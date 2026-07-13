@@ -613,214 +613,157 @@
       "message": "Accepted status requires a Release authority"
     },
     {
-      "claim-id": "ADR-0006-C1",
-      "criterion-index": 0,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0001-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c1-committed-manifest-schema.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0006-C2",
-      "criterion-index": 1,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0001-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c1-committed-manifest-schema.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0006-C3",
-      "criterion-index": 2,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0001-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c2-canonical-null-array-order.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0006-C4",
-      "criterion-index": 3,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0001-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c2-canonical-null-array-order.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0006-C5",
-      "criterion-index": 4,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0001-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c3-nested-artifact-id-rejection.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0006-C6",
-      "criterion-index": 5,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0001-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c3-nested-artifact-id-rejection.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0006-C7",
-      "criterion-index": 6,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0001-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c4-failure-artifact-scope.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0006-C8",
-      "criterion-index": 7,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0001-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c4-failure-artifact-scope.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0006-C9",
-      "criterion-index": 8,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0001-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c4-failure-coordinates.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0012-C1",
-      "criterion-index": 0,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0001-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c4-failure-coordinates.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0012-C2",
-      "criterion-index": 1,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0001-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c4-failure-semantics.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0012-C3",
-      "criterion-index": 2,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0001-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c4-failure-semantics.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0012-C4",
-      "criterion-index": 3,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0001-C5"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c5-reproducibility-conflict.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0012-C5",
-      "criterion-index": 4,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0001-C5"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0001-c5-reproducibility-conflict.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0012-C6",
-      "criterion-index": 5,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0008-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0008-c3-workflow-wiring.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0013-C1",
-      "criterion-index": 0,
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0008-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0008-c3-workflow-wiring.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
-      "claim-id": "ADR-0013-C2",
-      "criterion-index": 1,
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0013-C3",
-      "criterion-index": 2,
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0014-C1",
-      "criterion-index": 0,
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0014-C2",
-      "criterion-index": 1,
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0014-C3",
-      "criterion-index": 2,
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0014-C4",
-      "criterion-index": 3,
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0017-C1",
-      "criterion-index": 0,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0017-C2",
-      "criterion-index": 1,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0017-C3",
-      "criterion-index": 2,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0017-C4",
-      "criterion-index": 3,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0017-C5",
-      "criterion-index": 4,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0018-C1",
-      "criterion-index": 0,
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0018-C2",
-      "criterion-index": 1,
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
-    },
-    {
-      "claim-id": "ADR-0018-C3",
-      "criterion-index": 2,
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-claim-evidence",
-      "message": "Accepted claim has no evidence registry entry"
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0008-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0008-c4-validation-read-catalog.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
       "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
@@ -828,6 +771,33 @@
       "artifact-path": "docs\/evidence\/adr-runs\/adr-0008-c4-validation-read-catalog.json",
       "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
       "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0008-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0008-c4-validation-read-catalog.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:b048d24406710adc244573ff7e5c6c0e2a30ea46293411d3a50e52f1f442ad01",
+      "affected-claim-ids": ["ADR-0008-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0008-c4-validation-read-catalog.json",
+      "expected": "sha256:2be0b672853a8b15efad53a66a8a13d5baf25d8513735d7ccd1690433b5da28e",
+      "input-path": "abc\/test\/abc\/tools\/validate_design_bundle_test.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0009-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c2-materialized-content-hashes.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
       "kind": "input-hash-mismatch",
       "message": "current evidence input hash does not match the artifact"
     },
@@ -841,11 +811,47 @@
       "message": "current evidence input hash does not match the artifact"
     },
     {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0009-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c2-materialized-content-hashes.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0009-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c3-mapping-divergence-sidecar.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
       "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
       "affected-claim-ids": ["ADR-0009-C3"],
       "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c3-mapping-divergence-sidecar.json",
       "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
       "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0009-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c3-mapping-divergence-sidecar.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0009-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c4-generated-artifact-ids-vs-content-hashes.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
       "kind": "input-hash-mismatch",
       "message": "current evidence input hash does not match the artifact"
     },
@@ -859,11 +865,56 @@
       "message": "current evidence input hash does not match the artifact"
     },
     {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0009-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c4-generated-artifact-ids-vs-content-hashes.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0009-C5"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c5-aat-conversion-compatibility.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
       "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
       "affected-claim-ids": ["ADR-0009-C5"],
       "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c5-aat-conversion-compatibility.json",
       "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
       "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0009-C5"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c5-aat-conversion-compatibility.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:b048d24406710adc244573ff7e5c6c0e2a30ea46293411d3a50e52f1f442ad01",
+      "affected-claim-ids": ["ADR-0009-C5"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c5-aat-conversion-compatibility.json",
+      "expected": "sha256:2be0b672853a8b15efad53a66a8a13d5baf25d8513735d7ccd1690433b5da28e",
+      "input-path": "abc\/test\/abc\/tools\/validate_design_bundle_test.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0009-C6"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c6-temporary-materialization.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
       "kind": "input-hash-mismatch",
       "message": "current evidence input hash does not match the artifact"
     },
@@ -877,11 +928,56 @@
       "message": "current evidence input hash does not match the artifact"
     },
     {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0009-C6"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c6-temporary-materialization.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:b048d24406710adc244573ff7e5c6c0e2a30ea46293411d3a50e52f1f442ad01",
+      "affected-claim-ids": ["ADR-0009-C6"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c6-temporary-materialization.json",
+      "expected": "sha256:2be0b672853a8b15efad53a66a8a13d5baf25d8513735d7ccd1690433b5da28e",
+      "input-path": "abc\/test\/abc\/tools\/validate_design_bundle_test.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0010-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c1-materialized-bundled-schema-jcs-hash.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
       "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
       "affected-claim-ids": ["ADR-0010-C1"],
       "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c1-materialized-bundled-schema-jcs-hash.json",
       "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
       "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0010-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c1-materialized-bundled-schema-jcs-hash.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0010-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c2-materialized-artifact-ids-distinct.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
       "kind": "input-hash-mismatch",
       "message": "current evidence input hash does not match the artifact"
     },
@@ -895,11 +991,47 @@
       "message": "current evidence input hash does not match the artifact"
     },
     {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0010-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c2-materialized-artifact-ids-distinct.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0010-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c3-v0-identity-json.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
       "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
       "affected-claim-ids": ["ADR-0010-C3"],
       "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c3-v0-identity-json.json",
       "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
       "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0010-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c3-v0-identity-json.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0010-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c4-parser-schema-mismatch.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
       "kind": "input-hash-mismatch",
       "message": "current evidence input hash does not match the artifact"
     },
@@ -913,11 +1045,56 @@
       "message": "current evidence input hash does not match the artifact"
     },
     {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0010-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c4-parser-schema-mismatch.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:b048d24406710adc244573ff7e5c6c0e2a30ea46293411d3a50e52f1f442ad01",
+      "affected-claim-ids": ["ADR-0010-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c4-parser-schema-mismatch.json",
+      "expected": "sha256:2be0b672853a8b15efad53a66a8a13d5baf25d8513735d7ccd1690433b5da28e",
+      "input-path": "abc\/test\/abc\/tools\/validate_design_bundle_test.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0011-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0011-c2-deterministic-json-writer.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
       "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
       "affected-claim-ids": ["ADR-0011-C2"],
       "artifact-path": "docs\/evidence\/adr-runs\/adr-0011-c2-deterministic-json-writer.json",
       "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
       "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0011-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0011-c2-deterministic-json-writer.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0011-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0011-c3-two-run-byte-identity.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
       "kind": "input-hash-mismatch",
       "message": "current evidence input hash does not match the artifact"
     },
@@ -931,22 +1108,238 @@
       "message": "current evidence input hash does not match the artifact"
     },
     {
-      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
-      "affected-claim-ids": ["ADR-0008-C2","ADR-0010-C5","ADR-0011-C1"],
-      "artifact-path": "docs\/evidence\/adr-runs\/design-bundle-operational.json",
-      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
-      "input-path": "src\/abc\/tools\/validate_design_bundle.clj",
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0011-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0011-c3-two-run-byte-identity.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
       "kind": "input-hash-mismatch",
       "message": "current evidence input hash does not match the artifact"
     },
     {
-      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
-      "affected-claim-ids": ["ADR-0008-C2","ADR-0010-C5","ADR-0011-C1"],
-      "artifact-path": "docs\/evidence\/adr-runs\/design-bundle-operational.json",
-      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
-      "input-path": "src\/abc\/tools\/validate_design_bundle.clj",
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c1-canonical-all-member-schema.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
       "kind": "input-hash-mismatch",
-      "message": "operational input hash does not match current bytes"
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c1-canonical-all-member-schema.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C10"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c10-admission-limits.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C10"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c10-admission-limits.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C11"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c11-best-effort-counted-failure.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C11"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c11-best-effort-counted-failure.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C11"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c11-non-release-admissible.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C11"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c11-non-release-admissible.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C11"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c11-strict-atomic-abort.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C11"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c11-strict-atomic-abort.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c2-clojure-known-answer.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c2-clojure-known-answer.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c3-repack-image-evolution.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c3-repack-image-evolution.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c4-parser-identity-roles.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c4-parser-identity-roles.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C5"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c5-role-specific-snapshot-validation.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C5"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c5-role-specific-snapshot-validation.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C6"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c6-p16-3-ungated.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C6"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c6-p16-3-ungated.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C7"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c7-d7-dated-fixed-state.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C7"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c7-d7-dated-fixed-state.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0033-C8"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c8-complete-legacy-readability.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0033-C8"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0033-c8-complete-legacy-readability.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0009-C5","ADR-0010-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/diagnostic-schema-exact-current.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     },
     {
       "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
@@ -954,6 +1347,69 @@
       "artifact-path": "docs\/evidence\/adr-runs\/diagnostic-schema-exact-current.json",
       "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
       "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0009-C5","ADR-0010-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/diagnostic-schema-exact-current.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0001-C1","ADR-0009-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/generated-import-manifest-schema.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0001-C1","ADR-0009-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/generated-import-manifest-schema.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:914c69bb961067f50d26f9be7969de9867680d4a6eaf11838544c21574a0fe01",
+      "affected-claim-ids": ["ADR-0033-C9"],
+      "artifact-path": "docs\/evidence\/adr-runs\/source-bundle-corpus.json",
+      "expected": "sha256:bcfbb19ebe3e22648be630593bf3f06b9c49cf12a5ff83ac3bf3321377c70595",
+      "input-path": "flake.nix",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:914c69bb961067f50d26f9be7969de9867680d4a6eaf11838544c21574a0fe01",
+      "affected-claim-ids": ["ADR-0033-C9"],
+      "artifact-path": "docs\/evidence\/adr-runs\/source-bundle-corpus.json",
+      "expected": "sha256:bcfbb19ebe3e22648be630593bf3f06b9c49cf12a5ff83ac3bf3321377c70595",
+      "input-path": "flake.nix",
+      "kind": "input-hash-mismatch",
+      "message": "operational input hash does not match current bytes"
+    },
+    {
+      "actual": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+      "affected-claim-ids": ["ADR-0008-C1","ADR-0009-C7"],
+      "artifact-path": "docs\/evidence\/adr-runs\/validate-design-bundle-wrapper-delegation.json",
+      "expected": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+      "input-path": "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+      "affected-claim-ids": ["ADR-0008-C1","ADR-0009-C7"],
+      "artifact-path": "docs\/evidence\/adr-runs\/validate-design-bundle-wrapper-delegation.json",
+      "expected": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+      "input-path": "abc\/test\/abc\/tools\/evidence_test_support.clj",
       "kind": "input-hash-mismatch",
       "message": "current evidence input hash does not match the artifact"
     }]

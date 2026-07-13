@@ -158,6 +158,7 @@
 
 (def ^:private trusted-adapter-vars
   '#{abc.tools.evidence-io/with-read-trace
+     abc.tools.evidence-io/with-ephemeral-root
      abc.tools.evidence-io/record-read!
      abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure!
      abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace!
@@ -178,7 +179,11 @@
       (contains? audited-structural-leaf-vars var)))
 
 (def ^:private audited-higher-order-signatures
-  '{clojure.core/apply :first
+  '{abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace! #{1}
+    abc.tools.evidence-io/with-read-trace #{1}
+    abc.tools.evidence-io/with-ephemeral-root #{1}
+    abc.tools.files/with-zip-file #{1}
+    clojure.core/apply :first
     clojure.core/map :first
     clojure.core/mapv :first
     clojure.core/mapcat :first
@@ -393,7 +398,8 @@
         forms-cache (atom {})
         consulted (atom (sorted-set))
         reachable (atom (sorted-set))
-        resolved-calls (atom (sorted-set))]
+        resolved-calls (atom (sorted-set))
+        direct-body-calls (atom {})]
     (letfn [(definition! [var]
               (let [items (get definitions-grouped var)]
                 (cond
@@ -406,6 +412,15 @@
               (or (get @forms-cache filename)
                   (let [forms (read-forms! (fs/file repo-root filename))]
                     (swap! forms-cache assoc filename forms) forms)))
+            (direct-body-call-target [definition form]
+              (when (and (seq? form) (symbol? (first form)))
+                (let [head (first form)
+                      matches (filter #(= (span head) (usage-span %))
+                                      (get usages [(:filename definition)
+                                                   (:name definition)]))]
+                  (when (= 1 (count matches))
+                    (let [usage (first matches)]
+                      (symbol (str (:to usage)) (str (:name usage))))))))
             (admit-callable-target! [caller target pending]
               (swap! resolved-calls conj target)
               (cond
@@ -633,6 +648,9 @@
                     (fail! :unresolved-call-edge "clj-kondo found an error in reachable Var" :var var))
                   (swap! reachable conj var)
                   (let [{:keys [params body]} (parse-defn form)]
+                    (swap! direct-body-calls assoc var
+                           (into (sorted-set)
+                                 (keep #(direct-body-call-target definition %) body)))
                     (doseq [x body]
                       (walk! var definition (set (filter symbol? params)) x pending))))))]
       (let [pending (atom (into (sorted-set) focused-vars))]
@@ -644,6 +662,7 @@
       {:focused-vars (vec (sort focused-vars))
        :reachable-vars (vec @reachable)
        :resolved-call-vars (vec @resolved-calls)
+       :direct-body-call-vars @direct-body-calls
        :paths (->> @reachable (map #(-> definitions (get %) :filename)) distinct sort vec)
        :contract-paths (vec @consulted)})))
 
@@ -651,13 +670,16 @@
   '#{abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace!})
 
 (defn assert-v2-boundary-ownership!
-  "Require a focused v2 wrapper to call the deep trace-and-validate owner."
-  [{:keys [resolved-call-vars] :as analysis}]
-  (let [missing (set/difference required-v2-boundary-vars (set resolved-call-vars))]
+  "Require every focused v2 wrapper to own a direct unconditional boundary."
+  [{:keys [focused-vars direct-body-call-vars] :as analysis}]
+  (let [missing (->> focused-vars
+                     (remove #(set/subset? required-v2-boundary-vars
+                                           (get direct-body-call-vars % #{})))
+                     vec)]
     (when (seq missing)
       (fail! :missing-evidence-boundary-owner
-             "v2 focus must call the exact trace-and-validate owner"
-             :vars (vec (sort missing))))
+             "each v2 focus must directly call the trace-and-validate owner"
+             :vars missing))
     analysis))
 
 (defn derive-nix-clojure-source-closure [repo-root focused-vars]

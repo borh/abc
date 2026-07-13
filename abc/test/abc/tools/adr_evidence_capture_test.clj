@@ -153,11 +153,11 @@
              [manifest-path (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []})]
              [closure-path (str "(ns abc.tools.adr-evidence-runtime-inputs)\n"
                                 "(defn with-validated-read-trace! [_ thunk] (thunk))\n")]
-             [test-path (str "(ns example.core-test (:require [clojure.test :refer [deftest is]] "
+             [test-path (str "(ns example.core-test (:require [clojure.test :refer [deftest]] "
                              "[example.core] "
                              "[abc.tools.adr-evidence-runtime-inputs :as runtime]))\n"
                              "(deftest runtime-input-contract\n"
-                             "  (is (runtime/with-validated-read-trace! {} (fn [] true))))\n")]]]
+                             "  (runtime/with-validated-read-trace! {} (fn [] true)))\n")]]]
       (let [file (fs/file repo path)]
         (fs/create-dirs (fs/parent file))
         (spit file body)))

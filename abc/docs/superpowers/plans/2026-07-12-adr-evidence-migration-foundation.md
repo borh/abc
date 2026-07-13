@@ -486,9 +486,11 @@ git commit -m "feat(adr): add deterministic evidence registrar"
   - `(with-validated-read-trace! options thunk) -> thunk-value` owns the deep
     version-2 boundary: it completes `with-read-trace`, passes that exact
     trace's `:repository-paths` to `assert-runtime-input-closure!`, and only
-    then returns the value. A focused v2 graph must reach this exact Var;
-    disconnected calls to the two lower-level operations do not establish
-    boundary ownership;
+    then returns the value. Every exact focused v2 Var must be a single-arity
+    `defn`/`defn-` or a `deftest` whose parsed body contains a top-level list
+    expression headed by this exact resolved Var. Nesting it under `when`,
+    `if`, `is`, another macro, or any dead branch does not establish ownership;
+    neither do disconnected calls to the two lower-level operations;
   - `(derive-nix-clojure-source-closure repo-root focused-vars) ->
     sorted-vector<relative-source-or-test-path>` and a closed checked manifest
     `{:schema-version :abc-adr-nix-clojure-closure-v1 :focused-vars [...]
@@ -588,9 +590,11 @@ Add runtime-input tests proving:
   manifest `:paths`, and descriptor runtime-data inputs are exactly equal;
   descriptor self, manifest self, and statically derived Clojure namespaces
   are excluded from that equality;
-- `with-validated-read-trace!` validates its own completed trace; omission of
-  the deep owner and a wrapper containing disconnected lower-level trace and
-  assertion calls both fail `:missing-evidence-boundary-owner`;
+- `with-validated-read-trace!` validates its own completed trace. Each exact
+  focused Var succeeds only with the owner as an unconditional direct parsed
+  body expression; omission, `when`/`if`/`is` nesting, dead branches, and a
+  wrapper containing disconnected lower-level trace and assertion calls fail
+  `:missing-evidence-boundary-owner`;
 - a Nix/Clojure closure manifest rejects unresolved focused Vars, unsorted or
   missing source paths, and a descriptor that binds the manifest but omits one
   listed source/test file or any of `deps.edn`, `deps-lock.json`, and
@@ -624,9 +628,12 @@ Add runtime-input tests proving:
   contract enumerates every possible target. Computed, conditional,
   collection-hidden, and let-bound callables fail closed; target and literal
   function bodies receive the same lint. The audited signature table names the
-  callable argument positions for every admitted higher-order Var. Threading
-  forms are reconstructed with the threaded value in its semantic position
-  before those signatures are checked.
+  callable argument positions for every admitted higher-order Var, including
+  thunk/callback index 1 for `with-validated-read-trace!`,
+  `evidence-io/with-read-trace`, `evidence-io/with-ephemeral-root`, and
+  `files/with-zip-file`; there are no callback-taking trusted APIs outside
+  that inventory. Threading forms are reconstructed with the threaded value
+  in its semantic position before those signatures are checked.
 
 - [ ] **Step 2: Run RED**
 
@@ -731,9 +738,10 @@ explicit set is exactly:
 The focused boundary calls `with-validated-read-trace!`; that owner supplies
 `:repository-paths` from its own completed `with-read-trace` result to
 `assert-runtime-input-closure!`. Capture refuses to execute a v2 descriptor
-whose static manifest/explicit comparison fails or whose resolved graph does
-not reach that exact deep owner; co-presence of disconnected lower-level calls
-does not satisfy the contract.
+whose static manifest/explicit comparison fails or when any exact focused Var
+lacks that owner as a top-level direct body call. Merely reaching the owner
+transitively, nesting it under a conditional/assertion macro, or co-locating
+disconnected lower-level calls does not satisfy the contract.
 
 `derive-minimum-inputs` resolves the contained component root once and searches
 only its `test/` and `src/` directories. `capture!` continues to receive an

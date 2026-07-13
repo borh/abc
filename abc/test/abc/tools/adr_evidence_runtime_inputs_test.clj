@@ -41,7 +41,11 @@
 (defn- boundary-analyzer-repo [body]
   (let [root (analyzer-repo body)]
     (write! root "src/abc/tools/evidence_io.clj"
-            "(ns abc.tools.evidence-io)\n(defn with-read-trace [options thunk] (thunk))\n")
+            (str "(ns abc.tools.evidence-io)\n"
+                 "(defn with-read-trace [options thunk] (thunk))\n"
+                 "(defn with-ephemeral-root [root thunk] (thunk))\n"))
+    (write! root "src/abc/tools/files.clj"
+            "(ns abc.tools.files)\n(defn with-zip-file [archive callback] (callback archive))\n")
     (write! root "src/abc/tools/adr_evidence_runtime_inputs.clj"
             (str "(ns abc.tools.adr-evidence-runtime-inputs)\n"
                  "(defn assert-runtime-input-closure! [options] true)\n"
@@ -298,6 +302,43 @@
             abc.tools.files/parse-xml-document}
          inventory))))
 
+(deftest every-trusted-callback-position-is-explicit-and-fail-closed-test
+  (let [signatures (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                                        'audited-higher-order-signatures))
+        inventory (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                                       'trusted-adapter-vars))
+        expected '{abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace! #{1}
+                   abc.tools.evidence-io/with-read-trace #{1}
+                   abc.tools.evidence-io/with-ephemeral-root #{1}
+                   abc.tools.files/with-zip-file #{1}}]
+    (is (= expected (select-keys signatures (keys expected))))
+    (is (= (set (keys expected))
+           (set/intersection inventory (set (keys signatures)))))
+    (doseq [[label call]
+            [["deep owner" "(runtime/with-validated-read-trace! {} (first [slurp]))"]
+             ["read trace" "(evidence-io/with-read-trace {} (first [slurp]))"]
+             ["ephemeral root" "(evidence-io/with-ephemeral-root \"tmp\" (first [slurp]))"]
+             ["zip callback" "(files/with-zip-file \"fixture.zip\" (first [slurp]))"]
+             ["hidden process" "(evidence-io/with-ephemeral-root \"tmp\" (get {:run process/process} :run))"]]]
+      (let [root (boundary-analyzer-repo
+                  (str "(ns example.core (:require "
+                       "[abc.tools.adr-evidence-runtime-inputs :as runtime] "
+                       "[abc.tools.evidence-io :as evidence-io] "
+                       "[abc.tools.files :as files] "
+                       "[babashka.process :as process]))\n"
+                       "(defn contract [] " call ")"))]
+        (is (= :unsupported-evidence-call-graph
+               (problem-kind #(runtime/analyze-reachable-vars
+                               root ['example.core/contract])))
+            label)))
+    (let [root (boundary-analyzer-repo
+                (str "(ns example.core (:require [abc.tools.evidence-io :as evidence-io]))\n"
+                     "(defn contract [] "
+                     "(evidence-io/with-ephemeral-root \"tmp\" (fn [] true)))"))]
+      (is (= ['abc.tools.evidence-io/with-ephemeral-root 'example.core/contract]
+             (:reachable-vars
+              (runtime/analyze-reachable-vars root ['example.core/contract])))))))
+
 (deftest v2-focused-boundary-must-use-the-deep-validation-owner-test
   (let [missing-trace (boundary-analyzer-repo
                        "(ns example.core (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]))\n(defn contract [] (runtime/assert-runtime-input-closure! {}))")
@@ -318,6 +359,44 @@
     (is (= :missing-evidence-boundary-owner
            (problem-kind #(runtime/assert-v2-boundary-ownership!
                            (runtime/analyze-reachable-vars disconnected ['example.core/contract])))))))
+
+(deftest v2-owner-must-be-an-unconditional-direct-focused-body-expression-test
+  (let [direct (boundary-analyzer-repo
+                (str "(ns example.core (:require "
+                     "[abc.tools.adr-evidence-runtime-inputs :as runtime]))\n"
+                     "(defn contract []\n"
+                     "  (runtime/with-validated-read-trace! {} (fn [] true)))"))
+        nested-forms
+        ["(when false (runtime/with-validated-read-trace! {} (fn [] true)))"
+         "(if false (runtime/with-validated-read-trace! {} (fn [] true)) true)"
+         "(is (runtime/with-validated-read-trace! {} (fn [] true)))"]]
+    (is (= ['example.core/contract]
+           (:focused-vars
+            (runtime/assert-v2-boundary-ownership!
+             (runtime/analyze-reachable-vars direct ['example.core/contract])))))
+    (doseq [nested nested-forms]
+      (let [root (boundary-analyzer-repo
+                  (str "(ns example.core (:require "
+                       "[abc.tools.adr-evidence-runtime-inputs :as runtime] "
+                       "[clojure.test :refer [is]]))\n"
+                       "(defn contract [] " nested ")"))]
+        (is (= :missing-evidence-boundary-owner
+               (problem-kind
+                #(runtime/assert-v2-boundary-ownership!
+                  (runtime/analyze-reachable-vars root ['example.core/contract])))))))
+    (let [mixed (boundary-analyzer-repo
+                 (str "(ns example.core (:require "
+                      "[abc.tools.adr-evidence-runtime-inputs :as runtime]))\n"
+                      "(defn direct []\n"
+                      "  (runtime/with-validated-read-trace! {} (fn [] true)))\n"
+                      "(defn hidden []\n"
+                      "  (when false "
+                      "(runtime/with-validated-read-trace! {} (fn [] true))))"))]
+      (is (= :missing-evidence-boundary-owner
+             (problem-kind
+              #(runtime/assert-v2-boundary-ownership!
+                (runtime/analyze-reachable-vars
+                 mixed ['example.core/direct 'example.core/hidden]))))))))
 
 (deftest statically-resolved-higher-order-local-var-arguments-expand-test
   (let [root (analyzer-repo

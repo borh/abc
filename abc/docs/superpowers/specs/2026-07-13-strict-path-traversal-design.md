@@ -50,7 +50,7 @@ the five call sites.
   when the root itself is a symlink.
 - For descendants, yield symbolic links but never descend through a symbolic link whose
   target is a directory.
-- Sort children by their normalized string path before recursion.
+- Sort children with `sort-by str` before recursion.
 - Return a lazy depth-first, pre-order sequence.
 - Propagate `IOException`, `SecurityException`, and other listing failures.
 - Do not resolve real paths, track visited identities, or add cycle detection. Child

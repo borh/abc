@@ -223,6 +223,51 @@
         (delete-recursive origin)
         (delete-recursive cache)))))
 
+(deftest ensure-clone-distinguishes-git-directory-test
+  (let [root (temp-dir "abc-replay-git-kind")
+        directory-cache (io/file root "directory-cache")
+        file-cache (io/file root "file-cache")
+        calls (atom [])
+        verify-var (ns-resolve 'abc.tools.aozora-replay 'verify-origin!)
+        git-var (ns-resolve 'abc.tools.aozora-replay 'git!)]
+    (try
+      (.mkdirs (io/file directory-cache ".git"))
+      (.mkdirs file-cache)
+      (spit (io/file file-cache ".git") "not a directory")
+      (with-redefs-fn
+        {verify-var (fn [& args] (swap! calls conj [:verify args]))
+         git-var (fn [& args] (swap! calls conj [:git args]))}
+        #(do
+           (replay/ensure-clone! {:cache-dir (str directory-cache)
+                                  :remote-url "https://example.invalid/repo.git"})
+           (replay/ensure-clone! {:cache-dir (str file-cache)
+                                  :remote-url "https://example.invalid/repo.git"})))
+      (is (= [:verify :git] (mapv first @calls)))
+      (finally
+        (delete-recursive root)))))
+
+(deftest resolve-options-canonicalizes-symlinked-parent-test
+  (let [root (temp-dir "abc-replay-canonical")
+        real-parent (io/file root "real")
+        linked-parent (io/file root "linked")
+        baseline (io/file real-parent "baseline.json")]
+    (try
+      (.mkdirs real-parent)
+      (spit baseline "{}")
+      (Files/createSymbolicLink (.toPath linked-parent) (.toPath real-parent)
+                                (make-array FileAttribute 0))
+      (with-redefs-fn
+        {#'replay/default-baseline-path (str baseline)
+         #'replay/locked-pin (constantly (apply str (repeat 40 "a")))}
+        #(is (thrown? clojure.lang.ExceptionInfo
+                      (replay/resolve-options
+                       {:update true
+                        :sample-period "month"
+                        :baseline (str (io/file linked-parent "baseline.json"))}))))
+      (finally
+        (.delete linked-parent)
+        (delete-recursive root)))))
+
 (deftest resolve-options-guards-test
   (let [pin (replay/locked-pin "flake.lock")]
     (testing "exactly one of --check/--update"

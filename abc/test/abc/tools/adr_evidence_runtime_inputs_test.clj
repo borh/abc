@@ -4,8 +4,7 @@
             [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.set :as set]
-            [clojure.test :refer [deftest is]])
-  (:import [java.nio.file Files]))
+            [clojure.test :refer [deftest is]]))
 
 (defn- temp-dir []
   (fs/file (fs/create-temp-dir {:prefix "runtime-inputs-"})))
@@ -58,7 +57,7 @@
 (deftest workspace-root-is-the-exact-git-and-monorepo-identity-test
   (let [root (monorepo-root)
         child (fs/file root "abc")]
-    (is (= (.getCanonicalFile root)
+    (is (= (fs/file (fs/canonicalize root))
            (runtime/validate-workspace-root! root)))
     (is (= :invalid-workspace-root
            (problem-kind #(runtime/validate-workspace-root! child))))
@@ -151,10 +150,9 @@
         outside-file (write! outside "outside.txt" "outside")
         link (fs/file root "linked.txt")]
     (fs/create-dirs (fs/parent (fs/file root manifest-path)))
-    (Files/createSymbolicLink (.toPath link) (.toPath outside-file)
-                              (make-array java.nio.file.attribute.FileAttribute 0))
+    (fs/create-sym-link link outside-file)
     (doseq [[label paths]
-            [["absolute" [(.getAbsolutePath outside-file)]]
+            [["absolute" [(str (fs/absolutize outside-file))]]
              ["parent" ["../outside.txt"]]
              ["missing" ["missing.txt"]]
              ["duplicate" ["linked.txt" "linked.txt"]]
@@ -493,4 +491,4 @@
       (is (= :missing-evidence-input
              (problem-kind #(runtime/validate-nix-clojure-closure!
                              "." manifest-path (remove #{"deps.edn"} inputs)))))
-      (finally (.delete manifest-file)))))
+      (finally (fs/delete-if-exists manifest-file)))))

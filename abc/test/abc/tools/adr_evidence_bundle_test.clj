@@ -2,6 +2,7 @@
   (:require [abc.tools.adr-evidence-bundle :as bundle]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]])
   (:import [java.nio.file Files]
@@ -155,7 +156,7 @@
 
 (deftest ordinary-and-component-bundles-resolve-against-separate-roots-test
   (let [workspace (temp-dir)
-        abc (io/file workspace "abc")
+        abc (fs/file workspace "abc")
         ordinary-input (write-path! abc "src/example/core.clj" "(ns example.core)\n")
         test-input (write-path! workspace "abc/test/example/core_test.clj"
                                 "(ns example.core-test (:require [example.core]))\n")
@@ -173,8 +174,8 @@
                    "observations" {"contract" {"value" true}}}
         ordinary-path "docs/evidence/ordinary.json"
         component-path "docs/evidence/component.json"]
-    (json/write-deterministic-json-file! (io/file abc ordinary-path) ordinary)
-    (json/write-deterministic-json-file! (io/file abc component-path) component)
+    (json/write-deterministic-json-file! (fs/file abc ordinary-path) ordinary)
+    (json/write-deterministic-json-file! (fs/file abc component-path) component)
     (is (empty? (:problems
                  (bundle/validate-bundle
                   {:artifact-root abc :workspace-root workspace}

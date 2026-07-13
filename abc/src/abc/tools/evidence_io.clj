@@ -10,7 +10,7 @@
   (fs/file (fs/canonicalize file)))
 
 (defn- below? [root file]
-  (.startsWith (.toPath (canonical-file file)) (.toPath (canonical-file root))))
+  (fs/starts-with? (canonical-file file) (canonical-file root)))
 
 (defn- relative-key [root file]
   (-> (fs/relativize (canonical-file root) (canonical-file file))

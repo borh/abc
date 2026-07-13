@@ -1,8 +1,8 @@
 (ns abc.tools.adr-evidence-inventory
   (:require [abc.tools.adr :as adr]
             [abc.tools.adr-claim-migration :as migration]
-            [abc.tools.json :as json]
-            [clojure.tools.cli :as cli]))
+            [abc.tools.cli :as abc-cli]
+            [abc.tools.json :as json]))
 
 (def ^:private families
   ["foundation-runtime-identity" "schema-rdf-tei" "temporal-person-ingest"
@@ -96,14 +96,21 @@
 
 (def cli-options [[nil "--output PATH"]])
 
+(defn usage [_]
+  "Usage: clojure -M:abc/adr-evidence-inventory --output PATH")
+
+(def cli-config
+  {:cli-options cli-options
+   :required [:output]
+   :max-args 0
+   :usage-fn usage
+   :run (fn [{:keys [options]}]
+          (let [migration-state (migration/load-migration-state "." {:require-complete? false})
+                value (inventory-value (adr/parse-all "docs/adr") migration-state)]
+            (json/write-deterministic-json-file! (:output options) value)
+            {:ok? (and (empty? (:problems migration-state))
+                       (zero? (get-in value ["families" "unclassified"])))}))
+   :fail? (complement :ok?)})
+
 (defn -main [& args]
-  (let [args (if (= "--" (first args)) (rest args) args)
-        {:keys [options errors]} (cli/parse-opts args cli-options)]
-    (if (or (seq errors) (nil? (:output options)))
-      (System/exit 2)
-      (let [migration-state (migration/load-migration-state "." {:require-complete? false})
-            value (inventory-value (adr/parse-all "docs/adr") migration-state)]
-        (json/write-deterministic-json-file! (:output options) value)
-        (System/exit (if (or (seq (:problems migration-state))
-                             (pos? (get-in value ["families" "unclassified"])))
-                       1 0))))))
+  (abc-cli/run-cli! args cli-config))

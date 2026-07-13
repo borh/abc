@@ -243,6 +243,9 @@
    {:relations {} :problems []}
    relation-fields))
 
+(defn- append-section-body [bodies body]
+  (conj (or bodies []) body))
+
 (defn- parse-sections [lines]
   (let [{:keys [section sections section-bodies section-occurrences body]}
         (reduce
@@ -252,7 +255,7 @@
                section (assoc-in [:section-bodies section]
                                  (str/join "\n" body))
                section (update-in [:section-occurrences section]
-                                  (fnil conj []) (str/join "\n" body))
+                                  append-section-body (str/join "\n" body))
                true (update :sections conj heading))
              (cond-> parsed
                section (update :body conj line))))
@@ -263,7 +266,7 @@
         section-bodies (cond-> section-bodies
                          section (assoc section section-body))
         section-occurrences (cond-> section-occurrences
-                              section (update section (fnil conj []) section-body))]
+                              section (update section append-section-body section-body))]
     {:sections sections
      :section-bodies section-bodies
      :section-occurrences section-occurrences}))

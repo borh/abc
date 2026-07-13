@@ -2,14 +2,38 @@
   (:require [abc.tools.adr :as adr]
             [abc.tools.adr-claim-migration :as migration]
             [abc.tools.adr-evidence-inventory :as inventory]
+            [abc.tools.cli :as cli]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]]))
 
 (def retained-text "Criterion text.")
 (def corrected-text "Correct this.")
 (def moved-text "Move this.")
+
+(defn- dispatch [args]
+  (cli/dispatch! (cli/parse args inventory/cli-config)
+                 inventory/cli-config))
+
+(deftest cli-preserves-usage-success-and-debt-exit-codes-test
+  (let [dir (fs/create-temp-dir {:prefix "adr-evidence-inventory-cli-"})
+        output (fs/file dir "inventory.json")
+        state {:problems []}]
+    (is (= 2 (dispatch [])))
+    (with-redefs [migration/load-migration-state (fn [& _] state)
+                  adr/parse-all (constantly [])
+                  inventory/inventory-value
+                  (fn [& _] {"families" {"unclassified" 0}})]
+      (is (= 0 (dispatch ["--output" (str output)])))
+      (is (fs/regular-file? output)))
+    (with-redefs [migration/load-migration-state
+                  (fn [& _] {:problems [{:kind :migration-debt}]})
+                  adr/parse-all (constantly [])
+                  inventory/inventory-value
+                  (fn [& _] {"families" {"unclassified" 0}})]
+      (is (= 1 (dispatch ["--output" (str output)]))))))
 
 (def sample-adrs
   [{:num 1 :file "0001-one.md" :status "Accepted"

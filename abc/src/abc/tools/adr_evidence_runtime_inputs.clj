@@ -253,7 +253,8 @@
      clojure.core/subs
      clojure.test/is clojure.string/includes? clojure.string/starts-with?
      clojure.string/ends-with? clojure.string/blank? clojure.string/split
-     clojure.string/split-lines clojure.string/replace clojure.string/join clojure.string/trim
+     clojure.string/split-lines clojure.string/replace clojure.string/replace-first
+     clojure.string/join clojure.string/trim
      clojure.set/union clojure.set/difference clojure.set/intersection
      clojure.set/subset? clojure.java.io/file
      babashka.fs/absolute? babashka.fs/absolutize babashka.fs/file

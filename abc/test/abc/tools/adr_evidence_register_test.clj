@@ -1,18 +1,16 @@
 (ns abc.tools.adr-evidence-register-test
   (:require [abc.tools.adr-evidence :as evidence]
             [abc.tools.adr-evidence-register :as register]
-            [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]])
-  (:import [java.nio.file Files]
-           [java.nio.file.attribute FileAttribute]))
+            [babashka.fs :as fs]
+            [babashka.process :as process]
+            [clojure.test :refer [deftest is testing]]))
 
 (defn- temp-dir []
-  (.toFile (Files/createTempDirectory "adr-evidence-register-test"
-                                      (make-array FileAttribute 0))))
+  (fs/file (fs/create-temp-dir {:prefix "adr-evidence-register-test-"})))
 
 (defn- write! [root path value]
-  (let [file (io/file root path)]
-    (.mkdirs (.getParentFile file))
+  (let [file (fs/file root path)]
+    (fs/create-dirs (fs/parent file))
     (spit file value)
     file))
 
@@ -20,9 +18,11 @@
   (let [root (temp-dir)]
     (doseq [path ["flake.nix" "justfile" "abc/flake.nix" "ab-validator/flake.nix"]]
       (write! root path "fixture\n"))
-    (let [process (-> (ProcessBuilder. ["git" "init" "-q"])
-                      (.directory root) (.start))]
-      (when-not (zero? (.waitFor process))
+    (let [{:keys [exit]} @(process/process ["git" "init" "-q"]
+                                           {:dir (str root)
+                                            :out :string
+                                            :err :string})]
+      (when-not (zero? exit)
         (throw (ex-info "git init failed" {}))))
     root))
 
@@ -126,8 +126,9 @@
                        "{\"problems\":[{\"claim-id\":\"ADR-0001-C1\"},{\"affected-claim-ids\":[\"ADR-0002-C1\"]},{\"file\":\"0003-example.md\"},{\"claim-id\":\"ADR-9999-C1\"}]}")
         jq "nix/adr-family-clean.jq"
         run (fn [family]
-              (-> (ProcessBuilder. ["jq" "-e" "--arg" "family" family "-f" jq
-                                    (.getPath report)]) .start .waitFor))]
+              (:exit @(process/process ["jq" "-e" "--arg" "family" family "-f" jq
+                                        (str report)]
+                                       {:out :string :err :string})))]
     (is (not (zero? (run "ADR-0001"))))
     (is (not (zero? (run "ADR-0002"))))
     (is (not (zero? (run "ADR-0003"))))
@@ -135,7 +136,7 @@
 
 (deftest registration-threads-an-explicit-workspace-without-writing-on-failure-test
   (let [workspace (valid-workspace)
-        repo (io/file workspace "abc")
+        repo (fs/file workspace "abc")
         registry-path "docs/adr/adr-evidence.edn"
         registry-file (write! repo registry-path "{:entries []}\n")
         entries-path "docs/evidence/adr-entries/example.edn"]
@@ -146,7 +147,7 @@
     (with-redefs [register/current-claims (constantly [{:claim-id "ADR-0001-C1"}])
                   evidence/validate-registry
                   (fn [{:keys [workspace-root]}]
-                    (if (= (.getCanonicalFile workspace) (.getCanonicalFile (io/file workspace-root)))
+                    (if (= (fs/canonicalize workspace) (fs/canonicalize workspace-root))
                       []
                       [{:kind :missing-evidence-input :claim-id "ADR-0001-C1"}]))]
       (let [before (slurp registry-file)]

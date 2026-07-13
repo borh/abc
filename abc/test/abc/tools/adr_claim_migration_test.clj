@@ -1,8 +1,10 @@
 (ns abc.tools.adr-claim-migration-test
   (:require [abc.tools.adr :as adr]
             [abc.tools.adr-claim-migration :as migration]
+            [abc.tools.cli :as cli]
             [abc.tools.files :as files]
             [abc.tools.schema :as schema]
+            [babashka.fs :as fs]
             [clojure.test :refer [deftest is]]))
 
 (def revision "0123456789012345678901234567890123456789")
@@ -12,6 +14,20 @@
 
 (defn- actual-baseline []
   (migration/baseline-value revision (adr/parse-all "docs/adr")))
+
+(defn- dispatch [args]
+  (cli/dispatch! (cli/parse args migration/cli-config)
+                 migration/cli-config))
+
+(deftest cli-preserves-usage-success-and-refusal-exit-codes-test
+  (let [dir (fs/create-temp-dir {:prefix "adr-claim-migration-cli-"})
+        output (fs/file dir "baseline.json")]
+    (is (= 2 (dispatch [])))
+    (is (= 0 (dispatch ["--write-baseline" (str output)
+                        "--revision" revision])))
+    (is (fs/regular-file? output))
+    (is (= 1 (dispatch ["--write-baseline" (str output)
+                        "--revision" revision])))))
 
 (deftest criterion-hash-is-exact-and-baseline-is-deterministic-test
   (is (not= (migration/criterion-text-hash "First.")

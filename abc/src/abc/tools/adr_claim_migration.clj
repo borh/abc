@@ -1,12 +1,12 @@
 (ns abc.tools.adr-claim-migration
   (:require [abc.tools.adr :as adr]
+            [abc.tools.cli :as abc-cli]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.schema :as schema]
             [babashka.fs :as fs]
-            [clojure.set :as set]
-            [clojure.tools.cli :as cli]))
+            [clojure.set :as set]))
 
 (def ^:private baseline-schema-version "abc-adr-claim-migration-baseline-v1")
 (def ^:private ledger-schema-version "abc-adr-claim-migration-v1")
@@ -197,22 +197,29 @@
   [[nil "--write-baseline PATH"]
    [nil "--revision REV"]])
 
+(defn usage [_]
+  "Usage: clojure -M:abc/adr-claim-migration --write-baseline PATH --revision REV")
+
+(def cli-config
+  {:cli-options cli-options
+   :required [:write-baseline :revision]
+   :max-args 0
+   :usage-fn usage
+   :run (fn [{:keys [options]}]
+          (let [output (:write-baseline options)
+                revision (:revision options)]
+            (if (fs/exists? output)
+              (do
+                (binding [*out* *err*]
+                  (println "Refusing to replace immutable baseline:" output))
+                {:ok? false})
+              (let [value (baseline-value revision (adr/parse-all "docs/adr"))]
+                (json/write-deterministic-json-file! output value)
+                (println (str "Wrote baseline: " (get value "accepted_adr_count") " ADRs, "
+                              (get value "criterion_count") " criteria, "
+                              (get value "normative_section_count") " normative sections"))
+                {:ok? true}))))
+   :fail? (complement :ok?)})
+
 (defn -main [& args]
-  (let [args (if (= "--" (first args)) (rest args) args)
-        {:keys [options errors]} (cli/parse-opts args cli-options)
-        output (:write-baseline options)
-        revision (:revision options)]
-    (cond
-      (or (seq errors) (nil? output) (nil? revision))
-      (System/exit 2)
-
-      (fs/exists? output)
-      (do (binding [*out* *err*] (println "Refusing to replace immutable baseline:" output))
-          (System/exit 1))
-
-      :else
-      (let [value (baseline-value revision (adr/parse-all "docs/adr"))]
-        (json/write-deterministic-json-file! output value)
-        (println (str "Wrote baseline: " (get value "accepted_adr_count") " ADRs, "
-                      (get value "criterion_count") " criteria, "
-                      (get value "normative_section_count") " normative sections"))))))
+  (abc-cli/run-cli! args cli-config))

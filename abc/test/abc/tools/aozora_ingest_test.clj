@@ -2,9 +2,12 @@
   (:require [abc.tools.aozora-csv :as ac]
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
+            [abc.tools.malli :as am]
+            [abc.tools.manifest :as manifest]
             [abc.tools.person-record :as pr]
             [abc.sim.render :as sim-render]
             [clojure.java.io :as io]
+            [clojure.set :as set]
             [clojure.string]
             [clojure.test :refer [deftest is testing]]
             [taoensso.telemere :as tel])
@@ -53,6 +56,100 @@
 ;; row to satisfy the metadata-record schema's minItems: 1. Add one.
 (def synthetic-rows-with-edition
   [(row {"底本名1" "羅生門" "底本出版社名1" "テスト出版社"})])
+
+(defn- changed-json-paths
+  ([before after] (changed-json-paths [] before after))
+  ([path before after]
+   (cond
+     (and (map? before) (map? after))
+     (into #{}
+           (mapcat (fn [k]
+                     (changed-json-paths (conj path k)
+                                         (get before k ::missing)
+                                         (get after k ::missing))))
+           (set/union (set (keys before)) (set (keys after))))
+
+     (and (vector? before) (vector? after))
+     (into #{}
+           (mapcat (fn [i]
+                     (changed-json-paths (conj path i)
+                                         (get before i ::missing)
+                                         (get after i ::missing))))
+           (range (max (count before) (count after))))
+
+     (= before after) #{}
+     :else #{path})))
+
+(defn- seed-manifest! [manifest-path]
+  (manifest/write-json-file!
+   manifest-path
+   (files/read-json "examples/v0/example-work/manifest.json")))
+
+(defn- ingest-options [rows work-dir persons-dir manifest-path]
+  {:rows rows
+   :work-id "000127"
+   :output (str (io/file work-dir "metadata-record.json"))
+   :persons-output-dir (str persons-dir)
+   :refresh-manifest (str manifest-path)})
+
+(defn- copy-drift-sidecars! [persons-dir]
+  (doseq [source ["examples/v0/example-persons/_indexes/000879.json"
+                  "examples/v0/example-persons/_indexes/abc-000000000001.json"
+                  "examples/v0/example-persons/_indexes/abc-000000000002.json"
+                  (str "examples/v0/example-persons/_events/"
+                       "sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json")]
+          :let [kind (.getName (.getParentFile (io/file source)))
+                target (io/file persons-dir kind (.getName (io/file source)))]]
+    (io/make-parents target)
+    (io/copy (io/file source) target)))
+
+(defn- run-isolated-ingest! [rows with-sidecars?]
+  (let [work-dir (temp-dir "abc-ingest-drift-w")
+        persons-dir (temp-dir "abc-ingest-drift-p")
+        manifest-path (io/file work-dir "manifest.json")
+        opts (ingest-options rows work-dir persons-dir manifest-path)]
+    (try
+      (seed-manifest! manifest-path)
+      (ingest/run-from-rows! opts)
+      (when with-sidecars?
+        (copy-drift-sidecars! persons-dir)
+        (ingest/run-from-rows! opts))
+      (let [manifest-value (files/read-json manifest-path)]
+        {:person-bytes (vec (files/read-bytes
+                             (io/file persons-dir "000879.json")))
+         :metadata-bytes (vec (files/read-bytes
+                               (io/file work-dir "metadata-record.json")))
+         :manifest-bytes (vec (files/read-bytes manifest-path))
+         :manifest-identity-object
+         (get manifest-value "manifest_identity_object")})
+      (finally
+        (delete-recursive work-dir)
+        (delete-recursive persons-dir)))))
+
+(defn- run-isolated-ingest-and-read! []
+  (let [work-dir (temp-dir "abc-ingest-schema-w")
+        persons-dir (temp-dir "abc-ingest-schema-p")
+        manifest-path (io/file work-dir "manifest.json")]
+    (try
+      (seed-manifest! manifest-path)
+      (ingest/run-from-rows!
+       (ingest-options synthetic-rows-with-edition
+                       work-dir persons-dir manifest-path))
+      {"person" (files/read-json (io/file persons-dir "000879.json"))
+       "metadata" (files/read-json (io/file work-dir "metadata-record.json"))
+       "manifest" (files/read-json manifest-path)}
+      (finally
+        (delete-recursive work-dir)
+        (delete-recursive persons-dir)))))
+
+(defn- run-with-person-schema-hash! [person-schema-hash]
+  (let [live-cached-schema-hash am/cached-schema-hash]
+    (with-redefs [am/cached-schema-hash
+                  (fn [path]
+                    (if (= path ingest/person-schema-path)
+                      person-schema-hash
+                      (live-cached-schema-hash path)))]
+      (run-isolated-ingest-and-read!))))
 
 (deftest ingest-emits-n-plus-1-files-test
   (testing "run-from-rows! writes the work record + each person file"
@@ -151,6 +248,35 @@
         (finally
           (delete-recursive d1-work) (delete-recursive d1-persons)
           (delete-recursive d2-work) (delete-recursive d2-persons))))))
+
+(deftest drift-sidecars-do-not-affect-ingest-or-manifest-identity-test
+  (let [without (run-isolated-ingest! synthetic-rows-with-edition false)
+        with (run-isolated-ingest! synthetic-rows-with-edition true)]
+    (is (= (:person-bytes without) (:person-bytes with)))
+    (is (= (:metadata-bytes without) (:metadata-bytes with)))
+    (is (= (:manifest-bytes without) (:manifest-bytes with)))
+    (is (= (:manifest-identity-object without)
+           (:manifest-identity-object with)))))
+
+(deftest person-schema-hash-cascade-is-bounded-on-example-slice-test
+  (let [baseline (run-with-person-schema-hash!
+                  (manifest/schema-hash
+                   "schemas/person-record.schema.json"))
+        rotated (run-with-person-schema-hash!
+                 "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+    (is (= #{["person" "person_record_schema_hash"]
+             ["metadata" "contributors" 0 "person_record_hash"]
+             ["manifest" "manifest_identity_object" "metadata_record_hash"]
+             ["manifest" "artifact_id"]}
+           (changed-json-paths baseline rotated)))
+    (is (= (dissoc (get baseline "person") "person_record_schema_hash")
+           (dissoc (get rotated "person") "person_record_schema_hash")))
+    (is (= (get baseline "metadata")
+           (assoc-in (get rotated "metadata")
+                     ["contributors" 0 "person_record_hash"]
+                     (get-in baseline
+                             ["metadata" "contributors" 0
+                              "person_record_hash"]))))))
 
 (deftest ingest-refuse-overwrite-on-divergent-person-test
   (testing "with a divergent on-disk person file and no --overwrite, ingest fails"

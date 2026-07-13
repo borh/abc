@@ -55,6 +55,15 @@
       (is (= ["ADR-0042-C1" "ADR-0042-C2"]
              (:affected-claim-ids (first problems)))))))
 
+(deftest bundle-input-profile-shapes-are-closed-test
+  (let [base (run-bundle "fixtures/input.txt" (str "sha256:" (apply str (repeat 64 "0"))))]
+    (is (seq (bundle/validate-bundle-value
+              (assoc-in base ["input_profile" "component_root"] "abc"))))
+    (is (seq (bundle/validate-bundle-value
+              (assoc base "input_profile"
+                     {"kind" "component-clojure-test-v1"
+                      "roots" [] "explicit" []}))))))
+
 (deftest artifact-path-and-input-failures-are-root-causes
   (let [repo (temp-dir)
         input (write-path! repo "fixtures/input.txt" "input")

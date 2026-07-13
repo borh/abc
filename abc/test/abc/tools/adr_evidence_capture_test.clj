@@ -125,6 +125,14 @@
              [(assoc (descriptor ["true"])
                      :runtime-input-manifest "docs/evidence/adr-inputs/example.edn")
               "docs/evidence/adr-capture/example.edn"]
+             [(assoc-in v2 [:input-profile :unexpected] true)
+              "docs/evidence/adr-capture/example.edn"]
+             [(assoc-in v2 [:input-profile :component-root] "abc")
+              "docs/evidence/adr-capture/example.edn"]
+             [(assoc v2 :input-profile
+                     {:kind "component-clojure-test-v1"
+                      :roots ["example.core"] :explicit []})
+              "docs/evidence/adr-capture/example.edn"]
              [v2 "docs/evidence/adr-capture/wrong.edn"]]]
       (is (thrown? clojure.lang.ExceptionInfo
                    (capture/capture! {:repo-root repo :descriptor value

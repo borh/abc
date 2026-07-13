@@ -1,7 +1,9 @@
 (ns abc.tools.adr-evidence
   "Typed, deterministic evidence validation for ADR acceptance claims."
   (:require [abc.tools.adr-evidence-bundle :as bundle]
+            [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
             [abc.tools.files :as files]
+            [clojure.java.io :as io]
             [clojure.set :as set])
   (:import [java.time DateTimeException LocalDate]))
 
@@ -160,7 +162,18 @@
 
 (defn validate-registry
   [{:keys [repo-root workspace-root claims registry matrix as-of]}]
-  (let [entries (:entries registry)
+  (let [distinct-workspace? (and workspace-root
+                                 (not= (.getCanonicalFile (io/file repo-root))
+                                       (.getCanonicalFile (io/file workspace-root))))
+        workspace-problems
+        (when distinct-workspace?
+          (try
+            (runtime-inputs/validate-workspace-root! repo-root workspace-root)
+            []
+            (catch Exception exception
+              [{:kind (or (:kind (ex-data exception)) :invalid-workspace-root)
+                :message (.getMessage exception)}])))
+        entries (:entries registry)
         claims-by-id (into {} (map (juxt :claim-id identity)) claims)
         known-evidence-kinds (apply set/union #{} (vals matrix))
         static-problems (mapcat #(static-entry-problems matrix known-evidence-kinds
@@ -188,7 +201,8 @@
              (when (:bundle result)
                (artifact-entry-problems as-of (:bundle result) entry))))
          (filter entry-shape-valid? entries))]
-    (vec (concat coverage-problems
+    (vec (concat workspace-problems
+                 coverage-problems
                  (duplicate-entry-problems entries)
                  static-problems
                  artifact-root-problems

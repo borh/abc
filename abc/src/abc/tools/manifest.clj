@@ -75,7 +75,7 @@
 (defn content [file media-type path-hint sha256-file-fn]
   {"content_hash" (str "sha256:" (sha256-file-fn file))
    "media_type" media-type
-   "byte_length" (.length (io/file file))
+   "byte_length" (hash/byte-length file)
    "path_hint" path-hint})
 
 (defn artifact-manifest

@@ -17,6 +17,16 @@
     (spit file value)
     file))
 
+(defn- valid-workspace []
+  (let [root (temp-dir)]
+    (doseq [path ["flake.nix" "justfile" "abc/flake.nix" "ab-validator/flake.nix"]]
+      (write! root path "fixture\n"))
+    (let [process (-> (ProcessBuilder. ["git" "init" "-q"])
+                      (.directory root) (.start))]
+      (when-not (zero? (.waitFor process))
+        (throw (ex-info "git init failed" {}))))
+    root))
+
 (defn- artifact [observation-key value]
   (str "{\"schema_version\":\"abc-adr-evidence-run-v1\","
        "\"observations\":{\"" observation-key "\":{\"value\":" value "}}}"))
@@ -125,8 +135,8 @@
     (is (zero? (run "ADR-7777")))))
 
 (deftest registration-threads-an-explicit-workspace-without-writing-on-failure-test
-  (let [repo (temp-dir)
-        workspace (temp-dir)
+  (let [workspace (valid-workspace)
+        repo (io/file workspace "abc")
         registry-path "docs/adr/adr-evidence.edn"
         registry-file (write! repo registry-path "{:entries []}\n")
         entries-path "docs/evidence/adr-entries/example.edn"]

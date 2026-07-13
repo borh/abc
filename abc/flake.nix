@@ -403,9 +403,11 @@
               {
                 nativeBuildInputs = [
                   pkgs.clojure
+                  pkgs.clj-kondo
                   pkgs._7zz
                   pkgs.git
                   pkgs.git-cliff
+                  pkgs.jq
                   pkgs.libxml2
                 ];
               }

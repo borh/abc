@@ -46,4 +46,4 @@
   (sha256-bytes (jcs/canonical-json-bytes value)))
 
 (defn byte-length [file]
-  (.length (io/file file)))
+  (.length (io/file (evidence-io/record-read! file))))

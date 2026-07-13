@@ -12,6 +12,37 @@
 (defn- fail! [kind message & {:as data}]
   (throw (ex-info message (assoc data :kind kind))))
 
+(def ^:private workspace-sentinels
+  ["flake.nix" "justfile" "abc/flake.nix" "ab-validator/flake.nix"])
+
+(defn validate-workspace-root!
+  "Require the monorepo identity root, not merely a containing directory.
+  The Git identity and the four owned entry-point sentinels must agree."
+  ([workspace-root] (validate-workspace-root! nil workspace-root))
+  ([repo-root workspace-root]
+   (let [root (.getCanonicalFile (io/file workspace-root))
+         process (-> (ProcessBuilder. ["git" "-C" (.getPath root)
+                                       "rev-parse" "--show-toplevel"])
+                     (.redirectErrorStream true)
+                     (.start))
+         output (str/trim (slurp (.getInputStream process)))
+         exit (.waitFor process)
+         git-root (when (zero? exit) (.getCanonicalFile (io/file output)))
+         missing (->> workspace-sentinels
+                      (remove #(.isFile (io/file root %)))
+                      vec)
+         expected-abc (.getCanonicalFile (io/file root "abc"))
+         actual-abc (some-> repo-root io/file .getCanonicalFile)]
+     (when-not (and (zero? exit) (= root git-root) (empty? missing)
+                    (or (nil? actual-abc) (= expected-abc actual-abc)))
+       (fail! :invalid-workspace-root
+              "workspace root must be the exact Soranoha Git root"
+              :workspace-root (.getPath root)
+              :git-root (some-> git-root .getPath)
+              :abc-root (some-> actual-abc .getPath)
+              :missing missing))
+     root)))
+
 (defn- validate-path! [root path]
   (when-not (and (string? path) (seq path))
     (fail! :invalid-runtime-input-manifest "runtime input path must be non-empty" :path path))
@@ -52,16 +83,21 @@
       (fail! :missing-runtime-input "component evidence requires a workspace root"))
     (let [manifest-path (:runtime-input-manifest value)
           manifest (load-manifest! input-root manifest-path)
-          expected (into (sorted-set) (concat (:paths manifest)
-                                              [descriptor-path manifest-path]))
+          ;; Runtime equality is deliberately only the data-read boundary.
+          ;; Descriptor, manifest, and statically-derived source inputs are
+          ;; independently hash-bound, but are not required to be contrived
+          ;; physical reads by the focused test.
+          expected (into (sorted-set) (:paths manifest))
           explicit (set (get-in value [:input-profile :explicit]))
           observed (into (sorted-set) repository-paths)
           missing (set/difference expected observed)
           extra (set/difference observed expected)]
-      (when-not (set/subset? expected explicit)
+      (when-not (set/subset? (conj expected descriptor-path manifest-path) explicit)
         (fail! :invalid-runtime-input-manifest
                "descriptor must bind its runtime manifest and every runtime-data input"
-               :paths (vec (sort (set/difference expected explicit)))))
+               :paths (vec (sort (set/difference
+                                  (conj expected descriptor-path manifest-path)
+                                  explicit)))))
       (when (seq missing)
         (fail! :undeclared-runtime-input "declared runtime inputs were not observed"
                :paths (vec (sort missing))))
@@ -103,16 +139,29 @@
      sh process shell})
 
 (def ^:private exempt-callers
-  '#{abc.tools.files abc.tools.hash abc.tools.json abc.tools.evidence-io})
+  '#{abc.tools.files abc.tools.hash abc.tools.json abc.tools.evidence-io
+     abc.tools.path-containment})
 
 (def ^:private audited-special-heads
-  '#{fn* fn if let* let loop* loop recur do throw try catch finally new .
+  '#{fn* fn if let* let loop* loop recur do throw try catch finally
      -> ->> some-> some->> cond-> cond->>
      set! monitor-enter monitor-exit case* deftype* reify*})
 
 (def ^:private audited-core-macros
   '#{and or when when-not if-let when-let if-some when-some cond condp case
      doseq for dotimes letfn binding with-open lazy-seq doto assert})
+
+(def ^:private audited-noncore-macros
+  '#{clojure.test/is})
+
+;; Exact object-pure operations only. Filesystem predicates and metadata,
+;; constructors, static JVM I/O, network, and process APIs go through named
+;; adapters instead.
+(def ^:private audited-safe-jvm-heads
+  '#{.getName .isBefore})
+
+(def ^:private audited-safe-jvm-vars
+  '#{Integer/parseInt LocalDate/parse})
 
 (defn- forbidden-head? [head]
   (let [simple (-> (name head)
@@ -240,11 +289,17 @@
                         (doseq [step (take-nth 2 (drop 3 form))
                                 :when (symbol? step)]
                           (walk! caller definition params (list step) pending))))
-                    (str/starts-with? (name head) ".")
-                    (when (forbidden-head? head)
-                      (when-not (contains? exempt-callers (:ns definition))
-                        (fail! :forbidden-evidence-io "reachable reflective I/O call"
-                               :caller caller :target head)))
+                    (or (= 'new head)
+                        (= '. head)
+                        (str/starts-with? (name head) ".")
+                        (and (namespace head)
+                             (re-matches #"[A-Z].*" (last (str/split (namespace head) #"\.")))))
+                    (when-not (or (contains? exempt-callers (:ns definition))
+                                  (contains? audited-safe-jvm-heads head)
+                                  (contains? audited-safe-jvm-vars head))
+                      (fail! :forbidden-evidence-io
+                             "reachable JVM invocation is outside a named traced adapter"
+                             :caller caller :target head))
                     (forbidden-head? head)
                     (when-not (contains? exempt-callers (:ns definition))
                       (fail! :forbidden-evidence-io "reachable raw I/O, network, or process call"
@@ -262,32 +317,56 @@
                       (swap! consulted conj path)
                       (doseq [target targets] (definition! target) (swap! pending conj target)))
                     :else
-                    (if (and (namespace head)
-                             (re-matches #"[A-Z].*" (last (str/split (namespace head) #"\."))))
-                      nil
-                      (let [matches (filter #(= (span head) (usage-span %))
-                                            (get usages [(:filename definition) (:name definition)]))]
-                        (when-not (= 1 (count matches))
-                          (fail! :reader-kondo-span-mismatch "list head must match exactly one resolved Var"
-                                 :caller caller :head head :matches (count matches)))
-                        (let [usage (first matches)
-                              target (symbol (str (:to usage)) (str (:name usage)))]
-                          (when (and (:macro usage)
-                                     (not (and (= 'clojure.core (:to usage))
-                                               (contains? audited-core-macros (:name usage)))))
-                            (fail! :unsupported-evidence-call-graph
-                                   "reachable macro is outside the audited subset"
-                                   :caller caller :target target))
-                          (when (or (contains? forbidden-vars target)
-                                    (forbidden-head? (:name usage)))
-                            (when-not (contains? exempt-callers (:ns definition))
-                              (fail! :forbidden-evidence-io "reachable raw I/O, network, or process call"
-                                     :caller caller :target target)))
-                          (when (contains? definitions target)
-                            (when (and (:macro (get definitions target))
-                                       (not= 'clojure.core (:to usage)))
-                              (fail! :unsupported-evidence-call-graph "user macro is forbidden" :target target))
-                            (swap! pending conj target))))))
+                    (let [matches (filter #(= (span head) (usage-span %))
+                                          (get usages [(:filename definition) (:name definition)]))]
+                      (when-not (= 1 (count matches))
+                        (fail! :reader-kondo-span-mismatch "list head must match exactly one resolved Var"
+                               :caller caller :head head :matches (count matches)))
+                      (let [usage (first matches)
+                            target (symbol (str (:to usage)) (str (:name usage)))]
+                        (when (and (:macro usage)
+                                   (not (or (and (= 'clojure.core (:to usage))
+                                                 (contains? audited-core-macros (:name usage)))
+                                            (contains? audited-noncore-macros target))))
+                          (fail! :unsupported-evidence-call-graph
+                                 "reachable macro is outside the audited subset"
+                                 :caller caller :target target))
+                        (when (or (contains? forbidden-vars target)
+                                  (forbidden-head? (:name usage)))
+                          (when-not (contains? exempt-callers (:ns definition))
+                            (fail! :forbidden-evidence-io "reachable raw I/O, network, or process call"
+                                   :caller caller :target target)))
+                        (when (contains? definitions target)
+                          (when (and (:macro (get definitions target))
+                                     (not= 'clojure.core (:to usage)))
+                            (fail! :unsupported-evidence-call-graph "user macro is forbidden" :target target))
+                          (swap! pending conj target)))))
+                  ;; A forbidden Var passed as data is still an executable capability
+                  ;; (for example `(apply slurp args)`). Resolve every symbol argument
+                  ;; at its reader span and reject it before descending.
+                  (doseq [argument (rest form)
+                          :when (symbol? argument)
+                          usage (filter #(= (span argument) (usage-span %))
+                                        (get usages [(:filename definition) (:name definition)]))
+                          :let [target (symbol (str (:to usage)) (str (:name usage)))]]
+                    (cond
+                      (contains? forbidden-vars target)
+                      (when-not (contains? exempt-callers (:ns definition))
+                        (fail! :forbidden-evidence-io
+                               "raw I/O Var passed as a higher-order argument"
+                               :caller caller :target target))
+
+                      (and (contains? definitions target)
+                           (let [target-definition (get definitions target)]
+                             (and (not (:macro target-definition))
+                                  (or (:fixed-arities target-definition)
+                                      (:varargs-min-arity target-definition))))
+                           (not (contains? exempt-callers
+                                           (:ns (get definitions target)))))
+                      ;; A directly resolved Var is already a finite target: add
+                      ;; its graph. Only function-valued parameters need the
+                      ;; caller-scoped contract handled above.
+                      (swap! pending conj target)))
                   (doseq [x (rest form)] (walk! caller definition params x pending)))
                 (coll? form) (doseq [x form] (walk! caller definition params x pending))))
             (visit! [var pending]

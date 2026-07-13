@@ -37,6 +37,13 @@
         profile (:input-profile descriptor)
         clojure-profile? (contains? #{"clojure-test-v1" "component-clojure-test-v1"}
                                     (:kind profile))
+        profile-kind (:kind profile)
+        expected-profile-keys (case profile-kind
+                                "component-clojure-test-v1"
+                                #{:kind :component-root :roots :explicit}
+                                ("clojure-test-v1" "repo-files-v1")
+                                #{:kind :roots :explicit}
+                                nil)
         expected-keys (case version
                         "abc-adr-evidence-capture-v1" descriptor-v1-keys
                         "abc-adr-evidence-capture-v2" descriptor-v2-keys
@@ -47,6 +54,19 @@
     (when-not (= expected-keys (set (keys descriptor)))
       (throw (ex-info "capture descriptor has an invalid versioned key set"
                       {:exit-code 2 :keys (keys descriptor)})))
+    (when-not (and expected-profile-keys
+                   (= expected-profile-keys (set (keys profile)))
+                   (vector? (:roots profile))
+                   (every? #(and (string? %) (seq %)) (:roots profile))
+                   (= (count (:roots profile)) (count (distinct (:roots profile))))
+                   (vector? (:explicit profile))
+                   (every? #(and (string? %) (seq %)) (:explicit profile))
+                   (= (count (:explicit profile)) (count (distinct (:explicit profile))))
+                   (or (not= "component-clojure-test-v1" profile-kind)
+                       (and (string? (:component-root profile))
+                            (seq (:component-root profile)))))
+      (throw (ex-info "capture descriptor input profile is not closed"
+                      {:exit-code 2 :kind :invalid-evidence-artifact})))
     (when (and (= version "abc-adr-evidence-capture-v2") (not clojure-profile?))
       (throw (ex-info "version 2 is restricted to Clojure input profiles" {:exit-code 2})))
     (when (= version "abc-adr-evidence-capture-v2")

@@ -50,6 +50,15 @@
     (doseq [file files] (evidence-io/record-read! file))
     files))
 
+(defn exists? [path]
+  (.exists (io/file path)))
+
+(defn directory? [path]
+  (.isDirectory (io/file path)))
+
+(defn file? [path]
+  (.isFile (io/file path)))
+
 (defn with-zip-file [archive f]
   (with-open [zip (ZipFile. (io/file (evidence-io/record-read! archive)))]
     (f zip)))

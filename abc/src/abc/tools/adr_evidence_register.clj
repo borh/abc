@@ -2,6 +2,7 @@
   (:require [abc.tools.adr :as adr]
             [abc.tools.adr-evidence :as evidence]
             [abc.tools.adr-evidence-bundle :as bundle]
+            [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
             [abc.tools.path-containment :as containment]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
@@ -119,7 +120,11 @@
 
 (defn register! [{:keys [repo-root workspace-root entries-path registry-path]}]
   (try
-    (let [entries-file (contained-file repo-root entries-path)
+    (let [_ (when (and workspace-root
+                       (not= (.getCanonicalFile (io/file repo-root))
+                             (.getCanonicalFile (io/file workspace-root))))
+              (runtime-inputs/validate-workspace-root! repo-root workspace-root))
+          entries-file (contained-file repo-root entries-path)
           registry-file (contained-file repo-root registry-path)
           template (edn/read-string (slurp entries-file))
           materialized (materialize-template repo-root template)]

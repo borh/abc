@@ -32,7 +32,7 @@
 
 (defn adr-files [dir]
   (->> (files/list-files (io/file dir))
-       (filter #(.isFile %))
+       (filter files/file?)
        (map #(.getName %))
        (filter #(re-matches #"\d{4}-.+\.md" %))
        sort
@@ -506,14 +506,14 @@
            evidence)
      (for [{:keys [path criterion-index] :as item} evidence
            :let [state (get states path)]
-           :when (and (nil? (:problem state)) (fs/directory? (:path state)))
+           :when (and (nil? (:problem state)) (files/directory? (:path state)))
            :let [companions (get by-criterion criterion-index)]
            :when (not-any? (fn [{companion :path}]
                              (and (or (str/starts-with? companion "test/")
                                       (str/starts-with? companion "nix/"))
                                   (let [companion-state (get states companion)]
                                     (and (nil? (:problem companion-state))
-                                         (fs/regular-file? (:path companion-state))))))
+                                         (files/file? (:path companion-state))))))
                            companions)]
        (problem :unverified-evidence-directory file
                 "an evidence directory requires an existing test/ or nix/ file in the same criterion"
@@ -560,15 +560,15 @@
 (defn- validate-repository* [validate-fn repo-root adr-dir]
   (let [directory (fs/file repo-root adr-dir)]
     (cond
-      (not (fs/exists? directory))
+      (not (files/exists? directory))
       [(problem :missing-adr-directory adr-dir "ADR directory does not exist")]
 
-      (not (fs/directory? directory))
+      (not (files/directory? directory))
       [(problem :invalid-adr-directory adr-dir "ADR path is not a directory")]
 
       :else
       (let [markdown-files (->> (files/list-files directory)
-                                (filter #(.isFile %))
+                                (filter files/file?)
                                 (map #(.getName %))
                                 (filter #(and (str/ends-with? % ".md")
                                               (not= "README.md" %)))

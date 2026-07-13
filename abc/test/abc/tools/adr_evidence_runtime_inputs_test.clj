@@ -14,6 +14,24 @@
     (spit file body)
     file))
 
+(defn- exec! [root & argv]
+  (let [process (-> (ProcessBuilder. (into-array String argv))
+                    (.directory root)
+                    (.redirectErrorStream true)
+                    (.start))
+        output (slurp (.getInputStream process))
+        exit (.waitFor process)]
+    (when-not (zero? exit)
+      (throw (ex-info "fixture command failed" {:argv argv :output output})))
+    output))
+
+(defn- monorepo-root []
+  (let [root (temp-dir)]
+    (doseq [path ["flake.nix" "justfile" "abc/flake.nix" "ab-validator/flake.nix"]]
+      (write! root path "fixture\n"))
+    (exec! root "git" "init" "-q")
+    root))
+
 (defn- analyzer-repo [body]
   (let [root (temp-dir)]
     (write! root "src/example/core.clj" (str "(ns example.core)\n" body "\n"))
@@ -22,6 +40,17 @@
 
 (defn- problem-kind [thunk]
   (try (thunk) nil (catch Exception e (:kind (ex-data e)))))
+
+(deftest workspace-root-is-the-exact-git-and-monorepo-identity-test
+  (let [root (monorepo-root)
+        child (io/file root "abc")]
+    (is (= (.getCanonicalFile root)
+           (runtime/validate-workspace-root! root)))
+    (is (= :invalid-workspace-root
+           (problem-kind #(runtime/validate-workspace-root! child))))
+    (.delete (io/file root "justfile"))
+    (is (= :invalid-workspace-root
+           (problem-kind #(runtime/validate-workspace-root! root))))))
 
 (deftest runtime-input-closure-is-exact-test
   (let [root (temp-dir)
@@ -40,14 +69,14 @@
     (is (true? (runtime/assert-runtime-input-closure!
                 {:repo-root root :workspace-root root
                  :descriptor {:path descriptor-path :value descriptor}
-                 :repository-paths [descriptor-path manifest-path "data/value.edn"]})))
+                 :repository-paths ["data/value.edn"]})))
     (is (= :undeclared-runtime-input
            (:kind (ex-data
                    (try
                      (runtime/assert-runtime-input-closure!
                       {:repo-root root :workspace-root root
                        :descriptor {:path descriptor-path :value descriptor}
-                       :repository-paths [descriptor-path manifest-path]})
+                       :repository-paths []})
                      (catch Exception e e))))))))
 
 (deftest runtime-manifest-rejects-noncanonical-vectors-test
@@ -157,6 +186,43 @@
       (is (= :forbidden-evidence-io
              (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad])))
           label))))
+
+(deftest reachable-var-lint-closes-indirect-and-jvm-invocation-bypasses-test
+  (doseq [[label body]
+          [["higher-order raw read" "(defn bad [] (apply slurp [\"x\"]))"]
+           ["file reader constructor" "(defn bad [] (new java.io.FileReader \"x\"))"]
+           ["http client factory" "(defn bad [] (java.net.http.HttpClient/newHttpClient))"]
+           ["runtime exec" "(defn bad [] (.exec (Runtime/getRuntime) \"true\"))"]
+           ["file channel" "(defn bad [] (java.nio.channels.FileChannel/open (java.nio.file.Path/of \"x\" (make-array String 0)) (make-array java.nio.file.OpenOption 0)))"]]]
+    (let [root (analyzer-repo body)]
+      (is (= :forbidden-evidence-io
+             (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad])))
+          label))))
+
+(deftest statically-resolved-higher-order-local-var-arguments-expand-test
+  (let [root (analyzer-repo
+              "(defn target [x] x)\n(defn bad [] (map target [1]))")]
+    (is (= ['example.core/bad 'example.core/target]
+           (:reachable-vars (runtime/analyze-reachable-vars
+                             root ['example.core/bad]))))))
+
+(deftest raw-filesystem-state-predicates-are-not-safe-jvm-operations-test
+  (doseq [body ["(defn bad [] (.exists (java.io.File. \"x\")))"
+                "(defn bad [] (.isFile (java.io.File. \"x\")))"
+                "(defn bad [] (.isDirectory (java.io.File. \"x\")))"]]
+    (let [root (analyzer-repo body)]
+      (is (= :forbidden-evidence-io
+             (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad])))))))
+
+(deftest clojure-test-is-is-the-only-explicit-noncore-safe-macro-test
+  (let [safe (analyzer-repo
+              "(require '[clojure.test :refer [is]])\n(defn contract [] (is (= 1 1)))")
+        unsafe (analyzer-repo
+                "(defmacro unchecked [& body] `(do ~@body))\n(defn contract [] (unchecked true))")]
+    (is (= ['example.core/contract]
+           (:reachable-vars (runtime/analyze-reachable-vars safe ['example.core/contract]))))
+    (is (= :unsupported-evidence-call-graph
+           (problem-kind #(runtime/analyze-reachable-vars unsafe ['example.core/contract]))))))
 
 (deftest higher-order-contract-shape-and-targets-fail-closed-test
   (let [root (temp-dir)

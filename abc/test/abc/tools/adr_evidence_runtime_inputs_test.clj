@@ -54,6 +54,22 @@
 (defn- problem-kind [thunk]
   (try (thunk) nil (catch Exception e (:kind (ex-data e)))))
 
+(deftest source-reader-resolves-aliases-without-global-namespace-state-test
+  (let [fixture (write! (temp-dir) "alias_test.clj"
+                        (str "(ns fixture.alias-test\n"
+                             "  (:require [abc.sim.artifact-manifest :as am]))\n"
+                             "(def event ::am/run-summary-events)\n"))
+        results (->> (range 8)
+                     (mapv (fn [_]
+                             (future (runtime/read-source-forms! fixture))))
+                     (mapv deref))]
+    (is (apply = results))
+    (is (= :abc.sim.artifact-manifest/run-summary-events
+           (nth (second (first results)) 2)))
+    (is (every? #(and (:line (meta %)) (:column (meta %)))
+                (first results)))
+    (is (nil? (find-ns 'fixture.alias-test)))))
+
 (deftest workspace-root-is-the-exact-git-and-monorepo-identity-test
   (let [root (monorepo-root)
         child (fs/file root "abc")]
@@ -252,6 +268,23 @@
       (is (= :forbidden-evidence-capability
              (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad])))
           label))))
+
+(deftest reachable-var-lint-admits-only-exact-reviewed-pure-capabilities-test
+  (doseq [[body expected]
+          [["(ns example.core (:require [charred.api :as json]))\n(defn safe [] (json/write-json-str {:ok true}))"
+            ['example.core/safe]]
+           ["(defn safe [] (re-pattern \"a+\"))"
+            ['example.core/safe]]]]
+    (let [root (analyzer-repo body)]
+      (is (= expected
+             (:reachable-vars
+              (runtime/analyze-reachable-vars root ['example.core/safe]))))))
+  (doseq [body ["(ns example.core (:require [charred.api :as json]))\n(defn bad [] (json/read-json \"{}\"))"
+                "(defn bad [] (load-string \"(+ 1 2)\"))"]]
+    (let [root (analyzer-repo body)]
+      (is (= :forbidden-evidence-capability
+             (problem-kind #(runtime/analyze-reachable-vars
+                             root ['example.core/bad])))))))
 
 (deftest higher-order-calls-require-a-direct-finite-target-test
   (doseq [[label body expected]

@@ -249,7 +249,7 @@
      clojure.core/coll? clojure.core/integer? clojure.core/qualified-symbol?
      clojure.core/nil? clojure.core/some? clojure.core/true? clojure.core/false?
      clojure.core/zero? clojure.core/pos? clojure.core/neg?
-     clojure.core/re-find clojure.core/re-matches clojure.core/re-seq
+     clojure.core/re-pattern clojure.core/re-find clojure.core/re-matches clojure.core/re-seq
      clojure.core/subs
      clojure.test/is clojure.string/includes? clojure.string/starts-with?
      clojure.string/ends-with? clojure.string/blank? clojure.string/split
@@ -257,6 +257,7 @@
      clojure.string/join clojure.string/trim
      clojure.set/union clojure.set/difference clojure.set/intersection
      clojure.set/subset? clojure.java.io/file
+     charred.api/write-json-str
      babashka.fs/absolute? babashka.fs/absolutize babashka.fs/file
      babashka.fs/file-name babashka.fs/normalize babashka.fs/path
      babashka.fs/relativize})
@@ -313,12 +314,33 @@
       (fail! :invalid-focused-evidence-analysis "clj-kondo analysis failed" :output output))
     (edn/read-string output)))
 
-(defn- read-forms! [file]
+(defn- ns-require-aliases [form]
+  (if (and (seq? form) (= 'ns (first form)))
+    (->> (drop 2 form)
+         (filter #(and (seq? %) (= :require (first %))))
+         (mapcat rest)
+         (keep (fn [libspec]
+                 (when (vector? libspec)
+                   (let [options (apply hash-map (rest libspec))]
+                     (when-let [alias (:as options)]
+                       [alias (first libspec)])))))
+         (into {}))
+    {}))
+
+(defn read-source-forms! [file]
   (with-open [r (files/reader file)]
     (let [r (reader-types/indexing-push-back-reader r)]
-      (loop [forms []]
-        (let [form (reader/read {:eof ::eof :read-cond :allow :features #{:clj}} r)]
-          (if (= ::eof form) forms (recur (conj forms form))))))))
+      (binding [*read-eval* false]
+        (let [options {:eof ::eof :read-cond :allow :features #{:clj}}
+              first-form (reader/read options r)]
+          (if (= ::eof first-form)
+            []
+            (binding [reader/*alias-map* (ns-require-aliases first-form)]
+              (loop [forms [first-form]]
+                (let [form (reader/read options r)]
+                  (if (= ::eof form)
+                    forms
+                    (recur (conj forms form))))))))))))
 
 (defn- qvar [m] (symbol (str (:ns m)) (str (:name m))))
 (defn- span [x] [(:line (meta x)) (:column (meta x))])
@@ -335,7 +357,7 @@
   (let [repo-root (fs/file (fs/canonicalize repo-root))
         definitions (group-by qvar (get-in (kondo-analysis! repo-root)
                                            [:analysis :var-definitions]))
-        forms (memoize #(read-forms! (fs/file repo-root %)))]
+        forms (memoize #(read-source-forms! (fs/file repo-root %)))]
     (doseq [var focused-vars]
       (let [items (get definitions var)]
         (when-not (= 1 (count items))
@@ -432,7 +454,7 @@
                   :else (first items))))
             (forms! [filename]
               (or (get @forms-cache filename)
-                  (let [forms (read-forms! (fs/file repo-root filename))]
+                  (let [forms (read-source-forms! (fs/file repo-root filename))]
                     (swap! forms-cache assoc filename forms) forms)))
             (direct-body-call-target [definition form]
               (when (and (seq? form) (symbol? (first form)))

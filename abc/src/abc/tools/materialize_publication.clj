@@ -741,8 +741,9 @@
         results (materialize-batch-jobs! batch-jobs concurrency)
         passed (count (filter #(= "passed" (get % "status")) results))
         summary-file (some-> summary-path fs/file)
-        summary-dir (or (some-> summary-path fs/parent)
-                        (fs/absolutize "."))
+        summary-dir (when summary-path
+                      (or (fs/parent summary-path)
+                          (fs/absolutize ".")))
         workflow-run-file (some-> summary-dir (fs/file "workflow-run.json"))
         summary (cond-> {"schema_version" "abc-materialize-publications-batch-v1"
                          "jobs_total" (count results)

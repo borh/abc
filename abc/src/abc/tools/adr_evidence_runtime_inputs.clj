@@ -330,7 +330,7 @@
 (defn read-source-forms! [file]
   (with-open [r (files/reader file)]
     (let [r (reader-types/indexing-push-back-reader r)]
-      (binding [*read-eval* false]
+      (binding [reader/*read-eval* false]
         (let [options {:eof ::eof :read-cond :allow :features #{:clj}}
               first-form (reader/read options r)]
           (if (= ::eof first-form)

@@ -70,6 +70,18 @@
                 (first results)))
     (is (nil? (find-ns 'fixture.alias-test)))))
 
+(deftest source-reader-disables-read-eval-test
+  (let [property "abc.tools.adr-evidence-runtime-inputs-test/read-eval"
+        fixture (write! (temp-dir) "read_eval_test.clj"
+                        (str "(ns fixture.read-eval-test)\n"
+                             "#=(System/setProperty \"" property "\" \"executed\")\n"))]
+    (System/clearProperty property)
+    (try
+      (is (thrown? Exception (runtime/read-source-forms! fixture)))
+      (is (nil? (System/getProperty property)))
+      (finally
+        (System/clearProperty property)))))
+
 (deftest workspace-root-is-the-exact-git-and-monorepo-identity-test
   (let [root (monorepo-root)
         child (fs/file root "abc")]

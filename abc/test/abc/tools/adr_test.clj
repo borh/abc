@@ -97,14 +97,22 @@
                      "## Future Verification\n\nLater plain verification.\n"))
     (let [parsed (adr/parse-adr dir "0042-duplicate-targets.md")
           outside (filter #(= :claim-header-outside-acceptance (:kind %))
-                          (:claim-problems parsed))
-          duplicates (filter #(= :duplicate-section (:kind %))
-                             (:parse-problems parsed))]
+                          (:claim-problems parsed))]
       (is (= ["Historical Evidence" "Future Verification"]
              (mapv :section outside)))
-      (is (= ["Historical Evidence" "Future Verification"]
-             (mapv :section duplicates)))
+      (is (empty? (:parse-problems parsed)))
       (is (every? string? (vals (:section-bodies parsed)))))))
+
+(deftest duplicate-ordinary-sections-remain-legacy-valid
+  (let [dir (temp-dir)]
+    (write-adr! dir "0042-duplicate-ordinary.md"
+                (str (claim-body 42 "Proposed" "- Plain criterion.")
+                     "\n## Notes\n\nFirst note.\n\n"
+                     "## Notes\n\nSecond note.\n\n"
+                     "## Consequences\n\nFirst consequence.\n\n"
+                     "## Consequences\n\nSecond consequence.\n"))
+    (is (empty? (adr/validate-adrs-legacy
+                 (adr/parse-all dir) dir)))))
 
 (deftest markdown-list-prefixed-claim-headers-are-linted-in-target-sections
   (let [dir (temp-dir)]

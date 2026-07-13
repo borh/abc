@@ -117,3 +117,13 @@ Observed result: exit 0, `58 tests, 184 assertions, 0 failures`.
 `clj-kondo --lint src/abc/tools/adr.clj test/abc/tools/adr_test.clj` reported 0 errors and 0 warnings. `clj-paren-repair` reported no changes needed, and `git diff --check` exited 0.
 
 The fix retains every ordered section occurrence internally for linting, preserves the existing string-valued `:section-bodies` contract, emits `:duplicate-section` parser problems, and strips only a valid CommonMark bullet/ordered marker before applying the existing typed claim-header pattern.
+
+## Final scope correction
+
+The generic section-uniqueness policy was removed while ordered occurrence retention was preserved.
+
+RED command `cd abc && bin/kaocha --focus abc.tools.adr-test` exited 2 with `45 tests, 99 assertions, 2 failures`: repeated target headings and repeated ordinary Notes/Consequences were rejected only by the unwanted `:duplicate-section` problems.
+
+GREEN focused result: `45 tests, 99 assertions, 0 failures`. Final adjacent verification (`adr-test`, `adr-governance-test`, and `adr-claim-migration-test`) passed with `59 tests, 185 assertions, 0 failures`. clj-kondo reported 0 errors and 0 warnings; formatting required no changes and `git diff --check` exited 0.
+
+Repeated Historical Evidence/Future Verification bodies remain fully scanned for typed headers. Repeated Notes and Consequences now remain legacy-valid; no heading-uniqueness policy is introduced.

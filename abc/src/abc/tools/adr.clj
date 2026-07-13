@@ -244,7 +244,7 @@
    relation-fields))
 
 (defn- parse-sections [lines]
-  (let [{:keys [section sections section-bodies section-occurrences headings body]}
+  (let [{:keys [section sections section-bodies section-occurrences body]}
         (reduce
          (fn [{:keys [section body] :as parsed} line]
            (if-let [[_ heading] (re-matches #"## (.+)" line)]
@@ -253,26 +253,20 @@
                                  (str/join "\n" body))
                section (update-in [:section-occurrences section]
                                   (fnil conj []) (str/join "\n" body))
-               true (update :sections conj heading)
-               true (update :headings conj heading))
+               true (update :sections conj heading))
              (cond-> parsed
                section (update :body conj line))))
          {:section nil :sections #{} :section-bodies {}
-          :section-occurrences {} :headings [] :body []}
+          :section-occurrences {} :body []}
          lines)
         section-body (str/join "\n" body)
         section-bodies (cond-> section-bodies
                          section (assoc section section-body))
         section-occurrences (cond-> section-occurrences
-                              section (update section (fnil conj []) section-body))
-        frequencies (frequencies headings)]
+                              section (update section (fnil conj []) section-body))]
     {:sections sections
      :section-bodies section-bodies
-     :section-occurrences section-occurrences
-     :duplicate-sections (->> headings
-                              distinct
-                              (filter #(< 1 (get frequencies %)))
-                              vec)}))
+     :section-occurrences section-occurrences}))
 
 (defn- filename-number [filename]
   (some-> (re-find #"^(\d{4})" filename) second Integer/parseInt))
@@ -293,12 +287,7 @@
                             [(problem :filename-title-mismatch filename
                                       "filename and title ADR numbers must match"
                                       :value {:filename filename-num :title num})]
-                            [])
-        duplicate-section-problems
-        (mapv #(problem :duplicate-section filename
-                        "section heading must appear at most once"
-                        :section %)
-              (:duplicate-sections sections-result))]
+                            [])]
     {:num num
      :file filename
      :title (:title title-result)
@@ -320,8 +309,7 @@
                                   (:problems header-result)
                                   (:problems fields-result)
                                   (:problems relations-result)
-                                  mismatch-problems
-                                  duplicate-section-problems))}))
+                                  mismatch-problems))}))
 
 (defn parse-all [dir]
   (vec (for [filename (adr-files dir)]

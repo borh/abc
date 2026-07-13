@@ -59,8 +59,8 @@
 ## Verification
 
 - Task 6 focused suites: 63 tests, 222 assertions, 0 failures.
-- `nix build ./abc#checks.x86_64-linux.clj-kondo`: passed with zero errors and
-  the same nine existing warnings; all Clojure files formatted correctly.
+- `nix build ./abc#checks.x86_64-linux.clj-kondo`: passed with zero errors;
+  warnings remained non-blocking, and all Clojure files formatted correctly.
 - `git diff --check`: passed.
 - `just validate-migration` reached the schema mirror gate and failed on
   `isolated Nix schema mirror drift: adr-evidence-run.schema.json`, between
@@ -97,8 +97,9 @@ registry entries were created or modified. Stage B has not begun.
 - Full relevant Kaocha selection: 72 tests, 244 assertions, 0 failures.
 - Root `monorepo-adr-governance` Nix check: passed and accepted the exact
   184-problem Stage A vector.
-- `abc-clj-kondo`: passed with zero errors, the same nine existing warnings,
-  and all Clojure source files formatted correctly.
+- `abc-clj-kondo`: passed with zero errors, 11 warnings and one informational
+  finding in the final post-rebase run, and all Clojure source files formatted
+  correctly.
 - `just validate-migration` now passes the previously blocked schema-mirror
   gate and every preceding check, then stops at `nix-format-check` because the
   newly rebased, untouched `ab-validator/flake.nix` is not formatted. The Task

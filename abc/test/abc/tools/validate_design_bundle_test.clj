@@ -18,6 +18,22 @@
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
+(deftest run-command-retains-command-and-nonzero-exit-code-test
+  (let [fixture (java.io.File/createTempFile "abc-run-command" ".sh")]
+    (try
+      (spit fixture "#!/bin/sh\nexit 9\n")
+      (.setExecutable fixture true)
+      (let [command [(.getAbsolutePath fixture)]
+            exception (try
+                        (apply validate/run-command! command)
+                        nil
+                        (catch clojure.lang.ExceptionInfo ex ex))]
+        (is (some? exception))
+        (is (= command (vec (:command (ex-data exception)))))
+        (is (= 9 (:exit-code (ex-data exception)))))
+      (finally
+        (.delete fixture)))))
+
 (deftest sha256-file-test
   (let [file (java.io.File/createTempFile "abc-sha256" ".txt")]
     (try

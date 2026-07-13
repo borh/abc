@@ -30,6 +30,7 @@
    [abc.tools.tei :as tei]
    [arachne.aristotle :as aa]
    [babashka.fs :as fs]
+   [babashka.process :as process]
    [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.string :as string]
@@ -304,13 +305,13 @@
   (schema/schema-valid! schema path))
 
 (defn run-command! [& command]
-  (let [started (.start (doto (ProcessBuilder. command)
-                          (.inheritIO)))
-        exit-code (.waitFor started)]
-    (when-not (zero? exit-code)
+  (try
+    (process/shell (vec command) {:in :inherit :out :inherit :err :inherit})
+    nil
+    (catch clojure.lang.ExceptionInfo ex
       (throw (ex-info (str "Command failed: " (string/join " " command))
-                      {:command command
-                       :exit-code exit-code})))))
+                      {:command command :exit-code (:exit (ex-data ex))}
+                      ex)))))
 
 (defn check-errors! [errors]
   (when (seq errors)

@@ -2,6 +2,7 @@
   (:require [abc.tools.adr-evidence-bundle :as bundle]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
+            [babashka.process :as process]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -11,12 +12,10 @@
   #{:schema-version :tool :argv :input-profile :observation-key})
 
 (defn- run-process [repo-root argv]
-  (let [process (.start (doto (ProcessBuilder. argv)
-                          (.directory (io/file repo-root))))
-        stdout (future (slurp (.getInputStream process)))
-        stderr (future (slurp (.getErrorStream process)))
-        exit-code (.waitFor process)]
-    {:exit-code exit-code :stdout @stdout :stderr @stderr}))
+  (let [{:keys [exit out err]}
+        @(process/process argv
+                          {:dir (str repo-root) :out :string :err :string})]
+    {:exit-code exit :stdout out :stderr err}))
 
 (defn- git-output [repo-root & args]
   (let [result (run-process repo-root (into ["git"] args))]

@@ -37,6 +37,17 @@
                    :explicit ["src/example/core.clj"]}
    :observation-key "command-passed"})
 
+(deftest run-process-captures-working-directory-output-and-status
+  (let [run-process (ns-resolve 'abc.tools.adr-evidence-capture 'run-process)
+        dir (temp-dir "abc-evidence-capture-process")
+        result (@run-process dir
+                             ["sh" "-c"
+                              "printf %s \"$PWD\"; printf err >&2; exit 4"])]
+    (is (= #{:exit-code :stdout :stderr} (set (keys result))))
+    (is (= 4 (:exit-code result)))
+    (is (= (.getCanonicalPath dir) (:stdout result)))
+    (is (= "err" (:stderr result)))))
+
 (deftest captures-byte-identical-clean-tree-bundles
   (let [repo (git-repo)
         output-root (temp-dir "abc-evidence-capture-output")

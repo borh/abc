@@ -137,11 +137,19 @@
 (def ^:private non-acceptance-claim-sections
   ["Historical Evidence" "Future Verification"])
 
-(defn- non-acceptance-claim-problems [file section-bodies]
+(defn- claim-header-line? [line]
+  (let [without-list-marker
+        (str/replace-first line
+                           #"^ {0,3}(?:(?:[-+*])|(?:[0-9]{1,9}[.)]))[ \t]+"
+                           "")]
+    (boolean (re-find claim-header-pattern without-list-marker))))
+
+(defn- non-acceptance-claim-problems [file section-occurrences]
   (vec
    (for [section non-acceptance-claim-sections
-         line (str/split-lines (get section-bodies section ""))
-         :when (re-find claim-header-pattern line)]
+         body (get section-occurrences section [])
+         line (str/split-lines body)
+         :when (claim-header-line? line)]
      (problem :claim-header-outside-acceptance file
               "typed claim headers are allowed only in Acceptance Criteria"
               :section section))))
@@ -236,21 +244,35 @@
    relation-fields))
 
 (defn- parse-sections [lines]
-  (let [{:keys [section sections section-bodies body]}
+  (let [{:keys [section sections section-bodies section-occurrences headings body]}
         (reduce
          (fn [{:keys [section body] :as parsed} line]
            (if-let [[_ heading] (re-matches #"## (.+)" line)]
              (cond-> (assoc parsed :section heading :body [])
                section (assoc-in [:section-bodies section]
                                  (str/join "\n" body))
-               true (update :sections conj heading))
+               section (update-in [:section-occurrences section]
+                                  (fnil conj []) (str/join "\n" body))
+               true (update :sections conj heading)
+               true (update :headings conj heading))
              (cond-> parsed
                section (update :body conj line))))
-         {:section nil :sections #{} :section-bodies {} :body []}
-         lines)]
+         {:section nil :sections #{} :section-bodies {}
+          :section-occurrences {} :headings [] :body []}
+         lines)
+        section-body (str/join "\n" body)
+        section-bodies (cond-> section-bodies
+                         section (assoc section section-body))
+        section-occurrences (cond-> section-occurrences
+                              section (update section (fnil conj []) section-body))
+        frequencies (frequencies headings)]
     {:sections sections
-     :section-bodies (cond-> section-bodies
-                       section (assoc section (str/join "\n" body)))}))
+     :section-bodies section-bodies
+     :section-occurrences section-occurrences
+     :duplicate-sections (->> headings
+                              distinct
+                              (filter #(< 1 (get frequencies %)))
+                              vec)}))
 
 (defn- filename-number [filename]
   (some-> (re-find #"^(\d{4})" filename) second Integer/parseInt))
@@ -271,7 +293,12 @@
                             [(problem :filename-title-mismatch filename
                                       "filename and title ADR numbers must match"
                                       :value {:filename filename-num :title num})]
-                            [])]
+                            [])
+        duplicate-section-problems
+        (mapv #(problem :duplicate-section filename
+                        "section heading must appear at most once"
+                        :section %)
+              (:duplicate-sections sections-result))]
     {:num num
      :file filename
      :title (:title title-result)
@@ -287,13 +314,14 @@
      :criteria (:criteria criteria-result)
      :claim-problems (vec (concat (:problems criteria-result)
                                   (non-acceptance-claim-problems
-                                   filename (:section-bodies sections-result))))
+                                   filename (:section-occurrences sections-result))))
      :evidence (evidence (:section-bodies sections-result))
      :parse-problems (vec (concat (:problems title-result)
                                   (:problems header-result)
                                   (:problems fields-result)
                                   (:problems relations-result)
-                                  mismatch-problems))}))
+                                  mismatch-problems
+                                  duplicate-section-problems))}))
 
 (defn parse-all [dir]
   (vec (for [filename (adr-files dir)]

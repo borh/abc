@@ -23,3 +23,97 @@
 ## Concerns
 
 None.
+
+---
+
+# ADR Evidence Migration Task 3 Report: Historical Evidence and Future Verification Claim-Header Lint
+
+## Status
+
+Implemented and verified. Existing Task 2B ADR read/listing adapters remain unchanged.
+
+## TDD evidence
+
+### RED
+
+Command:
+
+```sh
+cd abc && bin/kaocha --focus abc.tools.adr-test
+```
+
+Observed result: exit 2, `42 tests, 93 assertions, 2 failures`. Both failures were the new exact-section assertions: no `:claim-header-outside-acceptance` problems were emitted yet for `Historical Evidence` and `Future Verification`. The traced-adapter/default-deny characterization passed during this RED run.
+
+### GREEN
+
+Command:
+
+```sh
+cd abc && bin/kaocha --focus abc.tools.adr-test
+```
+
+Observed result: exit 0, `42 tests, 93 assertions, 0 failures`.
+
+Adjacent focused ADR regressions:
+
+```sh
+cd abc && bin/kaocha --focus abc.tools.adr-test --focus abc.tools.adr-governance-test --focus abc.tools.adr-claim-migration-test
+```
+
+Observed result: exit 0, `56 tests, 179 assertions, 0 failures`.
+
+Static/format checks:
+
+- `clj-paren-repair src/abc/tools/adr.clj test/abc/tools/adr_test.clj`: no changes needed.
+- `clj-kondo --lint src/abc/tools/adr.clj test/abc/tools/adr_test.clj`: 0 errors, 0 warnings.
+- `git diff --check`: exit 0.
+
+## Files
+
+- `abc/src/abc/tools/adr.clj`
+- `abc/test/abc/tools/adr_test.clj`
+
+## Behavior
+
+- Scans only exact `Historical Evidence` and `Future Verification` section bodies with the existing typed `claim-header-pattern`.
+- Emits `:claim-header-outside-acceptance` with the exact offending `:section`.
+- Ordinary bold prose and typed headers in Acceptance Criteria remain unaffected.
+- Keeps the new migration lint audit-only, preserving legacy governance behavior.
+- Characterizes byte-equivalent parsed ADR values and sorted ADR names under the traced adapters.
+- Proves synthetic direct `.listFiles` and `slurp` implementations fail the existing reachable-Var default-deny lint.
+
+## Commit
+
+`9917ec0f feat(adr): lint claims in non-acceptance sections`
+
+## Concerns
+
+None known.
+
+## ADR lint review follow-up
+
+### RED
+
+Command:
+
+```sh
+cd abc && bin/kaocha --focus abc.tools.adr-test
+```
+
+Observed result: exit 3, `44 tests, 98 assertions, 3 failures`. The failures showed that list-prefixed typed headers were missed, earlier repeated-section occurrences were overwritten, and repeated headings had no parser diagnostic.
+
+### GREEN
+
+Focused command result: exit 0, `44 tests, 98 assertions, 0 failures`.
+
+Final adjacent verification:
+
+```sh
+cd abc && bin/kaocha --focus abc.tools.adr-test --focus abc.tools.adr-governance-test --focus abc.tools.adr-claim-migration-test
+```
+
+Observed result: exit 0, `58 tests, 184 assertions, 0 failures`.
+
+`clj-kondo --lint src/abc/tools/adr.clj test/abc/tools/adr_test.clj` reported 0 errors and 0 warnings. `clj-paren-repair` reported no changes needed, and `git diff --check` exited 0.
+
+The fix retains every ordered section occurrence internally for linting, preserves the existing string-valued `:section-bodies` contract, emits `:duplicate-section` parser problems, and strips only a valid CommonMark bullet/ordered marker before applying the existing typed claim-header pattern.

@@ -85,6 +85,43 @@
              (set outside)))
       (is (= 2 (count problems))))))
 
+(deftest duplicate-target-sections-preserve-earlier-claim-headers
+  (let [dir (temp-dir)]
+    (write-adr! dir "0042-duplicate-targets.md"
+                (str (claim-body 42 "Proposed" "- Plain criterion.")
+                     "\n## Historical Evidence\n\n"
+                     "**ADR-0042-C1 — structural-invariant:** first historical occurrence.\n\n"
+                     "## Historical Evidence\n\nLater plain history.\n\n"
+                     "## Future Verification\n\n"
+                     "**ADR-0042-C2 — operational-behavior:** first future occurrence.\n\n"
+                     "## Future Verification\n\nLater plain verification.\n"))
+    (let [parsed (adr/parse-adr dir "0042-duplicate-targets.md")
+          outside (filter #(= :claim-header-outside-acceptance (:kind %))
+                          (:claim-problems parsed))
+          duplicates (filter #(= :duplicate-section (:kind %))
+                             (:parse-problems parsed))]
+      (is (= ["Historical Evidence" "Future Verification"]
+             (mapv :section outside)))
+      (is (= ["Historical Evidence" "Future Verification"]
+             (mapv :section duplicates)))
+      (is (every? string? (vals (:section-bodies parsed)))))))
+
+(deftest markdown-list-prefixed-claim-headers-are-linted-in-target-sections
+  (let [dir (temp-dir)]
+    (write-adr! dir "0042-list-claims.md"
+                (str (claim-body 42 "Proposed" "- Plain criterion.")
+                     "\n## Historical Evidence\n\n"
+                     "- **ADR-0042-C1 — structural-invariant:** dash.\n"
+                     "* **ADR-0042-C2 — structural-invariant:** star.\n"
+                     "+ **ADR-0042-C3 — structural-invariant:** plus.\n"
+                     "1. **ADR-0042-C4 — structural-invariant:** ordered.\n"
+                     "Ordinary **ADR-0042-C5 — structural-invariant:** prose is not a header.\n"))
+    (let [problems (->> (adr/parse-adr dir "0042-list-claims.md")
+                        :claim-problems
+                        (filter #(= :claim-header-outside-acceptance (:kind %))))]
+      (is (= 4 (count problems)))
+      (is (every? #(= "Historical Evidence" (:section %)) problems)))))
+
 (deftest adr-read-adapters-preserve-values-and-are-traced-default-deny
   (let [dir (temp-dir)
         first-body (claim-body 42 "Proposed" "- First criterion.")

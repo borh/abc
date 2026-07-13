@@ -63,7 +63,7 @@
                   (mapv (comp symbol second) pairs))]
     (when-not (seq focuses)
       (throw (ex-info "version-2 capture requires a bound repository Kaocha runner and exact focuses"
-                      {:exit-code 2 :kind :invalid-nix-clojure-closure})))
+                      {:exit-code 2 :kind :invalid-focused-evidence-runner})))
     focuses))
 
 (defn- validate-runner! [repo-root descriptor]
@@ -73,7 +73,7 @@
                    (fs/regular-file? (:path state))
                    (fs/executable? (:path state)))
       (throw (ex-info "version-2 Kaocha runner must be a contained executable file"
-                      {:exit-code 2 :kind :invalid-nix-clojure-closure
+                      {:exit-code 2 :kind :invalid-focused-evidence-runner
                        :runner runner :state (:state state)})))
     runner))
 
@@ -88,7 +88,7 @@
                    (pos? expected)
                    (= expected test-count))
       (throw (ex-info "Kaocha did not execute each focused evidence test exactly once"
-                      {:exit-code 2 :kind :invalid-nix-clojure-closure
+                      {:exit-code 2 :kind :invalid-focused-evidence-runner
                        :expected-tests expected :actual-tests test-count})))
     command-result))
 

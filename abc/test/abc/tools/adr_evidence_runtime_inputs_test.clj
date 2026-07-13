@@ -475,20 +475,8 @@
            (problem-kind #(runtime/analyze-reachable-vars
                            root ['example.core/duplicate]))))))
 
-(deftest nix-clojure-closure-manifest-binds-the-derived-graph-test
-  (let [result (runtime/analyze-reachable-vars "." ['abc.tools.manifest/content])
-        manifest-path "target/runtime-input-test-closure.edn"
-        manifest-file (fs/file manifest-path)
-        inputs (concat ["deps.edn" "deps-lock.json" "tests.edn" manifest-path]
-                       (:paths result) (:contract-paths result))]
-    (fs/create-dirs (fs/parent manifest-file))
-    (spit manifest-file
-          (pr-str {:schema-version :abc-adr-nix-clojure-closure-v1
-                   :focused-vars ['abc.tools.manifest/content]
-                   :paths (:paths result)}))
-    (try
-      (is (true? (runtime/validate-nix-clojure-closure! "." manifest-path inputs)))
-      (is (= :missing-evidence-input
-             (problem-kind #(runtime/validate-nix-clojure-closure!
-                             "." manifest-path (remove #{"deps.edn"} inputs)))))
-      (finally (fs/delete-if-exists manifest-file)))))
+(deftest retired-nix-clojure-closure-is-not-an-accepted-protocol-test
+  (is (nil? (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                        (symbol (str "derive-nix-" "clojure-source-closure")))))
+  (is (nil? (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                        (symbol (str "validate-nix-" "clojure-closure!"))))))

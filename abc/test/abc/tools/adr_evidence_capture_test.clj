@@ -12,6 +12,9 @@
 (defn- exec! [dir & argv]
   (:exit @(process/process (vec argv) {:dir (str dir) :out :string :err :out})))
 
+(defn- problem-kind [thunk]
+  (try (thunk) nil (catch Exception e (:kind (ex-data e)))))
+
 (defn- write-executable! [root path body]
   (let [file (fs/file root path)]
     (fs/create-dirs (fs/parent file))
@@ -39,6 +42,34 @@
                    :roots []
                    :explicit ["src/example/core.clj"]}
    :observation-key "command-passed"})
+
+(deftest focused-runner-failures-have-a-focused-problem-kind-test
+  (let [runner "bin/kaocha"
+        invalid-runner-options
+        {:repo-root nil
+         :descriptor {:schema-version "abc-adr-evidence-capture-v2"
+                      :tool runner
+                      :argv [runner]
+                      :input-profile {:kind "clojure-test-v1"
+                                      :roots ["example.core-test"]
+                                      :explicit [runner "docs/evidence/adr-inputs/example.edn"]}
+                      :runtime-input-manifest "docs/evidence/adr-inputs/example.edn"
+                      :observation-key "passes"}
+         :descriptor-path "docs/evidence/adr-capture/example.edn"
+         :output nil}
+        validate-runner! (ns-resolve 'abc.tools.adr-evidence-capture 'validate-runner!)
+        validate-summary! (ns-resolve 'abc.tools.adr-evidence-capture
+                                      'validate-v2-command-result!)]
+    (is (= :invalid-focused-evidence-runner
+           (problem-kind #(capture/capture! invalid-runner-options))))
+    (is (= :invalid-focused-evidence-runner
+           (problem-kind #(@validate-runner! (temp-dir "abc-missing-runner")
+                                             (:descriptor invalid-runner-options)))))
+    (is (= :invalid-focused-evidence-runner
+           (problem-kind #(@validate-summary! ['example.core-test/contract]
+                                              {:exit-code 0
+                                               :stdout "0 tests, 0 assertions, 0 failures."
+                                               :stderr ""}))))))
 
 (deftest run-process-captures-working-directory-output-and-status
   (let [run-process (ns-resolve 'abc.tools.adr-evidence-capture 'run-process)

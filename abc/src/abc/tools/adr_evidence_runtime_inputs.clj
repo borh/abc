@@ -310,7 +310,7 @@
                              {:dir (str repo-root) :out :string :err :out})
         output out]
     (when-not (zero? exit)
-      (fail! :invalid-nix-clojure-closure "clj-kondo analysis failed" :output output))
+      (fail! :invalid-focused-evidence-analysis "clj-kondo analysis failed" :output output))
     (edn/read-string output)))
 
 (defn- read-forms! [file]
@@ -703,38 +703,3 @@
              "each v2 focus must directly call the trace-and-validate owner"
              :vars missing))
     analysis))
-
-(defn derive-nix-clojure-source-closure [repo-root focused-vars]
-  (:paths (analyze-reachable-vars repo-root focused-vars)))
-
-(defn validate-nix-clojure-closure!
-  "Validate a checked Nix/Clojure closure manifest and its descriptor binding."
-  [repo-root manifest-path descriptor-inputs]
-  (validate-path! repo-root manifest-path)
-  (let [manifest (files/read-edn (fs/file repo-root manifest-path))
-        focused (:focused-vars manifest)
-        paths (:paths manifest)]
-    (when-not (= #{:schema-version :focused-vars :paths} (set (keys manifest)))
-      (fail! :invalid-nix-clojure-closure "closure manifest has an invalid key set"))
-    (when-not (= :abc-adr-nix-clojure-closure-v1 (:schema-version manifest))
-      (fail! :invalid-nix-clojure-closure "closure manifest schema is unsupported"))
-    (when-not (and (vector? focused) (seq focused)
-                   (every? qualified-symbol? focused)
-                   (= focused (vec (sort focused)))
-                   (= (count focused) (count (distinct focused)))
-                   (vector? paths) (= paths (vec (sort paths)))
-                   (= (count paths) (count (distinct paths))))
-      (fail! :invalid-nix-clojure-closure "closure coordinates must be sorted and unique"))
-    (let [{actual-paths :paths contract-paths :contract-paths}
-          (analyze-reachable-vars repo-root focused)
-          expected-paths (vec (sort actual-paths))
-          required (into #{"deps.edn" "deps-lock.json" "tests.edn" manifest-path}
-                         (concat expected-paths contract-paths))
-          inputs (set descriptor-inputs)]
-      (when-not (= paths expected-paths)
-        (fail! :invalid-nix-clojure-closure "closure manifest does not equal derived reachable paths"
-               :expected expected-paths :actual paths))
-      (when-let [missing (seq (sort (set/difference required inputs)))]
-        (fail! :missing-evidence-input "descriptor omits a Nix/Clojure closure determinant"
-               :paths (vec missing)))
-      true)))

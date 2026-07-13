@@ -99,6 +99,64 @@
   (.setExecutable ^java.io.File file true)
   file)
 
+(defn- executable-script! [root name body]
+  (write-stub! (io/file root (str name ".sh"))
+               (str "#!/usr/bin/env bash\n" body "\n")))
+
+(deftest run-process-preserves-utf8-nonzero-and-environment-test
+  (let [root (fixture/temp-dir "abc-join-stats-run-process")]
+    (try
+      (let [run-process (ns-resolve 'abc.tools.annotation-join-stats-run
+                                    'run-process!)
+            script (executable-script!
+                    root
+                    "utf8-env"
+                    (str "input=$(cat)\n"
+                         "printf '%s|%s|%s' \"$input\" \"$ABC_TEST_ENV\" "
+                         "\"${PATH:+inherited}\"\n"
+                         "printf '診断' >&2\n"
+                         "exit 19"))
+            result (@run-process {:cmd [(str script)]
+                                  :env {"ABC_TEST_ENV" "追加"}
+                                  :stdin "入力"})]
+        (is (= #{:exit :out :err} (set (keys result))))
+        (is (= 19 (:exit result)))
+        (is (= "入力|追加|inherited" (:out result)))
+        (is (= "診断" (:err result))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest run-process-drains-both-streams-test
+  (let [root (fixture/temp-dir "abc-join-stats-run-drain")]
+    (try
+      (let [run-process (ns-resolve 'abc.tools.annotation-join-stats-run
+                                    'run-process!)
+            script (executable-script!
+                    root
+                    "large-output"
+                    (str "i=0; while [ $i -lt 10000 ]; do "
+                         "printf o; printf e >&2; i=$((i+1)); done"))
+            {:keys [exit out err]} (@run-process {:cmd [(str script)]})]
+        (is (zero? exit))
+        (is (= 10000 (count out)))
+        (is (= 10000 (count err))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest run-process-preserves-early-exit-diagnostics-test
+  (let [root (fixture/temp-dir "abc-join-stats-run-early-exit")]
+    (try
+      (let [run-process (ns-resolve 'abc.tools.annotation-join-stats-run
+                                    'run-process!)
+            script (executable-script!
+                    root "early-exit" "printf diagnosed >&2; exit 23")
+            result (@run-process {:cmd [(str script)]
+                                  :stdin (apply str (repeat 2000000 "x"))})]
+        (is (= 23 (:exit result)))
+        (is (= "diagnosed" (:err result))))
+      (finally
+        (fixture/delete-tree! root)))))
+
 (deftest write-stub-resolves-portable-bash-shebang-test
   (let [root (fixture/temp-dir "abc-join-stats-run-stub")
         stub (io/file root "stub.sh")]

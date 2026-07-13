@@ -18,6 +18,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.workflow :as workflow]
+            [babashka.process :as process]
             [charred.api :as charred]
             [clojure.java.io :as io]
             [clojure.string :as string]))
@@ -57,21 +58,16 @@
   and stderr — the actual diagnosis — survive to the caller. Returns
   {:exit :out :err}."
   [{:keys [cmd env stdin]}]
-  (let [pb (ProcessBuilder. ^java.util.List (mapv str cmd))]
-    (doseq [[k v] env]
-      (.put (.environment pb) (str k) (str v)))
-    (let [proc (.start pb)
-          out-fut (future (slurp (io/reader (.getInputStream proc)
-                                            :encoding "UTF-8")))
-          err-fut (future (slurp (io/reader (.getErrorStream proc)
-                                            :encoding "UTF-8")))]
-      (try
-        (with-open [w (io/writer (.getOutputStream proc) :encoding "UTF-8")]
-          (when stdin
-            (.write w ^String stdin)))
-        (catch java.io.IOException _))
-      (let [exit (.waitFor proc)]
-        {:exit exit :out @out-fut :err @err-fut}))))
+  (let [proc (process/process cmd {:extra-env env
+                                   :out :string
+                                   :err :string})]
+    (try
+      (with-open [w (io/writer (:in proc) :encoding "UTF-8")]
+        (when stdin
+          (.write w ^String stdin)))
+      (catch java.io.IOException _))
+    (let [{:keys [exit out err]} @proc]
+      {:exit exit :out out :err err})))
 
 (defn- tokenize-summary
   "Parse the tokenize-plaintext summary JSON line from the tool's stdout."

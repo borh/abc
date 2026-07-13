@@ -26,6 +26,18 @@
               ["z" "{\"$id\":\"z\",\"type\":\"object\"}"]]
              (vec (#'schema/checked-in-schema-resources dir)))))))
 
+(deftest checked-in-schema-resources-follows-directory-symlinks-test
+  (with-temp-dir [base]
+    (let [root (fs/path base "root")
+          external (fs/path base "external")]
+      (fs/create-dirs root)
+      (fs/create-dirs external)
+      (spit (fs/file external "linked.schema.json")
+            "{\"$id\":\"linked\",\"type\":\"object\"}")
+      (fs/create-sym-link (fs/path root "linked") external)
+      (is (= [["linked" "{\"$id\":\"linked\",\"type\":\"object\"}"]]
+             (vec (#'schema/checked-in-schema-resources root)))))))
+
 (def ^:private cross-project-schema-versions
   {"schemas/annotation-output.schema.json" "0.1.0"
    "schemas/parser-ir.schema.json" "0.7.0"

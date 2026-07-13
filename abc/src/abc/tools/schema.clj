@@ -40,15 +40,23 @@
      {}
      (into {}
            (keep (fn [path]
-                   (when (fs/regular-file? path)
+                   (when (and (fs/regular-file? path)
+                              (str/ends-with? (str (fs/file-name path))
+                                              ".schema.json"))
                      (let [file (fs/file path)
                            content (slurp file)
                            schema (abc-json/read-json-file file)]
                        (when-let [schema-id (get schema "$id")]
                          [schema-id content])))))
-           (->> (concat (fs/glob schema-dir "*.schema.json")
-                        (fs/glob schema-dir "**/*.schema.json"))
-                distinct
+           (->> (tree-seq fs/directory?
+                          (fn [path]
+                            (try
+                              (sort-by str (fs/list-dir path))
+                              (catch java.io.IOException _
+                                [])
+                              (catch SecurityException _
+                                [])))
+                          (fs/path schema-dir))
                 (sort-by #(str (fs/relativize schema-dir %))))))))
 
 (def ^:private schema-registry

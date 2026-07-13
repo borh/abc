@@ -63,16 +63,19 @@
   (some #(fs/exists? (fs/path dir %)) (vals required-file-names)))
 
 (defn- directories-below [root]
-  (tree-seq (fn [path]
-              (and (fs/directory? path {:follow-links false})
-                   (not (fs/sym-link? path))))
+  (tree-seq fs/directory?
             (fn [path]
-              (sort-by normalize-path (fs/list-dir path)))
+              (try
+                (sort-by normalize-path (fs/list-dir path))
+                (catch java.io.IOException _
+                  [])
+                (catch SecurityException _
+                  [])))
             (fs/path root)))
 
 (defn- work-dirs [input-root]
   (->> (directories-below input-root)
-       (filter #(fs/directory? % {:follow-links false}))
+       (filter fs/directory?)
        (filter candidate-work-dir?)
        (sort-by #(normalize-path (fs/relativize input-root %)))
        vec))

@@ -4,9 +4,59 @@
             [abc.tools.materialize-source-snapshot :as materialize]
             [abc.tools.source-snapshot-fixture :as fixture]
             [abc.tools.source-snapshot-workset :as workset]
+            [babashka.fs :as fs]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :refer [deftest is testing]])
+  (:import [java.nio.file Files]
+           [java.nio.file.attribute PosixFilePermissions]))
+
+(deftest workset-follows-directory-symlinks-test
+  (let [base (fixture/temp-dir "abc-source-snapshot-workset-symlink")
+        root (io/file base "root")
+        external (io/file base "external")]
+    (try
+      (.mkdirs root)
+      (fixture/materialized-work! external {:slug "linked"
+                                            :title "一"
+                                            :work-id "000001"
+                                            :person-id "000101"
+                                            :work-hash (fixture/example-hash "a1")})
+      (fs/create-sym-link (fs/path root "linked-works") external)
+      (is (= ["000001"]
+             (mapv :work_id
+                   (:works (workset/workset-from-root
+                            {:input-root (str root)
+                             :path-base (str base)
+                             :snapshot-scope "unit-test"
+                             :snapshot-date "2026-07-07"})))))
+      (finally
+        (fixture/delete-tree! base)))))
+
+(deftest workset-treats-an-unlistable-directory-as-empty-test
+  (let [root (fixture/temp-dir "abc-source-snapshot-workset-unlistable")
+        unlistable (fs/path root "unlistable")]
+    (try
+      (fixture/materialized-work! root {:slug "visible"
+                                        :title "一"
+                                        :work-id "000001"
+                                        :person-id "000101"
+                                        :work-hash (fixture/example-hash "a1")})
+      (fs/create-dirs unlistable)
+      (Files/setPosixFilePermissions unlistable (java.util.HashSet.))
+      (try
+        (is (= ["000001"]
+               (mapv :work_id
+                     (:works (workset/workset-from-root
+                              {:input-root (str root)
+                               :snapshot-scope "unit-test"
+                               :snapshot-date "2026-07-07"})))))
+        (finally
+          (Files/setPosixFilePermissions
+           unlistable
+           (PosixFilePermissions/fromString "rwx------"))))
+      (finally
+        (fixture/delete-tree! root)))))
 
 (deftest workset-from-materialized-root-test
   (let [root (fixture/temp-dir "abc-source-snapshot-workset")

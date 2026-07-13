@@ -4,7 +4,15 @@
             [clojure.java.io :as io]))
 
 (defn- regular-files [root]
-  (->> (fs/glob root "**")
+  (->> (tree-seq fs/directory?
+                 (fn [path]
+                   (try
+                     (sort-by str (fs/list-dir path))
+                     (catch java.io.IOException _
+                       [])
+                     (catch SecurityException _
+                       [])))
+                 (fs/path root))
        (filter fs/regular-file?)
        (sort-by #(str (fs/relativize root %)))
        (map fs/file)))

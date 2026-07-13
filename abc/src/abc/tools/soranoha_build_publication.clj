@@ -87,7 +87,15 @@
           rows))
 
 (defn- work-zip-files [aozora-root]
-  (->> (tree-seq fs/directory? fs/list-dir (fs/path aozora-root))
+  (->> (tree-seq fs/directory?
+                 (fn [path]
+                   (try
+                     (sort-by normalized-path (fs/list-dir path))
+                     (catch java.io.IOException _
+                       [])
+                     (catch SecurityException _
+                       [])))
+                 (fs/path aozora-root))
        (map fs/file)
        (filter zip-file?)
        (map (fn [file]

@@ -77,6 +77,27 @@
     (is (= ["linked/a.tar.zst" "linked/b.tar.zst" "z.tar.zst"]
            (get (#'soranoha/archive-summary root) "paths")))))
 
+(deftest recursive-traversals-treat-unlistable-directories-as-empty-test
+  (fs/with-temp-dir [root {}]
+    (let [unlistable (fs/path root "unlistable")
+          archive (fs/path root "z.tar.zst")
+          work-zip (fs/path root "work.zip")]
+      (fs/create-dirs unlistable)
+      (spit (fs/file archive) "z")
+      (spit (fs/file work-zip) "zip")
+      (Files/setPosixFilePermissions unlistable (java.util.HashSet.))
+      (try
+        (is (= ["z.tar.zst"]
+               (get (#'soranoha/archive-summary root) "paths")))
+        (is (= [work-zip]
+               (mapv (comp fs/path :file)
+                     (#'build-publication/work-zip-files root))))
+        (finally
+          (Files/setPosixFilePermissions
+           unlistable
+           (java.nio.file.attribute.PosixFilePermissions/fromString
+            "rwx------")))))))
+
 (defn- delete-tree! [file]
   (fixture/delete-tree! file))
 

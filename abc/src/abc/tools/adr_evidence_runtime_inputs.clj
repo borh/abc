@@ -127,16 +127,14 @@
    'abc.tools.adr/validate-repository* "adr-validate-repository-star.edn"})
 
 (def ^:private forbidden-vars
-  (conj '#{clojure.core/slurp clojure.core/line-seq clojure.core/file-seq
-           clojure.edn/read clojure.java.io/reader clojure.java.io/input-stream
-           babashka.process/process babashka.process/shell}
-        (symbol (str "clojure.java" ".shell") "sh")))
+  '#{clojure.core/slurp clojure.core/line-seq clojure.core/file-seq
+     clojure.edn/read clojure.java.io/reader clojure.java.io/input-stream
+     clojure.java.shell/sh babashka.process/process babashka.process/shell})
 
 (def ^:private forbidden-simple
-  (conj '#{FileReader ZipFile readAllBytes readString newInputStream
-           listFiles loadModel readDataset inputStream input-stream reader URL openStream
-           sh process shell}
-        (symbol (str "Process" "Builder"))))
+  '#{FileReader ProcessBuilder ZipFile readAllBytes readString newInputStream
+     listFiles loadModel readDataset inputStream input-stream reader URL openStream
+     sh process shell})
 
 (def ^:private exempt-callers
   '#{abc.tools.files abc.tools.hash abc.tools.json abc.tools.evidence-io

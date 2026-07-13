@@ -12,4 +12,5 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo fmt --check
       - run: cargo clippy --all-targets -- -D warnings
+      - uses: EmbarkStudios/cargo-deny-action@v2
       - run: cargo test

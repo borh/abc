@@ -48,10 +48,14 @@ preserve-order-hazard-check:
 	bash "{{repo_root}}/tests/workspace-no-preserve-order.sh"; \
 	cargo test --manifest-path "{{repo_root}}/tools/preserve-order-canary/Cargo.toml"
 
+cargo-deny:
+	@cargo deny check
+
 quality:
 	@just fmt-check
 	@just workspace-check
 	@just clippy
+	@just cargo-deny
 
 flake-cargo *ARGS:
 	@nix develop "{{repo_root}}#default" --command cargo {{ARGS}}

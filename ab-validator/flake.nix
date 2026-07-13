@@ -1125,8 +1125,19 @@
           touch "$out"
         '';
 
+        cargoDenyCheck = pkgs.runCommand "ab-validator-cargo-deny-check"
+          (cargoQualityEnv // {
+            nativeBuildInputs = cargoQualityEnv.nativeBuildInputs ++ [ pkgs.cargo-deny ];
+          })
+          ''
+            ${cargoQualityPrelude}
+            cargo deny check licenses bans sources
+            touch "$out"
+          '';
+
         devTools = [
           rustToolchain
+          pkgs.cargo-deny
           pkgs.cargo-nextest
           pkgs.cargo-watch
           pkgs.criterion
@@ -1897,6 +1908,7 @@
           cargo-fmt = cargoFmtCheck;
           cargo-check = cargoCheck;
           cargo-clippy = cargoClippyCheck;
+          cargo-deny = cargoDenyCheck;
           cargo-test = workspaceCheck;
           upstream-parser-aozora2 = upstreamParserAozora2;
           upstream-parser-aozora-rs = upstreamParserAozoraRs;

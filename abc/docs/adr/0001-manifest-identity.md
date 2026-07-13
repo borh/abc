@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-04-28
+Validation scope: fixture
+Release authority: publication
 Supersedes: none
 Amended by: ADR 0010, ADR 0023, ADR 0027, ADR 0033 [scope: work_content_hash equality relation]
 Source: `docs/high-level-architecture-note.md` v0.5
@@ -129,22 +131,29 @@ sha256-rfc8785-jcs-bundled-json-schema-v0
 
 ## Acceptance Criteria
 
-- `schemas/manifest.schema.json` validates success and failure manifests, as
-  covered by `test/abc/tools/materialize_import_test.clj`.
-- A canonicalization fixture demonstrates null dimensions and array ordering;
-  `test/abc/tools/jcs_test.clj` proves its canonical byte contract.
-- Example manifests keep `artifact_id` outside `manifest_identity_object`.
-- Failure manifests include input identity, attempted recipe identity,
-  validation status, and error sidecar references.
-- Given two successful manifests with identical `manifest_identity_object` and
-  different `content.content_hash`, release validation fails with a
-  reproducibility-conflict report unless a later schema explicitly marks the
-  artifact kind non-deterministic and non-releaseable.
-- Before any non-Clojure implementation is relied on for identity, a
-  cross-language RFC 8785 JCS conformance fixture (canonical bytes reproduced
-  byte-for-byte by at least one non-JVM implementation) is committed and
-  exercised. Until then, the cross-language language in the Context is treated
-  as a target, not a satisfied criterion.
+- **ADR-0001-C1 — fixture-behavior:** Committed success/failure manifests and
+  freshly generated parser-IR/warnings manifests validate against
+  `schemas/manifest.schema.json`, as asserted by
+  `test/abc/tools/foundation_evidence_test.clj`.
+- **ADR-0001-C2 — fixture-behavior:** Inline canonical values pin null
+  dimensions and semantic array order.
+- **ADR-0001-C3 — structural-invariant:** The manifest schema rejects
+  `artifact_id` nested inside `manifest_identity_object`.
+- **ADR-0001-C4 — fixture-behavior:** The committed failure manifest carries
+  the exact asserted input and attempted-output identity coordinates,
+  validation status, null content, error sidecar, and top-level-only
+  `artifact_id`.
+- **ADR-0001-C5 — structural-invariant:** Two successful entries with the same
+  `artifact_id` and different `content.content_hash` values produce a
+  reproducibility conflict.
+
+## Future Verification
+
+Before any non-Clojure implementation is relied on for identity, a
+cross-language RFC 8785 JCS conformance fixture (canonical bytes reproduced
+byte-for-byte by at least one non-JVM implementation) is committed and
+exercised. Until then, the cross-language language in the Context is treated
+as a target, not a satisfied criterion.
 
 ## Rollback
 

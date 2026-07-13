@@ -1,6 +1,6 @@
 {
   "accepted_adr_count": 26,
-  "accepted_criterion_count": 144,
+  "accepted_criterion_count": 146,
   "baseline_criteria": [
     {
       "adr": 1,
@@ -13,7 +13,7 @@
       "original_text": "`schemas\/manifest.schema.json` validates success and failure manifests, as\ncovered by `test\/abc\/tools\/materialize_import_test.clj`.",
       "original_text_hash": "sha256:a29b17fa870e6f4fc7a9b323cc83c19b85f5eb9ec5420fbe5b24ddfb771c043b",
       "planned_evidence_boundaries": ["generated-manifest-schema-fixtures"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C1"]
     },
     {
       "adr": 1,
@@ -26,7 +26,7 @@
       "original_text": "A canonicalization fixture demonstrates null dimensions and array ordering;\n`test\/abc\/tools\/jcs_test.clj` proves its canonical byte contract.",
       "original_text_hash": "sha256:1c6823345014b9b13768dee0d2d1c66a609bb5ec9427d149dca6906c331dab54",
       "planned_evidence_boundaries": ["inline-canonical-null-and-array-order"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C2"]
     },
     {
       "adr": 1,
@@ -39,7 +39,7 @@
       "original_text": "Example manifests keep `artifact_id` outside `manifest_identity_object`.",
       "original_text_hash": "sha256:6d495f4c83d65f6dc7a1c4cebf20b528d6fe9befad0c262b5f407eed5bf63d35",
       "planned_evidence_boundaries": ["nested-artifact-id-schema-rejection"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C3"]
     },
     {
       "adr": 1,
@@ -52,7 +52,7 @@
       "original_text": "Failure manifests include input identity, attempted recipe identity,\nvalidation status, and error sidecar references.",
       "original_text_hash": "sha256:1c1944449f07cf23fe00d574d585217a5649de20550c0651ae569c18aa0102ec",
       "planned_evidence_boundaries": ["failure-manifest-exact-fields"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C4"]
     },
     {
       "adr": 1,
@@ -65,7 +65,7 @@
       "original_text": "Given two successful manifests with identical `manifest_identity_object` and\ndifferent `content.content_hash`, release validation fails with a\nreproducibility-conflict report unless a later schema explicitly marks the\nartifact kind non-deterministic and non-releaseable.",
       "original_text_hash": "sha256:15c28d8861bde961e3cfec91dd7bea6cca5772243bc8b7e9235e104f2d73c77f",
       "planned_evidence_boundaries": ["manifest-index-reproducibility-conflict"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C5"]
     },
     {
       "adr": 1,
@@ -390,7 +390,7 @@
       "original_text": "`bin\/validate-design-bundle.sh` calls the Clojure tool rather than duplicating\nvalidation logic.",
       "original_text_hash": "sha256:1db372595077f0faddd5a9d1656b1a5050ca54451054a7a4eaeb75bba327d309",
       "planned_evidence_boundaries": ["wrapper-delegation"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0008-C1"]
     },
     {
       "adr": 8,
@@ -403,7 +403,7 @@
       "original_text": "`nix run .#validate-design-bundle` works locally.",
       "original_text_hash": "sha256:f74e34393b508b323d2ea38e90256f9db4c94f28d924113928b01d8e178b3e6b",
       "planned_evidence_boundaries": ["supported-nix-app-exit-zero"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0008-C2"]
     },
     {
       "adr": 8,
@@ -416,7 +416,7 @@
       "original_text": "CI continues to run the same validation command through Nix.",
       "original_text_hash": "sha256:13d57a0ea34fc32256da82fcc1e444fff23ea139618a78005ef7d8bc0653abc8",
       "planned_evidence_boundaries": ["workflow-command-wiring"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0008-C3"]
     },
     {
       "adr": 8,
@@ -429,7 +429,7 @@
       "original_text": "Pure validation helpers are covered by\n`test\/abc\/tools\/validate_design_bundle_test.clj`.",
       "original_text_hash": "sha256:9a567d39554e3d21110c01b77594279f58a401bf4cef35fe881106e2ffc7e802",
       "planned_evidence_boundaries": ["named-pure-validation-helpers"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0008-C4"]
     },
     {
       "adr": 9,
@@ -442,7 +442,7 @@
       "original_text": "Generated parser IR and warnings manifests validate against\n`schemas\/manifest.schema.json`, covered by\n`test\/abc\/tools\/materialize_import_test.clj`.",
       "original_text_hash": "sha256:fe9f8e4759ac0f34efea3c43c866d287189b1f0348269bf1b0da2f8a97bfdc84",
       "planned_evidence_boundaries": ["direct-generated-manifest-schema-test"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C1"]
     },
     {
       "adr": 9,
@@ -455,7 +455,7 @@
       "original_text": "Generated content hashes match the actual imported files.",
       "original_text_hash": "sha256:43969f3009ca2ee74e08eca436ba0930d1c732fbd5939b4a1f98bacc7104451a",
       "planned_evidence_boundaries": ["generated-content-hashes"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C2"]
     },
     {
       "adr": 9,
@@ -468,7 +468,7 @@
       "original_text": "The parser-IR manifest includes `divergence.json` as a\n`mapping-divergence` sidecar when present, falling back to legacy\n`divergence.jsonl`.",
       "original_text_hash": "sha256:1b27c88bd21889c0d55924f3b3188d3613e0798af2f17e975fcb34d225806fd1",
       "planned_evidence_boundaries": ["mapping-divergence-sidecar-selection"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C3"]
     },
     {
       "adr": 9,
@@ -481,7 +481,7 @@
       "original_text": "Generated artifact IDs are distinct from content hashes.",
       "original_text_hash": "sha256:67623330d2e10a4db342dc2aeb3586d3f56e6b1f715127b54d0f84c8799ea046",
       "planned_evidence_boundaries": ["artifact-id-content-hash-distinction"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C4"]
     },
     {
       "adr": 9,
@@ -494,7 +494,7 @@
       "original_text": "Producer-supplied parser IR and diagnostic schema hashes match the checked-in\nABC schemas used for validation, unless a registered compatibility rule\nexists.",
       "original_text_hash": "sha256:32934fe5b8af881021dfd1872b6582c8631d3e7f8f58c27c7e4a4a1c64c367d9",
       "planned_evidence_boundaries": ["parser-schema-compatibility-and-diagnostic-match"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C5"]
     },
     {
       "adr": 9,
@@ -507,7 +507,7 @@
       "original_text": "The design-bundle validation command materializes the fixture into a temporary\ndirectory and validates the generated manifests.",
       "original_text_hash": "sha256:331ef38a78bbb0e51ec03c086f217e8acd98e210f6174fc7a64e833042ae0ee2",
       "planned_evidence_boundaries": ["temporary-materialization-orchestration"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C6"]
     },
     {
       "adr": 9,
@@ -520,7 +520,7 @@
       "original_text": "The Bash wrapper remains a compatibility shim; Clojure owns the logic.",
       "original_text_hash": "sha256:d904804f6d05dda54eb08705a299b7dbee66b8e55c474da8ce86d6d60c5ff262",
       "planned_evidence_boundaries": ["wrapper-delegation"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C7"]
     },
     {
       "adr": 10,
@@ -533,7 +533,7 @@
       "original_text": "Materialized manifests contain `manifest_schema_hash` equal to the\nSHA-256\/JCS hash of the bundled manifest schema JSON value.",
       "original_text_hash": "sha256:4276aca66a1bcc292305c1ac71211544debabb8f4855d135cf7a45f6bcacff31",
       "planned_evidence_boundaries": ["manifest-schema-jcs-hash"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C1"]
     },
     {
       "adr": 10,
@@ -546,7 +546,7 @@
       "original_text": "Parser IR and warning materialized manifests have distinct `artifact_id`\nvalues.",
       "original_text_hash": "sha256:8dd0eec558392f721426161f0a47d017634e5483ed09dc8085d4a48a2ffb00ca",
       "planned_evidence_boundaries": ["distinct-materialized-artifact-ids"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C2"]
     },
     {
       "adr": 10,
@@ -559,7 +559,7 @@
       "original_text": "`test\/abc\/tools\/materialize_import_test.clj` covers `v0-identity-json`,\nschema hashing, and generated manifest identity fields.",
       "original_text_hash": "sha256:aa30186391c6a310234f71e0cbf5b69000a6609f2fe396acb0d98c4434d52175",
       "planned_evidence_boundaries": ["materialized-manifest-identity-behavior"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C3"]
     },
     {
       "adr": 10,
@@ -572,7 +572,7 @@
       "original_text": "Validation fails if producer-supplied parser IR or diagnostic schema hashes\ndisagree with the checked-in ABC schemas and no compatibility rule exists.",
       "original_text_hash": "sha256:f2fd52b030dc92074964127d3bd207aa2fd18426b8e2945aa6c41d71e99b2801",
       "planned_evidence_boundaries": ["schema-hash-mismatch-rejection"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C4"]
     },
     {
       "adr": 10,
@@ -585,7 +585,7 @@
       "original_text": "`nix run .#validate-design-bundle` still validates materialized manifests.",
       "original_text_hash": "sha256:b65937a308a4582274e59a2a78e736aedf0753d7d64d70f2dfad3ff4922c497d",
       "planned_evidence_boundaries": ["supported-nix-app-manifest-validation"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C5"]
     },
     {
       "adr": 11,
@@ -598,7 +598,7 @@
       "original_text": "`nix run .#validate-design-bundle` materializes parser IR and warning manifests into a temporary directory and validates both against `schemas\/manifest.schema.json`.",
       "original_text_hash": "sha256:455ea3916f52e9f1ae5115bba514eadc97b3ed49a6d95efdf29659886158bdef",
       "planned_evidence_boundaries": ["supported-nix-app-temporary-materialization"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0011-C1"]
     },
     {
       "adr": 11,
@@ -611,7 +611,7 @@
       "original_text": "`test\/abc\/tools\/materialize_import_test.clj` proves deterministic JSON output\nfor maps with differently ordered input keys.",
       "original_text_hash": "sha256:f92fb00d7f506d651f02550fe60f89bf1a14faac120e45990927d994a1aa80f4",
       "planned_evidence_boundaries": ["ordered-map-deterministic-json"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0011-C2"]
     },
     {
       "adr": 11,
@@ -624,7 +624,7 @@
       "original_text": "`test\/abc\/tools\/materialize_import_test.clj` proves two materialization runs\nwith the same inputs produce byte-identical manifest files.",
       "original_text_hash": "sha256:1f95118d755dd472bfb4eb18b4754b45458b58bb62082caeb20a67d3d55bf91c",
       "planned_evidence_boundaries": ["two-run-byte-identity"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0011-C3"]
     },
     {
       "adr": 12,
@@ -1794,7 +1794,7 @@
       "original_text": "`schemas\/source-bundle.schema.json` validates a canonical manifest covering\nevery non-directory member;\n`fixtures\/source-bundle\/abc-source-bundle-v1-known-answer.json`,\n`test\/abc\/tools\/source_bundle_test.clj`, and\n`test\/abc\/tools\/schema_test.clj` pin the producer, canonical bytes\/digest,\nand schema contracts.",
       "original_text_hash": "sha256:5f0ee5797b8e45e6292ed4015d791002b96ec3d18e980f699de73ce3203bf2d0",
       "planned_evidence_boundaries": ["canonical-all-member-schema-fixture"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C1"]
     },
     {
       "adr": 33,
@@ -1807,7 +1807,7 @@
       "original_text": "The Clojure producer reproduces one checked-in canonical identity fixture and\n`bundle_hash` byte-for-byte. Rust remains a consumer until a conformant\nimplementation reproduces that fixture; it must not author bundle identity.",
       "original_text_hash": "sha256:0959a52cefbc2f84774ffa2aa1e90570683a76a2ed1c8d475c5aef6f2d3e5cda",
       "planned_evidence_boundaries": ["clojure-known-answer-reproduction"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C2"]
     },
     {
       "adr": 33,
@@ -1820,7 +1820,7 @@
       "original_text": "`test\/abc\/sim\/content_sim_test.clj` proves metadata-only repacks preserve\n`bundle_hash` while image changes rotate it.",
       "original_text_hash": "sha256:843010d484c7dd27c661023f31c641d4d5c1830fc89a58ec126cd1771fcf93b4",
       "planned_evidence_boundaries": ["repack-and-image-evolution"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C3"]
     },
     {
       "adr": 33,
@@ -1833,7 +1833,7 @@
       "original_text": "Parser-IR records both `work_content_hash = bundle_hash` and the independently\nverified `primary_text_hash`.",
       "original_text_hash": "sha256:4ade2d07b6cd4e988cabe9473ee829f716d89f60eb00bcc42d2eb4393482d514",
       "planned_evidence_boundaries": ["parser-ir-bundle-and-primary-roles"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C4"]
     },
     {
       "adr": 33,
@@ -1846,7 +1846,7 @@
       "original_text": "Source snapshot validation checks each hash role by its own construction and\nnever requires cross-role equality, as pinned by\n`test\/abc\/tools\/materialize_source_snapshot_test.clj`.",
       "original_text_hash": "sha256:d09bfcf0212a3872e0eafa978200adb85aec3f0bc17bd64d3c89df5bd6ff88c6",
       "planned_evidence_boundaries": ["role-specific-snapshot-validation"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C5"]
     },
     {
       "adr": 33,
@@ -1859,7 +1859,7 @@
       "original_text": "P16.3 passes without `expected-failure*`; D7 is marked fixed with dated\nevidence.",
       "original_text_hash": "sha256:ffa31a0ca8353317bfd1af26c58f8206d4db07772c26b3470438bba626a094ad",
       "planned_evidence_boundaries": ["ungated-p16-3","dated-d7-fixed-state"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C6","ADR-0033-C7"]
     },
     {
       "adr": 33,
@@ -1872,7 +1872,7 @@
       "original_text": "Historical manifests and worksets remain readable without reinterpretation.",
       "original_text_hash": "sha256:2c2cc9e6482eecff33bce6934d3d1823dfa065511e45202942214deadc1451af",
       "planned_evidence_boundaries": ["legacy-shaped-workset-fixture-readability"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C8"]
     },
     {
       "adr": 33,
@@ -1885,7 +1885,7 @@
       "original_text": "Archive member-count, per-member byte, and total-uncompressed-byte limits are\nselected from measured corpus evidence and enforced before production use;\n`test\/abc\/tools\/source_bundle_report_test.clj` validates the report contract.",
       "original_text_hash": "sha256:9185a2cf95bbf10d77d5ee90ef5bc49200905679677c72649858962297878f64",
       "planned_evidence_boundaries": ["pinned-source-bundle-corpus-maxima","archive-limit-enforcement"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C9","ADR-0033-C10"]
     },
     {
       "adr": 33,
@@ -1898,7 +1898,7 @@
       "original_text": "Tests pin both strict atomic-abort and best-effort counted-failure admission\ndispositions, and release validation rejects any nonzero derive-failure\ncount.",
       "original_text_hash": "sha256:524dd9590000bfc7f77baa3f27497e677d04b836882bae24f131b8443cc6abdd",
       "planned_evidence_boundaries": ["strict-atomic-abort","best-effort-counted-non-release-admissible"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C11"]
     }],
   "baseline_criterion_count": 146,
   "baseline_revision": "0542b7f43b0f47d0baf1620aa91d8d9312825cfa",
@@ -1906,39 +1906,39 @@
     {
       "adr": 1,
       "baseline_key": [1,"sha256:a29b17fa870e6f4fc7a9b323cc83c19b85f5eb9ec5420fbe5b24ddfb771c043b"],
-      "body": "`schemas\/manifest.schema.json` validates success and failure manifests, as\ncovered by `test\/abc\/tools\/materialize_import_test.clj`.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0001-C1 \u2014 fixture-behavior:** Committed success\/failure manifests and\nfreshly generated parser-IR\/warnings manifests validate against\n`schemas\/manifest.schema.json`, as asserted by\n`test\/abc\/tools\/foundation_evidence_test.clj`.",
+      "claim_id": "ADR-0001-C1",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 0,
       "disposition": "correct",
       "disposition_rationale": "Narrow to committed success\/failure and generated parser\/warning manifests validating against the manifest schema.",
-      "evidence_paths": ["test\/abc\/tools\/materialize_import_test.clj"],
+      "evidence_paths": ["test\/abc\/tools\/foundation_evidence_test.clj"],
       "family": "foundation-runtime-identity",
       "file": "0001-manifest-identity.md",
       "planned_evidence_boundaries": ["generated-manifest-schema-fixtures"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C1"]
     },
     {
       "adr": 1,
       "baseline_key": [1,"sha256:1c6823345014b9b13768dee0d2d1c66a609bb5ec9427d149dca6906c331dab54"],
-      "body": "A canonicalization fixture demonstrates null dimensions and array ordering;\n`test\/abc\/tools\/jcs_test.clj` proves its canonical byte contract.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0001-C2 \u2014 fixture-behavior:** Inline canonical values pin null\ndimensions and semantic array order.",
+      "claim_id": "ADR-0001-C2",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 1,
       "disposition": "retain",
       "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/jcs_test.clj"],
+      "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0001-manifest-identity.md",
       "planned_evidence_boundaries": ["inline-canonical-null-and-array-order"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C2"]
     },
     {
       "adr": 1,
       "baseline_key": [1,"sha256:6d495f4c83d65f6dc7a1c4cebf20b528d6fe9befad0c262b5f407eed5bf63d35"],
-      "body": "Example manifests keep `artifact_id` outside `manifest_identity_object`.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0001-C3 \u2014 structural-invariant:** The manifest schema rejects\n`artifact_id` nested inside `manifest_identity_object`.",
+      "claim_id": "ADR-0001-C3",
+      "claim_kind": "structural-invariant",
       "criterion_index": 2,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -1946,14 +1946,14 @@
       "family": "foundation-runtime-identity",
       "file": "0001-manifest-identity.md",
       "planned_evidence_boundaries": ["nested-artifact-id-schema-rejection"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C3"]
     },
     {
       "adr": 1,
       "baseline_key": [1,"sha256:1c1944449f07cf23fe00d574d585217a5649de20550c0651ae569c18aa0102ec"],
-      "body": "Failure manifests include input identity, attempted recipe identity,\nvalidation status, and error sidecar references.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0001-C4 \u2014 fixture-behavior:** The committed failure manifest carries\nthe exact asserted input and attempted-output identity coordinates,\nvalidation status, null content, error sidecar, and top-level-only\n`artifact_id`.",
+      "claim_id": "ADR-0001-C4",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 3,
       "disposition": "correct",
       "disposition_rationale": "Narrow to the failure fixture carrying the exact asserted input identity, attempted recipe identity, validation status, and error sidecar fields.",
@@ -1961,14 +1961,14 @@
       "family": "foundation-runtime-identity",
       "file": "0001-manifest-identity.md",
       "planned_evidence_boundaries": ["failure-manifest-exact-fields"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C4"]
     },
     {
       "adr": 1,
       "baseline_key": [1,"sha256:15c28d8861bde961e3cfec91dd7bea6cca5772243bc8b7e9235e104f2d73c77f"],
-      "body": "Given two successful manifests with identical `manifest_identity_object` and\ndifferent `content.content_hash`, release validation fails with a\nreproducibility-conflict report unless a later schema explicitly marks the\nartifact kind non-deterministic and non-releaseable.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0001-C5 \u2014 structural-invariant:** Two successful entries with the same\n`artifact_id` and different `content.content_hash` values produce a\nreproducibility conflict.",
+      "claim_id": "ADR-0001-C5",
+      "claim_kind": "structural-invariant",
       "criterion_index": 4,
       "disposition": "correct",
       "disposition_rationale": "Narrow to two successful entries with the same artifact_id and different content hashes producing a reproducibility conflict; delete the nonexistent nondeterministic schema exception.",
@@ -1976,7 +1976,7 @@
       "family": "foundation-runtime-identity",
       "file": "0001-manifest-identity.md",
       "planned_evidence_boundaries": ["manifest-index-reproducibility-conflict"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0001-C5"]
     },
     {
       "adr": 2,
@@ -2311,84 +2311,84 @@
     {
       "adr": 8,
       "baseline_key": [8,"sha256:1db372595077f0faddd5a9d1656b1a5050ca54451054a7a4eaeb75bba327d309"],
-      "body": "`bin\/validate-design-bundle.sh` calls the Clojure tool rather than duplicating\nvalidation logic.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 1,
+      "body": "**ADR-0008-C1 \u2014 structural-invariant:** `bin\/validate-design-bundle.sh`\ndelegates to the Clojure tool without duplicating validation logic, as\nasserted by `test\/abc\/tools\/foundation_evidence_test.clj`.",
+      "claim_id": "ADR-0008-C1",
+      "claim_kind": "structural-invariant",
+      "criterion_index": 0,
       "disposition": "retain",
       "disposition_rationale": null,
-      "evidence_paths": [],
+      "evidence_paths": ["test\/abc\/tools\/foundation_evidence_test.clj"],
       "family": "foundation-runtime-identity",
       "file": "0008-abc-tools-runtime.md",
       "planned_evidence_boundaries": ["wrapper-delegation"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0008-C1"]
     },
     {
       "adr": 8,
       "baseline_key": [8,"sha256:f74e34393b508b323d2ea38e90256f9db4c94f28d924113928b01d8e178b3e6b"],
-      "body": "`nix run .#validate-design-bundle` works locally.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 2,
+      "body": "**ADR-0008-C2 \u2014 operational-behavior:** The supported\n`nix run .#validate-design-bundle` app exits zero.",
+      "claim_id": "ADR-0008-C2",
+      "claim_kind": "operational-behavior",
+      "criterion_index": 1,
       "disposition": "correct",
       "disposition_rationale": "Narrow to the supported Nix app exiting zero.",
       "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0008-abc-tools-runtime.md",
       "planned_evidence_boundaries": ["supported-nix-app-exit-zero"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0008-C2"]
     },
     {
       "adr": 8,
       "baseline_key": [8,"sha256:13d57a0ea34fc32256da82fcc1e444fff23ea139618a78005ef7d8bc0653abc8"],
-      "body": "CI continues to run the same validation command through Nix.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 3,
+      "body": "**ADR-0008-C3 \u2014 structural-invariant:** The validation workflow checks out\nthe repository before invoking the exact repository-root Nix design-bundle\ncommand in the same job.",
+      "claim_id": "ADR-0008-C3",
+      "claim_kind": "structural-invariant",
+      "criterion_index": 2,
       "disposition": "correct",
       "disposition_rationale": "Narrow to structural workflow wiring and do not claim a local or CI run from workflow text.",
       "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0008-abc-tools-runtime.md",
       "planned_evidence_boundaries": ["workflow-command-wiring"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0008-C3"]
     },
     {
       "adr": 8,
       "baseline_key": [8,"sha256:9a567d39554e3d21110c01b77594279f58a401bf4cef35fe881106e2ffc7e802"],
-      "body": "Pure validation helpers are covered by\n`test\/abc\/tools\/validate_design_bundle_test.clj`.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 4,
+      "body": "**ADR-0008-C4 \u2014 structural-invariant:** The named pure validation-helper read\nset exactly equals `abc.tools.validate-design-bundle\/evidence-input-paths`.",
+      "claim_id": "ADR-0008-C4",
+      "claim_kind": "structural-invariant",
+      "criterion_index": 3,
       "disposition": "correct",
       "disposition_rationale": "Narrow test-coverage prose to named pure-helper behavior.",
-      "evidence_paths": ["test\/abc\/tools\/validate_design_bundle_test.clj"],
+      "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0008-abc-tools-runtime.md",
       "planned_evidence_boundaries": ["named-pure-validation-helpers"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0008-C4"]
     },
     {
       "adr": 9,
       "baseline_key": [9,"sha256:fe9f8e4759ac0f34efea3c43c866d287189b1f0348269bf1b0da2f8a97bfdc84"],
-      "body": "Generated parser IR and warnings manifests validate against\n`schemas\/manifest.schema.json`, covered by\n`test\/abc\/tools\/materialize_import_test.clj`.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0009-C1 \u2014 fixture-behavior:** Fresh parser-IR and warnings manifests\nboth validate against `schemas\/manifest.schema.json`, as asserted by\n`test\/abc\/tools\/foundation_evidence_test.clj`.",
+      "claim_id": "ADR-0009-C1",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 0,
       "disposition": "correct",
       "disposition_rationale": "Narrow to the direct generated-manifest schema test rather than the old materialization citation.",
-      "evidence_paths": ["test\/abc\/tools\/materialize_import_test.clj"],
+      "evidence_paths": ["test\/abc\/tools\/foundation_evidence_test.clj"],
       "family": "foundation-runtime-identity",
       "file": "0009-imported-output-materialization.md",
       "planned_evidence_boundaries": ["direct-generated-manifest-schema-test"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C1"]
     },
     {
       "adr": 9,
       "baseline_key": [9,"sha256:43969f3009ca2ee74e08eca436ba0930d1c732fbd5939b4a1f98bacc7104451a"],
-      "body": "Generated content hashes match the actual imported files.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0009-C2 \u2014 fixture-behavior:** Generated content hashes equal the exact\nimported parser-IR and warnings bytes.",
+      "claim_id": "ADR-0009-C2",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 1,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -2396,14 +2396,14 @@
       "family": "foundation-runtime-identity",
       "file": "0009-imported-output-materialization.md",
       "planned_evidence_boundaries": ["generated-content-hashes"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C2"]
     },
     {
       "adr": 9,
       "baseline_key": [9,"sha256:1b27c88bd21889c0d55924f3b3188d3613e0798af2f17e975fcb34d225806fd1"],
-      "body": "The parser-IR manifest includes `divergence.json` as a\n`mapping-divergence` sidecar when present, falling back to legacy\n`divergence.jsonl`.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0009-C3 \u2014 fixture-behavior:** Materialization selects\n`divergence.json` as the canonical `mapping-divergence` sidecar and falls\nback to legacy `divergence.jsonl` only when the canonical file is absent.",
+      "claim_id": "ADR-0009-C3",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 2,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -2411,14 +2411,14 @@
       "family": "foundation-runtime-identity",
       "file": "0009-imported-output-materialization.md",
       "planned_evidence_boundaries": ["mapping-divergence-sidecar-selection"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C3"]
     },
     {
       "adr": 9,
       "baseline_key": [9,"sha256:67623330d2e10a4db342dc2aeb3586d3f56e6b1f715127b54d0f84c8799ea046"],
-      "body": "Generated artifact IDs are distinct from content hashes.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0009-C4 \u2014 fixture-behavior:** Each generated parser-IR and warnings\n`artifact_id` is distinct from its own `content.content_hash`.",
+      "claim_id": "ADR-0009-C4",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 3,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -2426,14 +2426,14 @@
       "family": "foundation-runtime-identity",
       "file": "0009-imported-output-materialization.md",
       "planned_evidence_boundaries": ["artifact-id-content-hash-distinction"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C4"]
     },
     {
       "adr": 9,
       "baseline_key": [9,"sha256:32934fe5b8af881021dfd1872b6582c8631d3e7f8f58c27c7e4a4a1c64c367d9"],
-      "body": "Producer-supplied parser IR and diagnostic schema hashes match the checked-in\nABC schemas used for validation, unless a registered compatibility rule\nexists.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0009-C5 \u2014 structural-invariant:** Pinned AAT mapping plus adapter\nregistry agreement governs AAT parser-IR conversion compatibility, while\ndiagnostic schema identity requires exact-current equality.",
+      "claim_id": "ADR-0009-C5",
+      "claim_kind": "structural-invariant",
       "criterion_index": 4,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -2441,14 +2441,14 @@
       "family": "foundation-runtime-identity",
       "file": "0009-imported-output-materialization.md",
       "planned_evidence_boundaries": ["parser-schema-compatibility-and-diagnostic-match"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C5"]
     },
     {
       "adr": 9,
       "baseline_key": [9,"sha256:331ef38a78bbb0e51ec03c086f217e8acd98e210f6174fc7a64e833042ae0ee2"],
-      "body": "The design-bundle validation command materializes the fixture into a temporary\ndirectory and validates the generated manifests.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0009-C6 \u2014 fixture-behavior:** Design-bundle fixture orchestration\nmaterializes into a temporary directory and validates both generated\nmanifests.",
+      "claim_id": "ADR-0009-C6",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 5,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -2456,14 +2456,14 @@
       "family": "foundation-runtime-identity",
       "file": "0009-imported-output-materialization.md",
       "planned_evidence_boundaries": ["temporary-materialization-orchestration"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C6"]
     },
     {
       "adr": 9,
       "baseline_key": [9,"sha256:d904804f6d05dda54eb08705a299b7dbee66b8e55c474da8ce86d6d60c5ff262"],
-      "body": "The Bash wrapper remains a compatibility shim; Clojure owns the logic.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0009-C7 \u2014 structural-invariant:** The Bash entry point contains\ndelegation only; Clojure owns materialization logic.",
+      "claim_id": "ADR-0009-C7",
+      "claim_kind": "structural-invariant",
       "criterion_index": 6,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -2471,29 +2471,29 @@
       "family": "foundation-runtime-identity",
       "file": "0009-imported-output-materialization.md",
       "planned_evidence_boundaries": ["wrapper-delegation"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0009-C7"]
     },
     {
       "adr": 10,
       "baseline_key": [10,"sha256:4276aca66a1bcc292305c1ac71211544debabb8f4855d135cf7a45f6bcacff31"],
-      "body": "Materialized manifests contain `manifest_schema_hash` equal to the\nSHA-256\/JCS hash of the bundled manifest schema JSON value.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0010-C1 \u2014 fixture-behavior:** Both materialized manifests contain\n`manifest_schema_hash` equal to the SHA-256\/JCS hash of the parsed bundled\nmanifest schema JSON value, as asserted by\n`test\/abc\/tools\/materialize_import_test.clj`.",
+      "claim_id": "ADR-0010-C1",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 0,
       "disposition": "retain",
       "disposition_rationale": null,
-      "evidence_paths": [],
+      "evidence_paths": ["test\/abc\/tools\/materialize_import_test.clj"],
       "family": "foundation-runtime-identity",
       "file": "0010-manifest-identity-hardening.md",
       "planned_evidence_boundaries": ["manifest-schema-jcs-hash"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C1"]
     },
     {
       "adr": 10,
       "baseline_key": [10,"sha256:8dd0eec558392f721426161f0a47d017634e5483ed09dc8085d4a48a2ffb00ca"],
-      "body": "Parser IR and warning materialized manifests have distinct `artifact_id`\nvalues.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0010-C2 \u2014 fixture-behavior:** Materialized parser-IR and warnings\nmanifests have distinct `artifact_id` values.",
+      "claim_id": "ADR-0010-C2",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 1,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -2501,29 +2501,29 @@
       "family": "foundation-runtime-identity",
       "file": "0010-manifest-identity-hardening.md",
       "planned_evidence_boundaries": ["distinct-materialized-artifact-ids"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C2"]
     },
     {
       "adr": 10,
       "baseline_key": [10,"sha256:aa30186391c6a310234f71e0cbf5b69000a6609f2fe396acb0d98c4434d52175"],
-      "body": "`test\/abc\/tools\/materialize_import_test.clj` covers `v0-identity-json`,\nschema hashing, and generated manifest identity fields.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0010-C3 \u2014 fixture-behavior:** V0 identity JSON preserves the asserted\nnull, escaping, and canonical member behavior used by generated manifest\nidentity fields.",
+      "claim_id": "ADR-0010-C3",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 2,
       "disposition": "correct",
       "disposition_rationale": "Replace 'test covers' prose with the manifest identity behavior it asserts.",
-      "evidence_paths": ["test\/abc\/tools\/materialize_import_test.clj"],
+      "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0010-manifest-identity-hardening.md",
       "planned_evidence_boundaries": ["materialized-manifest-identity-behavior"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C3"]
     },
     {
       "adr": 10,
       "baseline_key": [10,"sha256:f2fd52b030dc92074964127d3bd207aa2fd18426b8e2945aa6c41d71e99b2801"],
-      "body": "Validation fails if producer-supplied parser IR or diagnostic schema hashes\ndisagree with the checked-in ABC schemas and no compatibility rule exists.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0010-C4 \u2014 structural-invariant:** Parser-IR schema mismatch without a\nregistered compatibility rule and diagnostic schema exact-current mismatch\nare independently rejected.",
+      "claim_id": "ADR-0010-C4",
+      "claim_kind": "structural-invariant",
       "criterion_index": 3,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -2531,14 +2531,14 @@
       "family": "foundation-runtime-identity",
       "file": "0010-manifest-identity-hardening.md",
       "planned_evidence_boundaries": ["schema-hash-mismatch-rejection"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C4"]
     },
     {
       "adr": 10,
       "baseline_key": [10,"sha256:b65937a308a4582274e59a2a78e736aedf0753d7d64d70f2dfad3ff4922c497d"],
-      "body": "`nix run .#validate-design-bundle` still validates materialized manifests.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0010-C5 \u2014 operational-behavior:** The supported\n`nix run .#validate-design-bundle` app exits zero while validating\nmaterialized manifests.",
+      "claim_id": "ADR-0010-C5",
+      "claim_kind": "operational-behavior",
       "criterion_index": 4,
       "disposition": "correct",
       "disposition_rationale": "Narrow the operational claim to the supported Nix app validating materialized manifests.",
@@ -2546,52 +2546,52 @@
       "family": "foundation-runtime-identity",
       "file": "0010-manifest-identity-hardening.md",
       "planned_evidence_boundaries": ["supported-nix-app-manifest-validation"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0010-C5"]
     },
     {
       "adr": 11,
       "baseline_key": [11,"sha256:455ea3916f52e9f1ae5115bba514eadc97b3ed49a6d95efdf29659886158bdef"],
-      "body": "`nix run .#validate-design-bundle` materializes parser IR and warning manifests into a temporary directory and validates both against `schemas\/manifest.schema.json`.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0011-C1 \u2014 operational-behavior:** The supported\n`nix run .#validate-design-bundle` app materializes parser-IR and warnings\nmanifests into a temporary directory and validates both against\n`schemas\/manifest.schema.json`, with fixture orchestration asserted by\n`test\/abc\/tools\/validate_design_bundle_test.clj`.",
+      "claim_id": "ADR-0011-C1",
+      "claim_kind": "operational-behavior",
       "criterion_index": 0,
       "disposition": "correct",
       "disposition_rationale": "Narrow to the supported Nix app and its temporary materialization and schema-validation behavior.",
-      "evidence_paths": [],
+      "evidence_paths": ["test\/abc\/tools\/validate_design_bundle_test.clj"],
       "family": "foundation-runtime-identity",
       "file": "0011-generated-fixture-policy.md",
       "planned_evidence_boundaries": ["supported-nix-app-temporary-materialization"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0011-C1"]
     },
     {
       "adr": 11,
       "baseline_key": [11,"sha256:f92fb00d7f506d651f02550fe60f89bf1a14faac120e45990927d994a1aa80f4"],
-      "body": "`test\/abc\/tools\/materialize_import_test.clj` proves deterministic JSON output\nfor maps with differently ordered input keys.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0011-C2 \u2014 fixture-behavior:** Deterministic JSON writing produces\nidentical ordered bytes from differently ordered map inputs.",
+      "claim_id": "ADR-0011-C2",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 1,
       "disposition": "retain",
       "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/materialize_import_test.clj"],
+      "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0011-generated-fixture-policy.md",
       "planned_evidence_boundaries": ["ordered-map-deterministic-json"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0011-C2"]
     },
     {
       "adr": 11,
       "baseline_key": [11,"sha256:1f95118d755dd472bfb4eb18b4754b45458b58bb62082caeb20a67d3d55bf91c"],
-      "body": "`test\/abc\/tools\/materialize_import_test.clj` proves two materialization runs\nwith the same inputs produce byte-identical manifest files.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0011-C3 \u2014 fixture-behavior:** Two materialization runs with identical\ninputs produce byte-identical manifest files.",
+      "claim_id": "ADR-0011-C3",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 2,
       "disposition": "retain",
       "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/materialize_import_test.clj"],
+      "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0011-generated-fixture-policy.md",
       "planned_evidence_boundaries": ["two-run-byte-identity"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0011-C3"]
     },
     {
       "adr": 12,
@@ -3931,24 +3931,24 @@
     {
       "adr": 33,
       "baseline_key": [33,"sha256:5f0ee5797b8e45e6292ed4015d791002b96ec3d18e980f699de73ce3203bf2d0"],
-      "body": "`schemas\/source-bundle.schema.json` validates a canonical manifest covering\nevery non-directory member;\n`fixtures\/source-bundle\/abc-source-bundle-v1-known-answer.json`,\n`test\/abc\/tools\/source_bundle_test.clj`, and\n`test\/abc\/tools\/schema_test.clj` pin the producer, canonical bytes\/digest,\nand schema contracts.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0033-C1 \u2014 fixture-behavior:** The source-bundle schema validates the\ncanonical all-member manifest fixture, as asserted by\n`test\/abc\/tools\/source_bundle_test.clj`.",
+      "claim_id": "ADR-0033-C1",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 0,
       "disposition": "retain",
       "disposition_rationale": null,
-      "evidence_paths": ["fixtures\/source-bundle\/abc-source-bundle-v1-known-answer.json","test\/abc\/tools\/schema_test.clj","test\/abc\/tools\/source_bundle_test.clj"],
+      "evidence_paths": ["test\/abc\/tools\/source_bundle_test.clj"],
       "family": "foundation-runtime-identity",
       "file": "0033-source-bundle-identity.md",
       "planned_evidence_boundaries": ["canonical-all-member-schema-fixture"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C1"]
     },
     {
       "adr": 33,
       "baseline_key": [33,"sha256:0959a52cefbc2f84774ffa2aa1e90570683a76a2ed1c8d475c5aef6f2d3e5cda"],
-      "body": "The Clojure producer reproduces one checked-in canonical identity fixture and\n`bundle_hash` byte-for-byte. Rust remains a consumer until a conformant\nimplementation reproduces that fixture; it must not author bundle identity.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0033-C2 \u2014 fixture-behavior:** The Clojure producer reproduces the\nchecked-in canonical identity bytes and `bundle_hash` byte-for-byte.",
+      "claim_id": "ADR-0033-C2",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 1,
       "disposition": "correct",
       "disposition_rationale": "Narrow to Clojure known-answer reproduction; keep the Rust consumer\/producer authority rule in Decision rather than claiming the absence of a second producer as a durable observation.",
@@ -3956,29 +3956,29 @@
       "family": "foundation-runtime-identity",
       "file": "0033-source-bundle-identity.md",
       "planned_evidence_boundaries": ["clojure-known-answer-reproduction"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C2"]
     },
     {
       "adr": 33,
       "baseline_key": [33,"sha256:843010d484c7dd27c661023f31c641d4d5c1830fc89a58ec126cd1771fcf93b4"],
-      "body": "`test\/abc\/sim\/content_sim_test.clj` proves metadata-only repacks preserve\n`bundle_hash` while image changes rotate it.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0033-C3 \u2014 fixture-behavior:** Metadata-only repacks preserve\n`bundle_hash`, while image changes rotate it.",
+      "claim_id": "ADR-0033-C3",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 2,
       "disposition": "retain",
       "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/sim\/content_sim_test.clj"],
+      "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0033-source-bundle-identity.md",
       "planned_evidence_boundaries": ["repack-and-image-evolution"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C3"]
     },
     {
       "adr": 33,
       "baseline_key": [33,"sha256:4ade2d07b6cd4e988cabe9473ee829f716d89f60eb00bcc42d2eb4393482d514"],
-      "body": "Parser-IR records both `work_content_hash = bundle_hash` and the independently\nverified `primary_text_hash`.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0033-C4 \u2014 fixture-behavior:** Parser-IR records\n`work_content_hash = bundle_hash` and the independently verified\n`primary_text_hash` in their distinct roles.",
+      "claim_id": "ADR-0033-C4",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 3,
       "disposition": "retain",
       "disposition_rationale": null,
@@ -3986,29 +3986,29 @@
       "family": "foundation-runtime-identity",
       "file": "0033-source-bundle-identity.md",
       "planned_evidence_boundaries": ["parser-ir-bundle-and-primary-roles"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C4"]
     },
     {
       "adr": 33,
       "baseline_key": [33,"sha256:d09bfcf0212a3872e0eafa978200adb85aec3f0bc17bd64d3c89df5bd6ff88c6"],
-      "body": "Source snapshot validation checks each hash role by its own construction and\nnever requires cross-role equality, as pinned by\n`test\/abc\/tools\/materialize_source_snapshot_test.clj`.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0033-C5 \u2014 fixture-behavior:** Source snapshot validation checks archive,\ncanonical bundle, primary member, and parser-input hashes by their own\nconstructions without cross-role equality.",
+      "claim_id": "ADR-0033-C5",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 4,
       "disposition": "retain",
       "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/materialize_source_snapshot_test.clj"],
+      "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0033-source-bundle-identity.md",
       "planned_evidence_boundaries": ["role-specific-snapshot-validation"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C5"]
     },
     {
       "adr": 33,
       "baseline_key": [33,"sha256:ffa31a0ca8353317bfd1af26c58f8206d4db07772c26b3470438bba626a094ad"],
-      "body": "P16.3 passes without `expected-failure*`; D7 is marked fixed with dated\nevidence.",
-      "claim_id": null,
-      "claim_kind": null,
+      "body": "**ADR-0033-C6 \u2014 fixture-behavior:** P16.3 passes without an\n`expected-failure*` gate.",
+      "claim_id": "ADR-0033-C6",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 5,
       "disposition": "correct",
       "disposition_rationale": "Split into ungated P16.3 and a dated D7 fixed-state structural observation.",
@@ -4016,57 +4016,87 @@
       "family": "foundation-runtime-identity",
       "file": "0033-source-bundle-identity.md",
       "planned_evidence_boundaries": ["ungated-p16-3","dated-d7-fixed-state"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C6","ADR-0033-C7"]
+    },
+    {
+      "adr": 33,
+      "baseline_key": [33,"sha256:ffa31a0ca8353317bfd1af26c58f8206d4db07772c26b3470438bba626a094ad"],
+      "body": "**ADR-0033-C7 \u2014 structural-invariant:** D7 is `:fixed` with dated\n`2026-07-12` structural evidence.",
+      "claim_id": "ADR-0033-C7",
+      "claim_kind": "structural-invariant",
+      "criterion_index": 6,
+      "disposition": "correct",
+      "disposition_rationale": "Split into ungated P16.3 and a dated D7 fixed-state structural observation.",
+      "evidence_paths": [],
+      "family": "foundation-runtime-identity",
+      "file": "0033-source-bundle-identity.md",
+      "planned_evidence_boundaries": ["ungated-p16-3","dated-d7-fixed-state"],
+      "resulting_claim_ids": ["ADR-0033-C6","ADR-0033-C7"]
     },
     {
       "adr": 33,
       "baseline_key": [33,"sha256:2c2cc9e6482eecff33bce6934d3d1823dfa065511e45202942214deadc1451af"],
-      "body": "Historical manifests and worksets remain readable without reinterpretation.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 6,
+      "body": "**ADR-0033-C8 \u2014 fixture-behavior:** A complete legacy-shaped workset fixture\nremains readable without reinterpretation.",
+      "claim_id": "ADR-0033-C8",
+      "claim_kind": "fixture-behavior",
+      "criterion_index": 7,
       "disposition": "correct",
       "disposition_rationale": "Narrow to complete legacy-shaped workset fixture readability and move broad historical-manifests prose to Historical Evidence.",
       "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0033-source-bundle-identity.md",
       "planned_evidence_boundaries": ["legacy-shaped-workset-fixture-readability"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C8"]
     },
     {
       "adr": 33,
       "baseline_key": [33,"sha256:9185a2cf95bbf10d77d5ee90ef5bc49200905679677c72649858962297878f64"],
-      "body": "Archive member-count, per-member byte, and total-uncompressed-byte limits are\nselected from measured corpus evidence and enforced before production use;\n`test\/abc\/tools\/source_bundle_report_test.clj` validates the report contract.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 7,
+      "body": "**ADR-0033-C9 \u2014 corpus-behavior:** The pinned source-bundle corpus report for\nAozora commit `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` reproduces its\nmeasured maxima.",
+      "claim_id": "ADR-0033-C9",
+      "claim_kind": "corpus-behavior",
+      "criterion_index": 8,
       "disposition": "correct",
       "disposition_rationale": "Split into pinned corpus-report maxima and member-count, per-member-byte, and total-byte enforcement at both declared-size and streamed-byte boundaries.",
-      "evidence_paths": ["test\/abc\/tools\/source_bundle_report_test.clj"],
+      "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0033-source-bundle-identity.md",
       "planned_evidence_boundaries": ["pinned-source-bundle-corpus-maxima","archive-limit-enforcement"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C9","ADR-0033-C10"]
+    },
+    {
+      "adr": 33,
+      "baseline_key": [33,"sha256:9185a2cf95bbf10d77d5ee90ef5bc49200905679677c72649858962297878f64"],
+      "body": "**ADR-0033-C10 \u2014 fixture-behavior:** Member-count, per-member-byte, and total\nuncompressed-byte limits are enforced at both declared-size and streamed-byte\nboundaries.",
+      "claim_id": "ADR-0033-C10",
+      "claim_kind": "fixture-behavior",
+      "criterion_index": 9,
+      "disposition": "correct",
+      "disposition_rationale": "Split into pinned corpus-report maxima and member-count, per-member-byte, and total-byte enforcement at both declared-size and streamed-byte boundaries.",
+      "evidence_paths": [],
+      "family": "foundation-runtime-identity",
+      "file": "0033-source-bundle-identity.md",
+      "planned_evidence_boundaries": ["pinned-source-bundle-corpus-maxima","archive-limit-enforcement"],
+      "resulting_claim_ids": ["ADR-0033-C9","ADR-0033-C10"]
     },
     {
       "adr": 33,
       "baseline_key": [33,"sha256:524dd9590000bfc7f77baa3f27497e677d04b836882bae24f131b8443cc6abdd"],
-      "body": "Tests pin both strict atomic-abort and best-effort counted-failure admission\ndispositions, and release validation rejects any nonzero derive-failure\ncount.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 8,
+      "body": "**ADR-0033-C11 \u2014 fixture-behavior:** Strict admission failure aborts\natomically; best-effort admission records counted failures with\n`release_admissible=false`, continues only the partial workflow, and exits\nthe build with status 1.",
+      "claim_id": "ADR-0033-C11",
+      "claim_kind": "fixture-behavior",
+      "criterion_index": 10,
       "disposition": "correct",
       "disposition_rationale": "Narrow to exact strict atomic abort and best-effort counted non-release-admissible behavior: release_admissible=false, partial workflow, and build exit 1, without inventing a separate release validator.",
       "evidence_paths": [],
       "family": "foundation-runtime-identity",
       "file": "0033-source-bundle-identity.md",
       "planned_evidence_boundaries": ["strict-atomic-abort","best-effort-counted-non-release-admissible"],
-      "resulting_claim_ids": []
+      "resulting_claim_ids": ["ADR-0033-C11"]
     }],
   "families":
   {
     "diagrams-governance": 8,
-    "foundation-runtime-identity": 33,
+    "foundation-runtime-identity": 35,
     "parser-ir-publication": 36,
     "schema-rdf-tei": 31,
     "temporal-person-ingest": 36,

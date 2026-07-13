@@ -4,42 +4,6 @@
   "problems": [
     {
       "criterion-index": 0,
-      "file": "0001-manifest-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0001-manifest-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0001-manifest-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 3,
-      "file": "0001-manifest-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 4,
-      "file": "0001-manifest-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 5,
-      "file": "0001-manifest-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
       "file": "0002-parser-evaluation.md",
       "kind": "missing-claim-header",
       "message": "Accepted criterion requires an exact claim header"
@@ -167,126 +131,6 @@
     {
       "criterion-index": 4,
       "file": "0007-external-parser-validation-boundary.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
-      "file": "0008-abc-tools-runtime.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0008-abc-tools-runtime.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0008-abc-tools-runtime.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 3,
-      "file": "0008-abc-tools-runtime.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 4,
-      "file": "0008-abc-tools-runtime.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
-      "file": "0009-imported-output-materialization.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0009-imported-output-materialization.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0009-imported-output-materialization.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 3,
-      "file": "0009-imported-output-materialization.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 4,
-      "file": "0009-imported-output-materialization.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 5,
-      "file": "0009-imported-output-materialization.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 6,
-      "file": "0009-imported-output-materialization.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
-      "file": "0010-manifest-identity-hardening.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0010-manifest-identity-hardening.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0010-manifest-identity-hardening.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 3,
-      "file": "0010-manifest-identity-hardening.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 4,
-      "file": "0010-manifest-identity-hardening.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
-      "file": "0011-generated-fixture-policy.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0011-generated-fixture-policy.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0011-generated-fixture-policy.md",
       "kind": "missing-claim-header",
       "message": "Accepted criterion requires an exact claim header"
     },
@@ -825,307 +669,438 @@
       "message": "Accepted criterion requires an exact claim header"
     },
     {
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0007-external-parser-validation-boundary.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0007-external-parser-validation-boundary.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0015-temporal-modeling.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0015-temporal-modeling.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0016-edtf-level1-decade-century.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0016-edtf-level1-decade-century.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0023-owned-aat-parser-ir-mapping.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0023-owned-aat-parser-ir-mapping.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0030-aozora-parser-selection.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0030-aozora-parser-selection.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0031-adr-governance-validation.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0031-adr-governance-validation.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0032-parser-fork-hard-detach.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0032-parser-fork-hard-detach.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "claim-id": "ADR-0001-C1",
+      "criterion-index": 0,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0001-C2",
+      "criterion-index": 1,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0001-C3",
+      "criterion-index": 2,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0001-C4",
+      "criterion-index": 3,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0001-C5",
+      "criterion-index": 4,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0008-C1",
+      "criterion-index": 0,
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0008-C2",
+      "criterion-index": 1,
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0008-C3",
+      "criterion-index": 2,
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0008-C4",
+      "criterion-index": 3,
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0009-C1",
+      "criterion-index": 0,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0009-C2",
+      "criterion-index": 1,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0009-C3",
+      "criterion-index": 2,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0009-C4",
+      "criterion-index": 3,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0009-C5",
+      "criterion-index": 4,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0009-C6",
+      "criterion-index": 5,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0009-C7",
+      "criterion-index": 6,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0010-C1",
+      "criterion-index": 0,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0010-C2",
+      "criterion-index": 1,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0010-C3",
+      "criterion-index": 2,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0010-C4",
+      "criterion-index": 3,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0010-C5",
+      "criterion-index": 4,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0011-C1",
+      "criterion-index": 0,
+      "file": "0011-generated-fixture-policy.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0011-C2",
+      "criterion-index": 1,
+      "file": "0011-generated-fixture-policy.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0011-C3",
+      "criterion-index": 2,
+      "file": "0011-generated-fixture-policy.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0033-C1",
       "criterion-index": 0,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
+      "claim-id": "ADR-0033-C2",
       "criterion-index": 1,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
+      "claim-id": "ADR-0033-C3",
       "criterion-index": 2,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
+      "claim-id": "ADR-0033-C4",
       "criterion-index": 3,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
+      "claim-id": "ADR-0033-C5",
       "criterion-index": 4,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
+      "claim-id": "ADR-0033-C6",
       "criterion-index": 5,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
+      "claim-id": "ADR-0033-C7",
       "criterion-index": 6,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
+      "claim-id": "ADR-0033-C8",
       "criterion-index": 7,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
+      "claim-id": "ADR-0033-C9",
       "criterion-index": 8,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
-      "file": "0001-manifest-identity.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0001-manifest-identity.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0002-parser-evaluation.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0002-parser-evaluation.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0007-external-parser-validation-boundary.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0007-external-parser-validation-boundary.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0008-abc-tools-runtime.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0008-abc-tools-runtime.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0009-imported-output-materialization.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0009-imported-output-materialization.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0010-manifest-identity-hardening.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0010-manifest-identity-hardening.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0011-generated-fixture-policy.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0011-generated-fixture-policy.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0015-temporal-modeling.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0015-temporal-modeling.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0016-edtf-level1-decade-century.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0016-edtf-level1-decade-century.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0020-person-identity-drift-data-model.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0020-person-identity-drift-data-model.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0021-person-identity-drift-harness.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0021-person-identity-drift-harness.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0022-upstream-ingest-drift-awareness.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0022-upstream-ingest-drift-awareness.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0023-owned-aat-parser-ir-mapping.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0023-owned-aat-parser-ir-mapping.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0024-parser-ir-span-and-ruby-direction.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0024-parser-ir-span-and-ruby-direction.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0025-parser-ir-publication-rendering.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0025-parser-ir-publication-rendering.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0030-aozora-parser-selection.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0030-aozora-parser-selection.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0031-adr-governance-validation.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0031-adr-governance-validation.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0032-parser-fork-hard-detach.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0032-parser-fork-hard-detach.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
+      "claim-id": "ADR-0033-C10",
+      "criterion-index": 9,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     },
     {
+      "claim-id": "ADR-0033-C11",
+      "criterion-index": 10,
       "file": "0033-source-bundle-identity.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
     }]
 }

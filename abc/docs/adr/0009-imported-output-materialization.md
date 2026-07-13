@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-07-03
+Validation scope: fixture
+Release authority: development
 Supersedes: none
 Amended by: ADR 0010
 Source: `docs/adr/0007-external-parser-validation-boundary.md` and `docs/adr/0008-abc-tools-runtime.md`
@@ -79,20 +81,24 @@ not the ArtifactID canonicalization algorithm.
 
 ## Acceptance Criteria
 
-- Generated parser IR and warnings manifests validate against
-  `schemas/manifest.schema.json`, covered by
-  `test/abc/tools/materialize_import_test.clj`.
-- Generated content hashes match the actual imported files.
-- The parser-IR manifest includes `divergence.json` as a
-  `mapping-divergence` sidecar when present, falling back to legacy
-  `divergence.jsonl`.
-- Generated artifact IDs are distinct from content hashes.
-- Producer-supplied parser IR and diagnostic schema hashes match the checked-in
-  ABC schemas used for validation, unless a registered compatibility rule
-  exists.
-- The design-bundle validation command materializes the fixture into a temporary
-  directory and validates the generated manifests.
-- The Bash wrapper remains a compatibility shim; Clojure owns the logic.
+- **ADR-0009-C1 — fixture-behavior:** Fresh parser-IR and warnings manifests
+  both validate against `schemas/manifest.schema.json`, as asserted by
+  `test/abc/tools/foundation_evidence_test.clj`.
+- **ADR-0009-C2 — fixture-behavior:** Generated content hashes equal the exact
+  imported parser-IR and warnings bytes.
+- **ADR-0009-C3 — fixture-behavior:** Materialization selects
+  `divergence.json` as the canonical `mapping-divergence` sidecar and falls
+  back to legacy `divergence.jsonl` only when the canonical file is absent.
+- **ADR-0009-C4 — fixture-behavior:** Each generated parser-IR and warnings
+  `artifact_id` is distinct from its own `content.content_hash`.
+- **ADR-0009-C5 — structural-invariant:** Pinned AAT mapping plus adapter
+  registry agreement governs AAT parser-IR conversion compatibility, while
+  diagnostic schema identity requires exact-current equality.
+- **ADR-0009-C6 — fixture-behavior:** Design-bundle fixture orchestration
+  materializes into a temporary directory and validates both generated
+  manifests.
+- **ADR-0009-C7 — structural-invariant:** The Bash entry point contains
+  delegation only; Clojure owns materialization logic.
 
 ## Rollback
 

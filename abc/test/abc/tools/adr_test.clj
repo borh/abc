@@ -657,6 +657,8 @@
         problems (adr/validate-repository ".")
         missing-claim-count (count (filter #(= :missing-claim-header (:kind %))
                                            problems))
+        missing-evidence-count (count (filter #(= :missing-evidence (:kind %))
+                                              problems))
         dependency-paths (->> problems
                               (filter #(= :noncanonical-dependency-path
                                           (:kind %)))
@@ -668,9 +670,10 @@
            (kinds problems)))
     (is (= 26 (count accepted)))
     (is (= 146 (count accepted-criteria)))
-    (is (= 146 missing-claim-count))
+    (is (= 111 missing-claim-count))
+    (is (zero? missing-evidence-count))
     (is (= (+ missing-scope-count missing-authority-count
-              (count accepted-criteria))
+              missing-claim-count missing-evidence-count)
            (count problems)))
     (is (= [] dependency-paths))))
 

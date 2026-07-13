@@ -1,6 +1,8 @@
 (ns abc.tools.adr-evidence-inventory-test
-  (:require [abc.tools.adr-claim-migration :as migration]
+  (:require [abc.tools.adr :as adr]
+            [abc.tools.adr-claim-migration :as migration]
             [abc.tools.adr-evidence-inventory :as inventory]
+            [abc.tools.files :as files]
             [abc.tools.json :as json]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]]))
@@ -94,3 +96,29 @@
     (is (= (slurp first-file) (slurp second-file)))
     (is (= (inventory/inventory-value sample-adrs sample-state)
            (json/read-json-file first-file)))))
+
+(deftest foundation-stage-a-claim-and-lifecycle-contract-test
+  (let [expected-ranges {1 5, 8 4, 9 7, 10 5, 11 3, 33 11}
+        expected-ids (set (mapcat (fn [[adr count]]
+                                    (map #(format "ADR-%04d-C%d" adr %)
+                                         (range 1 (inc count))))
+                                  expected-ranges))
+        expected-lifecycle {1 ["fixture" "publication"]
+                            8 ["operational" "development"]
+                            9 ["fixture" "development"]
+                            10 ["fixture" "publication"]
+                            11 ["fixture" "development"]
+                            33 ["full-corpus" "publication"]}
+        adrs (into {} (map (juxt :num identity) (adr/parse-all "docs/adr")))
+        ledger (files/read-edn "docs/adr/adr-claim-migration.edn")
+        foundation-rows (filter (fn [[[adr _] _]] (contains? expected-ranges adr))
+                                (:entries ledger))
+        live-ids (set (mapcat (comp :resulting-claim-ids val) foundation-rows))]
+    (is (= 35 (count foundation-rows)))
+    (is (= expected-ids live-ids))
+    (doseq [[adr [scope authority]] expected-lifecycle]
+      (is (= scope (get-in adrs [adr :fields "Validation scope"])))
+      (is (= authority (get-in adrs [adr :fields "Release authority"]))))
+    (is (= expected-ids
+           (set (keep :claim-id
+                      (mapcat (comp :criteria adrs) (keys expected-ranges))))))))

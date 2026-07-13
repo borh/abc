@@ -3,6 +3,8 @@
 Date: 2026-04-26
 Status: Accepted
 Accepted: 2026-04-28
+Validation scope: fixture
+Release authority: development
 Depends on: ADR 0001, ADR 0008, ADR 0009, ADR 0010
 
 ## Implementation Status
@@ -53,11 +55,15 @@ Byte-for-byte comparison between two generated outputs is stricter than structur
 
 ## Acceptance Criteria
 
-- `nix run .#validate-design-bundle` materializes parser IR and warning manifests into a temporary directory and validates both against `schemas/manifest.schema.json`.
-- `test/abc/tools/materialize_import_test.clj` proves deterministic JSON output
-  for maps with differently ordered input keys.
-- `test/abc/tools/materialize_import_test.clj` proves two materialization runs
-  with the same inputs produce byte-identical manifest files.
+- **ADR-0011-C1 — operational-behavior:** The supported
+  `nix run .#validate-design-bundle` app materializes parser-IR and warnings
+  manifests into a temporary directory and validates both against
+  `schemas/manifest.schema.json`, with fixture orchestration asserted by
+  `test/abc/tools/validate_design_bundle_test.clj`.
+- **ADR-0011-C2 — fixture-behavior:** Deterministic JSON writing produces
+  identical ordered bytes from differently ordered map inputs.
+- **ADR-0011-C3 — fixture-behavior:** Two materialization runs with identical
+  inputs produce byte-identical manifest files.
 
 ## Rollback
 

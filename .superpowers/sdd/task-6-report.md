@@ -38,3 +38,38 @@
 ## Concerns
 
 - None.
+
+---
+
+# ADR Evidence Migration Task 6: Foundation Stage A
+
+## Result
+
+- Frozen baseline verification passed before edits: 9 tests, 85 assertions.
+- RED corpus contract failed with 14 expected lifecycle/claim/ledger failures.
+- Six foundation ADRs now expose the approved lifecycle fields and exactly 35
+  typed claims; all 35 reviewed baseline rows map to the final claim-ID union.
+- The 36 frozen normative sections remain byte-identical under the baseline
+  guard.
+- Inventory is 146 baseline criteria / 146 live criteria, with exactly 35 in
+  `foundation-runtime-identity` and zero unclassified.
+- Governance audit exits zero in audit mode. Foundation debt is exactly 35
+  `missing-claim-evidence` problems and no other foundation problem kind.
+
+## Verification
+
+- Task 6 focused suites: 63 tests, 222 assertions, 0 failures.
+- `nix build ./abc#checks.x86_64-linux.clj-kondo`: passed with zero errors and
+  the same nine existing warnings; all Clojure files formatted correctly.
+- `git diff --check`: passed.
+- `just validate-migration` reached the schema mirror gate and failed on
+  `isolated Nix schema mirror drift: adr-evidence-run.schema.json`, between
+  `abc/schemas/adr-evidence-run.schema.json` and
+  `ab-validator/data/abc-schemas/nix-schemas/adr-evidence-run.schema.json`.
+  This is recorded as branch-level integration debt to repair before Task 7;
+  Task 6 did not fold the schema-mirror repair into the Stage A claim commit.
+
+## Scope guard
+
+No evidence descriptors, run bundles, registration template, or evidence
+registry entries were created or modified. Stage B has not begun.

@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-07-03
+Validation scope: fixture
+Release authority: publication
 Supersedes: none
 Amends: ADR 0001, ADR 0009
 Source: `docs/adr/0001-manifest-identity.md` and `docs/adr/0009-imported-output-materialization.md`
@@ -72,15 +74,21 @@ algorithm.
 
 ## Acceptance Criteria
 
-- Materialized manifests contain `manifest_schema_hash` equal to the
-  SHA-256/JCS hash of the bundled manifest schema JSON value.
-- Parser IR and warning materialized manifests have distinct `artifact_id`
-  values.
-- `test/abc/tools/materialize_import_test.clj` covers `v0-identity-json`,
-  schema hashing, and generated manifest identity fields.
-- Validation fails if producer-supplied parser IR or diagnostic schema hashes
-  disagree with the checked-in ABC schemas and no compatibility rule exists.
-- `nix run .#validate-design-bundle` still validates materialized manifests.
+- **ADR-0010-C1 — fixture-behavior:** Both materialized manifests contain
+  `manifest_schema_hash` equal to the SHA-256/JCS hash of the parsed bundled
+  manifest schema JSON value, as asserted by
+  `test/abc/tools/materialize_import_test.clj`.
+- **ADR-0010-C2 — fixture-behavior:** Materialized parser-IR and warnings
+  manifests have distinct `artifact_id` values.
+- **ADR-0010-C3 — fixture-behavior:** V0 identity JSON preserves the asserted
+  null, escaping, and canonical member behavior used by generated manifest
+  identity fields.
+- **ADR-0010-C4 — structural-invariant:** Parser-IR schema mismatch without a
+  registered compatibility rule and diagnostic schema exact-current mismatch
+  are independently rejected.
+- **ADR-0010-C5 — operational-behavior:** The supported
+  `nix run .#validate-design-bundle` app exits zero while validating
+  materialized manifests.
 
 ## Rollback
 

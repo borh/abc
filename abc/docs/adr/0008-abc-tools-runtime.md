@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-04-28
+Validation scope: operational
+Release authority: development
 Supersedes: none
 Amends: ADR 0006
 Source: `docs/adr/0006-v0-design-bundle-validation.md`
@@ -62,13 +64,16 @@ run-summary checks, and external command reporting.
 
 ## Acceptance Criteria
 
-- `clojure -M:abc/validate-design-bundle` validates the current design bundle.
-- `bin/validate-design-bundle.sh` calls the Clojure tool rather than duplicating
-  validation logic.
-- `nix run .#validate-design-bundle` works locally.
-- CI continues to run the same validation command through Nix.
-- Pure validation helpers are covered by
-  `test/abc/tools/validate_design_bundle_test.clj`.
+- **ADR-0008-C1 — structural-invariant:** `bin/validate-design-bundle.sh`
+  delegates to the Clojure tool without duplicating validation logic, as
+  asserted by `test/abc/tools/foundation_evidence_test.clj`.
+- **ADR-0008-C2 — operational-behavior:** The supported
+  `nix run .#validate-design-bundle` app exits zero.
+- **ADR-0008-C3 — structural-invariant:** The validation workflow checks out
+  the repository before invoking the exact repository-root Nix design-bundle
+  command in the same job.
+- **ADR-0008-C4 — structural-invariant:** The named pure validation-helper read
+  set exactly equals `abc.tools.validate-design-bundle/evidence-input-paths`.
 
 ## Rollback
 

@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-07-12
 Accepted: 2026-07-12
+Validation scope: full-corpus
+Release authority: publication
 Supersedes: none
 Amends: ADR 0001 [scope: work_content_hash equality relation]
 Depends on: ADR 0010, ADR 0023, ADR 0025
@@ -140,28 +142,40 @@ whole-work identity, because the adapter receives only the primary text bytes.
 
 ## Acceptance Criteria
 
-- `schemas/source-bundle.schema.json` validates a canonical manifest covering
-  every non-directory member;
-  `fixtures/source-bundle/abc-source-bundle-v1-known-answer.json`,
-  `test/abc/tools/source_bundle_test.clj`, and
-  `test/abc/tools/schema_test.clj` pin the producer, canonical bytes/digest,
-  and schema contracts.
-- The Clojure producer reproduces one checked-in canonical identity fixture and
-  `bundle_hash` byte-for-byte. Rust remains a consumer until a conformant
-  implementation reproduces that fixture; it must not author bundle identity.
-- `test/abc/sim/content_sim_test.clj` proves metadata-only repacks preserve
-  `bundle_hash` while image changes rotate it.
-- Parser-IR records both `work_content_hash = bundle_hash` and the independently
-  verified `primary_text_hash`.
-- Source snapshot validation checks each hash role by its own construction and
-  never requires cross-role equality, as pinned by
-  `test/abc/tools/materialize_source_snapshot_test.clj`.
-- P16.3 passes without `expected-failure*`; D7 is marked fixed with dated
-  evidence.
-- Historical manifests and worksets remain readable without reinterpretation.
-- Archive member-count, per-member byte, and total-uncompressed-byte limits are
-  selected from measured corpus evidence and enforced before production use;
-  `test/abc/tools/source_bundle_report_test.clj` validates the report contract.
-- Tests pin both strict atomic-abort and best-effort counted-failure admission
-  dispositions, and release validation rejects any nonzero derive-failure
-  count.
+- **ADR-0033-C1 — fixture-behavior:** The source-bundle schema validates the
+  canonical all-member manifest fixture, as asserted by
+  `test/abc/tools/source_bundle_test.clj`.
+- **ADR-0033-C2 — fixture-behavior:** The Clojure producer reproduces the
+  checked-in canonical identity bytes and `bundle_hash` byte-for-byte.
+- **ADR-0033-C3 — fixture-behavior:** Metadata-only repacks preserve
+  `bundle_hash`, while image changes rotate it.
+- **ADR-0033-C4 — fixture-behavior:** Parser-IR records
+  `work_content_hash = bundle_hash` and the independently verified
+  `primary_text_hash` in their distinct roles.
+- **ADR-0033-C5 — fixture-behavior:** Source snapshot validation checks archive,
+  canonical bundle, primary member, and parser-input hashes by their own
+  constructions without cross-role equality.
+- **ADR-0033-C6 — fixture-behavior:** P16.3 passes without an
+  `expected-failure*` gate.
+- **ADR-0033-C7 — structural-invariant:** D7 is `:fixed` with dated
+  `2026-07-12` structural evidence.
+- **ADR-0033-C8 — fixture-behavior:** A complete legacy-shaped workset fixture
+  remains readable without reinterpretation.
+- **ADR-0033-C9 — corpus-behavior:** The pinned source-bundle corpus report for
+  Aozora commit `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` reproduces its
+  measured maxima.
+- **ADR-0033-C10 — fixture-behavior:** Member-count, per-member-byte, and total
+  uncompressed-byte limits are enforced at both declared-size and streamed-byte
+  boundaries.
+- **ADR-0033-C11 — fixture-behavior:** Strict admission failure aborts
+  atomically; best-effort admission records counted failures with
+  `release_admissible=false`, continues only the partial workflow, and exits
+  the build with status 1.
+
+## Historical Evidence
+
+Historical manifests and worksets remain readable without reinterpretation.
+Historical manifests retain their schema hashes and historical
+`work_content_hash` meaning, and complete legacy-shaped worksets remain
+readable without reinterpretation. This historical compatibility does not
+reinterpret or rewrite those manifests.

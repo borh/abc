@@ -60,3 +60,26 @@
                  (files/read-text generated))))]
       (is (= ["source.txt"] (:repository-paths result)))
       (is (= [(.getCanonicalPath generated)] (:ephemeral-paths result))))))
+
+(deftest metadata-adapters-are-traced-and-missing-state-fails-closed-test
+  (let [root (.toFile (java.nio.file.Files/createTempDirectory
+                       "metadata-trace-" (make-array java.nio.file.attribute.FileAttribute 0)))
+        file (io/file root "present.txt")]
+    (.mkdirs (io/file root "data"))
+    (spit file "present")
+    (let [result (evidence-io/with-read-trace
+                   {:identity-root root :cwd-root root}
+                   #(vector (files/exists? file)
+                            (files/file? file)
+                            (files/directory? (io/file root "data"))))]
+      (is (= [true true true] (:value result)))
+      (is (= ["data" "present.txt"] (:repository-paths result))))
+    (is (false? (files/exists? (io/file root "missing.txt"))))
+    (is (= :missing-runtime-input
+           (:kind
+            (ex-data
+             (try
+               (evidence-io/with-read-trace
+                 {:identity-root root :cwd-root root}
+                 #(files/exists? "missing.txt"))
+               (catch Exception exception exception))))))))

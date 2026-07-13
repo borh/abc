@@ -150,10 +150,18 @@
      abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure!
      abc.tools.files/read-text abc.tools.files/read-bytes
      abc.tools.files/input-stream abc.tools.files/reader abc.tools.files/list-files
+     abc.tools.files/exists? abc.tools.files/directory? abc.tools.files/file?
      abc.tools.files/read-edn abc.tools.files/read-jsonl abc.tools.files/read-zip-entry
      abc.tools.files/read-jena-model abc.tools.files/read-tei-document
      abc.tools.json/read-json-file abc.tools.hash/sha256-file
      abc.tools.hash/byte-length})
+
+(def ^:private audited-structural-leaf-vars
+  '#{abc.tools.path-containment/path-state})
+
+(defn- trusted-leaf-var? [var]
+  (or (contains? trusted-adapter-vars var)
+      (contains? audited-structural-leaf-vars var)))
 
 ;; External executable Vars are capabilities, not harmless names. This is an
 ;; exact reviewed inventory of pure operations needed by current evidence
@@ -163,12 +171,13 @@
      clojure.core/> clojure.core/>= clojure.core/+ clojure.core/-
      clojure.core/* clojure.core// clojure.core/inc clojure.core/dec
      clojure.core/identity clojure.core/constantly clojure.core/comp
-     clojure.core/complement clojure.core/partial clojure.core/apply
+     clojure.core/complement clojure.core/partial clojure.core/apply clojure.core/juxt
      clojure.core/ex-info clojure.core/iterator-seq clojure.core/make-array
      clojure.core/str clojure.core/pr-str clojure.core/name clojure.core/namespace
      clojure.core/symbol clojure.core/keyword clojure.core/boolean
      clojure.core/count clojure.core/empty? clojure.core/seq clojure.core/first
      clojure.core/second clojure.core/rest clojure.core/next clojure.core/nth
+     clojure.core/peek clojure.core/pop
      clojure.core/get clojure.core/get-in clojure.core/find clojure.core/contains?
      clojure.core/keys clojure.core/vals clojure.core/select-keys
      clojure.core/assoc clojure.core/assoc-in clojure.core/dissoc
@@ -178,6 +187,7 @@
      clojure.core/remove clojure.core/keep clojure.core/keep-indexed
      clojure.core/reduce clojure.core/reduce-kv clojure.core/sort clojure.core/sort-by
      clojure.core/distinct clojure.core/dedupe clojure.core/group-by
+     clojure.core/frequencies
      clojure.core/some clojure.core/every? clojure.core/not-any?
      clojure.core/vector clojure.core/vec clojure.core/set clojure.core/hash-map
      clojure.core/sorted-map clojure.core/sorted-set clojure.core/range
@@ -195,8 +205,8 @@
      clojure.string/split-lines clojure.string/replace clojure.string/join clojure.string/trim
      clojure.set/union clojure.set/difference clojure.set/intersection
      clojure.set/subset? clojure.java.io/file
-     babashka.fs/absolute? babashka.fs/canonicalize babashka.fs/file
-     babashka.fs/path babashka.fs/relativize})
+     babashka.fs/absolute? babashka.fs/absolutize babashka.fs/canonicalize babashka.fs/file
+     babashka.fs/normalize babashka.fs/path babashka.fs/relativize})
 
 (def ^:private audited-special-heads
   '#{fn* fn if let* let loop* loop recur do throw try catch finally
@@ -370,7 +380,7 @@
                       (doseq [target targets]
                         (definition! target)
                         (swap! resolved-calls conj target)
-                        (if (contains? trusted-adapter-vars target)
+                        (if (trusted-leaf-var? target)
                           (swap! reachable conj target)
                           (swap! pending conj target))))
                     :else
@@ -397,7 +407,7 @@
                                  "reachable code-loading, I/O, network, or process capability"
                                  :caller caller :target target))
                         (cond
-                          (contains? trusted-adapter-vars target)
+                          (trusted-leaf-var? target)
                           (swap! reachable conj target)
                           (contains? definitions target)
                           (do
@@ -434,7 +444,7 @@
                              (and (not (:macro target-definition))
                                   (or (:fixed-arities target-definition)
                                       (:varargs-min-arity target-definition))))
-                           (not (contains? trusted-adapter-vars target)))
+                           (not (trusted-leaf-var? target)))
                       ;; A directly resolved Var is already a finite target: add
                       ;; its graph. Only function-valued parameters need the
                       ;; caller-scoped contract handled above.

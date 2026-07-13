@@ -291,9 +291,9 @@
                                   (when (empty? artifact-problems)
                                     (input-problems repo-root workspace-root artifact-path value
                                                     affected-claim-ids))))]
-        {:bundle (when (empty? problems) value)
-         :component-profile? component-profile?
-         :problems problems}))))
+        (cond-> {:bundle (when (empty? problems) value)
+                 :problems problems}
+          component-profile? (assoc :component-profile? true))))))
 
 (defn observation [bundle observation-key]
   (get-in bundle ["observations" observation-key "value"]))

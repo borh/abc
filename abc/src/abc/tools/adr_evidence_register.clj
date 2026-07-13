@@ -7,8 +7,7 @@
             [abc.tools.files :as files]
             [abc.tools.path-containment :as containment]
             [babashka.fs :as fs]
-            [clojure.set :as set])
-  (:import [java.nio.file CopyOption Files StandardCopyOption]))
+            [clojure.set :as set]))
 
 (def ^:private template-keys #{:schema-version :entries})
 (def ^:private entry-keys
@@ -107,16 +106,15 @@
        (not (contains? owned (:claim-id problem)))))
 
 (defn- atomic-write! [registry-file value]
-  (let [target (.toPath registry-file)
-        temp (Files/createTempFile (.getParent target) ".adr-evidence-" ".tmp"
-                                   (make-array java.nio.file.attribute.FileAttribute 0))]
+  (let [target (fs/path registry-file)
+        temp (fs/create-temp-file {:dir (fs/parent target)
+                                   :prefix ".adr-evidence-"
+                                   :suffix ".tmp"})]
     (try
-      (spit (.toFile temp) (str (pr-str value) "\n"))
-      (Files/move temp target
-                  (into-array CopyOption [StandardCopyOption/ATOMIC_MOVE
-                                          StandardCopyOption/REPLACE_EXISTING]))
+      (spit (fs/file temp) (str (pr-str value) "\n"))
+      (fs/move temp target {:atomic-move true :replace-existing true})
       (finally
-        (Files/deleteIfExists temp)))))
+        (fs/delete-if-exists temp)))))
 
 (defn register! [{:keys [repo-root workspace-root entries-path registry-path]}]
   (try

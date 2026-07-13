@@ -33,7 +33,7 @@
   (slurp (evidence-io/record-read! (fs/file file))))
 
 (defn read-bytes [file]
-  (java.nio.file.Files/readAllBytes (.toPath (io/file (evidence-io/record-read! file)))))
+  (fs/read-all-bytes (evidence-io/record-read! file)))
 
 (defn input-stream [file]
   (io/input-stream (evidence-io/record-read! file)))
@@ -51,13 +51,13 @@
     files))
 
 (defn exists? [path]
-  (.exists (io/file path)))
+  (fs/exists? (evidence-io/record-read! path)))
 
 (defn directory? [path]
-  (.isDirectory (io/file path)))
+  (fs/directory? (evidence-io/record-read! path)))
 
 (defn file? [path]
-  (.isFile (io/file path)))
+  (fs/regular-file? (evidence-io/record-read! path)))
 
 (defn with-zip-file [archive f]
   (with-open [zip (ZipFile. (io/file (evidence-io/record-read! archive)))]

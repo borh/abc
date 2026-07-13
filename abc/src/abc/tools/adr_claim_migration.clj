@@ -2,12 +2,11 @@
   (:require [abc.tools.adr :as adr]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
+            [abc.tools.json :as json]
             [abc.tools.schema :as schema]
-            [clojure.edn :as edn]
-            [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [clojure.set :as set]
-            [clojure.tools.cli :as cli]
-            [abc.tools.json :as json]))
+            [clojure.tools.cli :as cli]))
 
 (def ^:private baseline-schema-version "abc-adr-claim-migration-baseline-v1")
 (def ^:private ledger-schema-version "abc-adr-claim-migration-v1")
@@ -183,9 +182,9 @@
            (duplicates identity resulting-ids))))))
 
 (defn load-migration-state [repo-root options]
-  (let [baseline (files/read-json (io/file repo-root "docs/adr/adr-claim-migration-baseline.json"))
-        ledger (edn/read-string (slurp (io/file repo-root "docs/adr/adr-claim-migration.edn")))
-        adrs (adr/parse-all (io/file repo-root "docs/adr"))
+  (let [baseline (files/read-json (fs/file repo-root "docs/adr/adr-claim-migration-baseline.json"))
+        ledger (files/read-edn (fs/file repo-root "docs/adr/adr-claim-migration.edn"))
+        adrs (adr/parse-all (fs/file repo-root "docs/adr"))
         claims (into {} (keep (fn [criterion]
                                 (when-let [claim-id (:claim-id criterion)] [claim-id criterion])))
                      (mapcat :criteria adrs))
@@ -207,7 +206,7 @@
       (or (seq errors) (nil? output) (nil? revision))
       (System/exit 2)
 
-      (.exists (io/file output))
+      (fs/exists? output)
       (do (binding [*out* *err*] (println "Refusing to replace immutable baseline:" output))
           (System/exit 1))
 

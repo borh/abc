@@ -125,7 +125,7 @@
     (is (= 1 (count (filter #(= :artifact-hash-mismatch (:kind %)) problems))))
     (is (= ["ADR-0034-C1" "ADR-0034-C2"]
            (:affected-claim-ids
-           (first (filter #(= :artifact-hash-mismatch (:kind %)) problems)))))))
+            (first (filter #(= :artifact-hash-mismatch (:kind %)) problems)))))))
 
 (deftest component-evidence-requires-an-explicit-validated-workspace-test
   (with-redefs [bundle/validate-bundle

@@ -1,6 +1,6 @@
 # ADR 0037: Terminal Provenance / Colophon Split
 
-Status: Accepted
+Status: Proposed
 Date: 2026-07-13
 
 ## Context

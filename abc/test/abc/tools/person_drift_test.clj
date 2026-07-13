@@ -1,12 +1,16 @@
 (ns abc.tools.person-drift-test
   (:require [arachne.aristotle :as aa]
+            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
             [abc.tools.person-drift :as drift]
             [abc.tools.schema :as schema]
+            [abc.tools.shacl :as shacl]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is use-fixtures]]))
+            [clojure.string :as string]
+            [clojure.test :refer [deftest is use-fixtures]])
+  (:import [org.apache.jena.graph NodeFactory Triple]))
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
@@ -194,6 +198,31 @@
     (is (some #{:unknown-snapshot-reference}
               (map :code (drift/event-json-coherence-failures bad))))))
 
+(deftest validate-event-json-coherence-rejects-duplicate-snapshot-id-test
+  (let [event (base-split)
+        duplicate (first (get event "participants"))
+        bad (update event "participants" conj duplicate)]
+    (is (some #{:duplicate-snapshot-id}
+              (map :code (drift/event-json-coherence-failures bad))))))
+
+(deftest validate-event-json-coherence-rejects-interleaved-participant-test
+  (let [bad (-> (base-split)
+                (assoc-in ["prov" "used"] ["pre-000879"
+                                           "post-abc-000000000001"])
+                (assoc-in ["prov" "was_generated_by"]
+                          ["post-abc-000000000001"
+                           "post-abc-000000000002"]))]
+    (is (some #{:participant-in-both-used-and-generated}
+              (map :code (drift/event-json-coherence-failures bad))))))
+
+(deftest validate-event-json-coherence-rejects-noncanonical-edge-order-test
+  (let [split (update-in (base-split) ["prov" "was_generated_by"] reverse)
+        merge (update-in (base-merge) ["prov" "used"] reverse)]
+    (is (some #{:generated-not-sorted}
+              (map :code (drift/event-json-coherence-failures split))))
+    (is (some #{:used-not-sorted}
+              (map :code (drift/event-json-coherence-failures merge))))))
+
 (deftest validate-event-json-coherence-rejects-uncovered-participant-test
   (let [bad (update (base-split) "participants" conj
                     {"snapshot_id" "post-abc-000000000003"
@@ -247,6 +276,48 @@
                  :else (str (.getObject triple)))])
             (triples graph))))
 
+(def ^:private person-drift-event-shape
+  (NodeFactory/createURI "https://w3id.org/abc/PersonDriftEventShape"))
+(def ^:private person-drift-split-event-shape
+  (NodeFactory/createURI "https://w3id.org/abc/PersonDriftSplitEventShape"))
+(def ^:private person-drift-merge-event-shape
+  (NodeFactory/createURI "https://w3id.org/abc/PersonDriftMergeEventShape"))
+(def ^:private drift-event
+  (NodeFactory/createURI "https://w3id.org/abc/DriftEvent"))
+(def ^:private drift-split-event
+  (NodeFactory/createURI "https://w3id.org/abc/DriftSplitEvent"))
+(def ^:private drift-merge-event
+  (NodeFactory/createURI "https://w3id.org/abc/DriftMergeEvent"))
+(def ^:private prov-activity
+  (NodeFactory/createURI "http://www.w3.org/ns/prov#Activity"))
+(def ^:private rdf-type
+  (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"))
+(def ^:private rdfs-sub-class-of
+  (NodeFactory/createURI "http://www.w3.org/2000/01/rdf-schema#subClassOf"))
+(def ^:private sh-node-shape
+  (NodeFactory/createURI "http://www.w3.org/ns/shacl#NodeShape"))
+
+(defn- graph-contains? [graph subject predicate object]
+  (.contains graph (Triple/create subject predicate object)))
+
+(deftest drift-shacl-resources-and-subclass-axioms-test
+  (let [g (shacl/load-shapes-graph)]
+    (doseq [shape [person-drift-event-shape
+                   person-drift-split-event-shape
+                   person-drift-merge-event-shape]]
+      (is (graph-contains? g shape rdf-type sh-node-shape)))
+    (doseq [[child parent] [[drift-event prov-activity]
+                            [drift-split-event drift-event]
+                            [drift-merge-event drift-event]]]
+      (is (graph-contains? g child rdfs-sub-class-of parent)))))
+
+(deftest load-shapes-graph-records-schema-read-test
+  (let [traced (evidence-io/with-read-trace
+                 {:identity-root "." :cwd-root "."}
+                 shacl/load-shapes-graph)]
+    (is (= [shacl/default-shapes-path]
+           (:repository-paths traced)))))
+
 (deftest snapshot-iri-uses-event-embedded-hash-test
   (is (= "https://w3id.org/abc/persons/000879#snapshot-000000000000"
          (drift/snapshot-iri {"snapshot_id" "pre-000879"
@@ -269,6 +340,10 @@
     (is (contains? triples [post-a "http://www.w3.org/ns/prov#wasGeneratedBy" event-iri]))
     (is (contains? triples [pre "http://www.w3.org/ns/prov#wasInvalidatedBy" event-iri]))
     (is (contains? triples [post-a "http://www.w3.org/ns/prov#wasDerivedFrom" pre]))
+    (is (contains? triples
+                   [event-iri
+                    "http://www.w3.org/ns/prov#wasAssociatedWith"
+                    "https://w3id.org/abc/agents/editorial-board"]))
     (is (contains? triples [pre "http://www.w3.org/ns/prov#specializationOf"
                             "http://www.aozora.gr.jp/index_pages/person000879.html"]))))
 
@@ -322,6 +397,19 @@
                        (index-for person-id event-id)))
         (is (= {:status :ok :events 1 :indexes 3}
                (drift/validate-drift-events! {:persons-dir (str dir)})))))))
+
+(deftest committed-drift-example-layout-and-validation-test
+  (let [persons-dir "examples/v0/example-persons"
+        events (->> (file-seq (io/file persons-dir "_events"))
+                    (filter #(.isFile %))
+                    (filter #(string/ends-with? (.getName %) ".json")))
+        indexes (->> (file-seq (io/file persons-dir "_indexes"))
+                     (filter #(.isFile %))
+                     (filter #(string/ends-with? (.getName %) ".json")))]
+    (is (= 1 (count events)))
+    (is (= 3 (count indexes)))
+    (is (= {:status :ok :events 1 :indexes 3}
+           (drift/validate-drift-events! {:persons-dir persons-dir})))))
 
 (deftest validate-drift-events-rejects-broken-index-target-test
   (with-temp-dir

@@ -258,26 +258,44 @@
           [_ {:keys [rationale]}] exceptions]
     (is (not (string/blank? rationale)))))
 
+(defn- real-operation-findings [reports namespace kind operation]
+  (->> reports
+       (filter #(= namespace (:namespace %)))
+       (mapcat :findings)
+       (filter #(and (= kind (:kind %))
+                     (= operation (:operation %))))
+       vec))
+
+(defn- exposed-findings-after-removing
+  [namespace kind operation real-findings]
+  (with-redefs [legacy-filesystem-namespaces
+                (disj legacy-filesystem-namespaces namespace)
+                permanent-files-operations
+                (if (= :files kind)
+                  (update-in permanent-files-operations
+                             [namespace :operations] disj operation)
+                  permanent-files-operations)
+                permanent-interop-operations
+                (if (= :interop kind)
+                  (update-in permanent-interop-operations
+                             [namespace :operations] disj operation)
+                  permanent-interop-operations)]
+    (vec (remove #(allowed? namespace %) real-findings))))
+
 (deftest permanent-exceptions-are-sensitive-test
-  (let [files-finding {:kind :files :operation 'Files/move}
-        interop-finding {:kind :interop :operation :renameTo}]
-    (is (allowed? 'abc.tools.json files-finding))
-    (is (= [files-finding]
-           (with-redefs [permanent-files-operations
-                         (update-in permanent-files-operations
-                                    ['abc.tools.json :operations]
-                                    disj 'Files/move)]
-             (vec (remove #(allowed? 'abc.tools.json %) [files-finding])))))
-    (is (allowed? 'abc.tools.aozora-history-audit interop-finding))
-    (is (= [interop-finding]
-           (with-redefs [legacy-filesystem-namespaces
-                         (disj legacy-filesystem-namespaces
-                               'abc.tools.aozora-history-audit)
-                         permanent-interop-operations
-                         (dissoc permanent-interop-operations
-                                 'abc.tools.aozora-history-audit)]
-             (vec (remove #(allowed? 'abc.tools.aozora-history-audit %)
-                          [interop-finding])))))))
+  (let [reports (source-reports "src")]
+    (doseq [[kind exceptions]
+            [[:files permanent-files-operations]
+             [:interop permanent-interop-operations]]
+            [namespace {:keys [operations]}] exceptions
+            operation operations]
+      (testing (str namespace " " operation " is a live exact exception")
+        (let [real-findings (real-operation-findings
+                             reports namespace kind operation)]
+          (is (seq real-findings))
+          (is (= real-findings
+                 (exposed-findings-after-removing
+                  namespace kind operation real-findings))))))))
 
 (deftest legacy-filesystem-baseline-test
   (is (= '#{abc.tools.adr abc.tools.annotation-join-stats

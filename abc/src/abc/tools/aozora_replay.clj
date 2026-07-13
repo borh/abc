@@ -230,7 +230,7 @@
   Returns cache-dir as a string."
   [{:keys [cache-dir remote-url to-ref]}]
   (let [dir (fs/path cache-dir)]
-    (if (fs/directory? (fs/path dir ".git"))
+    (if (fs/exists? (fs/path dir ".git"))
       (verify-origin! (str dir) remote-url)
       (do (fs/create-dirs dir)
           (git! ["clone" "--filter=blob:none" "--no-checkout"

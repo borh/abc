@@ -223,7 +223,7 @@
         (delete-recursive origin)
         (delete-recursive cache)))))
 
-(deftest ensure-clone-distinguishes-git-directory-test
+(deftest ensure-clone-preserves-git-entry-presence-test
   (let [root (temp-dir "abc-replay-git-kind")
         directory-cache (io/file root "directory-cache")
         file-cache (io/file root "file-cache")
@@ -242,7 +242,7 @@
                                   :remote-url "https://example.invalid/repo.git"})
            (replay/ensure-clone! {:cache-dir (str file-cache)
                                   :remote-url "https://example.invalid/repo.git"})))
-      (is (= [:verify :git] (mapv first @calls)))
+      (is (= [:verify :verify] (mapv first @calls)))
       (finally
         (delete-recursive root)))))
 

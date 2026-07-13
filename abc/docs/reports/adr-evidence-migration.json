@@ -52,60 +52,6 @@
     },
     {
       "criterion-index": 0,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 3,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 4,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 5,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 6,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 7,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 8,
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
       "file": "0007-external-parser-validation-boundary.md",
       "kind": "missing-claim-header",
       "message": "Accepted criterion requires an exact claim header"
@@ -131,78 +77,6 @@
     {
       "criterion-index": 4,
       "file": "0007-external-parser-validation-boundary.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 3,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 4,
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 3,
-      "file": "0014-iiif-applicability.md",
       "kind": "missing-claim-header",
       "message": "Accepted criterion requires an exact claim header"
     },
@@ -257,66 +131,6 @@
     {
       "criterion-index": 3,
       "file": "0016-edtf-level1-decade-century.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 3,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 4,
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 0,
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 1,
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 2,
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 3,
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-claim-header",
-      "message": "Accepted criterion requires an exact claim header"
-    },
-    {
-      "criterion-index": 4,
-      "file": "0018-predicate-rename-batch-1.md",
       "kind": "missing-claim-header",
       "message": "Accepted criterion requires an exact claim header"
     },
@@ -679,52 +493,12 @@
       "message": "Accepted status requires a Release authority"
     },
     {
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0006-v0-design-bundle-validation.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
       "file": "0007-external-parser-validation-boundary.md",
       "kind": "missing-validation-scope",
       "message": "Accepted status requires a Validation scope"
     },
     {
       "file": "0007-external-parser-validation-boundary.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0012-tei-odd-schematron-validation.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0013-cultural-heritage-lod-profile.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0014-iiif-applicability.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0014-iiif-applicability.md",
       "kind": "missing-release-authority",
       "message": "Accepted status requires a Release authority"
     },
@@ -745,26 +519,6 @@
     },
     {
       "file": "0016-edtf-level1-decade-century.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0017-vocabulary-review.md",
-      "kind": "missing-release-authority",
-      "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0018-predicate-rename-batch-1.md",
-      "kind": "missing-validation-scope",
-      "message": "Accepted status requires a Validation scope"
-    },
-    {
-      "file": "0018-predicate-rename-batch-1.md",
       "kind": "missing-release-authority",
       "message": "Accepted status requires a Release authority"
     },
@@ -857,5 +611,350 @@
       "file": "0032-parser-fork-hard-detach.md",
       "kind": "missing-release-authority",
       "message": "Accepted status requires a Release authority"
+    },
+    {
+      "claim-id": "ADR-0006-C1",
+      "criterion-index": 0,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0006-C2",
+      "criterion-index": 1,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0006-C3",
+      "criterion-index": 2,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0006-C4",
+      "criterion-index": 3,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0006-C5",
+      "criterion-index": 4,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0006-C6",
+      "criterion-index": 5,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0006-C7",
+      "criterion-index": 6,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0006-C8",
+      "criterion-index": 7,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0006-C9",
+      "criterion-index": 8,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0012-C1",
+      "criterion-index": 0,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0012-C2",
+      "criterion-index": 1,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0012-C3",
+      "criterion-index": 2,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0012-C4",
+      "criterion-index": 3,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0012-C5",
+      "criterion-index": 4,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0012-C6",
+      "criterion-index": 5,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0013-C1",
+      "criterion-index": 0,
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0013-C2",
+      "criterion-index": 1,
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0013-C3",
+      "criterion-index": 2,
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0014-C1",
+      "criterion-index": 0,
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0014-C2",
+      "criterion-index": 1,
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0014-C3",
+      "criterion-index": 2,
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0014-C4",
+      "criterion-index": 3,
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0017-C1",
+      "criterion-index": 0,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0017-C2",
+      "criterion-index": 1,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0017-C3",
+      "criterion-index": 2,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0017-C4",
+      "criterion-index": 3,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0017-C5",
+      "criterion-index": 4,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0018-C1",
+      "criterion-index": 0,
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0018-C2",
+      "criterion-index": 1,
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "claim-id": "ADR-0018-C3",
+      "criterion-index": 2,
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-claim-evidence",
+      "message": "Accepted claim has no evidence registry entry"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0008-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0008-c4-validation-read-catalog.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0009-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c2-materialized-content-hashes.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0009-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c3-mapping-divergence-sidecar.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0009-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c4-generated-artifact-ids-vs-content-hashes.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0009-C5"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c5-aat-conversion-compatibility.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0009-C6"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0009-c6-temporary-materialization.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0010-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c1-materialized-bundled-schema-jcs-hash.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0010-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c2-materialized-artifact-ids-distinct.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0010-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c3-v0-identity-json.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0010-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0010-c4-parser-schema-mismatch.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0011-C2"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0011-c2-deterministic-json-writer.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0011-C3"],
+      "artifact-path": "docs\/evidence\/adr-runs\/adr-0011-c3-two-run-byte-identity.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0008-C2","ADR-0010-C5","ADR-0011-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/design-bundle-operational.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0008-C2","ADR-0010-C5","ADR-0011-C1"],
+      "artifact-path": "docs\/evidence\/adr-runs\/design-bundle-operational.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "operational input hash does not match current bytes"
+    },
+    {
+      "actual": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+      "affected-claim-ids": ["ADR-0009-C5","ADR-0010-C4"],
+      "artifact-path": "docs\/evidence\/adr-runs\/diagnostic-schema-exact-current.json",
+      "expected": "sha256:1990d1291f1ed486387b827d0da648f6100120ca3b4d33994329aa4e4bfc5362",
+      "input-path": "abc\/src\/abc\/tools\/validate_design_bundle.clj",
+      "kind": "input-hash-mismatch",
+      "message": "current evidence input hash does not match the artifact"
     }]
 }

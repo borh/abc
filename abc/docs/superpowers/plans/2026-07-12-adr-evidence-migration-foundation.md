@@ -1145,8 +1145,8 @@ against this table rather than infer kinds from descriptor names:
 | `ADR-0009-C1` | Fresh parser-IR and warnings manifests both validate against the manifest schema. | `fixture-behavior` | `fixture-conformance` |
 | `ADR-0009-C2` | Generated content hashes equal the exact imported parser-IR and warnings bytes. | `fixture-behavior` | `fixture-conformance` |
 | `ADR-0009-C3` | Materialization selects the canonical mapping-divergence sidecar and the declared legacy fallback. | `fixture-behavior` | `fixture-conformance` |
-| `ADR-0009-C4` | Generated artifact IDs are distinct from their content hashes. | `fixture-behavior` | `fixture-conformance` |
-| `ADR-0009-C5` | Parser-IR schema mismatch is admitted only by a registered compatibility rule, while diagnostic schema identity requires exact-current equality. | `structural-invariant` | `structural-test` |
+| `ADR-0009-C4` | Each generated parser-IR and warnings artifact ID is distinct from its own `content.content_hash`. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0009-C5` | Pinned AAT mapping plus adapter registry agreement governs AAT parser-IR conversion compatibility, while diagnostic schema identity requires exact-current equality. | `structural-invariant` | `structural-test` |
 | `ADR-0009-C6` | Design-bundle fixture orchestration materializes into a temporary directory and validates the generated manifests. | `fixture-behavior` | `fixture-conformance` |
 | `ADR-0009-C7` | The Bash entry point contains delegation only; Clojure owns materialization logic. | `structural-invariant` | `structural-test` |
 | `ADR-0010-C1` | Materialized `manifest_schema_hash` equals the SHA-256/JCS hash of the parsed bundled manifest schema. | `fixture-behavior` | `fixture-conformance` |
@@ -1157,6 +1157,12 @@ against this table rather than infer kinds from descriptor names:
 | `ADR-0011-C1` | The supported Nix design-bundle app materializes both manifests temporarily and validates both against the schema. | `operational-behavior` | `operational-observation` |
 | `ADR-0011-C2` | Deterministic JSON writing produces identical ordered bytes from differently ordered map inputs. | `fixture-behavior` | `fixture-conformance` |
 | `ADR-0011-C3` | Two materialization runs with identical inputs produce byte-identical manifest files. | `fixture-behavior` | `fixture-conformance` |
+
+The ADR-0009-C5 wording is an explicit Stage A correction to the mechanism the
+two cited tests actually observe. It does not claim general parser-schema
+mismatch admission. Parser schema mismatch rejection remains solely
+`ADR-0010-C4`, independently corroborated from diagnostic exact-current
+mismatch rejection.
 
 - [ ] **Step 5: Split/narrow ADR 0033 into eleven claims**
 
@@ -1268,6 +1274,14 @@ the named narrow Vars below so each exact focus asserts only its row's claim
 boundary. A narrow Var may share setup helpers; it must not invoke another
 `deftest` Var.
 
+The materialize-import split must include
+`generated-artifact-ids-differ-from-content-hashes-test`, which materializes
+both outputs and compares each generated manifest's `artifact_id` with that
+same manifest's `content.content_hash`, and
+`materialized-manifest-schema-hash-matches-bundled-jcs-test`, which materializes
+both outputs and asserts both `manifest_identity_object.manifest_schema_hash`
+fields equal `manifest/schema-hash` of the parsed bundled manifest schema.
+
 Use `abc-adr-evidence-capture-v2` for the 38 focused Clojure descriptors and
 version 1 for the four `repo-files-v1` Nix boundaries. Every v2 descriptor sets
 `:runtime-input-manifest` with the same basename under
@@ -1298,12 +1312,12 @@ followed by `-passes`, except the four Nix rows whose keys are shown explicitly.
 | `ADR-0009-C1` | `adr-0009-c1-generated-manifest-schema` | `abc.tools.foundation-evidence-test/generated-import-manifest-schema-conformance-test` |
 | `ADR-0009-C2` | `adr-0009-c2-materialized-content-hashes` | new `abc.tools.materialize-import-test/materialized-content-hashes-match-imported-files-test` split from `materialize-import-test` |
 | `ADR-0009-C3` | `adr-0009-c3-mapping-divergence-sidecar` | new `abc.tools.materialize-import-test/mapping-divergence-sidecar-selection-test` covering canonical and legacy fallback |
-| `ADR-0009-C4` | `adr-0009-c4-artifact-id-distinct-from-content` | `abc.tools.materialize-import-test/artifact-id-test` |
+| `ADR-0009-C4` | `adr-0009-c4-generated-artifact-ids-vs-content-hashes` | new `abc.tools.materialize-import-test/generated-artifact-ids-differ-from-content-hashes-test`, split directly from both generated-manifest assertions in `materialize-import-test` |
 | `ADR-0009-C5` | `adr-0009-c5-parser-schema-compatibility` | `abc.tools.validate-design-bundle-test/aat-parser-ir-compatibility-test` |
 | `ADR-0009-C5` | `adr-0009-c5-diagnostic-schema-exact-current` | `abc.tools.materialize-import-test/diagnostic-schema-hash-requires-the-exact-current-contract-test` |
 | `ADR-0009-C6` | `adr-0009-c6-temporary-materialization` | new `abc.tools.validate-design-bundle-test/design-bundle-temporary-import-materialization-test` split from the design-bundle orchestration test |
 | `ADR-0009-C7` | `adr-0009-c7-wrapper-delegation` | `abc.tools.foundation-evidence-test/validate-design-bundle-wrapper-delegation-test` |
-| `ADR-0010-C1` | `adr-0010-c1-bundled-schema-jcs-hash` | `abc.tools.materialize-import-test/schema-hash-test` |
+| `ADR-0010-C1` | `adr-0010-c1-materialized-bundled-schema-jcs-hash` | new `abc.tools.materialize-import-test/materialized-manifest-schema-hash-matches-bundled-jcs-test`, split directly from both generated-manifest assertions in `materialize-import-test` |
 | `ADR-0010-C2` | `adr-0010-c2-materialized-artifact-ids-distinct` | new `abc.tools.materialize-import-test/materialized-parser-and-warning-artifact-ids-are-distinct-test` split from `materialize-import-test` |
 | `ADR-0010-C3` | `adr-0010-c3-v0-identity-json` | `abc.tools.materialize-import-test/v0-identity-json-test` |
 | `ADR-0010-C4` | `adr-0010-c4-parser-schema-mismatch` | `abc.tools.validate-design-bundle-test/parser-ir-schema-hash-errors-test` |

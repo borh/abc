@@ -197,3 +197,24 @@ Task 7 registration template instead of claiming to create it.
 The documented mechanical checks were run successfully: 15 Task 6 typing
 rows, 42 Task 7 descriptor rows, 35 unique foundation claim IDs, and 17 rows /
 15 unique claims for ADRs 0009–0011.
+
+## Semantic evidence corrections
+
+ADR-0009-C4 now schedules the narrow
+`generated-artifact-ids-differ-from-content-hashes-test`. It materializes both
+generated manifests and independently compares each `artifact_id` with its own
+`content.content_hash`; the earlier synthetic single-identity
+`artifact-id-test` no longer stands in for this claim.
+
+ADR-0010-C1 now schedules
+`materialized-manifest-schema-hash-matches-bundled-jcs-test`. It materializes
+both manifests and asserts both embedded manifest-schema hashes equal the
+bundled parsed-schema JCS hash. The lower-level `schema-hash-test` alone no
+longer certifies materialized fields.
+
+ADR-0009-C5 is explicitly corrected during Stage A to the mechanisms its
+evidence observes: pinned AAT mapping plus adapter registry agreement governs
+AAT parser-IR conversion compatibility, and diagnostic schema identity is
+exact-current. General parser-schema mismatch rejection remains ADR-0010-C4.
+The plan remains 15 / 42 / 35 / 17 / 15 under the mechanical checks, with no
+claim-kind or evidence-kind arithmetic change.

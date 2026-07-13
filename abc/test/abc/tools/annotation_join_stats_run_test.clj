@@ -117,11 +117,11 @@
                          "printf '診断' >&2\n"
                          "exit 19"))
             result (@run-process {:cmd [(str script)]
-                                  :env {"ABC_TEST_ENV" "追加"}
+                                  :env {"ABC_TEST_ENV" "added"}
                                   :stdin "入力"})]
         (is (= #{:exit :out :err} (set (keys result))))
         (is (= 19 (:exit result)))
-        (is (= "入力|追加|inherited" (:out result)))
+        (is (= "入力|added|inherited" (:out result)))
         (is (= "診断" (:err result))))
       (finally
         (fixture/delete-tree! root)))))

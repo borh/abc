@@ -60,7 +60,9 @@
   [{:keys [cmd env stdin]}]
   (let [proc (process/process cmd {:extra-env env
                                    :out :string
-                                   :err :string})]
+                                   :out-enc "UTF-8"
+                                   :err :string
+                                   :err-enc "UTF-8"})]
     (try
       (with-open [w (io/writer (:in proc) :encoding "UTF-8")]
         (when stdin

@@ -238,6 +238,23 @@
       hash/sha256-bytes
       hash/format-sha256))
 
+(defn select-observation!
+  "Return the single catalog row selected by ID and observation family."
+  [catalog observation-id family]
+  (let [rows (case family
+               :focused (:focused-observations catalog)
+               :operational (:operational-observations catalog)
+               nil)
+        matches (filterv #(= observation-id (:observation-id %)) rows)]
+    (when-not (= 1 (count matches))
+      (throw (ex-info "catalog observation selection must resolve exactly once"
+                      {:problems [(problem :invalid-observation-selection
+                                           "catalog observation selection must resolve exactly once"
+                                           :observation-id observation-id
+                                           :family family
+                                           :matches (count matches))]})))
+    (first matches)))
+
 (defn validate-bindings [catalog template]
   (let [rows (observation-rows catalog)
         known (set (map :observation-id rows))

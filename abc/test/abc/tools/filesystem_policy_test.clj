@@ -12,13 +12,9 @@
     :getCanonicalFile :getCanonicalPath :getAbsolutePath :relativize})
 
 (def legacy-filesystem-namespaces
-  '#{abc.tools.adr abc.tools.annotation-join-stats
-     abc.tools.annotation-join-stats-run
-     abc.tools.path-containment
-     abc.tools.soranoha abc.tools.soranoha-build-publication
-     abc.tools.soranoha-stage-publication
+  '#{abc.tools.path-containment
+     abc.tools.soranoha-build-publication
      abc.tools.source-bundle
-     abc.tools.validate-corpus
      abc.tools.validate-design-bundle})
 
 (def permanent-files-operations
@@ -292,13 +288,9 @@
                   namespace kind operation real-findings))))))))
 
 (deftest legacy-filesystem-baseline-test
-  (is (= '#{abc.tools.adr abc.tools.annotation-join-stats
-            abc.tools.annotation-join-stats-run
-            abc.tools.path-containment
-            abc.tools.soranoha abc.tools.soranoha-build-publication
-            abc.tools.soranoha-stage-publication
+  (is (= '#{abc.tools.path-containment
+            abc.tools.soranoha-build-publication
             abc.tools.source-bundle
-            abc.tools.validate-corpus
             abc.tools.validate-design-bundle}
          legacy-filesystem-namespaces)))
 

@@ -18,6 +18,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.workflow :as workflow]
+            [babashka.fs :as fs]
             [babashka.process :as process]
             [charred.api :as charred]
             [clojure.java.io :as io]
@@ -39,11 +40,12 @@
 (defn sample-aat-files
   "Deterministic stride sample over the sorted AAT file list."
   [aat-dir stride]
-  (let [all (->> (.listFiles (io/file aat-dir))
-                 (filter #(and (.isFile ^java.io.File %)
-                               (string/ends-with? (.getName ^java.io.File %)
+  (let [all (->> (fs/list-dir aat-dir)
+                 (filter #(and (fs/regular-file? %)
+                               (string/ends-with? (str (fs/file-name %))
                                                   ".json")))
-                 (sort-by #(.getName ^java.io.File %))
+                 (sort-by #(str (fs/file-name %)))
+                 (map fs/file)
                  vec)]
     (when (empty? all)
       (throw (ex-info "AAT directory contains no .json files"
@@ -99,9 +101,9 @@
                  (mapv
                   (fn [aat-file]
                     (let [work-id (work-id-from-aat-filename
-                                   (.getName ^java.io.File aat-file))
+                                   (str (fs/file-name aat-file)))
                           work-dir (io/file parser-ir-dir work-id)]
-                      (.mkdirs work-dir)
+                      (fs/create-dirs work-dir)
                       (let [{:keys [exit err]}
                             (run-process!
                              {:cmd [converter-bin "convert"
@@ -131,7 +133,7 @@
     :requires [:work-ids :parser-ir-dir :plaintext-dir]
     :produces [:rendered-work-ids]
     :run (fn [{:keys [work-ids parser-ir-dir plaintext-dir]}]
-           (.mkdirs (io/file plaintext-dir))
+           (fs/create-dirs plaintext-dir)
            (doseq [work-id work-ids]
              (let [parser-ir (files/read-json
                               (io/file parser-ir-dir work-id "parser-ir.json"))
@@ -148,7 +150,7 @@
     :produces [:tokenized-work-ids]
     :run (fn [{:keys [rendered-work-ids plaintext-dir tokenizer-bin
                       tokenizer-dict tokens-dir]}]
-           (.mkdirs (io/file tokens-dir))
+           (fs/create-dirs tokens-dir)
            (let [{:keys [exit out err]}
                  (run-process!
                   {:cmd (cond-> [tokenizer-bin "tokenize-plaintext"
@@ -163,15 +165,15 @@
                                {:exit exit :stderr err})))
              (let [summary (tokenize-summary out)
                    errors-file (io/file tokens-dir "tokenize-errors.jsonl")
-                   errored (if (.isFile errors-file)
+                   errored (if (fs/regular-file? errors-file)
                              (mapv #(get % "work_id")
                                    (files/read-json-lines errors-file))
                              [])
                    errored-set (set errored)
                    missing (vec (remove #(or (contains? errored-set %)
-                                             (.isFile (io/file
-                                                       tokens-dir
-                                                       (str % ".tokens.jsonl"))))
+                                             (fs/regular-file? (fs/file
+                                                                tokens-dir
+                                                                (str % ".tokens.jsonl"))))
                                         rendered-work-ids))]
                (when (seq missing)
                  (throw (ex-info "Tokenizer output missing for works"
@@ -261,7 +263,7 @@
         tokens-dir (io/file out-root-file "tokens")
         stats-dir (io/file out-root-file "stats")]
     (files/delete-tree! out-root-file)
-    (.mkdirs out-root-file)
+    (fs/create-dirs out-root-file)
     (files/copy-file! (io/file plan-file)
                       (io/file out-root-file "join-stats-plan.json"))
     (let [{:keys [state run]}

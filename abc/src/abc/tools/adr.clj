@@ -1,6 +1,7 @@
 (ns abc.tools.adr
-  (:require [clojure.java.io :as io]
-            [abc.tools.path-containment :as containment]
+  (:require [abc.tools.path-containment :as containment]
+            [babashka.fs :as fs]
+            [clojure.java.io :as io]
             [clojure.string :as str])
   (:import [java.time LocalDate]))
 
@@ -29,9 +30,9 @@
   (merge {:kind kind :file file :message message} data))
 
 (defn adr-files [dir]
-  (->> (or (.listFiles (io/file dir)) [])
-       (filter #(.isFile %))
-       (map #(.getName %))
+  (->> (fs/list-dir dir)
+       (filter fs/regular-file?)
+       (map #(str (fs/file-name %)))
        (filter #(re-matches #"\d{4}-.+\.md" %))
        sort
        vec))
@@ -504,14 +505,14 @@
            evidence)
      (for [{:keys [path criterion-index] :as item} evidence
            :let [state (get states path)]
-           :when (and (nil? (:problem state)) (.isDirectory (:path state)))
+           :when (and (nil? (:problem state)) (fs/directory? (:path state)))
            :let [companions (get by-criterion criterion-index)]
            :when (not-any? (fn [{companion :path}]
                              (and (or (str/starts-with? companion "test/")
                                       (str/starts-with? companion "nix/"))
                                   (let [companion-state (get states companion)]
                                     (and (nil? (:problem companion-state))
-                                         (.isFile (:path companion-state))))))
+                                         (fs/regular-file? (:path companion-state))))))
                            companions)]
        (problem :unverified-evidence-directory file
                 "an evidence directory requires an existing test/ or nix/ file in the same criterion"
@@ -556,18 +557,18 @@
     (legacy-dependency-status-problems adrs))))
 
 (defn- validate-repository* [validate-fn repo-root adr-dir]
-  (let [directory (io/file repo-root adr-dir)]
+  (let [directory (fs/file repo-root adr-dir)]
     (cond
-      (not (.exists directory))
+      (not (fs/exists? directory))
       [(problem :missing-adr-directory adr-dir "ADR directory does not exist")]
 
-      (not (.isDirectory directory))
+      (not (fs/directory? directory))
       [(problem :invalid-adr-directory adr-dir "ADR path is not a directory")]
 
       :else
-      (let [markdown-files (->> (or (.listFiles directory) [])
-                                (filter #(.isFile %))
-                                (map #(.getName %))
+      (let [markdown-files (->> (fs/list-dir directory)
+                                (filter fs/regular-file?)
+                                (map #(str (fs/file-name %)))
                                 (filter #(and (str/ends-with? % ".md")
                                               (not= "README.md" %)))
                                 sort

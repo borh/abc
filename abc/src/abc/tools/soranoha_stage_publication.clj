@@ -3,6 +3,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.snapshot-index :as snapshot-index]
             [abc.tools.tar :as tar]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
@@ -18,7 +19,7 @@
                      :artifact_id (get reference "artifact_id")}))))
 
 (defn- manifest-content-file [manifest-file manifest-value]
-  (io/file (.getParentFile (io/file manifest-file))
+  (fs/file (fs/parent manifest-file)
            (get-in manifest-value ["content" "path_hint"])))
 
 (defn- loose-kind? [layout-policy artifact-kind]
@@ -61,8 +62,7 @@
     (assoc reference
            "locator" {"kind" "loose"
                       "path" (string/replace
-                              (str (.relativize (.toPath (io/file staged-root))
-                                                (.toPath manifest-target)))
+                              (str (fs/relativize staged-root manifest-target))
                               "\\" "/")})))
 
 (defn- archive-extension [archive-format]
@@ -139,7 +139,7 @@
         layout-policy (get snapshot "layout_policy")
         references (get snapshot "artifact_references" [])]
     (files/delete-tree! staged-root)
-    (.mkdirs staged-root)
+    (fs/create-dirs staged-root)
     (let [staged (reduce (fn [{:keys [references batched]} reference]
                            (let [{staged-reference :reference
                                   staged-batched :batched}
@@ -159,7 +159,7 @@
                                  (batch-archive-path layout-policy
                                                      artifact-kind))
                         entries))
-      (when (.isFile (io/file snapshot-root "run-summary.json"))
+      (when (fs/regular-file? (fs/file snapshot-root "run-summary.json"))
         (files/copy-file! (io/file snapshot-root "run-summary.json")
                           (io/file staged-root "run-summary.json")))
       (let [staged-snapshot (assoc snapshot

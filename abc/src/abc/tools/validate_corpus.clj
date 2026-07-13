@@ -14,39 +14,39 @@
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.person-record :as person-record]
             [abc.tools.shacl :as shacl]
-            [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [clojure.string :as string]
             [taoensso.telemere :as tel]))
 
-(defn- list-json-files [^java.io.File dir]
-  (->> (.listFiles dir)
-       (filter (fn [^java.io.File f]
-                 (and (.isFile f)
-                      (string/ends-with? (.getName f) ".json"))))
-       (sort-by #(.getName ^java.io.File %))))
+(defn- list-json-files [dir]
+  (->> (fs/list-dir dir)
+       (filter #(and (fs/regular-file? %)
+                     (string/ends-with? (str (fs/file-name %)) ".json")))
+       (sort-by #(str (fs/file-name %)))
+       (map fs/file)))
 
 (defn- person-loader
   "Memoized loader: person_id -> parsed JSON body. Throws if the file
   is missing or fails person-schema validation."
-  [^java.io.File persons-dir]
+  [persons-dir]
   (let [cache (atom {})]
     (fn [pid]
       (or (get @cache pid)
-          (let [f (io/file persons-dir (str pid ".json"))]
-            (when-not (.exists f)
-              (throw (ex-info (str "person file missing: " (.getPath f))
-                              {:person-id pid :path (.getPath f)})))
-            (let [body (files/read-json (.getPath f))]
+          (let [f (fs/file persons-dir (str pid ".json"))]
+            (when-not (fs/exists? f)
+              (throw (ex-info (str "person file missing: " (str f))
+                              {:person-id pid :path (str f)})))
+            (let [body (files/read-json f)]
               (person-record/validate! body)
               (swap! cache assoc pid body)
               body))))))
 
 (defn- check-work
   "Returns nil on success; a {:work-id, :stage, :error} map on failure."
-  [^java.io.File work-file shapes-graph load-person]
-  (let [work-id (string/replace (.getName work-file) #"\.json$" "")]
+  [work-file shapes-graph load-person]
+  (let [work-id (string/replace (str (fs/file-name work-file)) #"\.json$" "")]
     (try
-      (let [record (files/read-json (.getPath work-file))]
+      (let [record (files/read-json work-file)]
         (metadata-record/validate! record)
         (let [persons-by-id (into {}
                                   (for [c (get record "contributors")
@@ -71,12 +71,12 @@
   :first-failures. The :failed count covers all failures regardless."
   [{:keys [input-dir max-failures]
     :or {max-failures 10}}]
-  (let [works-dir (io/file input-dir "works")
-        persons-dir (io/file input-dir "persons")]
-    (when-not (.isDirectory works-dir)
+  (let [works-dir (fs/file input-dir "works")
+        persons-dir (fs/file input-dir "persons")]
+    (when-not (fs/directory? works-dir)
       (throw (ex-info (str "no works/ subdirectory under " input-dir)
                       {:input-dir input-dir})))
-    (when-not (.isDirectory persons-dir)
+    (when-not (fs/directory? persons-dir)
       (throw (ex-info (str "no persons/ subdirectory under " input-dir)
                       {:input-dir input-dir})))
     (let [shapes-graph (shacl/load-shapes-graph)

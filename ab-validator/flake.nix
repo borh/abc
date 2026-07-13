@@ -1125,15 +1125,19 @@
           touch "$out"
         '';
 
-        cargoDenyCheck = pkgs.runCommand "ab-validator-cargo-deny-check"
-          (cargoQualityEnv // {
-            nativeBuildInputs = cargoQualityEnv.nativeBuildInputs ++ [ pkgs.cargo-deny ];
-          })
-          ''
-            ${cargoQualityPrelude}
-            cargo deny check licenses bans sources
-            touch "$out"
-          '';
+        cargoDenyCheck =
+          pkgs.runCommand "ab-validator-cargo-deny-check"
+            (
+              cargoQualityEnv
+              // {
+                nativeBuildInputs = cargoQualityEnv.nativeBuildInputs ++ [ pkgs.cargo-deny ];
+              }
+            )
+            ''
+              ${cargoQualityPrelude}
+              cargo deny check licenses bans sources
+              touch "$out"
+            '';
 
         devTools = [
           rustToolchain

@@ -44,5 +44,6 @@
     (doseq [source sources :let [text (slurp source)]]
       (is (not (string/includes? text "clojure.java.shell")) (str source))
       (is (not (string/includes? text "ProcessBuilder")) (str source))
-      (is (not (re-find #"Runtime/getRuntime[^)]*\)\s*\.exec" text))
+      (is (not (re-find #"(?s)Runtime/getRuntime[^)]*\)\s*\.exec|\(\s*\.exec\s+\(\s*Runtime/getRuntime\b|\(\s*\.\.\s+Runtime\s+getRuntime\s+\(\s*exec\b"
+                        text))
           (str source)))))

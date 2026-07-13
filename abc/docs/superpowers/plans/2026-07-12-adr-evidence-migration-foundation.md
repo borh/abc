@@ -264,12 +264,12 @@ Use baseline text hashes as keys. Apply this exact disposition vector by
 original criterion order:
 
 ```clojure
-{1  [:correct :retain :retain :correct :correct :move-out-of-acceptance]
+{1  [:correct :retain :correct :correct :correct :move-out-of-acceptance]
  8  [:move-out-of-acceptance :retain :correct :correct :correct]
- 9  [:correct :retain :retain :retain :retain :retain :retain]
- 10 [:retain :retain :correct :retain :correct]
+ 9  [:correct :retain :retain :retain :correct :retain :retain]
+ 10 [:retain :retain :correct :correct :correct]
  11 [:correct :retain :retain]
- 33 [:retain :correct :retain :retain :retain :correct :correct :correct :correct]}
+ 33 [:correct :correct :retain :retain :retain :correct :correct :correct :correct]}
 ```
 
 Every `:correct` rationale must state the exact narrowing/split specified in
@@ -1084,6 +1084,9 @@ git commit -m "test(abc): assert foundation evidence boundaries"
 - Modify: `abc/docs/adr/adr-claim-migration.edn`
 - Modify: `abc/docs/reports/adr-claim-migration-inventory.json`
 - Modify: `abc/docs/reports/adr-evidence-migration.json`
+- Modify: `abc/test/abc/tools/adr-claim-migration-test.clj`
+- Modify: `abc/test/abc/tools/adr-governance-test.clj`
+- Modify: `flake.nix`
 
 **Interfaces:**
 - Consumes: Tasks 1–5.
@@ -1194,6 +1197,11 @@ acceptance observation.
 
 Moved rows get `[]`; corrected split rows get multiple IDs; all retained rows
 get one ID. Validate that the union is exactly the 35 final live claim IDs.
+The exact historical rows for ADR 0001 C3, ADR 0009 C5, ADR 0010 C4, and ADR
+0033 C1 are `:correct`, not `:retain`: each records the correction rationale
+and the independently rejectable evidence boundaries named by Steps 2, 4,
+and 5. The canonical all-member schema row maps only to `ADR-0033-C1`; the
+separate known-answer baseline row solely owns `ADR-0033-C2`.
 
 - [ ] **Step 7: Regenerate inventory and audit report**
 
@@ -1205,12 +1213,11 @@ clojure -M:abc/adr-governance -- --mode audit \
   --report docs/reports/adr-evidence-migration.json
 ```
 
-Expected audit delta: all six foundation ADRs lose missing lifecycle problems;
-all final foundation claims lose `:missing-claim-header` and acquire only
-`:missing-claim-evidence`; no new parser, dependency, graph, malformed-header,
-ledger, or claim-kind problem appears. Compare stable problem identities, not
-the global problem count, because later family corrections may land at a
-different checkpoint.
+Expected audit identity: exactly 184 problems comprising 111
+`:missing-claim-header`, 35 `:missing-claim-evidence`, 19
+`:missing-validation-scope`, and 19 `:missing-release-authority`, with no other
+kind. Atomically rotate the root monorepo governance predicate from the stale
+196-problem pre-Stage-A identity to this exact vector in the same commit.
 
 - [ ] **Step 8: Run Stage A verification**
 
@@ -1219,8 +1226,11 @@ cd abc
 bin/kaocha --focus abc.tools.adr-test \
   --focus abc.tools.adr-claim-migration-test \
   --focus abc.tools.adr-evidence-inventory-test \
-  --focus abc.tools.foundation-evidence-test
+  --focus abc.tools.foundation-evidence-test \
+  --focus abc.tools.adr-governance-test
 clojure -M:abc/adr-governance -- --mode audit
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+nix build --no-link ".#checks.${system}.monorepo-adr-governance" --print-build-logs
 git diff --check
 ```
 
@@ -1238,7 +1248,10 @@ git add abc/docs/adr/0001-manifest-identity.md \
   abc/docs/adr/0033-source-bundle-identity.md \
   abc/docs/adr/adr-claim-migration.edn \
   abc/docs/reports/adr-claim-migration-inventory.json \
-  abc/docs/reports/adr-evidence-migration.json
+  abc/docs/reports/adr-evidence-migration.json \
+  abc/test/abc/tools/adr-claim-migration-test.clj \
+  abc/test/abc/tools/adr-governance-test.clj \
+  flake.nix
 git commit -m "docs(adr): bind foundation evidence claims"
 git status --short
 ```

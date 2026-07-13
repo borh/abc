@@ -73,3 +73,33 @@
 
 No evidence descriptors, run bundles, registration template, or evidence
 registry entries were created or modified. Stage B has not begun.
+
+## Stage A review corrections
+
+- Rotated the root monorepo governance audit predicate atomically to the exact
+  Stage A identity: 184 problems comprising 111 `missing-claim-header`, 35
+  `missing-claim-evidence`, 19 `missing-validation-scope`, and 19
+  `missing-release-authority`, with no additional kind accepted.
+- Corrected the historical provenance dispositions for ADR 0001 C3, ADR 0009
+  C5, ADR 0010 C4, and ADR 0033 C1. Their rationales now record the actual
+  correction, and their planned boundaries preserve independently rejectable
+  schema, compatibility, and diagnostic observations. ADR 0033 C2 remains
+  solely owned by its separate known-answer baseline row.
+- Added focused regression assertions for the exact audit vector and the four
+  ledger entries, including unique ownership of ADR 0033 C2.
+
+## Review-correction verification
+
+- Focused RED: 2 tests, 11 assertions, 10 expected failures against the stale
+  root predicate and retained ledger provenance.
+- Final focused GREEN: 2 tests, 7 assertions, 0 failures; the governance
+  assertion matches the complete kind-map literal so an added kind also fails.
+- Full relevant Kaocha selection: 72 tests, 244 assertions, 0 failures.
+- Root `monorepo-adr-governance` Nix check: passed and accepted the exact
+  184-problem Stage A vector.
+- `abc-clj-kondo`: passed with zero errors, the same nine existing warnings,
+  and all Clojure source files formatted correctly.
+- `just validate-migration` now passes the previously blocked schema-mirror
+  gate and every preceding check, then stops at `nix-format-check` because the
+  newly rebased, untouched `ab-validator/flake.nix` is not formatted. The Task
+  6 correction does not modify that upstream file.

@@ -12,7 +12,8 @@
    :planned-evidence-boundaries [:inline-canonical-null-and-array-order]
    :resulting-claim-ids ["ADR-0001-C2"]}
   [1 "sha256:6d495f4c83d65f6dc7a1c4cebf20b528d6fe9befad0c262b5f407eed5bf63d35"]
-  {:disposition :retain
+  {:disposition :correct
+   :rationale "Correct example-only wording to the universal schema rejection of nested artifact_id."
    :planned-evidence-boundaries [:nested-artifact-id-schema-rejection]
    :resulting-claim-ids ["ADR-0001-C3"]}
   [1 "sha256:1c1944449f07cf23fe00d574d585217a5649de20550c0651ae569c18aa0102ec"]
@@ -74,8 +75,10 @@
    :planned-evidence-boundaries [:artifact-id-content-hash-distinction]
    :resulting-claim-ids ["ADR-0009-C4"]}
   [9 "sha256:32934fe5b8af881021dfd1872b6582c8631d3e7f8f58c27c7e4a4a1c64c367d9"]
-  {:disposition :retain
-   :planned-evidence-boundaries [:parser-schema-compatibility-and-diagnostic-match]
+  {:disposition :correct
+   :rationale "Correct the broad schema-compatibility statement to pinned AAT mapping plus adapter registry agreement and diagnostic exact-current equality."
+   :planned-evidence-boundaries [:aat-parser-ir-adapter-registry-agreement
+                                 :diagnostic-schema-exact-current]
    :resulting-claim-ids ["ADR-0009-C5"]}
   [9 "sha256:331ef38a78bbb0e51ec03c086f217e8acd98e210f6174fc7a64e833042ae0ee2"]
   {:disposition :retain
@@ -100,8 +103,10 @@
    :planned-evidence-boundaries [:materialized-manifest-identity-behavior]
    :resulting-claim-ids ["ADR-0010-C3"]}
   [10 "sha256:f2fd52b030dc92074964127d3bd207aa2fd18426b8e2945aa6c41d71e99b2801"]
-  {:disposition :retain
-   :planned-evidence-boundaries [:schema-hash-mismatch-rejection]
+  {:disposition :correct
+   :rationale "Split parser-IR schema mismatch rejection from diagnostic exact-current mismatch rejection."
+   :planned-evidence-boundaries [:parser-ir-schema-mismatch-rejection
+                                 :diagnostic-schema-exact-current-mismatch-rejection]
    :resulting-claim-ids ["ADR-0010-C4"]}
   [10 "sha256:b65937a308a4582274e59a2a78e736aedf0753d7d64d70f2dfad3ff4922c497d"]
   {:disposition :correct
@@ -124,7 +129,8 @@
    :resulting-claim-ids ["ADR-0011-C3"]}
 
   [33 "sha256:5f0ee5797b8e45e6292ed4015d791002b96ec3d18e980f699de73ce3203bf2d0"]
-  {:disposition :retain
+  {:disposition :correct
+   :rationale "Narrow this row to the canonical all-member schema fixture; the separate known-answer baseline row solely owns ADR-0033-C2."
    :planned-evidence-boundaries [:canonical-all-member-schema-fixture]
    :resulting-claim-ids ["ADR-0033-C1"]}
   [33 "sha256:0959a52cefbc2f84774ffa2aa1e90570683a76a2ed1c8d475c5aef6f2d3e5cda"]

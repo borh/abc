@@ -151,3 +151,33 @@
                                         (assoc-in [:entries key :planned-evidence-boundaries] [])
                                         (assoc-in [:entries key :resulting-claim-ids] ["ADR-0001-C4"])) claims))
                    :invalid-disposition))))
+
+(deftest foundation-corrected-ledger-provenance-test
+  (let [entries (:entries (files/read-edn "docs/adr/adr-claim-migration.edn"))
+        expected
+        {[1 "sha256:6d495f4c83d65f6dc7a1c4cebf20b528d6fe9befad0c262b5f407eed5bf63d35"]
+         {:disposition :correct
+          :rationale "Correct example-only wording to the universal schema rejection of nested artifact_id."
+          :planned-evidence-boundaries [:nested-artifact-id-schema-rejection]
+          :resulting-claim-ids ["ADR-0001-C3"]}
+         [9 "sha256:32934fe5b8af881021dfd1872b6582c8631d3e7f8f58c27c7e4a4a1c64c367d9"]
+         {:disposition :correct
+          :rationale "Correct the broad schema-compatibility statement to pinned AAT mapping plus adapter registry agreement and diagnostic exact-current equality."
+          :planned-evidence-boundaries [:aat-parser-ir-adapter-registry-agreement
+                                        :diagnostic-schema-exact-current]
+          :resulting-claim-ids ["ADR-0009-C5"]}
+         [10 "sha256:f2fd52b030dc92074964127d3bd207aa2fd18426b8e2945aa6c41d71e99b2801"]
+         {:disposition :correct
+          :rationale "Split parser-IR schema mismatch rejection from diagnostic exact-current mismatch rejection."
+          :planned-evidence-boundaries [:parser-ir-schema-mismatch-rejection
+                                        :diagnostic-schema-exact-current-mismatch-rejection]
+          :resulting-claim-ids ["ADR-0010-C4"]}
+         [33 "sha256:5f0ee5797b8e45e6292ed4015d791002b96ec3d18e980f699de73ce3203bf2d0"]
+         {:disposition :correct
+          :rationale "Narrow this row to the canonical all-member schema fixture; the separate known-answer baseline row solely owns ADR-0033-C2."
+          :planned-evidence-boundaries [:canonical-all-member-schema-fixture]
+          :resulting-claim-ids ["ADR-0033-C1"]}}]
+    (doseq [[key value] expected]
+      (is (= value (get entries key)) (pr-str key)))
+    (is (= 1 (count (filter #(some #{"ADR-0033-C2"} (:resulting-claim-ids %))
+                            (vals entries)))))))

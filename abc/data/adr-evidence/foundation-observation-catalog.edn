@@ -1,0 +1,226 @@
+{:schema-version :abc-adr-evidence-observation-catalog-v1
+ :focused-observations
+ [{:observation-id :adr-0001-c1-committed-manifest-schema
+   :descriptor-stem "adr-0001-c1-committed-manifest-schema"
+   :observation-key "adr-0001-c1-committed-manifest-schema-passes"
+   :focus-var abc.tools.foundation-evidence-test/committed-manifest-schema-conformance-test}
+  {:observation-id :adr-0001-c2-canonical-null-array-order
+   :descriptor-stem "adr-0001-c2-canonical-null-array-order"
+   :observation-key "adr-0001-c2-canonical-null-array-order-passes"
+   :focus-var abc.tools.jcs-test/canonical-json-test}
+  {:observation-id :adr-0001-c3-nested-artifact-id-rejection
+   :descriptor-stem "adr-0001-c3-nested-artifact-id-rejection"
+   :observation-key "adr-0001-c3-nested-artifact-id-rejection-passes"
+   :focus-var abc.tools.code-as-spec-test/r2-manifest-schema-rejects-nested-artifact-id-test}
+  {:observation-id :adr-0001-c4-failure-artifact-scope
+   :descriptor-stem "adr-0001-c4-failure-artifact-scope"
+   :observation-key "adr-0001-c4-failure-artifact-scope-passes"
+   :focus-var abc.tools.foundation-evidence-test/failure-manifest-artifact-id-scope-test}
+  {:observation-id :adr-0001-c4-failure-coordinates
+   :descriptor-stem "adr-0001-c4-failure-coordinates"
+   :observation-key "adr-0001-c4-failure-coordinates-passes"
+   :focus-var abc.tools.foundation-evidence-test/failure-manifest-identity-coordinates-test}
+  {:observation-id :adr-0001-c4-failure-semantics
+   :descriptor-stem "adr-0001-c4-failure-semantics"
+   :observation-key "adr-0001-c4-failure-semantics-passes"
+   :focus-var abc.tools.foundation-evidence-test/failure-manifest-semantics-test}
+  {:observation-id :adr-0001-c5-reproducibility-conflict
+   :descriptor-stem "adr-0001-c5-reproducibility-conflict"
+   :observation-key "adr-0001-c5-reproducibility-conflict-passes"
+   :focus-var abc.tools.manifest-index-test/reproducibility-conflicts-test}
+  {:observation-id :adr-0008-c3-workflow-wiring
+   :descriptor-stem "adr-0008-c3-workflow-wiring"
+   :observation-key "adr-0008-c3-workflow-wiring-passes"
+   :focus-var abc.tools.foundation-evidence-test/validation-workflow-wiring-test}
+  {:observation-id :adr-0008-c4-validation-read-catalog
+   :descriptor-stem "adr-0008-c4-validation-read-catalog"
+   :observation-key "adr-0008-c4-validation-read-catalog-passes"
+   :focus-var abc.tools.validate-design-bundle-test/evidence-input-catalog-equals-the-pure-schema-validation-read-set-test}
+  {:observation-id :adr-0009-c2-materialized-content-hashes
+   :descriptor-stem "adr-0009-c2-materialized-content-hashes"
+   :observation-key "adr-0009-c2-materialized-content-hashes-passes"
+   :focus-var abc.tools.materialize-import-test/materialized-content-hashes-match-imported-files-test}
+  {:observation-id :adr-0009-c3-mapping-divergence-sidecar
+   :descriptor-stem "adr-0009-c3-mapping-divergence-sidecar"
+   :observation-key "adr-0009-c3-mapping-divergence-sidecar-passes"
+   :focus-var abc.tools.materialize-import-test/mapping-divergence-sidecar-selection-test}
+  {:observation-id :adr-0009-c4-generated-artifact-ids-vs-content-hashes
+   :descriptor-stem "adr-0009-c4-generated-artifact-ids-vs-content-hashes"
+   :observation-key "adr-0009-c4-generated-artifact-ids-vs-content-hashes-passes"
+   :focus-var abc.tools.materialize-import-test/generated-artifact-ids-differ-from-content-hashes-test}
+  {:observation-id :adr-0009-c5-aat-conversion-compatibility
+   :descriptor-stem "adr-0009-c5-aat-conversion-compatibility"
+   :observation-key "adr-0009-c5-aat-conversion-compatibility-passes"
+   :focus-var abc.tools.validate-design-bundle-test/aat-parser-ir-compatibility-test}
+  {:observation-id :adr-0009-c6-temporary-materialization
+   :descriptor-stem "adr-0009-c6-temporary-materialization"
+   :observation-key "adr-0009-c6-temporary-materialization-passes"
+   :focus-var abc.tools.validate-design-bundle-test/design-bundle-temporary-import-materialization-test}
+  {:observation-id :adr-0010-c1-materialized-bundled-schema-jcs-hash
+   :descriptor-stem "adr-0010-c1-materialized-bundled-schema-jcs-hash"
+   :observation-key "adr-0010-c1-materialized-bundled-schema-jcs-hash-passes"
+   :focus-var abc.tools.materialize-import-test/materialized-manifest-schema-hash-matches-bundled-jcs-test}
+  {:observation-id :adr-0010-c2-materialized-artifact-ids-distinct
+   :descriptor-stem "adr-0010-c2-materialized-artifact-ids-distinct"
+   :observation-key "adr-0010-c2-materialized-artifact-ids-distinct-passes"
+   :focus-var abc.tools.materialize-import-test/materialized-parser-and-warning-artifact-ids-are-distinct-test}
+  {:observation-id :adr-0010-c3-v0-identity-json
+   :descriptor-stem "adr-0010-c3-v0-identity-json"
+   :observation-key "adr-0010-c3-v0-identity-json-passes"
+   :focus-var abc.tools.materialize-import-test/v0-identity-json-test}
+  {:observation-id :adr-0010-c4-parser-schema-mismatch
+   :descriptor-stem "adr-0010-c4-parser-schema-mismatch"
+   :observation-key "adr-0010-c4-parser-schema-mismatch-passes"
+   :focus-var abc.tools.validate-design-bundle-test/parser-ir-schema-hash-errors-test}
+  {:observation-id :adr-0011-c2-deterministic-json-writer
+   :descriptor-stem "adr-0011-c2-deterministic-json-writer"
+   :observation-key "adr-0011-c2-deterministic-json-writer-passes"
+   :focus-var abc.tools.materialize-import-test/deterministic-json-writer-test}
+  {:observation-id :adr-0011-c3-two-run-byte-identity
+   :descriptor-stem "adr-0011-c3-two-run-byte-identity"
+   :observation-key "adr-0011-c3-two-run-byte-identity-passes"
+   :focus-var abc.tools.materialize-import-test/materialized-output-is-deterministic-test}
+  {:observation-id :adr-0033-c1-canonical-all-member-schema
+   :descriptor-stem "adr-0033-c1-canonical-all-member-schema"
+   :observation-key "adr-0033-c1-canonical-all-member-schema-passes"
+   :focus-var abc.tools.source-bundle-test/canonical-all-member-schema-fixture-test}
+  {:observation-id :adr-0033-c10-admission-limits
+   :descriptor-stem "adr-0033-c10-admission-limits"
+   :observation-key "adr-0033-c10-admission-limits-passes"
+   :focus-var abc.tools.source-bundle-test/declared-and-streamed-limits-are-enforced-test}
+  {:observation-id :adr-0033-c11-best-effort-counted-failure
+   :descriptor-stem "adr-0033-c11-best-effort-counted-failure"
+   :observation-key "adr-0033-c11-best-effort-counted-failure-passes"
+   :focus-var abc.sim.content-sim-test/best-effort-admission-failures-are-counted-test}
+  {:observation-id :adr-0033-c11-non-release-admissible
+   :descriptor-stem "adr-0033-c11-non-release-admissible"
+   :observation-key "adr-0033-c11-non-release-admissible-passes"
+   :focus-var abc.sim.content-sim-test/nonzero-derive-failures-are-not-release-admissible-test}
+  {:observation-id :adr-0033-c11-strict-atomic-abort
+   :descriptor-stem "adr-0033-c11-strict-atomic-abort"
+   :observation-key "adr-0033-c11-strict-atomic-abort-passes"
+   :focus-var abc.sim.content-sim-test/strict-admission-failure-aborts-atomically-test}
+  {:observation-id :adr-0033-c2-clojure-known-answer
+   :descriptor-stem "adr-0033-c2-clojure-known-answer"
+   :observation-key "adr-0033-c2-clojure-known-answer-passes"
+   :focus-var abc.tools.source-bundle-test/clojure-source-bundle-known-answer-test}
+  {:observation-id :adr-0033-c3-repack-image-evolution
+   :descriptor-stem "adr-0033-c3-repack-image-evolution"
+   :observation-key "adr-0033-c3-repack-image-evolution-passes"
+   :focus-var abc.sim.content-sim-test/repack-and-image-identity-evolution-test}
+  {:observation-id :adr-0033-c4-parser-identity-roles
+   :descriptor-stem "adr-0033-c4-parser-identity-roles"
+   :observation-key "adr-0033-c4-parser-identity-roles-passes"
+   :focus-var abc.tools.materialize-source-snapshot-test/parser-ir-source-identity-roles-test}
+  {:observation-id :adr-0033-c5-role-specific-snapshot-validation
+   :descriptor-stem "adr-0033-c5-role-specific-snapshot-validation"
+   :observation-key "adr-0033-c5-role-specific-snapshot-validation-passes"
+   :focus-var abc.tools.materialize-source-snapshot-test/source-snapshot-role-specific-validation-test}
+  {:observation-id :adr-0033-c6-p16-3-ungated
+   :descriptor-stem "adr-0033-c6-p16-3-ungated"
+   :observation-key "adr-0033-c6-p16-3-ungated-passes"
+   :focus-var abc.sim.content-sim-test/p16-3-pin-chain-sim-test}
+  {:observation-id :adr-0033-c7-d7-dated-fixed-state
+   :descriptor-stem "adr-0033-c7-d7-dated-fixed-state"
+   :observation-key "adr-0033-c7-d7-dated-fixed-state-passes"
+   :focus-var abc.sim.divergences-test/d7-pin-chain-fix-is-dated-and-structural-test}
+  {:observation-id :adr-0033-c8-complete-legacy-readability
+   :descriptor-stem "adr-0033-c8-complete-legacy-readability"
+   :observation-key "adr-0033-c8-complete-legacy-readability-passes"
+   :focus-var abc.tools.materialize-source-snapshot-test/complete-legacy-workset-remains-readable-test}
+  {:observation-id :diagnostic-schema-exact-current
+   :descriptor-stem "diagnostic-schema-exact-current"
+   :observation-key "diagnostic-schema-exact-current-passes"
+   :focus-var abc.tools.materialize-import-test/diagnostic-schema-hash-requires-the-exact-current-contract-test}
+  {:observation-id :generated-import-manifest-schema
+   :descriptor-stem "generated-import-manifest-schema"
+   :observation-key "generated-import-manifest-schema-passes"
+   :focus-var abc.tools.foundation-evidence-test/generated-import-manifest-schema-conformance-test}
+  {:observation-id :validate-design-bundle-wrapper-delegation
+   :descriptor-stem "validate-design-bundle-wrapper-delegation"
+   :observation-key "validate-design-bundle-wrapper-delegation-passes"
+   :focus-var abc.tools.foundation-evidence-test/validate-design-bundle-wrapper-delegation-test}]
+ :operational-observations
+ [{:observation-id :design-bundle-operational
+   :descriptor-stem "design-bundle-operational"
+   :observation-key "design-bundle-operational-passes"
+   :command-id :validate-design-bundle
+   :tool "bash"
+   :argv ["bash" "--noprofile" "--norc" "-c" "nix run .#validate-design-bundle"]
+   :environment-policy :nix-local-v1
+   :entrypoint-kind :clojure
+   :entrypoint-namespaces [abc.tools.validate-design-bundle]
+   :determinant-paths
+   ["data/aat-parser-ir-compatibility.edn"
+    "data/analysis-recipes/literary-basic-ja-v1.json"
+    "data/analysis-recipes/token-basic-ja-v1.json"
+    "data/pack-policies/no-pack-v1.json"
+    "data/pack-policies/parquet-basic-v1.json"
+    "data/parser-evidence-citations.edn"
+    "data/request-sets/demo-basic-ja.json"
+    "data/request-sets/full-corpus-analysis-basic-ja.json"
+    "data/request-sets/full-corpus-basic-ja.json"
+    "data/request-sets/full-corpus-publication-basic-ja.json"
+    "data/request-sets/smoke-basic-ja.json"
+    "examples/ab-validator-output/comparison-report.json"
+    "examples/ab-validator-output/divergence.json"
+    "examples/ab-validator-output/manifest-inputs.json"
+    "examples/ab-validator-output/parser-ir.json"
+    "examples/ab-validator-output/run-summary.jsonl"
+    "examples/ab-validator-output/source-region-coverage.json"
+    "examples/ab-validator-output/warnings.jsonl"
+    "examples/v0/example-work/analysis-result.json"
+    "examples/v0/example-work/body-annotations.json"
+    "examples/v0/example-work/failure-manifest.example.json"
+    "examples/v0/example-work/manifest.json"
+    "examples/v0/example-work/parser-ir.json"
+    "examples/v0/example-work/source.manifest.json"
+    "examples/v0/example-work/tei-validation-result.json"
+    "examples/v0/example-work/token-stream.json"
+    "examples/v0/example-work/warnings.jsonl"
+    "examples/v0/snapshot/snapshot-index.json"
+    "examples/workflow/passed.workflow-run.json"
+    "fixtures/tei-eaj-comparison/workset-export.json"
+    "flake.lock"
+    "flake.nix"
+    "schemas/aat-parser-ir-divergence-bundle.schema.json"
+    "schemas/aat-parser-ir-divergence.schema.json"
+    "schemas/aat-parser-ir-mapping.schema.json"
+    "schemas/adr-claim-migration-baseline.schema.json"
+    "schemas/adr-evidence-run.schema.json"
+    "schemas/adr-external-evidence.schema.json"
+    "schemas/analysis-recipe.schema.json"
+    "schemas/analysis-result.schema.json"
+    "schemas/annotation-output.schema.json"
+    "schemas/comparison-report.schema.json"
+    "schemas/diagnostic.schema.json"
+    "schemas/iiif-applicability.schema.json"
+    "schemas/manifest-inputs.schema.json"
+    "schemas/manifest.schema.json"
+    "schemas/pack-policy.schema.json"
+    "schemas/parser-ir-publication-preservation.schema.json"
+    "schemas/parser-ir.schema.json"
+    "schemas/person-drift-event.schema.json"
+    "schemas/person-drift-index.schema.json"
+    "schemas/request-set.schema.json"
+    "schemas/run-summary.schema.json"
+    "schemas/snapshot-index.schema.json"
+    "schemas/source-assertion.schema.json"
+    "schemas/source-region-coverage.schema.json"
+    "schemas/tei-eaj-comparison.schema.json"
+    "schemas/tei-validation-result.schema.json"
+    "schemas/token-output.schema.json"
+    "schemas/workflow-run.schema.json"]}
+  {:observation-id :source-bundle-corpus
+   :descriptor-stem "source-bundle-corpus"
+   :observation-key "source-bundle-corpus-passes"
+   :command-id :source-bundle-corpus
+   :tool "bash"
+   :argv ["bash" "--noprofile" "--norc" "-c"
+          "nix build --no-link .#checks.x86_64-linux.source-bundle-corpus"]
+   :environment-policy :nix-local-v1
+   :entrypoint-kind :clojure
+   :entrypoint-namespaces [abc.tools.source-bundle-report]
+   :determinant-paths ["data/source-bundle/aozorabunko-0e9ea3e-summary.json"
+                       "flake.lock"
+                       "flake.nix"]}]}

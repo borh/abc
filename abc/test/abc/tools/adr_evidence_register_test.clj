@@ -1,9 +1,26 @@
 (ns abc.tools.adr-evidence-register-test
   (:require [abc.tools.adr-evidence :as evidence]
+            [abc.tools.adr-evidence-observation-catalog :as observation-catalog]
             [abc.tools.adr-evidence-register :as register]
             [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.test :refer [deftest is testing]]))
+
+(deftest registration-bindings-select-catalog-observations-test
+  (let [catalog {:schema-version :abc-adr-evidence-observation-catalog-v1
+                 :focused-observations
+                 [{:observation-id :shared
+                   :descriptor-stem "shared"
+                   :observation-key "shared-passes"
+                   :focus-var 'abc.tools.foundation-evidence-test/committed-manifest-schema-conformance-test}]
+                 :operational-observations []}
+        binding {:claim-id "ADR-0001-C1" :observation-id :shared}]
+    (is (empty? (observation-catalog/validate-bindings
+                 catalog {:entries [binding
+                                    (assoc binding :claim-id "ADR-0009-C1")]})))
+    (is (= :duplicate-observation-binding
+           (-> (observation-catalog/validate-bindings
+                catalog {:entries [binding binding]}) first :kind)))))
 
 (defn- temp-dir []
   (fs/file (fs/create-temp-dir {:prefix "adr-evidence-register-test-"})))

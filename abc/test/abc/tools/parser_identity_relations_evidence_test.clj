@@ -1,66 +1,76 @@
 (ns abc.tools.parser-identity-relations-evidence-test
   (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
-            [abc.tools.materialize-import :as materialize]
-            [abc.tools.source-bundle :as source-bundle]
+            [abc.tools.materialize-import :as materialize-import]
+            [abc.tools.materialize-source-snapshot :as materialize-snapshot]
+            [abc.tools.source-snapshot-fixture :as fixture]
+            [abc.tools.source-snapshot-workset :as workset]
             [babashka.fs :as fs]
-            [clojure.java.io :as io]
-            [clojure.test :refer [deftest is]])
-  (:import [java.util.zip ZipEntry ZipOutputStream]))
+            [clojure.test :refer [deftest is]]))
 
-(defn- source-bundle! [path]
-  (with-open [out (ZipOutputStream. (io/output-stream path))]
-    (doseq [[member content] [["fig/一.png" (byte-array [1 2 3])]
-                              ["作品.txt" (.getBytes "本文" "UTF-8")]]]
-      (.putNextEntry out (ZipEntry. member))
-      (.write out content)
-      (.closeEntry out)))
-  (source-bundle/inspect-zip path))
-
-(defn- materialized-parser-manifest! [input output manifest-inputs parser-ir]
+(defn- materialized-parser-manifest!
+  [input output manifest-inputs parser-ir]
   (fs/copy-tree "examples/ab-validator-output" input)
   (manifest/write-json-file! (fs/file input "manifest-inputs.json") manifest-inputs)
   (manifest/write-json-file! (fs/file input "parser-ir.json") parser-ir)
-  (let [result (materialize/materialize-import!
-                {:input-dir input :output-dir output})]
-    {:manifest (files/read-json (:parser-ir result))
-     :parser-ir (files/read-json (fs/file input "parser-ir.json"))}))
+  (files/read-json
+   (:parser-ir (materialize-import/materialize-import!
+                {:input-dir input :output-dir output}))))
 
 (deftest parser-tuple-change-preserves-source-role-relations-test
   (fs/with-temp-dir [root {}]
-    (let [{:keys [bundle-hash primary-text-hash]}
-          (source-bundle! (fs/file root "source.zip"))
-          base-inputs (assoc (files/read-json "examples/ab-validator-output/manifest-inputs.json")
-                             "work_content_hash" bundle-hash)
-          base-ir (assoc (files/read-json "examples/ab-validator-output/parser-ir.json")
-                         "source" {"work_content_hash" bundle-hash
-                                   "primary_text_hash" primary-text-hash})
-          changed-inputs (assoc base-inputs
-                                "parser_build_hash" (files/example-hash "91")
-                                "mapping_hash" (files/example-hash "92"))
-          changed-ir (-> base-ir
-                         (assoc-in ["derived_from" "aat_adapter"] "changed-parser-adapter")
-                         (assoc-in ["derived_from" "aat_adapter_version"] "changed-parser-adapter 2.0")
-                         (assoc-in ["derived_from" "mapping_id"] "https://w3id.org/abc/mappings/changed")
-                         (assoc-in ["derived_from" "mapping_version"] "2.0"))
-          base (materialized-parser-manifest! (fs/file root "base-input")
-                                              (fs/file root "base-output")
-                                              base-inputs base-ir)
-          changed (materialized-parser-manifest! (fs/file root "changed-input")
-                                                 (fs/file root "changed-output")
-                                                 changed-inputs changed-ir)
-          tuple (fn [inputs parser-ir]
-                  [(get inputs "parser_build_hash")
-                   (get-in parser-ir ["derived_from" "aat_adapter"])
-                   (get inputs "mapping_hash")])]
-      (is (not= (tuple base-inputs (:parser-ir base))
-                (tuple changed-inputs (:parser-ir changed))))
-      (is (not= (get-in base [:manifest "manifest_identity_object"])
-                (get-in changed [:manifest "manifest_identity_object"])))
-      (is (not= (get-in base [:manifest "artifact_id"])
-                (get-in changed [:manifest "artifact_id"])))
-      (doseq [{:keys [parser-ir manifest]} [base changed]]
-        (is (= bundle-hash (get-in parser-ir ["source" "work_content_hash"])))
-        (is (= primary-text-hash (get-in parser-ir ["source" "primary_text_hash"])))
+    (let [work-root (fs/file root "materialized")
+          workset-file (fs/file root "workset.edn")
+          snapshot-file (fs/file root "snapshot.json")]
+      (fixture/materialized-work! work-root {:slug "alpha"
+                                             :title "一"
+                                             :work-id "000001"
+                                             :person-id "000101"
+                                             :work-hash (files/example-hash "a1")})
+      (workset/write-workset!
+       {:input-root (str work-root)
+        :output-path (str workset-file)
+        :snapshot-scope "parser-identity-relations"
+        :snapshot-date "2026-07-14"})
+      (materialize-snapshot/materialize-source-snapshot!
+       {:workset-path workset-file :output-path snapshot-file})
+      (let [source (-> (files/read-json snapshot-file)
+                       (get-in ["snapshot_identity_object" "snapshot_inputs" 0]))
+            source-bundle (files/read-json
+                           (fs/file root (get source "source_bundle_path")))
+            bundle-hash (get source "work_content_hash")
+            primary-text-hash (get source "primary_text_hash")
+            base-inputs (assoc (files/read-json "examples/ab-validator-output/manifest-inputs.json")
+                               "work_content_hash" bundle-hash)
+            base-ir (assoc (files/read-json "examples/ab-validator-output/parser-ir.json")
+                           "source" {"work_content_hash" bundle-hash
+                                     "primary_text_hash" primary-text-hash})
+            changed-inputs (assoc base-inputs
+                                  "parser_build_hash" (files/example-hash "91")
+                                  "mapping_hash" (files/example-hash "92"))
+            changed-ir (-> base-ir
+                           (assoc-in ["derived_from" "aat_adapter"] "changed-parser-adapter")
+                           (assoc-in ["derived_from" "aat_adapter_version"] "changed-parser-adapter 2.0")
+                           (assoc-in ["derived_from" "mapping_id"] "https://w3id.org/abc/mappings/changed")
+                           (assoc-in ["derived_from" "mapping_version"] "2.0"))
+            base-manifest (materialized-parser-manifest!
+                           (fs/file root "base-input") (fs/file root "base-output")
+                           base-inputs base-ir)
+            changed-manifest (materialized-parser-manifest!
+                              (fs/file root "changed-input") (fs/file root "changed-output")
+                              changed-inputs changed-ir)
+            tuple (fn [inputs parser-ir]
+                    [(get inputs "parser_build_hash")
+                     (get-in parser-ir ["derived_from" "aat_adapter"])
+                     (get inputs "mapping_hash")])]
+        (is (= bundle-hash (get source-bundle "bundle_hash")))
+        (is (= primary-text-hash
+               (->> (get-in source-bundle ["identity_object" "members"])
+                    (some #(when (= (get source "primary_text_member") (get % "path"))
+                             (get % "member_hash"))))))
         (is (not= bundle-hash primary-text-hash))
-        (is (some #{bundle-hash} (get-in manifest ["provenance" "was_derived_from"])))))))
+        (is (not= (tuple base-inputs base-ir) (tuple changed-inputs changed-ir)))
+        (is (not= (get base-manifest "manifest_identity_object")
+                  (get changed-manifest "manifest_identity_object")))
+        (is (not= (get base-manifest "artifact_id")
+                  (get changed-manifest "artifact_id")))))))

@@ -566,7 +566,7 @@ fn resolve_run_normalization(
             );
             // I2-D17 coupling: a HistoricalToModern policy is only admissible
             // with a dictionary-backed detector. This is the guard the spec
-            // requires to land with the Phase-3 lane.
+            // requires.
             policy
                 .validate()
                 .context("M2 historical normalization policy failed validation")?;

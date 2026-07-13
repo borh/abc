@@ -22,6 +22,9 @@ active-path-hygiene:
 python-quality:
 	@bash scripts/python-quality.sh
 
+comment-hygiene:
+	@bash scripts/comment-hygiene-check.sh
+
 nix-format-check:
 	@find . \
 		-path './.git' -prune -o \

@@ -1,8 +1,8 @@
 //! Reads JSONL `{sentence, label}` from stdin, runs HeuristicV1 on each
 //! sentence, prints JSONL `{sentence, gold, heuristic, agree}`.
 //!
-//! Requires AB_VIBRATO_DICT to point at a unidic-cwj dictionary (Phase 1
-//! HeuristicV1 uses Vibrato for the proper-noun guard via OrthoTokenizer).
+//! Requires AB_VIBRATO_DICT to point at a unidic-cwj dictionary
+//! (HeuristicV1 uses Vibrato for the proper-noun guard via OrthoTokenizer).
 //!
 //! Usage:
 //!   cargo run --example detect_sentences < data/ortho-gold/sentences.jsonl > out.jsonl

@@ -13,7 +13,7 @@ impl OrthoTokenizer for VibratoAnalyzer {
     /// `proper_noun_char_ratio = 0` and proceeds. The proper-noun guard thus
     /// SILENTLY degenerates to "no proper nouns" on failure. We log to stderr
     /// so the failure is observable, but the contract remains `Vec`-returning
-    /// for backwards compatibility with Phase 1's trait shape. A future trait
+    /// for backwards compatibility with the original trait shape. A future trait
     /// revision should return `Result<Vec<OrthoToken>, _>` and route errors to
     /// the pipeline `errors_writer`.
     fn tokenize(&self, text: &str) -> Vec<OrthoToken> {

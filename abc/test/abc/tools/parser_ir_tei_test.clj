@@ -522,6 +522,17 @@
              ruby-node))
       (is (not (contains? (second ruby-node) :place))))))
 
+(deftest aozora-ruby-defaults-to-furigana-test
+  (let [ruby-node (some #(when (= :ruby (first %)) %)
+                        (hiccup-nodes
+                         (:body (parser-ir-tei/render
+                                 {"nodes" [{"type" "ruby"
+                                            "span" {"start" 0 "end" 3}
+                                            "ruby" {"base" "猫"
+                                                    "reading" "ねこ"
+                                                    "scope" "inferred"}}]}))))]
+    (is (= "furigana" (:type (second ruby-node))))))
+
 (deftest empty-ruby-base-is-omitted-test
   (testing "ruby with no source base does not emit TEI-invalid empty rb"
     (let [result (parser-ir-tei/render

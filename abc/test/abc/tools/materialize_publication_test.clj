@@ -180,6 +180,11 @@
                         (= "preservation.json" (get % "path_hint")))
                   (get tei-manifest "sidecars")))
         (is (= "passed" (get tei-validation-result "status")))
+        (is (= "passed" (get-in tei-validation-result
+                                ["layers" "relax_ng" "status"])))
+        (is (= "passed" (get-in tei-validation-result
+                                ["layers" "schematron" "status"])))
+        (is (empty? (get tei-validation-result "findings")))
         (is (= "passed" (get tei-manifest "validation_status")))
         (is (= source-corpus-hash
                (get-in plaintext-manifest

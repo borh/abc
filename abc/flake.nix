@@ -555,6 +555,24 @@
                 echo "ABC focused Clojure lint and format checks passed." > "$out/result.txt"
               '';
 
+          parser-publication-evidence =
+            pkgs.runCommand "abc-parser-publication-evidence"
+              {
+                nativeBuildInputs = [
+                  pkgs.clojure
+                  pkgs.libxml2
+                ];
+              }
+              ''
+                ${copyWritableSource}
+                patchShebangs bin/kaocha
+                ${cljSandboxEnv}
+                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+                bin/kaocha --focus \
+                  abc.tools.parser-publication-evidence-test/parser-publication-rendering-contract
+                touch "$out"
+              '';
+
           source-bundle-corpus =
             pkgs.runCommand "abc-source-bundle-corpus"
               {

@@ -3,6 +3,7 @@
             [abc.tools.parser-ir-publication-policy :as policy]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-vocabulary :as vocab]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]))
 
 (def policy-path "data/parser-ir-publication-policy-v0.json")
@@ -48,6 +49,32 @@
   (testing "plaintext renders visible text policy for every current node type"
     (is (= "\nH\nABX※［＃y］CD\n\nALTCAPQ"
            (plaintext/render-string all-node-parser-ir)))))
+
+(deftest plaintext-is-visible-body-text-only-test
+  (testing "ruby readings, apparatus, provenance, layout, and back matter remain outside plaintext"
+    (let [parser-ir {"source" {"source_path" "cards/work.txt"
+                               "encoding" "Shift_JIS"}
+                     "nodes" [{"type" "ruby"
+                               "span" {"start" 0 "end" 3}
+                               "ruby" {"base" "猫" "reading" "ねこ"
+                                       "scope" "explicit" "direction" "right"}}
+                              {"type" "editor-note"
+                               "span" {"start" 3 "end" 9}
+                               "note" {"raw" "［＃注］" "category" "apparatus"}}
+                              {"type" "layout-span"
+                               "span" {"start" 9 "end" 12}
+                               "text" "本文"
+                               "layout" {"kind" "tcy" "marker" "縦中横"}}
+                              {"type" "source-note"
+                               "span" {"start" 12 "end" 20}
+                               "text" "底本注" "note_type" "source-attribution"
+                               "placement" "back" "classification" "direct"
+                               "source_pointer" "blocks[9]"}]}
+          text (plaintext/render-string parser-ir)]
+      (is (= "猫本文" text))
+      (doseq [excluded ["ねこ" "［＃注］" "cards/work.txt" "Shift_JIS"
+                        "tcy" "縦中横" "底本注" "blocks[9]"]]
+        (is (not (string/includes? text excluded)) excluded)))))
 
 (deftest source-note-back-matter-is-separated-test
   (testing "front/back/body source notes are metadata and do not enter plaintext"

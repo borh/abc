@@ -21,6 +21,16 @@
     (is (= ["plaintext renderer has unexpected parser-IR node policy for image"]
            (vocab/coverage-errors #{"text"} "plaintext" #{"text" "image"})))))
 
+(deftest schema-derived-coverage-rejects-missing-and-extra-policy-test
+  (let [schema-node-types (vocab/node-types
+                           (files/read-json "schemas/parser-ir.schema.json"))
+        covered (policy/renderer-covered-node-types
+                 (policy/load-policy policy-path) "plaintext")]
+    (is (seq (vocab/coverage-errors schema-node-types "plaintext"
+                                    (disj covered "ruby"))))
+    (is (seq (vocab/coverage-errors schema-node-types "plaintext"
+                                    (conj covered "future-node"))))))
+
 (deftest policy-hash-is-jcs-json-test
   (testing "publication policy identity is canonical JSON, not source bytes"
     (is (= (hash/format-sha256

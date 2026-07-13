@@ -17,7 +17,9 @@
 - Exact goldens plus filesystem policy: 14 tests, 75 assertions, 0 failures.
 - Full `abc.tools.soranoha-test`: 38 tests, 349 assertions, 0 failures.
 - Direct four-namespace Kaocha run distinguishes the direct environment: the schema-backed TEI vars error because `TEI_SCHEMA_PATH` is unset. After correcting a migrated traversal's `Path`/`File` result type, the complete Soranoha namespace is green.
-- `nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests` ran 904 tests and 4054 assertions with 0 failures, but the derivation failed on the unrelated `abc.tools.tei-cache-test/missing-schema-still-fails-loudly-test` (`NoSuchFileException: no/such/schema.rng`).
+- Initial `nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests` exposed a deterministic Task 2 regression in `abc.tools.tei-cache-test/missing-schema-still-fails-loudly-test`: `fs/last-modified-time` threw before the schema-load error wrapper. Moving cache-key construction inside that wrapper restored the public loud-failure contract.
+- `bin/kaocha --focus abc.tools.tei-cache-test`: 4 tests, 31 assertions, 0 failures.
+- Fresh `nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests`: exit 0.
 - Focused policy sensitivity proves every retained permanent entry is live; exception rationale strings are nonblank.
 
 ## Self-review
@@ -29,4 +31,4 @@
 
 ## Concerns
 
-- The focused Nix derivation has one unrelated TEI cache error described above; all Task 6 focused suites and policy checks are green.
+- None.

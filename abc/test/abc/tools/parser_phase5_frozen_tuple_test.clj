@@ -306,3 +306,14 @@
               (expected-problem checkpoint-path [:prefix] "CHECKPOINT OK" "BROKENOINT OK")]
              (frozen/frozen-tuple-problems root)))
       (finally (fs/delete-tree root)))))
+
+(deftest short-checkpoint-preserves-all-independent-problems-test
+  (doseq [checkpoint ["" "SHORT"]]
+    (let [root (temp-root)]
+      (try
+        (mutate-json! root perf-path #(assoc % "verdict" "FAIL"))
+        (spit (fs/file root checkpoint-path) checkpoint)
+        (is (= [(expected-problem perf-path [:verdict] "PASS" "FAIL")
+                (expected-problem checkpoint-path [:prefix] "CHECKPOINT OK" checkpoint)]
+               (frozen/frozen-tuple-problems root)))
+        (finally (fs/delete-tree root))))))

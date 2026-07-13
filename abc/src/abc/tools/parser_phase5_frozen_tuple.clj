@@ -111,6 +111,11 @@
     {:value (nth values 0) :problems []}
     {:value nil :problems [(mismatch relative key-path 1 (count values))]}))
 
+(defn- observed-prefix [text expected-prefix]
+  (if (string/starts-with? text expected-prefix)
+    expected-prefix
+    (subs text 0 (min (count text) (count expected-prefix)))))
+
 (defn frozen-tuple-problems [monorepo-root]
   (let [mapping-relative "ab-validator/data/aat-to-parser-ir-mapping-v2-0.4.0.json"
         mapping-file (path monorepo-root mapping-relative)
@@ -200,9 +205,10 @@
                             (get-in conversion ["details" "converter_bin_sha256"]))
         (compare-coordinate (str reports-prefix "2026-07-12-phase5-checkpoint.txt")
                             [:prefix] "CHECKPOINT OK"
-                            (subs (files/read-text
-                                   (path monorepo-root (str reports-prefix "2026-07-12-phase5-checkpoint.txt")))
-                                  0 (count "CHECKPOINT OK")))])))))
+                            (observed-prefix
+                             (files/read-text
+                              (path monorepo-root (str reports-prefix "2026-07-12-phase5-checkpoint.txt")))
+                             "CHECKPOINT OK"))])))))
 
 (defn assert-frozen-tuple! [monorepo-root]
   (let [problems (frozen-tuple-problems monorepo-root)]

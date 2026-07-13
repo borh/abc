@@ -164,6 +164,15 @@
 (defn- participant-update-count [report]
   (count (:drift_participant_updates report)))
 
+(defn exit-failure?
+  [{:keys [validation-failed? fail-on-candidates? candidate-count
+           fail-on-drift-participant-updates? drift-participant-update-count]}]
+  (boolean
+   (or validation-failed?
+       (and fail-on-candidates? (pos? candidate-count))
+       (and fail-on-drift-participant-updates?
+            (pos? drift-participant-update-count)))))
+
 (defn- pair-report [previous-ref current-ref previous-corpus current-corpus
                     drift-persons-dir current-ingest]
   (let [report (generated-corpus-report
@@ -396,8 +405,10 @@
                                                           (or (get-in result [:summary "drift_participant_updates"]) 0)
                                                           (participant-update-count result))]
                      (assoc result ::exit-fail?
-                            (boolean (or validation-failed?
-                                         (and (:fail-on-candidates options) (pos? candidate-count))
-                                         (and (:fail-on-drift-participant-updates options)
-                                              (pos? drift-participant-update-count)))))))
+                            (exit-failure?
+                             {:validation-failed? validation-failed?
+                              :fail-on-candidates? (:fail-on-candidates options)
+                              :candidate-count candidate-count
+                              :fail-on-drift-participant-updates? (:fail-on-drift-participant-updates options)
+                              :drift-participant-update-count drift-participant-update-count}))))
     :fail?       ::exit-fail?}))

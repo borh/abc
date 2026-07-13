@@ -704,6 +704,18 @@
                 touch "$out/passed"
               '';
 
+          adr-evidence-aozora-history-audit-cli =
+            pkgs.runCommand "abc-adr-evidence-aozora-history-audit-cli"
+              { nativeBuildInputs = [ pkgs.clojure ]; }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                clojure -M:test:kaocha -m kaocha.runner \
+                  --focus abc.tools.aozora-history-audit-test/aozora-history-audit-cli-drift-update-exit-matrix-test
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
           schema-contract-drift =
             pkgs.runCommand "abc-schema-contract-drift" { nativeBuildInputs = [ pkgs.python3 ]; }
               ''

@@ -110,7 +110,7 @@
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"duplicate"
                           (register/candidate-registry {:entries []} [new-a new-a])))))
 
-(deftest registration-is-atomic-idempotent-and-allows-only-unrelated-missing-debt
+(deftest registration-is-atomic-idempotent-and-allows-only-preexisting-unrelated-debt
   (let [root (temp-dir)
         registry-path "docs/adr/adr-evidence.edn"
         registry-file (write! root registry-path "{:entries []}\n")
@@ -139,15 +139,31 @@
     (spit template-file (pr-str (template [(entry)])))
     (doseq [kind [:artifact-hash-mismatch :expired-evidence :predicate-failed]]
       (testing (name kind)
-        (with-redefs [register/current-claims (constantly [{:claim-id "ADR-0001-C1"}])
-                      evidence/validate-registry
-                      (constantly [{:kind kind :claim-id "ADR-9999-C1"}])]
-          (let [before (slurp registry-file)
-                result (register/register! {:repo-root root :entries-path template-path
-                                            :registry-path registry-path})]
-            (is (false? (:ok? result)))
-            (is (= kind (-> result :problems first :kind)))
-            (is (= before (slurp registry-file)))))))))
+        (let [finding {:kind kind :claim-id "ADR-9999-C1"
+                       :message "diagnostic wording" :line 42 :column 7}]
+          (with-redefs [register/current-claims (constantly [{:claim-id "ADR-0001-C1"}])
+                        evidence/validate-registry (constantly [finding])]
+            (is (:ok? (register/register! {:repo-root root :entries-path template-path
+                                           :registry-path registry-path})))))))
+    (let [calls (atom 0)
+          old-finding {:kind :input-hash-mismatch
+                       :affected-claim-ids ["ADR-9999-C1"]
+                       :artifact-path "old.json" :input-path "shared.clj"
+                       :message "old wording" :line 10}
+          candidate-finding (assoc old-finding :message "new wording" :line 900)
+          new-finding {:kind :predicate-failed :claim-id "ADR-9999-C1"}]
+      (with-redefs [register/current-claims (constantly [{:claim-id "ADR-0001-C1"}])
+                    evidence/validate-registry
+                    (fn [_]
+                      (if (odd? (swap! calls inc))
+                        [old-finding]
+                        [candidate-finding new-finding]))]
+        (let [before (slurp registry-file)
+              result (register/register! {:repo-root root :entries-path template-path
+                                          :registry-path registry-path})]
+          (is (false? (:ok? result)))
+          (is (= [candidate-finding new-finding] (:problems result)))
+          (is (= before (slurp registry-file))))))))
 
 (deftest checked-jq-family-predicate-covers-all-problem-coordinate-shapes
   (let [root (temp-dir)

@@ -104,9 +104,20 @@
                                            "path is missing or escapes the repository"
                                            :path path :state (:state state))]})))))
 
-(defn- allowed-migration-problem? [owned problem]
-  (and (= :missing-claim-evidence (:kind problem))
-       (not (contains? owned (:claim-id problem)))))
+(def ^:private diagnostic-problem-keys
+  #{:message :line :column :criterion-index :expected :actual :detail
+    :errors-humanized})
+
+(defn- problem-identity [problem]
+  (apply dissoc problem diagnostic-problem-keys))
+
+(defn- problem-claim-ids [problem]
+  (cond-> (set (:affected-claim-ids problem))
+    (:claim-id problem) (conj (:claim-id problem))))
+
+(defn- allowed-migration-problem? [owned baseline-identities problem]
+  (and (empty? (set/intersection owned (problem-claim-ids problem)))
+       (contains? baseline-identities (problem-identity problem))))
 
 (defn- atomic-write! [registry-file value]
   (let [target (fs/path registry-file)
@@ -133,17 +144,24 @@
         {:ok? false :problems (:problems materialized)}
         (let [entries (:entries materialized)
               owned (set (map :claim-id entries))
-              candidate (candidate-registry (files/read-edn registry-file) entries)
-              problems (evidence/validate-registry
-                        {:repo-root repo-root
-                         :workspace-root workspace-root
-                         :claims (current-claims repo-root)
-                         :registry candidate
-                         :matrix (files/read-edn
-                                  (contained-file repo-root evidence/matrix-path))
-                         :as-of (:as-of (files/read-edn
-                                         (contained-file repo-root evidence/as-of-path)))})
-              blocking (vec (remove #(allowed-migration-problem? owned %) problems))]
+              registry (files/read-edn registry-file)
+              candidate (candidate-registry registry entries)
+              validation-context
+              {:repo-root repo-root
+               :workspace-root workspace-root
+               :claims (current-claims repo-root)
+               :matrix (files/read-edn
+                        (contained-file repo-root evidence/matrix-path))
+               :as-of (:as-of (files/read-edn
+                               (contained-file repo-root evidence/as-of-path)))}
+              baseline-problems
+              (evidence/validate-registry (assoc validation-context :registry registry))
+              baseline-identities (set (map problem-identity baseline-problems))
+              problems
+              (evidence/validate-registry (assoc validation-context :registry candidate))
+              blocking (vec (remove #(allowed-migration-problem?
+                                      owned baseline-identities %)
+                                    problems))]
           (if (seq blocking)
             {:ok? false :problems problems}
             (do (atomic-write! registry-file candidate)

@@ -153,6 +153,10 @@
 
 (deftest parse-date-bce-astronomical-test
   (testing "parse-date converts 前N (N BCE) to ISO 8601-2 astronomical year"
+    (is (= ["-0346" [{"raw" "前347"
+                      "corrected" "-0346"
+                      "rule" "bce-astronomical"}]]
+           (ac/parse-date "前347")))
     (is (= ["-0426" [{"raw" "前427" "corrected" "-0426" "rule" "bce-astronomical"}]]
            (ac/parse-date "前427"))
         "前427 (427 BCE) → -0426 in astronomical year numbering")

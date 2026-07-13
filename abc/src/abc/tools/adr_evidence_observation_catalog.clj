@@ -317,7 +317,7 @@
 (defn- normalized-finding-path [path]
   (let [machine-local? (and (string? path)
                             (or (re-find #"(?i)^[a-z]:" path)
-                                (str/starts-with? path "\\\\")
+                                (str/starts-with? path "\\")
                                 (str/starts-with? path "//")))
         supplied (when (and (string? path) (not machine-local?)) (fs/path path))
         normalized (when-not machine-local? (normalized-coordinate path))]

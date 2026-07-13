@@ -279,7 +279,9 @@
 
 (deftest normalized-conformance-findings-reject-cross-host-machine-paths-test
   (doseq [path ["C:\\tmp\\finding.clj"
-                "\\\\server\\share\\finding.clj"]]
+                "\\\\server\\share\\finding.clj"
+                "\\tmp\\finding.clj"
+                "\\..\\outside.clj"]]
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"repository-relatively"
          (catalog/normalize-conformance-findings

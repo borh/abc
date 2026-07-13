@@ -65,13 +65,12 @@
     (write-lines! out-dir "manifest_identity.pl" lines)))
 
 (defn- emit-drift-facts! [out-dir]
-  (let [dir (fs/file example-drift-events-dir)
+  (let [dir (fs/path example-drift-events-dir)
         event-files (->> (if (fs/directory? dir) (fs/list-dir dir) [])
                          (filter fs/regular-file?)
-                         (sort-by (comp str fs/file-name))
-                         (map fs/file))
+                         (sort-by (comp str fs/file-name)))
         lines (for [f event-files
-                    :let [ev (files/read-json f)
+                    :let [ev (files/read-json (fs/file f))
                           id (get ev "drift_event_id")]]
                 (format "drift_event(%s)." (prolog-atom id)))]
     (write-lines! out-dir "drift.pl" lines)))
@@ -87,18 +86,16 @@
   ;; entries. Both assert a person exists in the corpus; the union is what
   ;; the referential-integrity query (Task 7) resolves against.
   []
-  (let [records-dir (fs/file example-persons-dir)
-        indexes-dir (fs/file example-persons-index-dir)
+  (let [records-dir (fs/path example-persons-dir)
+        indexes-dir (fs/path example-persons-index-dir)
         records (->> (if (fs/directory? records-dir) (fs/list-dir records-dir) [])
                      (filter fs/regular-file?)
                      (filter #(str/ends-with? (str (fs/file-name %)) ".json"))
-                     (sort-by (comp str fs/file-name))
-                     (map fs/file))
+                     (sort-by (comp str fs/file-name)))
         indexes (->> (if (fs/directory? indexes-dir) (fs/list-dir indexes-dir) [])
                      (filter fs/regular-file?)
-                     (sort-by (comp str fs/file-name))
-                     (map fs/file))
-        extract (fn [f] (get (files/read-json f) "person_id"))]
+                     (sort-by (comp str fs/file-name)))
+        extract (fn [path] (get (files/read-json (fs/file path)) "person_id"))]
     (into [] (comp (map extract)
                    (remove nil?)
                    (distinct))
@@ -107,18 +104,17 @@
 (defn- emit-person-record-facts! [out-dir]
   (let [record-lines (for [pid (person-record-ids)]
                        (format "person_record(%s)." (prolog-atom pid)))
-        event-dir (fs/file example-drift-events-dir)
+        event-dir (fs/path example-drift-events-dir)
         event-files (->> (if (fs/directory? event-dir) (fs/list-dir event-dir) [])
                          (filter fs/regular-file?)
-                         (sort-by (comp str fs/file-name))
-                         (map fs/file))
+                         (sort-by (comp str fs/file-name)))
         ;; drift_successor/2: for each drift event, every post- participant
         ;; (successor) is a successor of every pre- participant (predecessor).
         ;; Resolved by mapping prov.used (pre snapshot_ids) and
         ;; prov.was_generated_by (post snapshot_ids) through participants to
         ;; person_ids. Real corpus is the source — no hand-transcription.
         successor-lines (for [f event-files
-                              :let [ev (files/read-json f)
+                              :let [ev (files/read-json (fs/file f))
                                     snap->pid (snapshot->person-id ev)
                                     pre-pids (for [s (get-in ev ["prov" "used"])]
                                                (get snap->pid s))

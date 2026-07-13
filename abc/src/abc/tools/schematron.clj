@@ -54,10 +54,10 @@
 (defonce ^:private resource-cache (atom {}))
 
 (defn- schematron-resource [schema-path]
-  (let [file (fs/file schema-path)
-        cache-key [(str (fs/canonicalize file)) (fs/last-modified-time file)]]
+  (let [path (fs/path schema-path)
+        cache-key [(str (fs/canonicalize path)) (fs/last-modified-time path)]]
     (or (get @resource-cache cache-key)
-        (let [resource (SchematronResourceSCH/fromFile (fs/file file))]
+        (let [resource (SchematronResourceSCH/fromFile (fs/file path))]
           (when-not (.isValidSchematron resource)
             (throw (ex-info "Invalid Schematron schema"
                             {:schema-path schema-path})))

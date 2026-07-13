@@ -33,21 +33,23 @@
 ;; Schema objects keyed by $id / content. Draft 2020-12 is the default dialect
 ;; when $schema is absent from the schema data.
 ;; ---------------------------------------------------------------------------
-(defn- checked-in-schema-resources []
-  (let [schema-dir (fs/file "schemas")]
-    (if-not (fs/directory? schema-dir)
-      {}
-      (into {}
-            (keep (fn [path]
-                    (when (and (fs/regular-file? path)
-                               (str/ends-with? (str (fs/file-name path)) ".schema.json"))
-                      (let [file (fs/file path)
-                            path (str path)
-                            content (slurp file)
-                            schema (abc-json/read-json-file path)]
-                        (when-let [schema-id (get schema "$id")]
-                          [schema-id content])))))
-            (sort-by (comp str fs/file-name) (fs/list-dir schema-dir))))))
+(defn- checked-in-schema-resources
+  ([] (checked-in-schema-resources (fs/path "schemas")))
+  ([schema-dir]
+   (if-not (fs/directory? schema-dir)
+     {}
+     (into {}
+           (keep (fn [path]
+                   (when (fs/regular-file? path)
+                     (let [file (fs/file path)
+                           content (slurp file)
+                           schema (abc-json/read-json-file file)]
+                       (when-let [schema-id (get schema "$id")]
+                         [schema-id content])))))
+           (->> (concat (fs/glob schema-dir "*.schema.json")
+                        (fs/glob schema-dir "**/*.schema.json"))
+                distinct
+                (sort-by #(str (fs/relativize schema-dir %))))))))
 
 (def ^:private schema-registry
   (SchemaRegistry/withDefaultDialect

@@ -6,14 +6,25 @@
             [abc.tools.schema :as schema]
             [abc.test-fs :refer [with-temp-dir]]
             [babashka.fs :as fs]
-            [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
 
 (deftest checked-in-schema-resources-treats-an-absent-directory-as-empty-test
   (with-temp-dir [dir]
     (let [missing (fs/file dir "missing")]
-      (with-redefs [io/file (fn [& _] missing)]
-        (is (= {} (#'schema/checked-in-schema-resources)))))))
+      (is (= {} (#'schema/checked-in-schema-resources missing))))))
+
+(deftest checked-in-schema-resources-discovers-nested-schemas-in-stable-order-test
+  (with-temp-dir [dir]
+    (let [nested (fs/path dir "nested")]
+      (fs/create-dirs nested)
+      (spit (fs/file dir "z.schema.json")
+            "{\"$id\":\"z\",\"type\":\"object\"}")
+      (spit (fs/file nested "a.schema.json")
+            "{\"$id\":\"a\",\"type\":\"array\"}")
+      (spit (fs/file nested "ignored.json") "{\"$id\":\"ignored\"}")
+      (is (= [["a" "{\"$id\":\"a\",\"type\":\"array\"}"]
+              ["z" "{\"$id\":\"z\",\"type\":\"object\"}"]]
+             (vec (#'schema/checked-in-schema-resources dir)))))))
 
 (def ^:private cross-project-schema-versions
   {"schemas/annotation-output.schema.json" "0.1.0"

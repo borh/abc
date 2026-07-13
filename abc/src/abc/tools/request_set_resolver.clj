@@ -52,8 +52,8 @@
 
 (defn read-request-set-definition [label]
   (let [path (request-set-definition-path label)
-        file (fs/file path)]
-    (when-not (fs/regular-file? file)
+        path-exists? (fs/regular-file? path)]
+    (when-not path-exists?
       (throw (ex-info "Unknown request set"
                       {:label label
                        :path path})))
@@ -65,8 +65,8 @@
 (defn- read-registry-value
   [{:keys [dir value-kind semantic-key semantic-id]}]
   (let [path (registry-value-path dir semantic-id)
-        file (fs/file path)]
-    (when-not (fs/regular-file? file)
+        path-exists? (fs/regular-file? path)]
+    (when-not path-exists?
       (throw (ex-info (str "Unknown " value-kind)
                       {semantic-key semantic-id
                        :path path})))

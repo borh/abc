@@ -9,16 +9,15 @@
   "0e9ea3e586eb0aa34039fabfc85a407d2f98b165")
 
 (defn- corpus-zips [root]
-  (let [cards (fs/file root "cards")]
+  (let [cards (fs/path root "cards")]
     (->> (if (fs/directory? cards) (fs/list-dir cards) [])
          (filter fs/directory?)
          (sort-by (comp str fs/file-name))
-         (map #(fs/file % "files"))
+         (map #(fs/path % "files"))
          (mapcat #(if (fs/directory? %) (fs/list-dir %) []))
          (filter #(and (fs/regular-file? %)
                        (string/ends-with? (str (fs/file-name %)) ".zip")))
-         (sort-by str)
-         (map fs/file))))
+         (sort-by str))))
 
 (defn- relative-path [root file]
   (-> (fs/relativize root file)
@@ -118,7 +117,7 @@
   (reduce
    (fn [summary zip-file]
      (try
-       (let [scan (source-bundle/scan-zip zip-file)]
+       (let [scan (source-bundle/scan-zip (fs/file zip-file))]
          (record-readable summary aozora-root zip-file scan
                           (admission-reason scan)))
        (catch clojure.lang.ExceptionInfo t

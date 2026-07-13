@@ -51,8 +51,8 @@
 (defonce ^:private schema-cache (atom {}))
 
 (defn- load-schema ^Schema [^String schema-path]
-  (let [file (fs/file schema-path)
-        cache-key [(str (fs/canonicalize file)) (fs/last-modified-time file)]]
+  (let [path (fs/path schema-path)
+        cache-key [(str (fs/canonicalize path)) (fs/last-modified-time path)]]
     (or (get @schema-cache cache-key)
         (let [violations (atom [])
               schema (try

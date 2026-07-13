@@ -2,6 +2,7 @@
   (:require [abc.tools.json :as json]
             [abc.tools.source-bundle :as source-bundle]
             [abc.tools.source-bundle-report :as report]
+            [babashka.process :as process]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]])
   (:import [java.io FileNotFoundException InterruptedIOException]
@@ -64,15 +65,20 @@
     root))
 
 (deftest sevenzip-listable-exit-status-test
-  (let [root (.toFile (Files/createTempDirectory
-                       "abc-source-bundle-report-sevenzip-"
-                       (make-array java.nio.file.attribute.FileAttribute 0)))
-        valid (write-zip! (io/file root "valid.zip")
-                          [["work.txt" (content-bytes "body")]])
-        invalid (io/file root "invalid.zip")]
-    (spit invalid "not a zip")
-    (is (true? (#'report/sevenzip-listable? valid)))
-    (is (false? (#'report/sevenzip-listable? invalid)))))
+  (let [calls (atom [])
+        binary (or (System/getenv "ABC_7ZZ_BIN") "7zz")
+        zip-file (io/file "fixture.zip")]
+    (with-redefs [process/sh (fn [args]
+                               (swap! calls conj args)
+                               {:exit 0 :out "" :err ""})]
+      (is (true? (#'report/sevenzip-listable? zip-file))))
+    (with-redefs [process/sh (fn [args]
+                               (swap! calls conj args)
+                               {:exit 1 :out "" :err "not listable"})]
+      (is (false? (#'report/sevenzip-listable? zip-file))))
+    (is (= [[binary "l" "-slt" "fixture.zip"]
+            [binary "l" "-slt" "fixture.zip"]]
+           @calls))))
 
 (deftest programming-failures-do-not-invoke-sevenzip-test
   (let [sevenzip-calls (atom 0)]

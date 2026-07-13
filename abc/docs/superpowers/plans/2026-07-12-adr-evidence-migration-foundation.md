@@ -483,6 +483,12 @@ git commit -m "feat(adr): add deterministic evidence registrar"
     `:missing-runtime-input`, `:undeclared-runtime-input`,
     `:invalid-runtime-input-manifest`, `:external-read-denied`,
     `:invalid-ephemeral-root`, or containment problem data;
+  - `(with-validated-read-trace! options thunk) -> thunk-value` owns the deep
+    version-2 boundary: it completes `with-read-trace`, passes that exact
+    trace's `:repository-paths` to `assert-runtime-input-closure!`, and only
+    then returns the value. A focused v2 graph must reach this exact Var;
+    disconnected calls to the two lower-level operations do not establish
+    boundary ownership;
   - `(derive-nix-clojure-source-closure repo-root focused-vars) ->
     sorted-vector<relative-source-or-test-path>` and a closed checked manifest
     `{:schema-version :abc-adr-nix-clojure-closure-v1 :focused-vars [...]
@@ -582,6 +588,9 @@ Add runtime-input tests proving:
   manifest `:paths`, and descriptor runtime-data inputs are exactly equal;
   descriptor self, manifest self, and statically derived Clojure namespaces
   are excluded from that equality;
+- `with-validated-read-trace!` validates its own completed trace; omission of
+  the deep owner and a wrapper containing disconnected lower-level trace and
+  assertion calls both fail `:missing-evidence-boundary-owner`;
 - a Nix/Clojure closure manifest rejects unresolved focused Vars, unsorted or
   missing source paths, and a descriptor that binds the manifest but omits one
   listed source/test file or any of `deps.edn`, `deps-lock.json`, and
@@ -600,15 +609,24 @@ Add runtime-input tests proving:
   `Files/newInputStream`, `line-seq`, path-based `clojure.edn/read`,
   `file-seq`, `.listFiles`, `ZipFile`, `ProcessBuilder`, `shell/sh`, and
   `babashka.process`. `spit` and other writes are not reads.
-  `abc.tools.files`, `abc.tools.hash`,
-  `abc.tools.json/read-json-file`, and a small named adapter
+  the exact named adapters `abc.tools.files/read-json-lines`,
+  `abc.tools.files/with-zip-file`, `abc.tools.files/load-jena-model`,
+  `abc.tools.files/parse-xml-document`, the other reviewed traced helpers in
+  `abc.tools.files` and `abc.tools.hash`, `abc.tools.json/read-json-file`, and a small named adapter
   that calls `record-read!` immediately before a library path-load are the
   only exemptions. A bypass in a transitive production helper therefore
   fails the descriptor contract, while an unrelated unreachable helper does
   not contaminate a narrow boundary. Dynamic Var resolution, reflection-based
   I/O, and an unresolved call edge are forbidden in a v2 evidence graph.
-  Checked higher-order entries are allowed only when the caller/parameter and
-  every possible target resolve exactly; target graphs receive the same lint.
+  A higher-order callable must be either a direct symbol resolving to one exact
+  reviewed Var, a single-arity literal function whose body is recursively
+  analyzed under its bindings, or a defn parameter whose caller-scoped
+  contract enumerates every possible target. Computed, conditional,
+  collection-hidden, and let-bound callables fail closed; target and literal
+  function bodies receive the same lint. The audited signature table names the
+  callable argument positions for every admitted higher-order Var. Threading
+  forms are reconstructed with the threaded value in its semantic position
+  before those signatures are checked.
 
 - [ ] **Step 2: Run RED**
 
@@ -710,10 +728,12 @@ explicit set is exactly:
               [descriptor-path (:runtime-input-manifest descriptor)]))
 ```
 
-The caller supplies `:repository-paths` from the boundary's completed
-`with-read-trace` result. Capture refuses to execute a v2 descriptor whose
-static manifest/explicit comparison fails; the focused boundary test refuses
-to pass when the dynamic observed/manifest comparison fails.
+The focused boundary calls `with-validated-read-trace!`; that owner supplies
+`:repository-paths` from its own completed `with-read-trace` result to
+`assert-runtime-input-closure!`. Capture refuses to execute a v2 descriptor
+whose static manifest/explicit comparison fails or whose resolved graph does
+not reach that exact deep owner; co-presence of disconnected lower-level calls
+does not satisfy the contract.
 
 `derive-minimum-inputs` resolves the contained component root once and searches
 only its `test/` and `src/` directories. `capture!` continues to receive an

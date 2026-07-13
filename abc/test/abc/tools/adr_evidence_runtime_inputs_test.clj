@@ -1,26 +1,26 @@
 (ns abc.tools.adr-evidence-runtime-inputs-test
   (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
-            [clojure.java.io :as io]
+            [abc.tools.files :as files]
+            [babashka.fs :as fs]
+            [babashka.process :as process]
+            [clojure.set :as set]
             [clojure.test :refer [deftest is]])
-  (:import [java.nio.file Files]
-           [java.nio.file.attribute FileAttribute]))
+  (:import [java.nio.file Files]))
 
 (defn- temp-dir []
-  (.toFile (Files/createTempDirectory "runtime-inputs-" (make-array FileAttribute 0))))
+  (fs/file (fs/create-temp-dir {:prefix "runtime-inputs-"})))
 
 (defn- write! [root path body]
-  (let [file (io/file root path)]
-    (.mkdirs (.getParentFile file))
+  (let [file (fs/file root path)]
+    (fs/create-dirs (fs/parent file))
     (spit file body)
     file))
 
 (defn- exec! [root & argv]
-  (let [process (-> (ProcessBuilder. (into-array String argv))
-                    (.directory root)
-                    (.redirectErrorStream true)
-                    (.start))
-        output (slurp (.getInputStream process))
-        exit (.waitFor process)]
+  (let [{:keys [exit out]} @(process/process
+                             (vec argv)
+                             {:dir (str root) :out :string :err :out})
+        output out]
     (when-not (zero? exit)
       (throw (ex-info "fixture command failed" {:argv argv :output output})))
     output))
@@ -43,7 +43,9 @@
     (write! root "src/abc/tools/evidence_io.clj"
             "(ns abc.tools.evidence-io)\n(defn with-read-trace [options thunk] (thunk))\n")
     (write! root "src/abc/tools/adr_evidence_runtime_inputs.clj"
-            "(ns abc.tools.adr-evidence-runtime-inputs)\n(defn assert-runtime-input-closure! [options] true)\n")
+            (str "(ns abc.tools.adr-evidence-runtime-inputs)\n"
+                 "(defn assert-runtime-input-closure! [options] true)\n"
+                 "(defn with-validated-read-trace! [options thunk] (thunk))\n"))
     root))
 
 (defn- problem-kind [thunk]
@@ -51,12 +53,12 @@
 
 (deftest workspace-root-is-the-exact-git-and-monorepo-identity-test
   (let [root (monorepo-root)
-        child (io/file root "abc")]
+        child (fs/file root "abc")]
     (is (= (.getCanonicalFile root)
            (runtime/validate-workspace-root! root)))
     (is (= :invalid-workspace-root
            (problem-kind #(runtime/validate-workspace-root! child))))
-    (.delete (io/file root "justfile"))
+    (fs/delete (fs/file root "justfile"))
     (is (= :invalid-workspace-root
            (problem-kind #(runtime/validate-workspace-root! root))))))
 
@@ -87,6 +89,33 @@
                        :repository-paths []})
                      (catch Exception e e))))))))
 
+(deftest deep-read-boundary-validates-its-own-completed-trace-test
+  (let [root (temp-dir)
+        descriptor-path "docs/evidence/adr-capture/example.edn"
+        manifest-path "docs/evidence/adr-inputs/example.edn"
+        data-path "data/value.edn"
+        descriptor {:schema-version "abc-adr-evidence-capture-v2"
+                    :runtime-input-manifest manifest-path
+                    :input-profile {:kind "clojure-test-v1"
+                                    :roots []
+                                    :explicit [descriptor-path manifest-path data-path]}}
+        options {:repo-root root :workspace-root root
+                 :identity-root root :cwd-root root
+                 :descriptor {:path descriptor-path :value descriptor}}]
+    (write! root descriptor-path (pr-str descriptor))
+    (write! root manifest-path
+            (pr-str {:schema-version :abc-adr-runtime-inputs-v1
+                     :paths [data-path]}))
+    (write! root data-path "{:value 42}")
+    (let [boundary (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                               'with-validated-read-trace!)]
+      (is (some? boundary))
+      (when boundary
+        (is (= {:value 42}
+               (@boundary options #(files/read-edn (fs/path root data-path)))))
+        (is (= :undeclared-runtime-input
+               (problem-kind #(@boundary options (constantly :no-read)))))))))
+
 (deftest runtime-manifest-rejects-noncanonical-vectors-test
   (let [root (temp-dir)
         descriptor-path "docs/evidence/adr-capture/example.edn"
@@ -116,8 +145,8 @@
         descriptor-path "docs/evidence/adr-capture/example.edn"
         manifest-path "docs/evidence/adr-inputs/example.edn"
         outside-file (write! outside "outside.txt" "outside")
-        link (io/file root "linked.txt")]
-    (.mkdirs (.getParentFile (io/file root manifest-path)))
+        link (fs/file root "linked.txt")]
+    (fs/create-dirs (fs/parent (fs/file root manifest-path)))
     (Files/createSymbolicLink (.toPath link) (.toPath outside-file)
                               (make-array java.nio.file.attribute.FileAttribute 0))
     (doseq [[label paths]
@@ -222,17 +251,73 @@
              (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad])))
           label))))
 
-(deftest v2-focused-boundary-must-own-tracing-and-runtime-closure-test
+(deftest higher-order-calls-require-a-direct-finite-target-test
+  (doseq [[label body expected]
+          [["vector-hidden read"
+            "(defn bad [] (apply (first [slurp]) [\"x\"]))"
+            :unsupported-evidence-call-graph]
+           ["map-hidden process"
+            "(ns example.core (:require [babashka.process :as process]))\n(defn bad [] (map (get {:run process/process} :run) [[\"true\"]]))"
+            :unsupported-evidence-call-graph]
+           ["literal callable with forbidden body"
+            "(defn bad [] (filter (fn [x] (slurp x)) [\"x\"]))"
+            :forbidden-evidence-io]]]
+    (let [root (analyzer-repo body)]
+      (is (= expected
+             (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad])))
+          label))))
+
+(deftest direct-higher-order-target-is-enqueued-and-linted-test
+  (let [root (analyzer-repo
+              "(defn unsafe [x] (slurp x))\n(defn bad [] (map unsafe [\"x\"]))")]
+    (is (= :forbidden-evidence-io
+           (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad]))))))
+
+(deftest untraced-metadata-and-generic-jvm-length-are-not-safe-test
+  (doseq [[label body]
+          [["canonicalize"
+            "(ns example.core (:require [babashka.fs :as fs]))\n(defn bad [] (fs/canonicalize \"x\"))"]
+           ["length" "(defn bad [] (.length (java.io.File. \"x\")))"]]]
+    (let [root (analyzer-repo body)]
+      (is (contains? #{:forbidden-evidence-capability :forbidden-evidence-io}
+                     (problem-kind #(runtime/analyze-reachable-vars
+                                     root ['example.core/bad])))
+          label))))
+
+(deftest trusted-adapter-inventory-names-only-resolvable-vars-test
+  (let [inventory (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                                       'trusted-adapter-vars))]
+    (is (every? (fn [qualified]
+                  (some-> (find-ns (symbol (namespace qualified)))
+                          (ns-resolve (symbol (name qualified)))))
+                inventory))
+    (is (set/subset?
+         '#{abc.tools.files/read-json-lines
+            abc.tools.files/with-zip-file
+            abc.tools.files/load-jena-model
+            abc.tools.files/parse-xml-document}
+         inventory))))
+
+(deftest v2-focused-boundary-must-use-the-deep-validation-owner-test
   (let [missing-trace (boundary-analyzer-repo
                        "(ns example.core (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]))\n(defn contract [] (runtime/assert-runtime-input-closure! {}))")
         missing-closure (boundary-analyzer-repo
-                         "(ns example.core (:require [abc.tools.evidence-io :as evidence-io]))\n(defn contract [] (evidence-io/with-read-trace {} (fn [] true)))")]
+                         "(ns example.core (:require [abc.tools.evidence-io :as evidence-io]))\n(defn contract [] (evidence-io/with-read-trace {} (fn [] true)))")
+        disconnected (boundary-analyzer-repo
+                      (str "(ns example.core (:require [abc.tools.evidence-io :as evidence-io] "
+                           "[abc.tools.adr-evidence-runtime-inputs :as runtime]))\n"
+                           "(defn contract []\n"
+                           "  (evidence-io/with-read-trace {} (fn [] true))\n"
+                           "  (runtime/assert-runtime-input-closure! {}))"))]
     (is (= :missing-evidence-boundary-owner
            (problem-kind #(runtime/assert-v2-boundary-ownership!
                            (runtime/analyze-reachable-vars missing-trace ['example.core/contract])))))
     (is (= :missing-evidence-boundary-owner
            (problem-kind #(runtime/assert-v2-boundary-ownership!
-                           (runtime/analyze-reachable-vars missing-closure ['example.core/contract])))))))
+                           (runtime/analyze-reachable-vars missing-closure ['example.core/contract])))))
+    (is (= :missing-evidence-boundary-owner
+           (problem-kind #(runtime/assert-v2-boundary-ownership!
+                           (runtime/analyze-reachable-vars disconnected ['example.core/contract])))))))
 
 (deftest statically-resolved-higher-order-local-var-arguments-expand-test
   (let [root (analyzer-repo
@@ -298,10 +383,10 @@
 (deftest nix-clojure-closure-manifest-binds-the-derived-graph-test
   (let [result (runtime/analyze-reachable-vars "." ['abc.tools.manifest/content])
         manifest-path "target/runtime-input-test-closure.edn"
-        manifest-file (io/file manifest-path)
+        manifest-file (fs/file manifest-path)
         inputs (concat ["deps.edn" "deps-lock.json" "tests.edn" manifest-path]
                        (:paths result) (:contract-paths result))]
-    (.mkdirs (.getParentFile manifest-file))
+    (fs/create-dirs (fs/parent manifest-file))
     (spit manifest-file
           (pr-str {:schema-version :abc-adr-nix-clojure-closure-v1
                    :focused-vars ['abc.tools.manifest/content]

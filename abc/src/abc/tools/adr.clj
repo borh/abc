@@ -2,7 +2,6 @@
   (:require [abc.tools.files :as files]
             [abc.tools.path-containment :as containment]
             [babashka.fs :as fs]
-            [clojure.java.io :as io]
             [clojure.string :as str])
   (:import [java.time LocalDate]))
 
@@ -27,14 +26,28 @@
 (def evidence-prefixes ["test/" "fixtures/" "nix/"])
 (def ^:private evidence-roots #{"test" "fixtures" "nix"})
 
+(defn- adr-markdown-filename? [filename]
+  (boolean (re-matches #"\d{4}-.+\.md" filename)))
+
+(defn- corpus-markdown-filename? [filename]
+  (and (str/ends-with? filename ".md")
+       (not= "README.md" filename)))
+
+(defn- evidence-token? [token]
+  (loop [[prefix & more] evidence-prefixes]
+    (cond
+      (nil? prefix) false
+      (str/starts-with? token prefix) true
+      :else (recur more))))
+
 (defn problem [kind file message & {:as data}]
   (merge {:kind kind :file file :message message} data))
 
 (defn adr-files [dir]
-  (->> (files/list-files (io/file dir))
+  (->> (files/list-files (fs/path dir))
        (filter files/file?)
-       (map #(.getName %))
-       (filter #(re-matches #"\d{4}-.+\.md" %))
+       (map fs/file-name)
+       (filter adr-markdown-filename?)
        sort
        vec))
 
@@ -118,8 +131,8 @@
                      (range)
                      (criterion-bodies
                       (get section-bodies "Acceptance Criteria")))]
-    {:criteria (mapv :criterion parsed)
-     :problems (vec (mapcat :problems parsed))}))
+    {:criteria (mapv #(:criterion %) parsed)
+     :problems (vec (mapcat #(:problems %) parsed))}))
 
 (defn- evidence [section-bodies]
   (vec
@@ -128,7 +141,7 @@
                       (criterion-bodies
                        (get section-bodies "Acceptance Criteria")))
          token (map second (re-seq #"`([^`]+)`" criterion))
-         :when (some #(str/starts-with? token %) evidence-prefixes)]
+         :when (evidence-token? token)]
      {:path token
       :section "Acceptance Criteria"
       :criterion-index idx})))
@@ -202,10 +215,10 @@
          (assoc-in parsed [:relations relation-key] [])
          (let [items (map #(relation-item file field %)
                           (str/split value #",\s*"))]
-           (-> parsed
-               (assoc-in [:relations relation-key]
-                         (vec (keep :value items)))
-               (update :problems into (mapcat :problems items)))))
+           (assoc (assoc-in parsed [:relations relation-key]
+                            (vec (keep #(:value %) items)))
+                  :problems
+                  (into (:problems parsed) (mapcat #(:problems %) items)))))
        parsed))
    {:relations {} :problems []}
    relation-fields))
@@ -231,7 +244,7 @@
   (some-> (re-find #"^(\d{4})" filename) second Integer/parseInt))
 
 (defn parse-adr [dir filename]
-  (let [lines (str/split-lines (files/read-text (io/file dir filename)))
+  (let [lines (str/split-lines (files/read-text (fs/path dir filename)))
         title-result (parse-title filename (first lines))
         header-result (header-lines filename lines)
         fields-result (parse-fields filename (:lines header-result))
@@ -269,10 +282,11 @@
                                   mismatch-problems))}))
 
 (defn parse-all [dir]
-  (mapv #(parse-adr dir %) (adr-files dir)))
+  (vec (for [filename (adr-files dir)]
+         (parse-adr dir filename))))
 
 (defn- duplicate-number-problems [adrs]
-  (for [[num duplicates] (group-by :num adrs)
+  (for [[num duplicates] (group-by #(:num %) adrs)
         :when (and num (< 1 (count duplicates)))
         adr duplicates]
     (problem :duplicate-number (:file adr)
@@ -284,7 +298,7 @@
                      {:keys [claim-id] :as criterion} criteria
                      :when claim-id]
                  (assoc criterion :file file))]
-    (for [[claim-id duplicates] (sort-by key (group-by :claim-id claims))
+    (for [[claim-id duplicates] (sort-by key (group-by #(:claim-id %) claims))
           :when (< 1 (count duplicates))
           {:keys [file criterion-index]} duplicates]
       (problem :duplicate-claim-id file
@@ -359,7 +373,7 @@
                (str "Accepted status requires a `## " heading "` section")))))
 
 (defn- relation-resolution-problems [adrs]
-  (let [known (set (keep :num adrs))]
+  (let [known (set (keep #(:num %) adrs))]
     (mapcat
      (fn [{:keys [file relations]}]
        (mapcat
@@ -387,21 +401,21 @@
                    :missing-kind :missing-supersedes}})
 
 (defn- relation-reciprocity-problems [adrs]
-  (let [by-number (into {} (map (juxt :num identity) adrs))]
+  (let [by-number (into {} (map (fn [adr] [(:num adr) adr]) adrs))]
     (for [{source :num file :file relations :relations} adrs
           [relation {:keys [reciprocal missing-kind]}] reciprocal-relations
           {:keys [target scope] :as item} (get relations relation)
           :let [target-adr (get by-number target)
                 expected {:target source :scope scope}]
           :when (and target-adr
-                     (not (some #{expected}
+                     (not (some #(= expected %)
                                 (get-in target-adr [:relations reciprocal]))))]
       (problem missing-kind file
                "relation must have a reciprocal item with matching scope"
                :relation relation :value item))))
 
 (defn- supersession-status-problems [adrs]
-  (let [by-number (into {} (map (juxt :num identity) adrs))
+  (let [by-number (into {} (map (fn [adr] [(:num adr) adr]) adrs))
         incoming-unscoped
         (set (for [{:keys [relations]} adrs
                    {:keys [target scope]} (:supersedes relations)
@@ -431,17 +445,17 @@
       (let [path (peek queue)
             current (get by-number (peek path))
             targets (->> (get-in current [:relations :depends-on])
-                         (map :target)
+                         (map #(:target %))
                          distinct
                          sort)
-            unseen (remove visited targets)
+            unseen (remove #(contains? visited %) targets)
             next-paths (mapv #(conj path %) unseen)]
         (recur (into (pop queue) next-paths)
                (into visited unseen)
                (into paths next-paths))))))
 
 (defn- dependency-status-problems [adrs]
-  (let [by-number (into {} (map (juxt :num identity) adrs))]
+  (let [by-number (into {} (map (fn [adr] [(:num adr) adr]) adrs))]
     (for [{:keys [num file status]} adrs
           :when (= "Accepted" status)
           path (dependency-paths-from by-number num)
@@ -453,7 +467,7 @@
                :target-status (:status target)))))
 
 (defn- legacy-dependency-status-problems [adrs]
-  (let [by-number (into {} (map (juxt :num identity) adrs))]
+  (let [by-number (into {} (map (fn [adr] [(:num adr) adr]) adrs))]
     (for [{source-status :status file :file relations :relations} adrs
           {:keys [target scope] :as item} (:depends-on relations)
           :let [target-status (:status (get by-number target))]
@@ -493,7 +507,7 @@
              :value item)))
 
 (defn- evidence-problems [repo-root {:keys [file status evidence]}]
-  (let [by-criterion (group-by :criterion-index evidence)
+  (let [by-criterion (group-by #(:criterion-index %) evidence)
         states (into {} (map (fn [{:keys [path]}]
                                [path (evidence-path-state repo-root path)])
                              evidence))]
@@ -522,8 +536,8 @@
 (defn validate-adrs [adrs repo-root]
   (vec
    (concat
-    (mapcat :parse-problems adrs)
-    (mapcat :claim-problems adrs)
+    (mapcat #(:parse-problems %) adrs)
+    (mapcat #(:claim-problems %) adrs)
     (duplicate-number-problems adrs)
     (duplicate-claim-id-problems adrs)
     (mapcat lifecycle-problems adrs)
@@ -569,12 +583,11 @@
       :else
       (let [markdown-files (->> (files/list-files directory)
                                 (filter files/file?)
-                                (map #(.getName %))
-                                (filter #(and (str/ends-with? % ".md")
-                                              (not= "README.md" %)))
+                                (map fs/file-name)
+                                (filter corpus-markdown-filename?)
                                 sort
                                 vec)
-            malformed (remove #(re-matches #"\d{4}-.+\.md" %) markdown-files)
+            malformed (remove adr-markdown-filename? markdown-files)
             adrs (parse-all directory)]
         (vec
          (concat
@@ -583,7 +596,7 @@
           (for [filename malformed]
             (problem :invalid-adr-filename filename
                      "ADR filename must be `NNNN-title.md`"))
-          (validate-fn adrs (io/file repo-root))))))))
+          (validate-fn adrs (fs/path repo-root))))))))
 
 (defn validate-repository
   ([repo-root] (validate-repository repo-root "docs/adr"))

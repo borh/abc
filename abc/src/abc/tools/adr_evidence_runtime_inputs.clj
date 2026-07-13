@@ -1,5 +1,6 @@
 (ns abc.tools.adr-evidence-runtime-inputs
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.evidence-io :as evidence-io]
+            [abc.tools.files :as files]
             [abc.tools.path-containment :as containment]
             [babashka.fs :as fs]
             [babashka.process :as process]
@@ -104,6 +105,17 @@
                :paths (vec (sort extra))))
       true)))
 
+(defn with-validated-read-trace!
+  "Run a physical-read boundary and validate that boundary's completed trace
+  against the descriptor runtime-input manifest before returning its value."
+  [{:keys [identity-root cwd-root] :as options} thunk]
+  (let [{:keys [value repository-paths]}
+        (evidence-io/with-read-trace {:identity-root identity-root
+                                      :cwd-root cwd-root}
+          thunk)]
+    (assert-runtime-input-closure! (assoc options :repository-paths repository-paths))
+    value))
+
 (defn validate-runtime-input-manifest!
   "Validate the static v2 descriptor/manifest binding before executing it."
   [{:keys [repo-root workspace-root descriptor]}]
@@ -148,11 +160,13 @@
   '#{abc.tools.evidence-io/with-read-trace
      abc.tools.evidence-io/record-read!
      abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure!
+     abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace!
      abc.tools.files/read-text abc.tools.files/read-bytes
      abc.tools.files/input-stream abc.tools.files/reader abc.tools.files/list-files
      abc.tools.files/exists? abc.tools.files/directory? abc.tools.files/file?
-     abc.tools.files/read-edn abc.tools.files/read-jsonl abc.tools.files/read-zip-entry
-     abc.tools.files/read-jena-model abc.tools.files/read-tei-document
+     abc.tools.files/read-edn abc.tools.files/read-json-lines
+     abc.tools.files/with-zip-file abc.tools.files/load-jena-model
+     abc.tools.files/parse-xml-document
      abc.tools.json/read-json-file abc.tools.hash/sha256-file
      abc.tools.hash/byte-length})
 
@@ -163,6 +177,42 @@
   (or (contains? trusted-adapter-vars var)
       (contains? audited-structural-leaf-vars var)))
 
+(def ^:private audited-higher-order-signatures
+  '{clojure.core/apply :first
+    clojure.core/map :first
+    clojure.core/mapv :first
+    clojure.core/mapcat :first
+    clojure.core/map-indexed :first
+    clojure.core/filter :first
+    clojure.core/remove :first
+    clojure.core/keep :first
+    clojure.core/keep-indexed :first
+    clojure.core/reduce :first
+    clojure.core/reduce-kv :first
+    clojure.core/group-by :first
+    clojure.core/some :first
+    clojure.core/every? :first
+    clojure.core/not-any? :first
+    clojure.core/merge-with :first
+    clojure.core/complement :first
+    clojure.core/partial :first
+    clojure.core/comp :all
+    clojure.core/juxt :all
+    clojure.core/update #{2}
+    clojure.core/update-in #{2}
+    clojure.core/swap! #{1}
+    clojure.core/sort-by {2 #{0} 3 #{0 1}}
+    clojure.core/repeatedly {1 #{0} 2 #{1}}
+    clojure.core/into {3 #{1}}})
+
+(defn- callable-argument-indexes [target argument-count]
+  (let [signature (get audited-higher-order-signatures target)]
+    (cond
+      (= :first signature) #{0}
+      (= :all signature) (set (range argument-count))
+      (map? signature) (get signature argument-count #{})
+      :else signature)))
+
 ;; External executable Vars are capabilities, not harmless names. This is an
 ;; exact reviewed inventory of pure operations needed by current evidence
 ;; boundaries; additions require a focused positive test and review.
@@ -170,28 +220,24 @@
   '#{clojure.core/= clojure.core/not= clojure.core/not clojure.core/< clojure.core/<=
      clojure.core/> clojure.core/>= clojure.core/+ clojure.core/-
      clojure.core/* clojure.core// clojure.core/inc clojure.core/dec
-     clojure.core/identity clojure.core/constantly clojure.core/comp
-     clojure.core/complement clojure.core/partial clojure.core/apply clojure.core/juxt
+     clojure.core/identity clojure.core/constantly
      clojure.core/ex-info clojure.core/iterator-seq clojure.core/make-array
      clojure.core/str clojure.core/pr-str clojure.core/name clojure.core/namespace
      clojure.core/symbol clojure.core/keyword clojure.core/boolean
+     clojure.core/key clojure.core/val
      clojure.core/count clojure.core/empty? clojure.core/seq clojure.core/first
      clojure.core/second clojure.core/rest clojure.core/next clojure.core/nth
      clojure.core/peek clojure.core/pop
      clojure.core/get clojure.core/get-in clojure.core/find clojure.core/contains?
      clojure.core/keys clojure.core/vals clojure.core/select-keys
      clojure.core/assoc clojure.core/assoc-in clojure.core/dissoc
-     clojure.core/update clojure.core/update-in clojure.core/conj clojure.core/disj
-     clojure.core/into clojure.core/merge clojure.core/merge-with
-     clojure.core/map clojure.core/mapv clojure.core/mapcat clojure.core/map-indexed clojure.core/filter
-     clojure.core/remove clojure.core/keep clojure.core/keep-indexed
-     clojure.core/reduce clojure.core/reduce-kv clojure.core/sort clojure.core/sort-by
-     clojure.core/distinct clojure.core/dedupe clojure.core/group-by
+     clojure.core/conj clojure.core/disj
+     clojure.core/merge
+     clojure.core/distinct clojure.core/dedupe clojure.core/sort
      clojure.core/frequencies
-     clojure.core/some clojure.core/every? clojure.core/not-any?
      clojure.core/vector clojure.core/vec clojure.core/set clojure.core/hash-map
      clojure.core/sorted-map clojure.core/sorted-set clojure.core/range
-     clojure.core/repeatedly clojure.core/take clojure.core/drop
+     clojure.core/take clojure.core/drop
      clojure.core/take-nth clojure.core/concat clojure.core/reverse
      clojure.core/string? clojure.core/symbol? clojure.core/keyword?
      clojure.core/map? clojure.core/set? clojure.core/vector? clojure.core/seq?
@@ -199,19 +245,29 @@
      clojure.core/nil? clojure.core/some? clojure.core/true? clojure.core/false?
      clojure.core/zero? clojure.core/pos? clojure.core/neg?
      clojure.core/re-find clojure.core/re-matches clojure.core/re-seq
-     clojure.core/subs clojure.core/swap!
+     clojure.core/subs
      clojure.test/is clojure.string/includes? clojure.string/starts-with?
      clojure.string/ends-with? clojure.string/blank? clojure.string/split
      clojure.string/split-lines clojure.string/replace clojure.string/join clojure.string/trim
      clojure.set/union clojure.set/difference clojure.set/intersection
      clojure.set/subset? clojure.java.io/file
-     babashka.fs/absolute? babashka.fs/absolutize babashka.fs/canonicalize babashka.fs/file
-     babashka.fs/normalize babashka.fs/path babashka.fs/relativize})
+     babashka.fs/absolute? babashka.fs/absolutize babashka.fs/file
+     babashka.fs/file-name babashka.fs/normalize babashka.fs/path
+     babashka.fs/relativize})
 
 (def ^:private audited-special-heads
   '#{fn* fn if let* let loop* loop recur do throw try catch finally
      -> ->> some-> some->> cond-> cond->>
      set! monitor-enter monitor-exit case* deftype* reify*})
+
+(def ^:private thread-first-heads '#{-> some-> cond->})
+(def ^:private thread-last-heads '#{->> some->> cond->>})
+
+(defn- thread-step-form [direction step]
+  (let [parts (if (seq? step) step (list step))]
+    (case direction
+      :first (with-meta (list* (first parts) nil (rest parts)) (meta step))
+      :last (with-meta (apply list (concat parts [nil])) (meta step)))))
 
 (def ^:private audited-core-macros
   '#{and or when when-not if-let when-let if-some when-some cond condp case
@@ -224,7 +280,7 @@
 ;; constructors, static JVM I/O, network, and process APIs go through named
 ;; adapters instead.
 (def ^:private audited-safe-jvm-heads
-  '#{.getName .isBefore .length})
+  '#{.getName .isBefore})
 
 (def ^:private audited-safe-jvm-vars
   '#{Integer/parseInt LocalDate/parse})
@@ -277,6 +333,22 @@
         (fail! :unsupported-evidence-call-graph "multi-arity defn is outside the audited subset"))
       {:params (first (first arities)) :body (rest (first arities))})))
 
+(defn- parse-literal-fn [form]
+  (let [[_ & tail] form
+        tail (if (symbol? (first tail)) (rest tail) tail)
+        arities (if (vector? (first tail)) [(cons (first tail) (rest tail))] tail)]
+    (when-not (and (= 1 (count arities))
+                   (vector? (first (first arities))))
+      (fail! :unsupported-evidence-call-graph
+             "higher-order literal function must have exactly one arity"))
+    {:params (first (first arities)) :body (rest (first arities))}))
+
+(defn- binding-symbols [binding-form]
+  (->> (tree-seq coll? seq binding-form)
+       (filter symbol?)
+       (remove '#{&})
+       set))
+
 (defn- contract-path [caller]
   (when-let [basename (get contract-basenames caller)]
     (str "data/evidence-higher-order-calls/" basename)))
@@ -314,6 +386,7 @@
         analysis (:analysis kondo)
         definitions-grouped (group-by qvar (:var-definitions analysis))
         definitions (into {} (map (fn [[var items]] [var (first items)])) definitions-grouped)
+        defined-namespaces (set (keep namespace (keys definitions)))
         usages (group-by (juxt :filename :from-var) (:var-usages analysis))
         locals (group-by :filename (:local-usages analysis))
         findings (group-by :filename (:findings kondo))
@@ -333,6 +406,89 @@
               (or (get @forms-cache filename)
                   (let [forms (read-forms! (fs/file repo-root filename))]
                     (swap! forms-cache assoc filename forms) forms)))
+            (admit-callable-target! [caller target pending]
+              (swap! resolved-calls conj target)
+              (cond
+                (or (contains? forbidden-vars target)
+                    (forbidden-head? target))
+                (fail! (if (contains? code-loading-vars target)
+                         :forbidden-evidence-capability
+                         :forbidden-evidence-io)
+                       "higher-order target is a forbidden capability"
+                       :caller caller :target target)
+
+                (trusted-leaf-var? target)
+                (do (definition! target)
+                    (swap! reachable conj target))
+
+                (contains? definitions target)
+                (let [target-definition (definition! target)]
+                  (when (:macro target-definition)
+                    (fail! :unsupported-evidence-call-graph
+                           "higher-order target cannot be a macro"
+                           :caller caller :target target))
+                  (swap! pending conj target))
+
+                (contains? audited-safe-external-vars target) nil
+
+                (contains? defined-namespaces (namespace target))
+                (definition! target)
+
+                :else
+                (fail! :forbidden-evidence-capability
+                       "higher-order target is not an exact reviewed executable Var"
+                       :caller caller :target target)))
+            (resolve-callable-argument! [caller definition params argument pending]
+              (cond
+                (and (seq? argument) (#{'fn 'fn*} (first argument)))
+                (let [{literal-params :params body :body} (parse-literal-fn argument)
+                      lambda-params (binding-symbols literal-params)]
+                  (doseq [body-form body]
+                    (walk! caller definition (set/union params lambda-params)
+                           body-form pending)))
+
+                (not (symbol? argument))
+                (fail! :unsupported-evidence-call-graph
+                       "higher-order callable must be a direct symbol or literal function"
+                       :caller caller :form (pr-str argument))
+
+                (contains? params argument)
+                (let [[path contract] (load-contract! repo-root caller)
+                      targets (get-in contract [:parameters argument])]
+                  (when-not targets
+                    (fail! :invalid-higher-order-contract
+                           "callable parameter is absent from its caller contract"
+                           :caller caller :parameter argument))
+                  (when-not (some #(= (span argument) (usage-span %))
+                                  (get locals (:filename definition)))
+                    (fail! :reader-kondo-span-mismatch
+                           "callable parameter does not match clj-kondo local usage"
+                           :caller caller :parameter argument))
+                  (swap! consulted conj path)
+                  (doseq [target targets]
+                    (admit-callable-target! caller target pending)))
+
+                :else
+                (let [matches (filter #(= (span argument) (usage-span %))
+                                      (get usages [(:filename definition)
+                                                   (:name definition)]))]
+                  (when-not (= 1 (count matches))
+                    (fail! :unsupported-evidence-call-graph
+                           "higher-order callable must resolve to exactly one Var"
+                           :caller caller :form (pr-str argument)
+                           :matches (count matches)))
+                  (let [usage (first matches)
+                        target (symbol (str (:to usage)) (str (:name usage)))]
+                    (admit-callable-target! caller target pending)))))
+            (validate-higher-order-call! [caller definition params target form pending]
+              (let [arguments (vec (rest form))]
+                (doseq [index (callable-argument-indexes target (count arguments))]
+                  (when (>= index (count arguments))
+                    (fail! :unsupported-evidence-call-graph
+                           "higher-order call omits its callable argument"
+                           :caller caller :target target))
+                  (resolve-callable-argument! caller definition params
+                                              (nth arguments index) pending))))
             (walk! [caller definition params form pending]
               (cond
                 (seq? form)
@@ -344,15 +500,23 @@
                     (#{'quote 'var} head) nil
                     (or (keyword? head) (set? head) (map? head)) nil
                     (contains? audited-special-heads head)
-                    (do
-                      (when (#{'-> '->> 'some-> 'some->>} head)
-                        (doseq [step (drop 2 form)
-                                :when (symbol? step)]
-                          (walk! caller definition params (list step) pending)))
-                      (when (#{'cond-> 'cond->>} head)
-                        (doseq [step (take-nth 2 (drop 3 form))
-                                :when (symbol? step)]
-                          (walk! caller definition params (list step) pending))))
+                    (when (or (contains? thread-first-heads head)
+                              (contains? thread-last-heads head))
+                      (walk! caller definition params (second form) pending)
+                      (let [conditional? (#{'cond-> 'cond->>} head)
+                            steps (if conditional?
+                                    (take-nth 2 (drop 3 form))
+                                    (drop 2 form))
+                            conditions (when conditional?
+                                         (take-nth 2 (drop 2 form)))
+                            direction (if (contains? thread-first-heads head)
+                                        :first
+                                        :last)]
+                        (doseq [condition conditions]
+                          (walk! caller definition params condition pending))
+                        (doseq [step steps]
+                          (walk! caller definition params
+                                 (thread-step-form direction step) pending))))
                     (or (= 'new head)
                         (= '. head)
                         (str/starts-with? (name head) ".")
@@ -378,11 +542,7 @@
                                :caller caller :parameter head))
                       (swap! consulted conj path)
                       (doseq [target targets]
-                        (definition! target)
-                        (swap! resolved-calls conj target)
-                        (if (trusted-leaf-var? target)
-                          (swap! reachable conj target)
-                          (swap! pending conj target))))
+                        (admit-callable-target! caller target pending)))
                     :else
                     (let [matches (filter #(= (span head) (usage-span %))
                                           (get usages [(:filename definition) (:name definition)]))]
@@ -406,6 +566,9 @@
                                    :forbidden-evidence-io)
                                  "reachable code-loading, I/O, network, or process capability"
                                  :caller caller :target target))
+                        (when (contains? audited-higher-order-signatures target)
+                          (validate-higher-order-call! caller definition params
+                                                       target form pending))
                         (cond
                           (trusted-leaf-var? target)
                           (swap! reachable conj target)
@@ -417,7 +580,9 @@
                                      "user macro is forbidden" :target target))
                             (swap! pending conj target))
 
-                          (or (:macro usage) (contains? audited-safe-external-vars target)) nil
+                          (or (:macro usage)
+                              (contains? audited-safe-external-vars target)
+                              (contains? audited-higher-order-signatures target)) nil
 
                           :else
                           (fail! :forbidden-evidence-capability
@@ -449,7 +614,10 @@
                       ;; its graph. Only function-valued parameters need the
                       ;; caller-scoped contract handled above.
                       (swap! pending conj target)))
-                  (doseq [x (rest form)] (walk! caller definition params x pending)))
+                  (when-not (or (contains? thread-first-heads head)
+                                (contains? thread-last-heads head))
+                    (doseq [x (rest form)]
+                      (walk! caller definition params x pending))))
                 (coll? form) (doseq [x form] (walk! caller definition params x pending))))
             (visit! [var pending]
               (when-not (contains? @reachable var)
@@ -480,17 +648,15 @@
        :contract-paths (vec @consulted)})))
 
 (def ^:private required-v2-boundary-vars
-  '#{abc.tools.evidence-io/with-read-trace
-     abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure!})
+  '#{abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace!})
 
 (defn assert-v2-boundary-ownership!
-  "Require a focused v2 wrapper to own both the physical trace and its exact
-  manifest comparison. Merely reaching a test suite is not evidence."
+  "Require a focused v2 wrapper to call the deep trace-and-validate owner."
   [{:keys [resolved-call-vars] :as analysis}]
   (let [missing (set/difference required-v2-boundary-vars (set resolved-call-vars))]
     (when (seq missing)
       (fail! :missing-evidence-boundary-owner
-             "v2 focus must call the exact trace and runtime-closure owners"
+             "v2 focus must call the exact trace-and-validate owner"
              :vars (vec (sort missing))))
     analysis))
 

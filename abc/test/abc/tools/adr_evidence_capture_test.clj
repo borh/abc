@@ -1,25 +1,20 @@
 (ns abc.tools.adr-evidence-capture-test
   (:require [abc.tools.adr-evidence-capture :as capture]
             [abc.tools.json :as json]
-            [clojure.java.io :as io]
-            [clojure.test :refer [deftest is]])
-  (:import [java.nio.file Files]
-           [java.nio.file.attribute FileAttribute]))
+            [babashka.fs :as fs]
+            [babashka.process :as process]
+            [clojure.test :refer [deftest is]]))
 
 (defn- temp-dir [prefix]
-  (.toFile (Files/createTempDirectory prefix (make-array FileAttribute 0))))
+  (fs/file (fs/create-temp-dir {:prefix prefix})))
 
 (defn- exec! [dir & argv]
-  (let [process (.start (doto (ProcessBuilder. argv)
-                          (.directory dir)
-                          (.redirectErrorStream true)))]
-    (slurp (.getInputStream process))
-    (.waitFor process)))
+  (:exit @(process/process (vec argv) {:dir (str dir) :out :string :err :out})))
 
 (defn- git-repo []
   (let [repo (temp-dir "abc-evidence-capture-repo")
-        source (io/file repo "src/example/core.clj")]
-    (.mkdirs (.getParentFile source))
+        source (fs/file repo "src/example/core.clj")]
+    (fs/create-dirs (fs/parent source))
     (spit source "(ns example.core)\n")
     (exec! repo "git" "init" "-q")
     (exec! repo "git" "config" "user.email" "capture@example.invalid")
@@ -51,8 +46,8 @@
 (deftest captures-byte-identical-clean-tree-bundles
   (let [repo (git-repo)
         output-root (temp-dir "abc-evidence-capture-output")
-        first-output (io/file output-root "first.json")
-        second-output (io/file output-root "second.json")
+        first-output (fs/file output-root "first.json")
+        second-output (fs/file output-root "second.json")
         first-result (capture/capture!
                       {:repo-root repo :descriptor (descriptor ["sh" "-c" "exit 0"])
                        :output first-output})
@@ -70,9 +65,9 @@
 (deftest dirty-tree-is-rejected-before-and-after-command
   (let [repo (git-repo)
         output-root (temp-dir "abc-evidence-capture-dirty")
-        output (io/file output-root "bundle.json")
-        marker (io/file output-root "executed")]
-    (spit (io/file repo "untracked") "dirty")
+        output (fs/file output-root "bundle.json")
+        marker (fs/file output-root "executed")]
+    (spit (fs/file repo "untracked") "dirty")
     (is (thrown? clojure.lang.ExceptionInfo
                  (capture/capture!
                   {:repo-root repo
@@ -80,7 +75,7 @@
                                             (str "touch " (.getAbsolutePath marker))])
                    :output output})))
     (is (not (.exists marker)))
-    (.delete (io/file repo "untracked"))
+    (fs/delete (fs/file repo "untracked"))
     (is (thrown? clojure.lang.ExceptionInfo
                  (capture/capture!
                   {:repo-root repo
@@ -90,7 +85,7 @@
 
 (deftest failing-command-is-captured-before-cli-failure
   (let [repo (git-repo)
-        output (io/file (temp-dir "abc-evidence-capture-fail") "bundle.json")
+        output (fs/file (temp-dir "abc-evidence-capture-fail") "bundle.json")
         result (capture/capture!
                 {:repo-root repo :descriptor (descriptor ["sh" "-c" "exit 7"])
                  :output output})]
@@ -100,7 +95,7 @@
 
 (deftest descriptor-key-set-is-closed
   (let [repo (git-repo)
-        output (io/file (temp-dir "abc-evidence-capture-invalid") "bundle.json")]
+        output (fs/file (temp-dir "abc-evidence-capture-invalid") "bundle.json")]
     (is (thrown? clojure.lang.ExceptionInfo
                  (capture/capture!
                   {:repo-root repo
@@ -110,7 +105,7 @@
 
 (deftest descriptor-version-and-runtime-manifest-contract-is-closed
   (let [repo (git-repo)
-        output (io/file (temp-dir "abc-evidence-capture-v2") "bundle.json")
+        output (fs/file (temp-dir "abc-evidence-capture-v2") "bundle.json")
         profile {:kind "clojure-test-v1"
                  :roots ["example.core"]
                  :explicit ["docs/evidence/adr-capture/example.edn"
@@ -143,7 +138,6 @@
         descriptor-path "docs/evidence/adr-capture/example.edn"
         manifest-path "docs/evidence/adr-inputs/example.edn"
         test-path "test/example/core_test.clj"
-        trace-path "src/abc/tools/evidence_io.clj"
         closure-path "src/abc/tools/adr_evidence_runtime_inputs.clj"
         descriptor {:schema-version "abc-adr-evidence-capture-v2"
                     :tool "true"
@@ -153,23 +147,19 @@
                                     :roots ["example.core-test"]
                                     :explicit [descriptor-path manifest-path]}
                     :observation-key "passes"}
-        output (io/file (temp-dir "abc-evidence-capture-v2-run") "bundle.json")]
+        output (fs/file (temp-dir "abc-evidence-capture-v2-run") "bundle.json")]
     (doseq [[path body]
             [[descriptor-path (pr-str descriptor)]
              [manifest-path (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []})]
-             [trace-path (str "(ns abc.tools.evidence-io)\n"
-                              "(defn with-read-trace [_ thunk] {:value (thunk) :repository-paths []})\n")]
              [closure-path (str "(ns abc.tools.adr-evidence-runtime-inputs)\n"
-                                "(defn assert-runtime-input-closure! [_] true)\n")]
+                                "(defn with-validated-read-trace! [_ thunk] (thunk))\n")]
              [test-path (str "(ns example.core-test (:require [clojure.test :refer [deftest is]] "
-                             "[example.core] [abc.tools.evidence-io :as evidence-io] "
+                             "[example.core] "
                              "[abc.tools.adr-evidence-runtime-inputs :as runtime]))\n"
                              "(deftest runtime-input-contract\n"
-                             "  (let [trace (evidence-io/with-read-trace {} (fn [] true))]\n"
-                             "    (is (runtime/assert-runtime-input-closure! "
-                             "{:repository-paths (:repository-paths trace)}))))\n")]]]
-      (let [file (io/file repo path)]
-        (.mkdirs (.getParentFile file))
+                             "  (is (runtime/with-validated-read-trace! {} (fn [] true))))\n")]]]
+      (let [file (fs/file repo path)]
+        (fs/create-dirs (fs/parent file))
         (spit file body)))
     (exec! repo "git" "add" ".")
     (exec! repo "git" "commit" "-q" "-m" "v2 fixture")

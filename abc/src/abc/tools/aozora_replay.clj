@@ -1,7 +1,6 @@
 (ns abc.tools.aozora-replay
   "Replay abc's audit machinery over the real pinned aozorabunko history
-  and pin the per-pair findings as a committed baseline. Design:
-  docs/superpowers/specs/2026-07-12-aozora-replay-harness-design.md."
+  and pin the per-pair findings as a committed baseline."
   (:require [abc.git :as abc-git]
             [abc.tools.aozora-csv :as ac]
             [abc.tools.aozora-history-audit :as audit]

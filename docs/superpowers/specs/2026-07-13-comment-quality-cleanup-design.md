@@ -172,14 +172,23 @@ export", "a later task", "leaves room for splitting later".
 
 `//! **UNSTABLE — not subject to semver until v0.5.0.**` in
 `ab-aozora-facade/src/lib.rs` (lines 116, 151) and `.../incremental.rs`
-(lines 511, 910, 1438).
+(lines 511, 910, 1438). These sit on `///` doc comments on public items
+visible in generated rustdoc; they are the items' only stability signal.
 
-**Rule:** These items are already gated behind `#[doc(hidden)]` or are
-module-internal. The `UNSTABLE` comment duplicates what the doc-hidden
-attribute already communicates to tooling. Remove the per-item markers. If a
-broader pre-0.5 stability warning is desired, add a single `# Stability`
-section to the crate-level or module-level doc — once, not repeated per item —
-stating the pre-1.0 semver posture.
+**Rule:** Remove the per-item markers and add a single `# Stability` section
+to `incremental.rs`'s module-level doc. This preserves the signal for all
+public items once, without the repetitive #237-tainted wording:
+
+```rust
+//! # Stability
+//!
+//! The incremental re-parse API is pre-1.0 and not subject to semver
+//! until the crate reaches v0.5.0.
+```
+
+The two markers in `lib.rs` (lines 116, 151) are removed without
+replacement — they are already covered by the crate's overall pre-1.0
+posture stated in its top-level docs.
 
 ### J. Transient Tier References (~15 occurrences, ~10 files)
 
@@ -395,10 +404,19 @@ rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
 rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
   '\bTier[\s-][B-H1-9]\b' ab-validator/ abc/src/
 
-# C10: zero transient Phase refs (keep algorithm-stage markers)
+# C10: zero transient Phase refs
+# Matches project-management Phase labels (Phase-C, Phase-3 Lane B, Phase 1.2,
+# post-Phase-F, pre-Phase, Phase-0 responsibility) while excluding algorithm-
+# stage markers of the form "// --- Phase N: description ---" and path-
+# excluding sentences.rs (where all Phase refs are algorithm-stage markers).
 rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
-  -i '\b(phase[- ][a-f0-9]|phase[- ]lane|post-phase|pre-phase)\b' \
-  ab-validator/ abc/src/
+  -i '\b(phase[- ][a-f]|phase[- ]lane|phase\s+\d\.\d|post-phase|pre-phase)\b' \
+  ab-validator/ abc/src/ \
+  | grep -v 'sentences\.rs'
+# C10-keep: verify algorithm-stage markers are still present
+rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
+  '// --- Phase [0-9]:' ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs
+# Expected: matches (Phase 0 through Phase 5 + Phase-2 on line 509)
 
 # C11: the 6 stable invariant names are still present (NOT deleted)
 # Each of these should return matches — their presence is the pass condition.
@@ -417,13 +435,18 @@ done
 - C4 filters out the 6 stable invariant names via `grep -v` on the #NNN
   values. These are listed explicitly — not excluded by regex — so the command
   is auditable.
-- C11 is a presence check, not absence. It verifies the 6 kept numbers
-  weren't accidentally deleted during Track 2 rewrites.
+- C10 excludes `sentences.rs` (all Phase refs there are algorithm-stage
+  markers) and uses `phase[- ][a-f]` to match transient lettered phases
+  (Phase-C, Phase-F) without matching numbered algorithm phases (Phase 0–5).
+- C10-keep is a presence check for algorithm-stage markers.
+- C11 is a presence check for the 6 kept invariant numbers.
 - Exit code 1 from ripgrep means "no matches found" (pass for C1–C10). Exit
   code 0 means matches were found (fail for C1–C10, pass for C11).
 - The `.cargo/` directory is excluded from the search path and from the
   `--type-add` glob. It is gitignored and contains third-party dependency
   files.
+- Use `awk` instead of `bc` for summing occurrence counts: `rg -c ... \
+  | awk -F: '{s+=$2} END{print s}'` (bc may not be present).
 
 ## Success Criteria
 

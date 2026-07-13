@@ -15,7 +15,9 @@
 - `just validate-migration` must pass after every task
 - Per-language checks from AGENTS.md must pass before commit
 - Do NOT touch `third_party/`, `.cargo/`, ADR references, upstream-spec references, Tier-A canary, the 6 stable invariant #NNNs (#78, #228, #331, #333, #384, #435), `U+XXXX` notation, or algorithm-stage Phase markers in `sentences.rs`
-- Rewrite Rule: every rewritten comment must be a valid English sentence standing alone
+- Rewrite Rule: every rewritten comment must be a valid English sentence standing alone — no bare parentheticals, no dangling clauses
+- Edit safety: apply string-anchored edits first; for pure-line-number deletions, work bottom-to-top within each file so line numbers don't drift
+- Where a task says "find with grep", the grep result is authoritative — line-number tables are hints that may have drifted, but the old-text strings in the tables were verified against the current tree and are reliable
 
 ---
 
@@ -92,8 +94,8 @@ git commit -m "adr: comment reference hygiene policy (ADR 0036)"
 # Invariant Glossary
 
 Stable concept identifiers used as cross-file vocabulary. Each entry
-records the invariant name, its former issue number for historical
-lookup, and a one-paragraph definition.
+records the invariant name, the issue number that named it, and a
+one-paragraph definition.
 
 ## #228 — double-render invariant
 
@@ -172,6 +174,11 @@ For each document found in Step 1, read it. If it contains design rationale wort
 - [ ] **Step 3: Reconstruct rationale for absent documents**
 
 The document `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md` is referenced 7 times in `ab-validator/crates/ab-aozora-aat/src/lib.rs` but is already absent from the repo. Read the code comments around each reference to reconstruct the rationale: the terminal-provenance/colophon split separates end-of-work metadata from body text in the sanitize stage, and the `sanitized_tail` field carries this terminal text with its byte offset for span rebasing through `SpanContext`. Capture this in an ADR.
+
+Also extract the permanent rationale from this cleanup's design doc
+(`docs/superpowers/specs/2026-07-13-comment-quality-cleanup-design.md`)
+into an ADR: the comment taxonomy, keep-rules, invariant-name policy, and
+verification recipe. This satisfies the Note on Location.
 
 - [ ] **Step 4: Commit**
 
@@ -305,12 +312,23 @@ The #237 references name the incremental re-parse feature. Replace with descript
 | 1871 | `corpus divergence #284 surfaced:` | `corpus divergence surfaced:` |
 | 1937 | `Regression for the verify finding on #284.` | `Regression for the verify finding.` |
 
-- [ ] **Step 4: Remove UNSTABLE markers (line 511, 910)**
+- [ ] **Step 4: Replace UNSTABLE markers with a Stability section**
+
+Lines 511 and 910 are on public `///` items visible in generated rustdoc — they are NOT doc-hidden. Remove both markers and add a single `# Stability` section to the module-level doc (after the existing module doc header block, around line 19):
+
+```rust
+//! # Stability
+//!
+//! The incremental re-parse API is pre-1.0 and not subject to semver
+//! until the crate reaches v0.5.0.
+```
+
+Then rewrite the now-bare-parenthetical fragments that the marker removal left:
 
 | Line | Old | New |
 |------|-----|-----|
-| 511 | `/// **UNSTABLE — not subject to semver until v0.5.0** (the incremental` | `/// (the incremental` |
-| 910 | `/// **UNSTABLE — not subject to semver until v0.5.0** (the incremental API).` | `/// (the incremental API).` |
+| 511 | `/// **UNSTABLE — not subject to semver until v0.5.0** (the #237 incremental` | `/// The incremental` |
+| 910 | `/// **UNSTABLE — not subject to semver until v0.5.0** (the #237 incremental API).` | `/// The incremental API (see module-level Stability section).` |
 
 - [ ] **Step 5: Verify**
 
@@ -525,9 +543,9 @@ rg -nP '(?<![A-Za-z0-9_!\[+&])#(122|181|189|326)\b' \
 
 Delete each `(#NNN)` tag. Keep adjacent prose. Where `#122` means "standalone external-character form (no `※`)", the prose already says that — just delete the tag.
 
-- [ ] **Step 2: pipeline.rs — rewrite #180, #202, #384 Track 2**
+- [ ] **Step 2: pipeline.rs — rewrite #180, #202**
 
-Lines 267, 336, 339, 363, 377, 383, 398. Check which are Track 2 (not the kept #384 invariant name). Lines 267 (`Ruby-base forward emphasis (#384)`) — this uses #384 as a feature label, keep the prose, delete the `(#384)` tag.
+Lines 267, 336, 339, 363, 377, 383, 398. Check with grep:
 
 ```bash
 rg -nP '(?<![A-Za-z0-9_!\[+&])#(180|202)\b' \
@@ -693,9 +711,14 @@ git commit -m "chore: remove transient issue refs and phase labels from render/s
 - [ ] **Step 1: lib.rs — rewrite #202, #237, UNSTABLE**
 
 Line 111: `Source-region ownership and minimal-diff source splicing (#202).` → `Source-region ownership and minimal-diff source splicing.`
-Line 116: `/// **UNSTABLE — not subject to semver until v0.5.0.**` → delete line
-Line 119: `(#237 Tier 1/2).` → delete parenthetical
-Line 151: `/// **UNSTABLE — not subject to semver until v0.5.0.**` → delete line
+
+Lines 116 and 151: remove the `UNSTABLE` markers. The crate-level docs already state the pre-1.0 posture. Rewrite so the doc comments are valid sentences:
+
+| Line | Old | New |
+|------|-----|-----|
+| 116 | `/// **UNSTABLE — not subject to semver until v0.5.0.**` | (delete line) |
+| 119 | `(#237 Tier 1/2). Splices` → `Splices` |
+| 151 | `/// **UNSTABLE — not subject to semver until v0.5.0.**` | (delete line) |
 
 - [ ] **Step 2: json.rs — verify #435 is Track 1 (keep)**
 
@@ -985,16 +1008,25 @@ rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
 # Expected: exit 1
 
 # C10: zero transient Phase refs
+# Matches project-management Phase labels (Phase-C, Phase-3 Lane B, Phase 1.2,
+# post-Phase-F, pre-Phase) while excluding algorithm-stage markers of the form
+# "// --- Phase N: description ---" and path-excluding sentences.rs.
 rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
-  -i '\b(phase[- ][a-f0-9]|phase[- ]lane|post-phase|pre-phase)\b' \
-  ab-validator/ abc/src/
-# Expected: exit 1
+  -i '\b(phase[- ][a-f]|phase[- ]lane|phase\s+\d\.\d|post-phase|pre-phase)\b' \
+  ab-validator/ abc/src/ \
+  | grep -v 'sentences\.rs'
+# Expected: no matches
+
+# C10-keep: verify algorithm-stage markers are still present
+rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
+  '// --- Phase [0-9]:' ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs
+# Expected: matches (Phase 0 through Phase 5 + Phase-2 on line 509)
 
 # C11: 6 stable invariant names still present
 for n in 78 228 331 333 384 435; do
   count=$(rg -cP --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
     "(?<![A-Za-z0-9_!\[+&])#${n}\b" ab-validator/ abc/src/ \
-    | cut -d: -f2 | paste -sd+ | bc)
+    | awk -F: '{s+=$2} END{print s}')
   echo "#${n}: ${count:-0} occurrences"
 done
 # Expected: each shows >0 occurrences
@@ -1016,9 +1048,9 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 ```bash
 # Count ADR references before (from git) and after
 git stash
-before=$(rg -c --type-add 'src:*.{rs,clj,cljc,cljs}' -t src 'ADR\s*\d{4}' ab-validator/ abc/src/ | cut -d: -f2 | paste -sd+ | bc)
+before=$(rg -c --type-add 'src:*.{rs,clj,cljc,cljs}' -t src 'ADR\s*\d{4}' ab-validator/ abc/src/ | awk -F: '{s+=$2} END{print s}')
 git stash pop
-after=$(rg -c --type-add 'src:*.{rs,clj,cljc,cljs}' -t src 'ADR\s*\d{4}' ab-validator/ abc/src/ | cut -d: -f2 | paste -sd+ | bc)
+after=$(rg -c --type-add 'src:*.{rs,clj,cljc,cljs}' -t src 'ADR\s*\d{4}' ab-validator/ abc/src/ | awk -F: '{s+=$2} END{print s}')
 echo "ADR refs before: $before, after: $after"
 # Expected: after >= before
 ```
@@ -1044,28 +1076,17 @@ git commit --allow-empty -m "chore: verification — all cleanup criteria pass"
 git rm -r abc/docs/handoffs/
 ```
 
-- [ ] **Step 2: Delete superpowers specs (keep this plan and design doc)**
+- [ ] **Step 2: Delete superpowers specs and reports**
 
 ```bash
-# List what's in specs/
-ls docs/superpowers/specs/
-
-# Delete all except the current design doc and plan
-for f in docs/superpowers/specs/*; do
-  case "$f" in
-    */2026-07-13-comment-quality-cleanup-design.md) ;;
-    *) git rm "$f" ;;
-  esac
-done
+# Delete all specs and reports; the design doc and plan are transient and
+# are deleted here with the rest.
+git rm -r docs/superpowers/specs/ 2>/dev/null || true
+git rm -r docs/superpowers/plans/ 2>/dev/null || true
+git rm -r docs/superpowers/reports/ 2>/dev/null || true
 ```
 
-- [ ] **Step 3: Delete superpowers reports**
-
-```bash
-git rm -r docs/superpowers/reports/ 2>/dev/null || echo "directory already absent"
-```
-
-- [ ] **Step 4: Verify no code still references deleted docs**
+- [ ] **Step 3: Verify no code still references deleted docs**
 
 ```bash
 # C1: zero docs/handoffs/
@@ -1079,7 +1100,7 @@ rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
 # Expected: exit 1
 ```
 
-- [ ] **Step 5: Verify full checks still pass**
+- [ ] **Step 4: Verify full checks still pass**
 
 ```bash
 just validate-migration
@@ -1087,7 +1108,7 @@ nix build ./abc#checks.x86_64-linux.clj-kondo
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git commit -m "chore: delete now-unreferenced transient doc directories"

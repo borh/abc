@@ -15,6 +15,19 @@
     (doseq [child (.listFiles f)] (delete-recursive child)))
   (.delete f))
 
+(deftest person-listing-filters-and-sorts-test
+  (let [dir (temp-dir "abc-drift-history-list")]
+    (try
+      (spit (io/file dir "b.json") "{}")
+      (spit (io/file dir "a.json") "{}")
+      (spit (io/file dir "ignored.txt") "x")
+      (.mkdirs (io/file dir "directory.json"))
+      (is (= ["a.json" "b.json"]
+             (mapv #(.getName ^java.io.File %)
+                   (#'history/list-json-files dir))))
+      (finally
+        (delete-recursive dir)))))
+
 (defn- person-record [person-id family given]
   {"person_record_schema_id" pr/schema-id
    "person_record_schema_hash" "sha256:1111111111111111111111111111111111111111111111111111111111111111"

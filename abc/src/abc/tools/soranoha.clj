@@ -22,6 +22,7 @@
             [abc.tools.soranoha-stage-publication :as stage-publication]
             [abc.tools.tar :as tar]
             [abc.tools.workflow :as workflow]
+            [babashka.fs :as fs]
             [babashka.cli :as cli]
             [charred.api :as json]
             [clojure.java.io :as io]
@@ -48,7 +49,7 @@
 
 (defn read-request-set [label-or-path]
   (let [file (io/file label-or-path)]
-    (if (.isFile file)
+    (if (fs/regular-file? file)
       (read-resolved-request-set-file file)
       (request-set-resolver/resolve-request-set label-or-path))))
 
@@ -107,7 +108,7 @@
 
 (defn- snapshot-plan-if-present [label]
   (let [path (snapshot-index/snapshot-plan-path label)]
-    (when (.isFile (io/file path))
+    (when (fs/regular-file? path)
       (snapshot-index/read-snapshot-plan label))))
 
 (defn- source-snapshot-workset-path [request-set]
@@ -115,7 +116,7 @@
       (when-let [source-snapshot-path (get-in request-set
                                               ["resolution"
                                                "subject_source_path"])]
-        (when-let [parent (.getParentFile (io/file source-snapshot-path))]
+        (when-let [parent (fs/parent source-snapshot-path)]
           (str (io/file parent
                         request-set-resolver/source-snapshot-workset-file-name))))))
 
@@ -220,8 +221,7 @@
   (vec (keep identity values)))
 
 (defn- relative-path [root file]
-  (str (.relativize (.toPath (io/file root))
-                    (.toPath (io/file file)))))
+  (str (fs/relativize root file)))
 
 (defn- normalized-relative-path [root file]
   (files/relative-path root file))
@@ -267,7 +267,7 @@
                          {:manifest-schema-hash (manifest/schema-hash
                                                  "schemas/manifest.schema.json")
                           :output-format-spec-hash parser-ir-schema-hash})
-        warnings-file (when (and warnings-file (.exists (io/file warnings-file)))
+        warnings-file (when (and warnings-file (fs/exists? warnings-file))
                         (io/file warnings-file))]
     (manifest/artifact-manifest
      {:artifact-kind "parser-ir"
@@ -541,7 +541,7 @@
                                     {:request-set request-set
                                      :registry-dir annotation-policies-dir})]
     (files/delete-tree! root)
-    (.mkdirs (io/file root))
+    (fs/create-dirs root)
     (let [generated-at (get plan "generated_at")
           manifest-files (vec (mapcat
                                (fn [materialization]
@@ -585,18 +585,18 @@
 
 (defn snapshot-index-path [path]
   (let [file (io/file path)]
-    (if (.isDirectory file)
+    (if (fs/directory? file)
       (let [snapshot-index-file (io/file file "snapshot-index.json")]
-        (if (.isFile snapshot-index-file)
+        (if (fs/regular-file? snapshot-index-file)
           snapshot-index-file
           (io/file file "index.json")))
       file)))
 
 (defn- snapshot-root-path [path]
   (let [file (io/file path)]
-    (if (.isDirectory file)
+    (if (fs/directory? file)
       file
-      (or (.getParentFile file)
+      (or (fs/parent file)
           (io/file ".")))))
 
 (defn read-valid-snapshot-index [path]
@@ -634,7 +634,7 @@
 (defn- validate-loose-reference! [root reference]
   (let [relative-path (get-in reference ["locator" "path"])
         manifest-file (io/file root relative-path)]
-    (when-not (.isFile manifest-file)
+    (when-not (fs/regular-file? manifest-file)
       (throw (ex-info "Referenced snapshot manifest does not exist"
                       {:locator (get reference "locator")
                        :path (str manifest-file)})))
@@ -649,7 +649,7 @@
   (let [archive-path (get-in reference ["locator" "archive_path"])
         member-path (get-in reference ["locator" "member_path"])
         archive-file (io/file root archive-path)]
-    (when-not (.isFile archive-file)
+    (when-not (fs/regular-file? archive-file)
       (throw (ex-info "Referenced snapshot archive does not exist"
                       {:locator (get reference "locator")
                        :path (str archive-file)})))
@@ -681,7 +681,7 @@
 
 (defn- validate-run-summary! [root snapshot]
   (let [run-summary-file (io/file root "run-summary.json")]
-    (when (.isFile run-summary-file)
+    (when (fs/regular-file? run-summary-file)
       (let [summary (files/read-json run-summary-file)]
         (doseq [[field expected actual]
                 [["request_set_label" (get snapshot "request_set_label")
@@ -706,7 +706,7 @@
 
 (defn- read-required-run-summary [root]
   (let [run-summary-file (io/file root "run-summary.json")]
-    (when-not (.isFile run-summary-file)
+    (when-not (fs/regular-file? run-summary-file)
       (throw (ex-info "Snapshot root has no run-summary.json"
                       {:path (str run-summary-file)})))
     (files/read-json run-summary-file)))
@@ -753,7 +753,7 @@
 (defn publication-report! [snapshot-root output-path]
   (let [root (io/file snapshot-root)
         snapshot (read-valid-snapshot-index root)]
-    (when-not (.isDirectory root)
+    (when-not (fs/directory? root)
       (throw (ex-info "publication-report requires a snapshot root directory"
                       {:path (str root)})))
     (let [{:keys [file]} (write-publication-report-file! root
@@ -780,7 +780,7 @@
 (defn layout-report! [snapshot-root output-path]
   (let [root (io/file snapshot-root)
         snapshot (read-valid-snapshot-index root)]
-    (when-not (.isDirectory root)
+    (when-not (fs/directory? root)
       (throw (ex-info "layout-report requires a snapshot root directory"
                       {:path (str root)})))
     (let [{:keys [file]} (write-layout-report-file! root
@@ -797,7 +797,7 @@
   (let [root (io/file snapshot-root)
         output-root (io/file output-root)
         snapshot (read-valid-snapshot-index root)]
-    (when-not (.isDirectory root)
+    (when-not (fs/directory? root)
       (throw (ex-info "stage-publication requires a snapshot root directory"
                       {:path (str root)})))
     (validate-snapshot-root-references! root snapshot)
@@ -827,7 +827,7 @@
 
 (defn validate! [snapshot-root]
   (let [snapshot (read-valid-snapshot-index snapshot-root)]
-    (when (.isDirectory (io/file snapshot-root))
+    (when (fs/directory? snapshot-root)
       (validate-snapshot-root-references! (snapshot-root-path snapshot-root)
                                           snapshot)
       (validate-run-summary! (snapshot-root-path snapshot-root) snapshot))
@@ -892,8 +892,18 @@
     0))
 
 (defn- zstd-archives [root]
-  (->> (file-seq (io/file root))
-       (filter #(.isFile %))
+  ;; Match java.io/file-seq: directory symlinks are followed, failed directory
+  ;; listings are empty, and cycles are not silently pruned.
+  (->> (tree-seq fs/directory?
+                 (fn [path]
+                   (try
+                     (sort-by str (fs/list-dir path))
+                     (catch java.io.IOException _
+                       [])
+                     (catch SecurityException _
+                       [])))
+                 (fs/path root))
+       (filter fs/regular-file?)
        (filter #(string/ends-with? (str %) ".tar.zst"))
        (sort-by str)
        vec))
@@ -901,7 +911,7 @@
 (defn- archive-summary [root]
   (let [archives (zstd-archives root)]
     {"count" (count archives)
-     "byte_count" (reduce + 0 (map #(.length %) archives))
+     "byte_count" (reduce + 0 (map fs/size archives))
      "paths" (mapv #(normalized-relative-path root %) archives)}))
 
 (defn- validate-staged-root! [staged-root]
@@ -1094,7 +1104,7 @@
         rehearsal-report-file (io/file output-root-file
                                        "rehearsal-report.json")]
     (files/delete-tree! output-root-file)
-    (.mkdirs output-root-file)
+    (fs/create-dirs output-root-file)
     (let [{:keys [state]}
           (workflow/run-workflow!
            {:workflow-id "soranoha.publication-rehearsal.v1"

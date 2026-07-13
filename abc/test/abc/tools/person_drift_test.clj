@@ -5,9 +5,27 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.person-drift :as drift]
             [abc.tools.schema :as schema]
+            [clojure.java.io :as io]
             [clojure.test :refer [deftest is use-fixtures]]))
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
+
+(deftest json-directory-listing-contract-test
+  (let [dir (.toFile (java.nio.file.Files/createTempDirectory
+                      "abc-drift-list"
+                      (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (try
+      (spit (io/file dir "b.json") "{}")
+      (spit (io/file dir "a.json") "{}")
+      (spit (io/file dir "ignored.txt") "x")
+      (.mkdirs (io/file dir "directory.json"))
+      (is (= ["a.json" "b.json"]
+             (mapv #(.getName ^java.io.File %) (#'drift/json-files dir))))
+      (finally
+        (doseq [child (.listFiles dir)]
+          (when (.isDirectory child) (.delete child))
+          (when (.exists child) (.delete child)))
+        (.delete dir)))))
 
 (defn example-hash [suffix]
   (files/example-hash suffix))

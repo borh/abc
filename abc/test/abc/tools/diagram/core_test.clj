@@ -1,7 +1,9 @@
 (ns abc.tools.diagram.core-test
   (:require [clojure.test :refer [deftest is]]
             [clojure.string :as str]
-            [abc.tools.diagram.core :as core]))
+            [abc.test-fs :refer [with-temp-dir]]
+            [abc.tools.diagram.core :as core]
+            [babashka.fs :as fs]))
 
 (defn sample [out-path]
   {:id :t :out-path out-path :regen "regen-cmd"
@@ -9,6 +11,13 @@
                   :nodes [{:id :a :label "A"}]
                   :edges [] :class-defs {}})
    :lint (fn [] [])})
+
+(deftest missing-output-file-is-reported-as-drift-test
+  (with-temp-dir [dir]
+    (let [diagram (sample (str (fs/file dir "missing.mmd")))
+          result (core/run! [diagram] {:check? true})]
+      (is (false? (:ok? result)))
+      (is (= 1 (count (:drifts result)))))))
 
 (deftest render-prepends-generated-header
   (let [out (core/render (sample "unused-by-render"))]

@@ -242,6 +242,24 @@
       (finally
         (delete-tree! out-dir)))))
 
+(deftest materialize-publication-batch-without-summary-does-not-write-report-test
+  (let [out-dir (temp-dir "abc-materialize-publication-no-summary")
+        batch-file (io/file out-dir "batch.json")
+        writes (atom [])]
+    (try
+      (abc-json/write-deterministic-json-file! batch-file {"jobs" []})
+      (let [summary (with-redefs [abc-json/write-deterministic-json-file!
+                                  (fn [path value]
+                                    (swap! writes conj [path value]))]
+                      (materialize/materialize-publications-batch!
+                       {:batch-path (str batch-file)
+                        :summary-path nil
+                        :jobs 1}))]
+        (is (nil? (get summary "workflow_run_path")))
+        (is (= [] @writes)))
+      (finally
+        (delete-tree! out-dir)))))
+
 (deftest materialize-publication-declares-orthographic-sentence-normalization-test
   (let [work-dir (temp-dir "abc-materialize-publication-sentences")
         out-dir (io/file work-dir "out")

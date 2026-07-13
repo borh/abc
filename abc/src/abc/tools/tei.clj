@@ -6,6 +6,7 @@
   com.thaiopensource.validate.Schema is immutable; a fresh Validator and
   error handler are created per call."
   (:require [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [clojure.string :as string])
   (:import [com.thaiopensource.util PropertyMapBuilder]
            [com.thaiopensource.validate Schema ValidateProperty]
@@ -50,23 +51,24 @@
 (defonce ^:private schema-cache (atom {}))
 
 (defn- load-schema ^Schema [^String schema-path]
-  (let [file (io/file schema-path)
-        cache-key [(.getCanonicalPath file) (.lastModified file)]]
-    (or (get @schema-cache cache-key)
-        (let [violations (atom [])
-              schema (try
-                       (.createSchema (AutoSchemaReader.)
-                                      (file->input-source schema-path)
-                                      (error-handler-props
-                                       (build-sax-error-handler violations)))
-                       (catch Exception e
-                         (throw (ex-info (str "Failed to load TEI RelaxNG schema: "
-                                              schema-path)
-                                         {:schema-path schema-path
-                                          :violations @violations}
-                                         e))))]
-          (swap! schema-cache assoc cache-key schema)
-          schema))))
+  (let [violations (atom [])]
+    (try
+      (let [path (fs/path schema-path)
+            cache-key [(str (fs/canonicalize path))
+                       (fs/last-modified-time path)]]
+        (or (get @schema-cache cache-key)
+            (let [schema (.createSchema
+                          (AutoSchemaReader.)
+                          (file->input-source schema-path)
+                          (error-handler-props
+                           (build-sax-error-handler violations)))]
+              (swap! schema-cache assoc cache-key schema)
+              schema)))
+      (catch Exception e
+        (throw (ex-info (str "Failed to load TEI RelaxNG schema: " schema-path)
+                        {:schema-path schema-path
+                         :violations @violations}
+                        e))))))
 
 (defn validate!
   "Validate the XML at `xml-path` against the RelaxNG schema at

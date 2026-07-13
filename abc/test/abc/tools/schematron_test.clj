@@ -1,11 +1,25 @@
 (ns abc.tools.schematron-test
   (:require [abc.tools.schematron :as schematron]
+            [abc.test-fs :refer [with-temp-dir]]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
 
 (def ^:private schematron-ns "http://purl.oclc.org/dsdl/schematron")
 
 (def schema-path "schemas/tei-profile.sch")
+
+(deftest schema-cache-identifies-a-schema-through-a-symlinked-parent-test
+  (with-temp-dir [dir]
+    (let [real-parent (fs/file dir "real")
+          linked-parent (fs/file dir "linked")
+          real-schema (fs/file real-parent "schema.sch")]
+      (fs/create-dirs real-parent)
+      (fs/copy schema-path real-schema)
+      (fs/create-sym-link linked-parent real-parent)
+      (is (identical? (#'schematron/schematron-resource (str real-schema))
+                      (#'schematron/schematron-resource
+                       (str (fs/file linked-parent "schema.sch"))))))))
 
 (deftest saxon-runtime-version-is-pinned-stable-line-test
   (testing "Clojure Schematron runtime stays aligned with the Saxon production-line pin"

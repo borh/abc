@@ -1,7 +1,14 @@
 (ns abc.tools.diagram.adr-graph-test
   (:require [abc.tools.diagram.adr-graph :as adr]
+            [abc.test-fs :refer [with-temp-dir]]
+            [babashka.fs :as fs]
             [clojure.string :as str]
             [clojure.test :refer [deftest is]]))
+
+(deftest missing-relations-file-is-empty-test
+  (with-temp-dir [dir]
+    (with-redefs [adr/relations-path (str (fs/file dir "missing.edn"))]
+      (is (= [] (adr/load-relations))))))
 
 (deftest header-lint-clean-on-current-set
   (is (= [] (adr/lint*))))

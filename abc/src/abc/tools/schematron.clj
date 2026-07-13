@@ -4,6 +4,7 @@
   Validation uses ph-schematron's ISO Schematron-to-XSLT engine and returns the
   ABC finding shape consumed by publication and design-bundle validation."
   (:require [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [clojure.string :as string])
   (:import [javax.xml.parsers DocumentBuilderFactory]
            [javax.xml.transform.stream StreamSource]
@@ -53,10 +54,10 @@
 (defonce ^:private resource-cache (atom {}))
 
 (defn- schematron-resource [schema-path]
-  (let [file (io/file schema-path)
-        cache-key [(.getCanonicalPath file) (.lastModified file)]]
+  (let [path (fs/path schema-path)
+        cache-key [(str (fs/canonicalize path)) (fs/last-modified-time path)]]
     (or (get @resource-cache cache-key)
-        (let [resource (SchematronResourceSCH/fromFile file)]
+        (let [resource (SchematronResourceSCH/fromFile (fs/file path))]
           (when-not (.isValidSchematron resource)
             (throw (ex-info "Invalid Schematron schema"
                             {:schema-path schema-path})))

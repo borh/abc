@@ -2,7 +2,7 @@
   (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.manifest :as manifest]
-            [clojure.java.io :as io]))
+            [babashka.fs :as fs]))
 
 (def snapshot-index-schema-id
   "https://w3id.org/abc/schemas/snapshot-index.schema.json")
@@ -206,7 +206,7 @@
 
 (defn read-snapshot-plan [request-set-label]
   (let [path (snapshot-plan-path request-set-label)]
-    (when-not (.isFile (io/file path))
+    (when-not (fs/regular-file? path)
       (throw (ex-info "Unknown snapshot plan"
                       {:request_set_label request-set-label
                        :path path})))
@@ -243,9 +243,9 @@
                                  (get plan "manifest_references" []))})))
 
 (defn write-snapshot-index! [snapshot-index output-path]
-  (let [output-file (io/file output-path)]
-    (when-let [parent (.getParentFile output-file)]
-      (.mkdirs parent))
+  (let [output-file (fs/file output-path)]
+    (when-let [parent (fs/parent output-path)]
+      (fs/create-dirs parent))
     (manifest/write-json-file! output-file snapshot-index)
     output-file))
 

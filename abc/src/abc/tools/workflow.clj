@@ -1,6 +1,6 @@
 (ns abc.tools.workflow
   (:require [abc.tools.manifest :as manifest]
-            [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [clojure.set :as set]))
 
 (def workflow-run-schema-id
@@ -105,7 +105,8 @@
      "steps" steps}))
 
 (defn- write-run! [output-root run]
-  (manifest/write-json-file! (io/file output-root "workflow-run.json") run))
+  (manifest/write-json-file! (fs/file (fs/path output-root "workflow-run.json"))
+                             run))
 
 (defn- semantic-error [path message expected actual]
   (cond-> {:path path
@@ -216,12 +217,12 @@
   [{:keys [workflow-id run-id output-root initial-state steps clock]
     :or {clock now-utc
          run-id "local-run"}}]
-  (let [output-root (io/file output-root)
-        _ (.mkdirs output-root)
+  (let [output-root (fs/path output-root)
+        _ (fs/create-dirs output-root)
         plan (validate-plan! {:steps steps} initial-state)
         ordered-steps (:steps plan)
         started-at (clock)]
-    (manifest/write-json-file! (io/file output-root "workflow-plan.json")
+    (manifest/write-json-file! (fs/file (fs/path output-root "workflow-plan.json"))
                                (json-plan workflow-id ordered-steps))
     (loop [state initial-state
            remaining ordered-steps

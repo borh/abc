@@ -11,18 +11,92 @@
             [abc.tools.soranoha :as soranoha]
             [abc.tools.soranoha-build-publication :as build-publication]
             [abc.tools.source-bundle :as source-bundle]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
   (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio.charset StandardCharsets]
-           [java.nio.file AccessDeniedException NoSuchFileException]
+           [java.nio.file AccessDeniedException Files NoSuchFileException]
            [java.util.zip ZipEntry ZipOutputStream]))
+
+(deftest publication-filesystem-contract-test
+  (fs/with-temp-dir [root {}]
+    (let [output (fs/file root "out")
+          tmp (#'build-publication/prepare-output-root! output false)]
+      (is (instance? java.io.File tmp))
+      (is (fs/directory? root))
+      (fs/create-dirs output)
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                            #"output-root already exists"
+                            (#'build-publication/prepare-output-root! output false)))
+      (is (instance? java.io.File
+                     (#'build-publication/prepare-output-root! output true))))
+    (let [tmp (fs/file root "promotion.tmp")
+          target (fs/file root "promotion")]
+      (fs/create-dirs tmp)
+      (spit (fs/file tmp "artifact") "ok")
+      (let [result (#'build-publication/promote-output-root! tmp target false)]
+        (is (instance? java.io.File result))
+        (is (= "ok" (slurp (fs/file target "artifact"))))))
+    (let [publication (fs/file root "publication")]
+      (fs/create-dirs publication)
+      (spit (fs/file publication "tei.manifest.json") "{}")
+      (spit (fs/file publication "source_work_content_hash.txt") " hash\n")
+      (is (#'build-publication/publication-up-to-date? publication "hash"))
+      (fs/delete (fs/file publication "tei.manifest.json"))
+      (is (not (#'build-publication/publication-up-to-date? publication "hash"))))
+    (let [from (fs/file root "from")
+          to (fs/file root "to")]
+      (fs/create-dirs (fs/file from "nested"))
+      (spit (fs/file from "b") "b")
+      (spit (fs/file from "a") "a")
+      (spit (fs/file from "nested" "ignored") "ignored")
+      (is (= (fs/file to) (#'build-publication/copy-dir-files! from to)))
+      (is (= ["a" "b"] (->> (fs/list-dir to)
+                            (map (comp str fs/file-name))
+                            sort vec))))))
 
 (defn- temp-json-path [prefix]
   (let [file (java.io.File/createTempFile prefix ".json")]
     (.delete file)
     (str file)))
+
+(deftest archive-summary-follows-directory-symlinks-in-stable-path-order-test
+  (let [base (fixture/temp-dir "abc-soranoha-symlinked-archives")
+        root (io/file base "root")
+        external (io/file base "external")]
+    (.mkdirs root)
+    (.mkdirs external)
+    (spit (io/file root "z.tar.zst") "z")
+    (spit (io/file external "b.tar.zst") "b")
+    (spit (io/file external "a.tar.zst") "a")
+    (Files/createSymbolicLink (.toPath (io/file root "linked"))
+                              (.toPath external)
+                              (make-array java.nio.file.attribute.FileAttribute 0))
+    (is (= ["linked/a.tar.zst" "linked/b.tar.zst" "z.tar.zst"]
+           (get (#'soranoha/archive-summary root) "paths")))))
+
+(deftest recursive-traversals-treat-unlistable-directories-as-empty-test
+  (fs/with-temp-dir [root {}]
+    (let [unlistable (fs/path root "unlistable")
+          archive (fs/path root "z.tar.zst")
+          work-zip (fs/path root "work.zip")]
+      (fs/create-dirs unlistable)
+      (spit (fs/file archive) "z")
+      (spit (fs/file work-zip) "zip")
+      (Files/setPosixFilePermissions unlistable (java.util.HashSet.))
+      (try
+        (is (= ["z.tar.zst"]
+               (get (#'soranoha/archive-summary root) "paths")))
+        (is (= [work-zip]
+               (mapv (comp fs/path :file)
+                     (#'build-publication/work-zip-files root))))
+        (finally
+          (Files/setPosixFilePermissions
+           unlistable
+           (java.nio.file.attribute.PosixFilePermissions/fromString
+            "rwx------")))))))
 
 (defn- delete-tree! [file]
   (fixture/delete-tree! file))

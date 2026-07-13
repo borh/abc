@@ -240,6 +240,23 @@
                 "生年月日" "1867-02-09" "没年月日" "1916-12-09"
                 "底本名1" "吾輩は猫である" "底本出版社名1" "テスト出版社"})])
 
+(deftest ingest-corpus-creates-absent-parents-idempotently-test
+  (let [root (temp-dir "abc-ingest-parents")
+        output-dir (io/file root "absent" "corpus")]
+    (try
+      (is (not (.exists output-dir)))
+      (let [first-result (ingest/run-corpus!
+                          {:rows synthetic-corpus-rows
+                           :output-dir (str output-dir)})
+            second-result (ingest/run-corpus!
+                           {:rows synthetic-corpus-rows
+                            :output-dir (str output-dir)})]
+        (is (= first-result second-result))
+        (is (.isDirectory (io/file output-dir "works")))
+        (is (.isDirectory (io/file output-dir "persons"))))
+      (finally
+        (delete-recursive root)))))
+
 (deftest ingest-corpus-emits-work-and-person-files-test
   (testing "run-corpus! writes one metadata-record per work and dedups persons"
     (let [out-dir (temp-dir "abc-ingest-corpus")]

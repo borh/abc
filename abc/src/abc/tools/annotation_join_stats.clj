@@ -11,6 +11,7 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.parser-ir-plaintext :as plaintext]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]))
 
 (defn- scalar-count [^String s]
@@ -130,13 +131,14 @@
      :classification_rates rates}))
 
 (defn- work-dirs [parser-ir-dir]
-  (->> (.listFiles (io/file parser-ir-dir))
-       (filter #(.isDirectory %))
-       (sort-by #(.getName %))))
+  (->> (fs/list-dir parser-ir-dir)
+       (filter fs/directory?)
+       (sort-by #(str (fs/file-name %)))
+       (map fs/file)))
 
 (defn- work-tokens [tokens-dir work-id]
   (let [file (io/file tokens-dir (str work-id ".tokens.jsonl"))]
-    (when (.isFile file)
+    (when (fs/regular-file? file)
       (vec (files/read-json-lines file)))))
 
 (defn- stats-row [work-id text work-stats-value]
@@ -172,15 +174,15 @@
   aggregate.json, and report.md to out-dir. Works without a token file or
   with invalid reported spans are recorded in skipped_work_ids. Returns 0."
   [parser-ir-dir tokens-dir out-dir]
-  (let [out (io/file out-dir)]
-    (.mkdirs out)
+  (let [out (fs/file out-dir)]
+    (fs/create-dirs out)
     (loop [dirs (work-dirs parser-ir-dir)
            rows []
            work-stats-acc []
            skipped []]
       (if-let [dir (first dirs)]
-        (let [work-id (.getName dir)
-              has-parser-ir (.isFile (io/file dir "parser-ir.json"))
+        (let [work-id (str (fs/file-name dir))
+              has-parser-ir (fs/regular-file? (fs/file dir "parser-ir.json"))
               token-rows (and has-parser-ir (work-tokens tokens-dir work-id))]
           (if-not token-rows
             (recur (next dirs) rows work-stats-acc (conj skipped work-id))

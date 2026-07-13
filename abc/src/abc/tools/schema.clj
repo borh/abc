@@ -2,8 +2,8 @@
   (:require [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
             [abc.tools.malli :as am]
+            [babashka.fs :as fs]
             [charred.api :as json]
-            [clojure.java.io :as io]
             [clojure.string :as str])
   (:import [com.networknt.schema SchemaRegistry InputFormat SpecificationVersion]))
 
@@ -33,19 +33,31 @@
 ;; Schema objects keyed by $id / content. Draft 2020-12 is the default dialect
 ;; when $schema is absent from the schema data.
 ;; ---------------------------------------------------------------------------
-(defn- checked-in-schema-resources []
-  (let [schema-dir (io/file "schemas")]
-    (if-not (.isDirectory schema-dir)
-      {}
-      (into {}
-            (keep (fn [^java.io.File file]
-                    (when (and (.isFile file) (str/ends-with? (.getName file) ".schema.json"))
-                      (let [path (.getPath file)
-                            content (slurp file)
-                            schema (abc-json/read-json-file path)]
-                        (when-let [schema-id (get schema "$id")]
-                          [schema-id content])))))
-            (file-seq schema-dir)))))
+(defn- checked-in-schema-resources
+  ([] (checked-in-schema-resources (fs/path "schemas")))
+  ([schema-dir]
+   (if-not (fs/directory? schema-dir)
+     {}
+     (into {}
+           (keep (fn [path]
+                   (when (and (fs/regular-file? path)
+                              (str/ends-with? (str (fs/file-name path))
+                                              ".schema.json"))
+                     (let [file (fs/file path)
+                           content (slurp file)
+                           schema (abc-json/read-json-file file)]
+                       (when-let [schema-id (get schema "$id")]
+                         [schema-id content])))))
+           (->> (tree-seq fs/directory?
+                          (fn [path]
+                            (try
+                              (sort-by str (fs/list-dir path))
+                              (catch java.io.IOException _
+                                [])
+                              (catch SecurityException _
+                                [])))
+                          (fs/path schema-dir))
+                (sort-by #(str (fs/relativize schema-dir %))))))))
 
 (def ^:private schema-registry
   (SchemaRegistry/withDefaultDialect

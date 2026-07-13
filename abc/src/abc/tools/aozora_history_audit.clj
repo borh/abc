@@ -5,11 +5,11 @@
   (:require [abc.git :as abc-git]
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.cli :as abc-cli]
-            [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.person-drift :as drift]
             [abc.tools.person-drift-history :as drift-history]
             [abc.tools.validate-corpus :as validate-corpus]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [taoensso.telemere :as tel])
@@ -51,9 +51,10 @@
        summary))
 
 (defn- prepare-owned-path! [path]
-  (let [file (io/file path)]
-    (files/delete-tree! file)
-    file))
+  (let [path (fs/path path)]
+    (when (fs/exists? path)
+      (fs/delete-tree path))
+    (io/file (str path))))
 
 (defn- extract-zip! [repo ref zip-path output-file]
   (abc-git/write-blob-at! repo ref zip-path output-file))
@@ -72,10 +73,11 @@
   (ingest-corpus! (str zip-file) (str corpus-dir) ref zip-path))
 
 (defn- index-json-files [indexes-dir]
-  (->> (or (.listFiles (io/file indexes-dir)) (make-array java.io.File 0))
-       (filter #(and (.isFile ^java.io.File %)
-                     (string/ends-with? (.getName ^java.io.File %) ".json")))
-       (sort-by #(.getName ^java.io.File %))))
+  (->> (if (fs/directory? indexes-dir) (fs/list-dir indexes-dir) [])
+       (filter #(and (fs/regular-file? %)
+                     (string/ends-with? (str (fs/file-name %)) ".json")))
+       (sort-by (comp str fs/file-name))
+       (map #(io/file (str %)))))
 
 (defn- drift-index-map [persons-dir]
   (let [result (drift/validate-drift-events! {:persons-dir persons-dir})]

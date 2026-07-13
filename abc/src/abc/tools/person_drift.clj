@@ -7,6 +7,7 @@
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [arachne.aristotle :as aa]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string])
@@ -326,13 +327,15 @@
         (shacl-failures graph label))))
 
 (defn- drift-dir [persons-dir dirname]
-  (java.io.File. (io/file persons-dir) dirname))
+  (fs/path persons-dir dirname))
 
 (defn- json-files [dir]
-  (if (.isDirectory dir)
-    (->> (.listFiles dir)
-         (filter #(and (.isFile %) (string/ends-with? (.getName %) ".json")))
-         sort
+  (if (fs/directory? dir)
+    (->> (fs/list-dir dir)
+         (filter #(and (fs/regular-file? %)
+                       (string/ends-with? (str (fs/file-name %)) ".json")))
+         (sort-by (comp str fs/file-name))
+         (map #(io/file (str %)))
          vec)
     []))
 

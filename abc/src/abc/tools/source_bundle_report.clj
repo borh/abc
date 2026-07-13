@@ -1,26 +1,26 @@
 (ns abc.tools.source-bundle-report
   (:require [abc.tools.json :as json]
             [abc.tools.source-bundle :as source-bundle]
+            [babashka.fs :as fs]
             [babashka.process :as process]
-            [clojure.java.io :as io]
             [clojure.string :as string]))
 
 (def pinned-aozorabunko-commit
   "0e9ea3e586eb0aa34039fabfc85a407d2f98b165")
 
 (defn- corpus-zips [root]
-  (let [cards (io/file root "cards")]
-    (->> (or (.listFiles cards) (make-array java.io.File 0))
-         (filter #(.isDirectory ^java.io.File %))
-         (map #(io/file % "files"))
-         (mapcat #(or (.listFiles ^java.io.File %)
-                      (make-array java.io.File 0)))
-         (filter #(and (.isFile ^java.io.File %)
-                       (string/ends-with? (.getName ^java.io.File %) ".zip")))
-         (sort-by #(.getPath ^java.io.File %)))))
+  (let [cards (fs/path root "cards")]
+    (->> (if (fs/directory? cards) (fs/list-dir cards) [])
+         (filter fs/directory?)
+         (sort-by (comp str fs/file-name))
+         (map #(fs/path % "files"))
+         (mapcat #(if (fs/directory? %) (fs/list-dir %) []))
+         (filter #(and (fs/regular-file? %)
+                       (string/ends-with? (str (fs/file-name %)) ".zip")))
+         (sort-by str))))
 
 (defn- relative-path [root file]
-  (-> (.relativize (.toPath (io/file root)) (.toPath (io/file file)))
+  (-> (fs/relativize root file)
       str
       (string/replace "\\" "/")))
 
@@ -117,7 +117,7 @@
   (reduce
    (fn [summary zip-file]
      (try
-       (let [scan (source-bundle/scan-zip zip-file)]
+       (let [scan (source-bundle/scan-zip (fs/file zip-file))]
          (record-readable summary aozora-root zip-file scan
                           (admission-reason scan)))
        (catch clojure.lang.ExceptionInfo t

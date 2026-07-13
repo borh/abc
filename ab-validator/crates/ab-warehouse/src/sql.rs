@@ -177,7 +177,7 @@ mod tests {
     }
 
     /// End-to-end check that the canonical `warehouse_nway_feature_diffs`
-    /// view (Task 2, step 9) re-expands a collapsed `analyzers` list column
+    /// view  re-expands a collapsed `analyzers` list column
     /// back into one row per analyzer with a scalar `analyzer_id`, matching
     /// the pre-collapse (schema v2) per-analyzer row shape byte-for-byte.
     /// Skips (rather than fails) if the `duckdb` binary is unavailable in

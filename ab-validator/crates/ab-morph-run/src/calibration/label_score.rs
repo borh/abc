@@ -1,5 +1,5 @@
 //! Label scoring (spec §Calibration Plan step 5): turns a filled blind
-//! labeling TSV (Task 4's export, owner-annotated `verdict` column) plus its
+//! labeling TSV (export, owner-annotated `verdict` column) plus its
 //! `mapping.json` sidecar into per-method p@k and nDCG@k. Pooled evaluation:
 //! the ideal ranking (IDCG) is drawn from the union of *all* labeled
 //! patterns, not from each method's own surfaced set, so methods that
@@ -55,7 +55,7 @@ const RELEVANCE_DOC: &str = "a verdict counts as relevant when it indicates the 
 const GAINS_DOC: &str =
     "bug=3, expected-dictionary=2, corpus-artifact=1, expected-policy=1, noise=0, unclear=0";
 
-/// Reads `labels` (filled Task 4 TSV) and `mapping` (Task 4's `mapping.json`
+/// Reads `labels` (filled TSV) and `mapping` (`mapping.json`
 /// sidecar) and computes p@k/nDCG@k per method.
 ///
 /// # Errors

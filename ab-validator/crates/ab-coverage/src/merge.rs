@@ -2,11 +2,11 @@
 //!
 //! Two operations:
 //! - `apply_classifier_findings` — replaces `parsers.<id>` and `adapters.<id>`
-//!   sub-tables for the rows present in the JSON input. Used by Task 3.
+//!   sub-tables for the rows present in the JSON input. 
 //! - `apply_prevalence_findings` — overwrites only the
 //!   `corpus_prevalence.{works_with_feature, total_occurrences, sample_works,
 //!   coverage_basis}` fields on the rows present in the JSON input. Used by
-//!   Task 4 Step 5.
+//!   
 //!
 //! Both operations preserve comments, ordering, and untouched fields by
 //! editing through `toml_edit::DocumentMut`.

@@ -2,7 +2,7 @@
 //!
 //! Every payload is `Copy`, and the variable-length pieces are `u32`
 //! handles into a flat [`NodeStore`] rather than `&'src str` borrows, so
-//! the whole tree carries no lifetime and **is** `Send + Sync`. The #237
+//! the whole tree carries no lifetime and **is** `Send + Sync`. The
 //! incremental (`PieceSeq`) cache and an out-of-process LSP consumer need
 //! exactly that: a representation they can own, cache, and move between
 //! threads.

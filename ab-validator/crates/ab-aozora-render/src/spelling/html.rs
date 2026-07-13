@@ -39,14 +39,14 @@ pub(crate) struct RenderState {
     /// [`Self::ensure_in_paragraph`] reopens it (re-pushing onto `open_stack`) in
     /// the next paragraph — keeping the stack consistent so the eventual close
     /// still pairs. A never-closed inline container renders balanced in each
-    /// paragraph to EOF (#420).
+    /// paragraph to EOF.
     reopen_after_para: Vec<RegionFormat>,
     /// Count of open inline-warichu spans (`［＃割り注］`) awaiting their close
     /// (`［＃割り注終わり］`). A warichu span is phrasing content, so it must
     /// never straddle a `</p>` or `</div>`: [`Self::close_paragraph`] drains any
     /// still-open span before closing the paragraph, and [`Self::close_warichu`]
     /// absorbs a stray close with no matching open. Sources that mismatch the
-    /// block- and inline-warichu forms (9 corpus works, #415) rely on this to
+    /// block- and inline-warichu forms  rely on this to
     /// stay balanced.
     warichu_depth: u32,
 }
@@ -69,7 +69,7 @@ impl RenderState {
             out.write_str("<p>")?;
             self.in_paragraph = true;
             // Reopen any inline containers `close_paragraph` closed at the last
-            // paragraph boundary (#420). `pop()` yields them in reverse of the
+            // paragraph boundary. `pop()` yields them in reverse of the
             // top-down push order, i.e. outermost-first, restoring the original
             // nesting; re-pushing onto `open_stack` keeps the eventual close
             // paired. This runs only for real paragraphs — the `in_heading`
@@ -84,14 +84,14 @@ impl RenderState {
 
     pub(crate) fn close_paragraph<W: Write>(&mut self, out: &mut W) -> fmt::Result {
         // A warichu span is phrasing content that must close before the
-        // enclosing paragraph (#415, Case 2): drain any still-open span here,
+        // enclosing paragraph, Case 2): drain any still-open span here,
         // the single choke-point every block-leaf / container / finish path
         // routes through (via `before_block_emit` and `drain_open_containers`).
         self.drain_open_warichu(out)?;
         if self.in_paragraph {
             // An inline container is phrasing content and sits at the TOP of
             // `open_stack` (any block container is below it), so it must not
-            // straddle `</p>` either (#420). Close each open inline container
+            // straddle `</p>` either. Close each open inline container
             // top-down here and remember it, so `ensure_in_paragraph` can reopen
             // it in the next paragraph — re-pushing onto `open_stack` keeps a
             // later close marker paired.
@@ -155,7 +155,7 @@ impl RenderState {
     ) -> fmt::Result {
         // An inline close marker (`［＃太字終わり］` etc.) that lands in the gap
         // between a paragraph boundary and the next text cancels a pending
-        // reopen instead of no-oping (#420). `close_paragraph` already drained
+        // reopen instead of no-oping. `close_paragraph` already drained
         // the paragraph's inline containers into `reopen_after_para`, so the
         // stack is empty (or holds only the enclosing block) and a plain
         // `open_stack.pop()` would silently lose the close — and the next
@@ -210,7 +210,7 @@ impl RenderState {
 
     /// Close one inline-warichu span (`［＃割り注終わり］`). A close with no
     /// matching open — a source that mismatches the block- and inline-warichu
-    /// forms (#415, Case 1) — is absorbed as a no-op rather than emitting a stray
+    /// forms, Case 1) — is absorbed as a no-op rather than emitting a stray
     /// `</span>`.
     pub(crate) fn close_warichu<W: Write>(&mut self, out: &mut W) -> fmt::Result {
         if self.warichu_depth > 0 {
@@ -221,7 +221,7 @@ impl RenderState {
     }
 
     /// Close every warichu span left open when the paragraph / document ends —
-    /// an inline `［＃割り注］` with no matching inline close (#415, Case 2). The
+    /// an inline `［＃割り注］` with no matching inline close, Case 2). The
     /// span renders as extending to the paragraph boundary, mirroring
     /// [`Self::drain_open_containers`] for unclosed regions.
     pub(crate) fn drain_open_warichu<W: Write>(&mut self, out: &mut W) -> fmt::Result {
@@ -665,7 +665,7 @@ mod tests {
 
     /// A well-formed inline warichu pair emits the same balanced span it always
     /// did — a byte-identity guard that the `RenderState`-owned depth machinery
-    /// (#415) does not perturb the correct case.
+    ///) does not perturb the correct case.
     #[test]
     fn warichu_wellformed_inline_pair_is_byte_identical() {
         let html = render("前［＃割り注］上等／下等［＃割り注終わり］後");
@@ -679,7 +679,7 @@ mod tests {
         );
     }
 
-    /// #415 Case 1: a block-form warichu open (`［＃ここから割り注］`) paired with an
+    /// block-warichu 1: a block-form warichu open (`［＃ここから割り注］`) paired with an
     /// inline-form close (`［＃割り注終わり］`) must not leak a stray `</span>` — the
     /// unmatched inline close is absorbed as a no-op.
     #[test]
@@ -698,7 +698,7 @@ mod tests {
         assert_eq!(html.matches("<div").count(), html.matches("</div>").count());
     }
 
-    /// #415 Case 2: an inline-form warichu open (`［＃割り注］`) paired with a
+    /// block-warichu 2: an inline-form warichu open (`［＃割り注］`) paired with a
     /// block-form close (`［＃ここで割り注終わり］`) must have its span drained before
     /// the paragraph closes — the open `<span>` never straddles `</p>`.
     #[test]
@@ -770,7 +770,7 @@ mod tests {
 
     #[test]
     fn inline_container_stays_inside_paragraph() {
-        // Byte-identity regression guard for #420: a well-formed inline container
+        // Byte-identity regression guard: a well-formed inline container
         // opens AND closes within its paragraph, so the paragraph-boundary
         // reopen machinery is a no-op — the top of `open_stack` is never inline
         // at `close_paragraph`. Output must be exactly as before the fix.
@@ -782,7 +782,7 @@ mod tests {
     }
 
     /// True iff `<b>` is balanced at every `</p>` boundary — i.e. no open bold
-    /// ever straddles a paragraph close (#420). A `</b>` (`<`,`/`,`b`,`>`) never
+    /// ever straddles a paragraph close. A `</b>` (`<`,`/`,`b`,`>`) never
     /// contains the substring `<b`, so `matches("<b")` counts only opening tags.
     fn bold_never_straddles_p_close(html: &str) -> bool {
         let mut cursor = 0;
@@ -797,7 +797,7 @@ mod tests {
         true
     }
 
-    /// #420: an inline 太字 container the source never closes must not leave an
+    ///: an inline 太字 container the source never closes must not leave an
     /// open `<b>` straddling `</p>` across a paragraph break. The container is
     /// closed before `</p>` and reopened in the next paragraph, so bold is
     /// globally balanced and balanced at the `</p>` boundary.
@@ -823,7 +823,7 @@ mod tests {
         );
     }
 
-    /// #420: an unclosed inline 太字 that reaches EOF renders balanced, with each
+    ///: an unclosed inline 太字 that reaches EOF renders balanced, with each
     /// trailing paragraph bold and no bold straddling any `</p>`.
     #[test]
     fn unclosed_bold_reaching_eof_is_balanced_each_paragraph() {
@@ -848,7 +848,7 @@ mod tests {
         );
     }
 
-    /// #420: a 太字 opened before a paragraph break and closed with
+    ///: a 太字 opened before a paragraph break and closed with
     /// `［＃太字終わり］` in a later paragraph must still pair — the reopened
     /// container stays on `open_stack`, so the close marker finds its match and
     /// text after the close is no longer bold.
@@ -874,7 +874,7 @@ mod tests {
         );
     }
 
-    /// #420: an inline close marker landing in the *gap* between a paragraph
+    ///: an inline close marker landing in the *gap* between a paragraph
     /// break and the next text (no intervening text) ends the emphasis — it
     /// must cancel the pending reopen, not silently no-op and then wrongly
     /// re-apply the emphasis to the following paragraph. Regression guard for

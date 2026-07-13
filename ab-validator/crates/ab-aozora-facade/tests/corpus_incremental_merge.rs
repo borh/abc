@@ -1,4 +1,4 @@
-//! Load-bearing gate for incremental re-parse (#237).
+//! Load-bearing gate for incremental re-parse.
 //!
 //! Proves, over every document in `AOZORA_CORPUS_ROOT`, that the
 //! **diagnostics-only** incremental engine
@@ -19,7 +19,7 @@ use ab_aozora_facade::{
     DiagBaseRef, Diagnostic, Document, PieceSeq, reparse_incremental_diagnostics_only,
 };
 
-/// #237 Tier 1: the **diagnostics-only** incremental engine
+///the **diagnostics-only** incremental engine
 /// ([`ab_aozora_facade::reparse_incremental_diagnostics_only`]) — the LSP's per-keystroke
 /// hot path — must produce diagnostics byte-identical to a from-scratch parse of
 /// the edited text, for every corpus document whose midpoint insertion is a

@@ -717,7 +717,7 @@ fn frozen_v2_0_3_0_artifact_retains_historical_coordinates() {
     assert_ne!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "the frozen pre-Phase-5 generation must retain its historical parser-IR coordinate"
+        "the frozen generation must retain its historical parser-IR coordinate"
     );
 }
 

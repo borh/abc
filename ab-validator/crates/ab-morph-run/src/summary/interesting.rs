@@ -5,7 +5,7 @@
 //! within-kind, with an anomaly channel for high-signal regions whose
 //! patterns fall below the cutoff. Reads only existing v1 tables; degrades
 //! honestly (`rarity_basis = "source"`) when `aozora_works.parquet` is
-//! absent. See `docs/superpowers/specs/2026-07-05-interestingness-ranking-design.md`.
+//! absent.
 //!
 //! Two collection engines produce identical results: a DuckDB CLI
 //! aggregation (required at full-corpus scale — the full Aozora warehouse

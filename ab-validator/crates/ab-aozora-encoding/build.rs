@@ -54,7 +54,7 @@ fn main() {
     let dict_tsv = data_dir.join("aozora-gaiji-chuki.tsv");
     let special_tsv = data_dir.join("aozora-gaiji-special.tsv");
     // Full mapping table — the slim TSVs above carry only 第3/第4水準, so
-    // the reverse char → 水準 classifier (issue #89) needs the complete
+    // the reverse char → 水準 classifier needs the complete
     // file, which alone records the JIS X 0208 cells plus the
     // `[2000]/[2004]` / `Fullwidth:` / `Windows:` annotations.
     let std_txt = data_dir.join("jisx0213-2004-std.txt");
@@ -173,7 +173,7 @@ fn main() {
     .expect(INFALLIBLE);
     writeln!(out).expect(INFALLIBLE);
 
-    // ---- reverse char → JIS 水準 table (issue #89) ----
+    // ---- reverse char → JIS 水準 table ----
     // A codepoint-sorted `&[(u32, u8)]` queried by binary search in
     // `suijun::jis_level`. A plain slice (not phf) keeps the codegen
     // dependency-free and is plenty fast for a per-char classifier.
@@ -203,7 +203,7 @@ fn main() {
     .expect(INFALLIBLE);
     writeln!(out).expect(INFALLIBLE);
 
-    // ---- roman numeral tables (#326) ----
+    // ---- roman numeral tables  ----
     // Bare `※［＃ローマ数字N］` glyph references have no men-ku-ten cell for
     // N≥13 (the corpus pairs them with a page-line ref, not a JIS code), so
     // they are composed from the U+2160 / U+2170 single-letter blocks.
@@ -360,7 +360,7 @@ fn parse_description_tsv(path: &std::path::Path) -> Vec<DescriptionEntry> {
 /// single-letter block atoms (I=+0, V=+4, X=+9, L=+12, C=+13, D=+14,
 /// M=+15). Returns the empty string for `n == 0`. Emits the
 /// `ROMAN_NUMERAL_*` tables consumed by `gaiji::roman_numeral_glyph`
-/// for #326's bare `※［＃ローマ数字N］`.
+/// for the bare `※［＃ローマ数字N］`.
 fn roman_numeral(mut n: u32, base: u32) -> String {
     const TABLE: &[(u32, &[u32])] = &[
         (1000, &[15]),
@@ -395,7 +395,7 @@ fn mencode(plane: u8, row: u8, cell: u8) -> String {
 }
 
 /// Reverse char → JIS 水準 table built from `jisx0213-2004-std.txt`
-/// for issue #89's `jis_level` / `is_platform_dependent` classifier.
+///'s `jis_level` / `is_platform_dependent` classifier.
 struct LevelTable {
     /// `(codepoint, level)` pairs sorted by codepoint, deduped so the
     /// lowest (most standard) level wins on collision. `level` ∈ 1..=4.

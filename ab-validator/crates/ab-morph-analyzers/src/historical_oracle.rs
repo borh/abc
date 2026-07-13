@@ -1,4 +1,4 @@
-//! Adapter: drive the Phase-3 Lane B (M2) historical modernizer from a
+//! Adapter: drive the historical modernizer from a
 //! `kindai-bungo`-backed [`VibratoAnalyzer`].
 //!
 //! `ab-ortho-detect` defines [`HistoricalOracle`] (surface + span + `pron` +

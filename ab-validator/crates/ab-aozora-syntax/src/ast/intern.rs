@@ -91,7 +91,7 @@ pub struct StrId(pub u32);
 /// `(start, len)` span per id (`spans`). Dedup is served by an
 /// open-addressing probe table (`table`).
 ///
-/// Derives `Clone` (the owned output may be cached/cloned by the #237
+/// Derives `Clone` (the owned output may be cached/cloned by the
 /// incremental cache). It does **not** derive `Copy` (owns heap storage) nor
 /// `PartialEq`/`Eq`: the reused `stats: InternStats` field does not implement
 /// `PartialEq`, so deriving it here would not compile, and structural

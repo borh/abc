@@ -21,7 +21,7 @@ pub use label_export::{ExportLabelsOptions, ExportSummary, run_export_labels};
 pub use label_score::{LabelScores, MethodScores, run_score_labels};
 
 /// Reads a ranking artifact (a serialized `InterestingSummary` JSON), shared
-/// by ranking comparison (this module) and label scoring (a later task).
+/// by ranking comparison (this module) and label scoring.
 pub fn read_ranking(path: &Path) -> Result<InterestingSummary> {
     let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
     serde_json::from_reader(BufReader::new(file))

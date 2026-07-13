@@ -730,7 +730,7 @@ fn tei_eaj_file_id_aliases(tei_eaj_file: &str, work_id: &str) -> BTreeSet<String
     numeric_tokens
         .into_iter()
         // Avoid unsafe aliases from suffixes like 4244-1_tei.xml; ABC should
-        // eventually export durable source aliases instead of relying on this.
+        // Source aliases are not yet exported; relying on this temporary mapping.
         .filter(|token| *token != work_id && token.len() >= 3)
         .map(ToOwned::to_owned)
         .collect()

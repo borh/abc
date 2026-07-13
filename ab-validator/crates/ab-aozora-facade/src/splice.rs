@@ -1,7 +1,7 @@
 //! Source-region ownership and minimal-diff source splicing.
 //!
-//! The **minimal-diff edit splice** (issue #202) — the last pillar of the
-//! coremodel-purification epic (#189). An editor surface that "adds ruby to
+//! The **minimal-diff edit splice** (the — the last pillar of the
+//! coremodel-purification epic. An editor surface that "adds ruby to
 //! this word" or "changes this heading level" wants the resulting source to
 //! differ from the original by the smallest possible diff; it must *not*
 //! reflow the whole document to canonical form ([`Tree::to_source`]), which

@@ -498,7 +498,7 @@ impl RecogniseCtx<'_, '_> {
             return Some(self.typed_annotation_match(directive_span, kind));
         }
 
-        // Standalone external-character (#122): a no-`※` `［＃…］` whose body
+        // Standalone external-character: a no-`※` `［＃…］` whose body
         // is a gaiji description with a trailing mencode / 底本ページ-行
         // (`「※」は「祿－示」、第3水準1-84-27、144-上-9`, `「比」の「ヒ」に代えて「く」、
         // 第4水準2-1-23`). Checked after the editorial notes so a `底本では` note
@@ -522,7 +522,7 @@ impl RecogniseCtx<'_, '_> {
         Some(self.unknown_annotation_match(directive_span, body, tcy_pending))
     }
 
-    /// Standalone (no-`※`) external-character recogniser (#122). Reuses the
+    /// Standalone (no-`※`) external-character recogniser. Reuses the
     /// gaiji body parser with the bracket open as the consume start, and
     /// declines unless the body resolves to a glyph or carries a mencode /
     /// 底本ページ-行 tail — so an ordinary `［＃「…」］` note is never claimed.
@@ -1876,7 +1876,7 @@ mod tests {
         // A comma-joined compound (`「3」は上付き小文字、「1/143」は分数`) reaches this
         // fn with a suffix that is not exactly `分数`, so it must NOT match — it
         // stays `Directive{Unknown}` until the multi-directive-per-bracket
-        // grammar owns it (#321 out-of-scope).
+        // grammar owns it out-of-scope).
         assert_eq!(
             forward_attr_from_suffix("上付き小文字、「1/143」は分数"),
             None

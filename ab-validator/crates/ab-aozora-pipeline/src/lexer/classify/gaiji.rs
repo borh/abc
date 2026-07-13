@@ -57,7 +57,7 @@ impl RecogniseCtx<'_, '_> {
     }
 
     /// Core recogniser shared by the `※`-prefixed [`Self::recognize_gaiji`]
-    /// and the no-refmark standalone (#122) form. `consume_start` is the
+    /// and the no-refmark standalone form. `consume_start` is the
     /// byte the gaiji span folds back to (`※` start for the refmark form,
     /// `［` start for standalone); `standalone` records whether the source
     /// carried a `※` so the serializer can round-trip the bracket verbatim.
@@ -110,9 +110,9 @@ impl RecogniseCtx<'_, '_> {
         // view and the gaiji() wire. It handles the simple quoted form, the
         // composed-glyph / 正字 / 屋号 forms, and the bare form with one
         // right-to-left mencode scan (the naive first-`、` split it replaces
-        // wrongly cut composed forms — #181).
+        // wrongly cut composed forms.
         // Recognition gate (I3 idempotency) via the single authority in
-        // aozora-encoding — shared with the resolution view (#181) and the
+        // aozora-encoding — shared with the resolution view and the
         // gaiji() wire. The simple `「desc」` quoted form is a gaiji even
         // without a mencode; the composed / bare forms need a trailing mencode
         // anchor; a non-serializable description (stray quote imbalance, an

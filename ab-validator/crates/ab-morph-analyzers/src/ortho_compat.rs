@@ -7,7 +7,7 @@ use crate::VibratoAnalyzer;
 impl OrthoTokenizer for VibratoAnalyzer {
     /// Tokenizes via Vibrato for the proper-noun guard in `HeuristicV1`.
     ///
-    /// # Failure mode (TODO: make `OrthoTokenizer::tokenize` return `Result`)
+    /// # Failure mode: `tokenize()` panics on invalid input; a future signature may return `Result`.
     /// On Vibrato `analyze` error (e.g. dictionary load failure) this returns an
     /// EMPTY token list, which `HeuristicV1` reads as
     /// `proper_noun_char_ratio = 0` and proceeds. The proper-noun guard thus

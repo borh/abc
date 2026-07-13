@@ -1,4 +1,4 @@
-//! Black-box coverage of the public minimal-diff splice surface (#202),
+//! Black-box coverage of the public minimal-diff splice surface,
 //! exercised through the `aozora` front door exactly as an editor
 //! integration would — proving the re-exports are usable from outside
 //! the crate.

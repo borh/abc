@@ -1,4 +1,4 @@
-//! Reverse JIS X 0208 / 0213 水準 (level) classification — issue #89.
+//! Reverse JIS X 0208 / 0213 水準 (level) classification
 //!
 //! `aozora-encoding` already owns the full Project X0213 mapping table
 //! and bakes the *forward* direction (注記 reference → `char`) into the

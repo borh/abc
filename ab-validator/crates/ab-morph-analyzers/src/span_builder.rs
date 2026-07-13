@@ -139,7 +139,7 @@ fn find_sequential_span(
 /// Post-process an Analysis to remap morpheme `byte_span`, `char_span`, and
 /// `surface` from normalized-text coordinates to original-text coordinates.
 ///
-/// This honors the Phase 2 spec invariant #2: after remapping, `byte_span`,
+/// This honors the spec invariant #2: after remapping, `byte_span`,
 /// `char_span`, and `surface` of every morpheme refer to the ORIGINAL source
 /// text (the same text the analyzer's caller will validate against), not the
 /// normalized view that was actually tokenized.

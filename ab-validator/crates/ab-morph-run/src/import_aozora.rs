@@ -1,6 +1,6 @@
 //! Producer for the `aozora_works.parquet` sidecar: an imported projection
 //! of ABC's `metadata-record.schema.json` export.
-//! Design: docs/superpowers/specs/2026-07-06-aozora-works-import-design.md
+//! Import design.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};

@@ -134,7 +134,7 @@ impl<W: fmt::Write> WalkSink for HtmlSink<'_, W> {
                 // their span must stay balanced across paragraph boundaries, so
                 // `RenderState` owns the depth counter (mirroring container
                 // balance) rather than the AST emitter writing the tags
-                // unconditionally (#415). Every other inline node renders as
+                // unconditionally. Every other inline node renders as
                 // before. Check `kind` through a borrow, then move `n` into
                 // `render` on the fall-through.
                 match &n {
@@ -159,7 +159,7 @@ impl<W: fmt::Write> WalkSink for HtmlSink<'_, W> {
             (SentinelKind::BlockClose, NodeRef::BlockClose(close)) => {
                 // Pass the close marker's inline-ness so a stray inline close in
                 // a paragraph gap cancels a pending reopen rather than popping a
-                // block off the stack (#420).
+                // block off the stack.
                 self.state.close_container(close.is_inline(), self.out)
             }
             // Sentinel without a matching registry entry: best-effort skip.

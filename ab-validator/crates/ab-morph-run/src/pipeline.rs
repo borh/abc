@@ -1914,7 +1914,7 @@ pub(crate) fn run_analyze_aat_parallel(
                         collect_string_stats,
                         warehouse: None,
                         progress: None,
-                        // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
+                        // --ortho-detect is not yet threaded through the parallel/warehouse/selected paths.
                         ortho_detect: OrthoDetectMode::Off,
                         ortho_ml_model: None,
                         prepared_ortho_detector: None,

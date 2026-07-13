@@ -115,7 +115,7 @@ fn ablate(gold: &std::path::Path, report: &std::path::Path) -> anyhow::Result<()
     // v1 reality (Branch B): TokenFeatures (oov_count, oov_ratio,
     // proper_noun_char_ratio) are dead. Character-only IS the only viable
     // feature set in v1. The ablation documents this so a future full-feature
-    // revisit has a baseline to beat.
+    // 
     let recs = io::read_gold(gold)?;
     let n = recs.len();
     if n == 0 {

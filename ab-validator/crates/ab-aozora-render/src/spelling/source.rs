@@ -1,7 +1,7 @@
 //! Lifetime-free Aozora-source serialize helpers.
 //!
 //! The shared, AST-payload-free marker emitters the owned serializer
-//! (`serialize`) and the source splice (#202) reuse: the
+//! (`serialize`) and the source splice) reuse: the
 //! container open/close marker spellers, the single-line layout-directive
 //! emitter, the heading keyword helpers, the `TrackingWriter` (tracks the last
 //! emitted char for the bare-`｜` decision), and the `NewlineCappedWriter`
@@ -22,7 +22,7 @@ use ab_aozora_syntax::{
 /// payload (N / width / offset / 字組み clause). The inverse of the
 /// classifier's open recognition.
 ///
-/// Used by the minimal-diff source splice (#202) to canonicalize a
+/// Used by the minimal-diff source splice) to canonicalize a
 /// container's open marker. The serialization rule lives here (the single
 /// source of truth for marker spelling); the splice layer only calls it.
 ///
@@ -42,7 +42,7 @@ pub fn container_open_source(open: RegionFormat) -> String {
 /// keeps its width. The close is a pure function of the open
 /// ([`RegionClose::of`]).
 ///
-/// Used by the minimal-diff source splice (#202): when a container's family
+/// Used by the minimal-diff source splice): when a container's family
 /// changes, the paired close marker must be rewritten to match the new open,
 /// and this derives it without the splice layer re-implementing the spelling.
 ///

@@ -139,7 +139,7 @@ pub fn lookup(
     if let Some(&ch) = DESCRIPTION_TO_CHAR.get(description) {
         return Some(Resolved::Char(ch));
     }
-    // Bare `ローマ数字N` (#326) composes from the U+2160 block — the
+    // Bare `ローマ数字N` composes from the U+2160 block — the
     // N≥13 forms have no single JIS cell, so the dictionary above misses.
     if let Some(s) = roman_numeral_glyph(description) {
         return Some(Resolved::Multi(s));
@@ -167,7 +167,7 @@ pub fn lookup(
 }
 
 /// Compose the Unicode roman numeral for a bare `ローマ数字N` /
-/// `ローマ数字N小文字` gaiji description (#326), or `None` if the
+/// `ローマ数字N小文字` gaiji description, or `None` if the
 /// description is not that shape or `N` is outside the composed range.
 ///
 /// `N` accepts ASCII or full-width digits. The numeral is read from the
@@ -253,7 +253,7 @@ pub const GAIJI_OPEN: &str = "※［＃";
 /// The bracket-hash annotation opener (`［＃`).
 ///
 /// Shared by the refmark form (`※` + this) and the standalone
-/// external-character form (#122), which carries no `※`. The standalone form
+/// external-character form, which carries no `※`. The standalone form
 /// needs the [`recognize_gaiji_body`] gate to tell it apart from a plain
 /// directive (`［＃改ページ］`).
 pub const BRACKET_HASH: &str = "［＃";
@@ -697,7 +697,7 @@ fn is_digit_run(p: &str) -> bool {
 }
 
 /// Resolve the gaiji span at `[start..end)` — either the refmark form
-/// (`※［＃…］`) or the standalone form (`［＃…］`, #122).
+/// (`※［＃…］`) or the standalone form (`［＃…］`).
 ///
 /// The refmark `※` is itself the gaiji marker, so a `※［＃…］` span is always
 /// resolved. A standalone `［＃…］` must pass [`recognize_gaiji_body`] (else it
@@ -752,7 +752,7 @@ pub fn gaiji_resolutions(source: &str) -> Vec<GaijiResolution> {
     let mut out = Vec::new();
     let mut cursor = 0usize;
     // Scan the bracket-hash opener so both the refmark (`※［＃`) and the
-    // standalone (`［＃`, #122) forms are seen; `resolve_at` folds a preceding
+    // standalone (`［＃`)  forms are seen; `resolve_at` folds a preceding
     // `※` into the span and gates the standalone form against recognition.
     while let Some(rel) = source[cursor..].find(BRACKET_HASH) {
         let hash_open = cursor + rel;
@@ -853,7 +853,7 @@ mod tests {
                 quoted: true,
             }
         );
-        // Composed-glyph form (#181): the whole description is kept verbatim,
+        // Composed-glyph form: the whole description is kept verbatim,
         // NOT cut at the first 、 — the right-to-left scan finds the mencode.
         assert_eq!(
             parse_gaiji_body("「廰」の「广」を「厂」に、第3水準1-15-94"),
@@ -1043,7 +1043,7 @@ mod tests {
 
     #[test]
     fn gaiji_resolutions_includes_standalone_form() {
-        // Standalone `［＃…］` (no `※`) external-character form (#122/#181):
+        // Standalone `［＃…］` (no `※`) external-character form:
         // previously invisible to the resolution view.
         let src = "前［＃「木＋吶のつくり」、第3水準1-85-54］後";
         let res = gaiji_resolutions(src);
@@ -1089,7 +1089,7 @@ mod tests {
         assert!(recognize_gaiji_body("ここから2字下げ").is_none());
         assert!(recognize_gaiji_body("「々」").is_some()); // quoted form, no mencode
         assert!(recognize_gaiji_body("「desc」、第3水準1-85-54").is_some());
-        // #326: a bare `ローマ数字N` resolves, so its `※［＃…］` is gaiji,
+        // a bare `ローマ数字N` resolves, so its `※［＃…］` is gaiji,
         // not a plain directive.
         assert!(recognize_gaiji_body("ローマ数字17").is_some());
         assert!(recognize_gaiji_body("ローマ数字23").is_some());

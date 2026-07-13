@@ -1,10 +1,10 @@
-//! Historical-kana → modern-kana surface modernizer (Issue 2, Phase-3 Lane B / M2).
+//! Historical-kana → modern-kana surface modernizer 
 //!
 //! Rewrites 歴史的仮名遣い to 現代仮名遣い at the **surface** level — keep the kanji,
 //! rewrite only the historical *kana* — so an analyzer with no historical
 //! dictionary (sudachi) can be fed modernized input, and every analyzer sees the
 //! identical modernized text for cross-analyzer comparability. See
-//! `docs/superpowers/specs/2026-07-08-ortho-phase3-lane-b-surface-normalizer-design.md`.
+//! See ADR 0036 and docs/glossary.md.
 //!
 //! ## The algorithm is what was measured, not what was hoped
 //!
@@ -218,7 +218,7 @@ pub trait HistoricalOracle: Send + Sync {
     fn tokenize(&self, text: &str) -> Vec<HistOracleToken>;
 }
 
-/// The Phase-3 Lane B historical→modern surface detector (M2). Tokenizes each
+/// The historical→modern surface detector (M2). Tokenizes each
 /// sentence with the historical oracle and emits **one token-granular
 /// [`OrthoAnnotation`] per rewritten token** (kind
 /// [`OrthoNormalization::HistoricalToModern`]), so every length-changing span

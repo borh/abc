@@ -4,7 +4,7 @@
 //! classified there; [`LexOutput`] holds the lexer's output, with a
 //! `store: NodeStore` that backs the `StrId`/range payloads. The whole struct
 //! is `Send + Sync` (static assertion below) — the point of the owned
-//! representation for the #237 incremental cache / LSP consumer.
+//! representation for the incremental cache / LSP consumer.
 
 use ab_aozora_spec::{Diagnostic, PairLink, SourceOffset, Span};
 
@@ -119,7 +119,7 @@ impl LexOutput {
 }
 
 /// Required static assertion: the owned lex output crosses thread boundaries
-/// (the whole point of the owned representation for the #237 LSP consumer).
+/// (the whole point of the owned representation for the LSP consumer).
 const _: fn() = || {
     const fn assert_send_sync<T: Send + Sync>() {}
     assert_send_sync::<LexOutput>();

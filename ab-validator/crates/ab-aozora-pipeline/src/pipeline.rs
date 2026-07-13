@@ -331,9 +331,9 @@ impl Pipeline<'_, Paired> {
 /// e.g. a promoted 大/中/小 heading reclaiming its referent line `序章\n`, or a
 /// forward node reclaiming its predecessor literal — the subsumed earlier span
 /// is dropped, so the normalizer (which appends in source order) does not emit
-/// the reclaimed text twice. This overlap-truncate cured the #180 round-trip
+/// the reclaimed text twice. This overlap-truncate cured the round-trip
 /// pathology; the surviving [`ForwardOrigin`] on each forward leaf is necessary
-/// provenance (#202).
+/// provenance.
 ///
 /// Returns the lowered spans and the set of forward-directive spans the
 /// ruby-base emphasis phase (#384) decorated — the builder suppresses those
@@ -360,7 +360,7 @@ fn lower_spans(
                 // Partial overlap: `span` (a `Reclaimed` forward node) pulled its
                 // source region back into the *tail* of a committed plain run —
                 // truncate the plain so the literal is emitted once, by the node
-                // (issue #180, unbounded growth).
+                // (issue, unbounded growth).
                 if let Some(last) = out.last_mut() {
                     last.source_span.end = ss;
                 }

@@ -2,7 +2,7 @@
 //! [`ab_aozora_pipeline::lexer`] streaming building blocks (`tokenize` / `pair` /
 //! `classify`).
 //!
-//! Plan G.4 deliverable. These tests pin the *behaviour* of the
+//! These tests pin the *behaviour* of the
 //! streaming pipeline that earlier unit tests treated as
 //! implementation detail:
 //!

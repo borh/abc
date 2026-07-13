@@ -29,7 +29,7 @@ const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;
 /// Merge-time compaction threshold (§3.12):
 /// coalesce a staged table iff it has more than this many parts AND the
 /// true median part is smaller than `COMPACTION_MAX_MEDIAN_PART_BYTES`.
-/// Values from `docs/superpowers/reports/2026-07-03-morph-perf-decision.md`.
+/// Values from performance calibration.
 pub(crate) const COMPACTION_MIN_PART_COUNT: usize = 64;
 pub(crate) const COMPACTION_MAX_MEDIAN_PART_BYTES: u64 = 1_048_576; // 1 MiB
 

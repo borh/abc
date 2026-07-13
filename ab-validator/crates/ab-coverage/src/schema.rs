@@ -6,7 +6,7 @@ use crate::matrix::{CoverageMatrix, Recognition, RepresentabilityStatus, Row, Ro
 #[derive(Debug, Clone, Copy)]
 pub struct ValidationOptions {
     /// If true, `recognition = "unknown"` and `aat_fidelity = "unknown"` are
-    /// allowed (used during Task 3 ramp-up where rows are filled
+    /// allowed  where rows are filled
     /// parser-by-parser).
     pub allow_unknown: bool,
     /// If true, every row must declare cells for these parser/adapter ids.

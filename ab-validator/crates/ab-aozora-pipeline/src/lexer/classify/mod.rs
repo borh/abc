@@ -2074,7 +2074,7 @@ impl RecogniseCtx<'_, '_> {
         build.text_start = g.consume_end;
         // A nested gaiji whose mencode resolves nothing renders best-effort as
         // its description; flag the miss so nested references match the
-        // top-level `※［＃…］` behaviour (#84). The owning `ClassifyStream`
+        // top-level `※［＃…］` behaviour. The owning `ClassifyStream`
         // drains `self.diagnostics` after the recognise call.
         if g.payload.resolve(self.alloc.store()).is_none() {
             self.diagnostics
@@ -2132,9 +2132,9 @@ impl RecogniseCtx<'_, '_> {
             build.text_start..a.consume_start,
             self.alloc,
         );
-        // A no-`※` standalone gaiji (#122) reaches here as `Aozora(Gaiji)`;
+        // A no-`※` standalone gaiji reaches here as `Aozora(Gaiji)`;
         // wrap it as a `Segment::Gaiji` (not the `Unknown` annotation the
-        // payload fallback would build) and flag an unresolved miss (#84).
+        // payload fallback would build) and flag an unresolved miss.
         // Every other recogniser keeps the `Segment::Directive` path.
         if let EmitKind::Aozora(Node::Gaiji(g)) = a.emit {
             build.segments.push(self.alloc.seg_gaiji(g));

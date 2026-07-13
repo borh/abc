@@ -58,7 +58,7 @@
     clippy::doc_markdown,
     reason = "the included README is human-facing prose; proper nouns (PyO3, x86_64, macOS, …) are intentionally not code-spanned"
 )]
-// NOTE (Task 3 lift): upstream's relative depth (crate/src/lib.rs -> 3x
+// NOTE: upstream's relative depth (crate/src/lib.rs -> 3x
 // `..` -> project root README.md) is preserved verbatim, but the fork
 // lives at a different tree depth, so the unadjusted path would have
 // silently resolved to ab-validator's own top-level README instead of
@@ -108,15 +108,15 @@ pub mod json;
 /// Plain-text diagnostic rendering (`miette`-free, every target).
 pub use diagnostics_text::diagnostics_text;
 pub use document::{DiagnosticPolicy, Document, ParseOptions, Tree};
-/// Source-region ownership and minimal-diff source splicing (#202).
+/// Source-region ownership and minimal-diff source splicing.
 pub use splice::{CoupledKind, Coupling, Region, RegionRole, SpliceError, SpliceSafety};
 
 pub use incremental::{DiagBaseRef, DiagSplice, PieceSeq, SanitizedSrc};
 
-/// **UNSTABLE — not subject to semver until v0.5.0.**
+ 
 ///
 /// Diagnostics-only incremental re-parse — the LSP's per-keystroke hot path
-/// (#237 Tier 1/2). Splices the maintained [`PieceSeq`] (the next edit's
+///. Splices the maintained [`PieceSeq`] (the next edit's
 /// region-find base, from which the LSP flattens this edit's diagnostics) from
 /// the store-free [`DiagBaseRef`] of the prior parse, **without building an
 /// [`LexOutput`]** — no normalized/sanitized string rebuild, no store
@@ -148,7 +148,7 @@ pub fn reparse_incremental_diagnostics_only(
     incremental::reparse_incremental_diagnostics_only(&base, &new_sanitized, edit_old)
 }
 
-/// **UNSTABLE — not subject to semver until v0.5.0.**
+ 
 ///
 /// Generic-source variant of [`reparse_incremental_diagnostics_only`]: the same
 /// diagnostics-only hot path, but over any [`SanitizedSrc`] byte source `S`

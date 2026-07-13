@@ -2136,7 +2136,7 @@ mod tests {
 
 /// Property tests pinning every `RegionIndex` query byte-identical to the linear
 /// oracle it replaces, over randomly-assembled aozora-shaped documents (
-/// Tier 2). The oracles (`structurally_safe`, `candidate_boundaries`) and a
+/// ). The oracles (`structurally_safe`, `candidate_boundaries`) and a
 /// whole-buffer reference region finder are the ground truth; the
 /// indexed/outward-scan production forms must match them exactly, which (with the
 /// corpus differential gate) is the byte-identity guarantee.
@@ -2177,7 +2177,7 @@ mod oracle_proptests {
         )
     }
 
-    /// The pre-Tier-2 whole-buffer region finder, retained verbatim as the
+    /// The whole-buffer region finder, retained verbatim as the
     /// reference the outward-scan [`minimal_balanced_region`] must match: all
     /// structurally-safe blank-line cuts (plus document ends), then the greatest
     /// cut `<= es` and least cut `>= ee`.

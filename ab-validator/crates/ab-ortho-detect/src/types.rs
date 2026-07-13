@@ -51,7 +51,7 @@ pub enum OrthoDetectorId {
         /// SHA-256 hex digest of serialized model weight bytes (little-endian f32).
         model_hash: String,
     },
-    /// The Phase-3 Lane B historical→modern surface modernizer (M2). Binds both
+    /// The historical→modern surface modernizer (M2). Binds both
     /// the segmentation-oracle dictionary (`kindai-bungo`) and the rewrite rule
     /// set into identity, per I2-D17: a `HistoricalToModern` policy is only valid
     /// when its detector carries a `dictionary_hash`.

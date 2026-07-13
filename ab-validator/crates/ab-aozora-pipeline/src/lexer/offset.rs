@@ -1,4 +1,4 @@
-//! Sanitized ↔ source byte-offset mapping — issue #90.
+//! Sanitized ↔ source byte-offset mapping — byte-offset mapping.
 //!
 //! [`Document::parse`](crate) reports [`Diagnostic`](ab_aozora_spec::Diagnostic)
 //! spans in **sanitized** coordinates: the [`sanitize`](super::sanitize)

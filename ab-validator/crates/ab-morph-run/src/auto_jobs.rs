@@ -19,7 +19,7 @@ pub(crate) const GIB: u64 = 1024 * 1024 * 1024;
 /// page cache churn, and concurrent processes).
 const MEM_FRACTION_NUM: u64 = 7;
 const MEM_FRACTION_DEN: u64 = 10;
-/// Fixed per-job overhead. Calibrated 2026-07-06 by the Task 4 subset sweep
+/// Fixed per-job overhead. Calibrated 2026-07-06 by the subset sweep
 /// (2,000-source random sample, 4 analyzers, jobs 4/16/32; peak RSS
 /// 15,397,980 / 28,978,108 / 39,760,908 kB). Least-squares slope was
 /// 859,500 kB/job (~839 MiB); the fit attributes the whole slope to

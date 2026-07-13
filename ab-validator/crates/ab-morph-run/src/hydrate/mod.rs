@@ -3,7 +3,7 @@
 //! post-processor: reads the artifact, the warehouse run dir, the AAT files
 //! referenced by `sources.aat_path`, and (optionally) an ABC catalog export;
 //! never modifies any input. Spec:
-//! docs/superpowers/specs/2026-07-10-hydrate-interesting-examples-design.md
+//! See the design document for details
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};
@@ -412,7 +412,7 @@ pub(crate) mod tests {
     use arrow_schema::{DataType, Field, Schema};
     use parquet::arrow::ArrowWriter;
 
-    /// Copied from Task 5's `metadata::tests::write_catalog` — one work
+    /// Copied from `metadata::tests::write_catalog` — one work
     /// record (000080, 煙管) plus its author person record (000879, 芥川竜之介).
     fn write_catalog_fixture(dir: &Path) {
         std::fs::create_dir_all(dir.join("works")).unwrap();
@@ -545,12 +545,12 @@ pub(crate) mod tests {
         })
     }
 
-    /// One tempdir holding: warehouse run (Task 3's write_fixture, with
+    /// One tempdir holding: warehouse run  write_fixture, with
     /// SourceRow.aat_path pointing at src-a.json and source_chars matching
     /// the typed AAT fixture's 12 projected chars), the typed AAT file,
-    /// a Task 5 ABC catalog, an aozora_works.parquet mapping src-a→000080,
+    /// an ABC catalog, an aozora_works.parquet mapping src-a→000080,
     /// and a ranking JSON whose single row exemplifies chars [2,5) region 2.
-    /// `pub(crate)` for cross-module `#[cfg(test)]` reuse — Task 8's
+    /// `pub(crate)` for cross-module `#[cfg(test)]` reuse — 
     /// `render::tests::markdown_renders_all_layers` drives this same
     /// end-to-end fixture through `run_hydrate_interesting` to pin the
     /// renderer against real bundle output.

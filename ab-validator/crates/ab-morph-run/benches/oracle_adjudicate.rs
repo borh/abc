@@ -1,4 +1,4 @@
-//! Micro-bench for `oracle::ruby::adjudicate` (Lever 3, task 1): confirms the
+//! Micro-bench for `oracle::ruby::adjudicate`  confirms the
 //! deferred evidence-map-build refactor does not regress the emit-heavy path,
 //! and quantifies the win on the fully-matching (no-emit) path.
 

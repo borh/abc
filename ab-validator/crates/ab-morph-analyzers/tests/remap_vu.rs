@@ -1,4 +1,4 @@
-//! Regression test for Task 7.5: coordinate coherence of remapped `Analysis`
+//! Regression test for coordinate coherence of remapped `Analysis`
 //! when normalization changes byte length (`ヴ → う゛`).
 //!
 //! Spec invariant #2: after `remap_spans`, every morpheme's `byte_span`,

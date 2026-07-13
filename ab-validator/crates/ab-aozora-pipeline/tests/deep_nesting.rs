@@ -1,6 +1,6 @@
 //! Deep-nesting stress for the streaming pair + classify pipeline.
 //!
-//! Plan G.4 deliverable. Two things to pin:
+//! Two things to pin:
 //!
 //! 1. The Frame body buffer (a `SmallVec<[PairEvent; 16]>`) handles
 //!    nesting that exceeds the inline capacity by spilling to the heap

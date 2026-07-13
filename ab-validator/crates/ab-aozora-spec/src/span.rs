@@ -68,7 +68,7 @@ impl Span {
     /// stays well-defined.
     ///
     /// Used by the incremental re-parse engine ([`aozora`'s segment
-    /// cache](https://p4suta.github.io/aozora/), #237) to rebase a span
+    /// cache](https://p4suta.github.io/aozora/) to rebase a span
     /// produced by lexing a document *segment* (segment-local coordinates)
     /// back into whole-document coordinates by adding the segment's start
     /// offset. `by` is `i64` because a rebase can move a span either way;

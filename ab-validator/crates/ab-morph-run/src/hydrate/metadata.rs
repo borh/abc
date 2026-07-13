@@ -1,5 +1,5 @@
 //! Work-metadata resolution: joins the warehouse `aozora_works` sidecar
-//! (Task 3's `WorkRow`) against an optional ABC catalog export
+//!  `WorkRow`) against an optional ABC catalog export
 //! (`works/<work_id>.json`, `persons/<person_id>.json`) to recover author
 //! names and richer work fields (`first_published`, `ndc`, `card_url`, …).
 //! Every field degrades independently: no catalog configured is not an

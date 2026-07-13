@@ -157,7 +157,7 @@ fn terminator_ends(text: &str) -> Vec<usize> {
 /// Terminator-INCLUSIVE `(start, end)` byte ranges of every line in
 /// `text`, built from the same boundary set as `line_starts`/
 /// `terminator_ends`. Unlike `split_inclusive('\n')` (which only splits on
-/// `\n`, missing bare-CR tails — see Phase 3's `line_starts` doc comment),
+/// `\n`, missing bare-CR tails — see the `line_starts` doc comment),
 /// this honors `\n`, `\r\n`, and bare `\r`. A final line lacking a
 /// terminator (the text doesn't end in one) still yields one last range
 /// ending at `text.len()`.
@@ -505,7 +505,7 @@ fn rebase_spans(
 /// One wire diagnostics envelope (`{"data": […], "schemaVersion": 3}`)
 /// per input — the `--mode diagnostics` payload.
 ///
-/// Single owner of the diagnostics path (Phase 3 design spec): decoding,
+/// Single owner of the diagnostics path: decoding,
 /// sanitization, and body selection are the EXACT same
 /// `decode_source_bytes` path as `aat_json_from_bytes`; the parse mirrors
 /// `projections()`. Entry order: sanitize-stage diagnostics, then parser
@@ -1114,7 +1114,7 @@ fn simple_jisage_open_indent(source: &str) -> Option<u64> {
 /// (`push_burasage_paragraph_maybe_jizume`): a `字詰め` that appears as a
 /// clause on a `字下げ`-carrying indent opener projects the compound
 /// `jizume_block { width }`. It intentionally still *recognizes* the
-/// standalone form (a pure predicate — its Phase 3 semantics are pinned by
+/// standalone form (a pure predicate — its semantics are pinned by
 /// `jizume_open_chars_recognizes_standalone_and_compound`), but no block
 /// classifier arm emits a standalone `jizume_block` from it.
 #[must_use]

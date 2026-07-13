@@ -40,6 +40,9 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 - Python: all tracked Python should pass ruff format/check and mypy via `just python-quality`.
 - Clojure: `abc-clj-kondo` checks all `abc/src` and `abc/test` with clj-kondo plus cljfmt.
 - Nix: run `nixfmt` or `just nix-format-check` for Nix changes.
+- Comments: follow `docs/comment-standards.md`; verify with
+  `scripts/comment-hygiene-check.sh` (no transient task/plan/spec/issue
+  references in `ab-validator/` or `abc/src/` comments).
 
 ## Design Boundaries
 

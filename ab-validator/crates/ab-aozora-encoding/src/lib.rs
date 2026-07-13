@@ -111,7 +111,7 @@ pub fn decode_sjis_into(input: &[u8], dst: &mut String) -> Result<(), DecodeErro
 /// UTF-8 input.
 ///
 /// BOM stripping, CRLF folding and NFC normalisation are the parser's
-/// Phase-0 responsibility and are deliberately not applied here.
+/// sanitization responsibility and are deliberately not applied here.
 ///
 /// # Errors
 ///
@@ -149,7 +149,7 @@ pub fn decode_auto_into(input: &[u8], dst: &mut String) -> Result<(), DecodeErro
 /// Used by the CLI to strip the BOM before handing input to the parser.
 /// BOM presence is the one signal even [`decode_auto`] leaves to the
 /// caller: it is valid UTF-8, so it round-trips through `decode_auto`
-/// untouched and is stripped by the parser's Phase-0 sanitiser.
+/// untouched and is stripped by the parser's sanitiser.
 #[must_use]
 pub const fn has_utf8_bom(input: &[u8]) -> bool {
     matches!(input, [0xEF, 0xBB, 0xBF, ..])

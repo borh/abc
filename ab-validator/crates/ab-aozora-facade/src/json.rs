@@ -46,7 +46,7 @@ use crate::{DiagnosticSource, NodeRef, RubySide, Severity, Tree};
 /// renamed the `lineBold` node kind to `lineGothic`; removed the
 /// `combineUprightRange` container tag (縦中横 has no paired-range form).
 ///
-/// Schema 3 (Phase 3): added the stable kebab-case `code` field to
+/// Schema 3: added the stable kebab-case `code` field to
 /// diagnostics entries.
 pub const SCHEMA_VERSION: u32 = 3;
 
@@ -459,7 +459,7 @@ impl From<crate::Span> for Span {
 pub struct Diagnostic {
     kind: &'static str,
     /// Stable kebab-case diagnostic code — the conformance-contract
-    /// identity of this diagnostic (Phase 3 design spec). Always the
+    /// identity of this diagnostic. Always the
     /// 1:1 kebab form of `kind`.
     code: String,
     severity: &'static str,

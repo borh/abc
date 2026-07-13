@@ -3,8 +3,8 @@
 //! Rewrites 歴史的仮名遣い to 現代仮名遣い at the **surface** level — keep the kanji,
 //! rewrite only the historical *kana* — so an analyzer with no historical
 //! dictionary (sudachi) can be fed modernized input, and every analyzer sees the
-//! identical modernized text for cross-analyzer comparability. See
-//! See ADR 0036 and docs/glossary.md.
+//! identical modernized text for cross-analyzer comparability.
+//! See docs/comment-standards.md and docs/glossary.md.
 //!
 //! ## The algorithm is what was measured, not what was hoped
 //!

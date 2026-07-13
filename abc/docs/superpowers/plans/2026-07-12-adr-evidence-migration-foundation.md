@@ -4,7 +4,7 @@
 
 **Goal:** Establish the shared claim-migration ledger and hermetic design-bundle boundary, then migrate every foundation/runtime/identity Accepted criterion to honest typed, artifact-backed evidence while remaining in audit mode.
 
-**Architecture:** A content-hashed baseline and reviewed EDN ledger preserve every pre-review criterion while ADR Markdown is corrected and assigned stable claim IDs. Focused fixture/structural bundles stay separate from the shared operational Nix-app bundle; the design-bundle app becomes store-hermetic and Git-cliff configuration moves to its own synthetic-repository Nix check. Family Stage A corrects claims and lifecycle headers; Stage B captures only from the clean Stage A commit and joins immutable bundles through `docs/adr/adr-evidence.edn`.
+**Architecture:** A content-hashed baseline and reviewed EDN ledger preserve every pre-review criterion while ADR Markdown is corrected and assigned stable claim IDs. Every independently rejectable fixture, structural, and operational claim boundary receives its own observation and bundle; even repeated Nix commands are recaptured under claim-specific descriptors rather than shared as a family boolean. The design-bundle app becomes store-hermetic and Git-cliff configuration moves to its own synthetic-repository Nix check. Family Stage A corrects claims and lifecycle headers; Stage B captures only from the clean Stage A commit and joins immutable bundles through `docs/adr/adr-evidence.edn`.
 
 **Tech Stack:** Clojure 1.12, Kaocha/clojure.test/test.check, deterministic JSON/JCS SHA-256, EDN, Nix flakes, Bash, git-cliff, JSON Schema.
 
@@ -75,10 +75,11 @@
   dynamically read by the supported design-bundle validation path; descriptor
   tests require exact equality with this vector plus descriptor/flake wiring.
 - Create checked-in descriptors under `docs/evidence/adr-capture/` and Stage B bundles under `docs/evidence/adr-runs/`.
-- Shared cross-plan operational boundary owned here:
-  `docs/evidence/adr-capture/design-bundle-operational.edn` ->
-  `docs/evidence/adr-runs/design-bundle-operational.json`, observation
-  `design-bundle-exits-zero`. Later plans may join it but must not recapture it.
+- Claim-specific operational boundaries are owned here for `ADR-0008-C2`,
+  `ADR-0010-C5`, and `ADR-0011-C1`. They deliberately run the same supported
+  Nix app but produce distinct observations and bundles; later plans must
+  capture their own claim-specific operational evidence rather than join one
+  of these observations.
 
 ### Task 1: Baseline and migration-ledger contracts
 
@@ -1220,61 +1221,123 @@ Expected: clean tree. Do not begin capture otherwise.
 ### Task 7: Check in capture descriptors at the Stage A boundary
 
 **Files:**
-- Create: `abc/docs/evidence/adr-capture/foundation-manifest-identity.edn`
-- Create: `abc/docs/evidence/adr-capture/foundation-import-materialization.edn`
-- Create: `abc/docs/evidence/adr-capture/foundation-validation-helpers.edn`
-- Create: `abc/docs/evidence/adr-capture/source-bundle-fixtures.edn`
-- Create: `abc/docs/evidence/adr-capture/source-identity-simulation.edn`
-- Create: `abc/docs/evidence/adr-capture/source-snapshot-fixtures.edn`
-- Create: `abc/docs/evidence/adr-capture/source-bundle-corpus.edn`
-- Create: `abc/docs/evidence/adr-capture/design-bundle-operational.edn`
-- Create: six same-stem manifests under `abc/docs/evidence/adr-inputs/` for
-  the focused Clojure descriptors
-- Create: `abc/docs/evidence/adr-inputs/source-bundle-corpus-nix-clojure-closure.edn`
-- Create: `abc/docs/evidence/adr-inputs/design-bundle-operational-nix-clojure-closure.edn`
+- Create: the 42 descriptors listed below under
+  `abc/docs/evidence/adr-capture/`.
+- Create: 42 corresponding input manifests under
+  `abc/docs/evidence/adr-inputs/`: same-stem runtime manifests for the 38
+  focused Clojure descriptors and same-stem Nix/Clojure closure manifests for
+  the four `repo-files-v1` descriptors.
 - Create: `abc/docs/evidence/adr-entries/foundation.edn`
+- Modify: `abc/test/abc/tools/materialize_import_test.clj`
+- Modify: `abc/test/abc/tools/source_bundle_test.clj`
+- Modify: `abc/test/abc/tools/materialize_source_snapshot_test.clj`
+- Modify: `abc/test/abc/sim/content_sim_test.clj`
+- Modify: `abc/test/abc/tools/adr_evidence_capture_test.clj`
 
 **Interfaces:**
 - Produces immutable commands/observation keys used in Task 8.
 
 - [ ] **Step 1: Author descriptors with exact boundaries**
 
-Use `abc-adr-evidence-capture-v2` for the six focused Clojure descriptors and
-version 1 for the two `repo-files-v1` Nix boundaries. Every v2 descriptor sets
+First split any legacy test that crosses rows in the table below. In
+particular, do not use the broad `materialize-import-test`, a source-bundle or
+source-snapshot family wrapper, or the combined P16 admission-disposition Var
+as evidence. Preserve their ordinary regression coverage if useful, but add
+the named narrow Vars below so each exact focus asserts only its row's claim
+boundary. A narrow Var may share setup helpers; it must not invoke another
+`deftest` Var.
+
+Use `abc-adr-evidence-capture-v2` for the 38 focused Clojure descriptors and
+version 1 for the four `repo-files-v1` Nix boundaries. Every v2 descriptor sets
 `:runtime-input-manifest` with the same basename under
 `docs/evidence/adr-inputs/` and includes
 both its descriptor and manifest paths in `:input-profile :explicit`. Its
 manifest `:paths` vector is exactly the remaining explicit runtime-data paths.
-Each v2 descriptor also binds `bin/kaocha`, sets both `:tool` and `argv[0]` to
-`bin/kaocha`, and lists only exact `--focus`, qualified-Var pairs after it.
-Those focus pairs are unique `deftest` Vars, and successful capture requires
-Kaocha to report exactly one executed test for each pair.
+Each v2 descriptor binds `bin/kaocha`, sets both `:tool` and `argv[0]` to
+`bin/kaocha`, and contains exactly one exact `--focus`, qualified-Var pair.
+Successful capture requires Kaocha to report exactly one executed test.
 
-| Descriptor | Profile/command | Observation |
+The descriptor stem is also the bundle stem. Its observation key is the stem
+followed by `-passes`, except the four Nix rows whose keys are shown explicitly.
+
+| Claim | Descriptor stem | Exact focus or independent command |
 |---|---|---|
-| `foundation-manifest-identity.edn` | exact focus pairs for `abc.tools.foundation-evidence-test/{committed-manifest-schema-conformance-test,failure-manifest-semantics-test,failure-manifest-identity-coordinates-test,failure-manifest-artifact-id-scope-test}`, plus the selected claim-aligned JCS/code-as-spec/index Vars; never wrap these Vars in another `deftest` | `manifest-identity-contracts-pass` |
-| `foundation-import-materialization.edn` | exact focus pairs for `abc.tools.foundation-evidence-test/{generated-import-manifest-set-test,generated-import-manifest-schema-conformance-test}` and `abc.tools.materialize-import-test/diagnostic-schema-hash-requires-the-exact-current-contract-test`, plus the claim-aligned registered-compatibility/orchestration/determinism Vars; explicitly bind `examples/ab-validator-output/{README.md,comparison-report.json,divergence.json,manifest-inputs.json,parser-ir.json,run-summary.jsonl,source-region-coverage.json,warnings.jsonl}`, manifest/IR/diagnostic schemas, and compatibility data; never wrap these Vars in another `deftest` | `import-materialization-contracts-pass` |
-| `foundation-validation-helpers.edn` | exact focus pairs for `abc.tools.foundation-evidence-test/{validate-design-bundle-wrapper-delegation-test,validation-workflow-wiring-test}` and `abc.tools.validate-design-bundle-test/evidence-input-catalog-equals-the-pure-schema-validation-read-set-test`, plus the selected claim-aligned pure-helper Vars; bind every schema/fixture/data path reached by those helper calls; never wrap these Vars in another `deftest` | `validation-helper-contracts-pass` |
-| `source-bundle-fixtures.edn` | exact focus `abc.tools.foundation-evidence-test/source-bundle-fixtures-contract`; bind known answer and source-bundle schema | `source-bundle-fixtures-pass` |
-| `source-identity-simulation.edn` | exact focus pair `abc.sim.divergences-test/d7-pin-chain-fix-is-dated-and-structural-test`, plus any other selected claim-aligned simulation Vars; bind simulation configs and D7 table; never wrap these Vars in another `deftest` | `source-identity-simulation-pass` |
-| `source-snapshot-fixtures.edn` | exact focus `abc.tools.foundation-evidence-test/source-snapshot-fixtures-contract`; bind schema/data fixtures | `source-snapshot-fixtures-pass` |
-| `source-bundle-corpus.edn` | `repo-files-v1`; command `nix build --no-link .#checks.$(nix eval --impure --raw --expr builtins.currentSystem).source-bundle-corpus --print-build-logs`; bind descriptor, flake/locks/dependency configs, checked closure manifest for `abc.tools.source-bundle-report/-main` plus every expanded path, source-bundle schema, and the checked corpus summary | `source-bundle-corpus-reproduced` |
-| `design-bundle-operational.edn` | `repo-files-v1`; command `nix run .#validate-design-bundle`; bind descriptor, flake/locks/dependency configs, checked closure manifest for `abc.tools.validate-design-bundle/-main` plus every expanded path, wrapper, and exactly `(validate-design-bundle/evidence-input-paths)` | `design-bundle-exits-zero` |
+| `ADR-0001-C1` | `adr-0001-c1-committed-manifest-schema` | `abc.tools.foundation-evidence-test/committed-manifest-schema-conformance-test` |
+| `ADR-0001-C1` | `adr-0001-c1-generated-manifest-schema` | `abc.tools.foundation-evidence-test/generated-import-manifest-schema-conformance-test` |
+| `ADR-0001-C2` | `adr-0001-c2-canonical-null-array-order` | `abc.tools.jcs-test/canonical-json-test` |
+| `ADR-0001-C3` | `adr-0001-c3-nested-artifact-id-rejection` | `abc.tools.code-as-spec-test/r2-manifest-schema-rejects-nested-artifact-id-test` |
+| `ADR-0001-C4` | `adr-0001-c4-failure-semantics` | `abc.tools.foundation-evidence-test/failure-manifest-semantics-test` |
+| `ADR-0001-C4` | `adr-0001-c4-failure-coordinates` | `abc.tools.foundation-evidence-test/failure-manifest-identity-coordinates-test` |
+| `ADR-0001-C4` | `adr-0001-c4-failure-artifact-scope` | `abc.tools.foundation-evidence-test/failure-manifest-artifact-id-scope-test` |
+| `ADR-0001-C5` | `adr-0001-c5-reproducibility-conflict` | `abc.tools.manifest-index-test/reproducibility-conflicts-test` |
+| `ADR-0008-C1` | `adr-0008-c1-wrapper-delegation` | `abc.tools.foundation-evidence-test/validate-design-bundle-wrapper-delegation-test` |
+| `ADR-0008-C2` | `adr-0008-c2-design-bundle-operational` | `repo-files-v1`; `nix run .#validate-design-bundle`; observation `adr-0008-c2-design-bundle-exits-zero` |
+| `ADR-0008-C3` | `adr-0008-c3-workflow-wiring` | `abc.tools.foundation-evidence-test/validation-workflow-wiring-test` |
+| `ADR-0008-C4` | `adr-0008-c4-validation-read-catalog` | `abc.tools.validate-design-bundle-test/evidence-input-catalog-equals-the-pure-schema-validation-read-set-test` |
+| `ADR-0009-C1` | `adr-0009-c1-generated-manifest-schema` | `abc.tools.foundation-evidence-test/generated-import-manifest-schema-conformance-test` |
+| `ADR-0009-C2` | `adr-0009-c2-materialized-content-hashes` | new `abc.tools.materialize-import-test/materialized-content-hashes-match-imported-files-test` split from `materialize-import-test` |
+| `ADR-0009-C3` | `adr-0009-c3-mapping-divergence-sidecar` | new `abc.tools.materialize-import-test/mapping-divergence-sidecar-selection-test` covering canonical and legacy fallback |
+| `ADR-0009-C4` | `adr-0009-c4-artifact-id-distinct-from-content` | `abc.tools.materialize-import-test/artifact-id-test` |
+| `ADR-0009-C5` | `adr-0009-c5-parser-schema-compatibility` | `abc.tools.validate-design-bundle-test/aat-parser-ir-compatibility-test` |
+| `ADR-0009-C5` | `adr-0009-c5-diagnostic-schema-exact-current` | `abc.tools.materialize-import-test/diagnostic-schema-hash-requires-the-exact-current-contract-test` |
+| `ADR-0009-C6` | `adr-0009-c6-temporary-materialization` | new `abc.tools.validate-design-bundle-test/design-bundle-temporary-import-materialization-test` split from the design-bundle orchestration test |
+| `ADR-0009-C7` | `adr-0009-c7-wrapper-delegation` | `abc.tools.foundation-evidence-test/validate-design-bundle-wrapper-delegation-test` |
+| `ADR-0010-C1` | `adr-0010-c1-bundled-schema-jcs-hash` | `abc.tools.materialize-import-test/schema-hash-test` |
+| `ADR-0010-C2` | `adr-0010-c2-materialized-artifact-ids-distinct` | new `abc.tools.materialize-import-test/materialized-parser-and-warning-artifact-ids-are-distinct-test` split from `materialize-import-test` |
+| `ADR-0010-C3` | `adr-0010-c3-v0-identity-json` | `abc.tools.materialize-import-test/v0-identity-json-test` |
+| `ADR-0010-C4` | `adr-0010-c4-parser-schema-mismatch` | `abc.tools.validate-design-bundle-test/parser-ir-schema-hash-errors-test` |
+| `ADR-0010-C4` | `adr-0010-c4-diagnostic-schema-mismatch` | `abc.tools.validate-design-bundle-test/schema-hash-errors-test` |
+| `ADR-0010-C5` | `adr-0010-c5-design-bundle-operational` | `repo-files-v1`; `nix run .#validate-design-bundle`; observation `adr-0010-c5-design-bundle-exits-zero` |
+| `ADR-0011-C1` | `adr-0011-c1-temporary-generated-output` | `repo-files-v1`; `nix run .#validate-design-bundle`; observation `adr-0011-c1-temporary-generated-output-passes` |
+| `ADR-0011-C2` | `adr-0011-c2-deterministic-json-writer` | `abc.tools.materialize-import-test/deterministic-json-writer-test` |
+| `ADR-0011-C3` | `adr-0011-c3-two-run-byte-identity` | `abc.tools.materialize-import-test/materialized-output-is-deterministic-test` |
+| `ADR-0033-C1` | `adr-0033-c1-canonical-all-member-schema` | new `abc.tools.source-bundle-test/canonical-all-member-schema-fixture-test`, split from schema/known-answer family assertions |
+| `ADR-0033-C2` | `adr-0033-c2-clojure-known-answer` | new `abc.tools.source-bundle-test/clojure-source-bundle-known-answer-test`, narrowed from `source-bundle-v1-known-answer-test` |
+| `ADR-0033-C3` | `adr-0033-c3-repack-image-evolution` | new `abc.sim.content-sim-test/repack-and-image-identity-evolution-test`, narrowed from `p16-image-repack-and-text-evolution-test` |
+| `ADR-0033-C4` | `adr-0033-c4-parser-identity-roles` | new `abc.tools.materialize-source-snapshot-test/parser-ir-source-identity-roles-test`, split from `snapshot-records-source-identity-roles-test` |
+| `ADR-0033-C5` | `adr-0033-c5-role-specific-snapshot-validation` | new `abc.tools.materialize-source-snapshot-test/source-snapshot-role-specific-validation-test`, narrowed from `source-identity-corruptions-have-distinct-diagnostics-test` |
+| `ADR-0033-C6` | `adr-0033-c6-p16-3-ungated` | `abc.sim.content-sim-test/p16-3-pin-chain-sim-test` |
+| `ADR-0033-C7` | `adr-0033-c7-d7-dated-fixed-state` | `abc.sim.divergences-test/d7-pin-chain-fix-is-dated-and-structural-test` |
+| `ADR-0033-C8` | `adr-0033-c8-complete-legacy-readability` | `abc.tools.materialize-source-snapshot-test/complete-legacy-workset-remains-readable-test` |
+| `ADR-0033-C9` | `adr-0033-c9-pinned-corpus` | `repo-files-v1`; source-bundle-corpus Nix check; observation `adr-0033-c9-pinned-corpus-reproduced` |
+| `ADR-0033-C10` | `adr-0033-c10-admission-limits` | `abc.tools.source-bundle-test/declared-and-streamed-limits-are-enforced-test` |
+| `ADR-0033-C11` | `adr-0033-c11-strict-atomic-abort` | new `abc.sim.content-sim-test/strict-admission-failure-aborts-atomically-test` split from `p16-admission-failure-disposition-test` |
+| `ADR-0033-C11` | `adr-0033-c11-best-effort-counted-failure` | new `abc.sim.content-sim-test/best-effort-admission-failures-are-counted-test` split from the P16 disposition family tests |
+| `ADR-0033-C11` | `adr-0033-c11-non-release-admissible` | new `abc.sim.content-sim-test/nonzero-derive-failures-are-not-release-admissible-test` split from `p16-admission-failure-disposition-test` |
+
+This is exactly **42 evidence units**: 38 one-Var Clojure descriptors and four
+independent Nix descriptors. They materialize as 42 descriptors, 42 input or
+closure manifests, 42 run bundles, and 42 registration rows covering 35
+distinct claim IDs. The seven additional rows are required corroboration for
+independently rejectable parts of `ADR-0001-C1` (one extra), `ADR-0001-C4`
+(two), `ADR-0009-C5` (one), `ADR-0010-C4` (one), and `ADR-0033-C11` (two).
+No observation key is reused between rows, even when two claims execute the
+same Var or Nix command.
+
+The registration template records the compatible evidence kind per row, not
+once per family. In particular, the seven corroborating rows are independently
+typed: both `ADR-0001-C1` rows and all three `ADR-0001-C4` rows are
+`:fixture-conformance`; both `ADR-0009-C5` rows and both `ADR-0010-C4` rows are
+`:structural-test`; and all three `ADR-0033-C11` rows are
+`:fixture-conformance`. Each corroborating row names the distinct descriptor,
+observation key, and artifact path from the table. Operational Nix rows use
+`:operational-observation`, the pinned corpus row uses `:corpus-measurement`, and every
+other row takes the single compatible evidence kind for its Task 6 claim kind.
 
 For Nix descriptors use `bash -lc` as argv so shell substitution is recorded
 literally. Do not attach fixture claims to the operational observation.
 Both Nix/Clojure descriptors bind `deps.edn`, `deps-lock.json`, and
 `tests.edn`. Generate their closure manifests with Plan 1's helper and assert
 exact descriptor expansion with missing/extra-path negative tests.
-Each version-2 wrapper has `with-validated-read-trace!` as a direct top-level
-body expression inside its `deftest` source form, scopes every freshly
-generated directory with
+Each focused Var has `with-validated-read-trace!` as a direct top-level body
+expression, scopes every freshly generated directory with
 `with-ephemeral-root`, and calls only the exact operation under evidence.
-Do not focus a whole legacy test namespace or call another `deftest` Var.
+Do not focus a whole legacy test namespace, use a multi-focus descriptor, or
+call another `deftest` Var.
 
 - [ ] **Step 2: Validate descriptor closure with tests**
 
-Extend `adr_evidence_capture_test.clj` to load every checked-in descriptor and
+Extend `adr_evidence_capture_test.clj` to load all 42 checked-in descriptors and
 assert exact key set, stable observation key, nonempty explicit set, and that
 the descriptor path is explicit.
 For every version-2 descriptor, invoke
@@ -1296,22 +1359,15 @@ Also exercise the real repository runner against a known non-test Var, a
 duplicate focus, a missing/non-executable runner, and an external symlink;
 each must fail capture before it can certify a passing observation. Pin the
 Kaocha summary-count parser with zero, missing, and focus-count-mismatch cases.
-For `design-bundle-operational.edn`, assert its explicit set equals the fixed
-wrapper/flake set union `(validate-design-bundle/evidence-input-paths)`; a new
-runtime-read file therefore fails the descriptor contract until it is bound.
+For each of the three design-bundle Nix descriptors, assert its explicit set
+equals its own descriptor/closure paths plus the fixed wrapper/flake set union
+`(validate-design-bundle/evidence-input-paths)`; a new runtime-read file
+therefore fails every affected descriptor contract until it is bound.
 
-Author `foundation.edn` with one row for every final foundation claim and an
-additional corroborating row only where a criterion explicitly requires two
-independent artifacts. Map claims to the narrowest observation in the table
-above: manifest/JCS/oracle claims to `foundation-manifest-identity`, imported
-output/determinism claims to `foundation-import-materialization`, validation
-helper/wrapper/CI-structure claims to `foundation-validation-helpers`, the
-supported Nix exit claim to `design-bundle-operational`, source-bundle schema
-and known-answer claims to `source-bundle-fixtures`, P16.3/evolution/D7/admission
-claims to `source-identity-simulation`, legacy/source-role claims to
-`source-snapshot-fixtures`, and the pinned corpus claim only to
-`source-bundle-corpus`. The template claim/evidence kinds must exactly match
-Task 6 and the compatibility matrix; every predicate is
+Author `foundation.edn` with exactly the 42 rows in the table: 35 primary rows
+and the seven stated corroborating rows. Each row names only its same-stem
+bundle and unique observation key. The template claim/evidence kinds must
+exactly match Task 6 and the compatibility matrix; every predicate is
 `{:operator := :value true}`. Do not place an artifact hash in the template.
 
 - [ ] **Step 3: Run tests and commit descriptors before capture**
@@ -1334,14 +1390,8 @@ boundary and the producer revision recorded by every Stage B bundle.
 ### Task 8: Foundation Stage B — capture bundles and join claims
 
 **Files:**
-- Create: `abc/docs/evidence/adr-runs/foundation-manifest-identity.json`
-- Create: `abc/docs/evidence/adr-runs/foundation-import-materialization.json`
-- Create: `abc/docs/evidence/adr-runs/foundation-validation-helpers.json`
-- Create: `abc/docs/evidence/adr-runs/source-bundle-fixtures.json`
-- Create: `abc/docs/evidence/adr-runs/source-identity-simulation.json`
-- Create: `abc/docs/evidence/adr-runs/source-snapshot-fixtures.json`
-- Create: `abc/docs/evidence/adr-runs/source-bundle-corpus.json`
-- Create: `abc/docs/evidence/adr-runs/design-bundle-operational.json`
+- Create: 42 same-stem JSON bundles under `abc/docs/evidence/adr-runs/`, one
+  for each Task 7 descriptor.
 - Create: `abc/docs/evidence/adr-entries/foundation.edn` (committed in Task 7)
 - Modify: `abc/docs/adr/adr-evidence.edn`
 - Modify: `abc/docs/reports/adr-claim-migration-inventory.json`
@@ -1350,7 +1400,8 @@ boundary and the producer revision recorded by every Stage B bundle.
 **Interfaces:**
 - Consumes: clean descriptor commit from Task 7.
 - Produces: passing compatible evidence for every final foundation claim. The
-  design-bundle artifact is shared read-only with later plans.
+  three design-bundle observations remain claim-specific and are not shared
+  with each other or with later plans.
 
 - [ ] **Step 1: Capture each descriptor from a clean tree into an external staging directory**
 
@@ -1366,7 +1417,12 @@ clojure -M:abc/adr-evidence-capture -- \
   --output "$stage/${stem}.json"
 ```
 
-Expected: exit 0 for all eight; each JSON observation value is `true`; input
+Derive the sorted stem list from the exact 42-row Task 7 table (or from a
+checked exact expected-stem set in the descriptor test), and assert its count
+is 42 before capture. Do not glob unrelated capture descriptors.
+
+Expected: exit 0 for all 42; each JSON contains exactly its row's unique
+observation with value `true`; input
 map contains the descriptor itself; `git status --short` remains empty after
 every capture. If any command fails, delete only its staged output and repair
 forward in a new clean commit—do not add a registry entry.
@@ -1378,16 +1434,14 @@ Read each staged file and pass its value to
 problems, then copy the exact generated bytes together:
 
 ```bash
+test "${#stems[@]}" -eq 42
 mkdir -p docs/evidence/adr-runs
-for stem in foundation-manifest-identity foundation-import-materialization \
-  foundation-validation-helpers source-bundle-fixtures \
-  source-identity-simulation source-snapshot-fixtures source-bundle-corpus \
-  design-bundle-operational; do
+for stem in "${stems[@]}"; do
   install -m 0644 "$stage/$stem.json" "docs/evidence/adr-runs/$stem.json"
 done
 ```
 
-Expected: only the eight intended run bundles make the worktree dirty.
+Expected: only the 42 intended run bundles make the worktree dirty.
 
 - [ ] **Step 3: Materialize and validate all claim joins through the registrar**
 
@@ -1398,7 +1452,8 @@ clojure -M:abc/adr-evidence-register -- \
   --registry docs/adr/adr-evidence.edn
 ```
 
-Expected: exit 0 and exactly 35 distinct foundation claim IDs registered. The
+Expected: exit 0 and exactly 42 entries covering 35 distinct foundation claim
+IDs registered. The
 tool derives canonical artifact hashes, validates observation existence and
 kind compatibility, and writes the sorted registry atomically. Run it a second
 time and assert `git diff -- docs/adr/adr-evidence.edn` is unchanged. Never
@@ -1417,8 +1472,7 @@ jq -e --arg family '^(ADR-)?(0001|0008|0009|0010|0011|0033)-' \
   docs/reports/adr-evidence-migration.json
 ```
 
-Expected: exit 0: no family problems, including shared artifact-root problems whose
-ownership is carried only by `affected-claim-ids`. Only later-family debt may
+Expected: exit 0: no family problems. Only later-family debt may
 remain. No foundation missing, stale, incompatible-kind, failed-predicate,
 missing-input, or artifact-hash problem is permitted.
 
@@ -1472,7 +1526,7 @@ Run: `just validate-migration`
 Expected: PASS. If this broad gate reveals unrelated pre-existing worktree
 failures, record the exact command/output and do not alter unrelated code.
 
-- [ ] **Step 2: Verify shared artifacts and ownership**
+- [ ] **Step 2: Verify artifacts and ownership**
 
 Assert:
 
@@ -1481,15 +1535,17 @@ Assert:
 - every foundation claim has compatible passing evidence;
 - `nix run ./abc#validate-design-bundle` exits 0 without Git history;
 - `git-cliff-config` passes only through its synthetic-repo check;
-- `design-bundle-operational.json` has one owner (this plan);
+- all 42 foundation bundles have exactly the registration ownership declared
+  by the 42-row table, and no observation is reused for a distinct claim;
 - governance remains audit mode and ADR 0034 remains Proposed;
 - `git status --short` is empty.
 
 - [ ] **Step 3: Publish the handoff facts (no commit unless a tracked handoff file is requested)**
 
-Report the Stage A/Stage B audit counts, capture revision, shared bundle path,
-canonical bundle hash, and any later-family claims authorized to join the
-shared operational bundle. Do not offer to switch enforcement.
+Report the Stage A/Stage B audit counts, capture revision, all 42 bundle paths
+and canonical hashes, and the explicit fact that later-family claims must
+capture their own claim-specific observations. Do not offer to switch
+enforcement.
 
 ## Self-review results
 

@@ -17,45 +17,81 @@
    "parser_ir_schema_hash" "sha256:6666666666666666666666666666666666666666666666666666666666666666"
    "output_format_spec_hash" "sha256:3333333333333333333333333333333333333333333333333333333333333333"})
 
+(def expected-design-bundle-command
+  ["nix" "run"
+   "--override-input" "local-pkgs"
+   "path:${GITHUB_WORKSPACE}/nix/ci-empty-local-pkgs"
+   ".#validate-design-bundle"])
+
 (defn- generated-manifest-set-errors [generated]
   (when-not (= expected-generated-manifest-kinds (set (keys generated)))
     [{:expected expected-generated-manifest-kinds
       :actual (set (keys generated))}]))
 
 (defn- failure-coordinate-errors [identity]
-  (let [non-null (into {} (remove (comp nil? val)) identity)
-        other-coordinates (apply dissoc identity (keys expected-failure-identity-coordinates))]
-    (cond-> []
-      (not= expected-failure-identity-coordinates non-null)
-      (conj {:expected-non-null expected-failure-identity-coordinates
-             :actual-non-null non-null})
+  (let [non-null (into {} (remove (comp nil? val)) identity)]
+    (when-not (= expected-failure-identity-coordinates non-null)
+      [{:expected-non-null expected-failure-identity-coordinates
+        :actual-non-null non-null}])))
 
-      (not-every? nil? (vals other-coordinates))
-      (conj {:expected-other-coordinates :nil
-             :actual-other-coordinates other-coordinates}))))
+(defn- workflow-error? [errors key]
+  (boolean (some #(contains? % key) errors)))
 
 (defn- indentation [line]
   (count (re-find #"^\s*" line)))
 
+(defn- yaml-step-field [lines key]
+  (let [field-name (name key)]
+    (some (fn [line]
+            (or (second (re-matches
+                         (re-pattern (str "^      -\\s+" field-name
+                                          ":\\s*(.*?)\\s*$"))
+                         line))
+                (second (re-matches
+                         (re-pattern (str "^        " field-name
+                                          ":\\s*(.*?)\\s*$"))
+                         line))))
+          lines)))
+
+(defn- shell-token [token]
+  (if (and (< 1 (count token))
+           (#{\" \'} (first token))
+           (= (first token) (last token)))
+    (subs token 1 (dec (count token)))
+    token))
+
+(defn- run-command-tokens [run-lines]
+  (->> run-lines
+       (map str/trim)
+       (remove str/blank?)
+       (map #(str/replace % #"\\\s*$" ""))
+       (str/join " ")
+       (re-seq #"\"(?:\\.|[^\"])*\"|'(?:\\.|[^'])*'|[^\s]+")
+       (mapv shell-token)))
+
 (defn- workflow-step [lines]
-  (let [field (fn [key]
-                (some (fn [line]
-                        (second (re-matches
-                                 (re-pattern (str "^\\s*(?:-\\s+)?"
-                                                  (name key)
-                                                  ":\\s*(.*?)\\s*$"))
-                                 line)))
-                      lines))
-        run-lines (->> lines
-                       (drop-while #(not (re-matches #"^\s*run:\s*\|\s*$" %)))
+  (let [run-lines (->> lines
+                       (drop-while #(not (re-matches #"^        run:\s*\|\s*$" %)))
                        rest
-                       (take-while #(or (str/blank? %) (< 8 (indentation %))))
-                       (map str/trim)
-                       (remove str/blank?))]
-    (cond-> {:name (field :name)
-             :uses (field :uses)
-             :working-directory (field :working-directory)}
-      (seq run-lines) (assoc :run (str/join " " run-lines)))))
+                       (take-while #(or (str/blank? %) (< 8 (indentation %)))))
+        command (run-command-tokens run-lines)]
+    (cond-> {:name (yaml-step-field lines :name)
+             :uses (yaml-step-field lines :uses)
+             :working-directory (yaml-step-field lines :working-directory)}
+      (seq command) (assoc :command command))))
+
+(defn- job-default-working-directory [job-lines]
+  (let [defaults-lines (->> job-lines
+                            (drop-while #(not (re-matches #"^    defaults:\s*$" %)))
+                            rest
+                            (take-while #(or (str/blank? %) (< 4 (indentation %)))))
+        run-defaults (->> defaults-lines
+                          (drop-while #(not (re-matches #"^      run:\s*$" %)))
+                          rest
+                          (take-while #(or (str/blank? %) (< 6 (indentation %)))))]
+    (some (fn [line]
+            (second (re-matches #"^        working-directory:\s*(.*?)\s*$" line)))
+          run-defaults)))
 
 (defn- workflow-steps [job-lines]
   (let [starts (->> job-lines
@@ -80,17 +116,23 @@
                          [index job])))
                     vec)]
     (mapv (fn [[[start job] end]]
-            {:job job
-             :steps (workflow-steps (subvec job-lines (inc start) end))})
+            (let [body (subvec job-lines (inc start) end)]
+              {:job job
+               :default-working-directory (job-default-working-directory body)
+               :steps (workflow-steps body)}))
           (map vector starts (concat (map first (rest starts)) [(count job-lines)])))))
 
 (defn- design-bundle-workflow-errors [text]
   (let [jobs (workflow-jobs text)
-        commands (for [{:keys [job steps]} jobs
+        commands (for [{:keys [job steps default-working-directory]} jobs
                        [index step] (map-indexed vector steps)
-                       :when (str/includes? (or (:run step) "")
-                                            ".#validate-design-bundle")]
-                   {:job job :index index :step step :steps steps})
+                       :when (some #{".#validate-design-bundle"} (:command step))]
+                   {:job job
+                    :index index
+                    :step step
+                    :steps steps
+                    :effective-working-directory (or (:working-directory step)
+                                                     default-working-directory)})
         command (first commands)
         preceding-steps (take (:index command 0) (:steps command))]
     (cond-> []
@@ -103,20 +145,15 @@
       (conj {:expected :preceding-checkout-in-command-job
              :actual-job (:job command)})
 
-      (and command (some? (get-in command [:step :working-directory])))
+      (and command
+           (not (contains? #{nil "."} (:effective-working-directory command))))
       (conj {:expected-working-directory :repository-root
-             :actual-working-directory (get-in command [:step :working-directory])})
+             :actual-working-directory (:effective-working-directory command)})
 
       (and command
-           (not (str/includes?
-                 (get-in command [:step :run])
-                 "--override-input local-pkgs \"path:${GITHUB_WORKSPACE}/nix/ci-empty-local-pkgs\"")))
-      (conj {:expected :repository-root-local-pkgs-override})
-
-      (and command
-           (not (str/ends-with? (get-in command [:step :run])
-                                ".#validate-design-bundle")))
-      (conj {:expected :design-bundle-command-at-run-end}))))
+           (not= expected-design-bundle-command (get-in command [:step :command])))
+      (conj {:expected-command expected-design-bundle-command
+             :actual-command (get-in command [:step :command])}))))
 
 (defn- artifact-id-paths [value]
   (letfn [(walk [path item]
@@ -155,11 +192,8 @@
 (deftest failure-manifest-identity-coordinates-test
   (let [identity (get (files/read-json
                        "examples/v0/example-work/failure-manifest.example.json")
-                      "manifest_identity_object")
-        non-null (into {} (remove (comp nil? val)) identity)
-        other-coordinates (apply dissoc identity (keys expected-failure-identity-coordinates))]
-    (is (= expected-failure-identity-coordinates non-null))
-    (is (every? nil? (vals other-coordinates)))
+                      "manifest_identity_object")]
+    (is (empty? (failure-coordinate-errors identity)))
     (is (seq (failure-coordinate-errors
               (assoc identity
                      "tokenizer_build_hash"
@@ -175,7 +209,7 @@
                      {:input-dir "examples/ab-validator-output"
                       :output-dir output
                       :generated-at materialize/default-generated-at})]
-      (is (= expected-generated-manifest-kinds (set (keys generated))))
+      (is (empty? (generated-manifest-set-errors generated)))
       (is (seq (generated-manifest-set-errors (dissoc generated :warnings)))))))
 
 (deftest generated-import-manifest-schema-conformance-test
@@ -203,8 +237,45 @@
            (->> (str/split-lines wrapper) (remove str/blank?) vec)))))
 
 (deftest validation-workflow-wiring-test
-  (let [workflow (files/read-text ".github/workflows/validation.yml")]
+  (let [workflow (files/read-text ".github/workflows/validation.yml")
+        wrong-defaults (str/replace workflow
+                                    "    runs-on: ubuntu-latest\n"
+                                    (str "    runs-on: ubuntu-latest\n"
+                                         "    defaults:\n"
+                                         "      run:\n"
+                                         "        working-directory: abc\n"))
+        root-step-override (str/replace wrong-defaults
+                                        "      - name: Validate design bundle\n"
+                                        (str "      - name: Validate design bundle\n"
+                                             "        working-directory: .\n"))
+        wrong-step-override (str/replace workflow
+                                         "      - name: Validate design bundle\n"
+                                         (str "      - name: Validate design bundle\n"
+                                              "        working-directory: abc\n"))
+        inline-cd (str/replace workflow "          nix run \\\n"
+                               "          cd abc && nix run \\\n")
+        chained-suffix (str/replace workflow
+                                    "            .#validate-design-bundle\n"
+                                    "            .#validate-design-bundle && echo accepted\n")
+        reversed (str/replace workflow
+                              (str "      - uses: actions/checkout@v7\n\n"
+                                   "      - uses: cachix/install-nix-action@v31\n\n"
+                                   "      - name: Validate design bundle")
+                              "      - name: Validate design bundle")
+        reversed (str reversed
+                      "\n      - uses: actions/checkout@v7\n")]
     (is (empty? (design-bundle-workflow-errors workflow)))
+    (is (workflow-error? (design-bundle-workflow-errors wrong-defaults)
+                         :expected-working-directory))
+    (is (empty? (design-bundle-workflow-errors root-step-override)))
+    (is (workflow-error? (design-bundle-workflow-errors wrong-step-override)
+                         :expected-working-directory))
+    (is (workflow-error? (design-bundle-workflow-errors inline-cd)
+                         :expected-command))
+    (is (workflow-error? (design-bundle-workflow-errors chained-suffix)
+                         :expected-command))
+    (is (some #(= :preceding-checkout-in-command-job (:expected %))
+              (design-bundle-workflow-errors reversed)))
     (is (= [{:expected :preceding-checkout-in-command-job
              :actual-job "validate"}]
            (design-bundle-workflow-errors

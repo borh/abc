@@ -69,8 +69,8 @@ cd abc && bin/kaocha \
 
 Result: exit 1, `1 tests, 1 assertions, 1 errors, 0 failures`; test loading failed on the intentionally missing `validate/evidence-input-paths` public boundary.
 
-After the review fixes, the combined Task 5 boundary run passed with
-`24 tests, 63 assertions, 0 failures`.
+After the rereview fixes, the combined Task 5 boundary run passed with
+`24 tests, 68 assertions, 0 failures`.
 
 Final plan-specified command:
 
@@ -81,7 +81,7 @@ cd abc && bin/kaocha \
   --focus abc.sim.divergences-test
 ```
 
-Result after the review fixes: `23 tests, 62 assertions, 0 failures`.
+Result after the rereview fixes: `23 tests, 67 assertions, 0 failures`.
 
 Complete design-bundle namespace with the pinned upstream TEI schema:
 
@@ -144,3 +144,36 @@ Schema conformance, failure semantics, failure coordinates, top-level
 `artifact_id`, generated output set/conformance, wrapper delegation, and CI
 wiring now have distinct stable `deftest` Vars. Task 7's plan references these
 Vars directly and forbids aggregate wrapper tests around them.
+
+## Rereview fixes
+
+RED added wrong job defaults and inline-`cd` mutations. The focused boundary
+failed with `3 tests, 9 assertions, 2 failures`, demonstrating that both
+mutations incorrectly passed the former parser.
+
+The indentation parser now models job-level
+`defaults.run.working-directory`, step-level overrides, effective working
+directory, ordered steps, and literal run block scalars. It tokenizes the run
+scalar after line-continuation removal and requires the exact six-token Nix
+command, so inline `cd`, command prefixes, shell chaining, and suffixes cannot
+pass. Tests cover wrong job defaults, a root step override, a wrong step
+override, inline `cd`, a chained suffix, checkout after the command, and
+checkout in a different job. The focused namespace passes with `8 tests, 22
+assertions, 0 failures`.
+
+Positive and mutated failure identities now use the same
+`failure-coordinate-errors` predicate. Its single exact non-null-map
+comparison both pins the complete expected coordinates and rejects every
+other non-null coordinate; the redundant second coordinate branch was
+removed. Generated-manifest positive and missing-warnings cases likewise use
+one predicate.
+
+Tasks 7 and 8 were decomplected from eight family observations into exactly 42
+claim-specific evidence units: 38 single-focus Clojure descriptors and four
+independent Nix descriptors. The plan now requires 42 descriptors, 42 input
+or closure manifests, 42 bundles, and 42 typed registration rows covering 35
+distinct claims. Seven corroborating rows represent independently rejectable
+parts of five compound criteria. No observation or artifact certifies a
+distinct claim, and legacy aggregate materialize/source-bundle/source-snapshot
+and P16 disposition tests must be split into the named narrow Vars before
+capture.

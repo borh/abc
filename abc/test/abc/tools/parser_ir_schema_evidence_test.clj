@@ -6,6 +6,7 @@
             [abc.tools.parser-ir-tei :as tei]
             [abc.tools.schema :as schema]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
@@ -32,6 +33,19 @@
              "sentences" [])
       (dissoc "sentence_segmentation" "orthographic_annotations")))
 
+(defn- parser-ir-with-ruby-direction [direction]
+  (-> (files/read-json "examples/v0/example-work/parser-ir.json")
+      (assoc "nodes" [{"type" "ruby"
+                       "span" {"start" 0 "end" 6
+                               "coordinate_system" "decoded_utf8"}
+                       "ruby" {"base" "本文"
+                               "reading" "ほんぶん"
+                               "scope" "explicit"
+                               "direction" direction}}]
+             "paragraphs" []
+             "sentences" [])
+      (dissoc "sentence_segmentation" "orthographic_annotations")))
+
 (deftest bounded-span-shapes-remain-compatible-test
   (let [parser-schema (files/read-json parser-ir-schema-path)]
     (testing "current decoded UTF-8 spans carry bounded line and column coordinates"
@@ -53,19 +67,51 @@
                 (parser-ir-with-span
                  (fixture-span "span-invalid-coordinate.json"))))))))
 
+(deftest complete-parser-ir-envelopes-accept-supported-ruby-directions-test
+  (let [parser-schema (files/read-json parser-ir-schema-path)]
+    (doseq [direction ["left" "right" nil]]
+      (is (nil? (schema/validation-errors
+                 parser-schema
+                 (parser-ir-with-ruby-direction direction)))
+          (str "complete parser-IR envelope accepts ruby direction "
+               (pr-str direction))))
+    (is (seq (schema/validation-errors
+              parser-schema
+              (parser-ir-with-ruby-direction "horizontal")))
+        "a direction outside the ruby enum is rejected")))
+
 (deftest committed-publication-fixture-consumes-decoded-utf8-spans-test
   (let [parser-ir (files/read-json "examples/v0/example-work/parser-ir.json")
-        decoded-spans (->> (tree-seq coll? seq parser-ir)
-                           (filter map?)
-                           (map #(get % "span"))
-                           (filter #(= "decoded_utf8"
-                                       (get % "coordinate_system"))))]
-    (is (seq decoded-spans))
-    (is (every? #(and (integer? (get % "start"))
-                      (integer? (get % "end")))
-                decoded-spans))
-    (is (seq (:text (plaintext/render parser-ir))))
-    (is (seq (:body (tei/render parser-ir))))))
+        decoded-nodes (->> (get parser-ir "nodes")
+                           (keep-indexed
+                            (fn [index node]
+                              (when (= "decoded_utf8"
+                                       (get-in node ["span" "coordinate_system"]))
+                                [index node]))))
+        plaintext-output (plaintext/render-string parser-ir)
+        tei-output (pr-str (:body (tei/render parser-ir)))
+        preservation-records (get (materialize/publication-preservation
+                                   {:parser-ir parser-ir
+                                    :source-manifest
+                                    (files/read-json
+                                     "examples/v0/example-work/source.manifest.json")
+                                    :generated-at generated-at})
+                                  "records")]
+    (is (= [[4 "第二段"] [5 "（古伝説と、シルレルの詩から。）"]]
+           (mapv (fn [[index node]] [index (get node "text")]) decoded-nodes)))
+    (is (string/includes? plaintext-output "第二段")
+        "visible text selected by a decoded UTF-8 span reaches plaintext")
+    (is (string/includes? tei-output "第二段")
+        "visible text selected by a decoded UTF-8 span reaches TEI")
+    (is (not (string/includes? plaintext-output "古伝説"))
+        "decoded-span source-note text remains outside visible plaintext")
+    (doseq [[index node] decoded-nodes]
+      (is (some #(and (= (str "/nodes/" index "/span")
+                         (get % "ir_pointer"))
+                      (= (pr-str (get node "span")) (get % "value")))
+                preservation-records)
+          (str "decoded UTF-8 span for node " index
+               " is preserved with its parser-IR pointer")))))
 
 (deftest parser-ir-schema-hash-propagates-to-materialized-manifest-test
   (let [work-dir (temp-dir "abc-parser-ir-schema-propagation")

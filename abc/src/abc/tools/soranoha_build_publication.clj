@@ -134,16 +134,13 @@
   "Run a subprocess inheriting the current environment plus extra-env, feeding
   stdin-bytes, returning {:exit :out-bytes :err}."
   [{:keys [args stdin-bytes extra-env]}]
-  (let [pb (ProcessBuilder. ^java.util.List (mapv str args))]
-    (doseq [[k v] extra-env]
-      (.put (.environment pb) (str k) (str v)))
-    (let [proc (.start pb)]
-      (with-open [os (.getOutputStream proc)]
-        (when stdin-bytes (.write os ^bytes stdin-bytes)))
-      (let [out (.readAllBytes (.getInputStream proc))
-            err (slurp (.getErrorStream proc))
-            exit (.waitFor proc)]
-        {:exit exit :out-bytes out :err err}))))
+  (let [{:keys [exit out err]}
+        @(process/process args
+                          {:in stdin-bytes
+                           :out :bytes
+                           :err :string
+                           :extra-env extra-env})]
+    {:exit exit :out-bytes out :err err}))
 
 (defn- write-aat!
   "Run the aozora2html adapter wrapper (parse + align) over the raw source

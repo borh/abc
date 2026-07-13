@@ -1146,6 +1146,20 @@
       (finally
         (delete-tree! root)))))
 
+(deftest publication-run-process-preserves-bytes-env-and-nonzero-test
+  (let [run-process (ns-resolve 'abc.tools.soranoha-build-publication
+                                'run-process!)
+        stdin-bytes (.getBytes "\u0000\u00ffA" StandardCharsets/ISO_8859_1)
+        result (@run-process
+                {:args ["sh" "-c"
+                        "cat; printf '%s|%s' \"$ABC_TEST_ENV\" \"$HOME\" >&2; exit 6"]
+                 :stdin-bytes stdin-bytes
+                 :extra-env {"ABC_TEST_ENV" "kept"}})]
+    (is (= #{:exit :out-bytes :err} (set (keys result))))
+    (is (= 6 (:exit result)))
+    (is (= (seq stdin-bytes) (seq (:out-bytes result))))
+    (is (= (str "kept|" (System/getenv "HOME")) (:err result)))))
+
 (deftest build-publication-damaged-zip-does-not-invoke-process-recovery-test
   (let [root (fixture/temp-dir "abc-soranoha-build-damaged-zip")
         aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))

@@ -534,14 +534,15 @@ descriptor value:
 
 ```clojure
 {:schema-version "abc-adr-evidence-capture-v2"
- :tool "bin/kaocha"
- :argv ["bin/kaocha" "--focus" "example.core-test/runtime-input-contract"]
+ :tool "abc/bin/kaocha"
+ :argv ["abc/bin/kaocha" "--focus" "example.core-test/runtime-input-contract"]
  :runtime-input-manifest "abc/docs/evidence/adr-inputs/example.edn"
  :input-profile {:kind "component-clojure-test-v1"
                  :component-root "abc"
                  :roots ["example.core-test"]
                  :explicit ["abc/docs/evidence/adr-capture/example.edn"
                             "abc/docs/evidence/adr-inputs/example.edn"
+                            "abc/bin/kaocha"
                             "ab-validator/docs/report.md"]}
  :observation-key "component-check-passes"}
 ```
@@ -749,8 +750,14 @@ explicit `repo-root`; the CLI parses `--repo-root`, verifies its real path is
 exactly `git rev-parse --show-toplevel`, and passes it through. The descriptor
 path and every explicit path are still evidence inputs relative to that root.
 The subprocess working directory is the monorepo root; component selection is
-recorded in `argv`, normally `bash -lc "cd abc && ..."`. Do not add an ambient
-working-directory field or permit repository-parent inputs.
+recorded by the exact repository runner `abc/bin/kaocha`, which resolves and
+enters its own ABC root before executing Clojure. An ordinary ABC-local v2
+descriptor uses exactly `:tool "bin/kaocha"`; a component v2 descriptor uses
+exactly `:tool "<component-root>/bin/kaocha"`; `argv[0]` equals that tool and
+the remaining argv is one or more exact `--focus`, qualified-Var string pairs.
+No shell, extra option, or positional argument is admitted. The runner path is
+an explicit hashed input. Do not add an ambient working-directory field or
+permit repository-parent inputs.
 Every v2 derived input set includes only the caller-scoped higher-order
 contract files actually consulted by its reachable graph (with `abc/data/...`
 keys for a component profile). Adding a contract for an unrelated future
@@ -1219,6 +1226,8 @@ version 1 for the two `repo-files-v1` Nix boundaries. Every v2 descriptor sets
 `docs/evidence/adr-inputs/` and includes
 both its descriptor and manifest paths in `:input-profile :explicit`. Its
 manifest `:paths` vector is exactly the remaining explicit runtime-data paths.
+Each v2 descriptor also binds `bin/kaocha`, sets both `:tool` and `argv[0]` to
+`bin/kaocha`, and lists only exact `--focus`, qualified-Var pairs after it.
 
 | Descriptor | Profile/command | Observation |
 |---|---|---|
@@ -1236,9 +1245,9 @@ literally. Do not attach fixture claims to the operational observation.
 Both Nix/Clojure descriptors bind `deps.edn`, `deps-lock.json`, and
 `tests.edn`. Generate their closure manifests with Plan 1's helper and assert
 exact descriptor expansion with missing/extra-path negative tests.
-Each version-2 wrapper owns its `with-read-trace`, scopes every freshly
-generated directory with `with-ephemeral-root`, calls only the exact operation
-under evidence, and invokes `assert-runtime-input-closure!` before returning.
+Each version-2 wrapper has `with-validated-read-trace!` as a direct top-level
+body expression, scopes every freshly generated directory with
+`with-ephemeral-root`, and calls only the exact operation under evidence.
 Do not focus a whole legacy test namespace or call another `deftest` Var.
 
 - [ ] **Step 2: Validate descriptor closure with tests**

@@ -1,2 +1,7 @@
 #!/usr/bin/env bash
-clojure -M:test:kaocha -m kaocha.runner "$@"
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+abc_root="$(cd -- "$script_dir/.." && pwd)"
+cd "$abc_root"
+exec clojure -M:test:kaocha -m kaocha.runner "$@"

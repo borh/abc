@@ -417,6 +417,7 @@
                 # the repository layout while preserving its store-read-only mode.
                 cp ${../flake.lock} flake.lock
                 ${copyWritableSource}
+                patchShebangs bin/kaocha
                 ${cljSandboxEnv}
                 # Keep TEI schema-backed tests active in the sandbox. The schema is
                 # a pinned fixed-output artifact, so tests do not need network access.

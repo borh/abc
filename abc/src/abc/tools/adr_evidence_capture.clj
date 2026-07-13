@@ -5,9 +5,9 @@
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
-            [babashka.process :as process]
-            [babashka.fs :as fs]
             [abc.tools.path-containment :as containment]
+            [babashka.fs :as fs]
+            [babashka.process :as process]
             [clojure.string :as str]))
 
 (def ^:private descriptor-v1-keys
@@ -31,6 +31,32 @@
   (when (seq (git-output repo-root "status" "--porcelain" "--untracked-files=all"))
     (throw (ex-info "evidence capture requires a clean Git worktree"
                     {:phase phase :exit-code 2}))))
+
+(defn- focus-vars! [descriptor]
+  (let [profile (:input-profile descriptor)
+        component? (= "component-clojure-test-v1" (:kind profile))
+        runner (if component?
+                 (str (str/replace (:component-root profile) #"/+$" "")
+                      "/bin/kaocha")
+                 "bin/kaocha")
+        argv (:argv descriptor)
+        focus-args (when (vector? argv) (subvec argv (min 1 (count argv))))
+        pairs (when (and (seq focus-args) (even? (count focus-args)))
+                (partition 2 focus-args))
+        focuses (when (and (= runner (:tool descriptor))
+                           (= runner (first argv))
+                           (contains? (set (:explicit profile)) runner)
+                           pairs
+                           (every? (fn [[flag value]]
+                                     (and (= "--focus" flag)
+                                          (string? value)
+                                          (qualified-symbol? (symbol value))))
+                                   pairs))
+                  (mapv (comp symbol second) pairs))]
+    (when-not (seq focuses)
+      (throw (ex-info "version-2 capture requires a bound repository Kaocha runner and exact focuses"
+                      {:exit-code 2 :kind :invalid-nix-clojure-closure})))
+    focuses))
 
 (defn- validate-descriptor! [descriptor descriptor-path]
   (let [version (:schema-version descriptor)
@@ -84,7 +110,8 @@
                        descriptor-name
                        (= descriptor-name manifest-name))
           (throw (ex-info "version-2 runtime manifest must be a bound ADR input"
-                          {:exit-code 2 :kind :invalid-runtime-input-manifest}))))))
+                          {:exit-code 2 :kind :invalid-runtime-input-manifest}))))
+      (focus-vars! descriptor)))
   (when-not (and (string? (:tool descriptor))
                  (seq (:tool descriptor))
                  (vector? (:argv descriptor))
@@ -112,17 +139,6 @@
       (throw (ex-info "descriptor path must be a contained repository file"
                       {:exit-code 2 :state (:state state)})))
     relative))
-
-(defn- focus-vars! [descriptor]
-  (let [argv (:argv descriptor)
-        focuses (->> (map vector argv (rest argv))
-                     (keep (fn [[arg value]] (when (= "--focus" arg) value)))
-                     (map symbol)
-                     vec)]
-    (when-not (and (seq focuses) (every? qualified-symbol? focuses))
-      (throw (ex-info "version-2 capture requires exact qualified --focus Vars"
-                      {:exit-code 2 :kind :invalid-nix-clojure-closure})))
-    focuses))
 
 (defn capture! [{:keys [repo-root descriptor descriptor-path output]}]
   (validate-descriptor! descriptor descriptor-path)

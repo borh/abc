@@ -3,6 +3,7 @@
             [abc.tools.json :as json]
             [babashka.fs :as fs]
             [babashka.process :as process]
+            [clojure.string :as str]
             [clojure.test :refer [deftest is]]))
 
 (defn- temp-dir [prefix]
@@ -10,6 +11,13 @@
 
 (defn- exec! [dir & argv]
   (:exit @(process/process (vec argv) {:dir (str dir) :out :string :err :out})))
+
+(defn- write-executable! [root path body]
+  (let [file (fs/file root path)]
+    (fs/create-dirs (fs/parent file))
+    (spit file body)
+    (fs/set-posix-file-permissions file "rwxr-xr-x")
+    file))
 
 (defn- git-repo []
   (let [repo (temp-dir "abc-evidence-capture-repo")
@@ -40,7 +48,7 @@
                               "printf %s \"$PWD\"; printf err >&2; exit 4"])]
     (is (= #{:exit-code :stdout :stderr} (set (keys result))))
     (is (= 4 (:exit-code result)))
-    (is (= (.getCanonicalPath dir) (:stdout result)))
+    (is (= (str (fs/canonicalize dir)) (:stdout result)))
     (is (= "err" (:stderr result)))))
 
 (deftest captures-byte-identical-clean-tree-bundles
@@ -72,16 +80,16 @@
                  (capture/capture!
                   {:repo-root repo
                    :descriptor (descriptor ["sh" "-c"
-                                            (str "touch " (.getAbsolutePath marker))])
+                                            (str "touch " (fs/absolutize marker))])
                    :output output})))
-    (is (not (.exists marker)))
+    (is (not (fs/exists? marker)))
     (fs/delete (fs/file repo "untracked"))
     (is (thrown? clojure.lang.ExceptionInfo
                  (capture/capture!
                   {:repo-root repo
                    :descriptor (descriptor ["sh" "-c" "touch command-dirtied"])
                    :output output})))
-    (is (not (.exists output)))))
+    (is (not (fs/exists? output)))))
 
 (deftest failing-command-is-captured-before-cli-failure
   (let [repo (git-repo)
@@ -101,7 +109,7 @@
                   {:repo-root repo
                    :descriptor (assoc (descriptor ["true"]) :unexpected true)
                    :output output})))
-    (is (not (.exists output)))))
+    (is (not (fs/exists? output)))))
 
 (deftest descriptor-version-and-runtime-manifest-contract-is-closed
   (let [repo (git-repo)
@@ -109,9 +117,12 @@
         profile {:kind "clojure-test-v1"
                  :roots ["example.core"]
                  :explicit ["docs/evidence/adr-capture/example.edn"
-                            "docs/evidence/adr-inputs/example.edn"]}
+                            "docs/evidence/adr-inputs/example.edn"
+                            "bin/kaocha"]}
         v2 {:schema-version "abc-adr-evidence-capture-v2"
-            :tool "true" :argv ["true"] :input-profile profile
+            :tool "bin/kaocha"
+            :argv ["bin/kaocha" "--focus" "example.core/contract"]
+            :input-profile profile
             :runtime-input-manifest "docs/evidence/adr-inputs/example.edn"
             :observation-key "passes"}]
     (doseq [[value path]
@@ -133,19 +144,75 @@
                    (capture/capture! {:repo-root repo :descriptor value
                                       :descriptor-path path :output output}))))))
 
+(deftest v2-runner-shape-is-repository-bound-and-focus-only-test
+  (let [validate! (ns-resolve 'abc.tools.adr-evidence-capture 'validate-descriptor!)
+        descriptor-path "docs/evidence/adr-capture/example.edn"
+        manifest-path "docs/evidence/adr-inputs/example.edn"
+        component-descriptor-path "abc/docs/evidence/adr-capture/example.edn"
+        component-manifest-path "abc/docs/evidence/adr-inputs/example.edn"
+        ordinary {:schema-version "abc-adr-evidence-capture-v2"
+                  :tool "bin/kaocha"
+                  :argv ["bin/kaocha" "--focus" "example.core-test/contract"]
+                  :runtime-input-manifest manifest-path
+                  :input-profile {:kind "clojure-test-v1"
+                                  :roots ["example.core-test"]
+                                  :explicit [descriptor-path manifest-path "bin/kaocha"]}
+                  :observation-key "passes"}
+        component (-> ordinary
+                      (assoc :tool "abc/bin/kaocha"
+                             :argv ["abc/bin/kaocha" "--focus"
+                                    "example.core-test/contract"]
+                             :runtime-input-manifest component-manifest-path)
+                      (assoc :input-profile
+                             {:kind "component-clojure-test-v1"
+                              :component-root "abc"
+                              :roots ["example.core-test"]
+                              :explicit [component-descriptor-path component-manifest-path
+                                         "abc/bin/kaocha"]}))]
+    (is (= ordinary (@validate! ordinary descriptor-path)))
+    (is (= component (@validate! component component-descriptor-path)))
+    (doseq [[label invalid]
+            [["generic true" (assoc ordinary :tool "true" :argv ["true" "--focus"
+                                                                 "example.core-test/contract"])]
+             ["shell" (assoc ordinary :tool "bash"
+                             :argv ["bash" "-lc" "bin/kaocha --focus example.core-test/contract"])]
+             ["tool mismatch" (assoc ordinary :tool "bin/kaocha"
+                                     :argv ["other" "--focus" "example.core-test/contract"])]
+             ["missing focus" (assoc ordinary :argv ["bin/kaocha"])]
+             ["unqualified focus" (assoc ordinary :argv ["bin/kaocha" "--focus" "contract"])]
+             ["extra option" (update ordinary :argv into ["--randomize" "false"])]
+             ["runner unbound" (update-in ordinary [:input-profile :explicit]
+                                          #(vec (remove #{"bin/kaocha"} %)))]]]
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (@validate! invalid descriptor-path))
+          label))))
+
+(deftest repository-kaocha-launcher-is-cwd-independent-test
+  (let [runner (str (fs/canonicalize "bin/kaocha"))
+        outside (temp-dir "abc-kaocha-outside")
+        valid @(process/process
+                [runner "--focus"
+                 "abc.tools.files-test/delete-tree-is-a-noop-on-missing-path-test"]
+                {:dir (str outside) :out :string :err :string})]
+    (is (zero? (:exit valid)))
+    (is (str/includes? (:out valid)
+                       "delete-tree-is-a-noop-on-missing-path-test"))
+    (is (str/includes? (:out valid) "1 tests, 1 assertions"))))
+
 (deftest v2-capture-lints-the-focused-var-and-binds-its-closed-inputs-test
   (let [repo (git-repo)
         descriptor-path "docs/evidence/adr-capture/example.edn"
         manifest-path "docs/evidence/adr-inputs/example.edn"
+        runner-path "bin/kaocha"
         test-path "test/example/core_test.clj"
         closure-path "src/abc/tools/adr_evidence_runtime_inputs.clj"
         descriptor {:schema-version "abc-adr-evidence-capture-v2"
-                    :tool "true"
-                    :argv ["true" "--focus" "example.core-test/runtime-input-contract"]
+                    :tool runner-path
+                    :argv [runner-path "--focus" "example.core-test/runtime-input-contract"]
                     :runtime-input-manifest manifest-path
                     :input-profile {:kind "clojure-test-v1"
                                     :roots ["example.core-test"]
-                                    :explicit [descriptor-path manifest-path]}
+                                    :explicit [descriptor-path manifest-path runner-path]}
                     :observation-key "passes"}
         output (fs/file (temp-dir "abc-evidence-capture-v2-run") "bundle.json")]
     (doseq [[path body]
@@ -161,6 +228,12 @@
       (let [file (fs/file repo path)]
         (fs/create-dirs (fs/parent file))
         (spit file body)))
+    (write-executable! repo runner-path
+                       (str "#!" (fs/which "bash") "\n"
+                            "set -euo pipefail\n"
+                            "test \"$#\" -eq 2\n"
+                            "test \"$1\" = --focus\n"
+                            "test \"$2\" = example.core-test/runtime-input-contract\n"))
     (exec! repo "git" "add" ".")
     (exec! repo "git" "commit" "-q" "-m" "v2 fixture")
     (let [result (capture/capture! {:repo-root repo :descriptor descriptor

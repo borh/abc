@@ -5,7 +5,6 @@
             [abc.tools.shacl :as shacl]
             [arachne.aristotle :as aa]
             [arachne.aristotle.registry :as reg]
-            [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
   (:import [org.apache.jena.datatypes BaseDatatype]
            [org.apache.jena.datatypes.xsd XSDDatatype]
@@ -159,16 +158,24 @@
   (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
 (def ^:private sh-path
   (NodeFactory/createURI "http://www.w3.org/ns/shacl#path"))
+(def ^:private sh-property
+  (NodeFactory/createURI "http://www.w3.org/ns/shacl#property"))
 (def ^:private sh-or
   (NodeFactory/createURI "http://www.w3.org/ns/shacl#or"))
 (def ^:private sh-datatype
   (NodeFactory/createURI "http://www.w3.org/ns/shacl#datatype"))
 (def ^:private sh-max-count
   (NodeFactory/createURI "http://www.w3.org/ns/shacl#maxCount"))
+(def ^:private sh-pattern
+  (NodeFactory/createURI "http://www.w3.org/ns/shacl#pattern"))
+(def ^:private person-record-shape
+  (NodeFactory/createURI "https://w3id.org/abc/PersonRecordShape"))
 (def ^:private rdag2-date-of-birth
   (NodeFactory/createURI "http://RDVocab.info/ElementsGr2/dateOfBirth"))
 (def ^:private abc-edtf-date-of-birth
   (NodeFactory/createURI "https://w3id.org/abc/edtfDateOfBirth"))
+(def ^:private abc-edtf-date-of-death
+  (NodeFactory/createURI "https://w3id.org/abc/edtfDateOfDeath"))
 (def ^:private abc-edtf
   (NodeFactory/createURI "https://w3id.org/abc/EDTF"))
 (def ^:private xsd-date
@@ -177,6 +184,8 @@
   (NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#gYearMonth"))
 (def ^:private xsd-g-year
   (NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#gYear"))
+(def ^:private temporal-pattern
+  "^(-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?|-?\\d{3}X|-?\\d{2}XX)$")
 
 (defn- objects [^Graph graph subject predicate]
   (mapv #(.getObject %)
@@ -192,13 +201,17 @@
     (first matches)))
 
 (defn- exact-property-shape [^Graph graph path]
-  (let [subjects (->> (iterator-seq (.find graph Node/ANY sh-path path))
-                      (map #(.getSubject %))
-                      set)]
-    (when-not (= 1 (count subjects))
-      (throw (ex-info "expected exactly one SHACL property shape"
-                      {:path path :subjects subjects})))
-    (first subjects)))
+  (let [attached (set (objects graph person-record-shape sh-property))
+        matches (->> attached
+                     (filter #(some #{path} (objects graph % sh-path)))
+                     set)]
+    (when-not (= 1 (count matches))
+      (throw (ex-info "expected exactly one attached SHACL property shape"
+                      {:node-shape person-record-shape
+                       :path path
+                       :attached attached
+                       :matches matches})))
+    (first matches)))
 
 (defn- rdf-list [^Graph graph head]
   (loop [node head
@@ -218,9 +231,34 @@
        (map #(unique-object graph % sh-datatype))
        set))
 
+(deftest exact-property-shape-rejects-detached-match-test
+  (let [g (shacl/load-shapes-graph)
+        attached (exact-property-shape g rdag2-date-of-birth)
+        orphan (NodeFactory/createBlankNode)]
+    (.delete g (org.apache.jena.graph.Triple/create
+                attached sh-path rdag2-date-of-birth))
+    (.add g (org.apache.jena.graph.Triple/create
+             orphan sh-path rdag2-date-of-birth))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"attached SHACL property shape"
+                          (exact-property-shape g rdag2-date-of-birth)))))
+
+(deftest birth-pattern-cannot-be-donated-by-death-property-test
+  (let [g (shacl/load-shapes-graph)
+        birth-property (exact-property-shape g abc-edtf-date-of-birth)
+        death-property (exact-property-shape g abc-edtf-date-of-death)
+        birth-pattern (unique-object g birth-property sh-pattern)]
+    (.delete g (org.apache.jena.graph.Triple/create
+                birth-property sh-pattern birth-pattern))
+    (is (= temporal-pattern
+           (.getLiteralLexicalForm
+            (unique-object g death-property sh-pattern))))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"exactly one RDF object"
+                          (unique-object g birth-property sh-pattern)))))
+
 (deftest person-record-temporal-shape-contract-test
   (let [g (shacl/load-shapes-graph)
-        ttl (files/read-text "schemas/manifest.shacl.ttl")
         dob-property (exact-property-shape g rdag2-date-of-birth)
         edtf-property (exact-property-shape g abc-edtf-date-of-birth)]
     (is (= #{xsd-date xsd-g-year-month xsd-g-year}
@@ -229,9 +267,9 @@
            (set (objects g edtf-property sh-max-count))))
     (is (= #{abc-edtf}
            (set (objects g edtf-property sh-datatype))))
-    (is (string/includes? ttl
-                          "sh:pattern \"^(-?\\\\d{4}"))
-    (is (string/includes? ttl "|-?\\\\d{3}X|-?\\\\d{2}XX)"))
+    (is (= temporal-pattern
+           (.getLiteralLexicalForm
+            (unique-object g edtf-property sh-pattern))))
     (is (pos? (count (iterator-seq (.find g)))))))
 
 (deftest validate-abc-local-person-record-conforms-test

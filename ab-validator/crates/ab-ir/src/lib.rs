@@ -381,7 +381,7 @@ pub struct AatProjection {
     /// Per spec §"IR/AAT mode": ruby bases and gaiji-resolved text in the
     /// visible-text projection may contain katakana and will be normalized.
     ///
-    /// # Phase 2 status — RESERVED, no producer yet
+    /// # Status — RESERVED, no producer yet
     /// The ab-ir pipeline does NOT currently populate this field from the
     /// incoming AAT (it is `None` at all construction sites). It is reserved
     /// for a future TEI/XML renderer that will consume `ortho_choices()` to

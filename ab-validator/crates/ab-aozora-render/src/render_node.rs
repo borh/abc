@@ -253,7 +253,7 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
         ForwardAttr::AccentDot => render_accent_dot(f, store, out),
         // アクサン / ウムラウト: compose the single target letter with its accent
         // mark into the precomposed glyph (é / ö) — see `render_accent`. Its own
-        // arm keeps it off the bold catch-all below (the #376/#385 bug class).
+        // arm keeps it off the bold catch-all below (a known bug class).
         ForwardAttr::Accent(mark) => render_accent(f, mark, store, out),
         // 文末より N字上げ揃え: end-align the run. Reuses the line-form's
         // `aozora-align-end` class / `data-offset` so the two scopes style
@@ -411,7 +411,7 @@ fn render_gaiji<W: Write>(g: &Gaiji, store: &NodeStore, out: &mut W) -> fmt::Res
 fn render_annotation<W: Write>(a: Directive, store: &NodeStore, out: &mut W) -> fmt::Result {
     match a.kind {
         // Top-level inline warichu balance is now owned by `RenderState`
-        // (sink-driven, #415); these arms are a defensive fallback that fires
+        // (sink-driven; these arms are a defensive fallback that fires
         // only for the non-occurring nested-`Segment::Directive` case.
         DirectiveKind::WarichuOpen => return out.write_str(r#"<span class="aozora-warichu">"#),
         DirectiveKind::WarichuClose => return out.write_str("</span>"),

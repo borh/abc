@@ -488,7 +488,7 @@ pub enum ForwardAttr {
 /// - **Not always `Reclaimed`** (node owns the literal): when the recognized
 ///   target occurrence is itself a **ruby base**
 ///   (`我《が》…我［＃「我」に傍点］`; ≥34 in the 17,889-work `aozorabunko_text`
-///   mirror, see #202) it cannot be pulled into a text-only forward leaf
+///   mirror, it cannot be pulled into a text-only forward leaf
 ///   (bouten-over-ruby is not representable), so it must stay `Referenced`.
 /// - **Not always `Referenced`** (literal left upstream): an adjacent forward
 ///   had its literal pulled into the node and the surrounding plain run
@@ -496,7 +496,7 @@ pub enum ForwardAttr {
 ///
 /// Deriving it at serialize from a non-local preceding-content scan would
 /// re-introduce exactly the lookback the scope-free core removes, so it is
-/// materialized here as explicit provenance. (The #180 unbounded-growth
+/// materialized here as explicit provenance. unbounded-growth
 /// pathology — a `Reclaimed` literal doubled in the plain tail — is separately
 /// cured by the lowering pass's overlap-truncate.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

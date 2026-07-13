@@ -56,7 +56,7 @@
 //! [`crate::lex`].
 
 // PUA sentinel constants live in `aozora-spec` and are re-exported
-// here so the post-Phase-F `crate::lexer::INLINE_SENTINEL` etc.
+// here so the `crate::lexer::INLINE_SENTINEL` etc.
 // import paths inside this crate keep working unchanged.
 pub use ab_aozora_spec::{
     BLOCK_CLOSE_SENTINEL, BLOCK_LEAF_SENTINEL, BLOCK_OPEN_SENTINEL, INLINE_SENTINEL, SLUGS,

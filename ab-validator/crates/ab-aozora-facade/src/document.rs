@@ -225,7 +225,7 @@ impl Document {
     /// is `Send + Sync`. Applies the same [`DiagnosticPolicy`] filtering as
     /// [`Self::parse`].
     ///
-    /// This is the entry point the #237 incremental-reparse LSP consumer holds
+    /// This is the entry point the incremental-reparse LSP consumer holds
     /// across edits; renderers reach it through `ab_aozora_render`'s owned paths
     /// (`serialize` / `render_html`).
     #[must_use]

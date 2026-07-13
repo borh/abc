@@ -585,7 +585,7 @@ fn resolve_run_normalization(
 }
 
 /// File name of the run-normalization provenance sidecar (T1 transport, spec
-/// Issue 2 P4). ABC reads this JSON to learn the applied normalization policy
+/// ). ABC reads this JSON to learn the applied normalization policy
 /// without depending on a parquet reader.
 pub const RUN_NORMALIZATION_PROVENANCE_FILE: &str = "run-normalization-provenance.json";
 
@@ -2881,7 +2881,7 @@ mod tests {
         ))
     }
 
-    // --- WarehouseFeaturePatternAccumulator: BTreeMap -> linear scan (Task 2) ---
+    // --- WarehouseFeaturePatternAccumulator: BTreeMap -> linear scan ---
 
     fn warehouse_test_diff_row(
         region_index: u64,
@@ -3243,7 +3243,7 @@ mod tests {
 
     #[test]
     fn feature_pattern_accumulator_region_group_path_matches_reference_row_path() {
-        // Content-neutrality differential test for Task 4 (nway_feature_diffs
+        // Content-neutrality differential test for nway_feature_diffs
         // direct-column producer): the production path feeds
         // `feature_pattern_counts` via
         // `WarehouseFeaturePatternAccumulator::record_region_feature_group`,

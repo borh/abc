@@ -1,4 +1,4 @@
-//! Canonical slug catalogue for Aozora annotation bodies (Phase 1.2 of
+//! Canonical slug catalogue for Aozora annotation bodies 
 //! the editor-integration sprint).
 //!
 //! `classify::BODY_PATTERNS` is the *parser-side* aho-corasick
@@ -763,8 +763,8 @@ pub const RENDER_SLUGS: &[RenderSlug] = &[
         jis: Some("07.16"),
     },
     // --- Emphasis / inline ---------------------------------------------------
-    // The emphasis family now uses reading-based romaji slugs (#115),
-    // matching the bouten kinds (#114): the slug is `hepburn(reading)`,
+    // The emphasis family now uses reading-based romaji slugs,
+    // matching the bouten kinds: the slug is `hepburn(reading)`,
     // enforced by `render_slug_matches_reading`. Two stay on their existing
     // slugs deliberately — `caption` (a loanword, キャプション) and
     // `keigakomi` (罫囲み＝けいがこみ, a valid reading already serving as the

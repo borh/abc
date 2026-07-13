@@ -317,7 +317,7 @@ mod tests {
     fn prop_idempotent_and_script_invariant() {
         // hegel-style: any katakana string canonicalizes equal to its hiragana form,
         // and normalize is idempotent. Kept as a bounded enumerated check to avoid
-        // pulling generators into a unit test; the hegel target is added in Task 6.
+        // pulling generators into a unit test; the hegel target is added.
         for s in ["カハ", "ミヅ", "テフテフ", "トーキヨー", "クワシ"] {
             let n = normalize(s);
             assert_eq!(normalize(&n), n, "idempotent for {s}");

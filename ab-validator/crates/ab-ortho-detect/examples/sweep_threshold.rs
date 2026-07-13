@@ -90,7 +90,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     } else {
         eprintln!(
-            "WARN: no threshold cleared recall >= 0.85 — escalation needed (see plan Task 4 EARLY EXIT B)"
+            "WARN: no threshold cleared recall >= 0.85 — escalation needed see threshold calibration"
         );
     }
     Ok(())

@@ -16,7 +16,7 @@
 //! `serde_json/preserve_order`, and while a since-deleted workspace member's
 //! CLI shim depended on it, this flipped `ab-aat-to-parser-ir`'s canonical
 //! output to insertion order workspace-wide (see
-//! `docs/handoffs/2026-07-10-parser-fork-provenance.md`, "Feature-unification
+//! "Feature-unification
 //! hazard"). That shim has since been deleted from the root workspace, but
 //! this module is the defense-in-depth fix: explicit key sorting at the
 //! call sites that turn a `Value` into canonical bytes, so correctness no

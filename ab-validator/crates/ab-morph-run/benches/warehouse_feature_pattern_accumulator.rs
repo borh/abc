@@ -1,5 +1,5 @@
 //! Micro-bench for `WarehouseFeaturePatternAccumulator::record` /
-//! `into_rows` (Lever 1, task 2): confirms the `BTreeMap` -> linear-scan
+//! `into_rows`  confirms the `BTreeMap` -> linear-scan
 //! group-detection refactor does not regress throughput, on a synthetic
 //! multi-region `feature_diffs` slice shaped like the real producer output
 //! (contiguous `WarehouseFeatureGroupKey` runs per region).

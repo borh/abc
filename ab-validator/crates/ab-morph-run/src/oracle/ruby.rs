@@ -536,7 +536,7 @@ mod tests {
 
     #[test]
     fn adjudicate_matches_reference_across_match_single_and_multi_loser_bases() {
-        // Differential oracle test (Lever 3, task 1): `adjudicate` defers the
+        // Differential oracle test  `adjudicate` defers the
         // evidence-map build and name clones to after the emit gate;
         // `adjudicate_reference` is the verbatim pre-refactor implementation.
         // The two must return byte-for-byte identical rows for every base

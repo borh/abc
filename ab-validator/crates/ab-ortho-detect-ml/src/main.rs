@@ -115,7 +115,7 @@ fn ablate(gold: &std::path::Path, report: &std::path::Path) -> anyhow::Result<()
     // v1 reality (Branch B): TokenFeatures (oov_count, oov_ratio,
     // proper_noun_char_ratio) are dead. Character-only IS the only viable
     // feature set in v1. The ablation documents this so a future full-feature
-    // revisit has a baseline to beat.
+    // 
     let recs = io::read_gold(gold)?;
     let n = recs.len();
     if n == 0 {
@@ -166,7 +166,7 @@ It measures whether the linear model can reproduce the heuristic's\n\
 character cascade, NOT real-world detection quality. A perfectly-trained\n\
 model on these labels can at best tie the heuristic; it cannot exceed it\n\
 on the labeled distribution. Real evaluation requires the\n\
-human-annotated gold set (Task 9 — the documented finishing input).\n\n\
+human-annotated gold set (the documented finishing input).\n\n\
 ## Recommended action\n\n\
 - Delete `OrthoTokenizer` trait + `ortho_compat.rs` + double-dict-load\n\
   + `oov_*` config fields (investigation report items C1, C3, C4).\n\
@@ -258,7 +258,7 @@ fn cross_validate(
         // Predict::predict returns the actual class labels (i32 here), NOT
         // probabilities-then-threshold. Using predict_probabilities >= 0.5
         // would invert on this data because linfa-logistic designates the
-        // more-frequent class as positive (Phase 2 Task 6 fix).
+        // more-frequent class as positive (class-balance fix).
         let preds_te: Array1<i32> = model.predict(&x_te);
 
         let (mut tp, mut fn_, mut fp, mut tn) = (0u32, 0u32, 0u32, 0u32);
@@ -343,18 +343,18 @@ Model: `linfa_logistic::LogisticRegression` (char-only features via `extract_cha
 | f1 | {:.4} | — | — |\n\
 | accuracy | {:.4} | — | — |\n\
 \n\
-## Method note (Phase 2 Task 6 fix applied)\n\
+## Method note (class-balance fix applied)\n\
 \n\
 Evaluation uses `Predict::predict`, which returns the actual class labels directly. **Do NOT** use `predict_probabilities >= 0.5`: linfa-logistic's `label_classes` designates the *more-frequent* class as positive, so thresholded probabilities invert on this data (correct impl shows ~0.9x recall; a buggy probabilities-threshold impl shows ~0.05 recall — the inversion signature). Labels are `Array1<i32>` (`1=accept, 0=reject`); linfa-logistic requires `Ord` labels, ruling out `f64`.\n\
 \n\
 ## Honest generalization vs train-accuracy ceiling\n\
 \n\
-- Train-accuracy recall on the full 300 LLM labels (Phase 2.5 Task 5/6 trainer, no hold-out): **0.958** — this is a *ceiling*, not generalization.\n\
+- Train-accuracy recall on the full 300 LLM labels (trainer, no hold-out): **0.958** — this is a *ceiling*, not generalization.\n\
 - Hold-out mean recall (5-fold CV, this report): **{:.4}** (min {:.4}, max {:.4}).\n\
 \n\
 The ~{} percentage-point gap between the ceiling and the hold-out mean is the train/test optimism on this feature set.\n\
 \n\
-## Phase 2.5 Task 7 gate\n\
+## Task 7 gate\n\
 \n\
 Promote `--ortho-detect ml` from EXPERIMENTAL to stable **only if mean recall >= 0.85**.\n\
 \n\

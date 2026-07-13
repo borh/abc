@@ -1,6 +1,6 @@
 //! Diagnostic ordering invariants for the fused lex pipeline.
 //!
-//! Plan G.4 deliverable. Pins the [`Pipeline::build`] documented order:
+//! Pins the [`Pipeline::build`] documented order:
 //!
 //!   sanitize → pair → classify
 //!
@@ -22,7 +22,7 @@ use ab_aozora_spec::{Diagnostic, DiagnosticSource, codes};
 /// Ordinal position of a diagnostic in the documented pipeline order
 /// (sanitize → pair → classify → "later").
 ///
-/// Post-Phase-C the four legacy `Registry*` / `Unregistered*` /
+///  the four legacy `Registry*` / `Unregistered*` /
 /// `ResidualAnnotationMarker` variants are folded into
 /// [`Diagnostic::Internal`] with a stable `code` payload — they
 /// remain post-classify validators and still sort last.

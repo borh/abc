@@ -477,7 +477,7 @@ pub(crate) mod tests {
 
     use serde_json::json;
 
-    /// Also used by `hydrate::tests::write_e2e_fixture` (Task 7's
+    /// Also used by `hydrate::tests::write_e2e_fixture` 
     /// end-to-end orchestration fixture); `pub(crate)` for that cross-module
     /// `#[cfg(test)]` reuse.
     ///

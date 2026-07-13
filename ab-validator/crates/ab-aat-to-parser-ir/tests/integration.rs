@@ -717,7 +717,7 @@ fn frozen_v2_0_3_0_artifact_retains_historical_coordinates() {
     assert_ne!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "the frozen pre-Phase-5 generation must retain its historical parser-IR coordinate"
+        "the frozen generation must retain its historical parser-IR coordinate"
     );
 }
 
@@ -1197,7 +1197,7 @@ fn coalesces_sentence_boundary_inside_atomic_ruby_child_from_aat() {
 
 #[test]
 fn splits_emphasis_container_at_sentence_boundary_keeping_ruby_whole() {
-    // Phase B (B1): an emphasis carrying inline_children with an interior terminal
+    // an emphasis carrying inline_children with an interior terminal
     // in a splittable text child splits into two sibling emphases; a ruby sibling
     // is kept whole. This is the case the old hard-fail regressed.
     let (schemas, mapping) = schemas_and_mapping();

@@ -1,5 +1,5 @@
 (ns abc.tools.diagram.workflow-graph
-  "Tier 3: render one workflow-run.json as a runtime-provenance DAG. Per-run,
+  "Render one workflow-run.json as a runtime-provenance DAG. Per-run,
    printed to stdout, not committed. Edges connect a step that produces a target
    key to every step that requires it. See ADR 0029."
   (:require [abc.tools.diagram.mermaid :as mermaid]

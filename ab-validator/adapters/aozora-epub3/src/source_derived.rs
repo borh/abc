@@ -8,7 +8,7 @@
 //! The two implemented passes — gaiji and figure recovery — emit nodes tagged
 //! `x-provenance = "source-derived"`. The warichu pass is intentionally a
 //! no-op: AozoraEpub3 1.3.4-jdk21 emits malformed HTML for warichu blocks
-//! (see `docs/handoffs/adding-aozora2-aozoraepub3-parser-support.md`) and the
+
 //! schema's `warigaki` kind requires upper/lower rows that cannot be reliably
 //! reconstructed from rendered split spans here. Recovery is left as a
 //! documented gap rather than emitting schema-invalid nodes.

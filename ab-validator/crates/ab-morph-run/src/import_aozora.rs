@@ -1,6 +1,6 @@
 //! Producer for the `aozora_works.parquet` sidecar: an imported projection
 //! of ABC's `metadata-record.schema.json` export.
-//! Design: docs/superpowers/specs/2026-07-06-aozora-works-import-design.md
+//! Import design.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};
@@ -21,7 +21,7 @@ use crate::warehouse::schema::WarehouseTable;
 /// ABC metadata-record schema hash this importer was written against.
 /// Every export record must declare exactly this hash; an ABC schema
 /// change updates this constant and the field mapping together in one
-/// reviewed change (spec Decision 3).
+/// reviewed change .
 pub const ABC_METADATA_RECORD_SCHEMA_HASH: &str =
     "sha256:55eeb37795d53b1c9041d11215328536eada911f36335abfd5f213dfa3a90fb8";
 
@@ -65,7 +65,7 @@ fn extract_year(value: &str) -> Option<i32> {
 
 /// The consumed subset of ABC's `metadata-record.schema.json`. Unknown
 /// fields are ignored by serde; validation covers only consumed fields
-/// (spec Decision 3: the pinned hash is the drift gate).
+/// (the pinned hash is the drift gate).
 #[derive(Debug, Deserialize)]
 struct MetadataRecord {
     metadata_record_schema_hash: String,

@@ -84,7 +84,7 @@ enum Command {
             help = "Orthographic-detection layer for pre-war Japanese text (kata→hira normalization).
 
 [off] No normalization (default).
-[heuristic] v1 char-cascade detector. Default threshold 0.40 (tuned Phase 2.5);
+[heuristic] v1 char-cascade detector. Default threshold 0.40 ;
 recall 0.939 on a 300-sentence LLM-labeled evaluation set (>= 0.85 floor).
 See reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md.
 [ml] Logistic-regression detector on character features. Stable (not default):
@@ -293,7 +293,7 @@ Defaults to the old-kana set 新字旧仮名,旧字旧仮名 when --works-parque
     /// self-contained example bundle (examples.md + examples.json) with
     /// text snippets, per-analyzer tables, reconstructed aozora markup,
     /// and work metadata. Spec:
-    /// docs/superpowers/specs/2026-07-10-hydrate-interesting-examples-design.md
+    /// See the design for details
     HydrateInteresting {
         #[arg(long)]
         interesting: PathBuf,
@@ -389,7 +389,7 @@ Defaults to the old-kana set 新字旧仮名,旧字旧仮名 when --works-parque
         #[arg(long)]
         force: bool,
     },
-    /// Scores a filled blind labeling TSV (Task 4's export, owner-annotated
+    /// Scores a filled blind labeling TSV (export, owner-annotated
     /// `verdict` column) plus its `mapping.json` sidecar into per-method
     /// p@k and nDCG@k (spec §Calibration Plan step 5). Pooled evaluation:
     /// the ideal ranking is drawn from the union of all labeled patterns.

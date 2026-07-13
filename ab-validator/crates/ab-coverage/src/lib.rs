@@ -1,7 +1,7 @@
 //! Coverage matrix loader and schema validator for
 //! `data/aozora-syntax-coverage.toml`. The canonical schema lives at
 //! `data/aozora-syntax-coverage.schema.json` and is documented in
-//! `docs/superpowers/specs/2026-04-28-syntax-coverage-methodology.md`.
+//! Coverage methodology.
 
 pub mod adapter;
 pub mod cache;

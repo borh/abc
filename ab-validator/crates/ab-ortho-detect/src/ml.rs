@@ -20,7 +20,7 @@ pub struct MlModel {
 }
 
 /// SHA-256 hex digest of the model's weight bytes in little-endian f32.
-/// Per spec Decision #10. NOT a debug-format string. The digest covers
+/// NOT a debug-format string. The digest covers
 /// weights followed by intercept (both as LE f32); threshold is excluded
 /// (it is a runtime knob, not a learned parameter).
 #[must_use]

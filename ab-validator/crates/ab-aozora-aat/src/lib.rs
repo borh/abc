@@ -28,7 +28,7 @@ pub type AozoraSanitizeDiagnostic = Diagnostic;
 /// `Content::Segments` and so has no plain-text range to resolve — see
 /// `ruby_node`'s fallback branch). This is the original v1 regex, restored
 /// verbatim so a gaiji-base ruby's typed emission stays byte-identical to
-/// the pre-`ruby_entries` adapter output (Task 8's delta-audit ruby class
+/// the pre-`ruby_entries` adapter output (delta-audit ruby class
 /// requires baseline typed ruby to be byte-identical in the candidate;
 /// silently downgrading these to `raw` would break that).
 static RUBY_RE: LazyLock<Regex> =
@@ -56,11 +56,10 @@ pub struct DecodedSource {
     /// so anchoring on the line itself is the only choice that doesn't
     /// silently drop or duplicate those blanks). Empty when the work has
     /// no `底本：` line at all (`aozora_body_range` returns
-    /// `source.len()` as the tail start in that case). Phase 4 (Task 14):
+    /// `source.len()` as the tail start in that case).
     /// previously this text was computed and thrown away by
     /// `sanitize_for_aat`, discarding the terminal-provenance/colophon
-    /// tail entirely — see
-    /// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`.
+    /// tail entirely (see ADR 0037).
     pub sanitized_tail: String,
     /// Byte offset of `sanitized_tail`'s start within the full SANITIZED
     /// text (same coordinate system `sanitize_diagnostics` spans use —
@@ -163,13 +162,11 @@ fn terminator_ends(text: &str) -> Vec<usize> {
 /// terminator (the text doesn't end in one) still yields one last range
 /// ending at `text.len()`.
 ///
-/// NOTE (Task 14 divergence from the Python reference,
-/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`):
+/// NOTE (divergence from the Python reference, see ADR 0037):
 /// Python's `str.splitlines`/line iteration also breaks on `\v`, `\f`,
 /// `\x1c`-`\x1e`, `U+2028`, `U+2029`, etc. This Rust rule only recognizes
 /// `\n`/`\r\n`/`\r` (the terminators `sanitize` and `line_starts` already
 /// treat as real line boundaries). The corpus scan
-/// (`docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`)
 /// found zero exotic-boundary tail lines across 17,886 works, so this
 /// divergence is corpus-absent.
 fn line_ranges(text: &str) -> Vec<Range<usize>> {
@@ -305,7 +302,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
 
 /// Intermediate result of the sanitize + body/tail split stage — a named
 /// struct rather than a wide tuple so `decode_source_bytes`'s three
-/// branches read as field access, not positional unpacking (Task 14 added
+/// branches read as field access, not positional unpacking (added
 /// the tail fields; a tuple would have grown to six positional slots).
 struct SanitizedForAat {
     /// The BODY slice (`sanitized[body_range]`), same content
@@ -610,9 +607,7 @@ fn build_aat(
 /// The terminal-provenance/colophon tail line classes — a direct
 /// transcription of `reports/lib/terminal_provenance.py`'s `Class`
 /// (`TERMINAL_PROVENANCE_CLASS` / `COLOPHON_METADATA_CLASS` /
-/// `BLANK_CLASS`) from
-/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`,
-/// the NORMATIVE authority for this rule. `Colophon` covers both a real
+/// `BLANK_CLASS`), the NORMATIVE authority for this rule (see ADR 0037). `Colophon` covers both a real
 /// colophon-head/continuation line AND the fail-open fallback below
 /// (`classify_tail`'s doc comment) — AAT emission only ever needs to know
 /// "not terminal provenance", so the two are not distinguished here; the
@@ -644,10 +639,8 @@ const COLOPHON_HEADS: [&str; 4] = ["入力：", "校正：", "青空文庫作成
 
 /// Classify every line of a tail (terminator-inclusive, as produced by
 /// `line_ranges` over `DecodedSource::sanitized_tail`). Transcribes
-/// `reports/lib/terminal_provenance.py`'s `classify_tail` case-for-case —
-/// see
-/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`
-/// for the normative rule this must not drift from:
+/// `reports/lib/terminal_provenance.py`'s `classify_tail` case-for-case
+/// (see ADR 0037 for the normative rule):
 ///
 /// - blank line (whitespace-stripped empty): `Blank`, state unchanged.
 /// - line (stripped) starts with a `PROVENANCE_HEADS` entry: `Provenance`
@@ -735,7 +728,7 @@ fn tail_span_json(range: &Range<usize>, tail_offset: usize, ctx: &SpanContext) -
 /// block per group — a `Blank` or `Colophon` line ends a group.
 /// `colophon_metadata` lines are excluded from AAT entirely (measured
 /// separately by the source-region instrument;
-/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`),
+/// see ADR 0037),
 /// as is a work with no tail at all (`sanitized_tail` empty — no blocks,
 /// no warnings). Returns `(blocks, warnings)`: the `warnings` are only
 /// ever `tail-line-unclassified` fallback entries (see `classify_tail`'s
@@ -1430,7 +1423,7 @@ fn inline_content(
             "x-break-kind": "page"
         }));
     }
-    // NOTE (plan amendment 2, Task 9 delta-gate block): the bare-toggle
+    // NOTE: the bare-toggle
     // pairing pass does NOT run here. It must run AFTER block
     // classification (`pair_bare_toggles_in_blocks` in `build_aat`):
     // consuming the raw `containerOpen`/`containerClose` marker nodes
@@ -1477,7 +1470,7 @@ fn bare_toggle_construct_index(construct: &str) -> usize {
 }
 
 /// Apply `pair_bare_toggles` to every content array of an already-built
-/// block tree (plan amendment 2): recurse into each node's `content`/
+/// block tree: recurse into each node's `content`/
 /// `children` arrays FIRST, then run the pairing pass over the array at this
 /// level. Post-order matters — a container the pass creates holds nodes the
 /// per-line grammar already ruled on (adopted-into or declined-in-place), and
@@ -1938,9 +1931,7 @@ mod tests {
         );
     }
 
-    /// `preserve_order` tripwire (see
-    /// `docs/handoffs/2026-07-10-parser-fork-provenance.md`'s
-    /// feature-unification hazard section): `aat_json_from_bytes` builds its
+    /// `preserve_order` tripwire: `aat_json_from_bytes` builds its
     /// `serde_json::Value` output via object literals (`json!` macro
     /// insertion order), so if `serde_json/preserve_order` ever leaks into
     /// this crate's compiled feature graph, `Value`'s map switches from
@@ -1949,7 +1940,7 @@ mod tests {
     /// red — a parsed/`Value`-equality check would NOT catch this, since
     /// `Value::eq` for objects is order-independent.
     ///
-    /// Expected output re-pasted 2026-07-12 (Task 8: `ab-aozora` `0.5.0` →
+    /// Expected output re-pasted 2026-07-12 (`ab-aozora` `0.5.0` →
     /// `0.6.0` — the C5 identity bump; no functional change, only the
     /// version string) via:
     /// ```text
@@ -2323,7 +2314,7 @@ mod tests {
     /// `ruby_node` falls through to the `RUBY_RE` regex path. This asserts
     /// that fallback keeps v1's typed emission (byte-identical `base`,
     /// `direction: "right"`) rather than silently downgrading to a `raw`
-    /// node — see the `RUBY_RE` doc comment and Task 4's fix-wave concern
+    /// node — see the `RUBY_RE` doc comment and fix-wave concern
     /// 1 (delta-audit ruby class requires byte-identical typed ruby).
     #[test]
     fn gaiji_base_ruby_keeps_v1_typed_emission() {
@@ -2538,7 +2529,7 @@ mod tests {
 
     #[test]
     fn c5_identity_join_key_and_document_version() {
-        // Was the C4 identity test (Task 14); C5 (Task 8) bumps
+        // Bumps
         // `ab-aozora` `0.5.0` → `0.6.0` — the schema-2 join key's other
         // coordinates (`aat-schema 2 facade 0.3.0 wire-schema 3`) are
         // unchanged by this version-only bump.
@@ -2550,9 +2541,8 @@ mod tests {
         assert_eq!(aat["version"], 2);
     }
 
-    // --- Task 14: classify_tail (transcribed from
-    // reports/lib/terminal_provenance.py — see
-    // docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md)
+    // --- classify_tail (transcribed from
+    // reports/lib/terminal_provenance.py; see ADR 0037)
     // Tests mirror `ClassifyTail` in
     // reports/source-regions/tests/test_terminal_provenance_split.py
     // one-for-one where applicable. ------------------------------------
@@ -2693,7 +2683,7 @@ mod tests {
         assert_eq!(unclassifiable, vec![0]);
     }
 
-    // --- Task 14: source_note emission --------------------------------
+    // --- source_note emission -------------------------------------------
 
     #[test]
     fn terminal_provenance_tail_emits_source_note() {
@@ -2817,7 +2807,7 @@ mod tests {
         // marker as its own wire node whose span slices the exact token, in
         // source order — paired markers included (adoption later consumes
         // them, so THIS test, not the AAT fallback test, pins the stream the
-        // classifier reads). Observed wire mapping (plan amendment, main
+        // classifier reads). Observed wire mapping (main
         // 9a480e39): open tokens arrive as `containerOpen` nodes and close
         // tokens as `containerClose` nodes — not `directive`.
         let src =
@@ -2909,7 +2899,7 @@ mod tests {
 
     /// A REAL adapter-built node array for `pair_bare_toggles`, produced by
     /// reusing `inline_content` with the same inputs `build_aat` constructs
-    /// (no hand-built approximation). Since plan amendment 2 the adapter
+    /// The adapter
     /// applies the pass to the post-block-classification content arrays
     /// (`pair_bare_toggles_in_blocks`), but for these single-paragraph,
     /// zero-adoption lines block classification wraps the identical node
@@ -3200,7 +3190,7 @@ mod tests {
 
     #[test]
     fn bare_toggle_inside_jizume_block_preserves_block_structure() {
-        // Corpus shape 000026_55738 (Task 9 delta-gate BLOCK → plan
+        // Corpus shape 000026_55738 (delta-gate BLOCK →
         // amendment 2): a compound 字下げ (burasage) block whose body line
         // carries a bare yokogumi pair, closed by ここで字下げ終わり, then
         // another paragraph. With the pass running BEFORE block
@@ -3265,7 +3255,7 @@ mod tests {
         );
     }
 
-    // --- Phase 5 Task 5: property-test target -----------------------------
+    // --- property-test target ---------------------------------------------
     //
     // `pair_bare_toggles` is `pub(crate)`, unreachable from an integration
     // test under `tests/`. The mirror test over the shared vector file and

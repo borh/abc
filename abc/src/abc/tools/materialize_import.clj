@@ -11,8 +11,8 @@
   (fs/file input-dir name))
 
 (defn run-summary-status [input-dir]
-  ;; v0 simplification: reads entire file. TODO: stream to handle
-  ;; run summaries with thousands of work results.
+  ;; Reads entire file into memory; large run summaries may OOM.
+  
   (let [summary-file (fs/file input-dir "run-summary.jsonl")
         events (when (fs/exists? summary-file)
                  (files/read-json-lines summary-file))]

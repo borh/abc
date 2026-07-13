@@ -1,7 +1,7 @@
 //! Rust↔Python mirror test + property-test target for the bare-toggle
 //! inline-container classifier (`pair_bare_toggles` in `src/lib.rs`,
 //! applied AFTER block classification to every built content array via
-//! `pair_bare_toggles_in_blocks` — plan amendment 2; Phase 5 Task 4).
+//! `pair_bare_toggles_in_blocks`.
 //!
 //! `pair_bare_toggles` itself is `pub(crate)` — this integration test
 //! reaches it only indirectly, through the crate's public
@@ -14,7 +14,7 @@
 //! that must call a `pub(crate)` function directly.
 //!
 //! Mirror test (Step 1): reads the shared vector file
-//! `reports/aat-fidelity/bare-toggle-model-vectors.json` (Task 2), the
+//! `reports/aat-fidelity/bare-toggle-model-vectors.json`, the
 //! same vectors `reports/aat-fidelity/bare-toggle-placement.py`'s
 //! `classify_tokens` classifies on the Python side. This side asserts the
 //! OBSERVABLE adapter outcome only — container counts and raw-node
@@ -201,7 +201,7 @@ fn bare_toggle_line() -> impl Strategy<Value = String> {
 }
 
 /// 1-3 generated lines joined with `\n` — the shared "token soup"
-/// generator (Phase 5 Task 5 spec).
+/// generator.
 fn bare_toggle_doc() -> impl Strategy<Value = String> {
     prop::collection::vec(bare_toggle_line(), 1..=3).prop_map(|lines| lines.join("\n"))
 }
@@ -424,7 +424,7 @@ proptest! {
         assert_nesting_well_formed(&value);
     }
 
-    /// Property 3 (ADAPTER-level determinism, per the task spec): running
+    /// Property 3 (ADAPTER-level determinism): running
     /// the whole public pipeline (`aat_json_from_bytes` — decode, sanitize,
     /// parse, classify, serialize) twice on the same input yields identical
     /// output bytes, hence identical JSON. Byte equality is deliberately

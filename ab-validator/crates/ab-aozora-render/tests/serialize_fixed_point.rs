@@ -74,7 +74,7 @@ fn fixed_point_on_gaiji_reference() {
 
 #[test]
 fn fixed_point_on_standalone_gaiji() {
-    // No-`※` standalone external-character notes (#122) must round-trip
+    // No-`※` standalone external-character notes must round-trip
     // *without* gaining a `※` — the `standalone` flag suppresses it.
     for src in [
         "［＃「※」は「祿－示」、第3水準1-84-27、144-上-9］",

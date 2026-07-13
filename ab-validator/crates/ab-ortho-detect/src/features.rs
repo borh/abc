@@ -178,7 +178,7 @@ fn count_immediate_bigram_echoes(chars: &[char]) -> usize {
 
 /// Canonical feature vector order used by the ML trainer + runtime classifier.
 /// The model's weight vector indexes match this order. DO NOT reorder without
-/// retraining + rehashing (spec Decision #10 partitions the model hash by
+/// retraining + rehashing partitions the model hash by
 /// this exact order).
 pub const FEATURE_NAMES: &[&str] = &[
     "total_chars",

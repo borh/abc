@@ -158,7 +158,7 @@ pub const fn has_utf8_bom(input: &[u8]) -> bool {
 pub mod gaiji;
 
 pub mod suijun;
-/// Reverse JIS 水準 classifier (issue #89), re-exported flat so callers
+/// Reverse JIS 水準 classifier, re-exported flat so callers
 /// reach it as `ab_aozora_facade::encoding::jis_level` / `Suijun` (the umbrella
 /// wildcard-re-exports this crate).
 #[doc(inline)]

@@ -14,7 +14,7 @@
 //! * [`aozora_fragment`] — mixed plain text + Aozora trigger glyphs,
 //!   the workhorse strategy for "parse doesn't crash and doesn't leak"
 //!   properties. Includes long `-`/`=`/`_` decorative rule rows so
-//!   Tier H (setext-vs-decorative-rule) fires naturally.
+//!   setext-vs-decorative-rule property fires naturally.
 //! * [`pathological_aozora`] — unbalanced bracket shapes, runaway
 //!   delimiters, adjacent paired-container opens without closes. Drives
 //!   the "parse is total" and "malformed input never panics" properties.
@@ -93,7 +93,7 @@ pub fn hiragana_fragment(max_len: usize) -> impl Strategy<Value = String> {
 /// well-formedness gate on the lexer's own diagnostics.
 ///
 /// The decorative rule atoms (≥ 10 repeats of `-`/`=`/`_`) are the
-/// bait for Tier H — the sanitize stage must isolate them so
+/// bait for the setext rule — the sanitize stage must isolate them so
 /// `CommonMark` does not promote the preceding paragraph into a setext
 /// heading. Inputs like `prose\n----------\nbody` must stay as three
 /// paragraphs + `<hr>`, not `<h2>prose</h2>`.
@@ -117,7 +117,7 @@ pub fn aozora_fragment(max_atoms: usize) -> impl Strategy<Value = String> {
         Just("。".to_owned()),
         Just(" ".to_owned()),
         // Decorative rule rows — 10 to 50 repeats of the three setext
-        // / thematic-break chars. Exercised via Tier H. The row is
+        // / thematic-break chars. Exercised via the setext rule. The row is
         // emitted bare so the surrounding atoms decide whether a
         // newline brackets it.
         Just("-".repeat(12)),

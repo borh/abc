@@ -1,5 +1,5 @@
 //! Walks `AOZORA_CORPUS_ROOT` and verifies the source-region ownership
-//! tiling and minimal-diff splice (#202) hold for every real document:
+//! tiling and minimal-diff splice hold for every real document:
 //!
 //! * [`ab_aozora_facade::Tree::regions`] is a complete, gap-free, ordered,
 //!   non-overlapping cover of the verbatim (sanitized) source — the

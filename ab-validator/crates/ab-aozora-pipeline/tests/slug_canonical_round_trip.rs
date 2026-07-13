@@ -1,4 +1,4 @@
-//! Phase 1.3 (editor-integration sprint) — pin every entry in the
+//! pin every entry in the
 //! canonical [`ab_aozora_spec::SLUGS`] table against the live classify-stage
 //! classifier.
 //!

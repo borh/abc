@@ -1271,7 +1271,7 @@ impl Diagnostic {
     ///
     /// Translates the `span` (and the miette `at` caret, which the
     /// constructors always derive from `span`) by `by`. Used by the
-    /// incremental re-parse engine (#237) to lift a diagnostic produced
+    /// incremental re-parse engine to lift a diagnostic produced
     /// by lexing a document *segment* — whose offsets are segment-local —
     /// back into whole-document coordinates by adding the segment's start
     /// offset.

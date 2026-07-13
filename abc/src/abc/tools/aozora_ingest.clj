@@ -3,7 +3,7 @@
   an Aozora list_person_all_extended ZIP slice for a given work-id.
   Validates the result against the schema and asserts schema-hash
   self-consistency before writing. Optionally refreshes a manifest
-  (Task 11)."
+  ."
   (:refer-clojure :exclude [run!])
   (:require [abc.tools.aozora-csv :as ac]
             [abc.tools.files :as files]
@@ -304,7 +304,7 @@
                (update acc :skipped conj work-id))))
          {:plans [] :skipped []}
          (sort-by key rows-by-work))
-        ;; corpus-level shared-person reconciliation: plans arrive sorted by
+        ;; corpus-level shared-person reconciliation: records arrive sorted by
         ;; work id, so the FIRST carrier of a pid is the smallest work id.
         carriers-by-pid
         (reduce (fn [m {:keys [work-id person-records]}]

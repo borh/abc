@@ -1,5 +1,5 @@
 (ns abc.tools.diagram.architecture-graph
-  "Tier 2 pure builder: architecture-stages.edn -> dataflow graph value, cross-
+  "Pure builder: architecture-stages.edn -> dataflow graph value, cross-
    checked against schema-contracts.json and the ADR files. See ADR 0029."
   (:require [abc.tools.adr :as adr]
             [abc.tools.files :as files]

@@ -1,4 +1,4 @@
-//! Issue 2 P5 — ortho-normalization reproducibility golden.
+//! ortho-normalization reproducibility golden.
 //!
 //! Pins the full **detector-driven** input-derivation chain that the warehouse
 //! run path executes (pipeline.rs: `sentence_split` → `OrthoDetector::detect`

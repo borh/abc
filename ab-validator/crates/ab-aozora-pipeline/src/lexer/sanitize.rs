@@ -86,7 +86,7 @@ pub struct SanitizeOutput<'s> {
 /// output bytes `dst_start..dst_end`.
 ///
 /// Recorded in a single transform step's OWN input/output coordinates
-/// (Task 13 offset-map groundwork for Phase 3 span semantics; consumed by
+/// (offset-map groundwork for span metrics; consumed by
 /// [`OffsetMap`] / [`SanitizeMaps`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MapEdit {
@@ -180,7 +180,7 @@ impl SanitizeMaps {
     }
 }
 
-/// [`sanitize`] plus the composed offset map (Phase 3 span semantics).
+/// [`sanitize`] plus the composed offset map .
 #[derive(Debug)]
 pub struct SanitizeMappedOutput<'s> {
     pub text: Cow<'s, str>,
@@ -251,7 +251,7 @@ pub fn sanitize(source: &str) -> SanitizeOutput<'_> {
 ///
 /// Composes one [`OffsetMap`] per transform step, so a downstream consumer
 /// can translate a byte offset in the sanitized `text` back to the
-/// corresponding offset in `source` (Task 13 groundwork for Phase 3 span
+/// corresponding offset in `source` (groundwork for span
 /// semantics). Mirrors `sanitize`'s exact step sequence and MUST stay
 /// bit-identical to it — both delegate to the same `_core` functions, so
 /// there is only one implementation of each step to drift.
@@ -437,7 +437,7 @@ fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic
 /// records one [`MapEdit`] per rewritten `〔...〕` span — whole bracketed
 /// run (open through close) in THIS step's input coordinates to the same
 /// run in its output coordinates — since accent decomposition is not
-/// byte-length-preserving inside the span (Task 13 offset-map groundwork).
+/// byte-length-preserving inside the span (offset-map groundwork).
 fn rewrite_accent_spans_collecting_core(
     input: &str,
     diagnostics: &mut Vec<Diagnostic>,
@@ -581,7 +581,7 @@ pub fn isolate_decorative_rules(input: &str) -> String {
 
 /// Core of [`isolate_decorative_rules`]; when `edits` is `Some`, records
 /// one [`MapEdit`] per inserted blank line — an empty source span (the
-/// insertion point) to the one-byte `\n` it produced (Task 13 offset-map
+/// insertion point) to the one-byte `\n` it produced (offset-map
 /// groundwork).
 fn isolate_decorative_rules_core(input: &str, mut edits: Option<&mut Vec<MapEdit>>) -> String {
     let bytes = input.as_bytes();
@@ -676,7 +676,7 @@ pub fn normalize_line_endings(input: &str) -> String {
 
 /// Core of [`normalize_line_endings`]; when `edits` is `Some`, records
 /// one [`MapEdit`] per `\r\n`→`\n` or lone `\r`→`\n` substitution in this
-/// step's own input/output coordinates (Task 13 offset-map groundwork).
+/// step's own input/output coordinates (offset-map groundwork).
 fn normalize_line_endings_core(input: &str, mut edits: Option<&mut Vec<MapEdit>>) -> String {
     let bytes = input.as_bytes();
     let mut out = String::with_capacity(input.len());
@@ -1248,7 +1248,7 @@ mod tests {
     }
 
     // -------------------------------------------------------------
-    // Task 13: `sanitize_mapped` + `OffsetMap` — offset bookkeeping
+    // `sanitize_mapped` + `OffsetMap` — offset bookkeeping
     // across the five sanitize transform steps.
     // -------------------------------------------------------------
 

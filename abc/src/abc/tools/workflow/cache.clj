@@ -1,6 +1,6 @@
 (ns abc.tools.workflow.cache
   (:require [abc.tools.hash :as hash]
-            [clojure.java.io :as io]))
+            [babashka.fs :as fs]))
 
 (defn node-cache-key [{:keys [workflow-id target-key node-key node-kind
                               graph-version impl-id impl-hash input-value-hashes
@@ -41,9 +41,9 @@
             :else
             (let [path (:path output)
                   recorded (:content_hash output)
-                  f (io/file (:base-dir env) path)]
+                  f (fs/file (:base-dir env) path)]
               (cond
-                (not (.exists f))
+                (not (fs/exists? f))
                 {:status :invalid :reason "missing output path" :evidence {:path path}}
 
                 :else

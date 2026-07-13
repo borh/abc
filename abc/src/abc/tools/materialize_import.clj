@@ -2,19 +2,19 @@
   (:require [abc.tools.cli :as abc-cli]
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
-            [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [taoensso.telemere :as tel]))
 
 (def default-generated-at "2026-04-26T00:00:00Z")
 
 (defn imported-file [input-dir name]
-  (io/file input-dir name))
+  (fs/file input-dir name))
 
 (defn run-summary-status [input-dir]
   ;; v0 simplification: reads entire file. TODO: stream to handle
   ;; run summaries with thousands of work results.
-  (let [summary-file (io/file input-dir "run-summary.jsonl")
-        events (when (.exists summary-file)
+  (let [summary-file (fs/file input-dir "run-summary.jsonl")
+        events (when (fs/exists? summary-file)
                  (files/read-json-lines summary-file))]
     (or (some #(when (= "run-complete" (get % "event"))
                  (get % "status"))
@@ -33,20 +33,20 @@
         divergence-file (imported-file input-dir "divergence.jsonl")
         source-region-coverage-file (imported-file input-dir "source-region-coverage.json")]
     (cond-> [(sidecar "warnings" warnings-file "application/jsonl" "warnings.jsonl")]
-      (.exists divergence-bundle-file)
+      (fs/exists? divergence-bundle-file)
       (conj (sidecar "mapping-divergence"
                      divergence-bundle-file
                      "application/json"
                      "divergence.json"))
 
-      (and (not (.exists divergence-bundle-file))
-           (.exists divergence-file))
+      (and (not (fs/exists? divergence-bundle-file))
+           (fs/exists? divergence-file))
       (conj (sidecar "mapping-divergence"
                      divergence-file
                      "application/jsonl"
                      "divergence.jsonl"))
 
-      (.exists source-region-coverage-file)
+      (fs/exists? source-region-coverage-file)
       (conj (sidecar "source-region-coverage"
                      source-region-coverage-file
                      "application/json"
@@ -109,11 +109,11 @@
 
 (defn materialize-import! [{:keys [input-dir output-dir generated-at]
                             :or {generated-at default-generated-at}}]
-  (let [input-dir (io/file input-dir)
-        output-dir (io/file output-dir)
+  (let [input-dir (fs/file input-dir)
+        output-dir (fs/file output-dir)
         manifest-inputs (files/read-json (imported-file input-dir "manifest-inputs.json"))
-        parser-file (io/file output-dir "parser-ir.manifest.json")
-        warnings-file (io/file output-dir "warnings.manifest.json")]
+        parser-file (fs/file output-dir "parser-ir.manifest.json")
+        warnings-file (fs/file output-dir "warnings.manifest.json")]
     (manifest/write-json-file! parser-file
                                (parser-ir-manifest input-dir manifest-inputs generated-at))
     (manifest/write-json-file! warnings-file

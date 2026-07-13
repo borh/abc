@@ -1,5 +1,6 @@
 (ns abc.tools.workflow
   (:require [abc.tools.manifest :as manifest]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.set :as set]))
 
@@ -216,8 +217,8 @@
   [{:keys [workflow-id run-id output-root initial-state steps clock]
     :or {clock now-utc
          run-id "local-run"}}]
-  (let [output-root (io/file output-root)
-        _ (.mkdirs output-root)
+  (let [output-root (fs/file output-root)
+        _ (fs/create-dirs output-root)
         plan (validate-plan! {:steps steps} initial-state)
         ordered-steps (:steps plan)
         started-at (clock)]

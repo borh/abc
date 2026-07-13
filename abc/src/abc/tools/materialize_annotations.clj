@@ -3,7 +3,7 @@
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.parser-ir-plaintext :as plaintext]
-            [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [clojure.string :as string]))
 
 (def activity-id "https://w3id.org/abc/activity/materialize-annotations")
@@ -86,9 +86,9 @@
 (defn materialize-annotations!
   [{:keys [producer-manifest parser-ir annotation-policy
            input-plaintext-policy-hash output-dir generated-at]}]
-  (let [output-dir (io/file output-dir)
-        annotations-file (io/file output-dir "body-annotations.json")
-        manifest-file (io/file output-dir "annotation.manifest.json")
+  (let [output-dir (fs/path output-dir)
+        annotations-file (fs/file output-dir "body-annotations.json")
+        manifest-file (fs/file output-dir "annotation.manifest.json")
         {:keys [annotations]} (plaintext/render-with-annotations parser-ir)]
     (manifest/write-json-file! annotations-file
                                (annotation-value
@@ -109,11 +109,12 @@
 (def annotation-input-view-kind "parser-ir-body-annotations-v1")
 
 (defn- registry-policies [registry-dir]
-  (->> (.listFiles (io/file registry-dir))
-       (filter #(and (.isFile %) (string/ends-with? (.getName %) ".json")))
-       (sort-by #(.getName %))
-       (mapv (fn [f] {:path (str f)
-                      :policy (files/read-json f)}))))
+  (->> (fs/list-dir registry-dir)
+       (filter #(and (fs/regular-file? %)
+                     (string/ends-with? (str (fs/file-name %)) ".json")))
+       (sort-by #(str (fs/file-name %)))
+       (mapv (fn [path] {:path (str path)
+                         :policy (files/read-json (fs/file path))}))))
 
 (defn- resolve-policy-by-hash [registry-dir policy-hash]
   (let [matches (filterv #(= policy-hash

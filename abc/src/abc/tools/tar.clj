@@ -1,5 +1,6 @@
 (ns abc.tools.tar
-  (:require [clojure.java.io :as io]
+  (:require [babashka.fs :as fs]
+            [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [java.nio.charset StandardCharsets]
            [org.apache.commons.compress.compressors.zstandard
@@ -54,12 +55,13 @@
     header))
 
 (defn write-tar! [output-file entries]
-  (let [output-file (io/file output-file)]
-    (when-let [parent (.getParentFile output-file)]
-      (.mkdirs parent))
+  (let [output-path (fs/path output-file)
+        output-file (fs/file output-path)]
+    (when-let [parent (fs/parent output-path)]
+      (fs/create-dirs parent))
     (with-open [out (tar-output-stream output-file)]
       (doseq [{:keys [member-path source-file]} entries
-              :let [source-file (io/file source-file)
+              :let [source-file (fs/file source-file)
                     size (.length source-file)]]
         (.write out (header member-path size))
         (io/copy source-file out)

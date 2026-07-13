@@ -14,15 +14,12 @@
 (def legacy-filesystem-namespaces
   '#{abc.tools.adr abc.tools.annotation-join-stats
      abc.tools.annotation-join-stats-run
-     abc.tools.materialize-annotations abc.tools.materialize-import
-     abc.tools.materialize-publication abc.tools.path-containment
-     abc.tools.snapshot-index
+     abc.tools.path-containment
      abc.tools.soranoha abc.tools.soranoha-build-publication
      abc.tools.soranoha-stage-publication
      abc.tools.source-bundle
-     abc.tools.source-snapshot-workset abc.tools.materialize-source-snapshot
-     abc.tools.tar abc.tools.validate-corpus
-     abc.tools.validate-design-bundle abc.tools.workflow abc.tools.workflow.cache})
+     abc.tools.validate-corpus
+     abc.tools.validate-design-bundle})
 
 (def permanent-files-operations
   '{abc.tools.json
@@ -297,15 +294,12 @@
 (deftest legacy-filesystem-baseline-test
   (is (= '#{abc.tools.adr abc.tools.annotation-join-stats
             abc.tools.annotation-join-stats-run
-            abc.tools.materialize-annotations abc.tools.materialize-import
-            abc.tools.materialize-publication abc.tools.path-containment
-            abc.tools.snapshot-index
+            abc.tools.path-containment
             abc.tools.soranoha abc.tools.soranoha-build-publication
             abc.tools.soranoha-stage-publication
             abc.tools.source-bundle
-            abc.tools.source-snapshot-workset abc.tools.materialize-source-snapshot
-            abc.tools.tar abc.tools.validate-corpus
-            abc.tools.validate-design-bundle abc.tools.workflow abc.tools.workflow.cache}
+            abc.tools.validate-corpus
+            abc.tools.validate-design-bundle}
          legacy-filesystem-namespaces)))
 
 (deftest production-filesystem-policy-test

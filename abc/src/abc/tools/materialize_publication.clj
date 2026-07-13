@@ -13,6 +13,7 @@
             [abc.tools.schematron :as schematron]
             [abc.tools.tei :as tei]
             [abc.tools.tei-header :as tei-header]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]
@@ -28,7 +29,8 @@
 (def preservation-schema-version "0.3.0")
 
 (defn- write-string-file! [file value]
-  (io/make-parents file)
+  (when-let [parent (fs/parent file)]
+    (fs/create-dirs parent))
   (spit file value)
   file)
 
@@ -37,7 +39,7 @@
                             (for [contributor (get metadata-record "contributors")
                                   :let [person-id (get contributor "person_id")
                                         person (files/read-json
-                                                (io/file persons-dir
+                                                (fs/file persons-dir
                                                          (str person-id ".json")))]]
                               [person-id person]))]
     {:work (get metadata-record "work")
@@ -59,10 +61,10 @@
 (defonce ^:private static-file-hash-cache (atom {}))
 
 (defn- static-file-hash [path]
-  (let [file (io/file path)
-        cache-key [(.getCanonicalPath file) (.lastModified file)]]
+  (let [path (fs/canonicalize path)
+        cache-key [(str path) (fs/last-modified-time path)]]
     (or (get @static-file-hash-cache cache-key)
-        (let [hash (str "sha256:" (files/sha256-file path))]
+        (let [hash (str "sha256:" (files/sha256-file (fs/file path)))]
           (swap! static-file-hash-cache assoc cache-key hash)
           hash))))
 
@@ -167,10 +169,10 @@
                              (:findings schematron-result)))}))
 
 (defn- adjacent-source-manifest-path [parser-ir-path]
-  (let [parent (some-> (io/file parser-ir-path) .getParentFile)
+  (let [parent (fs/parent parser-ir-path)
         source-manifest (when parent
-                          (io/file parent "source.manifest.json"))]
-    (when (and source-manifest (.exists source-manifest))
+                          (fs/file parent "source.manifest.json"))]
+    (when (and source-manifest (fs/exists? source-manifest))
       (str source-manifest))))
 
 (defn- read-source-manifest [parser-ir-path source-manifest-path]
@@ -575,8 +577,8 @@
   [{:keys [parser-ir-path metadata-record-path persons-dir output-dir
            source-manifest-path generated-at]
     :or {generated-at default-generated-at}}]
-  (let [output-dir (io/file output-dir)
-        _ (.mkdirs output-dir)
+  (let [output-dir (fs/file output-dir)
+        _ (fs/create-dirs output-dir)
         parser-ir (files/read-json parser-ir-path)
         parser-ir (sentence-policy/ensure-publication-sentence-evidence! parser-ir)
         metadata-record (files/read-json metadata-record-path)
@@ -588,12 +590,12 @@
                        :char-declarations (:char_declarations tei-result)
                        :orthographic-sentence-normalization?
                        (orthographic-sentence-normalization? parser-ir)))
-        plain-file (io/file output-dir "plain.txt")
-        tei-file (io/file output-dir "tei.xml")
-        preservation-file (io/file output-dir "preservation.json")
-        plaintext-manifest-file (io/file output-dir "plaintext.manifest.json")
-        tei-manifest-file (io/file output-dir "tei.manifest.json")
-        tei-validation-result-file (io/file output-dir "tei-validation-result.json")]
+        plain-file (fs/file output-dir "plain.txt")
+        tei-file (fs/file output-dir "tei.xml")
+        preservation-file (fs/file output-dir "preservation.json")
+        plaintext-manifest-file (fs/file output-dir "plaintext.manifest.json")
+        tei-manifest-file (fs/file output-dir "tei.manifest.json")
+        tei-validation-result-file (fs/file output-dir "tei-validation-result.json")]
     (write-string-file! plain-file (:text plaintext-result))
     (write-string-file! tei-file
                         (tei-header/hiccup->pretty-xml-string
@@ -738,10 +740,10 @@
         concurrency (batch-concurrency jobs (count batch-jobs))
         results (materialize-batch-jobs! batch-jobs concurrency)
         passed (count (filter #(= "passed" (get % "status")) results))
-        summary-file (some-> summary-path io/file)
-        summary-dir (some-> summary-file .getParentFile)
-        summary-dir (or summary-dir (some-> summary-file .getAbsoluteFile .getParentFile))
-        workflow-run-file (some-> summary-dir (io/file "workflow-run.json"))
+        summary-file (some-> summary-path fs/file)
+        summary-dir (or (some-> summary-path fs/parent)
+                        (fs/absolutize "."))
+        workflow-run-file (some-> summary-dir (fs/file "workflow-run.json"))
         summary (cond-> {"schema_version" "abc-materialize-publications-batch-v1"
                          "jobs_total" (count results)
                          "jobs_concurrency" concurrency

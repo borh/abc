@@ -7,7 +7,7 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-bundle :as source-bundle]
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
-            [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [taoensso.telemere :as tel]))
 
 (def default-generated-at "2026-07-04T00:00:00Z")
@@ -31,8 +31,8 @@
       (required-work-value work k)))
 
 (defn- relative-path [from-file to-file]
-  (files/relative-path (.getCanonicalFile (.getParentFile (io/file from-file)))
-                       (.getCanonicalFile (io/file to-file))))
+  (files/relative-path (fs/canonicalize (fs/parent from-file))
+                       (fs/canonicalize to-file)))
 
 (defn- compact-hashes [& values]
   (vec (keep identity values)))
@@ -344,7 +344,7 @@
                   "snapshot_hash" snapshot-hash
                   "snapshot_identity_object" identity-object
                   "notes" "Source corpus snapshot over selected AAT JSON files. The hash is SHA-256 over the RFC8785/JCS canonical snapshot_identity_object."}
-        output-file (io/file output-path)]
+        output-file (fs/file output-path)]
     (manifest/write-json-file! output-file snapshot)
     (let [works (mapv (fn [work]
                         (let [manifest-path (work-file-path
@@ -356,7 +356,7 @@
                           (manifest/write-json-file! manifest-path
                                                      manifest-value)
                           {:slug (required-work-value work :slug)
-                           :source-manifest (io/file manifest-path)}))
+                           :source-manifest (fs/file manifest-path)}))
                       (map-value workset :works))]
       {:snapshot output-file
        :snapshot-hash snapshot-hash

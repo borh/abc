@@ -15,9 +15,32 @@ claim-registration rows. Focused Clojure tests and operational Nix commands
 have different trust and freshness properties. They must not share a nominal
 closure mechanism that is strict enough for neither.
 
-This design is a prerequisite to Task 7 of
-`2026-07-12-adr-evidence-migration-foundation.md`. It does not create evidence
-bundles, register claims, or change governance from audit mode.
+This design revises the implementation contract in
+`2026-07-12-adr-evidence-migration-foundation.md`; it is not merely an
+additional prerequisite. Before implementation resumes, that plan must be
+amended so the two documents do not remain concurrently authoritative.
+
+Specifically, this design supersedes:
+
+- Task 2B's requirement that `--repo-root` equal the Git worktree root;
+- Task 7's 42-descriptor/42-manifest count and its prohibition on observation
+  key reuse when rows execute the same Var or command;
+- Task 7's four independently named Nix descriptors; and
+- Task 8's 42-bundle capture loop.
+
+It also supersedes the `derive-nix-clojure-source-closure` instructions in the
+unexecuted schema/RDF/TEI, temporal/person/ingest, and parser/publication family
+plans. Their operational boundaries must use the entrypoint-namespace closure
+protocol when those plans are revised for execution.
+
+The replacement contract is the three-root model, 37 observation descriptors
+and manifests, 37 run bundles, and 42 claim-support bindings described here.
+The foundation implementation plan must record Task 2B's landed single-root
+behavior as superseded, schedule its replacement in Task 6C, and update Tasks
+6C, 7, and 8 before implementation resumes. The three later family plans must
+be corrected before their own execution, but they do not block foundation
+capture. This design itself does not create evidence bundles, register claims,
+or change governance from audit mode.
 
 ## Grounded Failure Evidence
 
@@ -55,6 +78,17 @@ The incomplete Task 7 prototype is not an accepted artifact. It remains
 outside history until this prerequisite is implemented and independently
 reviewed.
 
+The corrected arithmetic is:
+
+| Boundary | Observations | Claim bindings | Distinct claims |
+|---|---:|---:|---:|
+| Focused Clojure | 35 | 38 | 32 |
+| Operational Nix | 2 | 4 | 3 |
+| Total | 37 | 42 | 35 |
+
+One event has one observation identity. Multiple bindings may select it; they
+do not manufacture additional measurements.
+
 ## Decision
 
 ### Keep focused-test safety separate from operational freshness
@@ -83,6 +117,21 @@ closure coordinates are hashed inputs, so this strengthens capture
 preconditions without changing the observation artifact consumed by
 governance.
 
+The existing test-only `:abc-adr-nix-clojure-closure-v1` shape is not retained
+as a second accepted closure protocol. Task 6C deletes
+`derive-nix-clojure-source-closure`, `validate-nix-clojure-closure!`, their
+focused-Var manifest fixtures, and tests that accept that schema before adding
+`:abc-adr-operational-closure-v1`. No committed descriptor or run bundle uses
+the retired shape, so no historical artifact is migrated. References in the
+three unexecuted family plans are planning debt corrected as stated above, not
+compatibility consumers.
+
+The unrelated use of `:invalid-nix-clojure-closure` for version-2 focused
+runner validation is renamed to `:invalid-focused-evidence-runner` in the same
+commit. Operational manifest problems use only
+`:invalid-operational-closure`. The old name is not aliased to either new
+problem kind.
+
 ### Foundation observation catalog and claim bindings
 
 Observation policy lives in
@@ -109,6 +158,19 @@ observation row as an observation-contract value and hashes that projection.
 The descriptor stores the catalog path, observation ID, and expected contract
 hash; offline validation recomputes the projection from the current catalog.
 
+The hash never serializes generic EDN. A pure
+`observation-contract-json-value` projection maps the closed catalog row to an
+I-JSON value with schema version
+`abc-foundation-observation-contract-v1`. JSON object keys are fixed ASCII
+field names; EDN keywords map through field-specific closed string enums;
+qualified symbols become their full dotted/slashed strings; paths are
+normalized repository-relative strings; vectors preserve their already
+validated order; and no sets, arbitrary map keys, tagged values, ratios,
+floating-point values, or integers outside the I-JSON range are admitted. The
+contract hash is `sha256:` plus the SHA-256 of the RFC 8785 canonical JSON UTF-8
+bytes produced by the repository's existing JCS implementation. Positive
+known-answer and cross-order tests pin the exact bytes and digest.
+
 The whole observation catalog and the registration template are not
 observation inputs. Changing an unrelated row or a claim binding therefore
 does not rewrite measurement history. Changing
@@ -131,12 +193,21 @@ claim tests. It writes the reviewed complete sorted finding vector to
 `data/adr-evidence/foundation-capture-conformance-debt.edn`, with schema
 version `:abc-foundation-capture-conformance-debt-v1`. The gate requires exact
 equality with that value; “at least these findings” is not a passing state.
-The vector includes the 14 unresolved Vars, the 21 existing Vars without
-direct ownership, and every additional capability or source-reading finding
-produced by the completed Task 6C analyzer. Task 7 atomically changes the debt
-value to `[]` and requires observed findings to equal it before descriptors
-are admitted. The debt value is a temporary migration control, not an
-observation input. No production gate scrapes implementation-plan Markdown.
+The vector contains normalized finding identities, not diagnostic messages,
+line/column coordinates, analyzer traversal order, or stack data. Each identity
+is a closed tuple of problem kind plus the stable semantic coordinates relevant
+to that kind, such as focus Var, target Var/JVM head, or repository-relative
+path. It includes the 14 unresolved Vars, the 21 existing Vars without direct
+ownership, and every additional capability or source-reading admission blocker
+produced by the completed Task 6C analyzer.
+
+Human-readable diagnostics remain an accumulated derived report but are not
+the equality key. An analyzer change that alters admission semantics requires
+an explicit reviewed debt update; an edit that only changes messages or source
+positions does not. Task 7 atomically changes the normalized debt value to `[]`
+and requires observed identities to equal it before descriptors are admitted.
+The debt value is a temporary migration control, not an observation input. No
+production gate scrapes implementation-plan Markdown.
 
 ### Alias-aware source reading
 
@@ -169,13 +240,22 @@ authorized only inside the ephemeral-root capability described below.
 
 ### Owned ephemeral roots
 
-Add one reviewed helper that creates a temporary directory outside the
-repository identity root, activates `with-ephemeral-root`, invokes one finite
-callback with the root, and removes the directory in `finally`. It may be used
-only inside an active read trace.
+`abc.tools.evidence-io/with-ephemeral-root` already supplies the authorization
+primitive: it requires an active read trace, rejects overlap with the identity
+root, tracks ephemeral reads separately, and scopes one caller-supplied root.
+It does not create or remove that root and does not currently know the outer
+Git workspace when the identity root is `abc/`.
 
-The helper is a registered higher-order capability with exactly one callback
-position. It cannot:
+Task 6C retains that primitive and adds one reviewed owner,
+`with-owned-ephemeral-root`. The read-trace context gains the canonical
+workspace root, defaulting to the identity root for existing callers. The new
+owner creates a temporary directory outside both roots, delegates
+authorization to `with-ephemeral-root`, invokes one finite callback with the
+root, and removes the directory in `finally`. Both helpers remain invalid
+outside an active read trace.
+
+The new owner is a registered higher-order capability with exactly one
+callback position. It cannot:
 
 - create or select a root inside the repository/workspace;
 - suppress a repository read;
@@ -204,6 +284,13 @@ the Git root. The command working directory is `repo-root`, preserving
 must be the exact Git root containing the monorepo sentinels. Cleanliness is
 checked at `workspace-root` with untracked files included.
 
+For these two commands, flake resolution begins at `abc/`. The component
+`abc/flake.nix` and `abc/flake.lock` are determinants expressed relative to
+`repo-root`; the monorepo-root flake and lock are not evaluation inputs to
+`nix run .#validate-design-bundle` or the component source-corpus check. The
+workspace root affects cleanliness and provenance, not component-flake
+identity.
+
 Before command execution, capture canonicalizes `staging-root` and `output`,
 requires the output to be a direct contained target below the staging root,
 and rejects staging or output paths inside `repo-root` or `workspace-root`.
@@ -213,15 +300,16 @@ exist.
 One pure output-boundary function owns these relations and returns a closed
 validated-destination value containing the canonical staging root, canonical
 output target, and deterministic sibling-candidate relation. It performs no
-allocation. It proves that the output parent is the staging root, so a caller
-cannot reinterpret “contained” as arbitrary descendant traversal. The atomic
-writer accepts that value, not raw path arguments, and owns the filesystem
-transition: exclusive `CREATE_NEW` allocation of a collision-free sibling,
-serialization, fsync, and atomic rename. This guarantees that a successful
-process does not publish a partial artifact; it does not claim persistence
-across power loss. Failure removes the temporary file and never replaces an
-existing artifact. Tests must show that neither the capture path nor the writer
-can bypass the owner with an unvalidated string or `Path`.
+filesystem allocation or mutation. It proves that the output parent is the
+staging root, so a caller cannot reinterpret “contained” as arbitrary
+descendant traversal. The atomic writer accepts that value, not raw path
+arguments, and owns the filesystem transition: exclusive `CREATE_NEW`
+allocation of a collision-free sibling, serialization, fsync, and atomic
+rename. This guarantees that a successful process does not publish a partial
+artifact; it does not claim persistence across power loss. Failure removes the
+temporary file and never replaces an existing artifact. Tests must show that
+neither the capture path nor the writer can bypass the owner with an
+unvalidated string or `Path`.
 
 ### Operational closure manifest
 
@@ -236,11 +324,12 @@ The closed EDN value is:
 
 `entrypoint-namespaces` is a nonempty, sorted, unique vector of dotted
 namespace symbols. `owned-namespace-prefixes` is the closed sorted component
-policy and is exactly `[abc]`; an unresolved namespace under an owned prefix is
-always an error, never an external dependency. `paths` is the exact sorted,
-unique, contained transitive
-repository-local namespace closure derived from those namespaces' `ns`
-`:require` declarations.
+policy and is exactly `[abc]`. Prefix matching is by namespace segment:
+`abc` and `abc.*` match, while `abcdef.*` does not. An unresolved namespace
+under an owned prefix is always an error, never an external dependency.
+`paths` is the exact sorted, unique, contained transitive repository-local
+namespace closure derived from those namespaces' `ns` `:require`
+declarations.
 
 Resolution examines the Cartesian product of `[src test]` and `[.clj .cljc]`
 in that deterministic enumeration order for each namespace coordinate.
@@ -273,9 +362,7 @@ fields. Each closed contract contains:
         "nix run .#validate-design-bundle"]
  :environment-policy :nix-local-v1
  :entrypoint-namespaces [abc.tools.validate-design-bundle]
- :determinant-policy
- {:checker :validate-design-bundle-v1
-  :paths ["flake.nix" "flake.lock" ...]}
+ :determinant-paths ["flake.nix" "flake.lock" ...]
  :observation-key "design-bundle-operational-passes"}
 ```
 
@@ -289,28 +376,21 @@ observation. The narrow temporary-materialization focus remains the evidence
 for `ADR-0009-C6`; it does not impersonate the Nix app for `ADR-0011-C1`.
 Running an identical command under different names is forbidden.
 
-The determinant policy is data interpreted by one shared checker module; it is
-not an open callback protocol. `:paths` is a closed sorted vector and
-`:checker` selects one closed pure relation. Capture loads the named contained
-paths into an immutable `path -> bytes` value and invokes the checker with only
-that value and the selected observation contract. A checker returns a sorted
-vector of problem values. It cannot access a repository root, environment,
-network, process, clock, or other file API. Its statically derived Clojure
-namespace closure is bound as part of the artifact policy inputs.
-
-The design-bundle policy includes the component flake and lock, the app
-definition, schemas, fixtures, and the exact
-`validate-design-bundle/evidence-input-paths` union. The source-bundle-corpus
-policy includes the component flake and lock, source-bundle report fixture, and
-pinned-source identity. Their closed checkers verify the structural relation
-between command, flake app/check, and Clojure entrypoint from the supplied byte
-values.
+`determinant-paths` is a closed sorted reviewed value. The design-bundle set
+includes the component flake and lock, the app definition, schemas, fixtures,
+and the exact `validate-design-bundle/evidence-input-paths` union. The
+source-bundle-corpus set includes the component flake and lock, source-bundle
+report fixture, and pinned-source identity.
 
 Nix determinant completeness is a reviewed policy value, not claimed to be
 automatically discovered from arbitrary Nix evaluation. Mechanical guarantees
-are limited to exact agreement with that reviewed policy, the namespace
-closure, and the bound locks. Changing a determinant path or checker relation
-stales the artifact.
+are limited to exact agreement with that reviewed set, the recomputed namespace
+closure, current hashes, and the bound locks. The executed command proves the
+named flake app/check's result; the catalog's explanation that a particular
+Clojure entrypoint implements it remains a reviewed relation. This design does
+not claim that source-text matching can prove Nix evaluation semantics.
+Changing a determinant path or entrypoint namespace changes the selected
+observation-contract hash and stales the artifact.
 
 ### Operational descriptor
 
@@ -332,7 +412,8 @@ this closed shape:
  "docs/evidence/adr-inputs/design-bundle-operational.edn"
  :catalog-path "data/adr-evidence/foundation-observation-catalog.edn"
  :observation-id :design-bundle-operational
- :observation-contract-sha256 "<sha256-of-canonical-observation-row>"
+ :observation-contract-sha256 "sha256:<64 lowercase hex digits>"
+ :input-set-mode "exact-v1"
  :input-profile {:kind "repo-files-v1"
                  :roots []
                  :explicit [...]}
@@ -341,18 +422,25 @@ this closed shape:
 
 The closure manifest basename equals the descriptor basename and is itself an
 explicit input. `:tool`, `:argv`, entrypoints, observation key, and determinant
-policy come from the catalog observation row; the descriptor must equal them
+paths come from the catalog observation row; the descriptor must equal them
 and `:tool` must equal the first argv element. Claim bindings are validated
 separately and do not participate in the observation-contract hash. Version 1
 continues to reject the new fields. Version 2 continues to require
 `:runtime-input-manifest` and reject the new catalog and operational fields.
 No existing descriptor is silently reinterpreted.
 
-For an operational descriptor, the explicit input set is exact rather than a
-minimum. It equals the union of:
+Generic `abc-adr-evidence-run-v1` validation retains the parent contract for
+`repo-files-v1`: explicit paths are the minimum and additional bound inputs are
+allowed and hash-checked. The stricter rule belongs to the operational
+descriptor protocol, not to that profile kind. Every operational-v1 descriptor
+requires `:input-set-mode "exact-v1"`; capture and the additional offline
+operational validator require the run bundle's actual input keys to equal the
+derived set. Dispatch is therefore by closed descriptor version and mode while
+the governance-consumed run-bundle profile keeps its existing meaning.
+
+For an operational descriptor, the derived exact set is the union of:
 
 - the descriptor and operational closure manifest;
-- the shared determinant-checker namespace closure;
 - `deps.edn`, `deps-lock.json`, and `tests.edn`;
 - every recomputed closure path; and
 - the command-specific Nix expression, flake lock, wrapper, schema, fixture,
@@ -375,10 +463,10 @@ Operational capture performs these steps in order:
 4. validate the closure-manifest coordinate before loading its value;
 5. resolve namespace candidates through the contained-coordinate boundary,
    validating each candidate before reading it, then recompute the closure;
-6. validate and canonicalize every determinant, explicit-input, and checker
-   coordinate before loading any bytes;
-7. load only those validated contained coordinates, execute the closed checker
-   relation, and compare the exact explicit set;
+6. validate and canonicalize every determinant and explicit-input coordinate,
+   derive the required set, and compare exact set equality before loading any
+   bytes;
+7. load and hash only those validated contained coordinates;
 8. require a clean Git worktree, including untracked files;
 9. execute the catalog-owned direct argv vector;
 10. require the worktree to remain clean;
@@ -410,13 +498,13 @@ described as hermetic execution.
 
 Evidence validation derives the descriptor path from the run-bundle artifact
 stem, loads the descriptor and current catalog, and reruns all shape, same-stem,
-closure, determinant-policy, and exact-input checks without executing the
-command. The descriptor, closure manifest, determinant-checker closure, and
-all derived inputs must occur in the bundle input map with current hashes. The validator
-also recomputes the canonical selected observation row and requires its hash
-to equal the descriptor's expected contract hash. The descriptor's own current
-file hash is already a run-bundle input. The catalog's unrelated rows and
-claim bindings are not observation inputs.
+closure, determinant-set, and exact-input checks without executing the command.
+The descriptor, closure manifest, and all derived inputs must occur in the
+bundle input map with current hashes. The validator also recomputes the
+canonical selected observation row and requires its hash to equal the
+descriptor's expected contract hash. The descriptor's own current file hash is
+already a run-bundle input. The catalog's unrelated rows and claim bindings are
+not observation inputs.
 
 A bundle missing its descriptor or bound policy artifacts is invalid even if
 its remaining hashes agree. This prevents hand-authored internally consistent
@@ -451,18 +539,22 @@ failure.
 
 ## Migration and Sequencing
 
-1. Land Task 6C source-reader, observation catalog, exact conformance-debt
-   value, ephemeral-root, operational manifest, descriptor, and capture
-   validation under tests. Governance stays in audit mode and no evidence
-   bundle is captured.
-2. Amend Task 7's file inventory to include every namespace containing a
+1. Amend foundation Tasks 2B, 6C, 7, and 8 to cite this design and remove the
+   superseded root, count, duplicate-observation, and capture-loop instructions.
+2. Land Task 6C: retire the test-only focused-Var Nix closure shape and old
+   problem name; add the alias-aware reader, observation catalog, normalized
+   exact conformance debt, owner around the existing ephemeral authorization
+   primitive, operational manifest/descriptor protocols, root separation, and
+   capture/offline validation under tests. Governance stays in audit mode and
+   no evidence bundle is captured.
+3. Amend Task 7's file inventory to include every namespace containing a
    planned focused Var and every newly authored narrow Var. Its commit stages
    all required test files as well as the descriptors, manifests, and
    registration template.
-3. Task 7 authors the 14 missing narrow Vars, gives all 35 focused Vars direct
+4. Task 7 authors the 14 missing narrow Vars, gives all 35 focused Vars direct
    trace ownership, resolves every catalog finding, and checks in exactly 37
    descriptors and manifests: 35 focused and two operational.
-4. Task 8 captures those 37 artifacts from the clean Task 7 commit. It
+5. Task 8 captures those 37 artifacts from the clean Task 7 commit. It
    registers 42 claim-support rows because three focused observations each
    support two claims and the shared design-bundle observation supports three
    claims, then regenerates reports atomically.
@@ -485,6 +577,14 @@ Rejected because capture itself could execute a descriptor whose closure
 manifest is decorative or stale. This recreates the same-entry
 self-certification fault that artifact-backed evidence was designed to remove.
 
+### Keep both Nix/Clojure closure shapes
+
+Rejected because `:abc-adr-nix-clojure-closure-v1` derives operational
+freshness through the focused capability graph while the new closure derives
+namespace freshness without a capability verdict. Accepting both would retain
+two meanings for the same operational responsibility. The old shape has no
+committed consumers, so retirement is cheaper and clearer than compatibility.
+
 ### Bind only Nix files for operational commands
 
 Rejected because the Nix derivation executes Clojure whose source closure can
@@ -494,6 +594,9 @@ change independently of its wrapper and lock files.
 
 - Existing version-1 and version-2 descriptor fixtures retain their exact
   accepted and rejected shapes.
+- The old `:abc-adr-nix-clojure-closure-v1` schema and functions have no
+  accepted path, and focused-runner failures use
+  `:invalid-focused-evidence-runner` rather than a closure problem kind.
 - Alias-aware reading accepts known namespace aliases, rejects unknown aliases,
   preserves reader/kondo source-coordinate agreement, and is deterministic
   under repeated and concurrent analysis without global namespace mutation.
@@ -506,10 +609,13 @@ change independently of its wrapper and lock files.
   in one commit.
 - Changing only a claim binding or unrelated observation row does not stale an
   artifact; changing its selected observation contract does.
+- Observation-contract known-answer tests pin the exact I-JSON projection,
+  RFC 8785 bytes, and SHA-256 independently of EDN map iteration order.
 - Every focused pure-capability addition is exact and has a neighboring
   rejection test; no namespace-wide allowance exists.
-- The owned temporary-root helper cleans up on success and exception and cannot
-  authorize repository or unrelated external reads.
+- Existing `with-ephemeral-root` authorization behavior remains covered; the
+  new owner cleans up on success and exception and cannot authorize repository,
+  workspace, or unrelated external reads.
 - Operational manifests are total, exact, reproducible functions of named
   entrypoint namespaces, the specified resolver algebra, and current repository
   namespace forms.
@@ -523,7 +629,7 @@ change independently of its wrapper and lock files.
   and records that policy with the observed Nix system and version.
 - Offline validation rejects a bundle that omits, changes, or disagrees with
   its descriptor, selected observation-contract hash, closure manifest,
-  determinant policy, checker relation, or exact input set.
+  reviewed determinant set, exact-v1 descriptor mode, or exact input set.
 - Repository-local, workspace-local, symlinked, existing, partially written,
   and serialization-failing output cases cannot produce an accepted bundle.
 - No Task 6C commit creates run bundles, changes the evidence registry, promotes

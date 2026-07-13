@@ -2037,7 +2037,7 @@
                       (compat/registry-errors
                        {:entries [invalid-entry]}))))))
 
-(defn- aat-parser-ir-compatibility-assertions []
+(defn aat-parser-ir-compatibility-assertions []
   (let [registry (compat/load-registry)]
     (testing "matches measured adapter-scoped registry entries"
       (is (true? (compat/compatible? registry old-compat-query)))

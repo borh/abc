@@ -1,8 +1,8 @@
 (ns abc.tools.source-bundle-report
   (:require [abc.tools.json :as json]
             [abc.tools.source-bundle :as source-bundle]
+            [babashka.process :as process]
             [clojure.java.io :as io]
-            [clojure.java.shell :as shell]
             [clojure.string :as string]))
 
 (def pinned-aozorabunko-commit
@@ -26,7 +26,7 @@
 
 (defn- sevenzip-listable? [zip-file]
   (let [binary (or (System/getenv "ABC_7ZZ_BIN") "7zz")]
-    (zero? (:exit (shell/sh binary "l" "-slt" (str zip-file))))))
+    (zero? (:exit (process/sh [binary "l" "-slt" (str zip-file)])))))
 
 (def measurement-construction
   "abc-source-bundle-streamed-evidence-v1")

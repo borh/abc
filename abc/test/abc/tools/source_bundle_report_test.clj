@@ -63,6 +63,17 @@
     (card-zip root "1" "work.zip" [["work.txt" (content-bytes "body")]])
     root))
 
+(deftest sevenzip-listable-exit-status-test
+  (let [root (.toFile (Files/createTempDirectory
+                       "abc-source-bundle-report-sevenzip-"
+                       (make-array java.nio.file.attribute.FileAttribute 0)))
+        valid (write-zip! (io/file root "valid.zip")
+                          [["work.txt" (content-bytes "body")]])
+        invalid (io/file root "invalid.zip")]
+    (spit invalid "not a zip")
+    (is (true? (#'report/sevenzip-listable? valid)))
+    (is (false? (#'report/sevenzip-listable? invalid)))))
+
 (deftest programming-failures-do-not-invoke-sevenzip-test
   (let [sevenzip-calls (atom 0)]
     (doseq [failure [(AssertionError. "programming failure")

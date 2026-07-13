@@ -6,13 +6,13 @@
    real `nix`. A node key or branch result is never used directly as a Nix
    attribute name: `flake-output` is always caller-supplied."
   (:require [abc.tools.workflow.target :as target]
-            [charred.api :as json]
-            [clojure.java.shell :as shell]))
+            [babashka.process :as process]
+            [charred.api :as json]))
 
 (defn default-runner
-  "Real nix runner: shells out via `clojure.java.shell/sh`."
+  "Real nix runner: shells out via `babashka.process/sh`."
   [args]
-  (apply shell/sh args))
+  (process/sh args))
 
 (defn read-lock-nodes
   "Pure. For each name in `node-names` present under (get flake-lock \"nodes\"),
@@ -35,7 +35,7 @@
 
 (defn realize-flake-output!
   "Realize `flake-output` via `runner` (default: real nix through
-   clojure.java.shell/sh). `runner` is a fn [args-vector] -> {:exit :out :err}.
+   babashka.process/sh). `runner` is a fn [args-vector] -> {:exit :out :err}.
    Non-zero exit throws ex-info with :type :nix-bridge-failure. Returns
    {:store-path :flake-output :lock-nodes :outputs :messages}."
   [{:keys [flake-output runner flake-lock lock-node-names]

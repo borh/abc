@@ -12,8 +12,8 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-bundle :as source-bundle]
             [abc.tools.workflow :as workflow]
+            [babashka.process :as process]
             [clojure.java.io :as io]
-            [clojure.java.shell :as shell]
             [clojure.string :as string])
   (:import [java.nio.file Files StandardCopyOption]
            [java.util.zip ZipEntry ZipFile]))
@@ -468,7 +468,8 @@
 
 (defn- git-sh [aozora-root & args]
   (try
-    (let [{:keys [exit out]} (apply shell/sh "git" "-C" (str aozora-root) args)]
+    (let [{:keys [exit out]}
+          (process/sh (into ["git" "-C" (str aozora-root)] args))]
       (when (zero? exit)
         (string/trim out)))
     (catch java.io.IOException _

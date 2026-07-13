@@ -7,8 +7,8 @@
             [abc.tools.aozora-history-audit :as audit]
             [abc.tools.cli :as abc-cli]
             [abc.tools.json :as abc-json]
+            [babashka.process :as process]
             [clojure.java.io :as io]
-            [clojure.java.shell :as shell]
             [clojure.string :as string]
             [taoensso.telemere :as tel])
   (:import [java.io ByteArrayInputStream IOException]
@@ -173,13 +173,12 @@
 
 (defn- git*
   "Run git with argv `args` (strings), optionally in `dir`. Returns the
-  clojure.java.shell result map; never throws on nonzero exit."
+  babashka.process result map; never throws on nonzero exit."
   [args {:keys [dir out-enc]}]
-  (apply shell/sh
-         (concat ["git"]
-                 (when dir ["-C" (str dir)])
-                 (map str args)
-                 (when out-enc [:out-enc out-enc]))))
+  (process/sh (into ["git"] (map str args))
+              (cond-> {:out :string :err :string}
+                dir (assoc :dir (str dir))
+                out-enc (assoc :out-enc out-enc))))
 
 (defn- git!
   "Like git*, but nonzero exit throws ex-info with the command context."

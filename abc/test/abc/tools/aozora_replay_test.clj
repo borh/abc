@@ -19,6 +19,21 @@
     (doseq [child (.listFiles f)] (delete-recursive child)))
   (.delete f))
 
+(deftest git-star-honors-dir-and-captures-nonzero-test
+  (let [dir (temp-dir "abc-replay-git-star")
+        git* (ns-resolve 'abc.tools.aozora-replay 'git*)]
+    (try
+      (is (zero? (:exit (git* ["init" "--quiet"] {:dir dir}))))
+      (let [{:keys [exit out]} (git* ["rev-parse" "--show-toplevel"]
+                                     {:dir dir})]
+        (is (zero? exit))
+        (is (= (.getCanonicalPath dir)
+               (.getCanonicalPath (io/file (clojure.string/trim out))))))
+      (is (pos? (:exit (git* ["rev-parse" "--verify" "missing-ref"]
+                             {:dir dir}))))
+      (finally
+        (delete-recursive dir)))))
+
 (deftest locked-pin-test
   (let [dir (temp-dir "abc-replay-lock")
         write! (fn [name value]

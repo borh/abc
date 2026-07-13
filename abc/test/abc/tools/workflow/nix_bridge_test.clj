@@ -15,6 +15,14 @@
 (def fake-runner-out
   "[{\"drvPath\":\"/nix/store/x.drv\",\"outputs\":{\"out\":\"/nix/store/abc-name\"}}]")
 
+(deftest default-runner-captures-nonzero-result-test
+  (let [{:keys [exit out err]}
+        (nix-bridge/default-runner
+         ["sh" "-c" "printf stdout; printf stderr >&2; exit 7"])]
+    (is (= 7 exit))
+    (is (= "stdout" out))
+    (is (= "stderr" err))))
+
 (deftest read-lock-nodes-test
   (testing "known node names resolve to their locked info"
     (is (= expected-lock-nodes

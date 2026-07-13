@@ -184,10 +184,15 @@ An AST/source-form policy test is preferred here over a clj-kondo analyze-call h
 the repository's hooks attach to named vars and cannot reliably intercept arbitrary
 instance interop calls.
 
-The policy rejects ordinary direct `java.io.File` filesystem operations (`mkdirs`,
-`exists`, `isFile`, `isDirectory`, `listFiles`, `renameTo`, and `delete`) and
-`file-seq`. It does not reject `io/file` construction or representation getters needed
-at Java boundaries. Direct `java.nio.file.Files` mutation is allowed only as exact
+The policy rejects ordinary direct `java.io.File`/Path filesystem operations (`mkdirs`,
+`exists`, `isFile`, `isDirectory`, `listFiles`, `delete`, `getCanonicalFile`,
+`getCanonicalPath`, `getAbsolutePath`, and `relativize`) and `file-seq`. It does not
+reject `io/file` construction or representation getters explicitly allowed at a named
+Java boundary. Receiver-blind non-File instance calls such as
+`ZipArchiveEntry.isDirectory`, and File calls deliberately retained for their exact
+behavior such as the history audit's boolean `renameTo`, use a permanent exact
+interop-operation map with rationales and anti-staleness tests. Direct
+`java.nio.file.Files` mutation is allowed only as exact
 operations in a small, named allowlist of atomicity-, permission-, containment-, or
 byte-contract sites; the test documents the rationale beside each exception. A
 checked-in grandfather set initially exempts legacy namespaces, may only shrink, and is

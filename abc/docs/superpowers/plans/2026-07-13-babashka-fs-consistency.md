@@ -18,7 +18,7 @@
 - Use explicit sorting after `fs/list-dir`, `fs/glob`, or traversal whenever output order is observable.
 - Preserve missing-directory, missing-path, dangling-symlink, replacement, cleanup, and failure behavior per site.
 - Do not replace real-path containment (`toRealPath`), atomic move/temp/cleanup units, POSIX permissions, archive/library File boundaries, or byte-array reads.
-- The legacy grandfather set may only shrink. Permanent NIO exceptions are exact namespace/operation pairs with rationales.
+- The legacy grandfather set may only shrink. Permanent NIO and non-File/behavior-sensitive instance-interop exceptions are exact namespace/operation pairs with rationales.
 - Do not upgrade babashka.fs beyond 0.5.34.
 
 ---
@@ -29,7 +29,7 @@
 - Create: `abc/test/abc/tools/filesystem_policy_test.clj`
 
 **Interfaces:**
-- Produces: `legacy-filesystem-namespaces`, the fixed set consumed and reduced by Tasks 2–7; `permanent-files-operations`, the exact NIO exception map.
+- Produces: `legacy-filesystem-namespaces`, the fixed set consumed and reduced by Tasks 2–6; `permanent-files-operations`, the exact NIO exception map; and `permanent-interop-operations`, the exact receiver-blind instance exception map.
 
 - [ ] **Step 1: Add source-form parsing tests**
 
@@ -68,7 +68,8 @@ Use `clojure.java.io/reader`, `clojure.walk/postwalk`, and a `LineNumberingPushb
 
 ```clojure
 (def forbidden-file-methods
-  #{:mkdirs :exists :isFile :isDirectory :listFiles :renameTo :delete})
+  #{:mkdirs :exists :isFile :isDirectory :listFiles :renameTo :delete
+    :getCanonicalFile :getCanonicalPath :getAbsolutePath :relativize})
 
 (defn- dotted-method [x]
   (when (and (symbol? x) (string/starts-with? (name x) "."))
@@ -79,7 +80,11 @@ Use `clojure.java.io/reader`, `clojure.walk/postwalk`, and a `LineNumberingPushb
     (let [head (first form)]
       (cond
         (dotted-method head) #{(dotted-method head)}
-        (= '. head) (some-> (nth form 2 nil) name keyword hash-set)
+        (= '. head) (let [method-form (nth form 2 nil)
+                          method (if (seq? method-form)
+                                   (first method-form)
+                                   method-form)]
+                      (some-> method name keyword hash-set))
         (#{'-> '->>} head) (into #{} (keep dotted-method) (rest form))
         (= '.. head) (into #{}
                            (keep (fn [step]
@@ -99,7 +104,7 @@ Use `clojure.java.io/reader`, `clojure.walk/postwalk`, and a `LineNumberingPushb
     @found))
 ```
 
-`file-seq` is a separate exact symbol violation. Preserve file/row information in reported violations by reading top-level forms one at a time and attaching the reader line before traversal.
+`file-seq` is a separate exact symbol violation. Bind `*default-data-reader-fn*` to return a tagged-literal value so project-specific tags in `.cljc` do not abort the scan. Preserve file/row information in reported violations by reading top-level forms one at a time and attaching the reader line before traversal. Add tests for `(. file (exists))`, reader conditionals, and an unknown tagged literal.
 
 - [ ] **Step 4: Add the initial grandfather and permanent exception data**
 
@@ -117,7 +122,8 @@ Set `legacy-filesystem-namespaces` to the exact production namespaces currently 
   abc.tools.soranoha abc.tools.soranoha-build-publication
   abc.tools.soranoha-layout-report abc.tools.soranoha-stage-publication
   abc.tools.source-bundle abc.tools.source-bundle-report
-  abc.tools.source-snapshot-workset abc.tools.tar abc.tools.validate-corpus
+  abc.tools.source-snapshot-workset abc.tools.materialize-source-snapshot
+  abc.tools.schematron abc.tools.tei abc.tools.tar abc.tools.validate-corpus
   abc.tools.validate-design-bundle abc.tools.workflow abc.tools.workflow.cache}
 ```
 
@@ -138,6 +144,32 @@ Set the exact permanent `Files` allowlist and rationale map:
 ```
 
 Store a rationale string beside each namespace in the actual map. Fully-qualified `java.nio.file.Files/createTempDirectory` in `validate-design-bundle` is grandfathered for later migration, not permanent.
+
+Add a static-call normalizer that matches symbols whose namespace is exactly `Files` or ends in `.Files`, then returns a bare `Files/<method>` symbol:
+
+```clojure
+(defn- normalized-files-call [x]
+  (when (symbol? x)
+    (let [owner (namespace x)]
+      (when (or (= "Files" owner)
+                (and owner (string/ends-with? owner ".Files")))
+        (symbol "Files" (name x))))))
+```
+
+Test both `Files/move` and `java.nio.file.Files/createTempDirectory`, plus a collision such as `ProfileFiles/read` that must not match.
+
+Add `permanent-interop-operations` with exact methods and rationales:
+
+```clojure
+{'abc.tools.source-bundle
+ {:operations #{:isDirectory}
+  :rationale "ZipArchiveEntry predicate, not java.io.File"}
+ 'abc.tools.aozora-history-audit
+ {:operations #{:renameTo}
+  :rationale "Preserve File.renameTo same-filesystem boolean failure contract"}}
+```
+
+The instance exception map receives the same anti-staleness tests as the `Files/*` map: removing an entry must expose exactly the named violation, and every rationale is nonblank. Do not infer receiver types from optional type hints.
 
 - [ ] **Step 5: Enforce the baseline without blocking legacy code**
 
@@ -172,6 +204,8 @@ git commit -m "test(abc): prevent new legacy filesystem idioms"
 - Modify: `abc/src/abc/tools/source_bundle_report.clj`
 - Modify: `abc/src/abc/tools/diagram/adr_graph.clj`
 - Modify: `abc/src/abc/tools/diagram/core.clj`
+- Modify: `abc/src/abc/tools/schematron.clj`
+- Modify: `abc/src/abc/tools/tei.clj`
 - Test: corresponding namespaces under `abc/test/abc/tools/`
 - Modify: `abc/test/abc/tools/filesystem_policy_test.clj`
 
@@ -181,7 +215,7 @@ git commit -m "test(abc): prevent new legacy filesystem idioms"
 
 - [ ] **Step 1: Add old-code golden characterizations**
 
-Cover: unknown registry paths; absent schema directory; facts/report empty directories; report ZIP ordering; diagram missing files; `files/delete-tree!` missing-path no-op and `copy-file!` bare-filename parent behavior. For each listing function assert both the selected filenames and their order. Use `abc.test-fs/with-temp-dir` and create file/directory/dangling-symlink fixtures with `babashka.fs` in tests.
+Cover: unknown registry paths; absent schema directory; facts/report empty directories; report ZIP ordering; diagram missing files; Schematron canonical cache identity through a symlinked parent; TEI absolute/canonical schema paths; `files/delete-tree!` missing-path no-op and `copy-file!` bare-filename parent behavior. For each listing function assert both the selected filenames and their order. Use `abc.test-fs/with-temp-dir` and create file/directory/dangling-symlink fixtures with `babashka.fs` in tests.
 
 - [ ] **Step 2: Run the focused leaf suites against old code**
 
@@ -193,7 +227,9 @@ bin/kaocha --focus abc.tools.files-test \
   --focus abc.tools.soranoha-layout-report-test \
   --focus abc.tools.source-bundle-report-test \
   --focus abc.tools.diagram.adr-graph-test \
-  --focus abc.tools.diagram.core-test
+  --focus abc.tools.diagram.core-test \
+  --focus abc.tools.schematron-test \
+  --focus abc.tools.tei-test
 ```
 
 Expected: PASS before production changes. Record test/assertion counts in the task report.
@@ -222,12 +258,21 @@ Convert to `(fs/file path)` only for APIs or public results that still require F
 
 - [ ] **Step 4: Shrink and verify the policy**
 
-Remove the seven migrated grandfathered namespaces (`abc.tools.files` was already compliant) from `legacy-filesystem-namespaces` and its exact baseline assertion. Run the unchanged golden suites and policy test; expected PASS with identical assertions.
+Remove the nine migrated grandfathered namespaces (`abc.tools.files` was already compliant) from `legacy-filesystem-namespaces` and its exact baseline assertion. Run the unchanged golden suites and policy test; expected PASS with identical assertions.
 
 - [ ] **Step 5: Commit**
 
 ```sh
-git add abc/src/abc/tools abc/test/abc/tools
+git add abc/src/abc/tools/files.clj \
+  abc/src/abc/tools/request_set_resolver.clj \
+  abc/src/abc/tools/schema.clj abc/src/abc/tools/facts.clj \
+  abc/src/abc/tools/soranoha_layout_report.clj \
+  abc/src/abc/tools/source_bundle_report.clj \
+  abc/src/abc/tools/diagram/adr_graph.clj \
+  abc/src/abc/tools/diagram/core.clj \
+  abc/src/abc/tools/schematron.clj abc/src/abc/tools/tei.clj \
+  abc/test/abc/tools
+git diff --cached --name-only
 git commit -m "refactor(abc): use babashka fs in leaf filesystem code"
 ```
 
@@ -251,7 +296,7 @@ Before committing, verify `git diff --cached --name-only` contains only the Task
 
 - [ ] **Step 1: Characterize old behavior**
 
-Add golden tests for: missing `_indexes` returns empty; JSON/person lists sort by filename; `prepare-owned-path!` removes existing files/trees; ingest creates persons/works parents idempotently; replay distinguishes an existing `.git` directory; canonical default-baseline comparison remains true through a symlinked parent; person-drift directory listings exclude non-JSON and directories.
+Add golden tests for: missing `_indexes` returns empty; JSON/person lists sort by filename; `prepare-owned-path!` removes existing files/trees; ingest creates persons/works parents idempotently; replay distinguishes an existing `.git` directory; canonical default-baseline comparison remains true through a symlinked parent; person-drift directory listings exclude non-JSON and directories; `move-directory!` turns a failed boolean rename into the existing `ex-info`.
 
 - [ ] **Step 2: Run old-code focused suites**
 
@@ -267,20 +312,19 @@ Expected: PASS before production changes.
 
 - [ ] **Step 3: Migrate operations**
 
-Use `fs/list-dir` behind explicit missing-directory guards and retain existing sort keys. Replace `.renameTo` with:
-
-```clojure
-(fs/move from to {:replace-existing false})
-```
-
-Only use this after the golden test proves current destination handling; if `.renameTo` returns false for a condition where `fs/move` throws, catch that exact exception and throw the existing `ex-info`, not a new message. Replace canonical comparisons with `(fs/canonicalize path)` equality. Retain `io/file` for ZIP/JGit/JSON consumers requiring File.
+Use `fs/list-dir` behind explicit missing-directory guards and retain existing sort keys. Keep `move-directory!` on `.renameTo`: `fs/move` may copy/delete successfully across filesystems where `File.renameTo` returns false, so replacing it would violate the error contract. Its exact `:renameTo` call is covered by `permanent-interop-operations`. Replace canonical comparisons with `(fs/canonicalize path)` equality. Retain `io/file` for ZIP/JGit/JSON consumers requiring File.
 
 - [ ] **Step 4: Shrink policy, rerun unchanged tests, and commit**
 
 Remove the five namespaces from the grandfather set. Run Task 3 suites plus the policy test. Commit:
 
 ```sh
-git commit -am "refactor(abc): use babashka fs in Aozora history tools"
+git add abc/src/abc/tools/aozora_history_audit.clj \
+  abc/src/abc/tools/aozora_ingest.clj abc/src/abc/tools/aozora_replay.clj \
+  abc/src/abc/tools/person_drift.clj \
+  abc/src/abc/tools/person_drift_history.clj abc/test/abc/tools
+git diff --cached --name-only
+git commit -m "refactor(abc): use babashka fs in Aozora history tools"
 ```
 
 ---
@@ -293,6 +337,7 @@ git commit -am "refactor(abc): use babashka fs in Aozora history tools"
 - Modify: `abc/src/abc/tools/materialize_publication.clj`
 - Modify: `abc/src/abc/tools/snapshot_index.clj`
 - Modify: `abc/src/abc/tools/source_snapshot_workset.clj`
+- Modify: `abc/src/abc/tools/materialize_source_snapshot.clj`
 - Modify: `abc/src/abc/tools/tar.clj`
 - Modify: `abc/src/abc/tools/workflow.clj`
 - Modify: `abc/src/abc/tools/workflow/cache.clj`
@@ -305,7 +350,7 @@ git commit -am "refactor(abc): use babashka fs in Aozora history tools"
 
 - [ ] **Step 1: Add old-code golden tests**
 
-Pin: annotations registry listing and order; optional import sidecar precedence; publication optional source manifest; snapshot-index parent creation for a bare filename; source-workset recursive discovery including dangling symlinks and deterministic relative order; TAR parent creation; workflow output creation; cache `:missing` versus `:stale` decisions.
+Pin: annotations registry listing and order; optional import sidecar precedence; publication optional source manifest; snapshot-index parent creation for a bare filename; source-workset recursive discovery including dangling symlinks and deterministic relative order; materialized source-snapshot relative paths through a symlinked source parent; TAR parent creation; workflow output creation; cache `:missing` versus `:stale` decisions.
 
 - [ ] **Step 2: Run old implementation suites**
 
@@ -315,6 +360,7 @@ bin/kaocha --focus abc.tools.materialize-annotations-test \
   --focus abc.tools.materialize-publication-test \
   --focus abc.tools.snapshot-index-test \
   --focus abc.tools.source-snapshot-workset-test \
+  --focus abc.tools.materialize-source-snapshot-test \
   --focus abc.tools.tar-test \
   --focus abc.tools.workflow-test \
   --focus abc.tools.workflow.cache-test
@@ -328,7 +374,7 @@ Use fs predicates/creation/listing. For source-workset recursive discovery use `
 
 - [ ] **Step 4: Shrink policy and commit green code**
 
-Remove the eight namespaces from the grandfather set. Re-run the unchanged Task 4 suites and policy test, then commit:
+Remove the nine namespaces from the grandfather set. Re-run the unchanged Task 4 suites and policy test, then commit:
 
 ```sh
 git add abc/src/abc/tools/materialize_annotations.clj \
@@ -336,6 +382,7 @@ git add abc/src/abc/tools/materialize_annotations.clj \
   abc/src/abc/tools/materialize_publication.clj \
   abc/src/abc/tools/snapshot_index.clj \
   abc/src/abc/tools/source_snapshot_workset.clj \
+  abc/src/abc/tools/materialize_source_snapshot.clj \
   abc/src/abc/tools/tar.clj abc/src/abc/tools/workflow.clj \
   abc/src/abc/tools/workflow/cache.clj \
   abc/test/abc/tools abc/test/abc/tools/filesystem_policy_test.clj
@@ -431,75 +478,53 @@ Keep `Files/move` in `promote-output-root!`, the `toRealPath` calls in containme
 
 - [ ] **Step 4: Shrink policy and verify boundaries**
 
-Remove all four namespaces from the grandfather set. Their exact permanent operations must continue to pass through `permanent-files-operations`. Add assertions that deleting any one permanent entry makes the fixture fail and that the rationale string is nonblank.
+Remove all four namespaces from the grandfather set. `source-bundle` then remains compliant through its exact `permanent-files-operations` and `permanent-interop-operations` entries rather than through grandfathering. Add assertions that deleting any one permanent entry makes the fixture fail and that every rationale string is nonblank.
 
 - [ ] **Step 5: Commit**
 
 ```sh
-git commit -am "refactor(abc): standardize publication filesystem operations"
+git add abc/src/abc/tools/soranoha_build_publication.clj \
+  abc/src/abc/tools/validate_design_bundle.clj \
+  abc/src/abc/tools/path_containment.clj \
+  abc/src/abc/tools/source_bundle.clj abc/test/abc/tools
+git diff --cached --name-only
+git commit -m "refactor(abc): standardize publication filesystem operations"
 ```
 
 ---
 
-### Task 7: Close remaining legacy sites and audit representation seams
+### Task 7: Audit representation seams and verify the repository
 
 **Files:**
-- Modify: any production namespace still named by `legacy-filesystem-namespaces`, limited to the initial set from Task 1
-- Modify: `abc/test/abc/tools/filesystem_policy_test.clj`
-- Test: corresponding existing namespace tests
+- Read/verify: all production and filesystem characterization namespaces changed by Tasks 1–6
 
 **Interfaces:**
-- Produces: empty legacy grandfather set and documented permanent exact exceptions only.
+- Produces: final acceptance evidence and a zero-grandfather production policy.
 
-- [ ] **Step 1: Prove the remainder is exact**
+- [ ] **Step 1: Verify the planned grandfather arithmetic reached zero**
 
 Run from `abc/`:
 
 ```sh
 bin/kaocha --focus abc.tools.filesystem-policy-test
-rg -n "file-seq|\.(mkdirs|exists|isFile|isDirectory|listFiles|renameTo|delete)\b" src --glob '*.clj' --glob '*.cljc'
+rg -n "file-seq|\.(mkdirs|exists|isFile|isDirectory|listFiles|renameTo|delete|getCanonicalFile|getCanonicalPath|getAbsolutePath|relativize)\b" src --glob '*.clj' --glob '*.cljc'
 ```
 
-Every result must be either still present in the grandfather set or a demonstrated lexical collision handled by an exact policy exception. Do not use this raw search as acceptance evidence.
+The policy, not the raw search, is acceptance evidence. Assert
+`legacy-filesystem-namespaces` is already `#{}` after Tasks 2–6. Each raw-search result
+must correspond to a permanent exact instance exception, a Java/library boundary the
+policy explicitly permits, or a syntax collision test. Do not reopen migrated
+namespaces looking for an invented remainder.
 
-- [ ] **Step 2: Characterize each remaining namespace before editing**
+- [ ] **Step 2: Audit Path/File conversion seams**
 
-For each remainder, add a focused test for the concrete missing-path, symlink, ordering, mutation, or return-type contract and run it green against old code. Record namespace, test var, old result, and intended fs operation in the task report.
+Search migrated files for adjacent `fs/path`→`fs/file`→`fs/path` or
+`io/file`→`.toPath` cycles. Confirm existing golden tests contain type assertions for
+functions that historically return File. If the audit finds an issue, return it to the
+owning Task 2–6 commit and repeat that task's review; do not create an uncharacterized
+catch-all cleanup diff here.
 
-- [ ] **Step 3: Migrate remaining safe operations**
-
-Apply the same direct fs operations and last-responsible-moment conversions. Delete each grandfather entry only when its namespace has no policy violations. Do not broaden the permanent allowlist; any proposed new entry requires a design amendment.
-
-- [ ] **Step 4: Audit Path/File conversion seams**
-
-Search migrated files for adjacent `fs/path`→`fs/file`→`fs/path` or `io/file`→`.toPath` cycles. Remove oscillation while retaining Java boundary conversions. Add type assertions to golden tests for functions that historically return File.
-
-- [ ] **Step 5: Require an empty grandfather set and commit**
-
-Set:
-
-```clojure
-(def legacy-filesystem-namespaces #{})
-```
-
-Run all tests touched by the remainder plus the policy suite, then commit:
-
-```sh
-git commit -am "refactor(abc): complete babashka fs migration"
-```
-
----
-
-### Task 8: Final enforcement and repository verification
-
-**Files:**
-- Modify: `abc/test/abc/tools/filesystem_policy_test.clj` only if final enforcement cleanup is required
-- Modify: production namespaces only for unused-import cleanup found by clj-kondo
-
-**Interfaces:**
-- Produces: final acceptance evidence and a zero-grandfather production policy.
-
-- [ ] **Step 1: Run the policy and all focused filesystem suites**
+- [ ] **Step 3: Run the policy and all focused filesystem suites**
 
 ```sh
 bin/kaocha --focus abc.tools.filesystem-policy-test \
@@ -513,7 +538,7 @@ bin/kaocha --focus abc.tools.filesystem-policy-test \
 
 Expected: zero failures. The two schema-backed direct-Kaocha tests may require `TEI_SCHEMA_PATH`; distinguish them explicitly and rely on the Nix suite for their complete environment.
 
-- [ ] **Step 2: Run acceptance gates from the monorepo root**
+- [ ] **Step 4: Run acceptance gates from the monorepo root**
 
 ```sh
 nix build ./abc#checks.x86_64-linux.clj-kondo
@@ -522,7 +547,7 @@ nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
 
 Expected: PASS. These and the source policy are primary acceptance evidence.
 
-- [ ] **Step 3: Run repository regression evidence**
+- [ ] **Step 5: Run repository regression evidence**
 
 ```sh
 just validate-migration
@@ -530,7 +555,7 @@ just validate-migration
 
 Expected: PASS; report this as broader regression evidence, not filesystem acceptance evidence.
 
-- [ ] **Step 4: Verify final source state**
+- [ ] **Step 6: Verify final source state**
 
 ```sh
 git diff --check
@@ -539,11 +564,8 @@ git status --short
 
 Confirm the policy reports an empty grandfather set, all permanent exception rationales are nonblank, and no untracked fixtures remain.
 
-- [ ] **Step 5: Commit final cleanup if needed**
+- [ ] **Step 7: Confirm no final catch-all diff exists**
 
-```sh
-git add abc/src abc/test
-git commit -m "test(abc): enforce babashka fs production boundary"
-```
-
-Skip this commit when Step 1–4 require no changes; do not create an empty commit.
+`git status --short` must be empty. Task 7 is an audit and verification gate, not a
+fallback migration batch. Any required correction returns to its owning task and review
+cycle.

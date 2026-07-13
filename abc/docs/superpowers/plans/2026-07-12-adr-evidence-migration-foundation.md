@@ -755,8 +755,16 @@ enters its own ABC root before executing Clojure. An ordinary ABC-local v2
 descriptor uses exactly `:tool "bin/kaocha"`; a component v2 descriptor uses
 exactly `:tool "<component-root>/bin/kaocha"`; `argv[0]` equals that tool and
 the remaining argv is one or more exact `--focus`, qualified-Var string pairs.
-No shell, extra option, or positional argument is admitted. The runner path is
-an explicit hashed input. Do not add an ambient working-directory field or
+Focus pairs are unique and each focused Var must resolve to a `deftest` source
+form whose direct top-level body owns `with-validated-read-trace!`; ordinary
+functions and namespace-wide focus are not evidence boundaries. No shell,
+extra option, or positional argument is admitted. The normalized runner path
+is an explicit hashed input and must resolve through `path-state` to a
+contained, regular, executable file; missing runners and symlink escapes fail
+before execution. After execution, capture parses Kaocha's stable summary and
+requires its executed-test count to equal the unique focus count. Missing,
+zero-test, skipped, or count-mismatched summaries invalidate capture even when
+the process exits zero. Do not add an ambient working-directory field or
 permit repository-parent inputs.
 Every v2 derived input set includes only the caller-scoped higher-order
 contract files actually consulted by its reachable graph (with `abc/data/...`
@@ -1228,6 +1236,8 @@ both its descriptor and manifest paths in `:input-profile :explicit`. Its
 manifest `:paths` vector is exactly the remaining explicit runtime-data paths.
 Each v2 descriptor also binds `bin/kaocha`, sets both `:tool` and `argv[0]` to
 `bin/kaocha`, and lists only exact `--focus`, qualified-Var pairs after it.
+Those focus pairs are unique `deftest` Vars, and successful capture requires
+Kaocha to report exactly one executed test for each pair.
 
 | Descriptor | Profile/command | Observation |
 |---|---|---|
@@ -1246,7 +1256,8 @@ Both Nix/Clojure descriptors bind `deps.edn`, `deps-lock.json`, and
 `tests.edn`. Generate their closure manifests with Plan 1's helper and assert
 exact descriptor expansion with missing/extra-path negative tests.
 Each version-2 wrapper has `with-validated-read-trace!` as a direct top-level
-body expression, scopes every freshly generated directory with
+body expression inside its `deftest` source form, scopes every freshly
+generated directory with
 `with-ephemeral-root`, and calls only the exact operation under evidence.
 Do not focus a whole legacy test namespace or call another `deftest` Var.
 
@@ -1270,6 +1281,10 @@ without executing the real trace assertion. It resolves every exact focused
 Var and verifies that the owning namespace contains the descriptor-keyed
 `with-read-trace` plus `assert-runtime-input-closure!` call before running that
 Var; missing focus or missing closure wiring fails before capture.
+Also exercise the real repository runner against a known non-test Var, a
+duplicate focus, a missing/non-executable runner, and an external symlink;
+each must fail capture before it can certify a passing observation. Pin the
+Kaocha summary-count parser with zero, missing, and focus-count-mismatch cases.
 For `design-bundle-operational.edn`, assert its explicit set equals the fixed
 wrapper/flake set union `(validate-design-bundle/evidence-input-paths)`; a new
 runtime-read file therefore fails the descriptor contract until it is bound.

@@ -328,6 +328,27 @@
           (when (and (seq? form) (#{'defn 'defn- 'deftest} (first form)) (= name (second form))) form))
         forms))
 
+(defn validate-focused-deftests!
+  "Require each v2 focus to resolve uniquely to a deftest source form."
+  [repo-root focused-vars]
+  (let [repo-root (fs/file (fs/canonicalize repo-root))
+        definitions (group-by qvar (get-in (kondo-analysis! repo-root)
+                                           [:analysis :var-definitions]))
+        forms (memoize #(read-forms! (fs/file repo-root %)))]
+    (doseq [var focused-vars]
+      (let [items (get definitions var)]
+        (when-not (= 1 (count items))
+          (fail! (if (seq items) :duplicate-var-definition :unresolved-focused-var)
+                 "focused v2 Var must resolve exactly once"
+                 :var var))
+        (let [definition (first items)
+              form (defn-form (forms (:filename definition)) (:name definition))]
+          (when-not (= 'deftest (first form))
+            (fail! :focused-var-not-deftest
+                   "focused v2 Var must resolve to a deftest source form"
+                   :var var :actual-form (first form))))))
+    true))
+
 (defn- parse-defn [form]
   (if (= 'deftest (first form))
     {:params [] :body (drop 2 form)}

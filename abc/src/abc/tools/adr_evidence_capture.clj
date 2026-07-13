@@ -32,13 +32,20 @@
     (throw (ex-info "evidence capture requires a clean Git worktree"
                     {:phase phase :exit-code 2}))))
 
+(defn- normalized-component-root [profile]
+  (-> (:component-root profile) fs/path fs/normalize str (str/replace "\\" "/")))
+
+(defn- expected-runner [profile]
+  (if (= "component-clojure-test-v1" (:kind profile))
+    (-> (fs/path (normalized-component-root profile) "bin/kaocha")
+        fs/normalize
+        str
+        (str/replace "\\" "/"))
+    "bin/kaocha"))
+
 (defn- focus-vars! [descriptor]
   (let [profile (:input-profile descriptor)
-        component? (= "component-clojure-test-v1" (:kind profile))
-        runner (if component?
-                 (str (str/replace (:component-root profile) #"/+$" "")
-                      "/bin/kaocha")
-                 "bin/kaocha")
+        runner (expected-runner profile)
         argv (:argv descriptor)
         focus-args (when (vector? argv) (subvec argv (min 1 (count argv))))
         pairs (when (and (seq focus-args) (even? (count focus-args)))
@@ -51,12 +58,39 @@
                                      (and (= "--focus" flag)
                                           (string? value)
                                           (qualified-symbol? (symbol value))))
-                                   pairs))
+                                   pairs)
+                           (= (count pairs) (count (distinct pairs))))
                   (mapv (comp symbol second) pairs))]
     (when-not (seq focuses)
       (throw (ex-info "version-2 capture requires a bound repository Kaocha runner and exact focuses"
                       {:exit-code 2 :kind :invalid-nix-clojure-closure})))
     focuses))
+
+(defn- validate-runner! [repo-root descriptor]
+  (let [runner (expected-runner (:input-profile descriptor))
+        state (containment/path-state repo-root runner)]
+    (when-not (and (= :ok (:state state))
+                   (fs/regular-file? (:path state))
+                   (fs/executable? (:path state)))
+      (throw (ex-info "version-2 Kaocha runner must be a contained executable file"
+                      {:exit-code 2 :kind :invalid-nix-clojure-closure
+                       :runner runner :state (:state state)})))
+    runner))
+
+(def ^:private kaocha-summary-pattern
+  #"(\d+) tests?, (\d+) assertions?(?:, (\d+) errors?)?, (\d+) failures?\.")
+
+(defn- validate-v2-command-result! [focuses command-result]
+  (let [summaries (re-seq kaocha-summary-pattern (:stdout command-result))
+        test-count (some-> summaries first second parse-long)
+        expected (count (distinct focuses))]
+    (when-not (and (= 1 (count summaries))
+                   (pos? expected)
+                   (= expected test-count))
+      (throw (ex-info "Kaocha did not execute each focused evidence test exactly once"
+                      {:exit-code 2 :kind :invalid-nix-clojure-closure
+                       :expected-tests expected :actual-tests test-count})))
+    command-result))
 
 (defn- validate-descriptor! [descriptor descriptor-path]
   (let [version (:schema-version descriptor)
@@ -101,7 +135,7 @@
             descriptor-name (some-> descriptor-path fs/file-name str)
             manifest-name (some-> manifest fs/file-name str)
             manifest-prefix (if (= "component-clojure-test-v1" (:kind profile))
-                              (str (str/replace (:component-root profile) #"/+$" "")
+                              (str (normalized-component-root profile)
                                    "/docs/evidence/adr-inputs/")
                               "docs/evidence/adr-inputs/")]
         (when-not (and (string? manifest)
@@ -142,17 +176,22 @@
 
 (defn capture! [{:keys [repo-root descriptor descriptor-path output]}]
   (validate-descriptor! descriptor descriptor-path)
+  (when (= "abc-adr-evidence-capture-v2" (:schema-version descriptor))
+    (validate-runner! repo-root descriptor))
   (let [component? (= "component-clojure-test-v1" (get-in descriptor [:input-profile :kind]))
         descriptor-path (when descriptor-path (contained-relative-path! repo-root descriptor-path))
-        component-root (get-in descriptor [:input-profile :component-root])
+        component-root (when component?
+                         (normalized-component-root (:input-profile descriptor)))
         analysis (when (= "abc-adr-evidence-capture-v2" (:schema-version descriptor))
                    (let [manifest-options {:repo-root repo-root
                                            :workspace-root (when component? repo-root)
                                            :descriptor {:path descriptor-path :value descriptor}}
                          _ (runtime-inputs/validate-runtime-input-manifest! manifest-options)
                          analysis-root (if component? (fs/file repo-root component-root) repo-root)]
-                     (-> (runtime-inputs/analyze-reachable-vars analysis-root
-                                                                (focus-vars! descriptor))
+                     (runtime-inputs/validate-focused-deftests!
+                      analysis-root (focus-vars! descriptor))
+                     (-> (runtime-inputs/analyze-reachable-vars
+                          analysis-root (focus-vars! descriptor))
                          runtime-inputs/assert-v2-boundary-ownership!)))
         prefix (if component? (str (str/replace component-root #"/+$" "") "/") "")
         analyzed-paths (when analysis
@@ -160,7 +199,12 @@
     (require-clean! repo-root :before-command)
     (let [command-result (run-process repo-root (:argv descriptor))]
       (require-clean! repo-root :after-command)
-      (let [profile (:input-profile descriptor)
+      (let [command-result (if (= "abc-adr-evidence-capture-v2"
+                                  (:schema-version descriptor))
+                             (validate-v2-command-result! (focus-vars! descriptor)
+                                                          command-result)
+                             command-result)
+            profile (:input-profile descriptor)
             revision (git-output repo-root "rev-parse" "--verify" "HEAD")
             value {"schema_version" "abc-adr-evidence-run-v1"
                    "producer" {"tool" (:tool descriptor)

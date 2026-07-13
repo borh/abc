@@ -168,9 +168,11 @@
                               :component-root "abc"
                               :roots ["example.core-test"]
                               :explicit [component-descriptor-path component-manifest-path
-                                         "abc/bin/kaocha"]}))]
+                                         "abc/bin/kaocha"]}))
+        normalized-component (assoc-in component [:input-profile :component-root] "abc/.")]
     (is (= ordinary (@validate! ordinary descriptor-path)))
     (is (= component (@validate! component component-descriptor-path)))
+    (is (= normalized-component (@validate! normalized-component component-descriptor-path)))
     (doseq [[label invalid]
             [["generic true" (assoc ordinary :tool "true" :argv ["true" "--focus"
                                                                  "example.core-test/contract"])]
@@ -180,6 +182,8 @@
                                      :argv ["other" "--focus" "example.core-test/contract"])]
              ["missing focus" (assoc ordinary :argv ["bin/kaocha"])]
              ["unqualified focus" (assoc ordinary :argv ["bin/kaocha" "--focus" "contract"])]
+             ["duplicate focus" (update ordinary :argv into
+                                        ["--focus" "example.core-test/contract"])]
              ["extra option" (update ordinary :argv into ["--randomize" "false"])]
              ["runner unbound" (update-in ordinary [:input-profile :explicit]
                                           #(vec (remove #{"bin/kaocha"} %)))]]]
@@ -187,17 +191,78 @@
                    (@validate! invalid descriptor-path))
           label))))
 
+(deftest v2-runner-must-be-a-contained-regular-executable-test
+  (let [validate-runner! (ns-resolve 'abc.tools.adr-evidence-capture 'validate-runner!)
+        repo (temp-dir "abc-runner-containment")
+        outside (temp-dir "abc-runner-outside")
+        runner "bin/kaocha"
+        descriptor {:schema-version "abc-adr-evidence-capture-v2"
+                    :tool runner
+                    :argv [runner "--focus" "example.core-test/contract"]
+                    :input-profile {:kind "clojure-test-v1"
+                                    :roots ["example.core-test"]
+                                    :explicit [runner]}
+                    :runtime-input-manifest "docs/evidence/adr-inputs/example.edn"
+                    :observation-key "passes"}]
+    (is (some? validate-runner!))
+    (when validate-runner!
+      (write-executable! repo runner (str "#!" (fs/which "bash") "\nexit 0\n"))
+      (is (= runner (@validate-runner! repo descriptor)))
+      (fs/delete (fs/file repo runner))
+      (is (thrown? clojure.lang.ExceptionInfo (@validate-runner! repo descriptor)))
+      (fs/create-dirs (fs/file repo runner))
+      (is (thrown? clojure.lang.ExceptionInfo (@validate-runner! repo descriptor)))
+      (fs/delete-tree (fs/file repo runner))
+      (let [plain (fs/file repo runner)]
+        (fs/create-dirs (fs/parent plain))
+        (spit plain "not executable")
+        (is (thrown? clojure.lang.ExceptionInfo (@validate-runner! repo descriptor)))
+        (fs/delete plain))
+      (let [external (write-executable! outside "kaocha" (str "#!" (fs/which "bash") "\n"))]
+        (fs/create-sym-link (fs/file repo runner) external)
+        (is (thrown? clojure.lang.ExceptionInfo (@validate-runner! repo descriptor)))))))
+
+(deftest v2-command-summary-must-execute-each-unique-focus-exactly-once-test
+  (let [validate-summary! (ns-resolve 'abc.tools.adr-evidence-capture
+                                      'validate-v2-command-result!)
+        focuses ['example.core-test/one 'example.core-test/two]]
+    (is (some? validate-summary!))
+    (when validate-summary!
+      (is (= {:exit-code 0 :stdout "2 tests, 2 assertions, 0 failures." :stderr ""}
+             (@validate-summary! focuses
+                                 {:exit-code 0
+                                  :stdout "2 tests, 2 assertions, 0 failures."
+                                  :stderr ""})))
+      (doseq [stdout ["" "0 tests, 0 assertions, 0 failures."
+                      "1 tests, 1 assertions, 0 failures."
+                      "2 tests skipped"]]
+        (is (thrown? clojure.lang.ExceptionInfo
+                     (@validate-summary! focuses
+                                         {:exit-code 0 :stdout stdout :stderr ""})))))))
+
 (deftest repository-kaocha-launcher-is-cwd-independent-test
-  (let [runner (str (fs/canonicalize "bin/kaocha"))
+  (let [validate-summary! (ns-resolve 'abc.tools.adr-evidence-capture
+                                      'validate-v2-command-result!)
+        runner (str (fs/canonicalize "bin/kaocha"))
         outside (temp-dir "abc-kaocha-outside")
         valid @(process/process
                 [runner "--focus"
                  "abc.tools.files-test/delete-tree-is-a-noop-on-missing-path-test"]
-                {:dir (str outside) :out :string :err :string})]
+                {:dir (str outside) :out :string :err :string})
+        non-test @(process/process
+                   [runner "--focus" "abc.tools.files/bytes->hex"]
+                   {:dir (str outside) :out :string :err :string})]
     (is (zero? (:exit valid)))
     (is (str/includes? (:out valid)
                        "delete-tree-is-a-noop-on-missing-path-test"))
-    (is (str/includes? (:out valid) "1 tests, 1 assertions"))))
+    (is (str/includes? (:out valid) "1 tests, 1 assertions"))
+    (is (zero? (:exit non-test)))
+    (is (str/blank? (:out non-test)))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (@validate-summary! ['abc.tools.files/bytes->hex]
+                                     {:exit-code (:exit non-test)
+                                      :stdout (:out non-test)
+                                      :stderr (:err non-test)})))))
 
 (deftest v2-capture-lints-the-focused-var-and-binds-its-closed-inputs-test
   (let [repo (git-repo)
@@ -233,7 +298,8 @@
                             "set -euo pipefail\n"
                             "test \"$#\" -eq 2\n"
                             "test \"$1\" = --focus\n"
-                            "test \"$2\" = example.core-test/runtime-input-contract\n"))
+                            "test \"$2\" = example.core-test/runtime-input-contract\n"
+                            "printf '1 tests, 1 assertions, 0 failures.\\n'\n"))
     (exec! repo "git" "add" ".")
     (exec! repo "git" "commit" "-q" "-m" "v2 fixture")
     (let [result (capture/capture! {:repo-root repo :descriptor descriptor

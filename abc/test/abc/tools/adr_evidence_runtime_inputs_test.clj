@@ -360,6 +360,24 @@
            (problem-kind #(runtime/assert-v2-boundary-ownership!
                            (runtime/analyze-reachable-vars disconnected ['example.core/contract])))))))
 
+(deftest v2-focus-must-resolve-to-a-deftest-source-form-test
+  (let [body (fn [head]
+               (boundary-analyzer-repo
+                (str "(ns example.core (:require "
+                     "[abc.tools.adr-evidence-runtime-inputs :as runtime] "
+                     "[clojure.test :refer [deftest]]))\n"
+                     "(" head " contract " (if (= head "deftest") "" "[] ")
+                     "(runtime/with-validated-read-trace! {} (fn [] true)))")))
+        validate! #(runtime/validate-focused-deftests! % ['example.core/contract])]
+    (is (true? (validate! (body "deftest"))))
+    (doseq [head ["defn" "defn-"]]
+      (is (= :focused-var-not-deftest
+             (problem-kind #(validate! (body head))))
+          head))
+    (is (= :focused-var-not-deftest
+           (problem-kind #(runtime/validate-focused-deftests!
+                           "." ['abc.tools.files/bytes->hex]))))))
+
 (deftest v2-owner-must-be-an-unconditional-direct-focused-body-expression-test
   (let [direct (boundary-analyzer-repo
                 (str "(ns example.core (:require "

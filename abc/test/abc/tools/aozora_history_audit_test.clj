@@ -22,6 +22,32 @@
     (doseq [child (.listFiles f)] (delete-recursive child)))
   (.delete f))
 
+(deftest filesystem-edge-contracts-test
+  (let [root (temp-dir "abc-audit-fs")
+        indexes (io/file root "_indexes")
+        owned (io/file root "owned")]
+    (try
+      (is (empty? (#'audit/index-json-files indexes)))
+      (.mkdirs indexes)
+      (doseq [name ["b.json" "ignored.txt" "a.json"]]
+        (spit (io/file indexes name) "{}"))
+      (is (= ["a.json" "b.json"]
+             (mapv #(.getName ^java.io.File %)
+                   (#'audit/index-json-files indexes))))
+      (.mkdirs (io/file owned "nested"))
+      (spit (io/file owned "nested" "value") "x")
+      (#'audit/prepare-owned-path! owned)
+      (is (not (.exists owned)))
+      (let [from (io/file root "missing")
+            to (io/file root "target")
+            e (try
+                (#'audit/move-directory! from to)
+                nil
+                (catch clojure.lang.ExceptionInfo e e))]
+        (is (= {:from (str from) :to (str to)} (ex-data e))))
+      (finally
+        (delete-recursive root)))))
+
 (defn- row [overrides]
   (merge {"作品ID" "000100"
           "人物ID" "000001"

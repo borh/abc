@@ -7,6 +7,7 @@
             [abc.tools.aozora-history-audit :as audit]
             [abc.tools.cli :as abc-cli]
             [abc.tools.json :as abc-json]
+            [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.java.io :as io]
             [clojure.string :as string]
@@ -228,10 +229,10 @@
   baseline must never record one source while replaying another.
   Returns cache-dir as a string."
   [{:keys [cache-dir remote-url to-ref]}]
-  (let [dir (io/file cache-dir)]
-    (if (.exists (io/file dir ".git"))
+  (let [dir (fs/path cache-dir)]
+    (if (fs/directory? (fs/path dir ".git"))
       (verify-origin! (str dir) remote-url)
-      (do (io/make-parents (io/file dir "placeholder"))
+      (do (fs/create-dirs dir)
           (git! ["clone" "--filter=blob:none" "--no-checkout"
                  remote-url (str dir)]
                 {})))
@@ -401,8 +402,8 @@
         baseline (or baseline default-baseline-path)
         ;; canonical compare: the guard must not be bypassable by path
         ;; spelling (./, absolute, ..) of the committed baseline
-        default-baseline? (= (.getCanonicalPath (io/file baseline))
-                             (.getCanonicalPath (io/file default-baseline-path)))]
+        default-baseline? (= (fs/canonicalize baseline)
+                             (fs/canonicalize default-baseline-path))]
     (when (and update? default-baseline?
                (or (not= "year" sample-period)
                    (some? from-ref)

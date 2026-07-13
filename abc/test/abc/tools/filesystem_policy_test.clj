@@ -13,11 +13,9 @@
 
 (def legacy-filesystem-namespaces
   '#{abc.tools.adr abc.tools.annotation-join-stats
-     abc.tools.annotation-join-stats-run abc.tools.aozora-history-audit
-     abc.tools.aozora-ingest abc.tools.aozora-replay
+     abc.tools.annotation-join-stats-run
      abc.tools.materialize-annotations abc.tools.materialize-import
      abc.tools.materialize-publication abc.tools.path-containment
-     abc.tools.person-drift abc.tools.person-drift-history
      abc.tools.snapshot-index
      abc.tools.soranoha abc.tools.soranoha-build-publication
      abc.tools.soranoha-stage-publication
@@ -298,11 +296,9 @@
 
 (deftest legacy-filesystem-baseline-test
   (is (= '#{abc.tools.adr abc.tools.annotation-join-stats
-            abc.tools.annotation-join-stats-run abc.tools.aozora-history-audit
-            abc.tools.aozora-ingest abc.tools.aozora-replay
+            abc.tools.annotation-join-stats-run
             abc.tools.materialize-annotations abc.tools.materialize-import
             abc.tools.materialize-publication abc.tools.path-containment
-            abc.tools.person-drift abc.tools.person-drift-history
             abc.tools.snapshot-index
             abc.tools.soranoha abc.tools.soranoha-build-publication
             abc.tools.soranoha-stage-publication

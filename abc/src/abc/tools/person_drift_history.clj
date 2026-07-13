@@ -9,6 +9,7 @@
             [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.person-record :as person-record]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string]))
@@ -42,20 +43,21 @@
        "Compares generated corpus snapshots containing works/ and persons/ directories.\n\n"
        summary))
 
-(defn- json-file? [^java.io.File file]
-  (and (.isFile file)
-       (string/ends-with? (.getName file) ".json")))
+(defn- json-file? [path]
+  (and (fs/regular-file? path)
+       (string/ends-with? (str (fs/file-name path)) ".json")))
 
 (defn- list-json-files [dir]
-  (let [file (io/file dir)]
-    (when-not (.isDirectory file)
+  (let [path (fs/path dir)]
+    (when-not (fs/directory? path)
       (throw (ex-info (str "expected directory: " dir) {:dir dir})))
-    (->> (or (.listFiles file) (make-array java.io.File 0))
+    (->> (fs/list-dir path)
          (filter json-file?)
-         (sort-by #(.getName ^java.io.File %)))))
+         (sort-by (comp str fs/file-name))
+         (map #(io/file (str %))))))
 
-(defn- file-stem [^java.io.File file]
-  (let [name (.getName file)]
+(defn- file-stem [path]
+  (let [name (str (fs/file-name path))]
     (subs name 0 (- (count name) (count ".json")))))
 
 (defn- read-persons [root]
@@ -63,13 +65,13 @@
         (map (fn [file]
                (let [record (files/read-json file)]
                  [(get record "person_id" (file-stem file)) record])))
-        (list-json-files (io/file root "persons"))))
+        (list-json-files (fs/path root "persons"))))
 
 (defn- read-works [root]
   (into (sorted-map)
         (map (fn [file]
                [(file-stem file) (files/read-json file)]))
-        (list-json-files (io/file root "works"))))
+        (list-json-files (fs/path root "works"))))
 
 (defn- corpus [root]
   (let [persons (read-persons root)

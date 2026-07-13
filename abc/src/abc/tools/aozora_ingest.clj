@@ -14,6 +14,7 @@
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.person-record :as person-record]
             [abc.tools.schema :as schema]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]
@@ -117,8 +118,8 @@
   (let [pid (get record "person_id")
         target (io/file persons-dir (str pid ".json"))
         new-hash (person-record/record-hash record)]
-    (.mkdirs (io/file persons-dir))
-    (if (.exists target)
+    (fs/create-dirs persons-dir)
+    (if (fs/exists? target)
       (let [existing (try (files/read-json (str target))
                           (catch Exception e
                             (throw (ex-info (str "on-disk person file " target
@@ -230,10 +231,10 @@
         (build-work-plan {:rows rows :work-id work-id
                           :source-csv-provenance source-csv-provenance})
         persons-dir (or persons-output-dir
-                        (str (.getParent (io/file output)) "/persons"))]
+                        (str (fs/parent output) "/persons"))]
     (doseq [[_pid record] person-records]
       (write-person-file! persons-dir record (boolean overwrite)))
-    (.mkdirs (.getParentFile (io/file output)))
+    (fs/create-dirs (fs/parent output))
     (json/write-deterministic-json-file! (io/file output) metadata-rec)
     (let [new-hash (metadata-record/record-hash metadata-rec)]
       (tel/log! :debug (str "metadata_record_hash: " new-hash))
@@ -334,8 +335,8 @@
                      " has divergent bodies across works "
                      (get c "work_ids")
                      "; keeping the body from work " (get c "chosen_work_id"))))
-    (.mkdirs works-dir)
-    (.mkdirs persons-dir)
+    (fs/create-dirs works-dir)
+    (fs/create-dirs persons-dir)
     (doseq [{:keys [record]} resolutions]
       (write-person-file! persons-dir record (boolean overwrite)))
     (doseq [{:keys [work-id metadata-rec]} plans

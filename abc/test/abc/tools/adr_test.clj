@@ -1,5 +1,8 @@
 (ns abc.tools.adr-test
   (:require [abc.tools.adr :as adr]
+            [abc.tools.adr-evidence-runtime-inputs :as runtime]
+            [abc.tools.evidence-io :as evidence-io]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]])
   (:import [java.nio.file Files]
@@ -22,6 +25,9 @@
 
 (defn- kinds [problems]
   (set (map :kind problems)))
+
+(defn- problem-kind [thunk]
+  (try (thunk) nil (catch Exception exception (:kind (ex-data exception)))))
 
 (defn- accepted-body [num title extra-fields]
   (str "# ADR " (format "%04d" num) ": " title "\n\n"
@@ -54,6 +60,59 @@
                :claim-kind :structural-invariant}]
              (:criteria parsed)))
       (is (empty? (:claim-problems parsed))))))
+
+(deftest typed-claim-headers-are-forbidden-only-in-exact-non-acceptance-sections
+  (let [dir (temp-dir)]
+    (write-adr! dir "0042-claims.md"
+                (str (claim-body 42 "Proposed"
+                                 "- **ADR-0042-C3 — fixture-behavior:** valid criterion.")
+                     "\n## Historical Evidence\n\n"
+                     "**ADR-0042-C1 — structural-invariant:** historical coordinate.\n\n"
+                     "## Future Verification\n\n"
+                     "**ADR-0042-C2 — operational-behavior:** future guard.\n\n"
+                     "## Notes\n\n"
+                     "**Ordinary bold prose:** remains ordinary prose.\n"))
+    (let [problems (:claim-problems (adr/parse-adr dir "0042-claims.md"))
+          outside (filter #(= :claim-header-outside-acceptance (:kind %)) problems)]
+      (is (= #{{:kind :claim-header-outside-acceptance
+                :file "0042-claims.md"
+                :message "typed claim headers are allowed only in Acceptance Criteria"
+                :section "Historical Evidence"}
+               {:kind :claim-header-outside-acceptance
+                :file "0042-claims.md"
+                :message "typed claim headers are allowed only in Acceptance Criteria"
+                :section "Future Verification"}}
+             (set outside)))
+      (is (= 2 (count problems))))))
+
+(deftest adr-read-adapters-preserve-values-and-are-traced-default-deny
+  (let [dir (temp-dir)
+        first-body (claim-body 42 "Proposed" "- First criterion.")
+        second-body (claim-body 43 "Proposed" "- Second criterion.")]
+    (write-adr! dir "0043-second.md" second-body)
+    (write-adr! dir "0042-first.md" first-body)
+    (write-adr! dir "README.md" "ignored")
+    (let [expected-files ["0042-first.md" "0043-second.md"]
+          expected-adr (adr/parse-adr dir "0042-first.md")
+          traced (evidence-io/with-read-trace
+                   {:identity-root dir :cwd-root dir}
+                   #(vector (adr/adr-files dir)
+                            (adr/parse-adr dir "0042-first.md")))]
+      (is (= [expected-files expected-adr] (:value traced)))
+      (is (= ["0042-first.md" "0043-second.md" "README.md"]
+             (:repository-paths traced))))
+    (let [analyzer-root (fs/file (fs/create-temp-dir {:prefix "adr-direct-read-"}))]
+      (write-path! analyzer-root "src/example/core.clj"
+                   (str "(ns example.core)\n"
+                        "(defn direct-list [dir] (.listFiles (java.io.File. dir)))\n"
+                        "(defn direct-read [path] (slurp path))\n"))
+      (write-path! analyzer-root "test/.keep" "")
+      (is (= :forbidden-evidence-io
+             (problem-kind #(runtime/analyze-reachable-vars
+                             analyzer-root ['example.core/direct-list]))))
+      (is (= :forbidden-evidence-io
+             (problem-kind #(runtime/analyze-reachable-vars
+                             analyzer-root ['example.core/direct-read])))))))
 
 (deftest claim-header-problems-are-specific-and-proposed-aware
   (let [dir (temp-dir)]

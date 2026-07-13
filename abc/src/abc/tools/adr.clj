@@ -134,6 +134,18 @@
     {:criteria (mapv #(:criterion %) parsed)
      :problems (vec (mapcat #(:problems %) parsed))}))
 
+(def ^:private non-acceptance-claim-sections
+  ["Historical Evidence" "Future Verification"])
+
+(defn- non-acceptance-claim-problems [file section-bodies]
+  (vec
+   (for [section non-acceptance-claim-sections
+         line (str/split-lines (get section-bodies section ""))
+         :when (re-find claim-header-pattern line)]
+     (problem :claim-header-outside-acceptance file
+              "typed claim headers are allowed only in Acceptance Criteria"
+              :section section))))
+
 (defn- evidence [section-bodies]
   (vec
    (for [[idx criterion]
@@ -273,7 +285,9 @@
      :sections (:sections sections-result)
      :section-bodies (:section-bodies sections-result)
      :criteria (:criteria criteria-result)
-     :claim-problems (:problems criteria-result)
+     :claim-problems (vec (concat (:problems criteria-result)
+                                  (non-acceptance-claim-problems
+                                   filename (:section-bodies sections-result))))
      :evidence (evidence (:section-bodies sections-result))
      :parse-problems (vec (concat (:problems title-result)
                                   (:problems header-result)
@@ -558,7 +572,8 @@
     :malformed-claim-header
     :claim-adr-mismatch
     :duplicate-claim-id
-    :unknown-claim-kind})
+    :unknown-claim-kind
+    :claim-header-outside-acceptance})
 
 (defn validate-adrs-legacy
   "Validate with the pre-migration lifecycle/dependency policy. Parsing,

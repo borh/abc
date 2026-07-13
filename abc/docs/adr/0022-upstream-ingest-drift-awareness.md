@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-30
 Accepted: 2026-04-30
+Validation scope: operational
+Release authority: development
 
 ## Implementation Status
 
@@ -143,21 +145,16 @@ still be possible. The failure mode belongs behind an explicit audit flag.
 
 ## Acceptance Criteria
 
-- `aozora-history-audit --drift-persons-dir examples/v0/example-persons`
-  includes `drift_participant_updates` in the JSON report, covered by
-  `test/abc/tools/aozora_history_audit_test.clj`.
-- Invalid drift sidecars under `--drift-persons-dir` make the audit fail before
-  reporting participant updates.
-- With no drift artifacts present, the report contains an empty
-  `drift_participant_updates` list.
-- With valid drift artifacts present, a generated hash change for any indexed
-  participant appears in `drift_participant_updates`.
-- `--fail-on-drift-participant-updates` exits non-zero only when that list is
-  non-empty.
-- `nix run .#aozora-upstream-audit` runs the default after-upstream audit with
-  drift sidecars and both failure gates enabled.
-- `aozora-ingest` still produces source-faithful person and work records from
-  the CSV without applying drift-event rewrites.
+- **ADR-0022-C1 — fixture-behavior:** the synthetic two-ref audit report includes `drift_participant_updates` and the matched event IDs when an indexed participant changes; `test/abc/tools/aozora_history_audit_test.clj` covers the integrated report.
+- **ADR-0022-C2 — fixture-behavior:** invalid drift sidecars abort the tested audit path before a report value is returned; `test/abc/tools/aozora_history_audit_test.clj` covers the exception.
+- **ADR-0022-C3 — fixture-behavior:** a complete synthetic audit report contains an empty `drift_participant_updates` list when no drift artifacts are present; `test/abc/tools/aozora_history_audit_test.clj` covers the report value.
+- **ADR-0022-C4 — fixture-behavior:** a generated hash change for the tested indexed participant appears in `drift_participant_updates`; `test/abc/tools/aozora_history_audit_test.clj` covers the bounded case.
+- **ADR-0022-C5 — operational-behavior:** with validation and candidate failures held false, `--fail-on-drift-participant-updates` makes the real audit process exit nonzero for a non-empty update list and does not make it fail for an empty list; other validation/candidate gates remain independent; `test/abc/tools/aozora_history_audit_test.clj` launches the subprocess and covers the exit matrix.
+- **ADR-0022-C6 — fixture-behavior:** on the bounded synthetic CSV slice, adding drift sidecars does not change the generated person record, metadata record, or refreshed manifest; `test/abc/tools/aozora_ingest_test.clj` covers raw-ingest independence without claiming broader undefined “source-faithfulness.”
+
+## Future Verification
+
+The `aozora-upstream-audit` app remains a supported wrapper, but a passing operational claim requires a direct, reproducible Nix-app observation with fixed upstream refs; wrapper source text is not that observation.
 
 ## Rollback
 

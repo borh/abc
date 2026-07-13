@@ -50,6 +50,17 @@
     (is (= :ok (pr/validate! (assoc (example-person)
                                     "date_of_birth" "-0426-01-15"))))))
 
+(deftest nullable-date-l0-lexical-contract-test
+  (doseq [value [nil "1892-03-01" "1904-01" "1941"
+                 "-0426-01-15" "-0426-01" "-0426"]]
+    (is (= :ok (pr/validate! (assoc (example-person) "date_of_birth" value)))
+        (str "expected accepted temporal lexical value " (pr-str value))))
+  (doseq [value ["1892?" "1984/1999" "{1984, 1986}"
+                 "1892-00" "1892-13" "1892-01-00" "1892-01-32"]]
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (pr/validate! (assoc (example-person) "date_of_birth" value)))
+        (str "expected rejected temporal lexical value " (pr-str value)))))
+
 (deftest validate-rejects-extra-key-test
   (testing "validate! rejects an unknown property"
     (is (thrown? clojure.lang.ExceptionInfo
@@ -162,6 +173,17 @@
   (->> (iterator-seq (.find graph))
        (filter #(= predicate-uri (.getURI (.getPredicate %))))
        (mapv #(.getObject %))))
+
+(deftest example-person-fixture-rdf-temporal-dispatch-test
+  (let [record (files/read-json fixture-path)
+        graph (pr/record->graph record)
+        [dob] (objects-of graph "http://RDVocab.info/ElementsGr2/dateOfBirth")
+        [edtf] (objects-of graph "https://w3id.org/abc/edtfDateOfBirth")]
+    (is (= "1892-03-01" (.getLiteralLexicalForm dob)))
+    (is (= "http://www.w3.org/2001/XMLSchema#date"
+           (.getLiteralDatatypeURI dob)))
+    (is (= "1892-03-01" (.getLiteralLexicalForm edtf)))
+    (is (= "https://w3id.org/abc/EDTF" (.getLiteralDatatypeURI edtf)))))
 
 (deftest record->graph-precise-date-test
   (testing "YYYY-MM-DD dates emit xsd:date with parallel EDTF echo"

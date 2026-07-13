@@ -1,7 +1,7 @@
 (ns abc.tools.shacl
   "Wrap Jena SHACL validation. Returns structured violation maps;
   rendering for human output is the caller's responsibility."
-  (:require [clojure.java.io :as io])
+  (:require [abc.tools.files :as files])
   (:import [org.apache.jena.rdf.model ModelFactory]
            [org.apache.jena.riot RDFDataMgr Lang]
            [org.apache.jena.shacl ShaclValidator]
@@ -15,7 +15,7 @@
   ([] (load-shapes-graph default-shapes-path))
   ([path]
    (let [model (ModelFactory/createDefaultModel)]
-     (with-open [in (io/input-stream path)]
+     (with-open [in (files/input-stream path)]
        (RDFDataMgr/read model in Lang/TURTLE))
      (.getGraph model))))
 

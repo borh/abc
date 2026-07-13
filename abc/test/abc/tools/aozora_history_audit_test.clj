@@ -22,6 +22,20 @@
     (doseq [child (.listFiles f)] (delete-recursive child)))
   (.delete f))
 
+(deftest drift-update-gate-is-one-independent-failure-condition-test
+  (is (false? (audit/exit-failure?
+               {:validation-failed? false :fail-on-candidates? false
+                :candidate-count 0 :fail-on-drift-participant-updates? true
+                :drift-participant-update-count 0})))
+  (is (true? (audit/exit-failure?
+              {:validation-failed? false :fail-on-candidates? false
+               :candidate-count 0 :fail-on-drift-participant-updates? true
+               :drift-participant-update-count 1})))
+  (is (true? (audit/exit-failure?
+              {:validation-failed? true :fail-on-candidates? false
+               :candidate-count 0 :fail-on-drift-participant-updates? false
+               :drift-participant-update-count 0}))))
+
 (deftest filesystem-edge-contracts-test
   (let [root (temp-dir "abc-audit-fs")
         indexes (io/file root "_indexes")
@@ -98,6 +112,13 @@
         (.setCommitter "ABC Test" "abc@example.test")
         .call)))
 
+(defn- indexed-row [family-name]
+  (row {"人物ID" "000879"
+        "姓" family-name
+        "姓読み" "あくたがわ"
+        "姓読みソート用" "あくたかわ"
+        "姓ローマ字" "Akutagawa"}))
+
 (defn- write-drift-sidecars! [persons-dir event]
   (let [event-with-id (drift/materialize-event-id event)
         event-id (get event-with-id "drift_event_id")
@@ -133,6 +154,81 @@
    "date_of_death" "1970-01-01"
    "person_copyright_expired" true
    "external_links" []})
+
+(defn- write-indexed-drift-sidecars! [drift-dir]
+  (let [previous-person (synthetic-person-record "000879" "芥川")
+        first-successor (synthetic-person-record "abc-000000000001" "芥川一")
+        second-successor (synthetic-person-record "abc-000000000002" "芥川二")]
+    (write-drift-sidecars!
+     drift-dir
+     {"schema_id" drift/event-schema-id
+      "schema_hash" (manifest/schema-hash drift/event-schema-path)
+      "drift_event_type" "split"
+      "date" "2026-04-30"
+      "participants" [{"snapshot_id" "post-abc-000000000001"
+                       "person_id" "abc-000000000001"
+                       "person_record_hash" (person-record/record-hash first-successor)}
+                      {"snapshot_id" "post-abc-000000000002"
+                       "person_id" "abc-000000000002"
+                       "person_record_hash" (person-record/record-hash second-successor)}
+                      {"snapshot_id" "pre-000879"
+                       "person_id" "000879"
+                       "person_record_hash" (person-record/record-hash previous-person)}]
+      "evidence" ["https://example.org/drift-evidence"]
+      "prov" {"used" ["pre-000879"]
+              "was_generated_by" ["post-abc-000000000001"
+                                  "post-abc-000000000002"]
+              "qualified_association" {"agent" "https://w3id.org/abc/agents/test"
+                                       "had_role" "abc:DriftEditor"}}})))
+
+(defn- cli-audit-fixture [current-family-name]
+  (let [repo-dir (temp-dir "abc-history-audit-cli-repo")
+        work-dir (temp-dir "abc-history-audit-cli-work")
+        drift-dir (temp-dir "abc-history-audit-cli-drift")
+        git (-> (Git/init) (.setDirectory repo-dir) .call)]
+    (try
+      (let [previous-ref (.getName
+                          (commit-zip!
+                           git repo-dir
+                           (sim-render/csv->zip-bytes
+                            (csv-text [(indexed-row "芥川")]))
+                           "previous corpus"))
+            current-ref (.getName
+                         (commit-zip!
+                          git repo-dir
+                          (sim-render/csv->zip-bytes
+                           (csv-text [(indexed-row current-family-name)]))
+                          "current corpus"))]
+        (write-indexed-drift-sidecars! drift-dir)
+        {:repo-dir repo-dir
+         :work-dir work-dir
+         :drift-dir drift-dir
+         :previous-ref previous-ref
+         :current-ref current-ref})
+      (finally
+        (.close git)))))
+
+(defn- delete-cli-audit-fixture! [{:keys [repo-dir work-dir drift-dir]}]
+  (delete-recursive repo-dir)
+  (delete-recursive work-dir)
+  (delete-recursive drift-dir))
+
+(defn- cli-audit-args
+  [{:keys [repo-dir work-dir drift-dir previous-ref current-ref]}]
+  ["--aozora-repo" (str repo-dir)
+   "--previous-ref" previous-ref
+   "--current-ref" current-ref
+   "--drift-persons-dir" (str drift-dir)
+   "--work-dir" (str work-dir)])
+
+(defn- run-audit-process [args]
+  (let [p (.start (doto (ProcessBuilder.
+                         (into ["clojure" "-M:abc/aozora-history-audit"] args))
+                    (.directory (io/file "."))))
+        stdout (future (slurp (.getInputStream p)))
+        stderr (future (slurp (.getErrorStream p)))
+        exit (.waitFor p)]
+    {:exit exit :stdout @stdout :stderr @stderr}))
 
 (defn- write-corpus! [root persons-by-id]
   (let [persons-dir (io/file root "persons")
@@ -178,7 +274,10 @@
 (deftest drift-participant-updates-empty-without-sidecars-test
   (let [previous-dir (temp-dir "abc-audit-prev")
         current-dir (temp-dir "abc-audit-cur")
-        drift-dir (temp-dir "abc-audit-drift")]
+        drift-dir (temp-dir "abc-audit-drift")
+        repo-dir (temp-dir "abc-audit-report-repo")
+        work-dir (temp-dir "abc-audit-report-work")
+        git (-> (Git/init) (.setDirectory repo-dir) .call)]
     (try
       (write-corpus! previous-dir {"000879" (synthetic-person-record "000879" "芥川")})
       (write-corpus! current-dir {"000879" (synthetic-person-record "000879" "芥川")})
@@ -187,15 +286,37 @@
               {:previous-dir (str previous-dir)
                :current-dir (str current-dir)
                :drift-persons-dir (str drift-dir)})))
+      (let [previous-ref (.getName
+                          (commit-zip!
+                           git repo-dir
+                           (sim-render/csv->zip-bytes (csv-text [(indexed-row "芥川")]))
+                           "previous corpus"))
+            current-ref (.getName
+                         (commit-zip!
+                          git repo-dir
+                          (sim-render/csv->zip-bytes (csv-text [(indexed-row "芥川")]))
+                          "current corpus"))
+            result (audit/audit! {:aozora-repo (str repo-dir)
+                                  :previous-ref previous-ref
+                                  :current-ref current-ref
+                                  :drift-persons-dir (str drift-dir)
+                                  :work-dir (str work-dir)})]
+        (is (= [] (:drift_participant_updates result))))
       (finally
+        (.close git)
         (delete-recursive previous-dir)
         (delete-recursive current-dir)
-        (delete-recursive drift-dir)))))
+        (delete-recursive drift-dir)
+        (delete-recursive repo-dir)
+        (delete-recursive work-dir)))))
 
 (deftest drift-participant-updates-report-hash-changes-test
   (let [previous-dir (temp-dir "abc-audit-prev")
         current-dir (temp-dir "abc-audit-cur")
-        drift-dir (temp-dir "abc-audit-drift")]
+        drift-dir (temp-dir "abc-audit-drift")
+        repo-dir (temp-dir "abc-audit-report-repo")
+        work-dir (temp-dir "abc-audit-report-work")
+        git (-> (Git/init) (.setDirectory repo-dir) .call)]
     (try
       (write-corpus! previous-dir {"000879" (synthetic-person-record "000879" "芥川")})
       (write-corpus! current-dir {"000879" (synthetic-person-record "000879" "芥川改")})
@@ -234,10 +355,30 @@
                  "current_hash" (person-record/record-hash current-person)
                  "drift_event_ids" [(get event "drift_event_id")]}]
                updates)))
+      (let [previous-ref (.getName
+                          (commit-zip!
+                           git repo-dir
+                           (sim-render/csv->zip-bytes (csv-text [(indexed-row "芥川")]))
+                           "previous corpus"))
+            current-ref (.getName
+                         (commit-zip!
+                          git repo-dir
+                          (sim-render/csv->zip-bytes (csv-text [(indexed-row "芥川改")]))
+                          "current corpus"))
+            result (audit/audit! {:aozora-repo (str repo-dir)
+                                  :previous-ref previous-ref
+                                  :current-ref current-ref
+                                  :drift-persons-dir (str drift-dir)
+                                  :work-dir (str work-dir)})]
+        (is (= ["000879"]
+               (mapv #(get % "person_id") (:drift_participant_updates result)))))
       (finally
+        (.close git)
         (delete-recursive previous-dir)
         (delete-recursive current-dir)
-        (delete-recursive drift-dir)))))
+        (delete-recursive drift-dir)
+        (delete-recursive repo-dir)
+        (delete-recursive work-dir)))))
 
 (deftest drift-participant-updates-reject-invalid-sidecars-test
   (let [previous-dir (temp-dir "abc-audit-prev")
@@ -265,6 +406,37 @@
         (delete-recursive previous-dir)
         (delete-recursive current-dir)
         (delete-recursive drift-dir)))))
+
+(deftest aozora-history-audit-cli-drift-update-exit-matrix-test
+  (let [unchanged (cli-audit-fixture "芥川")
+        changed (cli-audit-fixture "芥川改")]
+    (try
+      (let [unchanged-with-flag
+            (run-audit-process
+             (conj (cli-audit-args unchanged)
+                   "--fail-on-drift-participant-updates"))
+            changed-with-flag
+            (run-audit-process
+             (conj (cli-audit-args changed)
+                   "--fail-on-drift-participant-updates"))
+            changed-without-flag
+            (run-audit-process (cli-audit-args changed))]
+        (is (= 0 (:exit unchanged-with-flag)) (:stderr unchanged-with-flag))
+        (is (= 1 (:exit changed-with-flag)) (:stderr changed-with-flag))
+        (is (= 0 (:exit changed-without-flag)) (:stderr changed-without-flag))
+        (doseq [[process expected-update-count]
+                [[unchanged-with-flag 0]
+                 [changed-with-flag 1]
+                 [changed-without-flag 1]]]
+          (let [report (json/read-json-str (:stdout process))]
+            (is (= 0 (get-in report ["validation" "current" "failed"])))
+            (is (= 0 (get-in report ["drift" "summary" "split_candidates"])))
+            (is (= 0 (get-in report ["drift" "summary" "merge_candidates"])))
+            (is (= expected-update-count
+                   (count (get report "drift_participant_updates")))))))
+      (finally
+        (delete-cli-audit-fixture! unchanged)
+        (delete-cli-audit-fixture! changed)))))
 
 (deftest audit-history-uses-git-refs-and-flags-real-split-evidence-test
   (testing "two upstream refs are extracted, ingested, validated, and compared"

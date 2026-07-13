@@ -5,6 +5,7 @@
    [abc.tools.logging :as logging]
    [abc.tools.aat-parser-ir-compat :as compat]
    [abc.tools.analysis-identity :as analysis-identity]
+   [abc.tools.evidence-io :as evidence-io]
    [abc.tools.files :as files]
    [abc.tools.iiif :as iiif]
    [abc.tools.linked-art :as linked-art]
@@ -543,15 +544,17 @@
                         (files/read-json (files/path "examples" "ab-validator-output" "comparison-report.json"))
                         "ab-validator comparison report"))
 
+(def ^:private canonicalization-defaults
+  {:expected "667a3bfa5ab9a5e52a88e2e7de15506936a13c5d6c33825b8983861787bbcdea"
+   :identity-json "fixtures/canonicalization/manifest-identity-object.canonical.json"
+   :array-a "fixtures/canonicalization/array-ordering-negative-a.json"
+   :array-b "fixtures/canonicalization/array-ordering-negative-b.json"})
+
 (defn validate-canonicalization!
-  ([]
-   (validate-canonicalization!
-    {:expected "667a3bfa5ab9a5e52a88e2e7de15506936a13c5d6c33825b8983861787bbcdea"
-     :identity-json "fixtures/canonicalization/manifest-identity-object.canonical.json"
-     :array-a "fixtures/canonicalization/array-ordering-negative-a.json"
-     :array-b "fixtures/canonicalization/array-ordering-negative-b.json"}))
-  ([{:keys [expected identity-json array-a array-b]}]
-   (let [actual (files/sha256-file identity-json)
+  ([] (validate-canonicalization! canonicalization-defaults))
+  ([options]
+   (let [{:keys [expected identity-json array-a array-b]} options
+         actual (files/sha256-file identity-json)
          array-a (files/sha256-file array-a)
          array-b (files/sha256-file array-b)]
      (when-not (= expected actual)
@@ -817,7 +820,7 @@
                        :unknown (sort unknown)})))))
 
 (defn- load-turtle-graph [path]
-  (aa/read (aa/graph :simple) (io/file path)))
+  (aa/read (aa/graph :simple) (io/file (evidence-io/record-read! path))))
 
 (defn- validate-drift-ttl-fixture-result [{:keys [event graph]}]
   (let [event-value (files/read-json event)
@@ -968,9 +971,8 @@
   schema's JCS hash. Returns a map person_id → person-record map."
   [persons-dir person-schema-path]
   (let [live-schema-hash (manifest/schema-hash person-schema-path)
-        files (->> (fs/list-dir persons-dir)
-                   (filter #(and (fs/regular-file? %)
-                                 (string/ends-with? (str (fs/file-name %)) ".json")))
+        files (->> (files/list-files persons-dir)
+                   (filter #(string/ends-with? (str (fs/file-name %)) ".json"))
                    (sort-by str))]
     (into {}
           (for [^java.io.File f files]
@@ -1049,7 +1051,7 @@
                                    record persons-by-id)
                       :label record-path})
     (let [generated (metadata-record/record+persons->ttl record persons-by-id)
-          expected (slurp ttl-path)]
+          expected (files/read-text ttl-path)]
       (when-not (= expected generated)
         (throw (ex-info (str "metadata-record.ttl parity mismatch with " ttl-path)
                         {:record-path record-path

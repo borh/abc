@@ -65,7 +65,7 @@
 - Inventory producer: `clojure -M:abc/adr-evidence-inventory -- --output docs/reports/adr-claim-migration-inventory.json`; it rejects duplicate/unresolved baseline keys and missing resulting claim IDs.
 - Evidence capture: `clojure -M:abc/adr-evidence-capture -- --repo-root . --workspace-root .. --staging-root STAGE --descriptor PATH --output STAGE/FILE`; a successful bundle contains one Boolean observation named by the descriptor.
 - Runtime-input closure: each of the seven focused-v3 descriptors names `:runtime-input-manifest "docs/evidence/adr-inputs/<stem>.edn"`; that EDN has exact shape `{:schema-version :abc-adr-runtime-inputs-v1 :paths [...]}` with a sorted, duplicate-free vector of repository/workspace-relative runtime data paths. Focused wrapper Vars trace repository reads through `abc.tools.evidence-io` and require exact equality with `:paths`. Every descriptor selects and hashes a row in `data/adr-evidence/temporal-person-ingest-observation-catalog.edn`; the CLI and design-bundle operational-v1 descriptors instead bind their checked entrypoint-namespace closures and exact operational determinants.
-- Evidence validation/join: `abc.tools.adr-evidence/validate-registry` through `clojure -M:abc/adr-governance -- --mode audit --report docs/reports/adr-evidence-migration.json`; the optional leading `--` is normalized by Plan 1 and no positional repository argument is accepted.
+- Evidence validation/join: `abc.tools.adr-evidence/validate-registry` through `clojure -M:abc/adr-governance -- --workspace-root .. --mode audit --report docs/reports/adr-evidence-migration.json`; the optional leading `--` is normalized by Plan 1 and no positional repository argument is accepted.
 - Shared command checks use the evaluated system instead of a hard-coded architecture: `system=$(nix eval --raw --impure --expr builtins.currentSystem)`. `nix run ./abc#validate-design-bundle` is hermetic after Plan 1; `nix build --no-link "./abc#checks.${system}.git-cliff-config"` owns synthetic Git-cliff validation.
 
 ---
@@ -706,7 +706,8 @@ runtime inputs. Create the corresponding manifest with exact shape:
 ```
 
 The descriptor's `:explicit` vector must equal the manifest `:paths` plus its
-own descriptor path and manifest path. Source and test namespaces remain
+own descriptor path, manifest path, and required focused runner `bin/kaocha`.
+Source and test namespaces remain
 derived by the profile and are not duplicated in the runtime manifest. For
 `person-drift-negative-fixtures.edn`, mechanically enumerate every file
 returned by:
@@ -834,7 +835,7 @@ bin/kaocha \
   --focus abc.tools.aozora-ingest-test \
   --focus abc.tools.aozora-history-audit-test
 bin/kaocha --focus abc.tools.validate-design-bundle-test/validate-drift-fixtures-smoke-test
-clojure -M:abc/adr-governance -- --mode audit \
+clojure -M:abc/adr-governance -- --workspace-root .. --mode audit \
   --report docs/reports/adr-evidence-migration.json
 ```
 
@@ -981,7 +982,7 @@ second run leaves the registry byte-identical.
 ```bash
 clojure -M:abc/adr-evidence-inventory -- \
   --output docs/reports/adr-claim-migration-inventory.json
-clojure -M:abc/adr-governance -- --mode audit \
+clojure -M:abc/adr-governance -- --workspace-root .. --mode audit \
   --report docs/reports/adr-evidence-migration.json
 ```
 
@@ -1151,7 +1152,9 @@ Use immutable baseline hashes as ledger keys. `correct` rationales are the narro
 
 For the seven focused-v3 rows, each row's data paths are the exact `:paths` of
 `docs/evidence/adr-inputs/<boundary>.edn`. Every descriptor's `:explicit`
-vector is that set plus its own path and the manifest path.
+vector is that set plus its own path, the manifest path, and the required
+focused runner `bin/kaocha`. These are Plan 1's existing descriptor and
+runtime-closure interfaces; this plan does not define a successor protocol.
 
 | Boundary / output basename | Command and profile root | Exact runtime-data paths |
 |---|---|---|

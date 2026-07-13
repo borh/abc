@@ -5,6 +5,7 @@
   (:require [abc.git :as abc-git]
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.cli :as abc-cli]
+            [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.person-drift :as drift]
             [abc.tools.person-drift-history :as drift-history]
@@ -73,11 +74,9 @@
   (ingest-corpus! (str zip-file) (str corpus-dir) ref zip-path))
 
 (defn- index-json-files [indexes-dir]
-  (->> (if (fs/directory? indexes-dir) (fs/list-dir indexes-dir) [])
-       (filter #(and (fs/regular-file? %)
-                     (string/ends-with? (str (fs/file-name %)) ".json")))
-       (sort-by (comp str fs/file-name))
-       (map #(io/file (str %)))))
+  (map #(io/file (str %))
+       (filter #(string/ends-with? (str (fs/file-name %)) ".json")
+               (files/list-files-if-directory indexes-dir))))
 
 (defn- drift-index-map [persons-dir]
   (let [result (drift/validate-drift-events! {:persons-dir persons-dir})]
@@ -91,8 +90,8 @@
               (map (fn [file]
                      (let [index (abc-json/read-json-file file)]
                        [(get index "person_id")
-                        (vec (sort (get index "drift_event_ids")))])))
-              (index-json-files indexes-dir)))
+                        (vec (sort (get index "drift_event_ids")))]))
+                   (index-json-files indexes-dir))))
 
       :error
       (throw (ex-info "drift sidecars failed validation"
@@ -163,6 +162,15 @@
 
 (defn- participant-update-count [report]
   (count (:drift_participant_updates report)))
+
+(defn exit-failure?
+  [{:keys [validation-failed? fail-on-candidates? candidate-count
+           fail-on-drift-participant-updates? drift-participant-update-count]}]
+  (boolean
+   (or validation-failed?
+       (and fail-on-candidates? (pos? candidate-count))
+       (and fail-on-drift-participant-updates?
+            (pos? drift-participant-update-count)))))
 
 (defn- pair-report [previous-ref current-ref previous-corpus current-corpus
                     drift-persons-dir current-ingest]
@@ -396,8 +404,10 @@
                                                           (or (get-in result [:summary "drift_participant_updates"]) 0)
                                                           (participant-update-count result))]
                      (assoc result ::exit-fail?
-                            (boolean (or validation-failed?
-                                         (and (:fail-on-candidates options) (pos? candidate-count))
-                                         (and (:fail-on-drift-participant-updates options)
-                                              (pos? drift-participant-update-count)))))))
+                            (exit-failure?
+                             {:validation-failed? validation-failed?
+                              :fail-on-candidates? (:fail-on-candidates options)
+                              :candidate-count candidate-count
+                              :fail-on-drift-participant-updates? (:fail-on-drift-participant-updates options)
+                              :drift-participant-update-count drift-participant-update-count}))))
     :fail?       ::exit-fail?}))

@@ -172,3 +172,39 @@
     (is (= expected-ids
            (set (keep :claim-id
                       (mapcat (comp :criteria adrs) (keys expected-ranges))))))))
+
+(deftest temporal-person-ingest-stage-a-claim-ledger-and-inventory-contract-test
+  (let [expected-ranges {15 6, 16 4, 20 4, 21 12, 22 6}
+        expected-ids (set (mapcat (fn [[adr count]]
+                                    (map #(format "ADR-%04d-C%d" adr %)
+                                         (range 1 (inc count))))
+                                  expected-ranges))
+        expected-lifecycle {15 ["fixture" "publication"]
+                            16 ["fixture" "publication"]
+                            20 ["fixture" "publication"]
+                            21 ["fixture" "publication"]
+                            22 ["operational" "development"]}
+        adrs (into {} (map (juxt :num identity) (adr/parse-all "docs/adr")))
+        state (migration/load-migration-state "." {:require-complete? false})
+        value (inventory/inventory-value (vals adrs) state)
+        family-rows (filter (fn [[[adr _] _]] (contains? expected-ranges adr))
+                            (get-in state [:ledger :entries]))
+        baseline-rows (filter #(contains? expected-ranges (get % "adr"))
+                              (get value "baseline_criteria"))]
+    (is (not-any? #(and (= :duplicate-resulting-claim-id (:kind %))
+                        (contains? expected-ids (:claim-id %)))
+                  (:problems state)))
+    (is (= 36 (count family-rows)))
+    (is (= 36 (count baseline-rows)))
+    (is (every? some? (map #(get % "disposition") baseline-rows)))
+    (is (= expected-ids
+           (set (mapcat (comp :resulting-claim-ids val) family-rows))))
+    (is (= 32 (get-in value ["families" "temporal-person-ingest"])))
+    (is (= expected-ids
+           (->> (get value "criteria")
+                (filter #(= "temporal-person-ingest" (get % "family")))
+                (map #(get % "claim_id"))
+                set)))
+    (doseq [[adr [scope authority]] expected-lifecycle]
+      (is (= scope (get-in adrs [adr :fields "Validation scope"])))
+      (is (= authority (get-in adrs [adr :fields "Release authority"]))))))

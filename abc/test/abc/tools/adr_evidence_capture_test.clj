@@ -1,5 +1,6 @@
 (ns abc.tools.adr-evidence-capture-test
   (:require [abc.tools.adr-evidence-capture :as capture]
+            [abc.tools.adr-evidence-bundle :as bundle]
             [abc.tools.adr-evidence-observation-catalog :as catalog]
             [abc.tools.adr-evidence-operational :as operational]
             [abc.tools.adr-evidence-runtime-inputs :as runtime]
@@ -82,6 +83,17 @@
     "tei-upstream-rng"
     "turtle-prefix-inventory"})
 
+(def ^:private temporal-person-ingest-descriptor-stems
+  #{"aozora-history-audit"
+    "aozora-history-audit-cli"
+    "aozora-ingest-drift-invariants"
+    "design-bundle-operational-temporal-person-ingest"
+    "person-drift-contract"
+    "person-drift-negative-fixtures"
+    "temporal-date-normalization"
+    "temporal-person-record-contract"
+    "temporal-person-shacl-contract"})
+
 (deftest checked-in-foundation-observation-boundary-inventory-is-exact-test
   (let [stems (fn [root]
                 (->> (fs/list-dir root)
@@ -90,10 +102,12 @@
                      set))]
     (is (= 37 (count foundation-descriptor-stems)))
     (is (= (set/union foundation-descriptor-stems
-                      schema-rdf-tei-descriptor-stems)
+                      schema-rdf-tei-descriptor-stems
+                      temporal-person-ingest-descriptor-stems)
            (stems "docs/evidence/adr-capture")))
     (is (= (set/union foundation-descriptor-stems
-                      (disj schema-rdf-tei-descriptor-stems "tei-profile-drift"))
+                      (disj schema-rdf-tei-descriptor-stems "tei-profile-drift")
+                      temporal-person-ingest-descriptor-stems)
            (stems "docs/evidence/adr-inputs")))
     (is (= 42 (count (:entries (files/read-edn
                                 "docs/evidence/adr-entries/foundation.edn")))))))
@@ -192,6 +206,64 @@
                            :descriptor runtime-descriptor}
                     (not monorepo-layout?) (assoc :component-root "abc"))))
                 stem)))))))
+
+(deftest checked-in-temporal-person-ingest-boundaries-are-exact-test
+  (let [repo-root (fs/file (fs/canonicalize "."))
+        workspace-root (fs/file (fs/canonicalize ".."))
+        catalog-value (catalog/load-catalog!
+                       repo-root
+                       "data/adr-evidence/temporal-person-ingest-observation-catalog.edn")
+        bindings (files/read-edn "docs/evidence/adr-entries/temporal-person-ingest.edn")]
+    (is (= 9 (count temporal-person-ingest-descriptor-stems)))
+    (is (= 7 (count (:focused-observations catalog-value))))
+    (is (= 2 (count (:operational-observations catalog-value))))
+    (is (= 37 (count (:entries bindings))))
+    (is (empty? (catalog/validate-bindings catalog-value bindings)))
+    (is (empty? (catalog/focused-conformance-findings repo-root catalog-value)))
+    (doseq [stem (sort temporal-person-ingest-descriptor-stems)]
+      (let [descriptor-path (str "docs/evidence/adr-capture/" stem ".edn")
+            context (operational/load-descriptor-context!
+                     {:repo-root repo-root :workspace-root workspace-root
+                      :descriptor-path descriptor-path})
+            value (get-in context [:descriptor :value])]
+        (if (= "abc-adr-evidence-capture-operational-v1" (:schema-version value))
+          (let [validated (operational/validate-operational-manifest! context)
+                required (:required-inputs validated)
+                explicit (set (get-in value [:input-profile :explicit]))]
+            (is (= required explicit) stem)
+            (is (contains? required descriptor-path) stem))
+          (is (map? (runtime/validate-runtime-input-manifest!
+                     {:repo-root repo-root :workspace-root workspace-root
+                      :descriptor {:path descriptor-path :value value}}))
+              stem))))))
+
+(deftest generation-two-design-bundle-preserves-exact-historical-debt-test
+  (let [problems (:problems
+                  (bundle/validate-bundle
+                   "."
+                   "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json"
+                   "sha256:89a825eeaad021147b20938ccc5f0345421afac9c16c1143b77cdac9a145b524"
+                   ["ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"]))]
+    (is (= 16 (count problems)))
+    (is (= #{:input-hash-mismatch} (set (map :kind problems))))
+    (is (= #{["ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"]}
+           (set (map :affected-claim-ids problems))))
+    (is (= {"flake.nix" 2
+            "src/abc/tools/files.clj" 2
+            "src/abc/tools/linked_art.clj" 2
+            "src/abc/tools/logging.clj" 2
+            "src/abc/tools/manifest_to_rdf.clj" 2
+            "src/abc/tools/person_drift.clj" 2
+            "src/abc/tools/shacl.clj" 2
+            "src/abc/tools/validate_design_bundle.clj" 2}
+           (frequencies (map :input-path problems))))))
+
+(deftest live-registry-has-no-generation-two-design-bundle-bindings-test
+  (let [registry (files/read-edn "docs/adr/adr-evidence.edn")]
+    (is (empty?
+         (filter #(= "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json"
+                     (:artifact-path %))
+                 (:entries registry))))))
 
 (defn- temp-dir [prefix]
   (fs/file (fs/create-temp-dir {:prefix prefix})))

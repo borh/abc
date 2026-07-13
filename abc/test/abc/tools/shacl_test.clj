@@ -8,7 +8,7 @@
             [clojure.test :refer [deftest is testing]])
   (:import [org.apache.jena.datatypes BaseDatatype]
            [org.apache.jena.datatypes.xsd XSDDatatype]
-           [org.apache.jena.graph Graph NodeFactory]))
+           [org.apache.jena.graph Graph Node NodeFactory]))
 
 ;; Register prefixes so keyword-based map literals resolve to the correct IRIs.
 ;; Idempotent; safe at load time.
@@ -149,6 +149,128 @@
   (testing "PersonRecordShape is loaded from manifest.shacl.ttl"
     (is (contains? (shape-iris (shacl/load-shapes-graph))
                    "https://w3id.org/abc/PersonRecordShape"))))
+
+(def ^:private rdf-first
+  (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"))
+(def ^:private rdf-rest
+  (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"))
+(def ^:private rdf-nil
+  (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
+(def ^:private sh-path
+  (NodeFactory/createURI "http://www.w3.org/ns/shacl#path"))
+(def ^:private sh-property
+  (NodeFactory/createURI "http://www.w3.org/ns/shacl#property"))
+(def ^:private sh-or
+  (NodeFactory/createURI "http://www.w3.org/ns/shacl#or"))
+(def ^:private sh-datatype
+  (NodeFactory/createURI "http://www.w3.org/ns/shacl#datatype"))
+(def ^:private sh-max-count
+  (NodeFactory/createURI "http://www.w3.org/ns/shacl#maxCount"))
+(def ^:private sh-pattern
+  (NodeFactory/createURI "http://www.w3.org/ns/shacl#pattern"))
+(def ^:private person-record-shape
+  (NodeFactory/createURI "https://w3id.org/abc/PersonRecordShape"))
+(def ^:private rdag2-date-of-birth
+  (NodeFactory/createURI "http://RDVocab.info/ElementsGr2/dateOfBirth"))
+(def ^:private abc-edtf-date-of-birth
+  (NodeFactory/createURI "https://w3id.org/abc/edtfDateOfBirth"))
+(def ^:private abc-edtf-date-of-death
+  (NodeFactory/createURI "https://w3id.org/abc/edtfDateOfDeath"))
+(def ^:private abc-edtf
+  (NodeFactory/createURI "https://w3id.org/abc/EDTF"))
+(def ^:private xsd-date
+  (NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#date"))
+(def ^:private xsd-g-year-month
+  (NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#gYearMonth"))
+(def ^:private xsd-g-year
+  (NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#gYear"))
+(def ^:private temporal-pattern
+  "^(-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?|-?\\d{3}X|-?\\d{2}XX)$")
+
+(defn- objects [^Graph graph subject predicate]
+  (mapv #(.getObject %)
+        (iterator-seq (.find graph subject predicate Node/ANY))))
+
+(defn- unique-object [^Graph graph subject predicate]
+  (let [matches (objects graph subject predicate)]
+    (when-not (= 1 (count matches))
+      (throw (ex-info "expected exactly one RDF object"
+                      {:subject subject
+                       :predicate predicate
+                       :objects matches})))
+    (first matches)))
+
+(defn- exact-property-shape [^Graph graph path]
+  (let [attached (set (objects graph person-record-shape sh-property))
+        matches (->> attached
+                     (filter #(some #{path} (objects graph % sh-path)))
+                     set)]
+    (when-not (= 1 (count matches))
+      (throw (ex-info "expected exactly one attached SHACL property shape"
+                      {:node-shape person-record-shape
+                       :path path
+                       :attached attached
+                       :matches matches})))
+    (first matches)))
+
+(defn- rdf-list [^Graph graph head]
+  (loop [node head
+         seen #{}
+         values []]
+    (cond
+      (= rdf-nil node) values
+      (contains? seen node)
+      (throw (ex-info "cyclic RDF list" {:head head :node node}))
+      :else
+      (recur (unique-object graph node rdf-rest)
+             (conj seen node)
+             (conj values (unique-object graph node rdf-first))))))
+
+(defn- datatype-alternatives [^Graph graph property-shape]
+  (->> (rdf-list graph (unique-object graph property-shape sh-or))
+       (map #(unique-object graph % sh-datatype))
+       set))
+
+(deftest exact-property-shape-rejects-detached-match-test
+  (let [g (shacl/load-shapes-graph)
+        attached (exact-property-shape g rdag2-date-of-birth)
+        orphan (NodeFactory/createBlankNode)]
+    (.delete g (org.apache.jena.graph.Triple/create
+                attached sh-path rdag2-date-of-birth))
+    (.add g (org.apache.jena.graph.Triple/create
+             orphan sh-path rdag2-date-of-birth))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"attached SHACL property shape"
+                          (exact-property-shape g rdag2-date-of-birth)))))
+
+(deftest birth-pattern-cannot-be-donated-by-death-property-test
+  (let [g (shacl/load-shapes-graph)
+        birth-property (exact-property-shape g abc-edtf-date-of-birth)
+        death-property (exact-property-shape g abc-edtf-date-of-death)
+        birth-pattern (unique-object g birth-property sh-pattern)]
+    (.delete g (org.apache.jena.graph.Triple/create
+                birth-property sh-pattern birth-pattern))
+    (is (= temporal-pattern
+           (.getLiteralLexicalForm
+            (unique-object g death-property sh-pattern))))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"exactly one RDF object"
+                          (unique-object g birth-property sh-pattern)))))
+
+(deftest person-record-temporal-shape-contract-test
+  (let [g (shacl/load-shapes-graph)
+        dob-property (exact-property-shape g rdag2-date-of-birth)
+        edtf-property (exact-property-shape g abc-edtf-date-of-birth)]
+    (is (= #{xsd-date xsd-g-year-month xsd-g-year}
+           (datatype-alternatives g dob-property)))
+    (is (= #{(NodeFactory/createLiteral "1" XSDDatatype/XSDinteger)}
+           (set (objects g edtf-property sh-max-count))))
+    (is (= #{abc-edtf}
+           (set (objects g edtf-property sh-datatype))))
+    (is (= temporal-pattern
+           (.getLiteralLexicalForm
+            (unique-object g edtf-property sh-pattern))))
+    (is (pos? (count (iterator-seq (.find g)))))))
 
 (deftest validate-abc-local-person-record-conforms-test
   (testing "PersonRecordShape accepts the ABC-local identifier RDF emitted by person-record"

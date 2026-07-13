@@ -1,0 +1,2 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["schemas/manifest.shacl.ttl"]}

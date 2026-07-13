@@ -1,19 +1,34 @@
 (ns abc.git
-  (:require [clj-jgit.porcelain :as git :refer
+  (:require [abc.tools.evidence-io :as evidence-io]
+            [clj-jgit.porcelain :as git :refer
              [load-repo git-blame]]
             [clojure.java.io :as io]
             [clojure.spec.alpha :as s])
-  (:import [java.util Date]
+  (:import [java.time Instant]
+           [java.util Date TimeZone]
            [org.eclipse.jgit.revwalk RevCommit RevWalk]
            [org.eclipse.jgit.api Git]
            [org.eclipse.jgit.diff DiffFormatter RawTextComparator]
-           [org.eclipse.jgit.lib Repository]
+           [org.eclipse.jgit.lib PersonIdent Repository]
            [org.eclipse.jgit.treewalk TreeWalk]
            [org.eclipse.jgit.treewalk.filter PathFilter]
            [org.eclipse.jgit.util.io DisabledOutputStream]))
 
 (defn load-git-repo [path]
-  (load-repo path))
+  (load-repo (evidence-io/record-read! path)))
+
+(defn add-file! [^Git repo path]
+  (-> repo .add (.addFilepattern path) .call))
+
+(defn commit! [^Git repo message ident]
+  (-> repo .commit (.setMessage message)
+      (.setAuthor ident) (.setCommitter ident) .call))
+
+(defn commit-at! [^Git repo message instant-str]
+  (let [ident (PersonIdent. "ABC Sim" "sim@example.test"
+                            (Date/from (Instant/parse instant-str))
+                            (TimeZone/getTimeZone "UTC"))]
+    (commit! repo message ident)))
 
 (defn get-commit-date [^RevCommit commit]
   (.. commit (getAuthorIdent) (getWhen)))

@@ -283,6 +283,153 @@
    :planned-evidence-boundaries [:historical-evidence]
    :resulting-claim-ids []}
 
+  [15 "sha256:adc24109c33a51a7ee61c62e68176f936a457424f83337164d23c4911b1336e1"]
+  {:disposition :correct
+   :rationale "Narrow to the tested live nullable-date lexical contract."
+   :planned-evidence-boundaries [:temporal-person-record-contract]
+   :resulting-claim-ids ["ADR-0015-C1"]}
+  [15 "sha256:52547141b2fd0d956146feecb4ea432671de700cc0f5bd1e54667afc3728c05d"]
+  {:disposition :correct
+   :rationale "Narrow normalization to the named tested cases and disclaim temporal knowledge-state preservation."
+   :planned-evidence-boundaries [:temporal-date-normalization]
+   :resulting-claim-ids ["ADR-0015-C2"]}
+  [15 "sha256:6ab7b8899d2fa14f65e3c94edbf2a4fd29d5d27ce4ef4faa3842cb4d133a2ba3"]
+  {:disposition :correct
+   :rationale "Narrow RDF emission to the tested temporal values, datatypes, and committed person fixture."
+   :planned-evidence-boundaries [:temporal-person-record-contract]
+   :resulting-claim-ids ["ADR-0015-C3"]}
+  [15 "sha256:689b0aeacd58349c8a2cccd81d7c2902bac3d73dfb8e8a45750d6aedc7dbfcaf"]
+  {:disposition :correct
+   :rationale "Split the SHACL structure contract from malformed EDTF fixture rejection."
+   :planned-evidence-boundaries [:temporal-person-shacl-contract]
+   :resulting-claim-ids ["ADR-0015-C4" "ADR-0015-C5"]}
+  [15 "sha256:84b28c07c9829cc4ab4348a78cf360685fbd03c5a491a7592a3fa104da598256"]
+  {:disposition :correct
+   :rationale "Replace the historical rotation claim with the current committed fixture contract."
+   :planned-evidence-boundaries [:temporal-person-record-contract]
+   :resulting-claim-ids ["ADR-0015-C6"]}
+
+  [16 "sha256:2519cfc44e4cb67b628bd612959f97fa66c0c47da6a865d26432b329f7e5df8d"]
+  {:disposition :correct
+   :rationale "Split schema admission from verbatim parser admission for tested Level 1 values."
+   :planned-evidence-boundaries [:temporal-person-record-contract
+                                 :temporal-date-normalization]
+   :resulting-claim-ids ["ADR-0016-C1" "ADR-0016-C2"]}
+  [16 "sha256:8691f2f8e43281027c2970ec401e71c77ccee5e0d195b70cba0bd3c2b126ff37"]
+  {:disposition :correct
+   :rationale "Narrow BCE-century translation to the named tested prose cases and correction record."
+   :planned-evidence-boundaries [:temporal-date-normalization]
+   :resulting-claim-ids ["ADR-0016-C3"]}
+  [16 "sha256:5a033804571f4d65a8f337576c8c323fb4db3eba5b88ce1bf5b71609c0509baa"]
+  {:disposition :correct
+   :rationale "Narrow Level 1 RDF emission to the tested EDTF-only birth and death examples."
+   :planned-evidence-boundaries [:temporal-person-record-contract]
+   :resulting-claim-ids ["ADR-0016-C4"]}
+  [16 "sha256:cdaf44a67bf34b328833694227bda8f37482cc9bfed742dcedad4bb70907fbee"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Keep the temporal source-of-truth rule in the existing Hard Rule section rather than self-certifying it."
+   :planned-evidence-boundaries [:hard-rule]
+   :resulting-claim-ids []}
+
+  [20 "sha256:3a08d6ccc6a8b423b7cb6fed4401fbc37507224b8f342317ed8e593a258278ff"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Keep the decision-completeness checklist as Decision prose rather than an acceptance observation."
+   :planned-evidence-boundaries [:decision-review-checklist]
+   :resulting-claim-ids []}
+  [20 "sha256:c85fc9d88756e63e9dd959ce6f720f582fea12659e3d2d8dd279929df503b77e"]
+  {:disposition :correct
+   :rationale "Narrow snapshot identity to the tested participant fields and event-embedded hash derivation."
+   :planned-evidence-boundaries [:person-drift-contract]
+   :resulting-claim-ids ["ADR-0020-C1"]}
+  [20 "sha256:aa985fb4a821f599426a41c0d4898aca0689a3a2e4cc496079358f84235788ac"]
+  {:disposition :correct
+   :rationale "Expand the canonical participant invariant to every directly tested ordering and role condition."
+   :planned-evidence-boundaries [:person-drift-contract]
+   :resulting-claim-ids ["ADR-0020-C2"]}
+  [20 "sha256:416179c0073723a2481d050c7e40eefb9e2db6e7f12ef98a7ea0197d7ce53b7e"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Keep vocabulary justification in Decision rather than creating an expert-assessment claim."
+   :planned-evidence-boundaries [:decision-vocabulary-rationale]
+   :resulting-claim-ids []}
+  [20 "sha256:85bc98c236b2952eedd925cb43ec6f24c661364ce9802de2272dcf66db6d79ca"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Keep the canonical PROV graph in Decision rather than treating document presence as acceptance evidence."
+   :planned-evidence-boundaries [:decision-canonical-graph]
+   :resulting-claim-ids []}
+  [20 "sha256:d49bff5a6d2b8b5ff5ad6efe01bedf08980bfb171b22a3cd9a4766f26a4b83cd"]
+  {:disposition :correct
+   :rationale "Narrow drift-sidecar identity independence to the bounded isolated before/after ingest observation."
+   :planned-evidence-boundaries [:aozora-ingest-drift-invariants]
+   :resulting-claim-ids ["ADR-0020-C3"]}
+  [20 "sha256:f6a7cffce8a0a73512ad82897f30e457eb9fb65b850d3a30f08c9f3b98d321cd"]
+  {:disposition :correct
+   :rationale "Replace a conditional future checklist with the exact tested schema-hash cascade on one example slice."
+   :planned-evidence-boundaries [:aozora-ingest-drift-invariants]
+   :resulting-claim-ids ["ADR-0020-C4"]}
+
+  [21 "sha256:6033c5293e449ce30fb72a50b4fc52c3b47351fd19a32db46c34f07ca61bb822"]
+  {:disposition :correct :rationale "Narrow to meta-schema validity and the tested split wrapper."
+   :planned-evidence-boundaries [:person-drift-contract] :resulting-claim-ids ["ADR-0021-C1"]}
+  [21 "sha256:083ef8f3cb35990f9ee3b1a347bc94582fe4e82083d69d5bf69ce9e4889d989b"]
+  {:disposition :correct :rationale "Bind required participant fields and every tested split/merge cardinality boundary."
+   :planned-evidence-boundaries [:person-drift-contract] :resulting-claim-ids ["ADR-0021-C2"]}
+  [21 "sha256:e3bd964748ab806f5a742b3090b4b6c03a88cc4d4a94adf8b5504c81a30da0cb"]
+  {:disposition :correct :rationale "Bind the exact tested JSON coherence and ordering failure families."
+   :planned-evidence-boundaries [:person-drift-contract] :resulting-claim-ids ["ADR-0021-C3"]}
+  [21 "sha256:707b61ec5d36ba3cd31fe5a4a613dd1484aa90590d8bb280ae87503c72a73d93"]
+  {:disposition :correct :rationale "Narrow association validation to the tested role, CURIE, and IRI failures."
+   :planned-evidence-boundaries [:person-drift-contract] :resulting-claim-ids ["ADR-0021-C4"]}
+  [21 "sha256:644ce208c0017d00798e4ca327effa23acdf0c1e791f6dbc1529fc82ce569e7d"]
+  {:disposition :correct :rationale "Narrow index schema acceptance to meta-schema validity and the tested sidecar."
+   :planned-evidence-boundaries [:person-drift-contract] :resulting-claim-ids ["ADR-0021-C5"]}
+  [21 "sha256:5bc928991e173bebb4d7e6633d86dc4038881aa399f46c5533bb238eb24a6687"]
+  {:disposition :correct :rationale "Bind the exact named SHACL shapes and subclass axioms."
+   :planned-evidence-boundaries [:person-drift-contract] :resulting-claim-ids ["ADR-0021-C6"]}
+  [21 "sha256:d1b292cb72e067f7d4495229b56392b2cd7340a9f228d302d3f1ae40c0b350f5"]
+  {:disposition :correct :rationale "Bind exact RDF types and derived PROV predicates."
+   :planned-evidence-boundaries [:person-drift-contract] :resulting-claim-ids ["ADR-0021-C7"]}
+  [21 "sha256:b95ff72277e76ae8242e66d15693243acfca9c5702d7f2c5e6ffb2787c54f8c9"]
+  {:disposition :correct :rationale "Narrow snapshot IRI derivation to the event-embedded value without claiming no disk reads."
+   :planned-evidence-boundaries [:person-drift-contract] :resulting-claim-ids ["ADR-0021-C8"]}
+  [21 "sha256:dc959564d76c3f13a46206563e25e5d8831e8747120b25864be6a90e6cbd04f9"]
+  {:disposition :correct :rationale "Bind the named focused and negative-fixture failure families."
+   :planned-evidence-boundaries [:person-drift-contract :person-drift-negative-fixtures]
+   :resulting-claim-ids ["ADR-0021-C9"]}
+  [21 "sha256:cee5b2ae02dcc8783e35f14176c7cfa72e2d16b6255546cd9391d856077f7774"]
+  {:disposition :correct :rationale "Replace an open layout statement with exact committed event and index counts plus validation."
+   :planned-evidence-boundaries [:person-drift-contract] :resulting-claim-ids ["ADR-0021-C10"]}
+  [21 "sha256:25b4756df520324cc4f0a06533565b26d4805a2be3b9606f2f2a90a372de459e"]
+  {:disposition :correct :rationale "Narrow negative fixtures to the exact asserted failure-code sets."
+   :planned-evidence-boundaries [:person-drift-negative-fixtures] :resulting-claim-ids ["ADR-0021-C11"]}
+  [21 "sha256:def82dda8cb1c9974dc0c9e6cbab6844eb069a6e94ead021a14af0c538c553f5"]
+  {:disposition :move-out-of-acceptance :rationale "Move the timeless full-flake statement to Future Verification."
+   :planned-evidence-boundaries [:future-verification] :resulting-claim-ids []}
+  [21 "sha256:0045536ea528a57ef7e4286053d7064d0c36162539b974e672877f07832c8514"]
+  {:disposition :correct :rationale "Narrow manifest independence to the bounded isolated drift-sidecar before/after comparison."
+   :planned-evidence-boundaries [:aozora-ingest-drift-invariants] :resulting-claim-ids ["ADR-0021-C12"]}
+
+  [22 "sha256:5d00fc58a4ea0f22d218fb22bbaed0b65c9d1424e5975e2ea4f9c44fdf80aaf9"]
+  {:disposition :correct :rationale "Narrow the integrated audit report to the synthetic two-ref participant-update case."
+   :planned-evidence-boundaries [:aozora-history-audit] :resulting-claim-ids ["ADR-0022-C1"]}
+  [22 "sha256:fb29421579ba8a21f6e3e65c09793856548194a7fbfa09d6bc89020c597c4c49"]
+  {:disposition :correct :rationale "Bind invalid-sidecar rejection before a report value is returned."
+   :planned-evidence-boundaries [:aozora-history-audit] :resulting-claim-ids ["ADR-0022-C2"]}
+  [22 "sha256:77b58b46c4666f05d9b76fd1d50c8b86622421774ab8c389da2baece4758c224"]
+  {:disposition :correct :rationale "Bind the complete no-drift synthetic report's empty update list."
+   :planned-evidence-boundaries [:aozora-history-audit] :resulting-claim-ids ["ADR-0022-C3"]}
+  [22 "sha256:d6707484c1c74f151303467c358d0154653d22afa290af86ed69971d7ea39951"]
+  {:disposition :correct :rationale "Narrow generated hash change reporting to the tested indexed participant."
+   :planned-evidence-boundaries [:aozora-history-audit] :resulting-claim-ids ["ADR-0022-C4"]}
+  [22 "sha256:3e73235ca56b5be557ed53d185f3202641a6db7cfb87ea7d409763939082192d"]
+  {:disposition :correct :rationale "Bind real-process exit behavior to the isolated update gate matrix."
+   :planned-evidence-boundaries [:aozora-history-audit-cli] :resulting-claim-ids ["ADR-0022-C5"]}
+  [22 "sha256:3ee9b18b1ecb4c383705854050bcc34f14b3f406c052d42a79212c755829d6e0"]
+  {:disposition :move-out-of-acceptance :rationale "Move the supported Nix wrapper statement to Future Verification pending a reproducible fixed-ref observation."
+   :planned-evidence-boundaries [:future-verification] :resulting-claim-ids []}
+  [22 "sha256:b8e3874473dd6dde59befbb463ae9808255c47a5d4c04977af6498ef1f0b8e1b"]
+  {:disposition :correct :rationale "Narrow ingest independence to the bounded synthetic CSV slice and exact generated artifacts."
+   :planned-evidence-boundaries [:aozora-ingest-drift-invariants] :resulting-claim-ids ["ADR-0022-C6"]}
+
   [33 "sha256:5f0ee5797b8e45e6292ed4015d791002b96ec3d18e980f699de73ce3203bf2d0"]
   {:disposition :correct
    :rationale "Narrow this row to the canonical all-member schema fixture; the separate known-answer baseline row solely owns ADR-0033-C2."

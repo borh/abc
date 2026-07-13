@@ -79,6 +79,13 @@
 (defn- problem-kinds [problems]
   (set (map :kind problems)))
 
+(defn- exception-kind [thunk]
+  (try
+    (thunk)
+    nil
+    (catch clojure.lang.ExceptionInfo exception
+      (:kind (ex-data exception)))))
+
 (deftest observation-contract-known-answer-is-order-independent-test
   (let [expected-json (str "{\"descriptor_stem\":\"focused-example\","
                            "\"focus_var\":\"abc.tools.foundation-evidence-test/committed-manifest-schema-conformance-test\","
@@ -316,11 +323,32 @@
             (fs/file repo-root "data/adr-evidence/foundation-capture-conformance-debt.edn"))
            {:schema-version :abc-foundation-capture-conformance-debt-v1
             :findings (catalog/normalize-conformance-findings
-                       (catalog/focused-conformance-findings repo-root foundation))}))))
+                       (catalog/foundation-focused-conformance-findings
+                        repo-root foundation))}))))
 
 (deftest foundation-focused-observations-have-zero-conformance-debt-test
   (let [repo-root (fs/file (fs/canonicalize "."))
         foundation (catalog/load-catalog!
                     repo-root "data/adr-evidence/foundation-observation-catalog.edn")]
     (is (empty? (catalog/normalize-conformance-findings
-                 (catalog/focused-conformance-findings repo-root foundation))))))
+                 (catalog/foundation-focused-conformance-findings
+                  repo-root foundation))))))
+
+(deftest foundation-compatibility-profile-rejects-every-other-catalog-test
+  (let [repo-root (fs/file (fs/canonicalize "."))
+        foundation (catalog/load-catalog!
+                    repo-root "data/adr-evidence/foundation-observation-catalog.edn")
+        temporal (catalog/load-catalog!
+                  repo-root
+                  "data/adr-evidence/temporal-person-ingest-observation-catalog.edn")
+        changed (update-in foundation [:focused-observations 0 :observation-key]
+                           str "-changed")
+        ad-hoc (catalog-value [focused-row] [])]
+    (doseq [[label candidate] [["changed" changed]
+                               ["ad hoc" ad-hoc]
+                               ["temporal" temporal]]]
+      (is (= :invalid-foundation-conformance-profile
+             (exception-kind
+              #(catalog/foundation-focused-conformance-findings
+                repo-root candidate)))
+          label))))

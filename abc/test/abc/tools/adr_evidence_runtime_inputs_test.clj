@@ -1,9 +1,13 @@
 (ns abc.tools.adr-evidence-runtime-inputs-test
   (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
             [abc.tools.files :as files]
+            [abc.tools.manifest-to-rdf :as manifest-to-rdf]
+            [abc.tools.shacl :as shacl]
+            [abc.tools.validate-design-bundle :as validate-design-bundle]
             [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.set :as set]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is]]))
 
 (defn- temp-dir []
@@ -40,12 +44,17 @@
 (defn- boundary-analyzer-repo [body]
   (let [root (analyzer-repo body)]
     (write! root "src/abc/tools/evidence_io.clj"
-            (str "(ns abc.tools.evidence-io)\n"
+            (str "(ns abc.tools.evidence-io (:require [babashka.fs :as fs]))\n"
                  "(defn with-read-trace [options thunk] (thunk))\n"
                  "(defn with-ephemeral-root [root thunk] (thunk))\n"
-                 "(defn with-owned-ephemeral-root [thunk] (thunk \"tmp\"))\n"))
+                 "(defn record-read! [path] path)\n"
+                 "(defn with-owned-ephemeral-root [thunk]\n"
+                 "  (fs/with-temp-dir [] (thunk \"tmp\")))\n"))
     (write! root "src/abc/tools/files.clj"
-            "(ns abc.tools.files)\n(defn with-zip-file [archive callback] (callback archive))\n")
+            (str "(ns abc.tools.files (:import [java.util.zip ZipFile]))\n"
+                 "(defn with-zip-file [archive callback]\n"
+                 "  (with-open [zip (ZipFile. (abc.tools.evidence-io/record-read! archive))]\n"
+                 "    (callback zip)))\n"))
     (write! root "src/abc/tools/adr_evidence_runtime_inputs.clj"
             (str "(ns abc.tools.adr-evidence-runtime-inputs)\n"
                  "(defn assert-runtime-input-closure! [options] true)\n"
@@ -359,6 +368,39 @@
     (is (= :forbidden-evidence-io
            (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad]))))))
 
+(deftest domain-functions-cannot-hide-transitive-read-or-process-bypasses-test
+  (doseq [[label domain-var domain-body]
+          [["date parser raw read"
+            'abc.tools.aozora-csv/parse-date
+            "(defn parse-date [value] (slurp value))"]
+           ["ingest runner raw read"
+            'abc.tools.aozora-ingest/run-from-rows!
+            "(defn run-from-rows! [options] (slurp (:input options)))"]
+           ["drift RDF process"
+            'abc.tools.person-drift/event->graph
+            "(defn event->graph [event] (java.lang.ProcessBuilder. [\"true\"]))"]
+           ["SHACL validation raw read"
+            'abc.tools.shacl/validate!
+            "(defn validate! [options] (slurp (:shapes options)))"]
+           ["history audit process"
+            'abc.tools.aozora-history-audit/drift-participant-updates
+            "(defn drift-participant-updates [options] (java.lang.ProcessBuilder. [\"true\"]))"]]]
+    (let [root (temp-dir)
+          domain-ns (symbol (namespace domain-var))
+          domain-path (str "src/" (-> (namespace domain-var)
+                                      (string/replace "." "/")
+                                      (string/replace "-" "_"))
+                           ".clj")
+          domain-name (symbol (name domain-var))]
+      (write! root domain-path (str "(ns " domain-ns ")\n" domain-body "\n"))
+      (write! root "test/example/contract_test.clj"
+              (str "(ns example.contract-test (:require [" domain-ns " :as domain]))\n"
+                   "(defn contract [] (domain/" domain-name " {}))\n"))
+      (is (= :forbidden-evidence-io
+             (problem-kind #(runtime/analyze-reachable-vars
+                             root ['example.contract-test/contract])))
+          label))))
+
 (deftest untraced-metadata-and-generic-jvm-length-are-not-safe-test
   (doseq [[label body]
           [["canonicalize"
@@ -382,7 +424,207 @@
             abc.tools.files/with-zip-file
             abc.tools.files/load-jena-model
             abc.tools.files/parse-xml-document}
-         inventory))))
+         inventory))
+    (is (empty?
+         (set/intersection
+          '#{abc.tools.aozora-csv/parse-date
+             abc.tools.aozora-ingest/run-from-rows!
+             abc.tools.aozora-ingest/write-person-file!
+             abc.tools.malli/cached-schema-hash
+             abc.tools.person-drift/event->graph
+             abc.tools.person-drift/validate!
+             abc.tools.shacl/validate!
+             abc.tools.aozora-history-audit/drift-participant-updates}
+          inventory)))))
+
+(deftest strict-analysis-does-not-trust-legacy-foundation-terminals-test
+  (let [root (temp-dir)]
+    (write! root "src/abc/sim/content_sim_test.clj"
+            (str "(ns abc.sim.content-sim-test\n"
+                 "  (:require [clojure.java.io :as io]))\n"
+                 "(defn overwrite-zip! [path] (io/output-stream path))\n"
+                 "(defn contract [path] (overwrite-zip! path))\n"))
+    (write! root "test/.keep" "")
+    (is (= :forbidden-evidence-capability
+           (problem-kind #(runtime/analyze-reachable-vars
+                           root ['abc.sim.content-sim-test/contract]))))
+    (is (= :invalid-foundation-conformance-profile
+           (problem-kind #(runtime/analyze-foundation-reachable-vars
+                           root ['abc.sim.content-sim-test/contract]))))))
+
+(deftest restored-public-apis-have-only-their-original-fixed-arities-test
+  (is (= '([] [path]) (:arglists (meta #'shacl/load-shapes-graph))))
+  (is (= '([manifest] [manifest opts])
+         (:arglists (meta #'manifest-to-rdf/manifest->ttl))))
+  (is (= '([] [options])
+         (:arglists (meta #'validate-design-bundle/validate-canonicalization!)))))
+
+(deftest static-code-loading-bridge-rejects-any-additional-target-test
+  (let [audit! (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                                    'audit-static-code-loading-edge!))
+        find-defn (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                                       'defn-form))
+        forms (runtime/read-source-forms! (files/path "src" "abc/tools/malli.clj"))
+        original (find-defn forms 'cached-schema-hash)
+        mutations ['(slurp "secret")
+                   '(java.nio.file.Files/readAllBytes (java.nio.file.Path/of "secret" (make-array String 0)))
+                   '(java.nio.file.Files/newInputStream (java.nio.file.Path/of "secret" (make-array String 0)))
+                   '(java.nio.file.Files/readString (java.nio.file.Path/of "secret" (make-array String 0)))
+                   '(java.nio.file.Files/newBufferedReader (java.nio.file.Path/of "secret" (make-array String 0)))
+                   '(java.nio.file.Files/list (java.nio.file.Path/of "." (make-array String 0)))
+                   '(clojure.java.io/input-stream "secret")
+                   '(clojure.java.io/reader "secret")
+                   '(java.io.FileReader. "secret")
+                   '(java.io.FileInputStream. "secret")
+                   '(java.util.zip.ZipFile. "secret.zip")
+                   '(.listFiles (java.io.File. "."))
+                   '(babashka.fs/list-dir ".")
+                   '(babashka.fs/directory? ".")
+                   '(babashka.fs/regular-file? "secret")
+                   '(babashka.fs/glob "." "**/*")
+                   '(org.apache.jena.riot.RDFDataMgr/loadModel "secret")
+                   '(org.apache.jena.riot.RDFDataMgr/read nil "secret")
+                   '(org.apache.jena.riot.RDFDataMgr/loadGraph "secret")
+                   '(org.apache.jena.riot.RDFDataMgr/readDataset "secret")
+                   '(java.lang.ProcessBuilder. ["true"])
+                   '(.openStream (java.net.URL. "https://example.test"))
+                   '(requiring-resolve 'example.injected/run)]]
+    (is (= 'abc.tools.manifest/schema-hash
+           (audit! 'abc.tools.malli/cached-schema-hash original)))
+    (doseq [mutation mutations]
+      (is (= :forbidden-evidence-capability
+             (problem-kind
+              #(audit! 'abc.tools.malli/cached-schema-hash
+                       (concat original [mutation]))))))))
+
+(deftest every-trusted-leaf-rejects-injected-capabilities-test
+  (let [adapters (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                                      'trusted-adapter-vars))
+        structural-leaves
+        (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                             'audited-structural-leaf-vars))
+        inventory (set/union adapters structural-leaves)
+        operation-inventories
+        (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                             'trusted-adapter-operation-counts))
+        audit! (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                                    'audit-trusted-adapter-form!))
+        find-defn (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                                       'defn-form))
+        mutations {'slurp '(slurp "secret")
+                   'files-read-all-bytes
+                   '(java.nio.file.Files/readAllBytes
+                     (java.nio.file.Path/of "secret" (make-array String 0)))
+                   'files-new-input-stream
+                   '(java.nio.file.Files/newInputStream
+                     (java.nio.file.Path/of "secret" (make-array String 0)))
+                   'files-read-string
+                   '(java.nio.file.Files/readString
+                     (java.nio.file.Path/of "secret" (make-array String 0)))
+                   'files-new-buffered-reader
+                   '(java.nio.file.Files/newBufferedReader
+                     (java.nio.file.Path/of "secret" (make-array String 0)))
+                   'files-list
+                   '(java.nio.file.Files/list
+                     (java.nio.file.Path/of "." (make-array String 0)))
+                   'io-input-stream '(clojure.java.io/input-stream "secret")
+                   'io-reader '(clojure.java.io/reader "secret")
+                   'file-reader '(java.io.FileReader. "secret")
+                   'file-input-stream '(java.io.FileInputStream. "secret")
+                   'zip-file '(java.util.zip.ZipFile. "secret.zip")
+                   'file-listing '(.listFiles (java.io.File. "."))
+                   'fs-list-dir '(babashka.fs/list-dir ".")
+                   'fs-directory '(babashka.fs/directory? ".")
+                   'fs-regular-file '(babashka.fs/regular-file? "secret")
+                   'fs-glob '(babashka.fs/glob "." "**/*")
+                   'jena-load-model '(org.apache.jena.riot.RDFDataMgr/loadModel "secret")
+                   'jena-read '(org.apache.jena.riot.RDFDataMgr/read nil "secret")
+                   'jena-load-graph '(org.apache.jena.riot.RDFDataMgr/loadGraph "secret")
+                   'jena-read-dataset '(org.apache.jena.riot.RDFDataMgr/readDataset "secret")
+                   'process '(java.lang.ProcessBuilder. ["true"])
+                   'network '(.openStream (java.net.URL. "https://example.test"))
+                   'code-loading '(requiring-resolve 'example.core/run)}]
+    (is (= inventory (set (keys operation-inventories))))
+    (doseq [leaf inventory
+            :let [resolved (ns-resolve (symbol (namespace leaf))
+                                       (symbol (name leaf)))
+                  metadata (meta resolved)
+                  source-file (some #(when (fs/exists? %) %)
+                                    [(files/path "src" (:file metadata))
+                                     (files/path "test" (:file metadata))])
+                  forms (runtime/read-source-forms!
+                         source-file)
+                  original (find-defn forms (:name metadata))]]
+      (is (true? (audit! leaf original))
+          (str leaf " matches its exact operation inventory"))
+      (doseq [[label mutation] mutations]
+        (is (= :forbidden-evidence-capability
+               (problem-kind #(audit! leaf (concat original [mutation]))))
+            (str leaf " rejects injected " label))))))
+
+(deftest trusted-loaders-require-an-immediately-nested-read-trace-test
+  (let [audit! (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
+                                    'audit-trusted-adapter-form!))]
+    (is (= :forbidden-evidence-capability
+           (problem-kind
+            #(audit! 'abc.tools.files/read-bytes
+                     '(defn read-bytes [file]
+                        (do
+                          (abc.tools.evidence-io/record-read! file)
+                          (babashka.fs/read-all-bytes file)))))))
+    (is (= :forbidden-evidence-capability
+           (problem-kind
+            #(audit! 'abc.tools.files/load-jena-model
+                     '(defn load-jena-model [file]
+                        (do
+                          (abc.tools.evidence-io/record-read! file)
+                          (org.apache.jena.riot.RDFDataMgr/loadModel
+                           (str file))))))))
+    (doseq [[adapter form]
+            [['abc.tools.files/read-bytes
+              '(defn read-bytes [file]
+                 (babashka.fs/read-all-bytes
+                  (do
+                    (abc.tools.evidence-io/record-read! "unrelated-safe-path")
+                    file)))]
+             ['abc.tools.files/read-bytes
+              '(defn read-bytes [file other-file]
+                 (babashka.fs/read-all-bytes
+                  (let [_ (abc.tools.evidence-io/record-read! file)]
+                    other-file)))]
+             ['abc.tools.files/read-bytes
+              '(defn read-bytes [file]
+                 (letfn [(record-read! [_] file)]
+                   (babashka.fs/read-all-bytes
+                    (record-read! "unrelated-safe-path"))))]
+             ['abc.tools.files/load-jena-model
+              '(defn load-jena-model [file traced-file]
+                 (org.apache.jena.riot.RDFDataMgr/loadModel
+                  (str
+                   (do
+                     (abc.tools.evidence-io/record-read! traced-file)
+                     file))))]
+             ['abc.tools.files/parse-xml-document
+              '(defn parse-xml-document [file traced-file]
+                 (let [factory
+                       (javax.xml.parsers.DocumentBuilderFactory/newInstance)
+                       _ (.newDocumentBuilder factory)]
+                   (.setNamespaceAware factory true)
+                   (.parse
+                    (str (abc.tools.evidence-io/record-read! traced-file))
+                    (clojure.java.io/file file))))]]]
+      (is (= :forbidden-evidence-capability
+             (problem-kind #(audit! adapter form)))))))
+
+(deftest finite-fixed-multi-arity-definitions-are-traversed-test
+  (let [root (analyzer-repo
+              (str "(defn helper\n"
+                   "  ([] true)\n"
+                   "  ([path] (slurp path)))\n"
+                   "(defn contract [] (helper))"))]
+    (is (= :forbidden-evidence-io
+           (problem-kind #(runtime/analyze-reachable-vars
+                           root ['example.core/contract]))))))
 
 (deftest every-trusted-callback-position-is-explicit-and-fail-closed-test
   (let [signatures (var-get (ns-resolve 'abc.tools.adr-evidence-runtime-inputs

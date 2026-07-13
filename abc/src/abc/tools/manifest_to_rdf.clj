@@ -126,7 +126,7 @@
 
         stable-node
         (fn [^Node n]
-          (if (and (.isBlank n) (not (inlineable-blanks n)))
+          (if (and (.isBlank n) (not (contains? inlineable-blanks n)))
             (str "_:" (get blank-ids n))
             (node->ttl n)))
 
@@ -175,7 +175,7 @@
 
         render-subject
         (fn [subj]
-          (if (and (.isBlank subj) (inlineable-blanks subj))
+          (if (and (.isBlank subj) (contains? inlineable-blanks subj))
             nil  ;; inlined elsewhere, skip standalone
             (let [triples     (get by-subj subj)
                   by-pred     (group-by #(.getPredicate ^Triple %) triples)
@@ -195,7 +195,7 @@
                        (map-indexed
                         (fn [obj-idx obj]
                           (str "  " pred-name " "
-                               (if (and (.isBlank obj) (inlineable-blanks obj))
+                               (if (and (.isBlank obj) (contains? inlineable-blanks obj))
                                  (inline-blank obj)
                                  (stable-node obj))
                                (if (and last-pred? (= obj-idx (dec (count sorted-objs))))
@@ -338,8 +338,7 @@
 (defn manifest->ttl
   "Convert an ABC manifest (JSON parsed as string-keyed map) to an RDF/Turtle
   string using Apache Jena via Aristotle."
-  ([manifest]
-   (manifest->ttl manifest {}))
+  ([manifest] (manifest->ttl manifest {}))
   ([manifest opts]
    (-> (manifest->graph manifest opts)
        (graph->ttl))))

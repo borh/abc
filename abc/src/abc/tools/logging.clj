@@ -29,6 +29,9 @@
                          :allow "*"})
     true))
 
+(defn log! [level message]
+  (tel/log! level message))
+
 (defn install-cli-handler!
   "Replace the default Telemere console handler with a compact one
   suited to CLI tools. Sync dispatch so messages flush before

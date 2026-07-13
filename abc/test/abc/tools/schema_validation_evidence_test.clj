@@ -94,9 +94,9 @@
                       :label "metadata-rights"})))
 
 (defn write-canonicalization-fixtures! [identity-json array-a array-b]
-  (spit identity-json "{}\n")
-  (spit array-a "[]\n")
-  (spit array-b "[1]\n"))
+  (files/write-text! identity-json "{}\n")
+  (files/write-text! array-a "[]\n")
+  (files/write-text! array-b "[1]\n"))
 
 (deftest broken-manifest-is-rejected-test
   (runtime/with-validated-read-trace!

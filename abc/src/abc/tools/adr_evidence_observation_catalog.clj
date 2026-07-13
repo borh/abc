@@ -431,7 +431,7 @@
                   usages))))
       (drop 2 form)))))
 
-(defn focused-conformance-findings [repo-root catalog]
+(defn- focused-conformance-findings* [repo-root catalog analyze]
   (let [analysis-var (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
                                  'kondo-analysis!)
         original-analysis @analysis-var
@@ -449,7 +449,7 @@
                                     :focus-var focus-var})
                        analysis-finding
                        (try
-                         (runtime-inputs/analyze-reachable-vars repo-root [focus-var])
+                         (analyze repo-root [focus-var])
                          nil
                          (catch clojure.lang.ExceptionInfo exception
                            (assoc (ex-data exception) :focus-var focus-var)))]
@@ -457,3 +457,37 @@
                  (catch clojure.lang.ExceptionInfo exception
                    [(assoc (ex-data exception) :focus-var focus-var)]))))
             vec))))
+
+(defn focused-conformance-findings [repo-root catalog]
+  (focused-conformance-findings* repo-root catalog
+                                 runtime-inputs/analyze-reachable-vars))
+
+(defn- assert-exact-foundation-catalog! [repo-root catalog]
+  (let [{foundation-catalog-path :path
+         foundation-catalog-sha256 :sha256}
+        runtime-inputs/foundation-catalog-contract
+        state (containment/path-state repo-root foundation-catalog-path)
+        file (:path state)
+        actual-sha256 (when (and (= :ok (:state state))
+                                 (fs/regular-file? file))
+                        (hash/sha256-file file))
+        checked-in (when (= foundation-catalog-sha256 actual-sha256)
+                     (files/read-edn file))]
+    (when-not (and (= foundation-catalog-sha256 actual-sha256)
+                   (= checked-in catalog))
+      (throw (ex-info
+              "foundation compatibility requires the immutable catalog contract"
+              {:kind :invalid-foundation-conformance-profile
+               :path foundation-catalog-path
+               :expected-sha256 foundation-catalog-sha256
+               :actual-sha256 actual-sha256})))
+    catalog))
+
+(defn foundation-focused-conformance-findings
+  "Evaluate only the immutable foundation catalog under its frozen pre-v3
+  terminal frontier. Every other catalog uses strict conformance analysis."
+  [repo-root catalog]
+  (focused-conformance-findings*
+   repo-root
+   (assert-exact-foundation-catalog! repo-root catalog)
+   runtime-inputs/analyze-foundation-reachable-vars))

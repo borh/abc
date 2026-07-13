@@ -1,0 +1,6 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["schemas/manifest.shacl.ttl"
+         "schemas/metadata-record.schema.json"
+         "schemas/person-drift-event.schema.json"
+         "schemas/person-drift-index.schema.json"
+         "schemas/person-record.schema.json"]}

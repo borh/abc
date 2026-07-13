@@ -41,6 +41,7 @@
       nixpkgs,
       abc,
       ab-validator,
+      clj-nix,
       tei-p5,
       aozorabunko-src,
       ...
@@ -185,6 +186,13 @@
         system:
         let
           pkgs = pkgsFor system;
+          cljPkgs = import nixpkgs {
+            inherit system;
+            overlays = [ clj-nix.overlays.default ];
+          };
+          cljDepsCache = cljPkgs.mk-deps-cache {
+            lockfile = ./abc/deps-lock.json;
+          };
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
           abcApps = optionalOutputAttrs abc "apps" system;
           abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
@@ -203,17 +211,40 @@
         in
         {
           monorepo-adr-governance =
-            pkgs.runCommand "soranoha-monorepo-adr-governance"
+            cljPkgs.runCommand "soranoha-monorepo-adr-governance"
               {
+                nativeBuildInputs = [
+                  cljPkgs.clojure
+                  cljPkgs.git
+                  cljPkgs.gnugrep
+                ];
                 src = self;
               }
               ''
+                export HOME="${cljDepsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export GITLIBS="$HOME/.gitlibs"
+                cp -R "$src" "$TMPDIR/workspace"
+                chmod -R u+w "$TMPDIR/workspace"
+                git -C "$TMPDIR/workspace" init --quiet
+                git -C "$TMPDIR/workspace" add --all
+                git -C "$TMPDIR/workspace" \
+                  -c user.name=adr-governance \
+                  -c user.email=adr-governance.invalid \
+                  commit --quiet --message="materialize root self snapshot"
                 mkdir -p "$out"
-                ${abcApps.adr-governance.program} \
-                  --repo-root "$src/abc" \
-                  --workspace-root "$src" \
+                cd "$TMPDIR/workspace/abc"
+                clojure -M:abc/adr-governance \
+                  --repo-root "$TMPDIR/workspace/abc" \
+                  --workspace-root "$TMPDIR/workspace" \
                   --mode audit \
                   --report "$out/report.json"
+                if grep -q 'invalid-workspace-root' "$out/report.json"; then
+                  echo "monorepo ADR governance did not validate the materialized workspace" >&2
+                  exit 1
+                fi
               '';
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =

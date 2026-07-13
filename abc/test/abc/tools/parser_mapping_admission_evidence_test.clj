@@ -31,14 +31,23 @@
                                          :mapping_schema_hash (get-in parser-ir ["derived_from" "mapping_schema_hash"])
                                          :parser_ir_schema_id (get parser-ir "schema_id")
                                          :parser_ir_schema_hash (get parser-ir "schema_hash")})
-                                %)
+                                 %)
                               (:entries registry))
         missing-inputs (assoc manifest-inputs "mapping_hash" (files/example-hash "99"))
         conflicting-entry (assoc exact-candidate :compatibility "lossless")
-        conflicting-ir (assoc-in parser-ir ["derived_from" "mapping_version"] "conflicting")]
+        conflicting-ir (assoc-in parser-ir ["derived_from" "mapping_version"] "conflicting")
+        release-report (fn [citation candidate-ir candidate-inputs]
+                         (parser-evidence/validate-index! {:entries [citation]})
+                         {:citation-status (:status citation)
+                          :compatibility-errors
+                          (validate/compatibility-errors registry candidate-ir candidate-inputs)})
+        missing-release (release-report historical-selection parser-ir missing-inputs)
+        conflicting-release (release-report historical-selection conflicting-ir manifest-inputs)]
     (is (some? historical-selection))
-    (is (seq (validate/compatibility-errors registry parser-ir missing-inputs)))
-    (is (seq (validate/compatibility-errors registry conflicting-ir manifest-inputs)))
+    (is (= :citable (:citation-status missing-release)))
+    (is (seq (:compatibility-errors missing-release)))
+    (is (= :citable (:citation-status conflicting-release)))
+    (is (seq (:compatibility-errors conflicting-release)))
     (is (= :conflict
            (:status (compat/admission-report registry {:entries [conflicting-entry]}))))
     (is (= :admitted

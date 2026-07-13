@@ -4,6 +4,8 @@
             [abc.tools.schema :as schema]
             [abc.tools.validate-design-bundle :as validate]
             [babashka.fs :as fs]
+            [babashka.process :as process]
+            [charred.api :as json]
             [clojure.test :refer [deftest is use-fixtures]]
             [malli.core :as m]
             [malli.registry :as mr]))
@@ -51,20 +53,33 @@
   (fs/with-temp-dir [root {}]
     (let [input (fs/file root "imported")
           sentinel (fs/file root "parser-candidate-sentinel")
-          invoked? (atom false)
+          process-calls (atom [])
           original-path files/path]
       (fs/copy-tree fixture-root input)
       (spit sentinel "#!/bin/sh\nexit 97\n")
       (fs/set-posix-file-permissions sentinel "rwx------")
+      (let [comparison-file (fs/file input "comparison-report.json")
+            comparison (files/read-json comparison-file)]
+        (spit comparison-file
+              (json/write-json-str
+               (assoc-in comparison ["parser_candidates" 0 "executable"]
+                         (str sentinel)))))
       (with-redefs [files/path (fn [& parts]
-                                (if (= ["examples" "ab-validator-output"]
-                                       (vec (take 2 parts)))
-                                  (apply fs/file input (drop 2 parts))
-                                  (apply original-path parts)))
+                                 (if (= ["examples" "ab-validator-output"]
+                                        (vec (take 2 parts)))
+                                   (apply fs/file input (drop 2 parts))
+                                   (apply original-path parts)))
+                    process/process (fn [& command]
+                                      (swap! process-calls conj [:process command])
+                                      (throw (ex-info "ABC crossed parser execution boundary"
+                                                      {:command command})))
+                    process/shell (fn [& command]
+                                    (swap! process-calls conj [:shell command])
+                                    (throw (ex-info "ABC crossed parser execution boundary"
+                                                    {:command command})))
                     validate/run-command! (fn [& command]
-                                            (when (some #{(str sentinel)} command)
-                                              (reset! invoked? true))
+                                            (swap! process-calls conj [:run-command command])
                                             (throw (ex-info "ABC crossed parser execution boundary"
                                                             {:command command})))]
         (is (= :ok (validate/validate-ab-validator-output!))))
-      (is (false? @invoked?)))))
+      (is (empty? @process-calls)))))

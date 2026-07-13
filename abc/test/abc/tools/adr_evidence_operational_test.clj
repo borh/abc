@@ -125,7 +125,14 @@
       (is (= #{:invalid-operational-namespace-coordinate}
              (problem-kinds
               (thrown-info #(operational/derive-namespace-closure
-                             root ['abc.escape]))))))))
+                             root ['abc.escape])))))))
+  (testing "the declared namespace must equal the requested namespace"
+    (let [root (temp-root)]
+      (write! root "src/abc/requested.clj" "(ns abc.different)\n")
+      (is (= #{:invalid-operational-namespace}
+             (problem-kinds
+              (thrown-info #(operational/derive-namespace-closure
+                             root ['abc.requested]))))))))
 
 (deftest descriptor-versions-are-closed-discriminated-shapes-test
   (let [root (temp-root)
@@ -135,10 +142,21 @@
               :input-profile {:kind "clojure-test-v1" :roots ["abc.example-test"]
                               :explicit [path]}
               :observation-key "focused-passes"}]
-    (doseq [version ["abc-adr-evidence-capture-v1"
-                     "abc-adr-evidence-capture-v2"]]
-      (write! root path (pr-str (assoc base :schema-version version
-                                       :catalog-path "data/catalog.edn")))
+    (doseq [descriptor [(assoc base
+                               :schema-version "abc-adr-evidence-capture-v1"
+                               :catalog-path "data/catalog.edn")
+                        (assoc base
+                               :schema-version "abc-adr-evidence-capture-v2"
+                               :runtime-input-manifest
+                               "docs/evidence/adr-inputs/focused.edn"
+                               :input-profile
+                               {:kind "clojure-test-v1"
+                                :roots ["abc.example-test"]
+                                :explicit [path
+                                           "docs/evidence/adr-inputs/focused.edn"
+                                           "bin/kaocha"]}
+                               :catalog-path "data/catalog.edn")]]
+      (write! root path (pr-str descriptor))
       (is (= #{:invalid-evidence-descriptor}
              (problem-kinds
               (thrown-info #(operational/load-descriptor-context!
@@ -167,13 +185,15 @@
                     :argv ["bin/kaocha" "--focus" "abc.example-test/focus"]
                     :input-profile {:kind "clojure-test-v1"
                                     :roots ["abc.example-test"]
-                                    :explicit [path manifest-path]}
+                                    :explicit [path manifest-path "bin/kaocha"]}
                     :runtime-input-manifest manifest-path
                     :catalog-path "data/catalog.edn"
                     :observation-id :focused
                     :observation-contract-sha256
                     (catalog/observation-contract-sha256 row)
                     :observation-key "focused-passes"}]
+    (let [runner (write! root "bin/kaocha" "#!/usr/bin/env bash\n")]
+      (.setExecutable runner true))
     (write! root path (pr-str descriptor))
     (write! root manifest-path
             (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []}))
@@ -185,6 +205,112 @@
                    {:repo-root root :descriptor-path path})]
       (is (= "abc-adr-evidence-capture-v3" (:descriptor-version context)))
       (is (= row (:catalog-row context))))))
+
+(deftest focused-v3-rejects-adversarial-runner-and-argv-test
+  (let [root (temp-root)
+        path "docs/evidence/adr-capture/focused.edn"
+        manifest-path "docs/evidence/adr-inputs/focused.edn"
+        row {:observation-id :focused
+             :descriptor-stem "focused"
+             :observation-key "focused-passes"
+             :focus-var 'abc.example-test/focus}
+        base {:schema-version "abc-adr-evidence-capture-v3"
+              :tool "bin/kaocha"
+              :argv ["bin/kaocha" "--focus" "abc.example-test/focus"]
+              :input-profile {:kind "clojure-test-v1"
+                              :roots ["abc.example-test"]
+                              :explicit [path manifest-path "bin/kaocha"]}
+              :runtime-input-manifest manifest-path
+              :catalog-path "data/catalog.edn"
+              :observation-id :focused
+              :observation-contract-sha256
+              (catalog/observation-contract-sha256 row)
+              :observation-key "focused-passes"}]
+    (let [runner (write! root "bin/kaocha" "#!/usr/bin/env bash\n")]
+      (.setExecutable runner true))
+    (write! root manifest-path
+            (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []}))
+    (write! root "data/catalog.edn"
+            (pr-str {:schema-version :abc-adr-evidence-observation-catalog-v1
+                     :focused-observations [row]
+                     :operational-observations []}))
+    (doseq [[label changed]
+            [[:shell (assoc base :tool "bash"
+                            :argv ["bash" "-c" "abc.example-test/focus"])]
+             [:extra-prefix
+              (assoc base :argv ["bin/kaocha" "--focus" "abc.other-test/other"
+                                 "--focus" "abc.example-test/focus"])]
+             [:extra-option
+              (assoc base :argv ["bin/kaocha" "--randomize" "false"
+                                 "--focus" "abc.example-test/focus"])]
+             [:runner-unbound
+              (update-in base [:input-profile :explicit]
+                         #(vec (remove #{"bin/kaocha"} %)))]
+             [:non-executable base]]]
+      (testing (name label)
+        (when (= label :non-executable)
+          (.setExecutable (fs/file root "bin/kaocha") false))
+        (write! root path (pr-str changed))
+        (is (= #{:invalid-focused-evidence-runner}
+               (problem-kinds
+                (thrown-info #(operational/load-descriptor-context!
+                               {:repo-root root :descriptor-path path})))))))))
+
+(deftest focused-v3-runtime-manifest-coordinate-is-bound-before-context-test
+  (let [root (temp-root)
+        path "docs/evidence/adr-capture/focused.edn"
+        manifest-path "docs/evidence/adr-inputs/focused.edn"
+        row {:observation-id :focused
+             :descriptor-stem "focused"
+             :observation-key "focused-passes"
+             :focus-var 'abc.example-test/focus}
+        base {:schema-version "abc-adr-evidence-capture-v3"
+              :tool "bin/kaocha"
+              :argv ["bin/kaocha" "--focus" "abc.example-test/focus"]
+              :input-profile {:kind "clojure-test-v1"
+                              :roots ["abc.example-test"]
+                              :explicit [path manifest-path "bin/kaocha"]}
+              :runtime-input-manifest manifest-path
+              :catalog-path "data/catalog.edn"
+              :observation-id :focused
+              :observation-contract-sha256
+              (catalog/observation-contract-sha256 row)
+              :observation-key "focused-passes"}]
+    (let [runner (write! root "bin/kaocha" "#!/usr/bin/env bash\n")]
+      (.setExecutable runner true))
+    (write! root manifest-path
+            (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []}))
+    (write! root "docs/evidence/adr-inputs/other.edn"
+            (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []}))
+    (let [outside (fs/file (temp-root) "outside-inputs")]
+      (fs/create-dirs outside)
+      (write! outside "focused.edn"
+              (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []}))
+      (Files/createSymbolicLink
+       (.toPath (fs/file root "docs/evidence/adr-inputs/escape"))
+       (.toPath outside)
+       (make-array FileAttribute 0)))
+    (write! root "data/catalog.edn"
+            (pr-str {:schema-version :abc-adr-evidence-observation-catalog-v1
+                     :focused-observations [row]
+                     :operational-observations []}))
+    (doseq [[label changed]
+            [[:missing (assoc base :runtime-input-manifest
+                              "docs/evidence/adr-inputs/missing.edn")]
+             [:traversal (assoc base :runtime-input-manifest "../focused.edn")]
+             [:wrong-stem (assoc base :runtime-input-manifest
+                                 "docs/evidence/adr-inputs/other.edn")]
+             [:symlink-escape
+              (assoc base :runtime-input-manifest
+                     "docs/evidence/adr-inputs/escape/focused.edn")]
+             [:unbound (update-in base [:input-profile :explicit]
+                                  #(vec (remove #{manifest-path} %)))]]]
+      (testing (name label)
+        (write! root path (pr-str changed))
+        (is (= #{:invalid-runtime-input-manifest}
+               (problem-kinds
+                (thrown-info #(operational/load-descriptor-context!
+                               {:repo-root root :descriptor-path path})))))))))
 
 (deftest operational-clojure-manifest-and-exact-input-policy-test
   (let [{:keys [root descriptor-path]} (prepare-operational-root! clojure-row)

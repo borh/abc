@@ -116,7 +116,7 @@
             (rest libspec)))
     :else [(first libspec)]))
 
-(defn- ns-requires [file]
+(defn- ns-declaration [file]
   (with-open [input (files/reader file)]
     (let [pushback (reader-types/indexing-push-back-reader input)
           form (binding [reader/*read-eval* false
@@ -127,13 +127,14 @@
                [(problem :invalid-operational-namespace
                          "operational source must begin with an ns form"
                          :path (str file))]))
-      (->> (drop 2 form)
-           (filter #(and (seq? %) (= :require (first %))))
-           (mapcat rest)
-           (mapcat libspec-namespaces)
-           distinct
-           sort
-           vec))))
+      {:namespace (second form)
+       :requires (->> (drop 2 form)
+                      (filter #(and (seq? %) (= :require (first %))))
+                      (mapcat rest)
+                      (mapcat libspec-namespaces)
+                      distinct
+                      sort
+                      vec)})))
 
 (defn derive-namespace-closure
   "Derive the exact repository-local namespace closure for owned `abc` roots."
@@ -155,7 +156,16 @@
           (if-not (owned-namespace? namespace-symbol)
             (recur pending (conj visited namespace-symbol) paths)
             (let [[path state] (resolve-owned-namespace! repo-root namespace-symbol)
-                  requirements (ns-requires (:path state))]
+                  declaration (ns-declaration (:path state))
+                  declared (:namespace declaration)
+                  requirements (:requires declaration)]
+              (when-not (= namespace-symbol declared)
+                (fail! "operational source declares a different namespace"
+                       [(problem :invalid-operational-namespace
+                                 "declared namespace must equal the requested namespace"
+                                 :namespace namespace-symbol
+                                 :declared-namespace declared
+                                 :path path)]))
               (recur (into pending requirements)
                      (conj visited namespace-symbol)
                      (conj paths path))))))
@@ -253,6 +263,64 @@
 (defn- basename-stem [path]
   (some-> path fs/file-name str (str/replace #"\.[^.]+$" "")))
 
+(defn- normalized-component-root [profile]
+  (when (nonempty-string? (:component-root profile))
+    (-> (:component-root profile)
+        fs/path
+        fs/normalize
+        str
+        (str/replace "\\" "/"))))
+
+(defn- focused-runner [profile]
+  (if (= "component-clojure-test-v1" (:kind profile))
+    (some-> (normalized-component-root profile)
+            (fs/path "bin/kaocha")
+            str
+            (str/replace "\\" "/"))
+    "bin/kaocha"))
+
+(defn- focused-v3-policy-problems [repo-root descriptor descriptor-path row]
+  (let [profile (:input-profile descriptor)
+        profile-kind (:kind profile)
+        runner (focused-runner profile)
+        manifest-path (:runtime-input-manifest descriptor)
+        explicit (set (:explicit profile))
+        manifest-prefix (if (= "component-clojure-test-v1" profile-kind)
+                          (some-> (normalized-component-root profile)
+                                  (str "/docs/evidence/adr-inputs/"))
+                          "docs/evidence/adr-inputs/")
+        runner-state (when (nonempty-string? runner)
+                       (containment/path-state repo-root runner))
+        manifest-state (when (nonempty-string? manifest-path)
+                         (containment/path-state repo-root manifest-path))]
+    (concat
+     (when-not (contains? #{"clojure-test-v1" "component-clojure-test-v1"}
+                          profile-kind)
+       [(problem :invalid-focused-evidence-runner
+                 "focused version 3 requires a Clojure test input profile")])
+     (when-not (and (nonempty-string? runner)
+                    (= runner (:tool descriptor))
+                    (= [runner "--focus" (str (:focus-var row))]
+                       (:argv descriptor))
+                    (contains? explicit runner)
+                    (= :ok (:state runner-state))
+                    (fs/regular-file? (:path runner-state))
+                    (fs/executable? (:path runner-state)))
+       [(problem :invalid-focused-evidence-runner
+                 "focused version 3 requires one bound contained executable Kaocha focus"
+                 :runner runner :state (:state runner-state))])
+     (when-not (and (nonempty-string? manifest-path)
+                    (nonempty-string? manifest-prefix)
+                    (str/starts-with? manifest-path manifest-prefix)
+                    (= (some-> descriptor-path fs/file-name str)
+                       (some-> manifest-path fs/file-name str))
+                    (contains? explicit manifest-path)
+                    (= :ok (:state manifest-state))
+                    (fs/regular-file? (:path manifest-state)))
+       [(problem :invalid-runtime-input-manifest
+                 "focused version 3 runtime manifest must be same-stem, bound, and contained"
+                 :path manifest-path :state (:state manifest-state))]))))
+
 (defn- catalog-binding-problems [descriptor descriptor-path row family]
   (let [expected-hash (catalog/observation-contract-sha256 row)]
     (concat
@@ -293,7 +361,11 @@
                        :focused :operational)
               row (catalog/select-observation! catalog-value
                                                (:observation-id descriptor) family)
-              binding-problems (catalog-binding-problems descriptor descriptor-path row family)]
+              binding-problems (concat
+                                (catalog-binding-problems descriptor descriptor-path row family)
+                                (when (= :focused family)
+                                  (focused-v3-policy-problems repo-root descriptor
+                                                              descriptor-path row)))]
           (when (seq binding-problems)
             (fail! "descriptor does not match its selected observation" binding-problems))
           {:repo-root repo-root

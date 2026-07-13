@@ -1,0 +1,24 @@
+{:observation-key "adr-0033-c4-parser-identity-roles-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:dda4f34220e7f4c0a24f989bce1906b443a99c5c78116c7f39d8c41ef6cab5d7",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0033-c4-parser-identity-roles.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.materialize-source-snapshot-test/parser-ir-source-identity-roles-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.materialize-source-snapshot-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0033-c4-parser-identity-roles.edn"
+   "abc/docs/evidence/adr-inputs/adr-0033-c4-parser-identity-roles.edn"
+   "abc/schemas/manifest.schema.json"
+   "abc/schemas/metadata-record.schema.json"
+   "abc/schemas/source-bundle.schema.json"]},
+ :observation-id :adr-0033-c4-parser-identity-roles}

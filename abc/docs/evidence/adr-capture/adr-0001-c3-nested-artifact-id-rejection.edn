@@ -1,0 +1,23 @@
+{:observation-key "adr-0001-c3-nested-artifact-id-rejection-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:7eeb63272c8b0b9e453057ee88410809706bc0b29ff1fd51bb751e490808be05",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0001-c3-nested-artifact-id-rejection.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.code-as-spec-test/r2-manifest-schema-rejects-nested-artifact-id-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.code-as-spec-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0001-c3-nested-artifact-id-rejection.edn"
+   "abc/docs/evidence/adr-inputs/adr-0001-c3-nested-artifact-id-rejection.edn"
+   "abc/fixtures/v0/invalid/manifest-nested-artifact-id/manifest.json"
+   "abc/schemas/manifest.schema.json"]},
+ :observation-id :adr-0001-c3-nested-artifact-id-rejection}

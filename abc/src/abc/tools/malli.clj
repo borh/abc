@@ -7,7 +7,8 @@
   Tests and the focused-test alias call `install!` exactly once, *after*
   every namespace that declares schemas has been loaded. Namespaces
   themselves stay side-effect-free at load time."
-  (:require [abc.tools.json :as abc-json]
+  (:require [abc.tools.evidence-io :as evidence-io]
+            [abc.tools.json :as abc-json]
             [clojure.string :as string]
             [malli.core :as m]
             [malli.error :as me]
@@ -302,6 +303,7 @@
     "Read and parse the JSON Schema at `path` exactly once per JVM.
     Identity-stable: callers can compare with `identical?`."
     [path]
+    (evidence-io/record-read! path)
     (or (get @cache path)
         (let [v (abc-json/read-json-file path)]
           (swap! cache assoc path v)
@@ -312,6 +314,7 @@
     `abc.tools.manifest/schema-hash` so the on-disk hash contract is
     preserved exactly."
     [path]
+    (evidence-io/record-read! path)
     (or (get @cache [::hash path])
         (let [schema-hash-fn (requiring-resolve 'abc.tools.manifest/schema-hash)
               v (schema-hash-fn path)]

@@ -1,0 +1,21 @@
+{:observation-key "adr-0033-c10-admission-limits-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:53f8f6767d0fa7ef0ae3f60b10f5cc3dc633cc15e575b6a98aede4b038296d82",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0033-c10-admission-limits.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.source-bundle-test/declared-and-streamed-limits-are-enforced-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.source-bundle-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0033-c10-admission-limits.edn"
+   "abc/docs/evidence/adr-inputs/adr-0033-c10-admission-limits.edn"]},
+ :observation-id :adr-0033-c10-admission-limits}

@@ -5,8 +5,9 @@
   violations. Safe for concurrent use: the cached
   com.thaiopensource.validate.Schema is immutable; a fresh Validator and
   error handler are created per call."
-  (:require [clojure.java.io :as io]
+  (:require [abc.tools.evidence-io :as evidence-io]
             [babashka.fs :as fs]
+            [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [com.thaiopensource.util PropertyMapBuilder]
            [com.thaiopensource.validate Schema ValidateProperty]
@@ -51,6 +52,7 @@
 (defonce ^:private schema-cache (atom {}))
 
 (defn- load-schema ^Schema [^String schema-path]
+  (evidence-io/record-read! schema-path)
   (let [violations (atom [])]
     (try
       (let [path (fs/path schema-path)

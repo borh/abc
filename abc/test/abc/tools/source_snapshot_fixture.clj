@@ -4,6 +4,7 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.source-bundle :as source-bundle]
+            [babashka.fs :as fs]
             [clojure.java.io :as io])
   (:import [java.nio.charset StandardCharsets]
            [java.nio.file Files]
@@ -157,11 +158,11 @@
 
 (defn materialized-work!
   [root {:keys [slug] :as opts}]
-  (write-work-files! (io/file root "works" slug) opts))
+  (write-work-files! (fs/file root "works" slug) opts))
 
 (defn workset-entry!
   [root {:keys [slug title work-id person-id] :as opts}]
-  (let [work-dir (write-work-files! (io/file root slug) opts)]
+  (let [work-dir (write-work-files! (fs/file root slug) opts)]
     {:slug slug
      :title title
      :work_id work-id

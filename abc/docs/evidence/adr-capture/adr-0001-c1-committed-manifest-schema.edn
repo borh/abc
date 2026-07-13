@@ -1,0 +1,24 @@
+{:observation-key "adr-0001-c1-committed-manifest-schema-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:13c0edaae0a305a13872ca7bcac42d0f630a9eb54af354cedd8c15ca618856f4",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0001-c1-committed-manifest-schema.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.foundation-evidence-test/committed-manifest-schema-conformance-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.foundation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0001-c1-committed-manifest-schema.edn"
+   "abc/docs/evidence/adr-inputs/adr-0001-c1-committed-manifest-schema.edn"
+   "abc/examples/v0/example-work/failure-manifest.example.json"
+   "abc/examples/v0/example-work/manifest.json"
+   "abc/schemas/manifest.schema.json"]},
+ :observation-id :adr-0001-c1-committed-manifest-schema}

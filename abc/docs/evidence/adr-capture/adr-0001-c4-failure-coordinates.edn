@@ -1,0 +1,22 @@
+{:observation-key "adr-0001-c4-failure-coordinates-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:cfe298654a73777cc2dbe60a9d2754dbcf3c961939d862f6c8baf3501f0a11fb",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0001-c4-failure-coordinates.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.foundation-evidence-test/failure-manifest-identity-coordinates-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.foundation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0001-c4-failure-coordinates.edn"
+   "abc/docs/evidence/adr-inputs/adr-0001-c4-failure-coordinates.edn"
+   "abc/examples/v0/example-work/failure-manifest.example.json"]},
+ :observation-id :adr-0001-c4-failure-coordinates}

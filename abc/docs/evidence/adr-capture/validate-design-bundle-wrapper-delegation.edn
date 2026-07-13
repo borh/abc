@@ -1,0 +1,22 @@
+{:observation-key "validate-design-bundle-wrapper-delegation-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:5565341be1b77af53ddcca64b88ff13099edfe80f73fed9940995d2298f09338",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/validate-design-bundle-wrapper-delegation.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.foundation-evidence-test/validate-design-bundle-wrapper-delegation-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.foundation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/bin/validate-design-bundle.sh"
+   "abc/docs/evidence/adr-capture/validate-design-bundle-wrapper-delegation.edn"
+   "abc/docs/evidence/adr-inputs/validate-design-bundle-wrapper-delegation.edn"]},
+ :observation-id :validate-design-bundle-wrapper-delegation}

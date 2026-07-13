@@ -1,0 +1,22 @@
+{:observation-key "adr-0009-c3-mapping-divergence-sidecar-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:8d306e94a9973957bda8303650c38b4f832626f8d90d6b5a36e0592f260b60e3",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0009-c3-mapping-divergence-sidecar.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.materialize-import-test/mapping-divergence-sidecar-selection-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.materialize-import-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0009-c3-mapping-divergence-sidecar.edn"
+   "abc/docs/evidence/adr-inputs/adr-0009-c3-mapping-divergence-sidecar.edn"
+   "abc/schemas/manifest.schema.json"]},
+ :observation-id :adr-0009-c3-mapping-divergence-sidecar}

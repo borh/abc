@@ -1,0 +1,29 @@
+{:observation-key
+ "adr-0010-c2-materialized-artifact-ids-distinct-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:ab6a82a0d6b8af5d4f2d5bab088956c9af54f152a2a7fdb10bf7fcb27e4009ac",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0010-c2-materialized-artifact-ids-distinct.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.materialize-import-test/materialized-parser-and-warning-artifact-ids-are-distinct-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.materialize-import-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0010-c2-materialized-artifact-ids-distinct.edn"
+   "abc/docs/evidence/adr-inputs/adr-0010-c2-materialized-artifact-ids-distinct.edn"
+   "abc/examples/ab-validator-output/divergence.json"
+   "abc/examples/ab-validator-output/manifest-inputs.json"
+   "abc/examples/ab-validator-output/parser-ir.json"
+   "abc/examples/ab-validator-output/run-summary.jsonl"
+   "abc/examples/ab-validator-output/source-region-coverage.json"
+   "abc/examples/ab-validator-output/warnings.jsonl"
+   "abc/schemas/manifest.schema.json"]},
+ :observation-id :adr-0010-c2-materialized-artifact-ids-distinct}

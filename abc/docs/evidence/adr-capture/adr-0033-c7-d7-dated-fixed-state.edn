@@ -1,0 +1,21 @@
+{:observation-key "adr-0033-c7-d7-dated-fixed-state-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:fb174bc12974e2931e1e31856c1b10b6463eb7a7a2759e83dc59b500c4738a9e",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0033-c7-d7-dated-fixed-state.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.sim.divergences-test/d7-pin-chain-fix-is-dated-and-structural-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.sim.divergences-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0033-c7-d7-dated-fixed-state.edn"
+   "abc/docs/evidence/adr-inputs/adr-0033-c7-d7-dated-fixed-state.edn"]},
+ :observation-id :adr-0033-c7-d7-dated-fixed-state}

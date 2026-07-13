@@ -1,0 +1,21 @@
+{:observation-key "adr-0011-c2-deterministic-json-writer-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:61d665c9c2dbf597f758aaed0d1f8a429f797ceddc647f315792a58f7d103a82",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0011-c2-deterministic-json-writer.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.materialize-import-test/deterministic-json-writer-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.materialize-import-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0011-c2-deterministic-json-writer.edn"
+   "abc/docs/evidence/adr-inputs/adr-0011-c2-deterministic-json-writer.edn"]},
+ :observation-id :adr-0011-c2-deterministic-json-writer}

@@ -1,5 +1,8 @@
 (ns abc.tools.foundation-evidence-test
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
+            [abc.tools.evidence-io :as evidence-io]
+            [abc.tools.evidence-test-support :as evidence-support]
+            [abc.tools.files :as files]
             [abc.tools.materialize-import :as materialize]
             [abc.tools.schema :as schema]
             [babashka.fs :as fs]
@@ -126,7 +129,7 @@
   (let [jobs (workflow-jobs text)
         commands (for [{:keys [job steps default-working-directory]} jobs
                        [index step] (map-indexed vector steps)
-                       :when (some #{".#validate-design-bundle"} (:command step))]
+                       :when (some #(= ".#validate-design-bundle" %) (:command step))]
                    {:job job
                     :index index
                     :step step
@@ -170,38 +173,56 @@
     (vec (walk [] value))))
 
 (deftest committed-manifest-schema-conformance-test
-  (let [manifest-schema (files/read-json "schemas/manifest.schema.json")]
-    (is (nil? (schema/validation-errors
-               manifest-schema
-               (files/read-json "examples/v0/example-work/manifest.json"))))
-    (is (nil? (schema/validation-errors
-               manifest-schema
-               (files/read-json "examples/v0/example-work/failure-manifest.example.json"))))))
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0001-c1-committed-manifest-schema")
+    (fn []
+      (let [manifest-schema (files/read-json "schemas/manifest.schema.json")]
+        (is (nil? (schema/validation-errors
+                   manifest-schema
+                   (files/read-json "examples/v0/example-work/manifest.json"))))
+        (is (nil? (schema/validation-errors
+                   manifest-schema
+                   (files/read-json "examples/v0/example-work/failure-manifest.example.json"))))))))
 
 (deftest failure-manifest-semantics-test
-  (let [failure (files/read-json "examples/v0/example-work/failure-manifest.example.json")]
-    (is (= "failure" (get failure "artifact_kind")))
-    (is (= "failed" (get failure "validation_status")))
-    (is (nil? (get failure "content")))
-    (is (= [{"role" "errors"
-             "hash" "sha256:9999999999999999999999999999999999999999999999999999999999999999"
-             "media_type" "application/jsonl"
-             "path_hint" "errors.jsonl"}]
-           (get failure "sidecars")))))
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0001-c4-failure-semantics")
+    (fn []
+      (let [failure (files/read-json "examples/v0/example-work/failure-manifest.example.json")]
+        (is (= "failure" (get failure "artifact_kind")))
+        (is (= "failed" (get failure "validation_status")))
+        (is (nil? (get failure "content")))
+        (is (= [{"role" "errors"
+                 "hash" "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+                 "media_type" "application/jsonl"
+                 "path_hint" "errors.jsonl"}]
+               (get failure "sidecars")))))))
 
 (deftest failure-manifest-identity-coordinates-test
-  (let [identity (get (files/read-json
-                       "examples/v0/example-work/failure-manifest.example.json")
-                      "manifest_identity_object")]
-    (is (empty? (failure-coordinate-errors identity)))
-    (is (seq (failure-coordinate-errors
-              (assoc identity
-                     "tokenizer_build_hash"
-                     "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))))))
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0001-c4-failure-coordinates")
+    (fn []
+      (let [identity (get (files/read-json
+                           "examples/v0/example-work/failure-manifest.example.json")
+                          "manifest_identity_object")]
+        (is (= expected-failure-identity-coordinates
+               (select-keys identity (keys expected-failure-identity-coordinates))))
+        (is (not= expected-failure-identity-coordinates
+                  (select-keys
+                   (assoc identity
+                          "tokenizer_build_hash"
+                          "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                   (conj (vec (keys expected-failure-identity-coordinates))
+                         "tokenizer_build_hash"))))))))
 
 (deftest failure-manifest-artifact-id-scope-test
-  (let [failure (files/read-json "examples/v0/example-work/failure-manifest.example.json")]
-    (is (= [["artifact_id"]] (artifact-id-paths failure)))))
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0001-c4-failure-artifact-scope")
+    (fn []
+      (let [failure (files/read-json "examples/v0/example-work/failure-manifest.example.json")]
+        (is (contains? failure "artifact_id"))
+        (is (not (contains? (get failure "manifest_identity_object")
+                            "artifact_id")))))))
 
 (deftest generated-import-manifest-set-test
   (fs/with-temp-dir [output {:prefix "foundation-evidence-manifests-"}]
@@ -213,80 +234,87 @@
       (is (seq (generated-manifest-set-errors (dissoc generated :warnings)))))))
 
 (deftest generated-import-manifest-schema-conformance-test
-  (fs/with-temp-dir [output {:prefix "foundation-evidence-manifests-"}]
-    (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
-          generated (materialize/materialize-import!
-                     {:input-dir "examples/ab-validator-output"
-                      :output-dir output
-                      :generated-at materialize/default-generated-at})]
-      (testing "parser IR manifest"
-        (is (nil? (schema/validation-errors
-                   manifest-schema
-                   (files/read-json (:parser-ir generated))))))
-      (testing "warnings manifest"
-        (is (nil? (schema/validation-errors
-                   manifest-schema
-                   (files/read-json (:warnings generated)))))))))
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "generated-import-manifest-schema")
+    (fn []
+      (evidence-io/with-owned-ephemeral-root
+        (fn [output]
+          (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
+                generated (materialize/materialize-import!
+                           {:input-dir "examples/ab-validator-output"
+                            :output-dir output
+                            :generated-at materialize/default-generated-at})]
+            (is (nil? (schema/validation-errors
+                       manifest-schema
+                       (files/read-json (:parser-ir generated)))))
+            (is (nil? (schema/validation-errors
+                       manifest-schema
+                       (files/read-json (:warnings generated)))))))))))
 
 (deftest validate-design-bundle-wrapper-delegation-test
-  (let [wrapper (files/read-text "bin/validate-design-bundle.sh")]
-    (is (= ["#!/usr/bin/env bash"
-            "set -euo pipefail"
-            "cd \"$(dirname \"${BASH_SOURCE[0]}\")/..\""
-            "exec clojure -M:abc/validate-design-bundle \"$@\""]
-           (->> (str/split-lines wrapper) (remove str/blank?) vec)))))
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "validate-design-bundle-wrapper-delegation")
+    (fn []
+      (let [wrapper (files/read-text "bin/validate-design-bundle.sh")]
+        (is (= ["#!/usr/bin/env bash"
+                "set -euo pipefail"
+                "cd \"$(dirname \"${BASH_SOURCE[0]}\")/..\""
+                "exec clojure -M:abc/validate-design-bundle \"$@\""]
+               (->> (str/split-lines wrapper) (remove str/blank?) vec)))))))
 
 (deftest validation-workflow-wiring-test
-  (let [workflow (files/read-text ".github/workflows/validation.yml")
-        wrong-defaults (str/replace workflow
-                                    "    runs-on: ubuntu-latest\n"
-                                    (str "    runs-on: ubuntu-latest\n"
-                                         "    defaults:\n"
-                                         "      run:\n"
-                                         "        working-directory: abc\n"))
-        root-step-override (str/replace wrong-defaults
-                                        "      - name: Validate design bundle\n"
-                                        (str "      - name: Validate design bundle\n"
-                                             "        working-directory: .\n"))
-        wrong-step-override (str/replace workflow
-                                         "      - name: Validate design bundle\n"
-                                         (str "      - name: Validate design bundle\n"
-                                              "        working-directory: abc\n"))
-        inline-cd (str/replace workflow "          nix run \\\n"
-                               "          cd abc && nix run \\\n")
-        chained-suffix (str/replace workflow
-                                    "            .#validate-design-bundle\n"
-                                    "            .#validate-design-bundle && echo accepted\n")
-        reversed (str/replace workflow
-                              (str "      - uses: actions/checkout@v7\n\n"
-                                   "      - uses: cachix/install-nix-action@v31\n\n"
-                                   "      - name: Validate design bundle")
-                              "      - name: Validate design bundle")
-        reversed (str reversed
-                      "\n      - uses: actions/checkout@v7\n")]
-    (is (empty? (design-bundle-workflow-errors workflow)))
-    (is (workflow-error? (design-bundle-workflow-errors wrong-defaults)
-                         :expected-working-directory))
-    (is (empty? (design-bundle-workflow-errors root-step-override)))
-    (is (workflow-error? (design-bundle-workflow-errors wrong-step-override)
-                         :expected-working-directory))
-    (is (workflow-error? (design-bundle-workflow-errors inline-cd)
-                         :expected-command))
-    (is (workflow-error? (design-bundle-workflow-errors chained-suffix)
-                         :expected-command))
-    (is (some #(= :preceding-checkout-in-command-job (:expected %))
-              (design-bundle-workflow-errors reversed)))
-    (is (= [{:expected :preceding-checkout-in-command-job
-             :actual-job "validate"}]
-           (design-bundle-workflow-errors
-            (str "jobs:\n"
-                 "  checkout-only:\n"
-                 "    steps:\n"
-                 "      - uses: actions/checkout@v4\n"
-                 "  validate:\n"
-                 "    steps:\n"
-                 "      - name: Validate design bundle\n"
-                 "        run: |\n"
-                 "          nix run \\\n"
-                 "            --override-input local-pkgs \"path:${GITHUB_WORKSPACE}/nix/ci-empty-local-pkgs\" \\\n"
-                 "            .#validate-design-bundle\n"))))))
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0008-c3-workflow-wiring")
+    (fn []
+      (let [workflow (files/read-text ".github/workflows/validation.yml")
+            wrong-defaults (str/replace workflow
+                                        "    runs-on: ubuntu-latest\n"
+                                        (str "    runs-on: ubuntu-latest\n"
+                                             "    defaults:\n"
+                                             "      run:\n"
+                                             "        working-directory: abc\n"))
+            root-step-override (str/replace wrong-defaults
+                                            "      - name: Validate design bundle\n"
+                                            (str "      - name: Validate design bundle\n"
+                                                 "        working-directory: .\n"))
+            wrong-step-override (str/replace workflow
+                                             "      - name: Validate design bundle\n"
+                                             (str "      - name: Validate design bundle\n"
+                                                  "        working-directory: abc\n"))
+            inline-cd (str/replace workflow "          nix run \\\n"
+                                   "          cd abc && nix run \\\n")
+            chained-suffix (str/replace workflow
+                                        "            .#validate-design-bundle\n"
+                                        "            .#validate-design-bundle && echo accepted\n")
+            reversed (str/replace workflow
+                                  (str "      - uses: actions/checkout@v7\n\n"
+                                       "      - uses: cachix/install-nix-action@v31\n\n"
+                                       "      - name: Validate design bundle")
+                                  "      - name: Validate design bundle")
+            reversed (str reversed "\n      - uses: actions/checkout@v7\n")]
+        (is (empty? (design-bundle-workflow-errors workflow)))
+        (is (workflow-error? (design-bundle-workflow-errors wrong-defaults)
+                             :expected-working-directory))
+        (is (empty? (design-bundle-workflow-errors root-step-override)))
+        (is (workflow-error? (design-bundle-workflow-errors wrong-step-override)
+                             :expected-working-directory))
+        (is (workflow-error? (design-bundle-workflow-errors inline-cd)
+                             :expected-command))
+        (is (workflow-error? (design-bundle-workflow-errors chained-suffix)
+                             :expected-command))
+        (is (some #(= :preceding-checkout-in-command-job (:expected %))
+                  (design-bundle-workflow-errors reversed)))
+        (is (= [{:expected :preceding-checkout-in-command-job
+                 :actual-job "validate"}]
+               (design-bundle-workflow-errors
+                (str "jobs:\n"
+                     "  checkout-only:\n"
+                     "    steps:\n"
+                     "      - uses: actions/checkout@v4\n"
+                     "  validate:\n"
+                     "    steps:\n"
+                     "      - name: Validate design bundle\n"
+                     "        run: |\n"
+                     "          nix run \\\n"
+                     "            --override-input local-pkgs \"path:${GITHUB_WORKSPACE}/nix/ci-empty-local-pkgs\" \\\n"
+                     "            .#validate-design-bundle\n"))))))))

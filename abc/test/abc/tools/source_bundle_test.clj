@@ -1,8 +1,12 @@
 (ns abc.tools.source-bundle-test
-  (:require [abc.tools.hash :as hash]
+  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
+            [abc.tools.evidence-io :as evidence-io]
+            [abc.tools.evidence-test-support :as evidence-support]
+            [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.schema :as schema]
             [abc.tools.source-bundle :as source-bundle]
+            [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]])
   (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio ByteBuffer ByteOrder]
@@ -170,6 +174,43 @@
                (seq (source-bundle/bundle-identity-canonical-bytes
                      identity-object))))
         (is (= (get known-answer "bundle_hash") bundle-hash))))))
+
+(deftest clojure-source-bundle-known-answer-test
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0033-c2-clojure-known-answer")
+    (fn []
+      (evidence-io/with-owned-ephemeral-root
+        (fn [root]
+          (let [known-answer (json/read-json-file
+                              "fixtures/source-bundle/abc-source-bundle-v1-known-answer.json")
+                members (mapv (fn [member]
+                                [(get member "path")
+                                 (if-let [content (get member "content_utf8")]
+                                   (utf8-bytes content)
+                                   (hex-bytes (get member "content_hex")))])
+                              (get known-answer "input_members"))
+                zip (write-zip! (fs/file root "known-answer.zip") members)
+                {:keys [identity-object bundle-hash]} (source-bundle/inspect-zip zip)]
+            (is (= (seq (utf8-bytes (get known-answer "canonical_identity_utf8")))
+                   (seq (source-bundle/bundle-identity-canonical-bytes identity-object))))
+            (is (= (get known-answer "bundle_hash") bundle-hash))))))))
+
+(deftest canonical-all-member-schema-fixture-test
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0033-c1-canonical-all-member-schema")
+    (fn []
+      (evidence-io/with-owned-ephemeral-root
+        (fn [root]
+          (let [zip (write-zip! (fs/file root "fixture.zip")
+                                [["work.txt" (utf8-bytes "本文")]
+                                 ["figure.png" (byte-array [1 2 3])]])
+                manifest (fs/file root "manifest.json")]
+            (source-bundle/write-manifest! manifest (source-bundle/inspect-zip zip))
+            (let [value (json/read-json-file manifest)]
+              (is (nil? (schema/validation-errors
+                         (schema/read-schema "schemas/source-bundle.schema.json") value)))
+              (is (every? #(not (contains? % "byte_length"))
+                          (get-in value ["identity_object" "members"]))))))))))
 
 (deftest repacking-does-not-change-bundle-identity-test
   (let [members [["work.txt" (utf8-bytes "same")]
@@ -418,38 +459,54 @@
              (catch Throwable t t)))))))
 
 (deftest declared-and-streamed-limits-are-enforced-test
-  (with-zips [zip (write-zip! (temp-file ".zip")
-                              [["work.txt" (utf8-bytes "12345")]
-                               ["image.bin" (utf8-bytes "67890")]])]
-    (is (= :too-many-members
-           (reason #(source-bundle/inspect-zip zip {:max-members 1
-                                                    :max-member-bytes 100
-                                                    :max-total-bytes 100}))))
-    (is (= :member-too-large
-           (reason #(source-bundle/inspect-zip zip {:max-members 10
-                                                    :max-member-bytes 4
-                                                    :max-total-bytes 100}))))
-    (is (= :total-too-large
-           (reason #(source-bundle/inspect-zip zip {:max-members 10
-                                                    :max-member-bytes 100
-                                                    :max-total-bytes 9})))))
-  (with-zips [zip (write-zip! (temp-file ".zip")
-                              [["work.txt" (utf8-bytes "12345")]])]
-    (understate-first-central-size! zip 1)
-    (let [member-data (admission-data
-                       #(source-bundle/inspect-zip
-                         zip {:max-members 10
-                              :max-member-bytes 4
-                              :max-total-bytes 100}))
-          total-data (admission-data
-                      #(source-bundle/inspect-zip
-                        zip {:max-members 10
-                             :max-member-bytes 100
-                             :max-total-bytes 4}))]
-      (is (= :member-too-large (:reason member-data)))
-      (is (= 5 (:actual-bytes member-data)))
-      (is (= :total-too-large (:reason total-data)))
-      (is (= 5 (:actual-bytes total-data))))))
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0033-c10-admission-limits")
+    (fn []
+      (evidence-io/with-owned-ephemeral-root
+        (fn [root]
+          (let [declared (write-zip! (fs/file root "declared.zip")
+                                     [["work.txt" (utf8-bytes "12345")]
+                                      ["image.bin" (utf8-bytes "67890")]])]
+            (is (= :too-many-members
+                   (:reason (try
+                              (source-bundle/inspect-zip
+                               declared {:max-members 1 :max-member-bytes 100
+                                         :max-total-bytes 100})
+                              (catch clojure.lang.ExceptionInfo exception
+                                (ex-data exception))))))
+            (is (= :member-too-large
+                   (:reason (try
+                              (source-bundle/inspect-zip
+                               declared {:max-members 10 :max-member-bytes 4
+                                         :max-total-bytes 100})
+                              (catch clojure.lang.ExceptionInfo exception
+                                (ex-data exception))))))
+            (is (= :total-too-large
+                   (:reason (try
+                              (source-bundle/inspect-zip
+                               declared {:max-members 10 :max-member-bytes 100
+                                         :max-total-bytes 9})
+                              (catch clojure.lang.ExceptionInfo exception
+                                (ex-data exception)))))))
+          (let [streamed (write-zip! (fs/file root "streamed.zip")
+                                     [["work.txt" (utf8-bytes "12345")]])]
+            (understate-first-central-size! streamed 1)
+            (let [member-data (try
+                                (source-bundle/inspect-zip
+                                 streamed {:max-members 10 :max-member-bytes 4
+                                           :max-total-bytes 100})
+                                (catch clojure.lang.ExceptionInfo exception
+                                  (ex-data exception)))
+                  total-data (try
+                               (source-bundle/inspect-zip
+                                streamed {:max-members 10 :max-member-bytes 100
+                                          :max-total-bytes 4})
+                               (catch clojure.lang.ExceptionInfo exception
+                                 (ex-data exception)))]
+              (is (= :member-too-large (:reason member-data)))
+              (is (= 5 (:actual-bytes member-data)))
+              (is (= :total-too-large (:reason total-data)))
+              (is (= 5 (:actual-bytes total-data))))))))))
 
 (deftest manifest-validates-against-source-bundle-schema-test
   (with-zips [zip (write-zip! (temp-file ".zip") [["work.txt" (utf8-bytes "本文")]])

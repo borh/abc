@@ -1,0 +1,22 @@
+{:observation-key "adr-0008-c3-workflow-wiring-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:2bdc65ee49f8bc8a91a81e7d949ea0849d7aab5d524ff98897e7300079513e15",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0008-c3-workflow-wiring.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.foundation-evidence-test/validation-workflow-wiring-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.foundation-evidence-test"],
+  :explicit
+  ["abc/.github/workflows/validation.yml"
+   "abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0008-c3-workflow-wiring.edn"
+   "abc/docs/evidence/adr-inputs/adr-0008-c3-workflow-wiring.edn"]},
+ :observation-id :adr-0008-c3-workflow-wiring}

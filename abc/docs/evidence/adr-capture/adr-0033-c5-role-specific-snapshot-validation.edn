@@ -1,0 +1,24 @@
+{:observation-key
+ "adr-0033-c5-role-specific-snapshot-validation-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:8c770cd6e31011d92d57ca05f94535e542cc6a9226968a9d240a77a610e767bd",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0033-c5-role-specific-snapshot-validation.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.materialize-source-snapshot-test/source-snapshot-role-specific-validation-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.materialize-source-snapshot-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0033-c5-role-specific-snapshot-validation.edn"
+   "abc/docs/evidence/adr-inputs/adr-0033-c5-role-specific-snapshot-validation.edn"
+   "abc/schemas/metadata-record.schema.json"
+   "abc/schemas/source-bundle.schema.json"]},
+ :observation-id :adr-0033-c5-role-specific-snapshot-validation}

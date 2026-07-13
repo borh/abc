@@ -317,3 +317,10 @@
            {:schema-version :abc-foundation-capture-conformance-debt-v1
             :findings (catalog/normalize-conformance-findings
                        (catalog/focused-conformance-findings repo-root foundation))}))))
+
+(deftest foundation-focused-observations-have-zero-conformance-debt-test
+  (let [repo-root (fs/file (fs/canonicalize "."))
+        foundation (catalog/load-catalog!
+                    repo-root "data/adr-evidence/foundation-observation-catalog.edn")]
+    (is (empty? (catalog/normalize-conformance-findings
+                 (catalog/focused-conformance-findings repo-root foundation))))))

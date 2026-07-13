@@ -1,5 +1,7 @@
 (ns abc.tools.manifest-index-test
-  (:require [abc.tools.analysis-identity :as analysis-identity]
+  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
+            [abc.tools.analysis-identity :as analysis-identity]
+            [abc.tools.evidence-test-support :as evidence-support]
             [abc.tools.files :as files]
             [abc.tools.manifest-index :as manifest-index]
             [clojure.test :refer [deftest is testing]]))
@@ -195,8 +197,8 @@
                                        "sha256:1111111111111111111111111111111111111111111111111111111111111111"
                                        "passed")}))))
 
-(deftest reproducibility-conflicts-test
-  (testing "same artifact_id and content_hash is not a conflict"
+(defn- reproducibility-conflicts-assertions []
+  (do
     (is (empty?
          (manifest-index/reproducibility-conflicts
           [(manifest-index/manifest->index-entry
@@ -209,7 +211,7 @@
             (manifest "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                       "sha256:1111111111111111111111111111111111111111111111111111111111111111"
                       "warning"))]))))
-  (testing "same artifact_id and different content_hash is a conflict"
+  (do
     (is (= [{"artifact_id" "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
              "content_hashes" ["sha256:1111111111111111111111111111111111111111111111111111111111111111"
                                "sha256:2222222222222222222222222222222222222222222222222222222222222222"]
@@ -225,6 +227,11 @@
               (manifest "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                         "sha256:2222222222222222222222222222222222222222222222222222222222222222"
                         "warning"))])))))
+
+(deftest reproducibility-conflicts-test
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0001-c5-reproducibility-conflict")
+    (fn [] (reproducibility-conflicts-assertions))))
 
 (deftest parser-ir-producer-lookup-test
   (let [producer-id (files/example-hash "31")

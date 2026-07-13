@@ -1,0 +1,4 @@
+{:schema-version :abc-adr-runtime-inputs-v1,
+ :paths
+ ["abc/schemas/diagnostic.schema.json"
+  "abc/schemas/parser-ir.schema.json"]}

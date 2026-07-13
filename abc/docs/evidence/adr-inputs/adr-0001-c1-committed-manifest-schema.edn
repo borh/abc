@@ -1,0 +1,5 @@
+{:schema-version :abc-adr-runtime-inputs-v1,
+ :paths
+ ["abc/examples/v0/example-work/failure-manifest.example.json"
+  "abc/examples/v0/example-work/manifest.json"
+  "abc/schemas/manifest.schema.json"]}

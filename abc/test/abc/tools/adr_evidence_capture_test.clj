@@ -1,10 +1,102 @@
 (ns abc.tools.adr-evidence-capture-test
   (:require [abc.tools.adr-evidence-capture :as capture]
+            [abc.tools.adr-evidence-observation-catalog :as catalog]
+            [abc.tools.adr-evidence-operational :as operational]
+            [abc.tools.adr-evidence-runtime-inputs :as runtime]
+            [abc.tools.files :as files]
             [abc.tools.json :as json]
             [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.string :as str]
             [clojure.test :refer [deftest is]]))
+
+(def ^:private foundation-descriptor-stems
+  #{"adr-0001-c1-committed-manifest-schema"
+    "adr-0001-c2-canonical-null-array-order"
+    "adr-0001-c3-nested-artifact-id-rejection"
+    "adr-0001-c4-failure-artifact-scope"
+    "adr-0001-c4-failure-coordinates"
+    "adr-0001-c4-failure-semantics"
+    "adr-0001-c5-reproducibility-conflict"
+    "adr-0008-c3-workflow-wiring"
+    "adr-0008-c4-validation-read-catalog"
+    "adr-0009-c2-materialized-content-hashes"
+    "adr-0009-c3-mapping-divergence-sidecar"
+    "adr-0009-c4-generated-artifact-ids-vs-content-hashes"
+    "adr-0009-c5-aat-conversion-compatibility"
+    "adr-0009-c6-temporary-materialization"
+    "adr-0010-c1-materialized-bundled-schema-jcs-hash"
+    "adr-0010-c2-materialized-artifact-ids-distinct"
+    "adr-0010-c3-v0-identity-json"
+    "adr-0010-c4-parser-schema-mismatch"
+    "adr-0011-c2-deterministic-json-writer"
+    "adr-0011-c3-two-run-byte-identity"
+    "adr-0033-c1-canonical-all-member-schema"
+    "adr-0033-c10-admission-limits"
+    "adr-0033-c11-best-effort-counted-failure"
+    "adr-0033-c11-non-release-admissible"
+    "adr-0033-c11-strict-atomic-abort"
+    "adr-0033-c2-clojure-known-answer"
+    "adr-0033-c3-repack-image-evolution"
+    "adr-0033-c4-parser-identity-roles"
+    "adr-0033-c5-role-specific-snapshot-validation"
+    "adr-0033-c6-p16-3-ungated"
+    "adr-0033-c7-d7-dated-fixed-state"
+    "adr-0033-c8-complete-legacy-readability"
+    "design-bundle-operational"
+    "diagnostic-schema-exact-current"
+    "generated-import-manifest-schema"
+    "source-bundle-corpus"
+    "validate-design-bundle-wrapper-delegation"})
+
+(deftest checked-in-foundation-observation-boundary-inventory-is-exact-test
+  (let [stems (fn [root]
+                (->> (fs/list-dir root)
+                     (filter fs/regular-file?)
+                     (map #(str (fs/strip-ext (fs/file-name %))))
+                     set))]
+    (is (= 37 (count foundation-descriptor-stems)))
+    (is (= foundation-descriptor-stems
+           (stems "docs/evidence/adr-capture")))
+    (is (= foundation-descriptor-stems
+           (stems "docs/evidence/adr-inputs")))
+    (is (= 42 (count (:entries (files/read-edn
+                                "docs/evidence/adr-entries/foundation.edn")))))))
+
+(deftest checked-in-foundation-observation-boundaries-are-valid-test
+  (let [repo-root (fs/file (fs/canonicalize "."))
+        monorepo-layout? (fs/directory? "../abc")
+        workspace-root (fs/file (fs/canonicalize (if monorepo-layout? ".." ".")))
+        catalog-value (catalog/load-catalog!
+                       repo-root "data/adr-evidence/foundation-observation-catalog.edn")
+        bindings (files/read-edn "docs/evidence/adr-entries/foundation.edn")]
+    (is (empty? (catalog/validate-bindings catalog-value bindings)))
+    (doseq [stem (sort foundation-descriptor-stems)]
+      (let [descriptor-path (str "docs/evidence/adr-capture/" stem ".edn")
+            context (operational/load-descriptor-context!
+                     {:repo-root repo-root
+                      :workspace-root workspace-root
+                      :descriptor-path descriptor-path})
+            descriptor (get-in context [:descriptor :value])]
+        (if (= "abc-adr-evidence-capture-operational-v1"
+               (:schema-version descriptor))
+          (is (some? (operational/validate-operational-manifest! context)))
+          (let [runtime-descriptor
+                (if monorepo-layout?
+                  {:path (str "abc/" descriptor-path)
+                   :value (update descriptor :runtime-input-manifest
+                                  #(str "abc/" %))}
+                  {:path descriptor-path
+                   :value (update-in descriptor [:input-profile :explicit]
+                                     #(mapv (fn [path]
+                                              (str/replace path #"^abc/" ""))
+                                            %))})]
+            (is (map?
+                 (runtime/validate-runtime-input-manifest!
+                  (cond-> {:repo-root repo-root
+                           :workspace-root workspace-root
+                           :descriptor runtime-descriptor}
+                    (not monorepo-layout?) (assoc :component-root "abc")))))))))))
 
 (defn- temp-dir [prefix]
   (fs/file (fs/create-temp-dir {:prefix prefix})))

@@ -1,0 +1,21 @@
+{:observation-key "adr-0001-c5-reproducibility-conflict-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:128774c491cde8b869eb007e698d8da3e73f29231b4b3d2e701bc66c2a2e8c2f",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0001-c5-reproducibility-conflict.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.manifest-index-test/reproducibility-conflicts-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.manifest-index-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0001-c5-reproducibility-conflict.edn"
+   "abc/docs/evidence/adr-inputs/adr-0001-c5-reproducibility-conflict.edn"]},
+ :observation-id :adr-0001-c5-reproducibility-conflict}

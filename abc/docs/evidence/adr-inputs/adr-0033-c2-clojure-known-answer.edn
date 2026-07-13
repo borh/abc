@@ -1,0 +1,3 @@
+{:schema-version :abc-adr-runtime-inputs-v1,
+ :paths
+ ["abc/fixtures/source-bundle/abc-source-bundle-v1-known-answer.json"]}

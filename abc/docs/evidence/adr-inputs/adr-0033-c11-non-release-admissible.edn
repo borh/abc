@@ -1,0 +1,12 @@
+{:schema-version :abc-adr-runtime-inputs-v1,
+ :paths
+ ["abc/data/parser-ir-publication-policy-v0.json"
+  "abc/schemas/manifest.schema.json"
+  "abc/schemas/metadata-record.schema.json"
+  "abc/schemas/parser-ir-publication-preservation.schema.json"
+  "abc/schemas/parser-ir.schema.json"
+  "abc/schemas/person-record.schema.json"
+  "abc/schemas/soranoha-publication-build-config.schema.json"
+  "abc/schemas/tei-profile.odd"
+  "abc/schemas/tei-profile.rng"
+  "abc/schemas/tei-profile.sch"]}

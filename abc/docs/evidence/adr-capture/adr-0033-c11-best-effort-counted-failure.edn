@@ -1,0 +1,31 @@
+{:observation-key "adr-0033-c11-best-effort-counted-failure-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:17ce6374e0aada82235d752b553c9c34e73eeb7cb50dd6cbbae9a3aba09a54fd",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0033-c11-best-effort-counted-failure.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.sim.content-sim-test/best-effort-admission-failures-are-counted-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.sim.content-sim-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/data/parser-ir-publication-policy-v0.json"
+   "abc/docs/evidence/adr-capture/adr-0033-c11-best-effort-counted-failure.edn"
+   "abc/docs/evidence/adr-inputs/adr-0033-c11-best-effort-counted-failure.edn"
+   "abc/schemas/manifest.schema.json"
+   "abc/schemas/metadata-record.schema.json"
+   "abc/schemas/parser-ir-publication-preservation.schema.json"
+   "abc/schemas/parser-ir.schema.json"
+   "abc/schemas/person-record.schema.json"
+   "abc/schemas/soranoha-publication-build-config.schema.json"
+   "abc/schemas/tei-profile.odd"
+   "abc/schemas/tei-profile.rng"
+   "abc/schemas/tei-profile.sch"]},
+ :observation-id :adr-0033-c11-best-effort-counted-failure}

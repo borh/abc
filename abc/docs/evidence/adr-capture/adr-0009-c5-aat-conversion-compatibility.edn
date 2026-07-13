@@ -1,0 +1,22 @@
+{:observation-key "adr-0009-c5-aat-conversion-compatibility-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:4877e18f46c3091e2f96b5be27d21fed7599d79ba874a53db9d544601e00506b",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0009-c5-aat-conversion-compatibility.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.validate-design-bundle-test/aat-parser-ir-compatibility-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.validate-design-bundle-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/data/aat-parser-ir-compatibility.edn"
+   "abc/docs/evidence/adr-capture/adr-0009-c5-aat-conversion-compatibility.edn"
+   "abc/docs/evidence/adr-inputs/adr-0009-c5-aat-conversion-compatibility.edn"]},
+ :observation-id :adr-0009-c5-aat-conversion-compatibility}

@@ -1,0 +1,31 @@
+{:observation-key "adr-0033-c11-non-release-admissible-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:27c43123ffe7b3b142a57391dae1a79ce9f5b42f792db5a5973717f6a1d2d7f5",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0033-c11-non-release-admissible.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.sim.content-sim-test/nonzero-derive-failures-are-not-release-admissible-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.sim.content-sim-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/data/parser-ir-publication-policy-v0.json"
+   "abc/docs/evidence/adr-capture/adr-0033-c11-non-release-admissible.edn"
+   "abc/docs/evidence/adr-inputs/adr-0033-c11-non-release-admissible.edn"
+   "abc/schemas/manifest.schema.json"
+   "abc/schemas/metadata-record.schema.json"
+   "abc/schemas/parser-ir-publication-preservation.schema.json"
+   "abc/schemas/parser-ir.schema.json"
+   "abc/schemas/person-record.schema.json"
+   "abc/schemas/soranoha-publication-build-config.schema.json"
+   "abc/schemas/tei-profile.odd"
+   "abc/schemas/tei-profile.rng"
+   "abc/schemas/tei-profile.sch"]},
+ :observation-id :adr-0033-c11-non-release-admissible}

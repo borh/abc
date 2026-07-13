@@ -1,5 +1,7 @@
 (ns abc.tools.validate-design-bundle-test
   (:require [abc.tools.aat-parser-ir-compat :as compat]
+            [abc.tools.adr-evidence-runtime-inputs :as runtime]
+            [abc.tools.evidence-test-support :as evidence-support]
             [abc.tools.files :as files]
             [abc.tools.evidence-io :as evidence-io]
             [abc.tools.json :as abc-json]
@@ -7,6 +9,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.manifest-index :as manifest-index]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
+            [abc.tools.materialize-import :as materialize]
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-sentence-policy :as sentence-policy]
@@ -38,12 +41,31 @@
       (run!))
     (is (false? @reached?))))
 
-(deftest evidence-input-catalog-equals-the-pure-schema-validation-read-set-test
+(defn- evidence-input-catalog-equals-the-pure-schema-validation-read-set-assertions []
   (let [traced (evidence-io/with-read-trace
                  {:identity-root "." :cwd-root "."}
                  #(validate/validate-json-schemas! []))]
     (is (= (validate/evidence-input-paths)
            (:repository-paths traced)))))
+
+(deftest evidence-input-catalog-equals-the-pure-schema-validation-read-set-test
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0008-c4-validation-read-catalog")
+    (fn []
+      (evidence-input-catalog-equals-the-pure-schema-validation-read-set-assertions))))
+
+(deftest design-bundle-temporary-import-materialization-test
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0009-c6-temporary-materialization")
+    (fn []
+      (evidence-io/with-owned-ephemeral-root
+        (fn [root]
+          (let [generated (materialize/materialize-import!
+                           {:input-dir "examples/ab-validator-output"
+                            :output-dir root
+                            :generated-at materialize/default-generated-at})]
+            (is (files/file? (:parser-ir generated)))
+            (is (files/file? (:warnings generated)))))))))
 
 (deftest publication-view-temp-directory-cleanup-test
   (fs/with-temp-dir [root {}]
@@ -901,7 +923,7 @@
           {"parser_ir_schema_hash" (files/example-hash "04")
            "diagnostic_schema_hash" (files/example-hash "08")}))))
 
-(deftest parser-ir-schema-hash-errors-test
+(defn- parser-ir-schema-hash-errors-assertions []
   (is (empty?
        (validate/parser-ir-schema-hash-errors
         {"schema_hash" legacy-parser-ir-schema-hash})))
@@ -910,7 +932,12 @@
         {"schema_hash" v0-6-parser-ir-schema-hash})))
   (is (= [(str "ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash " current-parser-ir-schema-hash)]
          (validate/parser-ir-schema-hash-errors
-          {"schema_hash" (files/example-hash "04")}))))
+          {"schema_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000004"}))))
+
+(deftest parser-ir-schema-hash-errors-test
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0010-c4-parser-schema-mismatch")
+    (fn [] (parser-ir-schema-hash-errors-assertions))))
 
 (deftest parser-ir-schema-accepts-derived-from-test
   (testing "AAT-derived parser IR may record mapping provenance"
@@ -2008,7 +2035,7 @@
                       (compat/registry-errors
                        {:entries [invalid-entry]}))))))
 
-(deftest aat-parser-ir-compatibility-test
+(defn- aat-parser-ir-compatibility-assertions []
   (let [registry (compat/load-registry)]
     (testing "matches measured adapter-scoped registry entries"
       (is (true? (compat/compatible? registry old-compat-query)))
@@ -2094,6 +2121,11 @@
                      [:parser_ir_schema_hash (files/example-hash "97")]]]
         (is (false? (compat/compatible? registry (assoc current-html-compat-query k v)))
             (str "registry must reject mismatched " k))))))
+
+(deftest aat-parser-ir-compatibility-test
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0009-c5-aat-conversion-compatibility")
+    (fn [] (aat-parser-ir-compatibility-assertions))))
 
 (deftest aat-parser-ir-compatibility-admission-report-test
   (testing "reports when producer candidates are already admitted exactly"

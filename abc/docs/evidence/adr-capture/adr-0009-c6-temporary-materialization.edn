@@ -1,0 +1,28 @@
+{:observation-key "adr-0009-c6-temporary-materialization-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:2d50ac5fb7063f5bf249866d663672847df3125111e909eca52740571b56b51c",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0009-c6-temporary-materialization.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.validate-design-bundle-test/design-bundle-temporary-import-materialization-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.validate-design-bundle-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0009-c6-temporary-materialization.edn"
+   "abc/docs/evidence/adr-inputs/adr-0009-c6-temporary-materialization.edn"
+   "abc/examples/ab-validator-output/divergence.json"
+   "abc/examples/ab-validator-output/manifest-inputs.json"
+   "abc/examples/ab-validator-output/parser-ir.json"
+   "abc/examples/ab-validator-output/run-summary.jsonl"
+   "abc/examples/ab-validator-output/source-region-coverage.json"
+   "abc/examples/ab-validator-output/warnings.jsonl"
+   "abc/schemas/manifest.schema.json"]},
+ :observation-id :adr-0009-c6-temporary-materialization}

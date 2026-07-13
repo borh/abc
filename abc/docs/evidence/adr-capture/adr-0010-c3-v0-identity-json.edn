@@ -1,0 +1,21 @@
+{:observation-key "adr-0010-c3-v0-identity-json-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:ab2aaab6b9a365924b54768630bb4cd5f0c7b0445e930c278ca339a533dc3c5d",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0010-c3-v0-identity-json.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.materialize-import-test/v0-identity-json-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.materialize-import-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0010-c3-v0-identity-json.edn"
+   "abc/docs/evidence/adr-inputs/adr-0010-c3-v0-identity-json.edn"]},
+ :observation-id :adr-0010-c3-v0-identity-json}

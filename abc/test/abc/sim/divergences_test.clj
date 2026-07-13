@@ -1,5 +1,7 @@
 (ns abc.sim.divergences-test
   (:require [abc.sim.divergences :as div]
+            [abc.tools.adr-evidence-runtime-inputs :as runtime]
+            [abc.tools.evidence-test-support :as evidence-support]
             [clojure.test :refer [deftest is]]))
 
 (deftest table-covers-spec-entries-test
@@ -9,10 +11,13 @@
               (vals div/table))))
 
 (deftest d7-pin-chain-fix-is-dated-and-structural-test
-  (is (= :fixed (get-in div/table [:D7 :status])))
-  (is (re-find #"2026-07-12" (get-in div/table [:D7 :notes])))
-  (is (re-find #"archive, bundle, member, and primary-text identity"
-               (get-in div/table [:D7 :notes]))))
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0033-c7-d7-dated-fixed-state")
+    (fn []
+      (is (= :fixed (get-in div/table [:D7 :status])))
+      (is (re-find #"2026-07-12" (get-in div/table [:D7 :notes])))
+      (is (re-find #"archive, bundle, member, and primary-text identity"
+                   (get-in div/table [:D7 :notes]))))))
 
 (deftest expected-failure-inverts-while-open-test
   ;; Inversion semantics are pinned against a synthetic open entry so this

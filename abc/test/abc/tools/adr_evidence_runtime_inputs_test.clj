@@ -171,6 +171,44 @@
                        :repository-paths []})
                      (catch Exception e e))))))))
 
+(deftest component-runtime-closure-normalizes-one-explicit-workspace-prefix-test
+  (let [root (temp-dir)
+        descriptor-path "docs/evidence/adr-capture/example.edn"
+        manifest-path "docs/evidence/adr-inputs/example.edn"
+        descriptor {:schema-version "abc-adr-evidence-capture-v3"
+                    :runtime-input-manifest manifest-path
+                    :input-profile {:kind "component-clojure-test-v1"
+                                    :component-root "abc"
+                                    :roots ['example.core-test]
+                                    :explicit [descriptor-path manifest-path "data/input.txt"]}}]
+    (write! root descriptor-path "descriptor")
+    (write! root "data/input.txt" "input")
+    (write! root manifest-path
+            (pr-str {:schema-version :abc-adr-runtime-inputs-v1
+                     :paths ["abc/data/input.txt"]}))
+    (is (true? (runtime/assert-runtime-input-closure!
+                {:repo-root root
+                 :workspace-root root
+                 :component-root "abc"
+                 :descriptor {:path descriptor-path :value descriptor}
+                 :repository-paths ["data/input.txt"]})))
+    (is (map? (runtime/validate-runtime-input-manifest!
+               {:repo-root root
+                :workspace-root root
+                :component-root "abc"
+                :descriptor {:path descriptor-path :value descriptor}})))
+    (write! root manifest-path
+            (pr-str {:schema-version :abc-adr-runtime-inputs-v1
+                     :paths ["other/data/input.txt"]}))
+    (is (= :invalid-runtime-input-manifest
+           (problem-kind
+            #(runtime/assert-runtime-input-closure!
+              {:repo-root root
+               :workspace-root root
+               :component-root "abc"
+               :descriptor {:path descriptor-path :value descriptor}
+               :repository-paths ["data/input.txt"]}))))))
+
 (deftest runtime-manifest-rejects-every-noncontained-path-shape-test
   (let [root (temp-dir)
         outside (temp-dir)

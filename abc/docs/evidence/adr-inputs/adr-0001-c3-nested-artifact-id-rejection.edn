@@ -1,0 +1,4 @@
+{:schema-version :abc-adr-runtime-inputs-v1,
+ :paths
+ ["abc/fixtures/v0/invalid/manifest-nested-artifact-id/manifest.json"
+  "abc/schemas/manifest.schema.json"]}

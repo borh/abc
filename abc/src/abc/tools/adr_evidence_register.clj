@@ -11,7 +11,8 @@
 
 (def ^:private template-keys #{:schema-version :entries})
 (def ^:private entry-keys
-  #{:claim-id :claim-kind :evidence-kind :artifact-path :observation-key :expected})
+  #{:claim-id :claim-kind :evidence-kind :artifact-path :observation-id
+    :observation-key :expected})
 (def ^:private forbidden-inline-keys #{:artifact-hash :observed :inputs :verdict})
 
 (defn- problem [kind message & {:as data}]
@@ -64,7 +65,9 @@
                                    "named observation is absent from the evidence artifact"
                                    :claim-id (:claim-id entry)
                                    :artifact-path (:artifact-path entry))]}
-              :else {:entry (assoc entry :artifact-hash (:canonical-hash loaded))})))
+              :else {:entry (-> entry
+                                (dissoc :observation-id)
+                                (assoc :artifact-hash (:canonical-hash loaded)))})))
         problems (vec (concat template-problems shape-problems (mapcat :problems results)))]
     (if (seq problems)
       {:problems problems}

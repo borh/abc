@@ -1,0 +1,19 @@
+{:observation-key "adr-0001-c2-canonical-null-array-order-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:cdd34b91f702a911eb60c761186d69aa7c48a88aa5a8e3ac8fa650bd1b052555",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/adr-0001-c2-canonical-null-array-order.edn",
+ :argv
+ ["bin/kaocha" "--focus" "abc.tools.jcs-test/canonical-json-test"],
+ :catalog-path "data/adr-evidence/foundation-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.jcs-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/adr-0001-c2-canonical-null-array-order.edn"
+   "abc/docs/evidence/adr-inputs/adr-0001-c2-canonical-null-array-order.edn"]},
+ :observation-id :adr-0001-c2-canonical-null-array-order}

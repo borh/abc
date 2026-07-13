@@ -5,7 +5,9 @@
 
   Layer D: test.check property test bound to the REAL
   manifest-index/reproducibility-conflicts oracle (replaces R1)."
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
+            [abc.tools.evidence-test-support :as evidence-support]
+            [abc.tools.files :as files]
             [abc.tools.schema :as schema]
             [abc.tools.manifest-index :as manifest-index]
             [clojure.test :refer [deftest is testing]]
@@ -15,7 +17,7 @@
 
 (def nested-id-fixture-path "fixtures/v0/invalid/manifest-nested-artifact-id/manifest.json")
 
-(deftest r2-manifest-schema-rejects-nested-artifact-id-test
+(defn- r2-manifest-schema-rejects-nested-artifact-id-assertions []
   "ADR 0001 R2: artifact_id must not be nested inside manifest_identity_object.
   The real carrier is the JSON Schema's $defs/identityObject, which declares
   additionalProperties:false and a fixed 13-key property set that does NOT
@@ -35,6 +37,11 @@
               (map str errors))
         (str "error path must target manifest_identity_object/artifact_id; got: "
              (pr-str errors)))))
+
+(deftest r2-manifest-schema-rejects-nested-artifact-id-test
+  (runtime/with-validated-read-trace!
+    (evidence-support/focused-trace-options "adr-0001-c3-nested-artifact-id-rejection")
+    (fn [] (r2-manifest-schema-rejects-nested-artifact-id-assertions))))
 
 ;; Layer D — R1 reproducibility conflict, bound to the REAL oracle
 ;; (manifest-index/reproducibility-conflicts). Replaces vacuous

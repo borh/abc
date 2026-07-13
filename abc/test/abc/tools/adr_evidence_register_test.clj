@@ -54,6 +54,7 @@
     :claim-kind :fixture-behavior
     :evidence-kind :fixture-conformance
     :artifact-path path
+    :observation-id :example
     :observation-key observation-key
     :expected {:operator := :value true}}))
 
@@ -86,11 +87,22 @@
            (-> (register/materialize-template root (template [:not-a-map]))
                :problems first :kind)))))
 
+(deftest materialize-template-accepts-binding-identity-without-widening-registry-rows-test
+  (let [root (temp-dir)
+        binding (assoc (entry) :observation-id :example)]
+    (write! root "docs/evidence/adr-runs/example.json" (artifact "example-passes" "true"))
+    (let [result (register/materialize-template root (template [binding]))]
+      (is (empty? (:problems result)))
+      (is (not (contains? (first (:entries result)) :observation-id))))))
+
 (deftest candidate-registry-replaces-owned-claims-deterministically
-  (let [old-a (assoc (entry) :artifact-hash "old-a")
-        old-b (assoc (entry "ADR-0002-C1" "other.json" "other") :artifact-hash "old-b")
-        new-a (assoc (entry) :artifact-hash "new-a")
-        new-a2 (assoc (entry "ADR-0001-C1" "second.json" "second") :artifact-hash "new-b")]
+  (let [registry-entry #(dissoc % :observation-id)
+        old-a (assoc (registry-entry (entry)) :artifact-hash "old-a")
+        old-b (assoc (registry-entry (entry "ADR-0002-C1" "other.json" "other"))
+                     :artifact-hash "old-b")
+        new-a (assoc (registry-entry (entry)) :artifact-hash "new-a")
+        new-a2 (assoc (registry-entry (entry "ADR-0001-C1" "second.json" "second"))
+                      :artifact-hash "new-b")]
     (is (= {:entries [new-a new-a2 old-b]}
            (register/candidate-registry {:entries [old-b old-a]} [new-a2 new-a])))
     (is (= (pr-str (register/candidate-registry {:entries [old-a old-b]} [new-a new-a2]))

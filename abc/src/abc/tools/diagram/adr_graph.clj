@@ -1,5 +1,5 @@
 (ns abc.tools.diagram.adr-graph
-  "Tier 1 pure builder: ADR headers (+ adr-relations.edn) -> decision-map
+  "Pure builder: ADR headers (+ adr-relations.edn) -> decision-map
    graph value. lint* delegates ADR governance to abc.tools.adr and enforces
    semantic-sidecar rules locally.
    See ADR 0029."

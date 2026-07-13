@@ -25,7 +25,7 @@
   ;; person-drift-index files bridge drift participants back to person_id;
   ;; abc-... person_ids that drift successors reference live here (not as
   ;; top-level records). Reading both sources keeps the referential-integrity
-  ;; gate (Task 7) honest: it does not dangle on the real corpus.
+  ;; gate honest: it does not dangle on the real corpus.
   "examples/v0/example-persons/_indexes")
 
 ;; All Prolog string args are emitted as single-quoted atoms with ' doubled.
@@ -40,15 +40,15 @@
   (fs/create-dirs out-dir))
 
 (defn- write-lines! [out-dir filename lines]
-  ;; Sort for byte-stability across .listFiles orderings (plan Blocker
-  ;; remediation). Empty corpus writes an empty file (not none), so downstream
+  ;; Sort for byte-stability across .listFiles orderings (deterministic
+  ;; ordering). Empty corpus writes an empty file (not none), so downstream
   ;; swipl -c finds the file regardless of corpus size.
   (spit (io/file out-dir filename) (str/join "\n" (sort lines)) :append false))
 
 (defn- append-lines!
   ;; Append a (sorted, deduped) fact block to an existing fact file, preceded
   ;; by a comment header. Used so person_records.pl carries both
-  ;; person_record/1 and drift_successor/2 (Task 7 queries both).
+  ;; person_record/1 and drift_successor/2.
   [out-dir filename header lines]
   (let [existing (slurp (io/file out-dir filename))
         addition (when (seq lines)
@@ -84,7 +84,7 @@
 (defn- person-record-ids
   ;; Union of person_ids present as top-level records AND as drift-index
   ;; entries. Both assert a person exists in the corpus; the union is what
-  ;; the referential-integrity query (Task 7) resolves against.
+  ;; the referential-integrity query resolves against.
   []
   (let [records-dir (fs/path example-persons-dir)
         indexes-dir (fs/path example-persons-index-dir)

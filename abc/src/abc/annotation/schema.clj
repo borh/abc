@@ -2,7 +2,7 @@
 
 ;; att.linguistics: <w> element for morphological information
 ;; http://www.tei-c.org/release/doc/tei-p5-doc/en/html/ref-att.linguistic.html
-;; Thoughts: msd for all morphosyntactic information, lemma for lemma, pos for pos. join perhaps for non-independent morphemes.
+;; Morphosyntactic fields: msd, lemma, pos, join (for non-independent morphemes).
 
 (def registry
   {:quotation/type            [:enum :spoken :thought]

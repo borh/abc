@@ -11,7 +11,7 @@
   #{"parser-ir-plaintext-body-v1" "parser-ir-body-annotations-v1"})
 
 ;; The identity (no-op) input-normalization policy hash — produced by Rust
-;; (ab_ortho_detect::NormalizationPolicy::identity, spec Issue 2 P1) and used
+;; (ab_ortho_detect::NormalizationPolicy::identity) and used
 ;; verbatim here (U1: compute stays in Rust, ABC reads/records the hash). This
 ;; is the value the input view records when no ortho normalization was applied
 ;; (the default for every source-identity flow).

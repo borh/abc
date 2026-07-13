@@ -3,7 +3,8 @@
             [abc.tools.json :as json]
             [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]])
-  (:import [java.nio.channels FileChannel]
+  (:import [java.nio ByteBuffer]
+           [java.nio.channels FileChannel]
            [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]
            [java.util UUID]))
@@ -142,7 +143,41 @@
     (is (not (fs/exists? output)))
     (is (empty? (sibling-names staging-root)))))
 
-(deftest force-failure-removes-partially-written-sibling-test
+(deftest prefix-write-failure-closes-channel-and-removes-only-owned-sibling-test
+  (let [{:keys [staging-root output] :as paths} (layout)
+        destination (output/validated-destination paths)
+        collision-id (UUID/fromString "00000000-0000-0000-0000-000000000003")
+        owned-id (UUID/fromString "00000000-0000-0000-0000-000000000004")
+        collision-name (str ".bundle.json." collision-id ".tmp")
+        collision (fs/path staging-root collision-name)
+        ids (atom [collision-id owned-id])
+        seen-channel (atom nil)
+        total-bytes (atom 0)
+        written (atom 0)]
+    (spit (fs/file collision) "unrelated collision")
+    (is (thrown-with-msg?
+         Exception #"prefix write failed"
+         (with-redefs-fn
+           {#'output/fresh-uuid
+            (fn [] (let [id (first @ids)]
+                     (swap! ids rest)
+                     id))
+            #'output/write-buffer!
+            (fn [^FileChannel channel ^ByteBuffer buffer]
+              (reset! seen-channel channel)
+              (reset! total-bytes (.remaining buffer))
+              (.limit buffer (+ (.position buffer) 3))
+              (reset! written (.write channel buffer))
+              (throw (Exception. "prefix write failed")))}
+           #(output/write-json-exclusive! destination {"value" "long enough"}))))
+    (is (pos? @written))
+    (is (< @written @total-bytes))
+    (is (false? (.isOpen ^FileChannel @seen-channel)))
+    (is (not (fs/exists? output)))
+    (is (= #{collision-name} (sibling-names staging-root)))
+    (is (= "unrelated collision" (slurp (fs/file collision))))))
+
+(deftest force-failure-removes-complete-unpublished-sibling-test
   (let [{:keys [staging-root output] :as paths} (layout)
         destination (output/validated-destination paths)]
     (is (thrown-with-msg?
@@ -168,13 +203,11 @@
     (is (= [true] @forced))
     (is (= (json/write-deterministic-json-str {"b" 2 "a" 1})
            (slurp (fs/file output))))
-    (is (empty? (filter #(fs/ends-with? % ".tmp")
-                        (fs/list-dir staging-root))))
+    (is (= #{"bundle.json"} (sibling-names staging-root)))
     (is (thrown? java.nio.file.FileAlreadyExistsException
                  (output/write-json-exclusive! destination {"replacement" true})))
     (is (= {"a" 1 "b" 2} (json/read-json-file (fs/file output))))
-    (is (empty? (filter #(fs/ends-with? % ".tmp")
-                        (fs/list-dir staging-root))))))
+    (is (= #{"bundle.json"} (sibling-names staging-root)))))
 
 (deftest writer-rejects-an-unvalidated-map-test
   (let [{:keys [staging-root output]} (layout)]

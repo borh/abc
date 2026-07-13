@@ -82,6 +82,10 @@
 (defn- create-link! [output temp]
   (Files/createLink output temp))
 
+(defn- write-buffer! [^FileChannel channel ^ByteBuffer buffer]
+  (while (.hasRemaining buffer)
+    (.write channel buffer)))
+
 (defn- allocate-sibling! [parent output-name bytes]
   (loop []
     (let [candidate (fs/path parent
@@ -94,8 +98,7 @@
                                           [StandardOpenOption/CREATE_NEW
                                            StandardOpenOption/WRITE]))]
                       (let [buffer (ByteBuffer/wrap bytes)]
-                        (while (.hasRemaining buffer)
-                          (.write channel buffer)))
+                        (write-buffer! channel buffer))
                       (force-channel! channel true))
                     candidate
                     (catch FileAlreadyExistsException _

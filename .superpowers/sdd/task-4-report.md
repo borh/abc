@@ -1,96 +1,41 @@
-# Task 4 report
+# Task 4 Report: Workspace-Aware Ephemeral Ownership
 
-## Scope
+## Status
 
-Migrated the nine materialization/workflow namespaces to direct `babashka.fs`
-0.5.34 usage. Paths remain `Path` values while filesystem logic is internal and
-are converted to `File` at manifest, hashing, TAR, JSON, and stream consumers.
-The source-workset traversal uses a sorted local `fs/list-dir` tree and
-explicitly declines to recurse through symbolic links.
+Complete.
 
-The filesystem policy grandfather set shrank by exactly nine entries:
+## RED evidence
 
-- `abc.tools.materialize-annotations`
-- `abc.tools.materialize-import`
-- `abc.tools.materialize-publication`
-- `abc.tools.snapshot-index`
-- `abc.tools.source-snapshot-workset`
-- `abc.tools.materialize-source-snapshot`
-- `abc.tools.tar`
-- `abc.tools.workflow`
-- `abc.tools.workflow.cache`
-
-## Old green
-
-Command (before production edits):
+Command:
 
 ```sh
-bin/kaocha --focus abc.tools.materialize-annotations-test --focus abc.tools.materialize-import-test --focus abc.tools.materialize-publication-test --focus abc.tools.snapshot-index-test --focus abc.tools.source-snapshot-workset-test --focus abc.tools.materialize-source-snapshot-test --focus abc.tools.tar-test --focus abc.tools.workflow-test --focus abc.tools.workflow.cache-test
+cd abc
+bin/kaocha --focus abc.tools.evidence-io-test \
+  --focus abc.tools.adr-evidence-runtime-inputs-test
 ```
 
-Result: **63 tests, 284 assertions, 0 failures**.
+Result: exit 1. Test loading failed at `evidence_io_test.clj:81` with
+`No such var: evidence-io/with-owned-ephemeral-root`. This was the expected
+failure because the ownership API had not been implemented.
 
-## New green
+The first post-implementation run also exposed a test assertion-shape error:
+the workspace-default test compared the whole trace result with the callback
+value. Correcting the assertion to inspect `:value` required no production
+change.
 
-Command (unchanged suites plus policy):
+## GREEN evidence
+
+Focused tests:
 
 ```sh
-bin/kaocha --focus abc.tools.materialize-annotations-test --focus abc.tools.materialize-import-test --focus abc.tools.materialize-publication-test --focus abc.tools.snapshot-index-test --focus abc.tools.source-snapshot-workset-test --focus abc.tools.materialize-source-snapshot-test --focus abc.tools.tar-test --focus abc.tools.workflow-test --focus abc.tools.workflow.cache-test --focus abc.tools.filesystem-policy-test
+cd abc
+bin/kaocha --focus abc.tools.evidence-io-test \
+  --focus abc.tools.adr-evidence-runtime-inputs-test
 ```
 
-Result: **72 tests, 352 assertions, 0 failures**.
+Result: exit 0, 39 tests, 131 assertions, 0 failures.
 
-## Commit
-
-`refactor(abc): use babashka fs in materialization workflows`
-
-## Concerns
-
-None. TAR entry ordering remains caller-controlled. Recursive workset discovery
-is deterministic and does not follow directory symlinks; dangling symlinks are
-listed safely but never traversed.
-
-## Review follow-up
-
-Added a regression for nil `:summary-path`. Before the production correction:
-
-```sh
-bin/kaocha --focus abc.tools.materialize-publication-test/materialize-publication-batch-without-summary-does-not-write-report-test
-```
-
-Result: **1 test, 2 assertions, 2 failures**. The returned summary incorrectly
-contained `workflow_run_path`, and a workflow-run write targeted the suite cwd.
-After restoring conditional summary-directory construction, the same command
-reported **1 test, 2 assertions, 0 failures**.
-
-Affected-suite verification:
-
-```sh
-bin/kaocha --focus abc.tools.materialize-publication-test --focus abc.tools.tar-test --focus abc.tools.workflow-test --focus abc.tools.filesystem-policy-test
-```
-
-Result: **25 tests, 179 assertions, 0 failures**.
-
-Quality verification:
-
-```sh
-nix build ./abc#checks.x86_64-linux.clj-kondo
-```
-
-Result: exit 0. Workflow joins now remain `Path` values internally and convert
-to `File` only at the manifest writer. The TAR bare-filename test now uses a
-unique file in the real suite cwd and does not mutate `user.dir`.
-
-## Final audit cleanup
-
-Removed the unused batch `summary-file` binding and the now-unused
-`clojure.java.io` alias from `materialize-publication`.
-
-```sh
-bin/kaocha --focus abc.tools.materialize-publication-test --focus abc.tools.filesystem-policy-test
-```
-
-Result: **20 tests, 133 assertions, 0 failures**.
+Lint:
 
 ```sh
 nix build ./abc#checks.x86_64-linux.clj-kondo
@@ -98,72 +43,49 @@ nix build ./abc#checks.x86_64-linux.clj-kondo
 
 Result: exit 0.
 
----
-
-# ADR Evidence Migration Task 4: Hermetic Design Bundle and Synthetic Git-cliff Check
-
-## Status
-
-Implemented and verified. No evidence contracts were changed.
-
-## RED evidence
-
-Before editing, from the monorepo root:
+Diff hygiene:
 
 ```sh
-nix run ./abc#validate-design-bundle
+git diff --check
 ```
 
-Exited 1 after `==> Checking git-cliff configuration` with `could not find repository` at the Nix-store ABC source.
+Result: exit 0 with no output.
 
-The new focused sentinel test was then run before production changes:
+## Tests added or extended
 
-```sh
-cd abc && bin/kaocha --focus abc.tools.validate-design-bundle-test/design-bundle-does-not-run-repository-history-checks-test
-```
+- `ephemeral-root-requires-trace-and-external-workspace-test`
+- `read-trace-workspace-defaults-to-canonical-identity-test`
+- `owned-ephemeral-root-owns-lifecycle-and-traces-rereads-test`
+- `owned-ephemeral-root-cleans-up-after-throw-test`
+- `owned-ephemeral-root-requires-active-trace-test`
+- Extended `every-trusted-callback-position-is-explicit-and-fail-closed-test`
+  for the exact `with-owned-ephemeral-root` callback position `#{0}`, hidden
+  callback rejection, and direct literal callback reachability.
+- Extended the boundary analyzer fixture with only the new owner Var.
 
-Result: `1 tests, 1 assertions, 1 errors, 0 failures`; the error was the expected `repository-history sentinel reached` at the old final Git-cliff stage.
+## Files changed
 
-## GREEN evidence
+- `abc/src/abc/tools/evidence_io.clj`
+- `abc/src/abc/tools/adr_evidence_runtime_inputs.clj`
+- `abc/test/abc/tools/evidence_io_test.clj`
+- `abc/test/abc/tools/adr_evidence_runtime_inputs_test.clj`
 
-Focused sentinel: `1 tests, 1 assertions, 0 failures`.
+## Self-review
 
-Complete namespace in the pinned flake dev-shell environment:
-
-```sh
-nix develop ./abc#default -c bash -lc \
-  'cd abc && bin/kaocha --focus abc.tools.validate-design-bundle-test'
-```
-
-Result: `67 tests, 231 assertions, 0 failures`.
-
-The direct local namespace run passed 65 tests and retained its two documented `TEI_SCHEMA_PATH` environment errors; the pinned dev shell supplied the required upstream schema for the complete GREEN run.
-
-Production boundaries:
-
-```sh
-bash abc/nix/check-git-cliff-config.sh abc/cliff.toml
-nix run ./abc#validate-design-bundle
-system="$(nix eval --impure --raw --expr builtins.currentSystem)"
-nix build "./abc#checks.${system}.git-cliff-config" --print-build-logs
-```
-
-All exited 0. The design-bundle output ended after IIIF with `design bundle validation ok` and contained no Git-cliff stage. The dedicated check generated a nonempty changelog in a synthetic repository.
-
-Quality checks:
-
-- `nix fmt abc/flake.nix`: passed.
-- `clj-paren-repair` on the modified Clojure files: no changes needed.
-- `clj-kondo --lint src/abc/tools/validate_design_bundle.clj test/abc/tools/validate_design_bundle_test.clj`: 0 errors, 0 warnings.
-- `git diff --check`: exit 0.
-
-## Files
-
-- `abc/src/abc/tools/validate_design_bundle.clj`
-- `abc/test/abc/tools/validate_design_bundle_test.clj`
-- `abc/nix/check-git-cliff-config.sh`
-- `abc/flake.nix`
+- `with-read-trace` canonicalizes `workspace-root` and defaults it to the
+  canonical identity root.
+- The shared overlap validation rejects canonical overlap in either direction
+  against both identity and workspace roots.
+- `with-ephemeral-root` remains the only scoped authorization mechanism.
+  `with-owned-ephemeral-root` owns lifecycle with `fs/with-temp-dir`, validates
+  the generated root, and delegates authorization to `with-ephemeral-root`.
+- Cleanup is verified after both normal completion and exceptions.
+- Rereads remain deduplicated ephemeral trace entries.
+- Only `abc.tools.evidence-io/with-owned-ephemeral-root` was added to the trusted
+  adapter inventory and audited higher-order signatures, at callback position
+  `#{0}`.
+- Existing unrelated Task 2 and Task 3 report changes were not modified.
 
 ## Concerns
 
-None known.
+None.

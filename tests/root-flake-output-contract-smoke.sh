@@ -3,11 +3,23 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix flake show --json "$repo_root" | python -c '
+nix flake show --json --all-systems "$repo_root" | python -c '
 import json
 import sys
 
-outputs = json.load(sys.stdin)
+raw_outputs = json.load(sys.stdin)
+if "inventory" in raw_outputs:
+    outputs = {
+        output_name: {
+            system: system_value.get("children", {})
+            for system, system_value in output_value.get("output", {})
+            .get("children", {})
+            .items()
+        }
+        for output_name, output_value in raw_outputs["inventory"].items()
+    }
+else:
+    outputs = raw_outputs
 systems = {"aarch64-linux", "x86_64-linux"}
 expected_output_names = {"apps", "checks", "devShells", "formatter", "packages"}
 expected = {

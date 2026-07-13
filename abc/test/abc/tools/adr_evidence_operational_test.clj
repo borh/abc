@@ -206,6 +206,45 @@
       (is (= "abc-adr-evidence-capture-v3" (:descriptor-version context)))
       (is (= row (:catalog-row context))))))
 
+(deftest focused-v3-component-coordinates-separate-command-and-input-roots-test
+  (let [workspace (temp-root)
+        root (fs/file workspace "abc")
+        path "docs/evidence/adr-capture/focused.edn"
+        manifest-path "docs/evidence/adr-inputs/focused.edn"
+        catalog-path "data/catalog.edn"
+        row {:observation-id :focused
+             :descriptor-stem "focused"
+             :observation-key "focused-passes"
+             :focus-var 'abc.example-test/focus}
+        descriptor {:schema-version "abc-adr-evidence-capture-v3"
+                    :tool "bin/kaocha"
+                    :argv ["bin/kaocha" "--focus" "abc.example-test/focus"]
+                    :input-profile {:kind "component-clojure-test-v1"
+                                    :component-root "abc"
+                                    :roots ["abc.example-test"]
+                                    :explicit ["abc/bin/kaocha"
+                                               "abc/docs/evidence/adr-capture/focused.edn"
+                                               "abc/docs/evidence/adr-inputs/focused.edn"]}
+                    :runtime-input-manifest manifest-path
+                    :catalog-path catalog-path
+                    :observation-id :focused
+                    :observation-contract-sha256
+                    (catalog/observation-contract-sha256 row)
+                    :observation-key "focused-passes"}]
+    (let [runner (write! root "bin/kaocha" "#!/usr/bin/env bash\n")]
+      (.setExecutable runner true))
+    (write! root path (pr-str descriptor))
+    (write! root manifest-path
+            (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []}))
+    (write! root catalog-path
+            (pr-str {:schema-version :abc-adr-evidence-observation-catalog-v1
+                     :focused-observations [row]
+                     :operational-observations []}))
+    (is (= row
+           (:catalog-row
+            (operational/load-descriptor-context!
+             {:repo-root root :workspace-root workspace :descriptor-path path}))))))
+
 (deftest focused-v3-rejects-adversarial-runner-and-argv-test
   (let [root (temp-root)
         path "docs/evidence/adr-capture/focused.edn"
@@ -399,7 +438,8 @@
 
 (deftest nix-only-exactness-has-no-invented-clojure-inputs-test
   (let [{:keys [root descriptor-path]} (prepare-operational-root! nix-row)
-        required (vec (sort (conj (set (:determinant-paths nix-row)) descriptor-path)))
+        required (vec (sort (conj (set (:determinant-paths nix-row))
+                                  descriptor-path)))
         descriptor (operational-descriptor nix-row required)]
     (write! root descriptor-path (pr-str descriptor))
     (let [context (-> (operational/load-descriptor-context!
@@ -434,7 +474,8 @@
 
 (deftest offline-policy-accumulates-exact-input-and-hash-problems-test
   (let [{:keys [root descriptor-path]} (prepare-operational-root! nix-row)
-        required (vec (sort (conj (set (:determinant-paths nix-row)) descriptor-path)))
+        required (vec (sort (conj (set (:determinant-paths nix-row))
+                                  descriptor-path)))
         descriptor (operational-descriptor nix-row required)
         _ (write! root descriptor-path (pr-str descriptor))
         inputs (into {} (map (fn [path] [path (sha256 (fs/file root path))]) required))
@@ -457,7 +498,8 @@
   (let [marker (fs/file (temp-root) "must-not-exist")
         row (assoc nix-row :argv ["bash" "-c" (str "touch " marker)])
         {:keys [root descriptor-path]} (prepare-operational-root! row)
-        required (vec (sort (conj (set (:determinant-paths row)) descriptor-path)))
+        required (vec (sort (conj (set (:determinant-paths row))
+                                  descriptor-path)))
         descriptor (operational-descriptor row required)
         _ (write! root descriptor-path (pr-str descriptor))
         inputs (into {} (map (fn [path] [path (sha256 (fs/file root path))]) required))]
@@ -467,5 +509,30 @@
            :artifact-path "docs/evidence/adr-run/tei-profile-drift.json"
            :bundle {"input_profile" {"kind" "repo-files-v1" "roots" []
                                      "explicit" required}
-                    "inputs" inputs}})))
+                    "inputs" inputs
+                    "observations" {(:observation-key row) {"value" true}}}})))
     (is (not (fs/exists? marker)))))
+
+(deftest selected-contract-hash-does-not-bind-unrelated-catalog-rows-test
+  (let [{:keys [root descriptor-path]} (prepare-operational-root! nix-row)
+        unrelated-row (assoc nix-row
+                             :observation-id :unrelated
+                             :descriptor-stem "unrelated"
+                             :observation-key "unrelated-passes"
+                             :command-id :unrelated)
+        required (vec (sort (conj (set (:determinant-paths nix-row))
+                                  descriptor-path)))
+        descriptor (operational-descriptor nix-row required)
+        _ (write! root descriptor-path (pr-str descriptor))
+        _ (write! root "data/catalog.edn"
+                  (pr-str (assoc (catalog-value nix-row)
+                                 :operational-observations [nix-row unrelated-row])))
+        inputs (into {} (map (fn [path] [path (sha256 (fs/file root path))]) required))]
+    (is (empty?
+         (operational/offline-policy-problems
+          {:repo-root root :workspace-root root
+           :artifact-path "docs/evidence/adr-run/tei-profile-drift.json"
+           :bundle {"input_profile" {"kind" "repo-files-v1" "roots" []
+                                     "explicit" required}
+                    "inputs" inputs
+                    "observations" {(:observation-key nix-row) {"value" true}}}})))))

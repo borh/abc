@@ -1,220 +1,264 @@
-# Task 5 report
+# Task 5 Report: Evidence-only validated destination and exclusive writer
 
 ## Status
 
-Complete. The six Soranoha orchestration/staging namespaces now use
-`babashka.fs` for ordinary filesystem predicates, creation, traversal, names,
-parents, sizes, and relativization. The filesystem-policy grandfather set was
-reduced by exactly those six namespaces.
+Implemented and committed as `0f302b74` (`feat(abc): publish evidence bundles exclusively`).
 
-## Characterization and compatibility
+The commit contains only:
 
-- Existing focused suites characterized snapshot-root selection, optional
-  warnings/run summaries, recursive archive selection and ordering, annotation
-  discovery, ADR repository errors/order, corpus directory validation, and
-  subprocess fixture discovery.
-- Added direct staging coverage for replacement of stale output, verbatim
-  run-summary copying, and absence of the optional run summary.
-- Preserved `java.io.File` at downstream JSON, manifest, process, and public
-  return-value boundaries. CLI and exception-data paths remain strings at their
-  established boundaries.
-- Recursive `.tar.zst` selection remains explicitly sorted by path.
+- `abc/src/abc/tools/evidence_output.clj`
+- `abc/test/abc/tools/evidence_output_test.clj`
 
-## Verification
+## RED evidence
 
-- Symlink traversal golden test at parent `bfdf4167`: 1 test, 1 assertion,
-  0 failures (disposable detached worktree).
-- The same test before the blocker fix at `8c6af4b3`: 1 failure; only
-  `z.tar.zst` was found and `linked/a.tar.zst` / `linked/b.tar.zst` were
-  omitted.
-- The same test after replacing `fs/glob` with direct recursive
-  `babashka.fs` traversal: 1 test, 1 assertion, 0 failures. Directory symlinks
-  are followed, cycles are not pruned, traversal errors are not suppressed,
-  and archive results retain explicit path sorting.
-- Post-fix `abc.tools.soranoha-test` plus
-  `abc.tools.filesystem-policy-test`: 46 tests, 395 assertions, 0 failures.
-- Focused Task 5 suites plus `abc.tools.filesystem-policy-test`: 115 tests,
-  604 assertions, 0 failures.
-- `nix build ./abc#checks.x86_64-linux.clj-kondo`: passed.
-- `git diff --check`: passed.
-- No project-local nREPL server was available; Kaocha and the Nix Clojure check
-  provided compile/load verification.
+Initial required RED:
+
+```sh
+cd abc && bin/kaocha --focus abc.tools.evidence-output-test
+```
+
+Result: exit 1, 1 error, because `abc.tools.evidence-output` did not exist:
+
+```text
+Could not locate abc/tools/evidence_output__init.class,
+abc/tools/evidence_output.clj or abc/tools/evidence_output.cljc on classpath.
+1 tests, 1 assertions, 1 errors, 0 failures.
+```
+
+Trust-boundary regression RED added during self-review:
+
+```sh
+cd abc && bin/kaocha --focus \
+  abc.tools.evidence-output-test/staging-symlink-cannot-escape-from-an-identity-tree-test
+```
+
+Result: exit 1, 1 failure. Canonical-only validation returned `nil` instead of
+`:invalid-evidence-destination` for a staging symlink lexically inside the
+repository and canonically outside it. Validation was then tightened to check
+both normalized lexical and canonical relations.
+
+## GREEN evidence
+
+Fresh focused test run before commit:
+
+```sh
+cd abc && bin/kaocha --focus abc.tools.evidence-output-test
+```
+
+Result: exit 0, `11 tests, 37 assertions, 0 failures.`
+
+Fresh lint/format check with both new files staged so the flake source included
+them:
+
+```sh
+nix build ./abc#checks.x86_64-linux.clj-kondo
+```
+
+Result: exit 0; derivation `abc-clj-kondo` built successfully.
+
+Shared deterministic file writer immutability check:
+
+```sh
+git diff --exit-code 8e00eecf -- abc/src/abc/tools/json.clj
+```
+
+Result: exit 0 with no diff.
+
+Additional checks:
+
+```sh
+git diff --cached --check
+rg -n "ATOMIC_MOVE|write-deterministic-json-file!|Files/move|Files/copy" \
+  abc/src/abc/tools/evidence_output.clj \
+  abc/test/abc/tools/evidence_output_test.clj
+```
+
+Results: cached diff check exited 0; forbidden publication/fallback search had
+no matches.
+
+## Implemented behavior
+
+`validated-destination`:
+
+- validates existing repository, workspace, and staging roots through
+  `abc.tools.path-containment/path-state`;
+- canonicalizes returned staging/output files with `babashka.fs`;
+- rejects staging overlap with repository/workspace in either direction using
+  both normalized lexical and canonical paths;
+- requires output's lexical and canonical parent to equal staging root;
+- rejects indirect descendants, symlink escapes, and any preexisting output,
+  including a symlink directory entry; and
+- allocates or mutates nothing.
+
+`write-json-exclusive!`:
+
+- accepts only `ValidatedDestination` instances;
+- serializes only through `write-deterministic-json-str`;
+- allocates a same-directory UUID sibling with `CREATE_NEW` and `WRITE`;
+- retries sibling name collisions without replacing or deleting the colliding
+  file;
+- writes all bytes and calls `FileChannel.force(true)` before publication;
+- publishes exclusively with `Files/createLink(output, temp)`;
+- propagates unsupported-link and destination-exists failures without any move
+  or copy fallback; and
+- removes its sibling after publication failure, publication success, or a
+  write/force failure. The channel closes before failure cleanup is attempted.
+
+## Test coverage
+
+The focused suite covers:
+
+- pure canonical destination construction;
+- repository/workspace/staging equality, ancestor, and descendant overlap;
+- indirect output descendants;
+- preexisting output;
+- output symlink escape;
+- staging symlink escape from an identity tree;
+- serialization failure without allocation;
+- forced sibling collision and retry;
+- partial sibling cleanup after forced storage failure;
+- unsupported hard-link fail-closed behavior and cleanup;
+- successful deterministic publication and `force(true)`;
+- exclusive second-write rejection while preserving the first artifact; and
+- rejection of an unvalidated map.
 
 ## Self-review
 
-Reviewed the patch for sort-key preservation, optional-file semantics,
-filesystem consumer types, path-string compatibility, and policy exactness.
-The unrelated tracked `.superpowers/sdd/task-3-report.md` modification was not
-edited or staged.
-
----
-
-# ADR Evidence Migration Task 5: Direct Foundation Assertions
-
-## Status
-
-Implemented and verified. No Task 6 corpus/ADR migration work or evidence-protocol changes were made.
-
-## TDD evidence
-
-RED command:
-
-```sh
-cd abc && bin/kaocha \
-  --focus abc.tools.foundation-evidence-test \
-  --focus abc.tools.materialize-import-test \
-  --focus abc.tools.validate-design-bundle-test/evidence-input-catalog-equals-the-pure-schema-validation-read-set-test \
-  --focus abc.sim.divergences-test
-```
-
-Result: exit 1, `1 tests, 1 assertions, 1 errors, 0 failures`; test loading failed on the intentionally missing `validate/evidence-input-paths` public boundary.
-
-After the rereview fixes, the combined Task 5 boundary run passed with
-`24 tests, 68 assertions, 0 failures`.
-
-Final plan-specified command:
-
-```sh
-cd abc && bin/kaocha \
-  --focus abc.tools.foundation-evidence-test \
-  --focus abc.tools.materialize-import-test \
-  --focus abc.sim.divergences-test
-```
-
-Result after the rereview fixes: `23 tests, 67 assertions, 0 failures`.
-
-Complete design-bundle namespace with the pinned upstream TEI schema:
-
-```sh
-nix develop ./abc#default -c bash -lc \
-  'cd abc && bin/kaocha --focus abc.tools.validate-design-bundle-test'
-```
-
-Result: `68 tests, 232 assertions, 0 failures`.
-
-## Assertions and boundaries
-
-- Both committed manifest examples conform to `manifest.schema.json`.
-- The failure fixture has exact failure kind/status, null content, the exact
-  errors sidecar, the complete non-null identity-coordinate map including
-  `manifest_schema_hash`, null for every other coordinate, and only a
-  top-level `artifact_id`. An extra non-null `tokenizer_build_hash`
-  counterexample is rejected.
-- Fresh materialization returns exactly `#{:parser-ir :warnings}` and both
-  manifests conform to the manifest schema. A missing-warnings counterexample
-  is rejected.
-- The shell wrapper is exactly delegation/setup. The workflow parser proves
-  that checkout precedes the Nix design-bundle step in the same job and that
-  the command runs from repository root; a synthetic split-job workflow is
-  rejected.
-- D7 is structurally `:fixed`, dated `2026-07-12`, and names the separated identity roles.
-- Diagnostic schema identity requires exact-current equality independently of registered parser-IR compatibility.
-- `evidence-input-paths` exactly equals the traced repository read set of the supported pure schema-validation path.
-
-## Additional verification
-
-- `nix run ./abc#validate-design-bundle`: exit 0; all schema/fixture checks passed.
-- `nix build ./abc#checks.<current-system>.clj-kondo --print-build-logs`: exit 0, 0 errors, all source files formatted correctly. The check reports the same nine pre-existing repository warnings.
-- `clj-paren-repair` on all five modified Clojure files: no changes needed after formatting the new namespace.
-- `git diff --check`: exit 0.
-
-## Files
-
-- `abc/test/abc/tools/foundation_evidence_test.clj`
-- `abc/src/abc/tools/validate_design_bundle.clj`
-- `abc/test/abc/tools/validate_design_bundle_test.clj`
-- `abc/test/abc/tools/materialize_import_test.clj`
-- `abc/test/abc/sim/divergences_test.clj`
+- The publication linearization point is the same-directory hard link.
+- There is no `ATOMIC_MOVE`, move, copy, or shared JSON file-writer call.
+- Output bytes are complete and forced before the hard link can expose them.
+- The output destination is never replaced; a second publication fails with
+  `FileAlreadyExistsException`.
+- Writer-owned temporary siblings are removed in `finally`; partial-write
+  cleanup happens after closing the channel.
+- A preexisting colliding sibling is deliberately preserved because it belongs
+  to another writer.
+- Existing unrelated modifications to Task 2-4 report files were not staged or
+  edited.
 
 ## Concerns
 
-None known.
+No blocker and no ambiguous portability result on the current Linux
+filesystem. The real hard-link success and real second-write rejection paths
+both passed. Filesystems/providers without hard-link support will receive the
+provider exception and fail closed, as verified through the unsupported-link
+transition seam; there is intentionally no fallback.
 
-## Review-fix TDD evidence
+## Review follow-up: partial-write and cleanup assertion defects
 
-The new negative assertions were first loaded before their narrow predicates
-existed. Focused Kaocha failed at compile time on the intentionally unresolved
-`failure-coordinate-errors` symbol (`1 tests, 1 assertions, 1 errors, 0
-failures`). After implementing the deterministic generated-key,
-identity-coordinate, and job/step workflow predicates, the split
-`abc.tools.foundation-evidence-test` namespace passed with `8 tests, 17
-assertions, 0 failures`.
+Commit `5c334c98` (`test(abc): cover partial evidence write cleanup`) fixes the
+Important and Minor review findings without changing the publication protocol.
+It contains only:
 
-Schema conformance, failure semantics, failure coordinates, top-level
-`artifact_id`, generated output set/conformance, wrapper delegation, and CI
-wiring now have distinct stable `deftest` Vars. Task 7's plan references these
-Vars directly and forbids aggregate wrapper tests around them.
+- `abc/src/abc/tools/evidence_output.clj`
+- `abc/test/abc/tools/evidence_output_test.clj`
 
-## Rereview fixes
+### Root causes
 
-RED added wrong job defaults and inline-`cd` mutations. The focused boundary
-failed with `3 tests, 9 assertions, 2 failures`, demonstrating that both
-mutations incorrectly passed the former parser.
+- The prior `force-channel!` failure seam ran only after the production write
+  loop had drained the entire buffer. It tested cleanup of a complete but
+  unforced sibling, not cleanup after a partial write.
+- The prior success cleanup expressions used `babashka.fs/ends-with?`, whose
+  path-component semantics do not treat UUID filenames such as
+  `.bundle.json.<uuid>.tmp` as ending with the path component `.tmp`. Those
+  assertions could therefore return empty even when such a sibling leaked.
 
-The indentation parser now models job-level
-`defaults.run.working-directory`, step-level overrides, effective working
-directory, ordered steps, and literal run block scalars. It tokenizes the run
-scalar after line-continuation removal and requires the exact six-token Nix
-command, so inline `cd`, command prefixes, shell chaining, and suffixes cannot
-pass. Tests cover wrong job defaults, a root step override, a wrong step
-override, inline `cd`, a chained suffix, checkout after the command, and
-checkout in a different job. The focused namespace passes with `8 tests, 22
-assertions, 0 failures`.
+### Follow-up RED evidence
 
-Positive and mutated failure identities now use the same
-`failure-coordinate-errors` predicate. Its single exact non-null-map
-comparison both pins the complete expected coordinates and rejects every
-other non-null coordinate; the redundant second coordinate branch was
-removed. Generated-manifest positive and missing-warnings cases likewise use
-one predicate.
+The prefix-write regression and the corrected sibling assertions were added
+before the production seam. Running:
 
-Tasks 7 and 8 were decomplected from eight family observations into exactly 42
-claim-specific evidence units: 38 single-focus Clojure descriptors and four
-independent Nix descriptors. The plan now requires 42 descriptors, 42 input
-or closure manifests, 42 bundles, and 42 typed registration rows covering 35
-distinct claims. Seven corroborating rows represent independently rejectable
-parts of five compound criteria. No observation or artifact certifies a
-distinct claim, and legacy aggregate materialize/source-bundle/source-snapshot
-and P16 disposition tests must be split into the named narrow Vars before
-capture.
+```sh
+cd abc && bin/kaocha --focus abc.tools.evidence-output-test
+```
 
-## Final plan typing fixes
+failed with exit 1 while loading the suite:
 
-Task 6 now contains an explicit 15-row claim table for every final ADR
-0009–0011 claim. Each row fixes the observable statement, claim kind, and the
-single admissible evidence kind from the compatibility matrix. Task 7 requires
-registration tests to join all 17 corresponding descriptor rows (15 primary
-claims plus the ADR-0009-C5 and ADR-0010-C4 corroborations) against that table;
-kind selection is no longer inferred from stems or family names.
+```text
+Unable to resolve var: output/write-buffer! in this context
+1 tests, 1 assertions, 1 errors, 0 failures.
+```
 
-The ADR-0010-C4 diagnostic corroboration now focuses the existing
-diagnostic-only
-`abc.tools.materialize-import-test/diagnostic-schema-hash-requires-the-exact-current-contract-test`
-under its own `adr-0010-c4-diagnostic-exact-current-mismatch` descriptor. It is
-independent of the parser-schema mismatch descriptor. Task 8 now consumes the
-Task 7 registration template instead of claiming to create it.
+This established that no seam existed at the actual channel-write boundary.
 
-The documented mechanical checks were run successfully: 15 Task 6 typing
-rows, 42 Task 7 descriptor rows, 35 unique foundation claim IDs, and 17 rows /
-15 unique claims for ADRs 0009–0011.
+### Follow-up implementation and assertion proof
 
-## Semantic evidence corrections
+The existing production buffer-draining loop was extracted unchanged into the
+private `write-buffer!` function. Normal success and publication tests still
+execute that real loop. The regression seam writes a strict prefix, records
+that the written count is smaller than the serialized byte count, then throws.
+The test proves:
 
-ADR-0009-C4 now schedules the narrow
-`generated-artifact-ids-differ-from-content-hashes-test`. It materializes both
-generated manifests and independently compares each `artifact_id` with its own
-`content.content_hash`; the earlier synthetic single-identity
-`artifact-id-test` no longer stands in for this claim.
+- the exception propagates;
+- at least one byte but fewer than all bytes reached the sibling;
+- the channel is closed before the assertion observes cleanup;
+- output was never published;
+- the writer-owned sibling is absent; and
+- the deliberately preexisting collision remains, with its contents intact.
 
-ADR-0010-C1 now schedules
-`materialized-manifest-schema-hash-matches-bundled-jcs-test`. It materializes
-both manifests and asserts both embedded manifest-schema hashes equal the
-bundled parsed-schema JCS hash. The lower-level `schema-hash-test` alone no
-longer certifies materialized fields.
+Success and second-write cleanup assertions now compare the complete sibling
+filename set to `#{"bundle.json"}`. A leaked UUID sibling would add a second
+set member and fail the equality, independent of path-component semantics. The
+partial-write assertion likewise expects exactly the one unrelated collision,
+so it catches any leaked writer-owned sibling while proving collision
+preservation.
 
-ADR-0009-C5 is explicitly corrected during Stage A to the mechanisms its
-evidence observes: pinned AAT mapping plus adapter registry agreement governs
-AAT parser-IR conversion compatibility, and diagnostic schema identity is
-exact-current. General parser-schema mismatch rejection remains ADR-0010-C4.
-The plan remains 15 / 42 / 35 / 17 / 15 under the mechanical checks, with no
-claim-kind or evidence-kind arithmetic change.
+### Follow-up GREEN evidence
+
+Fresh focused suite:
+
+```sh
+cd abc && bin/kaocha --focus abc.tools.evidence-output-test
+```
+
+Result: exit 0, `12 tests, 44 assertions, 0 failures.`
+
+Fresh staged lint/format check:
+
+```sh
+nix build ./abc#checks.x86_64-linux.clj-kondo
+```
+
+Result: exit 0; derivation `abc-clj-kondo` built successfully.
+
+Shared writer check:
+
+```sh
+git diff --exit-code 8e00eecf -- abc/src/abc/tools/json.clj
+```
+
+Result: exit 0 with no diff.
+
+Additional review checks:
+
+```sh
+git diff --cached --check
+rg -n "ATOMIC_MOVE|write-deterministic-json-file!|Files/move|Files/copy" \
+  abc/src/abc/tools/evidence_output.clj \
+  abc/test/abc/tools/evidence_output_test.clj
+```
+
+Results: cached diff check exited 0 and the forbidden fallback search had no
+matches.
+
+### Follow-up self-review and concerns
+
+- The production loop still writes until `ByteBuffer.hasRemaining` is false.
+- The seam is private and changes no public interface.
+- Failure cleanup remains outside `with-open`, so deletion is attempted only
+  after channel closure.
+- No unrelated collision is removed during retry or partial-write cleanup.
+- Exact sibling-name equality makes both success cleanup assertions
+  non-vacuous.
+- No portability blocker was found; the follow-up does not alter hard-link
+  behavior.
+
+## Integration policy registration
+
+The sandboxed full-suite gate exposed that the exclusive writer's intentional
+`Files/exists`, `Files/createLink`, and `Files/deleteIfExists` calls had not
+been registered in the repository's exact filesystem-policy map. The writer
+implementation was unchanged; the test-owned policy now lists precisely those
+three operations with a nonblank rationale. The focused policy regressions
+passed with 3 tests and 13 assertions together with the root-flake fixture
+check, and the rebuilt Nix suite passed with 1048 tests and 4666 assertions.

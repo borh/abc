@@ -425,8 +425,9 @@
               }
               ''
                 # Replay tests exercise the real CLI and pin coupling. Keep the
-                # monorepo lock outside the writable abc source fixture, matching
-                # the repository layout while preserving its store-read-only mode.
+                # monorepo flake and lock outside the writable abc source fixture,
+                # matching the repository layout while preserving store-read-only mode.
+                cp ${../flake.nix} flake.nix
                 cp ${../flake.lock} flake.lock
                 ${copyWritableSource}
                 patchShebangs bin/kaocha

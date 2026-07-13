@@ -34,6 +34,24 @@
     (exec! repo "git" "commit" "-q" "-m" "fixture")
     repo))
 
+(defn- git-workspace []
+  (let [workspace (temp-dir "abc-evidence-workspace")
+        repo (fs/file workspace "abc")]
+    (doseq [[path body] [["flake.nix" "{}\n"]
+                         ["justfile" "default:\n\t@true\n"]
+                         ["abc/flake.nix" "{}\n"]
+                         ["ab-validator/flake.nix" "{}\n"]
+                         ["abc/src/example/core.clj" "(ns example.core)\n"]]]
+      (let [file (fs/file workspace path)]
+        (fs/create-dirs (fs/parent file))
+        (spit file body)))
+    (exec! workspace "git" "init" "-q")
+    (exec! workspace "git" "config" "user.email" "capture@example.invalid")
+    (exec! workspace "git" "config" "user.name" "Capture Test")
+    (exec! workspace "git" "add" ".")
+    (exec! workspace "git" "commit" "-q" "-m" "fixture")
+    {:workspace workspace :repo repo}))
+
 (defn- descriptor [argv]
   {:schema-version "abc-adr-evidence-capture-v1"
    :tool "sh"
@@ -43,20 +61,69 @@
                    :explicit ["src/example/core.clj"]}
    :observation-key "command-passed"})
 
+(defn- install-descriptor! [repo path value message]
+  (let [file (fs/file repo path)]
+    (fs/create-dirs (fs/parent file))
+    (spit file (pr-str value))
+    (exec! repo "git" "add" path)
+    (exec! repo "git" "commit" "-q" "-m" message)
+    path))
+
+(defn- capture-options [repo staging descriptor-path output]
+  {:repo-root repo
+   :workspace-root repo
+   :staging-root staging
+   :descriptor-path descriptor-path
+   :output output})
+
+(deftest three-root-capture-loads-the-contained-descriptor-test
+  (let [{:keys [workspace repo]} (git-workspace)
+        staging (temp-dir "abc-evidence-staging")
+        descriptor-path "docs/evidence/adr-capture/example.edn"
+        output (fs/file staging "example.json")
+        value (descriptor ["sh" "-c" "test \"$PWD\" = \"$1\"" "sh" (str repo)])
+        descriptor-file (fs/file repo descriptor-path)]
+    (fs/create-dirs (fs/parent descriptor-file))
+    (spit descriptor-file (pr-str value))
+    (exec! workspace "git" "add" ".")
+    (exec! workspace "git" "commit" "-q" "-m" "descriptor")
+    (is (= 0 (:exit-code
+              (capture/capture! {:repo-root repo
+                                 :workspace-root workspace
+                                 :staging-root staging
+                                 :descriptor-path descriptor-path
+                                 :output output}))))
+    (is (fs/regular-file? output))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (capture/capture! {:repo-root repo
+                                    :workspace-root workspace
+                                    :staging-root staging
+                                    :descriptor-path descriptor-path
+                                    :descriptor value
+                                    :output (fs/file staging "forbidden.json")})))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (capture/capture! {:repo-root repo
+                                    :workspace-root workspace
+                                    :staging-root staging
+                                    :descriptor-path "../outside.edn"
+                                    :output (fs/file staging "outside.json")})))))
+
 (deftest focused-runner-failures-have-a-focused-problem-kind-test
-  (let [runner "bin/kaocha"
-        invalid-runner-options
-        {:repo-root nil
-         :descriptor {:schema-version "abc-adr-evidence-capture-v2"
-                      :tool runner
-                      :argv [runner]
-                      :input-profile {:kind "clojure-test-v1"
-                                      :roots ["example.core-test"]
-                                      :explicit [runner "docs/evidence/adr-inputs/example.edn"]}
-                      :runtime-input-manifest "docs/evidence/adr-inputs/example.edn"
-                      :observation-key "passes"}
-         :descriptor-path "docs/evidence/adr-capture/example.edn"
-         :output nil}
+  (let [repo (git-repo)
+        staging (temp-dir "abc-invalid-focused-staging")
+        runner "bin/kaocha"
+        descriptor-path "docs/evidence/adr-capture/example.edn"
+        invalid-descriptor {:schema-version "abc-adr-evidence-capture-v2"
+                            :tool runner
+                            :argv [runner]
+                            :input-profile {:kind "clojure-test-v1"
+                                            :roots ["example.core-test"]
+                                            :explicit [runner "docs/evidence/adr-inputs/example.edn"]}
+                            :runtime-input-manifest "docs/evidence/adr-inputs/example.edn"
+                            :observation-key "passes"}
+        _ (install-descriptor! repo descriptor-path invalid-descriptor "invalid focus")
+        invalid-runner-options (capture-options repo staging descriptor-path
+                                                (fs/file staging "example.json"))
         validate-runner! (ns-resolve 'abc.tools.adr-evidence-capture 'validate-runner!)
         validate-summary! (ns-resolve 'abc.tools.adr-evidence-capture
                                       'validate-v2-command-result!)]
@@ -64,7 +131,7 @@
            (problem-kind #(capture/capture! invalid-runner-options))))
     (is (= :invalid-focused-evidence-runner
            (problem-kind #(@validate-runner! (temp-dir "abc-missing-runner")
-                                             (:descriptor invalid-runner-options)))))
+                                             invalid-descriptor))))
     (is (= :invalid-focused-evidence-runner
            (problem-kind #(@validate-summary! ['example.core-test/contract]
                                               {:exit-code 0
@@ -82,17 +149,56 @@
     (is (= (str (fs/canonicalize dir)) (:stdout result)))
     (is (= "err" (:stderr result)))))
 
+(deftest operational-execution-uses-the-catalog-environment-policy-test
+  (let [run-operational (ns-resolve 'abc.tools.adr-evidence-capture
+                                    'run-operational-process)
+        run-process-var (ns-resolve 'abc.tools.adr-evidence-capture 'run-process)
+        calls (atom [])
+        homes (atom [])
+        fake-run (fn [repo argv environment]
+                   (swap! calls conj {:repo repo :argv argv :environment environment})
+                   (swap! homes conj (get environment "HOME"))
+                   (is (fs/directory? (get environment "HOME")))
+                   (cond
+                     (= ["nix" "--version"] argv)
+                     {:exit-code 0 :stdout "nix 2.test\n" :stderr ""}
+
+                     (= "nix" (first argv))
+                     {:exit-code 0 :stdout "x86_64-linux\n" :stderr ""}
+
+                     :else {:exit-code 7 :stdout "" :stderr "failed"}))
+        result (with-redefs-fn {run-process-var fake-run}
+                 #(@run-operational "."
+                                    {:catalog-row {:environment-policy :nix-local-v1
+                                                   :command-id :contract}}
+                                    ["bash" "--noprofile" "--norc" "-c" "exit 7"]))]
+    (is (= 7 (:exit-code result)))
+    (is (= {"nix_system" "x86_64-linux"
+            "nix_version" "nix 2.test"
+            "command_id" "contract"
+            "environment_policy" "nix-local-v1"}
+           (:operational-details result)))
+    (is (= 3 (count @calls)))
+    (is (every? #(= #{"HOME" "LANG" "LC_ALL"}
+                    (set (remove #{"PATH" "NIX_REMOTE" "NIX_SSL_CERT_FILE"
+                                   "SSL_CERT_FILE"}
+                                 (keys (:environment %)))))
+                @calls))
+    (is (every? false? (map fs/exists? @homes)))))
+
 (deftest captures-byte-identical-clean-tree-bundles
   (let [repo (git-repo)
         output-root (temp-dir "abc-evidence-capture-output")
+        descriptor-path "docs/evidence/adr-capture/example.edn"
+        _ (install-descriptor! repo descriptor-path
+                               (descriptor ["sh" "-c" "exit 0"])
+                               "descriptor")
         first-output (fs/file output-root "first.json")
         second-output (fs/file output-root "second.json")
         first-result (capture/capture!
-                      {:repo-root repo :descriptor (descriptor ["sh" "-c" "exit 0"])
-                       :output first-output})
+                      (capture-options repo output-root descriptor-path first-output))
         _ (capture/capture!
-           {:repo-root repo :descriptor (descriptor ["sh" "-c" "exit 0"])
-            :output second-output})
+           (capture-options repo output-root descriptor-path second-output))
         value (json/read-json-file first-output)]
     (is (= 0 (:exit-code first-result)))
     (is (= (slurp first-output) (slurp second-output)))
@@ -104,47 +210,57 @@
 (deftest dirty-tree-is-rejected-before-and-after-command
   (let [repo (git-repo)
         output-root (temp-dir "abc-evidence-capture-dirty")
+        descriptor-path "docs/evidence/adr-capture/example.edn"
         output (fs/file output-root "bundle.json")
         marker (fs/file output-root "executed")]
+    (install-descriptor! repo descriptor-path
+                         (descriptor ["sh" "-c" (str "touch " (fs/absolutize marker))])
+                         "descriptor")
     (spit (fs/file repo "untracked") "dirty")
     (is (thrown? clojure.lang.ExceptionInfo
                  (capture/capture!
-                  {:repo-root repo
-                   :descriptor (descriptor ["sh" "-c"
-                                            (str "touch " (fs/absolutize marker))])
-                   :output output})))
+                  (capture-options repo output-root descriptor-path output))))
     (is (not (fs/exists? marker)))
     (fs/delete (fs/file repo "untracked"))
+    (install-descriptor! repo descriptor-path
+                         (descriptor ["sh" "-c" "touch command-dirtied"])
+                         "dirty command")
     (is (thrown? clojure.lang.ExceptionInfo
                  (capture/capture!
-                  {:repo-root repo
-                   :descriptor (descriptor ["sh" "-c" "touch command-dirtied"])
-                   :output output})))
+                  (capture-options repo output-root descriptor-path output))))
     (is (not (fs/exists? output)))))
 
 (deftest failing-command-is-captured-before-cli-failure
   (let [repo (git-repo)
-        output (fs/file (temp-dir "abc-evidence-capture-fail") "bundle.json")
+        staging (temp-dir "abc-evidence-capture-fail")
+        output (fs/file staging "bundle.json")
+        descriptor-path "docs/evidence/adr-capture/example.edn"
+        _ (install-descriptor! repo descriptor-path
+                               (descriptor ["sh" "-c" "exit 7"])
+                               "descriptor")
         result (capture/capture!
-                {:repo-root repo :descriptor (descriptor ["sh" "-c" "exit 7"])
-                 :output output})]
+                (capture-options repo staging descriptor-path output))]
     (is (= 1 (:exit-code result)))
     (is (= 7 (get-in (json/read-json-file output)
                      ["observations" "command-passed" "details" "exit_code"])))))
 
 (deftest descriptor-key-set-is-closed
   (let [repo (git-repo)
-        output (fs/file (temp-dir "abc-evidence-capture-invalid") "bundle.json")]
+        staging (temp-dir "abc-evidence-capture-invalid")
+        output (fs/file staging "bundle.json")
+        descriptor-path "docs/evidence/adr-capture/example.edn"]
+    (install-descriptor! repo descriptor-path
+                         (assoc (descriptor ["true"]) :unexpected true)
+                         "invalid descriptor")
     (is (thrown? clojure.lang.ExceptionInfo
                  (capture/capture!
-                  {:repo-root repo
-                   :descriptor (assoc (descriptor ["true"]) :unexpected true)
-                   :output output})))
+                  (capture-options repo staging descriptor-path output))))
     (is (not (fs/exists? output)))))
 
 (deftest descriptor-version-and-runtime-manifest-contract-is-closed
   (let [repo (git-repo)
-        output (fs/file (temp-dir "abc-evidence-capture-v2") "bundle.json")
+        staging (temp-dir "abc-evidence-capture-v2")
+        output (fs/file staging "bundle.json")
         profile {:kind "clojure-test-v1"
                  :roots ["example.core"]
                  :explicit ["docs/evidence/adr-capture/example.edn"
@@ -172,8 +288,11 @@
               "docs/evidence/adr-capture/example.edn"]
              [v2 "docs/evidence/adr-capture/wrong.edn"]]]
       (is (thrown? clojure.lang.ExceptionInfo
-                   (capture/capture! {:repo-root repo :descriptor value
-                                      :descriptor-path path :output output}))))))
+                   (do
+                     (let [file (fs/file repo path)]
+                       (fs/create-dirs (fs/parent file))
+                       (spit file (pr-str value)))
+                     (capture/capture! (capture-options repo staging path output))))))))
 
 (deftest v2-runner-shape-is-repository-bound-and-focus-only-test
   (let [validate! (ns-resolve 'abc.tools.adr-evidence-capture 'validate-descriptor!)
@@ -333,8 +452,8 @@
                             "printf '1 tests, 1 assertions, 0 failures.\\n'\n"))
     (exec! repo "git" "add" ".")
     (exec! repo "git" "commit" "-q" "-m" "v2 fixture")
-    (let [result (capture/capture! {:repo-root repo :descriptor descriptor
-                                    :descriptor-path descriptor-path :output output})
+    (let [staging (fs/parent output)
+          result (capture/capture! (capture-options repo staging descriptor-path output))
           inputs (get-in result [:bundle "inputs"])]
       (is (= 0 (:exit-code result)))
       (is (contains? inputs test-path))

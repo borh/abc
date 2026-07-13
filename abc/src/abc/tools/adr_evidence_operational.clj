@@ -271,13 +271,16 @@
         str
         (str/replace "\\" "/"))))
 
-(defn- focused-runner [profile]
+(defn- focused-runner [_profile]
+  "bin/kaocha")
+
+(defn- focused-input-key [profile repo-relative-path]
   (if (= "component-clojure-test-v1" (:kind profile))
     (some-> (normalized-component-root profile)
-            (fs/path "bin/kaocha")
+            (fs/path repo-relative-path)
             str
             (str/replace "\\" "/"))
-    "bin/kaocha"))
+    repo-relative-path))
 
 (defn- focused-v3-policy-problems [repo-root descriptor descriptor-path row]
   (let [profile (:input-profile descriptor)
@@ -285,10 +288,10 @@
         runner (focused-runner profile)
         manifest-path (:runtime-input-manifest descriptor)
         explicit (set (:explicit profile))
-        manifest-prefix (if (= "component-clojure-test-v1" profile-kind)
-                          (some-> (normalized-component-root profile)
-                                  (str "/docs/evidence/adr-inputs/"))
-                          "docs/evidence/adr-inputs/")
+        manifest-prefix "docs/evidence/adr-inputs/"
+        runner-input (focused-input-key profile runner)
+        manifest-input (focused-input-key profile manifest-path)
+        descriptor-input (focused-input-key profile descriptor-path)
         runner-state (when (nonempty-string? runner)
                        (containment/path-state repo-root runner))
         manifest-state (when (nonempty-string? manifest-path)
@@ -302,7 +305,7 @@
                     (= runner (:tool descriptor))
                     (= [runner "--focus" (str (:focus-var row))]
                        (:argv descriptor))
-                    (contains? explicit runner)
+                    (contains? explicit runner-input)
                     (= :ok (:state runner-state))
                     (fs/regular-file? (:path runner-state))
                     (fs/executable? (:path runner-state)))
@@ -314,12 +317,16 @@
                     (str/starts-with? manifest-path manifest-prefix)
                     (= (some-> descriptor-path fs/file-name str)
                        (some-> manifest-path fs/file-name str))
-                    (contains? explicit manifest-path)
+                    (contains? explicit manifest-input)
                     (= :ok (:state manifest-state))
                     (fs/regular-file? (:path manifest-state)))
        [(problem :invalid-runtime-input-manifest
                  "focused version 3 runtime manifest must be same-stem, bound, and contained"
-                 :path manifest-path :state (:state manifest-state))]))))
+                 :path manifest-path :state (:state manifest-state))])
+     (when-not (contains? explicit descriptor-input)
+       [(problem :invalid-evidence-descriptor
+                 "focused version 3 must bind its descriptor"
+                 :descriptor-input descriptor-input)]))))
 
 (defn- catalog-binding-problems [descriptor descriptor-path row family]
   (let [expected-hash (catalog/observation-contract-sha256 row)]
@@ -343,7 +350,7 @@
            [(problem :invalid-evidence-descriptor "focus Var does not match catalog row")]))))))
 
 (defn load-descriptor-context!
-  [{:keys [repo-root descriptor-path]}]
+  [{:keys [repo-root workspace-root descriptor-path]}]
   (let [descriptor (read-contained-edn! repo-root descriptor-path
                                         :invalid-evidence-descriptor-path)
         shape-problems (descriptor-shape-problems descriptor)]
@@ -371,6 +378,7 @@
           {:repo-root repo-root
            :descriptor {:path descriptor-path :value descriptor}
            :descriptor-version version
+           :workspace-root workspace-root
            :catalog catalog-value
            :catalog-row row})))))
 
@@ -451,24 +459,53 @@
   (or (get bundle key) (get bundle (name key))))
 
 (defn offline-policy-problems
-  [{:keys [repo-root artifact-path bundle]}]
+  [{:keys [repo-root workspace-root artifact-path bundle]}]
   (let [descriptor-path (artifact-descriptor-path artifact-path)
-        validated (try
-                    (-> (load-descriptor-context! {:repo-root repo-root
-                                                   :descriptor-path descriptor-path})
-                        validate-operational-manifest!)
-                    (catch clojure.lang.ExceptionInfo exception exception))]
-    (if (instance? clojure.lang.ExceptionInfo validated)
+        descriptor-state (containment/path-state repo-root descriptor-path)
+        validated (when (= :ok (:state descriptor-state))
+                    (try
+                      (-> (load-descriptor-context! {:repo-root repo-root
+                                                     :workspace-root workspace-root
+                                                     :descriptor-path descriptor-path})
+                          validate-operational-manifest!)
+                      (catch clojure.lang.ExceptionInfo exception exception)))]
+    (cond
+      (nil? validated) []
+      (instance? clojure.lang.ExceptionInfo validated)
       (->> (:problems (ex-data validated)) (sort-by pr-str) vec)
-      (let [version (:descriptor-version validated)]
-        (if-not (= version "abc-adr-evidence-capture-operational-v1")
-          []
+      :else
+      (let [version (:descriptor-version validated)
+            descriptor (get-in validated [:descriptor :value])
+            profile (:input-profile descriptor)
+            inputs (or (bundle-value bundle :inputs) {})
+            bundle-profile (or (bundle-value bundle :input_profile) {})
+            bundle-explicit (set (or (bundle-value bundle-profile :explicit) []))
+            input-keys (set (keys inputs))
+            observations (or (bundle-value bundle :observations) {})
+            observation-key (:observation-key descriptor)]
+        (if (= version "abc-adr-evidence-capture-v3")
+          (let [required (set (map #(focused-input-key profile %)
+                                   [descriptor-path (:runtime-input-manifest descriptor)
+                                    (:tool descriptor)]))
+                missing-required (set/difference required input-keys)
+                missing-explicit (set/difference required bundle-explicit)
+                missing-observation? (not (contains? observations observation-key))]
+            (->> (concat
+                  (when (seq missing-required)
+                    [(problem :missing-evidence-input
+                              "focused bundle omits required protocol inputs"
+                              :missing (vec (sort missing-required)))])
+                  (when (seq missing-explicit)
+                    [(problem :missing-evidence-input
+                              "focused bundle profile omits required protocol inputs"
+                              :missing (vec (sort missing-explicit)))])
+                  (when missing-observation?
+                    [(problem :missing-observation
+                              "focused bundle omits its selected observation"
+                              :observation-key observation-key)]))
+                 (sort-by pr-str) vec))
           (let [required (:required-inputs validated)
                 descriptor (get-in validated [:descriptor :value])
-                inputs (or (bundle-value bundle :inputs) {})
-                profile (or (bundle-value bundle :input_profile) {})
-                bundle-explicit (set (or (bundle-value profile :explicit) []))
-                input-keys (set (keys inputs))
                 expected (set required)
                 mismatch (concat
                           (when-not (= expected bundle-explicit)
@@ -490,7 +527,12 @@
                          (problem :input-hash-mismatch
                                   "operational input hash does not match current bytes"
                                   :input-path path :artifact-path artifact-path
-                                  :expected (get inputs path) :actual actual))]
+                                  :expected (get inputs path) :actual actual))
+                selected-observation (when-not (contains? observations observation-key)
+                                       [(problem :missing-observation
+                                                 "operational bundle omits its selected observation"
+                                                 :observation-key observation-key)])]
             (if (= "exact-v1" (:input-set-mode descriptor))
-              (->> (concat mismatch missing hashes) (sort-by pr-str) vec)
+              (->> (concat mismatch missing hashes selected-observation)
+                   (sort-by pr-str) vec)
               [])))))))

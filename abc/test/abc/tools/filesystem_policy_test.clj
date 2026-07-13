@@ -29,7 +29,10 @@
      :rationale "Binary SVG asset loading is an intentional NIO byte operation"}
     abc.tools.soranoha-build-publication
     {:operations #{Files/move}
-     :rationale "Publication installation requires an atomic NIO move"}})
+     :rationale "Publication installation requires an atomic NIO move"}
+    abc.tools.evidence-output
+    {:operations #{Files/exists Files/createLink Files/deleteIfExists}
+     :rationale "Exclusive evidence publication requires no-follow existence, hard-link linearization, and failure cleanup"}})
 
 (def permanent-interop-operations
   '{abc.tools.source-bundle
@@ -235,7 +238,9 @@
            abc.tools.source-bundle
            #{Files/createTempFile Files/copy Files/deleteIfExists}
            abc.tools.diagram.presentation-svg #{Files/readAllBytes}
-           abc.tools.soranoha-build-publication #{Files/move}}
+           abc.tools.soranoha-build-publication #{Files/move}
+           abc.tools.evidence-output
+           #{Files/exists Files/createLink Files/deleteIfExists}}
          (update-vals permanent-files-operations :operations)))
   (is (= '{abc.tools.source-bundle #{:isDirectory}
            abc.tools.aozora-history-audit #{:renameTo}}

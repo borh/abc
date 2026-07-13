@@ -1,82 +1,95 @@
-# Task 2 report
+# Task 2 Report: Alias-aware source reading and exact pure capabilities
 
-- Commit: `6a377788` (`refactor(abc): use babashka fs in leaf filesystem code`)
-- Scope: migrated the nine grandfathered leaf namespaces for registries, schema discovery, facts/report enumeration, diagram existence checks, and Schematron/TEI canonical cache keys. `abc.tools.files` was already compliant; its missing-delete and parentless-copy characterizations remain unchanged.
-- Policy: removed exactly `abc.tools.request-set-resolver`, `abc.tools.schema`, `abc.tools.facts`, `abc.tools.soranoha-layout-report`, `abc.tools.source-bundle-report`, `abc.tools.diagram.adr-graph`, `abc.tools.diagram.core`, `abc.tools.schematron`, and `abc.tools.tei` from both legacy baseline sets. Permanent exception mechanics and maps were unchanged.
+## Status
 
-## Old green
+Complete.
 
-Run from `abc/` with `TEI_SCHEMA_PATH=/nix/store/gd772mj2jm1pih1g7larhlkm5irlhbql-tei_all.rng`:
+Commit: `6e2e075f feat(abc): resolve evidence source aliases locally`
 
-```sh
-bin/kaocha --focus abc.tools.files-test \
-  --focus abc.tools.request-set-resolver-test \
-  --focus abc.tools.schema-test \
-  --focus abc.tools.facts-test \
-  --focus abc.tools.soranoha-layout-report-test \
-  --focus abc.tools.source-bundle-report-test \
-  --focus abc.tools.diagram.adr-graph-test \
-  --focus abc.tools.diagram.core-test \
-  --focus abc.tools.schematron-test \
-  --focus abc.tools.tei-test
-```
+## RED evidence
 
-Result: 86 tests, 263 assertions, 0 failures.
+1. Added the alias/concurrency test around a temporary `fixture.alias-test` namespace requiring `abc.sim.artifact-manifest` as `am`, with eight concurrent reads, exact auto-resolved keyword coverage, source metadata coverage, and a `find-ns` non-mutation assertion.
+2. Added positive reachable-graph cases for `charred.api/write-json-str` and `clojure.core/re-pattern`, plus negative neighboring capability cases for `charred.api/read-json` and `clojure.core/load-string`.
+3. The first focused run failed during test compilation because the requested public `read-source-forms!` API did not yet exist (`No such var: runtime/read-source-forms!`).
+4. After the minimal first-cycle rename exposing the existing reader, the focused suite reached the intended behavioral RED state:
+   - `::am/run-summary-events` raised an invalid-keyword reader error.
+   - `charred.api/write-json-str` was rejected as `:forbidden-evidence-capability`.
+   - `clojure.core/re-pattern` was rejected as `:forbidden-evidence-capability`.
+   - Result: 28 tests, 95 assertions, 3 errors, 0 failures.
 
-## New green
+## GREEN implementation
 
-The same focused command produced 86 tests, 263 assertions, 0 failures.
+- Renamed the source reader to the public `read-source-forms!` interface and updated its two internal callers.
+- Reads the first form under `*read-eval* false`.
+- Derives a plain symbol-to-symbol alias map only from `:require` vector libspecs containing `:as`.
+- Reads later forms with an invocation-local `clojure.tools.reader/*alias-map*` binding.
+- Does not create namespaces, install aliases, enter namespaces, or bind `*ns*` to a created namespace.
+- Retains the indexing push-back reader, preserving line and column metadata.
+- Added exactly `charred.api/write-json-str` and `clojure.core/re-pattern` to `audited-safe-external-vars`.
 
-```sh
-bin/kaocha --focus abc.tools.filesystem-policy-test
-```
+## Files changed
 
-Result: 9 tests, 96 assertions, 0 failures.
+- `abc/src/abc/tools/adr_evidence_runtime_inputs.clj`
+- `abc/test/abc/tools/adr_evidence_runtime_inputs_test.clj`
 
-```sh
-nix build ./abc#checks.x86_64-linux.clj-kondo --no-link
-```
+## Verification
 
-Result: exit 0; Clojure lint and formatting passed.
+- `cd abc && bin/kaocha --focus abc.tools.adr-evidence-runtime-inputs-test`
+  - GREEN run 1: 28 tests, 98 assertions, 0 failures.
+  - GREEN run 2: 28 tests, 98 assertions, 0 failures.
+- `nix build ./abc#checks.x86_64-linux.clj-kondo`
+  - Exit 0; derivation built successfully.
+- `git diff --check`
+  - Exit 0.
+- Source scan for `create-ns`, `alias`, `in-ns`, and `binding [*ns*` in the two task files found no matches.
+
+## Self-review
+
+- The resolver state is dynamic and thread-local for each invocation; eight futures exercise repeated concurrent reads and return identical forms.
+- An empty local alias map also prevents accidental fallback to aliases in the caller's ambient `*ns*`.
+- Namespace names and aliases remain symbols, so no `Namespace` objects are created or registered.
+- The negative capability cases demonstrate exact admission rather than namespace-wide or family-wide admission.
+- No plan, specification, or progress files were edited.
 
 ## Concerns
 
-- The brief's `bin/kaocha` command must be run from `abc/`; from the monorepo root the executable is `abc/bin/kaocha` but the dependency aliases resolve against the wrong working directory.
-- Plain-shell TEI tests require the pinned schema path from `nix develop ./abc`; the path above is the value exposed by this checkout's dev shell.
-- No production concern remains. Paths stay as `Path` values through traversal/filter/sort and convert to `File` only at existing Java/Clojure IO consumers.
+None. The implementation intentionally covers ordinary vector `:require` libspecs with `:as`, which is the alias syntax required by the task brief; it does not introduce a broader source-reader protocol.
 
-## Review fixes
+## Critical read-eval fix
 
-- Added `checked-in-schema-resources-discovers-nested-schemas-in-stable-order-test`. Red command: `cd abc && bin/kaocha --focus abc.tools.schema-test`; the new fixture-root call failed with `ArityException`, proving the old helper could not exercise/preserve nested discovery. Green result after the fix: 13 tests, 67 assertions, 0 failures.
-- Restored recursive schema discovery with root `*.schema.json` plus recursive `**/*.schema.json` globs, deduplication, and an explicit relative-path sort.
-- Kept `Path` values through request-set predicates, schema/facts/report traversal, and Schematron/TEI canonical cache operations. Conversion to `File` now occurs only at JSON readers, `scan-zip`, `SchematronResourceSCH/fromFile`, and other Java consumers.
+Fix commit: `b7dd3c2296ebfd891545d1c5e8f99e7ca8607846 fix(abc): disable tools reader eval`
 
-Fresh final verification:
+### Regression RED
 
-```sh
-cd abc
-TEI_SCHEMA_PATH=/nix/store/gd772mj2jm1pih1g7larhlkm5irlhbql-tei_all.rng \
-  bin/kaocha --focus abc.tools.files-test \
-  --focus abc.tools.request-set-resolver-test --focus abc.tools.schema-test \
-  --focus abc.tools.facts-test --focus abc.tools.soranoha-layout-report-test \
-  --focus abc.tools.source-bundle-report-test \
-  --focus abc.tools.diagram.adr-graph-test \
-  --focus abc.tools.diagram.core-test --focus abc.tools.schematron-test \
-  --focus abc.tools.tei-test
-```
+- Added `source-reader-disables-read-eval-test` with a temporary source containing a `#=` payload that sets a unique JVM system property.
+- The test requires both rejection of the source and proof that the property remains unset, then clears the property in `finally`.
+- Initial focused regression command:
+  - `cd abc && bin/kaocha --focus abc.tools.adr-evidence-runtime-inputs-test/source-reader-disables-read-eval-test`
+  - Result: 1 test, 2 assertions, 2 failures.
+  - `read-source-forms!` returned without throwing.
+  - The sentinel property contained `"executed"`, proving that the payload ran.
 
-Output: `87 tests, 264 assertions, 0 failures.`
+### Root cause confirmation
 
-```sh
-cd abc
-TEI_SCHEMA_PATH=/nix/store/gd772mj2jm1pih1g7larhlkm5irlhbql-tei_all.rng \
-  bin/kaocha --focus abc.tools.filesystem-policy-test
-```
+- Installed dependency: `org.clojure/tools.reader` 1.5.2.
+- Its namespace excludes `clojure.core/*read-eval*` and defines a distinct `clojure.tools.reader/*read-eval*` dynamic Var whose default is `true`.
+- Its `#=` dispatch calls `read-eval`, which checks the tools.reader Var before evaluating the next form.
+- A direct identity check returned `:same-var? false` for `#'clojure.core/*read-eval*` and `#'clojure.tools.reader/*read-eval*`.
+- Therefore the original unqualified core binding did not affect `clojure.tools.reader/read`.
 
-Output: `9 tests, 96 assertions, 0 failures.`
+### Minimal fix
 
-```sh
-nix build ./abc#checks.x86_64-linux.clj-kondo --no-link
-```
+- Changed only the reader-boundary binding from `*read-eval*` to `reader/*read-eval*`.
+- No reader protocol, alias semantics, capability inventory, or other behavior changed.
 
-Output: exit 0; lint and formatting passed.
+### Fix GREEN and verification
+
+- Focused regression: 1 test, 2 assertions, 0 failures.
+- Full focused suite run 1: 29 tests, 100 assertions, 0 failures.
+- Full focused suite run 2: 29 tests, 100 assertions, 0 failures.
+- `nix build ./abc#checks.x86_64-linux.clj-kondo`: exit 0; derivation built successfully.
+- `git diff --check`: exit 0.
+
+### Fix concerns
+
+None.

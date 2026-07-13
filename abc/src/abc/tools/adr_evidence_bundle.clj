@@ -1,5 +1,6 @@
 (ns abc.tools.adr-evidence-bundle
-  (:require [abc.tools.hash :as hash]
+  (:require [abc.tools.adr-evidence-operational :as operational]
+            [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.path-containment :as containment]
             [abc.tools.schema :as schema]
@@ -287,10 +288,18 @@
                         "canonical evidence artifact hash does not match the registry"
                         affected-claim-ids :artifact-path artifact-path
                         :expected expected-hash :actual canonical-hash)])
-            problems (vec (concat hash-problems artifact-problems
-                                  (when (empty? artifact-problems)
-                                    (input-problems repo-root workspace-root artifact-path value
-                                                    affected-claim-ids))))]
+            generic-problems (vec (concat hash-problems artifact-problems
+                                          (when (empty? artifact-problems)
+                                            (input-problems repo-root workspace-root
+                                                            artifact-path value
+                                                            affected-claim-ids))))
+            policy-problems (mapv #(assoc % :affected-claim-ids affected-claim-ids)
+                                  (operational/offline-policy-problems
+                                   {:repo-root repo-root
+                                    :workspace-root workspace-root
+                                    :artifact-path artifact-path
+                                    :bundle value}))
+            problems (vec (concat generic-problems policy-problems))]
         (cond-> {:bundle (when (empty? problems) value)
                  :problems problems}
           component-profile? (assoc :component-profile? true))))))

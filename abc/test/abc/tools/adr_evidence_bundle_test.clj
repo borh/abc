@@ -1,5 +1,6 @@
 (ns abc.tools.adr-evidence-bundle-test
   (:require [abc.tools.adr-evidence-bundle :as bundle]
+            [abc.tools.adr-evidence-observation-catalog :as catalog]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [babashka.fs :as fs]
@@ -55,6 +56,53 @@
       (is (= [:artifact-hash-mismatch] (mapv :kind problems)))
       (is (= ["ADR-0042-C1" "ADR-0042-C2"]
              (:affected-claim-ids (first problems)))))))
+
+(deftest offline-policy-rejects-a-self-consistent-focused-bypass-test
+  (let [repo (temp-dir)
+        artifact-path "docs/evidence/adr-runs/focused.json"
+        descriptor-path "docs/evidence/adr-capture/focused.edn"
+        manifest-path "docs/evidence/adr-inputs/focused.edn"
+        catalog-path "data/catalog.edn"
+        runner-path "bin/kaocha"
+        row {:observation-id :focused
+             :descriptor-stem "focused"
+             :observation-key "focused-passes"
+             :focus-var 'abc.example-test/focus}
+        explicit [descriptor-path manifest-path runner-path]
+        descriptor {:schema-version "abc-adr-evidence-capture-v3"
+                    :tool runner-path
+                    :argv [runner-path "--focus" "abc.example-test/focus"]
+                    :input-profile {:kind "clojure-test-v1"
+                                    :roots ["abc.example-test"]
+                                    :explicit explicit}
+                    :runtime-input-manifest manifest-path
+                    :catalog-path catalog-path
+                    :observation-id :focused
+                    :observation-contract-sha256
+                    (catalog/observation-contract-sha256 row)
+                    :observation-key "focused-passes"}
+        source (write-path! repo "fixtures/input.txt" "input")
+        value (run-bundle "fixtures/input.txt" (file-hash source))
+        artifact (io/file repo artifact-path)]
+    (write-path! repo descriptor-path (pr-str descriptor))
+    (write-path! repo manifest-path
+                 (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []}))
+    (write-path! repo catalog-path
+                 (pr-str {:schema-version :abc-adr-evidence-observation-catalog-v1
+                          :focused-observations [row]
+                          :operational-observations []}))
+    (let [runner (write-path! repo runner-path "#!/usr/bin/env bash\n")]
+      (.setExecutable runner true))
+    (json/write-deterministic-json-file! artifact value)
+    (let [problems (:problems
+                    (bundle/validate-bundle
+                     repo artifact-path
+                     (hash/format-sha256 (apply str (repeat 64 "f")))
+                     ["ADR-0042-C1"]))]
+      (is (contains? (set (map :kind problems)) :artifact-hash-mismatch))
+      (is (contains? (set (map :kind problems)) :missing-evidence-input))
+      (is (contains? (set (map :kind problems)) :missing-observation))
+      (is (every? #(= ["ADR-0042-C1"] (:affected-claim-ids %)) problems)))))
 
 (deftest bundle-input-profile-shapes-are-closed-test
   (let [base (run-bundle "fixtures/input.txt" (str "sha256:" (apply str (repeat 64 "0"))))]

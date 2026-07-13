@@ -53,6 +53,32 @@
       (is (some? @seen-temp))
       (is (not (fs/exists? @seen-temp))))))
 
+(deftest design-bundle-outer-temp-directory-cleanup-test
+  (testing "cleanup after successful validation"
+    (let [seen-root (atom nil)
+          result (#'validate/with-design-temp-dir
+                  (fn [root]
+                    (reset! seen-root root)
+                    (spit (fs/file root "proof") "inside")
+                    :validated))]
+      (is (= :validated result))
+      (is (some? @seen-root))
+      (is (not (fs/exists? @seen-root)))))
+  (testing "cleanup after thrown validation"
+    (let [seen-root (atom nil)
+          failure (ex-info "validation failed" {})]
+      (is (identical?
+           failure
+           (try
+             (#'validate/with-design-temp-dir
+              (fn [root]
+                (reset! seen-root root)
+                (spit (fs/file root "proof") "inside")
+                (throw failure)))
+             (catch Throwable t t))))
+      (is (some? @seen-root))
+      (is (not (fs/exists? @seen-root))))))
+
 (deftest run-command-retains-command-and-nonzero-exit-code-test
   (let [fixture (java.io.File/createTempFile "abc-run-command" ".sh")]
     (try

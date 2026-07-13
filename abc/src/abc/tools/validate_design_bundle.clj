@@ -984,199 +984,204 @@
                         {:record-path record-path
                          :ttl-path ttl-path}))))))
 
-(defn validate-design-bundle! []
+(defn- with-design-temp-dir [f]
   (fs/with-temp-dir [temp-dir {:prefix "abc-design-bundle"}]
-    (let [materialized-dir (fs/file temp-dir "materialized-import")
-          publication-dir (fs/file temp-dir "publication")
-          tokenized-dir (fs/file temp-dir "tokenized")
-          token-analysis-dir (fs/file temp-dir "token-analysis")
-          annotation-dir (fs/file temp-dir "annotation")]
-      (tel/log! :info "==> Materializing imported ab-validator output")
-      (let [materialized (materialize/materialize-import!
-                          {:input-dir (files/path "examples" "ab-validator-output")
-                           :output-dir materialized-dir
-                           :generated-at materialize/default-generated-at})
-            publication-output (publication/materialize-publication!
-                                {:parser-ir-path "examples/v0/example-work/parser-ir.json"
-                                 :source-manifest-path "examples/v0/example-work/source.manifest.json"
-                                 :metadata-record-path "examples/v0/example-work/metadata-record.json"
-                                 :persons-dir "examples/v0/example-persons"
-                                 :output-dir publication-dir
-                                 :generated-at publication/default-generated-at})
-            tokenized-output (tokenized/materialize-tokenized!
-                              {:producer-manifest (files/read-json
-                                                   (:parser-ir materialized))
-                               :tokenizer-profile (files/read-json
-                                                   "data/tokenizer-profiles/fixture-tokenizer-ja-v1.json")
-                               :input-plaintext-policy-hash (files/example-hash "13")
-                               :tokens fixture-tokenized-tokens
-                               :output-dir tokenized-dir
-                               :generated-at materialize/default-generated-at})
-            token-analysis-output (analysis/materialize-token-backed-analysis!
-                                   {:producer-manifest (files/read-json
-                                                        (:manifest
-                                                         tokenized-output))
-                                    :recipe (files/read-json
-                                             "data/analysis-recipes/token-basic-ja-v1.json")
-                                    :subject fixture-analysis-subject
-                                    :metrics fixture-token-analysis-metrics
-                                    :output-dir token-analysis-dir
-                                    :generated-at materialize/default-generated-at})
-            annotation-output (annotations/materialize-annotations!
-                               {:producer-manifest (files/read-json
-                                                    (:parser-ir materialized))
-                                :parser-ir (files/read-json
-                                            "examples/ab-validator-output/parser-ir.json")
-                                :annotation-policy (files/read-json
-                                                    "data/annotation-policies/ruby-gaiji-v1.json")
-                                :input-plaintext-policy-hash (files/example-hash "13")
-                                :output-dir annotation-dir
-                                :generated-at materialize/default-generated-at})
-            manifest-paths (concat (vals materialized)
-                                   [(:plaintext-manifest publication-output)
-                                    (:tei-manifest publication-output)
-                                    (:manifest tokenized-output)
-                                    (:manifest token-analysis-output)
-                                    (:manifest annotation-output)])]
-        (tel/log! :info "materialized import ok")
-        (tel/log! :info "parser-IR publication materialization ok")
-        (tel/log! :info "tokenized fixture materialization ok")
-        (tel/log! :info "token-backed analysis fixture materialization ok")
-        (tel/log! :info "annotation fixture materialization ok")
-        (tel/log! :info "==> Validating JSON schemas and examples")
-        (validate-json-schemas! manifest-paths)
-        (validate-json! (files/read-json "schemas/token-output.schema.json")
-                        (:token-stream tokenized-output))
-        (validate-json! (files/read-json "schemas/analysis-result.schema.json")
-                        (:analysis-result token-analysis-output))
-        (validate-json! (files/read-json "schemas/annotation-output.schema.json")
-                        (:annotations annotation-output))
-        (tel/log! :info "json schema validation ok")
-        (tel/log! :info "==> Checking parser-IR publication output")
-        (validate-publication-output! publication-output)
-        (tel/log! :info "parser-IR publication output ok")
-        (tel/log! :info "==> Checking materialized manifest index")
-        (let [entries (manifest-index/index-manifest-files manifest-paths)
-              tokenizer-profiles (tokenizer-profiles-by-hash)]
-          (manifest-index/validate-no-reproducibility-conflicts! entries)
-          (manifest-index/validate-tokenized-release-guardrail! entries)
-          (manifest-index/validate-tokenized-copied-fields! entries
-                                                            tokenizer-profiles)
-          (manifest-index/validate-analysis-copied-fields! entries)
-          (manifest-index/validate-annotation-release-guardrail! entries)
-          (manifest-index/validate-annotation-copied-fields! entries))
-        (tel/log! :info "materialized manifest index ok")
-        (tel/log! :info "==> Checking materialized RDF views")
-        (doseq [manifest-path manifest-paths]
-          (manifest-to-rdf/manifest->ttl (files/read-json manifest-path)))
-        (tel/log! :info "materialized RDF views ok")
-        (tel/log! :info "==> Validating SHACL shapes")
-        (let [shapes (shacl/load-shapes-graph)
-              targets (concat manifest-paths
-                              ["examples/v0/example-work/manifest.json"
-                               "examples/v0/example-work/failure-manifest.example.json"])]
-          (validate-shacl! shapes targets))
-        (tel/log! :info "shacl shapes ok")
-        (tel/log! :info "==> Validating metadata record + persons bundle")
-        (let [shapes (shacl/load-shapes-graph)]
-          (validate-metadata-bundle!
-           {:record-path "examples/v0/example-work/metadata-record.json"
-            :manifest-path "examples/v0/example-work/manifest.json"
-            :persons-dir "examples/v0/example-persons"
-            :record-schema-path "schemas/metadata-record.schema.json"
-            :person-schema-path "schemas/person-record.schema.json"
-            :ttl-path "examples/v0/example-work/metadata-record.ttl"
-            :shapes-graph shapes}))
-        (tel/log! :info "metadata bundle ok")
-        (tel/log! :info "==> Validating person drift events")
-        (let [result (person-drift/validate-drift-events!
-                      {:persons-dir "examples/v0/example-persons"})]
-          (when (= :error (:status result))
-            (throw (ex-info "person drift validation failed"
-                            {:errors (:failures result)}))))
-        (tel/log! :info "person drift events ok"))
-      (tel/log! :info "==> Checking imported ab-validator output")
-      (validate-ab-validator-output!)
-      (tel/log! :info "ab-validator output ok")
-      (tel/log! :info "==> Checking canonicalization fixtures")
-      (validate-canonicalization!)
-      (tel/log! :info "canonicalization fixtures ok")
-      (tel/log! :info "==> Checking XML fixtures")
-      (validate-xml!)
-      (tel/log! :info "xml fixtures ok")
-      (tel/log! :info "==> Validating TEI against P5 RelaxNG")
-      (validate-tei! (System/getenv "TEI_SCHEMA_PATH")
-                     ["examples/v0/example-work/tei.xml"])
-      (tel/log! :info "tei rng validation ok")
-      (tel/log! :info "==> Validating TEI against project RelaxNG")
+    (f temp-dir)))
+
+(defn validate-design-bundle! []
+  (with-design-temp-dir
+    (fn [temp-dir]
+      (let [materialized-dir (fs/file temp-dir "materialized-import")
+            publication-dir (fs/file temp-dir "publication")
+            tokenized-dir (fs/file temp-dir "tokenized")
+            token-analysis-dir (fs/file temp-dir "token-analysis")
+            annotation-dir (fs/file temp-dir "annotation")]
+        (tel/log! :info "==> Materializing imported ab-validator output")
+        (let [materialized (materialize/materialize-import!
+                            {:input-dir (files/path "examples" "ab-validator-output")
+                             :output-dir materialized-dir
+                             :generated-at materialize/default-generated-at})
+              publication-output (publication/materialize-publication!
+                                  {:parser-ir-path "examples/v0/example-work/parser-ir.json"
+                                   :source-manifest-path "examples/v0/example-work/source.manifest.json"
+                                   :metadata-record-path "examples/v0/example-work/metadata-record.json"
+                                   :persons-dir "examples/v0/example-persons"
+                                   :output-dir publication-dir
+                                   :generated-at publication/default-generated-at})
+              tokenized-output (tokenized/materialize-tokenized!
+                                {:producer-manifest (files/read-json
+                                                     (:parser-ir materialized))
+                                 :tokenizer-profile (files/read-json
+                                                     "data/tokenizer-profiles/fixture-tokenizer-ja-v1.json")
+                                 :input-plaintext-policy-hash (files/example-hash "13")
+                                 :tokens fixture-tokenized-tokens
+                                 :output-dir tokenized-dir
+                                 :generated-at materialize/default-generated-at})
+              token-analysis-output (analysis/materialize-token-backed-analysis!
+                                     {:producer-manifest (files/read-json
+                                                          (:manifest
+                                                           tokenized-output))
+                                      :recipe (files/read-json
+                                               "data/analysis-recipes/token-basic-ja-v1.json")
+                                      :subject fixture-analysis-subject
+                                      :metrics fixture-token-analysis-metrics
+                                      :output-dir token-analysis-dir
+                                      :generated-at materialize/default-generated-at})
+              annotation-output (annotations/materialize-annotations!
+                                 {:producer-manifest (files/read-json
+                                                      (:parser-ir materialized))
+                                  :parser-ir (files/read-json
+                                              "examples/ab-validator-output/parser-ir.json")
+                                  :annotation-policy (files/read-json
+                                                      "data/annotation-policies/ruby-gaiji-v1.json")
+                                  :input-plaintext-policy-hash (files/example-hash "13")
+                                  :output-dir annotation-dir
+                                  :generated-at materialize/default-generated-at})
+              manifest-paths (concat (vals materialized)
+                                     [(:plaintext-manifest publication-output)
+                                      (:tei-manifest publication-output)
+                                      (:manifest tokenized-output)
+                                      (:manifest token-analysis-output)
+                                      (:manifest annotation-output)])]
+          (tel/log! :info "materialized import ok")
+          (tel/log! :info "parser-IR publication materialization ok")
+          (tel/log! :info "tokenized fixture materialization ok")
+          (tel/log! :info "token-backed analysis fixture materialization ok")
+          (tel/log! :info "annotation fixture materialization ok")
+          (tel/log! :info "==> Validating JSON schemas and examples")
+          (validate-json-schemas! manifest-paths)
+          (validate-json! (files/read-json "schemas/token-output.schema.json")
+                          (:token-stream tokenized-output))
+          (validate-json! (files/read-json "schemas/analysis-result.schema.json")
+                          (:analysis-result token-analysis-output))
+          (validate-json! (files/read-json "schemas/annotation-output.schema.json")
+                          (:annotations annotation-output))
+          (tel/log! :info "json schema validation ok")
+          (tel/log! :info "==> Checking parser-IR publication output")
+          (validate-publication-output! publication-output)
+          (tel/log! :info "parser-IR publication output ok")
+          (tel/log! :info "==> Checking materialized manifest index")
+          (let [entries (manifest-index/index-manifest-files manifest-paths)
+                tokenizer-profiles (tokenizer-profiles-by-hash)]
+            (manifest-index/validate-no-reproducibility-conflicts! entries)
+            (manifest-index/validate-tokenized-release-guardrail! entries)
+            (manifest-index/validate-tokenized-copied-fields! entries
+                                                              tokenizer-profiles)
+            (manifest-index/validate-analysis-copied-fields! entries)
+            (manifest-index/validate-annotation-release-guardrail! entries)
+            (manifest-index/validate-annotation-copied-fields! entries))
+          (tel/log! :info "materialized manifest index ok")
+          (tel/log! :info "==> Checking materialized RDF views")
+          (doseq [manifest-path manifest-paths]
+            (manifest-to-rdf/manifest->ttl (files/read-json manifest-path)))
+          (tel/log! :info "materialized RDF views ok")
+          (tel/log! :info "==> Validating SHACL shapes")
+          (let [shapes (shacl/load-shapes-graph)
+                targets (concat manifest-paths
+                                ["examples/v0/example-work/manifest.json"
+                                 "examples/v0/example-work/failure-manifest.example.json"])]
+            (validate-shacl! shapes targets))
+          (tel/log! :info "shacl shapes ok")
+          (tel/log! :info "==> Validating metadata record + persons bundle")
+          (let [shapes (shacl/load-shapes-graph)]
+            (validate-metadata-bundle!
+             {:record-path "examples/v0/example-work/metadata-record.json"
+              :manifest-path "examples/v0/example-work/manifest.json"
+              :persons-dir "examples/v0/example-persons"
+              :record-schema-path "schemas/metadata-record.schema.json"
+              :person-schema-path "schemas/person-record.schema.json"
+              :ttl-path "examples/v0/example-work/metadata-record.ttl"
+              :shapes-graph shapes}))
+          (tel/log! :info "metadata bundle ok")
+          (tel/log! :info "==> Validating person drift events")
+          (let [result (person-drift/validate-drift-events!
+                        {:persons-dir "examples/v0/example-persons"})]
+            (when (= :error (:status result))
+              (throw (ex-info "person drift validation failed"
+                              {:errors (:failures result)}))))
+          (tel/log! :info "person drift events ok"))
+        (tel/log! :info "==> Checking imported ab-validator output")
+        (validate-ab-validator-output!)
+        (tel/log! :info "ab-validator output ok")
+        (tel/log! :info "==> Checking canonicalization fixtures")
+        (validate-canonicalization!)
+        (tel/log! :info "canonicalization fixtures ok")
+        (tel/log! :info "==> Checking XML fixtures")
+        (validate-xml!)
+        (tel/log! :info "xml fixtures ok")
+        (tel/log! :info "==> Validating TEI against P5 RelaxNG")
+        (validate-tei! (System/getenv "TEI_SCHEMA_PATH")
+                       ["examples/v0/example-work/tei.xml"])
+        (tel/log! :info "tei rng validation ok")
+        (tel/log! :info "==> Validating TEI against project RelaxNG")
       ;; Some negative Schematron fixtures are intentionally structurally
       ;; invalid too. tei-fixture-catalog marks which fixtures should pass the
       ;; ODD-derived Relax NG layer so this list does not drift independently.
-      (validate-tei! "schemas/tei-profile.rng" (tei-project-rng-paths))
-      (tel/log! :info "tei project rng validation ok")
-      (tel/log! :info "==> Validating TEI against project Schematron")
-      (validate-tei-schematron! tei-schematron-fixtures)
-      (tel/log! :info "tei schematron validation ok")
-      (tel/log! :info "==> Validating person drift negative fixtures")
-      (validate-drift-fixtures!
-       {"fixtures/v0/invalid/drift/broken-index-target" #{:index-target-missing}
-        "fixtures/v0/invalid/drift/asymmetric-index" #{:event-missing-from-participant-index}
-        "fixtures/v0/invalid/drift/orphan-event-file"
-        #{:orphan-event-file :event-missing-from-participant-index}
-        "fixtures/v0/invalid/drift/unsorted-participants"
-        #{:participants-not-sorted :index-target-missing
-          :event-missing-from-participant-index :orphan-event-file}
-        "fixtures/v0/invalid/drift/dangling-snapshot-ref"
-        #{:unknown-snapshot-reference :participant-not-covered
-          :index-target-missing :event-missing-from-participant-index
-          :orphan-event-file}
-        "fixtures/v0/invalid/drift/invalid-role"
-        #{:invalid-had-role :index-target-missing
-          :event-missing-from-participant-index :orphan-event-file}
-        "fixtures/v0/invalid/drift/invalid-agent"
-        #{:invalid-agent-iri :index-target-missing
-          :event-missing-from-participant-index :orphan-event-file}
-        {:type :ttl
-         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
-         :graph "fixtures/v0/invalid/drift/shacl-missing-date/graph.ttl"}
-        #{:shacl-violation}
-        {:type :ttl
-         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
-         :graph "fixtures/v0/invalid/drift/split-cardinality-one-successor/graph.ttl"}
-        #{:shacl-violation :rdf-participant-prov-mismatch}
-        {:type :ttl
-         :event "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/event.json"
-         :graph "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/graph.ttl"}
-        #{:shacl-violation}
-        {:type :ttl
-         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
-         :graph "fixtures/v0/invalid/drift/typing-missing-subclass/graph.ttl"}
-        #{:missing-rdf-type :rdf-participant-prov-mismatch}
-        {:type :ttl
-         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
-         :graph "fixtures/v0/invalid/drift/typing-missing-activity/graph.ttl"}
-        #{:missing-rdf-type :shacl-violation :rdf-participant-prov-mismatch}
-        {:type :ttl
-         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
-         :graph "fixtures/v0/invalid/drift/rdf-participant-prov-mismatch/graph.ttl"}
-        #{:rdf-participant-prov-mismatch}})
-      (tel/log! :info "person drift negative fixtures ok")
-      (tel/log! :info "==> Validating Linked Art publication view (ADR 0013)")
-      (validate-publication-view!
-       {:manifest-path "examples/v0/example-work/manifest.json"
-        :metadata-record-path "examples/v0/example-work/metadata-record.json"
-        :context-path "contexts/abc-v0.jsonld"
-        :candidate-path "examples/v0/example-work/lod/linked-art-candidate.jsonld"
-        :expanded-path "examples/v0/example-work/lod/linked-art-expanded.normalized.json"
-        :result-path "examples/v0/example-work/lod/jsonld-context-validation-result.json"})
-      (tel/log! :info "linked art publication view ok")
-      (tel/log! :info "==> Checking IIIF applicability record (ADR 0014)")
-      (iiif/validate-applicability! "examples/v0/example-work/iiif/applicability.json")
-      (tel/log! :info "iiif applicability record ok")
-      (tel/log! :info "==> Checking git-cliff configuration")
-      (validate-git-cliff!)
-      (tel/log! :info "git-cliff config ok")
-      (tel/log! :info "design bundle validation ok"))))
+        (validate-tei! "schemas/tei-profile.rng" (tei-project-rng-paths))
+        (tel/log! :info "tei project rng validation ok")
+        (tel/log! :info "==> Validating TEI against project Schematron")
+        (validate-tei-schematron! tei-schematron-fixtures)
+        (tel/log! :info "tei schematron validation ok")
+        (tel/log! :info "==> Validating person drift negative fixtures")
+        (validate-drift-fixtures!
+         {"fixtures/v0/invalid/drift/broken-index-target" #{:index-target-missing}
+          "fixtures/v0/invalid/drift/asymmetric-index" #{:event-missing-from-participant-index}
+          "fixtures/v0/invalid/drift/orphan-event-file"
+          #{:orphan-event-file :event-missing-from-participant-index}
+          "fixtures/v0/invalid/drift/unsorted-participants"
+          #{:participants-not-sorted :index-target-missing
+            :event-missing-from-participant-index :orphan-event-file}
+          "fixtures/v0/invalid/drift/dangling-snapshot-ref"
+          #{:unknown-snapshot-reference :participant-not-covered
+            :index-target-missing :event-missing-from-participant-index
+            :orphan-event-file}
+          "fixtures/v0/invalid/drift/invalid-role"
+          #{:invalid-had-role :index-target-missing
+            :event-missing-from-participant-index :orphan-event-file}
+          "fixtures/v0/invalid/drift/invalid-agent"
+          #{:invalid-agent-iri :index-target-missing
+            :event-missing-from-participant-index :orphan-event-file}
+          {:type :ttl
+           :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+           :graph "fixtures/v0/invalid/drift/shacl-missing-date/graph.ttl"}
+          #{:shacl-violation}
+          {:type :ttl
+           :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+           :graph "fixtures/v0/invalid/drift/split-cardinality-one-successor/graph.ttl"}
+          #{:shacl-violation :rdf-participant-prov-mismatch}
+          {:type :ttl
+           :event "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/event.json"
+           :graph "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/graph.ttl"}
+          #{:shacl-violation}
+          {:type :ttl
+           :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+           :graph "fixtures/v0/invalid/drift/typing-missing-subclass/graph.ttl"}
+          #{:missing-rdf-type :rdf-participant-prov-mismatch}
+          {:type :ttl
+           :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+           :graph "fixtures/v0/invalid/drift/typing-missing-activity/graph.ttl"}
+          #{:missing-rdf-type :shacl-violation :rdf-participant-prov-mismatch}
+          {:type :ttl
+           :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+           :graph "fixtures/v0/invalid/drift/rdf-participant-prov-mismatch/graph.ttl"}
+          #{:rdf-participant-prov-mismatch}})
+        (tel/log! :info "person drift negative fixtures ok")
+        (tel/log! :info "==> Validating Linked Art publication view (ADR 0013)")
+        (validate-publication-view!
+         {:manifest-path "examples/v0/example-work/manifest.json"
+          :metadata-record-path "examples/v0/example-work/metadata-record.json"
+          :context-path "contexts/abc-v0.jsonld"
+          :candidate-path "examples/v0/example-work/lod/linked-art-candidate.jsonld"
+          :expanded-path "examples/v0/example-work/lod/linked-art-expanded.normalized.json"
+          :result-path "examples/v0/example-work/lod/jsonld-context-validation-result.json"})
+        (tel/log! :info "linked art publication view ok")
+        (tel/log! :info "==> Checking IIIF applicability record (ADR 0014)")
+        (iiif/validate-applicability! "examples/v0/example-work/iiif/applicability.json")
+        (tel/log! :info "iiif applicability record ok")
+        (tel/log! :info "==> Checking git-cliff configuration")
+        (validate-git-cliff!)
+        (tel/log! :info "git-cliff config ok")
+        (tel/log! :info "design bundle validation ok")))))
 
 (defn -main [& _args]
   (logging/install-cli-handler!)

@@ -16,13 +16,28 @@
             [clojure.test :refer [deftest is testing]])
   (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio.charset StandardCharsets]
-           [java.nio.file AccessDeniedException NoSuchFileException]
+           [java.nio.file AccessDeniedException Files NoSuchFileException]
            [java.util.zip ZipEntry ZipOutputStream]))
 
 (defn- temp-json-path [prefix]
   (let [file (java.io.File/createTempFile prefix ".json")]
     (.delete file)
     (str file)))
+
+(deftest archive-summary-follows-directory-symlinks-in-stable-path-order-test
+  (let [base (fixture/temp-dir "abc-soranoha-symlinked-archives")
+        root (io/file base "root")
+        external (io/file base "external")]
+    (.mkdirs root)
+    (.mkdirs external)
+    (spit (io/file root "z.tar.zst") "z")
+    (spit (io/file external "b.tar.zst") "b")
+    (spit (io/file external "a.tar.zst") "a")
+    (Files/createSymbolicLink (.toPath (io/file root "linked"))
+                              (.toPath external)
+                              (make-array java.nio.file.attribute.FileAttribute 0))
+    (is (= ["linked/a.tar.zst" "linked/b.tar.zst" "z.tar.zst"]
+           (get (#'soranoha/archive-summary root) "paths")))))
 
 (defn- delete-tree! [file]
   (fixture/delete-tree! file))

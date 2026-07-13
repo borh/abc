@@ -22,6 +22,17 @@ reduced by exactly those six namespaces.
 
 ## Verification
 
+- Symlink traversal golden test at parent `bfdf4167`: 1 test, 1 assertion,
+  0 failures (disposable detached worktree).
+- The same test before the blocker fix at `8c6af4b3`: 1 failure; only
+  `z.tar.zst` was found and `linked/a.tar.zst` / `linked/b.tar.zst` were
+  omitted.
+- The same test after replacing `fs/glob` with direct recursive
+  `babashka.fs` traversal: 1 test, 1 assertion, 0 failures. Directory symlinks
+  are followed, cycles are not pruned, traversal errors are not suppressed,
+  and archive results retain explicit path sorting.
+- Post-fix `abc.tools.soranoha-test` plus
+  `abc.tools.filesystem-policy-test`: 46 tests, 395 assertions, 0 failures.
 - Focused Task 5 suites plus `abc.tools.filesystem-policy-test`: 115 tests,
   604 assertions, 0 failures.
 - `nix build ./abc#checks.x86_64-linux.clj-kondo`: passed.

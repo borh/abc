@@ -892,7 +892,9 @@
     0))
 
 (defn- zstd-archives [root]
-  (->> (fs/glob root "**")
+  ;; Match java.io/file-seq: directory symlinks are followed, traversal errors
+  ;; are not suppressed, and cycles are not silently pruned.
+  (->> (tree-seq fs/directory? fs/list-dir (fs/path root))
        (filter fs/regular-file?)
        (filter #(string/ends-with? (str %) ".tar.zst"))
        (sort-by str)

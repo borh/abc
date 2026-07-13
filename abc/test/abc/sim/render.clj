@@ -2,7 +2,8 @@
   "Projection of model states into the concrete upstream formats: CSV rows,
   quoted CSV text (charred), and post-ingest corpus directories. Dirty-data
   corruptions are applied here so the model stays well-formed."
-  (:require [abc.sim.oracle :as oracle]
+  (:require [abc.git :as abc-git]
+            [abc.sim.oracle :as oracle]
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
@@ -13,11 +14,8 @@
            [java.nio.charset StandardCharsets]
            [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]
-           [java.time Instant]
-           [java.util Date TimeZone]
            [java.util.zip CRC32 ZipEntry ZipOutputStream]
-           [org.eclipse.jgit.api Git]
-           [org.eclipse.jgit.lib PersonIdent]))
+           [org.eclipse.jgit.api Git]))
 
 (def headers
   (vec (sort ["作品ID" "人物ID" "役割フラグ" "作品名" "作品名読み" "ソート用読み"
@@ -256,7 +254,7 @@
   ([dir m {:keys [zip-layouts] :or {zip-layouts {}}}]
    (let [write-bytes! (fn [relpath ^bytes bs]
                         (let [f (io/file dir relpath)]
-                          (io/make-parents f)
+                          (files/create-parent-dirs! f)
                           (with-open [o (io/output-stream f)] (.write o bs))))]
      (write-bytes! zip-path (csv->zip-bytes (rows->csv (model->rows m))))
      (doseq [[_wid {:keys [relpath archive-bytes]}] (content-sources m zip-layouts)]
@@ -264,26 +262,22 @@
      (write-bytes! "cards/999999/files/decoy.zip" (text->zip-bytes "decoy 999999" "999999"))
      (write-bytes! "support/tools.zip" (text->zip-bytes "tools 000000" "000000"))
      (let [head (io/file dir ".git/HEAD")]
-       (io/make-parents head)
+       (files/create-parent-dirs! head)
        (spit head "sim-fixture-head\n")))))
 
 (defn init-repo! [dir]
-  (-> (Git/init) (.setDirectory (io/file dir)) .call))
+  (-> (Git/init) (.setDirectory (io/file (str dir))) .call))
 
 (defn- commit-at! [git message instant-str]
-  (let [ident (PersonIdent. "ABC Sim" "sim@example.test"
-                            (Date/from (Instant/parse instant-str))
-                            (TimeZone/getTimeZone "UTC"))]
-    (-> ^Git git .commit (.setMessage message)
-        (.setAuthor ident) (.setCommitter ident) .call)))
+  (abc-git/commit-at! git message instant-str))
 
 (defn commit-file-at! [git root relpath content message instant-str]
   (let [f (io/file root relpath)]
-    (io/make-parents f)
+    (files/create-parent-dirs! f)
     (if (bytes? content)
-      (with-open [o (io/output-stream f)] (.write o ^bytes content))
-      (spit f content))
-    (-> ^Git git .add (.addFilepattern relpath) .call)
+      (files/write-bytes! f content)
+      (files/write-text! f content))
+    (abc-git/add-file! git relpath)
     (commit-at! git message instant-str)))
 
 (defn commit-zip-at! [git root zip-bytes message instant-str]

@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-29
 Accepted: 2026-04-29
+Validation scope: fixture
+Release authority: publication
 
 ## Implementation Status
 
@@ -183,23 +185,10 @@ the EDTF string and therefore must not change `person-record-hash`.
 
 ## Acceptance Criteria
 
-- `schemas/person-record.schema.json` `nullableDate` admits EDTF Level 1
-  decade (`\d{3}X`, including BCE `-019X`) and BCE century markers (`-YYXX`);
-  `test/abc/tools/aozora_csv_test.clj` (`parse-date-decade-marker-admitted-verbatim-test`)
-  covers admission verbatim with no audit correction.
-- `abc.tools.aozora-csv/parse-date` converts Japanese BCE century prose
-  (`紀元前7世紀末` → `-06XX`, `紀元前6世紀初` → `-05XX`) under astronomical
-  year numbering, recording the original prose in a `century-prose`
-  `parse_corrections` entry; `test/abc/tools/aozora_csv_test.clj`
-  (`parse-date-bce-century-prose-test`) covers this.
-- `abc.tools.person-record/record->graph` emits decade and century markers only
-  as the `abc:EDTF` echo (the RDA Group 2 predicate is omitted for these shapes
-  because no XSD precision type exists); `test/abc/tools/person_record_test.clj`
-  (`record->graph-decade-marker-test`, `record->graph-bce-century-marker-test`)
-  covers this.
-- The Hard Rule (EDTF string is the temporal source of truth) is upheld: a
-  `century-prose` correction changes the EDTF string and its echo only; it does
-  not change the source-of-truth boundary carried forward from ADR 0015.
+- **ADR-0016-C1 — structural-invariant:** the live person-record schema accepts the tested Level 1 decade and BCE-century lexical values for birth and death; `test/abc/tools/person_record_test.clj` covers the accepted table.
+- **ADR-0016-C2 — fixture-behavior:** `parse-date` admits the tested decade markers, including `-019X`, verbatim without an audit correction; `test/abc/tools/aozora_csv_test.clj` covers those cases.
+- **ADR-0016-C3 — fixture-behavior:** `parse-date` maps the tested Japanese BCE-century prose, including `紀元前7世紀末` to `-06XX` and `紀元前6世紀初` to `-05XX`, and records the source phrase under `century-prose`; `test/abc/tools/aozora_csv_test.clj` covers those cases.
+- **ADR-0016-C4 — fixture-behavior:** `record->graph` emits the tested decade and BCE-century values only as `abc:EDTF` echoes and omits the RDA precision predicate; `test/abc/tools/person_record_test.clj` covers birth and death examples.
 
 ## Out-of-Scope (v0.1, deferred to future ADRs)
 

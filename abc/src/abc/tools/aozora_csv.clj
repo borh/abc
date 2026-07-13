@@ -214,29 +214,31 @@
     "あり" false
     nil))
 
+(defn- edition-key [n base]
+  (str base n))
+
 (defn- source-edition-from
   "Build a source-edition map from the columns indexed `n` (1 or 2).
   Returns nil when both title and publisher are blank."
   [row n]
-  (let [k (fn [base] (str base n))
-        title (nonblank (get row (k "底本名")))
-        publisher (nonblank (get row (k "底本出版社名")))]
+  (let [title (nonblank (get row (edition-key n "底本名")))
+        publisher (nonblank (get row (edition-key n "底本出版社名")))]
     (when (and title publisher)
       (cond-> {"title" (nfc title)
                "publisher" (nfc publisher)}
-        (nonblank (get row (k "底本初版発行年")))
-        (assoc "first_edition_year" (nfc (get row (k "底本初版発行年"))))
-        (nonblank (get row (k "入力に使用した版")))
-        (assoc "input_edition" (nfc (get row (k "入力に使用した版"))))
-        (nonblank (get row (k "校正に使用した版")))
-        (assoc "proof_edition" (nfc (get row (k "校正に使用した版"))))
-        (nonblank (get row (k "底本の親本名")))
-        (assoc "parent_title" (nfc (get row (k "底本の親本名"))))
-        (nonblank (get row (k "底本の親本出版社名")))
-        (assoc "parent_publisher" (nfc (get row (k "底本の親本出版社名"))))
-        (nonblank (get row (k "底本の親本初版発行年")))
+        (nonblank (get row (edition-key n "底本初版発行年")))
+        (assoc "first_edition_year" (nfc (get row (edition-key n "底本初版発行年"))))
+        (nonblank (get row (edition-key n "入力に使用した版")))
+        (assoc "input_edition" (nfc (get row (edition-key n "入力に使用した版"))))
+        (nonblank (get row (edition-key n "校正に使用した版")))
+        (assoc "proof_edition" (nfc (get row (edition-key n "校正に使用した版"))))
+        (nonblank (get row (edition-key n "底本の親本名")))
+        (assoc "parent_title" (nfc (get row (edition-key n "底本の親本名"))))
+        (nonblank (get row (edition-key n "底本の親本出版社名")))
+        (assoc "parent_publisher" (nfc (get row (edition-key n "底本の親本出版社名"))))
+        (nonblank (get row (edition-key n "底本の親本初版発行年")))
         (assoc "parent_first_edition_year"
-               (nfc (get row (k "底本の親本初版発行年"))))))))
+               (nfc (get row (edition-key n "底本の親本初版発行年"))))))))
 
 (defn parse-work-fields-from-row [row]
   (let [editions (filterv some? [(source-edition-from row 1)
@@ -303,7 +305,7 @@
         work-ids (distinct (map #(get % "work_id") works))]
     (assert (= 1 (count work-ids))
             (str "rows must share work_id; got: " (vec work-ids)))
-    (let [ragged (count (filter ragged-key rows))]
+    (let [ragged (count (filter #(get % ragged-key) rows))]
       (when (pos? ragged)
         (throw (ex-info (str "work " (first work-ids)
                              " has " ragged " ragged CSV row(s)")
@@ -327,13 +329,13 @@
                                         " has divergent bodies across CSV rows")
                                    {:person-id pid
                                     :bodies unique})))
-                         [pid (first unique)])))
-                per-pid)
+                         [pid (first unique)]))
+                     per-pid))
           corrections-by-pid
           (into {}
                 (map (fn [[pid xs]]
-                       [pid (vec (distinct (mapcat :corrections xs)))]))
-                per-pid)
+                       [pid (vec (distinct (mapcat :corrections xs)))])
+                     per-pid))
           contributors (->> rows
                             (mapv parse-contributor-from-row)
                             distinct

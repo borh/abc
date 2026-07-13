@@ -59,8 +59,7 @@
       hash/format-sha256))
 
 (defn- read-bytes ^bytes [path]
-  (with-open [in (io/input-stream (io/file path))]
-    (.readAllBytes in)))
+  (files/read-bytes path))
 
 (defn- artifact-uri [artifact-id]
   (str artifact-base-uri (string/replace artifact-id #"^sha256:" "sha256-")))

@@ -1,6 +1,7 @@
 (ns abc.tools.adr-evidence-runtime-inputs
   (:require [abc.tools.evidence-io :as evidence-io]
             [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.path-containment :as containment]
             [babashka.fs :as fs]
             [babashka.process :as process]
@@ -177,18 +178,63 @@
      abc.tools.evidence-io/record-read!
      abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure!
      abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace!
-     abc.tools.aat-parser-ir-compat/load-registry
-     abc.tools.aat-parser-ir-compat/compatible?
      abc.tools.json/write-deterministic-json-file!
+     abc.tools.files/read-text abc.tools.files/read-bytes
+     abc.tools.files/input-stream abc.tools.files/reader abc.tools.files/list-files
+     abc.tools.files/list-files-if-directory
+     abc.tools.files/exists? abc.tools.files/directory? abc.tools.files/file?
+     abc.tools.files/read-edn abc.tools.files/read-json-lines
+     abc.tools.files/with-zip-file abc.tools.files/load-jena-model
+     abc.tools.files/parse-xml-document abc.tools.files/copy-file!
+     abc.tools.files/create-dirs! abc.tools.files/create-parent-dirs!
+     abc.tools.files/write-bytes! abc.tools.files/write-text!
+     abc.tools.validate-design-bundle/load-turtle-graph
+     abc.sim.render/init-repo!
+     abc.git/load-git-repo
+     abc.git/add-file! abc.git/commit! abc.git/commit-at!
+     abc.git/write-blob-at!
+     abc.tools.logging/log!
+     abc.tools.shacl/load-shapes-graph
+     abc.tools.aozora-history-audit/prepare-owned-path!
+     abc.tools.aozora-ingest/open-zip
+     abc.tools.aozora-ingest/read-zip-csv
+     abc.tools.malli/cached-schema
+     abc.tools.json/read-json-file
+     abc.tools.hash/sha256-file
+     abc.tools.hash/byte-length})
+
+(def ^:private audited-structural-leaf-vars
+  '#{abc.tools.hash/sha256-bytes
+     abc.tools.jcs/canonical-json-string
+     abc.tools.jcs/rfc8785-string-domain-json-bytes
+     abc.tools.path-containment/path-state
+     abc.tools.schema/validation-errors
+     abc.tools.linked-art/expand-document
+     abc.tools.manifest-to-rdf/manifest->graph
+     abc.tools.manifest-to-rdf/graph->ttl
+     abc.sim.content-sim-test/ex-chain
+     abc.sim.render/csv->zip-bytes
+     abc.sim.render/content-sources
+     abc.sim.render/model->rows
+     abc.sim.oracle/expected-selection})
+
+(defn- trusted-leaf-var? [var]
+  (or (contains? trusted-adapter-vars var)
+      (contains? audited-structural-leaf-vars var)))
+
+(def ^:private legacy-foundation-terminal-vars
+  "The exact broad terminal frontier used by foundation captures before the
+  focused-v3 adapter audit. It is available only through the foundation
+  compatibility entry point; none of these Vars becomes globally trusted."
+  '#{abc.tools.aat-parser-ir-compat/load-registry
+     abc.tools.aat-parser-ir-compat/compatible?
      abc.tools.materialize-import/materialize-import!
      abc.tools.materialize-import/parser-ir-manifest
-     abc.tools.linked-art/expand-document
      abc.tools.linked-art/write-publication-view!
      abc.tools.manifest-to-rdf/manifest->ttl
      abc.tools.metadata-record/record->graph
      abc.tools.metadata-record/record+persons->graph
      abc.tools.metadata-record/record+persons->ttl
-     abc.tools.shacl/load-shapes-graph
      abc.tools.shacl/validate!
      abc.tools.materialize-source-snapshot/materialize-source-snapshot!
      abc.tools.source-snapshot-fixture/legacy-workset-entry!
@@ -209,31 +255,145 @@
      abc.tools.source-bundle-test/understate-first-central-size!
      abc.tools.source-bundle-test/write-zip!
      abc.tools.validate-design-bundle-test/aat-parser-ir-compatibility-assertions
-     abc.tools.schema-validation-evidence-test/write-canonicalization-fixtures!
-     abc.tools.files/read-text abc.tools.files/read-bytes
-     abc.tools.files/input-stream abc.tools.files/reader abc.tools.files/list-files
-     abc.tools.files/exists? abc.tools.files/directory? abc.tools.files/file?
-     abc.tools.files/read-edn abc.tools.files/read-json-lines
-     abc.tools.files/with-zip-file abc.tools.files/load-jena-model
-     abc.tools.files/parse-xml-document
-     abc.tools.json/read-json-file
-     abc.tools.hash/sha256-file
-     abc.tools.hash/byte-length})
+     abc.tools.schema-validation-evidence-test/write-canonicalization-fixtures!})
 
-(def ^:private audited-structural-leaf-vars
-  '#{abc.tools.hash/sha256-bytes
-     abc.tools.jcs/canonical-json-string
-     abc.tools.jcs/rfc8785-string-domain-json-bytes
-     abc.tools.path-containment/path-state
-     abc.tools.schema/validation-errors
-     abc.sim.content-sim-test/ex-chain
-     abc.sim.render/content-sources
-     abc.sim.render/model->rows
-     abc.sim.oracle/expected-selection})
+(def foundation-catalog-contract
+  {:path "data/adr-evidence/foundation-observation-catalog.edn"
+   :sha256 "3306784360eadf21784de59da7849016a43dc1c04443755e77d535c267b08385"})
 
-(defn- trusted-leaf-var? [var]
-  (or (contains? trusted-adapter-vars var)
-      (contains? audited-structural-leaf-vars var)))
+(defn- exact-foundation-focus-vars! [repo-root]
+  (let [{:keys [path sha256]} foundation-catalog-contract
+        state (containment/path-state repo-root path)
+        file (:path state)
+        actual-sha256 (when (and (= :ok (:state state))
+                                 (fs/regular-file? file))
+                        (hash/sha256-file file))]
+    (when-not (= sha256 actual-sha256)
+      (fail! :invalid-foundation-conformance-profile
+             "foundation compatibility requires the immutable catalog contract"
+             :path path :expected-sha256 sha256 :actual-sha256 actual-sha256))
+    (into #{} (map :focus-var)
+          (:focused-observations (files/read-edn file)))))
+
+(declare raw-capability-operation traced-loader-path-index)
+
+(def ^:private trusted-adapter-operation-counts
+  '{abc.git/add-file! {addFilepattern 1}
+    abc.git/commit! {setMessage 1 setAuthor 1 setCommitter 1}
+    abc.git/commit-at! {PersonIdent 1 from 1 parse 1 getTimeZone 1}
+    abc.git/load-git-repo {load-repo 1}
+    abc.git/write-blob-at! {make-parents 1 output-stream 1 write 1}
+    abc.sim.content-sim-test/ex-chain {getCause 1}
+    abc.sim.oracle/expected-selection {}
+    abc.sim.render/content-sources {}
+    abc.sim.render/csv->zip-bytes
+    {ByteArrayOutputStream 1 ZipEntry 1 setTime 1 ZipOutputStream 1
+     putNextEntry 2 write 2 closeEntry 1 toByteArray 1}
+    abc.sim.render/init-repo! {init 1 setDirectory 1}
+    abc.sim.render/model->rows {}
+    abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure! {}
+    abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace! {}
+    abc.tools.aozora-history-audit/prepare-owned-path! {exists? 1 delete-tree 1}
+    abc.tools.aozora-ingest/open-zip {ZipFile 1}
+    abc.tools.aozora-ingest/read-zip-csv
+    {entries 1 getInputStream 1 readAllBytes 1 getLastModifiedTime 1
+     toInstant 1 String 1}
+    abc.tools.evidence-io/record-read! {}
+    abc.tools.evidence-io/with-ephemeral-root {}
+    abc.tools.evidence-io/with-owned-ephemeral-root {with-temp-dir 1}
+    abc.tools.evidence-io/with-read-trace {}
+    abc.tools.files/copy-file! {create-dirs 1 copy 1}
+    abc.tools.files/create-dirs! {create-dirs 1}
+    abc.tools.files/create-parent-dirs! {make-parents 1}
+    abc.tools.files/directory? {directory? 1}
+    abc.tools.files/exists? {exists? 1}
+    abc.tools.files/file? {regular-file? 1}
+    abc.tools.files/input-stream {input-stream 1}
+    abc.tools.files/list-files {list-dir 1}
+    abc.tools.files/list-files-if-directory {directory? 1}
+    abc.tools.files/load-jena-model {loadModel 1}
+    abc.tools.files/parse-xml-document
+    {newInstance 1 setNamespaceAware 1 parse 1 newDocumentBuilder 1}
+    abc.tools.files/read-bytes {read-all-bytes 1}
+    abc.tools.files/read-edn {read-string 1 slurp 1}
+    abc.tools.files/read-json-lines {slurp 1}
+    abc.tools.files/read-text {slurp 1}
+    abc.tools.files/reader {reader 1}
+    abc.tools.files/with-zip-file {ZipFile 1}
+    abc.tools.files/write-bytes! {output-stream 1 write 1}
+    abc.tools.files/write-text! {spit 1}
+    abc.tools.hash/byte-length {}
+    abc.tools.hash/sha256-bytes {update 1 digest 1}
+    abc.tools.hash/sha256-file {input-stream 1 read 1 update 1 digest 1}
+    abc.tools.jcs/canonical-json-string {}
+    abc.tools.jcs/rfc8785-string-domain-json-bytes {}
+    abc.tools.json/read-json-file {read-json 1}
+    abc.tools.json/write-deterministic-json-file!
+    {getParent 1 make-parents 1 toFile 1 fromString 1 getFileName 1 toPath 2
+     createTempFile 1 setPosixFilePermissions 1 move 1 write 2 writer 1
+     deleteIfExists 1}
+    abc.tools.linked-art/expand-document {expand 1 loader 1 base 1 get 1}
+    abc.tools.logging/log! {log! 1}
+    abc.tools.malli/cached-schema {}
+    abc.tools.manifest-to-rdf/graph->ttl {}
+    abc.tools.manifest-to-rdf/manifest->graph {}
+    abc.tools.path-containment/path-state
+    {resolve 1 startsWith 2 exists? 1 toRealPath 2}
+    abc.tools.schema/validation-errors {}
+    abc.tools.shacl/load-shapes-graph {input-stream 1 read 1 getGraph 1}
+    abc.tools.validate-design-bundle/load-turtle-graph {read 1}})
+
+(def ^:private trusted-adapter-traced-loaders
+  '{abc.git/load-git-repo {load-repo 0}
+    abc.tools.aozora-ingest/open-zip {ZipFile 0}
+    abc.tools.files/input-stream {input-stream 0}
+    abc.tools.files/load-jena-model {loadModel 0}
+    abc.tools.files/parse-xml-document {parse 1}
+    abc.tools.files/read-bytes {read-all-bytes 0}
+    abc.tools.files/read-edn {slurp 0}
+    abc.tools.files/read-json-lines {slurp 0}
+    abc.tools.files/read-text {slurp 0}
+    abc.tools.files/reader {reader 0}
+    abc.tools.files/with-zip-file {ZipFile 0}
+    abc.tools.hash/sha256-file {input-stream 0}
+    abc.tools.json/read-json-file {read-json 0}})
+
+(def ^:private traced-path-wrappers
+  '#{str clojure.core/str io/file clojure.java.io/file
+     fs/file babashka.fs/file})
+
+(def ^:private traced-record-read-heads
+  '#{evidence-io/record-read! abc.tools.evidence-io/record-read!})
+
+(defn- traced-path-expression? [form]
+  (when (and (seq? form) (symbol? (first form)) (= 2 (count form)))
+    (let [[head argument] form
+          wrapper? (contains? traced-path-wrappers head)]
+      (or (contains? traced-record-read-heads head)
+          (and wrapper?
+               (traced-path-expression? argument))))))
+
+(defn- audit-trusted-adapter-form! [var form]
+  (let [actual (->> (tree-seq coll? seq form)
+                    (keep #(when (seq? %)
+                             (raw-capability-operation (first %))))
+                    frequencies)
+        expected (get trusted-adapter-operation-counts var {})]
+    (when-not (= expected actual)
+      (fail! :forbidden-evidence-capability
+             "trusted adapter capability inventory differs from its audited shape"
+             :var var :expected expected :actual actual))
+    (doseq [candidate (tree-seq coll? seq form)
+            :when (seq? candidate)
+            :let [path-index (traced-loader-path-index var candidate)]
+            :when (some? path-index)]
+      (when-not (traced-path-expression? (nth (rest candidate)
+                                              path-index
+                                              nil))
+        (fail! :forbidden-evidence-capability
+               "trusted path loader must consume its traced path"
+               :var var :form (pr-str candidate)))))
+  true)
 
 (def ^:private audited-higher-order-signatures
   '{abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace! #{1}
@@ -247,6 +407,7 @@
     clojure.core/mapcat :first
     clojure.core/map-indexed :first
     clojure.core/filter :first
+    clojure.core/filterv :first
     clojure.core/remove :first
     clojure.core/keep :first
     clojure.core/keep-indexed :first
@@ -281,17 +442,18 @@
 ;; boundaries; additions require a focused positive test and review.
 (def ^:private audited-safe-external-vars
   '#{clojure.core/= clojure.core/not= clojure.core/not clojure.core/< clojure.core/<=
-     clojure.core/> clojure.core/>= clojure.core/+ clojure.core/-
+     clojure.core/> clojure.core/>= clojure.core/+ clojure.core/- clojure.core/max
      clojure.core/* clojure.core// clojure.core/inc clojure.core/dec
-     clojure.core/identity clojure.core/constantly clojure.core/ex-data
+     clojure.core/identity clojure.core/constantly clojure.core/if-not
+     clojure.core/atom clojure.core/deref clojure.core/swap! clojure.core/ex-data
      clojure.core/ex-info clojure.core/ex-message clojure.core/instance?
-     clojure.core/iterator-seq clojure.core/make-array
+     clojure.core/enumeration-seq clojure.core/iterator-seq clojure.core/make-array
      clojure.core/str clojure.core/pr-str clojure.core/format
      clojure.core/name clojure.core/namespace
      clojure.core/symbol clojure.core/keyword clojure.core/boolean
      clojure.core/key clojure.core/val
      clojure.core/count clojure.core/empty? clojure.core/seq clojure.core/first
-     clojure.core/second clojure.core/rest clojure.core/next clojure.core/last clojure.core/nth
+     clojure.core/second clojure.core/ffirst clojure.core/rest clojure.core/next clojure.core/last clojure.core/nth
      clojure.core/peek clojure.core/pop
      clojure.core/get clojure.core/get-in clojure.core/find clojure.core/contains?
      clojure.core/keys clojure.core/vals clojure.core/select-keys
@@ -300,13 +462,13 @@
      clojure.core/merge
      clojure.core/distinct clojure.core/dedupe clojure.core/sort
      clojure.core/frequencies
-     clojure.core/vector clojure.core/vec clojure.core/set clojure.core/hash-map
+     clojure.core/vector clojure.core/vec clojure.core/set clojure.core/hash-map clojure.core/zipmap
      clojure.core/sorted-map clojure.core/sorted-set clojure.core/range
      clojure.core/take clojure.core/drop clojure.core/take-while
      clojure.core/drop-while clojure.core/subvec
-     clojure.core/take-nth clojure.core/concat clojure.core/reverse clojure.core/repeat
+     clojure.core/take-nth clojure.core/concat clojure.core/cons clojure.core/reverse clojure.core/repeat
      clojure.core/byte-array clojure.core/unchecked-byte
-     clojure.core/string? clojure.core/symbol? clojure.core/keyword?
+     clojure.core/string? clojure.core/symbol? clojure.core/keyword? clojure.core/bytes?
      clojure.core/map? clojure.core/set? clojure.core/vector? clojure.core/seq?
      clojure.core/coll? clojure.core/integer? clojure.core/number?
      clojure.core/sequential? clojure.core/qualified-symbol?
@@ -321,13 +483,13 @@
      clojure.set/union clojure.set/difference clojure.set/intersection
      clojure.set/subset? clojure.java.io/file
      arachne.aristotle/graph
-     charred.api/read-json-str charred.api/write-json-str
+     charred.api/read-csv charred.api/read-json-str charred.api/write-json-str
      babashka.fs/absolute? babashka.fs/absolutize babashka.fs/file
-     babashka.fs/file-name babashka.fs/normalize babashka.fs/path
-     babashka.fs/relativize})
+     babashka.fs/file-name babashka.fs/normalize babashka.fs/parent babashka.fs/path
+     babashka.fs/relativize arachne.aristotle/add})
 
 (def ^:private audited-special-heads
-  '#{fn* fn if let* let loop* loop recur do throw try catch finally
+  '#{fn* fn if if-not let* let loop* loop recur do throw try catch finally
      -> ->> some-> some->> cond-> cond->>
      set! monitor-enter monitor-exit case* deftype* reify*})
 
@@ -341,7 +503,7 @@
       :last (with-meta (apply list (concat parts [nil])) (meta step)))))
 
 (def ^:private audited-core-macros
-  '#{and or when when-not if-let when-let if-some when-some cond condp case
+  '#{and or when when-not if-let when-let if-some when-some cond condp case with-redefs
      doseq for dotimes letfn binding with-open lazy-seq doto assert})
 
 (def ^:private audited-noncore-macros
@@ -351,14 +513,18 @@
 ;; constructors, static JVM I/O, network, and process APIs go through named
 ;; adapters instead.
 (def ^:private audited-safe-jvm-heads
-  '#{.add .find .getBlankNodeLabel .getBytes .getLiteralDatatypeURI
+  '#{.add .close .contains .find .getBlankNodeLabel .getBytes .getLiteralDatatypeURI
      .getLiteralLanguage .getLiteralLexicalForm .getName .getObject
-     .getPredicate .getSchema .getSubject .getURI .isBefore .isBlank
+     .focusNode .getEntries .getMessage .getPredicate .getSafeTypeByName .getSchema .getScheme
+     .getSubject .getURI .lastIndexOf .level .message .resultPath .severity .source
+     .charAt .conforms .isAbsolute .isBefore .isBlank .length .substring .validate
      .isLiteral .isURI})
 
 (def ^:private audited-safe-jvm-vars
-  '#{Integer/parseInt JsonDocument/of LocalDate/parse MessageDigest/getInstance
-     GraphUtil/addInto NodeFactory/createURI Triple/create})
+  '#{BaseDatatype. ByteArrayInputStream. Integer/parseInt JsonDocument/of LocalDate/parse Normalizer/normalize
+     ShaclValidator/get YearMonth/parse java.net.URI.
+     MessageDigest/getInstance GraphUtil/addInto ModelFactory/createDefaultModel NodeFactory/createBlankNode
+     NodeFactory/createLiteral NodeFactory/createURI Triple/create TypeMapper/getInstance})
 
 (defn- forbidden-head? [head]
   (let [simple (-> (name head)
@@ -369,12 +535,64 @@
                    symbol)]
     (contains? forbidden-simple simple)))
 
+(def ^:private raw-namespace-aliases
+  '#{fs io Files RDFDataMgr tel git})
+
+(def ^:private raw-namespace-names
+  #{"babashka.fs" "clojure.java.io" "java.nio.file.Files"
+    "org.apache.jena.riot.RDFDataMgr"})
+
+(def ^:private raw-simple-heads
+  '#{slurp spit line-seq file-seq eval read-string load-string load-file
+     resolve ns-resolve requiring-resolve sh shell process
+     read-all-bytes readAllBytes readString newInputStream input-stream inputStream
+     reader FileReader ZipFile listFiles list-dir directory? regular-file? exists?
+     loadModel loadGraph readDataset read read-json openStream URL parse
+     create-dirs delete-tree copy output-stream make-parents
+     load-repo})
+
+(defn- head-simple [head]
+  (-> (name head)
+      (str/replace #"^\." "")
+      (str/replace #"\.$" "")
+      (str/split #"\.")
+      last
+      symbol))
+
+(defn- jvm-invocation-head? [head]
+  (or (= 'new head)
+      (= '. head)
+      (str/starts-with? (name head) ".")
+      (str/ends-with? (name head) ".")
+      (and (namespace head)
+           (re-matches #"[A-Z].*" (last (str/split (namespace head) #"\."))))))
+
+(defn- raw-capability-operation [head]
+  (when (symbol? head)
+    (let [simple (head-simple head)
+          alias (some-> (namespace head) symbol)]
+      (when (or (contains? raw-simple-heads simple)
+                (contains? forbidden-vars head)
+                (and (or (contains? raw-namespace-aliases alias)
+                         (contains? raw-namespace-names (namespace head)))
+                     (not (contains? '#{file path parent normalize relativize file-name
+                                        absolute? absolutize}
+                                     simple)))
+                (and (jvm-invocation-head? head)
+                     (not (contains? audited-safe-jvm-heads head))
+                     (not (contains? audited-safe-jvm-vars head))))
+        simple))))
+
+(defn- traced-loader-path-index [var form]
+  (get-in trusted-adapter-traced-loaders
+          [var (raw-capability-operation (first form))]))
+
 (defn- kondo-analysis! [repo-root]
   (let [config (pr-str {:output {:format :edn}
                         :analysis {:var-definitions true :var-usages true
                                    :locals true :local-usages true}})
         {:keys [exit out]} @(process/process
-                             ["clj-kondo" "--fail-level" "error"
+                             ["clj-kondo" "--cache" "false" "--fail-level" "error"
                               "--lint" "src" "test" "--config" config]
                              {:dir (str repo-root) :out :string :err :out})
         output out]
@@ -418,8 +636,45 @@
 
 (defn- defn-form [forms name]
   (some (fn [form]
-          (when (and (seq? form) (#{'defn 'defn- 'deftest} (first form)) (= name (second form))) form))
-        forms))
+          (when (and (seq? form) (#{'defn 'defn- 'deftest} (first form))
+                     (= name (second form)))
+            form))
+        (tree-seq coll? seq forms)))
+
+(def ^:private audited-static-code-loading-edges
+  '{abc.tools.malli/cached-schema-hash
+    abc.tools.manifest/schema-hash})
+
+(defn- audit-static-code-loading-edge! [var form]
+  (let [expected (get audited-static-code-loading-edges var)
+        capabilities (->> (tree-seq coll? seq form)
+                          (keep #(when (seq? %)
+                                   (raw-capability-operation (first %))))
+                          frequencies)
+        actual (->> (tree-seq coll? seq form)
+                    (keep (fn [candidate]
+                            (when (and (seq? candidate)
+                                       (= 'requiring-resolve (first candidate)))
+                              (let [[_ quoted & extra] candidate]
+                                (when-not (and (empty? extra)
+                                               (seq? quoted)
+                                               (= 'quote (first quoted))
+                                               (= 2 (count quoted))
+                                               (qualified-symbol? (second quoted)))
+                                  (fail! :forbidden-evidence-capability
+                                         "static code-loading edge is malformed"
+                                         :var var :form (pr-str candidate)))
+                                (second quoted)))))
+                    vec)]
+    (when-not (= {'requiring-resolve 1} capabilities)
+      (fail! :forbidden-evidence-capability
+             "static code-loading bridge contains another raw capability"
+             :var var :actual capabilities))
+    (when-not (= [expected] actual)
+      (fail! :forbidden-evidence-capability
+             "static code-loading edge differs from its exact audited target"
+             :var var :expected expected :actual actual))
+    expected))
 
 (defn validate-focused-deftests!
   "Require each v2 focus to resolve uniquely to a deftest source form."
@@ -445,13 +700,22 @@
 
 (defn- parse-defn [form]
   (if (= 'deftest (first form))
-    {:params [] :body (drop 2 form)}
+    [{:params [] :body (drop 2 form)}]
     (let [[_ _ & tail] form
           tail (cond-> tail (string? (first tail)) rest (map? (first tail)) rest)
           arities (if (vector? (first tail)) [(cons (first tail) (rest tail))] tail)]
-      (when-not (= 1 (count arities))
-        (fail! :unsupported-evidence-call-graph "multi-arity defn is outside the audited subset"))
-      {:params (first (first arities)) :body (rest (first arities))})))
+      (when-not (and (seq arities)
+                     (every? #(vector? (first %)) arities)
+                     (or (= 1 (count arities))
+                         (and (every? #(not-any? #{'&} (first %)) arities)
+                              (= (count arities)
+                                 (count (distinct (map #(count (first %)) arities)))))))
+        (fail! :unsupported-evidence-call-graph
+               "defn must have distinct finite fixed arities"
+               :form (pr-str form)))
+      (mapv (fn [arity]
+              {:params (first arity) :body (rest arity)})
+            arities))))
 
 (defn- parse-literal-fn [form]
   (let [[_ & tail] form
@@ -460,7 +724,8 @@
     (when-not (and (= 1 (count arities))
                    (vector? (first (first arities))))
       (fail! :unsupported-evidence-call-graph
-             "higher-order literal function must have exactly one arity"))
+             "higher-order literal function must have exactly one arity"
+             :form (pr-str form)))
     {:params (first (first arities)) :body (rest (first arities))}))
 
 (defn- binding-symbols [binding-form]
@@ -497,10 +762,8 @@
                :caller caller :path path))
       [path value])))
 
-(defn analyze-reachable-vars
-  "Return the exact call graph admitted by the evidence closed subset. clj-kondo
-  resolves Vars; tools.reader identifies list-head and defn-parameter spans."
-  [repo-root focused-vars]
+(defn- analyze-reachable-vars*
+  [repo-root focused-vars additional-terminal-vars]
   (let [repo-root (fs/file (fs/canonicalize repo-root))
         kondo (kondo-analysis! repo-root)
         analysis (:analysis kondo)
@@ -528,6 +791,15 @@
               (or (get @forms-cache filename)
                   (let [forms (read-source-forms! (fs/file repo-root filename))]
                     (swap! forms-cache assoc filename forms) forms)))
+            (audit-trusted-adapter! [var]
+              (when (trusted-leaf-var? var)
+                (let [definition (definition! var)
+                      form (defn-form (forms! (:filename definition))
+                             (:name definition))]
+                  (when-not form
+                    (fail! :unsupported-evidence-call-graph
+                           "trusted adapter is not a direct defn" :var var))
+                  (audit-trusted-adapter-form! var form))))
             (direct-body-call-target [definition form]
               (when (and (seq? form) (symbol? (first form)))
                 (let [head (first form)
@@ -548,8 +820,11 @@
                        "higher-order target is a forbidden capability"
                        :caller caller :target target)
 
+                (contains? additional-terminal-vars target)
+                (swap! reachable conj target)
+
                 (trusted-leaf-var? target)
-                (do (definition! target)
+                (do (audit-trusted-adapter! target)
                     (swap! reachable conj target))
 
                 (contains? definitions target)
@@ -571,6 +846,8 @@
                        :caller caller :target target)))
             (resolve-callable-argument! [caller definition params argument pending]
               (cond
+                (or (keyword? argument) (set? argument) (map? argument)) nil
+
                 (and (seq? argument) (#{'fn 'fn*} (first argument)))
                 (let [{literal-params :params body :body} (parse-literal-fn argument)
                       lambda-params (binding-symbols literal-params)]
@@ -651,6 +928,7 @@
                     (or (= 'new head)
                         (= '. head)
                         (str/starts-with? (name head) ".")
+                        (str/ends-with? (name head) ".")
                         (and (namespace head)
                              (re-matches #"[A-Z].*" (last (str/split (namespace head) #"\.")))))
                     (when-not (or (contains? audited-safe-jvm-heads head)
@@ -701,8 +979,12 @@
                           (validate-higher-order-call! caller definition params
                                                        target form pending))
                         (cond
-                          (trusted-leaf-var? target)
+                          (contains? additional-terminal-vars target)
                           (swap! reachable conj target)
+
+                          (trusted-leaf-var? target)
+                          (do (audit-trusted-adapter! target)
+                              (swap! reachable conj target))
                           (contains? definitions target)
                           (do
                             (when (and (:macro (get definitions target))
@@ -740,7 +1022,8 @@
                              (and (not (:macro target-definition))
                                   (or (:fixed-arities target-definition)
                                       (:varargs-min-arity target-definition))))
-                           (not (trusted-leaf-var? target)))
+                           (not (or (contains? additional-terminal-vars target)
+                                    (trusted-leaf-var? target))))
                       ;; A directly resolved Var is already a finite target: add
                       ;; its graph. Only function-valued parameters need the
                       ;; caller-scoped contract handled above.
@@ -763,12 +1046,18 @@
                               (get findings filename))
                     (fail! :unresolved-call-edge "clj-kondo found an error in reachable Var" :var var))
                   (swap! reachable conj var)
-                  (let [{:keys [params body]} (parse-defn form)]
-                    (swap! direct-body-calls assoc var
-                           (into (sorted-set)
-                                 (keep #(direct-body-call-target definition %) body)))
-                    (doseq [x body]
-                      (walk! var definition (set (filter symbol? params)) x pending))))))]
+                  (if (contains? audited-static-code-loading-edges var)
+                    (let [target (audit-static-code-loading-edge! var form)]
+                      (swap! resolved-calls conj target)
+                      (swap! pending conj target))
+                    (let [arities (parse-defn form)
+                          body (mapcat :body arities)]
+                      (swap! direct-body-calls assoc var
+                             (into (sorted-set)
+                                   (keep #(direct-body-call-target definition %) body)))
+                      (doseq [{:keys [params body]} arities
+                              x body]
+                        (walk! var definition (set (filter symbol? params)) x pending)))))))]
       (let [pending (atom (into (sorted-set) focused-vars))]
         (loop []
           (when-let [var (first @pending)]
@@ -781,6 +1070,25 @@
        :direct-body-call-vars @direct-body-calls
        :paths (->> @reachable (map #(-> definitions (get %) :filename)) distinct sort vec)
        :contract-paths (vec @consulted)})))
+
+(defn analyze-reachable-vars
+  "Return the exact call graph admitted by the evidence closed subset. clj-kondo
+  resolves Vars; tools.reader identifies list-head and defn-parameter spans."
+  [repo-root focused-vars]
+  (analyze-reachable-vars* repo-root focused-vars #{}))
+
+(defn analyze-foundation-reachable-vars
+  "Reproduce the frozen pre-focused-v3 terminal frontier for the immutable
+  foundation catalog. Callers must first validate that exact catalog contract."
+  [repo-root focused-vars]
+  (let [admitted (exact-foundation-focus-vars! repo-root)]
+    (when-not (and (seq focused-vars)
+                   (set/subset? (set focused-vars) admitted))
+      (fail! :invalid-foundation-conformance-profile
+             "foundation compatibility accepts only immutable foundation focuses"
+             :focused-vars (vec (sort focused-vars))))
+    (analyze-reachable-vars* repo-root focused-vars
+                             legacy-foundation-terminal-vars)))
 
 (def ^:private required-v2-boundary-vars
   '#{abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace!})

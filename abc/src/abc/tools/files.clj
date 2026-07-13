@@ -50,6 +50,24 @@
     (doseq [file files] (evidence-io/record-read! file))
     files))
 
+(defn list-files-if-directory [directory]
+  (if (fs/directory? directory)
+    (list-files directory)
+    []))
+
+(defn create-dirs! [path]
+  (fs/create-dirs path))
+
+(defn create-parent-dirs! [path]
+  (io/make-parents (io/file path)))
+
+(defn write-bytes! [path bytes]
+  (with-open [output (io/output-stream path)]
+    (.write output ^bytes bytes)))
+
+(defn write-text! [path text]
+  (spit path text))
+
 (defn exists? [path]
   (fs/exists? (evidence-io/record-read! path)))
 

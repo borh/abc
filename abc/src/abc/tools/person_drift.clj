@@ -120,7 +120,7 @@
       (map (fn [id] {:code :duplicate-snapshot-id :snapshot_id id})
            (duplicate-values snapshot-ids))
       (map (fn [id] {:code :unknown-snapshot-reference :snapshot_id id})
-           (sort (remove snapshot-set referenced)))
+           (sort (remove #(contains? snapshot-set %) referenced)))
       (map (fn [id] {:code :participant-not-covered :snapshot_id id})
            (sort (set/difference participant-set referenced)))
       (map (fn [id] {:code :participant-in-both-used-and-generated :snapshot_id id})
@@ -177,7 +177,8 @@
        (hash-short (get participant "person_record_hash"))))
 
 (defn- participant-by-id [event]
-  (into {} (map (juxt #(get % "snapshot_id") identity)
+  (into {} (map (fn [participant]
+                  [(get participant "snapshot_id") participant])
                 (get event "participants"))))
 
 (defn- subclass-type-uri [event-type]
@@ -286,24 +287,25 @@
   (let [by-id (participant-by-id event)]
     (set (map #(snapshot-iri (get by-id %)) snapshot-ids))))
 
+(defn- participant-prov-mismatch [field expected actual]
+  (when (not= expected actual)
+    {:code :rdf-participant-prov-mismatch
+     :field field
+     :expected (sort expected)
+     :actual (sort actual)}))
+
 (defn graph-participant-prov-failures [event graph]
   (let [event-node (event-iri (get event "drift_event_id"))
         expected-used (expected-snapshot-iris event (used-ids event))
         actual-used (uri-objects graph event-node (str prov-base "used"))
         expected-generated (expected-snapshot-iris event (generated-ids event))
         actual-generated (uri-subjects graph (str prov-base "wasGeneratedBy") event-node)
-        actual-invalidated (uri-subjects graph (str prov-base "wasInvalidatedBy") event-node)
-        mismatch (fn [field expected actual]
-                   (when (not= expected actual)
-                     {:code :rdf-participant-prov-mismatch
-                      :field field
-                      :expected (sort expected)
-                      :actual (sort actual)}))]
+        actual-invalidated (uri-subjects graph (str prov-base "wasInvalidatedBy") event-node)]
     (vec
      (keep identity
-           [(mismatch "prov:used" expected-used actual-used)
-            (mismatch "prov:wasGeneratedBy" expected-generated actual-generated)
-            (mismatch "prov:wasInvalidatedBy" expected-used actual-invalidated)]))))
+           [(participant-prov-mismatch "prov:used" expected-used actual-used)
+            (participant-prov-mismatch "prov:wasGeneratedBy" expected-generated actual-generated)
+            (participant-prov-mismatch "prov:wasInvalidatedBy" expected-used actual-invalidated)]))))
 
 (defn- shacl-failures [graph label]
   (try
@@ -330,14 +332,14 @@
   (fs/path persons-dir dirname))
 
 (defn- json-files [dir]
-  (if (fs/directory? dir)
-    (->> (fs/list-dir dir)
-         (filter #(and (fs/regular-file? %)
-                       (string/ends-with? (str (fs/file-name %)) ".json")))
-         (sort-by (comp str fs/file-name))
-         (map #(io/file (str %)))
-         vec)
-    []))
+  (let [listing (files/list-files-if-directory dir)]
+    (if (seq listing)
+      (->> listing
+           (filter #(string/ends-with? (str (fs/file-name %)) ".json"))
+           (sort-by #(str (fs/file-name %)))
+           (map #(io/file (str %)))
+           vec)
+      [])))
 
 (defn- expected-schema-hash [schema-path]
   (manifest/schema-hash schema-path))
@@ -400,16 +402,21 @@
        (into {})))
 
 (defn- expected-index-map [events]
-  (apply merge-with set/union (map participants-by-person-id events)))
+  (reduce (fn [result participants]
+            (merge-with set/union result participants))
+          {}
+          (map participants-by-person-id events)))
 
 (defn- actual-index-map [indexes]
   (into {}
         (map (fn [index]
-               [(get index "person_id") (set (get index "drift_event_ids"))]))
-        indexes))
+               [(get index "person_id") (set (get index "drift_event_ids"))])
+             indexes)))
 
 (defn- referential-integrity-failures [events indexes]
-  (let [events-by-id (into {} (map (juxt #(get % "drift_event_id") identity) events))
+  (let [events-by-id (into {} (map (fn [event]
+                                     [(get event "drift_event_id") event])
+                                   events))
         event-ids (set (keys events-by-id))
         expected (expected-index-map events)
         actual (actual-index-map indexes)

@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-29
 Accepted: 2026-04-30
+Validation scope: fixture
+Release authority: publication
 
 ## Implementation Status
 
@@ -365,38 +367,22 @@ the drift-artifact byte-identity rule.
 
 ## Acceptance Criteria
 
-- `schemas/person-drift-event.schema.json` exists and validates the wrapper JSON
-  event shape.
-- The event schema requires each `participants[]` item to carry `snapshot_id`,
-  `person_id`, and `person_record_hash`, and enforces split/merge cardinalities
-  for `prov.used` and `prov.was_generated_by`.
-- `validate-drift-events!` proves `prov.used` / `prov.was_generated_by` values
-  resolve to participant `snapshot_id`s, every participant is covered exactly
-  once, no participant appears as both predecessor and successor, and canonical
-  ordering is enforced by `test/abc/tools/person_drift_test.clj`.
-- `validate-drift-events!` rejects any `had_role` other than
-  `abc:DriftEditor`, any unresolved CURIE prefix, and any syntactically invalid
-  `qualified_association.agent` IRI.
-- `schemas/person-drift-index.schema.json` exists and validates index sidecars.
-- `schemas/manifest.shacl.ttl` includes `PersonDriftEventShape`,
-  `PersonDriftSplitEventShape`, `PersonDriftMergeEventShape`, and the three
-  subclass axioms for vocabulary documentation.
-- Unit tests prove `event->graph` materializes `rdf:type` triples and derives
-  `prov:wasInvalidatedBy`, `prov:wasAssociatedWith`, and
-  `prov:wasDerivedFrom`.
-- Unit tests prove `event->graph` derives snapshot IRIs from event-embedded
-  `person_record_hash` values, not from current person records on disk.
-- Unit tests prove `validate-drift-events!` catches typing-coherence,
-  JSON graph-coherence, participant-mismatch, and referential-integrity
-  failures.
-- The example bundle contains one fictional split event under `_events/` and
-  participant indexes under `_indexes/`.
-- Negative fixtures cover base shape failures, derived-predicate failures,
-  split/merge cardinality failures, typing-discipline failures, participant
-  mismatch, and the three referential-integrity rules.
-- `nix flake check` passes.
-- Adding the drift artifacts does not rotate `manifest.json` or
-  `manifest_identity_object`.
+- **ADR-0021-C1 — fixture-behavior:** the event schema is meta-schema-valid and accepts the tested split wrapper; `test/abc/tools/person_drift_test.clj` covers it.
+- **ADR-0021-C2 — structural-invariant:** the event schema requires the three participant fields and enforces the tested split/merge predecessor/successor cardinality bounds; `test/abc/tools/person_drift_test.clj` covers every boundary violation.
+- **ADR-0021-C3 — structural-invariant:** JSON coherence resolves used/generated snapshot IDs, requires complete disjoint coverage, and enforces participant and edge ordering; `test/abc/tools/person_drift_test.clj` covers the corresponding failure codes.
+- **ADR-0021-C4 — fixture-behavior:** JSON coherence rejects the tested disallowed role, unresolved CURIE prefix, and invalid agent IRI; `test/abc/tools/person_drift_test.clj` covers those cases.
+- **ADR-0021-C5 — fixture-behavior:** the drift index schema is meta-schema-valid and accepts the tested index sidecar; `test/abc/tools/person_drift_test.clj` covers it.
+- **ADR-0021-C6 — structural-invariant:** `manifest.shacl.ttl` contains the three named drift shapes and the three named subclass axioms; `test/abc/tools/person_drift_test.clj` asserts all six resources.
+- **ADR-0021-C7 — fixture-behavior:** `event->graph` materializes the tested RDF types and derives `prov:wasInvalidatedBy`, `prov:wasAssociatedWith`, and `prov:wasDerivedFrom`; `test/abc/tools/person_drift_test.clj` asserts the triples.
+- **ADR-0021-C8 — fixture-behavior:** the tested snapshot IRI is derived from the event participant's embedded `person_record_hash`; `test/abc/tools/person_drift_test.clj` covers the value without claiming an instrumented no-disk-read observation.
+- **ADR-0021-C9 — fixture-behavior:** the focused drift tests and negative fixtures catch the tested typing, JSON coherence, RDF participant/PROV mismatch, and three event/index referential-integrity failure families; `test/abc/tools/person_drift_test.clj` and `test/abc/tools/validate_design_bundle_test.clj` cover the exact codes.
+- **ADR-0021-C10 — fixture-behavior:** the committed example has exactly one event JSON and three participant index JSON files and validates as one event/three indexes; `test/abc/tools/person_drift_test.clj` covers the committed directory.
+- **ADR-0021-C11 — fixture-behavior:** the committed invalid drift fixtures produce the exact failure-code sets asserted by `validate-drift-fixtures-smoke-test`; `test/abc/tools/validate_design_bundle_test.clj` binds every fixture.
+- **ADR-0021-C12 — fixture-behavior:** on the bounded example ingest slice, adding only drift event/index sidecars leaves manifest bytes and `manifest_identity_object` unchanged; `test/abc/tools/aozora_ingest_test.clj` performs the isolated comparison.
+
+## Future Verification
+
+Release verification requires a fresh full-flake observation; it is not a timeless Acceptance Criterion.
 
 ## Consequences
 

@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-29
 Accepted: 2026-04-30
+Validation scope: fixture
+Release authority: publication
 
 ## Implementation Status
 
@@ -211,23 +213,10 @@ be verified as its own expected rotation.
 
 ## Acceptance Criteria
 
-- The Decision answers the identity-hash position, identifier policy,
-  multi-person indexing, drift-log identity, vocabulary, PROV graph shape, and
-  event-type set.
-- Drift events bind participant snapshots with `snapshot_id`, `person_id`, and
-  `person_record_hash`; no historical snapshot hash is derived from the current
-  person record at validation time; this is covered by
-  `test/abc/tools/person_drift_test.clj`.
-- Participant `snapshot_id` values are unique, use the committed `pre-` /
-  `post-` prefixes, and `participants[]` is stored in lexicographic
-  `snapshot_id` order so `drift_event_id` derivation is stable.
-- The chosen vocabulary maps onto PROV-O where possible and justifies every new
-  `abc:` term.
-- The canonical PROV graph appears in the Decision.
-- Adding a drift event to the example bundle does not change `manifest.json` or
-  `manifest_identity_object`.
-- If ABC-local IDs are implemented, the schema-hash cascade is explicitly
-  verified and bounded.
+- **ADR-0020-C1 — fixture-behavior:** drift participant snapshots carry `snapshot_id`, `person_id`, and `person_record_hash`, and the tested snapshot IRI is derived from the event-embedded hash; `test/abc/tools/person_drift_test.clj` covers the schema and derivation.
+- **ADR-0020-C2 — structural-invariant:** drift validation rejects duplicate snapshot IDs, predecessor/successor interleaving, wrong `pre-`/`post-` usage, and noncanonical participant/edge ordering; canonical order is part of the hashed event value; `test/abc/tools/person_drift_test.clj` covers those invariants.
+- **ADR-0020-C3 — fixture-behavior:** on the bounded example ingest slice, adding only the committed drift event/index sidecars leaves person bytes, metadata bytes, manifest bytes, and `manifest_identity_object` unchanged; `test/abc/tools/aozora_ingest_test.clj` performs the isolated before/after comparison.
+- **ADR-0020-C4 — fixture-behavior:** on the bounded example ingest slice, a synthetic rotation of only `person_record_schema_hash` changes exactly the person schema-hash field, contributor person hash, manifest metadata hash, and artifact ID while leaving semantic person/metadata fields unchanged; `test/abc/tools/aozora_ingest_test.clj` asserts the exact changed set.
 
 ## Consequences
 

@@ -6,6 +6,7 @@
   ."
   (:refer-clojure :exclude [run!])
   (:require [abc.tools.aozora-csv :as ac]
+            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
@@ -17,8 +18,7 @@
             [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.tools.cli :as cli]
-            [taoensso.telemere :as tel])
+            [clojure.tools.cli :as cli])
   (:import [java.util.zip ZipFile ZipEntry]))
 
 (def schema-path "schemas/metadata-record.schema.json")
@@ -32,7 +32,7 @@
   ZIP source validation)."
   ^ZipFile [^String zip-path]
   (try
-    (ZipFile. (io/file zip-path))
+    (ZipFile. (io/file (evidence-io/record-read! zip-path)))
     (catch java.util.zip.ZipException e
       (throw (ex-info (str zip-path " is not a readable ZIP archive")
                       {:zip-path zip-path}
@@ -118,8 +118,8 @@
   (let [pid (get record "person_id")
         target (io/file persons-dir (str pid ".json"))
         new-hash (person-record/record-hash record)]
-    (fs/create-dirs persons-dir)
-    (if (fs/exists? target)
+    (files/create-dirs! persons-dir)
+    (if (files/exists? target)
       (let [existing (try (files/read-json (str target))
                           (catch Exception e
                             (throw (ex-info (str "on-disk person file " target
@@ -176,12 +176,12 @@
           (ac/build-record-fragment-from-rows matching)
           _ (doseq [[pid corrs] (sort-by key corrections-by-pid)
                     c corrs]
-              (tel/log! :debug
-                        (str "parse-correction person=" pid
-                             " field=" (get c "field")
-                             " rule=" (get c "rule")
-                             " raw=" (pr-str (get c "raw"))
-                             " corrected=" (pr-str (get c "corrected")))))
+              (logging/log! :debug
+                            (str "parse-correction person=" pid
+                                 " field=" (get c "field")
+                                 " rule=" (get c "rule")
+                                 " raw=" (pr-str (get c "raw"))
+                                 " corrected=" (pr-str (get c "corrected")))))
           person-records
           (into (sorted-map)
                 (map (fn [[pid body]]
@@ -189,8 +189,8 @@
                                      body (get corrections-by-pid pid)
                                      source-csv-provenance)]
                          (person-record/validate! record)
-                         [pid record])))
-                persons-by-id)
+                         [pid record]))
+                     persons-by-id))
           contributor-entries
           (vec (for [c contributors
                      :let [pid (get c "person_id")]]
@@ -234,10 +234,10 @@
                         (str (fs/parent output) "/persons"))]
     (doseq [[_pid record] person-records]
       (write-person-file! persons-dir record (boolean overwrite)))
-    (fs/create-dirs (fs/parent output))
+    (files/create-dirs! (fs/parent output))
     (json/write-deterministic-json-file! (io/file output) metadata-rec)
     (let [new-hash (metadata-record/record-hash metadata-rec)]
-      (tel/log! :debug (str "metadata_record_hash: " new-hash))
+      (logging/log! :debug (str "metadata_record_hash: " new-hash))
       (when refresh-manifest
         (let [m (files/read-json refresh-manifest)
               m' (assoc-in m ["manifest_identity_object" "metadata_record_hash"] new-hash)
@@ -245,8 +245,11 @@
               artifact-id (hash/format-sha256 (hash/sha256-json-jcs identity-obj))
               m'' (assoc m' "artifact_id" artifact-id)]
           (json/write-deterministic-json-file! (io/file refresh-manifest) m'')
-          (tel/log! :info (str "refreshed manifest " refresh-manifest))))
+          (logging/log! :info (str "refreshed manifest " refresh-manifest))))
       new-hash)))
+
+(defn- append-carrier [carriers carrier]
+  (conj (or carriers []) carrier))
 
 (defn run-corpus!
   "Two-stage corpus ingest. Groups rows by work_id and writes:
@@ -298,9 +301,9 @@
                               (when (and field value)
                                 (str field "=" (pr-str value)))
                               "no detail")]
-                 (tel/log! :warn
-                           (str "skipped work " work-id ": "
-                                (.getMessage e) " — " hint)))
+                 (logging/log! :warn
+                               (str "skipped work " work-id ": "
+                                    (.getMessage e) " — " hint)))
                (update acc :skipped conj work-id))))
          {:plans [] :skipped []}
          (sort-by key rows-by-work))
@@ -309,7 +312,7 @@
         carriers-by-pid
         (reduce (fn [m {:keys [work-id person-records]}]
                   (reduce-kv (fn [m pid record]
-                               (update m pid (fnil conj [])
+                               (update m pid append-carrier
                                        {:work-id work-id :record record}))
                              m person-records))
                 (sorted-map)
@@ -327,23 +330,25 @@
                                 "chosen_work_id" (:work-id winner)
                                 "work_ids" (vec (distinct (map :work-id carriers)))})}))
               carriers-by-pid)
-        chosen-hash (into {} (map (juxt :pid :hash)) resolutions)
+        chosen-hash (into {} (map (fn [resolution]
+                                    [(:pid resolution) (:hash resolution)])
+                                  resolutions))
         conflicts (vec (keep :conflict resolutions))]
     (doseq [c conflicts]
-      (tel/log! :warn
-                (str "person " (get c "person_id")
-                     " has divergent bodies across works "
-                     (get c "work_ids")
-                     "; keeping the body from work " (get c "chosen_work_id"))))
-    (fs/create-dirs works-dir)
-    (fs/create-dirs persons-dir)
+      (logging/log! :warn
+                    (str "person " (get c "person_id")
+                         " has divergent bodies across works "
+                         (get c "work_ids")
+                         "; keeping the body from work " (get c "chosen_work_id"))))
+    (files/create-dirs! works-dir)
+    (files/create-dirs! persons-dir)
     (doseq [{:keys [record]} resolutions]
       (write-person-file! persons-dir record (boolean overwrite)))
     (doseq [{:keys [work-id metadata-rec]} plans
             :let [rec (update metadata-rec "contributors"
                               (fn [cs]
                                 (mapv #(assoc % "person_record_hash"
-                                              (chosen-hash (get % "person_id")))
+                                              (get chosen-hash (get % "person_id")))
                                       cs)))]]
       (json/write-deterministic-json-file!
        (io/file works-dir (str work-id ".json")) rec))
@@ -411,13 +416,13 @@
     :id :source-url]])
 
 (defn usage []
-  (tel/log! :warn (str "Usage:\n"
-                       "  Single-work mode: clojure -M:abc/aozora-ingest "
-                       "--zip <path-to-zip> --work-id NNNNNN --output <path>"
-                       " [--persons-output-dir DIR] [--overwrite]"
-                       " [--refresh-manifest manifest.json]\n"
-                       "  Corpus mode:      clojure -M:abc/aozora-ingest "
-                       "--zip <path-to-zip> --all --output-dir <DIR> [--overwrite]")))
+  (logging/log! :warn (str "Usage:\n"
+                           "  Single-work mode: clojure -M:abc/aozora-ingest "
+                           "--zip <path-to-zip> --work-id NNNNNN --output <path>"
+                           " [--persons-output-dir DIR] [--overwrite]"
+                           " [--refresh-manifest manifest.json]\n"
+                           "  Corpus mode:      clojure -M:abc/aozora-ingest "
+                           "--zip <path-to-zip> --all --output-dir <DIR> [--overwrite]")))
 
 (defn merge-catalog-defaults
   "Pure: fill `:zip-path`/`:source-url` from catalog fallbacks (the env values
@@ -450,17 +455,17 @@
                        (or (nil? work-id) (nil? output))))]
     (if invalid?
       (do
-        (doseq [e errors] (tel/log! :error e))
+        (doseq [e errors] (logging/log! :error e))
         (usage)
         (System/exit 2))
       (if corpus?
         (let [{:keys [works-written persons-written works-skipped]}
               (run-corpus-from-zip! options)]
-          (tel/log! :info (str "wrote " works-written " works and "
-                               persons-written " persons under " output-dir
-                               (when (pos? works-skipped)
-                                 (str "; skipped " works-skipped
-                                      " works (see warnings)")))))
+          (logging/log! :info (str "wrote " works-written " works and "
+                                   persons-written " persons under " output-dir
+                                   (when (pos? works-skipped)
+                                     (str "; skipped " works-skipped
+                                          " works (see warnings)")))))
         (do
           (run! options)
-          (tel/log! :info (str "wrote metadata-record to " output)))))))
+          (logging/log! :info (str "wrote metadata-record to " output)))))))

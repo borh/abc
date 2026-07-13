@@ -1,0 +1,8 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+         "examples/v0/example-persons/_indexes/000879.json"
+         "examples/v0/example-persons/_indexes/abc-000000000001.json"
+         "examples/v0/example-persons/_indexes/abc-000000000002.json"
+         "schemas/manifest.shacl.ttl"
+         "schemas/person-drift-event.schema.json"
+         "schemas/person-drift-index.schema.json"]}

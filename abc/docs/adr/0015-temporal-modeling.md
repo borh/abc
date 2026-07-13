@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-29
 Accepted: 2026-07-03
+Validation scope: fixture
+Release authority: publication
 
 ## Implementation Status
 
@@ -279,28 +281,12 @@ same discipline as ADR 0017 / ADR 0018.
 
 ## Acceptance Criteria
 
-- `schemas/person-record.schema.json` `nullableDate` admits the constrained
-  EDTF lexical subset and rejects out-of-grammar values.
-- `abc.tools.aozora-csv/parse-date` performs cosmetic normalization
-  (pad-month/day/year, strip-whitespace, collapse-multi-dash,
-  normalize-date-separator), BCE astronomical-year conversion
-  (`前347` → `-0346`), and sentinel-to-null mapping (`不詳`/`未詳` → `null`),
-  each recorded under a distinct `parse_corrections` rule;
-  `test/abc/tools/aozora_csv_test.clj` covers each rule plus rejection of
-  calendar-impossible full and BCE dates.
-- `abc.tools.person-record/record->graph` dispatches on lexical shape to pick
-  `xsd:date` / `xsd:gYearMonth` / `xsd:gYear` for the RDA predicate and emits
-  the parallel `abc:edtfDateOfBirth` / `abc:edtfDateOfDeath` echo;
-  `test/abc/tools/person_record_test.clj` covers the key triples and the
-  `000879` (芥川) example.
-- `schemas/manifest.shacl.ttl` accepts any of `xsd:date`, `xsd:gYearMonth`,
-  `xsd:gYear` on the RDA predicates and constrains the EDTF echo with
-  `sh:datatype abc:EDTF`, `sh:maxCount 1`, and the v0 lexical `sh:pattern`;
-  `test/abc/tools/shacl_test.clj` covers a malformed EDTF literal being
-  rejected by `PersonRecordShape`.
-- The 000879 fixture validates and its full-ISO dates are unaffected by the
-  rotation; `test/abc/tools/person_record_test.clj` covers the example
-  person fixture and schema hash.
+- **ADR-0015-C1 — structural-invariant:** `schemas/person-record.schema.json` admits null and the tested signed/unsigned full-date, year-month, and year lexical values, and rejects the tested out-of-scope and range-invalid lexicals; `test/abc/tools/person_record_test.clj` binds this contract.
+- **ADR-0015-C2 — fixture-behavior:** `abc.tools.aozora-csv/parse-date` performs the named pad-month, pad-day, pad-year, strip-whitespace, collapse-multi-dash, and normalize-date-separator cases, maps `前347` to `-0346`, maps `不詳`/`未詳` to `nil` with `unknown-marker` corrections, and leaves the tested calendar-impossible values uncorrected; `test/abc/tools/aozora_csv_test.clj` covers exactly those cases. This legacy null mapping does not claim to preserve temporal knowledge state.
+- **ADR-0015-C3 — fixture-behavior:** `abc.tools.person-record/record->graph` emits the tested `xsd:date`, `xsd:gYearMonth`, and `xsd:gYear` RDA literals with parallel `abc:EDTF` echoes, including the committed `examples/v0/example-persons/000879.json` fixture; `test/abc/tools/person_record_test.clj` covers the values and datatypes.
+- **ADR-0015-C4 — structural-invariant:** `schemas/manifest.shacl.ttl` gives the RDA birth/death properties maximum cardinality one with the three tested XSD datatype alternatives and constrains the EDTF echoes to maximum cardinality one, datatype `abc:EDTF`, and the live ADR-0016-widened lexical pattern; `test/abc/tools/shacl_test.clj` asserts that structure.
+- **ADR-0015-C5 — fixture-behavior:** `PersonRecordShape` rejects the tested malformed `abc:edtfDateOfBirth` literal and reports the EDTF path/shape context; `test/abc/tools/shacl_test.clj` covers the fixture.
+- **ADR-0015-C6 — fixture-behavior:** the committed 000879 person fixture retains full ISO birth/death values, validates, carries the live person schema hash, and emits the expected birth-date RDF view; `test/abc/tools/person_record_test.clj` covers the current fixture without making a historical rotation claim.
 
 ## References
 

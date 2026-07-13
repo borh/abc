@@ -19,31 +19,28 @@
             [taoensso.telemere :as tel]))
 
 (defn- list-json-files [dir]
-  (->> (fs/list-dir dir)
-       (filter #(and (fs/regular-file? %)
-                     (string/ends-with? (str (fs/file-name %)) ".json")))
+  (->> (files/list-files dir)
+       (filter #(string/ends-with? (str (fs/file-name %)) ".json"))
        (sort-by #(str (fs/file-name %)))
        (map fs/file)))
 
-(defn- person-loader
+(defn- load-person
   "Memoized loader: person_id -> parsed JSON body. Throws if the file
   is missing or fails person-schema validation."
-  [persons-dir]
-  (let [cache (atom {})]
-    (fn [pid]
-      (or (get @cache pid)
-          (let [f (fs/file persons-dir (str pid ".json"))]
-            (when-not (fs/exists? f)
-              (throw (ex-info (str "person file missing: " (str f))
-                              {:person-id pid :path (str f)})))
-            (let [body (files/read-json f)]
-              (person-record/validate! body)
-              (swap! cache assoc pid body)
-              body))))))
+  [persons-dir cache pid]
+  (or (get (deref cache) pid)
+      (let [f (fs/file persons-dir (str pid ".json"))]
+        (when-not (files/exists? f)
+          (throw (ex-info (str "person file missing: " (str f))
+                          {:person-id pid :path (str f)})))
+        (let [body (files/read-json f)]
+          (person-record/validate! body)
+          (swap! cache assoc pid body)
+          body))))
 
 (defn- check-work
   "Returns nil on success; a {:work-id, :stage, :error} map on failure."
-  [work-file shapes-graph load-person]
+  [work-file shapes-graph persons-dir person-cache]
   (let [work-id (string/replace (str (fs/file-name work-file)) #"\.json$" "")]
     (try
       (let [record (files/read-json work-file)]
@@ -51,7 +48,7 @@
         (let [persons-by-id (into {}
                                   (for [c (get record "contributors")
                                         :let [pid (get c "person_id")]]
-                                    [pid (load-person pid)]))
+                                    [pid (load-person persons-dir person-cache pid)]))
               data-graph (metadata-record/record+persons->graph record persons-by-id)]
           (shacl/validate! {:shapes-graph shapes-graph
                             :data-graph data-graph
@@ -73,24 +70,24 @@
     :or {max-failures 10}}]
   (let [works-dir (fs/file input-dir "works")
         persons-dir (fs/file input-dir "persons")]
-    (when-not (fs/directory? works-dir)
+    (when-not (files/directory? works-dir)
       (throw (ex-info (str "no works/ subdirectory under " input-dir)
                       {:input-dir input-dir})))
-    (when-not (fs/directory? persons-dir)
+    (when-not (files/directory? persons-dir)
       (throw (ex-info (str "no persons/ subdirectory under " input-dir)
                       {:input-dir input-dir})))
     (let [shapes-graph (shacl/load-shapes-graph)
-          load-person (person-loader persons-dir)
+          person-cache (atom {})
           work-files (list-json-files works-dir)
           failures (atom [])
           checked (atom 0)]
       (doseq [wf work-files]
         (swap! checked inc)
-        (when-let [failure (check-work wf shapes-graph load-person)]
+        (when-let [failure (check-work wf shapes-graph persons-dir person-cache)]
           (swap! failures conj failure)))
-      {:works-checked @checked
-       :failed (count @failures)
-       :first-failures (vec (take max-failures @failures))})))
+      {:works-checked (deref checked)
+       :failed (count (deref failures))
+       :first-failures (vec (take max-failures (deref failures)))})))
 
 (def cli-options
   [["-i" "--input-dir DIR"

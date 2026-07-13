@@ -102,15 +102,17 @@
   (let [interop (volatile! #{})
         files (volatile! #{})
         file-seq? (volatile! false)]
-    (walk/postwalk
-     (fn [x]
-       (vswap! interop into (filter forbidden-file-methods (form-methods x)))
-       (when-let [operation (normalized-files-call x)]
-         (vswap! files conj operation))
-       (when (= 'file-seq x)
-         (vreset! file-seq? true))
-       x)
-     form)
+    (letfn [(visit! [x]
+              (when-not (and (seq? x) (= 'quote (first x)))
+                (vswap! interop into (filter forbidden-file-methods (form-methods x)))
+                (when-let [operation (normalized-files-call x)]
+                  (vswap! files conj operation))
+                (when (= 'file-seq x)
+                  (vreset! file-seq? true))
+                (when (coll? x)
+                  (doseq [child x]
+                    (visit! child)))))]
+      (visit! form))
     {:interop @interop :files @files :file-seq? @file-seq?}))
 
 (defn- source-file? [file]
@@ -191,6 +193,12 @@
                '[".delete"
                  (delete transient-map :key)
                  (repository.delete branch)]))))
+
+(deftest filesystem-policy-distinguishes-quoted-data-from-file-seq-calls-test
+  (is (false? (:file-seq? (form-operations '(quote #{file-seq}))))
+      "a forbidden-operation inventory is data, not a filesystem traversal")
+  (is (true? (:file-seq? (form-operations '(file-seq root))))
+      "an executable production call remains forbidden"))
 
 (deftest files-call-normalization-test
   (is (= 'Files/move (normalized-files-call 'Files/move)))

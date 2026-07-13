@@ -43,17 +43,12 @@
        "Compares generated corpus snapshots containing works/ and persons/ directories.\n\n"
        summary))
 
-(defn- json-file? [path]
-  (and (fs/regular-file? path)
-       (string/ends-with? (str (fs/file-name path)) ".json")))
-
 (defn- list-json-files [dir]
   (let [path (fs/path dir)]
-    (when-not (fs/directory? path)
+    (when-not (files/directory? path)
       (throw (ex-info (str "expected directory: " dir) {:dir dir})))
-    (->> (fs/list-dir path)
-         (filter json-file?)
-         (sort-by (comp str fs/file-name))
+    (->> (files/list-files path)
+         (filter #(string/ends-with? (str (fs/file-name %)) ".json"))
          (map #(io/file (str %))))))
 
 (defn- file-stem [path]
@@ -64,14 +59,14 @@
   (into (sorted-map)
         (map (fn [file]
                (let [record (files/read-json file)]
-                 [(get record "person_id" (file-stem file)) record])))
-        (list-json-files (fs/path root "persons"))))
+                 [(get record "person_id" (file-stem file)) record]))
+             (list-json-files (fs/path root "persons")))))
 
 (defn- read-works [root]
   (into (sorted-map)
         (map (fn [file]
-               [(file-stem file) (files/read-json file)]))
-        (list-json-files (fs/path root "works"))))
+               [(file-stem file) (files/read-json file)])
+             (list-json-files (fs/path root "works")))))
 
 (defn- corpus [root]
   (let [persons (read-persons root)
@@ -85,7 +80,9 @@
                    (let [person-id (get contributor "person_id")
                          relation (get contributor "relation_to_work")]
                      (if (and person-id relation)
-                       (update edges [work-id relation] (fnil conj #{}) person-id)
+                       (assoc edges
+                              [work-id relation]
+                              (conj (get edges [work-id relation] #{}) person-id))
                        edges)))
                  edges
                  (get work "contributors" [])))
@@ -98,8 +95,8 @@
   [root]
   (into (sorted-map)
         (map (fn [[person-id record]]
-               [person-id (person-record/record-hash record)]))
-        (read-persons root)))
+               [person-id (person-record/record-hash record)])
+             (read-persons root))))
 
 (defn- sorted-ids [ids]
   (vec (sort ids)))
@@ -203,10 +200,11 @@
        vec))
 
 (defn- ambiguous-replacements [edge-changes split-candidates merge-candidates]
-  (let [candidate-keys (set (map (juxt #(get % "work_id")
-                                       #(get % "relation_to_work")
-                                       #(get % "source_person_ids")
-                                       #(get % "target_person_ids"))
+  (let [candidate-keys (set (map (fn [candidate]
+                                   [(get candidate "work_id")
+                                    (get candidate "relation_to_work")
+                                    (get candidate "source_person_ids")
+                                    (get candidate "target_person_ids")])
                                  (concat split-candidates merge-candidates)))]
     (->> edge-changes
          (filter replacement?)

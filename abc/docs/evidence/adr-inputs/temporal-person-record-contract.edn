@@ -1,0 +1,3 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["examples/v0/example-persons/000879.json"
+         "schemas/person-record.schema.json"]}

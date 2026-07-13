@@ -4,7 +4,7 @@
 
 **Goal:** Correct the six Accepted schema/RDF/TEI ADRs to 30 honest typed claims and bind each claim to fresh artifact-backed evidence while governance remains in audit mode.
 
-**Architecture:** This is family transaction 2 and starts only after plan 1 (`2026-07-12-adr-evidence-migration-foundation.md`) lands the shared prerequisite. Stage A adds missing assertions, corrects criteria before assigning IDs, and maps all 31 baseline rows through plan 1's ledger/inventory APIs. Stage B captures narrow observation boundaries from the clean Stage A revision, reuses plan 1's design-bundle operational bundle, joins claim-level registry entries, and drives only this family's audit problem set to zero.
+**Architecture:** This is family transaction 2 and starts only after plan 1 (`2026-07-12-adr-evidence-migration-foundation.md`) lands the shared prerequisite. Stage A adds missing assertions, corrects criteria before assigning IDs, and maps all 31 baseline rows through plan 1's ledger/inventory APIs. Because Stage A changes a bound design-bundle source, Stage B captures the first immutable successor generation, atomically repoints all predecessor bindings, captures the other narrow boundaries, and drives this family's audit problem set to zero.
 
 **Tech Stack:** Clojure 1.12, Kaocha, Apache Jena/SHACL, networknt JSON Schema 2020-12, Jing/TEI Relax NG, ph-schematron/Saxon, Nix flakes, RFC 8785/JCS bundles, EDN registries, deterministic JSON reports.
 
@@ -13,11 +13,16 @@
 - Work from `/home/bor/Projects/soranoha/.worktrees/adr-evidence-corpus-migration`; commands under `abc/` use component-relative paths.
 - Plan 1 must be committed first. Consume, do not redefine, its baseline manifest, content-hash ledger, disposition-aware inventory, non-acceptance-section lint, descriptor/bundle layout, repaired Git-free design-bundle app, and `git-cliff-config` check.
 - Exact plan 1 APIs consumed: `abc.tools.adr-claim-migration/{baseline-value,baseline-hash,validate-baseline,validate-ledger,load-migration-state}` and `abc.tools.adr-evidence-inventory/inventory-value` with migration state.
-- Reuse, do not recapture, `docs/evidence/adr-runs/design-bundle-operational.json`, observation `design-bundle-exits-zero`, produced from `docs/evidence/adr-capture/design-bundle-operational.edn` by `nix run .#validate-design-bundle` in `abc/`.
+- Treat `design-bundle-operational.json` as immutable generation 1. The planned
+  `validate_design_bundle.clj` edit makes it stale, so this plan captures
+  `design-bundle-operational-schema-rdf-tei` as generation 2 and atomically
+  repoints `ADR-0008-C2`, `ADR-0010-C5`, `ADR-0011-C1`, and `ADR-0006-C1` to
+  the successor. Never overwrite or relabel generation 1.
 - Criterion correction precedes stable claim IDs. Audit mode remains active; this plan must not promote ADR 0034, capture corpus-wide governance evidence, or enable enforcement.
 - Plan 1's 36-coordinate normative-section hash guard must remain green. Moving prose means relocating only Acceptance Criteria/Implementation Status duplicates; inventoried Decision, Decision Matrix, and Hard Rule bytes never change.
-- Every focused Clojure boundary uses capture descriptor version 2, a
+- Every focused Clojure boundary uses capture descriptor focused-v3, a
   same-stem checked manifest under `abc/docs/evidence/adr-inputs/`, and
+  a selected row/hash in the family observation catalog. It uses
   `abc.tools.evidence-io`. Static namespace closure is source closure only;
   it must pass Plan 1's default-deny raw-I/O and subprocess lint.
 - TEI-schema-dependent observations run only as dedicated Nix checks that
@@ -38,6 +43,9 @@
 - Modify ledger/registry: `abc/docs/adr/{adr-claim-migration,adr-evidence}.edn`.
 - Regenerate: `abc/docs/reports/{adr-claim-migration-inventory,adr-evidence-migration}.json`.
 - Create descriptors/bundles listed in Task 6 under `abc/docs/evidence/adr-{capture,runs}/`.
+- Create `abc/data/adr-evidence/schema-rdf-tei-observation-catalog.edn` as
+  the checked source of observation identity, argv/environment policy, and
+  determinants for this family.
 
 ### Task 1: Preflight plan 1 and record the family baseline
 
@@ -106,17 +114,17 @@ helpers for reads; it must not run the 62-test
     (is (seq (validate/validation-errors schema {})))))
 
 (deftest canonicalization-hash-mismatch-is-rejected-test
-  (tfs/with-temp-dir [dir]
-    ;; Write identity JSON, deliberately wrong .sha256, and equal array fixtures.
-    (eio/with-ephemeral-root
-      dir
-      #(is (thrown-with-msg? clojure.lang.ExceptionInfo
-                             #"canonical identity fixture hash mismatch"
-                             (validate/validate-canonicalization!
-                              {:expected (apply str (repeat 64 "0"))
-                               :identity-json (str (io/file dir "identity.json"))
-                               :array-a (str (io/file dir "array-a.json"))
-                               :array-b (str (io/file dir "array-b.json"))}))))))
+  ;; The owner creates and authorizes the directory for the callback lifetime.
+  (eio/with-owned-ephemeral-root
+    (fn [dir]
+      ;; Write identity JSON, deliberately wrong .sha256, and equal array fixtures.
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                            #"canonical identity fixture hash mismatch"
+                            (validate/validate-canonicalization!
+                             {:expected (apply str (repeat 64 "0"))
+                              :identity-json (str (io/file dir "identity.json"))
+                              :array-a (str (io/file dir "array-a.json"))
+                              :array-b (str (io/file dir "array-b.json"))}))))))
 
 (deftest supported-entrypoint-delegates-test
   (is (string/includes? (files/read-text "bin/validate-design-bundle.sh")
@@ -270,7 +278,7 @@ assertion logic rather than calling a whole test namespace:
   (`ADR-0018-C3`).
 
 Each var owns its own `with-read-trace` invocation, returns its traced paths to
-the same-stem closure assertion, and may use `with-ephemeral-root` only around
+the same-stem closure assertion, and may use `with-owned-ephemeral-root` only around
 freshly generated outputs. No focused var calls another `deftest` Var.
 
 - [ ] **Step 3: Add optional-rights SHACL cases**
@@ -442,8 +450,10 @@ jq -e --arg family '^(ADR-)?(0006|0012|0013|0014|0017|0018)-' '
 ```
 
 Expected: exactly 30 `missing-claim-evidence` problems. ADR-0006-C1 will
-reuse plan 1's bundle, but its claim-level join is intentionally absent until
-this family's Stage B registration. Any lifecycle, parser, ledger, graph,
+join the generation-2 successor, but its claim-level join is intentionally
+absent until this family's Stage B registration. The three generation-1
+foundation bindings are expected to be stale and are checked separately in
+Task 6 Step 3A. Any lifecycle, parser, ledger, graph,
 dependency, artifact, or predicate problem blocks capture.
 
 - [ ] **Step 2: Assert no unrelated regression and commit**
@@ -466,21 +476,26 @@ Expected: clean tree. This commit is the capture revision.
 **Files:**
 - Modify: `abc/flake.nix`
 - Modify: `abc/test/abc/tools/{schematron,tei,materialize_publication,validate_design_bundle}_test.clj`
-- Create the 29 matching `.edn`/`.json` pairs named in the boundary table
+- Create the 29 family `.edn`/`.json` pairs named in the boundary table plus
+  `design-bundle-operational-schema-rdf-tei` (30 total)
   under `abc/docs/evidence/adr-capture/` and
   `abc/docs/evidence/adr-runs/`.
 - Create one same-stem manifest for each of the twenty-one focused Clojure
   descriptors under `abc/docs/evidence/adr-inputs/`.
-- Create one `*-nix-clojure-closure.edn` manifest for each of the seven new
-  TEI Nix/Clojure checks; `tei-profile-drift` is not a Clojure check.
+- Create one same-stem operational closure manifest for each of the seven
+  Clojure-backed TEI Nix observations. `tei-profile-drift` is the closed
+  `:nix-only` branch and has no invented Clojure closure.
+- Create the Clojure-backed successor closure manifest
+  `abc/docs/evidence/adr-inputs/design-bundle-operational-schema-rdf-tei.edn`.
+- Create: `abc/data/adr-evidence/schema-rdf-tei-observation-catalog.edn`
 - Modify: `abc/test/abc/tools/adr_evidence_capture_test.clj`
 - Create: `abc/docs/evidence/adr-entries/schema-rdf-tei.edn`
 
 **Interfaces:**
-- Consumes: plan 1 capture v2/runtime-input contract and version-1
-  `repo-files-v1` operational capture.
-- Produces: twenty-nine claim-coherent Boolean observations plus the reused
-  design-bundle operational observation, and seven new dedicated TEI Nix
+- Consumes: plan 1 focused-v3 runtime-input contract and operational-v1
+  exact-input capture from Task 6C.
+- Produces: twenty-nine claim-coherent Boolean observations plus the new
+  design-bundle operational successor, and seven new dedicated TEI Nix
   checks plus existing `tei-profile-drift`.
 
 - [ ] **Step 1: Add hermetic TEI evidence checks**
@@ -555,14 +570,27 @@ before this step is green.
 
 - [ ] **Step 2: Write descriptor and manifest contracts**
 
+First create the family catalog with schema version
+`:abc-adr-evidence-observation-catalog-v1` and exactly the 30 new observation rows in
+the table. Validate it through
+`abc.tools.adr-evidence-observation-catalog`; every descriptor selects one row
+by `:catalog-path` and `:observation-id` and stores that row's recomputed JCS
+contract hash. The successor row has the unique ID/stem
+`design-bundle-operational-schema-rdf-tei`, the same command contract, and
+current generation-2 determinants. It is a new event because its bound inputs
+changed, not a renamed duplicate run.
+
 For example, `linked-art-parity.edn` has this exact shape:
 
 ```clojure
-{:schema-version "abc-adr-evidence-capture-v2"
+{:schema-version "abc-adr-evidence-capture-v3"
  :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus"
         "abc.tools.schema-validation-evidence-test/linked-art-parity-test"]
  :runtime-input-manifest "docs/evidence/adr-inputs/linked-art-parity.edn"
+ :catalog-path "data/adr-evidence/schema-rdf-tei-observation-catalog.edn"
+ :observation-id :linked-art-parity
+ :observation-contract-sha256 "sha256:<64 lowercase hex digits>"
  :input-profile {:kind "clojure-test-v1"
                  :roots ["abc.tools.schema-validation-evidence-test"]
                  :explicit ["docs/evidence/adr-capture/linked-art-parity.edn"
@@ -614,40 +642,53 @@ The twenty-one Clojure manifests list the exact repository paths read by their f
 the vars wrap their assertions in `eio/with-read-trace` and call plan 1's
 `assert-runtime-input-closure!`. Descriptor tests require exact equality among
 manifest paths, observed paths, and explicit data paths, and run the direct-I/O
-default-deny lint. The seven dedicated TEI Nix descriptors and `tei-profile-drift` remain
-version 1 `repo-files-v1`; each binds `flake.nix`, `flake.lock`, `deps.edn`,
-`deps-lock.json`, `tests.edn`,
-`nix/tei-profile-artifacts.nix`, the exact schema/fixture inputs, its checked
-Nix/Clojure source-closure manifest and every path expanded from that
-manifest, and its descriptor. They never use a v2 runtime manifest.
-Generate each Nix/Clojure closure manifest with Plan 1's
-`derive-nix-clojure-source-closure` from the exact focused Vars named by that
-check. The descriptor-contract test recomputes the closure and requires byte-
-equal focused Vars/paths plus exact expansion into `:explicit`; delete-one and
-add-unrelated-source negative cases must fail.
+default-deny lint. The seven dedicated TEI Nix descriptors and
+`tei-profile-drift` use `abc-adr-evidence-capture-operational-v1` with
+`:input-set-mode "exact-v1"`. The seven Clojure-backed checks bind `flake.nix`, `flake.lock`,
+`deps.edn`, `deps-lock.json`, `tests.edn`, `nix/tei-profile-artifacts.nix`,
+the exact schema/fixture determinants, its same-stem operational closure
+manifest, every path in the recomputed entrypoint-namespace closure, and its
+descriptor. They never use a focused runtime manifest. Generate and validate
+each closure through `abc.tools.adr-evidence-operational`, starting from the
+Clojure entrypoint namespace actually invoked by the Nix check rather than a
+focused test Var. The descriptor-contract test requires exact equality among
+the recomputed required set, manifest paths, descriptor `:explicit`, and
+bundle input keys; delete-one and add-unrelated-source negative cases must
+fail. `tei-profile-drift` selects `:entrypoint-kind :nix-only`, forbids a
+closure manifest, and binds only its descriptor/catalog plus exact
+Nix/lock/schema determinants.
+Generate and recompute the successor's same-stem closure from
+`abc.tools.validate-design-bundle`; its descriptor test has the same
+missing/extra exact-set negatives as the other Clojure-backed operational
+rows.
 
 Extend `adr_evidence_capture_test.clj` with a table-driven assertion over all
-twenty-nine descriptors. It must resolve every named Kaocha Var and every Nix
-check name before capture. For each v2 row, load the closed same-stem manifest,
+thirty descriptors. It must resolve every named Kaocha Var and every Nix
+check name before capture. For each focused-v3 row, load the closed same-stem manifest,
 assert the exact observation and focused var from the table, assert descriptor
 explicit inputs equal descriptor path + manifest path + manifest `:paths`, and
-invoke the reachable-Var default-deny lint. For each Nix/Clojure row, assert
-version 1, no `:runtime-input-manifest`, a `bash -lc` command using
-`builtins.currentSystem`, and the exact check-specific `flake.nix`,
+invoke the reachable-Var default-deny lint. For each Clojure-backed Nix row, assert
+operational-v1 with `exact-v1`, no `:runtime-input-manifest`, catalog-owned
+direct argv/environment policy, and the exact check-specific `flake.nix`,
 `flake.lock`, `deps.edn`, `deps-lock.json`, `tests.edn`,
 `nix/tei-profile-artifacts.nix`, checked and expanded
-source/test closure, schema, and fixture determinants. Missing or extra paths
-fail this test.
-For `tei-profile-drift`, assert the existing non-Clojure determinant set shown
-below; it does not bind `deps.edn` or a Clojure closure manifest.
+entrypoint-namespace closure, schema, and fixture determinants. Missing or
+extra paths fail this test. For `tei-profile-drift`, assert the `:nix-only`
+branch and its reviewed exact determinant set; it has no Clojure entrypoint or
+closure manifest.
 
 Direct Nix descriptor:
 
 ```clojure
-{:schema-version "abc-adr-evidence-capture-v1"
+{:schema-version "abc-adr-evidence-capture-operational-v1"
  :tool "bash"
- :argv ["bash" "-lc"
-        "system=$(nix eval --impure --raw --expr builtins.currentSystem); nix build --no-link .#checks.${system}.tei-profile-drift"]
+ :argv ["bash" "--noprofile" "--norc" "-c"
+        "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.tei-profile-drift\""]
+ :entrypoint-kind "nix-only"
+ :catalog-path "data/adr-evidence/schema-rdf-tei-observation-catalog.edn"
+ :observation-id :tei-profile-drift
+ :observation-contract-sha256 "sha256:<64 lowercase hex digits>"
+ :input-set-mode "exact-v1"
  :input-profile {:kind "repo-files-v1" :roots []
                  :explicit ["docs/evidence/adr-capture/tei-profile-drift.edn"
                             "flake.nix" "flake.lock" "nix/tei-profile-artifacts.nix"
@@ -656,8 +697,9 @@ Direct Nix descriptor:
  :observation-key "tei-profile-derived-artifacts-match"}
 ```
 
-Create `schema-rdf-tei.edn` with the exact 30 distinct claim IDs in Task 7's
-table and 32 entries total.
+Create `schema-rdf-tei.edn` with the exact 30 family claim IDs plus the three
+foundation predecessor claim IDs in Task 7's table: 33 distinct claim IDs and
+35 entries total.
 It uses the closed registration-template shape from plan 1, contains no
 artifact hashes, and includes two entries for ADR-0017-C5 because that claim
 requires both manifest and metadata RDF observations, plus two entries for
@@ -669,6 +711,7 @@ and enrichment observations.
 ```bash
 git add abc/flake.nix abc/docs/evidence/adr-capture \
   abc/docs/evidence/adr-inputs \
+  abc/data/adr-evidence/schema-rdf-tei-observation-catalog.edn \
   abc/docs/evidence/adr-entries/schema-rdf-tei.edn \
   abc/test/abc/tools/adr_evidence_capture_test.clj \
   abc/test/abc/tools/schematron_test.clj \
@@ -680,6 +723,15 @@ git status --short
 ```
 
 Expected: clean tree. Descriptor self-hashes would otherwise stale immediately.
+
+- [ ] **Step 3A: Prove the predecessor is stale for the expected reason**
+
+Run governance audit before capturing generation 2 and select problems whose
+artifact path is `docs/evidence/adr-runs/design-bundle-operational.json`.
+Require `:input-hash-mismatch` caused by the planned bound source/determinant
+changes and affected claims `ADR-0008-C2`, `ADR-0010-C5`, and `ADR-0011-C1`;
+any different problem kind is a blocker. This is a staleness probe, not
+permission to overwrite generation 1.
 
 - [ ] **Step 4: Capture outside repo**
 
@@ -699,49 +751,57 @@ basenames=(
   iiif-invalid-combinations iiif-valid-combinations turtle-prefix-inventory
   manifest-rdf-parity metadata-rdf-parity metadata-rdf-containment
   metadata-rights-shacl metadata-bundle-helper
+  design-bundle-operational-schema-rdf-tei
 )
 printf '%s\n' "${basenames[@]}" > /tmp/adr-schema-basenames.txt
+stage="$(mktemp -d)"
+printf '%s\n' "$stage" > /tmp/adr-schema-stage-path
 for basename in "${basenames[@]}"; do
-  clojure -M:abc/adr-evidence-capture \
+  clojure -M:abc/adr-evidence-capture -- \
+    --repo-root . \
+    --workspace-root .. \
+    --staging-root "$stage" \
     --descriptor "docs/evidence/adr-capture/${basename}.edn" \
-    --output "/tmp/${basename}.json"
+    --output "$stage/${basename}.json"
   test -z "$(git status --short)"
 done
 ```
 
-Expected: exactly 29 captures exit 0 and status is empty each time. TEI observations execute
+Expected: exactly 30 captures exit 0 and status is empty each time. TEI observations execute
 only the dedicated Nix checks; no descriptor invokes `nix develop`.
 
-- [ ] **Step 5: Validate and install all twenty-nine bundles**
+- [ ] **Step 5: Validate and install all thirty bundles**
 
 ```bash
+stage="$(cat /tmp/adr-schema-stage-path)"
 while read -r basename; do
-  f="/tmp/${basename}.json"
+  f="$stage/${basename}.json"
   jq -e '.schema_version == "abc-adr-evidence-run-v1" and ([.observations[].value] | all)' "$f"
 done < /tmp/adr-schema-basenames.txt
 while read -r basename; do
-  cp "/tmp/${basename}.json" docs/evidence/adr-runs/
+  cp "$stage/${basename}.json" docs/evidence/adr-runs/
 done < /tmp/adr-schema-basenames.txt
 ```
 
 Expected: every `jq` passes. Do not commit until registry/report updates are ready.
 
-### Task 7: Join 30 claims and drive family audit to zero
+### Task 7: Join 30 family claims, repoint three predecessor claims, and drive audit to zero
 
 **Files:**
 - Modify: `abc/docs/adr/adr-evidence.edn`
-- Add: twenty-nine Task 6 bundles
+- Add: thirty Task 6 bundles
 - Use: `abc/docs/evidence/adr-entries/schema-rdf-tei.edn`
 - Regenerate: both migration reports
 
 **Interfaces:**
-- Consumes: twenty-nine bundles plus plan 1's `design-bundle-operational.json`/`design-bundle-exits-zero`.
+- Consumes: thirty new bundles; generation 1 remains immutable history but is
+  no longer selected by a live registry entry.
 
 - [ ] **Step 1: Review the checked-in claim-level joins**
 
 | Claims | Evidence kind | Bundle / observation |
 | --- | --- | --- |
-| 0006-C1 | operational-observation | design-bundle-operational / design-bundle-exits-zero |
+| 0008-C2; 0010-C5; 0011-C1; 0006-C1 | operational-observation | design-bundle-operational-schema-rdf-tei / design-bundle-operational-schema-rdf-tei-passes |
 | 0006-C2 | structural-test | schema-entrypoint-delegation / supported-entrypoint-delegates |
 | 0006-C3 | fixture-conformance | schema-empty-manifest / empty-manifest-is-rejected |
 | 0006-C6 | fixture-conformance | schema-canonicalization-mismatch / canonicalization-mismatch-is-rejected |
@@ -774,6 +834,9 @@ Expected: every `jq` passes. Do not commit until registry/report updates are rea
 Each template entry uses the exact claim kind, compatible keyword evidence
 kind, artifact path, observation key, and
 `:expected {:operator := :value true}`. It does not contain an artifact hash.
+The first row expands to four literal template entries. The registrar replaces
+the three existing foundation claim entries in the same atomic registry write
+that adds `ADR-0006-C1`; no live entry may continue selecting generation 1.
 
 - [ ] **Step 2: Register the template and run red then green registry audit**
 

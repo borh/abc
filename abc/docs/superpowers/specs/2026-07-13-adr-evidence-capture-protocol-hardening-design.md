@@ -132,13 +132,16 @@ commit. Operational manifest problems use only
 `:invalid-operational-closure`. The old name is not aliased to either new
 problem kind.
 
-### Foundation observation catalog and claim bindings
+### Generic observation catalog and foundation claim bindings
 
 Observation policy lives in
 `data/adr-evidence/foundation-observation-catalog.edn`, with schema version
-`:abc-foundation-observation-catalog-v1`. It is closed and contains two sorted
-collections: focused observations and operational observations. Every row
-contains:
+`:abc-adr-evidence-observation-catalog-v1`. This is a family-neutral closed
+protocol containing two sorted collections: focused observations and
+operational observations. The catalog validator enforces row shape,
+uniqueness, ordering, and binding resolution without embedding a family name
+or fixed row count. Foundation-specific tests separately require 35 focused
+rows, two operational rows, and 42 bindings. Every row contains:
 
 - descriptor stem;
 - observation ID and unique observation key; and
@@ -161,7 +164,7 @@ hash; offline validation recomputes the projection from the current catalog.
 The hash never serializes generic EDN. A pure
 `observation-contract-json-value` projection maps the closed catalog row to an
 I-JSON value with schema version
-`abc-foundation-observation-contract-v1`. JSON object keys are fixed ASCII
+`abc-adr-evidence-observation-contract-v1`. JSON object keys are fixed ASCII
 field names; EDN keywords map through field-specific closed string enums;
 qualified symbols become their full dotted/slashed strings; paths are
 normalized repository-relative strings; vectors preserve their already
@@ -284,6 +287,14 @@ the Git root. The command working directory is `repo-root`, preserving
 must be the exact Git root containing the monorepo sentinels. Cleanliness is
 checked at `workspace-root` with untracked files included.
 
+Descriptor, catalog, manifest, and operational determinant coordinates are
+relative to `repo-root`. The existing `component-clojure-test-v1` profile is
+the one deliberate exception for focused evidence that consumes sibling
+components: its bundle input keys remain `workspace-root`-relative (for
+example `abc/...` and `ab-validator/...`) and its `component_root` identifies
+`abc`. Capture and offline validation must preserve that existing profile
+semantics; they must not reinterpret those keys as `repo-root`-relative.
+
 For these two commands, flake resolution begins at `abc/`. The component
 `abc/flake.nix` and `abc/flake.lock` are determinants expressed relative to
 `repo-root`; the monorepo-root flake and lock are not evaluation inputs to
@@ -304,8 +315,13 @@ filesystem allocation or mutation. It proves that the output parent is the
 staging root, so a caller cannot reinterpret “contained” as arbitrary
 descendant traversal. The atomic writer accepts that value, not raw path
 arguments, and owns the filesystem transition: exclusive `CREATE_NEW`
-allocation of a collision-free sibling, serialization, fsync, and atomic
-rename. This guarantees that a successful process does not publish a partial
+allocation of a collision-free sibling, serialization, fsync, then atomic
+exclusive publication with `Files/createLink(output, sibling)` followed by
+sibling removal. The same-directory hard-link creation is the linearization
+point: it exposes the already-complete inode and fails if `output` exists.
+Unsupported hard-link semantics fail closed; the implementation must not fall
+back to Java `ATOMIC_MOVE`, whose destination-exists behavior is provider
+specific. This guarantees that a successful process does not publish a partial
 artifact; it does not claim persistence across power loss. Failure removes the
 temporary file and never replaces an existing artifact. Tests must show that
 neither the capture path nor the writer can bypass the owner with an
@@ -322,8 +338,9 @@ The closed EDN value is:
  :paths ["src/abc/tools/validate_design_bundle.clj" ...]}
 ```
 
-`entrypoint-namespaces` is a nonempty, sorted, unique vector of dotted
-namespace symbols. `owned-namespace-prefixes` is the closed sorted component
+For `:entrypoint-kind :clojure`, `entrypoint-namespaces` is a nonempty,
+sorted, unique vector of dotted namespace symbols. `owned-namespace-prefixes`
+is the closed sorted component
 policy and is exactly `[abc]`. Prefix matching is by namespace segment:
 `abc` and `abc.*` match, while `abcdef.*` does not. An unresolved namespace
 under an owned prefix is always an error, never an external dependency.
@@ -353,7 +370,7 @@ The design-bundle observation uses entrypoint namespace
 ### Operational-command contracts
 
 Operational policy lives in the observation catalog, not in descriptor-authored
-fields. Each closed contract contains:
+fields. Each closed contract contains an explicit `:entrypoint-kind`:
 
 ```clojure
 {:command-id :validate-design-bundle
@@ -361,12 +378,13 @@ fields. Each closed contract contains:
  :argv ["bash" "--noprofile" "--norc" "-c"
         "nix run .#validate-design-bundle"]
  :environment-policy :nix-local-v1
+ :entrypoint-kind :clojure
  :entrypoint-namespaces [abc.tools.validate-design-bundle]
  :determinant-paths ["flake.nix" "flake.lock" ...]
  :observation-key "design-bundle-operational-passes"}
 ```
 
-The catalog has exactly two operational observation contracts: the shared
+The foundation catalog has exactly two operational observation contracts: the shared
 design-bundle event above and the pinned source-bundle-corpus check. The latter
 uses `nix build --no-link` and records its actual system-qualified check
 coordinate. Three `:operational-behavior` claim bindings reference the one
@@ -400,14 +418,15 @@ Task 7 focused descriptors use
 `:observation-contract-sha256`. Existing versions 1 and 2 remain closed and
 unchanged.
 
-Add descriptor schema version `abc-adr-evidence-capture-operational-v1` with
-this closed shape:
+Add descriptor schema version `abc-adr-evidence-capture-operational-v1` as a
+closed discriminated union. The Clojure-backed shape is:
 
 ```clojure
 {:schema-version "abc-adr-evidence-capture-operational-v1"
  :tool "bash"
  :argv ["bash" "--noprofile" "--norc" "-c"
         "nix run .#validate-design-bundle"]
+ :entrypoint-kind "clojure"
  :clojure-closure-manifest
  "docs/evidence/adr-inputs/design-bundle-operational.edn"
  :catalog-path "data/adr-evidence/foundation-observation-catalog.edn"
@@ -420,8 +439,17 @@ this closed shape:
  :observation-key "design-bundle-operational-passes"}
 ```
 
-The closure manifest basename equals the descriptor basename and is itself an
-explicit input. `:tool`, `:argv`, entrypoints, observation key, and determinant
+The pure-Nix branch sets `:entrypoint-kind "nix-only"` and forbids
+`:clojure-closure-manifest`. Its selected catalog row sets
+`:entrypoint-kind :nix-only`, has no `:entrypoint-namespaces`, and supplies a
+reviewed exact determinant set. This branch exists for commands such as
+`tei-profile-drift` whose Nix check contains no Clojure invocation. It does not
+pretend that a namespace closure exists; exactness is over descriptor,
+catalog, flake/lock, check expression, and reviewed data determinants.
+
+For the Clojure branch, the closure manifest basename equals the descriptor
+basename and is itself an explicit input. `:tool`, `:argv`, entrypoint kind
+and namespaces, observation key, and determinant
 paths come from the catalog observation row; the descriptor must equal them
 and `:tool` must equal the first argv element. Claim bindings are validated
 separately and do not participate in the observation-contract hash. Version 1
@@ -438,13 +466,18 @@ operational validator require the run bundle's actual input keys to equal the
 derived set. Dispatch is therefore by closed descriptor version and mode while
 the governance-consumed run-bundle profile keeps its existing meaning.
 
-For an operational descriptor, the derived exact set is the union of:
+For a Clojure-backed operational descriptor, the derived exact set is the
+union of:
 
 - the descriptor and operational closure manifest;
 - `deps.edn`, `deps-lock.json`, and `tests.edn`;
 - every recomputed closure path; and
 - the command-specific Nix expression, flake lock, wrapper, schema, fixture,
   report, and other non-Clojure determinants named by the catalog policy.
+
+For a Nix-only operational descriptor, omit the closure manifest, Clojure lock
+files, and closure paths unless the catalog lists them as actual determinants;
+the exact set is descriptor + catalog-selected reviewed determinants.
 
 Missing and extra paths both fail. One design-bundle descriptor, manifest,
 bundle, and observation support its three operational claim bindings. The
@@ -460,8 +493,9 @@ Operational capture performs these steps in order:
    load the descriptor;
 3. validate the catalog coordinate before loading its selected row and
    validating the closed descriptor shape and contract hash;
-4. validate the closure-manifest coordinate before loading its value;
-5. resolve namespace candidates through the contained-coordinate boundary,
+4. for `:clojure`, validate the closure-manifest coordinate before loading its
+   value; for `:nix-only`, reject any closure-manifest field;
+5. for `:clojure`, resolve namespace candidates through the contained-coordinate boundary,
    validating each candidate before reading it, then recompute the closure;
 6. validate and canonicalize every determinant and explicit-input coordinate,
    derive the required set, and compare exact set equality before loading any
@@ -604,6 +638,9 @@ change independently of its wrapper and lock files.
   deterministically and identifies all unresolved or nonconforming rows
   without first-error loss; the join validator separately reconciles 37
   observations with 42 claim bindings.
+- The catalog schema/validator is family-neutral and accepts a closed valid
+  non-foundation catalog with different counts; only the foundation admission
+  test enforces 37/42.
 - Task 6C requires exact equality with the checked transitional conformance
   debt, and Task 7 changes both expected and observed debt to the empty vector
   in one commit.
@@ -616,22 +653,25 @@ change independently of its wrapper and lock files.
 - Existing `with-ephemeral-root` authorization behavior remains covered; the
   new owner cleans up on success and exception and cannot authorize repository,
   workspace, or unrelated external reads.
-- Operational manifests are total, exact, reproducible functions of named
+- Clojure-backed operational manifests are total, exact, reproducible functions of named
   entrypoint namespaces, the specified resolver algebra, and current repository
   namespace forms.
 - Operational capture rejects every missing, extra, malformed, unresolved,
   absolute, traversal, symlink-escaping, or recorded-versus-recomputed
   closure coordinate before command execution.
-- Both operational observations have checked same-stem manifests and exact
+- Both foundation operational observations have checked same-stem manifests and exact
   reviewed determinant sets; the one design-bundle observation has three
   explicit claim bindings without duplicate renamed runs.
+- A `:nix-only` operational fixture forbids a closure manifest and namespace
+  resolution while retaining exact reviewed determinant equality.
 - Operational execution uses the catalog-owned versioned environment policy
   and records that policy with the observed Nix system and version.
 - Offline validation rejects a bundle that omits, changes, or disagrees with
   its descriptor, selected observation-contract hash, closure manifest,
   reviewed determinant set, exact-v1 descriptor mode, or exact input set.
 - Repository-local, workspace-local, symlinked, existing, partially written,
-  and serialization-failing output cases cannot produce an accepted bundle.
+  unsupported-hard-link, and serialization-failing output cases cannot
+  produce an accepted bundle; an existing destination is never replaced.
 - No Task 6C commit creates run bundles, changes the evidence registry, promotes
   ADR 0034, or changes the governance mode.
 - The focused suites, Clojure lint/format checks, Nix format checks, root

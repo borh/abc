@@ -13,15 +13,20 @@
 - Plans 1 and 2 are required completed preconditions. Although this family is
   independently reviewable, execution is sequential because both prior plans
   mutate the shared ledger, registry, reports, and ADR graph.
+- Treat `design-bundle-operational-schema-rdf-tei` as immutable generation 2.
+  This plan's schema/source changes create generation 3,
+  `design-bundle-operational-temporal-person-ingest`, and atomically repoint
+  the four live predecessor bindings (`ADR-0008-C2`, `ADR-0010-C5`,
+  `ADR-0011-C1`, `ADR-0006-C1`). Never overwrite generation 2.
 - Consume Plan 1's immutable `docs/adr/adr-claim-migration-baseline.json`, content-hash-keyed `docs/adr/adr-claim-migration.edn`, disposition-aware inventory validator/report, `## Historical Evidence` / `## Future Verification` claim-header lint, checked capture descriptor/bundle layout, and repaired hermetic design-bundle plus separate Git-cliff checks. Do not recreate or fork those interfaces here.
 - Follow `docs/superpowers/specs/2026-07-12-adr-evidence-corpus-migration-design.md` exactly.
 - Audit mode remains active. This plan is not authorized to accept ADR 0034 or switch any Nix governance gate to enforcement.
 - Criterion correction precedes final claim-ID assignment. Once the Stage A claim headers are committed, their IDs are stable.
 - Plan 1's normative-section hash guard must remain green. Preserve original Decision/Hard Rule bytes; only duplicated criteria/status prose may move to non-acceptance sections.
 - All 36 baseline rows in family `temporal-person-ingest` receive exactly one reviewed disposition and an exact `:resulting-claim-ids` vector.
-- A passing namespace supports only assertions that namespace actually makes. Runtime-read schemas, SHACL, JSON fixtures, sidecars, and TTL graphs are explicit capture inputs. Every version-2 boundary has a checked runtime-input manifest whose exact equality with the repository files observed by its focused execution is proved through Plan 1's supported-I/O closure contract; the subprocess boundary instead has an exact version-1 Nix determinant set.
+- A passing namespace supports only assertions that namespace actually makes. Runtime-read schemas, SHACL, JSON fixtures, sidecars, and TTL graphs are explicit capture inputs. Every focused-v3 boundary has a checked runtime-input manifest whose exact equality with the repository files observed by its focused execution is proved through Plan 1's supported-I/O closure contract; the subprocess boundary instead has an operational-v1 exact determinant set.
 - Keep legacy `nil` temporal behavior bounded to the named cases; never claim that it preserves unknown versus not-recorded knowledge state. ADR 0036 owns that future correction.
-- Command-level behavior requires a subprocess/direct operational assertion. A pure helper test does not prove a CLI exit contract. Real child-process evidence is a version-1 hermetic Nix boundary; version-2 Clojure evidence closures contain no subprocess API.
+- Command-level behavior requires a subprocess/direct operational assertion. A pure helper test does not prove a CLI exit contract. Real child-process evidence is an operational-v1 hermetic Nix boundary; focused-v3 Clojure evidence closures contain no subprocess API.
 - `nix flake check` is not a timeless acceptance fact. Move the old criterion out of Acceptance Criteria; do not manufacture a passing historical observation.
 - Every source/test commit is green. Criterion edits, ledger mappings, capture descriptors, inventory expectations, and regenerated inventory land in one atomic Stage A commit.
 - Capture requires a clean Git worktree. Descriptors must already be committed and must include themselves in `:input-profile :explicit`.
@@ -46,6 +51,9 @@
 - `docs/adr/adr-claim-migration.edn` — 36 baseline-hash dispositions and final claim mappings.
 - `test/abc/tools/adr_evidence_inventory_test.clj` — temporal family count/mapping expectations using Plan 1's disposition-aware interface.
 - `docs/evidence/adr-capture/temporal-*.edn`, `person-drift-*.edn`, `aozora-*.edn` — checked clean-tree capture descriptors; seven name runtime-input manifests and the CLI descriptor names an exact Nix determinant set.
+- `data/adr-evidence/temporal-person-ingest-observation-catalog.edn` — checked
+  observation identity, command/environment policy, and determinant rows for
+  all eight family boundaries plus the design-bundle successor generation.
 - `docs/evidence/adr-runs/temporal-*.json`, `person-drift-*.json`, `aozora-*.json` — generated executable bundles.
 - `docs/adr/adr-evidence.edn` — claim-level joins only; no observations, inputs, or verdicts.
 - `docs/reports/adr-claim-migration-inventory.json` and `docs/reports/adr-evidence-migration.json` — deterministic generated outputs.
@@ -55,8 +63,8 @@
 - Baseline identity: `docs/adr/adr-claim-migration-baseline.json`; select ledger keys from each row's immutable `original_text_hash`, never from edited Markdown.
 - Reviewed source: `docs/adr/adr-claim-migration.edn`; each key is `[adr-number original-criterion-text-hash]` and each value has one disposition, a rationale when non-retained, a planned evidence boundary for live claims, and `:resulting-claim-ids` after Stage A.
 - Inventory producer: `clojure -M:abc/adr-evidence-inventory -- --output docs/reports/adr-claim-migration-inventory.json`; it rejects duplicate/unresolved baseline keys and missing resulting claim IDs.
-- Evidence capture: `clojure -M:abc/adr-evidence-capture -- --descriptor PATH --output PATH`; a successful bundle contains one Boolean observation named by the descriptor.
-- Runtime-input closure: each of the seven version-2 descriptors names `:runtime-input-manifest "docs/evidence/adr-inputs/<stem>.edn"`; that EDN has exact shape `{:schema-version :abc-adr-runtime-inputs-v1 :paths [...]}` with a sorted, duplicate-free vector of repository/workspace-relative runtime data paths. Focused wrapper Vars trace repository reads through `abc.tools.evidence-io` and require exact equality with `:paths`. The CLI's version-1 Nix descriptor instead binds its checked expanded Clojure source closure and exact operational determinants.
+- Evidence capture: `clojure -M:abc/adr-evidence-capture -- --repo-root . --workspace-root .. --staging-root STAGE --descriptor PATH --output STAGE/FILE`; a successful bundle contains one Boolean observation named by the descriptor.
+- Runtime-input closure: each of the seven focused-v3 descriptors names `:runtime-input-manifest "docs/evidence/adr-inputs/<stem>.edn"`; that EDN has exact shape `{:schema-version :abc-adr-runtime-inputs-v1 :paths [...]}` with a sorted, duplicate-free vector of repository/workspace-relative runtime data paths. Focused wrapper Vars trace repository reads through `abc.tools.evidence-io` and require exact equality with `:paths`. Every descriptor selects and hashes a row in `data/adr-evidence/temporal-person-ingest-observation-catalog.edn`; the CLI and design-bundle operational-v1 descriptors instead bind their checked entrypoint-namespace closures and exact operational determinants.
 - Evidence validation/join: `abc.tools.adr-evidence/validate-registry` through `clojure -M:abc/adr-governance -- --mode audit --report docs/reports/adr-evidence-migration.json`; the optional leading `--` is normalized by Plan 1 and no positional repository argument is accepted.
 - Shared command checks use the evaluated system instead of a hard-coded architecture: `system=$(nix eval --raw --impure --expr builtins.currentSystem)`. `nix run ./abc#validate-design-bundle` is hermetic after Plan 1; `nix build --no-link "./abc#checks.${system}.git-cliff-config"` owns synthetic Git-cliff validation.
 
@@ -586,7 +594,7 @@ Add `aozora-history-audit-cli-drift-update-exit-matrix-test` with two isolated f
 Add `checks.<system>.adr-evidence-aozora-history-audit-cli` to `abc/flake.nix`.
 The check supplies Clojure from Nix, uses the lock-pinned dependency closure,
 and focuses only this exact Var. This test namespace is excluded from every
-version-2 descriptor root; its subprocess is authorized only by the Nix
+focused-v3 descriptor root; its subprocess is authorized only by the Nix
 sandboxed operational boundary.
 
 - [ ] **Step 5: Run GREEN audit tests**
@@ -620,7 +628,7 @@ git commit -m "test(adr): observe upstream audit failure gates"
 - Modify: `abc/test/abc/tools/adr_evidence_inventory_test.clj`
 - Modify: `abc/test/abc/tools/adr_evidence_capture_test.clj`
 - Create: `abc/test/abc/tools/temporal_evidence_input_test.clj`
-- Create: seven manifests under `abc/docs/evidence/adr-inputs/` with the same basenames as the version-2 descriptors below.
+- Create: seven manifests under `abc/docs/evidence/adr-inputs/` with the same basenames as the focused-v3 descriptors below.
 - Create: `abc/docs/evidence/adr-capture/temporal-date-normalization.edn`
 - Create: `abc/docs/evidence/adr-capture/temporal-person-record-contract.edn`
 - Create: `abc/docs/evidence/adr-capture/temporal-person-shacl-contract.edn`
@@ -629,14 +637,16 @@ git commit -m "test(adr): observe upstream audit failure gates"
 - Create: `abc/docs/evidence/adr-capture/aozora-ingest-drift-invariants.edn`
 - Create: `abc/docs/evidence/adr-capture/aozora-history-audit.edn`
 - Create: `abc/docs/evidence/adr-capture/aozora-history-audit-cli.edn`
-- Create: `abc/docs/evidence/adr-inputs/aozora-history-audit-cli-nix-clojure-closure.edn`
+- Create: `abc/docs/evidence/adr-inputs/aozora-history-audit-cli.edn`
+- Create: `abc/docs/evidence/adr-inputs/design-bundle-operational-temporal-person-ingest.edn`
+- Create: `abc/data/adr-evidence/temporal-person-ingest-observation-catalog.edn`
 - Modify: `abc/flake.nix`
 - Create: `abc/docs/evidence/adr-entries/temporal-person-ingest.edn`
 - Regenerate: `abc/docs/reports/adr-claim-migration-inventory.json`
 
 **Interfaces:**
 - Consumes: Plan 1's baseline/ledger/inventory contracts and Tasks 1–4's green focused boundaries.
-- Produces: final stable family claim IDs, exactly 36 reviewed baseline mappings, committed clean-tree capture descriptors, and the Stage A audit state.
+- Produces: final stable family claim IDs, exactly 36 reviewed baseline mappings, nine committed clean-tree capture descriptors (eight family plus one shared-observation successor), and the Stage A audit state.
 
 - [ ] **Step 1: Apply the exact final claim set from Appendix A**
 
@@ -658,16 +668,27 @@ Use Appendix B. For each original row, copy the hash from `adr-claim-migration-b
 
 - [ ] **Step 3: Write checked capture descriptors**
 
-The seven in-process descriptors have exactly this version-2 shape (example
+First create the family observation catalog with schema version
+`:abc-adr-evidence-observation-catalog-v1`, exactly the seven focused rows,
+one operational CLI row, and the generation-3 design-bundle successor row.
+Validate it through
+`abc.tools.adr-evidence-observation-catalog`; every descriptor selects one row
+by catalog path/observation ID and stores the row's recomputed JCS contract
+hash.
+
+The seven in-process descriptors have exactly this focused-v3 shape (example
 shown for the CSV boundary):
 
 ```clojure
-{:schema-version "abc-adr-evidence-capture-v2"
+{:schema-version "abc-adr-evidence-capture-v3"
  :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus"
         "abc.tools.temporal-evidence-input-test/temporal-date-normalization-contract"]
  :runtime-input-manifest
  "docs/evidence/adr-inputs/temporal-date-normalization.edn"
+ :catalog-path "data/adr-evidence/temporal-person-ingest-observation-catalog.edn"
+ :observation-id :temporal-date-normalization
+ :observation-contract-sha256 "sha256:<64 lowercase hex digits>"
  :input-profile
  {:kind "clojure-test-v1"
   :roots ["abc.tools.temporal-evidence-input-test"]
@@ -698,23 +719,30 @@ and add those files, both drift schemas, and `schemas/manifest.shacl.ttl` to
 the runtime manifest. No glob or directory name is a valid substitute for
 exact file bindings.
 
-`aozora-history-audit-cli.edn` is instead version 1 with profile
-`repo-files-v1`, no runtime manifest, and argv that builds with `--no-link`
+`aozora-history-audit-cli.edn` instead uses
+`abc-adr-evidence-capture-operational-v1` with
+`:input-set-mode "exact-v1"`, no focused runtime manifest, and catalog-owned
+argv that builds with `--no-link`
 `checks.<system>.adr-evidence-aozora-history-audit-cli`. Its exact inputs bind
 `flake.nix`, `flake.lock`, `deps.edn`, `deps-lock.json`, `tests.edn`, the check expression, the checked
-`aozora-history-audit-cli-nix-clojure-closure.edn` plus every expanded
-source/test path for exact focus
-`abc.tools.aozora-history-audit-test/aozora-history-audit-cli-drift-update-exit-matrix-test`,
+same-stem operational closure manifest plus every expanded source/test path
+from the Nix check's Clojure entrypoint namespace,
 person/metadata/drift schemas, and
 `schemas/manifest.shacl.ttl`.
-Generate the checked source closure with Plan 1's
-`derive-nix-clojure-source-closure` for the exact CLI matrix Var. In
-`adr_evidence_capture_test.clj`, assert the closure manifest equals a fresh
-derivation and the descriptor explicitly binds the manifest, every expanded
-path, `deps.edn`, `deps-lock.json`, and `tests.edn`; removing one path or adding
-an unrelated source path must fail.
+Generate the checked source closure with
+`abc.tools.adr-evidence-operational/derive-namespace-closure`. In
+`adr_evidence_capture_test.clj`, assert exact equality among the fresh
+derivation, manifest paths, descriptor `:explicit`, and bundle input keys;
+removing one path or adding an unrelated source path must fail.
 
-- [ ] **Step 3A: Prove default-deny runtime-input closure for all seven version-2 boundaries**
+`design-bundle-operational-temporal-person-ingest.edn` is a Clojure-backed
+operational-v1 descriptor for the same supported app at the new Stage A input
+generation. Its catalog row, closure manifest, and exact determinants are
+recomputed rather than copied from generation 2. Before capture, run offline
+validation on generation 2 and require `:input-hash-mismatch` affecting
+exactly its four live bindings; any other new problem kind blocks capture.
+
+- [ ] **Step 3A: Prove default-deny runtime-input closure for all seven focused-v3 boundaries**
 
 In `temporal_evidence_input_test.clj`, author seven same-stem dedicated wrapper
 Vars and use Plan 1's invocation-local, acyclic `abc.tools.evidence-io` trace
@@ -744,15 +772,18 @@ and named adapters that call `record-read!` immediately before a library load
 are exempt. Add synthetic transitive raw-file and ProcessBuilder bypasses and require
 the lint to fail. Route each existing bypass through a traceable adapter
 without changing the value or ownership of the read.
-Each wrapper scopes freshly generated directories with `with-ephemeral-root`,
+Each wrapper scopes freshly generated directories with `with-owned-ephemeral-root`,
 invokes the exact operation directly rather than another `deftest`, and owns
-the descriptor-keyed closure assertion. Every version-2 descriptor focuses
+the descriptor-keyed closure assertion. Every focused-v3 descriptor focuses
 its wrapper Var, never an original whole test namespace.
 
 Create `temporal-person-ingest.edn` from Appendix D using plan 1's closed
 registration-template contract. It contains every Appendix D claim/evidence
 row, the exact artifact path and observation key, and
 `:expected {:operator := :value true}`, but no `:artifact-hash`.
+Add four literal repoint entries for the live predecessor claims, all selecting
+`design-bundle-operational-temporal-person-ingest-passes`. The template has 37
+entries total: 33 temporal-family evidence rows plus four repoints.
 
 - [ ] **Step 4: Update inventory tests before regenerating**
 
@@ -820,6 +851,7 @@ git add docs/adr/0015-temporal-modeling.md \
         docs/adr/adr-claim-migration.edn \
         docs/evidence/adr-capture \
         docs/evidence/adr-inputs \
+        data/adr-evidence/temporal-person-ingest-observation-catalog.edn \
         docs/evidence/adr-entries/temporal-person-ingest.edn \
         docs/reports/adr-claim-migration-inventory.json \
         docs/reports/adr-evidence-migration.json \
@@ -837,11 +869,13 @@ Expected: commit succeeds and the final status is clean. Do not begin capture ot
 ### Task 6: Capture immutable family evidence from the clean Stage A commit
 
 **Files:**
-- Create: eight JSON files under `abc/docs/evidence/adr-runs/` listed in Appendix C.
+- Create: the eight family JSON files listed in Appendix C plus
+  `design-bundle-operational-temporal-person-ingest.json` (nine total) under
+  `abc/docs/evidence/adr-runs/`.
 
 **Interfaces:**
 - Consumes: committed descriptors and `:abc/adr-evidence-capture`.
-- Produces: eight schema-valid executable bundles whose Boolean observations are true and whose input bindings are complete.
+- Produces: nine schema-valid executable bundles whose Boolean observations are true and whose input bindings are complete.
 
 - [ ] **Step 1: Reconfirm clean-tree provenance**
 
@@ -865,9 +899,13 @@ for name in \
   person-drift-negative-fixtures \
   aozora-ingest-drift-invariants \
   aozora-history-audit \
-  aozora-history-audit-cli
+  aozora-history-audit-cli \
+  design-bundle-operational-temporal-person-ingest
 do
   clojure -M:abc/adr-evidence-capture -- \
+    --repo-root . \
+    --workspace-root .. \
+    --staging-root "$tmpdir" \
     --descriptor "docs/evidence/adr-capture/${name}.edn" \
     --output "${tmpdir}/${name}.json" || exit 1
 done
@@ -878,20 +916,22 @@ done
 rm -rf "$tmpdir"
 ```
 
-Expected: every command exits 0 and writes one temporary bundle with observation value `true`; only after all eight captures succeed are the files copied into the worktree. This is required because the first in-repository untracked output would make the tree dirty and block the second capture. If a command fails, install no bundles and add no registry entry; repair forward, recommit changed inputs/descriptors, return to a clean tree, and recapture every stale bundle owned by this plan.
+Expected: every command exits 0 and writes one temporary bundle with observation value `true`; only after all nine captures succeed are the files copied into the worktree. This is required because the first in-repository untracked output would make the tree dirty and block the second capture. If a command fails, install no bundles and add no registry entry; repair forward, recommit changed inputs/descriptors, return to a clean tree, and recapture every stale bundle owned by this plan.
 
 - [ ] **Step 3: Validate observations and closure-artifact binding**
 
 ```bash
-for f in docs/evidence/adr-runs/{temporal-*,person-drift-*,aozora-*}.json; do
+for f in docs/evidence/adr-runs/{temporal-*,person-drift-*,aozora-*,design-bundle-operational-temporal-person-ingest}.json; do
   jq -e '.observations | to_entries | length == 1 and .[0].value.value == true' "$f"
 done
-for f in docs/evidence/adr-capture/{temporal-*,person-drift-*,aozora-*}.edn; do
+for f in docs/evidence/adr-capture/{temporal-*,person-drift-*,aozora-*,design-bundle-operational-temporal-person-ingest}.edn; do
   base="$(basename "$f" .edn)"
   jq -e --arg p "docs/evidence/adr-capture/${base}.edn" '.inputs[$p] != null' \
     "docs/evidence/adr-runs/${base}.json"
-  if test "$base" = aozora-history-audit-cli; then
-    jq -e '.input_profile.kind == "repo-files-v1"' \
+  if test "$base" = aozora-history-audit-cli || \
+     test "$base" = design-bundle-operational-temporal-person-ingest; then
+    jq -e --arg p "docs/evidence/adr-inputs/${base}.edn" \
+      '.input_profile.kind == "repo-files-v1" and .inputs[$p] != null' \
       "docs/evidence/adr-runs/${base}.json"
     continue
   fi
@@ -903,8 +943,8 @@ done
 Expected: all checks exit 0. Capture has already rejected any mismatch among
 the traced runtime reads, the checked manifest, and descriptor explicit
 inputs; these checks additionally prove both closure-control artifacts are
-bound into each version-2 bundle and that the CLI bundle has the intended
-version-1 operational profile.
+bound into each focused-v3 bundle and that the CLI bundle has the intended
+operational-v1 exact profile.
 
 ---
 
@@ -929,10 +969,12 @@ clojure -M:abc/adr-evidence-register -- \
   --registry docs/adr/adr-evidence.edn
 ```
 
-Expected: exit 0 with all 32 distinct family claim IDs registered. The
-registrar derives the eight canonical JCS hashes and rejects a helper-test
+Expected: exit 0 with all 32 distinct family claim IDs registered and all four
+predecessor bindings repointed. The registrar derives the nine canonical JCS hashes and rejects a helper-test
 bundle for the CLI claim, any missing observation, or any incompatible kind.
-Run it twice and verify the second run leaves the registry byte-identical.
+Assert no live registry entry still selects
+`design-bundle-operational-schema-rdf-tei.json`. Run it twice and verify the
+second run leaves the registry byte-identical.
 
 - [ ] **Step 2: Regenerate both reports**
 
@@ -1107,7 +1149,7 @@ Use immutable baseline hashes as ledger keys. `correct` rationales are the narro
 
 ## Appendix C: Capture boundaries and runtime-input manifests
 
-For the seven version-2 rows, each row's data paths are the exact `:paths` of
+For the seven focused-v3 rows, each row's data paths are the exact `:paths` of
 `docs/evidence/adr-inputs/<boundary>.edn`. Every descriptor's `:explicit`
 vector is that set plus its own path and the manifest path.
 
@@ -1120,7 +1162,7 @@ vector is that set plus its own path and the manifest path.
 | `person-drift-negative-fixtures` | exact focus `abc.tools.temporal-evidence-input-test/person-drift-negative-fixtures-contract` | both drift schemas, SHACL, every sorted file under `fixtures/v0/invalid/drift/` |
 | `aozora-ingest-drift-invariants` | exact focus `abc.tools.temporal-evidence-input-test/aozora-ingest-drift-invariants-contract` | person/metadata/manifest schemas, example manifest, one event and three indexes |
 | `aozora-history-audit` | exact focus `abc.tools.temporal-evidence-input-test/aozora-history-audit-contract` | person/metadata/drift schemas and `schemas/manifest.shacl.ttl` |
-| `aozora-history-audit-cli` | version-1 `repo-files-v1`; `nix build --no-link .#checks.<system>.adr-evidence-aozora-history-audit-cli` | exact `flake.nix`, `flake.lock`, `deps.edn`, `deps-lock.json`, `tests.edn`, checked source-closure manifest, CLI/test/source files, person/metadata/drift schemas, and SHACL; no runtime manifest |
+| `aozora-history-audit-cli` | operational-v1 `exact-v1`; catalog-owned `nix build --no-link .#checks.<system>.adr-evidence-aozora-history-audit-cli` argv | exact `flake.nix`, `flake.lock`, `deps.edn`, `deps-lock.json`, `tests.edn`, same-stem entrypoint-namespace closure manifest, CLI/test/source files, person/metadata/drift schemas, and SHACL; no focused runtime manifest |
 
 If `temporal-person-shacl-contract` reads broad success/failure fixtures through namespace setup, either enumerate those exact paths or focus extracted temporal-only vars in a new small namespace. Never accept accidental broad runtime under-binding.
 

@@ -1,5 +1,6 @@
 (ns abc.tools.adr
-  (:require [abc.tools.path-containment :as containment]
+  (:require [abc.tools.files :as files]
+            [abc.tools.path-containment :as containment]
             [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as str])
@@ -30,9 +31,9 @@
   (merge {:kind kind :file file :message message} data))
 
 (defn adr-files [dir]
-  (->> (fs/list-dir dir)
-       (filter fs/regular-file?)
-       (map #(str (fs/file-name %)))
+  (->> (files/list-files (io/file dir))
+       (filter #(.isFile %))
+       (map #(.getName %))
        (filter #(re-matches #"\d{4}-.+\.md" %))
        sort
        vec))
@@ -230,7 +231,7 @@
   (some-> (re-find #"^(\d{4})" filename) second Integer/parseInt))
 
 (defn parse-adr [dir filename]
-  (let [lines (str/split-lines (slurp (io/file dir filename)))
+  (let [lines (str/split-lines (files/read-text (io/file dir filename)))
         title-result (parse-title filename (first lines))
         header-result (header-lines filename lines)
         fields-result (parse-fields filename (:lines header-result))
@@ -566,9 +567,9 @@
       [(problem :invalid-adr-directory adr-dir "ADR path is not a directory")]
 
       :else
-      (let [markdown-files (->> (fs/list-dir directory)
-                                (filter fs/regular-file?)
-                                (map #(str (fs/file-name %)))
+      (let [markdown-files (->> (files/list-files directory)
+                                (filter #(.isFile %))
+                                (map #(.getName %))
                                 (filter #(and (str/ends-with? % ".md")
                                               (not= "README.md" %)))
                                 sort

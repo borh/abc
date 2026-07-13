@@ -1,0 +1,353 @@
+(ns abc.tools.adr-evidence-runtime-inputs
+  (:require [abc.tools.files :as files]
+            [abc.tools.path-containment :as containment]
+            [clojure.edn :as edn]
+            [clojure.java.io :as io]
+            [clojure.set :as set]
+            [clojure.string :as str]
+            [clojure.tools.reader :as reader]
+            [clojure.tools.reader.reader-types :as reader-types])
+  (:import [java.lang ProcessBuilder]))
+
+(defn- fail! [kind message & {:as data}]
+  (throw (ex-info message (assoc data :kind kind))))
+
+(defn- validate-path! [root path]
+  (when-not (and (string? path) (seq path))
+    (fail! :invalid-runtime-input-manifest "runtime input path must be non-empty" :path path))
+  (let [state (containment/path-state root path)]
+    (when-not (and (= :ok (:state state)) (.isFile ^java.io.File (:path state)))
+      (fail! (if (= :missing (:state state))
+               :missing-runtime-input
+               :invalid-runtime-input-manifest)
+             "runtime input path is missing or not contained"
+             :path path :state (:state state)))))
+
+(defn- load-manifest! [root path]
+  (validate-path! root path)
+  (let [manifest (try (files/read-edn (io/file root path))
+                      (catch Exception e
+                        (fail! :invalid-runtime-input-manifest
+                               "runtime input manifest is unreadable"
+                               :path path :detail (.getMessage e))))
+        paths (:paths manifest)]
+    (when-not (= #{:schema-version :paths} (set (keys manifest)))
+      (fail! :invalid-runtime-input-manifest "runtime input manifest must have exactly two keys"))
+    (when-not (= :abc-adr-runtime-inputs-v1 (:schema-version manifest))
+      (fail! :invalid-runtime-input-manifest "runtime input manifest schema is unsupported"))
+    (when-not (and (vector? paths)
+                   (= paths (vec (sort paths)))
+                   (= (count paths) (count (distinct paths))))
+      (fail! :invalid-runtime-input-manifest "runtime input paths must be sorted and unique"))
+    (doseq [input paths] (validate-path! root input))
+    manifest))
+
+(defn assert-runtime-input-closure!
+  [{:keys [repo-root workspace-root descriptor repository-paths]}]
+  (let [{descriptor-path :path value :value} descriptor
+        profile (:input-profile value)
+        component? (= "component-clojure-test-v1" (:kind profile))
+        input-root (if component? workspace-root repo-root)]
+    (when (and component? (nil? workspace-root))
+      (fail! :missing-runtime-input "component evidence requires a workspace root"))
+    (let [manifest-path (:runtime-input-manifest value)
+          manifest (load-manifest! input-root manifest-path)
+          expected (into (sorted-set) (concat (:paths manifest)
+                                              [descriptor-path manifest-path]))
+          explicit (set (get-in value [:input-profile :explicit]))
+          observed (into (sorted-set) repository-paths)
+          missing (set/difference expected observed)
+          extra (set/difference observed expected)]
+      (when-not (set/subset? expected explicit)
+        (fail! :invalid-runtime-input-manifest
+               "descriptor must bind its runtime manifest and every runtime-data input"
+               :paths (vec (sort (set/difference expected explicit)))))
+      (when (seq missing)
+        (fail! :undeclared-runtime-input "declared runtime inputs were not observed"
+               :paths (vec (sort missing))))
+      (when (seq extra)
+        (fail! :missing-runtime-input "observed repository reads are absent from the manifest"
+               :paths (vec (sort extra))))
+      true)))
+
+(defn validate-runtime-input-manifest!
+  "Validate the static v2 descriptor/manifest binding before executing it."
+  [{:keys [repo-root workspace-root descriptor]}]
+  (let [{descriptor-path :path value :value} descriptor
+        component? (= "component-clojure-test-v1" (get-in value [:input-profile :kind]))
+        input-root (if component? workspace-root repo-root)]
+    (when (and component? (nil? workspace-root))
+      (fail! :missing-runtime-input "component evidence requires a workspace root"))
+    (let [manifest-path (:runtime-input-manifest value)
+          manifest (load-manifest! input-root manifest-path)
+          required (into #{descriptor-path manifest-path} (:paths manifest))
+          explicit (set (get-in value [:input-profile :explicit]))]
+      (when-not (set/subset? required explicit)
+        (fail! :invalid-runtime-input-manifest
+               "descriptor omits its manifest or a runtime-data path"
+               :paths (vec (sort (set/difference required explicit)))))
+      manifest)))
+
+(def ^:private contract-basenames
+  {'abc.tools.manifest/content "manifest-content.edn"
+   'abc.tools.adr/validate-repository* "adr-validate-repository-star.edn"})
+
+(def ^:private forbidden-vars
+  '#{clojure.core/slurp clojure.core/line-seq clojure.core/file-seq
+     clojure.edn/read clojure.java.io/reader clojure.java.io/input-stream
+     clojure.java.shell/sh babashka.process/process babashka.process/shell})
+
+(def ^:private forbidden-simple
+  '#{FileReader ProcessBuilder ZipFile readAllBytes readString newInputStream
+     listFiles loadModel readDataset inputStream input-stream reader URL openStream
+     sh process shell})
+
+(def ^:private exempt-callers
+  '#{abc.tools.files abc.tools.hash abc.tools.json abc.tools.evidence-io})
+
+(def ^:private audited-special-heads
+  '#{fn* fn if let* let loop* loop recur do throw try catch finally new .
+     -> ->> some-> some->> cond-> cond->>
+     set! monitor-enter monitor-exit case* deftype* reify*})
+
+(def ^:private audited-core-macros
+  '#{and or when when-not if-let when-let if-some when-some cond condp case
+     doseq for dotimes letfn binding with-open lazy-seq doto assert})
+
+(defn- forbidden-head? [head]
+  (let [simple (-> (name head)
+                   (str/replace #"^\." "")
+                   (str/replace #"\.$" "")
+                   (str/split #"\.")
+                   last
+                   symbol)]
+    (contains? forbidden-simple simple)))
+
+(defn- kondo-analysis! [repo-root]
+  (let [config (pr-str {:output {:format :edn}
+                        :analysis {:var-definitions true :var-usages true
+                                   :locals true :local-usages true}})
+        process (-> (ProcessBuilder. ["clj-kondo" "--fail-level" "error"
+                                      "--lint" "src" "test"
+                                      "--config" config])
+                    (.directory (io/file repo-root))
+                    (.redirectErrorStream true)
+                    (.start))
+        output (slurp (.getInputStream process))
+        exit (.waitFor process)]
+    (when-not (zero? exit)
+      (fail! :invalid-nix-clojure-closure "clj-kondo analysis failed" :output output))
+    (edn/read-string output)))
+
+(defn- read-forms! [file]
+  (with-open [r (io/reader file)]
+    (let [r (reader-types/indexing-push-back-reader r)]
+      (loop [forms []]
+        (let [form (reader/read {:eof ::eof :read-cond :allow :features #{:clj}} r)]
+          (if (= ::eof form) forms (recur (conj forms form))))))))
+
+(defn- qvar [m] (symbol (str (:ns m)) (str (:name m))))
+(defn- span [x] [(:line (meta x)) (:column (meta x))])
+(defn- usage-span [x] [(:name-row x) (:name-col x)])
+
+(defn- defn-form [forms name]
+  (some (fn [form]
+          (when (and (seq? form) (#{'defn 'defn- 'deftest} (first form)) (= name (second form))) form))
+        forms))
+
+(defn- parse-defn [form]
+  (if (= 'deftest (first form))
+    {:params [] :body (drop 2 form)}
+    (let [[_ _ & tail] form
+          tail (cond-> tail (string? (first tail)) rest (map? (first tail)) rest)
+          arities (if (vector? (first tail)) [(cons (first tail) (rest tail))] tail)]
+      (when-not (= 1 (count arities))
+        (fail! :unsupported-evidence-call-graph "multi-arity defn is outside the audited subset"))
+      {:params (first (first arities)) :body (rest (first arities))})))
+
+(defn- contract-path [caller]
+  (when-let [basename (get contract-basenames caller)]
+    (str "data/evidence-higher-order-calls/" basename)))
+
+(defn- load-contract! [repo-root caller]
+  (let [path (contract-path caller)]
+    (when-not path
+      (fail! :unregistered-higher-order-call "function parameter invocation has no contract"
+             :caller caller))
+    (when-not (= :ok (:state (containment/path-state repo-root path)))
+      (fail! :invalid-higher-order-contract "higher-order contract is missing"
+             :caller caller :path path))
+    (let [value (try (files/read-edn (io/file repo-root path))
+                     (catch Exception e
+                       (fail! :invalid-higher-order-contract "higher-order contract is unreadable"
+                              :caller caller :path path :detail (.getMessage e))))]
+      (when-not (and (= #{:schema-version :caller :parameters} (set (keys value)))
+                     (= :abc-evidence-higher-order-call-v1 (:schema-version value))
+                     (= caller (:caller value))
+                     (map? (:parameters value))
+                     (every? symbol? (keys (:parameters value)))
+                     (every? #(and (vector? %) (seq %) (= (count %) (count (distinct %)))
+                                   (every? qualified-symbol? %))
+                             (vals (:parameters value))))
+        (fail! :invalid-higher-order-contract "higher-order contract is malformed"
+               :caller caller :path path))
+      [path value])))
+
+(defn analyze-reachable-vars
+  "Return the exact call graph admitted by the evidence closed subset. clj-kondo
+  resolves Vars; tools.reader identifies list-head and defn-parameter spans."
+  [repo-root focused-vars]
+  (let [repo-root (.getCanonicalFile (io/file repo-root))
+        kondo (kondo-analysis! repo-root)
+        analysis (:analysis kondo)
+        definitions-grouped (group-by qvar (:var-definitions analysis))
+        definitions (into {} (map (fn [[var items]] [var (first items)])) definitions-grouped)
+        usages (group-by (juxt :filename :from-var) (:var-usages analysis))
+        locals (group-by :filename (:local-usages analysis))
+        findings (group-by :filename (:findings kondo))
+        forms-cache (atom {})
+        consulted (atom (sorted-set))
+        reachable (atom (sorted-set))]
+    (letfn [(definition! [var]
+              (let [items (get definitions-grouped var)]
+                (cond
+                  (nil? items)
+                  (fail! :unresolved-focused-var "focused or target Var does not resolve" :var var)
+                  (not= 1 (count items))
+                  (fail! :duplicate-var-definition "reachable Var has duplicate definitions" :var var)
+                  :else (first items))))
+            (forms! [filename]
+              (or (get @forms-cache filename)
+                  (let [forms (read-forms! (io/file repo-root filename))]
+                    (swap! forms-cache assoc filename forms) forms)))
+            (walk! [caller definition params form pending]
+              (cond
+                (seq? form)
+                (let [head (first form)]
+                  (when-not (or (symbol? head) (keyword? head) (set? head) (map? head))
+                    (fail! :unsupported-evidence-call-graph "computed invocation is forbidden"
+                           :caller caller :form (pr-str form)))
+                  (cond
+                    (#{'quote 'var} head) nil
+                    (or (keyword? head) (set? head) (map? head)) nil
+                    (contains? audited-special-heads head)
+                    (do
+                      (when (#{'-> '->> 'some-> 'some->>} head)
+                        (doseq [step (drop 2 form)
+                                :when (symbol? step)]
+                          (walk! caller definition params (list step) pending)))
+                      (when (#{'cond-> 'cond->>} head)
+                        (doseq [step (take-nth 2 (drop 3 form))
+                                :when (symbol? step)]
+                          (walk! caller definition params (list step) pending))))
+                    (str/starts-with? (name head) ".")
+                    (when (forbidden-head? head)
+                      (when-not (contains? exempt-callers (:ns definition))
+                        (fail! :forbidden-evidence-io "reachable reflective I/O call"
+                               :caller caller :target head)))
+                    (forbidden-head? head)
+                    (when-not (contains? exempt-callers (:ns definition))
+                      (fail! :forbidden-evidence-io "reachable raw I/O, network, or process call"
+                             :caller caller :target head))
+                    (contains? params head)
+                    (let [[path contract] (load-contract! repo-root caller)
+                          targets (get-in contract [:parameters head])]
+                      (when-not targets
+                        (fail! :invalid-higher-order-contract "invoked parameter is absent from contract"
+                               :caller caller :parameter head))
+                      (when-not (some #(= (span head) (usage-span %))
+                                      (get locals (:filename definition)))
+                        (fail! :reader-kondo-span-mismatch "parameter head does not match clj-kondo local usage"
+                               :caller caller :parameter head))
+                      (swap! consulted conj path)
+                      (doseq [target targets] (definition! target) (swap! pending conj target)))
+                    :else
+                    (if (and (namespace head)
+                             (re-matches #"[A-Z].*" (last (str/split (namespace head) #"\."))))
+                      nil
+                      (let [matches (filter #(= (span head) (usage-span %))
+                                            (get usages [(:filename definition) (:name definition)]))]
+                        (when-not (= 1 (count matches))
+                          (fail! :reader-kondo-span-mismatch "list head must match exactly one resolved Var"
+                                 :caller caller :head head :matches (count matches)))
+                        (let [usage (first matches)
+                              target (symbol (str (:to usage)) (str (:name usage)))]
+                          (when (and (:macro usage)
+                                     (not (and (= 'clojure.core (:to usage))
+                                               (contains? audited-core-macros (:name usage)))))
+                            (fail! :unsupported-evidence-call-graph
+                                   "reachable macro is outside the audited subset"
+                                   :caller caller :target target))
+                          (when (or (contains? forbidden-vars target)
+                                    (forbidden-head? (:name usage)))
+                            (when-not (contains? exempt-callers (:ns definition))
+                              (fail! :forbidden-evidence-io "reachable raw I/O, network, or process call"
+                                     :caller caller :target target)))
+                          (when (contains? definitions target)
+                            (when (and (:macro (get definitions target))
+                                       (not= 'clojure.core (:to usage)))
+                              (fail! :unsupported-evidence-call-graph "user macro is forbidden" :target target))
+                            (swap! pending conj target))))))
+                  (doseq [x (rest form)] (walk! caller definition params x pending)))
+                (coll? form) (doseq [x form] (walk! caller definition params x pending))))
+            (visit! [var pending]
+              (when-not (contains? @reachable var)
+                (let [definition (definition! var)
+                      filename (:filename definition)
+                      form (defn-form (forms! filename) (:name definition))]
+                  (when-not form
+                    (fail! :unsupported-evidence-call-graph "reachable Var is not a direct defn" :var var))
+                  (when (some #(and (<= (:row definition) (:row %))
+                                    (<= (:row %) (:end-row definition))
+                                    (= :error (:level %)))
+                              (get findings filename))
+                    (fail! :unresolved-call-edge "clj-kondo found an error in reachable Var" :var var))
+                  (swap! reachable conj var)
+                  (let [{:keys [params body]} (parse-defn form)]
+                    (doseq [x body]
+                      (walk! var definition (set (filter symbol? params)) x pending))))))]
+      (let [pending (atom (into (sorted-set) focused-vars))]
+        (loop []
+          (when-let [var (first @pending)]
+            (swap! pending disj var)
+            (visit! var pending)
+            (recur))))
+      {:focused-vars (vec (sort focused-vars))
+       :reachable-vars (vec @reachable)
+       :paths (->> @reachable (map #(-> definitions (get %) :filename)) distinct sort vec)
+       :contract-paths (vec @consulted)})))
+
+(defn derive-nix-clojure-source-closure [repo-root focused-vars]
+  (:paths (analyze-reachable-vars repo-root focused-vars)))
+
+(defn validate-nix-clojure-closure!
+  "Validate a checked Nix/Clojure closure manifest and its descriptor binding."
+  [repo-root manifest-path descriptor-inputs]
+  (validate-path! repo-root manifest-path)
+  (let [manifest (files/read-edn (io/file repo-root manifest-path))
+        focused (:focused-vars manifest)
+        paths (:paths manifest)]
+    (when-not (= #{:schema-version :focused-vars :paths} (set (keys manifest)))
+      (fail! :invalid-nix-clojure-closure "closure manifest has an invalid key set"))
+    (when-not (= :abc-adr-nix-clojure-closure-v1 (:schema-version manifest))
+      (fail! :invalid-nix-clojure-closure "closure manifest schema is unsupported"))
+    (when-not (and (vector? focused) (seq focused)
+                   (every? qualified-symbol? focused)
+                   (= focused (vec (sort focused)))
+                   (= (count focused) (count (distinct focused)))
+                   (vector? paths) (= paths (vec (sort paths)))
+                   (= (count paths) (count (distinct paths))))
+      (fail! :invalid-nix-clojure-closure "closure coordinates must be sorted and unique"))
+    (let [{actual-paths :paths contract-paths :contract-paths}
+          (analyze-reachable-vars repo-root focused)
+          expected-paths (vec (sort actual-paths))
+          required (into #{"deps.edn" "deps-lock.json" "tests.edn" manifest-path}
+                         (concat expected-paths contract-paths))
+          inputs (set descriptor-inputs)]
+      (when-not (= paths expected-paths)
+        (fail! :invalid-nix-clojure-closure "closure manifest does not equal derived reachable paths"
+               :expected expected-paths :actual paths))
+      (when-let [missing (seq (sort (set/difference required inputs)))]
+        (fail! :missing-evidence-input "descriptor omits a Nix/Clojure closure determinant"
+               :paths (vec missing)))
+      true)))

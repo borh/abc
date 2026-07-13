@@ -202,6 +202,19 @@
               '';
         in
         {
+          monorepo-adr-governance =
+            pkgs.runCommand "soranoha-monorepo-adr-governance"
+              {
+                src = self;
+              }
+              ''
+                mkdir -p "$out"
+                ${abcApps.adr-governance.program} \
+                  --repo-root "$src/abc" \
+                  --workspace-root "$src" \
+                  --mode audit \
+                  --report "$out/report.json"
+              '';
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =
             mkMonorepoCheck "soranoha-monorepo-tei-version-coherence"

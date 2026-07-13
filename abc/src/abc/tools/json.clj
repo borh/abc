@@ -1,12 +1,13 @@
 (ns abc.tools.json
   (:require [charred.api :as json]
+            [abc.tools.evidence-io :as evidence-io]
             [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [java.nio.file CopyOption Files StandardCopyOption]
            [java.nio.file.attribute FileAttribute PosixFilePermissions]))
 
 (defn read-json-file [file]
-  (json/read-json (io/file file)))
+  (json/read-json (io/file (evidence-io/record-read! file))))
 
 (defn read-json-str [s]
   (json/read-json s))

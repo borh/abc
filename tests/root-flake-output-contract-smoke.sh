@@ -21,6 +21,7 @@ expected = {
     "packages": {"tei-p5-reference"},
     "devShells": {"default"},
     "checks": {
+        "monorepo-adr-governance",
         "monorepo-aat-materialization-workflow",
         "monorepo-aat-run-set",
         "monorepo-active-path-hygiene",

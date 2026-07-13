@@ -56,7 +56,11 @@ phase5-checkpoint:
 	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
 	nix build "./ab-validator#checks.$system.phase5-checkpoint" --print-build-logs
 
-validate-migration: check-no-build phase5-checkpoint
+monorepo-adr-governance:
+	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
+	nix build ".#checks.$system.monorepo-adr-governance" --print-build-logs
+
+validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance
 
 # Unseeded simulation soak (15x counts); failures print the seed to replay.
 sim-soak:

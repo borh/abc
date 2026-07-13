@@ -104,3 +104,17 @@
         launcher (subs flake start end)]
     (is (not (string/includes? launcher "export JAVA_TOOL_OPTIONS")))
     (is (string/includes? launcher "-J-Duser.home=${cljDepsCache}"))))
+
+(deftest cli-leading-separator-preserves-root-options-test
+  (let [calls (atom [])
+        argv ["--repo-root" "/repo/abc" "--workspace-root" "/repo"
+              "--mode" "audit"]]
+    (with-redefs [governance/run!
+                  (fn [repo-root options]
+                    (swap! calls conj [repo-root options])
+                    {:ok? true :exit-code 0 :mode (:mode options) :problems []})]
+      (governance/run-cli! argv)
+      (governance/run-cli! (into ["--"] argv)))
+    (is (= [["/repo/abc" {:mode :audit :workspace-root "/repo"}]
+             ["/repo/abc" {:mode :audit :workspace-root "/repo"}]]
+            @calls))))

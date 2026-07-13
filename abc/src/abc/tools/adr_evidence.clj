@@ -159,7 +159,7 @@
                               "external evidence review date has passed")]))))))))
 
 (defn validate-registry
-  [{:keys [repo-root claims registry matrix as-of]}]
+  [{:keys [repo-root workspace-root claims registry matrix as-of]}]
   (let [entries (:entries registry)
         claims-by-id (into {} (map (juxt :claim-id identity)) claims)
         known-evidence-kinds (apply set/union #{} (vals matrix))
@@ -176,7 +176,9 @@
               (for [[[path artifact-hash] grouped] (artifact-groups entries)
                     :let [affected (mapv :claim-id grouped)]]
                 [[path artifact-hash]
-                 (bundle/validate-bundle repo-root path artifact-hash affected)]))
+                 (bundle/validate-bundle {:artifact-root repo-root
+                                          :workspace-root (or workspace-root repo-root)}
+                                         path artifact-hash affected)]))
         artifact-root-problems (mapcat :problems (vals artifact-results))
         joined-problems
         (mapcat

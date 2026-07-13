@@ -25,7 +25,9 @@
          data))
 
 (defn- value-at [m k]
-  (or (get m k) (get m (name k))))
+  (or (get m k)
+      (get m (name k))
+      (get m (str/replace (name k) "-" "_"))))
 
 (defn- artifact-path-problems [artifact-path state affected-claim-ids]
   (case (:state state)
@@ -170,6 +172,19 @@
       (into (sorted-set) (concat explicit
                                  (clojure-namespace-inputs repo-root roots)))
 
+      "component-clojure-test-v1"
+      (let [component-root (value-at input-profile :component-root)
+            state (containment/path-state repo-root component-root)]
+        (when-not (and (= :ok (:state state)) (.isDirectory ^java.io.File (:path state)))
+          (throw (ex-info "component root is missing or escapes the workspace"
+                          {:kind :missing-evidence-input
+                           :component-root component-root
+                           :state (:state state)})))
+        (into (sorted-set)
+              (concat explicit
+                      (map #(str (str/replace component-root #"/+$" "") "/" %)
+                           (clojure-namespace-inputs (:path state) roots)))))
+
       ("repo-files-v1" "external-authority-v1")
       (into (sorted-set) explicit)
 
@@ -189,14 +204,16 @@
            {:seen #{} :problems []}
            problems)))
 
-(defn- input-problems [repo-root artifact-path value affected-claim-ids]
+(defn- input-problems [repo-root workspace-root artifact-path value affected-claim-ids]
   (let [profile (get value "input_profile")
+        component? (= "component-clojure-test-v1" (get profile "kind"))
+        input-root (if component? workspace-root repo-root)
         inputs (get value "inputs")
         summary (when (= "abc-adr-external-evidence-v1"
                          (get value "schema_version"))
                   (get value "summary"))
         required (try
-                   (cond-> (derive-minimum-inputs repo-root profile)
+                   (cond-> (derive-minimum-inputs input-root profile)
                      (= "abc-adr-external-evidence-v1" (get value "schema_version"))
                      (conj (get-in value ["summary" "path"])))
                    (catch Exception exception exception))]
@@ -212,7 +229,7 @@
                    "derived evidence input is not bound by the artifact"
                    affected-claim-ids :artifact-path artifact-path :input-path path))
         (for [[path expected-hash] (sort-by key inputs)
-              :let [state (containment/path-state repo-root path)]
+              :let [state (containment/path-state input-root path)]
               :when (not= :ok (:state state))]
           (problem (case (:state state)
                      :missing :missing-evidence-input
@@ -221,7 +238,7 @@
                    "evidence input path is missing or escapes the repository"
                    affected-claim-ids :artifact-path artifact-path :input-path path))
         (for [[path expected-hash] (sort-by key inputs)
-              :let [state (containment/path-state repo-root path)]
+              :let [state (containment/path-state input-root path)]
               :when (= :ok (:state state))
               :let [actual-hash (hash/format-sha256 (hash/sha256-file (:path state)))]
               :when (not= expected-hash actual-hash)]
@@ -243,8 +260,12 @@
                             :input-path path :expected expected-hash
                             :actual actual-hash)]))))))))))
 
-(defn validate-bundle [repo-root artifact-path expected-hash affected-claim-ids]
-  (let [affected-claim-ids (vec (sort (distinct affected-claim-ids)))
+(defn validate-bundle
+  [roots artifact-path expected-hash affected-claim-ids]
+  (let [{:keys [artifact-root workspace-root]}
+        (if (map? roots) roots {:artifact-root roots :workspace-root roots})
+        repo-root artifact-root
+        affected-claim-ids (vec (sort (distinct affected-claim-ids)))
         loaded (load-bundle repo-root artifact-path)]
     (if-let [load-problems (:problems loaded)]
       {:bundle nil
@@ -261,7 +282,7 @@
                         :expected expected-hash :actual canonical-hash)])
             problems (vec (concat hash-problems artifact-problems
                                   (when (empty? artifact-problems)
-                                    (input-problems repo-root artifact-path value
+                                    (input-problems repo-root workspace-root artifact-path value
                                                     affected-claim-ids))))]
         {:bundle (when (empty? problems) value)
          :problems problems}))))

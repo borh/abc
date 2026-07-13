@@ -205,6 +205,12 @@
             description = "Soranoha snapshot publication command dispatcher";
           };
 
+          adr-governance = mkCljApp {
+            name = "abc-adr-governance";
+            alias = "abc/adr-governance";
+            description = "Validate ADR lifecycle, claims, and evidence governance";
+          };
+
           materialize-import = mkCljApp {
             name = "abc-materialize-import";
             alias = "abc/materialize-import";

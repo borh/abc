@@ -107,3 +107,58 @@
                    :descriptor (assoc (descriptor ["true"]) :unexpected true)
                    :output output})))
     (is (not (.exists output)))))
+
+(deftest descriptor-version-and-runtime-manifest-contract-is-closed
+  (let [repo (git-repo)
+        output (io/file (temp-dir "abc-evidence-capture-v2") "bundle.json")
+        profile {:kind "clojure-test-v1"
+                 :roots ["example.core"]
+                 :explicit ["docs/evidence/adr-capture/example.edn"
+                            "docs/evidence/adr-inputs/example.edn"]}
+        v2 {:schema-version "abc-adr-evidence-capture-v2"
+            :tool "true" :argv ["true"] :input-profile profile
+            :runtime-input-manifest "docs/evidence/adr-inputs/example.edn"
+            :observation-key "passes"}]
+    (doseq [[value path]
+            [[(dissoc v2 :runtime-input-manifest)
+              "docs/evidence/adr-capture/example.edn"]
+             [(assoc (descriptor ["true"])
+                     :runtime-input-manifest "docs/evidence/adr-inputs/example.edn")
+              "docs/evidence/adr-capture/example.edn"]
+             [v2 "docs/evidence/adr-capture/wrong.edn"]]]
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (capture/capture! {:repo-root repo :descriptor value
+                                      :descriptor-path path :output output}))))))
+
+(deftest v2-capture-lints-the-focused-var-and-binds-its-closed-inputs-test
+  (let [repo (git-repo)
+        descriptor-path "docs/evidence/adr-capture/example.edn"
+        manifest-path "docs/evidence/adr-inputs/example.edn"
+        test-path "test/example/core_test.clj"
+        descriptor {:schema-version "abc-adr-evidence-capture-v2"
+                    :tool "true"
+                    :argv ["true" "--focus" "example.core-test/runtime-input-contract"]
+                    :runtime-input-manifest manifest-path
+                    :input-profile {:kind "clojure-test-v1"
+                                    :roots ["example.core-test"]
+                                    :explicit [descriptor-path manifest-path]}
+                    :observation-key "passes"}
+        output (io/file (temp-dir "abc-evidence-capture-v2-run") "bundle.json")]
+    (doseq [[path body]
+            [[descriptor-path (pr-str descriptor)]
+             [manifest-path (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []})]
+             [test-path (str "(ns example.core-test (:require [clojure.test :refer [deftest is]] [example.core]))\n"
+                             "(deftest runtime-input-contract (is true))\n")]]]
+      (let [file (io/file repo path)]
+        (.mkdirs (.getParentFile file))
+        (spit file body)))
+    (exec! repo "git" "add" ".")
+    (exec! repo "git" "commit" "-q" "-m" "v2 fixture")
+    (let [result (capture/capture! {:repo-root repo :descriptor descriptor
+                                    :descriptor-path descriptor-path :output output})
+          inputs (get-in result [:bundle "inputs"])]
+      (is (= 0 (:exit-code result)))
+      (is (contains? inputs test-path))
+      (is (contains? inputs "src/example/core.clj"))
+      (is (contains? inputs descriptor-path))
+      (is (contains? inputs manifest-path)))))

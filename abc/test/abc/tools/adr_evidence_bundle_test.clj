@@ -129,6 +129,63 @@
                             :explicit []})))
         (is (not (.exists marker)))))))
 
+(deftest derives-component-clojure-inputs-relative-to-workspace
+  (let [repo (temp-dir)]
+    (write-path! repo "abc/test/example/core_test.clj"
+                 "(ns example.core-test (:require [example.core]))\n")
+    (write-path! repo "abc/src/example/core.clj" "(ns example.core)\n")
+    (write-path! repo "ab-validator/docs/report.md" "report\n")
+    (is (= (sorted-set "abc/test/example/core_test.clj"
+                       "abc/src/example/core.clj"
+                       "ab-validator/docs/report.md")
+           (bundle/derive-minimum-inputs
+            repo {:kind "component-clojure-test-v1"
+                  :component-root "abc"
+                  :roots ["example.core-test"]
+                  :explicit ["ab-validator/docs/report.md"]})))))
+
+(deftest ordinary-and-component-bundles-resolve-against-separate-roots-test
+  (let [workspace (temp-dir)
+        abc (io/file workspace "abc")
+        ordinary-input (write-path! abc "src/example/core.clj" "(ns example.core)\n")
+        test-input (write-path! workspace "abc/test/example/core_test.clj"
+                                "(ns example.core-test (:require [example.core]))\n")
+        sibling (write-path! workspace "ab-validator/docs/report.md" "report\n")
+        ordinary (run-bundle "src/example/core.clj" (file-hash ordinary-input))
+        component {"schema_version" "abc-adr-evidence-run-v1"
+                   "producer" {"tool" "test" "command" "test" "revision" "revision"}
+                   "input_profile" {"kind" "component-clojure-test-v1"
+                                    "component_root" "abc"
+                                    "roots" ["example.core-test"]
+                                    "explicit" ["ab-validator/docs/report.md"]}
+                   "inputs" {"abc/src/example/core.clj" (file-hash ordinary-input)
+                             "abc/test/example/core_test.clj" (file-hash test-input)
+                             "ab-validator/docs/report.md" (file-hash sibling)}
+                   "observations" {"contract" {"value" true}}}
+        ordinary-path "docs/evidence/ordinary.json"
+        component-path "docs/evidence/component.json"]
+    (json/write-deterministic-json-file! (io/file abc ordinary-path) ordinary)
+    (json/write-deterministic-json-file! (io/file abc component-path) component)
+    (is (empty? (:problems
+                 (bundle/validate-bundle
+                  {:artifact-root abc :workspace-root workspace}
+                  ordinary-path (hash/format-sha256 (hash/sha256-json-jcs ordinary)) []))))
+    (is (empty? (:problems
+                 (bundle/validate-bundle
+                  {:artifact-root abc :workspace-root workspace}
+                  component-path (hash/format-sha256 (hash/sha256-json-jcs component)) []))))
+    (is (seq (:problems
+              (bundle/validate-bundle
+               {:artifact-root abc :workspace-root nil}
+               component-path (hash/format-sha256 (hash/sha256-json-jcs component)) []))))
+    (spit sibling "drift\n")
+    (is (= [[:input-hash-mismatch "ab-validator/docs/report.md"]]
+           (mapv (juxt :kind :input-path)
+                 (:problems
+                  (bundle/validate-bundle
+                   {:artifact-root abc :workspace-root workspace}
+                   component-path (hash/format-sha256 (hash/sha256-json-jcs component)) [])))))))
+
 (deftest missing-derived-namespace-input-is-reported
   (let [repo (temp-dir)
         root (write-path! repo "test/example/core_test.clj"

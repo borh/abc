@@ -1,9 +1,14 @@
 (ns abc.tools.files
   (:require [abc.tools.hash :as hash]
+            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.json :as abc-json]
             [babashka.fs :as fs]
             [clojure.edn :as edn]
-            [clojure.string :as string]))
+            [clojure.java.io :as io]
+            [clojure.string :as string])
+  (:import [java.util.zip ZipFile]
+           [javax.xml.parsers DocumentBuilderFactory]
+           [org.apache.jena.riot RDFDataMgr]))
 
 (def hash-pattern hash/hash-pattern)
 
@@ -17,12 +22,46 @@
   (abc-json/read-json-file file))
 
 (defn read-json-lines [file]
-  (->> (string/split-lines (slurp (fs/file file)))
+  (->> (string/split-lines (slurp (evidence-io/record-read! (fs/file file))))
        (remove string/blank?)
        (mapv abc-json/read-json-str)))
 
 (defn read-edn [file]
-  (edn/read-string (slurp (fs/file file))))
+  (edn/read-string (slurp (evidence-io/record-read! (fs/file file)))))
+
+(defn read-text [file]
+  (slurp (evidence-io/record-read! (fs/file file))))
+
+(defn read-bytes [file]
+  (java.nio.file.Files/readAllBytes (.toPath (io/file (evidence-io/record-read! file)))))
+
+(defn input-stream [file]
+  (io/input-stream (evidence-io/record-read! file)))
+
+(defn reader [file]
+  (io/reader (evidence-io/record-read! file)))
+
+(defn list-files [directory]
+  (let [files (->> (fs/list-dir directory)
+                   (filter fs/regular-file?)
+                   (sort-by str)
+                   (mapv fs/file)
+                   vec)]
+    (doseq [file files] (evidence-io/record-read! file))
+    files))
+
+(defn with-zip-file [archive f]
+  (with-open [zip (ZipFile. (io/file (evidence-io/record-read! archive)))]
+    (f zip)))
+
+(defn load-jena-model [file]
+  (RDFDataMgr/loadModel (str (evidence-io/record-read! file))))
+
+(defn parse-xml-document [file]
+  (let [factory (DocumentBuilderFactory/newInstance)]
+    (.setNamespaceAware factory true)
+    (.parse (.newDocumentBuilder factory)
+            (io/file (evidence-io/record-read! file)))))
 
 (defn relative-path [base file]
   (string/replace (str (fs/relativize (fs/path base) (fs/path file))) "\\" "/"))
@@ -57,7 +96,7 @@
   ;; Guard: (fs/parent bare-filename) is nil and (fs/create-dirs nil) throws NPE.
   (when-let [parent (fs/parent target)]
     (fs/create-dirs parent))
-  (fs/copy source target {:replace-existing true})
+  (fs/copy (evidence-io/record-read! source) target {:replace-existing true})
   (fs/file target))
 
 (defn bytes->hex [bytes]

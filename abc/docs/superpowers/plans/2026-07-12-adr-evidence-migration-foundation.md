@@ -427,7 +427,8 @@ git commit -m "feat(adr): add deterministic evidence registrar"
 - Create: `abc/src/abc/tools/evidence_io.clj`
 - Create: `abc/src/abc/tools/adr_evidence_runtime_inputs.clj`
 - Create: `abc/data/evidence-higher-order-calls/manifest-content.edn`
-- Create: `abc/data/evidence-higher-order-calls/adr-validate-repository.edn`
+- Create: `abc/data/evidence-higher-order-calls/adr-validate-repository-star.edn`
+- Modify: `abc/deps.edn`
 - Modify: `abc/src/abc/tools/files.clj`
 - Modify: `abc/src/abc/tools/json.clj`
 - Modify: `abc/src/abc/tools/hash.clj`
@@ -586,7 +587,8 @@ Add runtime-input tests proving:
   listed source/test file or any of `deps.edn`, `deps-lock.json`, and
   `tests.edn`;
 - the caller-scoped contracts accept initial finite targets for
-  `manifest/content` `sha256-file-fn` and `adr/validate-repository`
+  `manifest/content` `sha256-file-fn` and the actual parameter-owning private
+  caller `adr/validate-repository*`
   `validate-fn`; unknown target,
   missing target Var, duplicate parameter, caller/path mismatch, or a target
   graph with forbidden I/O fails closed;
@@ -678,11 +680,16 @@ descriptor's derived namespaces. Tests needing a real child command must use
 a version-1 sandboxed Nix descriptor; injected fake runners remain allowed in
 pure unit tests.
 
-Use clj-kondo analysis to derive the exact reachable-Var graph from each
-focused Var. Source/test namespace files remain freshness inputs, but the
-default-deny semantic scan follows only resolved call edges. Fail closed on a
-missing focus, unresolved/dynamic invocation, reflective I/O, or a reachable
-raw I/O/network/process symbol.
+Use clj-kondo analysis to resolve Vars and a directly pinned
+`org.clojure/tools.reader` source-form pass to identify exact list-head and
+direct defn-parameter invocation positions. Match source spans exactly; do not
+infer invocation from column ordering. The analyzer supports a closed, audited
+subset of Clojure forms and rejects unsupported macros, computed heads,
+invoked let-bound functions, dynamic resolution, and reflective invocation.
+Source/test namespace files remain freshness inputs, but the default-deny
+semantic scan follows only exactly classified resolved call edges. Fail closed
+on a missing focus, unresolved invocation, or a reachable raw
+I/O/network/process symbol.
 The initial higher-order contracts are not a blanket allowlist. If RED
 analysis finds another legitimate function-valued call, stop and add a
 reviewed finite caller/parameter/target entry with positive and unknown-target
@@ -795,7 +802,7 @@ git add abc/schemas/adr-evidence-run.schema.json \
   abc/src/abc/tools/evidence_io.clj \
   abc/src/abc/tools/adr_evidence_runtime_inputs.clj \
   abc/data/evidence-higher-order-calls/manifest-content.edn \
-  abc/data/evidence-higher-order-calls/adr-validate-repository.edn \
+  abc/data/evidence-higher-order-calls/adr-validate-repository-star.edn \
   abc/src/abc/tools/files.clj \
   abc/src/abc/tools/json.clj \
   abc/src/abc/tools/hash.clj \
@@ -809,7 +816,7 @@ git add abc/schemas/adr-evidence-run.schema.json \
   abc/test/abc/tools/adr_evidence_test.clj \
   abc/test/abc/tools/adr_governance_test.clj \
   abc/test/abc/tools/adr_evidence_register_test.clj \
-  abc/flake.nix flake.nix justfile tests/root-flake-output-contract-smoke.sh
+  abc/deps.edn abc/flake.nix flake.nix justfile tests/root-flake-output-contract-smoke.sh
 git commit -m "feat(adr): capture component tests from monorepo root"
 ```
 

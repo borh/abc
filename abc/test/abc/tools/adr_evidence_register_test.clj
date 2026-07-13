@@ -123,3 +123,33 @@
     (is (not (zero? (run "ADR-0002"))))
     (is (not (zero? (run "ADR-0003"))))
     (is (zero? (run "ADR-7777")))))
+
+(deftest registration-threads-an-explicit-workspace-without-writing-on-failure-test
+  (let [repo (temp-dir)
+        workspace (temp-dir)
+        registry-path "docs/adr/adr-evidence.edn"
+        registry-file (write! repo registry-path "{:entries []}\n")
+        entries-path "docs/evidence/adr-entries/example.edn"]
+    (write! repo entries-path (pr-str (template [(entry)])))
+    (write! repo "docs/evidence/adr-runs/example.json" (artifact "example-passes" "true"))
+    (write! repo "docs/adr/claim-evidence-compatibility.edn" "{}\n")
+    (write! repo "docs/adr/governance-as-of.edn" "{:as-of \"2026-07-12\"}\n")
+    (with-redefs [register/current-claims (constantly [{:claim-id "ADR-0001-C1"}])
+                  evidence/validate-registry
+                  (fn [{:keys [workspace-root]}]
+                    (if (= (.getCanonicalFile workspace) (.getCanonicalFile (io/file workspace-root)))
+                      []
+                      [{:kind :missing-evidence-input :claim-id "ADR-0001-C1"}]))]
+      (let [before (slurp registry-file)]
+        (is (false? (:ok? (register/register!
+                           {:repo-root repo :entries-path entries-path
+                            :registry-path registry-path}))))
+        (is (= before (slurp registry-file))))
+      (is (:ok? (register/register!
+                 {:repo-root repo :workspace-root workspace :entries-path entries-path
+                  :registry-path registry-path})))
+      (let [first-bytes (slurp registry-file)]
+        (is (:ok? (register/register!
+                   {:repo-root repo :workspace-root workspace :entries-path entries-path
+                    :registry-path registry-path})))
+        (is (= first-bytes (slurp registry-file)))))))

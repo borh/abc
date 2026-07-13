@@ -1,0 +1,3 @@
+{:schema-version :abc-evidence-higher-order-call-v1
+ :caller abc.tools.manifest/content
+ :parameters {sha256-file-fn [abc.tools.hash/sha256-file]}}

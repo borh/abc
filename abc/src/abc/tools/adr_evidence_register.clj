@@ -117,7 +117,7 @@
       (finally
         (Files/deleteIfExists temp)))))
 
-(defn register! [{:keys [repo-root entries-path registry-path]}]
+(defn register! [{:keys [repo-root workspace-root entries-path registry-path]}]
   (try
     (let [entries-file (contained-file repo-root entries-path)
           registry-file (contained-file repo-root registry-path)
@@ -130,6 +130,7 @@
               candidate (candidate-registry (edn/read-string (slurp registry-file)) entries)
               problems (evidence/validate-registry
                         {:repo-root repo-root
+                         :workspace-root (or workspace-root repo-root)
                          :claims (current-claims repo-root)
                          :registry candidate
                          :matrix (edn/read-string
@@ -146,7 +147,8 @@
        :problems (or (:problems (ex-data exception))
                      [(problem :registration-failed (.getMessage exception))])})))
 
-(def cli-options [[nil "--entries PATH"] [nil "--registry PATH"]])
+(def cli-options [[nil "--entries PATH"] [nil "--registry PATH"]
+                  [nil "--workspace-root PATH"]])
 
 (defn- cli-args [args]
   (if (= "--" (first args)) (rest args) args))
@@ -156,6 +158,7 @@
         result (if (or (seq errors) (nil? (:entries options)) (nil? (:registry options)))
                  {:ok? false :problems [(problem :invalid-cli "--entries and --registry are required")]}
                  (register! {:repo-root "." :entries-path (:entries options)
+                             :workspace-root (or (:workspace-root options) ".")
                              :registry-path (:registry options)}))]
     (if (:ok? result)
       (println "Registered" (:registered result) "evidence entries")

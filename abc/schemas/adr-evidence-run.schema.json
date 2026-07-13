@@ -37,22 +37,27 @@
       }
     },
     "inputProfile": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["kind", "roots", "explicit"],
-      "properties": {
-        "kind": {"enum": ["clojure-test-v1", "repo-files-v1"]},
-        "roots": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {"$ref": "#/$defs/nonEmptyString"}
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "roots", "explicit"],
+          "properties": {
+            "kind": {"enum": ["clojure-test-v1", "repo-files-v1"]},
+            "roots": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "explicit": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}}
+          }
         },
-        "explicit": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {"$ref": "#/$defs/nonEmptyString"}
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "component_root", "roots", "explicit"],
+          "properties": {
+            "kind": {"const": "component-clojure-test-v1"},
+            "component_root": {"$ref": "#/$defs/nonEmptyString"},
+            "roots": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "explicit": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}}
+          }
         }
-      }
+      ]
     },
     "inputs": {
       "type": "object",

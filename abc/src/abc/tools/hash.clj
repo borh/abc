@@ -1,5 +1,6 @@
 (ns abc.tools.hash
   (:require [abc.tools.jcs :as jcs]
+            [abc.tools.evidence-io :as evidence-io]
             [clojure.java.io :as io])
   (:import [java.security MessageDigest]))
 
@@ -17,7 +18,7 @@
   (sha256-bytes (.getBytes s "UTF-8")))
 
 (defn sha256-file [file]
-  (with-open [in (io/input-stream (io/file file))]
+  (with-open [in (io/input-stream (io/file (evidence-io/record-read! file)))]
     (let [digest (MessageDigest/getInstance "SHA-256")
           buffer (byte-array 8192)]
       (loop []

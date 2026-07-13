@@ -3,7 +3,6 @@
   (:require [abc.tools.adr-evidence-bundle :as bundle]
             [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
             [abc.tools.files :as files]
-            [clojure.java.io :as io]
             [clojure.set :as set])
   (:import [java.time DateTimeException LocalDate]))
 
@@ -162,18 +161,7 @@
 
 (defn validate-registry
   [{:keys [repo-root workspace-root claims registry matrix as-of]}]
-  (let [distinct-workspace? (and workspace-root
-                                 (not= (.getCanonicalFile (io/file repo-root))
-                                       (.getCanonicalFile (io/file workspace-root))))
-        workspace-problems
-        (when distinct-workspace?
-          (try
-            (runtime-inputs/validate-workspace-root! repo-root workspace-root)
-            []
-            (catch Exception exception
-              [{:kind (or (:kind (ex-data exception)) :invalid-workspace-root)
-                :message (.getMessage exception)}])))
-        entries (:entries registry)
+  (let [entries (:entries registry)
         claims-by-id (into {} (map (juxt :claim-id identity)) claims)
         known-evidence-kinds (apply set/union #{} (vals matrix))
         static-problems (mapcat #(static-entry-problems matrix known-evidence-kinds
@@ -190,8 +178,20 @@
                     :let [affected (mapv :claim-id grouped)]]
                 [[path artifact-hash]
                  (bundle/validate-bundle {:artifact-root repo-root
-                                          :workspace-root (or workspace-root repo-root)}
+                                          :workspace-root workspace-root}
                                          path artifact-hash affected)]))
+        component-profile? (some :component-profile? (vals artifact-results))
+        workspace-problems
+        (when component-profile?
+          (if-not workspace-root
+            [{:kind :invalid-workspace-root
+              :message "component evidence requires an explicit workspace root"}]
+            (try
+              (runtime-inputs/validate-workspace-root! repo-root workspace-root)
+              []
+              (catch Exception exception
+                [{:kind (or (:kind (ex-data exception)) :invalid-workspace-root)
+                  :message (.getMessage exception)}]))))
         artifact-root-problems (mapcat :problems (vals artifact-results))
         joined-problems
         (mapcat

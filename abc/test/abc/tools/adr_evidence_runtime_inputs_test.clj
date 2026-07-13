@@ -38,6 +38,14 @@
     (write! root "test/.keep" "")
     root))
 
+(defn- boundary-analyzer-repo [body]
+  (let [root (analyzer-repo body)]
+    (write! root "src/abc/tools/evidence_io.clj"
+            "(ns abc.tools.evidence-io)\n(defn with-read-trace [options thunk] (thunk))\n")
+    (write! root "src/abc/tools/adr_evidence_runtime_inputs.clj"
+            "(ns abc.tools.adr-evidence-runtime-inputs)\n(defn assert-runtime-input-closure! [options] true)\n")
+    root))
+
 (defn- problem-kind [thunk]
   (try (thunk) nil (catch Exception e (:kind (ex-data e)))))
 
@@ -198,6 +206,33 @@
       (is (= :forbidden-evidence-io
              (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad])))
           label))))
+
+(deftest reachable-var-lint-rejects-code-loading-and-unreviewed-external-vars-test
+  (doseq [[label body]
+          [["eval" "(defn bad [] (eval '(+ 1 2)))"]
+           ["read-string" "(defn bad [] (read-string \"(+ 1 2)\"))"]
+           ["load-string" "(defn bad [] (load-string \"(+ 1 2)\"))"]
+           ["load-file" "(defn bad [] (load-file \"other.clj\"))"]
+           ["resolve" "(defn bad [] (resolve 'clojure.core/slurp))"]
+           ["ns-resolve" "(defn bad [] (ns-resolve 'clojure.core 'slurp))"]
+           ["requiring-resolve" "(defn bad [] (requiring-resolve 'clojure.core/slurp))"]
+           ["babashka fs" "(ns example.core (:require [babashka.fs :as fs]))\n(defn bad [] (fs/read-all-lines \"x\"))"]]]
+    (let [root (analyzer-repo body)]
+      (is (= :forbidden-evidence-capability
+             (problem-kind #(runtime/analyze-reachable-vars root ['example.core/bad])))
+          label))))
+
+(deftest v2-focused-boundary-must-own-tracing-and-runtime-closure-test
+  (let [missing-trace (boundary-analyzer-repo
+                       "(ns example.core (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]))\n(defn contract [] (runtime/assert-runtime-input-closure! {}))")
+        missing-closure (boundary-analyzer-repo
+                         "(ns example.core (:require [abc.tools.evidence-io :as evidence-io]))\n(defn contract [] (evidence-io/with-read-trace {} (fn [] true)))")]
+    (is (= :missing-evidence-boundary-owner
+           (problem-kind #(runtime/assert-v2-boundary-ownership!
+                           (runtime/analyze-reachable-vars missing-trace ['example.core/contract])))))
+    (is (= :missing-evidence-boundary-owner
+           (problem-kind #(runtime/assert-v2-boundary-ownership!
+                           (runtime/analyze-reachable-vars missing-closure ['example.core/contract])))))))
 
 (deftest statically-resolved-higher-order-local-var-arguments-expand-test
   (let [root (analyzer-repo

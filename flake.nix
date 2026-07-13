@@ -216,7 +216,7 @@
                 nativeBuildInputs = [
                   cljPkgs.clojure
                   cljPkgs.git
-                  cljPkgs.gnugrep
+                  cljPkgs.jq
                 ];
                 src = self;
               }
@@ -241,8 +241,18 @@
                   --workspace-root "$TMPDIR/workspace" \
                   --mode audit \
                   --report "$out/report.json"
-                if grep -q 'invalid-workspace-root' "$out/report.json"; then
-                  echo "monorepo ADR governance did not validate the materialized workspace" >&2
+                # Migration audit debt is an exact phase identity, not a
+                # permissive nonzero ceiling. Plan 6 replaces this predicate
+                # with the zero-debt enforce contract during atomic promotion.
+                if ! ${cljPkgs.jq}/bin/jq -e '
+                  (.problems | length) == 196 and
+                  ([.problems[].kind] | group_by(.) | map({(.[0]): length}) | add) == {
+                    "missing-claim-header": 146,
+                    "missing-release-authority": 25,
+                    "missing-validation-scope": 25
+                  }
+                ' "$out/report.json" >/dev/null; then
+                  echo "monorepo ADR governance audit debt differs from the pinned migration phase" >&2
                   exit 1
                 fi
               '';

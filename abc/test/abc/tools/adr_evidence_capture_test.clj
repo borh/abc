@@ -143,6 +143,8 @@
         descriptor-path "docs/evidence/adr-capture/example.edn"
         manifest-path "docs/evidence/adr-inputs/example.edn"
         test-path "test/example/core_test.clj"
+        trace-path "src/abc/tools/evidence_io.clj"
+        closure-path "src/abc/tools/adr_evidence_runtime_inputs.clj"
         descriptor {:schema-version "abc-adr-evidence-capture-v2"
                     :tool "true"
                     :argv ["true" "--focus" "example.core-test/runtime-input-contract"]
@@ -155,8 +157,17 @@
     (doseq [[path body]
             [[descriptor-path (pr-str descriptor)]
              [manifest-path (pr-str {:schema-version :abc-adr-runtime-inputs-v1 :paths []})]
-             [test-path (str "(ns example.core-test (:require [clojure.test :refer [deftest is]] [example.core]))\n"
-                             "(deftest runtime-input-contract (is true))\n")]]]
+             [trace-path (str "(ns abc.tools.evidence-io)\n"
+                              "(defn with-read-trace [_ thunk] {:value (thunk) :repository-paths []})\n")]
+             [closure-path (str "(ns abc.tools.adr-evidence-runtime-inputs)\n"
+                                "(defn assert-runtime-input-closure! [_] true)\n")]
+             [test-path (str "(ns example.core-test (:require [clojure.test :refer [deftest is]] "
+                             "[example.core] [abc.tools.evidence-io :as evidence-io] "
+                             "[abc.tools.adr-evidence-runtime-inputs :as runtime]))\n"
+                             "(deftest runtime-input-contract\n"
+                             "  (let [trace (evidence-io/with-read-trace {} (fn [] true))]\n"
+                             "    (is (runtime/assert-runtime-input-closure! "
+                             "{:repository-paths (:repository-paths trace)}))))\n")]]]
       (let [file (io/file repo path)]
         (.mkdirs (.getParentFile file))
         (spit file body)))

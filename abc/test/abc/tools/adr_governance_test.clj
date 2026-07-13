@@ -66,6 +66,20 @@
     (is (= {:ok? true :exit-code 0 :mode :legacy :problems []}
            (governance/run! "." {:mode :legacy})))))
 
+(deftest audit-preserves-an-absent-workspace-root-test
+  (let [seen (atom ::unset)]
+    (with-redefs [adr/parse-all (constantly [])
+                  adr/validate-adrs (constantly [])
+                  evidence/load-registry (constantly {:entries []})
+                  evidence/load-matrix (constantly {})
+                  evidence/load-as-of (constantly "2026-07-12")
+                  evidence/validate-registry
+                  (fn [{:keys [workspace-root]}]
+                    (reset! seen workspace-root)
+                    [])]
+      (governance/run! "." {:mode :audit})
+      (is (nil? @seen)))))
+
 (deftest audit-report-preserves-claim-problem-coordinates
   (let [dir (.toFile (java.nio.file.Files/createTempDirectory
                       "adr-governance-test"

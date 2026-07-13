@@ -135,7 +135,7 @@
               candidate (candidate-registry (files/read-edn registry-file) entries)
               problems (evidence/validate-registry
                         {:repo-root repo-root
-                         :workspace-root (or workspace-root repo-root)
+                         :workspace-root workspace-root
                          :claims (current-claims repo-root)
                          :registry candidate
                          :matrix (files/read-edn
@@ -168,7 +168,7 @@
     :run (fn [{:keys [options]}]
            (let [result (register! {:repo-root "."
                                     :entries-path (:entries options)
-                                    :workspace-root (or (:workspace-root options) ".")
+                                    :workspace-root (:workspace-root options)
                                     :registry-path (:registry options)})]
              (if (:ok? result)
                (println "Registered" (:registered result) "evidence entries")

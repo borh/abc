@@ -176,7 +176,11 @@
       "component-clojure-test-v1"
       (let [component-root (value-at input-profile :component-root)
             state (containment/path-state repo-root component-root)]
-        (when-not (and (= :ok (:state state)) (fs/directory? (:path state)))
+        (when-not (and (not= "." component-root)
+                       (= :ok (:state state))
+                       (not= (fs/canonicalize repo-root)
+                             (fs/canonicalize (:path state)))
+                       (fs/directory? (:path state)))
           (throw (ex-info "component root is missing or escapes the workspace"
                           {:kind :missing-evidence-input
                            :component-root component-root
@@ -273,6 +277,8 @@
        :problems (mapv #(assoc % :affected-claim-ids affected-claim-ids)
                        load-problems)}
       (let [{:keys [value canonical-hash]} loaded
+            component-profile? (= "component-clojure-test-v1"
+                                  (get-in value ["input_profile" "kind"]))
             artifact-problems
             (artifact-validation-problems artifact-path value affected-claim-ids)
             hash-problems
@@ -286,6 +292,7 @@
                                     (input-problems repo-root workspace-root artifact-path value
                                                     affected-claim-ids))))]
         {:bundle (when (empty? problems) value)
+         :component-profile? component-profile?
          :problems problems}))))
 
 (defn observation [bundle observation-key]

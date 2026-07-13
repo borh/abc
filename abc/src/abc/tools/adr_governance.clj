@@ -43,7 +43,7 @@
   ([repo-root {:keys [mode workspace-root] :or {mode :legacy}}]
    (let [problems (if (= :legacy mode)
                     (adr/validate-repository-legacy repo-root)
-                    (strict-problems repo-root (or workspace-root repo-root)))
+                    (strict-problems repo-root workspace-root))
          ok? (empty? problems)]
      {:ok? ok?
       :exit-code (if (or ok? (= :audit mode)) 0 1)
@@ -71,7 +71,7 @@
                                 (str "invalid ADR governance arguments: " args))}]}
       (let [repo-root (or (:repo-root options) (first arguments) ".")
             result (run! repo-root {:mode mode
-                                    :workspace-root (or (:workspace-root options) repo-root)})]
+                                    :workspace-root (:workspace-root options)})]
         (when-let [path (:report options)]
           (json/write-deterministic-json-file! path (report-value result)))
         result))))
@@ -99,8 +99,7 @@
                                {:mode (:mode options)})))
              (let [repo-root (or (:repo-root options) (first arguments) ".")
                    result (run! repo-root {:mode mode
-                                           :workspace-root (or (:workspace-root options)
-                                                               repo-root)})]
+                                           :workspace-root (:workspace-root options)})]
                (when-let [path (:report options)]
                  (json/write-deterministic-json-file! path (report-value result)))
                (emit-result! result))))

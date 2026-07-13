@@ -256,3 +256,11 @@
                "observations" {"source-contract" {"value" "documented"}}}]
     (is (= [:invalid-evidence-artifact]
            (mapv :kind (bundle/validate-bundle-value value))))))
+(deftest component-profile-rejects-workspace-root-as-the-component-test
+  (is (thrown? clojure.lang.ExceptionInfo
+               (bundle/derive-minimum-inputs
+                "."
+                {"kind" "component-clojure-test-v1"
+                 "component_root" "."
+                 "roots" []
+                 "explicit" []}))))

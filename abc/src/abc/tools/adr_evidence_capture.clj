@@ -135,7 +135,9 @@
                                            :descriptor {:path descriptor-path :value descriptor}}
                          _ (runtime-inputs/validate-runtime-input-manifest! manifest-options)
                          analysis-root (if component? (fs/file repo-root component-root) repo-root)]
-                     (runtime-inputs/analyze-reachable-vars analysis-root (focus-vars! descriptor))))
+                     (-> (runtime-inputs/analyze-reachable-vars analysis-root
+                                                                (focus-vars! descriptor))
+                         runtime-inputs/assert-v2-boundary-ownership!)))
         prefix (if component? (str (str/replace component-root #"/+$" "") "/") "")
         analyzed-paths (when analysis
                          (map #(str prefix %) (concat (:paths analysis) (:contract-paths analysis))))]

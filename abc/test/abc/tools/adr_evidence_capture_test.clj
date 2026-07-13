@@ -237,15 +237,13 @@
                       :descriptor {:path descriptor-path :value value}}))
               stem))))))
 
-(deftest generation-two-design-bundle-preserves-exact-live-binding-debt-test
-  (let [registry (files/read-edn "docs/adr/adr-evidence.edn")
-        entries (filter #(= "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json"
-                            (:artifact-path %))
-                        (:entries registry))
-        entry (first entries)
-        problems (:problems (bundle/validate-bundle
-                             "." (:artifact-path entry) (:artifact-hash entry)
-                             (mapv :claim-id entries)))]
+(deftest generation-two-design-bundle-preserves-exact-historical-debt-test
+  (let [problems (:problems
+                  (bundle/validate-bundle
+                   "."
+                   "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json"
+                   "sha256:89a825eeaad021147b20938ccc5f0345421afac9c16c1143b77cdac9a145b524"
+                   ["ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"]))]
     (is (= 16 (count problems)))
     (is (= #{:input-hash-mismatch} (set (map :kind problems))))
     (is (= #{["ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"]}
@@ -259,6 +257,13 @@
             "src/abc/tools/shacl.clj" 2
             "src/abc/tools/validate_design_bundle.clj" 2}
            (frequencies (map :input-path problems))))))
+
+(deftest live-registry-has-no-generation-two-design-bundle-bindings-test
+  (let [registry (files/read-edn "docs/adr/adr-evidence.edn")]
+    (is (empty?
+         (filter #(= "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json"
+                     (:artifact-path %))
+                 (:entries registry))))))
 
 (defn- temp-dir [prefix]
   (fs/file (fs/create-temp-dir {:prefix prefix})))

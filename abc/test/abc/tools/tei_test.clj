@@ -1,5 +1,7 @@
 (ns abc.tools.tei-test
   (:require [abc.tools.tei :as tei]
+            [abc.test-fs :refer [with-temp-dir]]
+            [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing use-fixtures]]))
 
 (def ^:private schema-path (atom nil))
@@ -13,6 +15,13 @@
                     {:env-var "TEI_SCHEMA_PATH"}))))
 
 (use-fixtures :once require-schema-path)
+
+(deftest schema-cache-accepts-absolute-and-canonical-schema-paths-test
+  (with-temp-dir [dir]
+    (let [schema (fs/file dir "schema.rng")]
+      (fs/copy @schema-path schema)
+      (is (identical? (#'tei/load-schema (str (fs/absolutize schema)))
+                      (#'tei/load-schema (str (fs/canonicalize schema))))))))
 
 (deftest validate-undefined-element-test
   (testing "<bogusElement> in TEI namespace surfaces a violation referencing the element name"

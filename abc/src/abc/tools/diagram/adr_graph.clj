@@ -5,7 +5,7 @@
    See ADR 0029."
   (:require [abc.tools.adr :as adr]
             [abc.tools.files :as files]
-            [clojure.java.io :as io]))
+            [babashka.fs :as fs]))
 
 (def adr-dir "docs/adr")
 (def out-path "docs/adr/adr-graph.mmd")
@@ -33,7 +33,7 @@
    :extends "extends"})
 
 (defn load-relations []
-  (if (.exists (io/file relations-path))
+  (if (fs/exists? relations-path)
     (:relations (files/read-edn relations-path))
     []))
 

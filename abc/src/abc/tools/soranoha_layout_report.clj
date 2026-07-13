@@ -1,9 +1,13 @@
 (ns abc.tools.soranoha-layout-report
   (:require [abc.tools.files :as files]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]))
 
 (defn- regular-files [root]
-  (filter #(.isFile %) (file-seq (io/file root))))
+  (->> (fs/glob root "**")
+       (filter fs/regular-file?)
+       (sort-by #(str (fs/relativize root %)))
+       (map fs/file)))
 
 (defn- actual-root-summary [root snapshot]
   (let [files (regular-files root)]

@@ -8,6 +8,7 @@
   emitter; clj-nix-focused-tests byte-compares committed vs freshly-emitted."
   (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
+            [babashka.fs :as fs]
             [clojure.string :as str]
             [clojure.java.io :as io]))
 
@@ -36,7 +37,7 @@
   (str "'" (.replace (str s) "'" "''") "'"))
 
 (defn- ensure-dir! [out-dir]
-  (.mkdirs (io/file out-dir)))
+  (fs/create-dirs out-dir))
 
 (defn- write-lines! [out-dir filename lines]
   ;; Sort for byte-stability across .listFiles orderings (plan Blocker
@@ -64,11 +65,12 @@
     (write-lines! out-dir "manifest_identity.pl" lines)))
 
 (defn- emit-drift-facts! [out-dir]
-  (let [dir (io/file example-drift-events-dir)
-        fs (->> (.listFiles dir)
-                (filter #(.isFile %))
-                (sort-by #(.getName %)))
-        lines (for [f fs
+  (let [dir (fs/file example-drift-events-dir)
+        event-files (->> (if (fs/directory? dir) (fs/list-dir dir) [])
+                         (filter fs/regular-file?)
+                         (sort-by (comp str fs/file-name))
+                         (map fs/file))
+        lines (for [f event-files
                     :let [ev (files/read-json f)
                           id (get ev "drift_event_id")]]
                 (format "drift_event(%s)." (prolog-atom id)))]
@@ -85,13 +87,17 @@
   ;; entries. Both assert a person exists in the corpus; the union is what
   ;; the referential-integrity query (Task 7) resolves against.
   []
-  (let [records (->> (.listFiles (io/file example-persons-dir))
-                     (filter #(.isFile %))
-                     (filter #(str/ends-with? (.getName %) ".json"))
-                     (sort-by #(.getName %)))
-        indexes (->> (.listFiles (io/file example-persons-index-dir))
-                     (filter #(.isFile %))
-                     (sort-by #(.getName %)))
+  (let [records-dir (fs/file example-persons-dir)
+        indexes-dir (fs/file example-persons-index-dir)
+        records (->> (if (fs/directory? records-dir) (fs/list-dir records-dir) [])
+                     (filter fs/regular-file?)
+                     (filter #(str/ends-with? (str (fs/file-name %)) ".json"))
+                     (sort-by (comp str fs/file-name))
+                     (map fs/file))
+        indexes (->> (if (fs/directory? indexes-dir) (fs/list-dir indexes-dir) [])
+                     (filter fs/regular-file?)
+                     (sort-by (comp str fs/file-name))
+                     (map fs/file))
         extract (fn [f] (get (files/read-json f) "person_id"))]
     (into [] (comp (map extract)
                    (remove nil?)
@@ -101,9 +107,11 @@
 (defn- emit-person-record-facts! [out-dir]
   (let [record-lines (for [pid (person-record-ids)]
                        (format "person_record(%s)." (prolog-atom pid)))
-        event-files (->> (.listFiles (io/file example-drift-events-dir))
-                         (filter #(.isFile %))
-                         (sort-by #(.getName %)))
+        event-dir (fs/file example-drift-events-dir)
+        event-files (->> (if (fs/directory? event-dir) (fs/list-dir event-dir) [])
+                         (filter fs/regular-file?)
+                         (sort-by (comp str fs/file-name))
+                         (map fs/file))
         ;; drift_successor/2: for each drift event, every post- participant
         ;; (successor) is a successor of every pre- participant (predecessor).
         ;; Resolved by mapping prov.used (pre snapshot_ids) and

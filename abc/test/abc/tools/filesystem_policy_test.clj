@@ -15,16 +15,15 @@
   '#{abc.tools.adr abc.tools.annotation-join-stats
      abc.tools.annotation-join-stats-run abc.tools.aozora-history-audit
      abc.tools.aozora-ingest abc.tools.aozora-replay
-     abc.tools.diagram.adr-graph abc.tools.diagram.core abc.tools.facts
      abc.tools.materialize-annotations abc.tools.materialize-import
      abc.tools.materialize-publication abc.tools.path-containment
      abc.tools.person-drift abc.tools.person-drift-history
-     abc.tools.request-set-resolver abc.tools.schema abc.tools.snapshot-index
+     abc.tools.snapshot-index
      abc.tools.soranoha abc.tools.soranoha-build-publication
-     abc.tools.soranoha-layout-report abc.tools.soranoha-stage-publication
-     abc.tools.source-bundle abc.tools.source-bundle-report
+     abc.tools.soranoha-stage-publication
+     abc.tools.source-bundle
      abc.tools.source-snapshot-workset abc.tools.materialize-source-snapshot
-     abc.tools.schematron abc.tools.tei abc.tools.tar abc.tools.validate-corpus
+     abc.tools.tar abc.tools.validate-corpus
      abc.tools.validate-design-bundle abc.tools.workflow abc.tools.workflow.cache})
 
 (def permanent-files-operations
@@ -301,16 +300,15 @@
   (is (= '#{abc.tools.adr abc.tools.annotation-join-stats
             abc.tools.annotation-join-stats-run abc.tools.aozora-history-audit
             abc.tools.aozora-ingest abc.tools.aozora-replay
-            abc.tools.diagram.adr-graph abc.tools.diagram.core abc.tools.facts
             abc.tools.materialize-annotations abc.tools.materialize-import
             abc.tools.materialize-publication abc.tools.path-containment
             abc.tools.person-drift abc.tools.person-drift-history
-            abc.tools.request-set-resolver abc.tools.schema abc.tools.snapshot-index
+            abc.tools.snapshot-index
             abc.tools.soranoha abc.tools.soranoha-build-publication
-            abc.tools.soranoha-layout-report abc.tools.soranoha-stage-publication
-            abc.tools.source-bundle abc.tools.source-bundle-report
+            abc.tools.soranoha-stage-publication
+            abc.tools.source-bundle
             abc.tools.source-snapshot-workset abc.tools.materialize-source-snapshot
-            abc.tools.schematron abc.tools.tei abc.tools.tar abc.tools.validate-corpus
+            abc.tools.tar abc.tools.validate-corpus
             abc.tools.validate-design-bundle abc.tools.workflow abc.tools.workflow.cache}
          legacy-filesystem-namespaces)))
 

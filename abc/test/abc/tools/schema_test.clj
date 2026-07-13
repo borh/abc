@@ -4,7 +4,16 @@
             [abc.tools.hash :as hash]
             [abc.tools.manifest :as manifest]
             [abc.tools.schema :as schema]
+            [abc.test-fs :refer [with-temp-dir]]
+            [babashka.fs :as fs]
+            [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
+
+(deftest checked-in-schema-resources-treats-an-absent-directory-as-empty-test
+  (with-temp-dir [dir]
+    (let [missing (fs/file dir "missing")]
+      (with-redefs [io/file (fn [& _] missing)]
+        (is (= {} (#'schema/checked-in-schema-resources)))))))
 
 (def ^:private cross-project-schema-versions
   {"schemas/annotation-output.schema.json" "0.1.0"

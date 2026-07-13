@@ -8,10 +8,25 @@
   (:require [abc.tools.facts :as facts]
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
+            [abc.test-fs :refer [with-temp-dir]]
+            [babashka.fs :as fs]
             [clojure.test :refer [deftest is use-fixtures]]
             [clojure.string :as str])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
+
+(deftest drift-file-listing-is-empty-for-an-empty-directory-test
+  (with-temp-dir [dir]
+    (with-redefs-fn {#'facts/example-manifests []
+                     #'facts/example-drift-events-dir (str dir)
+                     #'facts/example-persons-dir (str dir)
+                     #'facts/example-persons-index-dir (str dir)}
+      (fn []
+        (let [out (fs/file dir "out")]
+          (facts/emit-prolog! out)
+          (is (= ["drift.pl" "manifest_identity.pl" "person_records.pl"]
+                 (->> (fs/list-dir out) (map (comp str fs/file-name)) sort vec)))
+          (is (= "" (slurp (fs/file out "drift.pl")))))))))
 
 (def tmp-dir (atom nil))
 

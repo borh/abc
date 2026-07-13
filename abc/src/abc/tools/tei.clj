@@ -6,6 +6,7 @@
   com.thaiopensource.validate.Schema is immutable; a fresh Validator and
   error handler are created per call."
   (:require [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [clojure.string :as string])
   (:import [com.thaiopensource.util PropertyMapBuilder]
            [com.thaiopensource.validate Schema ValidateProperty]
@@ -50,8 +51,8 @@
 (defonce ^:private schema-cache (atom {}))
 
 (defn- load-schema ^Schema [^String schema-path]
-  (let [file (io/file schema-path)
-        cache-key [(.getCanonicalPath file) (.lastModified file)]]
+  (let [file (fs/file schema-path)
+        cache-key [(str (fs/canonicalize file)) (fs/last-modified-time file)]]
     (or (get @schema-cache cache-key)
         (let [violations (atom [])
               schema (try

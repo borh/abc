@@ -2,6 +2,8 @@
   (:require [abc.tools.json :as json]
             [abc.tools.source-bundle :as source-bundle]
             [abc.tools.source-bundle-report :as report]
+            [abc.test-fs :refer [with-temp-dir]]
+            [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]])
@@ -12,6 +14,18 @@
            [java.nio.file Files]
            [org.apache.commons.compress.archivers.zip
             ZipArchiveEntry ZipArchiveOutputStream]))
+
+(deftest corpus-zip-listing-selects-zips-in-path-order-test
+  (with-temp-dir [root]
+    (doseq [path [["cards" "b" "files" "z.zip"]
+                  ["cards" "a" "files" "b.zip"]
+                  ["cards" "a" "files" "a.zip"]]]
+      (fs/create-dirs (apply fs/file root (butlast path)))
+      (spit (apply fs/file root path) "zip"))
+    (fs/create-dirs (fs/file root "cards" "a" "files" "directory.zip"))
+    (spit (fs/file root "cards" "a" "files" "ignore.txt") "x")
+    (is (= ["a.zip" "b.zip" "z.zip"]
+           (mapv (comp str fs/file-name) (#'report/corpus-zips root))))))
 
 (defn- understate-first-central-size! [file declared-size]
   (let [data (Files/readAllBytes (.toPath file))

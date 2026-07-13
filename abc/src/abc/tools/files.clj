@@ -27,6 +27,25 @@
 (defn relative-path [base file]
   (string/replace (str (fs/relativize (fs/path base) (fs/path file))) "\\" "/"))
 
+(defn- sorted-path-seq*
+  [root list-dir]
+  (let [root (fs/path root)]
+    (letfn [(walk [path descend?]
+              (lazy-seq
+               (cons path
+                     (lazy-seq
+                      (when (and descend? (fs/directory? path))
+                        (mapcat #(walk % (not (fs/sym-link? %)))
+                                (sort-by str (list-dir path))))))))]
+      (walk root true))))
+
+(defn sorted-path-seq
+  "Return a deterministic lazy depth-first path sequence rooted at `root`.
+  The root may be a directory symlink; descendant symlinks are yielded but
+  never traversed. Directory-listing failures propagate."
+  [root]
+  (sorted-path-seq* root fs/list-dir))
+
 (defn delete-tree!
   "Recursively delete `file`. No-op when it does not exist; throws on real
   filesystem failure (unlike the ignored .delete boolean it replaces)."

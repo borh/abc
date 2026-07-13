@@ -1,0 +1,79 @@
+{
+  "input_profile":
+  {
+    "component_root": "abc",
+    "explicit": ["abc\/bin\/kaocha","abc\/bin\/validate-design-bundle.sh","abc\/docs\/evidence\/adr-capture\/schema-entrypoint-delegation.edn","abc\/docs\/evidence\/adr-inputs\/schema-entrypoint-delegation.edn"],
+    "kind": "component-clojure-test-v1",
+    "roots": ["abc.tools.schema-validation-evidence-test"]
+  },
+  "inputs":
+  {
+    "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
+    "abc\/bin\/validate-design-bundle.sh": "sha256:4c45a35a0c55b7b5e221d2dace91e3f35ffb067adc79cf6beb08ee89eb8bf7e0",
+    "abc\/docs\/evidence\/adr-capture\/schema-entrypoint-delegation.edn": "sha256:05c14059a35b3ff456e07602061e2a63af5f706d604d16ac0ce83cb665f18d09",
+    "abc\/docs\/evidence\/adr-inputs\/schema-entrypoint-delegation.edn": "sha256:311b0a5dde8d3c687b90cbade2a6ff728a12b1596de498482beac480c80b3844",
+    "abc\/src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:0ac95d069243b103f1100e5cd02a66efd763490832d4d3cb6d42957523d682f2",
+    "abc\/src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
+    "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
+    "abc\/src\/abc\/tools\/edn_registry.clj": "sha256:da83619d23b9ce748d611c7eb5fe029e98258767bb9468c4b54fc34e0ee8526a",
+    "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:5c2300ebcdbf8ba87b5f2836ffb1e4ca5f2828eb2bb180d8348e3b070a9af58f",
+    "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
+    "abc\/src\/abc\/tools\/iiif.clj": "sha256:dedf8ca77c9818c79e1d55c5b3e2a0143345d5b63225b16ce36040625ce0eaf0",
+    "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
+    "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "abc\/src\/abc\/tools\/linked_art.clj": "sha256:9329fcc95e974e36b2f101fe901b91b44b731e16de087426018eff6252386270",
+    "abc\/src\/abc\/tools\/logging.clj": "sha256:eaea004a96bc6cb18d02442df561b00847a8b84f6a0df901eaf446485ebfa019",
+    "abc\/src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
+    "abc\/src\/abc\/tools\/manifest.clj": "sha256:f3a1fdc6cb04ba86c67ed59ab6987971a0e022bf5c4a182b12d5e3c25ea98b6d",
+    "abc\/src\/abc\/tools\/manifest_index.clj": "sha256:5673957a889cb79df2710aafec2b0b5999c378215f4ec1120f08974d2faeaa59",
+    "abc\/src\/abc\/tools\/manifest_to_rdf.clj": "sha256:9faf6a8fdaf421ea3c7f6648cf33ec6d5ec9a1b43e1bd5a61641f0add202a703",
+    "abc\/src\/abc\/tools\/materialize_analysis.clj": "sha256:b07c53b5fa50c8149a98afd0a4fd3112c5293e86480a9359ac5acaacdcc94c41",
+    "abc\/src\/abc\/tools\/materialize_annotations.clj": "sha256:503731c1e7e61c2b3bf5770426149144638570dd2ac76fdd51935b943e7b8214",
+    "abc\/src\/abc\/tools\/materialize_import.clj": "sha256:c026265cb1f7482deaf9d0b7ee10be3c2fdcf5a48f563a62e416c7177cc374b9",
+    "abc\/src\/abc\/tools\/materialize_publication.clj": "sha256:f52335095b41fc2fd3c03678b2fccd40eb5775d5e91bf63cdb1b1855e035d3b0",
+    "abc\/src\/abc\/tools\/materialize_tokenized.clj": "sha256:f31513ee4f20fea248eaf667811ebb12057e7eb7591fb7e04a6d08c58fb16464",
+    "abc\/src\/abc\/tools\/metadata_record.clj": "sha256:b87fd5dbe5831983dc618849593fc08bba2d4bd6a2dbf447b88738253015f36f",
+    "abc\/src\/abc\/tools\/parallel.clj": "sha256:51b1105b04a52d45a6fb3811e4b3c53b1b44162fd81f5d68ab412039b31a243c",
+    "abc\/src\/abc\/tools\/parser_evidence.clj": "sha256:afce4b7ae376008401681ba5c9e787da8114b00172458c26ce202602e5874ea8",
+    "abc\/src\/abc\/tools\/parser_ir_plaintext.clj": "sha256:d21da8a17ef2e1d132ba7e05ce6c0d17bd4154d4c7c4bf9b9f72114e087f7d87",
+    "abc\/src\/abc\/tools\/parser_ir_publication_policy.clj": "sha256:f2315b7375ba189077ee34eee402e18ee711e84c5abcd92c60ef9ad91020d6f8",
+    "abc\/src\/abc\/tools\/parser_ir_publication_whitespace.clj": "sha256:649c5ad727df611eed3271856873f642066f5f62aa8c3648d6072a4ff467f8ad",
+    "abc\/src\/abc\/tools\/parser_ir_sentence_policy.clj": "sha256:a2c91542a06fbd97f4f0433127143bf0645d3b1828f7d13dfc2b38c0cb1bdd6b",
+    "abc\/src\/abc\/tools\/parser_ir_tei.clj": "sha256:6683b4a741ac1ea1967653f1f218fd1af804eb60ec950a26858ae057502d32ec",
+    "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "abc\/src\/abc\/tools\/person_drift.clj": "sha256:7ca250911fed05a969b3ac6339fd460790c2e5e008f4864739c78c79e11cebc9",
+    "abc\/src\/abc\/tools\/person_record.clj": "sha256:e9b2323dc7adba721d269bebab37bc9f13c4b89d3e504f0a6f63ff3bfb95b974",
+    "abc\/src\/abc\/tools\/publication_policy.clj": "sha256:d47280892c3bc350db264e86aff8eb5907f872d8a99508719103ec616cb17080",
+    "abc\/src\/abc\/tools\/rdf_prefixes.clj": "sha256:464ac0a7365d92a37084664c1af77aa5525c6eabbc86fad4358ff2637d993e29",
+    "abc\/src\/abc\/tools\/schema.clj": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871",
+    "abc\/src\/abc\/tools\/schematron.clj": "sha256:c1541ab6d3859b39601dafba06808b1cb95564d664875f375413ef64cbfd3737",
+    "abc\/src\/abc\/tools\/shacl.clj": "sha256:7310ac2ababba08ab1bc629521e2109f6cab1cfabdc90e82eb7e4607815f1e5d",
+    "abc\/src\/abc\/tools\/snapshot_index.clj": "sha256:e0e0b2b990a3725c18a2fcf8035d2bcc22954c2ea4c4efbaacdd8818e17cc7c4",
+    "abc\/src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
+    "abc\/src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
+    "abc\/src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
+    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
+    "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
+    "abc\/test\/abc\/tools\/schema_validation_evidence_test.clj": "sha256:03018bdf93c378e6808f501c375e24a4976b05a9586866e77c1ed786c7904392"
+  },
+  "observations":
+  {
+    "supported-entrypoint-delegates":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.schema-validation-evidence-test\/supported-entrypoint-delegates-test\"",
+    "revision": "053669700d26e5040f522595e80a4bfb8942efe1",
+    "tool": "bin\/kaocha"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

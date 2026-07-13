@@ -1,0 +1,40 @@
+{
+  "input_profile":
+  {
+    "explicit": ["docs\/evidence\/adr-capture\/tei-profile-drift.edn","flake.lock","flake.nix","nix\/tei-profile-artifacts.nix","schemas\/tei-profile.odd","schemas\/tei-profile.rng","schemas\/tei-profile.sch"],
+    "kind": "repo-files-v1",
+    "roots": []
+  },
+  "inputs":
+  {
+    "docs\/evidence\/adr-capture\/tei-profile-drift.edn": "sha256:588d65c4cff5398872f09a3d3ba26f7a3dcde90420633f10a486836cd77dc7e4",
+    "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
+    "flake.nix": "sha256:914c69bb961067f50d26f9be7969de9867680d4a6eaf11838544c21574a0fe01",
+    "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
+    "schemas\/tei-profile.odd": "sha256:b4b12fd7591f2ebe1f9417f8fa2bb938d025694c4202ef48c0bfe16045b120ac",
+    "schemas\/tei-profile.rng": "sha256:071479ba8eb10f93a46f4b3616a1c0007bdeafd7a4c321e49cd567d648768413",
+    "schemas\/tei-profile.sch": "sha256:608dcce45ba2acd490706691c4e38f885615176744f0db10a5a46aa96fa4da8a"
+  },
+  "observations":
+  {
+    "tei-profile-derived-artifacts-match":
+    {
+      "details":
+      {
+        "command_id": "tei-profile-drift",
+        "environment_policy": "nix-local-v1",
+        "exit_code": 0,
+        "nix_system": "x86_64-linux",
+        "nix_version": "nix (Determinate Nix 3.21.5) 2.34.8"
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.tei-profile-drift\\\"\"",
+    "revision": "93a693027f24a35caaabdd3faa7a0411f1ebf187",
+    "tool": "bash"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

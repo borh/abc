@@ -1,0 +1,9 @@
+{:schema-version :abc-adr-operational-closure-v1,
+ :entrypoint-namespaces [abc.tools.schematron-test],
+ :owned-namespace-prefixes [abc],
+ :paths
+ ["src/abc/tools/evidence_io.clj"
+  "src/abc/tools/path_containment.clj"
+  "src/abc/tools/schematron.clj"
+  "test/abc/test_fs.clj"
+  "test/abc/tools/schematron_test.clj"]}

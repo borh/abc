@@ -1,0 +1,266 @@
+{:schema-version :abc-adr-evidence-registration-v1,
+ :entries
+ [{:claim-id "ADR-0008-C2",
+   :claim-kind :operational-behavior,
+   :evidence-kind :operational-observation,
+   :artifact-path
+   "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json",
+   :observation-id :design-bundle-operational-schema-rdf-tei,
+   :observation-key "design-bundle-operational-schema-rdf-tei-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0010-C5",
+   :claim-kind :operational-behavior,
+   :evidence-kind :operational-observation,
+   :artifact-path
+   "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json",
+   :observation-id :design-bundle-operational-schema-rdf-tei,
+   :observation-key "design-bundle-operational-schema-rdf-tei-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0011-C1",
+   :claim-kind :operational-behavior,
+   :evidence-kind :operational-observation,
+   :artifact-path
+   "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json",
+   :observation-id :design-bundle-operational-schema-rdf-tei,
+   :observation-key "design-bundle-operational-schema-rdf-tei-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0006-C1",
+   :claim-kind :operational-behavior,
+   :evidence-kind :operational-observation,
+   :artifact-path
+   "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json",
+   :observation-id :design-bundle-operational-schema-rdf-tei,
+   :observation-key "design-bundle-operational-schema-rdf-tei-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0006-C2",
+   :claim-kind :structural-invariant,
+   :evidence-kind :structural-test,
+   :artifact-path
+   "docs/evidence/adr-runs/schema-entrypoint-delegation.json",
+   :observation-id :schema-entrypoint-delegation,
+   :observation-key "supported-entrypoint-delegates",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0006-C3",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/schema-empty-manifest.json",
+   :observation-id :schema-empty-manifest,
+   :observation-key "empty-manifest-is-rejected",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0006-C6",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/schema-canonicalization-mismatch.json",
+   :observation-id :schema-canonicalization-mismatch,
+   :observation-key "canonicalization-mismatch-is-rejected",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0006-C9",
+   :claim-kind :structural-invariant,
+   :evidence-kind :structural-test,
+   :artifact-path "docs/evidence/adr-runs/schema-ci-wiring.json",
+   :observation-id :schema-ci-wiring,
+   :observation-key "supported-ci-wiring-is-present",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0006-C4",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/tei-project-cross-schema-invalid.json",
+   :observation-id :tei-project-cross-schema-invalid,
+   :observation-key "tei-project-cross-schema-invalid-rejected",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0012-C2",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/tei-project-valid-fixtures.json",
+   :observation-id :tei-project-valid-fixtures,
+   :observation-key "tei-project-valid-fixtures-pass",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0012-C4",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/tei-schematron-invalid-ids.json",
+   :observation-id :tei-schematron-invalid-ids,
+   :observation-key "tei-schematron-invalid-ids-pass",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0006-C5",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/tei-figure-warning.json",
+   :observation-id :tei-figure-warning,
+   :observation-key "tei-figure-warning-contract-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0012-C5",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/tei-figure-warning.json",
+   :observation-id :tei-figure-warning,
+   :observation-key "tei-figure-warning-contract-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0012-C5",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/tei-enrichment-warning.json",
+   :observation-id :tei-enrichment-warning,
+   :observation-key "tei-enrichment-warning-contract-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0006-C7",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/linked-art-parity.json",
+   :observation-id :linked-art-parity,
+   :observation-key "linked-art-parity-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0013-C1",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/linked-art-parity.json",
+   :observation-id :linked-art-parity,
+   :observation-key "linked-art-parity-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0013-C2",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/linked-art-result-contract.json",
+   :observation-id :linked-art-result-contract,
+   :observation-key "linked-art-result-contract-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0013-C3",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/linked-art-full-behavior.json",
+   :observation-id :linked-art-full-behavior,
+   :observation-key "linked-art-full-behavior-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0017-C1",
+   :claim-kind :structural-invariant,
+   :evidence-kind :structural-test,
+   :artifact-path "docs/evidence/adr-runs/linked-art-context.json",
+   :observation-id :linked-art-context,
+   :observation-key "linked-art-context-is-canonical",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0017-C2",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/linked-art-artifact-predicate.json",
+   :observation-id :linked-art-artifact-predicate,
+   :observation-key "linked-art-artifact-predicate-is-canonical",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0017-C3",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/linked-art-current-parity-hash.json",
+   :observation-id :linked-art-current-parity-hash,
+   :observation-key "linked-art-current-parity-and-hash-pass",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0014-C1",
+   :claim-kind :structural-invariant,
+   :evidence-kind :structural-test,
+   :artifact-path "docs/evidence/adr-runs/iiif-schema-contract.json",
+   :observation-id :iiif-schema-contract,
+   :observation-key "iiif-schema-contract-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0006-C8",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/iiif-committed-applicability.json",
+   :observation-id :iiif-committed-applicability,
+   :observation-key "iiif-committed-applicability-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0014-C2",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/iiif-text-only-values.json",
+   :observation-id :iiif-text-only-values,
+   :observation-key "iiif-text-only-values-pass",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0014-C3",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/iiif-invalid-combinations.json",
+   :observation-id :iiif-invalid-combinations,
+   :observation-key "iiif-invalid-combinations-reject",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0014-C4",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/iiif-valid-combinations.json",
+   :observation-id :iiif-valid-combinations,
+   :observation-key "iiif-valid-combinations-pass",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0012-C1",
+   :claim-kind :operational-behavior,
+   :evidence-kind :operational-observation,
+   :artifact-path "docs/evidence/adr-runs/tei-profile-drift.json",
+   :observation-id :tei-profile-drift,
+   :observation-key "tei-profile-derived-artifacts-match",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0012-C3",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/tei-upstream-rng.json",
+   :observation-id :tei-upstream-rng,
+   :observation-key "tei-upstream-rng-fixture-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0012-C6",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/tei-publication-sidecars.json",
+   :observation-id :tei-publication-sidecars,
+   :observation-key "tei-validation-sidecars-pass",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0017-C4",
+   :claim-kind :structural-invariant,
+   :evidence-kind :structural-test,
+   :artifact-path
+   "docs/evidence/adr-runs/turtle-prefix-inventory.json",
+   :observation-id :turtle-prefix-inventory,
+   :observation-key "turtle-prefix-inventory-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0017-C5",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/manifest-rdf-parity.json",
+   :observation-id :manifest-rdf-parity,
+   :observation-key "manifest-rdf-parity-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0017-C5",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/metadata-rdf-parity.json",
+   :observation-id :metadata-rdf-parity,
+   :observation-key "metadata-rdf-parity-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0018-C1",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path
+   "docs/evidence/adr-runs/metadata-rdf-containment.json",
+   :observation-id :metadata-rdf-containment,
+   :observation-key "metadata-rdf-containment-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0018-C2",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/metadata-rights-shacl.json",
+   :observation-id :metadata-rights-shacl,
+   :observation-key "metadata-rights-shacl-passes",
+   :expected {:operator :=, :value true}}
+  {:claim-id "ADR-0018-C3",
+   :claim-kind :fixture-behavior,
+   :evidence-kind :fixture-conformance,
+   :artifact-path "docs/evidence/adr-runs/metadata-bundle-helper.json",
+   :observation-id :metadata-bundle-helper,
+   :observation-key "metadata-bundle-helper-passes",
+   :expected {:operator :=, :value true}}]}

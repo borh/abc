@@ -1,0 +1,6 @@
+{:schema-version :abc-adr-runtime-inputs-v1,
+ :paths
+ ["abc/fixtures/iiif/invalid/applicable-without-manifest.json"
+  "abc/fixtures/iiif/invalid/missing-work-id.json"
+  "abc/fixtures/iiif/invalid/not-applicable-with-manifest.json"
+  "abc/schemas/iiif-applicability.schema.json"]}

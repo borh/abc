@@ -1,0 +1,23 @@
+{:observation-key "empty-manifest-is-rejected",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:4e4fbc5bcb220d1b6d69546af5932dd7aaa386d9ff55c6678de193b4421f6198",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/schema-empty-manifest.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.schema-validation-evidence-test/broken-manifest-is-rejected-test"],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.schema-validation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/schema-empty-manifest.edn"
+   "abc/docs/evidence/adr-inputs/schema-empty-manifest.edn"
+   "abc/schemas/manifest.schema.json"]},
+ :observation-id :schema-empty-manifest}

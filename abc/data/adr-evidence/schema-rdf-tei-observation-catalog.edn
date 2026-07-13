@@ -1,0 +1,379 @@
+{:schema-version :abc-adr-evidence-observation-catalog-v1,
+ :focused-observations
+ [{:observation-id :iiif-committed-applicability,
+   :descriptor-stem "iiif-committed-applicability",
+   :observation-key "iiif-committed-applicability-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/iiif-committed-applicability-contract-test}
+  {:observation-id :iiif-invalid-combinations,
+   :descriptor-stem "iiif-invalid-combinations",
+   :observation-key "iiif-invalid-combinations-reject",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/iiif-invalid-combinations-contract-test}
+  {:observation-id :iiif-schema-contract,
+   :descriptor-stem "iiif-schema-contract",
+   :observation-key "iiif-schema-contract-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/applicability-schema-is-valid-draft-2020-12-test}
+  {:observation-id :iiif-text-only-values,
+   :descriptor-stem "iiif-text-only-values",
+   :observation-key "iiif-text-only-values-pass",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/iiif-text-only-values-contract-test}
+  {:observation-id :iiif-valid-combinations,
+   :descriptor-stem "iiif-valid-combinations",
+   :observation-key "iiif-valid-combinations-pass",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/iiif-valid-combinations-contract-test}
+  {:observation-id :linked-art-artifact-predicate,
+   :descriptor-stem "linked-art-artifact-predicate",
+   :observation-key "linked-art-artifact-predicate-is-canonical",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/expanded-artifact-id-uses-canonical-predicate-test}
+  {:observation-id :linked-art-context,
+   :descriptor-stem "linked-art-context",
+   :observation-key "linked-art-context-is-canonical",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/context-declares-canonical-abc-namespace-test}
+  {:observation-id :linked-art-current-parity-hash,
+   :descriptor-stem "linked-art-current-parity-hash",
+   :observation-key "linked-art-current-parity-and-hash-pass",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/current-linked-art-parity-and-context-hash-contract-test}
+  {:observation-id :linked-art-full-behavior,
+   :descriptor-stem "linked-art-full-behavior",
+   :observation-key "linked-art-full-behavior-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/linked-art-determinism-parity-hash-identity-fetch-contract-test}
+  {:observation-id :linked-art-parity,
+   :descriptor-stem "linked-art-parity",
+   :observation-key "linked-art-parity-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/linked-art-parity-test}
+  {:observation-id :linked-art-result-contract,
+   :descriptor-stem "linked-art-result-contract",
+   :observation-key "linked-art-result-contract-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/linked-art-result-status-and-context-hash-test}
+  {:observation-id :manifest-rdf-parity,
+   :descriptor-stem "manifest-rdf-parity",
+   :observation-key "manifest-rdf-parity-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/manifest-rdf-parity-test}
+  {:observation-id :metadata-bundle-helper,
+   :descriptor-stem "metadata-bundle-helper",
+   :observation-key "metadata-bundle-helper-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/metadata-bundle-helper-contract-test}
+  {:observation-id :metadata-rdf-containment,
+   :descriptor-stem "metadata-rdf-containment",
+   :observation-key "metadata-rdf-containment-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/metadata-title-and-legacy-predicate-containment-test}
+  {:observation-id :metadata-rdf-parity,
+   :descriptor-stem "metadata-rdf-parity",
+   :observation-key "metadata-rdf-parity-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/metadata-rdf-parity-test}
+  {:observation-id :metadata-rights-shacl,
+   :descriptor-stem "metadata-rights-shacl",
+   :observation-key "metadata-rights-shacl-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/optional-rights-shacl-contract-test}
+  {:observation-id :schema-canonicalization-mismatch,
+   :descriptor-stem "schema-canonicalization-mismatch",
+   :observation-key "canonicalization-mismatch-is-rejected",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/canonicalization-hash-mismatch-is-rejected-test}
+  {:observation-id :schema-ci-wiring,
+   :descriptor-stem "schema-ci-wiring",
+   :observation-key "supported-ci-wiring-is-present",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/supported-ci-wiring-test}
+  {:observation-id :schema-empty-manifest,
+   :descriptor-stem "schema-empty-manifest",
+   :observation-key "empty-manifest-is-rejected",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/broken-manifest-is-rejected-test}
+  {:observation-id :schema-entrypoint-delegation,
+   :descriptor-stem "schema-entrypoint-delegation",
+   :observation-key "supported-entrypoint-delegates",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/supported-entrypoint-delegates-test}
+  {:observation-id :turtle-prefix-inventory,
+   :descriptor-stem "turtle-prefix-inventory",
+   :observation-key "turtle-prefix-inventory-passes",
+   :focus-var
+   abc.tools.schema-validation-evidence-test/bounded-turtle-prefix-inventory-test}],
+ :operational-observations
+ [{:observation-key "design-bundle-operational-schema-rdf-tei-passes",
+   :tool "bash",
+   :descriptor-stem "design-bundle-operational-schema-rdf-tei",
+   :argv
+   ["bash"
+    "--noprofile"
+    "--norc"
+    "-c"
+    "nix run .#validate-design-bundle"],
+   :environment-policy :nix-local-v1,
+   :observation-id :design-bundle-operational-schema-rdf-tei,
+   :entrypoint-kind :clojure,
+   :entrypoint-namespaces [abc.tools.validate-design-bundle],
+   :determinant-paths
+   ["contexts/abc-v0.jsonld"
+    "data/aat-parser-ir-compatibility.edn"
+    "data/analysis-recipes/literary-basic-ja-v1.json"
+    "data/analysis-recipes/token-basic-ja-v1.json"
+    "data/pack-policies/no-pack-v1.json"
+    "data/pack-policies/parquet-basic-v1.json"
+    "data/parser-evidence-citations.edn"
+    "data/request-sets/demo-basic-ja.json"
+    "data/request-sets/full-corpus-analysis-basic-ja.json"
+    "data/request-sets/full-corpus-basic-ja.json"
+    "data/request-sets/full-corpus-publication-basic-ja.json"
+    "data/request-sets/smoke-basic-ja.json"
+    "examples/ab-validator-output/comparison-report.json"
+    "examples/ab-validator-output/divergence.json"
+    "examples/ab-validator-output/manifest-inputs.json"
+    "examples/ab-validator-output/parser-ir.json"
+    "examples/ab-validator-output/run-summary.jsonl"
+    "examples/ab-validator-output/source-region-coverage.json"
+    "examples/ab-validator-output/warnings.jsonl"
+    "examples/v0/example-persons/000879.json"
+    "examples/v0/example-work/analysis-result.json"
+    "examples/v0/example-work/body-annotations.json"
+    "examples/v0/example-work/failure-manifest.example.json"
+    "examples/v0/example-work/iiif/applicability.json"
+    "examples/v0/example-work/lod/jsonld-context-validation-result.json"
+    "examples/v0/example-work/lod/linked-art-candidate.jsonld"
+    "examples/v0/example-work/lod/linked-art-expanded.normalized.json"
+    "examples/v0/example-work/manifest.json"
+    "examples/v0/example-work/metadata-record.json"
+    "examples/v0/example-work/metadata-record.ttl"
+    "examples/v0/example-work/parser-ir.json"
+    "examples/v0/example-work/source.manifest.json"
+    "examples/v0/example-work/tei-validation-result.json"
+    "examples/v0/example-work/token-stream.json"
+    "examples/v0/example-work/warnings.jsonl"
+    "examples/v0/snapshot/snapshot-index.json"
+    "examples/workflow/passed.workflow-run.json"
+    "fixtures/tei-eaj-comparison/workset-export.json"
+    "flake.lock"
+    "flake.nix"
+    "nix/tei-profile-artifacts.nix"
+    "schemas/aat-parser-ir-divergence-bundle.schema.json"
+    "schemas/aat-parser-ir-divergence.schema.json"
+    "schemas/aat-parser-ir-mapping.schema.json"
+    "schemas/adr-claim-migration-baseline.schema.json"
+    "schemas/adr-evidence-run.schema.json"
+    "schemas/adr-external-evidence.schema.json"
+    "schemas/analysis-recipe.schema.json"
+    "schemas/analysis-result.schema.json"
+    "schemas/annotation-output.schema.json"
+    "schemas/comparison-report.schema.json"
+    "schemas/diagnostic.schema.json"
+    "schemas/iiif-applicability.schema.json"
+    "schemas/manifest-inputs.schema.json"
+    "schemas/manifest.schema.json"
+    "schemas/manifest.shacl.ttl"
+    "schemas/metadata-record.schema.json"
+    "schemas/pack-policy.schema.json"
+    "schemas/parser-ir-publication-preservation.schema.json"
+    "schemas/parser-ir.schema.json"
+    "schemas/person-drift-event.schema.json"
+    "schemas/person-drift-index.schema.json"
+    "schemas/person-record.schema.json"
+    "schemas/request-set.schema.json"
+    "schemas/run-summary.schema.json"
+    "schemas/snapshot-index.schema.json"
+    "schemas/source-assertion.schema.json"
+    "schemas/source-region-coverage.schema.json"
+    "schemas/tei-eaj-comparison.schema.json"
+    "schemas/tei-profile.odd"
+    "schemas/tei-profile.rng"
+    "schemas/tei-profile.sch"
+    "schemas/tei-validation-result.schema.json"
+    "schemas/token-output.schema.json"
+    "schemas/workflow-run.schema.json"],
+   :command-id :validate-design-bundle}
+  {:observation-key "tei-enrichment-warning-contract-passes",
+   :tool "bash",
+   :descriptor-stem "tei-enrichment-warning",
+   :argv
+   ["bash"
+    "--noprofile"
+    "--norc"
+    "-c"
+    "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.adr-evidence-tei-enrichment-warning\""],
+   :environment-policy :nix-local-v1,
+   :observation-id :tei-enrichment-warning,
+   :entrypoint-kind :clojure,
+   :entrypoint-namespaces [abc.tools.schematron-test],
+   :determinant-paths
+   ["fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
+    "flake.lock"
+    "flake.nix"
+    "nix/tei-profile-artifacts.nix"
+    "schemas/tei-profile.sch"],
+   :command-id :tei-enrichment-warning}
+  {:observation-key "tei-figure-warning-contract-passes",
+   :tool "bash",
+   :descriptor-stem "tei-figure-warning",
+   :argv
+   ["bash"
+    "--noprofile"
+    "--norc"
+    "-c"
+    "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.adr-evidence-tei-figure-warning\""],
+   :environment-policy :nix-local-v1,
+   :observation-id :tei-figure-warning,
+   :entrypoint-kind :clojure,
+   :entrypoint-namespaces [abc.tools.schematron-test],
+   :determinant-paths
+   ["fixtures/tei/warnings/figure-missing-desc.xml"
+    "flake.lock"
+    "flake.nix"
+    "nix/tei-profile-artifacts.nix"
+    "schemas/tei-profile.sch"],
+   :command-id :tei-figure-warning}
+  {:observation-key "tei-profile-derived-artifacts-match",
+   :tool "bash",
+   :descriptor-stem "tei-profile-drift",
+   :argv
+   ["bash"
+    "--noprofile"
+    "--norc"
+    "-c"
+    "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.tei-profile-drift\""],
+   :environment-policy :nix-local-v1,
+   :observation-id :tei-profile-drift,
+   :entrypoint-kind :nix-only,
+   :determinant-paths
+   ["flake.lock"
+    "flake.nix"
+    "nix/tei-profile-artifacts.nix"
+    "schemas/tei-profile.odd"
+    "schemas/tei-profile.rng"
+    "schemas/tei-profile.sch"],
+   :command-id :tei-profile-drift}
+  {:observation-key "tei-project-cross-schema-invalid-rejected",
+   :tool "bash",
+   :descriptor-stem "tei-project-cross-schema-invalid",
+   :argv
+   ["bash"
+    "--noprofile"
+    "--norc"
+    "-c"
+    "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.adr-evidence-tei-project-cross-schema-invalid\""],
+   :environment-policy :nix-local-v1,
+   :observation-id :tei-project-cross-schema-invalid,
+   :entrypoint-kind :clojure,
+   :entrypoint-namespaces [abc.tools.validate-design-bundle-test],
+   :determinant-paths
+   ["fixtures/tei/invalid/abc-bad-layout-params.xml"
+    "flake.lock"
+    "flake.nix"
+    "nix/tei-profile-artifacts.nix"
+    "schemas/tei-profile.odd"
+    "schemas/tei-profile.rng"
+    "schemas/tei-profile.sch"],
+   :command-id :tei-project-cross-schema-invalid}
+  {:observation-key "tei-project-valid-fixtures-pass",
+   :tool "bash",
+   :descriptor-stem "tei-project-valid-fixtures",
+   :argv
+   ["bash"
+    "--noprofile"
+    "--norc"
+    "-c"
+    "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.adr-evidence-tei-project-valid-fixtures\""],
+   :environment-policy :nix-local-v1,
+   :observation-id :tei-project-valid-fixtures,
+   :entrypoint-kind :clojure,
+   :entrypoint-namespaces [abc.tools.validate-design-bundle-test],
+   :determinant-paths
+   ["examples/v0/example-work/tei.xml"
+    "fixtures/tei/valid/rashomon-minimal.xml"
+    "fixtures/tei/valid/source-span-local-ref.xml"
+    "fixtures/tei/valid/transcription-enrichment-declared.xml"
+    "flake.lock"
+    "flake.nix"
+    "nix/tei-profile-artifacts.nix"
+    "schemas/tei-profile.odd"
+    "schemas/tei-profile.rng"
+    "schemas/tei-profile.sch"],
+   :command-id :tei-project-valid-fixtures}
+  {:observation-key "tei-validation-sidecars-pass",
+   :tool "bash",
+   :descriptor-stem "tei-publication-sidecars",
+   :argv
+   ["bash"
+    "--noprofile"
+    "--norc"
+    "-c"
+    "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.adr-evidence-tei-publication-sidecars\""],
+   :environment-policy :nix-local-v1,
+   :observation-id :tei-publication-sidecars,
+   :entrypoint-kind :clojure,
+   :entrypoint-namespaces
+   [abc.tools.materialize-publication-test
+    abc.tools.validate-design-bundle-test],
+   :determinant-paths
+   ["data/parser-ir-publication-policy-v0.json"
+    "data/publication-policy.edn"
+    "examples/v0/example-persons/000879.json"
+    "examples/v0/example-work/manifest.json"
+    "examples/v0/example-work/metadata-record.json"
+    "examples/v0/example-work/parser-ir.json"
+    "examples/v0/example-work/source.manifest.json"
+    "flake.lock"
+    "flake.nix"
+    "nix/tei-profile-artifacts.nix"
+    "schemas/manifest.schema.json"
+    "schemas/parser-ir-publication-preservation.schema.json"
+    "schemas/tei-profile.odd"
+    "schemas/tei-profile.rng"
+    "schemas/tei-profile.sch"
+    "schemas/tei-validation-result.schema.json"],
+   :command-id :tei-publication-sidecars}
+  {:observation-key "tei-schematron-invalid-ids-pass",
+   :tool "bash",
+   :descriptor-stem "tei-schematron-invalid-ids",
+   :argv
+   ["bash"
+    "--noprofile"
+    "--norc"
+    "-c"
+    "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.adr-evidence-tei-schematron-invalid-ids\""],
+   :environment-policy :nix-local-v1,
+   :observation-id :tei-schematron-invalid-ids,
+   :entrypoint-kind :clojure,
+   :entrypoint-namespaces [abc.tools.schematron-test],
+   :determinant-paths
+   ["fixtures/tei/invalid/gaiji-missing-ref.xml"
+    "fixtures/tei/invalid/missing-title.xml"
+    "fixtures/tei/invalid/ruby-missing-reading.xml"
+    "flake.lock"
+    "flake.nix"
+    "nix/tei-profile-artifacts.nix"
+    "schemas/tei-profile.sch"],
+   :command-id :tei-schematron-invalid-ids}
+  {:observation-key "tei-upstream-rng-fixture-passes",
+   :tool "bash",
+   :descriptor-stem "tei-upstream-rng",
+   :argv
+   ["bash"
+    "--noprofile"
+    "--norc"
+    "-c"
+    "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.adr-evidence-tei-upstream-rng\""],
+   :environment-policy :nix-local-v1,
+   :observation-id :tei-upstream-rng,
+   :entrypoint-kind :clojure,
+   :entrypoint-namespaces [abc.tools.tei-test],
+   :determinant-paths
+   ["examples/v0/example-work/tei.xml"
+    "flake.lock"
+    "flake.nix"
+    "nix/tei-profile-artifacts.nix"],
+   :command-id :tei-upstream-rng}]}

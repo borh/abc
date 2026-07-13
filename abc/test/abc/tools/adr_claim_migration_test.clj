@@ -12,8 +12,8 @@
 (defn- kinds [problems]
   (set (map :kind problems)))
 
-(defn- actual-baseline []
-  (migration/baseline-value revision (adr/parse-all "docs/adr")))
+(defn- checked-in-baseline []
+  (files/read-json "docs/adr/adr-claim-migration-baseline.json"))
 
 (defn- dispatch [args]
   (cli/dispatch! (cli/parse args migration/cli-config)
@@ -36,7 +36,7 @@
         baseline (migration/baseline-value revision adrs)]
     (is (= revision (get baseline "baseline_revision")))
     (is (= 26 (get baseline "accepted_adr_count")))
-    (is (= 146 (get baseline "criterion_count")))
+    (is (= 145 (get baseline "criterion_count")))
     (is (= 36 (get baseline "normative_section_count")))
     (is (= baseline (migration/baseline-value revision (reverse adrs))))
     (is (= (sort-by (juxt #(get % "adr") #(get % "original_criterion_index"))
@@ -87,7 +87,7 @@
             (migration/baseline-value revision (adr/parse-all "docs/adr")))))))
 
 (deftest baseline-validation-test
-  (let [baseline (actual-baseline)
+  (let [baseline (checked-in-baseline)
         row (first (get baseline "criteria"))]
     (is (empty? (migration/validate-baseline baseline)))
     (is (contains? (kinds (migration/validate-baseline (assoc baseline "extra" true)))
@@ -128,7 +128,7 @@
         key [(get row "adr") (get row "original_text_hash")]]
     {:key key
      :ledger {:schema-version "abc-adr-claim-migration-v1"
-              :baseline-revision revision
+              :baseline-revision (get baseline "baseline_revision")
               :baseline-manifest-hash (migration/baseline-hash baseline)
               :entries {key {:disposition :correct
                              :rationale "Narrow to the implemented artifact-ID oracle."
@@ -136,7 +136,7 @@
                              :resulting-claim-ids ["ADR-0001-C4"]}}}}))
 
 (deftest ledger-validation-contract-test
-  (let [baseline (actual-baseline)
+  (let [baseline (checked-in-baseline)
         {:keys [key ledger]} (ledger-fixture baseline)
         claims {"ADR-0001-C4" {}}
         validate #(migration/validate-ledger baseline %1 %2 {:require-complete? false})]

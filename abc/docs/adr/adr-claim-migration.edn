@@ -128,6 +128,161 @@
    :planned-evidence-boundaries [:two-run-byte-identity]
    :resulting-claim-ids ["ADR-0011-C3"]}
 
+  [6 "sha256:7e9792ab5d8c132f9c54811d9a06f4dcb532fe13c43454c00b7ab9302d3a4890"]
+  {:disposition :correct
+   :rationale "Narrow to the supported Nix design-bundle application exiting zero on the committed bundle."
+   :planned-evidence-boundaries [:design-bundle-operational-schema-rdf-tei]
+   :resulting-claim-ids ["ADR-0006-C1"]}
+  [6 "sha256:14ec9e6882ab1c331b7cb84641fa4bb2517c5de3651d848ce18758e0c1a9124c"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:schema-entrypoint-delegation]
+   :resulting-claim-ids ["ADR-0006-C2"]}
+  [6 "sha256:e6c9d4c9b4c5cf499999a49cb2e53fa70a6082e54afb2c51949b91681e8d4aeb"]
+  {:disposition :correct
+   :rationale "Replace the vague broken example with the exact empty-manifest schema rejection."
+   :planned-evidence-boundaries [:schema-empty-manifest]
+   :resulting-claim-ids ["ADR-0006-C3"]}
+  [6 "sha256:7c9a94bceda2ee34628211fbb32f1a5154d096efe30676f1ce130385a66c7d39"]
+  {:disposition :correct
+   :rationale "Retain the cross-schema rejection and declared rule ID; move unsupported failure-manifest materialization to Future Verification."
+   :planned-evidence-boundaries [:tei-project-cross-schema-invalid]
+   :resulting-claim-ids ["ADR-0006-C4"]}
+  [6 "sha256:1278837e317ab24c858f463f72161e077a1583f868991fb847ee8cc7ab709698"]
+  {:disposition :correct
+   :rationale "Narrow to the warning finding without an error and move warning promotion to Future Verification."
+   :planned-evidence-boundaries [:tei-figure-warning]
+   :resulting-claim-ids ["ADR-0006-C5"]}
+  [6 "sha256:c4db0eea3a165539ded05b1e096ee1b3e717e9894422ffd6cea631a71b789fa9"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:schema-canonicalization-mismatch]
+   :resulting-claim-ids ["ADR-0006-C6"]}
+  [6 "sha256:1337f9452352a4fa9ba2e68734c9af5191c6649369706eac4cecaf16e0394425"]
+  {:disposition :correct
+   :rationale "Split the enabled Linked Art parity and committed IIIF applicability boundaries."
+   :planned-evidence-boundaries [:linked-art-parity :iiif-committed-applicability]
+   :resulting-claim-ids ["ADR-0006-C7" "ADR-0006-C8"]}
+  [6 "sha256:ce9c205c6b42d6790937d445bbc545d7523a5e02e5610ac9ca09712c2b401503"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Move the historical broad flake pass out of live acceptance."
+   :planned-evidence-boundaries [:historical-evidence]
+   :resulting-claim-ids []}
+  [6 "sha256:ee7020699a1c0e5fdeb7a29ee07b1262a79c2dd32fb816e4cdb9903a2f4c9a57"]
+  {:disposition :correct
+   :rationale "Narrow to structural CI wiring for the supported Nix application."
+   :planned-evidence-boundaries [:schema-ci-wiring]
+   :resulting-claim-ids ["ADR-0006-C9"]}
+
+  [12 "sha256:68cd2436e688fbcd0041782c39e2c63ccccd4466a27a551b81f8cd7952365853"]
+  {:disposition :correct
+   :rationale "Split derivation drift, project validation, and pinned upstream compatibility into independent boundaries."
+   :planned-evidence-boundaries [:tei-profile-drift :tei-project-valid-fixtures :tei-upstream-rng]
+   :resulting-claim-ids ["ADR-0012-C1" "ADR-0012-C2" "ADR-0012-C3"]}
+  [12 "sha256:8cdae098d569f76c58b89e765b995ece150e8ed2d37a2aa9e36b06f26a708556"]
+  {:disposition :correct
+   :rationale "Pluralize and bind the literal valid fixture set to both project validators."
+   :planned-evidence-boundaries [:tei-project-valid-fixtures]
+   :resulting-claim-ids ["ADR-0012-C2"]}
+  [12 "sha256:039298b7ff2ec3ff1ba8c4f08af2ebf63bd5912dd80ea8c3e5e6ea795cb8f04a"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:tei-schematron-invalid-ids]
+   :resulting-claim-ids ["ADR-0012-C4"]}
+  [12 "sha256:f9e75f12135e0fa0e1c5e83c07cfdac5393e371a72113f93cc586c5935bec328"]
+  {:disposition :correct
+   :rationale "Correct unsupported report materialization to exact warning findings without errors."
+   :planned-evidence-boundaries [:tei-figure-warning :tei-enrichment-warning]
+   :resulting-claim-ids ["ADR-0012-C5"]}
+  [12 "sha256:b3bfd927ce8f77846414d76bd3fa72e821c97eb78b4b2972ac776283a8f84d36"]
+  {:disposition :correct
+   :rationale "Specify generated and committed TEI manifests and the validation-result sidecar name."
+   :planned-evidence-boundaries [:tei-publication-sidecars]
+   :resulting-claim-ids ["ADR-0012-C6"]}
+
+  [13 "sha256:09146cb791d7b07e31cdca8e33389f2090a410db772743b493b6f3922d5980ee"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:linked-art-parity]
+   :resulting-claim-ids ["ADR-0013-C1"]}
+  [13 "sha256:28f7c51a84cee926bc1dcd9a933a4919d129e20f759c89449700704664cb2e2b"]
+  {:disposition :correct
+   :rationale "Name the actual context-validation result and JCS hash recomputation."
+   :planned-evidence-boundaries [:linked-art-result-contract]
+   :resulting-claim-ids ["ADR-0013-C2"]}
+  [13 "sha256:0677776d939cd9ada8a6a1a16bd19e10ba69156895019f46d4ec7f265d2c69a3"]
+  {:disposition :correct
+   :rationale "Replace test-coverage prose with the complete observed Linked Art behavior."
+   :planned-evidence-boundaries [:linked-art-full-behavior]
+   :resulting-claim-ids ["ADR-0013-C3"]}
+
+  [14 "sha256:30780112817ff23d0b13648b6eb04fc4de8e27e1b1aa504dd26f77e1a5787cc2"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:iiif-schema-contract]
+   :resulting-claim-ids ["ADR-0014-C1"]}
+  [14 "sha256:7d8649de486fb0f94bbf632a44dcea713a37d99bd6c61b77c58a0a1d4735a75a"]
+  {:disposition :correct
+   :rationale "Bind the exact text-only fixture values rather than an open-ended reason assertion."
+   :planned-evidence-boundaries [:iiif-text-only-values]
+   :resulting-claim-ids ["ADR-0014-C2"]}
+  [14 "sha256:a72cf976971609a06e1baa11fcee8adf8b79d6844286b770e70b6775d19280ec"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Replace structural invocation prose with independently observed schema and fixture behavior."
+   :planned-evidence-boundaries [:decision-implementation-entry-point]
+   :resulting-claim-ids []}
+  [14 "sha256:87ae53cde95f69b8308d6b1dabcc12aec4a083285457c8f32ca813f355d2ca6b"]
+  {:disposition :correct
+   :rationale "Correct the erroneous case count and split invalid and valid status/manifest combinations."
+   :planned-evidence-boundaries [:iiif-invalid-combinations :iiif-valid-combinations]
+   :resulting-claim-ids ["ADR-0014-C3" "ADR-0014-C4"]}
+
+  [17 "sha256:eced4ca6f137d99749f8a851cc4ca3a6b365536cda8c4fb9bd60333297430c4e"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:linked-art-context]
+   :resulting-claim-ids ["ADR-0017-C1"]}
+  [17 "sha256:b46535979565951ff4df5f6e6dbd8165e0159ed6352fb16c6812255249bb3d83"]
+  {:disposition :correct
+   :rationale "Replace test-coverage prose with expanded artifact-ID preservation at the canonical predicate."
+   :planned-evidence-boundaries [:linked-art-artifact-predicate]
+   :resulting-claim-ids ["ADR-0017-C2"]}
+  [17 "sha256:74bb05b80d953d858b866aaffd6e1588d15cdbb522711d4f0395c0ebd08d1265"]
+  {:disposition :correct
+   :rationale "Remove historical rotation wording and bind current fixture parity plus recomputed hash."
+   :planned-evidence-boundaries [:linked-art-current-parity-hash]
+   :resulting-claim-ids ["ADR-0017-C3"]}
+  [17 "sha256:def82dda8cb1c9974dc0c9e6cbab6844eb069a6e94ead021a14af0c538c553f5"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Move the broad historical flake pass out of live acceptance."
+   :planned-evidence-boundaries [:historical-evidence]
+   :resulting-claim-ids []}
+  [17 "sha256:ce51bd77ff631ce8787766cfce28404864cc2e7cd987a468bef078fc9386685e"]
+  {:disposition :correct
+   :rationale "Split the bounded Turtle prefix inventory from named manifest and metadata RDF parity."
+   :planned-evidence-boundaries [:turtle-prefix-inventory :manifest-rdf-parity :metadata-rdf-parity]
+   :resulting-claim-ids ["ADR-0017-C4" "ADR-0017-C5"]}
+
+  [18 "sha256:f443650fe2902c0db9af21e4f86dfc074b12bea8c89074a36a1db930e1e4fec0"]
+  {:disposition :correct
+   :rationale "Correct the rights mapping to ADR 0035 containment and bind the named legacy-flag cases."
+   :planned-evidence-boundaries [:metadata-rdf-containment]
+   :resulting-claim-ids ["ADR-0018-C1"]}
+  [18 "sha256:34b66dd0105b417328864c74c85adee9b71e2e978a0891b5a2311bc6ce6f7f8b"]
+  {:disposition :correct
+   :rationale "Correct exactly-one to the live optional zero-or-one closed IRI contract."
+   :planned-evidence-boundaries [:metadata-rights-shacl]
+   :resulting-claim-ids ["ADR-0018-C2"]}
+  [18 "sha256:d9cbe288d4cf3a701a4f536f3fe82328ce22727bca3c397447b14dd08ca6db1d"]
+  {:disposition :correct
+   :rationale "Narrow the broad bundle pass to the metadata helper's JSON, person, SHACL, and Turtle parity boundary."
+   :planned-evidence-boundaries [:metadata-bundle-helper]
+   :resulting-claim-ids ["ADR-0018-C3"]}
+  [18 "sha256:def82dda8cb1c9974dc0c9e6cbab6844eb069a6e94ead021a14af0c538c553f5"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Move the broad historical flake pass out of live acceptance."
+   :planned-evidence-boundaries [:historical-evidence]
+   :resulting-claim-ids []}
+  [18 "sha256:808bf4cf3e82e746cf643635296bfa3857e22ea3e056cd520a92e8d3d3970353"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Move revision-bounded manifest equality to Historical Evidence."
+   :planned-evidence-boundaries [:historical-evidence]
+   :resulting-claim-ids []}
+
   [33 "sha256:5f0ee5797b8e45e6292ed4015d791002b96ec3d18e980f699de73ce3203bf2d0"]
   {:disposition :correct
    :rationale "Narrow this row to the canonical all-member schema fixture; the separate known-answer baseline row solely owns ADR-0033-C2."

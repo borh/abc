@@ -1,0 +1,23 @@
+{:observation-key "iiif-text-only-values-pass",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:b2699755b3092dafb6e5e4afe47651bd85c514d75cd3f91bae4dc689351eaff3",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/iiif-text-only-values.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.schema-validation-evidence-test/iiif-text-only-values-contract-test"],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.schema-validation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/iiif-text-only-values.edn"
+   "abc/docs/evidence/adr-inputs/iiif-text-only-values.edn"
+   "abc/examples/v0/example-work/iiif/applicability.json"]},
+ :observation-id :iiif-text-only-values}

@@ -613,6 +613,97 @@
             echo "schemas/tei-profile.{rng,sch} match the ODD-derived artifacts." > "$out/result.txt"
           '';
 
+          adr-evidence-tei-project-cross-schema-invalid =
+            pkgs.runCommand "abc-adr-evidence-tei-project-cross-schema-invalid"
+              { nativeBuildInputs = [ pkgs.clojure ]; }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+                clojure -M:test:kaocha -m kaocha.runner \
+                  --focus abc.tools.validate-design-bundle-test/project-rng-valid-schematron-invalid-fixture-test
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
+          adr-evidence-tei-project-valid-fixtures =
+            pkgs.runCommand "abc-adr-evidence-tei-project-valid-fixtures"
+              { nativeBuildInputs = [ pkgs.clojure ]; }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+                clojure -M:test:kaocha -m kaocha.runner \
+                  --focus abc.tools.validate-design-bundle-test/valid-project-tei-fixtures-pass-rng-and-schematron-test
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
+          adr-evidence-tei-schematron-invalid-ids =
+            pkgs.runCommand "abc-adr-evidence-tei-schematron-invalid-ids"
+              { nativeBuildInputs = [ pkgs.clojure ]; }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+                clojure -M:test:kaocha -m kaocha.runner \
+                  --focus abc.tools.schematron-test/missing-title-fails-title-rule-test \
+                  --focus abc.tools.schematron-test/gaiji-missing-reference-fails-gaiji-rule-test \
+                  --focus abc.tools.schematron-test/ruby-missing-reading-fails-ruby-rule-test
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
+          adr-evidence-tei-figure-warning =
+            pkgs.runCommand "abc-adr-evidence-tei-figure-warning" { nativeBuildInputs = [ pkgs.clojure ]; }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+                clojure -M:test:kaocha -m kaocha.runner \
+                  --focus abc.tools.schematron-test/figure-missing-description-reports-warning-test
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
+          adr-evidence-tei-enrichment-warning =
+            pkgs.runCommand "abc-adr-evidence-tei-enrichment-warning" { nativeBuildInputs = [ pkgs.clojure ]; }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+                clojure -M:test:kaocha -m kaocha.runner \
+                  --focus abc.tools.schematron-test/transcription-enrichment-undeclared-reports-warning-test
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
+          adr-evidence-tei-upstream-rng =
+            pkgs.runCommand "abc-adr-evidence-tei-upstream-rng" { nativeBuildInputs = [ pkgs.clojure ]; }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+                clojure -M:test:kaocha -m kaocha.runner \
+                  --focus abc.tools.tei-test/validate-example-fixture-test
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
+          adr-evidence-tei-publication-sidecars =
+            pkgs.runCommand "abc-adr-evidence-tei-publication-sidecars"
+              { nativeBuildInputs = [ pkgs.clojure ]; }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+                clojure -M:test:kaocha -m kaocha.runner \
+                  --focus abc.tools.materialize-publication-test/tei-generated-manifest-references-validation-result-test \
+                  --focus abc.tools.validate-design-bundle-test/tei-committed-manifest-references-validation-result-test
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
           schema-contract-drift =
             pkgs.runCommand "abc-schema-contract-drift" { nativeBuildInputs = [ pkgs.python3 ]; }
               ''

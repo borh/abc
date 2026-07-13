@@ -543,21 +543,24 @@
                         (files/read-json (files/path "examples" "ab-validator-output" "comparison-report.json"))
                         "ab-validator comparison report"))
 
-(defn validate-canonicalization! []
-  (let [expected "667a3bfa5ab9a5e52a88e2e7de15506936a13c5d6c33825b8983861787bbcdea"
-        actual (files/sha256-file (files/path "fixtures" "canonicalization"
-                                              "manifest-identity-object.canonical.json"))
-        array-a (files/sha256-file (files/path "fixtures" "canonicalization"
-                                               "array-ordering-negative-a.json"))
-        array-b (files/sha256-file (files/path "fixtures" "canonicalization"
-                                               "array-ordering-negative-b.json"))]
-    (when-not (= expected actual)
-      (throw (ex-info "canonical identity fixture hash mismatch"
-                      {:expected expected
-                       :actual actual})))
-    (when (= array-a array-b)
-      (throw (ex-info "array-ordering negative fixtures produced the same digest"
-                      {:digest array-a})))))
+(defn validate-canonicalization!
+  ([]
+   (validate-canonicalization!
+    {:expected "667a3bfa5ab9a5e52a88e2e7de15506936a13c5d6c33825b8983861787bbcdea"
+     :identity-json "fixtures/canonicalization/manifest-identity-object.canonical.json"
+     :array-a "fixtures/canonicalization/array-ordering-negative-a.json"
+     :array-b "fixtures/canonicalization/array-ordering-negative-b.json"}))
+  ([{:keys [expected identity-json array-a array-b]}]
+   (let [actual (files/sha256-file identity-json)
+         array-a (files/sha256-file array-a)
+         array-b (files/sha256-file array-b)]
+     (when-not (= expected actual)
+       (throw (ex-info "canonical identity fixture hash mismatch"
+                       {:expected expected
+                        :actual actual})))
+     (when (= array-a array-b)
+       (throw (ex-info "array-ordering negative fixtures produced the same digest"
+                       {:digest array-a}))))))
 
 (def ^:private tei-ns "http://www.tei-c.org/ns/1.0")
 

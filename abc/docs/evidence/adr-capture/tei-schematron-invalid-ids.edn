@@ -1,0 +1,39 @@
+{:observation-key "tei-schematron-invalid-ids-pass",
+ :tool "bash",
+ :schema-version "abc-adr-evidence-capture-operational-v1",
+ :observation-contract-sha256
+ "sha256:e0eeba40097e8d6f19019e1b1e2c6e9bf050081f85550c4c54626b6bf194e02e",
+ :clojure-closure-manifest
+ "docs/evidence/adr-inputs/tei-schematron-invalid-ids.edn",
+ :argv
+ ["bash"
+  "--noprofile"
+  "--norc"
+  "-c"
+  "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.adr-evidence-tei-schematron-invalid-ids\""],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "repo-files-v1",
+  :roots [],
+  :explicit
+  ["deps-lock.json"
+   "deps.edn"
+   "docs/evidence/adr-capture/tei-schematron-invalid-ids.edn"
+   "docs/evidence/adr-inputs/tei-schematron-invalid-ids.edn"
+   "fixtures/tei/invalid/gaiji-missing-ref.xml"
+   "fixtures/tei/invalid/missing-title.xml"
+   "fixtures/tei/invalid/ruby-missing-reading.xml"
+   "flake.lock"
+   "flake.nix"
+   "nix/tei-profile-artifacts.nix"
+   "schemas/tei-profile.sch"
+   "src/abc/tools/evidence_io.clj"
+   "src/abc/tools/path_containment.clj"
+   "src/abc/tools/schematron.clj"
+   "test/abc/test_fs.clj"
+   "test/abc/tools/schematron_test.clj"
+   "tests.edn"]},
+ :observation-id :tei-schematron-invalid-ids,
+ :entrypoint-kind "clojure",
+ :input-set-mode "exact-v1"}

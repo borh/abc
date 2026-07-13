@@ -146,3 +146,29 @@
     (is (= expected-ids
            (set (keep :claim-id
                       (mapcat (comp :criteria adrs) (keys expected-ranges))))))))
+
+(deftest schema-rdf-tei-stage-a-claim-and-lifecycle-contract-test
+  (let [expected-ranges {6 9, 12 6, 13 3, 14 4, 17 5, 18 3}
+        expected-ids (set (mapcat (fn [[adr count]]
+                                    (map #(format "ADR-%04d-C%d" adr %)
+                                         (range 1 (inc count))))
+                                  expected-ranges))
+        expected-lifecycle {6 ["fixture" "development"]
+                            12 ["fixture" "publication"]
+                            13 ["fixture" "publication"]
+                            14 ["fixture" "publication"]
+                            17 ["fixture" "publication"]
+                            18 ["fixture" "none"]}
+        adrs (into {} (map (juxt :num identity) (adr/parse-all "docs/adr")))
+        ledger (files/read-edn "docs/adr/adr-claim-migration.edn")
+        family-rows (filter (fn [[[adr _] _]] (contains? expected-ranges adr))
+                            (:entries ledger))
+        live-ids (set (mapcat (comp :resulting-claim-ids val) family-rows))]
+    (is (= 31 (count family-rows)))
+    (is (= expected-ids live-ids))
+    (doseq [[adr [scope authority]] expected-lifecycle]
+      (is (= scope (get-in adrs [adr :fields "Validation scope"])))
+      (is (= authority (get-in adrs [adr :fields "Release authority"]))))
+    (is (= expected-ids
+           (set (keep :claim-id
+                      (mapcat (comp :criteria adrs) (keys expected-ranges))))))))

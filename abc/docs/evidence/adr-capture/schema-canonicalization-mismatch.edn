@@ -1,0 +1,22 @@
+{:observation-key "canonicalization-mismatch-is-rejected",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:95f9477de3e1891c0be32678fb33d6e29d575714d2f70643a176426acc549eec",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/schema-canonicalization-mismatch.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.schema-validation-evidence-test/canonicalization-hash-mismatch-is-rejected-test"],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.schema-validation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/schema-canonicalization-mismatch.edn"
+   "abc/docs/evidence/adr-inputs/schema-canonicalization-mismatch.edn"]},
+ :observation-id :schema-canonicalization-mismatch}

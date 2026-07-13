@@ -72,6 +72,17 @@
                              local-name ">"))
             tei)))
 
+(deftest tei-generated-manifest-references-validation-result-test
+  (let [out-dir (temp-dir "abc-tei-sidecar")]
+    (try
+      (let [result (materialize-example! out-dir)
+            manifest (files/read-json (:tei-manifest result))]
+        (is (some #(and (= "validation-result" (get % "role"))
+                        (= "tei-validation-result.json" (get % "path_hint")))
+                  (get manifest "sidecars"))))
+      (finally
+        (delete-tree! out-dir)))))
+
 (deftest manifest-schema-accepts-plaintext-artifact-kind-test
   (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
         example-manifest (files/read-json "examples/v0/example-work/manifest.json")]

@@ -241,18 +241,18 @@
                   --workspace-root "$TMPDIR/workspace" \
                   --mode audit \
                   --report "$out/report.json"
-                # Migration audit debt is an exact phase identity, not a
-                # permissive nonzero ceiling. Stage B pins the clean foundation
-                # boundary; a later atomic promotion replaces it with zero-debt
-                # enforcement.
-                if ! ${cljPkgs.jq}/bin/jq -e '
-                  (.problems | length) == 149 and
-                  ([.problems[].kind] | group_by(.) | map({(.[0]): length}) | add) == {
-                    "missing-claim-header": 111,
-                    "missing-release-authority": 19,
-                    "missing-validation-scope": 19
-                  }
-                ' "$out/report.json" >/dev/null; then
+                # Migration audit debt is pinned by stable finding identity,
+                # including claim/artifact/input coordinates. Diagnostic wording
+                # and changing hash values are not migration identities.
+                ${cljPkgs.jq}/bin/jq -S \
+                  -f "$src/abc/nix/adr-problem-identities.jq" \
+                  "$src/abc/docs/reports/adr-evidence-migration.json" \
+                  > expected-problem-identities.json
+                ${cljPkgs.jq}/bin/jq -S \
+                  -f "$src/abc/nix/adr-problem-identities.jq" \
+                  "$out/report.json" \
+                  > actual-problem-identities.json
+                if ! cmp expected-problem-identities.json actual-problem-identities.json; then
                   echo "monorepo ADR governance audit debt differs from the pinned migration phase" >&2
                   exit 1
                 fi

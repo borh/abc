@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-29
 Accepted: 2026-04-29
+Validation scope: fixture
+Release authority: none
 Amends: ADR 0017
 Amended by: ADR 0035 [scope: Boolean-to-external-rights RDF mapping]
 
@@ -87,20 +89,19 @@ What rotates:
 
 ## Acceptance Criteria
 
-- `abc.tools.metadata-record/record->graph` emits
-  `:dcndl/titleTranscription` inside the title blank node and
-  `:dcterms/rights <IRI>` at the work IRI; no `:abc/reading` or
-  `:abc/copyrightExpired` triples remain in the work view, covered by
-  `test/abc/tools/metadata_record_test.clj`.
-- The SHACL shape `MetadataRecordWorkShape` requires exactly one
-  `dcterms:rights` whose value is an IRI from the closed set
-  `{<.../publicdomain/mark/1.0/>, <.../InC/1.0/>}`.
-  `test/abc/tools/shacl_test.clj` covers the shape.
-- `validate-design-bundle` passes — including the `metadata-record.ttl`
-  byte-parity test and the metadata-record SHACL pass.
-- `nix flake check` passes.
-- `manifest.json` and `manifest_identity_object` are unchanged from
-  commit `bc3ea94` (last commit before this ADR).
+- **ADR-0018-C1 — fixture-behavior:** In the named metadata RDF cases, the generator emits `dcndl:titleTranscription` inside the title blank node, emits neither `abc:reading` nor `abc:copyrightExpired`, and true, false, and nil legacy copyright flags emit no external rights assertion. See `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0018-C2 — fixture-behavior:** `MetadataRecordWorkShape` permits zero or one `dcterms:rights`; when present it must be an IRI in the closed Public Domain Mark/InC set.
+- **ADR-0018-C3 — fixture-behavior:** The metadata-bundle helper validates the committed metadata JSON and person inputs, SHACL graph, and byte-identical `metadata-record.ttl` fixture.
+
+ADR 0035 containment supersedes the original Boolean-to-external-rights
+derivation: legacy Boolean values now emit no external rights assertion.
+
+## Historical Evidence
+
+The broad `nix flake check` pass and equality of `manifest.json` and
+`manifest_identity_object` with commit `bc3ea94` were observations at the
+2026-04-29 migration revision. They are retained as historical evidence, not
+as claims about the current manifest.
 
 ## Consequences
 

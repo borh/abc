@@ -1,0 +1,23 @@
+{:observation-key "iiif-schema-contract-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:12d9db087116e5c3667486c8dfac7b79a7d557589525dcb6f2a913522e49bc79",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/iiif-schema-contract.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.schema-validation-evidence-test/applicability-schema-is-valid-draft-2020-12-test"],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.schema-validation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/iiif-schema-contract.edn"
+   "abc/docs/evidence/adr-inputs/iiif-schema-contract.edn"
+   "abc/schemas/iiif-applicability.schema.json"]},
+ :observation-id :iiif-schema-contract}

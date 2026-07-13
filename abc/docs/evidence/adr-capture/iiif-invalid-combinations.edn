@@ -1,0 +1,26 @@
+{:observation-key "iiif-invalid-combinations-reject",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:c24f0419d9dbbab475512ba23409b0f6fbbf4b62a2a106e7f9a20602259dfc58",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/iiif-invalid-combinations.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.schema-validation-evidence-test/iiif-invalid-combinations-contract-test"],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.schema-validation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/iiif-invalid-combinations.edn"
+   "abc/docs/evidence/adr-inputs/iiif-invalid-combinations.edn"
+   "abc/fixtures/iiif/invalid/applicable-without-manifest.json"
+   "abc/fixtures/iiif/invalid/missing-work-id.json"
+   "abc/fixtures/iiif/invalid/not-applicable-with-manifest.json"
+   "abc/schemas/iiif-applicability.schema.json"]},
+ :observation-id :iiif-invalid-combinations}

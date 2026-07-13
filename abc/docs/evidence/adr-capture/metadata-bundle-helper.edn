@@ -1,0 +1,29 @@
+{:observation-key "metadata-bundle-helper-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:2b6b86e89602ea226a890337003c3e630b484a44ec2fb3646917acac76fc3c06",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/metadata-bundle-helper.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.schema-validation-evidence-test/metadata-bundle-helper-contract-test"],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.schema-validation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/metadata-bundle-helper.edn"
+   "abc/docs/evidence/adr-inputs/metadata-bundle-helper.edn"
+   "abc/examples/v0/example-persons/000879.json"
+   "abc/examples/v0/example-work/manifest.json"
+   "abc/examples/v0/example-work/metadata-record.json"
+   "abc/examples/v0/example-work/metadata-record.ttl"
+   "abc/schemas/manifest.shacl.ttl"
+   "abc/schemas/metadata-record.schema.json"
+   "abc/schemas/person-record.schema.json"]},
+ :observation-id :metadata-bundle-helper}

@@ -1,4 +1,4 @@
-//! Owned-AST incremental re-parse engine for #237 — the sole incremental path.
+//! Owned-AST incremental re-parse engine — the sole incremental path.
 //!
 //! The retired Stage-A segment cache first proved — over the reference corpus —
 //! *where* a document can be cut into independently-lexable spans. This engine
@@ -13,9 +13,14 @@
 //! to cut the document" cut helpers. The splice is the production incremental
 //! path: it is re-exported from the crate root as the **unstable**
 //! [`crate::reparse_incremental_diagnostics_only`] and consumed by the LSP's
-//! debounced diagnostics (#237 Stage B'3). It is internal-unit-tested and proven
+//! debounced diagnostics. It is internal-unit-tested and proven
 //! byte-identical to a full re-parse by the `corpus_incremental_merge`
 //! differential gate.
+//!
+//! # Stability
+//!
+//! The incremental re-parse API is pre-1.0 and not subject to semver
+//! until the crate reaches v0.5.0.
 //!
 //! All coordinates here are **sanitized-source** byte offsets (the space every
 //! [`LexOutput::source_span`](crate::SourceNode::source_span) and
@@ -163,7 +168,7 @@ pub struct DiagBaseRef<'a, S: SanitizedSrc = &'a str> {
     /// space every piece offset indexes.
     pub sanitized: S,
     /// The incrementally-maintained region-find representation of the cached
-    /// parse's `source_nodes` / `pairs` / `diagnostics` (#237 Tier 2). Spliced
+    /// parse's `source_nodes` / `pairs` / `diagnostics` (incremental path). Spliced
     /// `O(region + log #pieces)` per edit instead of rebuilt, so the region-find
     /// prologue and the diagnostics splice read it without re-scanning the whole
     /// buffer/tables per edit.
@@ -188,7 +193,7 @@ impl<'a> DiagBaseRef<'a> {
     }
 }
 
-/// Precomputed acceleration structure for the region-find prologue (#237 Tier 2)
+/// Precomputed acceleration structure for the region-find prologue
 /// — the prefix-sum recurrence each `PieceIndex` wraps once per backing table.
 ///
 /// Crate-internal (`pub(crate)`) so the in-crate byte-identity oracle proptests
@@ -323,7 +328,7 @@ impl RegionIndex {
 }
 
 // ============================================================================
-// #237 Tier 2 (PR-1) — structure-sharing piece-sequence.
+// Structure-sharing piece-sequence for incremental region-find.
 //
 // `PieceSeq` is the unified, truly-incremental representation of the three
 // store-free region-find tables (`source_nodes` / `pairs` / `diagnostics`),
@@ -341,7 +346,7 @@ impl RegionIndex {
 /// and shared (behind an [`Arc`]) by every piece that views a slice of it,
 /// never rebuilt after a cut.
 ///
-/// `PieceIndex` is the cut-geometry specialisation the #237 Tier 2 design calls
+/// `PieceIndex` is the cut-geometry specialisation the incremental design calls
 /// for. Because every piece boundary is a structurally-safe cut (block-container
 /// depth zero; no node span, resolved pair, or diagnostic straddling it), the
 /// whole-backing recurrence answers each *within-piece* query directly: the
@@ -505,11 +510,10 @@ struct PieceAgg {
 
 /// A structure-sharing sequence of pieces, keyed by structurally-safe cuts.
 ///
-/// The #237 Tier 2 unified, truly incremental representation of a parse's three
+/// The unified, truly incremental representation of a parse's three
 /// store-free region-find tables (`source_nodes`, `pairs`, `diagnostics`).
 ///
-/// **UNSTABLE — not subject to semver until v0.5.0** (the #237 incremental
-/// API). This is the maintained representation the production diagnostics-only
+/// The incremental representation the production diagnostics-only
 /// engine splices on every edit: the per-keystroke hot path replaces the
 /// per-edit whole-table re-materialization + `RegionIndex::build` with
 /// `O(region + log #pieces)` piece splicing.
@@ -811,7 +815,7 @@ impl PieceSeq {
     /// [`from_contiguous`](Self::from_contiguous) over them answers every query
     /// identically (the same `PieceSeq ≡ contiguous` proptest that pins the
     /// single-piece base case). This is the structure-only replacement for the
-    /// LSP cache's periodic forced full re-parse (#249): the incremental base
+    /// LSP cache's periodic forced full re-parse: the incremental base
     /// never re-derives itself from source, it compacts.
     #[must_use]
     pub fn compact(&self) -> Self {
@@ -907,7 +911,7 @@ fn sort_diags(diags: &mut [Diagnostic]) {
 
 /// The result of a successful **diagnostics-only** incremental splice.
 ///
-/// **UNSTABLE — not subject to semver until v0.5.0** (the #237 incremental API).
+/// The incremental API (see module-level Stability section).
 ///
 /// Returned by [`crate::reparse_incremental_diagnostics_only`]: the spliced
 /// [`PieceSeq`] — the *next* edit's region-find base, from which the LSP also
@@ -1171,7 +1175,7 @@ pub(crate) fn minimal_balanced_region<S: SanitizedSrc>(
 ///   [`structurally_safe`]'s container-depth check, which keeps every
 ///   `［＃ここから…］`/`［＃ここで…終わり］` pair whole within one region.
 /// - **Opaque**: a node [`classify_node_ref`] does not understand (a future
-///   variant declined for safety by the #202 splice model). The splice cannot
+///   variant declined for safety by the minimal-diff splice model). The splice cannot
 ///   reason about its coupling, so it declines rather than risk a silent
 ///   divergence — keeping this guard correct by construction as the node set
 ///   grows.
@@ -1208,8 +1212,8 @@ pub(crate) fn minimal_balanced_region<S: SanitizedSrc>(
 ///   directive change is in the source) — so the ruby's region is not reusable
 ///   while `base_emphasis.is_some()`.
 ///
-/// Single-sources the classification through [`classify_node_ref`] (the #202
-/// splice authority) so this region-reuse guard and the #202 splice cannot
+/// Single-sources the classification through [`classify_node_ref`] (the
+/// splice authority) so this guard and the minimal-diff splice cannot
 /// drift.
 fn node_forbids_region_reuse(node: NodeRef) -> bool {
     let (role, safety) = classify_node_ref(node);
@@ -1435,8 +1439,6 @@ fn splice_prologue<S: SanitizedSrc>(
     })
 }
 
-/// **UNSTABLE — not subject to semver until v0.5.0.**
-///
 /// The LSP's per-keystroke hot path: compute the spliced diagnostics for the
 /// edited text `new_sanitized` (a sanitized fixed point) from the store-free
 /// [`DiagBaseRef`] of the prior parse and the single sanitized-coordinate edit
@@ -1868,7 +1870,7 @@ mod tests {
         // directive; the matching open lives in the reused prefix so the region
         // re-lex cannot see the breakage. `inside_directive` must decline even
         // though the inserted byte carries no structure of its own. (Regression
-        // for the corpus divergence #284 surfaced: 折口春洋/島の便り.txt.)
+        // for the corpus divergence surfaced: 折口春洋/島の便り.txt.)
         let cached = output(
             "序文の段落です。\n\n本文［＃割り注］注記の文字［＃割り注終わり］続き\n\n末尾の段落。\n",
         );
@@ -1934,7 +1936,7 @@ mod tests {
         // diagnostic looks back over the whole prefix. Duplicating the target in
         // an earlier region makes a full parse ambiguous while a naive splice
         // keeps the cached unambiguous node — so the node must forbid region
-        // reuse. (Regression for the verify finding on #284.)
+        // reuse. (Regression for the verify finding.)
         let cached = output("むかし。\n\n青空［＃「青空」に傍点］\n");
         let san = cached.sanitized.clone();
         assert!(
@@ -2133,7 +2135,7 @@ mod tests {
 }
 
 /// Property tests pinning every `RegionIndex` query byte-identical to the linear
-/// oracle it replaces, over randomly-assembled aozora-shaped documents (#237
+/// oracle it replaces, over randomly-assembled aozora-shaped documents (
 /// Tier 2). The oracles (`structurally_safe`, `candidate_boundaries`) and a
 /// whole-buffer reference region finder are the ground truth; the
 /// indexed/outward-scan production forms must match them exactly, which (with the

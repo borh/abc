@@ -26,7 +26,7 @@
               ["z" "{\"$id\":\"z\",\"type\":\"object\"}"]]
              (vec (#'schema/checked-in-schema-resources dir)))))))
 
-(deftest checked-in-schema-resources-follows-directory-symlinks-test
+(deftest checked-in-schema-resources-does-not-descend-through-directory-symlinks-test
   (with-temp-dir [base]
     (let [root (fs/path base "root")
           external (fs/path base "external")]
@@ -35,8 +35,17 @@
       (spit (fs/file external "linked.schema.json")
             "{\"$id\":\"linked\",\"type\":\"object\"}")
       (fs/create-sym-link (fs/path root "linked") external)
-      (is (= [["linked" "{\"$id\":\"linked\",\"type\":\"object\"}"]]
-             (vec (#'schema/checked-in-schema-resources root)))))))
+      (is (= [] (vec (#'schema/checked-in-schema-resources root)))))))
+
+(deftest checked-in-schema-resources-propagates-listing-failures-test
+  (with-temp-dir [dir]
+    (let [failure (java.io.IOException. "schema listing failed")]
+      (with-redefs [fs/list-dir (fn [_] (throw failure))]
+        (is (identical? failure
+                        (try
+                          (#'schema/checked-in-schema-resources dir)
+                          nil
+                          (catch java.io.IOException e e))))))))
 
 (def ^:private cross-project-schema-versions
   {"schemas/annotation-output.schema.json" "0.1.0"

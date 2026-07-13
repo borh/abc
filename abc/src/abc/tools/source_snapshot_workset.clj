@@ -63,15 +63,7 @@
   (some #(fs/exists? (fs/path dir %)) (vals required-file-names)))
 
 (defn- directories-below [root]
-  (tree-seq fs/directory?
-            (fn [path]
-              (try
-                (sort-by normalize-path (fs/list-dir path))
-                (catch java.io.IOException _
-                  [])
-                (catch SecurityException _
-                  [])))
-            (fs/path root)))
+  (files/sorted-path-seq root))
 
 (defn- work-dirs [input-root]
   (->> (directories-below input-root)

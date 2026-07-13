@@ -12,7 +12,7 @@
 
 (defn run-summary-status [input-dir]
   ;; Reads entire file into memory; large run summaries may OOM.
-  
+
   (let [summary-file (fs/file input-dir "run-summary.jsonl")
         events (when (fs/exists? summary-file)
                  (files/read-json-lines summary-file))]

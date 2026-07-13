@@ -77,9 +77,10 @@ The implementation shape is:
     (letfn [(walk [path descend?]
               (lazy-seq
                (cons path
-                     (when (and descend? (fs/directory? path))
-                       (mapcat #(walk % (not (fs/sym-link? %)))
-                               (sort-by str (fs/list-dir path)))))))]
+                     (lazy-seq
+                      (when (and descend? (fs/directory? path))
+                        (mapcat #(walk % (not (fs/sym-link? %)))
+                                (sort-by str (fs/list-dir path))))))))]
       (walk root true))))
 ```
 
@@ -89,8 +90,10 @@ receive no injection seam. Child ordering is exactly `(sort-by str (fs/list-dir 
 and exists only for internal determinism; every consumer retains its own final output
 sort.
 
-Recursive child realization remains inside `lazy-seq`, so listing errors surface when
-callers realize that part of the tree, consistent with a lazy traversal API.
+The nested `lazy-seq` around the `cons` tail is required because `cons` evaluates its
+tail argument. Recursive child realization therefore remains delayed until callers ask
+for entries after the node, and listing errors surface when callers realize that part
+of the tree.
 
 The five production sites replace their local `tree-seq` blocks with
 `files/sorted-path-seq`. Site-specific filtering, relative-path calculation, and final

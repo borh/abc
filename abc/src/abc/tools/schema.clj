@@ -1,5 +1,6 @@
 (ns abc.tools.schema
-  (:require [abc.tools.hash :as hash]
+  (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
             [abc.tools.malli :as am]
             [babashka.fs :as fs]
@@ -48,15 +49,7 @@
                            schema (abc-json/read-json-file file)]
                        (when-let [schema-id (get schema "$id")]
                          [schema-id content])))))
-           (->> (tree-seq fs/directory?
-                          (fn [path]
-                            (try
-                              (sort-by str (fs/list-dir path))
-                              (catch java.io.IOException _
-                                [])
-                              (catch SecurityException _
-                                [])))
-                          (fs/path schema-dir))
+           (->> (files/sorted-path-seq schema-dir)
                 (sort-by #(str (fs/relativize schema-dir %))))))))
 
 (def ^:private schema-registry

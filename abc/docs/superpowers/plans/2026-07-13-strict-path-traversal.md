@@ -136,9 +136,10 @@ Add this implementation to `abc/src/abc/tools/files.clj`:
     (letfn [(walk [path descend?]
               (lazy-seq
                (cons path
-                     (when (and descend? (fs/directory? path))
-                       (mapcat #(walk % (not (fs/sym-link? %)))
-                               (sort-by str (list-dir path)))))))]
+                     (lazy-seq
+                      (when (and descend? (fs/directory? path))
+                        (mapcat #(walk % (not (fs/sym-link? %)))
+                                (sort-by str (list-dir path))))))))]
       (walk root true))))
 
 (defn sorted-path-seq
@@ -149,7 +150,9 @@ Add this implementation to `abc/src/abc/tools/files.clj`:
   (sorted-path-seq* root fs/list-dir))
 ```
 
-Do not move the `list-dir` call outside `lazy-seq`, and do not apply `fs/sym-link?` to the root's initial `descend?` value.
+Keep the nested `lazy-seq` around the `cons` tail: `cons` evaluates its tail argument,
+so the outer `lazy-seq` alone does not delay directory listing past `(first paths)`.
+Do not apply `fs/sym-link?` to the root's initial `descend?` value.
 
 - [ ] **Step 4: Run the focused tests**
 

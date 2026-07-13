@@ -19,7 +19,7 @@
            (get (report/build-report dir {"artifact_references" []} {})
                 "actual_root")))))
 
-(deftest regular-files-follows-directory-symlinks-test
+(deftest regular-files-does-not-descend-through-directory-symlinks-test
   (with-temp-dir [base]
     (let [root (fs/path base "root")
           external (fs/path base "external")]
@@ -27,5 +27,5 @@
       (fs/create-dirs external)
       (spit (fs/file external "linked.txt") "linked")
       (fs/create-sym-link (fs/path root "linked") external)
-      (is (= ["linked.txt"]
+      (is (= []
              (mapv (comp str fs/file-name) (#'report/regular-files root)))))))

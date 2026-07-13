@@ -5,7 +5,7 @@
             [babashka.process :as process]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]])
-  (:import [java.io FileNotFoundException InterruptedIOException]
+  (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio ByteBuffer ByteOrder]
            [java.nio.charset StandardCharsets]
            [java.nio.file NoSuchFileException]
@@ -79,6 +79,17 @@
     (is (= [[binary "l" "-slt" "fixture.zip"]
             [binary "l" "-slt" "fixture.zip"]]
            @calls))))
+
+(deftest sevenzip-listable-process-start-failure-propagates-test
+  (let [failure (IOException. "7zz executable unavailable")
+        thrown (with-redefs [process/sh (fn [_args] (throw failure))]
+                 (try
+                   (#'report/sevenzip-listable? (io/file "fixture.zip"))
+                   nil
+                   (catch IOException e e)))]
+    (is (identical? failure thrown))
+    (is (= IOException (type thrown)))
+    (is (= "7zz executable unavailable" (.getMessage thrown)))))
 
 (deftest programming-failures-do-not-invoke-sevenzip-test
   (let [sevenzip-calls (atom 0)]

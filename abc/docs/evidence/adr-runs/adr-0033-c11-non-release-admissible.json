@@ -1,0 +1,85 @@
+{
+  "input_profile":
+  {
+    "component_root": "abc",
+    "explicit": ["abc\/bin\/kaocha","abc\/data\/parser-ir-publication-policy-v0.json","abc\/docs\/evidence\/adr-capture\/adr-0033-c11-non-release-admissible.edn","abc\/docs\/evidence\/adr-inputs\/adr-0033-c11-non-release-admissible.edn","abc\/schemas\/manifest.schema.json","abc\/schemas\/metadata-record.schema.json","abc\/schemas\/parser-ir-publication-preservation.schema.json","abc\/schemas\/parser-ir.schema.json","abc\/schemas\/person-record.schema.json","abc\/schemas\/soranoha-publication-build-config.schema.json","abc\/schemas\/tei-profile.odd","abc\/schemas\/tei-profile.rng","abc\/schemas\/tei-profile.sch"],
+    "kind": "component-clojure-test-v1",
+    "roots": ["abc.sim.content-sim-test"]
+  },
+  "inputs":
+  {
+    "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
+    "abc\/data\/parser-ir-publication-policy-v0.json": "sha256:7f0e47cb5a8217103ccee416bb2ef839f2e41cbbdc9ed40e404925474f23be85",
+    "abc\/docs\/evidence\/adr-capture\/adr-0033-c11-non-release-admissible.edn": "sha256:01f29e21d1c9afc0592a02687bc4df77afc9e4f1aaa3781eb603791e2aa92b71",
+    "abc\/docs\/evidence\/adr-inputs\/adr-0033-c11-non-release-admissible.edn": "sha256:bbe83b6a56cef1e528ed9ade66f08066232b128fb29780a7c586f726f566814c",
+    "abc\/schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
+    "abc\/schemas\/metadata-record.schema.json": "sha256:cb1c773f86f0ae16f613b342be80b87f8a7829417bcdcd36b5737eeab6a85129",
+    "abc\/schemas\/parser-ir-publication-preservation.schema.json": "sha256:b073df014a2b7c685059d3681dbfcbbde10ec66adfb0253ab80b6287c70c5599",
+    "abc\/schemas\/parser-ir.schema.json": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5",
+    "abc\/schemas\/person-record.schema.json": "sha256:35e5c3aac75d03f7bf228b05e331dea4df3e791256f14fa8b498fcd405888bcb",
+    "abc\/schemas\/soranoha-publication-build-config.schema.json": "sha256:d8585d9d792997f2387129ff5980567475a8e17358bdf9fb5fe41d0170060127",
+    "abc\/schemas\/tei-profile.odd": "sha256:b4b12fd7591f2ebe1f9417f8fa2bb938d025694c4202ef48c0bfe16045b120ac",
+    "abc\/schemas\/tei-profile.rng": "sha256:071479ba8eb10f93a46f4b3616a1c0007bdeafd7a4c321e49cd567d648768413",
+    "abc\/schemas\/tei-profile.sch": "sha256:608dcce45ba2acd490706691c4e38f885615176744f0db10a5a46aa96fa4da8a",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+    "abc\/src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
+    "abc\/src\/abc\/tools\/aozora_csv.clj": "sha256:34495ab6192d6da808fb09f68fa46b8c96db469b86c39dd93fba204cf9231b82",
+    "abc\/src\/abc\/tools\/aozora_ingest.clj": "sha256:c6ed0899a0333fc201eeaca518bd4ae552a11d52c14b087632468e81c8ea07ce",
+    "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
+    "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:5c2300ebcdbf8ba87b5f2836ffb1e4ca5f2828eb2bb180d8348e3b070a9af58f",
+    "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
+    "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
+    "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "abc\/src\/abc\/tools\/logging.clj": "sha256:eaea004a96bc6cb18d02442df561b00847a8b84f6a0df901eaf446485ebfa019",
+    "abc\/src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
+    "abc\/src\/abc\/tools\/manifest.clj": "sha256:f3a1fdc6cb04ba86c67ed59ab6987971a0e022bf5c4a182b12d5e3c25ea98b6d",
+    "abc\/src\/abc\/tools\/manifest_to_rdf.clj": "sha256:9faf6a8fdaf421ea3c7f6648cf33ec6d5ec9a1b43e1bd5a61641f0add202a703",
+    "abc\/src\/abc\/tools\/materialize_publication.clj": "sha256:f52335095b41fc2fd3c03678b2fccd40eb5775d5e91bf63cdb1b1855e035d3b0",
+    "abc\/src\/abc\/tools\/materialize_source_snapshot.clj": "sha256:b7ab6fce3558774a403477891290dc22817d7f34a5f9efb266ec0cfa3478ad9d",
+    "abc\/src\/abc\/tools\/metadata_record.clj": "sha256:b87fd5dbe5831983dc618849593fc08bba2d4bd6a2dbf447b88738253015f36f",
+    "abc\/src\/abc\/tools\/parallel.clj": "sha256:51b1105b04a52d45a6fb3811e4b3c53b1b44162fd81f5d68ab412039b31a243c",
+    "abc\/src\/abc\/tools\/parser_ir_plaintext.clj": "sha256:d21da8a17ef2e1d132ba7e05ce6c0d17bd4154d4c7c4bf9b9f72114e087f7d87",
+    "abc\/src\/abc\/tools\/parser_ir_publication_policy.clj": "sha256:f2315b7375ba189077ee34eee402e18ee711e84c5abcd92c60ef9ad91020d6f8",
+    "abc\/src\/abc\/tools\/parser_ir_publication_whitespace.clj": "sha256:649c5ad727df611eed3271856873f642066f5f62aa8c3648d6072a4ff467f8ad",
+    "abc\/src\/abc\/tools\/parser_ir_sentence_policy.clj": "sha256:a2c91542a06fbd97f4f0433127143bf0645d3b1828f7d13dfc2b38c0cb1bdd6b",
+    "abc\/src\/abc\/tools\/parser_ir_tei.clj": "sha256:6683b4a741ac1ea1967653f1f218fd1af804eb60ec950a26858ae057502d32ec",
+    "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "abc\/src\/abc\/tools\/person_record.clj": "sha256:e9b2323dc7adba721d269bebab37bc9f13c4b89d3e504f0a6f63ff3bfb95b974",
+    "abc\/src\/abc\/tools\/publication_policy.clj": "sha256:d47280892c3bc350db264e86aff8eb5907f872d8a99508719103ec616cb17080",
+    "abc\/src\/abc\/tools\/rdf_prefixes.clj": "sha256:464ac0a7365d92a37084664c1af77aa5525c6eabbc86fad4358ff2637d993e29",
+    "abc\/src\/abc\/tools\/schema.clj": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871",
+    "abc\/src\/abc\/tools\/schematron.clj": "sha256:c1541ab6d3859b39601dafba06808b1cb95564d664875f375413ef64cbfd3737",
+    "abc\/src\/abc\/tools\/soranoha_build_publication.clj": "sha256:5b5c713d5579db3f478104eeb8dd68b9068d09f5251c6ea8396aab12d1a763b5",
+    "abc\/src\/abc\/tools\/source_bundle.clj": "sha256:11387cb49f39bbc72006fa6cfd3296eafe9b84b7f8ec313d30d2201dc24de926",
+    "abc\/src\/abc\/tools\/source_snapshot_workset.clj": "sha256:46b870c330a2ac3fd7c07d0c1915977b91dbb12d87c4df3a95fe84f3083f2036",
+    "abc\/src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
+    "abc\/src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
+    "abc\/src\/abc\/tools\/workflow.clj": "sha256:07b492821f5c7f670a50512ef0ed28beac7c0bea64020890699c19e616d95c83",
+    "abc\/test\/abc\/sim\/content_sim_test.clj": "sha256:f1128093c0225dbc67350f662d7dbc1f972343adcb7382888214db58eb8b325c",
+    "abc\/test\/abc\/sim\/gen.clj": "sha256:a24448bc06f124ed60f342d695f7bb0e60d43ddebae591794d7efdf4e130d25c",
+    "abc\/test\/abc\/sim\/harness.clj": "sha256:2a7e053a0ad7f1675c03cfe7e4d2e8554bfb2eb029672e97027d1a11865eacfe",
+    "abc\/test\/abc\/sim\/model.clj": "sha256:a8fcb32893713792ae14563d9c97ab275b6e36a7943b7a7d6f57ad75dbe75470",
+    "abc\/test\/abc\/sim\/oracle.clj": "sha256:b25546934d3a9c1765bb12af27f37155a292c67a8bacbbd089835988dccb4728",
+    "abc\/test\/abc\/sim\/render.clj": "sha256:9712e1d6a49605abfb60287129901974c960b3af03a10b68b997b79f36f848fa",
+    "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95"
+  },
+  "observations":
+  {
+    "adr-0033-c11-non-release-admissible-passes":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bin\/kaocha\" \"--focus\" \"abc.sim.content-sim-test\/nonzero-derive-failures-are-not-release-admissible-test\"",
+    "revision": "d9f82cf96b4aa480b67a6f0daa084f0c0064dfdf",
+    "tool": "bin\/kaocha"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

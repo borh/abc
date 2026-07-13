@@ -1,0 +1,49 @@
+{
+  "input_profile":
+  {
+    "component_root": "abc",
+    "explicit": ["abc\/.github\/workflows\/validation.yml","abc\/bin\/kaocha","abc\/docs\/evidence\/adr-capture\/adr-0008-c3-workflow-wiring.edn","abc\/docs\/evidence\/adr-inputs\/adr-0008-c3-workflow-wiring.edn"],
+    "kind": "component-clojure-test-v1",
+    "roots": ["abc.tools.foundation-evidence-test"]
+  },
+  "inputs":
+  {
+    "abc\/.github\/workflows\/validation.yml": "sha256:4feb533e112f973bfac8059db61918bf50e6d70b280a42ce8e059a4619eec148",
+    "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
+    "abc\/docs\/evidence\/adr-capture\/adr-0008-c3-workflow-wiring.edn": "sha256:5d485188f06e21f7dc46205a41797e01c1aa22187198ae8871754fd2bd183e5a",
+    "abc\/docs\/evidence\/adr-inputs\/adr-0008-c3-workflow-wiring.edn": "sha256:d628cd6fd12da4ead8c7dc34f48c98ca2163e01d589261db1c7cc108bc1ac193",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+    "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
+    "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:5c2300ebcdbf8ba87b5f2836ffb1e4ca5f2828eb2bb180d8348e3b070a9af58f",
+    "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
+    "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
+    "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "abc\/src\/abc\/tools\/logging.clj": "sha256:eaea004a96bc6cb18d02442df561b00847a8b84f6a0df901eaf446485ebfa019",
+    "abc\/src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
+    "abc\/src\/abc\/tools\/manifest.clj": "sha256:f3a1fdc6cb04ba86c67ed59ab6987971a0e022bf5c4a182b12d5e3c25ea98b6d",
+    "abc\/src\/abc\/tools\/materialize_import.clj": "sha256:c026265cb1f7482deaf9d0b7ee10be3c2fdcf5a48f563a62e416c7177cc374b9",
+    "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "abc\/src\/abc\/tools\/schema.clj": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871",
+    "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+    "abc\/test\/abc\/tools\/foundation_evidence_test.clj": "sha256:8adfbb216f667461c671b4fbb7bbe388b86a0aedb8f585149947ffa309c4dfa6"
+  },
+  "observations":
+  {
+    "adr-0008-c3-workflow-wiring-passes":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.foundation-evidence-test\/validation-workflow-wiring-test\"",
+    "revision": "d9f82cf96b4aa480b67a6f0daa084f0c0064dfdf",
+    "tool": "bin\/kaocha"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

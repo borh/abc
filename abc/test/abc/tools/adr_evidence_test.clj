@@ -59,7 +59,15 @@
 
 (deftest checked-in-evidence-contract-test
   (is (= expected-matrix (evidence/load-matrix)))
-  (is (= {:entries []} (evidence/load-registry)))
+  (let [registry (evidence/load-registry)
+        foundation-entries
+        (filterv #(re-matches #"ADR-(0001|0008|0009|0010|0011|0033)-C[0-9]+"
+                              (:claim-id %))
+                 (:entries registry))]
+    (is (= #{:entries} (set (keys registry))))
+    (is (= 42 (count foundation-entries)))
+    (is (= 35 (count (distinct (map :claim-id foundation-entries)))))
+    (is (every? #(not (contains? % :observation-id)) foundation-entries)))
   (is (= "2026-07-12" (evidence/load-as-of))))
 
 (deftest artifact-backed-entry-contract-is-closed

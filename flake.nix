@@ -242,12 +242,12 @@
                   --mode audit \
                   --report "$out/report.json"
                 # Migration audit debt is an exact phase identity, not a
-                # permissive nonzero ceiling. Stage A pins this family boundary;
-                # a later atomic promotion replaces it with zero-debt enforcement.
+                # permissive nonzero ceiling. Stage B pins the clean foundation
+                # boundary; a later atomic promotion replaces it with zero-debt
+                # enforcement.
                 if ! ${cljPkgs.jq}/bin/jq -e '
-                  (.problems | length) == 184 and
+                  (.problems | length) == 149 and
                   ([.problems[].kind] | group_by(.) | map({(.[0]): length}) | add) == {
-                    "missing-claim-evidence": 35,
                     "missing-claim-header": 111,
                     "missing-release-authority": 19,
                     "missing-validation-scope": 19

@@ -1,0 +1,59 @@
+{
+  "input_profile":
+  {
+    "component_root": "abc",
+    "explicit": ["abc\/bin\/kaocha","abc\/docs\/evidence\/adr-capture\/adr-0033-c4-parser-identity-roles.edn","abc\/docs\/evidence\/adr-inputs\/adr-0033-c4-parser-identity-roles.edn","abc\/schemas\/manifest.schema.json","abc\/schemas\/metadata-record.schema.json","abc\/schemas\/source-bundle.schema.json"],
+    "kind": "component-clojure-test-v1",
+    "roots": ["abc.tools.materialize-source-snapshot-test"]
+  },
+  "inputs":
+  {
+    "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
+    "abc\/docs\/evidence\/adr-capture\/adr-0033-c4-parser-identity-roles.edn": "sha256:27d4ec6a28448d887b6ff6b8562020cbdee2aa4f3c7125f6e28a02e06a68bf29",
+    "abc\/docs\/evidence\/adr-inputs\/adr-0033-c4-parser-identity-roles.edn": "sha256:6487a483e2a33a2fa3a5b5f54575f224988fd3a983d34ff65cd451527a08cb52",
+    "abc\/schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
+    "abc\/schemas\/metadata-record.schema.json": "sha256:cb1c773f86f0ae16f613b342be80b87f8a7829417bcdcd36b5737eeab6a85129",
+    "abc\/schemas\/source-bundle.schema.json": "sha256:1e813b527619642152501704f83ebbc3ee191fe0e6f1e105801bcdc1e7d13f48",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+    "abc\/src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
+    "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
+    "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:5c2300ebcdbf8ba87b5f2836ffb1e4ca5f2828eb2bb180d8348e3b070a9af58f",
+    "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
+    "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
+    "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "abc\/src\/abc\/tools\/logging.clj": "sha256:eaea004a96bc6cb18d02442df561b00847a8b84f6a0df901eaf446485ebfa019",
+    "abc\/src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
+    "abc\/src\/abc\/tools\/manifest.clj": "sha256:f3a1fdc6cb04ba86c67ed59ab6987971a0e022bf5c4a182b12d5e3c25ea98b6d",
+    "abc\/src\/abc\/tools\/manifest_to_rdf.clj": "sha256:9faf6a8fdaf421ea3c7f6648cf33ec6d5ec9a1b43e1bd5a61641f0add202a703",
+    "abc\/src\/abc\/tools\/materialize_source_snapshot.clj": "sha256:b7ab6fce3558774a403477891290dc22817d7f34a5f9efb266ec0cfa3478ad9d",
+    "abc\/src\/abc\/tools\/metadata_record.clj": "sha256:b87fd5dbe5831983dc618849593fc08bba2d4bd6a2dbf447b88738253015f36f",
+    "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "abc\/src\/abc\/tools\/person_record.clj": "sha256:e9b2323dc7adba721d269bebab37bc9f13c4b89d3e504f0a6f63ff3bfb95b974",
+    "abc\/src\/abc\/tools\/rdf_prefixes.clj": "sha256:464ac0a7365d92a37084664c1af77aa5525c6eabbc86fad4358ff2637d993e29",
+    "abc\/src\/abc\/tools\/schema.clj": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871",
+    "abc\/src\/abc\/tools\/source_bundle.clj": "sha256:11387cb49f39bbc72006fa6cfd3296eafe9b84b7f8ec313d30d2201dc24de926",
+    "abc\/src\/abc\/tools\/source_snapshot_workset.clj": "sha256:46b870c330a2ac3fd7c07d0c1915977b91dbb12d87c4df3a95fe84f3083f2036",
+    "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+    "abc\/test\/abc\/tools\/materialize_source_snapshot_test.clj": "sha256:c1cf862f4e21c930d83e6031dce5b4428afbe5c89e74172dfcf9535978a625a4",
+    "abc\/test\/abc\/tools\/source_snapshot_fixture.clj": "sha256:9fc48b304f47475964d30de4e2477cca7423205735cd8fc8a72c12f00ed61476"
+  },
+  "observations":
+  {
+    "adr-0033-c4-parser-identity-roles-passes":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.materialize-source-snapshot-test\/parser-ir-source-identity-roles-test\"",
+    "revision": "d9f82cf96b4aa480b67a6f0daa084f0c0064dfdf",
+    "tool": "bin\/kaocha"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

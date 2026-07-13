@@ -1137,6 +1137,27 @@ workflow wiring (`structural-invariant`), and named pure-helper behavior
 - ADR 0011 C1 names the supported Nix app and its temp materialization/schema
   behavior; C2/C3 remain the ordered-map and two-run byte claims.
 
+Use this complete claim-kind/evidence-kind map; Task 7 must compare its rows
+against this table rather than infer kinds from descriptor names:
+
+| Claim | Observable statement | Claim kind | Admissible evidence kind |
+|---|---|---|---|
+| `ADR-0009-C1` | Fresh parser-IR and warnings manifests both validate against the manifest schema. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0009-C2` | Generated content hashes equal the exact imported parser-IR and warnings bytes. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0009-C3` | Materialization selects the canonical mapping-divergence sidecar and the declared legacy fallback. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0009-C4` | Generated artifact IDs are distinct from their content hashes. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0009-C5` | Parser-IR schema mismatch is admitted only by a registered compatibility rule, while diagnostic schema identity requires exact-current equality. | `structural-invariant` | `structural-test` |
+| `ADR-0009-C6` | Design-bundle fixture orchestration materializes into a temporary directory and validates the generated manifests. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0009-C7` | The Bash entry point contains delegation only; Clojure owns materialization logic. | `structural-invariant` | `structural-test` |
+| `ADR-0010-C1` | Materialized `manifest_schema_hash` equals the SHA-256/JCS hash of the parsed bundled manifest schema. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0010-C2` | Materialized parser-IR and warnings manifests have distinct artifact IDs. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0010-C3` | V0 identity JSON preserves the asserted null, escaping, and canonical member behavior used by generated identity fields. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0010-C4` | Parser-IR mismatch without compatibility and diagnostic exact-current mismatch are independently rejected. | `structural-invariant` | `structural-test` |
+| `ADR-0010-C5` | The supported Nix design-bundle app exits zero while validating materialized manifests. | `operational-behavior` | `operational-observation` |
+| `ADR-0011-C1` | The supported Nix design-bundle app materializes both manifests temporarily and validates both against the schema. | `operational-behavior` | `operational-observation` |
+| `ADR-0011-C2` | Deterministic JSON writing produces identical ordered bytes from differently ordered map inputs. | `fixture-behavior` | `fixture-conformance` |
+| `ADR-0011-C3` | Two materialization runs with identical inputs produce byte-identical manifest files. | `fixture-behavior` | `fixture-conformance` |
+
 - [ ] **Step 5: Split/narrow ADR 0033 into eleven claims**
 
 Use this order and kinds:
@@ -1286,7 +1307,7 @@ followed by `-passes`, except the four Nix rows whose keys are shown explicitly.
 | `ADR-0010-C2` | `adr-0010-c2-materialized-artifact-ids-distinct` | new `abc.tools.materialize-import-test/materialized-parser-and-warning-artifact-ids-are-distinct-test` split from `materialize-import-test` |
 | `ADR-0010-C3` | `adr-0010-c3-v0-identity-json` | `abc.tools.materialize-import-test/v0-identity-json-test` |
 | `ADR-0010-C4` | `adr-0010-c4-parser-schema-mismatch` | `abc.tools.validate-design-bundle-test/parser-ir-schema-hash-errors-test` |
-| `ADR-0010-C4` | `adr-0010-c4-diagnostic-schema-mismatch` | `abc.tools.validate-design-bundle-test/schema-hash-errors-test` |
+| `ADR-0010-C4` | `adr-0010-c4-diagnostic-exact-current-mismatch` | `abc.tools.materialize-import-test/diagnostic-schema-hash-requires-the-exact-current-contract-test` |
 | `ADR-0010-C5` | `adr-0010-c5-design-bundle-operational` | `repo-files-v1`; `nix run .#validate-design-bundle`; observation `adr-0010-c5-design-bundle-exits-zero` |
 | `ADR-0011-C1` | `adr-0011-c1-temporary-generated-output` | `repo-files-v1`; `nix run .#validate-design-bundle`; observation `adr-0011-c1-temporary-generated-output-passes` |
 | `ADR-0011-C2` | `adr-0011-c2-deterministic-json-writer` | `abc.tools.materialize-import-test/deterministic-json-writer-test` |
@@ -1336,6 +1357,24 @@ Do not focus a whole legacy test namespace, use a multi-focus descriptor, or
 call another `deftest` Var.
 
 - [ ] **Step 2: Validate descriptor closure with tests**
+
+Before descriptor execution, mechanically check the plan arithmetic:
+
+```bash
+plan=docs/superpowers/plans/2026-07-12-adr-evidence-migration-foundation.md
+task6="$(sed -n '/Use this complete claim-kind/,/Step 5:/p' "$plan")"
+task7="$(sed -n '/| Claim | Descriptor stem/,/This is exactly \*\*42 evidence units/p' "$plan")"
+test "$(printf '%s\n' "$task6" | rg -c '^\| `ADR-00(09|10|11)-C')" -eq 15
+test "$(printf '%s\n' "$task7" | rg -c '^\| `ADR-')" -eq 42
+test "$(printf '%s\n' "$task7" | rg -o 'ADR-[0-9]{4}-C[0-9]+' | sort -u | wc -l)" -eq 35
+test "$(printf '%s\n' "$task7" | rg '^\| `ADR-00(09|10|11)-C' | wc -l)" -eq 17
+test "$(printf '%s\n' "$task7" | rg -o 'ADR-00(09|10|11)-C[0-9]+' | sort -u | wc -l)" -eq 15
+```
+
+The last two counts are 15 primary claims plus the independent `ADR-0009-C5`
+and `ADR-0010-C4` corroborating rows. For each of those 17 descriptor rows,
+the registration test joins its claim ID to Task 6's exact claim/evidence-kind
+pair and rejects a different `:claim-kind` or `:evidence-kind`.
 
 Extend `adr_evidence_capture_test.clj` to load all 42 checked-in descriptors and
 assert exact key set, stable observation key, nonempty explicit set, and that
@@ -1392,7 +1431,7 @@ boundary and the producer revision recorded by every Stage B bundle.
 **Files:**
 - Create: 42 same-stem JSON bundles under `abc/docs/evidence/adr-runs/`, one
   for each Task 7 descriptor.
-- Create: `abc/docs/evidence/adr-entries/foundation.edn` (committed in Task 7)
+- Consume: `abc/docs/evidence/adr-entries/foundation.edn` (committed in Task 7)
 - Modify: `abc/docs/adr/adr-evidence.edn`
 - Modify: `abc/docs/reports/adr-claim-migration-inventory.json`
 - Modify: `abc/docs/reports/adr-evidence-migration.json`

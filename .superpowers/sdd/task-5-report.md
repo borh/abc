@@ -177,3 +177,23 @@ parts of five compound criteria. No observation or artifact certifies a
 distinct claim, and legacy aggregate materialize/source-bundle/source-snapshot
 and P16 disposition tests must be split into the named narrow Vars before
 capture.
+
+## Final plan typing fixes
+
+Task 6 now contains an explicit 15-row claim table for every final ADR
+0009–0011 claim. Each row fixes the observable statement, claim kind, and the
+single admissible evidence kind from the compatibility matrix. Task 7 requires
+registration tests to join all 17 corresponding descriptor rows (15 primary
+claims plus the ADR-0009-C5 and ADR-0010-C4 corroborations) against that table;
+kind selection is no longer inferred from stems or family names.
+
+The ADR-0010-C4 diagnostic corroboration now focuses the existing
+diagnostic-only
+`abc.tools.materialize-import-test/diagnostic-schema-hash-requires-the-exact-current-contract-test`
+under its own `adr-0010-c4-diagnostic-exact-current-mismatch` descriptor. It is
+independent of the parser-schema mismatch descriptor. Task 8 now consumes the
+Task 7 registration template instead of claiming to create it.
+
+The documented mechanical checks were run successfully: 15 Task 6 typing
+rows, 42 Task 7 descriptor rows, 35 unique foundation claim IDs, and 17 rows /
+15 unique claims for ADRs 0009–0011.

@@ -62,8 +62,10 @@
   (when-not (= expected (set (keys row)))
     [(problem kind "observation row must have the exact key set"
               :index index
-              :missing-keys (vec (sort (set/difference expected (set (keys row)))))
-              :unknown-keys (vec (sort (set/difference (set (keys row)) expected))))]))
+              :missing-keys (vec (sort-by pr-str
+                                          (set/difference expected (set (keys row)))))
+              :unknown-keys (vec (sort-by pr-str
+                                          (set/difference (set (keys row)) expected))))]))
 
 (defn- focused-row-problems [row index]
   (if-not (map? row)
@@ -313,9 +315,14 @@
   [:kind :focus-var :target :caller :parameter :head :matches :path])
 
 (defn- normalized-finding-path [path]
-  (let [supplied (when (string? path) (fs/path path))
-        normalized (normalized-coordinate path)]
-    (when-not (and supplied
+  (let [machine-local? (and (string? path)
+                            (or (re-find #"(?i)^[a-z]:" path)
+                                (str/starts-with? path "\\\\")
+                                (str/starts-with? path "//")))
+        supplied (when (and (string? path) (not machine-local?)) (fs/path path))
+        normalized (when-not machine-local? (normalized-coordinate path))]
+    (when-not (and (not machine-local?)
+                   supplied
                    (not (fs/absolute? supplied))
                    (nonempty-string? normalized)
                    (not (or (= ".." normalized)

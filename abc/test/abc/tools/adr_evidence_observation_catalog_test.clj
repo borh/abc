@@ -193,6 +193,16 @@
         (is (< 2 (count problems)))
         (is (= problems (vec (sort-by pr-str problems))))))))
 
+(deftest heterogeneous-unknown-row-keys-are-accumulated-deterministically-test
+  (let [root (temp-root)
+        row (assoc focused-row "string-key" true 42 true)
+        problems (catalog/catalog-problems root (catalog-value [row] []))
+        shape-problem (first (filter #(= :invalid-focused-observation (:kind %))
+                                     problems))]
+    (is (vector? problems))
+    (is (= (vec (sort-by pr-str ["string-key" 42]))
+           (:unknown-keys shape-problem)))))
+
 (deftest catalog-load-validates-coordinate-before-reading-test
   (let [root (temp-root)
         path "catalog.edn"
@@ -266,6 +276,18 @@
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"invalid semantic coordinates"
          (catalog/normalize-conformance-findings [finding])))))
+
+(deftest normalized-conformance-findings-reject-cross-host-machine-paths-test
+  (doseq [path ["C:\\tmp\\finding.clj"
+                "\\\\server\\share\\finding.clj"]]
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"repository-relatively"
+         (catalog/normalize-conformance-findings
+          [{:kind :forbidden-evidence-io
+            :focus-var 'abc.example/focus
+            :target 'java.io.File
+            :caller 'abc.example/focus
+            :path path}])))))
 
 (deftest foundation-catalog-has-separate-37-observation-arithmetic-test
   (let [repo-root (fs/file (fs/canonicalize "."))

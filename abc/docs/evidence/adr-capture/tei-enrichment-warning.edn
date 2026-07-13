@@ -1,0 +1,37 @@
+{:observation-key "tei-enrichment-warning-contract-passes",
+ :tool "bash",
+ :schema-version "abc-adr-evidence-capture-operational-v1",
+ :observation-contract-sha256
+ "sha256:f4dffd88594cbc18c6ebc4758c7f4fe49e6187bc60dd3d0c3ca090f3db51490c",
+ :clojure-closure-manifest
+ "docs/evidence/adr-inputs/tei-enrichment-warning.edn",
+ :argv
+ ["bash"
+  "--noprofile"
+  "--norc"
+  "-c"
+  "system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \".#checks.${system}.adr-evidence-tei-enrichment-warning\""],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "repo-files-v1",
+  :roots [],
+  :explicit
+  ["deps-lock.json"
+   "deps.edn"
+   "docs/evidence/adr-capture/tei-enrichment-warning.edn"
+   "docs/evidence/adr-inputs/tei-enrichment-warning.edn"
+   "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
+   "flake.lock"
+   "flake.nix"
+   "nix/tei-profile-artifacts.nix"
+   "schemas/tei-profile.sch"
+   "src/abc/tools/evidence_io.clj"
+   "src/abc/tools/path_containment.clj"
+   "src/abc/tools/schematron.clj"
+   "test/abc/test_fs.clj"
+   "test/abc/tools/schematron_test.clj"
+   "tests.edn"]},
+ :observation-id :tei-enrichment-warning,
+ :entrypoint-kind "clojure",
+ :input-set-mode "exact-v1"}

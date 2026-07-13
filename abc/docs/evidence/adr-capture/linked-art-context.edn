@@ -1,0 +1,23 @@
+{:observation-key "linked-art-context-is-canonical",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:2f19d1fc95f92a09a46b7e0f0f65c11d751614931eaef98b63156d8dbea99a0e",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/linked-art-context.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.schema-validation-evidence-test/context-declares-canonical-abc-namespace-test"],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.schema-validation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/contexts/abc-v0.jsonld"
+   "abc/docs/evidence/adr-capture/linked-art-context.edn"
+   "abc/docs/evidence/adr-inputs/linked-art-context.edn"]},
+ :observation-id :linked-art-context}

@@ -1,0 +1,28 @@
+{:observation-key "linked-art-full-behavior-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:1621d466598c5bba41ef31047d72cbbb0486148127e6f9576b793dcb73aae000",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/linked-art-full-behavior.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.schema-validation-evidence-test/linked-art-determinism-parity-hash-identity-fetch-contract-test"],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.schema-validation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/contexts/abc-v0.jsonld"
+   "abc/docs/evidence/adr-capture/linked-art-full-behavior.edn"
+   "abc/docs/evidence/adr-inputs/linked-art-full-behavior.edn"
+   "abc/examples/v0/example-work/lod/jsonld-context-validation-result.json"
+   "abc/examples/v0/example-work/lod/linked-art-candidate.jsonld"
+   "abc/examples/v0/example-work/lod/linked-art-expanded.normalized.json"
+   "abc/examples/v0/example-work/manifest.json"
+   "abc/examples/v0/example-work/metadata-record.json"]},
+ :observation-id :linked-art-full-behavior}

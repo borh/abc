@@ -1,0 +1,4 @@
+{:schema-version :abc-adr-runtime-inputs-v1,
+ :paths
+ ["abc/examples/v0/example-work/lod/linked-art-expanded.normalized.json"
+  "abc/examples/v0/example-work/manifest.json"]}

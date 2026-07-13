@@ -7,6 +7,7 @@
             [abc.tools.json :as json]
             [babashka.fs :as fs]
             [babashka.process :as process]
+            [clojure.set :as set]
             [clojure.string :as str]
             [clojure.test :refer [deftest is]]))
 
@@ -49,6 +50,38 @@
     "source-bundle-corpus"
     "validate-design-bundle-wrapper-delegation"})
 
+(def ^:private schema-rdf-tei-descriptor-stems
+  #{"design-bundle-operational-schema-rdf-tei"
+    "iiif-committed-applicability"
+    "iiif-invalid-combinations"
+    "iiif-schema-contract"
+    "iiif-text-only-values"
+    "iiif-valid-combinations"
+    "linked-art-artifact-predicate"
+    "linked-art-context"
+    "linked-art-current-parity-hash"
+    "linked-art-full-behavior"
+    "linked-art-parity"
+    "linked-art-result-contract"
+    "manifest-rdf-parity"
+    "metadata-bundle-helper"
+    "metadata-rdf-containment"
+    "metadata-rdf-parity"
+    "metadata-rights-shacl"
+    "schema-canonicalization-mismatch"
+    "schema-ci-wiring"
+    "schema-empty-manifest"
+    "schema-entrypoint-delegation"
+    "tei-enrichment-warning"
+    "tei-figure-warning"
+    "tei-profile-drift"
+    "tei-project-cross-schema-invalid"
+    "tei-project-valid-fixtures"
+    "tei-publication-sidecars"
+    "tei-schematron-invalid-ids"
+    "tei-upstream-rng"
+    "turtle-prefix-inventory"})
+
 (deftest checked-in-foundation-observation-boundary-inventory-is-exact-test
   (let [stems (fn [root]
                 (->> (fs/list-dir root)
@@ -56,9 +89,11 @@
                      (map #(str (fs/strip-ext (fs/file-name %))))
                      set))]
     (is (= 37 (count foundation-descriptor-stems)))
-    (is (= foundation-descriptor-stems
+    (is (= (set/union foundation-descriptor-stems
+                      schema-rdf-tei-descriptor-stems)
            (stems "docs/evidence/adr-capture")))
-    (is (= foundation-descriptor-stems
+    (is (= (set/union foundation-descriptor-stems
+                      (disj schema-rdf-tei-descriptor-stems "tei-profile-drift"))
            (stems "docs/evidence/adr-inputs")))
     (is (= 42 (count (:entries (files/read-edn
                                 "docs/evidence/adr-entries/foundation.edn")))))))
@@ -97,6 +132,56 @@
                            :workspace-root workspace-root
                            :descriptor runtime-descriptor}
                     (not monorepo-layout?) (assoc :component-root "abc")))))))))))
+
+(deftest checked-in-schema-rdf-tei-observation-boundaries-are-valid-test
+  (let [repo-root (fs/file (fs/canonicalize "."))
+        workspace-root (fs/file (fs/canonicalize ".."))
+        catalog-value (catalog/load-catalog!
+                       repo-root
+                       "data/adr-evidence/schema-rdf-tei-observation-catalog.edn")
+        bindings (files/read-edn "docs/evidence/adr-entries/schema-rdf-tei.edn")
+        operational-problem-kinds
+        (fn [context]
+          (try
+            (operational/validate-operational-manifest! context)
+            #{}
+            (catch clojure.lang.ExceptionInfo exception
+              (set (map :kind (:problems (ex-data exception)))))))]
+    (is (= 30 (count schema-rdf-tei-descriptor-stems)))
+    (is (= 21 (count (:focused-observations catalog-value))))
+    (is (= 9 (count (:operational-observations catalog-value))))
+    (is (= 35 (count (:entries bindings))))
+    (is (empty? (catalog/validate-bindings catalog-value bindings)))
+    (is (empty? (catalog/focused-conformance-findings repo-root catalog-value)))
+    (doseq [stem (sort schema-rdf-tei-descriptor-stems)]
+      (let [descriptor-path (str "docs/evidence/adr-capture/" stem ".edn")
+            context (operational/load-descriptor-context!
+                     {:repo-root repo-root
+                      :workspace-root workspace-root
+                      :descriptor-path descriptor-path})
+            descriptor (get-in context [:descriptor :value])]
+        (if (= "abc-adr-evidence-capture-operational-v1"
+               (:schema-version descriptor))
+          (let [explicit (get-in descriptor [:input-profile :explicit])
+                missing (assoc-in context [:descriptor :value :input-profile :explicit]
+                                  (vec (rest explicit)))
+                extra (assoc-in context [:descriptor :value :input-profile :explicit]
+                                (vec (sort (conj explicit "docs/adr/README.md"))))]
+            (is (some? (operational/validate-operational-manifest! context)) stem)
+            (is (contains? (operational-problem-kinds missing)
+                           :operational-input-set-mismatch)
+                (str stem " rejects a missing determinant"))
+            (is (contains? (operational-problem-kinds extra)
+                           :operational-input-set-mismatch)
+                (str stem " rejects an extra determinant")))
+          (is (map?
+               (runtime/validate-runtime-input-manifest!
+                {:repo-root repo-root
+                 :workspace-root workspace-root
+                 :descriptor {:path (str "abc/" descriptor-path)
+                              :value (update descriptor :runtime-input-manifest
+                                             #(str "abc/" %))}}))
+              stem))))))
 
 (defn- temp-dir [prefix]
   (fs/file (fs/create-temp-dir {:prefix prefix})))

@@ -8,6 +8,7 @@
 (defn focused-trace-options [descriptor-stem]
   (let [local-path (str "docs/evidence/adr-capture/" descriptor-stem ".edn")
         descriptor (-> (files/read-edn local-path)
+                       (update :runtime-input-manifest component-relative-path)
                        (update-in [:input-profile :explicit]
                                   #(mapv component-relative-path %)))]
     {:repo-root "."

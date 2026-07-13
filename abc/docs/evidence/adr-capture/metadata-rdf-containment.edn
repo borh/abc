@@ -1,0 +1,24 @@
+{:observation-key "metadata-rdf-containment-passes",
+ :tool "bin/kaocha",
+ :schema-version "abc-adr-evidence-capture-v3",
+ :observation-contract-sha256
+ "sha256:c87b437742be5bb792f9309ff446e2b09c4afe7113a37add9bcb4be8eb664fff",
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/metadata-rdf-containment.edn",
+ :argv
+ ["bin/kaocha"
+  "--focus"
+  "abc.tools.schema-validation-evidence-test/metadata-title-and-legacy-predicate-containment-test"],
+ :catalog-path
+ "data/adr-evidence/schema-rdf-tei-observation-catalog.edn",
+ :input-profile
+ {:kind "component-clojure-test-v1",
+  :component-root "abc",
+  :roots ["abc.tools.schema-validation-evidence-test"],
+  :explicit
+  ["abc/bin/kaocha"
+   "abc/docs/evidence/adr-capture/metadata-rdf-containment.edn"
+   "abc/docs/evidence/adr-inputs/metadata-rdf-containment.edn"
+   "abc/examples/v0/example-persons/000879.json"
+   "abc/examples/v0/example-work/metadata-record.json"]},
+ :observation-id :metadata-rdf-containment}

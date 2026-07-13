@@ -15,8 +15,10 @@
             [abc.tools.parser-ir-sentence-policy :as sentence-policy]
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
+            [abc.tools.schematron :as schematron]
             [abc.tools.validate-design-bundle :as validate]
             [babashka.fs :as fs]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is testing use-fixtures]]
             [malli.core :as m]
             [malli.generator :as mg]))
@@ -2279,6 +2281,90 @@
   (testing "validate-tei! returns nil for the example fixture when TEI_SCHEMA_PATH is set"
     (is (nil? (validate/validate-tei! (tei-schema-path!)
                                       ["examples/v0/example-work/tei.xml"])))))
+
+(deftest project-rng-valid-schematron-invalid-fixture-test
+  (let [path "fixtures/tei/invalid/abc-bad-layout-params.xml"]
+    (is (nil? (validate/validate-tei! "schemas/tei-profile.rng" [path])))
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path "schemas/tei-profile.sch"
+                               :xml-path path
+                               :label path})]
+      (is (= ["abc-layout-params-shape"] (mapv :rule-id findings)))
+      (is (= [:error] (mapv :severity findings))))))
+
+(deftest valid-project-tei-fixtures-pass-rng-and-schematron-test
+  (let [paths ["examples/v0/example-work/tei.xml"
+               "fixtures/tei/valid/rashomon-minimal.xml"
+               "fixtures/tei/valid/source-span-local-ref.xml"
+               "fixtures/tei/valid/transcription-enrichment-declared.xml"]]
+    (is (nil? (validate/validate-tei! "schemas/tei-profile.rng" paths)))
+    (doseq [path paths]
+      (let [{:keys [findings]} (schematron/validate!
+                                {:schema-path "schemas/tei-profile.sch"
+                                 :xml-path path
+                                 :label path})]
+        (is (not-any? #(= :error (:severity %)) findings) path)))))
+
+(deftest tei-committed-manifest-references-validation-result-test
+  (let [manifest (files/read-json "examples/v0/example-work/manifest.json")]
+    (is (some #(and (= "validation-result" (get % "role"))
+                    (= "tei-validation-result.json" (get % "path_hint")))
+              (get manifest "sidecars")))))
+
+(defn- check-expression [flake check-name]
+  (re-find
+   (re-pattern
+    (str "(?s)\\n          " (java.util.regex.Pattern/quote check-name)
+         " =.*?(?=\\n          [a-zA-Z0-9_-]+ =|\\n        };)"))
+   flake))
+
+(defn- tei-evidence-check-contract-errors [expression expected-focuses]
+  (cond-> []
+    (not (string/includes? expression "pkgs.clojure"))
+    (conj :missing-clojure)
+    (not (string/includes? expression
+                           "export TEI_SCHEMA_PATH=\"${tei.teiAllSchema}\""))
+    (conj :missing-tei-schema-path)
+    (not-every? #(string/includes? expression %) expected-focuses)
+    (conj :missing-focus)))
+
+(deftest tei-evidence-nix-checks-are-hermetic-test
+  (let [flake (slurp "flake.nix")
+        contracts
+        {"adr-evidence-tei-project-cross-schema-invalid"
+         ["abc.tools.validate-design-bundle-test/project-rng-valid-schematron-invalid-fixture-test"]
+         "adr-evidence-tei-project-valid-fixtures"
+         ["abc.tools.validate-design-bundle-test/valid-project-tei-fixtures-pass-rng-and-schematron-test"]
+         "adr-evidence-tei-schematron-invalid-ids"
+         ["abc.tools.schematron-test/missing-title-fails-title-rule-test"
+          "abc.tools.schematron-test/gaiji-missing-reference-fails-gaiji-rule-test"
+          "abc.tools.schematron-test/ruby-missing-reading-fails-ruby-rule-test"]
+         "adr-evidence-tei-figure-warning"
+         ["abc.tools.schematron-test/figure-missing-description-reports-warning-test"]
+         "adr-evidence-tei-enrichment-warning"
+         ["abc.tools.schematron-test/transcription-enrichment-undeclared-reports-warning-test"]
+         "adr-evidence-tei-upstream-rng"
+         ["abc.tools.tei-test/validate-example-fixture-test"]
+         "adr-evidence-tei-publication-sidecars"
+         ["abc.tools.materialize-publication-test/tei-generated-manifest-references-validation-result-test"
+          "abc.tools.validate-design-bundle-test/tei-committed-manifest-references-validation-result-test"]}]
+    (doseq [[check-name focuses] contracts]
+      (let [expression (check-expression flake check-name)]
+        (is (string? expression) check-name)
+        (is (= [] (tei-evidence-check-contract-errors expression focuses))
+            check-name)))
+    (let [sample (check-expression
+                  flake "adr-evidence-tei-project-cross-schema-invalid")]
+      (is (= [:missing-clojure]
+             (tei-evidence-check-contract-errors
+              (string/replace sample "pkgs.clojure" "")
+              (get contracts "adr-evidence-tei-project-cross-schema-invalid"))))
+      (is (= [:missing-tei-schema-path]
+             (tei-evidence-check-contract-errors
+              (string/replace sample
+                              "export TEI_SCHEMA_PATH=\"${tei.teiAllSchema}\""
+                              "")
+              (get contracts "adr-evidence-tei-project-cross-schema-invalid")))))))
 
 (deftest validate-tei-loud-fail-when-env-unset-test
   (testing "validate-tei! throws ex-info naming the schema-path problem when called with nil"

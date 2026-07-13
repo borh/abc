@@ -182,6 +182,14 @@
      abc.tools.json/write-deterministic-json-file!
      abc.tools.materialize-import/materialize-import!
      abc.tools.materialize-import/parser-ir-manifest
+     abc.tools.linked-art/expand-document
+     abc.tools.linked-art/write-publication-view!
+     abc.tools.manifest-to-rdf/manifest->ttl
+     abc.tools.metadata-record/record->graph
+     abc.tools.metadata-record/record+persons->graph
+     abc.tools.metadata-record/record+persons->ttl
+     abc.tools.shacl/load-shapes-graph
+     abc.tools.shacl/validate!
      abc.tools.materialize-source-snapshot/materialize-source-snapshot!
      abc.tools.source-snapshot-fixture/legacy-workset-entry!
      abc.tools.source-snapshot-fixture/workset-entry!
@@ -189,6 +197,8 @@
      abc.tools.source-bundle/write-manifest!
      abc.tools.source-snapshot-workset/write-workset!
      abc.tools.validate-design-bundle/validate-json-schemas!
+     abc.tools.validate-design-bundle/validate-canonicalization!
+     abc.tools.validate-design-bundle/validate-metadata-bundle!
      abc.sim.content-sim-test/overwrite-zip!
      abc.sim.content-sim-test/pin-chain-work-checks
      abc.sim.content-sim-test/run-build!
@@ -199,6 +209,7 @@
      abc.tools.source-bundle-test/understate-first-central-size!
      abc.tools.source-bundle-test/write-zip!
      abc.tools.validate-design-bundle-test/aat-parser-ir-compatibility-assertions
+     abc.tools.schema-validation-evidence-test/write-canonicalization-fixtures!
      abc.tools.files/read-text abc.tools.files/read-bytes
      abc.tools.files/input-stream abc.tools.files/reader abc.tools.files/list-files
      abc.tools.files/exists? abc.tools.files/directory? abc.tools.files/file?
@@ -273,7 +284,8 @@
      clojure.core/> clojure.core/>= clojure.core/+ clojure.core/-
      clojure.core/* clojure.core// clojure.core/inc clojure.core/dec
      clojure.core/identity clojure.core/constantly clojure.core/ex-data
-     clojure.core/ex-info clojure.core/iterator-seq clojure.core/make-array
+     clojure.core/ex-info clojure.core/ex-message clojure.core/instance?
+     clojure.core/iterator-seq clojure.core/make-array
      clojure.core/str clojure.core/pr-str clojure.core/format
      clojure.core/name clojure.core/namespace
      clojure.core/symbol clojure.core/keyword clojure.core/boolean
@@ -308,6 +320,7 @@
      clojure.string/join clojure.string/trim
      clojure.set/union clojure.set/difference clojure.set/intersection
      clojure.set/subset? clojure.java.io/file
+     arachne.aristotle/graph
      charred.api/read-json-str charred.api/write-json-str
      babashka.fs/absolute? babashka.fs/absolutize babashka.fs/file
      babashka.fs/file-name babashka.fs/normalize babashka.fs/path
@@ -338,10 +351,14 @@
 ;; constructors, static JVM I/O, network, and process APIs go through named
 ;; adapters instead.
 (def ^:private audited-safe-jvm-heads
-  '#{.getBytes .getName .getSchema .isBefore})
+  '#{.add .find .getBlankNodeLabel .getBytes .getLiteralDatatypeURI
+     .getLiteralLanguage .getLiteralLexicalForm .getName .getObject
+     .getPredicate .getSchema .getSubject .getURI .isBefore .isBlank
+     .isLiteral .isURI})
 
 (def ^:private audited-safe-jvm-vars
-  '#{Integer/parseInt LocalDate/parse MessageDigest/getInstance})
+  '#{Integer/parseInt JsonDocument/of LocalDate/parse MessageDigest/getInstance
+     GraphUtil/addInto NodeFactory/createURI Triple/create})
 
 (defn- forbidden-head? [head]
   (let [simple (-> (name head)

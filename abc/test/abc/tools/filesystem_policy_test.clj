@@ -11,11 +11,7 @@
   #{:mkdirs :exists :isFile :isDirectory :listFiles :renameTo :delete
     :getCanonicalFile :getCanonicalPath :getAbsolutePath :relativize})
 
-(def legacy-filesystem-namespaces
-  '#{abc.tools.path-containment
-     abc.tools.soranoha-build-publication
-     abc.tools.source-bundle
-     abc.tools.validate-design-bundle})
+(def legacy-filesystem-namespaces #{})
 
 (def permanent-files-operations
   '{abc.tools.json
@@ -288,11 +284,7 @@
                   namespace kind operation real-findings))))))))
 
 (deftest legacy-filesystem-baseline-test
-  (is (= '#{abc.tools.path-containment
-            abc.tools.soranoha-build-publication
-            abc.tools.source-bundle
-            abc.tools.validate-design-bundle}
-         legacy-filesystem-namespaces)))
+  (is (empty? legacy-filesystem-namespaces)))
 
 (deftest production-filesystem-policy-test
   (let [reports (source-reports "src")

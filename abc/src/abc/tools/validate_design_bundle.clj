@@ -450,7 +450,7 @@
                               (files/path "data"
                                           "source-region-publication-policy-v0.json"))
         divergence-file (files/path "examples" "ab-validator-output" "divergence.json")
-        divergence-bundle (when (.exists divergence-file)
+        divergence-bundle (when (fs/exists? divergence-file)
                             (files/read-json divergence-file))]
     (am/explain-or-throw! ::am/manifest-inputs manifest-inputs
                           "ab-validator manifest inputs")
@@ -802,32 +802,27 @@
   time."
   [{:keys [manifest-path metadata-record-path context-path
            candidate-path expanded-path result-path]}]
-  (let [temp (.toFile (java.nio.file.Files/createTempDirectory
-                       "abc-linked-art-bundle"
-                       (make-array java.nio.file.attribute.FileAttribute 0)))]
-    (try
-      (let [tmp-candidate (io/file temp "linked-art-candidate.jsonld")
-            tmp-expanded (io/file temp "linked-art-expanded.normalized.json")
-            tmp-result (io/file temp "jsonld-context-validation-result.json")]
-        (linked-art/write-publication-view!
-         {:manifest-path manifest-path
-          :metadata-record-path metadata-record-path
-          :context-path context-path
-          :candidate-path (str tmp-candidate)
-          :expanded-path (str tmp-expanded)
-          :result-path (str tmp-result)})
-        (doseq [[label committed regen]
-                [["linked-art-candidate.jsonld" candidate-path tmp-candidate]
-                 ["linked-art-expanded.normalized.json" expanded-path tmp-expanded]
-                 ["jsonld-context-validation-result.json" result-path tmp-result]]]
-          (let [a (file-bytes committed)
-                b (file-bytes regen)]
-            (when-not (= (seq a) (seq b))
-              (throw (ex-info (str label " drifted from harness output")
-                              {:committed (str committed)
-                               :regenerated (str regen)}))))))
-      (finally
-        (files/delete-tree! temp)))))
+  (fs/with-temp-dir [temp {:prefix "abc-linked-art-bundle"}]
+    (let [tmp-candidate (fs/file temp "linked-art-candidate.jsonld")
+          tmp-expanded (fs/file temp "linked-art-expanded.normalized.json")
+          tmp-result (fs/file temp "jsonld-context-validation-result.json")]
+      (linked-art/write-publication-view!
+       {:manifest-path manifest-path
+        :metadata-record-path metadata-record-path
+        :context-path context-path
+        :candidate-path (str tmp-candidate)
+        :expanded-path (str tmp-expanded)
+        :result-path (str tmp-result)})
+      (doseq [[label committed regen]
+              [["linked-art-candidate.jsonld" candidate-path tmp-candidate]
+               ["linked-art-expanded.normalized.json" expanded-path tmp-expanded]
+               ["jsonld-context-validation-result.json" result-path tmp-result]]]
+        (let [a (file-bytes committed)
+              b (file-bytes regen)]
+          (when-not (= (seq a) (seq b))
+            (throw (ex-info (str label " drifted from harness output")
+                            {:committed (str committed)
+                             :regenerated (str regen)}))))))))
 
 (defn validate-git-cliff! []
   (run-command! "git-cliff" "--config" "cliff.toml" "--unreleased" "--strip" "header"
@@ -841,7 +836,7 @@
         tei-file (:tei publication-output)
         preservation-file (:preservation publication-output)
         validation-result-file (:tei-validation-result publication-output)]
-    (when-not (and (.exists plain-file) (pos? (.length plain-file)))
+    (when-not (and (fs/exists? plain-file) (pos? (fs/size plain-file)))
       (throw (ex-info "parser-IR publication plain.txt must exist and be non-empty"
                       {:path (str plain-file)})))
     (run-command! "xmllint" "--noout" (str tei-file))
@@ -902,9 +897,10 @@
   schema's JCS hash. Returns a map person_id → person-record map."
   [persons-dir person-schema-path]
   (let [live-schema-hash (manifest/schema-hash person-schema-path)
-        files (->> (.listFiles (io/file persons-dir))
-                   (filter #(string/ends-with? (.getName ^java.io.File %) ".json"))
-                   sort)]
+        files (->> (fs/list-dir persons-dir)
+                   (filter #(and (fs/regular-file? %)
+                                 (string/ends-with? (str (fs/file-name %)) ".json")))
+                   (sort-by str))]
     (into {}
           (for [^java.io.File f files]
             (let [record (files/read-json (str f))]
@@ -989,15 +985,12 @@
                          :ttl-path ttl-path}))))))
 
 (defn validate-design-bundle! []
-  (let [temp-dir (.toFile (java.nio.file.Files/createTempDirectory
-                           "abc-design-bundle"
-                           (make-array java.nio.file.attribute.FileAttribute 0)))
-        materialized-dir (io/file temp-dir "materialized-import")
-        publication-dir (io/file temp-dir "publication")
-        tokenized-dir (io/file temp-dir "tokenized")
-        token-analysis-dir (io/file temp-dir "token-analysis")
-        annotation-dir (io/file temp-dir "annotation")]
-    (try
+  (fs/with-temp-dir [temp-dir {:prefix "abc-design-bundle"}]
+    (let [materialized-dir (fs/file temp-dir "materialized-import")
+          publication-dir (fs/file temp-dir "publication")
+          tokenized-dir (fs/file temp-dir "tokenized")
+          token-analysis-dir (fs/file temp-dir "token-analysis")
+          annotation-dir (fs/file temp-dir "annotation")]
       (tel/log! :info "==> Materializing imported ab-validator output")
       (let [materialized (materialize/materialize-import!
                           {:input-dir (files/path "examples" "ab-validator-output")
@@ -1183,9 +1176,7 @@
       (tel/log! :info "==> Checking git-cliff configuration")
       (validate-git-cliff!)
       (tel/log! :info "git-cliff config ok")
-      (tel/log! :info "design bundle validation ok")
-      (finally
-        (files/delete-tree! temp-dir)))))
+      (tel/log! :info "design bundle validation ok"))))
 
 (defn -main [& _args]
   (logging/install-cli-handler!)

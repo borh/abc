@@ -1,5 +1,5 @@
 (ns abc.tools.path-containment
-  (:require [clojure.java.io :as io])
+  (:require [babashka.fs :as fs])
   (:import [java.nio.file InvalidPathException Paths]))
 
 (defn- raw-path [path]
@@ -15,19 +15,19 @@
   [repo-root path]
   (try
     (let [relative (raw-path path)
-          root (-> (io/file repo-root) .toPath .toAbsolutePath .normalize)
+          root (fs/normalize (fs/absolutize repo-root))
           resolved (-> root (.resolve relative) .normalize)]
       (cond
         (.isAbsolute relative) {:state :path-traversal}
         (traversal? relative) {:state :path-traversal}
         (not (.startsWith resolved root)) {:state :path-traversal}
-        (not (.exists (.toFile resolved))) {:state :missing}
+        (not (fs/exists? resolved)) {:state :missing}
         :else
         (let [real-root (.toRealPath root (make-array java.nio.file.LinkOption 0))
               real-path (.toRealPath resolved (make-array java.nio.file.LinkOption 0))]
           (if (.startsWith real-path real-root)
             {:state :ok
-             :path (.toFile resolved)
+             :path (fs/file resolved)
              :relative (str relative)}
             {:state :real-path-escape}))))
     (catch InvalidPathException _

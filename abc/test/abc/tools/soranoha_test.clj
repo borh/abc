@@ -11,6 +11,7 @@
             [abc.tools.soranoha :as soranoha]
             [abc.tools.soranoha-build-publication :as build-publication]
             [abc.tools.source-bundle :as source-bundle]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
@@ -18,6 +19,43 @@
            [java.nio.charset StandardCharsets]
            [java.nio.file AccessDeniedException Files NoSuchFileException]
            [java.util.zip ZipEntry ZipOutputStream]))
+
+(deftest publication-filesystem-contract-test
+  (fs/with-temp-dir [root {}]
+    (let [output (fs/file root "out")
+          tmp (#'build-publication/prepare-output-root! output false)]
+      (is (instance? java.io.File tmp))
+      (is (fs/directory? root))
+      (fs/create-dirs output)
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                            #"output-root already exists"
+                            (#'build-publication/prepare-output-root! output false)))
+      (is (instance? java.io.File
+                     (#'build-publication/prepare-output-root! output true))))
+    (let [tmp (fs/file root "promotion.tmp")
+          target (fs/file root "promotion")]
+      (fs/create-dirs tmp)
+      (spit (fs/file tmp "artifact") "ok")
+      (let [result (#'build-publication/promote-output-root! tmp target false)]
+        (is (instance? java.io.File result))
+        (is (= "ok" (slurp (fs/file target "artifact"))))))
+    (let [publication (fs/file root "publication")]
+      (fs/create-dirs publication)
+      (spit (fs/file publication "tei.manifest.json") "{}")
+      (spit (fs/file publication "source_work_content_hash.txt") " hash\n")
+      (is (#'build-publication/publication-up-to-date? publication "hash"))
+      (fs/delete (fs/file publication "tei.manifest.json"))
+      (is (not (#'build-publication/publication-up-to-date? publication "hash"))))
+    (let [from (fs/file root "from")
+          to (fs/file root "to")]
+      (fs/create-dirs (fs/file from "nested"))
+      (spit (fs/file from "b") "b")
+      (spit (fs/file from "a") "a")
+      (spit (fs/file from "nested" "ignored") "ignored")
+      (is (= (fs/file to) (#'build-publication/copy-dir-files! from to)))
+      (is (= ["a" "b"] (->> (fs/list-dir to)
+                            (map (comp str fs/file-name))
+                            sort vec))))))
 
 (defn- temp-json-path [prefix]
   (let [file (java.io.File/createTempFile prefix ".json")]

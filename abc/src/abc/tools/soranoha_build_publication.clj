@@ -12,6 +12,7 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-bundle :as source-bundle]
             [abc.tools.workflow :as workflow]
+            [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.java.io :as io]
             [clojure.string :as string])
@@ -25,27 +26,27 @@
   (string/replace (str file) "\\" "/"))
 
 (defn- zip-file? [file]
-  (and (.isFile file)
-       (string/ends-with? (.getName file) ".zip")))
+  (and (fs/regular-file? file)
+       (string/ends-with? (str (fs/file-name file)) ".zip")))
 
 (defn- normalized-abs-path
   "Absolute, `.`/`..`-normalized path that does NOT resolve symlinks — unlike
   getCanonicalFile. Keeps files under a symlinked root (e.g. the zero-copy
   aozorabunko-corpus symlinkJoin) instead of escaping to the symlink targets."
   [f]
-  (.normalize (.toAbsolutePath (.toPath (io/file f)))))
+  (fs/normalize (fs/absolutize f)))
 
 (defn- aozora-work-zip? [root file]
   (let [rel (normalized-path
-             (.relativize (normalized-abs-path root)
-                          (normalized-abs-path file)))]
+             (fs/relativize (normalized-abs-path root)
+                            (normalized-abs-path file)))]
     (when (re-matches #"^cards/[0-9]{6}/files/[^/]+\.zip$" rel)
       rel)))
 
 (defn- read-catalog-zip [aozora-root]
   (let [zip-file (io/file aozora-root "index_pages"
                           "list_person_all_extended_utf8.zip")]
-    (when-not (.isFile zip-file)
+    (when-not (fs/regular-file? zip-file)
       (throw (ex-info "official catalog ZIP is missing"
                       {:path (str zip-file)})))
     (with-open [zf (ZipFile. zip-file)]
@@ -86,7 +87,8 @@
           rows))
 
 (defn- work-zip-files [aozora-root]
-  (->> (file-seq (io/file aozora-root))
+  (->> (tree-seq fs/directory? fs/list-dir (fs/path aozora-root))
+       (map fs/file)
        (filter zip-file?)
        (map (fn [file]
               {:file file
@@ -264,7 +266,7 @@
         source-manifest-file (io/file work-dir "source.manifest.json")
         persons-dir (io/file materialized-root "persons")
         metadata-file (io/file work-dir "metadata-record.json")]
-    (.mkdirs work-dir)
+    (fs/create-dirs work-dir)
     ;; Real AAT + parser-IR from the owned adapters (replaces the former stub),
     ;; through the injectable boundary so tests can stub it.
     (source-bundle/write-manifest! source-bundle-file inspection)
@@ -418,7 +420,7 @@
                       (mapv (fn [{:keys [file relpath]}]
                               {"path" (or relpath
                                           (normalized-path
-                                           (.relativize
+                                           (fs/relativize
                                             (normalized-abs-path aozora-root)
                                             (normalized-abs-path file))))
                                "reason" (cond
@@ -449,7 +451,7 @@
 
 (defn- read-config [path]
   (let [config-file (let [file (io/file path)]
-                      (if (.isFile file)
+                      (if (fs/regular-file? file)
                         file
                         (let [path-text (str path)]
                           (if (string/starts-with? path-text "abc/")
@@ -475,7 +477,7 @@
 (defn- git-provenance [aozora-root]
   (let [commit (or (git-sh aozora-root "rev-parse" "HEAD")
                    (let [head (io/file aozora-root ".git" "HEAD")]
-                     (when (.isFile head)
+                     (when (fs/regular-file? head)
                        (string/trim (slurp head)))))
         dirty-output (git-sh aozora-root "status" "--porcelain" "--"
                              "cards" "index_pages")]
@@ -528,15 +530,15 @@
 
 (defn- prepare-output-root! [output-root replace?]
   (let [output-root-file (io/file output-root)]
-    (when (and (.exists output-root-file) (not replace?))
+    (when (and (fs/exists? output-root-file) (not replace?))
       (throw (ex-info "output-root already exists; pass --replace to replace it after a successful build"
                       {:output_root (str output-root-file)})))
-    (.mkdirs (or (.getParentFile output-root-file) (io/file ".")))
+    (fs/create-dirs (or (fs/parent output-root-file) (fs/path ".")))
     (io/file (str output-root ".tmp-" (System/nanoTime)))))
 
 (defn- promote-output-root! [tmp-root output-root replace?]
   (let [target (io/file output-root)]
-    (when (and replace? (.exists target))
+    (when (and replace? (fs/exists? target))
       (files/delete-tree! target))
     (Files/move (.toPath (io/file tmp-root))
                 (.toPath target)
@@ -553,18 +555,19 @@
   recomputation and makes drift observable as a hash mismatch."
   [pub-dir work-hash]
   (let [marker (io/file pub-dir "source_work_content_hash.txt")]
-    (and (.isFile (io/file pub-dir "tei.manifest.json"))
-         (.isFile marker)
+    (and (fs/regular-file? (fs/file pub-dir "tei.manifest.json"))
+         (fs/regular-file? marker)
          (= work-hash (string/trim (slurp marker))))))
 
 (defn- copy-dir-files!
   "Copy the flat set of publication artifacts from one dir to another."
   [from to]
-  (.mkdirs (io/file to))
-  (doseq [f (.listFiles (io/file from))
-          :when (.isFile f)]
-    (files/copy-file! (str f) (io/file to (.getName f))))
-  to)
+  (fs/create-dirs to)
+  (doseq [f (->> (fs/list-dir from)
+                 (filter fs/regular-file?)
+                 (sort-by (comp str fs/file-name)))]
+    (files/copy-file! (str f) (fs/file to (fs/file-name f))))
+  (fs/file to))
 
 (defn- relative-to-output-root
   "Path of file relative to output-root, so publications-report.json survives
@@ -572,8 +575,8 @@
   absolute path (also keeps the report byte-identical regardless of
   concurrency or the output-root's own absolute location)."
   [output-root file]
-  (normalized-path (.relativize (normalized-abs-path output-root)
-                                (normalized-abs-path file))))
+  (normalized-path (fs/relativize (normalized-abs-path output-root)
+                                  (normalized-abs-path file))))
 
 (defn- materialize-one-publication!
   [{:keys [output-root prior-output-root generated-at continue-on-failure work]}]
@@ -722,10 +725,10 @@
       (throw (ex-info "snapshot-date is required for build-publication"
                       {:config config})))
     (publication-policy/assert-release-allowed!)
-    (let [prior-output-root (let [f (io/file output-root)]
-                              (when (.isDirectory f) (str f)))
+    (let [prior-output-root (when (fs/directory? output-root)
+                              (str output-root))
           tmp-root (prepare-output-root! output-root replace)]
-      (.mkdirs tmp-root)
+      (fs/create-dirs tmp-root)
       (let [opts (-> opts
                      (assoc :output-root tmp-root)
                      (update :concurrency resolve-concurrency))

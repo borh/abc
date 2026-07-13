@@ -12,11 +12,46 @@
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [abc.tools.validate-design-bundle :as validate]
+            [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing use-fixtures]]
             [malli.core :as m]
             [malli.generator :as mg]))
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
+
+(deftest publication-view-temp-directory-cleanup-test
+  (fs/with-temp-dir [root {}]
+    (let [committed (fs/file root "committed")
+          paths {:manifest-path "unused"
+                 :metadata-record-path "unused"
+                 :context-path "unused"
+                 :candidate-path (fs/file committed "candidate")
+                 :expanded-path (fs/file committed "expanded")
+                 :result-path (fs/file committed "result")}
+          seen-temp (atom nil)
+          writer (fn [{:keys [candidate-path expanded-path result-path]}]
+                   (reset! seen-temp (fs/parent candidate-path))
+                   (doseq [[source target] [[(:candidate-path paths) candidate-path]
+                                            [(:expanded-path paths) expanded-path]
+                                            [(:result-path paths) result-path]]]
+                     (fs/copy source target {:replace-existing true})))]
+      (fs/create-dirs committed)
+      (doseq [path (map paths [:candidate-path :expanded-path :result-path])]
+        (spit path "golden"))
+      (with-redefs [abc.tools.linked-art/write-publication-view! writer]
+        (validate/validate-publication-view! paths))
+      (is (some? @seen-temp))
+      (is (not (fs/exists? @seen-temp)))
+      (reset! seen-temp nil)
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo #"forced failure"
+           (with-redefs [abc.tools.linked-art/write-publication-view!
+                         (fn [{:keys [candidate-path]}]
+                           (reset! seen-temp (fs/parent candidate-path))
+                           (throw (ex-info "forced failure" {})))]
+             (validate/validate-publication-view! paths))))
+      (is (some? @seen-temp))
+      (is (not (fs/exists? @seen-temp))))))
 
 (deftest run-command-retains-command-and-nonzero-exit-code-test
   (let [fixture (java.io.File/createTempFile "abc-run-command" ".sh")]

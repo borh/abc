@@ -1,4 +1,4 @@
-//! Committed, HAND-VERIFIED goldens (Phase 3 rotation B). These replaced
+//! Committed, HAND-VERIFIED goldens. These replaced
 //! `tests/reference_parity.rs`: the frozen-adapter byte-parity claim ended
 //! at the span rotation by design (legacy adapter emits sanitized-offset
 //! spans with synthesized lines). Spans in these files were verified
@@ -7,7 +7,7 @@
 //! rotation B confinement report. Hermetic: plain `cargo test` builds
 //! carry `(git unknown)`, which these goldens embed.
 //!
-//! ## Verification summary (Task 15; updated Task 14 — C4 `source_note`
+//! ## Verification summary (updated C4 `source_note`
 //! emission)
 //!
 //! `verify-golden-spans.py` walks every node with both `value` (a string)
@@ -25,7 +25,7 @@
 //!
 //! `full-markup-{utf8,shift_jis}.txt` each carry `底本：「テスト」` as
 //! their final line (previously silently dropped by `aozora_body_range`;
-//! Task 14 retains it as a `source_note` block), so each golden went from
+//! retains it as a `source_note` block), so each golden went from
 //! one known CRLF FAIL to two:
 //!
 //! - The pre-existing FAIL: the trailing-newline `text` node after the

@@ -69,7 +69,8 @@ cd abc && bin/kaocha \
 
 Result: exit 1, `1 tests, 1 assertions, 1 errors, 0 failures`; test loading failed on the intentionally missing `validate/evidence-input-paths` public boundary.
 
-After adding the minimal sorted catalog, the combined Task 5 boundary run passed with `19 tests, 60 assertions, 0 failures`.
+After the review fixes, the combined Task 5 boundary run passed with
+`24 tests, 63 assertions, 0 failures`.
 
 Final plan-specified command:
 
@@ -80,7 +81,7 @@ cd abc && bin/kaocha \
   --focus abc.sim.divergences-test
 ```
 
-Result: `18 tests, 61 assertions, 0 failures`.
+Result after the review fixes: `23 tests, 62 assertions, 0 failures`.
 
 Complete design-bundle namespace with the pinned upstream TEI schema:
 
@@ -94,9 +95,18 @@ Result: `68 tests, 232 assertions, 0 failures`.
 ## Assertions and boundaries
 
 - Both committed manifest examples conform to `manifest.schema.json`.
-- The failure fixture has exact failure kind/status, null content, the exact errors sidecar, explicit non-null parser/input/output coordinates, and only a top-level `artifact_id`.
-- Fresh parser-IR and warnings manifests produced by `materialize-import!` both conform to the manifest schema.
-- The shell wrapper is exactly delegation/setup, and the parsed CI run block invokes the Nix design-bundle app under the checked-out ABC boundary.
+- The failure fixture has exact failure kind/status, null content, the exact
+  errors sidecar, the complete non-null identity-coordinate map including
+  `manifest_schema_hash`, null for every other coordinate, and only a
+  top-level `artifact_id`. An extra non-null `tokenizer_build_hash`
+  counterexample is rejected.
+- Fresh materialization returns exactly `#{:parser-ir :warnings}` and both
+  manifests conform to the manifest schema. A missing-warnings counterexample
+  is rejected.
+- The shell wrapper is exactly delegation/setup. The workflow parser proves
+  that checkout precedes the Nix design-bundle step in the same job and that
+  the command runs from repository root; a synthetic split-job workflow is
+  rejected.
 - D7 is structurally `:fixed`, dated `2026-07-12`, and names the separated identity roles.
 - Diagnostic schema identity requires exact-current equality independently of registered parser-IR compatibility.
 - `evidence-input-paths` exactly equals the traced repository read set of the supported pure schema-validation path.
@@ -119,3 +129,18 @@ Result: `68 tests, 232 assertions, 0 failures`.
 ## Concerns
 
 None known.
+
+## Review-fix TDD evidence
+
+The new negative assertions were first loaded before their narrow predicates
+existed. Focused Kaocha failed at compile time on the intentionally unresolved
+`failure-coordinate-errors` symbol (`1 tests, 1 assertions, 1 errors, 0
+failures`). After implementing the deterministic generated-key,
+identity-coordinate, and job/step workflow predicates, the split
+`abc.tools.foundation-evidence-test` namespace passed with `8 tests, 17
+assertions, 0 failures`.
+
+Schema conformance, failure semantics, failure coordinates, top-level
+`artifact_id`, generated output set/conformance, wrapper delegation, and CI
+wiring now have distinct stable `deftest` Vars. Task 7's plan references these
+Vars directly and forbids aggregate wrapper tests around them.

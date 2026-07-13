@@ -1013,11 +1013,15 @@ wrapper/CI wiring, and dated D7 structural state.
 Add tests that:
 
 - validate committed success/failure manifests against `manifest.schema.json`;
-- assert failure status, `errors` sidecar, exact non-null attempted-output/input coordinates, and top-level-only `artifact_id`;
-- materialize parser/warnings manifests and validate both against the schema;
+- assert failure status, `errors` sidecar, the complete exact non-null
+  attempted-output/input coordinate map (including `manifest_schema_hash`),
+  every other identity-object coordinate null, and top-level-only `artifact_id`;
+- materialize parser/warnings manifests, assert the exact generated key set
+  `#{:parser-ir :warnings}`, and explicitly validate both against the schema;
 - assert `bin/validate-design-bundle.sh` delegates with `exec clojure -M:abc/validate-design-bundle "$@"` and contains no validation implementation;
-- parse `.github/workflows/validation.yml` and assert it invokes
-  `nix run ... .#validate-design-bundle` under the ABC checkout boundary;
+- parse `.github/workflows/validation.yml` into jobs and steps and assert the
+  same job has a preceding checkout step before the repository-root
+  `nix run ... .#validate-design-bundle` step;
 - assert D7 is `:fixed` and its notes contain `2026-07-12`.
 
 - [ ] **Step 2: Run RED against the intended exact assertions**
@@ -1031,6 +1035,13 @@ wiring paths are supplied; no assertion may merely test file existence.
 
 Reuse `materialize/materialize-import!`, `schema/validation-errors`, and
 `files/read-json`; do not duplicate the production identity algorithm.
+Keep schema conformance, failure semantics, failure coordinates, top-level
+identity scope, generated-output set/conformance, wrapper delegation, and CI
+wiring in separate, stable `deftest` Vars. The negative examples must prove
+that missing `:warnings`, an extra non-null `tokenizer_build_hash`, and a
+checkout/design-command split across jobs fail their respective predicates.
+Task 7 focuses these claim-aligned Vars directly; it must not introduce an
+aggregate wrapper Var around them.
 
 - [ ] **Step 4: Strengthen schema-hash compatibility wording with tests**
 
@@ -1241,11 +1252,11 @@ Kaocha to report exactly one executed test for each pair.
 
 | Descriptor | Profile/command | Observation |
 |---|---|---|
-| `foundation-manifest-identity.edn` | exact focus `abc.tools.foundation-evidence-test/foundation-manifest-identity-contract`; this dedicated wrapper directly asserts the selected JCS/code-as-spec/index predicates | `manifest-identity-contracts-pass` |
-| `foundation-import-materialization.edn` | exact focus `abc.tools.foundation-evidence-test/foundation-import-materialization-contract`; explicitly bind `examples/ab-validator-output/{README.md,comparison-report.json,divergence.json,manifest-inputs.json,parser-ir.json,run-summary.jsonl,source-region-coverage.json,warnings.jsonl}`, manifest/IR/diagnostic schemas, and compatibility data | `import-materialization-contracts-pass` |
-| `foundation-validation-helpers.edn` | exact focus `abc.tools.foundation-evidence-test/foundation-validation-helpers-contract`; bind every schema/fixture/data path reached by the selected pure helper calls | `validation-helper-contracts-pass` |
+| `foundation-manifest-identity.edn` | exact focus pairs for `abc.tools.foundation-evidence-test/{committed-manifest-schema-conformance-test,failure-manifest-semantics-test,failure-manifest-identity-coordinates-test,failure-manifest-artifact-id-scope-test}`, plus the selected claim-aligned JCS/code-as-spec/index Vars; never wrap these Vars in another `deftest` | `manifest-identity-contracts-pass` |
+| `foundation-import-materialization.edn` | exact focus pairs for `abc.tools.foundation-evidence-test/{generated-import-manifest-set-test,generated-import-manifest-schema-conformance-test}` and `abc.tools.materialize-import-test/diagnostic-schema-hash-requires-the-exact-current-contract-test`, plus the claim-aligned registered-compatibility/orchestration/determinism Vars; explicitly bind `examples/ab-validator-output/{README.md,comparison-report.json,divergence.json,manifest-inputs.json,parser-ir.json,run-summary.jsonl,source-region-coverage.json,warnings.jsonl}`, manifest/IR/diagnostic schemas, and compatibility data; never wrap these Vars in another `deftest` | `import-materialization-contracts-pass` |
+| `foundation-validation-helpers.edn` | exact focus pairs for `abc.tools.foundation-evidence-test/{validate-design-bundle-wrapper-delegation-test,validation-workflow-wiring-test}` and `abc.tools.validate-design-bundle-test/evidence-input-catalog-equals-the-pure-schema-validation-read-set-test`, plus the selected claim-aligned pure-helper Vars; bind every schema/fixture/data path reached by those helper calls; never wrap these Vars in another `deftest` | `validation-helper-contracts-pass` |
 | `source-bundle-fixtures.edn` | exact focus `abc.tools.foundation-evidence-test/source-bundle-fixtures-contract`; bind known answer and source-bundle schema | `source-bundle-fixtures-pass` |
-| `source-identity-simulation.edn` | exact focus `abc.tools.foundation-evidence-test/source-identity-simulation-contract`; bind simulation configs and D7 table | `source-identity-simulation-pass` |
+| `source-identity-simulation.edn` | exact focus pair `abc.sim.divergences-test/d7-pin-chain-fix-is-dated-and-structural-test`, plus any other selected claim-aligned simulation Vars; bind simulation configs and D7 table; never wrap these Vars in another `deftest` | `source-identity-simulation-pass` |
 | `source-snapshot-fixtures.edn` | exact focus `abc.tools.foundation-evidence-test/source-snapshot-fixtures-contract`; bind schema/data fixtures | `source-snapshot-fixtures-pass` |
 | `source-bundle-corpus.edn` | `repo-files-v1`; command `nix build --no-link .#checks.$(nix eval --impure --raw --expr builtins.currentSystem).source-bundle-corpus --print-build-logs`; bind descriptor, flake/locks/dependency configs, checked closure manifest for `abc.tools.source-bundle-report/-main` plus every expanded path, source-bundle schema, and the checked corpus summary | `source-bundle-corpus-reproduced` |
 | `design-bundle-operational.edn` | `repo-files-v1`; command `nix run .#validate-design-bundle`; bind descriptor, flake/locks/dependency configs, checked closure manifest for `abc.tools.validate-design-bundle/-main` plus every expanded path, wrapper, and exactly `(validate-design-bundle/evidence-input-paths)` | `design-bundle-exits-zero` |

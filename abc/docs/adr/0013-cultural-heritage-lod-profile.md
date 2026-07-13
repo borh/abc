@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-28
 Accepted: 2026-04-29
+Validation scope: fixture
+Release authority: publication
 
 ## Implementation Status
 
@@ -91,17 +93,9 @@ that value.
 
 ## Acceptance Criteria
 
-- `validate-design-bundle` regenerates the LOD fixtures into a temp
-  directory and byte-compares against the committed
-  `examples/v0/example-work/lod/{linked-art-candidate.jsonld,
-  linked-art-expanded.normalized.json,
-  jsonld-context-validation-result.json}`. Any drift fails the bundle.
-- `validation-result.json` records `status: "ok"` and the recomputed
-  context hash.
-- `test/abc/tools/linked_art_test.clj` covers determinism, byte-parity with
-  the committed fixtures, the recomputed context hash, the identity
-  invariant, and the loader's refusal to fetch external JSON-LD
-  contexts.
+- **ADR-0013-C1 — fixture-behavior:** The Linked Art harness regenerates the candidate, normalized expansion, and context-validation result byte-identically to the three committed fixtures. See `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0013-C2 — fixture-behavior:** The regenerated validation result records `status: "ok"` and the JCS-recomputed context hash.
+- **ADR-0013-C3 — fixture-behavior:** Focused Linked Art tests demonstrate two-run determinism, committed byte parity, context hashing, artifact-ID preservation, and refusal to fetch an unapproved external JSON-LD context.
 
 ## References
 

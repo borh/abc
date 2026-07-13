@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-04-28
 Accepted: 2026-04-29
+Validation scope: fixture
+Release authority: publication
 
 ## Implementation Status
 
@@ -66,19 +68,10 @@ derived and must not feed `manifest_identity_object`.
 
 ## Acceptance Criteria
 
-- `schemas/iiif-applicability.schema.json` is JSON Schema 2020-12 and is
-  itself validated against the meta-schema by
-  `validate-design-bundle`.
-- `examples/v0/example-work/iiif/applicability.json` validates against
-  the schema; status, reason, and `derived_manifest=null` reflect the
-  text-only example.
-- `validate-design-bundle` calls `abc.tools.iiif/validate-applicability!`
-  on the example record; failure aborts the bundle gate.
-- `test/abc/tools/iiif_test.clj` covers the example record plus four contract
-  cases: an `applicable` record with a `derived_manifest` path, a
-  `rights_blocker` record, a missing `work_id`, an `applicable` record
-  with `derived_manifest=null` (must fail), and a non-applicable record
-  carrying a `derived_manifest` path (must fail).
+- **ADR-0014-C1 — structural-invariant:** `schemas/iiif-applicability.schema.json` declares JSON Schema 2020-12 and validates against that meta-schema. See `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0014-C2 — fixture-behavior:** The text-only `000127` applicability fixture validates with status `not_applicable`, a text-only reason, and `derived_manifest: null`.
+- **ADR-0014-C3 — fixture-behavior:** IIIF applicability validation rejects a missing work ID and both invalid status/derived-manifest combinations.
+- **ADR-0014-C4 — fixture-behavior:** IIIF applicability validation accepts an `applicable` record with a manifest path and a `rights_blocker` record with no derived manifest.
 
 ## References
 

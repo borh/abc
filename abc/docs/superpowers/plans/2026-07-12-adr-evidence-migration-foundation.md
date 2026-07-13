@@ -1313,7 +1313,7 @@ followed by `-passes`, except the four Nix rows whose keys are shown explicitly.
 | `ADR-0009-C2` | `adr-0009-c2-materialized-content-hashes` | new `abc.tools.materialize-import-test/materialized-content-hashes-match-imported-files-test` split from `materialize-import-test` |
 | `ADR-0009-C3` | `adr-0009-c3-mapping-divergence-sidecar` | new `abc.tools.materialize-import-test/mapping-divergence-sidecar-selection-test` covering canonical and legacy fallback |
 | `ADR-0009-C4` | `adr-0009-c4-generated-artifact-ids-vs-content-hashes` | new `abc.tools.materialize-import-test/generated-artifact-ids-differ-from-content-hashes-test`, split directly from both generated-manifest assertions in `materialize-import-test` |
-| `ADR-0009-C5` | `adr-0009-c5-parser-schema-compatibility` | `abc.tools.validate-design-bundle-test/aat-parser-ir-compatibility-test` |
+| `ADR-0009-C5` | `adr-0009-c5-aat-conversion-compatibility` | `abc.tools.validate-design-bundle-test/aat-parser-ir-compatibility-test` |
 | `ADR-0009-C5` | `adr-0009-c5-diagnostic-schema-exact-current` | `abc.tools.materialize-import-test/diagnostic-schema-hash-requires-the-exact-current-contract-test` |
 | `ADR-0009-C6` | `adr-0009-c6-temporary-materialization` | new `abc.tools.validate-design-bundle-test/design-bundle-temporary-import-materialization-test` split from the design-bundle orchestration test |
 | `ADR-0009-C7` | `adr-0009-c7-wrapper-delegation` | `abc.tools.foundation-evidence-test/validate-design-bundle-wrapper-delegation-test` |

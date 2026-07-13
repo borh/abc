@@ -14,7 +14,6 @@
             [abc.tools.tei :as tei]
             [abc.tools.tei-header :as tei-header]
             [babashka.fs :as fs]
-            [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]
             [taoensso.telemere :as tel]))
@@ -740,7 +739,6 @@
         concurrency (batch-concurrency jobs (count batch-jobs))
         results (materialize-batch-jobs! batch-jobs concurrency)
         passed (count (filter #(= "passed" (get % "status")) results))
-        summary-file (some-> summary-path fs/file)
         summary-dir (when summary-path
                       (or (fs/parent summary-path)
                           (fs/absolutize ".")))

@@ -80,3 +80,20 @@ nix build ./abc#checks.x86_64-linux.clj-kondo
 Result: exit 0. Workflow joins now remain `Path` values internally and convert
 to `File` only at the manifest writer. The TAR bare-filename test now uses a
 unique file in the real suite cwd and does not mutate `user.dir`.
+
+## Final audit cleanup
+
+Removed the unused batch `summary-file` binding and the now-unused
+`clojure.java.io` alias from `materialize-publication`.
+
+```sh
+bin/kaocha --focus abc.tools.materialize-publication-test --focus abc.tools.filesystem-policy-test
+```
+
+Result: **20 tests, 133 assertions, 0 failures**.
+
+```sh
+nix build ./abc#checks.x86_64-linux.clj-kondo
+```
+
+Result: exit 0.

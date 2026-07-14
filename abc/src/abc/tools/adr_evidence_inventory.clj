@@ -21,7 +21,8 @@
    24 "parser-ir-publication" 25 "parser-ir-publication"
    29 "diagrams-governance" 30 "parser-ir-publication"
    31 "diagrams-governance" 32 "parser-ir-publication"
-   33 "foundation-runtime-identity" 38 "parser-ir-publication"})
+   33 "foundation-runtime-identity" 34 "diagrams-governance"
+   38 "parser-ir-publication"})
 
 (defn- keyword-name [value]
   (some-> value name))

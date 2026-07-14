@@ -106,6 +106,13 @@
     "parser-publication-rendering"
     "parser-relations-provenance"})
 
+(def ^:private diagrams-governance-descriptor-stems
+  #{"adr-graph-contract"
+    "adr-policy-fixtures"
+    "architecture-graph-contract"
+    "diagram-registry-drift"
+    "workflow-graph-fixtures"})
+
 (deftest checked-in-foundation-observation-boundary-inventory-is-exact-test
   (let [stems (fn [root]
                 (->> (fs/list-dir root)
@@ -116,12 +123,14 @@
     (is (= (set/union foundation-descriptor-stems
                       schema-rdf-tei-descriptor-stems
                       temporal-person-ingest-descriptor-stems
-                      parser-ir-publication-descriptor-stems)
+                      parser-ir-publication-descriptor-stems
+                      diagrams-governance-descriptor-stems)
            (stems "docs/evidence/adr-capture")))
     (is (= (set/union foundation-descriptor-stems
                       (disj schema-rdf-tei-descriptor-stems "tei-profile-drift")
                       temporal-person-ingest-descriptor-stems
-                      parser-ir-publication-descriptor-stems)
+                      parser-ir-publication-descriptor-stems
+                      diagrams-governance-descriptor-stems)
            (stems "docs/evidence/adr-inputs")))
     (is (= 42 (count (:entries (files/read-edn
                                 "docs/evidence/adr-entries/foundation.edn")))))))
@@ -251,34 +260,15 @@
                       :descriptor {:path descriptor-path :value value}}))
               stem))))))
 
-(deftest generation-two-design-bundle-preserves-exact-historical-debt-test
-  (let [problems (:problems
-                  (bundle/validate-bundle
-                   "."
-                   "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json"
-                   "sha256:89a825eeaad021147b20938ccc5f0345421afac9c16c1143b77cdac9a145b524"
-                   ["ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"]))]
-    (is (= 18 (count problems)))
-    (is (= #{:input-hash-mismatch} (set (map :kind problems))))
-    (is (= #{["ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"]}
-           (set (map :affected-claim-ids problems))))
-    (is (= {"flake.nix" 2
-            "src/abc/tools/files.clj" 2
-            "src/abc/tools/linked_art.clj" 2
-            "src/abc/tools/logging.clj" 2
-            "src/abc/tools/manifest_to_rdf.clj" 2
-            "src/abc/tools/parser_evidence.clj" 2
-            "src/abc/tools/person_drift.clj" 2
-            "src/abc/tools/shacl.clj" 2
-            "src/abc/tools/validate_design_bundle.clj" 2}
-           (frequencies (map :input-path problems))))))
-
-(deftest live-registry-has-no-generation-two-design-bundle-bindings-test
-  (let [registry (files/read-edn "docs/adr/adr-evidence.edn")]
-    (is (empty?
-         (filter #(= "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json"
-                     (:artifact-path %))
-                 (:entries registry))))))
+(deftest migrated-design-bundle-is-schema-valid-and-canonically-registered-test
+  (let [path "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json"
+        {:keys [value canonical-hash]} (bundle/load-bundle "." path)
+        entries (filter #(= path (:artifact-path %))
+                        (:entries (files/read-edn "docs/adr/adr-evidence.edn")))]
+    (is (empty? (bundle/validate-bundle-value value)))
+    (is (= #{"ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"}
+           (set (map :claim-id entries))))
+    (is (= #{canonical-hash} (set (map :artifact-hash entries))))))
 
 (defn- temp-dir [prefix]
   (fs/file (fs/create-temp-dir {:prefix prefix})))

@@ -3,6 +3,7 @@
             [abc.tools.adr :as adr]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
+            [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]])
   (:import [java.nio.charset StandardCharsets]
            [java.util Base64]))
@@ -110,3 +111,26 @@
     (is (contains? path-set (str "abc/" ordinary-input)))
     (is (contains? path-set "abc/docs/adr/adr-graph.mmd"))
     (is (contains? path-set "abc/docs/architecture.mmd"))))
+
+(deftest snapshot-generation-rejects-a-dirty-worktree-before-reading-inputs-test
+  (let [workspace (str (fs/canonicalize ".."))]
+    (with-redefs [bootstrap/git-command
+                  (fn [_workspace & args]
+                    (cond
+                      (= args ["rev-parse" "--show-toplevel"])
+                      {:exit 0 :out (str workspace "\n") :err ""}
+
+                      (= args ["status" "--porcelain" "--untracked-files=all"])
+                      {:exit 0 :out " M abc/file\n" :err ""}))]
+      (let [exception (try
+                        (bootstrap/snapshot-value "." "..")
+                        nil
+                        (catch clojure.lang.ExceptionInfo value value))]
+        (is (= :dirty-bootstrap-worktree (:kind (ex-data exception))))))))
+
+(deftest final-transition-requires-one-adr-three-claims-and-enforcement-test
+  (let [kinds (set (map :kind
+                        (bootstrap/final-transition-problems
+                         "." ".." (valid-snapshot))))]
+    (is (contains? kinds :adr-0034-not-accepted))
+    (is (contains? kinds :governance-gate-not-enforced))))

@@ -252,3 +252,26 @@
     (doseq [[adr [scope authority]] expected-lifecycle]
       (is (= scope (get-in adrs [adr :fields "Validation scope"])))
       (is (= authority (get-in adrs [adr :fields "Release authority"]))))))
+
+(deftest adr-0034-family-rows-appear-only-after-acceptance-test
+  (let [criteria (mapv (fn [n]
+                         {:criterion-index (dec n)
+                          :body (str "Claim " n ".")
+                          :claim-id (str "ADR-0034-C" n)
+                          :claim-kind (if (= n 3)
+                                        :corpus-behavior
+                                        :structural-invariant)})
+                       [1 2 3])
+        proposed {:num 34 :file "0034-closure.md" :status "Proposed"
+                  :criteria criteria :evidence []}
+        state {:baseline {"baseline_revision" (apply str (repeat 40 "0"))
+                          "criteria" []}
+               :ledger {:entries {}} :by-key {} :problems []}
+        proposed-value (inventory/inventory-value [proposed] state)
+        accepted-value (inventory/inventory-value [(assoc proposed :status "Accepted")]
+                                                  state)
+        rows (get accepted-value "criteria")]
+    (is (empty? (get proposed-value "criteria")))
+    (is (= 3 (count rows)))
+    (is (every? #(= "diagrams-governance" (get % "family")) rows))
+    (is (zero? (get-in accepted-value ["families" "unclassified"])))))

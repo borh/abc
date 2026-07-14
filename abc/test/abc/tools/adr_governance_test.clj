@@ -140,3 +140,18 @@
     (is (= [["/repo/abc" {:mode :audit :workspace-root "/repo"}]
             ["/repo/abc" {:mode :audit :workspace-root "/repo"}]]
            @calls))))
+
+(deftest invalid-fixture-has-identical-audit-and-enforce-problems-test
+  (let [root "fixtures/adr-governance-invalid"]
+    (with-redefs [evidence/load-registry (constantly {:entries []})
+                  evidence/load-matrix (constantly {})
+                  evidence/load-as-of (constantly "2026-07-12")]
+      (let [audit (governance/run! root {:mode :audit})
+            enforce (governance/run! root {:mode :enforce})]
+        (is (false? (:ok? audit)))
+        (is (false? (:ok? enforce)))
+        (is (= 0 (:exit-code audit)))
+        (is (= 1 (:exit-code enforce)))
+        (is (= (:problems audit) (:problems enforce)))
+        (is (= #{:missing-relation-target}
+               (set (map :kind (:problems audit)))))))))

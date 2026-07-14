@@ -278,6 +278,73 @@
                            :problems problems})))
         value))))
 
+(defn- accepted-adrs [adrs]
+  (filterv #(= "Accepted" (:status %)) adrs))
+
+(defn- accepted-criterion-count [adrs]
+  (count (filter :claim-id (mapcat :criteria (accepted-adrs adrs)))))
+
+(defn- governance-enforced? [workspace-root]
+  (let [flake (files/read-text (fs/file workspace-root "flake.nix"))
+        start (string/index-of flake "monorepo-adr-governance")
+        tail (when start (subs flake start))
+        end (when tail (string/index-of tail "''" 2))
+        block (if end (subs tail 0 end) tail)]
+    (and block
+         (string/includes? block "--mode enforce")
+         (not (string/includes? block "--mode audit")))))
+
+(defn final-transition-problems [abc-root workspace-root snapshot]
+  (try
+    (let [{:keys [abc-root workspace-root]}
+          (assert-root-layout! abc-root workspace-root)
+          snapshot-problems (validate-snapshot-value snapshot)
+          adrs (adr/parse-all (fs/file abc-root "docs/adr"))
+          accepted (accepted-adrs adrs)
+          adr-0034 (first (filter #(= 34 (:num %)) adrs))
+          migration-state (migration/load-migration-state abc-root {})
+          strict-result (governance/run! abc-root {:mode :enforce
+                                                   :workspace-root workspace-root})
+          pre-count (get snapshot "accepted_adr_count")
+          pre-criteria (get snapshot "accepted_criterion_count")]
+      (vec
+       (concat
+        snapshot-problems
+        (when-not (= "Accepted" (:status adr-0034))
+          [(problem :adr-0034-not-accepted
+                    "ADR 0034 must be Accepted in the final tree")])
+        (when-not (= "full-corpus" (:validation-scope adr-0034))
+          [(problem :adr-0034-validation-scope-mismatch
+                    "ADR 0034 must declare full-corpus validation scope")])
+        (when-not (= "none" (:release-authority adr-0034))
+          [(problem :adr-0034-release-authority-mismatch
+                    "ADR 0034 must declare no release authority")])
+        (when (and (integer? pre-count)
+                   (not= (inc pre-count) (count accepted)))
+          [(problem :accepted-adr-count-mismatch
+                    "final tree must add exactly ADR 0034 to the Accepted set")])
+        (when (and (integer? pre-criteria)
+                   (not= (+ 3 pre-criteria) (accepted-criterion-count adrs)))
+          [(problem :accepted-criterion-count-mismatch
+                    "final tree must add exactly three binding criteria")])
+        (when (seq (:problems migration-state))
+          [(problem :incomplete-migration-ledger
+                    "final tree has migration ledger problems"
+                    :problems (:problems migration-state))])
+        (when-not (and (:ok? strict-result)
+                       (= :enforce (:mode strict-result))
+                       (empty? (:problems strict-result)))
+          [(problem :strict-governance-failed
+                    "final tree does not pass strict governance"
+                    :problems (:problems strict-result))])
+        (when-not (governance-enforced? workspace-root)
+          [(problem :governance-gate-not-enforced
+                    "root Nix governance check must statically select enforce mode")]))))
+    (catch Exception exception
+      [(problem :final-transition-validation-failed
+                "final transition validation could not complete"
+                :detail (.getMessage exception))])))
+
 (def cli-options
   [[nil "--write PATH"]
    [nil "--verify PATH"]
@@ -310,6 +377,13 @@
                            (throw (ex-info "bootstrap snapshot validation failed"
                                            {:problems problems})))
                          {:ok? true})
-               :verify-final (throw (ex-info "final transition validation is not implemented"
-                                             {})))))
+               :verify-final
+               (let [snapshot (files/read-json (:verify-final options))
+                     problems (final-transition-problems (:repo-root options)
+                                                         (:workspace-root options)
+                                                         snapshot)]
+                 (when (seq problems)
+                   (throw (ex-info "final transition validation failed"
+                                   {:problems problems})))
+                 {:ok? true}))))
     :fail? (complement :ok?)}))

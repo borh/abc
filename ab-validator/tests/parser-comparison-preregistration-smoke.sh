@@ -47,7 +47,19 @@ assert contract["performance_protocol"] == {
     "concurrency": 1,
     "environment": "x86_64-linux; root flake devShell; RUSTC_WRAPPER=; SCCACHE_DISABLE=1; LC_ALL=C.UTF-8; TZ=UTC; network disabled",
     "timeout_seconds": 300,
-    "timeout_treatment": "right_censored_at_300_seconds_and_counted_as_timeout_failure"
+    "timeout_treatment": "right_censored_at_300_seconds_and_counted_as_timeout_failure",
+    "censored_latency": {
+        "estimator": "kaplan_meier",
+        "substitution": "none",
+        "median_rule": "report_km_median_if_survival_le_0.5_else_unavailable_with_lower_bound_300s",
+        "p95_rule": "report_km_p95_if_survival_le_0.05_else_unavailable_with_lower_bound_300s",
+        "bootstrap": "candidate_level_stratified_resample_works_with_replacement_then_repetitions_with_replacement_10000_seed_20260714_recompute_km_quantile_preserve_censoring_report_percentile_ci_or_unavailable_bound"
+    },
+    "host_capture": {
+        "required_fields": ["cpu_model", "logical_cpu_count", "ram_bytes", "kernel_release", "cpu_governor", "load_1m", "isolated_cpu_set"],
+        "capture_time": "immediately_before_each_candidate_run",
+        "comparability": "comparable_only_when_cpu_model_logical_count_ram_kernel_governor_and_isolation_match_and_load_1m_diff_le_0.25; otherwise_report_separate_strata_no_pooled_ratio"
+    }
 }
 
 for key in ("candidates", "axes", "measurement_modes"):

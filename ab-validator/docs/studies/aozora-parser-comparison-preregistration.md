@@ -70,6 +70,20 @@ registered x86_64-linux root-flake environment, networking disabled, and a
 as timeout failures; they are never discarded from denominators or latency
 summaries.
 
+Latency never substitutes the 300-second cutoff as an observed completion.
+Kaplan–Meier estimates preserve the censoring indicator. Median is reported
+only when survival reaches 0.5; p95 only when it reaches 0.05. Otherwise the
+quantile is unavailable and reported with a 300-second lower bound. The frozen
+bootstrap resamples works, then repetitions within works, preserves censoring,
+recomputes the Kaplan–Meier statistic 10,000 times with seed 20260714, and
+reports a percentile interval or the same unavailable/lower-bound result.
+
+Immediately before every candidate run, capture CPU model, logical CPU count,
+RAM bytes, kernel release, CPU governor, one-minute load, and isolated CPU set.
+Runs are comparable only when all fields except load match and load differs by
+at most 0.25. Other runs remain published as separate strata; no pooled ratio
+or cross-stratum performance ranking is permitted.
+
 ## Integrated baseline observation
 
 Commit `ac2be926738f919faf44300e2999b3548d724297` is an ancestor of the

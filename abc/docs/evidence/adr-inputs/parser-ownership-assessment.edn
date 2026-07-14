@@ -1,0 +1,14 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["ab-validator/docs/handoffs/2026-07-10-parser-fork-provenance.md"
+         "ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md"
+         "ab-validator/docs/superpowers/reports/2026-07-08-parser-fork-candidacy-faithful-comparison.md"
+         "ab-validator/docs/superpowers/specs/2026-07-09-parser-comparison-followups-handoff.md"
+         "abc/data/parser-ir-publication-policy-v0.json"
+         "abc/data/publication-policy.edn"
+         "abc/docs/adr/0038-custom-parser-ownership-and-neutral-comparison.md"
+         "abc/docs/adr/governance-as-of.edn"
+         "abc/docs/evidence/external/custom-parser-ownership-assessment.md"
+         "abc/schemas/manifest.schema.json"
+         "abc/schemas/parser-ir-publication-preservation.schema.json"
+         "abc/schemas/parser-ir.schema.json"
+         "abc/schemas/tei-validation-result.schema.json"]}

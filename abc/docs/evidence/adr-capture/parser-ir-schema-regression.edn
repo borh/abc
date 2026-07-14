@@ -1,0 +1,14 @@
+{:schema-version "abc-adr-evidence-capture-v3" :tool "bin/kaocha"
+ :argv ["bin/kaocha" "--focus" "abc.tools.parser-ir-schema-evidence-test/parser-ir-schema-regression-contract"]
+ :runtime-input-manifest "abc/docs/evidence/adr-inputs/parser-ir-schema-regression.edn"
+ :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
+ :observation-id :parser-ir-schema-regression :observation-contract-sha256 "sha256:bf773e521cf948b08cf4c86094532362cb352725cd981a35e473854721979bde"
+ :input-profile {:kind "component-clojure-test-v1" :component-root "abc" :roots ["abc.tools.parser-ir-schema-evidence-test"]
+                 :explicit ["abc/bin/kaocha" "abc/docs/evidence/adr-capture/parser-ir-schema-regression.edn"
+                            "abc/docs/evidence/adr-inputs/parser-ir-schema-regression.edn" "abc/examples/ab-validator-output/manifest-inputs.json"
+                            "abc/examples/v0/example-work/manifest.json" "abc/examples/v0/example-work/metadata-record.json"
+                            "abc/examples/v0/example-work/parser-ir.json" "abc/examples/v0/example-work/source.manifest.json"
+                            "abc/fixtures/parser-ir/span-current.json" "abc/fixtures/parser-ir/span-invalid-coordinate.json"
+                            "abc/fixtures/parser-ir/span-legacy-line-column.json" "abc/fixtures/parser-ir/span-legacy-start-end.json"
+                            "abc/schemas/manifest.schema.json" "abc/schemas/parser-ir.schema.json"]}
+ :observation-key "parser-ir-schema-regression-pass"}

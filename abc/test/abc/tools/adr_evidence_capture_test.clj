@@ -94,6 +94,18 @@
     "temporal-person-record-contract"
     "temporal-person-shacl-contract"})
 
+(def ^:private parser-ir-publication-descriptor-stems
+  #{"design-bundle-operational-parser-ir-publication"
+    "parser-citation-identity"
+    "parser-identity-relations"
+    "parser-import-boundary"
+    "parser-ir-schema-regression"
+    "parser-mapping-admission"
+    "parser-ownership-assessment"
+    "parser-phase5-frozen-tuple"
+    "parser-publication-rendering"
+    "parser-relations-provenance"})
+
 (deftest checked-in-foundation-observation-boundary-inventory-is-exact-test
   (let [stems (fn [root]
                 (->> (fs/list-dir root)
@@ -103,11 +115,13 @@
     (is (= 37 (count foundation-descriptor-stems)))
     (is (= (set/union foundation-descriptor-stems
                       schema-rdf-tei-descriptor-stems
-                      temporal-person-ingest-descriptor-stems)
+                      temporal-person-ingest-descriptor-stems
+                      parser-ir-publication-descriptor-stems)
            (stems "docs/evidence/adr-capture")))
     (is (= (set/union foundation-descriptor-stems
                       (disj schema-rdf-tei-descriptor-stems "tei-profile-drift")
-                      temporal-person-ingest-descriptor-stems)
+                      temporal-person-ingest-descriptor-stems
+                      parser-ir-publication-descriptor-stems)
            (stems "docs/evidence/adr-inputs")))
     (is (= 42 (count (:entries (files/read-edn
                                 "docs/evidence/adr-entries/foundation.edn")))))))
@@ -244,7 +258,7 @@
                    "docs/evidence/adr-runs/design-bundle-operational-schema-rdf-tei.json"
                    "sha256:89a825eeaad021147b20938ccc5f0345421afac9c16c1143b77cdac9a145b524"
                    ["ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"]))]
-    (is (= 16 (count problems)))
+    (is (= 18 (count problems)))
     (is (= #{:input-hash-mismatch} (set (map :kind problems))))
     (is (= #{["ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"]}
            (set (map :affected-claim-ids problems))))
@@ -253,6 +267,7 @@
             "src/abc/tools/linked_art.clj" 2
             "src/abc/tools/logging.clj" 2
             "src/abc/tools/manifest_to_rdf.clj" 2
+            "src/abc/tools/parser_evidence.clj" 2
             "src/abc/tools/person_drift.clj" 2
             "src/abc/tools/shacl.clj" 2
             "src/abc/tools/validate_design_bundle.clj" 2}
@@ -672,6 +687,33 @@
                                      {:exit-code (:exit non-test)
                                       :stdout (:out non-test)
                                       :stderr (:err non-test)})))))
+
+(deftest parser-ir-publication-stage-a-contracts-are-closed-test
+  (let [stems ["parser-citation-identity" "parser-import-boundary"
+               "parser-mapping-admission" "parser-identity-relations"
+               "parser-ir-schema-regression" "parser-publication-rendering"
+               "parser-relations-provenance" "parser-ownership-assessment"
+               "parser-phase5-frozen-tuple"
+               "design-bundle-operational-parser-ir-publication"]
+        registration (files/read-edn "docs/evidence/adr-entries/parser-ir-publication.edn")
+        entries (:entries registration)]
+    (is (= :abc-adr-evidence-registration-v1 (:schema-version registration)))
+    (is (= 37 (count entries)))
+    (is (= 37 (count (distinct (map :claim-id entries)))))
+    (is (= #{"ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"}
+           (set (filter #{"ADR-0006-C1" "ADR-0008-C2" "ADR-0010-C5" "ADR-0011-C1"}
+                        (map :claim-id entries)))))
+    (is (not-any? #(contains? % :artifact-hash) entries))
+    (doseq [stem stems
+            :let [path (str "docs/evidence/adr-capture/" stem ".edn")
+                  value (files/read-edn path)]]
+      (if (= "abc-adr-evidence-capture-operational-v1" (:schema-version value))
+        (let [context (operational/load-descriptor-context!
+                       {:repo-root "." :workspace-root ".." :descriptor-path path})]
+          (is (map? (operational/validate-operational-manifest! context)) stem))
+        (is (map? (runtime/validate-runtime-input-manifest!
+                   {:repo-root "." :workspace-root ".."
+                    :descriptor {:path (str "abc/" path) :value value}})) stem)))))
 
 (deftest v2-capture-lints-the-focused-var-and-binds-its-closed-inputs-test
   (let [repo (git-repo)

@@ -1,6 +1,8 @@
 # ADR 0024: Parser-IR Additive Additions — Span Coordinate Semantics and `ruby.direction`
 
 Status: Accepted
+Validation scope: fixture
+Release authority: publication
 Date: 2026-07-02
 Accepted: 2026-07-03
 Supersedes: none
@@ -74,23 +76,14 @@ under this schema hash under a new coordinate or ruby model.
 
 ## Acceptance Criteria
 
-- `schemas/parser-ir.schema.json` accepts `span.coordinate_system =
-  "decoded_utf8"` and an optional `rubyNode.ruby.direction` in
-  `{"left","right",null}`, and the committed fixture
-  `examples/ab-validator-output/parser-ir.json` exercises a non-null
-  `direction` value.
-- Existing parser-IR fixtures that carry only `{start, end}` or
-  `{start, end, line, column}` continue to validate (the new fields are
-  optional), so the additive change does not invalidate prior fixtures.
-- `test/abc/tools/materialize_publication_test.clj` and
-  `test/abc/tools/parser_ir_plaintext_test.clj` exercise spans carrying
-  `coordinate_system: "decoded_utf8"`.
-- `test/abc/tools/parser_ir_tei_test.clj` exercises `ruby.direction` in TEI
-  body rendering.
-- `test/abc/tools/schema_test.clj` covers the JCS schema-hash discipline so a
-  parser-IR schema change rotates the schema hash used by parser-IR manifests.
-- `nix run .#validate-design-bundle` completes successfully after the
-  schema-hash rotation recorded in Implementation Status.
+- **ADR-0024-C1 — fixture-behavior:** The current parser-IR schema accepts `decoded_utf8` spans and ruby direction values `left`, `right`, and null, and rejects an unknown coordinate system.
+- **ADR-0024-C2 — fixture-behavior:** The parser-IR span definition continues to accept the legacy `{start,end}` and `{start,end,line,column}` object shapes.
+- **ADR-0024-C3 — fixture-behavior:** Current publication fixtures carry and consume `decoded_utf8` spans.
+- **ADR-0024-C4 — fixture-behavior:** TEI rendering preserves ruby direction using a profile-valid `rend` value.
+- **ADR-0024-C5 — structural-invariant:** Parser-IR schema JCS hash changes propagate to the parser-IR schema coordinate copied into materialized manifests.
+- **ADR-0024-C6 — operational-behavior:** The supported design-bundle application exits zero over the current parser-IR schema and fixture.
+
+- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
 
 ## Deferred follow-ups
 

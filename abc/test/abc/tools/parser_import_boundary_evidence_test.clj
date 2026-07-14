@@ -1,5 +1,6 @@
 (ns abc.tools.parser-import-boundary-evidence-test
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
+            [abc.tools.files :as files]
             [abc.tools.malli :as am]
             [abc.tools.schema :as schema]
             [abc.tools.validate-design-bundle :as validate]
@@ -13,6 +14,32 @@
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
 (def ^:private fixture-root "examples/ab-validator-output")
+
+(deftest parser-import-boundary-contract
+  (runtime-inputs/with-validated-read-trace!
+    {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
+     :descriptor {:path "abc/docs/evidence/adr-capture/parser-import-boundary.edn"
+                  :value (files/read-edn "docs/evidence/adr-capture/parser-import-boundary.edn")}}
+    (fn []
+      (doseq [path ["data/aat-parser-ir-compatibility.edn"
+                    "examples/ab-validator-output/README.md"
+                    "examples/ab-validator-output/comparison-report.json"
+                    "examples/ab-validator-output/divergence.json"
+                    "examples/ab-validator-output/manifest-inputs.json"
+                    "examples/ab-validator-output/parser-ir.json"
+                    "examples/ab-validator-output/run-summary.jsonl"
+                    "examples/ab-validator-output/source-region-coverage.json"
+                    "examples/ab-validator-output/warnings.jsonl"
+                    "schemas/aat-parser-ir-divergence-bundle.schema.json"
+                    "schemas/aat-parser-ir-divergence.schema.json"
+                    "schemas/aat-parser-ir-mapping.schema.json"
+                    "schemas/diagnostic.schema.json"
+                    "schemas/manifest-inputs.schema.json"
+                    "schemas/manifest.schema.json"
+                    "schemas/parser-ir.schema.json"
+                    "schemas/run-summary.schema.json"]]
+        (files/read-text path))
+      (is true))))
 
 (defn- fixture-path [name]
   (files/path fixture-root name))

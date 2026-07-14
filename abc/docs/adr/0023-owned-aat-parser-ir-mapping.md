@@ -1,6 +1,8 @@
 # ADR 0023: Owned AAT to Parser-IR Mapping and Compatibility Registry
 
 Status: Accepted
+Validation scope: fixture
+Release authority: publication
 Date: 2026-07-03
 Accepted: 2026-07-03
 Supersedes: none
@@ -118,28 +120,13 @@ not make this ADR stale).
 
 ## Acceptance Criteria
 
-- `schemas/aat-parser-ir-mapping.schema.json`,
-  `schemas/aat-parser-ir-divergence.schema.json`, and
-  `schemas/aat-parser-ir-divergence-bundle.schema.json` are valid JSON Schema
-  Draft 2020-12 documents validated by the design-bundle schema pass;
-  `test/abc/tools/validate_design_bundle_test.clj` covers this.
-- `data/aat-parser-ir-compatibility.edn` loads and
-  `aat_parser_ir_compat/validate-registry!` accepts the checked-in registry
-  (exact adapter/version/mapping/parser-IR-schema match keys, required
-  `evidence_scope`, no adapter-neutral/wildcard entries).
-- `aat_parser_ir_compat/admission-report` reports `:admitted`, `:missing`, and
-  `:conflicts` for producer candidates against the registry, treating an
-  already-admitted match key with changed evidence as a conflict rather than
-  admitted; `test/abc/tools/validate_design_bundle_test.clj`
-  (`aat-parser-ir-compatibility-admission-report-test`) covers admitted,
-  missing, and conflict cases.
-- Materialized parser-IR manifests copy `mapping_hash` from
-  `manifest-inputs.json` into
-  `manifest_identity_object.aat_parser_ir_mapping_hash`;
-  `test/abc/tools/materialize_import_test.clj` covers this.
-- `validate-design-bundle` validates the AAT mapping and divergence contracts
-  (schemas + registry) end-to-end against the committed fixture in
-  `examples/ab-validator-output/`.
+- **ADR-0023-C1 — structural-invariant:** The AAT mapping, divergence, and divergence-bundle schemas are valid Draft 2020-12 schemas under the real meta-schema validator.
+- **ADR-0023-C2 — structural-invariant:** The committed compatibility registry requires the complete adapter/version/mapping/parser-IR match key, matching evidence scope, and no wildcard adapter entries.
+- **ADR-0023-C3 — fixture-behavior:** The admission boundary reports admitted, missing, and conflict states and treats changed evidence under an existing match key as conflict.
+- **ADR-0023-C4 — fixture-behavior:** Import materialization copies `mapping_hash` into `manifest_identity_object.aat_parser_ir_mapping_hash`.
+- **ADR-0023-C5 — operational-behavior:** The supported design-bundle application exits zero over the committed mapping schemas, registry, and imported fixture.
+
+- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
 
 ## Deferred Decisions
 

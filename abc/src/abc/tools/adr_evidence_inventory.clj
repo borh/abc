@@ -21,7 +21,7 @@
    24 "parser-ir-publication" 25 "parser-ir-publication"
    29 "diagrams-governance" 30 "parser-ir-publication"
    31 "diagrams-governance" 32 "parser-ir-publication"
-   33 "foundation-runtime-identity"})
+   33 "foundation-runtime-identity" 38 "parser-ir-publication"})
 
 (defn- keyword-name [value]
   (some-> value name))
@@ -82,6 +82,7 @@
         counts (frequencies (map #(get % "family") rows))]
     {"schema_version" "abc-adr-claim-migration-inventory-v1"
      "baseline_revision" (get-in migration-state [:baseline "baseline_revision"])
+     "baseline_adr_count" (count (distinct (map #(get % "adr") baseline-rows)))
      "baseline_criterion_count" (count baseline-rows)
      "baseline_criteria" baseline-rows
      "accepted_adr_count" (count accepted)

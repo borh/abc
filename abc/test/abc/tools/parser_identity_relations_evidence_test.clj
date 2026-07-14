@@ -1,5 +1,6 @@
 (ns abc.tools.parser-identity-relations-evidence-test
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
+            [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-import :as materialize-import]
             [abc.tools.materialize-source-snapshot :as materialize-snapshot]
@@ -7,6 +8,18 @@
             [abc.tools.source-snapshot-workset :as workset]
             [babashka.fs :as fs]
             [clojure.test :refer [deftest is]]))
+
+(deftest parser-identity-relations-contract
+  (runtime-inputs/with-validated-read-trace!
+    {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
+     :descriptor {:path "abc/docs/evidence/adr-capture/parser-identity-relations.edn"
+                  :value (files/read-edn "docs/evidence/adr-capture/parser-identity-relations.edn")}}
+    (fn []
+      (doseq [path ["docs/adr/0033-source-bundle-identity.md" "examples/ab-validator-output/manifest-inputs.json"
+                    "examples/ab-validator-output/parser-ir.json" "fixtures/source-bundle/abc-source-bundle-v1-known-answer.json"
+                    "schemas/parser-ir.schema.json" "schemas/source-bundle.schema.json"]]
+        (files/read-text path))
+      (is true))))
 
 (defn- materialized-parser-manifest!
   [input output manifest-inputs parser-ir]

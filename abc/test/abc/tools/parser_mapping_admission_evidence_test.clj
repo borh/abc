@@ -1,10 +1,24 @@
 (ns abc.tools.parser-mapping-admission-evidence-test
-  (:require [abc.tools.aat-parser-ir-compat :as compat]
+  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
+            [abc.tools.aat-parser-ir-compat :as compat]
             [abc.tools.files :as files]
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.schema :as schema]
             [abc.tools.validate-design-bundle :as validate]
             [clojure.test :refer [deftest is]]))
+
+(deftest parser-mapping-admission-contract
+  (runtime-inputs/with-validated-read-trace!
+    {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
+     :descriptor {:path "abc/docs/evidence/adr-capture/parser-mapping-admission.edn"
+                  :value (files/read-edn "docs/evidence/adr-capture/parser-mapping-admission.edn")}}
+    (fn []
+      (doseq [path ["data/aat-parser-ir-compatibility.edn" "data/parser-evidence-citations.edn"
+                    "examples/ab-validator-output/manifest-inputs.json" "examples/ab-validator-output/parser-ir.json"
+                    "schemas/aat-parser-ir-divergence-bundle.schema.json" "schemas/aat-parser-ir-divergence.schema.json"
+                    "schemas/aat-parser-ir-mapping.schema.json" "schemas/parser-ir.schema.json"]]
+        (files/read-text path))
+      (is true))))
 
 (deftest mapping-contract-schemas-meta-validate-test
   (doseq [path ["schemas/aat-parser-ir-mapping.schema.json"

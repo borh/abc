@@ -1,0 +1,17 @@
+{:schema-version "abc-adr-evidence-capture-v3" :tool "bin/kaocha"
+ :argv ["bin/kaocha" "--focus" "abc.tools.parser-phase5-frozen-tuple-test/phase5-frozen-tuple-contract"]
+ :runtime-input-manifest "abc/docs/evidence/adr-inputs/parser-phase5-frozen-tuple.edn"
+ :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
+ :observation-id :parser-phase5-frozen-tuple :observation-contract-sha256 "sha256:335bedc8b654d617e5e38c2250ebab020d9ca72f3716dd0067e2e7fae30f59bd"
+ :input-profile {:kind "component-clojure-test-v1" :component-root "abc" :roots ["abc.tools.parser-phase5-frozen-tuple-test"]
+                 :explicit ["ab-validator/data/aat-to-parser-ir-mapping-v2-0.4.0.json"
+                            "ab-validator/docs/superpowers/reports/2026-07-12-ab-aozora-phase5-c5-compat.edn"
+                            "ab-validator/docs/superpowers/reports/2026-07-12-ab-aozora-phase5-c5-conversion-audit.summary.json"
+                            "ab-validator/docs/superpowers/reports/2026-07-12-phase5-c5-conformance-gate.summary.json"
+                            "ab-validator/docs/superpowers/reports/2026-07-12-phase5-c5-conversion-gate.summary.json"
+                            "ab-validator/docs/superpowers/reports/2026-07-12-phase5-c5-delta.summary.json"
+                            "ab-validator/docs/superpowers/reports/2026-07-12-phase5-c5-perf.summary.json"
+                            "ab-validator/docs/superpowers/reports/2026-07-12-phase5-checkpoint.txt" "abc/bin/kaocha"
+                            "abc/data/aat-parser-ir-compatibility.edn" "abc/docs/evidence/adr-capture/parser-phase5-frozen-tuple.edn"
+                            "abc/docs/evidence/adr-inputs/parser-phase5-frozen-tuple.edn" "abc/schemas/parser-ir.schema.json"]}
+ :observation-key "phase5-frozen-tuple-pass"}

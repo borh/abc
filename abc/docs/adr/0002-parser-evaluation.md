@@ -1,10 +1,12 @@
 # ADR 0002: Parser Evaluation Criteria
 
 Status: Accepted
+Validation scope: smoke-corpus
+Release authority: development
 Date: 2026-04-26
 Accepted: 2026-07-10
 Supersedes: none
-Amended by: ADR 0030
+Amended by: ADR 0030, ADR 0038
 Source: `docs/high-level-architecture-note.md` v0.5
 
 ## Implementation Status
@@ -184,21 +186,17 @@ recommendation:
 
 ## Acceptance Criteria
 
-- A candidate report exists for each serious parser option.
-- Parser-selection reports cited by ABC have a logical workspace-relative path,
-  SHA-256 hash, exact parser/adapter version, corpus label, success/failure
-  counts, and explicit caveats; `test/abc/tools/parser_evidence_test.clj`
-  validates the accepted citation index.
-- Conversion-compatibility reports are cited as compatibility evidence, not as
-  parser-selection acceptance.
-- Comparator/oracle reports are cited as explanatory evidence, not as direct
-  parser-selection acceptance.
-- At least one candidate can produce or map into `schemas/parser-ir.schema.json`.
-- Candidate reports include warning sidecar references and diagnostic
-  aggregation output.
-- The advertised `aozora-rs` speed claim is treated as a claim to re-measure,
-  not as accepted evidence.
-- Parser choice can be reversed without changing manifest identity rules.
+- **ADR-0002-C1 — structural-invariant:** The parser evidence index binds the three explicitly named July 2026 historical reports to their workspace-relative paths and current byte hashes, and does not identify them as the preregistered neutral comparison.
+- **ADR-0002-C2 — structural-invariant:** Parser citation classes do not admit or release a parser; exact adapter, mapping, parser-IR schema, and evidence-scope equality through ADR 0023 is required for admission.
+- **ADR-0002-C3 — fixture-behavior:** The committed imported producer fixture carries parser IR, warning diagnostics, run-summary aggregation, mapping provenance, and schema identities accepted by the ABC file boundary.
+- **ADR-0002-C4 — structural-invariant:** Changing the parser/adapter/mapping tuple changes parser derivation identity without changing the source relations `work_content_hash = bundle_hash` and independently checked `primary_text_hash`.
+
+- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
+
+## Future Verification
+
+The advertised `aozora-rs` speed claim and a preregistered neutral comparison
+remain unsatisfied re-measurement guards rather than accepted observations.
 
 ## Rollback
 

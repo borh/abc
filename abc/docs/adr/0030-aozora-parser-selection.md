@@ -1,10 +1,12 @@
 # ADR 0030: Aozora Parser Selection and Fork Base
 
 Status: Accepted
+Validation scope: full-corpus
+Release authority: development
 Date: 2026-07-10
 Accepted: 2026-07-10
 Supersedes: none
-Amended by: ADR 0032
+Amended by: ADR 0032, ADR 0038
 Amends: ADR 0002
 Depends on: ADR 0002, ADR 0007, ADR 0023
 Source: `ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`
@@ -189,19 +191,11 @@ permissively-licensed 0.969-coverage base already clears.
 
 ## Acceptance Criteria
 
-- `data/parser-evidence-citations.edn` contains the three `:parser-selection`
-  entries listed above with status `:citable` and the exact SHA-256 hashes
-  recorded in this ADR; the index validates via
-  `test/abc/tools/parser_evidence_test.clj` (committed-index validation) and
-  the design-bundle pass (`test/abc/tools/validate_design_bundle_test.clj`).
-- ADR 0002 carries the reciprocal `Amended by: ADR 0030` header link,
-  enforced by the header-hygiene lint proven in
-  `test/abc/tools/diagram/adr_graph_test.clj`.
-- Admission remains registry-gated and unchanged by this ADR:
-  `test/abc/tools/validate_design_bundle_test.clj`
-  (`aat-parser-ir-compatibility-admission-report-test`) continues to prove
-  admitted/missing/conflict behavior for producer candidates, demonstrating
-  that selection introduced no admission bypass.
+- **ADR-0030-C1 — structural-invariant:** The three historical study citations have exact workspace-relative paths and byte hashes in the parser evidence index.
+- **ADR-0030-C2 — structural-invariant:** ADRs 0002, 0030, 0032, and 0038 carry the reciprocal amendment links declared by the corrective decision chain.
+- **ADR-0030-C3 — structural-invariant:** Historical parser-selection citations cannot satisfy the exact-registry admission boundary; absent or conflicting tuples remain rejected.
+
+- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
 
 ## Rollback
 

@@ -1,9 +1,12 @@
 # ADR 0032: Parser Fork Hard Detach
 
 Status: Accepted
+Validation scope: full-corpus
+Release authority: development
 Date: 2026-07-10
 Accepted: 2026-07-10
 Supersedes: none
+Amended by: ADR 0038
 Amends: ADR 0030
 Depends on: ADR 0030
 Source: `ab-validator/docs/superpowers/specs/2026-07-10-consolidated-parser-design.md`
@@ -89,12 +92,15 @@ timeouts). The porting lane stays open and cheap relative to merging.
 
 ## Acceptance Criteria
 
-- ADR 0030 carries the reciprocal `Amended by: ADR 0032` header link,
-  enforced by the header-hygiene lint proven in
-  `test/abc/tools/diagram/adr_graph_test.clj`.
-- The fork-provenance handoff
-  (`ab-validator/docs/handoffs/2026-07-10-parser-fork-provenance.md`)
-  records the detach rev, lifted-crate provenance, and test inventory.
+- **ADR-0032-C1 — structural-invariant:** ADRs 0030, 0032, and 0038 carry reciprocal amendment links.
+- **ADR-0032-C2 — structural-invariant:** The fork-provenance handoff, lifted-crate provenance headers, upstream NOTICE, and ADR record the same detach repository, revision, and licence boundary.
+
+- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
+
+## Future Verification
+
+Maintenance economics and maintainer capacity remain future verification
+conditions for a superseding ownership decision.
 
 ## Rollback
 

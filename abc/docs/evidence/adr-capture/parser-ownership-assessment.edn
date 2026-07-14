@@ -1,0 +1,17 @@
+{:schema-version "abc-adr-evidence-capture-v3" :tool "bin/kaocha"
+ :argv ["bin/kaocha" "--focus" "abc.tools.parser-ownership-assessment-evidence-test/custom-parser-ownership-assessment-contract"]
+ :runtime-input-manifest "abc/docs/evidence/adr-inputs/parser-ownership-assessment.edn"
+ :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
+ :observation-id :custom-parser-ownership-assessment :observation-contract-sha256 "sha256:70b67a6bc77f9f2bb886750d6458d7fc103d6dd84614b493986c9494bf0081e3"
+ :input-profile {:kind "component-clojure-test-v1" :component-root "abc" :roots ["abc.tools.parser-ownership-assessment-evidence-test"]
+                 :explicit ["ab-validator/docs/handoffs/2026-07-10-parser-fork-provenance.md"
+                            "ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md"
+                            "ab-validator/docs/superpowers/reports/2026-07-08-parser-fork-candidacy-faithful-comparison.md"
+                            "ab-validator/docs/superpowers/specs/2026-07-09-parser-comparison-followups-handoff.md"
+                            "abc/bin/kaocha" "abc/data/parser-ir-publication-policy-v0.json" "abc/data/publication-policy.edn"
+                            "abc/docs/adr/0038-custom-parser-ownership-and-neutral-comparison.md" "abc/docs/adr/governance-as-of.edn"
+                            "abc/docs/evidence/adr-capture/parser-ownership-assessment.edn" "abc/docs/evidence/adr-inputs/parser-ownership-assessment.edn"
+                            "abc/docs/evidence/external/custom-parser-ownership-assessment.md" "abc/schemas/manifest.schema.json"
+                            "abc/schemas/parser-ir-publication-preservation.schema.json" "abc/schemas/parser-ir.schema.json"
+                            "abc/schemas/tei-validation-result.schema.json"]}
+ :observation-key "custom-parser-ownership-assessment-pass"}

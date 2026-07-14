@@ -471,4 +471,182 @@
   {:disposition :correct
    :rationale "Narrow to exact strict atomic abort and best-effort counted non-release-admissible behavior: release_admissible=false, partial workflow, and build exit 1, without inventing a separate release validator."
    :planned-evidence-boundaries [:strict-atomic-abort :best-effort-counted-non-release-admissible]
-   :resulting-claim-ids ["ADR-0033-C11"]}}}
+   :resulting-claim-ids ["ADR-0033-C11"]}
+
+  [2 "sha256:c7626b667a120633c4ed30ae1cc030443a7716957dec19d0d35bfd0242fe26f1"]
+  {:disposition :correct
+   :rationale "Narrow the compound historical wording to the parser citation identity boundary."
+   :planned-evidence-boundaries [:parser-citation-identity]
+   :resulting-claim-ids ["ADR-0002-C1"]}
+
+  [2 "sha256:a38ae8ea966b9dbb7b9403f0288782477b006356b91caa243a1099283cdbef5a"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-citation-identity boundary."
+   :planned-evidence-boundaries [:parser-citation-identity]
+   :resulting-claim-ids ["ADR-0002-C1"]}
+  [2 "sha256:ffc869b962c5cd7b014831a14b2517d1994207173b58897b461fd446599a057c"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-mapping-admission boundary."
+   :planned-evidence-boundaries [:parser-mapping-admission]
+   :resulting-claim-ids ["ADR-0002-C2"]}
+  [2 "sha256:9242b238b6238680594c46459afa03e9bbf644da64f84b484eba15b788bc7f59"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-mapping-admission boundary."
+   :planned-evidence-boundaries [:parser-mapping-admission]
+   :resulting-claim-ids ["ADR-0002-C2"]}
+  [2 "sha256:66344fe250155095d2e37a47fe50cabe7dbc6cc8b09920f225ac0b59c6263048"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
+   :planned-evidence-boundaries [:parser-import-boundary]
+   :resulting-claim-ids ["ADR-0002-C3"]}
+  [2 "sha256:d94e0f41d20449482836304e65b9b906eeb328bdac720d6ceadd3a7eaeeb65fc"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
+   :planned-evidence-boundaries [:parser-import-boundary]
+   :resulting-claim-ids ["ADR-0002-C3"]}
+  [2 "sha256:c3150caab973b769041e89fc572b291694f8793a498e61dd4681afc36d010376"]
+  {:disposition :move-out-of-acceptance
+   :rationale "The old text is an unsatisfied neutral-comparison or re-measurement guard rather than an accepted observation."
+   :planned-evidence-boundaries [:future-verification]
+   :resulting-claim-ids []}
+  [2 "sha256:6f2b5b0244e3a638a5e5e4cc3b99c0d8e7d56571ae04d7e1bb713e0ab972fe81"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-identity-relations boundary."
+   :planned-evidence-boundaries [:parser-identity-relations]
+   :resulting-claim-ids ["ADR-0002-C4"]}
+  [7 "sha256:04f2cbd70e8922719003f5d4e650c6d9d7516b5ef83234bbf9dd1d8eada358fb"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable design-bundle-operational-parser-ir-publication boundary."
+   :planned-evidence-boundaries [:design-bundle-operational-parser-ir-publication]
+   :resulting-claim-ids ["ADR-0007-C4"]}
+  [7 "sha256:a515bfde76d08c511481b2fda0ff29c4b70de578e45a29bc2eca55d0ea337219"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
+   :planned-evidence-boundaries [:parser-import-boundary]
+   :resulting-claim-ids ["ADR-0007-C2"]}
+  [7 "sha256:b8814802c112c40a4ce23ce2907295bfb7e7d1daaf377be448e03270fc3271f7"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
+   :planned-evidence-boundaries [:parser-import-boundary]
+   :resulting-claim-ids ["ADR-0007-C1" "ADR-0007-C3"]}
+  [7 "sha256:d2ff95fb9919be9f433b692e942e98707e8dc0d158e2831a3b9fa4e3d0197118"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
+   :planned-evidence-boundaries [:parser-import-boundary]
+   :resulting-claim-ids ["ADR-0007-C1" "ADR-0007-C3"]}
+  [7 "sha256:e29d2e8638c330ea5e936b2147bf37044a30236c790dbfe6509db8c0b5bd34f4"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
+   :planned-evidence-boundaries [:parser-import-boundary]
+   :resulting-claim-ids ["ADR-0007-C2"]}
+  [23 "sha256:8064f95a8ea1146ebabcc98041aa23bb7667642a561b476aea525bce9465558a"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-mapping-admission boundary."
+   :planned-evidence-boundaries [:parser-mapping-admission]
+   :resulting-claim-ids ["ADR-0023-C1"]}
+  [23 "sha256:1f238a8d4ec83b23441ee458e2b3c91b93a13cdc8c6cde7f830a05c9611d0119"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:parser-mapping-admission]
+   :resulting-claim-ids ["ADR-0023-C2"]}
+  [23 "sha256:0506c13a586df718059d6768284f574d9744398a4550182a0100f0c9a857f1af"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:parser-mapping-admission]
+   :resulting-claim-ids ["ADR-0023-C3"]}
+  [23 "sha256:06764a25ac03edf92022a2587621a665bd5966ebda4867026c82ee24fb38a042"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:parser-import-boundary]
+   :resulting-claim-ids ["ADR-0023-C4"]}
+  [23 "sha256:b95cd566163fa69b73b466f803cc21f08f82962ec13f6046acd0451daeda988a"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable design-bundle-operational-parser-ir-publication boundary."
+   :planned-evidence-boundaries [:design-bundle-operational-parser-ir-publication]
+   :resulting-claim-ids ["ADR-0023-C5"]}
+  [24 "sha256:e063249766d20f00349f54f812457ea906231962d59a1b51ea69cac9353d7e7c"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-ir-schema-regression boundary."
+   :planned-evidence-boundaries [:parser-ir-schema-regression]
+   :resulting-claim-ids ["ADR-0024-C1"]}
+  [24 "sha256:4e268683578d11b9c37dcb11dd4dbc2d9182891b212579340c6cd3858d50b93a"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-ir-schema-regression boundary."
+   :planned-evidence-boundaries [:parser-ir-schema-regression]
+   :resulting-claim-ids ["ADR-0024-C2"]}
+  [24 "sha256:38e77c25b9827145c3c1a0ed2c773ceb3bc9d9294440f0cc2abb08c72d8375db"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-ir-schema-regression boundary."
+   :planned-evidence-boundaries [:parser-ir-schema-regression]
+   :resulting-claim-ids ["ADR-0024-C3"]}
+  [24 "sha256:2dcddc1e94364c8cb560a34664e1c7093db2bbdf876e0f7a66d434c40324b3d6"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:parser-publication-rendering]
+   :resulting-claim-ids ["ADR-0024-C4"]}
+  [24 "sha256:7cbf894b788518f8123b0f45788c44e9b31d39794f27d93f3a3f291be59d21db"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-ir-schema-regression boundary."
+   :planned-evidence-boundaries [:parser-ir-schema-regression]
+   :resulting-claim-ids ["ADR-0024-C5"]}
+  [24 "sha256:f85fb406f6a92b083422e1227784e8916b5b1c3224c14250e4e0f266603e75fa"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable design-bundle-operational-parser-ir-publication boundary."
+   :planned-evidence-boundaries [:design-bundle-operational-parser-ir-publication]
+   :resulting-claim-ids ["ADR-0024-C6"]}
+  [25 "sha256:7a3f750ff3efa348fc9ebc0eda44071d7cbdf800f1af4aa7a3340e05564680f0"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-publication-rendering boundary."
+   :planned-evidence-boundaries [:parser-publication-rendering]
+   :resulting-claim-ids ["ADR-0025-C1"]}
+  [25 "sha256:a062ffee9582a458357c4531663dfecb0216f6b50b5205c03072f4ab3c3e5136"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-publication-rendering boundary."
+   :planned-evidence-boundaries [:parser-publication-rendering]
+   :resulting-claim-ids ["ADR-0025-C2"]}
+  [25 "sha256:ca8f57f27c3a403d84522bc935b3bf5bcdbdfc3d0d85a34ef955ef4eb9d77642"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-publication-rendering boundary."
+   :planned-evidence-boundaries [:parser-publication-rendering]
+   :resulting-claim-ids ["ADR-0025-C3"]}
+  [25 "sha256:e2312a41d5c1bb6d36dcdfc4783175fb916e3300024b7c270721f88ed8e9436b"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-publication-rendering boundary."
+   :planned-evidence-boundaries [:parser-publication-rendering]
+   :resulting-claim-ids ["ADR-0025-C4"]}
+  [25 "sha256:5bc5102c607dd116491eaffdf9a5378dd845bd685aaa22b63a401e2ff5e7e044"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-publication-rendering boundary."
+   :planned-evidence-boundaries [:parser-publication-rendering]
+   :resulting-claim-ids ["ADR-0025-C5"]}
+  [25 "sha256:0213c292e3e980bc20637da253c7b7e041dc839d23ccba5855fd9bed5429d4b8"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable design-bundle-operational-parser-ir-publication boundary."
+   :planned-evidence-boundaries [:design-bundle-operational-parser-ir-publication]
+   :resulting-claim-ids ["ADR-0025-C6"]}
+  [25 "sha256:babcb765353ad3d7351f7954b6fb9e75b7f580bb34051d0849f3b902959d3e9b"]
+  {:disposition :move-out-of-acceptance
+   :rationale "The old text is a test-inventory statement rather than an accepted observation."
+   :planned-evidence-boundaries [:implementation-status]
+   :resulting-claim-ids []}
+  [30 "sha256:406ec6d1a5b3173114fa349f2257e4d5e9a4b7e7898b651b9b89762734a53d0c"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-citation-identity boundary."
+   :planned-evidence-boundaries [:parser-citation-identity]
+   :resulting-claim-ids ["ADR-0030-C1"]}
+  [30 "sha256:0ad25abaf64959798dce3c220fb9f17c6cb50626216d512956f4f71d8112d348"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-relations-provenance boundary."
+   :planned-evidence-boundaries [:parser-relations-provenance]
+   :resulting-claim-ids ["ADR-0030-C2"]}
+  [30 "sha256:22a09425f51f22ddd8d0275f38bd72134201538f3cfd8d453597ae21b21893f8"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-mapping-admission boundary."
+   :planned-evidence-boundaries [:parser-mapping-admission]
+   :resulting-claim-ids ["ADR-0030-C3"]}
+  [32 "sha256:37f7951f2fa30bf09caa27bee628cfef6d03e4901b1bbefb12462173a61a8f65"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-relations-provenance boundary."
+   :planned-evidence-boundaries [:parser-relations-provenance]
+   :resulting-claim-ids ["ADR-0032-C1"]}
+  [32 "sha256:d91e1ebc02339c9adbd5bae92d4a75d383e45ddbc251365809b363ec909e9126"]
+  {:disposition :correct
+   :rationale "Narrow the compound or historical wording to the observable parser-relations-provenance boundary."
+   :planned-evidence-boundaries [:parser-relations-provenance]
+   :resulting-claim-ids ["ADR-0032-C2"]}}}

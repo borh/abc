@@ -1,0 +1,11 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["ab-validator/data/aat-to-parser-ir-mapping-v2-0.4.0.json"
+         "ab-validator/docs/superpowers/reports/2026-07-12-ab-aozora-phase5-c5-compat.edn"
+         "ab-validator/docs/superpowers/reports/2026-07-12-ab-aozora-phase5-c5-conversion-audit.summary.json"
+         "ab-validator/docs/superpowers/reports/2026-07-12-phase5-c5-conformance-gate.summary.json"
+         "ab-validator/docs/superpowers/reports/2026-07-12-phase5-c5-conversion-gate.summary.json"
+         "ab-validator/docs/superpowers/reports/2026-07-12-phase5-c5-delta.summary.json"
+         "ab-validator/docs/superpowers/reports/2026-07-12-phase5-c5-perf.summary.json"
+         "ab-validator/docs/superpowers/reports/2026-07-12-phase5-checkpoint.txt"
+         "abc/data/aat-parser-ir-compatibility.edn"
+         "abc/schemas/parser-ir.schema.json"]}

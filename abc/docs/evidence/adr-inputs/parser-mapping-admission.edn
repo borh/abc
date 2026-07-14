@@ -1,0 +1,9 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["abc/data/aat-parser-ir-compatibility.edn"
+         "abc/data/parser-evidence-citations.edn"
+         "abc/examples/ab-validator-output/manifest-inputs.json"
+         "abc/examples/ab-validator-output/parser-ir.json"
+         "abc/schemas/aat-parser-ir-divergence-bundle.schema.json"
+         "abc/schemas/aat-parser-ir-divergence.schema.json"
+         "abc/schemas/aat-parser-ir-mapping.schema.json"
+         "abc/schemas/parser-ir.schema.json"]}

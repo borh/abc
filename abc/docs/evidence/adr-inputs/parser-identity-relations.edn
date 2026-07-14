@@ -1,0 +1,7 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["abc/docs/adr/0033-source-bundle-identity.md"
+         "abc/examples/ab-validator-output/manifest-inputs.json"
+         "abc/examples/ab-validator-output/parser-ir.json"
+         "abc/fixtures/source-bundle/abc-source-bundle-v1-known-answer.json"
+         "abc/schemas/parser-ir.schema.json"
+         "abc/schemas/source-bundle.schema.json"]}

@@ -1,0 +1,18 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["abc/data/aat-parser-ir-compatibility.edn"
+         "abc/examples/ab-validator-output/README.md"
+         "abc/examples/ab-validator-output/comparison-report.json"
+         "abc/examples/ab-validator-output/divergence.json"
+         "abc/examples/ab-validator-output/manifest-inputs.json"
+         "abc/examples/ab-validator-output/parser-ir.json"
+         "abc/examples/ab-validator-output/run-summary.jsonl"
+         "abc/examples/ab-validator-output/source-region-coverage.json"
+         "abc/examples/ab-validator-output/warnings.jsonl"
+         "abc/schemas/aat-parser-ir-divergence-bundle.schema.json"
+         "abc/schemas/aat-parser-ir-divergence.schema.json"
+         "abc/schemas/aat-parser-ir-mapping.schema.json"
+         "abc/schemas/diagnostic.schema.json"
+         "abc/schemas/manifest-inputs.schema.json"
+         "abc/schemas/manifest.schema.json"
+         "abc/schemas/parser-ir.schema.json"
+         "abc/schemas/run-summary.schema.json"]}

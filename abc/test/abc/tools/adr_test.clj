@@ -668,9 +668,9 @@
              :missing-release-authority
              :missing-claim-header}
            (kinds problems)))
-    (is (= 26 (count accepted)))
-    (is (= 141 (count accepted-criteria)))
-    (is (= 44 missing-claim-count))
+    (is (= 27 (count accepted)))
+    (is (= 146 (count accepted-criteria)))
+    (is (= 16 missing-claim-count))
     (is (zero? missing-evidence-count))
     (is (= (+ missing-scope-count missing-authority-count
               missing-claim-count missing-evidence-count)

@@ -208,3 +208,18 @@
     (doseq [[adr [scope authority]] expected-lifecycle]
       (is (= scope (get-in adrs [adr :fields "Validation scope"])))
       (is (= authority (get-in adrs [adr :fields "Release authority"]))))))
+
+(deftest parser-ir-publication-live-adr-classification-test
+  (let [adrs (adr/parse-all "docs/adr")
+        accepted (filter #(= "Accepted" (:status %)) adrs)
+        state (migration/load-migration-state "." {:require-complete? false})
+        value (inventory/inventory-value adrs state)]
+    (is (= 26 (get value "baseline_adr_count"))
+        "the immutable baseline contains 26 ADRs")
+    (is (= 27 (count accepted))
+        "ADR 0038 is the additional live Accepted ADR")
+    (is (zero? (get-in value ["families" "unclassified"])))
+    (is (= "parser-ir-publication"
+           (get (first (filter #(= 38 (get % "adr"))
+                               (get value "criteria")))
+                "family")))))

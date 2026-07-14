@@ -618,6 +618,7 @@
 
 (deftest v2-runner-shape-is-repository-bound-and-focus-only-test
   (let [validate! (ns-resolve 'abc.tools.adr-evidence-capture 'validate-descriptor!)
+        prefix! (ns-resolve 'abc.tools.adr-evidence-capture 'prefixed-component-path)
         descriptor-path "docs/evidence/adr-capture/example.edn"
         manifest-path "docs/evidence/adr-inputs/example.edn"
         component-descriptor-path "abc/docs/evidence/adr-capture/example.edn"
@@ -645,6 +646,10 @@
     (is (= ordinary (@validate! ordinary descriptor-path)))
     (is (= component (@validate! component component-descriptor-path)))
     (is (= normalized-component (@validate! normalized-component component-descriptor-path)))
+    (is (= component-manifest-path
+           (@prefix! (:input-profile component) component-manifest-path)))
+    (is (= component-manifest-path
+           (@prefix! (:input-profile component) "docs/evidence/adr-inputs/example.edn")))
     (let [wrapped (assoc component
                          :tool "bash"
                          :argv ["bash" "-lc"

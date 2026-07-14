@@ -261,7 +261,8 @@
 
 (defn- prefixed-component-path [profile path]
   (if (= "component-clojure-test-v1" (:kind profile))
-    (str (str/replace (normalized-component-root profile) #"/+$" "") "/" path)
+    (let [component (str (str/replace (normalized-component-root profile) #"/+$" "") "/")]
+      (if (str/starts-with? path component) path (str component path)))
     path))
 
 (defn- validate-focused-runner! [repo-root descriptor]

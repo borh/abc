@@ -13,13 +13,13 @@
     "abc\/docs\/evidence\/adr-inputs\/adr-0001-c3-nested-artifact-id-rejection.edn": "sha256:298849dd48bb3145d8eb52351b688959ad5f5e9bdbabcc44157a3db23bb04b68",
     "abc\/fixtures\/v0\/invalid\/manifest-nested-artifact-id\/manifest.json": "sha256:34e6196b695ded13528602cab883d941ded9b1edc3cd90d1aae268a2f21fcec5",
     "abc\/schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
-    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:7945fb9c26cbcd173ebf997300c70b13c93ddf5d5b4a17f4901317890def884a",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
     "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "abc\/src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
     "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
     "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
-    "abc\/src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
+    "abc\/src\/abc\/tools\/malli.clj": "sha256:16c04c051ac5829e36b7d0e7707c0057cef22ac2c20f778ad08f0d3b40df471e",
     "abc\/src\/abc\/tools\/manifest_index.clj": "sha256:5673957a889cb79df2710aafec2b0b5999c378215f4ec1120f08974d2faeaa59",
     "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
     "abc\/src\/abc\/tools\/schema.clj": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871",
@@ -40,7 +40,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.code-as-spec-test\/r2-manifest-schema-rejects-nested-artifact-id-test\"",
-    "revision": "f3b12361fcadee14d62ae9a0583d9817fd327dcc",
+    "revision": "97788b3cc03334d60dc815c06648b31b2203bb89",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

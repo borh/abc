@@ -7,6 +7,7 @@
             [abc.test-fs :refer [with-temp-dir]]
             [babashka.fs :as fs]
             [clojure.edn :as edn]
+            [clojure.set :as set]
             [clojure.test :refer [deftest is testing use-fixtures]]
             [clojure.test.check :as tc]
             [clojure.test.check.properties :as prop]
@@ -115,6 +116,107 @@
     (is (every? #(not (contains? % :study_contract)) rows))
     (is (every? #(not (contains? % :neutral_comparison)) rows))
     (is (every? #(not= :neutral-comparison (:evidence_class %)) rows))))
+
+(deftest neutral-comparison-reports-are-registered-with-study-contract-test
+  (testing "the generated neutral-comparison reports register, content-address,
+            and bind to their frozen study-contract hash"
+    (let [root (fs/canonicalize "..")
+          study-contract "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe"
+          ids #{"ab-validator/aozora-parser-neutral-comparison-result-2026-07"
+                "ab-validator/aozora-parser-neutral-comparison-report-2026-07"}
+          rows (->> (:entries (parser-evidence/load-index))
+                    (filter #(contains? ids (:evidence_id %))))]
+      (testing "the committed index validates as a whole"
+        (is (= :ok (parser-evidence/validate-index!
+                    (parser-evidence/load-index)))))
+      (testing "both reports are present and typed neutral-comparison"
+        (is (= 2 (count rows)))
+        (is (every? #(= :neutral-comparison (:evidence_class %)) rows)))
+      (testing "each carries the frozen study-contract hash"
+        (is (every? #(= study-contract (:study_contract %)) rows)))
+      (testing "each report file content-addresses to its committed hash"
+        (is (empty? (parser-evidence/citation-file-problems root {:entries rows}))))
+      (testing "neutral-comparison is not an admission/release evidence class"
+        (is (every? #(not (contains? #{:conversion-compatibility
+                                       :parser-selection
+                                       :comparator-oracle}
+                                     (:evidence_class %)))
+                    rows))))))
+
+(deftest min-1-study-contract-is-coupled-to-evidence-class-test
+  (testing "MIN-1: an admission-class (:conversion-compatibility) entry must not
+            carry :study_contract"
+    (is (empty? (parser-evidence/index-errors {:entries [valid-entry]})))
+    (is (has-error? #":conversion-compatibility evidence must not carry a :study_contract"
+                    (parser-evidence/index-errors
+                     {:entries [(assoc valid-entry
+                                       :study_contract
+                                       "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe")]}))))
+  (testing "MIN-1: a :neutral-comparison entry must carry :study_contract"
+    (let [neutral (assoc valid-entry
+                         :evidence_id "ab-validator/neutral"
+                         :evidence_class :neutral-comparison
+                         :logical_path "ab-validator/docs/neutral.md"
+                         :study_contract "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe")]
+      (is (empty? (parser-evidence/index-errors {:entries [neutral]})))
+      (is (has-error? #":neutral-comparison evidence must carry a :study_contract"
+                      (parser-evidence/index-errors
+                       {:entries [(dissoc neutral :study_contract)]})))))
+  (testing "MIN-1 leaves the unconstrained classes (parser-selection,
+            comparator-oracle) free to omit :study_contract"
+    (is (empty? (parser-evidence/index-errors
+                 {:entries [(assoc valid-entry :evidence_class :parser-selection
+                                   :status :provisional)]})))
+    (is (empty? (parser-evidence/index-errors
+                 {:entries [(assoc valid-entry :evidence_class :comparator-oracle)]})))))
+
+(deftest comparison-citations-cannot-satisfy-admission-or-release-test
+  (testing "the structural allowlist boundary excludes both comparison classes"
+    (is (= #{:parser-selection :neutral-comparison}
+           parser-evidence/comparison-evidence-classes))
+    (is (empty? (set/intersection
+                 parser-evidence/comparison-evidence-classes
+                 parser-evidence/admission-evidence-classes)))
+    (is (empty? (set/intersection
+                 parser-evidence/comparison-evidence-classes
+                 parser-evidence/release-evidence-classes))))
+  (let [entries (:entries (parser-evidence/load-index))
+        selection-rows (filter #(= :parser-selection (:evidence_class %)) entries)
+        neutral-rows (filter #(= :neutral-comparison (:evidence_class %)) entries)
+        compat-rows (filter #(= :conversion-compatibility (:evidence_class %)) entries)]
+    (testing "the committed index actually contains rows of each kind"
+      (is (seq selection-rows))
+      (is (seq neutral-rows))
+      (is (seq compat-rows)))
+    (testing "every historical :parser-selection row is rejected for admission
+              AND release, keyed off evidence class not absence of fields"
+      (doseq [row selection-rows]
+        (is (false? (parser-evidence/entry-admissible? row)) (:evidence_id row))
+        (is (false? (parser-evidence/entry-release-qualifying? row)) (:evidence_id row))
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                              #"cannot support an admission claim"
+                              (parser-evidence/assert-admission-evidence! row)))
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                              #"cannot support a release claim"
+                              (parser-evidence/assert-release-evidence! row)))))
+    (testing "every new :neutral-comparison row is rejected for admission AND
+              release even though it is :citable and carries a study contract"
+      (doseq [row neutral-rows]
+        (is (= :citable (:status row)) (:evidence_id row))
+        (is (contains? row :study_contract) (:evidence_id row))
+        (is (false? (parser-evidence/entry-admissible? row)) (:evidence_id row))
+        (is (false? (parser-evidence/entry-release-qualifying? row)) (:evidence_id row))
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                              #"cannot support an admission claim"
+                              (parser-evidence/assert-admission-evidence! row)))
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                              #"cannot support a release claim"
+                              (parser-evidence/assert-release-evidence! row)))))
+    (testing "an admission-class :conversion-compatibility row still passes the
+              admission boundary, proving the allowlist is not vacuous"
+      (is (every? parser-evidence/entry-admissible? compat-rows))
+      (doseq [row compat-rows]
+        (is (identical? row (parser-evidence/assert-admission-evidence! row)))))))
 
 (deftest parser-evidence-index-validation-test
   (testing "accepts the committed evidence index"

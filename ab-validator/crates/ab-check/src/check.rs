@@ -479,7 +479,8 @@ fn join_reader(
         .with_context(|| format!("failed to read adapter {stream_name}"))
 }
 
-fn read_indexed_source_bytes(corpus_root: &Path, indexed_path: &str) -> Result<Vec<u8>> {
+/// Read the exact plain-file or ZIP-member bytes selected by an `ab-index` row.
+pub fn read_indexed_source_bytes(corpus_root: &Path, indexed_path: &str) -> Result<Vec<u8>> {
     if let Some((archive_path, entry_name)) = indexed_path.split_once("::") {
         return read_zip_entry_bytes(&corpus_root.join(archive_path), entry_name);
     }

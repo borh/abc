@@ -1,4 +1,4 @@
-//! Canonical slug catalogue for Aozora annotation bodies 
+//! Canonical slug catalogue for Aozora annotation bodies
 //! the editor-integration sprint).
 //!
 //! `classify::BODY_PATTERNS` is the *parser-side* aho-corasick

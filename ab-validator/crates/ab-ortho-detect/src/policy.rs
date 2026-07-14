@@ -1,4 +1,4 @@
-//! Normalization-policy identity 
+//! Normalization-policy identity
 //!
 //! A [`NormalizationPolicy`] is the structured, canonicalized descriptor of the
 //! orthographic normalization applied to analyzer input. Its content hash

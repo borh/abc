@@ -1,264 +1,154 @@
-# Task 5 Report: Evidence-only validated destination and exclusive writer
+# Task 5 report — Measure the custom parser on shared instruments
 
-## Status
+Status: **DONE**
 
-Implemented and committed as `0f302b74` (`feat(abc): publish evidence bundles exclusively`).
+Real ab-aozora measurement was folded into the report generator's appendix.
+The corpus + vector runs were executed on hinoki over the identical pinned
+instruments; nothing was fabricated. Every existing-parser row and metric
+definition stays byte-identical, and the frozen preregistration and
+`run-manifests.json` are untouched.
 
-The commit contains only:
+## Commits (branch `feat/parser-release-qualification`)
 
-- `abc/src/abc/tools/evidence_output.clj`
-- `abc/test/abc/tools/evidence_output_test.clj`
+- `5677815f` `data(parser-study): freeze ab-aozora shared-instrument appendix run manifest`
+- `8f2e852d` `docs(parser): add custom-parser comparison baselines` (main)
+- (this report committed separately: `docs(sdd): record task 5 report`)
 
-## RED evidence
+## What was measured, and at which revision
 
-Initial required RED:
+- Custom parser = `ab-aozora`, **native-only** (`--mode aat` emits parser-IR/AAT
+  on stdin→stdout; no adapter lane). CLI confirmed identical at HEAD and at the
+  pinned baseline.
+- Measured the **pinned baseline revision `ac2be926`**, not HEAD: the parser
+  crates changed 1600+ lines since `ac2be926`, so building HEAD and labelling it
+  `ac2be926` would misattribute behavior. `.#ab-aozora` exists at `ac2be926` and
+  `AB_AOZORA_GIT_REV = self.rev` bakes the rev into `--version`, so the built
+  binary self-identifies as the baseline.
 
-```sh
-cd abc && bin/kaocha --focus abc.tools.evidence-output-test
+Build (hinoki):
+```
+nix build --no-link --print-out-paths \
+  "git+file:///home/bor/Projects/soranoha?dir=ab-validator&rev=ac2be926738f919faf44300e2999b3548d724297#ab-aozora"
+-> /nix/store/p5wzii1dv99dngz3jlrrh6147i2j9cqa-ab-aozora-0.1.0
+$ printf 'test\n' | .../ab-aozora --version
+ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git ac2be926738f919faf44300e2999b3548d724297)
+program_sha256 = sha256:42a7095d5488827f579ce1e9fc73925047222842be6ea03c1d2bd4db7bbaa980
 ```
 
-Result: exit 1, 1 error, because `abc.tools.evidence-output` did not exist:
+Command binding (mirrors how adapters emit AAT via `--mode aat`):
+program basename `ab-aozora`, argv `["--mode","aat"]`, environment `{}`,
+execution_sha256 `sha256:b97400ab08ca37a5613df9a90b796c28eb42a023adb0d4b4072ba51f18dad706`
+(recomputed from the `{command, environment}` preimage; matches the run manifest).
 
-```text
-Could not locate abc/tools/evidence_output__init.class,
-abc/tools/evidence_output.clj or abc/tools/evidence_output.cljc on classpath.
-1 tests, 1 assertions, 1 errors, 0 failures.
+## Materialization + run (hinoki)
+
+Reused the committed Rust corpus materializer (`ab-check`'s
+`ab-materialize-study-inventory`), `ab-index`, and the committed
+`neutral_executor.py`. Both inventories reproduce the committed identities
+**byte-identically**, proving the identical pinned corpus/vectors:
+
+```
+ab-index --corpus <aozorabunko-corpus 0e9ea3e> --output index.json        -> 17886 works
+ab-materialize-study-inventory --index index.json --corpus <corpus> --output corpus-mat
+  corpus inventory_sha256 = sha256:5573de6f174b66cd1e7e30e62ebb7003984c79657fc5f81394ee5116e0d2a07c
+  (== committed run-manifests corpus inventory_sha256)   items = 17886
+neutral_executor.py --materialize-vectors <upstream-aozora-notation-spec>/conformance/vectors --output vectors-mat
+  vectors inventory_sha256 = sha256:cdfb40a49f5d52dd8274efb71aa6f512f9305f034e502b6d9c44c98c4779c787
+  (== committed run-manifests vectors inventory_sha256)  items = 127
 ```
 
-Trust-boundary regression RED added during self-review:
-
-```sh
-cd abc && bin/kaocha --focus \
-  abc.tools.evidence-output-test/staging-symlink-cannot-escape-from-an-identity-tree-test
+Runs (frozen 300 s per-work timeout, jobs 32):
+```
+neutral_executor.py --inventory vectors-mat/inventory.json --source-root vectors-mat/sources \
+  --output run-vectors --timeout 300 --jobs 32 <ab-aozora> --mode aat
+  -> outcomes {success: 127} / 127            manifest_sha256 sha256:db265b0e...f9d690d6
+neutral_executor.py --inventory corpus-mat/inventory.json  --source-root corpus-mat/sources \
+  --output run-corpus  --timeout 300 --jobs 32 <ab-aozora> --mode aat   (13.8 s wall)
+  -> outcomes {success: 17886} / 17886        manifest_sha256 sha256:42d96af3...126457a95f
 ```
 
-Result: exit 1, 1 failure. Canonical-only validation returned `nil` instead of
-`:invalid-evidence-destination` for a staging symlink lexically inside the
-repository and canonically outside it. Validation was then tightened to check
-both normalized lexical and canonical relations.
+Zero failures, zero timeouts on both instruments.
 
-## GREEN evidence
+## Appendix result folded into the report IR
 
-Fresh focused test run before commit:
+The nine ab-aozora native appendix rows (Task 4 reserved them as `missing`) now:
 
-```sh
-cd abc && bin/kaocha --focus abc.tools.evidence-output-test
+- **robustness (native): `measured`** — 17886/17886 from the appendix corpus run,
+  SAME preregistered 17,886 denominator (failures/timeouts retained) and 95%
+  Wilson interval as the existing-parser robustness lane: rate 1.000000,
+  CI [0.999785, 1.000000].
+- **spans, diagnostics (native): `non_comparable`** (missingness `non-comparable`)
+  — owned-contract axes ab-aozora emits natively (source spans in the AAT IR;
+  structured diagnostics via `--mode diagnostics`) for which the existing parsers
+  have no native analogue (they reach AAT only through their adapter lane, which
+  the native-only baseline lacks). Never a competitor zero, never a blocker.
+- **construct_coverage, fidelity, performance, maintenance, packaging, license
+  (native): `missing`** (`unavailable`) — no committed instrument for any parser;
+  they carry the same blocker text as the existing-parser rows.
+
+No competitor was assigned zero; nothing imputed.
+
+### Falsifiable sensitivity analysis (added)
+
+Claim under test: ab-aozora native parse-completion sits at the corpus ceiling
+and is *matched but not exceeded* by the strongest existing native lanes
+(`aozora2`, `aozora-rs`, `aozora2html`, each also 17886/17886), so
+parse-completion does not separate the baseline from the strongest parsers.
+Adversarial failure/timeout reweighting (reclassify k worst works as failures,
+k ∈ {1, 12, 50, 113} drawn from observed competitor corpus failure/timeout
+counts) yields rates 0.999944 / 0.999329 / 0.997205 / 0.993682 with Wilson
+intervals whose upper bound falls below 1 for any k≥1. Falsifier: the
+exact-ceiling reading is fragile to a single adversarial reclassification, so the
+result reads as "ceiling under the frozen 300 s timeout on the measurement host,"
+never as fidelity/diagnostics/span/performance superiority. Only this measured,
+comparative claim is asserted; unmeasured axes assert nothing.
+
+## Verification (real gates)
+
+Report crate (run locally cargo 1.96.2 and on hinoki; identical results):
+```
+cargo fmt -p ab-parser-study-report -- --check       -> exit 0 (clean)
+cargo clippy -p ab-parser-study-report --all-targets  -> Finished, no warnings
+cargo test -p ab-parser-study-report                 -> 16 passed (report_contract)
+                                                        6 passed (report_generation)
+```
+`report_generation` includes the byte-identical regeneration/drift test
+(`committed_reports_match_regeneration_from_raw_manifests`) — green with the new
+appendix data — and a new
+`ab_aozora_appendix_is_measured_noncomparable_or_missing_never_zero`.
+Confirmed independently: the 99 existing-parser machine rows are byte-identical
+before/after regeneration.
+
+Appendix run verifier (hinoki, `verify_appendix.py` + committed
+`neutral_executor.py --verify`): program_sha256, both inventory identities, both
+run manifest+execution hashes, ordered per-item completeness, every
+outcome/stdout/stderr hash, and outcome counts all match the committed appendix
+manifest.
+```
+program_sha256 OK: sha256:42a7095d5488827f579ce1e9fc73925047222842be6ea03c1d2bd4db7bbaa980
+inventory aozorabunko-source-snapshot: items=17886 sha OK
+inventory official-notation-vectors: items=127 sha OK
+run official-notation-vectors: manifest+exec sha OK, ordered-verify OK, outcomes {'success': 127} match committed
+run aozorabunko-source-snapshot: manifest+exec sha OK, ordered-verify OK, outcomes {'success': 17886} match committed
+APPENDIX VERIFIER: ALL CHECKS PASS
 ```
 
-Result: exit 0, `11 tests, 37 assertions, 0 failures.`
+## Constraints honored
 
-Fresh lint/format check with both new files staged so the flake source included
-them:
-
-```sh
-nix build ./abc#checks.x86_64-linux.clj-kondo
-```
-
-Result: exit 0; derivation `abc-clj-kondo` built successfully.
-
-Shared deterministic file writer immutability check:
-
-```sh
-git diff --exit-code 8e00eecf -- abc/src/abc/tools/json.clj
-```
-
-Result: exit 0 with no diff.
-
-Additional checks:
-
-```sh
-git diff --cached --check
-rg -n "ATOMIC_MOVE|write-deterministic-json-file!|Files/move|Files/copy" \
-  abc/src/abc/tools/evidence_output.clj \
-  abc/test/abc/tools/evidence_output_test.clj
-```
-
-Results: cached diff check exited 0; forbidden publication/fallback search had
-no matches.
-
-## Implemented behavior
-
-`validated-destination`:
-
-- validates existing repository, workspace, and staging roots through
-  `abc.tools.path-containment/path-state`;
-- canonicalizes returned staging/output files with `babashka.fs`;
-- rejects staging overlap with repository/workspace in either direction using
-  both normalized lexical and canonical paths;
-- requires output's lexical and canonical parent to equal staging root;
-- rejects indirect descendants, symlink escapes, and any preexisting output,
-  including a symlink directory entry; and
-- allocates or mutates nothing.
-
-`write-json-exclusive!`:
-
-- accepts only `ValidatedDestination` instances;
-- serializes only through `write-deterministic-json-str`;
-- allocates a same-directory UUID sibling with `CREATE_NEW` and `WRITE`;
-- retries sibling name collisions without replacing or deleting the colliding
-  file;
-- writes all bytes and calls `FileChannel.force(true)` before publication;
-- publishes exclusively with `Files/createLink(output, temp)`;
-- propagates unsupported-link and destination-exists failures without any move
-  or copy fallback; and
-- removes its sibling after publication failure, publication success, or a
-  write/force failure. The channel closes before failure cleanup is attempted.
-
-## Test coverage
-
-The focused suite covers:
-
-- pure canonical destination construction;
-- repository/workspace/staging equality, ancestor, and descendant overlap;
-- indirect output descendants;
-- preexisting output;
-- output symlink escape;
-- staging symlink escape from an identity tree;
-- serialization failure without allocation;
-- forced sibling collision and retry;
-- partial sibling cleanup after forced storage failure;
-- unsupported hard-link fail-closed behavior and cleanup;
-- successful deterministic publication and `force(true)`;
-- exclusive second-write rejection while preserving the first artifact; and
-- rejection of an unvalidated map.
-
-## Self-review
-
-- The publication linearization point is the same-directory hard link.
-- There is no `ATOMIC_MOVE`, move, copy, or shared JSON file-writer call.
-- Output bytes are complete and forced before the hard link can expose them.
-- The output destination is never replaced; a second publication fails with
-  `FileAlreadyExistsException`.
-- Writer-owned temporary siblings are removed in `finally`; partial-write
-  cleanup happens after closing the channel.
-- A preexisting colliding sibling is deliberately preserved because it belongs
-  to another writer.
-- Existing unrelated modifications to Task 2-4 report files were not staged or
-  edited.
+- Existing-parser results and metric/denominator definitions unchanged
+  (99 rows byte-identical).
+- Frozen contracts (preregistration `.md/.json`, result schema, run-manifests)
+  not mutated; extended only via a new committed appendix manifest.
+- Custom parser native-only; no adapter_normalized lane fabricated.
+- `non_comparable` used precisely (≠ zero, ≠ blocker-missing).
+- Reports regenerate byte-identically from committed manifests.
+- Corpus-scale raw bytes never committed (appendix manifest holds counts +
+  provenance hashes only).
 
 ## Concerns
 
-No blocker and no ambiguous portability result on the current Linux
-filesystem. The real hard-link success and real second-write rejection paths
-both passed. Filesystems/providers without hard-link support will receive the
-provider exception and fail closed, as verified through the unsupported-link
-transition seam; there is intentionally no fallback.
-
-## Review follow-up: partial-write and cleanup assertion defects
-
-Commit `5c334c98` (`test(abc): cover partial evidence write cleanup`) fixes the
-Important and Minor review findings without changing the publication protocol.
-It contains only:
-
-- `abc/src/abc/tools/evidence_output.clj`
-- `abc/test/abc/tools/evidence_output_test.clj`
-
-### Root causes
-
-- The prior `force-channel!` failure seam ran only after the production write
-  loop had drained the entire buffer. It tested cleanup of a complete but
-  unforced sibling, not cleanup after a partial write.
-- The prior success cleanup expressions used `babashka.fs/ends-with?`, whose
-  path-component semantics do not treat UUID filenames such as
-  `.bundle.json.<uuid>.tmp` as ending with the path component `.tmp`. Those
-  assertions could therefore return empty even when such a sibling leaked.
-
-### Follow-up RED evidence
-
-The prefix-write regression and the corrected sibling assertions were added
-before the production seam. Running:
-
-```sh
-cd abc && bin/kaocha --focus abc.tools.evidence-output-test
-```
-
-failed with exit 1 while loading the suite:
-
-```text
-Unable to resolve var: output/write-buffer! in this context
-1 tests, 1 assertions, 1 errors, 0 failures.
-```
-
-This established that no seam existed at the actual channel-write boundary.
-
-### Follow-up implementation and assertion proof
-
-The existing production buffer-draining loop was extracted unchanged into the
-private `write-buffer!` function. Normal success and publication tests still
-execute that real loop. The regression seam writes a strict prefix, records
-that the written count is smaller than the serialized byte count, then throws.
-The test proves:
-
-- the exception propagates;
-- at least one byte but fewer than all bytes reached the sibling;
-- the channel is closed before the assertion observes cleanup;
-- output was never published;
-- the writer-owned sibling is absent; and
-- the deliberately preexisting collision remains, with its contents intact.
-
-Success and second-write cleanup assertions now compare the complete sibling
-filename set to `#{"bundle.json"}`. A leaked UUID sibling would add a second
-set member and fail the equality, independent of path-component semantics. The
-partial-write assertion likewise expects exactly the one unrelated collision,
-so it catches any leaked writer-owned sibling while proving collision
-preservation.
-
-### Follow-up GREEN evidence
-
-Fresh focused suite:
-
-```sh
-cd abc && bin/kaocha --focus abc.tools.evidence-output-test
-```
-
-Result: exit 0, `12 tests, 44 assertions, 0 failures.`
-
-Fresh staged lint/format check:
-
-```sh
-nix build ./abc#checks.x86_64-linux.clj-kondo
-```
-
-Result: exit 0; derivation `abc-clj-kondo` built successfully.
-
-Shared writer check:
-
-```sh
-git diff --exit-code 8e00eecf -- abc/src/abc/tools/json.clj
-```
-
-Result: exit 0 with no diff.
-
-Additional review checks:
-
-```sh
-git diff --cached --check
-rg -n "ATOMIC_MOVE|write-deterministic-json-file!|Files/move|Files/copy" \
-  abc/src/abc/tools/evidence_output.clj \
-  abc/test/abc/tools/evidence_output_test.clj
-```
-
-Results: cached diff check exited 0 and the forbidden fallback search had no
-matches.
-
-### Follow-up self-review and concerns
-
-- The production loop still writes until `ByteBuffer.hasRemaining` is false.
-- The seam is private and changes no public interface.
-- Failure cleanup remains outside `with-open`, so deletion is attempted only
-  after channel closure.
-- No unrelated collision is removed during retry or partial-write cleanup.
-- Exact sibling-name equality makes both success cleanup assertions
-  non-vacuous.
-- No portability blocker was found; the follow-up does not alter hard-link
-  behavior.
-
-## Integration policy registration
-
-The sandboxed full-suite gate exposed that the exclusive writer's intentional
-`Files/exists`, `Files/createLink`, and `Files/deleteIfExists` calls had not
-been registered in the repository's exact filesystem-policy map. The writer
-implementation was unchanged; the test-owned policy now lists precisely those
-three operations with a nonblank rationale. The focused policy regressions
-passed with 3 tests and 13 assertions together with the root-flake fixture
-check, and the rebuilt Nix suite passed with 1048 tests and 4666 assertions.
+- The appendix corpus/vector raw artifacts live only under `/home/bor/task5` on
+  hinoki (not committed, by design). They are regenerable deterministically from
+  the pinned corpus + baseline binary; the committed manifest hashes pin their
+  identity. If those scratch artifacts are deleted, re-running the documented
+  build+materialize+run reproduces the same hashes.

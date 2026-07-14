@@ -1,7 +1,7 @@
 {
   "input_profile":
   {
-    "explicit": ["deps-lock.json","deps.edn","docs\/evidence\/adr-capture\/tei-project-valid-fixtures.edn","docs\/evidence\/adr-inputs\/tei-project-valid-fixtures.edn","examples\/v0\/example-work\/tei.xml","fixtures\/tei\/valid\/rashomon-minimal.xml","fixtures\/tei\/valid\/source-span-local-ref.xml","fixtures\/tei\/valid\/transcription-enrichment-declared.xml","flake.lock","flake.nix","nix\/tei-profile-artifacts.nix","schemas\/tei-profile.odd","schemas\/tei-profile.rng","schemas\/tei-profile.sch","src\/abc\/tools\/aat_parser_ir_compat.clj","src\/abc\/tools\/adr_evidence_runtime_inputs.clj","src\/abc\/tools\/analysis_identity.clj","src\/abc\/tools\/cli.clj","src\/abc\/tools\/edn_registry.clj","src\/abc\/tools\/evidence_io.clj","src\/abc\/tools\/files.clj","src\/abc\/tools\/hash.clj","src\/abc\/tools\/iiif.clj","src\/abc\/tools\/jcs.clj","src\/abc\/tools\/json.clj","src\/abc\/tools\/linked_art.clj","src\/abc\/tools\/logging.clj","src\/abc\/tools\/malli.clj","src\/abc\/tools\/manifest.clj","src\/abc\/tools\/manifest_index.clj","src\/abc\/tools\/manifest_to_rdf.clj","src\/abc\/tools\/materialize_analysis.clj","src\/abc\/tools\/materialize_annotations.clj","src\/abc\/tools\/materialize_import.clj","src\/abc\/tools\/materialize_publication.clj","src\/abc\/tools\/materialize_tokenized.clj","src\/abc\/tools\/metadata_record.clj","src\/abc\/tools\/parallel.clj","src\/abc\/tools\/parser_evidence.clj","src\/abc\/tools\/parser_ir_plaintext.clj","src\/abc\/tools\/parser_ir_publication_policy.clj","src\/abc\/tools\/parser_ir_publication_whitespace.clj","src\/abc\/tools\/parser_ir_sentence_policy.clj","src\/abc\/tools\/parser_ir_tei.clj","src\/abc\/tools\/path_containment.clj","src\/abc\/tools\/person_drift.clj","src\/abc\/tools\/person_record.clj","src\/abc\/tools\/publication_policy.clj","src\/abc\/tools\/rdf_prefixes.clj","src\/abc\/tools\/schema.clj","src\/abc\/tools\/schematron.clj","src\/abc\/tools\/shacl.clj","src\/abc\/tools\/snapshot_index.clj","src\/abc\/tools\/source_region_contract.clj","src\/abc\/tools\/tei.clj","src\/abc\/tools\/tei_header.clj","src\/abc\/tools\/validate_design_bundle.clj","test\/abc\/tools\/evidence_test_support.clj","test\/abc\/tools\/validate_design_bundle_test.clj","tests.edn"],
+    "explicit": ["deps-lock.json","deps.edn","docs\/evidence\/adr-capture\/tei-project-valid-fixtures.edn","docs\/evidence\/adr-inputs\/tei-project-valid-fixtures.edn","examples\/v0\/example-work\/tei.xml","fixtures\/tei\/valid\/rashomon-minimal.xml","fixtures\/tei\/valid\/source-span-local-ref.xml","fixtures\/tei\/valid\/transcription-enrichment-declared.xml","flake.lock","flake.nix","nix\/tei-profile-artifacts.nix","schemas\/tei-profile.odd","schemas\/tei-profile.rng","schemas\/tei-profile.sch","src\/abc\/tools\/aat_parser_ir_compat.clj","src\/abc\/tools\/adr_evidence_runtime_inputs.clj","src\/abc\/tools\/analysis_identity.clj","src\/abc\/tools\/cli.clj","src\/abc\/tools\/edn_registry.clj","src\/abc\/tools\/evidence_io.clj","src\/abc\/tools\/files.clj","src\/abc\/tools\/hash.clj","src\/abc\/tools\/iiif.clj","src\/abc\/tools\/jcs.clj","src\/abc\/tools\/json.clj","src\/abc\/tools\/linked_art.clj","src\/abc\/tools\/logging.clj","src\/abc\/tools\/malli.clj","src\/abc\/tools\/manifest.clj","src\/abc\/tools\/manifest_index.clj","src\/abc\/tools\/manifest_to_rdf.clj","src\/abc\/tools\/materialize_analysis.clj","src\/abc\/tools\/materialize_annotations.clj","src\/abc\/tools\/materialize_import.clj","src\/abc\/tools\/materialize_publication.clj","src\/abc\/tools\/materialize_tokenized.clj","src\/abc\/tools\/metadata_record.clj","src\/abc\/tools\/parallel.clj","src\/abc\/tools\/parser_evidence.clj","src\/abc\/tools\/parser_ir_plaintext.clj","src\/abc\/tools\/parser_ir_publication_policy.clj","src\/abc\/tools\/parser_ir_publication_whitespace.clj","src\/abc\/tools\/parser_ir_sentence_policy.clj","src\/abc\/tools\/parser_ir_tei.clj","src\/abc\/tools\/parser_maintenance_evidence.clj","src\/abc\/tools\/path_containment.clj","src\/abc\/tools\/person_drift.clj","src\/abc\/tools\/person_record.clj","src\/abc\/tools\/publication_policy.clj","src\/abc\/tools\/rdf_prefixes.clj","src\/abc\/tools\/schema.clj","src\/abc\/tools\/schematron.clj","src\/abc\/tools\/shacl.clj","src\/abc\/tools\/snapshot_index.clj","src\/abc\/tools\/source_region_contract.clj","src\/abc\/tools\/tei.clj","src\/abc\/tools\/tei_header.clj","src\/abc\/tools\/validate_design_bundle.clj","test\/abc\/tools\/evidence_test_support.clj","test\/abc\/tools\/validate_design_bundle_test.clj","tests.edn"],
     "kind": "repo-files-v1",
     "roots": []
   },
@@ -9,8 +9,8 @@
   {
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
     "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
-    "docs\/evidence\/adr-capture\/tei-project-valid-fixtures.edn": "sha256:7b90c45649b755b2ac8a64b0c8fa9d1181a1eb1e98135cf1fb0c8de004737a0d",
-    "docs\/evidence\/adr-inputs\/tei-project-valid-fixtures.edn": "sha256:2fd698595107d2b6ba9a85c378662dd28a28aea51fc033758ef30343543e9d9f",
+    "docs\/evidence\/adr-capture\/tei-project-valid-fixtures.edn": "sha256:22fbc25cfc80a4d653116506b6f7266f6f1b79213bfbe5e997129548706c8541",
+    "docs\/evidence\/adr-inputs\/tei-project-valid-fixtures.edn": "sha256:cd2c19b34351103db9047150a40f8dbda12e71683878dedc7d87ebe69d5655fe",
     "examples\/v0\/example-work\/tei.xml": "sha256:ee79db76b58f715400fe87ccd408c2724b1c85ccde8af15c059b05f98317f5c5",
     "fixtures\/tei\/valid\/rashomon-minimal.xml": "sha256:5a33c17b0bbde19d5dda9b41b08484e59c785cd9c2d4404344f8556214ead652",
     "fixtures\/tei\/valid\/source-span-local-ref.xml": "sha256:099dba138d9ec4a48e9f77adb74f176cebd7768d797f4ae2cd007c7264b64a31",
@@ -22,7 +22,7 @@
     "schemas\/tei-profile.rng": "sha256:071479ba8eb10f93a46f4b3616a1c0007bdeafd7a4c321e49cd567d648768413",
     "schemas\/tei-profile.sch": "sha256:608dcce45ba2acd490706691c4e38f885615176744f0db10a5a46aa96fa4da8a",
     "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:7945fb9c26cbcd173ebf997300c70b13c93ddf5d5b4a17f4901317890def884a",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
     "src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
     "src\/abc\/tools\/edn_registry.clj": "sha256:4d75f858bd14f6808d110ad9c252e643fcebfc3176eda65a3a6b7bfc9651eafb",
@@ -34,7 +34,7 @@
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
     "src\/abc\/tools\/linked_art.clj": "sha256:9bae5bb1f7fca74a6d1083b41cc76730d65dfdb01f414a25fa33c4770bc883fd",
     "src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
-    "src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
+    "src\/abc\/tools\/malli.clj": "sha256:16c04c051ac5829e36b7d0e7707c0057cef22ac2c20f778ad08f0d3b40df471e",
     "src\/abc\/tools\/manifest.clj": "sha256:ffeaad0f5073f8b8085562c854d76ea893fbc78669246e3601aa187e8a7006b6",
     "src\/abc\/tools\/manifest_index.clj": "sha256:5673957a889cb79df2710aafec2b0b5999c378215f4ec1120f08974d2faeaa59",
     "src\/abc\/tools\/manifest_to_rdf.clj": "sha256:bb38316e7aa5e6c0e0aeb6491b39807cb1c40ac3aef1b27a24cc6514799c63e9",
@@ -45,12 +45,13 @@
     "src\/abc\/tools\/materialize_tokenized.clj": "sha256:f31513ee4f20fea248eaf667811ebb12057e7eb7591fb7e04a6d08c58fb16464",
     "src\/abc\/tools\/metadata_record.clj": "sha256:b87fd5dbe5831983dc618849593fc08bba2d4bd6a2dbf447b88738253015f36f",
     "src\/abc\/tools\/parallel.clj": "sha256:51b1105b04a52d45a6fb3811e4b3c53b1b44162fd81f5d68ab412039b31a243c",
-    "src\/abc\/tools\/parser_evidence.clj": "sha256:d0bc2f12acbd8aa04b1b46888629db18c5afcb91f391d9f467514ce04086128f",
+    "src\/abc\/tools\/parser_evidence.clj": "sha256:5d735ad135dd1d991222a18ebe46ca62e862d54835687e1581c47b4f3a9aef78",
     "src\/abc\/tools\/parser_ir_plaintext.clj": "sha256:d21da8a17ef2e1d132ba7e05ce6c0d17bd4154d4c7c4bf9b9f72114e087f7d87",
     "src\/abc\/tools\/parser_ir_publication_policy.clj": "sha256:f2315b7375ba189077ee34eee402e18ee711e84c5abcd92c60ef9ad91020d6f8",
     "src\/abc\/tools\/parser_ir_publication_whitespace.clj": "sha256:649c5ad727df611eed3271856873f642066f5f62aa8c3648d6072a4ff467f8ad",
     "src\/abc\/tools\/parser_ir_sentence_policy.clj": "sha256:a2c91542a06fbd97f4f0433127143bf0645d3b1828f7d13dfc2b38c0cb1bdd6b",
     "src\/abc\/tools\/parser_ir_tei.clj": "sha256:6683b4a741ac1ea1967653f1f218fd1af804eb60ec950a26858ae057502d32ec",
+    "src\/abc\/tools\/parser_maintenance_evidence.clj": "sha256:ecf976ebc961c9bab66aaa51c9ebd54f3a9fa15035795eaa58e4da1d242e3b46",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
     "src\/abc\/tools\/person_drift.clj": "sha256:9a65f270e7df41a54a2b31c596f6593282f71f4d18622b39d9aafcb44e099b23",
     "src\/abc\/tools\/person_record.clj": "sha256:e9b2323dc7adba721d269bebab37bc9f13c4b89d3e504f0a6f63ff3bfb95b974",
@@ -63,7 +64,7 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:661835ccc00283896a075eaacf46f898cf6b6428dff6d6a6ba1c5bf9d6095ba6",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:0d2f8fd57ca9f4c2d9635957dfa2b440d08dda53c0bfa03f59b154966784a645",
     "test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
     "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:278f4482e15cc358a068da9b8b689b6105e0f1a9c3ab3242d76aeeb559a4800c",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
@@ -86,7 +87,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-project-valid-fixtures\\\"\"",
-    "revision": "f3b12361fcadee14d62ae9a0583d9817fd327dcc",
+    "revision": "97788b3cc03334d60dc815c06648b31b2203bb89",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

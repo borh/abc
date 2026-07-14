@@ -1,4 +1,4 @@
-//! Historical-kana → modern-kana surface modernizer 
+//! Historical-kana → modern-kana surface modernizer
 //!
 //! Rewrites 歴史的仮名遣い to 現代仮名遣い at the **surface** level — keep the kanji,
 //! rewrite only the historical *kana* — so an analyzer with no historical

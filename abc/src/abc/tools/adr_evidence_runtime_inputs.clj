@@ -257,7 +257,8 @@
      abc.sim.render/csv->zip-bytes
      abc.sim.render/content-sources
      abc.sim.render/model->rows
-     abc.sim.oracle/expected-selection})
+     abc.sim.oracle/expected-selection
+     abc.tools.parser-maintenance-evidence/problems})
 
 (defn- trusted-leaf-var? [var]
   (or (contains? trusted-adapter-vars var)
@@ -444,7 +445,8 @@
     abc.tools.soranoha-build-publication/resolve-invocation-path {getenv 1}
     abc.tools.soranoha-build-publication/invoke-derive-parser-ir! {}
     abc.tools.workflow/now-utc {now 1}
-    abc.tools.validate-design-bundle/load-turtle-graph {read 1}})
+    abc.tools.validate-design-bundle/load-turtle-graph {read 1}
+    abc.tools.parser-maintenance-evidence/problems {}})
 
 (def ^:private trusted-adapter-traced-loaders
   '{abc.git/load-git-repo {load-repo 0}

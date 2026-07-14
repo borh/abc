@@ -4,8 +4,9 @@
 //! the conformance suite (the production AAT path masks it behind a lexer
 //! fallback whenever the typed projection does not round-trip). Not part of the
 //! production AAT contract.
-use anyhow::Result;
-use aozora_rs_core::{Deco, Retokenized};
+use anyhow::{Result, anyhow};
+use aozora_rs_core::{Deco, Retokenized, retokenize, scopenize, tokenize};
+use winnow::LocatingSlice;
 
 use crate::{decode_source_bytes, parser, source};
 
@@ -41,8 +42,25 @@ pub fn retokenized_dump_json(bytes: &[u8]) -> Result<Vec<u8>> {
     let selection = source::select_body(&decoded);
     let parsed = parser::parse_with_aozora_rs(selection)?;
 
-    let tokens: Vec<serde_json::Value> = parsed
-        .retokenized
+    serialize_tokens(&parsed.retokenized)
+}
+
+/// Parse the entire decoded input directly with the pinned native core API.
+pub fn native_retokenized_dump_json(bytes: &[u8]) -> Result<Vec<u8>> {
+    let decoded = decode_source_bytes(bytes)?;
+    let mut input = LocatingSlice::new(decoded.text.as_str());
+    let tokenized = tokenize(&mut input).map_err(|()| anyhow!("aozora-rs tokenize failed"))?;
+    let ((scopes, flat), _) = scopenize(tokenized).into_tuple();
+    let (pages, _) = retokenize(flat, scopes);
+    let retokenized = pages
+        .into_iter()
+        .flat_map(|page| page.content.into_iter())
+        .collect::<Vec<_>>();
+    serialize_tokens(&retokenized)
+}
+
+fn serialize_tokens(tokens: &[Retokenized<'_>]) -> Result<Vec<u8>> {
+    let tokens: Vec<serde_json::Value> = tokens
         .iter()
         .map(|token| match token {
             Retokenized::Text(text) => serde_json::json!({"t": "text", "v": text}),
@@ -62,4 +80,23 @@ pub fn retokenized_dump_json(bytes: &[u8]) -> Result<Vec<u8>> {
     let mut out = serde_json::to_vec(&serde_json::json!({ "retokenized": tokens }))?;
     out.push(b'\n');
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::native_retokenized_dump_json;
+
+    #[test]
+    fn native_dump_parses_the_entire_decoded_input_without_body_selection() {
+        let output = native_retokenized_dump_json("題名\n吾輩《わがはい》\n".as_bytes()).unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&output).unwrap();
+        assert!(
+            value["retokenized"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|token| token["d"] == "ruby")
+        );
+        assert!(String::from_utf8(output).unwrap().contains("題名"));
+    }
 }

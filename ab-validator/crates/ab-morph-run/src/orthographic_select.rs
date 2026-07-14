@@ -2,7 +2,7 @@
 //! `orthographic_style`, so old-kana works can be analyzed under a historical
 //! UniDic (e.g. `vibrato:unidic-kindai-bungo-202512`).
 //!
-//! This is a **run-eligibility filter, outside normalization** 
+//! This is a **run-eligibility filter, outside normalization**
 //! decision I2-D17b): it only narrows the *set of works* a run analyzes; it
 //! never changes how any work's text is normalized, so a work's derived input
 //! stays a pure function of `(source, normalization policy)`. The metadata that

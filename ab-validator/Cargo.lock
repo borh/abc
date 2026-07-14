@@ -380,6 +380,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ab-parser-study-report"
+version = "0.1.0"
+dependencies = [
+ "jsonschema",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "ab-plaintext"
 version = "0.1.0"
 dependencies = [

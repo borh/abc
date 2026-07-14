@@ -1,291 +1,247 @@
-# Task 3 Report: Typed evidence observation catalogs
+# Task 3 Report — Existing-parser measurement attempt
 
 ## Status
 
-Complete and verified on `feat/adr-evidence-corpus-migration` from base
-`b7dd3c22`.
+Partially implemented with explicit failure evidence. The pinned corpus and
+four of five included parser/adapter pairs materialized through flake outputs.
+No corpus-scale parser result is claimed: the neutral runner needed to capture
+native and adapted per-work outputs is absent, and the historical `aozora`
+parser/adapter pins are not exposed by the current flake.
 
-## RED evidence
+## TDD evidence
 
-The new catalog tests and registrar join test were written before the
-production namespace or checked data existed.
+Manifest tests were written first. RED was observed as an unresolved
+`RawRunManifest` import. A self-review regression then failed compilation on
+missing candidate/mode accessors before the exact included-lane set was
+checkable. GREEN validates required parser, adapter, corpus, environment,
+timeout, protocol, failure, and raw-artifact fields; measured runs cannot have
+an empty artifact list.
 
-Command:
+## Materialization evidence
 
-```sh
-cd abc
-bin/kaocha --focus abc.tools.adr-evidence-observation-catalog-test \
-  --focus abc.tools.adr-evidence-register-test
-```
+One Nix invocation materialized the current pinned parsers for `aozora2`,
+`aozora-rs`, `aozora2html`, and `aozora-epub3`, plus their four current pinned
+adapters. It exited 0. The pinned notation-vector and Aozora Bunko corpus
+derivations also built successfully and their NAR hashes are recorded in the
+checked identity inputs.
 
-Observed result: exit 1, one test/error. Test loading failed because
-`abc.tools.adr-evidence-observation-catalog` did not exist. This was the
-expected missing-feature RED, not a fixture or syntax failure.
+The preregistered legacy `aozora` parser revision and its historical adapter
+revision are not current flake outputs. They are retained as build-failure
+lanes; a current adapter was not substituted.
 
-## GREEN implementation
+## Raw-run evidence
 
-- Added a family-neutral closed catalog with separate sorted focused and
-  operational collections. Shape, scalar domains, collection order,
-  uniqueness, determinant containment, lexical path normalization, and dotted
-  namespace coordinates are validated without a foundation row-count policy.
-- `catalog-problems` accumulates and sorts all structural problems. Malformed
-  rows and mixed collection values fail as data rather than throwing.
-- `load-catalog!` validates the catalog coordinate as a contained regular file
-  before calling `files/read-edn`, and every thrown validation failure carries
-  the complete problem vector.
-- Added an explicit field-by-field string-domain I-JSON projection. The digest
-  pipeline is exactly `projection -> RFC 8785 UTF-8 bytes -> SHA-256 ->
-  sha256:` formatting; generic EDN serialization is never hashed.
-- Added catalog-to-template joins that accumulate and sort unknown,
-  unbound, malformed, and duplicate `[claim-id observation-id]` problems.
-- Added closed, kind-specific conformance finding identities with mandatory
-  coordinate and value-domain checks. Message/source positions are ignored;
-  unknown kinds, incomplete identities, invalid coordinate types, and
-  absolute/machine-local paths fail closed.
-- Added one checked catalog with 35 unique focused observations and two
-  operational observations. The three repeated focused Vars and three
-  design-bundle bindings collapse to their single observation identities;
-  `source-bundle-corpus` remains separate.
-- Added the exact current transitional debt generated mechanically from the
-  checked catalog and analyzer.
+The checked bundle contains exactly ten unique lanes: native and
+adapter-normalized for each included existing parser. All carry the frozen
+300-second timeout and content hashes for protocol, composite corpus, and host
+environment. The legacy lanes are build failures. The other eight are explicit
+corpus-execution failures because no conforming full-corpus neutral runner
+exists. Their raw artifact arrays are empty by contract; no historical `/db`
+dump, untracked reference, current custom-parser output, or fabricated result
+was used.
 
-## Known-answer evidence
-
-The test contains literal canonical JSON bytes and a literal digest. Neither
-expected value calls the projection, JCS writer, or hash function under test.
-The literal JSON was independently piped to `sha256sum`, producing:
-
-```text
-f9492de66eaa225319318694ce7ece66978fc0903f5ebaffd24eba1e82070ed1
-```
-
-The test pins
-`sha256:f9492de66eaa225319318694ce7ece66978fc0903f5ebaffd24eba1e82070ed1`.
-Because the JCS API returns Java byte arrays, order-independent byte equality
-is asserted over their byte vectors; exact UTF-8 content is separately
-compared with the literal JSON string.
-
-## Exact arithmetic
-
-- Focused observations: 35.
-- Operational observations: 2.
-- Total observation identities: 37.
-- Focused claim bindings: 38.
-- Operational claim bindings: 4.
-- Total claim bindings: 42.
-- Distinct foundation claim IDs: 35.
-- Transitional normalized findings: 53.
-  - Unresolved focused Vars: 14.
-  - Existing focused Vars missing direct boundary ownership: 21.
-  - Additional capability, I/O, reader/span, or call-graph blockers: 18.
-
-The foundation-only test carries all 42 binding identities, validates the
-join, and compares the checked debt value exactly with live normalization.
-The generic catalog test separately accepts a valid catalog with different
-row counts.
-
-## Files
-
-- `abc/src/abc/tools/adr_evidence_observation_catalog.clj`
-- `abc/test/abc/tools/adr_evidence_observation_catalog_test.clj`
-- `abc/test/abc/tools/adr_evidence_register_test.clj`
-- `abc/data/adr-evidence/foundation-observation-catalog.edn`
-- `abc/data/adr-evidence/foundation-capture-conformance-debt.edn`
-
-No plan, specification, progress, governance, registry, descriptor, manifest,
-promotion, or run-bundle file was changed by Task 3.
+Corpus-scale artifacts remain out of source. The run directory documents the
+reproducible Nix materialization command and the requirement that a future
+runner hash every external per-work artifact before committing its manifest.
 
 ## Verification
 
-Final focused command:
+Focused verification performed during implementation:
 
-```sh
-cd abc
-bin/kaocha --focus abc.tools.adr-evidence-observation-catalog-test \
-  --focus abc.tools.adr-evidence-register-test
+```text
+cargo test -p ab-parser-study-report
+14 passed; 0 failed (before the final self-review regression)
+
+cargo clippy -p ab-parser-study-report --all-targets -- -D warnings
+pass
+
+nix build [eight pinned parser/adapter outputs] --no-link --print-build-logs
+pass
+
+nix build ./ab-validator#aozorabunko-corpus \
+  ./ab-validator#upstream-aozora-notation-spec --no-link
+pass
 ```
 
-Result: exit 0; **14 tests, 109 assertions, 0 failures**.
+Fresh final verification and its exact counts are recorded in the task handoff
+after the final formatting and repository checks.
 
-Formatting/delimiter gate:
+## Self-review
 
-```sh
-cd abc
-clj-paren-repair src/abc/tools/adr_evidence_observation_catalog.clj \
-  test/abc/tools/adr_evidence_observation_catalog_test.clj
-```
-
-Result: both files valid and formatted.
-
-Repository Clojure gate, after staging the exact new files so flake `self`
-included them:
-
-```sh
-nix build ./abc#checks.x86_64-linux.clj-kondo
-```
-
-Result: exit 0; derivation
-`/nix/store/kz5y0cf9rh3a8fdccn2zlgfa6p9qcl7p-abc-clj-kondo.drv` built.
-
-Additional gates:
-
-- `scripts/comment-hygiene-check.sh`: exit 0.
-- `git diff --cached --check`: exit 0.
-- staged scope: exactly the five Task 3 files.
-- debt scan: no `:message`, `:line`, or `:column` keys.
-- governance remains configured in audit mode; staged diff contains no
-  governance, run-bundle, or registry path.
-
-## Self-review and independent review
-
-Self-review hardened malformed-row accumulation, normalized determinant
-spellings, and exact foundation binding arithmetic.
-
-The independent read-only review initially found:
-
-1. determinant aliases such as `./flake.nix` needed rejection;
-2. debt identity needed per-kind closed projections and relative paths;
-3. entrypoint namespace symbols needed to reject qualified Var symbols; and
-4. recognized debt kinds needed mandatory typed semantic coordinates.
-
-All four were fixed with negative tests. Final re-review verdict: resolved,
-with no remaining Critical or Important issue.
+- The preregistration and fixture manifests were not modified.
+- The Task 2 result schema was not modified.
+- Native/adapted lanes are distinct and the checked set is exact, not merely a
+  row count.
+- Failure rows cannot be mistaken for measurements and contain no imputed
+  counts or outputs.
+- Raw artifact coordinates reject absolute paths and traversal.
+- The pre-existing Task 2 report worktree change is not part of this task.
 
 ## Concerns
 
-None. The 53-item debt is deliberately transitional and exact; Task 8 owns
-the atomic change to an empty debt vector together with the missing narrow
-tests and direct boundary ownership.
+Task 3 is not substantively complete: eight successful builds still lack
+per-work native/adapted executions, and the legacy pair lacks flake
+materialization. Completing it requires a frozen-protocol runner and a flake
+input for the historical adapter source, followed by the actual pinned-corpus
+run. The checked failures make that gap reviewable without overstating results.
 
-## Controller-review closure fix
+## Critical review correction
 
-### Root cause and RED evidence
+The initial bundle incorrectly represented absence of an execution harness as
+candidate `run-failure` evidence. Those rows and their hand-authored identity
+files have been deleted. An unattempted parser process is not a parser result.
 
-Two controller findings were reproduced regression-first.
+The raw-manifest contract now requires `attempted: true`; this means the pinned
+candidate process was actually started (or its pinned build derivation was
+actually evaluated for build-failure evidence). A harness or precondition gap
+cannot deserialize as a run. Raw output coordinates also reject POSIX absolute,
+Windows drive-qualified, root-relative/backslash, UNC, empty-segment, dot, and
+traversal spellings before any host filesystem interpretation.
 
-1. `exact-keys-problems` used Clojure's natural `sort` on arbitrary EDN map
-   keys. A focused row containing unknown keys `"string-key"` and `42`
-   reached `clojure.lang.Util/compare` and threw `ClassCastException` before
-   `catalog-problems` could return its accumulated vector.
-2. `normalized-finding-path` asked the Linux filesystem whether the supplied
-   value was absolute before normalizing slash spelling. Both
-   `C:\\tmp\\finding.clj` and `\\\\server\\share\\finding.clj` therefore
-   appeared host-relative and were admitted.
+RED was observed for both corrections: an attempted candidate failure was
+initially rejected because the field did not exist, while
+`C:\\tmp\\out.json` was initially accepted. The focused tests passed after the
+contract changes.
 
-RED command:
+No replacement run bundle is committed. The exact pinned source corpus is
+corpus-scale (historically 17,810 valid works), requiring roughly 178,000
+independent candidate/mode executions before registered performance
+repetitions. There is no checked neutral executor that can first prove exact
+inventory selection, per-item completeness/uniqueness, process-group timeout,
+and raw byte/hash verification. Producing results in this session would either
+skip required validation or exceed the available execution envelope. This is
+the explicit corpus-scale blocker; Task 3 remains incomplete rather than
+converting the blocker into candidate evidence.
 
-```sh
-cd abc
-bin/kaocha \
-  --focus abc.tools.adr-evidence-observation-catalog-test/heterogeneous-unknown-row-keys-are-accumulated-deterministically-test \
-  --focus abc.tools.adr-evidence-observation-catalog-test/normalized-conformance-findings-reject-cross-host-machine-paths-test
-```
+## Neutral executor implementation
 
-Observed result: exit 3; **2 tests, 3 assertions, 1 error, 2 failures**.
-The error was the expected heterogeneous-key `ClassCastException`; the two
-failures showed that drive-qualified and UNC paths returned normally instead
-of throwing.
+Follow-up work added `reports/parser-study/neutral_executor.py`, a checked
+executor independent of result aggregation. It deterministically materializes
+every frozen notation vector's `source` field in vector-name order, validates
+closed inventory rows and source hashes, executes one candidate command per
+item with bounded concurrency and per-item timeout, and writes stdout, stderr,
+and the outcome itself with SHA-256 identities. Resume accepts an outcome only
+after verifying its recorded bytes; the final verifier requires exactly one
+ordered outcome per inventory item and rechecks all source/output hashes.
 
-### Minimal fixes
+The executor test was written before the module and initially failed at import.
+A second RED showed the vector materializer API was absent. Four focused tests
+now cover success/resume, malformed manifests, cross-host paths, and sorted
+complete vector materialization. This commit contains executor code and tests
+only; it does not contain or claim parser measurements.
 
-- Missing/unknown diagnostic key vectors now use `sort-by pr-str`, providing
-  a deterministic total order across heterogeneous EDN key types without
-  changing accepted catalog shapes.
-- Raw Windows drive prefixes and UNC prefixes are rejected before calling
-  `fs/path`, `fs/absolute?`, or the shared coordinate normalizer. Host-native
-  absolute/traversal checks remain unchanged.
+The committed CLI argument handling was corrected so materialization does not
+spuriously require an execution inventory. A test-first canonical-index
+materializer now consumes `ab-index` order, safely reads plain files or exact
+ZIP members, hashes extracted bytes, and supports `--limit` only for explicit
+smoke runs (`0` means the entire inventory). RED was the missing API; GREEN is
+five focused tests plus ruff and strict mypy.
 
-Focused regression GREEN command: the same two-focus command above.
+Real smoke execution used the pinned notation derivation and the canonical
+17,886-work index (`corpus_hash`
+`sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8`).
+The first four frozen vectors and first four indexed corpus works each produced
+one hash-verified success outcome through the pinned `aozora2` adapted binary.
+These temporary smoke artifacts were verified outside the checkout and are not
+presented as full-study results.
 
-Result: exit 0; **2 tests, 4 assertions, 0 failures**.
+Before full execution, review found three resume/safety gaps. The executor now
+hashes the exact argument vector and declared environment into every outcome
+and manifest, refuses resume across an identity change, starts each candidate
+in a new session, kills the entire process group on timeout, and resolves every
+read artifact beneath the output root while rejecting symlink escapes. RED
+proved that a changed command incorrectly reused successes and that an output
+symlink escaped containment. Six focused tests, ruff, and strict mypy pass.
 
-Full Task 3 GREEN command:
+The canonical corpus materializer is now Rust and reuses `ab-check`'s exact
+plain/ZIP-member byte reader. This avoids Python ZIP central-directory and CRC
+differences without changing selected works. Its focused integration test
+checks index order, extracted bytes, and inventory output; cargo test and
+clippy pass. Applied to the pinned index it materialized all 17,886 selected
+works, including malformed archives that blocked Python extraction.
 
-```sh
-cd abc
-bin/kaocha --focus abc.tools.adr-evidence-observation-catalog-test \
-  --focus abc.tools.adr-evidence-register-test
-```
+The first full launch correctly failed closed because `ab-index` can contain
+multiple primary source members with the same work ID. The materializer now
+uses the established `ab-check` identity `work_id` plus the first twelve hex
+digits of the indexed-path SHA-256. This retains every selected member without
+collision or reordering; the focused test pins the composite identity.
 
-Result: exit 0; **16 tests, 113 assertions, 0 failures**.
+The `aozora-rs` native lane now has a dedicated stdin runner. It decodes input
+and directly calls the pinned core's `tokenize`, `scopenize`, and `retokenize`
+APIs over the entire text, then emits the native retokenized stream. It does
+not call adapter body selection, fallback, mapping, or AAT projection. RED was
+the missing native function; its focused test proves ruby recognition and
+retention of header text. The adapter-crate tests, formatter, and clippy pass.
 
-Staged repository Clojure gate:
+Interrupted full lanes exposed that the final manifest was the only resume
+index even though per-item outcomes were already durable. Resume now scans
+content-addressed outcome files when no manifest exists, reusing a row only if
+its embedded execution identity matches. The final completeness and artifact
+hash verifier remains mandatory. RED showed identical execution rewrote rows
+after deleting the manifest; GREEN preserves them byte-for-byte.
 
-```sh
-nix build ./abc#checks.x86_64-linux.clj-kondo
-```
+## Completed preregistered execution
 
-Result: exit 0; derivation
-`/nix/store/p5abr6580kgv07miqlbish1y9jkzam7i-abc-clj-kondo.drv` built.
+All ten included parser/mode lanes were executed independently over all 127
+frozen notation vectors and all 17,886 pinned corpus items. Every one of the 20
+external manifests now passes a fresh verifier run that checks ordered
+completeness plus every outcome, stdout, stderr, source, and manifest-entry
+hash. The compact checked manifest records the frozen protocol, corpus,
+inventory, parser, adapter, and execution identities without committing
+corpus-scale artifacts or machine-local paths.
 
-### Fix self-review
+Corpus outcomes are exact: `aozora` native 17,885 success/1 failure and adapted
+17,886 success; `aozora2` native 17,886 success and adapted 17,874 success/12
+timeouts; both `aozora-rs` lanes and both `aozora2html` lanes have 17,886
+success; `aozora-epub3` native has 17,836 success/50 failures and adapted has
+17,773 success/113 failures. Vector lanes have 127 successes except adapted
+`aozora-epub3`, which has 123 successes/4 failures.
 
-- Heterogeneous unknown keys remain diagnostic data and are sorted only for
-  reporting; required/accepted schema key sets are unchanged.
-- Drive detection is case-insensitive and rejects every leading ASCII drive
-  qualifier, including drive-relative spellings. UNC detection covers both
-  backslash and already slash-normalized forms.
-- Machine-local detection happens before all host-dependent path parsing, so
-  behavior does not depend on the capture host OS.
-- The staged fix contains only the catalog source and its focused test. No
-  catalog/debt values, governance state, descriptor, registry, or run bundle
-  changed.
+The first aozora2html manifests detected outcome-hash mismatches caused by
+workers surviving an earlier overlapping launch. Neither manifest was
+accepted. After all overlapping executors exited, one isolated resume pass per
+lane rewrote only mismatches; both complete manifests then passed independent
+verification. This demonstrates that the executor failed closed on corrupted
+run identity rather than silently accepting the row counts.
 
-## Single-backslash cross-host closure fix
+## Final evidence-verifier closure
 
-### RED evidence
+The compact summary is now canonical generated data with a checked verifier.
+An explicit untracked resolver maps logical artifact roots to local evidence
+and supplies each exact command/environment preimage. Verification recomputes
+execution identities, proves candidate/mode command bindings, runs the full
+per-item artifact verifier, checks exact counts and manifest hashes, and
+requires byte-identical checked-summary regeneration.
 
-The controller's remaining path case was added to the existing cross-host
-regression with both Windows root-relative `\\tmp\\finding.clj` and
-traversal-shaped `\\..\\outside.clj` spellings.
+The preregistered immediately-before-run host fields were not captured for the
+original lanes. They are classified as unavailable, making performance host
+comparability unavailable without weakening behavioral artifact integrity.
+No post-hoc host state was substituted. The exact original `aozora-rs` native
+command preimage was also unrecoverable, so that one fast vector/corpus lane
+was rerun into separate replacement roots after capturing all required host
+fields. The superseded roots remain preserved.
 
-Command:
+Different vector/corpus execution hashes for adapted `aozora2` and
+`aozora-rs` reflect different Nix store paths from separate builds of the same
+pinned source revisions. Because concrete command paths are intentionally part
+of execution identity, the divergence is expected and independently
+hash-matched rather than normalized away. The aozora2html repair audit records
+the recoverable overlap and final-manifest facts while explicitly marking the
+unpreserved rejected bytes and mismatched-ID list unavailable.
 
-```sh
-cd abc
-bin/kaocha \
-  --focus abc.tools.adr-evidence-observation-catalog-test/normalized-conformance-findings-reject-cross-host-machine-paths-test
-```
+## Exact frozen-binding closure
 
-Observed result: exit 2; **1 test, 4 assertions, 2 failures**. The existing
-drive-qualified and UNC assertions passed, while both new single-leading-
-backslash values returned normally instead of throwing.
+The verifier no longer treats any frozen field in the checked summary as an
+input assertion. It consumes the preregistration bytes, both materialized
+inventory files, content-addressed inventory identities, exact external run
+roots, command/environment preimages, and executable materialization
+attestations. It independently derives study ID, protocol hash, timeout,
+candidate parser/adapter revisions, corpus/vector revisions, inventory hashes
+and counts, corpus hash, execution and external manifest hashes, and outcome
+counts before byte-comparing the complete regenerated summary.
 
-### Minimal fix and GREEN evidence
-
-The raw cross-host predicate now rejects any leading backslash rather than
-only a two-backslash UNC prefix. This one-character boundary change retains
-UNC rejection and closes Windows root-relative and traversal-shaped spellings
-before `fs/path`, `fs/absolute?`, or slash normalization runs.
-
-Focused regression GREEN: the same command exited 0 with **1 test, 4
-assertions, 0 failures**.
-
-Full Task 3 command:
-
-```sh
-cd abc
-bin/kaocha --focus abc.tools.adr-evidence-observation-catalog-test \
-  --focus abc.tools.adr-evidence-register-test
-```
-
-Result: exit 0; **16 tests, 115 assertions, 0 failures**.
-
-Staged Clojure gate:
-
-```sh
-nix build ./abc#checks.x86_64-linux.clj-kondo
-```
-
-Result: exit 0; derivation
-`/nix/store/bkcma3kr7xcyr458gns1kbw5d6bad1yi-abc-clj-kondo.drv` built.
-
-### Self-review
-
-- The fix changes only raw machine-local classification; accepted normalized
-  repository-relative paths and their identities are unchanged.
-- Any one-backslash prefix is nonportable as a repository-relative coordinate
-  and is rejected uniformly, including UNC, Windows root-relative, and
-  backslash traversal spellings.
-- The staged scope remains exactly the catalog source and its focused test;
-  no data, governance, registry, descriptor, or run-bundle file changed.
+Materialization attestations bind each execution to candidate/mode, frozen
+source revisions, executable byte hash, and the Nix store derivation identity
+or content-addressed workspace build. Mutation-negative tests cover protocol,
+study ID, timeout, candidate revision, and inventory content/hash/count. The
+full 20-lane external verification remains the acceptance gate.

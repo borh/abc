@@ -13,7 +13,7 @@
          "src/abc/tools/parallel.clj" "src/abc/tools/parser_evidence.clj"
          "src/abc/tools/parser_ir_plaintext.clj" "src/abc/tools/parser_ir_publication_policy.clj"
          "src/abc/tools/parser_ir_publication_whitespace.clj" "src/abc/tools/parser_ir_sentence_policy.clj"
-         "src/abc/tools/parser_ir_tei.clj" "src/abc/tools/path_containment.clj"
+         "src/abc/tools/parser_ir_tei.clj" "src/abc/tools/parser_maintenance_evidence.clj" "src/abc/tools/path_containment.clj"
          "src/abc/tools/person_drift.clj" "src/abc/tools/person_record.clj"
          "src/abc/tools/publication_policy.clj" "src/abc/tools/rdf_prefixes.clj"
          "src/abc/tools/schema.clj" "src/abc/tools/schematron.clj" "src/abc/tools/shacl.clj"

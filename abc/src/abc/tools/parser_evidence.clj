@@ -39,6 +39,86 @@
        entry)
       (parser-evidence-malli-errors idx entry)))))
 
+;; --- Evidence-class admission/release boundary --------------------------------
+;;
+;; A structural allowlist keyed off :evidence_class, not off the absence of any
+;; particular field. Admission (ADR 0023 exact-tuple registry) and release
+;; qualification (separately authorized, ADR 0038) each name the exact evidence
+;; classes that may support the claim. Comparison/selection research evidence —
+;; the historical :parser-selection rows and the new :neutral-comparison rows —
+;; is deliberately outside both allowlists, so a comparison citation is
+;; structurally incapable of admitting or release-qualifying a parser regardless
+;; of its :status or which fields it carries (ADR 0030 §Evidence policy,
+;; ADR 0038-C2). Downstream gates (e.g. the release gate) key their predicates
+;; off these sets rather than re-deriving the policy.
+
+(def comparison-evidence-classes
+  "Evidence classes that record parser comparison / selection research only.
+  They are neither an admission nor a release evidence class."
+  #{:parser-selection :neutral-comparison})
+
+(def admission-evidence-classes
+  "Structural allowlist of evidence classes eligible to support an exact-tuple
+  admission claim. Admission is controlled by ADR 0023 exact registry tuples;
+  only conversion-compatibility evidence is an admission class."
+  #{:conversion-compatibility})
+
+(def release-evidence-classes
+  "Structural allowlist of evidence classes eligible to support a release /
+  qualification claim. Release authority is separate (ADR 0038); no
+  comparison/selection class qualifies a release, so the allowlist excludes
+  every comparison class by construction."
+  #{:conversion-compatibility})
+
+(defn admission-evidence-class?
+  "True when `evidence-class` is on the admission allowlist."
+  [evidence-class]
+  (contains? admission-evidence-classes evidence-class))
+
+(defn release-evidence-class?
+  "True when `evidence-class` is on the release-qualification allowlist."
+  [evidence-class]
+  (contains? release-evidence-classes evidence-class))
+
+(defn comparison-evidence-class?
+  "True when `evidence-class` is a comparison/selection research class."
+  [evidence-class]
+  (contains? comparison-evidence-classes evidence-class))
+
+(defn entry-admissible?
+  "True when `entry`'s evidence class may support an admission claim."
+  [entry]
+  (admission-evidence-class? (:evidence_class entry)))
+
+(defn entry-release-qualifying?
+  "True when `entry`'s evidence class may support a release/qualification claim."
+  [entry]
+  (release-evidence-class? (:evidence_class entry)))
+
+(defn assert-admission-evidence!
+  "Return `entry` when its evidence class is admission-eligible; otherwise throw.
+  The rejection is structural: comparison citations never pass this boundary."
+  [entry]
+  (if (entry-admissible? entry)
+    entry
+    (throw (ex-info "evidence class cannot support an admission claim"
+                    {:kind :non-admission-evidence-class
+                     :evidence-id (:evidence_id entry)
+                     :evidence-class (:evidence_class entry)
+                     :admission-evidence-classes admission-evidence-classes}))))
+
+(defn assert-release-evidence!
+  "Return `entry` when its evidence class is release-eligible; otherwise throw.
+  The rejection is structural: comparison citations never pass this boundary."
+  [entry]
+  (if (entry-release-qualifying? entry)
+    entry
+    (throw (ex-info "evidence class cannot support a release claim"
+                    {:kind :non-release-evidence-class
+                     :evidence-id (:evidence_id entry)
+                     :evidence-class (:evidence_class entry)
+                     :release-evidence-classes release-evidence-classes}))))
+
 (defn evidence-id-key [entry] (:evidence_id entry))
 
 (defn logical-file-key [entry] [(:logical_path entry) (:sha256 entry)])

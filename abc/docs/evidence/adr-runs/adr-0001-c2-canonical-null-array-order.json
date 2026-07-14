@@ -11,7 +11,7 @@
     "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
     "abc\/docs\/evidence\/adr-capture\/adr-0001-c2-canonical-null-array-order.edn": "sha256:492f590f0af714f3f4e2ca48e20ad37eeb5fc28053e6e6f2388b293ffb7caa77",
     "abc\/docs\/evidence\/adr-inputs\/adr-0001-c2-canonical-null-array-order.edn": "sha256:7deabe0c25f640e061c869534b5b1233005a419626da2b9b019545823ba99fa4",
-    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:7945fb9c26cbcd173ebf997300c70b13c93ddf5d5b4a17f4901317890def884a",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
     "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "abc\/src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
     "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
@@ -35,7 +35,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.jcs-test\/canonical-json-test\"",
-    "revision": "f3b12361fcadee14d62ae9a0583d9817fd327dcc",
+    "revision": "97788b3cc03334d60dc815c06648b31b2203bb89",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -74,7 +74,16 @@
     :current_external_path nil
     :sha256 example-hash
     :status :superseded
-    :summary "Comparator oracle evidence."}])
+    :summary "Comparator oracle evidence."}
+   {:evidence_id "ab-validator/neutral"
+    :evidence_class :neutral-comparison
+    :producer_component "ab-validator"
+    :logical_path "ab-validator/docs/neutral.md"
+    :current_external_path nil
+    :sha256 example-hash
+    :study_contract example-hash
+    :status :citable
+    :summary "Neutral existing-parser comparison measurement; cannot admit or release-qualify."}])
 
 (def ^:private compat-entry-example
   {:aat_version 1
@@ -145,17 +154,36 @@
     concrete-adapter?]
 
    ::parser-evidence-entry
-   [:map {:gen/elements parser-evidence-examples}
-    [:evidence_id ::nonblank-string]
-    [:evidence_class [:enum {:error/message "must be conversion-compatibility, parser-selection, or comparator-oracle"}
-                      :conversion-compatibility :parser-selection :comparator-oracle]]
-    [:producer_component ::nonblank-string]
-    [:logical_path ::workspace-logical-path]
-    [:current_external_path {:optional true} ::nullable-nonblank-string]
-    [:sha256 ::sha256-hash]
-    [:status [:enum {:error/message "must be citable, provisional, or superseded"}
-              :citable :provisional :superseded]]
-    [:summary ::nonblank-string]]
+   [:and {:gen/elements parser-evidence-examples}
+    [:map
+     [:evidence_id ::nonblank-string]
+     [:evidence_class [:enum {:error/message "must be conversion-compatibility, parser-selection, comparator-oracle, or neutral-comparison"}
+                       :conversion-compatibility :parser-selection :comparator-oracle :neutral-comparison]]
+     [:producer_component ::nonblank-string]
+     [:logical_path ::workspace-logical-path]
+     [:current_external_path {:optional true} ::nullable-nonblank-string]
+     [:sha256 ::sha256-hash]
+     ;; Neutral-comparison evidence binds to its frozen study contract by hash so
+     ;; a report can be cited as measurement while remaining structurally distinct
+     ;; from the admission/release evidence classes.
+     [:study_contract {:optional true} ::sha256-hash]
+     [:status [:enum {:error/message "must be citable, provisional, or superseded"}
+               :citable :provisional :superseded]]
+     [:summary ::nonblank-string]]
+    ;; MIN-1: couple :study_contract to :evidence_class so the study-contract
+    ;; binding cannot drift across evidence classes. Admission-class evidence
+    ;; (:conversion-compatibility, the only class ADR 0023 admits) records an
+    ;; exact registry tuple, not a research study, so it MUST NOT carry a study
+    ;; contract; a :neutral-comparison report is a preregistered study
+    ;; measurement, so it MUST bind to its frozen study contract by hash.
+    [:fn {:error/message ":conversion-compatibility evidence must not carry a :study_contract"}
+     (fn [entry]
+       (or (not= :conversion-compatibility (:evidence_class entry))
+           (not (contains? entry :study_contract))))]
+    [:fn {:error/message ":neutral-comparison evidence must carry a :study_contract"}
+     (fn [entry]
+       (or (not= :neutral-comparison (:evidence_class entry))
+           (contains? entry :study_contract)))]]
 
    ::aat-parser-ir-evidence-scope
    [:multi {:dispatch :evidence_type}

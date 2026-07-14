@@ -1,0 +1,153 @@
+{
+  "adr_0039_status": "Proposed",
+  "gate_status": "not-qualified",
+  "identity":
+  {
+    "adapter_version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 90967157f31687eeb8a994eb6d61810f19de5010)",
+    "admitted_git_rev": "004deaf548f34a36abbc17d0f7a162df010a6292",
+    "admitted_mapping_version": "0.4.0",
+    "admitted_parser_ir_schema_hash": "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2",
+    "admitted_tuple_adapter_version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 004deaf548f34a36abbc17d0f7a162df010a6292)",
+    "admitted_tuple_matches": false,
+    "baked_git_rev": "90967157f31687eeb8a994eb6d61810f19de5010",
+    "corpus_list_hash": "sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd",
+    "corpus_snapshot_hash": "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e",
+    "current_parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
+    "diagnostic_count": 0,
+    "divergence_loss_by_work":
+    {
+      "000001_1": 1,
+      "000002_2": 1,
+      "000003_3": 1
+    },
+    "mapping_used": "data\/aat-to-parser-ir-mapping-v2.json",
+    "mapping_version_used": "0.5.0",
+    "measurement_host": "hinoki",
+    "notes": ["Baked git coordinate 90967157 != admitted 004deaf; the release candidate is NOT the admitted ADR-0023 tuple.","Convert under the admitted mapping 0.4.0 fails closed: it pins parser-IR schema hash a1e1b506 but the current parser-ir.schema.json computes 43a6a6d8 (schema drifted since admission).","parser_ir_schema_validation was measured against the CURRENT parser-ir.schema.json via live mapping 0.5.0, not the admitted 0.4.0 tuple.","diagnostic_completeness is vacuous: the parser emitted 0 diagnostics over the corpus, so no diagnostic lacks the code\/severity\/span triple.","silent_drops is unavailable: the AAT->parser-IR divergence LOSS count (1\/work) is a mapping-layer signal, not the ADR-0002 source silent-drop instrument (source construct dropped without a diagnostic)."],
+    "parser": "ab-aozora"
+  },
+  "predicate_verdicts": [
+    {
+      "dimension": "Fatal parse failures over the qualification corpus",
+      "expected":
+      {
+        "comparator": "<=",
+        "value": 0
+      },
+      "instrument": "ab-check batch fatal_error result count (adapter exit 1)",
+      "observed": 0,
+      "predicate_id": "fatal-failures",
+      "unit": "works",
+      "verdict": "pass"
+    },
+    {
+      "dimension": "Parsed-source span coverage for parsed bytes, excluding documented ignored regions",
+      "expected":
+      {
+        "comparator": "=",
+        "value": 1.0
+      },
+      "instrument": "no committed per-work source-span-coverage instrument for ab-aozora",
+      "observed": "instrument-missing",
+      "predicate_id": "source-span-coverage",
+      "unit": "ratio",
+      "verdict": "unavailable"
+    },
+    {
+      "dimension": "Unsupported constructs dropped without a diagnostic (silent drops)",
+      "expected":
+      {
+        "comparator": "<=",
+        "value": 0
+      },
+      "instrument": "no committed silent-drop instrument (requires span-coverage vs diagnostic reconciliation)",
+      "observed": "instrument-missing",
+      "predicate_id": "silent-drops",
+      "unit": "constructs",
+      "verdict": "unavailable"
+    },
+    {
+      "dimension": "Every emitted diagnostic carries a stable code, severity, and span when available",
+      "expected":
+      {
+        "comparator": "=",
+        "value": 1.0
+      },
+      "instrument": "ab-aozora --mode diagnostics envelope entries {code,severity,source,span}",
+      "observed": 1.0,
+      "predicate_id": "diagnostic-completeness",
+      "unit": "ratio",
+      "verdict": "pass"
+    },
+    {
+      "dimension": "Successful parses whose parser-IR validates against parser-ir.schema.json",
+      "expected":
+      {
+        "comparator": "=",
+        "value": 1.0
+      },
+      "instrument": "ab-aat-to-parser-ir convert with validate_output_parser_ir",
+      "observed": 1.0,
+      "predicate_id": "parser-ir-schema-validation",
+      "unit": "ratio",
+      "verdict": "pass"
+    },
+    {
+      "dimension": "Required publication structures present per successful work",
+      "expected":
+      {
+        "comparator": "=",
+        "value": 1.0
+      },
+      "instrument": "reports\/parser-ir\/publication-bundle-validate.py against parser-ir-publication-preservation.schema.json",
+      "observed": "instrument-missing",
+      "predicate_id": "publication-structure",
+      "unit": "ratio",
+      "verdict": "unavailable"
+    },
+    {
+      "dimension": "Total wall time to process the qualification corpus",
+      "expected":
+      {
+        "comparator": "<=",
+        "value": 300
+      },
+      "instrument": "ab-check batch wall time via time(1); threshold from ci-smoke-corpus runtime target",
+      "observed": 0.06,
+      "predicate_id": "wall-time",
+      "unit": "seconds",
+      "verdict": "pass"
+    },
+    {
+      "dimension": "Peak resident memory attributable to the parser over the corpus",
+      "expected":
+      {
+        "comparator": "<=",
+        "value": 2147483648
+      },
+      "instrument": "no committed per-work memory instrument (ab-aozora\/ab-check emit no peak-RSS field)",
+      "observed": "instrument-missing",
+      "predicate_id": "memory",
+      "unit": "bytes",
+      "verdict": "unavailable"
+    },
+    {
+      "dimension": "Works exceeding the per-work timeout policy",
+      "expected":
+      {
+        "comparator": "<=",
+        "value": 0
+      },
+      "instrument": "ab-check --per_work_timeout adapter_timeout result count",
+      "observed": 0,
+      "predicate_id": "timeout-policy",
+      "unit": "works",
+      "verdict": "pass"
+    }],
+  "report_id": "abc\/parser-release-qualification\/2026-07-15",
+  "verdict_tally":
+  {
+    "pass": 5,
+    "unavailable": 4
+  }
+}

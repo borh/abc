@@ -37,6 +37,7 @@ flowchart LR
   ADR0035["0035 Rights Assessment and External Statements"]:::proposed
   ADR0037["0037 Terminal Provenance / Colophon Split"]:::proposed
   ADR0038["0038 Custom Parser Ownership and Neutral Comparison"]:::accepted
+  ADR0039["0039 Custom Parser Release Qualification"]:::proposed
   ADR0008 -->|"amends"| ADR0006
   ADR0010 -->|"amends"| ADR0001
   ADR0010 -->|"amends"| ADR0009
@@ -112,6 +113,10 @@ flowchart LR
   ADR0038 -.->|"depends on"| ADR0030
   ADR0038 -->|"amends"| ADR0032
   ADR0038 -.->|"depends on"| ADR0032
+  ADR0039 -.->|"depends on"| ADR0002
+  ADR0039 -.->|"depends on"| ADR0023
+  ADR0039 -.->|"depends on"| ADR0030
+  ADR0039 -.->|"depends on"| ADR0038
   classDef accepted fill:#1b5e20,stroke:#a5d6a7,color:#fff
   classDef draft fill:#37474f,stroke:#b0bec5,color:#fff
   classDef proposed fill:#e65100,stroke:#ffcc80,color:#fff

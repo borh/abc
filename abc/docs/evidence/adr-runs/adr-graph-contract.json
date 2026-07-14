@@ -36,12 +36,12 @@
     "docs\/adr\/0033-source-bundle-identity.md": "sha256:8dc84c890b8a1a7fcf08d8ac6eb0200b2af3d0d8e27a6fa4e814bf7ab115e752",
     "docs\/adr\/0034-typed-evidence-and-lifecycle-closure.md": "sha256:b05b9df35417d08c8ef8c301942bd4b86b114db489d7932b9dfa4e242c3b019b",
     "docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md": "sha256:bd7addd48c6d8cd7400e3dc90a957a167ffc567968490d821d736820809c7352",
-    "docs\/adr\/adr-graph.mmd": "sha256:c7d8529a574a2bd5998134b2e1dc306bae23b4e14cf37bede359563c26c2be43",
+    "docs\/adr\/adr-graph.mmd": "sha256:f9acdd4f8f4775377f80cdca4765513e54dbb7b6f49b8e6e47eb682b2207bb16",
     "docs\/adr\/adr-relations.edn": "sha256:66034fbb913112841e61e2cfee13e75fb0baae76d63c719d8f186896eacd66b6",
     "docs\/evidence\/adr-capture\/adr-graph-contract.edn": "sha256:251af9c178423b79ee1f35194628e97e0cc71cb5ebda0934930c47d1dc96c2be",
     "docs\/evidence\/adr-inputs\/adr-graph-contract.edn": "sha256:4729c48ab85162c30b9a00718dbd0f1030804ef97a2887576e99acb229f021e5",
     "src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:7945fb9c26cbcd173ebf997300c70b13c93ddf5d5b4a17f4901317890def884a",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
     "src\/abc\/tools\/diagram\/adr_graph.clj": "sha256:b444bd7f0cc8bcdc9f42721f51799c9536829e2ab4895e9ae8ed6c7e15134c4b",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
@@ -65,7 +65,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.adr-graph-evidence-test\/adr-graph-contract\"",
-    "revision": "981df886b001b499da3884907ecfda667d98e5d6",
+    "revision": "fff062d1c49fde007f97a8def00edcdc15b7491e",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

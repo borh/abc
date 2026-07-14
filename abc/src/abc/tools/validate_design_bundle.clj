@@ -22,6 +22,7 @@
    [abc.tools.snapshot-index :as snapshot-index]
    [abc.tools.metadata-record :as metadata-record]
    [abc.tools.parser-evidence :as parser-evidence]
+   [abc.tools.parser-maintenance-evidence :as parser-maintenance]
    [abc.tools.parser-ir-sentence-policy :as sentence-policy]
    [abc.tools.person-drift :as person-drift]
    [abc.tools.person-record :as person-record]
@@ -319,6 +320,14 @@
     (throw (ex-info (string/join "\n" errors)
                     {:errors errors}))))
 
+(defn validate-maintenance-evidence!
+  ([record as-of]
+   (validate-maintenance-evidence! "." record as-of))
+  ([repo-root record as-of]
+   (check-errors! (concat (parser-maintenance/problems record as-of)
+                          (parser-maintenance/benchmark-artifact-problems
+                           repo-root record)))))
+
 (def ^:private design-schema-inputs
   ["schemas/aat-parser-ir-divergence-bundle.schema.json"
    "schemas/aat-parser-ir-divergence.schema.json"
@@ -330,6 +339,7 @@
    "schemas/analysis-result.schema.json"
    "schemas/annotation-output.schema.json"
    "schemas/comparison-report.schema.json"
+   "schemas/custom-parser-maintenance-evidence.schema.json"
    "schemas/diagnostic.schema.json"
    "schemas/iiif-applicability.schema.json"
    "schemas/manifest-inputs.schema.json"
@@ -350,7 +360,8 @@
    "schemas/workflow-run.schema.json"])
 
 (def ^:private design-data-inputs
-  ["data/aat-parser-ir-compatibility.edn"
+  ["docs/evidence/external/custom-parser-maintenance-as-of.edn"
+   "data/aat-parser-ir-compatibility.edn"
    "data/analysis-recipes/literary-basic-ja-v1.json"
    "data/analysis-recipes/token-basic-ja-v1.json"
    "data/pack-policies/no-pack-v1.json"
@@ -381,6 +392,7 @@
    "examples/v0/example-work/warnings.jsonl"
    "examples/v0/snapshot/snapshot-index.json"
    "examples/workflow/passed.workflow-run.json"
+   "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
    "fixtures/tei-eaj-comparison/workset-export.json"])
 
 (defn evidence-input-paths []
@@ -400,6 +412,7 @@
         workflow-run-schema (files/read-json "schemas/workflow-run.schema.json")
         manifest-inputs-schema (files/read-json "schemas/manifest-inputs.schema.json")
         comparison-report-schema (files/read-json "schemas/comparison-report.schema.json")
+        custom-parser-maintenance-evidence-schema (files/read-json "schemas/custom-parser-maintenance-evidence.schema.json")
         aat-parser-ir-mapping-schema (files/read-json "schemas/aat-parser-ir-mapping.schema.json")
         aat-parser-ir-divergence-schema (files/read-json "schemas/aat-parser-ir-divergence.schema.json")
         aat-parser-ir-divergence-bundle-schema (files/read-json "schemas/aat-parser-ir-divergence-bundle.schema.json")
@@ -428,6 +441,7 @@
                            ["schemas/workflow-run.schema.json" workflow-run-schema]
                            ["schemas/manifest-inputs.schema.json" manifest-inputs-schema]
                            ["schemas/comparison-report.schema.json" comparison-report-schema]
+                           ["schemas/custom-parser-maintenance-evidence.schema.json" custom-parser-maintenance-evidence-schema]
                            ["schemas/aat-parser-ir-mapping.schema.json" aat-parser-ir-mapping-schema]
                            ["schemas/aat-parser-ir-divergence.schema.json" aat-parser-ir-divergence-schema]
                            ["schemas/aat-parser-ir-divergence-bundle.schema.json" aat-parser-ir-divergence-bundle-schema]
@@ -447,6 +461,15 @@
                            ["schemas/person-drift-event.schema.json" person-drift-event-schema]
                            ["schemas/person-drift-index.schema.json" person-drift-index-schema]]]
       (schema-valid! schema path))
+    (let [maintenance-path
+          "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
+          maintenance-record (files/read-json maintenance-path)
+          governance-as-of
+          (str (:as-of
+                (files/read-edn
+                 "docs/evidence/external/custom-parser-maintenance-as-of.edn")))]
+      (validate-json! custom-parser-maintenance-evidence-schema maintenance-path)
+      (validate-maintenance-evidence! "." maintenance-record governance-as-of))
     (doseq [path (concat ["examples/v0/example-work/source.manifest.json"
                           "examples/v0/example-work/manifest.json"
                           "examples/v0/example-work/failure-manifest.example.json"]

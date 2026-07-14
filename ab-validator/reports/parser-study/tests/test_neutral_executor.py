@@ -36,6 +36,10 @@ def test_run_and_resume_produce_one_verified_outcome_per_inventory_item(tmp_path
     assert [row["item_id"] for row in first] == ["a", "b"]
     assert all(row["status"] == "success" for row in first)
 
+    (output / "manifest.json").unlink()
+    executor.execute(inventory_path, sources, ["/bin/sh", "-c", "cat"], output, 2, 1)
+    assert executor.verify(inventory_path, output) == first
+
     executor.execute(inventory_path, sources, ["/bin/sh", "-c", "exit 99"], output, 2, 1)
     second = executor.verify(inventory_path, output)
     assert all(row["status"] == "failure" for row in second)

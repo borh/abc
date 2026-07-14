@@ -172,3 +172,10 @@ APIs over the entire text, then emits the native retokenized stream. It does
 not call adapter body selection, fallback, mapping, or AAT projection. RED was
 the missing native function; its focused test proves ruby recognition and
 retention of header text. The adapter-crate tests, formatter, and clippy pass.
+
+Interrupted full lanes exposed that the final manifest was the only resume
+index even though per-item outcomes were already durable. Resume now scans
+content-addressed outcome files when no manifest exists, reusing a row only if
+its embedded execution identity matches. The final completeness and artifact
+hash verifier remains mandatory. RED showed identical execution rewrote rows
+after deleting the manifest; GREEN preserves them byte-for-byte.

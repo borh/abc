@@ -195,6 +195,15 @@ def execute(
         if previous.get("execution_sha256") == execution_sha256:
             for entry in previous.get("outcomes", []):
                 existing[Path(entry["path"]).name] = entry
+    else:
+        for path in sorted((output / "outcomes").glob("*.json")):
+            data = path.read_bytes()
+            row = json.loads(data)
+            if row.get("execution_sha256") == execution_sha256:
+                existing[path.name] = {
+                    "path": path.relative_to(output).as_posix(),
+                    "sha256": sha256(data),
+                }
 
     def one(item: dict[str, str]) -> dict[str, str]:
         name = outcome_name(item["id"])

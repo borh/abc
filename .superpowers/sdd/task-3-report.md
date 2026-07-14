@@ -144,3 +144,11 @@ The first four frozen vectors and first four indexed corpus works each produced
 one hash-verified success outcome through the pinned `aozora2` adapted binary.
 These temporary smoke artifacts were verified outside the checkout and are not
 presented as full-study results.
+
+Before full execution, review found three resume/safety gaps. The executor now
+hashes the exact argument vector and declared environment into every outcome
+and manifest, refuses resume across an identity change, starts each candidate
+in a new session, kills the entire process group on timeout, and resolves every
+read artifact beneath the output root while rejecting symlink escapes. RED
+proved that a changed command incorrectly reused successes and that an output
+symlink escaped containment. Six focused tests, ruff, and strict mypy pass.

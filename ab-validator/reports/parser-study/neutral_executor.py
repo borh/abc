@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import signal
 import subprocess
 import time
 import zipfile
@@ -27,6 +29,16 @@ def safe_relative(value: str) -> bool:
         and not (len(value) >= 2 and value[0].isalpha() and value[1] == ":")
         and all(part not in ("", ".", "..") for part in path.parts)
     )
+
+
+def contained_file(root: Path, value: str) -> Path:
+    if not safe_relative(value):
+        raise ValueError("unsafe relative path")
+    root_resolved = root.resolve()
+    path = (root / value).resolve()
+    if not path.is_relative_to(root_resolved) or not path.is_file():
+        raise ValueError("path escapes output root or is not a file")
+    return path
 
 
 def load_inventory(path: Path) -> list[dict[str, str]]:
@@ -104,23 +116,34 @@ def materialize_index(index_path: Path, corpus: Path, output: Path, limit: int) 
 
 
 def run_item(
-    item: dict[str, str], source_root: Path, command: list[str], output: Path, timeout: int
+    item: dict[str, str],
+    source_root: Path,
+    command: list[str],
+    environment: dict[str, str],
+    execution_sha256: str,
+    output: Path,
+    timeout: int,
 ) -> dict[str, str]:
     source = (source_root / item["path"]).read_bytes()
     if sha256(source) != item["sha256"]:
         raise ValueError(f"source hash mismatch: {item['id']}")
     started = time.monotonic_ns()
+    process = subprocess.Popen(
+        command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=os.environ | environment,
+        start_new_session=True,
+    )
     try:
-        process = subprocess.run(
-            command, input=source, capture_output=True, timeout=timeout, check=False
-        )
+        stdout, stderr = process.communicate(source, timeout=timeout)
         status = "success" if process.returncode == 0 else "failure"
         exit_code: int | None = process.returncode
-        stdout, stderr = process.stdout, process.stderr
-    except subprocess.TimeoutExpired as error:
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGKILL)
+        stdout, stderr = process.communicate()
         status, exit_code = "timeout", None
-        stdout = error.stdout or b""
-        stderr = error.stderr or b""
     elapsed = time.monotonic_ns() - started
     raw = output / "raw"
     stdout_path = raw / (outcome_name(item["id"]) + ".stdout")
@@ -131,6 +154,7 @@ def run_item(
     outcome: dict[str, Any] = {
         "item_id": item["id"],
         "source_sha256": item["sha256"],
+        "execution_sha256": execution_sha256,
         "status": status,
         "exit_code": exit_code,
         "elapsed_ns": elapsed,
@@ -152,29 +176,47 @@ def execute(
     output: Path,
     timeout: int,
     jobs: int,
+    environment: dict[str, str] | None = None,
 ) -> None:
     items = load_inventory(inventory_path)
+    environment = environment or {}
+    execution_sha256 = sha256(
+        json.dumps(
+            {"command": command, "environment": environment},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    )
     output.mkdir(parents=True, exist_ok=True)
     existing: dict[str, dict[str, str]] = {}
     manifest_path = output / "manifest.json"
     if manifest_path.exists():
-        for entry in json.loads(manifest_path.read_bytes()).get("outcomes", []):
-            existing[Path(entry["path"]).name] = entry
+        previous = json.loads(manifest_path.read_bytes())
+        if previous.get("execution_sha256") == execution_sha256:
+            for entry in previous.get("outcomes", []):
+                existing[Path(entry["path"]).name] = entry
 
     def one(item: dict[str, str]) -> dict[str, str]:
         name = outcome_name(item["id"])
         entry = existing.get(name)
         if entry:
-            path = output / entry["path"]
-            if path.is_file() and sha256(path.read_bytes()) == entry["sha256"]:
+            try:
+                path = contained_file(output, entry["path"])
+            except ValueError:
+                path = None
+            if path is not None and sha256(path.read_bytes()) == entry["sha256"]:
                 return entry
-        return run_item(item, source_root, command, output, timeout)
+        return run_item(item, source_root, command, environment, execution_sha256, output, timeout)
 
     with ThreadPoolExecutor(max_workers=jobs) as pool:
         outcomes = list(pool.map(one, items))
     write_json(
         manifest_path,
-        {"inventory_sha256": sha256(inventory_path.read_bytes()), "outcomes": outcomes},
+        {
+            "inventory_sha256": sha256(inventory_path.read_bytes()),
+            "execution_sha256": execution_sha256,
+            "outcomes": outcomes,
+        },
     )
     verify(inventory_path, output)
 
@@ -189,18 +231,20 @@ def verify(inventory_path: Path, output: Path) -> list[dict[str, Any]]:
     for item, entry in zip(items, entries, strict=True):
         if not isinstance(entry, dict) or not safe_relative(entry.get("path", "")):
             raise ValueError("manifest outcomes contain unsafe paths")
-        path = output / entry["path"]
+        path = contained_file(output, entry["path"])
         data = path.read_bytes()
         if sha256(data) != entry.get("sha256"):
             raise ValueError("outcome hash mismatch")
         row = json.loads(data)
         if row.get("item_id") != item["id"] or row.get("source_sha256") != item["sha256"]:
             raise ValueError("outcome identity mismatch")
+        if row.get("execution_sha256") != manifest.get("execution_sha256"):
+            raise ValueError("outcome execution identity mismatch")
         for stream in ("stdout", "stderr"):
             artifact = row[stream]
             if not safe_relative(artifact["path"]):
                 raise ValueError("unsafe artifact path")
-            if sha256((output / artifact["path"]).read_bytes()) != artifact["sha256"]:
+            if sha256(contained_file(output, artifact["path"]).read_bytes()) != artifact["sha256"]:
                 raise ValueError("artifact hash mismatch")
         rows.append(row)
     return rows

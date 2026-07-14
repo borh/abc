@@ -37,7 +37,9 @@ def test_run_and_resume_produce_one_verified_outcome_per_inventory_item(tmp_path
     assert all(row["status"] == "success" for row in first)
 
     executor.execute(inventory_path, sources, ["/bin/sh", "-c", "exit 99"], output, 2, 1)
-    assert executor.verify(inventory_path, output) == first
+    second = executor.verify(inventory_path, output)
+    assert all(row["status"] == "failure" for row in second)
+    assert second != first
 
 
 def test_verifier_rejects_missing_duplicate_and_tampered_outcomes(tmp_path: Path) -> None:
@@ -93,3 +95,17 @@ def test_materialize_index_extracts_zip_members_without_reordering(tmp_path: Pat
     inventory = executor.load_inventory(output / "inventory.json")
     assert inventory[0]["id"] == "work-a"
     assert (output / "sources" / inventory[0]["path"]).read_bytes() == b"alpha"
+
+
+def test_verifier_rejects_output_symlink_escape(tmp_path: Path) -> None:
+    output = tmp_path / "out"
+    output.mkdir()
+    outside = tmp_path / "outside.json"
+    outside.write_text("{}")
+    (output / "escaped.json").symlink_to(outside)
+    try:
+        executor.contained_file(output, "escaped.json")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("output-root symlink escape accepted")

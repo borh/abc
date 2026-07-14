@@ -14,7 +14,7 @@
   ;; Reads entire file into memory; large run summaries may OOM.
 
   (let [summary-file (fs/file input-dir "run-summary.jsonl")
-        events (when (fs/exists? summary-file)
+        events (when (files/exists? summary-file)
                  (files/read-json-lines summary-file))]
     (or (some #(when (= "run-complete" (get % "event"))
                  (get % "status"))
@@ -33,20 +33,20 @@
         divergence-file (imported-file input-dir "divergence.jsonl")
         source-region-coverage-file (imported-file input-dir "source-region-coverage.json")]
     (cond-> [(sidecar "warnings" warnings-file "application/jsonl" "warnings.jsonl")]
-      (fs/exists? divergence-bundle-file)
+      (files/exists? divergence-bundle-file)
       (conj (sidecar "mapping-divergence"
                      divergence-bundle-file
                      "application/json"
                      "divergence.json"))
 
-      (and (not (fs/exists? divergence-bundle-file))
-           (fs/exists? divergence-file))
+      (and (not (files/exists? divergence-bundle-file))
+           (files/exists? divergence-file))
       (conj (sidecar "mapping-divergence"
                      divergence-file
                      "application/jsonl"
                      "divergence.jsonl"))
 
-      (fs/exists? source-region-coverage-file)
+      (files/exists? source-region-coverage-file)
       (conj (sidecar "source-region-coverage"
                      source-region-coverage-file
                      "application/json"

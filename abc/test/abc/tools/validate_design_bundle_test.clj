@@ -2037,6 +2037,13 @@
                       (compat/registry-errors
                        {:entries [invalid-entry]}))))))
 
+(defn- compatibility-entry [registry adapter adapter-version]
+  (->> (:entries registry)
+       (filter #(and (= adapter (:aat_adapter %))
+                     (= adapter-version (:aat_adapter_version %))
+                     (= "0.2.0" (:mapping_version %))))
+       first))
+
 (defn aat-parser-ir-compatibility-assertions []
   (let [registry (compat/load-registry)]
     (testing "matches measured adapter-scoped registry entries"
@@ -2084,14 +2091,8 @@
                      :mapping_schema_hash current-mapping-schema-hash
                      :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
                      :parser_ir_schema_hash v6-parser-ir-schema-hash}))))
-      (let [entry-for (fn [adapter adapter-version]
-                        (->> (:entries registry)
-                             (filter #(and (= adapter (:aat_adapter %))
-                                           (= adapter-version (:aat_adapter_version %))
-                                           (= "0.2.0" (:mapping_version %))))
-                             first))
-            aozora-rs-entry (entry-for "aozora-rs" "aozora-rs-adapter 0.1.0 2b4e8d1")
-            aozora2html-entry (entry-for "aozora2html" "aozora2html-adapter 0.1.0 gem-3.0.1")]
+      (let [aozora-rs-entry (compatibility-entry registry "aozora-rs" "aozora-rs-adapter 0.1.0 2b4e8d1")
+            aozora2html-entry (compatibility-entry registry "aozora2html" "aozora2html-adapter 0.1.0 gem-3.0.1")]
         (is (some? aozora-rs-entry) "missing 0.2.0 aozora-rs registry entry")
         (is (some? aozora2html-entry) "missing 0.2.0 aozora2html registry entry")
         (is (= (:mapping_hash aozora-rs-entry) (:mapping_hash aozora2html-entry))

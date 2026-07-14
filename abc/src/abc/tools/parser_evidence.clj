@@ -64,21 +64,22 @@
                                :logical-path logical_path)))))
        vec))
 
+(defn duplicate-values [entries key-fn label]
+  (->> entries
+       (map-indexed (fn [idx entry] [(key-fn entry) idx]))
+       (filter (fn [pair] (some? (first pair))))
+       (group-by first)
+       (keep (fn [[k pairs]]
+               (when (< 1 (count pairs))
+                 (str "Parser evidence index duplicates " label
+                      " " k " at entries "
+                      (string/join ", " (map second pairs))))))))
+
 (defn- duplicate-errors
   [entries]
-  (let [dupes (fn [key-fn label]
-                (->> entries
-                     (map-indexed (fn [idx entry] [(key-fn entry) idx]))
-                     (filter (comp some? first))
-                     (group-by first)
-                     (keep (fn [[k pairs]]
-                             (when (< 1 (count pairs))
-                               (str "Parser evidence index duplicates " label
-                                    " " k " at entries "
-                                    (string/join ", " (map second pairs))))))))]
-    (vec (concat (dupes evidence-id-key ":evidence_id")
-                 (dupes logical-file-key
-                        "logical_path + sha256")))))
+  (vec (concat (duplicate-values entries evidence-id-key ":evidence_id")
+               (duplicate-values entries logical-file-key
+                                 "logical_path + sha256"))))
 
 (defn index-errors
   [index]

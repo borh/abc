@@ -52,25 +52,26 @@
    "output_format_spec_hash"])
 
 (defn identity-object [manifest-inputs {:keys [manifest-schema-hash output-format-spec-hash]}]
-  (into (sorted-map)
-        (map (fn [k]
-               [k (case k
-                    "manifest_schema_hash" manifest-schema-hash
-                    "corpus_snapshot_hash" (get manifest-inputs k)
-                    "work_content_hash" (get manifest-inputs k)
-                    "metadata_record_hash" nil
-                    "parser_build_hash" (get manifest-inputs k)
-                    "parser_config_hash" (get manifest-inputs k)
-                    "aat_parser_ir_mapping_hash" (get manifest-inputs "mapping_hash")
-                    "parser_ir_schema_hash" (get manifest-inputs k)
-                    "tei_profile_hash" nil
-                    "tokenizer_build_hash" nil
-                    "tokenizer_dictionary_hash" nil
-                    "tokenizer_profile_hash" (get manifest-inputs k)
-                    "analysis_recipe_hash" nil
-                    "annotation_policy_hash" nil
-                    "output_format_spec_hash" output-format-spec-hash)]))
-        identity-keys))
+  (reduce (fn [result k]
+            (assoc result k
+                   (case k
+                     "manifest_schema_hash" manifest-schema-hash
+                     "corpus_snapshot_hash" (get manifest-inputs k)
+                     "work_content_hash" (get manifest-inputs k)
+                     "metadata_record_hash" nil
+                     "parser_build_hash" (get manifest-inputs k)
+                     "parser_config_hash" (get manifest-inputs k)
+                     "aat_parser_ir_mapping_hash" (get manifest-inputs "mapping_hash")
+                     "parser_ir_schema_hash" (get manifest-inputs k)
+                     "tei_profile_hash" nil
+                     "tokenizer_build_hash" nil
+                     "tokenizer_dictionary_hash" nil
+                     "tokenizer_profile_hash" (get manifest-inputs k)
+                     "analysis_recipe_hash" nil
+                     "annotation_policy_hash" nil
+                     "output_format_spec_hash" output-format-spec-hash)))
+          (sorted-map)
+          identity-keys))
 
 (defn content [file media-type path-hint sha256-file-fn]
   {"content_hash" (str "sha256:" (sha256-file-fn file))

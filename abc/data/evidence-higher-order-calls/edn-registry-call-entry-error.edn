@@ -1,0 +1,4 @@
+{:schema-version :abc-evidence-higher-order-call-v1
+ :caller abc.tools.edn-registry/call-entry-error
+ :parameters {entry-error-fn [abc.tools.parser-evidence/entry-errors
+                              abc.tools.aat-parser-ir-compat/entry-errors]}}

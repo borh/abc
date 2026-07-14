@@ -151,7 +151,10 @@
 
 (def ^:private contract-basenames
   {'abc.tools.manifest/content "manifest-content.edn"
-   'abc.tools.adr/validate-repository* "adr-validate-repository-star.edn"})
+   'abc.tools.adr/validate-repository* "adr-validate-repository-star.edn"
+   'abc.tools.edn-registry/call-entry-error "edn-registry-call-entry-error.edn"
+   'abc.tools.edn-registry/call-duplicate-error "edn-registry-call-duplicate-error.edn"
+   'abc.tools.parser-evidence/duplicate-values "parser-evidence-duplicate-errors.edn"})
 
 (def ^:private forbidden-vars
   '#{clojure.core/slurp clojure.core/line-seq clojure.core/file-seq
@@ -207,6 +210,8 @@
   '#{abc.tools.hash/sha256-bytes
      abc.tools.jcs/canonical-json-string
      abc.tools.jcs/rfc8785-string-domain-json-bytes
+     abc.tools.malli/explain-contract
+     abc.tools.malli/explanation-messages
      abc.tools.path-containment/path-state
      abc.tools.schema/validation-errors
      abc.tools.workflow/validate-run
@@ -335,6 +340,8 @@
      deleteIfExists 1}
     abc.tools.linked-art/expand-document {expand 1 loader 1 base 1 get 1}
     abc.tools.logging/log! {log! 1}
+    abc.tools.malli/explain-contract {}
+    abc.tools.malli/explanation-messages {}
     abc.tools.malli/cached-schema {}
     abc.tools.manifest-to-rdf/graph->ttl {}
     abc.tools.manifest-to-rdf/manifest->graph {}

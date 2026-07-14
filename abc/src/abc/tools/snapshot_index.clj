@@ -37,7 +37,8 @@
 (defn hash-json-value [value]
   (hash/format-sha256 (hash/sha256-json-jcs value)))
 
-(def policy-hash hash-json-value)
+(defn policy-hash [value]
+  (hash-json-value value))
 
 (defn- require-hash! [_label value]
   (hash/parse-sha256 value)

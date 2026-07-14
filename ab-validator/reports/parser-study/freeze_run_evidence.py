@@ -240,9 +240,7 @@ def project_summary(
         rows = neutral.verify(inventory_path, output)
         run["outcomes"] = dict(sorted(Counter(row["status"] for row in rows).items()))
         materialization = resolver["materializations"][run["execution_sha256"]]
-        program_basename, required_argv = COMMAND_BINDINGS[
-            (run["candidate"], run["mode"])
-        ]
+        program_basename, required_argv = COMMAND_BINDINGS[(run["candidate"], run["mode"])]
         materialization_projection = {
             key: materialization[key]
             for key in (
@@ -259,9 +257,7 @@ def project_summary(
             "mode": run["mode"],
             "required_program_basename": program_basename,
             "required_argv": required_argv,
-            "materialization_binding_sha256": sha256(
-                canonical_bytes(materialization_projection)
-            ),
+            "materialization_binding_sha256": sha256(canonical_bytes(materialization_projection)),
         }
     validate_summary(projected)
     validate_frozen_bindings(

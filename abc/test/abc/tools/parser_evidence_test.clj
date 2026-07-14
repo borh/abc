@@ -116,6 +116,32 @@
     (is (every? #(not (contains? % :neutral_comparison)) rows))
     (is (every? #(not= :neutral-comparison (:evidence_class %)) rows))))
 
+(deftest neutral-comparison-reports-are-registered-with-study-contract-test
+  (testing "the generated neutral-comparison reports register, content-address,
+            and bind to their frozen study-contract hash"
+    (let [root (fs/canonicalize "..")
+          study-contract "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe"
+          ids #{"ab-validator/aozora-parser-neutral-comparison-result-2026-07"
+                "ab-validator/aozora-parser-neutral-comparison-report-2026-07"}
+          rows (->> (:entries (parser-evidence/load-index))
+                    (filter #(contains? ids (:evidence_id %))))]
+      (testing "the committed index validates as a whole"
+        (is (= :ok (parser-evidence/validate-index!
+                    (parser-evidence/load-index)))))
+      (testing "both reports are present and typed neutral-comparison"
+        (is (= 2 (count rows)))
+        (is (every? #(= :neutral-comparison (:evidence_class %)) rows)))
+      (testing "each carries the frozen study-contract hash"
+        (is (every? #(= study-contract (:study_contract %)) rows)))
+      (testing "each report file content-addresses to its committed hash"
+        (is (empty? (parser-evidence/citation-file-problems root {:entries rows}))))
+      (testing "neutral-comparison is not an admission/release evidence class"
+        (is (every? #(not (contains? #{:conversion-compatibility
+                                       :parser-selection
+                                       :comparator-oracle}
+                                     (:evidence_class %)))
+                    rows))))))
+
 (deftest parser-evidence-index-validation-test
   (testing "accepts the committed evidence index"
     (is (= :ok (parser-evidence/validate-index!

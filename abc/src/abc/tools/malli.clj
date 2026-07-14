@@ -74,7 +74,16 @@
     :current_external_path nil
     :sha256 example-hash
     :status :superseded
-    :summary "Comparator oracle evidence."}])
+    :summary "Comparator oracle evidence."}
+   {:evidence_id "ab-validator/neutral"
+    :evidence_class :neutral-comparison
+    :producer_component "ab-validator"
+    :logical_path "ab-validator/docs/neutral.md"
+    :current_external_path nil
+    :sha256 example-hash
+    :study_contract example-hash
+    :status :citable
+    :summary "Neutral existing-parser comparison measurement; cannot admit or release-qualify."}])
 
 (def ^:private compat-entry-example
   {:aat_version 1
@@ -147,12 +156,16 @@
    ::parser-evidence-entry
    [:map {:gen/elements parser-evidence-examples}
     [:evidence_id ::nonblank-string]
-    [:evidence_class [:enum {:error/message "must be conversion-compatibility, parser-selection, or comparator-oracle"}
-                      :conversion-compatibility :parser-selection :comparator-oracle]]
+    [:evidence_class [:enum {:error/message "must be conversion-compatibility, parser-selection, comparator-oracle, or neutral-comparison"}
+                      :conversion-compatibility :parser-selection :comparator-oracle :neutral-comparison]]
     [:producer_component ::nonblank-string]
     [:logical_path ::workspace-logical-path]
     [:current_external_path {:optional true} ::nullable-nonblank-string]
     [:sha256 ::sha256-hash]
+    ;; Neutral-comparison evidence binds to its frozen study contract by hash so
+    ;; a report can be cited as measurement while remaining structurally distinct
+    ;; from the admission/release evidence classes.
+    [:study_contract {:optional true} ::sha256-hash]
     [:status [:enum {:error/message "must be citable, provisional, or superseded"}
               :citable :provisional :superseded]]
     [:summary ::nonblank-string]]

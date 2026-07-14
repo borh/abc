@@ -1,0 +1,1995 @@
+{
+  "schema_version": 1,
+  "study_id": "aozora-parser-neutral-comparison-2026-07",
+  "rows": [
+    {
+      "candidate": "aozora",
+      "axis": "construct_coverage",
+      "measurement_mode": "native",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "construct_coverage",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "fidelity",
+      "measurement_mode": "native",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "fidelity",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "robustness",
+      "measurement_mode": "native",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17885,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "robustness",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17886,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "diagnostics",
+      "measurement_mode": "native",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "diagnostics",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "spans",
+      "measurement_mode": "native",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "spans",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "performance",
+      "measurement_mode": "native",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "performance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "maintenance",
+      "measurement_mode": "native",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "maintenance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "packaging",
+      "measurement_mode": "native",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "packaging",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "license",
+      "measurement_mode": "native",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora",
+      "axis": "license",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "construct_coverage",
+      "measurement_mode": "native",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "construct_coverage",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "fidelity",
+      "measurement_mode": "native",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "fidelity",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "robustness",
+      "measurement_mode": "native",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17886,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "robustness",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17874,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "diagnostics",
+      "measurement_mode": "native",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "diagnostics",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "spans",
+      "measurement_mode": "native",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "spans",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "performance",
+      "measurement_mode": "native",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "performance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "maintenance",
+      "measurement_mode": "native",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "maintenance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "packaging",
+      "measurement_mode": "native",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "packaging",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "license",
+      "measurement_mode": "native",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2",
+      "axis": "license",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "construct_coverage",
+      "measurement_mode": "native",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "construct_coverage",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "fidelity",
+      "measurement_mode": "native",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "fidelity",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "robustness",
+      "measurement_mode": "native",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17886,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "robustness",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17886,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "diagnostics",
+      "measurement_mode": "native",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "diagnostics",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "spans",
+      "measurement_mode": "native",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "spans",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "performance",
+      "measurement_mode": "native",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "performance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "maintenance",
+      "measurement_mode": "native",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "maintenance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "packaging",
+      "measurement_mode": "native",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "packaging",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "license",
+      "measurement_mode": "native",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-rs",
+      "axis": "license",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "construct_coverage",
+      "measurement_mode": "native",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "construct_coverage",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "fidelity",
+      "measurement_mode": "native",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "fidelity",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "robustness",
+      "measurement_mode": "native",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17886,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "robustness",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17886,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "diagnostics",
+      "measurement_mode": "native",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "diagnostics",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "spans",
+      "measurement_mode": "native",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "spans",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "performance",
+      "measurement_mode": "native",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "performance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "maintenance",
+      "measurement_mode": "native",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "maintenance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "packaging",
+      "measurement_mode": "native",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "packaging",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "license",
+      "measurement_mode": "native",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora2html",
+      "axis": "license",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "rubygems:aozora2html:3.0.1",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "construct_coverage",
+      "measurement_mode": "native",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "construct_coverage",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "fidelity",
+      "measurement_mode": "native",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "fidelity",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "robustness",
+      "measurement_mode": "native",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17836,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "robustness",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "measured",
+      "numerator": 17773,
+      "denominator": 17886,
+      "missingness": "none",
+      "caveats": [
+        "Parse-completion (successful parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus, failures and timeouts retained in the denominator. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "diagnostics",
+      "measurement_mode": "native",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "diagnostics",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed diagnostic capture: the diagnostics fixture is frozen, but no per-parser diagnostic output and no cross-parser severity/span matching run is committed. Native diagnostic schemas differ per parser, so no comparable metric can be derived from parse-outcome counts alone."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "spans",
+      "measurement_mode": "native",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "spans",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed span oracle: exact/overlapping source-span, covered-byte, and invalid-span counts require an authoritative span-bearing reference that is absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "performance",
+      "measurement_mode": "native",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "performance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "maintenance",
+      "measurement_mode": "native",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "maintenance",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "packaging",
+      "measurement_mode": "native",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "packaging",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "license",
+      "measurement_mode": "native",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-epub3",
+      "axis": "license",
+      "measurement_mode": "adapter_normalized",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=",
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
+      ],
+      "provenance": [
+        "native_parser",
+        "adapter"
+      ]
+    },
+    {
+      "candidate": "aozora-parser.js",
+      "axis": "construct_coverage",
+      "measurement_mode": "native",
+      "parser_revision": "abaf45422051f418905d9d269f1d2db28ebeed05",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "build-failure",
+      "caveats": [
+        "Excluded from execution by the preregistration: Inventoried serious PEG parser, but the pin has no package-lock and therefore no reproducible executable build; retain as an explicit exclusion. No reproducible executable build exists, so no ConstructCoverage measurement can be attempted."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-parser.js",
+      "axis": "fidelity",
+      "measurement_mode": "native",
+      "parser_revision": "abaf45422051f418905d9d269f1d2db28ebeed05",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "build-failure",
+      "caveats": [
+        "Excluded from execution by the preregistration: Inventoried serious PEG parser, but the pin has no package-lock and therefore no reproducible executable build; retain as an explicit exclusion. No reproducible executable build exists, so no Fidelity measurement can be attempted."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-parser.js",
+      "axis": "robustness",
+      "measurement_mode": "native",
+      "parser_revision": "abaf45422051f418905d9d269f1d2db28ebeed05",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "build-failure",
+      "caveats": [
+        "Excluded from execution by the preregistration: Inventoried serious PEG parser, but the pin has no package-lock and therefore no reproducible executable build; retain as an explicit exclusion. No reproducible executable build exists, so no Robustness measurement can be attempted."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-parser.js",
+      "axis": "diagnostics",
+      "measurement_mode": "native",
+      "parser_revision": "abaf45422051f418905d9d269f1d2db28ebeed05",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "build-failure",
+      "caveats": [
+        "Excluded from execution by the preregistration: Inventoried serious PEG parser, but the pin has no package-lock and therefore no reproducible executable build; retain as an explicit exclusion. No reproducible executable build exists, so no Diagnostics measurement can be attempted."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-parser.js",
+      "axis": "spans",
+      "measurement_mode": "native",
+      "parser_revision": "abaf45422051f418905d9d269f1d2db28ebeed05",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "build-failure",
+      "caveats": [
+        "Excluded from execution by the preregistration: Inventoried serious PEG parser, but the pin has no package-lock and therefore no reproducible executable build; retain as an explicit exclusion. No reproducible executable build exists, so no Spans measurement can be attempted."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-parser.js",
+      "axis": "performance",
+      "measurement_mode": "native",
+      "parser_revision": "abaf45422051f418905d9d269f1d2db28ebeed05",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "build-failure",
+      "caveats": [
+        "Excluded from execution by the preregistration: Inventoried serious PEG parser, but the pin has no package-lock and therefore no reproducible executable build; retain as an explicit exclusion. No reproducible executable build exists, so no Performance measurement can be attempted."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-parser.js",
+      "axis": "maintenance",
+      "measurement_mode": "native",
+      "parser_revision": "abaf45422051f418905d9d269f1d2db28ebeed05",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "build-failure",
+      "caveats": [
+        "Excluded from execution by the preregistration: Inventoried serious PEG parser, but the pin has no package-lock and therefore no reproducible executable build; retain as an explicit exclusion. No reproducible executable build exists, so no Maintenance measurement can be attempted."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-parser.js",
+      "axis": "packaging",
+      "measurement_mode": "native",
+      "parser_revision": "abaf45422051f418905d9d269f1d2db28ebeed05",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "build-failure",
+      "caveats": [
+        "Excluded from execution by the preregistration: Inventoried serious PEG parser, but the pin has no package-lock and therefore no reproducible executable build; retain as an explicit exclusion. No reproducible executable build exists, so no Packaging measurement can be attempted."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "aozora-parser.js",
+      "axis": "license",
+      "measurement_mode": "native",
+      "parser_revision": "abaf45422051f418905d9d269f1d2db28ebeed05",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "build-failure",
+      "caveats": [
+        "Excluded from execution by the preregistration: Inventoried serious PEG parser, but the pin has no package-lock and therefore no reproducible executable build; retain as an explicit exclusion. No reproducible executable build exists, so no License measurement can be attempted."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "ab-aozora",
+      "axis": "construct_coverage",
+      "measurement_mode": "native",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "ab-aozora",
+      "axis": "fidelity",
+      "measurement_mode": "native",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "ab-aozora",
+      "axis": "robustness",
+      "measurement_mode": "native",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "ab-aozora",
+      "axis": "diagnostics",
+      "measurement_mode": "native",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "ab-aozora",
+      "axis": "spans",
+      "measurement_mode": "native",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "ab-aozora",
+      "axis": "performance",
+      "measurement_mode": "native",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "ab-aozora",
+      "axis": "maintenance",
+      "measurement_mode": "native",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "ab-aozora",
+      "axis": "packaging",
+      "measurement_mode": "native",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    },
+    {
+      "candidate": "ab-aozora",
+      "axis": "license",
+      "measurement_mode": "native",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "adapter_revision": null,
+      "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "status": "failed",
+      "numerator": null,
+      "denominator": null,
+      "missingness": "unavailable",
+      "caveats": [
+        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+      ],
+      "provenance": [
+        "native_parser"
+      ]
+    }
+  ]
+}

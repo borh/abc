@@ -1,0 +1,47 @@
+{:schema-version :abc-adr-evidence-registration-v1
+ :entries
+ [{:claim-id "ADR-0029-C1" :claim-kind :structural-invariant
+   :evidence-kind :structural-test
+   :artifact-path "docs/evidence/adr-runs/adr-graph-contract.json"
+   :observation-key "adr-graph-contracts-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0029-C2" :claim-kind :structural-invariant
+   :evidence-kind :structural-test
+   :artifact-path "docs/evidence/adr-runs/architecture-graph-contract.json"
+   :observation-key "architecture-graph-contracts-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0029-C3" :claim-kind :fixture-behavior
+   :evidence-kind :fixture-conformance
+   :artifact-path "docs/evidence/adr-runs/workflow-graph-fixtures.json"
+   :observation-key "workflow-graph-fixtures-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0029-C4" :claim-kind :structural-invariant
+   :evidence-kind :structural-test
+   :artifact-path "docs/evidence/adr-runs/diagram-registry-drift.json"
+   :observation-key "diagram-registry-contracts-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0029-C5" :claim-kind :structural-invariant
+   :evidence-kind :structural-test
+   :artifact-path "docs/evidence/adr-runs/diagram-registry-drift.json"
+   :observation-key "diagram-registry-contracts-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0031-C1" :claim-kind :structural-invariant
+   :evidence-kind :structural-test
+   :artifact-path "docs/evidence/adr-runs/adr-policy-fixtures.json"
+   :observation-key "adr-policy-fixtures-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0031-C2" :claim-kind :structural-invariant
+   :evidence-kind :structural-test
+   :artifact-path "docs/evidence/adr-runs/adr-graph-contract.json"
+   :observation-key "adr-graph-contracts-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0031-C3" :claim-kind :structural-invariant
+   :evidence-kind :structural-test
+   :artifact-path "docs/evidence/adr-runs/architecture-graph-contract.json"
+   :observation-key "architecture-graph-contracts-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0031-C4" :claim-kind :fixture-behavior
+   :evidence-kind :fixture-conformance
+   :artifact-path "docs/evidence/adr-runs/workflow-graph-fixtures.json"
+   :observation-key "workflow-graph-fixtures-pass"
+   :expected {:operator := :value true}}]}

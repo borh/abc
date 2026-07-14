@@ -331,9 +331,11 @@
                      (when (= :kaocha (:kind contract))
                        (runtime-inputs/validate-focused-deftests!
                         analysis-root (:vars contract)))
-                     (-> (runtime-inputs/analyze-reachable-vars
-                          analysis-root (:vars contract))
-                         runtime-inputs/assert-v2-boundary-ownership!)))
+                     (let [analysis (runtime-inputs/analyze-reachable-vars
+                                     analysis-root (:vars contract))]
+                       (if (= :kaocha (:kind contract))
+                         (runtime-inputs/assert-v2-boundary-ownership! analysis)
+                         analysis))))
         prefix (if component? (str (str/replace component-root #"/+$" "") "/") "")
         analyzed-paths (when analysis
                          (map #(str prefix %) (concat (:paths analysis) (:contract-paths analysis))))]

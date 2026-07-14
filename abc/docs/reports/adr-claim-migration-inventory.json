@@ -1,6 +1,6 @@
 {
   "accepted_adr_count": 27,
-  "accepted_criterion_count": 138,
+  "accepted_criterion_count": 139,
   "baseline_adr_count": 26,
   "baseline_criteria": [
     {
@@ -84,15 +84,15 @@
     {
       "adr": 2,
       "baseline_key": [2,"sha256:c7626b667a120633c4ed30ae1cc030443a7716957dec19d0d35bfd0242fe26f1"],
-      "disposition": "correct",
-      "disposition_rationale": "Narrow the compound historical wording to the parser citation identity boundary.",
+      "disposition": "move-out-of-acceptance",
+      "disposition_rationale": "The broad candidate-report inventory is preserved as historical context; the exact citation row owns the live structural claim.",
       "family": "parser-ir-publication",
       "file": "0002-parser-evaluation.md",
       "original_criterion_index": 0,
       "original_text": "A candidate report exists for each serious parser option.",
       "original_text_hash": "sha256:c7626b667a120633c4ed30ae1cc030443a7716957dec19d0d35bfd0242fe26f1",
-      "planned_evidence_boundaries": ["parser-citation-identity"],
-      "resulting_claim_ids": ["ADR-0002-C1"]
+      "planned_evidence_boundaries": ["historical-evidence"],
+      "resulting_claim_ids": []
     },
     {
       "adr": 2,
@@ -123,15 +123,15 @@
     {
       "adr": 2,
       "baseline_key": [2,"sha256:9242b238b6238680594c46459afa03e9bbf644da64f84b484eba15b788bc7f59"],
-      "disposition": "correct",
-      "disposition_rationale": "Narrow the compound or historical wording to the observable parser-mapping-admission boundary.",
+      "disposition": "move-out-of-acceptance",
+      "disposition_rationale": "The comparator classification is explanatory context; the conversion-compatibility row owns the combined non-admission claim.",
       "family": "parser-ir-publication",
       "file": "0002-parser-evaluation.md",
       "original_criterion_index": 3,
       "original_text": "Comparator\/oracle reports are cited as explanatory evidence, not as direct\nparser-selection acceptance.",
       "original_text_hash": "sha256:9242b238b6238680594c46459afa03e9bbf644da64f84b484eba15b788bc7f59",
-      "planned_evidence_boundaries": ["parser-mapping-admission"],
-      "resulting_claim_ids": ["ADR-0002-C2"]
+      "planned_evidence_boundaries": ["historical-evidence"],
+      "resulting_claim_ids": []
     },
     {
       "adr": 2,
@@ -149,15 +149,15 @@
     {
       "adr": 2,
       "baseline_key": [2,"sha256:d94e0f41d20449482836304e65b9b906eeb328bdac720d6ceadd3a7eaeeb65fc"],
-      "disposition": "correct",
-      "disposition_rationale": "Narrow the compound or historical wording to the observable parser-import-boundary boundary.",
+      "disposition": "move-out-of-acceptance",
+      "disposition_rationale": "The diagnostic aggregation inventory is subsumed by the imported-boundary fixture claim owned by the mapping row.",
       "family": "parser-ir-publication",
       "file": "0002-parser-evaluation.md",
       "original_criterion_index": 5,
       "original_text": "Candidate reports include warning sidecar references and diagnostic\naggregation output.",
       "original_text_hash": "sha256:d94e0f41d20449482836304e65b9b906eeb328bdac720d6ceadd3a7eaeeb65fc",
-      "planned_evidence_boundaries": ["parser-import-boundary"],
-      "resulting_claim_ids": ["ADR-0002-C3"]
+      "planned_evidence_boundaries": ["implementation-status"],
+      "resulting_claim_ids": []
     },
     {
       "adr": 2,
@@ -339,7 +339,7 @@
       "original_text": "Warning JSON Lines are checked against `schemas\/diagnostic.schema.json`.",
       "original_text_hash": "sha256:b8814802c112c40a4ce23ce2907295bfb7e7d1daaf377be448e03270fc3271f7",
       "planned_evidence_boundaries": ["parser-import-boundary"],
-      "resulting_claim_ids": ["ADR-0007-C1","ADR-0007-C3"]
+      "resulting_claim_ids": ["ADR-0007-C1"]
     },
     {
       "adr": 7,
@@ -352,20 +352,20 @@
       "original_text": "Run summary JSON Lines are at least structurally checked for one start event,\none complete event, and work-result entries.",
       "original_text_hash": "sha256:d2ff95fb9919be9f433b692e942e98707e8dc0d158e2831a3b9fa4e3d0197118",
       "planned_evidence_boundaries": ["parser-import-boundary"],
-      "resulting_claim_ids": ["ADR-0007-C1","ADR-0007-C3"]
+      "resulting_claim_ids": ["ADR-0007-C3"]
     },
     {
       "adr": 7,
       "baseline_key": [7,"sha256:e29d2e8638c330ea5e936b2147bf37044a30236c790dbfe6509db8c0b5bd34f4"],
-      "disposition": "correct",
-      "disposition_rationale": "Narrow the compound or historical wording to the observable parser-import-boundary boundary.",
+      "disposition": "move-out-of-acceptance",
+      "disposition_rationale": "The component-placement statement is preserved as decision context; the ABC-independence row owns the live execution-boundary claim.",
       "family": "parser-ir-publication",
       "file": "0007-external-parser-validation-boundary.md",
       "original_criterion_index": 4,
       "original_text": "Parser candidate execution remains outside this repository.",
       "original_text_hash": "sha256:e29d2e8638c330ea5e936b2147bf37044a30236c790dbfe6509db8c0b5bd34f4",
-      "planned_evidence_boundaries": ["parser-import-boundary"],
-      "resulting_claim_ids": ["ADR-0007-C2"]
+      "planned_evidence_boundaries": ["decision-context"],
+      "resulting_claim_ids": []
     },
     {
       "adr": 8,
@@ -638,7 +638,7 @@
       "original_text": "`validate-design-bundle` verifies ODD-derived Relax NG and Schematron\nartifacts; `test\/abc\/tools\/tei_test.clj` and\n`test\/abc\/tools\/schematron_test.clj` cover both layers.",
       "original_text_hash": "sha256:68cd2436e688fbcd0041782c39e2c63ccccd4466a27a551b81f8cd7952365853",
       "planned_evidence_boundaries": ["tei-profile-drift","tei-project-valid-fixtures","tei-upstream-rng"],
-      "resulting_claim_ids": ["ADR-0012-C1","ADR-0012-C2","ADR-0012-C3"]
+      "resulting_claim_ids": ["ADR-0012-C1","ADR-0012-C3"]
     },
     {
       "adr": 12,
@@ -1618,54 +1618,54 @@
     {
       "adr": 29,
       "baseline_key": [29,"sha256:8a9d8dca03698003272b06a60b0483f84097b8780984e30a7869e26086e0cecd"],
-      "disposition": null,
-      "disposition_rationale": null,
+      "disposition": "correct",
+      "disposition_rationale": "Replace coverage prose with the asserted graph and lint contract.",
       "family": "diagrams-governance",
       "file": "0029-diagrams-as-gated-derived-views.md",
       "original_criterion_index": 0,
       "original_text": "`test\/abc\/tools\/diagram\/adr_graph_test.clj` proves the header parser, the\nheader-hygiene lint (empty on the current post-backfill set; non-empty on a\nsynthetic missing-reciprocal fixture), and the sidecar rules (rejects a\nheader-owned edge type and a dangling reference; a valid semantic edge appears\nin the built graph).",
       "original_text_hash": "sha256:8a9d8dca03698003272b06a60b0483f84097b8780984e30a7869e26086e0cecd",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["adr-graph-contract"],
+      "resulting_claim_ids": ["ADR-0029-C1"]
     },
     {
       "adr": 29,
       "baseline_key": [29,"sha256:3d50eb6d0ba47178ddd41d8dae146b7d1a8ded05df69d5637bb732fbd3605ddf"],
-      "disposition": null,
-      "disposition_rationale": null,
+      "disposition": "correct",
+      "disposition_rationale": "State coordinate resolution directly.",
       "family": "diagrams-governance",
       "file": "0029-diagrams-as-gated-derived-views.md",
       "original_criterion_index": 1,
       "original_text": "`test\/abc\/tools\/diagram\/architecture_graph_test.clj` proves every stage\n`:schema` resolves in `schemas\/schema-contracts.json` and every `:adr`\nresolves to an ADR file.",
       "original_text_hash": "sha256:3d50eb6d0ba47178ddd41d8dae146b7d1a8ded05df69d5637bb732fbd3605ddf",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["architecture-graph-contract"],
+      "resulting_claim_ids": ["ADR-0029-C2"]
     },
     {
       "adr": 29,
       "baseline_key": [29,"sha256:b714415ea1da4c1058ba196434173b46fb04649199b36296c71fb18ab142b9a2"],
-      "disposition": null,
-      "disposition_rationale": null,
+      "disposition": "correct",
+      "disposition_rationale": "State committed fixture behavior directly.",
       "family": "diagrams-governance",
       "file": "0029-diagrams-as-gated-derived-views.md",
       "original_criterion_index": 2,
       "original_text": "`test\/abc\/tools\/diagram\/workflow_graph_test.clj` renders\n`examples\/workflow\/passed.workflow-run.json` deterministically and builds\nproducer\u2192consumer edges.",
       "original_text_hash": "sha256:b714415ea1da4c1058ba196434173b46fb04649199b36296c71fb18ab142b9a2",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["workflow-graph-fixtures"],
+      "resulting_claim_ids": ["ADR-0029-C3"]
     },
     {
       "adr": 29,
       "baseline_key": [29,"sha256:597e37951e89d30d5d5511cd2f8a0bbad4400ec9a43d149b6455002b27a6df1a"],
-      "disposition": null,
-      "disposition_rationale": null,
+      "disposition": "correct",
+      "disposition_rationale": "Split registry parity from run! lint behavior.",
       "family": "diagrams-governance",
       "file": "0029-diagrams-as-gated-derived-views.md",
       "original_criterion_index": 3,
       "original_text": "`test\/abc\/tools\/diagram\/registry_test.clj` proves each committed diagram's\nfile equals `core\/render` of its registry entry (the kaocha-level drift gate);\n`test\/abc\/tools\/diagram\/core_test.clj` proves `run!` reports lint problems via\n`:ok? false` (and does not exit).",
       "original_text_hash": "sha256:597e37951e89d30d5d5511cd2f8a0bbad4400ec9a43d149b6455002b27a6df1a",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["diagram-registry-drift"],
+      "resulting_claim_ids": ["ADR-0029-C4","ADR-0029-C5"]
     },
     {
       "adr": 30,
@@ -1709,54 +1709,54 @@
     {
       "adr": 31,
       "baseline_key": [31,"sha256:340ba68a1e28b017642d34cb3c18f8b9b1268d483d54b5823a4f99a1ac8fd1ed"],
-      "disposition": null,
-      "disposition_rationale": null,
+      "disposition": "correct",
+      "disposition_rationale": "Retain invalid-fixture behavior and delegate complete coverage to ADR 0034.",
       "family": "diagrams-governance",
       "file": "0031-adr-governance-validation.md",
       "original_criterion_index": 0,
       "original_text": "`test\/abc\/tools\/adr_test.clj` covers parser and policy failures and proves the\ncurrent repository is clean.",
       "original_text_hash": "sha256:340ba68a1e28b017642d34cb3c18f8b9b1268d483d54b5823a4f99a1ac8fd1ed",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["adr-policy-fixtures"],
+      "resulting_claim_ids": ["ADR-0031-C1"]
     },
     {
       "adr": 31,
       "baseline_key": [31,"sha256:c79dd72c23294fe321131a27f6236063494a8fd9458fc02041f563b529913f81"],
-      "disposition": null,
-      "disposition_rationale": null,
+      "disposition": "correct",
+      "disposition_rationale": "State shared-model and scope preservation directly.",
       "family": "diagrams-governance",
       "file": "0031-adr-governance-validation.md",
       "original_criterion_index": 1,
       "original_text": "`test\/abc\/tools\/diagram\/adr_graph_test.clj` proves the graph consumes shared\nADR values and preserves scope labels.",
       "original_text_hash": "sha256:c79dd72c23294fe321131a27f6236063494a8fd9458fc02041f563b529913f81",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["adr-graph-contract"],
+      "resulting_claim_ids": ["ADR-0031-C2"]
     },
     {
       "adr": 31,
       "baseline_key": [31,"sha256:136e7f33136db6270b604c7f675a1776afa7c06d8c0be47a30fe899828efd3e8"],
-      "disposition": null,
-      "disposition_rationale": null,
+      "disposition": "correct",
+      "disposition_rationale": "State identity-owner totality directly.",
       "family": "diagrams-governance",
       "file": "0031-adr-governance-validation.md",
       "original_criterion_index": 2,
       "original_text": "`test\/abc\/tools\/diagram\/architecture_graph_test.clj` proves coordinate and\nowner completeness.",
       "original_text_hash": "sha256:136e7f33136db6270b604c7f675a1776afa7c06d8c0be47a30fe899828efd3e8",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["architecture-graph-contract"],
+      "resulting_claim_ids": ["ADR-0031-C3"]
     },
     {
       "adr": 31,
       "baseline_key": [31,"sha256:039d4e186538268a62533649ae44a0c64cdd7eed09fad6a261f3130ae8c0db21"],
-      "disposition": null,
-      "disposition_rationale": null,
+      "disposition": "correct",
+      "disposition_rationale": "State invalid workflow rejection directly.",
       "family": "diagrams-governance",
       "file": "0031-adr-governance-validation.md",
       "original_criterion_index": 3,
       "original_text": "`test\/abc\/tools\/diagram\/workflow_graph_test.clj` proves invalid workflow runs\ncannot be rendered.",
       "original_text_hash": "sha256:039d4e186538268a62533649ae44a0c64cdd7eed09fad6a261f3130ae8c0db21",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["workflow-graph-fixtures"],
+      "resulting_claim_ids": ["ADR-0031-C4"]
     },
     {
       "adr": 32,
@@ -1996,7 +1996,7 @@
     },
     {
       "adr": 2,
-      "baseline_key": [2,"sha256:9242b238b6238680594c46459afa03e9bbf644da64f84b484eba15b788bc7f59"],
+      "baseline_key": [2,"sha256:ffc869b962c5cd7b014831a14b2517d1994207173b58897b461fd446599a057c"],
       "body": "**ADR-0002-C2 \u2014 structural-invariant:** Parser citation classes do not admit or release a parser; exact adapter, mapping, parser-IR schema, and evidence-scope equality through ADR 0023 is required for admission.",
       "claim_id": "ADR-0002-C2",
       "claim_kind": "structural-invariant",
@@ -2011,7 +2011,7 @@
     },
     {
       "adr": 2,
-      "baseline_key": [2,"sha256:d94e0f41d20449482836304e65b9b906eeb328bdac720d6ceadd3a7eaeeb65fc"],
+      "baseline_key": [2,"sha256:66344fe250155095d2e37a47fe50cabe7dbc6cc8b09920f225ac0b59c6263048"],
       "body": "**ADR-0002-C3 \u2014 fixture-behavior:** The committed imported producer fixture carries parser IR, warning diagnostics, run-summary aggregation, mapping provenance, and schema identities accepted by the ABC file boundary.",
       "claim_id": "ADR-0002-C3",
       "claim_kind": "fixture-behavior",
@@ -2176,7 +2176,7 @@
     },
     {
       "adr": 7,
-      "baseline_key": [7,"sha256:d2ff95fb9919be9f433b692e942e98707e8dc0d158e2831a3b9fa4e3d0197118"],
+      "baseline_key": [7,"sha256:b8814802c112c40a4ce23ce2907295bfb7e7d1daaf377be448e03270fc3271f7"],
       "body": "**ADR-0007-C1 \u2014 fixture-behavior:** The committed imported parser IR, warning JSON Lines, and run-summary event set conform to their ABC schemas and cross-file boundary checks.",
       "claim_id": "ADR-0007-C1",
       "claim_kind": "fixture-behavior",
@@ -2187,11 +2187,11 @@
       "family": "parser-ir-publication",
       "file": "0007-external-parser-validation-boundary.md",
       "planned_evidence_boundaries": ["parser-import-boundary"],
-      "resulting_claim_ids": ["ADR-0007-C1","ADR-0007-C3"]
+      "resulting_claim_ids": ["ADR-0007-C1"]
     },
     {
       "adr": 7,
-      "baseline_key": [7,"sha256:e29d2e8638c330ea5e936b2147bf37044a30236c790dbfe6509db8c0b5bd34f4"],
+      "baseline_key": [7,"sha256:a515bfde76d08c511481b2fda0ff29c4b70de578e45a29bc2eca55d0ea337219"],
       "body": "**ADR-0007-C2 \u2014 structural-invariant:** ABC validation consumes the imported file bundle and does not execute parser candidates; parser execution remains in the `ab-validator` component.",
       "claim_id": "ADR-0007-C2",
       "claim_kind": "structural-invariant",
@@ -2217,7 +2217,7 @@
       "family": "parser-ir-publication",
       "file": "0007-external-parser-validation-boundary.md",
       "planned_evidence_boundaries": ["parser-import-boundary"],
-      "resulting_claim_ids": ["ADR-0007-C1","ADR-0007-C3"]
+      "resulting_claim_ids": ["ADR-0007-C3"]
     },
     {
       "adr": 7,
@@ -2532,7 +2532,7 @@
       "family": "schema-rdf-tei",
       "file": "0012-tei-odd-schematron-validation.md",
       "planned_evidence_boundaries": ["tei-profile-drift","tei-project-valid-fixtures","tei-upstream-rng"],
-      "resulting_claim_ids": ["ADR-0012-C1","ADR-0012-C2","ADR-0012-C3"]
+      "resulting_claim_ids": ["ADR-0012-C1","ADR-0012-C3"]
     },
     {
       "adr": 12,
@@ -2562,7 +2562,7 @@
       "family": "schema-rdf-tei",
       "file": "0012-tei-odd-schematron-validation.md",
       "planned_evidence_boundaries": ["tei-profile-drift","tei-project-valid-fixtures","tei-upstream-rng"],
-      "resulting_claim_ids": ["ADR-0012-C1","ADR-0012-C2","ADR-0012-C3"]
+      "resulting_claim_ids": ["ADR-0012-C1","ADR-0012-C3"]
     },
     {
       "adr": 12,
@@ -3571,63 +3571,78 @@
     },
     {
       "adr": 29,
-      "baseline_key": null,
-      "body": "`test\/abc\/tools\/diagram\/adr_graph_test.clj` proves the header parser, the\nheader-hygiene lint (empty on the current post-backfill set; non-empty on a\nsynthetic missing-reciprocal fixture), and the sidecar rules (rejects a\nheader-owned edge type and a dangling reference; a valid semantic edge appears\nin the built graph).",
-      "claim_id": null,
-      "claim_kind": null,
+      "baseline_key": [29,"sha256:8a9d8dca03698003272b06a60b0483f84097b8780984e30a7869e26086e0cecd"],
+      "body": "**ADR-0029-C1 \u2014 structural-invariant:** ADR graph construction consumes\nshared parsed ADR values, preserves relation scopes, and rejects unknown,\ndangling, malformed, or header-owned sidecar edges.",
+      "claim_id": "ADR-0029-C1",
+      "claim_kind": "structural-invariant",
       "criterion_index": 0,
-      "disposition": null,
-      "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/diagram\/adr_graph_test.clj"],
+      "disposition": "correct",
+      "disposition_rationale": "Replace coverage prose with the asserted graph and lint contract.",
+      "evidence_paths": [],
       "family": "diagrams-governance",
       "file": "0029-diagrams-as-gated-derived-views.md",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["adr-graph-contract"],
+      "resulting_claim_ids": ["ADR-0029-C1"]
     },
     {
       "adr": 29,
-      "baseline_key": null,
-      "body": "`test\/abc\/tools\/diagram\/architecture_graph_test.clj` proves every stage\n`:schema` resolves in `schemas\/schema-contracts.json` and every `:adr`\nresolves to an ADR file.",
-      "claim_id": null,
-      "claim_kind": null,
+      "baseline_key": [29,"sha256:3d50eb6d0ba47178ddd41d8dae146b7d1a8ded05df69d5637bb732fbd3605ddf"],
+      "body": "**ADR-0029-C2 \u2014 structural-invariant:** Every declared architecture-stage\nschema and ADR coordinate resolves in the current repository contract.",
+      "claim_id": "ADR-0029-C2",
+      "claim_kind": "structural-invariant",
       "criterion_index": 1,
-      "disposition": null,
-      "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/diagram\/architecture_graph_test.clj"],
+      "disposition": "correct",
+      "disposition_rationale": "State coordinate resolution directly.",
+      "evidence_paths": [],
       "family": "diagrams-governance",
       "file": "0029-diagrams-as-gated-derived-views.md",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["architecture-graph-contract"],
+      "resulting_claim_ids": ["ADR-0029-C2"]
     },
     {
       "adr": 29,
-      "baseline_key": null,
-      "body": "`test\/abc\/tools\/diagram\/workflow_graph_test.clj` renders\n`examples\/workflow\/passed.workflow-run.json` deterministically and builds\nproducer\u2192consumer edges.",
-      "claim_id": null,
-      "claim_kind": null,
+      "baseline_key": [29,"sha256:b714415ea1da4c1058ba196434173b46fb04649199b36296c71fb18ab142b9a2"],
+      "body": "**ADR-0029-C3 \u2014 fixture-behavior:** The committed passed workflow fixture\nrenders deterministically with producer-to-consumer edges.",
+      "claim_id": "ADR-0029-C3",
+      "claim_kind": "fixture-behavior",
       "criterion_index": 2,
-      "disposition": null,
-      "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/diagram\/workflow_graph_test.clj"],
+      "disposition": "correct",
+      "disposition_rationale": "State committed fixture behavior directly.",
+      "evidence_paths": [],
       "family": "diagrams-governance",
       "file": "0029-diagrams-as-gated-derived-views.md",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["workflow-graph-fixtures"],
+      "resulting_claim_ids": ["ADR-0029-C3"]
     },
     {
       "adr": 29,
-      "baseline_key": null,
-      "body": "`test\/abc\/tools\/diagram\/registry_test.clj` proves each committed diagram's\nfile equals `core\/render` of its registry entry (the kaocha-level drift gate);\n`test\/abc\/tools\/diagram\/core_test.clj` proves `run!` reports lint problems via\n`:ok? false` (and does not exit).",
-      "claim_id": null,
-      "claim_kind": null,
+      "baseline_key": [29,"sha256:597e37951e89d30d5d5511cd2f8a0bbad4400ec9a43d149b6455002b27a6df1a"],
+      "body": "**ADR-0029-C4 \u2014 structural-invariant:** Every registered committed diagram\nis byte-equal to a fresh render of its registry entry.",
+      "claim_id": "ADR-0029-C4",
+      "claim_kind": "structural-invariant",
       "criterion_index": 3,
-      "disposition": null,
-      "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/diagram\/core_test.clj","test\/abc\/tools\/diagram\/registry_test.clj"],
+      "disposition": "correct",
+      "disposition_rationale": "Split registry parity from run! lint behavior.",
+      "evidence_paths": [],
       "family": "diagrams-governance",
       "file": "0029-diagrams-as-gated-derived-views.md",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["diagram-registry-drift"],
+      "resulting_claim_ids": ["ADR-0029-C4","ADR-0029-C5"]
+    },
+    {
+      "adr": 29,
+      "baseline_key": [29,"sha256:597e37951e89d30d5d5511cd2f8a0bbad4400ec9a43d149b6455002b27a6df1a"],
+      "body": "**ADR-0029-C5 \u2014 structural-invariant:** Diagram `run!` returns `:ok? false`\nfor lint problems without terminating the host process. Evidence boundary:\n`test\/abc\/tools\/diagram\/core_test.clj`.",
+      "claim_id": "ADR-0029-C5",
+      "claim_kind": "structural-invariant",
+      "criterion_index": 4,
+      "disposition": "correct",
+      "disposition_rationale": "Split registry parity from run! lint behavior.",
+      "evidence_paths": ["test\/abc\/tools\/diagram\/core_test.clj"],
+      "family": "diagrams-governance",
+      "file": "0029-diagrams-as-gated-derived-views.md",
+      "planned_evidence_boundaries": ["diagram-registry-drift"],
+      "resulting_claim_ids": ["ADR-0029-C4","ADR-0029-C5"]
     },
     {
       "adr": 30,
@@ -3676,63 +3691,63 @@
     },
     {
       "adr": 31,
-      "baseline_key": null,
-      "body": "`test\/abc\/tools\/adr_test.clj` covers parser and policy failures and proves the\ncurrent repository is clean.",
-      "claim_id": null,
-      "claim_kind": null,
+      "baseline_key": [31,"sha256:340ba68a1e28b017642d34cb3c18f8b9b1268d483d54b5823a4f99a1ac8fd1ed"],
+      "body": "**ADR-0031-C1 \u2014 structural-invariant:** The ADR parser and lifecycle,\nrelation, dependency, claim-header, and section policies reject their\nenumerated invalid fixtures.",
+      "claim_id": "ADR-0031-C1",
+      "claim_kind": "structural-invariant",
       "criterion_index": 0,
-      "disposition": null,
-      "disposition_rationale": null,
+      "disposition": "correct",
+      "disposition_rationale": "Retain invalid-fixture behavior and delegate complete coverage to ADR 0034.",
+      "evidence_paths": [],
+      "family": "diagrams-governance",
+      "file": "0031-adr-governance-validation.md",
+      "planned_evidence_boundaries": ["adr-policy-fixtures"],
+      "resulting_claim_ids": ["ADR-0031-C1"]
+    },
+    {
+      "adr": 31,
+      "baseline_key": [31,"sha256:c79dd72c23294fe321131a27f6236063494a8fd9458fc02041f563b529913f81"],
+      "body": "**ADR-0031-C2 \u2014 structural-invariant:** ADR graph construction consumes the\nshared parsed value model and preserves scoped relation labels.",
+      "claim_id": "ADR-0031-C2",
+      "claim_kind": "structural-invariant",
+      "criterion_index": 1,
+      "disposition": "correct",
+      "disposition_rationale": "State shared-model and scope preservation directly.",
+      "evidence_paths": [],
+      "family": "diagrams-governance",
+      "file": "0031-adr-governance-validation.md",
+      "planned_evidence_boundaries": ["adr-graph-contract"],
+      "resulting_claim_ids": ["ADR-0031-C2"]
+    },
+    {
+      "adr": 31,
+      "baseline_key": [31,"sha256:136e7f33136db6270b604c7f675a1776afa7c06d8c0be47a30fe899828efd3e8"],
+      "body": "**ADR-0031-C3 \u2014 structural-invariant:** Manifest identity coordinates and\ndeclared owner references are structurally total for the current contract.",
+      "claim_id": "ADR-0031-C3",
+      "claim_kind": "structural-invariant",
+      "criterion_index": 2,
+      "disposition": "correct",
+      "disposition_rationale": "State identity-owner totality directly.",
+      "evidence_paths": [],
+      "family": "diagrams-governance",
+      "file": "0031-adr-governance-validation.md",
+      "planned_evidence_boundaries": ["architecture-graph-contract"],
+      "resulting_claim_ids": ["ADR-0031-C3"]
+    },
+    {
+      "adr": 31,
+      "baseline_key": [31,"sha256:039d4e186538268a62533649ae44a0c64cdd7eed09fad6a261f3130ae8c0db21"],
+      "body": "**ADR-0031-C4 \u2014 fixture-behavior:** Schema-invalid and semantically invalid\nworkflow fixtures are rejected before rendering. Evidence boundary:\n`test\/abc\/tools\/adr_test.clj`.",
+      "claim_id": "ADR-0031-C4",
+      "claim_kind": "fixture-behavior",
+      "criterion_index": 3,
+      "disposition": "correct",
+      "disposition_rationale": "State invalid workflow rejection directly.",
       "evidence_paths": ["test\/abc\/tools\/adr_test.clj"],
       "family": "diagrams-governance",
       "file": "0031-adr-governance-validation.md",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
-    },
-    {
-      "adr": 31,
-      "baseline_key": null,
-      "body": "`test\/abc\/tools\/diagram\/adr_graph_test.clj` proves the graph consumes shared\nADR values and preserves scope labels.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 1,
-      "disposition": null,
-      "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/diagram\/adr_graph_test.clj"],
-      "family": "diagrams-governance",
-      "file": "0031-adr-governance-validation.md",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
-    },
-    {
-      "adr": 31,
-      "baseline_key": null,
-      "body": "`test\/abc\/tools\/diagram\/architecture_graph_test.clj` proves coordinate and\nowner completeness.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 2,
-      "disposition": null,
-      "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/diagram\/architecture_graph_test.clj"],
-      "family": "diagrams-governance",
-      "file": "0031-adr-governance-validation.md",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
-    },
-    {
-      "adr": 31,
-      "baseline_key": null,
-      "body": "`test\/abc\/tools\/diagram\/workflow_graph_test.clj` proves invalid workflow runs\ncannot be rendered.",
-      "claim_id": null,
-      "claim_kind": null,
-      "criterion_index": 3,
-      "disposition": null,
-      "disposition_rationale": null,
-      "evidence_paths": ["test\/abc\/tools\/diagram\/workflow_graph_test.clj"],
-      "family": "diagrams-governance",
-      "file": "0031-adr-governance-validation.md",
-      "planned_evidence_boundaries": [],
-      "resulting_claim_ids": []
+      "planned_evidence_boundaries": ["workflow-graph-fixtures"],
+      "resulting_claim_ids": ["ADR-0031-C4"]
     },
     {
       "adr": 32,
@@ -3976,7 +3991,7 @@
     }],
   "families":
   {
-    "diagrams-governance": 8,
+    "diagrams-governance": 9,
     "foundation-runtime-identity": 35,
     "parser-ir-publication": 33,
     "schema-rdf-tei": 30,

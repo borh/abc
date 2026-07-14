@@ -176,7 +176,7 @@
   {:disposition :correct
    :rationale "Split derivation drift, project validation, and pinned upstream compatibility into independent boundaries."
    :planned-evidence-boundaries [:tei-profile-drift :tei-project-valid-fixtures :tei-upstream-rng]
-   :resulting-claim-ids ["ADR-0012-C1" "ADR-0012-C2" "ADR-0012-C3"]}
+   :resulting-claim-ids ["ADR-0012-C1" "ADR-0012-C3"]}
   [12 "sha256:8cdae098d569f76c58b89e765b995ece150e8ed2d37a2aa9e36b06f26a708556"]
   {:disposition :correct
    :rationale "Pluralize and bind the literal valid fixture set to both project validators."
@@ -474,10 +474,10 @@
    :resulting-claim-ids ["ADR-0033-C11"]}
 
   [2 "sha256:c7626b667a120633c4ed30ae1cc030443a7716957dec19d0d35bfd0242fe26f1"]
-  {:disposition :correct
-   :rationale "Narrow the compound historical wording to the parser citation identity boundary."
-   :planned-evidence-boundaries [:parser-citation-identity]
-   :resulting-claim-ids ["ADR-0002-C1"]}
+  {:disposition :move-out-of-acceptance
+   :rationale "The broad candidate-report inventory is preserved as historical context; the exact citation row owns the live structural claim."
+   :planned-evidence-boundaries [:historical-evidence]
+   :resulting-claim-ids []}
 
   [2 "sha256:a38ae8ea966b9dbb7b9403f0288782477b006356b91caa243a1099283cdbef5a"]
   {:disposition :correct
@@ -490,20 +490,20 @@
    :planned-evidence-boundaries [:parser-mapping-admission]
    :resulting-claim-ids ["ADR-0002-C2"]}
   [2 "sha256:9242b238b6238680594c46459afa03e9bbf644da64f84b484eba15b788bc7f59"]
-  {:disposition :correct
-   :rationale "Narrow the compound or historical wording to the observable parser-mapping-admission boundary."
-   :planned-evidence-boundaries [:parser-mapping-admission]
-   :resulting-claim-ids ["ADR-0002-C2"]}
+  {:disposition :move-out-of-acceptance
+   :rationale "The comparator classification is explanatory context; the conversion-compatibility row owns the combined non-admission claim."
+   :planned-evidence-boundaries [:historical-evidence]
+   :resulting-claim-ids []}
   [2 "sha256:66344fe250155095d2e37a47fe50cabe7dbc6cc8b09920f225ac0b59c6263048"]
   {:disposition :correct
    :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
    :planned-evidence-boundaries [:parser-import-boundary]
    :resulting-claim-ids ["ADR-0002-C3"]}
   [2 "sha256:d94e0f41d20449482836304e65b9b906eeb328bdac720d6ceadd3a7eaeeb65fc"]
-  {:disposition :correct
-   :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
-   :planned-evidence-boundaries [:parser-import-boundary]
-   :resulting-claim-ids ["ADR-0002-C3"]}
+  {:disposition :move-out-of-acceptance
+   :rationale "The diagnostic aggregation inventory is subsumed by the imported-boundary fixture claim owned by the mapping row."
+   :planned-evidence-boundaries [:implementation-status]
+   :resulting-claim-ids []}
   [2 "sha256:c3150caab973b769041e89fc572b291694f8793a498e61dd4681afc36d010376"]
   {:disposition :move-out-of-acceptance
    :rationale "The old text is an unsatisfied neutral-comparison or re-measurement guard rather than an accepted observation."
@@ -528,17 +528,17 @@
   {:disposition :correct
    :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
    :planned-evidence-boundaries [:parser-import-boundary]
-   :resulting-claim-ids ["ADR-0007-C1" "ADR-0007-C3"]}
+   :resulting-claim-ids ["ADR-0007-C1"]}
   [7 "sha256:d2ff95fb9919be9f433b692e942e98707e8dc0d158e2831a3b9fa4e3d0197118"]
   {:disposition :correct
    :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
    :planned-evidence-boundaries [:parser-import-boundary]
-   :resulting-claim-ids ["ADR-0007-C1" "ADR-0007-C3"]}
+   :resulting-claim-ids ["ADR-0007-C3"]}
   [7 "sha256:e29d2e8638c330ea5e936b2147bf37044a30236c790dbfe6509db8c0b5bd34f4"]
-  {:disposition :correct
-   :rationale "Narrow the compound or historical wording to the observable parser-import-boundary boundary."
-   :planned-evidence-boundaries [:parser-import-boundary]
-   :resulting-claim-ids ["ADR-0007-C2"]}
+  {:disposition :move-out-of-acceptance
+   :rationale "The component-placement statement is preserved as decision context; the ABC-independence row owns the live execution-boundary claim."
+   :planned-evidence-boundaries [:decision-context]
+   :resulting-claim-ids []}
   [23 "sha256:8064f95a8ea1146ebabcc98041aa23bb7667642a561b476aea525bce9465558a"]
   {:disposition :correct
    :rationale "Narrow the compound or historical wording to the observable parser-mapping-admission boundary."
@@ -649,4 +649,44 @@
   {:disposition :correct
    :rationale "Narrow the compound or historical wording to the observable parser-relations-provenance boundary."
    :planned-evidence-boundaries [:parser-relations-provenance]
-   :resulting-claim-ids ["ADR-0032-C2"]}}}
+   :resulting-claim-ids ["ADR-0032-C2"]}
+  [29 "sha256:8a9d8dca03698003272b06a60b0483f84097b8780984e30a7869e26086e0cecd"]
+  {:disposition :correct
+   :rationale "Replace coverage prose with the asserted graph and lint contract."
+   :planned-evidence-boundaries [:adr-graph-contract]
+   :resulting-claim-ids ["ADR-0029-C1"]}
+  [29 "sha256:3d50eb6d0ba47178ddd41d8dae146b7d1a8ded05df69d5637bb732fbd3605ddf"]
+  {:disposition :correct
+   :rationale "State coordinate resolution directly."
+   :planned-evidence-boundaries [:architecture-graph-contract]
+   :resulting-claim-ids ["ADR-0029-C2"]}
+  [29 "sha256:b714415ea1da4c1058ba196434173b46fb04649199b36296c71fb18ab142b9a2"]
+  {:disposition :correct
+   :rationale "State committed fixture behavior directly."
+   :planned-evidence-boundaries [:workflow-graph-fixtures]
+   :resulting-claim-ids ["ADR-0029-C3"]}
+  [29 "sha256:597e37951e89d30d5d5511cd2f8a0bbad4400ec9a43d149b6455002b27a6df1a"]
+  {:disposition :correct
+   :rationale "Split registry parity from run! lint behavior."
+   :planned-evidence-boundaries [:diagram-registry-drift]
+   :resulting-claim-ids ["ADR-0029-C4" "ADR-0029-C5"]}
+  [31 "sha256:340ba68a1e28b017642d34cb3c18f8b9b1268d483d54b5823a4f99a1ac8fd1ed"]
+  {:disposition :correct
+   :rationale "Retain invalid-fixture behavior and delegate complete coverage to ADR 0034."
+   :planned-evidence-boundaries [:adr-policy-fixtures]
+   :resulting-claim-ids ["ADR-0031-C1"]}
+  [31 "sha256:c79dd72c23294fe321131a27f6236063494a8fd9458fc02041f563b529913f81"]
+  {:disposition :correct
+   :rationale "State shared-model and scope preservation directly."
+   :planned-evidence-boundaries [:adr-graph-contract]
+   :resulting-claim-ids ["ADR-0031-C2"]}
+  [31 "sha256:136e7f33136db6270b604c7f675a1776afa7c06d8c0be47a30fe899828efd3e8"]
+  {:disposition :correct
+   :rationale "State identity-owner totality directly."
+   :planned-evidence-boundaries [:architecture-graph-contract]
+   :resulting-claim-ids ["ADR-0031-C3"]}
+  [31 "sha256:039d4e186538268a62533649ae44a0c64cdd7eed09fad6a261f3130ae8c0db21"]
+  {:disposition :correct
+   :rationale "State invalid workflow rejection directly."
+   :planned-evidence-boundaries [:workflow-graph-fixtures]
+   :resulting-claim-ids ["ADR-0031-C4"]}}}

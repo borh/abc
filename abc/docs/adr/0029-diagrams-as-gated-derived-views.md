@@ -100,21 +100,18 @@ Two ADR-header hygiene rules become binding lints:
 
 ## Acceptance Criteria
 
-- `test/abc/tools/diagram/adr_graph_test.clj` proves the header parser, the
-  header-hygiene lint (empty on the current post-backfill set; non-empty on a
-  synthetic missing-reciprocal fixture), and the sidecar rules (rejects a
-  header-owned edge type and a dangling reference; a valid semantic edge appears
-  in the built graph).
-- `test/abc/tools/diagram/architecture_graph_test.clj` proves every stage
-  `:schema` resolves in `schemas/schema-contracts.json` and every `:adr`
-  resolves to an ADR file.
-- `test/abc/tools/diagram/workflow_graph_test.clj` renders
-  `examples/workflow/passed.workflow-run.json` deterministically and builds
-  producer→consumer edges.
-- `test/abc/tools/diagram/registry_test.clj` proves each committed diagram's
-  file equals `core/render` of its registry entry (the kaocha-level drift gate);
-  `test/abc/tools/diagram/core_test.clj` proves `run!` reports lint problems via
-  `:ok? false` (and does not exit).
+- **ADR-0029-C1 — structural-invariant:** ADR graph construction consumes
+  shared parsed ADR values, preserves relation scopes, and rejects unknown,
+  dangling, malformed, or header-owned sidecar edges.
+- **ADR-0029-C2 — structural-invariant:** Every declared architecture-stage
+  schema and ADR coordinate resolves in the current repository contract.
+- **ADR-0029-C3 — fixture-behavior:** The committed passed workflow fixture
+  renders deterministically with producer-to-consumer edges.
+- **ADR-0029-C4 — structural-invariant:** Every registered committed diagram
+  is byte-equal to a fresh render of its registry entry.
+- **ADR-0029-C5 — structural-invariant:** Diagram `run!` returns `:ok? false`
+  for lint problems without terminating the host process. Evidence boundary:
+  `test/abc/tools/diagram/core_test.clj`.
 
 ## Rollback
 

@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-07-10
 Accepted: 2026-07-10
+Validation scope: structural
+Release authority: none
 Supersedes: none
 Amends: ADR 0029 [scope: ADR header and decision-graph source validation]
 Depends on: ADR 0029 [scope: generated decision graph contract]
@@ -37,14 +39,22 @@ and semantic invariants before rendering.
 
 ## Acceptance Criteria
 
-- `test/abc/tools/adr_test.clj` covers parser and policy failures and proves the
-  current repository is clean.
-- `test/abc/tools/diagram/adr_graph_test.clj` proves the graph consumes shared
-  ADR values and preserves scope labels.
-- `test/abc/tools/diagram/architecture_graph_test.clj` proves coordinate and
-  owner completeness.
-- `test/abc/tools/diagram/workflow_graph_test.clj` proves invalid workflow runs
-  cannot be rendered.
+- **ADR-0031-C1 — structural-invariant:** The ADR parser and lifecycle,
+  relation, dependency, claim-header, and section policies reject their
+  enumerated invalid fixtures.
+- **ADR-0031-C2 — structural-invariant:** ADR graph construction consumes the
+  shared parsed value model and preserves scoped relation labels.
+- **ADR-0031-C3 — structural-invariant:** Manifest identity coordinates and
+  declared owner references are structurally total for the current contract.
+- **ADR-0031-C4 — fixture-behavior:** Schema-invalid and semantically invalid
+  workflow fixtures are rejected before rendering. Evidence boundary:
+  `test/abc/tools/adr_test.clj`.
+
+## Future Verification
+
+Complete typed claim/evidence coverage is not self-certified by this ADR.
+ADR 0034 owns the complete-corpus coverage observation, its immutable
+pre-promotion snapshot, and the final enforcement transition.
 
 ## Consequences
 

@@ -223,3 +223,32 @@
            (get (first (filter #(= 38 (get % "adr"))
                                (get value "criteria")))
                 "family")))))
+
+(deftest diagrams-governance-stage-a-claim-ledger-and-lifecycle-contract-test
+  (let [expected-ranges {29 5, 31 4}
+        expected-ids (set (mapcat (fn [[adr count]]
+                                    (map #(format "ADR-%04d-C%d" adr %)
+                                         (range 1 (inc count))))
+                                  expected-ranges))
+        expected-lifecycle {29 ["fixture" "none"]
+                            31 ["structural" "none"]}
+        adrs (into {} (map (juxt :num identity) (adr/parse-all "docs/adr")))
+        state (migration/load-migration-state "." {:require-complete? false})
+        value (inventory/inventory-value (vals adrs) state)
+        family-rows (filter (fn [[[adr _] _]] (contains? expected-ranges adr))
+                            (get-in state [:ledger :entries]))
+        baseline-rows (filter #(contains? expected-ranges (get % "adr"))
+                              (get value "baseline_criteria"))]
+    (is (= 8 (count family-rows)))
+    (is (= 8 (count baseline-rows)))
+    (is (every? some? (map #(get % "disposition") baseline-rows)))
+    (is (= expected-ids
+           (set (mapcat (comp :resulting-claim-ids val) family-rows))))
+    (is (= expected-ids
+           (->> (get value "criteria")
+                (filter #(= "diagrams-governance" (get % "family")))
+                (map #(get % "claim_id"))
+                set)))
+    (doseq [[adr [scope authority]] expected-lifecycle]
+      (is (= scope (get-in adrs [adr :fields "Validation scope"])))
+      (is (= authority (get-in adrs [adr :fields "Release authority"]))))))

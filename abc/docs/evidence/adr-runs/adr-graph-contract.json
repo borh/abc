@@ -48,7 +48,7 @@
     "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
-    "test\/abc\/tools\/diagram\/adr_graph_evidence_test.clj": "sha256:59d68ac1394dc06bb7fdf961d02d2c0c0ce5b0aa5e3b163a02e7c51820a787f3"
+    "test\/abc\/tools\/diagram\/adr_graph_evidence_test.clj": "sha256:b93b153a27bc3115cef219b8814a77b2f072026ddb53182626f0ba04172a5afc"
   },
   "observations":
   {
@@ -64,7 +64,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.adr-graph-evidence-test\/adr-graph-contract\"",
-    "revision": "369a747bca533a6b5af2d295ab2854037c547f98",
+    "revision": "7593e8d859a93cf46d7bf2850952aaed3ab53dce",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

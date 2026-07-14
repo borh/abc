@@ -51,7 +51,7 @@
     "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
-    "test\/abc\/tools\/diagram\/architecture_graph_evidence_test.clj": "sha256:449cc192aa6c30d21a9f1bc3d8be1a67c54c9d3fbe411238c36b15cdd5721780"
+    "test\/abc\/tools\/diagram\/architecture_graph_evidence_test.clj": "sha256:bc8ba5066417687c9ec6add336f439d10497019bc819d878557090f7b1776055"
   },
   "observations":
   {
@@ -67,7 +67,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.architecture-graph-evidence-test\/architecture-graph-contract\"",
-    "revision": "369a747bca533a6b5af2d295ab2854037c547f98",
+    "revision": "7593e8d859a93cf46d7bf2850952aaed3ab53dce",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

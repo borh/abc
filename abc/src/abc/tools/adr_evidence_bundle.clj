@@ -179,9 +179,9 @@
             state (containment/path-state repo-root component-root)]
         (when-not (and (not= "." component-root)
                        (= :ok (:state state))
-                       (not= (fs/canonicalize repo-root)
-                             (fs/canonicalize (:path state)))
-                       (fs/directory? (:path state)))
+                       (not= (files/canonicalize repo-root)
+                             (files/canonicalize (:path state)))
+                       (files/directory? (:path state)))
           (throw (ex-info "component root is missing or escapes the workspace"
                           {:kind :missing-evidence-input
                            :component-root component-root
@@ -191,7 +191,10 @@
                       (map #(str (str/replace component-root #"/+$" "") "/" %)
                            (clojure-namespace-inputs (:path state) roots)))))
 
-      ("repo-files-v1" "external-authority-v1")
+      "repo-files-v1"
+      (into (sorted-set) explicit)
+
+      "external-authority-v1"
       (into (sorted-set) explicit)
 
       (throw (ex-info "unknown evidence input profile"

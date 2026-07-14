@@ -1,0 +1,3 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["abc/docs/evidence/adr-bootstrap/pre-promotion.json"
+         "abc/schemas/adr-evidence-bootstrap.schema.json"]}

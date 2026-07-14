@@ -38,9 +38,8 @@
 (defn- nonempty-string? [value]
   (and (string? value) (not (str/blank? value))))
 
-(defn- sorted-unique-vector? [value predicate]
+(defn- sorted-unique-vector? [value]
   (and (vector? value)
-       (every? predicate value)
        (= (count value) (count (distinct value)))
        (try
          (= value (vec (sort value)))
@@ -79,7 +78,7 @@
       (fail! "operational namespace candidate is unsafe" unsafe))
     (when (some (fn [[_ state]]
                   (and (= :ok (:state state))
-                       (not (fs/regular-file? (:path state)))))
+                       (not (files/file? (:path state)))))
                 states)
       (fail! "operational namespace candidate is not a regular file"
              [(problem :invalid-operational-namespace-coordinate
@@ -140,7 +139,8 @@
   "Derive the exact repository-local namespace closure for owned `abc` roots."
   [repo-root entrypoint-namespaces]
   (when-not (and (vector? entrypoint-namespaces)
-                 (sorted-unique-vector? entrypoint-namespaces namespace-symbol?)
+                 (sorted-unique-vector? entrypoint-namespaces)
+                 (every? namespace-symbol? entrypoint-namespaces)
                  (seq entrypoint-namespaces)
                  (every? owned-namespace? entrypoint-namespaces))
     (fail! "operational entrypoints must be nonempty owned namespaces"
@@ -174,7 +174,7 @@
 (defn- valid-coordinate-state [root path]
   (when (nonempty-string? path)
     (let [state (containment/path-state root path)]
-      (when (and (= :ok (:state state)) (fs/regular-file? (:path state))) state))))
+      (when (and (= :ok (:state state)) (files/file? (:path state))) state))))
 
 (defn- read-contained-edn! [root path kind]
   (let [state (valid-coordinate-state root path)]
@@ -307,8 +307,8 @@
                        (:argv descriptor))
                     (contains? explicit runner-input)
                     (= :ok (:state runner-state))
-                    (fs/regular-file? (:path runner-state))
-                    (fs/executable? (:path runner-state)))
+                    (files/file? (:path runner-state))
+                    (files/executable? (:path runner-state)))
        [(problem :invalid-focused-evidence-runner
                  "focused version 3 requires one bound contained executable Kaocha focus"
                  :runner runner :state (:state runner-state))])
@@ -319,7 +319,7 @@
                        (some-> manifest-path fs/file-name str))
                     (contains? explicit manifest-input)
                     (= :ok (:state manifest-state))
-                    (fs/regular-file? (:path manifest-state)))
+                    (files/file? (:path manifest-state)))
        [(problem :invalid-runtime-input-manifest
                  "focused version 3 runtime manifest must be same-stem, bound, and contained"
                  :path manifest-path :state (:state manifest-state))])
@@ -388,7 +388,7 @@
      (let [state (when (nonempty-string? path)
                    (containment/path-state repo-root path))]
        (when-not (and state (= :ok (:state state))
-                      (fs/regular-file? (:path state)))
+                      (files/file? (:path state)))
          [(problem kind "input coordinate must be a contained regular file"
                    :path path :state (:state state))])))
    paths))
@@ -404,7 +404,8 @@
        [(problem :invalid-operational-closure "owned namespace prefixes must be exactly [abc]")])
      (when-not (= (:entrypoint-namespaces row) (:entrypoint-namespaces manifest))
        [(problem :invalid-operational-closure "manifest entrypoints do not match catalog policy")])
-     (when-not (sorted-unique-vector? paths nonempty-string?)
+     (when-not (and (sorted-unique-vector? paths)
+                    (every? nonempty-string? paths))
        [(problem :invalid-operational-closure "closure paths must be a sorted unique string vector")])
      (when-not (= expected-paths paths)
        [(problem :invalid-operational-closure "closure paths do not match the derived namespace closure")])

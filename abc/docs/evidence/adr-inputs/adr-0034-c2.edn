@@ -1,0 +1,2 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["abc/fixtures/adr-governance-invalid/docs/adr/0001-invalid.md"]}

@@ -19,11 +19,11 @@
 (def ^:private safe-integer-min -9007199254740991)
 (def ^:private safe-integer-max 9007199254740991)
 
+(defn- add-matrix-entry [matrix [claim-kind evidence-kinds]]
+  (assoc matrix claim-kind (set evidence-kinds)))
+
 (defn load-matrix []
-  (into (sorted-map)
-        (map (fn [[claim-kind evidence-kinds]]
-               [claim-kind (set evidence-kinds)]))
-        (files/read-edn matrix-path)))
+  (reduce add-matrix-entry (sorted-map) (files/read-edn matrix-path)))
 
 (defn load-registry [] (files/read-edn registry-path))
 (defn load-as-of [] (:as-of (files/read-edn as-of-path)))
@@ -38,12 +38,14 @@
     (map? value) :object
     :else :unsupported))
 
+(defn- pass-or-fail [result]
+  {:status (if result :pass :fail)})
+
 (defn evaluate-result [{:keys [operator value]} observed]
   (let [same-type? (= (value-type value) (value-type observed))
         ordered-integers? (and (integer? observed) (integer? value)
                                (<= safe-integer-min observed safe-integer-max)
-                               (<= safe-integer-min value safe-integer-max))
-        pass-or-fail (fn [result] {:status (if result :pass :fail)})]
+                               (<= safe-integer-min value safe-integer-max))]
     (case operator
       := (if same-type? (pass-or-fail (= observed value)) {:status :type-error})
       :not= (if same-type? (pass-or-fail (not= observed value)) {:status :type-error})
@@ -116,14 +118,20 @@
 (defn- entry-shape-valid? [entry]
   (= entry-keys (set (keys entry))))
 
+(defn- artifact-key [entry]
+  [(:artifact-path entry) (:artifact-hash entry)])
+
 (defn- artifact-groups [entries]
   (->> entries
        (filter entry-shape-valid?)
-       (group-by (juxt :artifact-path :artifact-hash))
+       (group-by artifact-key)
        (sort-by key)))
 
+(defn- frequency-entry-key [[entry _]]
+  (pr-str entry))
+
 (defn- duplicate-entry-problems [entries]
-  (for [[entry frequency] (sort-by (comp pr-str key) (frequencies entries))
+  (for [[entry frequency] (sort-by frequency-entry-key (frequencies entries))
         :when (< 1 frequency)]
     (entry-problem :duplicate-evidence-entry entry
                    "exact evidence registry entry is duplicated")))
@@ -155,14 +163,17 @@
                 review-after (parse-date (get artifact "review_after"))]
             (when (and (= :external-authority (:evidence-kind entry))
                        as-of-date review-after
-                       (.isAfter ^LocalDate as-of-date ^LocalDate review-after))
+                       (pos? (compare as-of-date review-after)))
               [(entry-problem :expired-evidence entry
                               "external evidence review date has passed")]))))))))
+
+(defn- index-claim [index claim]
+  (assoc index (:claim-id claim) claim))
 
 (defn validate-registry
   [{:keys [repo-root workspace-root claims registry matrix as-of]}]
   (let [entries (:entries registry)
-        claims-by-id (into {} (map (juxt :claim-id identity)) claims)
+        claims-by-id (reduce index-claim {} claims)
         known-evidence-kinds (apply set/union #{} (vals matrix))
         static-problems (mapcat #(static-entry-problems matrix known-evidence-kinds
                                                         claims-by-id %)

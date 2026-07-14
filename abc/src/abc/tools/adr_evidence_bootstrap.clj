@@ -3,6 +3,7 @@
             [abc.tools.adr-claim-migration :as migration]
             [abc.tools.adr-evidence :as evidence]
             [abc.tools.adr-evidence-bundle :as bundle]
+            [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
             [abc.tools.adr-governance :as governance]
             [abc.tools.cli :as cli]
             [abc.tools.files :as files]
@@ -71,6 +72,9 @@
       (.decode (Base64/getDecoder) encoded)
       (catch IllegalArgumentException _ nil))))
 
+(defn- encoded-string [bytes]
+  (.encodeToString (Base64/getEncoder) bytes))
+
 (defn- manifest-problems [files-value]
   (if-not (map? files-value)
     []
@@ -137,7 +141,7 @@
 (defn- governance-source-paths [abc-root workspace-root]
   (let [tools-root (fs/path abc-root "src/abc/tools")]
     (concat
-     (for [path (fs/glob tools-root "adr*.clj")]
+     (for [path (files/glob tools-root "adr*.clj")]
        (workspace-path workspace-root path))
      (map #(str "abc/src/abc/tools/" %)
           ["path_containment.clj" "hash.clj" "json.clj" "files.clj"]))))
@@ -162,9 +166,9 @@
 
 (defn snapshot-input-paths
   [abc-root workspace-root adrs registry]
-  (let [workspace-root (fs/canonicalize workspace-root)
-        abc-root (fs/canonicalize abc-root)]
-    (when-not (= abc-root (fs/canonicalize (fs/path workspace-root "abc")))
+  (let [workspace-root (files/canonicalize workspace-root)
+        abc-root (files/canonicalize abc-root)]
+    (when-not (= abc-root (files/canonicalize (fs/path workspace-root "abc")))
       (throw (ex-info "ABC root must be the workspace abc directory"
                       {:abc-root (str abc-root)
                        :workspace-root (str workspace-root)})))
@@ -197,16 +201,16 @@
                        :phase phase :status status})))))
 
 (defn- assert-root-layout! [abc-root workspace-root]
-  (let [workspace-root (fs/canonicalize workspace-root)
-        abc-root (fs/canonicalize abc-root)
-        git-root (fs/canonicalize
+  (let [workspace-root (files/canonicalize workspace-root)
+        abc-root (files/canonicalize abc-root)
+        git-root (files/canonicalize
                   (successful-git-output workspace-root
                                          "rev-parse" "--show-toplevel"))]
     (when-not (= workspace-root git-root)
       (throw (ex-info "workspace root is not the Git root"
                       {:workspace-root (str workspace-root)
                        :git-root (str git-root)})))
-    (when-not (= abc-root (fs/canonicalize (fs/path workspace-root "abc")))
+    (when-not (= abc-root (files/canonicalize (fs/path workspace-root "abc")))
       (throw (ex-info "ABC root is not the workspace abc directory"
                       {:abc-root (str abc-root)
                        :workspace-root (str workspace-root)})))
@@ -224,13 +228,13 @@
 
 (defn- snapshot-file-entry [workspace-root path]
   (let [state (containment/path-state workspace-root path)]
-    (when-not (and (= :ok (:state state)) (fs/regular-file? (:path state)))
+    (when-not (and (= :ok (:state state)) (files/file? (:path state)))
       (throw (ex-info "bootstrap input is missing or escapes the workspace"
                       {:kind :missing-bootstrap-input
                        :path path :state (:state state)})))
     (let [bytes (files/read-bytes (:path state))]
       {"sha256" (hash/format-sha256 (hash/sha256-bytes bytes))
-       "content_base64" (.encodeToString (Base64/getEncoder) bytes)})))
+       "content_base64" (encoded-string bytes)})))
 
 (defn snapshot-value [abc-root workspace-root]
   (let [{:keys [abc-root workspace-root]}
@@ -251,10 +255,11 @@
                         {:kind :incomplete-migration-ledger
                          :problems (:problems migration-state)})))
       (let [paths (snapshot-input-paths abc-root workspace-root adrs registry)
-            embedded-files (into (sorted-map)
-                                 (map (fn [path]
-                                        [path (snapshot-file-entry workspace-root path)]))
-                                 paths)
+            embedded-files (reduce (fn [result path]
+                                     (assoc result path
+                                            (snapshot-file-entry workspace-root path)))
+                                   (sorted-map)
+                                   paths)
             report-after (strict-report abc-root workspace-root)
             value {"schema_version" "abc-adr-evidence-bootstrap-v1"
                    "subject" "pre-promotion Accepted ADR corpus excluding ADR 0034"
@@ -355,7 +360,7 @@
 (defn usage [_]
   "Usage: clojure -M:abc/adr-evidence-bootstrap (--write|--verify|--verify-final) PATH --repo-root PATH --workspace-root PATH")
 
-(defn -main [& args]
+(defn- run-cli! [args]
   (cli/run-cli!
    args
    {:cli-options cli-options
@@ -387,3 +392,18 @@
                                    {:problems problems})))
                  {:ok? true}))))
     :fail? (complement :ok?)}))
+
+(defn- c3-verification-invocation? [args]
+  (= #{"--repo-root" "." "--workspace-root" ".." "--verify"
+       "docs/evidence/adr-bootstrap/pre-promotion.json"}
+     (set args)))
+
+(defn -main [& args]
+  (if (c3-verification-invocation? args)
+    (runtime-inputs/with-validated-read-trace!
+      {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
+       :descriptor
+       {:path "abc/docs/evidence/adr-capture/adr-0034-c3.edn"
+        :value (files/read-edn "docs/evidence/adr-capture/adr-0034-c3.edn")}}
+      #(run-cli! args))
+    (run-cli! args)))

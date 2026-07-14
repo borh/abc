@@ -113,6 +113,9 @@
     "diagram-registry-drift"
     "workflow-graph-fixtures"})
 
+(def ^:private adr-0034-descriptor-stems
+  #{"adr-0034-c1" "adr-0034-c2" "adr-0034-c3"})
+
 (deftest checked-in-foundation-observation-boundary-inventory-is-exact-test
   (let [stems (fn [root]
                 (->> (fs/list-dir root)
@@ -124,16 +127,71 @@
                       schema-rdf-tei-descriptor-stems
                       temporal-person-ingest-descriptor-stems
                       parser-ir-publication-descriptor-stems
-                      diagrams-governance-descriptor-stems)
+                      diagrams-governance-descriptor-stems
+                      adr-0034-descriptor-stems)
            (stems "docs/evidence/adr-capture")))
     (is (= (set/union foundation-descriptor-stems
                       (disj schema-rdf-tei-descriptor-stems "tei-profile-drift")
                       temporal-person-ingest-descriptor-stems
                       parser-ir-publication-descriptor-stems
-                      diagrams-governance-descriptor-stems)
+                      diagrams-governance-descriptor-stems
+                      adr-0034-descriptor-stems)
            (stems "docs/evidence/adr-inputs")))
     (is (= 42 (count (:entries (files/read-edn
                                 "docs/evidence/adr-entries/foundation.edn")))))))
+
+(deftest adr-0034-capture-contracts-are-closed-test
+  (let [workspace-root (fs/file (fs/canonicalize ".."))
+        live-inputs #{"abc/docs/adr/0034-typed-evidence-and-lifecycle-closure.md"
+                      "abc/docs/adr/adr-evidence.edn"
+                      "abc/docs/reports/adr-evidence-migration.json"}
+        expected
+        {"adr-0034-c1" {:observation "typed-artifact-protocol-passes"
+                        :paths ["abc/docs/adr/claim-evidence-compatibility.edn"
+                                "abc/schemas/adr-evidence-run.schema.json"
+                                "abc/schemas/adr-external-evidence.schema.json"]}
+         "adr-0034-c2" {:observation "lifecycle-and-mode-contract-passes"
+                        :paths ["abc/fixtures/adr-governance-invalid/docs/adr/0001-invalid.md"]}
+         "adr-0034-c3" {:observation "pre-promotion-corpus-conforms"
+                        :paths ["abc/docs/evidence/adr-bootstrap/pre-promotion.json"
+                                "abc/schemas/adr-evidence-bootstrap.schema.json"]}}]
+    (doseq [[stem {:keys [observation paths]}] expected
+            :let [descriptor-path (str "abc/docs/evidence/adr-capture/" stem ".edn")
+                  descriptor (files/read-edn (str "docs/evidence/adr-capture/" stem ".edn"))
+                  wrapped {:path descriptor-path :value descriptor}
+                  explicit (set (get-in descriptor [:input-profile :explicit]))]]
+      (is (= #{:schema-version :tool :argv :runtime-input-manifest
+               :input-profile :observation-key}
+             (set (keys descriptor))) stem)
+      (is (= "abc" (get-in descriptor [:input-profile :component-root])) stem)
+      (is (= observation (:observation-key descriptor)) stem)
+      (is (contains? explicit descriptor-path) stem)
+      (is (empty? (set/intersection live-inputs explicit)) stem)
+      (is (true? (runtime/assert-runtime-input-closure!
+                  {:repo-root "." :workspace-root workspace-root
+                   :descriptor wrapped :repository-paths paths})) stem)
+      (let [analysis (runtime/analyze-reachable-vars
+                      "."
+                      (if (= stem "adr-0034-c3")
+                        ['abc.tools.adr-evidence-bootstrap/-main]
+                        [(symbol "abc.tools.adr-0034-evidence-test"
+                                 (str stem "-contract"))]))]
+        (is (map? analysis) stem)
+        (when-not (= stem "adr-0034-c3")
+          (is (map? (runtime/assert-v2-boundary-ownership! analysis)) stem))))
+    (let [stem "adr-0034-c1"
+          descriptor (files/read-edn (str "docs/evidence/adr-capture/" stem ".edn"))]
+      (is (= :missing-runtime-input
+             (try
+               (runtime/assert-runtime-input-closure!
+                {:repo-root "." :workspace-root workspace-root
+                 :descriptor {:path (str "abc/docs/evidence/adr-capture/" stem ".edn")
+                              :value descriptor}
+                 :repository-paths (conj (vec (:paths (get expected stem)))
+                                         "abc/docs/adr/adr-evidence.edn")})
+               nil
+               (catch clojure.lang.ExceptionInfo exception
+                 (:kind (ex-data exception)))))))))
 
 (deftest checked-in-foundation-observation-boundaries-are-valid-test
   (let [repo-root (fs/file (fs/canonicalize "."))

@@ -41,6 +41,18 @@
      "original_text" body
      "original_text_hash" (criterion-text-hash body)}))
 
+(defn- index-adr [index adr-value]
+  (assoc index (:num adr-value) adr-value))
+
+(defn- criterion-sort-key [row]
+  [(get row "adr") (get row "original_criterion_index")])
+
+(defn- criterion-identity-key [row]
+  [(get row "adr") (get row "original_text_hash")])
+
+(defn- section-key [row]
+  [(get row "adr") (get row "section")])
+
 (defn baseline-value [revision adrs]
   (let [normative-coordinates (normative-coordinate-inventory)
         duplicate-coordinates (->> normative-coordinates
@@ -48,7 +60,7 @@
                                    (keep (fn [[coordinate count]]
                                            (when (< 1 count) coordinate))))
         accepted (vec (accepted-adrs adrs))
-        accepted-by-num (into {} (map (juxt :num identity) accepted))
+        accepted-by-num (reduce index-adr {} accepted)
         required-coordinates (filter (fn [[adr-number _]]
                                        (contains? accepted-by-num adr-number))
                                      normative-coordinates)
@@ -58,7 +70,7 @@
                                     required-coordinates)
         criteria (->> accepted
                       (mapcat (fn [item] (map #(criterion-row item %) (:criteria item))))
-                      (sort-by (juxt #(get % "adr") #(get % "original_criterion_index")))
+                      (sort-by criterion-sort-key)
                       vec)
         sections (->> accepted
                       (mapcat (fn [{:keys [num] :as item}]
@@ -67,7 +79,7 @@
                                       :let [row (normative-row item section)]
                                       :when row]
                                   row)))
-                      (sort-by (juxt #(get % "adr") #(get % "section")))
+                      (sort-by section-key)
                       vec)]
     (when (seq duplicate-coordinates)
       (throw (ex-info "Explicit inventory contains a duplicate normative coordinate"
@@ -89,8 +101,8 @@
 (defn- problem [kind message & {:as data}]
   (merge {:kind kind :message message} data))
 
-(defn- duplicates [key-fn values]
-  (->> values (group-by key-fn) (keep (fn [[key rows]] (when (< 1 (count rows)) key)))))
+(defn- duplicates [keys]
+  (->> keys frequencies (keep (fn [[key count]] (when (< 1 count) key)))))
 
 (defn validate-baseline [baseline]
   (let [schema-value (files/read-json "schemas/adr-claim-migration-baseline.schema.json")
@@ -106,20 +118,23 @@
                      (not= (count (set (map #(get % "adr") criteria)))
                            (get baseline "accepted_adr_count"))
                      (not= (count sections) (get baseline "normative_section_count"))
-                     (not= criteria (vec (sort-by (juxt #(get % "adr") #(get % "original_criterion_index")) criteria)))
-                     (not= sections (vec (sort-by (juxt #(get % "adr") #(get % "section")) sections)))
+                     (not= criteria (vec (sort-by criterion-sort-key criteria)))
+                     (not= sections (vec (sort-by section-key sections)))
                      (seq invalid-hashes)
-                     (seq (duplicates (juxt #(get % "adr") #(get % "original_text_hash")) criteria))
-                     (seq (duplicates (juxt #(get % "adr") #(get % "section")) sections)))]
+                     (seq (duplicates (map criterion-identity-key criteria)))
+                     (seq (duplicates (map section-key sections))))]
     (if invalid?
       [(problem :invalid-migration-baseline "migration baseline violates its closed contract")]
       [])))
 
+(defn- index-normative-section [index row]
+  (assoc index [(get row "adr") (get row "section")] row))
+
 (defn normative-section-problems [baseline current-adrs]
   (let [normative-coordinates (normative-coordinate-inventory)
-        by-adr (into {} (map (juxt :num identity) current-adrs))
-        expected (into {} (map (fn [row] [[(get row "adr") (get row "section")] row])
-                               (get baseline "normative_sections")))
+        by-adr (reduce index-adr {} current-adrs)
+        expected (reduce index-normative-section {}
+                         (get baseline "normative_sections"))
         original-adrs (set (map #(get % "adr") (get baseline "criteria")))]
     (->> normative-coordinates
          (filter (fn [[adr-number _]] (contains? original-adrs adr-number)))
@@ -141,7 +156,7 @@
 
 (defn validate-ledger [baseline ledger claims-by-id {:keys [require-complete?]
                                                      :or {require-complete? true}}]
-  (let [baseline-keys (set (map (juxt #(get % "adr") #(get % "original_text_hash"))
+  (let [baseline-keys (set (map criterion-identity-key
                                 (get baseline "criteria")))
         entries (:entries ledger {})
         entry-keys (set (keys entries))
@@ -179,15 +194,18 @@
        entries)
       (map #(problem :duplicate-resulting-claim-id "resulting claim ID occurs more than once"
                      :claim-id %)
-           (duplicates identity resulting-ids))))))
+           (duplicates resulting-ids))))))
+
+(defn- index-criterion [index criterion]
+  (if-let [claim-id (:claim-id criterion)]
+    (assoc index claim-id criterion)
+    index))
 
 (defn load-migration-state [repo-root options]
   (let [baseline (files/read-json (fs/file repo-root "docs/adr/adr-claim-migration-baseline.json"))
         ledger (files/read-edn (fs/file repo-root "docs/adr/adr-claim-migration.edn"))
         adrs (adr/parse-all (fs/file repo-root "docs/adr"))
-        claims (into {} (keep (fn [criterion]
-                                (when-let [claim-id (:claim-id criterion)] [claim-id criterion])))
-                     (mapcat :criteria adrs))
+        claims (reduce index-criterion {} (mapcat :criteria adrs))
         problems (vec (concat (validate-baseline baseline)
                               (normative-section-problems baseline adrs)
                               (validate-ledger baseline ledger claims options)))]

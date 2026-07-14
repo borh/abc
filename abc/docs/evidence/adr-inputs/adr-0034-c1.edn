@@ -1,0 +1,4 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["abc/docs/adr/claim-evidence-compatibility.edn"
+         "abc/schemas/adr-evidence-run.schema.json"
+         "abc/schemas/adr-external-evidence.schema.json"]}

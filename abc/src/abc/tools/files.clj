@@ -55,6 +55,12 @@
     (list-files directory)
     []))
 
+(defn glob [root pattern]
+  (let [matches (vec (fs/glob root pattern))]
+    (doseq [file matches]
+      (evidence-io/record-read! file))
+    matches))
+
 (defn create-dirs! [path]
   (fs/create-dirs path))
 
@@ -82,6 +88,9 @@
 
 (defn file? [path]
   (fs/regular-file? (evidence-io/record-read! path)))
+
+(defn executable? [path]
+  (fs/executable? (evidence-io/record-read! path)))
 
 (defn with-zip-file [archive f]
   (with-open [zip (ZipFile. (io/file (evidence-io/record-read! archive)))]

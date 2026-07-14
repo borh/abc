@@ -184,11 +184,16 @@
      abc.tools.evidence-io/record-read!
      abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure!
      abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace!
+     abc.tools.adr-evidence-runtime-inputs/validate-workspace-root!
+     abc.tools.adr-evidence-bootstrap/git-command
+     abc.tools.cli/run-cli!
      abc.tools.json/write-deterministic-json-file!
      abc.tools.files/read-text abc.tools.files/read-bytes
      abc.tools.files/input-stream abc.tools.files/reader abc.tools.files/list-files
      abc.tools.files/list-files-if-directory
+     abc.tools.files/glob
      abc.tools.files/exists? abc.tools.files/directory? abc.tools.files/file?
+     abc.tools.files/executable?
      abc.tools.files/read-edn abc.tools.files/read-json-lines
      abc.tools.files/with-zip-file abc.tools.files/load-jena-model
      abc.tools.files/parse-xml-document abc.tools.files/copy-file!
@@ -225,7 +230,11 @@
      abc.tools.hash/byte-length})
 
 (def ^:private audited-structural-leaf-vars
-  '#{abc.tools.hash/sha256-bytes
+  '#{abc.tools.adr-evidence-bootstrap/decoded-bytes
+     abc.tools.adr-evidence-bootstrap/encoded-string
+     abc.tools.adr-evidence-bundle/ns-requires
+     abc.tools.adr-evidence-operational/ns-declaration
+     abc.tools.hash/sha256-bytes
      abc.sim.content-sim-test/no-text-zip-bytes
      abc.sim.content-sim-test/unsafe-path-zip-bytes
      abc.sim.content-sim-test/named-text-zip-bytes
@@ -347,7 +356,16 @@
      putNextEntry 2 write 2 closeEntry 1 toByteArray 1}
     abc.sim.render/init-repo! {init 1 setDirectory 1}
     abc.sim.render/model->rows {}
+    abc.tools.adr-evidence-bootstrap/decoded-bytes {getDecoder 1 decode 1}
+    abc.tools.adr-evidence-bootstrap/encoded-string {getEncoder 1 encodeToString 1}
+    abc.tools.adr-evidence-bootstrap/git-command {}
+    abc.tools.cli/run-cli! {exit 1 parse 1}
+    abc.tools.adr-evidence-bundle/ns-requires
+    {LineNumberingPushbackReader 1 reader 1 read 1}
+    abc.tools.adr-evidence-operational/ns-declaration {reader 1 read 1}
     abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure! {}
+    abc.tools.adr-evidence-runtime-inputs/validate-workspace-root!
+    {canonicalize 3 process 1 regular-file? 1}
     abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace! {}
     abc.tools.aozora-history-audit/prepare-owned-path! {exists? 1 delete-tree 1}
     abc.tools.aozora-ingest/open-zip {ZipFile 1}
@@ -363,8 +381,10 @@
     abc.tools.files/create-parent-dirs! {make-parents 1}
     abc.tools.files/directory? {directory? 1}
     abc.tools.files/exists? {exists? 1}
+    abc.tools.files/executable? {executable? 1}
     abc.tools.files/file? {regular-file? 1}
     abc.tools.files/input-stream {input-stream 1}
+    abc.tools.files/glob {glob 1}
     abc.tools.files/list-files {list-dir 1}
     abc.tools.files/list-files-if-directory {directory? 1}
     abc.tools.files/load-jena-model {loadModel 1}
@@ -526,7 +546,7 @@
 (def ^:private audited-safe-external-vars
   '#{clojure.core/= clojure.core/not= clojure.core/not clojure.core/< clojure.core/<=
      clojure.core/> clojure.core/>= clojure.core/+ clojure.core/- clojure.core/max
-     clojure.core/* clojure.core// clojure.core/inc clojure.core/dec
+     clojure.core/* clojure.core// clojure.core/inc clojure.core/dec clojure.core/compare
      clojure.core/identity clojure.core/constantly clojure.core/if-not
      clojure.core/atom clojure.core/volatile! clojure.core/deref clojure.core/swap! clojure.core/vswap! clojure.core/ex-data
      clojure.core/ex-info clojure.core/ex-message clojure.core/instance? clojure.core/class
@@ -554,6 +574,7 @@
      clojure.core/take-nth clojure.core/concat clojure.core/cons clojure.core/reverse clojure.core/repeat
      clojure.core/byte-array clojure.core/unchecked-byte clojure.core/alength clojure.core/aget
      clojure.core/string? clojure.core/symbol? clojure.core/keyword? clojure.core/bytes?
+     clojure.core/boolean?
      clojure.core/map? clojure.core/set? clojure.core/vector? clojure.core/seq?
      clojure.core/coll? clojure.core/integer? clojure.core/number?
      clojure.core/sequential? clojure.core/qualified-symbol?
@@ -563,6 +584,7 @@
      clojure.core/subs
      clojure.test/is clojure.string/includes? clojure.string/starts-with?
      clojure.string/ends-with? clojure.string/blank? clojure.string/split
+     clojure.string/index-of
      clojure.string/lower-case
      clojure.string/split-lines clojure.string/replace clojure.string/replace-first
      clojure.string/join clojure.string/trim

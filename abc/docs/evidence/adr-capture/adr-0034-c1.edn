@@ -1,0 +1,13 @@
+{:schema-version "abc-adr-evidence-capture-v2"
+ :tool "bash"
+ :argv ["bash" "-lc" "cd abc && bin/kaocha --focus abc.tools.adr-0034-evidence-test/adr-0034-c1-contract"]
+ :runtime-input-manifest "abc/docs/evidence/adr-inputs/adr-0034-c1.edn"
+ :input-profile {:kind "component-clojure-test-v1"
+                 :component-root "abc"
+                 :roots ["abc.tools.adr-0034-evidence-test"]
+                 :explicit ["abc/docs/evidence/adr-capture/adr-0034-c1.edn"
+                            "abc/docs/evidence/adr-inputs/adr-0034-c1.edn"
+                            "abc/docs/adr/claim-evidence-compatibility.edn"
+                            "abc/schemas/adr-evidence-run.schema.json"
+                            "abc/schemas/adr-external-evidence.schema.json"]}
+ :observation-key "typed-artifact-protocol-passes"}

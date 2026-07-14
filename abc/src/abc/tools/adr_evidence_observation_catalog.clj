@@ -37,16 +37,18 @@
 (defn- namespace-symbol? [value]
   (and (symbol? value) (nil? (namespace value))))
 
-(defn- sorted-unique-vector? [value predicate]
+(defn- sorted-unique-vector? [value]
   (and (vector? value)
-       (every? predicate value)
        (= (count value) (count (distinct value)))
        (try
          (= value (vec (sort value)))
          (catch ClassCastException _ false))))
 
+(defn- observation-order [row]
+  (pr-str (:observation-id row)))
+
 (defn- row-order [rows]
-  (mapv (comp pr-str :observation-id) rows))
+  (mapv observation-order rows))
 
 (defn- normalized-coordinate [path]
   (when (string? path)
@@ -94,7 +96,7 @@
        (when-not (and state
                       (= path (normalized-coordinate path))
                       (= :ok (:state state))
-                      (fs/regular-file? (:path state)))
+                      (files/file? (:path state)))
          [(problem :invalid-operational-determinant
                    "operational determinant must be a contained regular file"
                    :index index :path path :state (:state state))])))
@@ -135,20 +137,27 @@
          [(problem :invalid-operational-observation
                    "entrypoint kind is unsupported" :index index)])
        (when (and clojure?
-                  (not (and (sorted-unique-vector? (:entrypoint-namespaces row)
-                                                   namespace-symbol?)
+                  (not (and (sorted-unique-vector? (:entrypoint-namespaces row))
+                            (every? namespace-symbol? (:entrypoint-namespaces row))
                             (seq (:entrypoint-namespaces row)))))
          [(problem :unsorted-operational-collection
                    "entrypoint namespaces must be a nonempty sorted unique symbol vector"
                    :index index :field :entrypoint-namespaces)])
-       (when-not (sorted-unique-vector? (:determinant-paths row) nonempty-string?)
+       (when-not (and (sorted-unique-vector? (:determinant-paths row))
+                      (every? nonempty-string? (:determinant-paths row)))
          [(problem :unsorted-operational-collection
                    "determinant paths must be a sorted unique string vector"
                    :index index :field :determinant-paths)])
        (determinant-problems repo-root row index)))))
 
-(defn- duplicate-problems [rows field kind]
-  (for [[value count] (frequencies (keep field rows))
+(defn- observation-id [row] (:observation-id row))
+(defn- descriptor-stem [row] (:descriptor-stem row))
+(defn- observation-key [row] (:observation-key row))
+(defn- focus-var [row] (:focus-var row))
+(defn- command-id [row] (:command-id row))
+
+(defn- duplicate-problems [values field kind]
+  (for [[value count] (frequencies (remove nil? values))
         :when (> count 1)]
     (problem kind "catalog identity must be unique" field value :count count)))
 
@@ -181,16 +190,21 @@
           [(problem :unsorted-observations "focused observations must be sorted by ID")])
         (when-not (= (row-order operational) (vec (sort (row-order operational))))
           [(problem :unsorted-observations "operational observations must be sorted by ID")])
-        (duplicate-problems rows :observation-id :duplicate-observation-id)
-        (duplicate-problems rows :descriptor-stem :duplicate-descriptor-stem)
-        (duplicate-problems rows :observation-key :duplicate-observation-key)
-        (duplicate-problems focused :focus-var :duplicate-focus-var)
-        (duplicate-problems operational :command-id :duplicate-command-id))))))
+        (duplicate-problems (map observation-id rows)
+                            :observation-id :duplicate-observation-id)
+        (duplicate-problems (map descriptor-stem rows)
+                            :descriptor-stem :duplicate-descriptor-stem)
+        (duplicate-problems (map observation-key rows)
+                            :observation-key :duplicate-observation-key)
+        (duplicate-problems (map focus-var focused)
+                            :focus-var :duplicate-focus-var)
+        (duplicate-problems (map command-id operational)
+                            :command-id :duplicate-command-id))))))
 
 (defn load-catalog! [repo-root catalog-path]
   (let [state (when (nonempty-string? catalog-path)
                 (containment/path-state repo-root catalog-path))]
-    (when-not (and state (= :ok (:state state)) (fs/regular-file? (:path state)))
+    (when-not (and state (= :ok (:state state)) (files/file? (:path state)))
       (throw (ex-info "observation catalog path is not a contained regular file"
                       {:problems [(problem :invalid-observation-catalog-path
                                            "catalog path is missing or escapes the repository"
@@ -435,7 +449,7 @@
   (let [analysis-var (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
                                  'kondo-analysis!)
         original-analysis @analysis-var
-        analysis (original-analysis (fs/file (fs/canonicalize repo-root)))]
+        analysis (original-analysis (fs/file (files/canonicalize repo-root)))]
     (with-redefs-fn
       {analysis-var (constantly analysis)}
       #(->> (:focused-observations catalog)
@@ -469,7 +483,7 @@
         state (containment/path-state repo-root foundation-catalog-path)
         file (:path state)
         actual-sha256 (when (and (= :ok (:state state))
-                                 (fs/regular-file? file))
+                                 (files/file? file))
                         (hash/sha256-file file))
         checked-in (when (= foundation-catalog-sha256 actual-sha256)
                      (files/read-edn file))]

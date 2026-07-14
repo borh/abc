@@ -56,7 +56,7 @@
     (is (every? seq owned))
     (is (str/includes? adr38 "Release authority: development"))
     (is (= review-after (LocalDate/parse "2026-10-12")))
-    (is (not (.isAfter as-of review-after))
+    (is (not (pos? (compare as-of review-after)))
         (str "governance epoch " as-of " is after ownership review date " review-after))
     true))
 
@@ -73,7 +73,7 @@
 
 (deftest ownership-review-window-is-date-ordered-and-mutation-sensitive-test
   (let [assessment (files/read-text assessment-path)]
-    (is (not (.isAfter (:as-of (assessment-dates assessment {:as-of "2026-09-01"}))
-                       (:review-after (assessment-dates assessment {:as-of "2026-09-01"})))))
-    (is (.isAfter (:as-of (assessment-dates assessment {:as-of "2026-10-13"}))
-                  (:review-after (assessment-dates assessment {:as-of "2026-10-13"}))))))
+    (is (not (pos? (compare (:as-of (assessment-dates assessment {:as-of "2026-09-01"}))
+                            (:review-after (assessment-dates assessment {:as-of "2026-09-01"}))))))
+    (is (pos? (compare (:as-of (assessment-dates assessment {:as-of "2026-10-13"}))
+                       (:review-after (assessment-dates assessment {:as-of "2026-10-13"})))))))

@@ -112,3 +112,20 @@ and raw byte/hash verification. Producing results in this session would either
 skip required validation or exceed the available execution envelope. This is
 the explicit corpus-scale blocker; Task 3 remains incomplete rather than
 converting the blocker into candidate evidence.
+
+## Neutral executor implementation
+
+Follow-up work added `reports/parser-study/neutral_executor.py`, a checked
+executor independent of result aggregation. It deterministically materializes
+every frozen notation vector's `source` field in vector-name order, validates
+closed inventory rows and source hashes, executes one candidate command per
+item with bounded concurrency and per-item timeout, and writes stdout, stderr,
+and the outcome itself with SHA-256 identities. Resume accepts an outcome only
+after verifying its recorded bytes; the final verifier requires exactly one
+ordered outcome per inventory item and rechecks all source/output hashes.
+
+The executor test was written before the module and initially failed at import.
+A second RED showed the vector materializer API was absent. Four focused tests
+now cover success/resume, malformed manifests, cross-host paths, and sorted
+complete vector materialization. This commit contains executor code and tests
+only; it does not contain or claim parser measurements.

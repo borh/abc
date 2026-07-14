@@ -12,12 +12,12 @@
     "abc\/docs\/evidence\/adr-capture\/adr-0011-c2-deterministic-json-writer.edn": "sha256:031afa015f35c5540a51b6073d8ff48ed4d3b17f9231b211ee083e81f326dbe2",
     "abc\/docs\/evidence\/adr-inputs\/adr-0011-c2-deterministic-json-writer.edn": "sha256:7deabe0c25f640e061c869534b5b1233005a419626da2b9b019545823ba99fa4",
     "abc\/src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
-    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:c96b994aa63fe2513e3ca2a15d61bf3e0900820ab171e25c5759c501c26810ec",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:7945fb9c26cbcd173ebf997300c70b13c93ddf5d5b4a17f4901317890def884a",
     "abc\/src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
     "abc\/src\/abc\/tools\/edn_registry.clj": "sha256:4d75f858bd14f6808d110ad9c252e643fcebfc3176eda65a3a6b7bfc9651eafb",
     "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
-    "abc\/src\/abc\/tools\/files.clj": "sha256:d75906597b819f97c8434e9f27e84601da3ca9492f4439bad4b8bd5e1141f241",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
     "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
     "abc\/src\/abc\/tools\/iiif.clj": "sha256:dedf8ca77c9818c79e1d55c5b3e2a0143345d5b63225b16ce36040625ce0eaf0",
     "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
@@ -71,7 +71,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.materialize-import-test\/deterministic-json-writer-test\"",
-    "revision": "53d471ddf7149da238f6f93879739162739799f8",
+    "revision": "f3b12361fcadee14d62ae9a0583d9817fd327dcc",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

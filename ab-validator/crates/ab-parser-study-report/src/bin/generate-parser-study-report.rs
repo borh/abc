@@ -25,6 +25,10 @@ fn main() -> ExitCode {
         .join("reports/parser-study/runs")
         .join(STUDY)
         .join("run-manifests.json");
+    let appendix_manifests_path = root
+        .join("reports/parser-study/runs")
+        .join(STUDY)
+        .join("appendix-run-manifests.json");
     let prereg_path = root.join("docs/studies/aozora-parser-comparison-preregistration.json");
     let out_dir = root.join("reports/parser-study/reports").join(STUDY);
     let machine_path = out_dir.join("comparison-result.json");
@@ -44,8 +48,18 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let appendix_manifests = match fs::read_to_string(&appendix_manifests_path) {
+        Ok(text) => text,
+        Err(err) => {
+            eprintln!(
+                "failed to read {}: {err}",
+                appendix_manifests_path.display()
+            );
+            return ExitCode::FAILURE;
+        }
+    };
 
-    let reports = match generate_reports(&run_manifests, &prereg) {
+    let reports = match generate_reports(&run_manifests, &prereg, &appendix_manifests) {
         Ok(reports) => reports,
         Err(err) => {
             eprintln!("report generation failed: {err}");

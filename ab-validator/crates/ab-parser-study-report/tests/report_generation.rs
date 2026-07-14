@@ -4,7 +4,9 @@
 use std::fs;
 
 use ab_parser_study_report::generate::{GeneratedReports, generate_reports};
-use ab_parser_study_report::{Axis, Candidate, MeasurementMode, RowStatus, StudyReport};
+use ab_parser_study_report::{
+    Axis, Candidate, MeasurementMode, Missingness, RowStatus, StudyReport,
+};
 
 const RUN_MANIFESTS: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -14,6 +16,11 @@ const RUN_MANIFESTS: &str = include_str!(concat!(
 const PREREGISTRATION: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../docs/studies/aozora-parser-comparison-preregistration.json"
+));
+
+const APPENDIX_MANIFESTS: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../reports/parser-study/runs/aozora-parser-neutral-comparison-2026-07/appendix-run-manifests.json"
 ));
 
 const COMMITTED_MACHINE_REPORT: &str = concat!(
@@ -27,7 +34,8 @@ const COMMITTED_NARRATIVE_REPORT: &str = concat!(
 );
 
 fn generate() -> GeneratedReports {
-    generate_reports(RUN_MANIFESTS, PREREGISTRATION).expect("generation succeeds")
+    generate_reports(RUN_MANIFESTS, PREREGISTRATION, APPENDIX_MANIFESTS)
+        .expect("generation succeeds")
 }
 
 #[test]
@@ -106,10 +114,13 @@ fn axes_without_committed_raw_data_are_missing_not_zero() {
     let generated = generate();
     let report: StudyReport = serde_json::from_str(&generated.machine_json).expect("parse report");
     for row in report.rows() {
-        if row.axis() != Axis::Robustness
-            || row.candidate() == Candidate::AozoraParserJs
-            || row.candidate() == Candidate::AbAozora
-        {
+        // Robustness is measured only where committed parse outcomes exist: every
+        // executable existing-parser lane and the ab-aozora appendix corpus lane.
+        // The excluded aozora-parser.js has no build, so even its robustness row is
+        // unmeasured. Every non-robustness axis remains unmeasured for everyone.
+        let expect_unmeasured =
+            row.axis() != Axis::Robustness || row.candidate() == Candidate::AozoraParserJs;
+        if expect_unmeasured {
             assert_ne!(
                 row.status(),
                 RowStatus::Measured,
@@ -120,6 +131,68 @@ fn axes_without_committed_raw_data_are_missing_not_zero() {
             assert_eq!(row.numerator(), None);
             assert_eq!(row.denominator(), None);
         }
+    }
+}
+
+#[test]
+fn ab_aozora_appendix_is_measured_noncomparable_or_missing_never_zero() {
+    let generated = generate();
+    let report: StudyReport = serde_json::from_str(&generated.machine_json).expect("parse report");
+    let rows: Vec<_> = report
+        .rows()
+        .iter()
+        .filter(|row| row.candidate() == Candidate::AbAozora)
+        .collect();
+    // Native-only appendix: exactly the 9 native rows, no adapter lane.
+    assert_eq!(rows.len(), 9);
+    for row in &rows {
+        assert_eq!(row.measurement_mode(), MeasurementMode::Native);
+        assert_eq!(
+            row.parser_revision(),
+            "ac2be926738f919faf44300e2999b3548d724297"
+        );
+    }
+
+    // Robustness is really measured from the pinned corpus: 17886 / 17886, no zero.
+    let robustness = rows
+        .iter()
+        .find(|row| row.axis() == Axis::Robustness)
+        .expect("ab-aozora robustness row present");
+    assert_eq!(robustness.status(), RowStatus::Measured);
+    assert_eq!(robustness.numerator(), Some(17886));
+    assert_eq!(robustness.denominator(), Some(17886));
+    assert_eq!(robustness.missingness(), Missingness::None);
+
+    // Owned-contract axes with no native competitor analogue are non-comparable,
+    // never a competitor zero and never a blocker-missing.
+    for axis in [Axis::Spans, Axis::Diagnostics] {
+        let row = rows
+            .iter()
+            .find(|row| row.axis() == axis)
+            .expect("owned axis row");
+        assert_eq!(row.status(), RowStatus::NonComparable, "{axis:?}");
+        assert_eq!(row.missingness(), Missingness::NonComparable, "{axis:?}");
+        assert_eq!(row.numerator(), None);
+        assert_eq!(row.denominator(), None);
+    }
+
+    // Axes with no valid instrument stay caveated missing (unavailable), not zero.
+    for axis in [
+        Axis::ConstructCoverage,
+        Axis::Fidelity,
+        Axis::Performance,
+        Axis::Maintenance,
+        Axis::Packaging,
+        Axis::License,
+    ] {
+        let row = rows
+            .iter()
+            .find(|row| row.axis() == axis)
+            .expect("missing axis row");
+        assert_eq!(row.status(), RowStatus::Failed, "{axis:?}");
+        assert_eq!(row.missingness(), Missingness::Unavailable, "{axis:?}");
+        assert_eq!(row.numerator(), None);
+        assert_eq!(row.denominator(), None);
     }
 }
 

@@ -1841,7 +1841,7 @@
       "denominator": null,
       "missingness": "unavailable",
       "caveats": [
-        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+        "No committed construct-recognition oracle: the run manifests carry only parse-outcome counts, not per-construct recognized/total counts. A real measurement needs an authoritative construct inventory and per-parser recognition capture over the official notation vectors."
       ],
       "provenance": [
         "native_parser"
@@ -1859,7 +1859,7 @@
       "denominator": null,
       "missingness": "unavailable",
       "caveats": [
-        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+        "No committed fidelity oracle: visible-text byte agreement, structure agreement, and ruby/gaiji/note counts require an authoritative reference rendering that is absent from the committed artifacts."
       ],
       "provenance": [
         "native_parser"
@@ -1872,12 +1872,12 @@
       "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
       "adapter_revision": null,
       "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
-      "status": "failed",
-      "numerator": null,
-      "denominator": null,
-      "missingness": "unavailable",
+      "status": "measured",
+      "numerator": 17886,
+      "denominator": 17886,
+      "missingness": "none",
       "caveats": [
-        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+        "Project-owned custom baseline; ownership grants no comparison pass. Parse-completion (successful native `--mode aat` parses / all 17886 attempted works) over the pinned aozorabunko-source-snapshot corpus at the frozen baseline revision ac2be926, failures and timeouts retained in the denominator under the frozen 300 s per-work timeout. A completed parse is not an assertion of output fidelity, and this count excludes the malformed-input robustness fixture, whose executable run is not committed here."
       ],
       "provenance": [
         "native_parser"
@@ -1890,12 +1890,12 @@
       "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
       "adapter_revision": null,
       "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
-      "status": "failed",
+      "status": "non_comparable",
       "numerator": null,
       "denominator": null,
-      "missingness": "unavailable",
+      "missingness": "non-comparable",
       "caveats": [
-        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+        "Owned-contract axis with no native competitor analogue: ab-aozora emits structured diagnostics natively (`--mode diagnostics`), whereas the existing parsers' native diagnostic schemas differ per parser and expose no comparable native field. No cross-parser native diagnostic metric exists to compare against, so this is non-comparable, not a competitor zero and not a measurement blocker."
       ],
       "provenance": [
         "native_parser"
@@ -1908,12 +1908,12 @@
       "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
       "adapter_revision": null,
       "corpus_hash": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
-      "status": "failed",
+      "status": "non_comparable",
       "numerator": null,
       "denominator": null,
-      "missingness": "unavailable",
+      "missingness": "non-comparable",
       "caveats": [
-        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+        "Owned-contract axis with no native competitor analogue: ab-aozora emits source spans on every node as first-class parser-IR (`--mode aat`) output, but the existing parsers produce no native source-span output and reach AAT only through their adapter-normalized lane, which the custom baseline does not have. There is therefore no like-for-like native comparison to draw; this is non-comparable, not a competitor zero and not a measurement blocker."
       ],
       "provenance": [
         "native_parser"
@@ -1931,7 +1931,7 @@
       "denominator": null,
       "missingness": "unavailable",
       "caveats": [
-        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+        "No committed latency measurements: the run manifests carry parse-outcome and timeout counts but not per-repetition wall time, and host comparability is unavailable for every lane except the aozora-rs native replacement. No Kaplan-Meier or bootstrap latency statistic can be computed."
       ],
       "provenance": [
         "native_parser"
@@ -1949,7 +1949,7 @@
       "denominator": null,
       "missingness": "unavailable",
       "caveats": [
-        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+        "No committed maintenance observations: last release/commit at the pin, bus-factor indicators, and issue/release cadence are absent from the committed artifacts."
       ],
       "provenance": [
         "native_parser"
@@ -1967,7 +1967,7 @@
       "denominator": null,
       "missingness": "unavailable",
       "caveats": [
-        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+        "No committed packaging measurement: the reproducible build produced the pinned execution binaries, but locked-dependency audit, runtime/toolchain requirements, and artifact size are not recorded in the committed artifacts."
       ],
       "provenance": [
         "native_parser"
@@ -1985,7 +1985,7 @@
       "denominator": null,
       "missingness": "unavailable",
       "caveats": [
-        "Project-owned custom baseline; ownership grants no comparison pass. It is measured separately on shared instruments in the appendix (remediation Task 5), so this neutral existing-parser study emits no measurement for it."
+        "No committed license audit: declared project and bundled-dependency licenses and redistribution constraints are absent from the committed artifacts."
       ],
       "provenance": [
         "native_parser"

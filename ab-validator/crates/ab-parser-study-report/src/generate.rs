@@ -90,9 +90,14 @@ pub enum GenerateError {
 }
 
 /// Generates both report representations from committed input bytes.
+///
+/// The custom-baseline appendix manifest carries only ab-aozora's native
+/// parse-outcome counts and run provenance hashes; it never changes an
+/// existing-parser row or metric definition.
 pub fn generate_reports(
     run_manifests_json: &str,
     preregistration_json: &str,
+    appendix_manifests_json: &str,
 ) -> Result<GeneratedReports, GenerateError> {
     let manifests: RunManifests =
         serde_json::from_str(run_manifests_json).map_err(|source| GenerateError::Parse {
@@ -104,10 +109,21 @@ pub fn generate_reports(
             input: "aozora-parser-comparison-preregistration.json",
             source,
         })?;
+    let appendix: AppendixManifests =
+        serde_json::from_str(appendix_manifests_json).map_err(|source| GenerateError::Parse {
+            input: "appendix-run-manifests.json",
+            source,
+        })?;
 
     if manifests.study_id != prereg.study_id {
         return Err(GenerateError::StudyIdentityMismatch {
             manifests: manifests.study_id,
+            prereg: prereg.study_id,
+        });
+    }
+    if appendix.study_id != prereg.study_id {
+        return Err(GenerateError::StudyIdentityMismatch {
+            manifests: appendix.study_id,
             prereg: prereg.study_id,
         });
     }
@@ -141,6 +157,7 @@ pub fn generate_reports(
                     meta.copied(),
                     &corpus_hash,
                     &manifests,
+                    &appendix,
                 )?);
             }
         }
@@ -151,7 +168,8 @@ pub fn generate_reports(
         serde_json::to_string_pretty(&report).map_err(GenerateError::Serialize)?;
     machine_json.push('\n');
 
-    let narrative_markdown = render_narrative(&report, &manifests, &prereg, &corpus_hash);
+    let narrative_markdown =
+        render_narrative(&report, &manifests, &prereg, &corpus_hash, &appendix);
 
     Ok(GeneratedReports {
         machine_json,
@@ -197,6 +215,7 @@ fn build_row(
     meta: Option<&PreregCandidate>,
     corpus_hash: &str,
     manifests: &RunManifests,
+    appendix: &AppendixManifests,
 ) -> Result<ResultRow, GenerateError> {
     let (parser_revision, adapter_revision, disposition, reason) = match meta {
         Some(meta) => (
@@ -236,28 +255,21 @@ fn build_row(
         .map_err(GenerateError::from);
     }
 
-    // Custom baseline: measured only in the shared-instrument appendix.
+    // Custom baseline: measured on the shared instruments in the appendix. Its
+    // native parse-completion is really measured; owned-contract axes with no
+    // native competitor analogue are non-comparable (never a competitor zero);
+    // axes with no valid instrument stay caveated missing. Ownership grants no
+    // comparison pass and no axis is imputed.
     if disposition == "shared_instrument_appendix" {
-        return ResultRow::new(
+        return build_appendix_row(
             candidate,
             axis,
             mode,
             parser_revision,
-            adapter_revision,
             corpus_hash,
-            RowStatus::Failed,
-            None,
-            None,
-            Missingness::Unavailable,
-            vec![
-                "Project-owned custom baseline; ownership grants no comparison pass. It is \
-                 measured separately on shared instruments in the appendix (remediation Task 5), \
-                 so this neutral existing-parser study emits no measurement for it."
-                    .to_string(),
-            ],
+            appendix,
             provenance,
-        )
-        .map_err(GenerateError::from);
+        );
     }
 
     // Included candidate. Robustness parse-completion is the only axis backed by
@@ -330,6 +342,135 @@ fn build_row(
         provenance,
     )
     .map_err(GenerateError::from)
+}
+
+/// Builds one ab-aozora native appendix row from the committed appendix counts.
+fn build_appendix_row(
+    candidate: Candidate,
+    axis: Axis,
+    mode: MeasurementMode,
+    parser_revision: String,
+    corpus_hash: &str,
+    appendix: &AppendixManifests,
+    provenance: Vec<ProvenanceStage>,
+) -> Result<ResultRow, GenerateError> {
+    let id = candidate_id(candidate);
+
+    // Parse-completion robustness is really measured from the appendix corpus run
+    // over the SAME pinned inventory and denominator as the existing-parser lanes.
+    if axis == Axis::Robustness {
+        let run = appendix
+            .runs
+            .iter()
+            .find(|run| {
+                run.candidate == id
+                    && run.inventory == ROBUSTNESS_INVENTORY
+                    && run.mode == mode_id(mode)
+            })
+            .ok_or_else(|| GenerateError::MissingRun {
+                candidate: id.to_string(),
+                mode: mode_id(mode).to_string(),
+                inventory: ROBUSTNESS_INVENTORY.to_string(),
+            })?;
+        let numerator = run.outcomes.success;
+        let denominator = run.outcomes.success + run.outcomes.failure + run.outcomes.timeout;
+        let expected = appendix
+            .inventories
+            .get(ROBUSTNESS_INVENTORY)
+            .map(|inv| inv.items)
+            .unwrap_or_default();
+        if denominator != expected {
+            return Err(GenerateError::DenominatorMismatch {
+                candidate: id.to_string(),
+                mode: mode_id(mode).to_string(),
+                observed: denominator,
+                expected,
+            });
+        }
+        return ResultRow::new(
+            candidate,
+            axis,
+            mode,
+            parser_revision,
+            None,
+            corpus_hash,
+            RowStatus::Measured,
+            Some(numerator),
+            Some(denominator),
+            Missingness::None,
+            vec![format!(
+                "Project-owned custom baseline; ownership grants no comparison pass. \
+                 Parse-completion (successful native `--mode aat` parses / all {denominator} \
+                 attempted works) over the pinned {ROBUSTNESS_INVENTORY} corpus at the frozen \
+                 baseline revision ac2be926, failures and timeouts retained in the denominator \
+                 under the frozen 300 s per-work timeout. A completed parse is not an assertion \
+                 of output fidelity, and this count excludes the malformed-input robustness \
+                 fixture, whose executable run is not committed here."
+            )],
+            provenance,
+        )
+        .map_err(GenerateError::from);
+    }
+
+    // Owned-contract axes ab-aozora emits natively as first-class parser-IR output
+    // (source spans; structured diagnostics via `--mode diagnostics`) have no
+    // native competitor analogue: the existing parsers reach AAT only through their
+    // adapter-normalized lane, which ab-aozora does not have. Non-comparable, never
+    // a competitor zero and never a blocker-missing.
+    if matches!(axis, Axis::Spans | Axis::Diagnostics) {
+        return ResultRow::new(
+            candidate,
+            axis,
+            mode,
+            parser_revision,
+            None,
+            corpus_hash,
+            RowStatus::NonComparable,
+            None,
+            None,
+            Missingness::NonComparable,
+            vec![non_comparable_axis_caveat(axis)],
+            provenance,
+        )
+        .map_err(GenerateError::from);
+    }
+
+    // Every remaining axis lacks a committed instrument for any parser: missing,
+    // never zero, carrying the same blocker text as the existing-parser rows.
+    ResultRow::new(
+        candidate,
+        axis,
+        mode,
+        parser_revision,
+        None,
+        corpus_hash,
+        RowStatus::Failed,
+        None,
+        None,
+        Missingness::Unavailable,
+        vec![missing_axis_caveat(axis)],
+        provenance,
+    )
+    .map_err(GenerateError::from)
+}
+
+fn non_comparable_axis_caveat(axis: Axis) -> String {
+    match axis {
+        Axis::Spans => "Owned-contract axis with no native competitor analogue: ab-aozora emits \
+            source spans on every node as first-class parser-IR (`--mode aat`) output, but the \
+            existing parsers produce no native source-span output and reach AAT only through their \
+            adapter-normalized lane, which the custom baseline does not have. There is therefore no \
+            like-for-like native comparison to draw; this is non-comparable, not a competitor zero \
+            and not a measurement blocker."
+            .to_string(),
+        Axis::Diagnostics => "Owned-contract axis with no native competitor analogue: ab-aozora \
+            emits structured diagnostics natively (`--mode diagnostics`), whereas the existing \
+            parsers' native diagnostic schemas differ per parser and expose no comparable native \
+            field. No cross-parser native diagnostic metric exists to compare against, so this is \
+            non-comparable, not a competitor zero and not a measurement blocker."
+            .to_string(),
+        _ => unreachable!("only spans and diagnostics are owned-contract non-comparable axes"),
+    }
 }
 
 fn missing_axis_caveat(axis: Axis) -> String {
@@ -413,6 +554,7 @@ fn render_narrative(
     manifests: &RunManifests,
     prereg: &Preregistration,
     corpus_hash: &str,
+    appendix: &AppendixManifests,
 ) -> String {
     let mut out = String::new();
     let study = report.study_id();
@@ -466,6 +608,10 @@ fn render_narrative(
         out.push_str("| Candidate | Successes | Denominator | Rate | Wilson 95% CI |\n");
         out.push_str("| --- | ---: | ---: | ---: | --- |\n");
         for candidate in Candidate::ALL {
+            // The custom baseline is measured separately in the appendix below.
+            if candidate == Candidate::AbAozora {
+                continue;
+            }
             let Some(row) = report.rows().iter().find(|r| {
                 r.candidate() == candidate
                     && r.axis() == Axis::Robustness
@@ -570,6 +716,11 @@ fn render_narrative(
         if row.status() == RowStatus::Measured {
             continue;
         }
+        // The custom baseline's missing and non-comparable axes are enumerated in
+        // its dedicated appendix, not mixed into the neutral existing-parser table.
+        if row.candidate() == Candidate::AbAozora {
+            continue;
+        }
         let caveat = row.caveats().first().cloned().unwrap_or_default();
         let _ = writeln!(
             out,
@@ -602,6 +753,8 @@ fn render_narrative(
           and this report must not be used to rank for such a use case.\n\n",
     );
 
+    render_custom_parser_appendix(&mut out, report, appendix);
+
     out.push_str("## Candidate dispositions\n\n");
     for candidate in &prereg.candidates {
         let _ = writeln!(
@@ -615,6 +768,140 @@ fn render_narrative(
     out
 }
 
+/// Success and attempted-work counts for one ab-aozora appendix lane.
+fn appendix_run_counts(appendix: &AppendixManifests, inventory: &str) -> Option<(u64, u64)> {
+    appendix
+        .runs
+        .iter()
+        .find(|run| run.candidate == "ab-aozora" && run.inventory == inventory)
+        .map(|run| {
+            (
+                run.outcomes.success,
+                run.outcomes.success + run.outcomes.failure + run.outcomes.timeout,
+            )
+        })
+}
+
+/// Renders the project-owned custom-parser appendix: real native measurement,
+/// non-comparable owned-contract axes, missing axes, and a falsifiable
+/// sensitivity analysis for the only claim the appendix actually makes.
+fn render_custom_parser_appendix(
+    out: &mut String,
+    report: &StudyReport,
+    appendix: &AppendixManifests,
+) {
+    out.push_str("## Custom-parser shared-instrument appendix\n\n");
+    out.push_str(
+        "`ab-aozora` is the project-owned baseline. It is measured here separately, native-only \
+         (it emits parser-IR/AAT natively via `--mode aat`; it has no adapter-normalized lane), on \
+         the same frozen instruments as the existing parsers and at the frozen baseline revision \
+         `ac2be926738f919faf44300e2999b3548d724297`. Ownership grants it no comparison pass: this \
+         appendix can neither admit nor release-qualify the parser, and no axis is imputed.\n\n",
+    );
+
+    // Measured native robustness, with the same denominator and Wilson interval
+    // as the existing-parser robustness lane.
+    out.push_str("### Robustness — native parse completion (measured)\n\n");
+    if let Some((corpus_num, corpus_den)) = appendix_run_counts(appendix, ROBUSTNESS_INVENTORY) {
+        let rate = if corpus_den == 0 {
+            0.0
+        } else {
+            corpus_num as f64 / corpus_den as f64
+        };
+        let (lo, hi) = wilson_interval(corpus_num, corpus_den);
+        out.push_str("| Candidate | Lane | Successes | Denominator | Rate | Wilson 95% CI |\n");
+        out.push_str("| --- | --- | ---: | ---: | ---: | --- |\n");
+        let _ = writeln!(
+            out,
+            "| `ab-aozora` | native | {corpus_num} | {corpus_den} | {rate:.6} | [{lo:.6}, {hi:.6}] |"
+        );
+        out.push('\n');
+        if let Some((vec_num, vec_den)) = appendix_run_counts(appendix, VECTORS_INVENTORY) {
+            let _ = writeln!(
+                out,
+                "Secondary parse completion over the official notation vectors (construct-coverage \
+                 corpus, reported only as a parse-completion observation, never as construct \
+                 coverage): {vec_num} / {vec_den} native `--mode aat` successes.\n"
+            );
+        }
+    }
+
+    // Falsifiable sensitivity analysis for the measured claim.
+    out.push_str("### Sensitivity analysis (falsifiable)\n\n");
+    if let Some((corpus_num, corpus_den)) = appendix_run_counts(appendix, ROBUSTNESS_INVENTORY) {
+        out.push_str(
+            "Claim under test: `ab-aozora` native parse-completion sits at the pinned corpus \
+             ceiling and is *matched but not exceeded* by the strongest existing-parser native \
+             lanes (`aozora2`, `aozora-rs`, `aozora2html`, each also at the ceiling over the same \
+             denominator); parse-completion therefore does not separate the custom baseline from \
+             the strongest existing parsers. This is a comparative claim between measured lanes, \
+             so it is falsifiable.\n\n",
+        );
+        out.push_str(
+            "Adversarial failure/timeout reweighting: reclassify the k worst works as failures \
+             (the frozen 300 s run produced zero ab-aozora failures or timeouts), for k drawn from \
+             the failure/timeout counts actually observed on competitor lanes. The reweighted rate \
+             is (den − k) / den with a two-sided 95% Wilson interval:\n\n",
+        );
+        out.push_str(
+            "| Adversarial k | Source of k | Reweighted successes | Rate | Wilson 95% CI |\n",
+        );
+        out.push_str("| ---: | --- | ---: | ---: | --- |\n");
+        for (k, source) in [
+            (1_u64, "aozora native corpus failures"),
+            (12, "aozora2 adapter corpus timeouts"),
+            (50, "aozora-epub3 native corpus failures"),
+            (113, "aozora-epub3 adapter corpus failures"),
+        ] {
+            if k > corpus_num {
+                continue;
+            }
+            let num = corpus_num - k;
+            let rate = num as f64 / corpus_den as f64;
+            let (lo, hi) = wilson_interval(num, corpus_den);
+            let _ = writeln!(
+                out,
+                "| {k} | {source} | {num} | {rate:.6} | [{lo:.6}, {hi:.6}] |"
+            );
+        }
+        out.push('\n');
+        out.push_str(
+            "Falsifier: for any k ≥ 1 the reweighted rate drops below 1 and its Wilson upper bound \
+             falls below 1, so the exact-ceiling reading is fragile to even a single adversarial \
+             reclassification. The measured result must be read as \"parse-completion ceiling under \
+             the frozen 300 s per-work timeout on the measurement host,\" not as an absolute or \
+             host-independent guarantee, and never as fidelity, diagnostics, span, or performance \
+             superiority (those axes are non-comparable or missing below).\n\n",
+        );
+    }
+
+    // Owned-contract non-comparable axes and missing axes, from the machine rows.
+    out.push_str("### Owned-contract non-comparable and missing axes\n\n");
+    out.push_str(
+        "Owned-contract axes ab-aozora emits natively but for which the existing parsers offer no \
+         native analogue are non-comparable (never a competitor zero); axes with no committed \
+         instrument for any parser stay caveated missing. No value is imputed for either.\n\n",
+    );
+    out.push_str("| Axis | Mode | Status | Missingness | Blocker |\n");
+    out.push_str("| --- | --- | --- | --- | --- |\n");
+    for row in report.rows() {
+        if row.candidate() != Candidate::AbAozora || row.status() == RowStatus::Measured {
+            continue;
+        }
+        let caveat = row.caveats().first().cloned().unwrap_or_default();
+        let _ = writeln!(
+            out,
+            "| {} | {} | {:?} | {:?} | {} |",
+            axis_label(row.axis()),
+            mode_label(row.measurement_mode()),
+            row.status(),
+            row.missingness(),
+            caveat.replace('\n', " ").replace('|', "\\|")
+        );
+    }
+    out.push('\n');
+}
+
 // --- Committed input document shapes (parse-only; unknown fields ignored). ---
 
 #[derive(Debug, Deserialize)]
@@ -622,6 +909,16 @@ struct RunManifests {
     study_id: String,
     protocol_sha256: String,
     timeout_seconds: u64,
+    inventories: BTreeMap<String, Inventory>,
+    runs: Vec<CompactRun>,
+}
+
+/// Custom-baseline appendix: ab-aozora's native parse-outcome counts and run
+/// provenance. Extra provenance fields (execution contracts, program/derivation
+/// hashes) are committed for verification but ignored here.
+#[derive(Debug, Deserialize)]
+struct AppendixManifests {
+    study_id: String,
     inventories: BTreeMap<String, Inventory>,
     runs: Vec<CompactRun>,
 }

@@ -1,0 +1,41 @@
+;; Captured measurement bundle for the release-qualification gate.
+;; Observations were captured on hinoki (32-core NixOS, Determinate Nix) over the
+;; pinned qualification corpus at branch feat/parser-release-qualification HEAD
+;; 90967157, using nix-built .#ab-aozora, .#ab-check, .#ab-index, and
+;; .#ab-aat-to-parser-ir. No observation is synthesized: keys carrying
+;; :instrument-missing have no committed release instrument for the predicate as
+;; defined, and become :unavailable verdicts. Feed this bundle to
+;; `clojure -M -m abc.tools.parser-release-qualification <this> <report.json>`
+;; to regenerate docs/reports/parser-release-qualification-report.json.
+{:report_id "abc/parser-release-qualification/2026-07-15"
+ :identity
+ {:parser "ab-aozora"
+  :adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 90967157f31687eeb8a994eb6d61810f19de5010)"
+  :admitted_tuple_adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 004deaf548f34a36abbc17d0f7a162df010a6292)"
+  :admitted_tuple_matches false
+  :baked_git_rev "90967157f31687eeb8a994eb6d61810f19de5010"
+  :admitted_git_rev "004deaf548f34a36abbc17d0f7a162df010a6292"
+  :measurement_host "hinoki"
+  :mapping_used "data/aat-to-parser-ir-mapping-v2.json"
+  :mapping_version_used "0.5.0"
+  :admitted_mapping_version "0.4.0"
+  :current_parser_ir_schema_hash "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"
+  :admitted_parser_ir_schema_hash "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"
+  :diagnostic_count 0
+  :divergence_loss_by_work {:000001_1 1 :000002_2 1 :000003_3 1}
+  :notes
+  ["Baked git coordinate 90967157 != admitted 004deaf; the release candidate is NOT the admitted ADR-0023 tuple."
+   "Convert under the admitted mapping 0.4.0 fails closed: it pins parser-IR schema hash a1e1b506 but the current parser-ir.schema.json computes 43a6a6d8 (schema drifted since admission)."
+   "parser_ir_schema_validation was measured against the CURRENT parser-ir.schema.json via live mapping 0.5.0, not the admitted 0.4.0 tuple."
+   "diagnostic_completeness is vacuous: the parser emitted 0 diagnostics over the corpus, so no diagnostic lacks the code/severity/span triple."
+   "silent_drops is unavailable: the AAT->parser-IR divergence LOSS count (1/work) is a mapping-layer signal, not the ADR-0002 source silent-drop instrument (source construct dropped without a diagnostic)."]}
+ :measurements
+ {:fatal_failures 0
+  :source_span_coverage :instrument-missing
+  :silent_drops :instrument-missing
+  :diagnostic_completeness 1.0
+  :parser_ir_schema_validation 1.0
+  :publication_structure :instrument-missing
+  :wall_time_seconds 0.06
+  :peak_rss_bytes :instrument-missing
+  :timeouts 0}}

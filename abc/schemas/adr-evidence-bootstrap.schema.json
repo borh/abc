@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/adr-evidence-bootstrap.schema.json",
+  "title": "ABC ADR evidence immutable bootstrap snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "subject",
+    "producer_revision",
+    "governance_as_of",
+    "accepted_adr_numbers",
+    "accepted_adr_count",
+    "accepted_criterion_count",
+    "audit_report",
+    "files"
+  ],
+  "properties": {
+    "schema_version": {"const": "abc-adr-evidence-bootstrap-v1"},
+    "subject": {"const": "pre-promotion Accepted ADR corpus excluding ADR 0034"},
+    "producer_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "governance_as_of": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "accepted_adr_numbers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "accepted_adr_count": {"type": "integer", "minimum": 0},
+    "accepted_criterion_count": {"type": "integer", "minimum": 0},
+    "audit_report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "ok", "problems"],
+      "properties": {
+        "mode": {"const": "enforce"},
+        "ok": {"const": true},
+        "problems": {"type": "array", "maxItems": 0}
+      }
+    },
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"type": "string", "minLength": 1},
+      "additionalProperties": {"$ref": "#/$defs/file"}
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "content_base64"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/hash"},
+        "content_base64": {"type": "string"}
+      }
+    }
+  }
+}

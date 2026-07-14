@@ -29,6 +29,7 @@ members = [
     "crates/ab-aozora-corpus",
     "crates/ab-aozora-aat",
     "crates/ab-aozora",
+    "crates/ab-parser-study-report",
 ]
 resolver = "2"
 exclude = [

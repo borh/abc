@@ -1112,6 +1112,12 @@
           touch "$out"
         '';
 
+        parserStudyReportCheck = pkgs.runCommand "parser-study-report-check" cargoQualityEnv ''
+          ${cargoQualityPrelude}
+          cargo test --package ab-parser-study-report --offline --locked
+          touch "$out"
+        '';
+
         cargoClippyCheck = pkgs.runCommand "ab-validator-cargo-clippy-check" cargoQualityEnv ''
           ${cargoQualityPrelude}
           cargo clippy \
@@ -1914,6 +1920,7 @@
           cargo-clippy = cargoClippyCheck;
           cargo-deny = cargoDenyCheck;
           cargo-test = workspaceCheck;
+          parser-study-report = parserStudyReportCheck;
           upstream-parser-aozora2 = upstreamParserAozora2;
           upstream-parser-aozora-rs = upstreamParserAozoraRs;
           aozora2-adapter = aozora2Adapter;

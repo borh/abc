@@ -1,0 +1,17 @@
+protocol sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe
+official-notation-vectors b60665fd50b596c967254f99b61f418495656fef sha256-/Zs3OqKkyw+cUQDldW+tMBs26F6GZZ0yfPAszyvXz50=
+aozorabunko-source-snapshot 0e9ea3e586eb0aa34039fabfc85a407d2f98b165 sha256-O5slhITwNFbwHD/mUveKbx1JO+qlZQWwut9nIYGY3do=
+corpus-composite sha256:cd9d206fd5bbdb7b4342d2818f2bb817ebd29b69dc44c20f41876cf0621381b3
+cpu_model AMD Ryzen 9 7950X3D 16-Core Processor
+logical_cpu_count 32
+ram_bytes 100817031168
+kernel_release 7.1.2
+cpu_governor performance
+load_1m 9.78
+isolated_cpu_set
+RUSTC_WRAPPER
+SCCACHE_DISABLE 1
+LC_ALL C.UTF-8
+TZ UTC
+network disabled
+environment sha256:6db4b93ed137cdb7d6ab6ec3001ada1a75ac6f0fbf8e9edadfa0249f17500381

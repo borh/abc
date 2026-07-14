@@ -448,6 +448,155 @@ impl StudyReport {
     }
 }
 
+/// Outcome of a raw parser execution lane before aggregation.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum RawRunStatus {
+    Measured,
+    BuildFailure,
+    RunFailure,
+    Timeout,
+}
+
+/// Content-addressed artifact for one pinned corpus work.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RawWorkOutput {
+    work_id: String,
+    path: String,
+    sha256: String,
+}
+
+/// Immutable identity and artifact index for one native or adapted run lane.
+#[derive(Clone, Debug, Serialize)]
+pub struct RawRunManifest {
+    schema_version: u8,
+    study_id: String,
+    candidate: Candidate,
+    measurement_mode: MeasurementMode,
+    parser_revision: String,
+    adapter_revision: Option<String>,
+    corpus_hash: String,
+    environment_hash: String,
+    timeout_seconds: u64,
+    protocol_hash: String,
+    status: RawRunStatus,
+    failure_stage: Option<String>,
+    failure_detail: Option<String>,
+    raw_outputs: Vec<RawWorkOutput>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct UncheckedRawRunManifest {
+    schema_version: u8,
+    study_id: String,
+    candidate: Candidate,
+    measurement_mode: MeasurementMode,
+    parser_revision: String,
+    adapter_revision: Option<String>,
+    corpus_hash: String,
+    environment_hash: String,
+    timeout_seconds: u64,
+    protocol_hash: String,
+    status: RawRunStatus,
+    failure_stage: Option<String>,
+    failure_detail: Option<String>,
+    raw_outputs: Vec<RawWorkOutput>,
+}
+
+impl<'de> Deserialize<'de> for RawRunManifest {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw = UncheckedRawRunManifest::deserialize(deserializer)?;
+        let manifest = Self {
+            schema_version: raw.schema_version,
+            study_id: raw.study_id,
+            candidate: raw.candidate,
+            measurement_mode: raw.measurement_mode,
+            parser_revision: raw.parser_revision,
+            adapter_revision: raw.adapter_revision,
+            corpus_hash: raw.corpus_hash,
+            environment_hash: raw.environment_hash,
+            timeout_seconds: raw.timeout_seconds,
+            protocol_hash: raw.protocol_hash,
+            status: raw.status,
+            failure_stage: raw.failure_stage,
+            failure_detail: raw.failure_detail,
+            raw_outputs: raw.raw_outputs,
+        };
+        manifest.validate().map_err(serde::de::Error::custom)?;
+        Ok(manifest)
+    }
+}
+
+impl RawRunManifest {
+    fn validate(&self) -> Result<(), ContractError> {
+        if self.schema_version != 1 {
+            return Err(ContractError::UnsupportedSchemaVersion);
+        }
+        if self.study_id.is_empty()
+            || self.parser_revision.is_empty()
+            || self.timeout_seconds == 0
+            || !valid_sha256(&self.corpus_hash)
+            || !valid_sha256(&self.environment_hash)
+            || !valid_sha256(&self.protocol_hash)
+        {
+            return Err(ContractError::InvalidRunManifest);
+        }
+        if matches!(self.measurement_mode, MeasurementMode::AdapterNormalized)
+            != self
+                .adapter_revision
+                .as_deref()
+                .is_some_and(|value| !value.is_empty())
+        {
+            return Err(ContractError::InvalidAdapterAttribution);
+        }
+        if self.raw_outputs.iter().any(|output| {
+            output.work_id.is_empty()
+                || output.path.starts_with('/')
+                || output.path.contains("..")
+                || !valid_sha256(&output.sha256)
+        }) {
+            return Err(ContractError::InvalidRunManifest);
+        }
+        let failed = !matches!(self.status, RawRunStatus::Measured);
+        if !failed && self.raw_outputs.is_empty() {
+            return Err(ContractError::InvalidRunManifest);
+        }
+        if failed
+            != (self
+                .failure_stage
+                .as_deref()
+                .is_some_and(|value| !value.is_empty())
+                && self
+                    .failure_detail
+                    .as_deref()
+                    .is_some_and(|value| !value.is_empty()))
+        {
+            return Err(ContractError::InvalidRunManifest);
+        }
+        Ok(())
+    }
+
+    /// Content-addressed raw per-work artifacts, before aggregation.
+    pub fn raw_outputs(&self) -> &[RawWorkOutput] {
+        &self.raw_outputs
+    }
+
+    /// Frozen parser candidate for this lane.
+    pub const fn candidate(&self) -> Candidate {
+        self.candidate
+    }
+
+    /// Independent native or adapter-normalized execution lane.
+    pub const fn measurement_mode(&self) -> MeasurementMode {
+        self.measurement_mode
+    }
+}
+
 /// Report-contract validation failure.
 #[derive(Clone, Copy, Debug, Error, Eq, PartialEq)]
 pub enum ContractError {
@@ -469,4 +618,6 @@ pub enum ContractError {
     MissingStudyIdentity,
     #[error("unsupported report schema version")]
     UnsupportedSchemaVersion,
+    #[error("raw run manifest has missing or inconsistent identity, failure, or artifact fields")]
+    InvalidRunManifest,
 }

@@ -1,6 +1,6 @@
 use ab_parser_study_report::{
-    Axis, Candidate, MeasurementMode, Missingness, ProvenanceStage, ResultRow, RowStatus,
-    StudyReport,
+    Axis, Candidate, MeasurementMode, Missingness, ProvenanceStage, RawRunManifest, ResultRow,
+    RowStatus, StudyReport,
 };
 
 const HASH: &str = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -225,4 +225,102 @@ fn failed_axis_is_retained_with_explicit_missingness_and_no_imputed_counts() {
     .expect("failure is a reportable result");
     assert_eq!(failed.missingness(), Missingness::BuildFailure);
     assert_eq!(failed.denominator(), None);
+}
+
+#[test]
+fn raw_run_manifest_requires_all_frozen_identity_hashes() {
+    let missing_environment = serde_json::json!({
+        "schema_version": 1,
+        "study_id": "aozora-parser-neutral-comparison-2026-07",
+        "candidate": "aozora2",
+        "measurement_mode": "native",
+        "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+        "adapter_revision": null,
+        "corpus_hash": HASH,
+        "timeout_seconds": 300,
+        "protocol_hash": HASH,
+        "status": "build-failure",
+        "raw_outputs": []
+    });
+    assert!(serde_json::from_value::<RawRunManifest>(missing_environment).is_err());
+}
+
+#[test]
+fn raw_run_manifest_retains_build_failure_without_outputs() {
+    let manifest: RawRunManifest = serde_json::from_value(serde_json::json!({
+        "schema_version": 1,
+        "study_id": "aozora-parser-neutral-comparison-2026-07",
+        "candidate": "aozora",
+        "measurement_mode": "native",
+        "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38",
+        "adapter_revision": null,
+        "corpus_hash": HASH,
+        "environment_hash": HASH,
+        "timeout_seconds": 300,
+        "protocol_hash": HASH,
+        "status": "build-failure",
+        "failure_stage": "parser-build",
+        "failure_detail": "pinned derivation did not build",
+        "raw_outputs": []
+    }))
+    .expect("build failure is evidence");
+    assert_eq!(manifest.raw_outputs().len(), 0);
+}
+
+#[test]
+fn adapted_run_requires_adapter_revision_and_content_addressed_outputs() {
+    let invalid = serde_json::json!({
+        "schema_version": 1,
+        "study_id": "study",
+        "candidate": "aozora-rs",
+        "measurement_mode": "adapter_normalized",
+        "parser_revision": "rev",
+        "adapter_revision": null,
+        "corpus_hash": HASH,
+        "environment_hash": HASH,
+        "timeout_seconds": 300,
+        "protocol_hash": HASH,
+        "status": "measured",
+        "raw_outputs": [{"work_id":"1", "path":"raw/1.json", "sha256":HASH}]
+    });
+    assert!(serde_json::from_value::<RawRunManifest>(invalid).is_err());
+}
+
+#[test]
+fn checked_raw_run_bundle_validates_every_included_lane() {
+    let manifests: Vec<RawRunManifest> = serde_json::from_str(include_str!(
+        "../../../reports/parser-study/runs/aozora-parser-neutral-comparison-2026-07/run-manifests.json"
+    ))
+    .expect("checked raw manifests validate");
+    assert_eq!(manifests.len(), 10);
+    let actual: std::collections::BTreeSet<_> = manifests
+        .iter()
+        .map(|manifest| (manifest.candidate(), manifest.measurement_mode()))
+        .collect();
+    let expected: std::collections::BTreeSet<_> = [
+        Candidate::Aozora,
+        Candidate::Aozora2,
+        Candidate::AozoraRs,
+        Candidate::Aozora2html,
+        Candidate::AozoraEpub3,
+    ]
+    .into_iter()
+    .flat_map(|candidate| {
+        [MeasurementMode::Native, MeasurementMode::AdapterNormalized]
+            .into_iter()
+            .map(move |mode| (candidate, mode))
+    })
+    .collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn measured_run_requires_at_least_one_raw_work_output() {
+    let empty = serde_json::json!({
+        "schema_version": 1, "study_id": "study", "candidate": "aozora2",
+        "measurement_mode": "native", "parser_revision": "rev", "adapter_revision": null,
+        "corpus_hash": HASH, "environment_hash": HASH, "timeout_seconds": 300,
+        "protocol_hash": HASH, "status": "measured", "raw_outputs": []
+    });
+    assert!(serde_json::from_value::<RawRunManifest>(empty).is_err());
 }

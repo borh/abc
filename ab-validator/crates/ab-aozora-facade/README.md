@@ -1,5 +1,9 @@
 # aozora
 
+Forked from <https://github.com/P4suta/aozora> at revision
+`1a4f864603970983719655aa4af4525958ac2d38` (hard detach; ADR 0032).
+Upstream crate: `aozora`. License: `MIT OR Apache-2.0` (see `NOTICE`).
+
 <p align="center">
   <a href="https://github.com/P4suta/aozora/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/P4suta/aozora/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/P4suta/aozora/actions/workflows/docs.yml"><img alt="docs deploy" src="https://github.com/P4suta/aozora/actions/workflows/docs.yml/badge.svg"></a>

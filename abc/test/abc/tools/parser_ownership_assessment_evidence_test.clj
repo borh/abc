@@ -8,6 +8,12 @@
 (def ^:private assessment-path
   "docs/evidence/external/custom-parser-ownership-assessment.md")
 
+(defn- assessment-dates [assessment governance]
+  {:review-after (LocalDate/parse
+                  (second (re-find #"(?m)^Review after: (\d{4}-\d{2}-\d{2})$"
+                                   assessment)))
+   :as-of (LocalDate/parse (str (:as-of governance)))})
+
 (defn custom-parser-ownership-assessment-operation []
   (let [assessment (files/read-text assessment-path)
         adr38 (files/read-text "docs/adr/0038-custom-parser-ownership-and-neutral-comparison.md")
@@ -24,8 +30,7 @@
                      "schemas/tei-validation-result.schema.json"
                      "data/parser-ir-publication-policy-v0.json"
                      "data/publication-policy.edn"])
-        review-after (LocalDate/parse "2026-10-12")
-        as-of (LocalDate/parse (str (:as-of governance)))]
+        {:keys [review-after as-of]} (assessment-dates assessment governance)]
     (doseq [line ["Assessment date: 2026-07-12"
                   "Review after: 2026-10-12"
                   "Decision owner: Soranoha project owner"
@@ -50,8 +55,9 @@
     (is (every? seq reports))
     (is (every? seq owned))
     (is (str/includes? adr38 "Release authority: development"))
-    (is (= as-of (LocalDate/parse "2026-07-12")))
     (is (= review-after (LocalDate/parse "2026-10-12")))
+    (is (not (.isAfter as-of review-after))
+        (str "governance epoch " as-of " is after ownership review date " review-after))
     true))
 
 (deftest custom-parser-ownership-assessment-contract
@@ -63,3 +69,10 @@
 
 (deftest custom-parser-ownership-assessment-contract-test
   (custom-parser-ownership-assessment-operation))
+
+(deftest ownership-review-window-is-date-ordered-and-mutation-sensitive-test
+  (let [assessment (files/read-text assessment-path)]
+    (is (not (.isAfter (:as-of (assessment-dates assessment {:as-of "2026-09-01"}))
+                       (:review-after (assessment-dates assessment {:as-of "2026-09-01"})))))
+    (is (.isAfter (:as-of (assessment-dates assessment {:as-of "2026-10-13"}))
+                  (:review-after (assessment-dates assessment {:as-of "2026-10-13"}))))))

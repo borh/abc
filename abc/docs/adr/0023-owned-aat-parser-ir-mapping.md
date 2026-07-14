@@ -124,9 +124,7 @@ not make this ADR stale).
 - **ADR-0023-C2 — structural-invariant:** The committed compatibility registry requires the complete adapter/version/mapping/parser-IR match key, matching evidence scope, and no wildcard adapter entries.
 - **ADR-0023-C3 — fixture-behavior:** The admission boundary reports admitted, missing, and conflict states and treats changed evidence under an existing match key as conflict.
 - **ADR-0023-C4 — fixture-behavior:** Import materialization copies `mapping_hash` into `manifest_identity_object.aat_parser_ir_mapping_hash`.
-- **ADR-0023-C5 — operational-behavior:** The supported design-bundle application exits zero over the committed mapping schemas, registry, and imported fixture.
-
-- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
+- **ADR-0023-C5 — operational-behavior:** The supported design-bundle application exits zero over the committed mapping schemas, registry, and imported fixture. Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
 
 ## Deferred Decisions
 

@@ -193,9 +193,7 @@ permissively-licensed 0.969-coverage base already clears.
 
 - **ADR-0030-C1 — structural-invariant:** The three historical study citations have exact workspace-relative paths and byte hashes in the parser evidence index.
 - **ADR-0030-C2 — structural-invariant:** ADRs 0002, 0030, 0032, and 0038 carry the reciprocal amendment links declared by the corrective decision chain.
-- **ADR-0030-C3 — structural-invariant:** Historical parser-selection citations cannot satisfy the exact-registry admission boundary; absent or conflicting tuples remain rejected.
-
-- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
+- **ADR-0030-C3 — structural-invariant:** Historical parser-selection citations cannot satisfy the exact-registry admission boundary; absent or conflicting tuples remain rejected. Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
 
 ## Rollback
 

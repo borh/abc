@@ -94,9 +94,7 @@ can evolve independently from the TEI body renderer logic.
 - **ADR-0025-C3 — fixture-behavior:** Publication materialization writes plaintext, TEI, both manifests, the preservation sidecar, and a passing `tei-validation-result.json`.
 - **ADR-0025-C4 — structural-invariant:** Renderer node coverage is derived from the parser-IR schema and rejects both missing and unexpected node policies.
 - **ADR-0025-C5 — fixture-behavior:** Generated Aozora ruby defaults to TEI `type="furigana"`.
-- **ADR-0025-C6 — operational-behavior:** The supported design-bundle application exits zero over the committed publication outputs and TEI gates.
-
-- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
+- **ADR-0025-C6 — operational-behavior:** The supported design-bundle application exits zero over the committed publication outputs and TEI gates. Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
 
 ## Historical Evidence
 

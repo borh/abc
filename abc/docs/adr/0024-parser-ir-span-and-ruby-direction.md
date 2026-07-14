@@ -81,9 +81,7 @@ under this schema hash under a new coordinate or ruby model.
 - **ADR-0024-C3 — fixture-behavior:** Current publication fixtures carry and consume `decoded_utf8` spans.
 - **ADR-0024-C4 — fixture-behavior:** TEI rendering preserves ruby direction using a profile-valid `rend` value.
 - **ADR-0024-C5 — structural-invariant:** Parser-IR schema JCS hash changes propagate to the parser-IR schema coordinate copied into materialized manifests.
-- **ADR-0024-C6 — operational-behavior:** The supported design-bundle application exits zero over the current parser-IR schema and fixture.
-
-- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
+- **ADR-0024-C6 — operational-behavior:** The supported design-bundle application exits zero over the current parser-IR schema and fixture. Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
 
 ## Deferred follow-ups
 

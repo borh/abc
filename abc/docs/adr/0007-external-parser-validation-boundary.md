@@ -92,9 +92,7 @@ ABC owns:
 - **ADR-0007-C1 — fixture-behavior:** The committed imported parser IR, warning JSON Lines, and run-summary event set conform to their ABC schemas and cross-file boundary checks.
 - **ADR-0007-C2 — structural-invariant:** ABC validation consumes the imported file bundle and does not execute parser candidates; parser execution remains in the `ab-validator` component.
 - **ADR-0007-C3 — fixture-behavior:** ABC rejects a malformed diagnostic row and a run-summary set missing its required completion event.
-- **ADR-0007-C4 — operational-behavior:** The supported `nix run ./abc#validate-design-bundle` application exits zero over the committed imported boundary.
-
-- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
+- **ADR-0007-C4 — operational-behavior:** The supported `nix run ./abc#validate-design-bundle` application exits zero over the committed imported boundary. Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
 
 ## Rollback
 

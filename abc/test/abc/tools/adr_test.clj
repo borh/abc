@@ -669,8 +669,8 @@
              :missing-claim-header}
            (kinds problems)))
     (is (= 27 (count accepted)))
-    (is (= 146 (count accepted-criteria)))
-    (is (= 16 missing-claim-count))
+    (is (= 138 (count accepted-criteria)))
+    (is (= 8 missing-claim-count))
     (is (zero? missing-evidence-count))
     (is (= (+ missing-scope-count missing-authority-count
               missing-claim-count missing-evidence-count)

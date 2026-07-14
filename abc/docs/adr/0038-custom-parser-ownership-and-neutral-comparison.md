@@ -38,9 +38,7 @@ admit or release a parser.
 
 - **ADR-0038-C1 — domain-interpretation:** Given the enumerated owned parser/publication contract, current maintainer commitment, and bounded five-parser/build-fresh survey, the project-owner assessment supports Soranoha ownership of the custom-parser contract for development only; it grants neither tuple admission nor publication authority.
 - **ADR-0038-C2 — structural-invariant:** Comparison and citation records cannot bypass ADR 0023 exact-tuple admission, and this ADR has development rather than publication release authority.
-- **ADR-0038-C3 — structural-invariant:** The historical Phase-5 evidence remains bound to its complete frozen C5 tuple and is distinct from the live parser-IR schema and current source-role relations.
-
-- Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
+- **ADR-0038-C3 — structural-invariant:** The historical Phase-5 evidence remains bound to its complete frozen C5 tuple and is distinct from the live parser-IR schema and current source-role relations. Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
 
 ## Historical Evidence
 

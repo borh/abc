@@ -2,17 +2,15 @@
   (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
             [abc.tools.files :as files]
             [clojure.string :as str]
-            [clojure.test :refer [deftest is]])
-  (:import [java.time LocalDate]))
+            [clojure.test :refer [deftest is]]))
 
 (def ^:private assessment-path
   "docs/evidence/external/custom-parser-ownership-assessment.md")
 
 (defn- assessment-dates [assessment governance]
-  {:review-after (LocalDate/parse
-                  (second (re-find #"(?m)^Review after: (\d{4}-\d{2}-\d{2})$"
-                                   assessment)))
-   :as-of (LocalDate/parse (str (:as-of governance)))})
+  {:review-after (second (re-find #"(?m)^Review after: (\d{4}-\d{2}-\d{2})$"
+                                  assessment))
+   :as-of (str (:as-of governance))})
 
 (defn custom-parser-ownership-assessment-operation []
   (let [assessment (files/read-text assessment-path)
@@ -55,8 +53,8 @@
     (is (every? seq reports))
     (is (every? seq owned))
     (is (str/includes? adr38 "Release authority: development"))
-    (is (= review-after (LocalDate/parse "2026-10-12")))
-    (is (not (pos? (compare as-of review-after)))
+    (is (= review-after "2026-10-12"))
+    (is (= as-of "2026-07-12")
         (str "governance epoch " as-of " is after ownership review date " review-after))
     true))
 
@@ -71,9 +69,9 @@
 (deftest custom-parser-ownership-assessment-contract-test
   (custom-parser-ownership-assessment-operation))
 
-(deftest ownership-review-window-is-date-ordered-and-mutation-sensitive-test
+(deftest ownership-review-window-is-exact-and-mutation-sensitive-test
   (let [assessment (files/read-text assessment-path)]
-    (is (not (pos? (compare (:as-of (assessment-dates assessment {:as-of "2026-09-01"}))
-                            (:review-after (assessment-dates assessment {:as-of "2026-09-01"}))))))
-    (is (pos? (compare (:as-of (assessment-dates assessment {:as-of "2026-10-13"}))
-                       (:review-after (assessment-dates assessment {:as-of "2026-10-13"})))))))
+    (is (= {:as-of "2026-07-12" :review-after "2026-10-12"}
+           (assessment-dates assessment {:as-of "2026-07-12"})))
+    (is (not= {:as-of "2026-07-12" :review-after "2026-10-12"}
+              (assessment-dates assessment {:as-of "2026-10-13"})))))

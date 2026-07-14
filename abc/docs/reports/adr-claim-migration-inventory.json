@@ -1,6 +1,6 @@
 {
-  "accepted_adr_count": 27,
-  "accepted_criterion_count": 139,
+  "accepted_adr_count": 28,
+  "accepted_criterion_count": 142,
   "baseline_adr_count": 26,
   "baseline_criteria": [
     {
@@ -3945,6 +3945,51 @@
       "resulting_claim_ids": ["ADR-0033-C11"]
     },
     {
+      "adr": 34,
+      "baseline_key": null,
+      "body": "**ADR-0034-C1 \u2014 structural-invariant:**\n`test\/abc\/tools\/adr_evidence_test.clj` demonstrates the closed compatibility\nmatrix, derived predicates, input binding, and deterministic expiry behavior.",
+      "claim_id": "ADR-0034-C1",
+      "claim_kind": "structural-invariant",
+      "criterion_index": 0,
+      "disposition": null,
+      "disposition_rationale": null,
+      "evidence_paths": ["test\/abc\/tools\/adr_evidence_test.clj"],
+      "family": "diagrams-governance",
+      "file": "0034-typed-evidence-and-lifecycle-closure.md",
+      "planned_evidence_boundaries": [],
+      "resulting_claim_ids": []
+    },
+    {
+      "adr": 34,
+      "baseline_key": null,
+      "body": "**ADR-0034-C2 \u2014 structural-invariant:** `test\/abc\/tools\/adr_test.clj` and\n`test\/abc\/tools\/adr_governance_test.clj` demonstrate lifecycle validation,\ncycle-safe stable dependency witnesses, audit containment, and enforcement\nexit behavior.",
+      "claim_id": "ADR-0034-C2",
+      "claim_kind": "structural-invariant",
+      "criterion_index": 1,
+      "disposition": null,
+      "disposition_rationale": null,
+      "evidence_paths": ["test\/abc\/tools\/adr_governance_test.clj","test\/abc\/tools\/adr_test.clj"],
+      "family": "diagrams-governance",
+      "file": "0034-typed-evidence-and-lifecycle-closure.md",
+      "planned_evidence_boundaries": [],
+      "resulting_claim_ids": []
+    },
+    {
+      "adr": 34,
+      "baseline_key": null,
+      "body": "**ADR-0034-C3 \u2014 corpus-behavior:** The immutable pre-promotion snapshot of\nevery Accepted ADR except ADR 0034 records the exact corpus and criterion\ncounts, committed governance epoch, `ok = true`, and zero strict problems;\nfinal promotion additionally requires live strict conformance including\nthis ADR.",
+      "claim_id": "ADR-0034-C3",
+      "claim_kind": "corpus-behavior",
+      "criterion_index": 2,
+      "disposition": null,
+      "disposition_rationale": null,
+      "evidence_paths": [],
+      "family": "diagrams-governance",
+      "file": "0034-typed-evidence-and-lifecycle-closure.md",
+      "planned_evidence_boundaries": [],
+      "resulting_claim_ids": []
+    },
+    {
       "adr": 38,
       "baseline_key": null,
       "body": "**ADR-0038-C1 \u2014 domain-interpretation:** Given the enumerated owned parser\/publication contract, current maintainer commitment, and bounded five-parser\/build-fresh survey, the project-owner assessment supports Soranoha ownership of the custom-parser contract for development only; it grants neither tuple admission nor publication authority.",
@@ -3991,7 +4036,7 @@
     }],
   "families":
   {
-    "diagrams-governance": 9,
+    "diagrams-governance": 12,
     "foundation-runtime-identity": 35,
     "parser-ir-publication": 33,
     "schema-rdf-tei": 30,

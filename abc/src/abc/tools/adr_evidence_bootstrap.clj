@@ -134,8 +134,8 @@
   (string/replace (str (fs/relativize workspace-root path)) "\\" "/"))
 
 (defn- accepted-adr-paths [abc-root workspace-root adrs]
-  (for [{:keys [file status]} adrs
-        :when (= "Accepted" status)]
+  (for [{:keys [file status num]} adrs
+        :when (and (= "Accepted" status) (not= 34 num))]
     (workspace-path workspace-root (fs/file abc-root "docs/adr" file))))
 
 (defn- governance-source-paths [abc-root workspace-root]
@@ -177,6 +177,7 @@
                  (accepted-adr-paths abc-root workspace-root adrs)
                  (governance-source-paths abc-root workspace-root)
                  (artifact-input-paths abc-root workspace-root registry))
+         (remove #{"abc/docs/adr/0034-typed-evidence-and-lifecycle-closure.md"})
          distinct
          sort
          vec)))
@@ -293,7 +294,8 @@
   (let [flake (files/read-text (fs/file workspace-root "flake.nix"))
         start (string/index-of flake "monorepo-adr-governance")
         tail (when start (subs flake start))
-        end (when tail (string/index-of tail "''" 2))
+        script-start (when tail (string/index-of tail "''"))
+        end (when script-start (string/index-of tail "''" (+ script-start 2)))
         block (if end (subs tail 0 end) tail)]
     (and block
          (string/includes? block "--mode enforce")

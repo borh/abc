@@ -22,6 +22,7 @@
    "0025-parser-ir-publication-rendering.md" "0029-diagrams-as-gated-derived-views.md"
    "0030-aozora-parser-selection.md" "0031-adr-governance-validation.md"
    "0032-parser-fork-hard-detach.md" "0033-source-bundle-identity.md"
+   "0034-typed-evidence-and-lifecycle-closure.md"
    "0038-custom-parser-ownership-and-neutral-comparison.md"])
 
 (deftest diagram-registry-contract

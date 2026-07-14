@@ -216,8 +216,8 @@
         value (inventory/inventory-value adrs state)]
     (is (= 26 (get value "baseline_adr_count"))
         "the immutable baseline contains 26 ADRs")
-    (is (= 27 (count accepted))
-        "ADR 0038 is the additional live Accepted ADR")
+    (is (= 28 (count accepted))
+        "ADRs 0034 and 0038 are the additional live Accepted ADRs")
     (is (zero? (get-in value ["families" "unclassified"])))
     (is (= "parser-ir-publication"
            (get (first (filter #(= 38 (get % "adr"))
@@ -225,13 +225,19 @@
                 "family")))))
 
 (deftest diagrams-governance-stage-a-claim-ledger-and-lifecycle-contract-test
-  (let [expected-ranges {29 5, 31 4}
+  (let [expected-ranges {29 5, 31 4, 34 3}
+        baseline-ranges {29 5, 31 4}
         expected-ids (set (mapcat (fn [[adr count]]
                                     (map #(format "ADR-%04d-C%d" adr %)
                                          (range 1 (inc count))))
                                   expected-ranges))
+        baseline-ids (set (mapcat (fn [[adr count]]
+                                    (map #(format "ADR-%04d-C%d" adr %)
+                                         (range 1 (inc count))))
+                                  baseline-ranges))
         expected-lifecycle {29 ["fixture" "none"]
-                            31 ["structural" "none"]}
+                            31 ["structural" "none"]
+                            34 ["full-corpus" "none"]}
         adrs (into {} (map (juxt :num identity) (adr/parse-all "docs/adr")))
         state (migration/load-migration-state "." {:require-complete? false})
         value (inventory/inventory-value (vals adrs) state)
@@ -242,7 +248,7 @@
     (is (= 8 (count family-rows)))
     (is (= 8 (count baseline-rows)))
     (is (every? some? (map #(get % "disposition") baseline-rows)))
-    (is (= expected-ids
+    (is (= baseline-ids
            (set (mapcat (comp :resulting-claim-ids val) family-rows))))
     (is (= expected-ids
            (->> (get value "criteria")

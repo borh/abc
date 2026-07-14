@@ -2,6 +2,7 @@
   (:require [abc.tools.adr-evidence-bootstrap :as bootstrap]
             [abc.tools.adr :as adr]
             [abc.tools.files :as files]
+            [abc.tools.adr-governance :as governance]
             [abc.tools.hash :as hash]
             [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]])
@@ -129,8 +130,15 @@
         (is (= :dirty-bootstrap-worktree (:kind (ex-data exception))))))))
 
 (deftest final-transition-requires-one-adr-three-claims-and-enforcement-test
-  (let [kinds (set (map :kind
-                        (bootstrap/final-transition-problems
-                         "." ".." (valid-snapshot))))]
-    (is (contains? kinds :adr-0034-not-accepted))
-    (is (contains? kinds :governance-gate-not-enforced))))
+  (let [workspace (str (fs/canonicalize ".."))]
+    (with-redefs [governance/run! (fn [_ _]
+                                    {:ok? true :mode :enforce :problems []})
+                  bootstrap/git-command
+                  (fn [_workspace & args]
+                    (if (= args ["rev-parse" "--show-toplevel"])
+                      {:exit 0 :out (str workspace "\n") :err ""}
+                      {:exit 2 :out "" :err "unexpected Git command"}))]
+      (is (empty? (bootstrap/final-transition-problems
+                   "." ".."
+                   (files/read-json
+                    "docs/evidence/adr-bootstrap/pre-promotion.json")))))))

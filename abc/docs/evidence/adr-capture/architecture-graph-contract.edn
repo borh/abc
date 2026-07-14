@@ -31,6 +31,7 @@
  "docs/adr/0031-adr-governance-validation.md"
  "docs/adr/0032-parser-fork-hard-detach.md"
  "docs/adr/0033-source-bundle-identity.md"
+ "docs/adr/0034-typed-evidence-and-lifecycle-closure.md"
  "docs/adr/0038-custom-parser-ownership-and-neutral-comparison.md"
  "docs/architecture-stages.edn"
  "docs/architecture.md"
@@ -40,4 +41,3 @@
  "schemas/manifest.schema.json"
  "schemas/schema-contracts.json"]}
  :observation-key "architecture-graph-contracts-pass"}
-

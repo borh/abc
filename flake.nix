@@ -239,7 +239,7 @@
                 clojure -M:abc/adr-governance \
                   --repo-root "$TMPDIR/workspace/abc" \
                   --workspace-root "$TMPDIR/workspace" \
-                  --mode audit \
+                  --mode enforce \
                   --report "$out/report.json"
                 # Migration audit debt is pinned by stable finding identity,
                 # including claim/artifact/input coordinates. Diagnostic wording

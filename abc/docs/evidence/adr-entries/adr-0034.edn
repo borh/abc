@@ -4,17 +4,20 @@
    :claim-kind :structural-invariant
    :evidence-kind :structural-test
    :artifact-path "docs/evidence/adr-runs/adr-0034-c1.json"
+   :observation-id :adr-0034-c1
    :observation-key "typed-artifact-protocol-passes"
    :expected {:operator := :value true}}
   {:claim-id "ADR-0034-C2"
    :claim-kind :structural-invariant
    :evidence-kind :structural-test
    :artifact-path "docs/evidence/adr-runs/adr-0034-c2.json"
+   :observation-id :adr-0034-c2
    :observation-key "lifecycle-and-mode-contract-passes"
    :expected {:operator := :value true}}
   {:claim-id "ADR-0034-C3"
    :claim-kind :corpus-behavior
    :evidence-kind :corpus-measurement
    :artifact-path "docs/evidence/adr-runs/adr-0034-c3.json"
+   :observation-id :adr-0034-c3
    :observation-key "pre-promotion-corpus-conforms"
    :expected {:operator := :value true}}]}

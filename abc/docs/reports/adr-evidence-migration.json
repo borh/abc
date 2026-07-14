@@ -1,5 +1,5 @@
 {
-  "mode": "audit",
+  "mode": "enforce",
   "ok": true,
   "problems": []
 }

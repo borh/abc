@@ -112,8 +112,11 @@
          flake
          "ADR lifecycle, dependency, claim, artifact, freshness, and evidence audit completed."))))
 
-(deftest root-schema-stage-b-governance-debt-predicate-is-exact-test
+(deftest root-governance-check-selects-enforcement-test
   (let [root-flake (slurp (fs/file "../flake.nix"))]
+    (is (string/includes? root-flake "src = self;"))
+    (is (string/includes? root-flake "--mode enforce"))
+    (is (not (string/includes? root-flake "--mode audit")))
     (is (string/includes? root-flake "abc/nix/adr-problem-identities.jq"))
     (is (string/includes? root-flake
                           "cmp expected-problem-identities.json actual-problem-identities.json"))

@@ -35,8 +35,8 @@
   (let [adrs (adr/parse-all "docs/adr")
         baseline (migration/baseline-value revision adrs)]
     (is (= revision (get baseline "baseline_revision")))
-    (is (= 27 (get baseline "accepted_adr_count")))
-    (is (= 138 (get baseline "criterion_count"))
+    (is (= 28 (get baseline "accepted_adr_count")))
+    (is (= 142 (get baseline "criterion_count"))
         "the post-migration accepted-criterion baseline remains exact")
     (is (= 36 (get baseline "normative_section_count")))
     (is (= baseline (migration/baseline-value revision (reverse adrs))))

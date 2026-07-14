@@ -33,6 +33,7 @@
    "0031-adr-governance-validation.md"
    "0032-parser-fork-hard-detach.md"
    "0033-source-bundle-identity.md"
+   "0034-typed-evidence-and-lifecycle-closure.md"
    "0038-custom-parser-ownership-and-neutral-comparison.md"])
 
 (deftest architecture-graph-contract

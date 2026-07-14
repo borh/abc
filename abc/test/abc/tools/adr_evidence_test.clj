@@ -65,7 +65,7 @@
                               (:claim-id %))
                  (:entries registry))]
     (is (= #{:entries} (set (keys registry))))
-    (is (= 42 (count foundation-entries)))
+    (is (= 51 (count foundation-entries)))
     (is (= 35 (count (distinct (map :claim-id foundation-entries)))))
     (is (every? #(not (contains? % :observation-id)) foundation-entries)))
   (is (= "2026-07-12" (evidence/load-as-of))))

@@ -14,7 +14,10 @@
 (def legacy-filesystem-namespaces #{})
 
 (def permanent-files-operations
-  '{abc.tools.json
+  '{abc.tools.files
+    {:operations #{Files/deleteIfExists}
+     :rationale "The shared cleanup wrapper preserves no-error missing-file semantics"}
+    abc.tools.json
     {:operations #{Files/createTempFile Files/setPosixFilePermissions
                    Files/move Files/deleteIfExists}
      :rationale "Atomic JSON replacement requires NIO temporary-file permissions and move semantics"}
@@ -248,7 +251,8 @@
            abc.tools.diagram.presentation-svg #{Files/readAllBytes}
            abc.tools.soranoha-build-publication #{Files/move}
            abc.tools.evidence-output
-           #{Files/exists Files/createLink Files/deleteIfExists}}
+           #{Files/exists Files/createLink Files/deleteIfExists}
+           abc.tools.files #{Files/deleteIfExists}}
          (update-vals permanent-files-operations :operations)))
   (is (= '{abc.tools.source-bundle #{:isDirectory}
            abc.tools.aozora-history-audit #{:renameTo}}

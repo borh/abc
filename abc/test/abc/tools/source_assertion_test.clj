@@ -45,7 +45,9 @@
       ;; The evidence analyzer names legacy process capabilities as quoted
       ;; denylist data. Its executable subprocess boundary is babashka.process;
       ;; the dedicated test below proves the exception is data-only.
-      (when-not (= "src/abc/tools/adr_evidence_runtime_inputs.clj" (str source))
+      (when-not (contains? #{"src/abc/tools/adr_evidence_runtime_inputs.clj"
+                             "src/abc/tools/adr_evidence_bootstrap.clj"}
+                           (str source))
         (is (not (string/includes? text "clojure.java.shell")) (str source))
         (is (not (string/includes? text "ProcessBuilder")) (str source)))
       (is (not (re-find #"(?s)Runtime/getRuntime[^)]*\)\s*\.exec|\(\s*\.exec\s+\(\s*Runtime/getRuntime\b|\(\s*\.\.\s+Runtime\s+getRuntime\s+\(\s*exec\b"

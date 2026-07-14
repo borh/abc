@@ -1,7 +1,7 @@
 {
   "input_profile":
   {
-    "explicit": ["bin\/kaocha","docs\/adr\/0001-manifest-identity.md","docs\/adr\/0002-parser-evaluation.md","docs\/adr\/0006-v0-design-bundle-validation.md","docs\/adr\/0007-external-parser-validation-boundary.md","docs\/adr\/0008-abc-tools-runtime.md","docs\/adr\/0009-imported-output-materialization.md","docs\/adr\/0010-manifest-identity-hardening.md","docs\/adr\/0011-generated-fixture-policy.md","docs\/adr\/0012-tei-odd-schematron-validation.md","docs\/adr\/0013-cultural-heritage-lod-profile.md","docs\/adr\/0014-iiif-applicability.md","docs\/adr\/0015-temporal-modeling.md","docs\/adr\/0016-edtf-level1-decade-century.md","docs\/adr\/0017-vocabulary-review.md","docs\/adr\/0018-predicate-rename-batch-1.md","docs\/adr\/0020-person-identity-drift-data-model.md","docs\/adr\/0021-person-identity-drift-harness.md","docs\/adr\/0022-upstream-ingest-drift-awareness.md","docs\/adr\/0023-owned-aat-parser-ir-mapping.md","docs\/adr\/0024-parser-ir-span-and-ruby-direction.md","docs\/adr\/0025-parser-ir-publication-rendering.md","docs\/adr\/0029-diagrams-as-gated-derived-views.md","docs\/adr\/0030-aozora-parser-selection.md","docs\/adr\/0031-adr-governance-validation.md","docs\/adr\/0032-parser-fork-hard-detach.md","docs\/adr\/0033-source-bundle-identity.md","docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md","docs\/adr\/adr-relations.edn","docs\/adr\/claim-evidence-compatibility.edn","docs\/adr\/governance-as-of.edn","docs\/evidence\/adr-capture\/adr-policy-fixtures.edn","docs\/evidence\/adr-inputs\/adr-policy-fixtures.edn"],
+    "explicit": ["bin\/kaocha","docs\/adr\/0001-manifest-identity.md","docs\/adr\/0002-parser-evaluation.md","docs\/adr\/0006-v0-design-bundle-validation.md","docs\/adr\/0007-external-parser-validation-boundary.md","docs\/adr\/0008-abc-tools-runtime.md","docs\/adr\/0009-imported-output-materialization.md","docs\/adr\/0010-manifest-identity-hardening.md","docs\/adr\/0011-generated-fixture-policy.md","docs\/adr\/0012-tei-odd-schematron-validation.md","docs\/adr\/0013-cultural-heritage-lod-profile.md","docs\/adr\/0014-iiif-applicability.md","docs\/adr\/0015-temporal-modeling.md","docs\/adr\/0016-edtf-level1-decade-century.md","docs\/adr\/0017-vocabulary-review.md","docs\/adr\/0018-predicate-rename-batch-1.md","docs\/adr\/0020-person-identity-drift-data-model.md","docs\/adr\/0021-person-identity-drift-harness.md","docs\/adr\/0022-upstream-ingest-drift-awareness.md","docs\/adr\/0023-owned-aat-parser-ir-mapping.md","docs\/adr\/0024-parser-ir-span-and-ruby-direction.md","docs\/adr\/0025-parser-ir-publication-rendering.md","docs\/adr\/0029-diagrams-as-gated-derived-views.md","docs\/adr\/0030-aozora-parser-selection.md","docs\/adr\/0031-adr-governance-validation.md","docs\/adr\/0032-parser-fork-hard-detach.md","docs\/adr\/0033-source-bundle-identity.md","docs\/adr\/0034-typed-evidence-and-lifecycle-closure.md","docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md","docs\/adr\/adr-relations.edn","docs\/adr\/claim-evidence-compatibility.edn","docs\/adr\/governance-as-of.edn","docs\/evidence\/adr-capture\/adr-policy-fixtures.edn","docs\/evidence\/adr-inputs\/adr-policy-fixtures.edn"],
     "kind": "clojure-test-v1",
     "roots": ["abc.tools.adr-policy-evidence-test"]
   },
@@ -34,12 +34,13 @@
     "docs\/adr\/0031-adr-governance-validation.md": "sha256:65253eb4aec74053edb34534ac5adc000765502afcffb669602d2c708604fbcf",
     "docs\/adr\/0032-parser-fork-hard-detach.md": "sha256:5bef3338b06d9ad5fa61352316e938b7fc49bdd2a7c95531873859f8727c1f02",
     "docs\/adr\/0033-source-bundle-identity.md": "sha256:8dc84c890b8a1a7fcf08d8ac6eb0200b2af3d0d8e27a6fa4e814bf7ab115e752",
+    "docs\/adr\/0034-typed-evidence-and-lifecycle-closure.md": "sha256:b05b9df35417d08c8ef8c301942bd4b86b114db489d7932b9dfa4e242c3b019b",
     "docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md": "sha256:bd7addd48c6d8cd7400e3dc90a957a167ffc567968490d821d736820809c7352",
     "docs\/adr\/adr-relations.edn": "sha256:66034fbb913112841e61e2cfee13e75fb0baae76d63c719d8f186896eacd66b6",
     "docs\/adr\/claim-evidence-compatibility.edn": "sha256:b52d39bac779f96622ebe7dc06f88a36cccec81e0b3c71f54ae91cd5ae03e9be",
     "docs\/adr\/governance-as-of.edn": "sha256:a0e9acce81ffb4ee09b9fac168a90a732e708aa378d4df15ad387b0e60e67d3b",
-    "docs\/evidence\/adr-capture\/adr-policy-fixtures.edn": "sha256:3338bf9530370d88e76637033a283511e209c14cc89f959ad68e450cb7c53f71",
-    "docs\/evidence\/adr-inputs\/adr-policy-fixtures.edn": "sha256:48413793b0b2c29080eba31f01b8f49ea9c35a2c16e3f654d34998f5cdf4d268",
+    "docs\/evidence\/adr-capture\/adr-policy-fixtures.edn": "sha256:36f3b5216f6a098a08ca18a81404babe89cfd15989714e9534f35db4e452f935",
+    "docs\/evidence\/adr-inputs\/adr-policy-fixtures.edn": "sha256:542142be5ec896abd4297cc4857bbc8d08b4b145724cd7025030aaeff595d583",
     "src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
     "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:7945fb9c26cbcd173ebf997300c70b13c93ddf5d5b4a17f4901317890def884a",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
@@ -48,7 +49,7 @@
     "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
-    "test\/abc\/tools\/adr_policy_evidence_test.clj": "sha256:3e639e4af1116157c22ac8c2ee75d3182903454503d2a4dadb2d6ae7e9e25ba6"
+    "test\/abc\/tools\/adr_policy_evidence_test.clj": "sha256:a236b54d32dbfb9d1e914c41e006284a6fab5e772ce099ad6f20c0eed77e9c17"
   },
   "observations":
   {
@@ -64,7 +65,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.adr-policy-evidence-test\/adr-policy-fixtures-contract\"",
-    "revision": "f3b12361fcadee14d62ae9a0583d9817fd327dcc",
+    "revision": "981df886b001b499da3884907ecfda667d98e5d6",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

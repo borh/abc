@@ -664,13 +664,10 @@
                                           (:kind %)))
                               (map :path)
                               vec)]
-    (is (= #{:missing-validation-scope
-             :missing-release-authority
-             :missing-claim-header}
-           (kinds problems)))
-    (is (= 27 (count accepted)))
-    (is (= 138 (count accepted-criteria)))
-    (is (= 8 missing-claim-count))
+    (is (= #{} (kinds problems)))
+    (is (= 28 (count accepted)))
+    (is (= 142 (count accepted-criteria)))
+    (is (zero? missing-claim-count))
     (is (zero? missing-evidence-count))
     (is (= (+ missing-scope-count missing-authority-count
               missing-claim-count missing-evidence-count)

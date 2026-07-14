@@ -1,8 +1,9 @@
 # ADR 0034: Typed Evidence and Lifecycle Closure
 
-Status: Proposed
+Status: Accepted
 Date: 2026-07-12
-Validation scope: structural
+Accepted: 2026-07-12
+Validation scope: full-corpus
 Release authority: none
 Supersedes: none
 Depends on: ADR 0031
@@ -12,10 +13,9 @@ Source: `docs/superpowers/specs/2026-07-11-adr-evidence-and-lifecycle-remediatio
 
 The typed claim/evidence vocabulary, deterministic reference date, audit-mode
 reporting, explicit lifecycle dimensions, and visited-set dependency closure
-are implemented. Audit policy is contained from legacy diagram consumers until
-the ADR corpus migration is complete. Promotion remains blocked on the
-full-corpus claim/evidence migration and this ADR's self-validation under the
-enforced regime.
+are implemented. C1 and C2 are backed by focused structural captures, while C3
+is backed by the immutable pre-promotion corpus snapshot. Final live strict
+enforcement, including this ADR, is required by the promotion procedure.
 
 ## Context
 
@@ -49,10 +49,11 @@ not become runtime dependencies.
   `test/abc/tools/adr_governance_test.clj` demonstrate lifecycle validation,
   cycle-safe stable dependency witnesses, audit containment, and enforcement
   exit behavior.
-- **ADR-0034-C3 — corpus-behavior:** As a promotion condition,
-  `docs/reports/adr-evidence-migration.json` must contain no problems after
-  every Accepted criterion has a compatible passing evidence entry bound to
-  current inputs.
+- **ADR-0034-C3 — corpus-behavior:** The immutable pre-promotion snapshot of
+  every Accepted ADR except ADR 0034 records the exact corpus and criterion
+  counts, committed governance epoch, `ok = true`, and zero strict problems;
+  final promotion additionally requires live strict conformance including
+  this ADR.
 
 ## Consequences
 

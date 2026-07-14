@@ -8,7 +8,7 @@
   "properties": {
     "schema_version": {"const": 1},
     "study_id": {"type": "string", "minLength": 1},
-    "rows": {"type": "array", "minItems": 63, "items": {"$ref": "#/$defs/row"}}
+    "rows": {"type": "array", "minItems": 108, "maxItems": 108, "items": {"$ref": "#/$defs/row"}}
   },
   "$defs": {
     "row": {
@@ -18,16 +18,28 @@
       "allOf": [
         {
           "if": {"properties": {"measurement_mode": {"const": "native"}}},
-          "then": {"properties": {"provenance": {"not": {"contains": {"enum": ["adapter", "source_lexer_fallback", "mapper"]}}}}}
+          "then": {"properties": {"adapter_revision": {"type": "null"}, "provenance": {"allOf": [{"contains": {"const": "native_parser"}}, {"not": {"contains": {"enum": ["adapter", "source_lexer_fallback", "mapper"]}}}]}}}
         },
         {
           "if": {"properties": {"measurement_mode": {"const": "adapter_normalized"}}},
-          "then": {"properties": {"adapter_revision": {"type": "string", "minLength": 1}}}
+          "then": {"properties": {"adapter_revision": {"type": "string", "minLength": 1}, "provenance": {"contains": {"enum": ["adapter", "source_lexer_fallback", "mapper"]}}}}
         },
         {
           "if": {"properties": {"status": {"const": "measured"}}},
           "then": {"properties": {"numerator": {"type": "integer"}, "denominator": {"type": "integer"}, "missingness": {"const": "none"}}},
-          "else": {"properties": {"numerator": {"type": "null"}, "denominator": {"type": "null"}, "missingness": {"not": {"const": "none"}}}}
+          "else": {"properties": {"numerator": {"type": "null"}, "denominator": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "failed"}}},
+          "then": {"properties": {"missingness": {"enum": ["unavailable", "build-failure", "run-failure", "timeout"]}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "non_comparable"}}},
+          "then": {"properties": {"missingness": {"enum": ["not-applicable", "non-comparable"]}}}
+        },
+        {
+          "if": {"properties": {"candidate": {"enum": ["aozora-parser.js", "ab-aozora"]}}},
+          "then": {"properties": {"measurement_mode": {"const": "native"}}}
         }
       ],
       "properties": {

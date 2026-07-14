@@ -209,6 +209,7 @@
      abc.tools.jcs/rfc8785-string-domain-json-bytes
      abc.tools.path-containment/path-state
      abc.tools.schema/validation-errors
+     abc.tools.workflow/validate-run
      abc.tools.linked-art/expand-document
      abc.tools.manifest-to-rdf/manifest->graph
      abc.tools.manifest-to-rdf/graph->ttl
@@ -340,6 +341,7 @@
     abc.tools.path-containment/path-state
     {resolve 1 startsWith 2 exists? 1 toRealPath 2}
     abc.tools.schema/validation-errors {}
+    abc.tools.workflow/validate-run {}
     abc.tools.shacl/load-shapes-graph {input-stream 1 read 1 getGraph 1}
     abc.tools.validate-design-bundle/load-turtle-graph {read 1}})
 

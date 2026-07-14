@@ -94,7 +94,7 @@
             (schema-paths)
             (adr-nums)
             (json/read-json-file manifest-schema-path)
-            (slurp "docs/architecture.md")))
+            (files/read-text "docs/architecture.md")))
 
 (defn- stage-label [s]
   (str (:label s) (when (:external s) " ⟨external⟩")

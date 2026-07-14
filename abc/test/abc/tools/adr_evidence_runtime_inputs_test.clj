@@ -278,6 +278,13 @@
            (problem-kind #(runtime/analyze-reachable-vars
                            root ['example.core/threaded-unsafe]))))))
 
+(deftest diagram-core-raw-drift-read-is-default-denied-test
+  (let [root (analyzer-repo
+              "(defn drift [out-path] (when out-path (slurp out-path)))")]
+    (is (= :forbidden-evidence-io
+           (problem-kind #(runtime/analyze-reachable-vars
+                           root ['example.core/drift]))))))
+
 (deftest reachable-var-lint-rejects-computed-and-unresolved-heads-test
   (let [computed (analyzer-repo "(defn bad [f] ((identity f) :x))")
         local-call (analyzer-repo "(defn bad [] (let [f identity] (f :x)))")]

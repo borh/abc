@@ -38,7 +38,8 @@
   (validate-run! run)
   (let [steps (get run "steps")
         producers (reduce (fn [m s]
-                            (reduce (fn [m k] (update m k (fnil conj #{}) (get s "id")))
+                            (reduce (fn [m k]
+                                      (assoc m k (conj (get m k #{}) (get s "id"))))
                                     m (get s "produces")))
                           {} steps)]
     {:direction "TD"

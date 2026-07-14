@@ -1,0 +1,3 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["examples/workflow/passed.workflow-run.json"
+         "schemas/workflow-run.schema.json"]}

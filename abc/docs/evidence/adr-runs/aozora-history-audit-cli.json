@@ -29,7 +29,7 @@
     "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
     "src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
-    "src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
+    "src\/abc\/tools\/malli.clj": "sha256:16c04c051ac5829e36b7d0e7707c0057cef22ac2c20f778ad08f0d3b40df471e",
     "src\/abc\/tools\/manifest.clj": "sha256:ffeaad0f5073f8b8085562c854d76ea893fbc78669246e3601aa187e8a7006b6",
     "src\/abc\/tools\/manifest_to_rdf.clj": "sha256:bb38316e7aa5e6c0e0aeb6491b39807cb1c40ac3aef1b27a24cc6514799c63e9",
     "src\/abc\/tools\/metadata_record.clj": "sha256:b87fd5dbe5831983dc618849593fc08bba2d4bd6a2dbf447b88738253015f36f",
@@ -64,7 +64,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-aozora-history-audit-cli\\\"\"",
-    "revision": "f3b12361fcadee14d62ae9a0583d9817fd327dcc",
+    "revision": "97788b3cc03334d60dc815c06648b31b2203bb89",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -17,7 +17,7 @@
     "ab-validator\/crates\/ab-aozora-facade\/Cargo.toml": "sha256:fa80f73ef43916dca1803ccc55c489688385e26e3e783d66121866d45dac1b90",
     "ab-validator\/crates\/ab-aozora-facade\/NOTICE": "sha256:19975b040ea388bc554497eb87baba37019a349a8756d8a72a881e64dd86921b",
     "ab-validator\/crates\/ab-aozora-facade\/README.md": "sha256:108981a2603dc8d416f92b37a4d4662bf5d67cd6adaa07d21587721d26c8adcd",
-    "ab-validator\/crates\/ab-aozora-facade\/src\/lib.rs": "sha256:24c457ee8172e57b4fa60f5177630a64aa3c03eb13654acce81e63da8f822682",
+    "ab-validator\/crates\/ab-aozora-facade\/src\/lib.rs": "sha256:099760f6844b87036d00372f85bbd1ca47e0ef7aad6a850047f36658c7b84d1d",
     "ab-validator\/crates\/ab-aozora-pipeline\/Cargo.toml": "sha256:ccb6141f5ed272e92e0b70890daaaa36389cff84ae63c4309013480a21ea84f4",
     "ab-validator\/crates\/ab-aozora-pipeline\/NOTICE": "sha256:19975b040ea388bc554497eb87baba37019a349a8756d8a72a881e64dd86921b",
     "ab-validator\/crates\/ab-aozora-pipeline\/src\/lib.rs": "sha256:9f89241ba611ecff683e8d25b3ba6d5a7b2fe72749ab644c1780d01ac6a03412",
@@ -32,7 +32,7 @@
     "ab-validator\/crates\/ab-aozora-scan\/src\/lib.rs": "sha256:a56c5fa98640664883ad414a19fdfbf6f8b3565f68d5d21c92ba4379c3e4217a",
     "ab-validator\/crates\/ab-aozora-spec\/Cargo.toml": "sha256:9e3701b0903b9c5d97b960e7f70bfec33dbdf609d518e808317af31b3168c96c",
     "ab-validator\/crates\/ab-aozora-spec\/NOTICE": "sha256:19975b040ea388bc554497eb87baba37019a349a8756d8a72a881e64dd86921b",
-    "ab-validator\/crates\/ab-aozora-spec\/src\/diagnostic.rs": "sha256:0c48c6a6437bedb53b526d2073900fe29bf1ddf4362902cd0cba189459d34ae9",
+    "ab-validator\/crates\/ab-aozora-spec\/src\/diagnostic.rs": "sha256:31efae5e4f60bf95542deb8e527ff7fd13ddfedeee6b0e9806547079bd12a911",
     "ab-validator\/crates\/ab-aozora-spec\/src\/lib.rs": "sha256:df4784247fd0b4c1fac7eefa6f12cf78401162e758e17ee00532d4dbb4aacb0a",
     "ab-validator\/crates\/ab-aozora-syntax\/Cargo.toml": "sha256:e324122f1983cdb17331adb98110d224cc335e7798076c700d0f1d6f9038e7ed",
     "ab-validator\/crates\/ab-aozora-syntax\/NOTICE": "sha256:19975b040ea388bc554497eb87baba37019a349a8756d8a72a881e64dd86921b",
@@ -50,7 +50,7 @@
     "abc\/docs\/evidence\/adr-capture\/parser-relations-provenance.edn": "sha256:15a7640cb33913c4e6a7659c5c63871e6a3802e59509cc862e7dbe5301f5d2ad",
     "abc\/docs\/evidence\/adr-inputs\/parser-relations-provenance.edn": "sha256:294ac03cbbdf9f3bc459501b1e464d1c6c8fff5bac50a0fcd868bf47ef828dc0",
     "abc\/src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
-    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:7945fb9c26cbcd173ebf997300c70b13c93ddf5d5b4a17f4901317890def884a",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
     "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "abc\/src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
     "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
@@ -73,7 +73,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-relations-provenance-evidence-test\/parser-relations-provenance-contract\"",
-    "revision": "f3b12361fcadee14d62ae9a0583d9817fd327dcc",
+    "revision": "97788b3cc03334d60dc815c06648b31b2203bb89",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

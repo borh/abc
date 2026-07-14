@@ -42,7 +42,7 @@
     "docs\/evidence\/adr-capture\/adr-policy-fixtures.edn": "sha256:36f3b5216f6a098a08ca18a81404babe89cfd15989714e9534f35db4e452f935",
     "docs\/evidence\/adr-inputs\/adr-policy-fixtures.edn": "sha256:542142be5ec896abd4297cc4857bbc8d08b4b145724cd7025030aaeff595d583",
     "src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:7945fb9c26cbcd173ebf997300c70b13c93ddf5d5b4a17f4901317890def884a",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
     "src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
@@ -65,7 +65,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.adr-policy-evidence-test\/adr-policy-fixtures-contract\"",
-    "revision": "981df886b001b499da3884907ecfda667d98e5d6",
+    "revision": "97788b3cc03334d60dc815c06648b31b2203bb89",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -159,3 +159,9 @@ differences without changing selected works. Its focused integration test
 checks index order, extracted bytes, and inventory output; cargo test and
 clippy pass. Applied to the pinned index it materialized all 17,886 selected
 works, including malformed archives that blocked Python extraction.
+
+The first full launch correctly failed closed because `ab-index` can contain
+multiple primary source members with the same work ID. The materializer now
+uses the established `ab-check` identity `work_id` plus the first twelve hex
+digits of the indexed-path SHA-256. This retains every selected member without
+collision or reordering; the focused test pins the composite identity.

@@ -54,10 +54,11 @@ fn main() -> Result<()> {
         }
         let bytes = read_indexed_source_bytes(&args.corpus, indexed_path)
             .with_context(|| format!("failed to materialize {id}"))?;
-        let relative = format!("{id}.txt");
+        let item_id = format!("{id}-{}", &hex_sha256(indexed_path.as_bytes())[..12]);
+        let relative = format!("{item_id}.txt");
         fs::write(source_dir.join(&relative), &bytes)?;
         items.push(Item {
-            id: id.to_owned(),
+            id: item_id,
             path: relative,
             sha256: format!("sha256:{}", hex_sha256(&bytes)),
         });

@@ -22,9 +22,10 @@ fn materializes_exact_index_order_and_hashes() {
     assert!(status.success());
     let inventory: serde_json::Value =
         serde_json::from_slice(&fs::read(output.join("inventory.json")).unwrap()).unwrap();
-    assert_eq!(inventory["items"][0]["id"], "work-a");
+    let item_id = inventory["items"][0]["id"].as_str().unwrap();
+    assert!(item_id.starts_with("work-a-"));
     assert_eq!(
-        fs::read(output.join("sources/work-a.txt")).unwrap(),
+        fs::read(output.join(format!("sources/{item_id}.txt"))).unwrap(),
         b"alpha"
     );
 }

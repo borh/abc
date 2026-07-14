@@ -152,3 +152,10 @@ in a new session, kills the entire process group on timeout, and resolves every
 read artifact beneath the output root while rejecting symlink escapes. RED
 proved that a changed command incorrectly reused successes and that an output
 symlink escaped containment. Six focused tests, ruff, and strict mypy pass.
+
+The canonical corpus materializer is now Rust and reuses `ab-check`'s exact
+plain/ZIP-member byte reader. This avoids Python ZIP central-directory and CRC
+differences without changing selected works. Its focused integration test
+checks index order, extracted bytes, and inventory output; cargo test and
+clippy pass. Applied to the pinned index it materialized all 17,886 selected
+works, including malformed archives that blocked Python extraction.

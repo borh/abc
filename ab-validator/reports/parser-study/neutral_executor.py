@@ -8,6 +8,7 @@ import hashlib
 import json
 import subprocess
 import time
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -72,6 +73,33 @@ def materialize_vectors(vector_root: Path, output: Path) -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(data)
         items.append({"id": name, "path": relative, "sha256": sha256(data)})
+    write_json(output / "inventory.json", {"items": items})
+
+
+def materialize_index(index_path: Path, corpus: Path, output: Path, limit: int) -> None:
+    works = json.loads(index_path.read_bytes()).get("works")
+    if not isinstance(works, list):
+        raise ValueError("index works must be an array")
+    selected = works if limit == 0 else works[:limit]
+    items: list[dict[str, str]] = []
+    sources = output / "sources"
+    for work in selected:
+        work_id, indexed_path = work.get("id"), work.get("txt_path")
+        if not isinstance(work_id, str) or not isinstance(indexed_path, str):
+            raise ValueError("invalid index work")
+        archive_path, separator, member = indexed_path.partition("::")
+        if not safe_relative(archive_path) or (separator and not safe_relative(member)):
+            raise ValueError("unsafe indexed source path")
+        if separator:
+            with zipfile.ZipFile(corpus / archive_path) as archive:
+                data = archive.read(member)
+        else:
+            data = (corpus / archive_path).read_bytes()
+        relative = hashlib.sha256(work_id.encode()).hexdigest() + ".txt"
+        destination = sources / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
+        items.append({"id": work_id, "path": relative, "sha256": sha256(data)})
     write_json(output / "inventory.json", {"items": items})
 
 
@@ -180,22 +208,30 @@ def verify(inventory_path: Path, output: Path) -> list[dict[str, Any]]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--inventory", type=Path, required=True)
+    parser.add_argument("--inventory", type=Path)
     parser.add_argument("--source-root", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--verify", action="store_true")
     parser.add_argument("--materialize-vectors", type=Path)
+    parser.add_argument("--materialize-index", type=Path)
+    parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.materialize_vectors:
         materialize_vectors(args.materialize_vectors, args.output)
+    elif args.materialize_index:
+        if args.source_root is None:
+            parser.error("index materialization requires --source-root corpus")
+        materialize_index(args.materialize_index, args.source_root, args.output, args.limit)
     elif args.verify:
+        if args.inventory is None:
+            parser.error("verification requires --inventory")
         verify(args.inventory, args.output)
     else:
-        if args.source_root is None or not args.command:
-            parser.error("execution requires --source-root and command")
+        if args.inventory is None or args.source_root is None or not args.command:
+            parser.error("execution requires --inventory, --source-root, and command")
         execute(
             args.inventory, args.source_root, args.command, args.output, args.timeout, args.jobs
         )

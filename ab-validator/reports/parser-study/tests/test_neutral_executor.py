@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import json
+import zipfile
 from pathlib import Path
 
 
@@ -78,3 +79,17 @@ def test_materialize_vectors_is_sorted_complete_and_content_addressed(tmp_path: 
     inventory = executor.load_inventory(output / "inventory.json")
     assert [item["id"] for item in inventory] == ["a", "z"]
     assert (output / "sources" / inventory[0]["path"]).read_text() == "前"
+
+
+def test_materialize_index_extracts_zip_members_without_reordering(tmp_path: Path) -> None:
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    with zipfile.ZipFile(corpus / "works.zip", "w") as archive:
+        archive.writestr("a.txt", b"alpha")
+    index = tmp_path / "index.json"
+    index.write_text(json.dumps({"works": [{"id": "work-a", "txt_path": "works.zip::a.txt"}]}))
+    output = tmp_path / "materialized"
+    executor.materialize_index(index, corpus, output, 0)
+    inventory = executor.load_inventory(output / "inventory.json")
+    assert inventory[0]["id"] == "work-a"
+    assert (output / "sources" / inventory[0]["path"]).read_bytes() == b"alpha"

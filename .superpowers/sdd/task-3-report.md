@@ -129,3 +129,18 @@ A second RED showed the vector materializer API was absent. Four focused tests
 now cover success/resume, malformed manifests, cross-host paths, and sorted
 complete vector materialization. This commit contains executor code and tests
 only; it does not contain or claim parser measurements.
+
+The committed CLI argument handling was corrected so materialization does not
+spuriously require an execution inventory. A test-first canonical-index
+materializer now consumes `ab-index` order, safely reads plain files or exact
+ZIP members, hashes extracted bytes, and supports `--limit` only for explicit
+smoke runs (`0` means the entire inventory). RED was the missing API; GREEN is
+five focused tests plus ruff and strict mypy.
+
+Real smoke execution used the pinned notation derivation and the canonical
+17,886-work index (`corpus_hash`
+`sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8`).
+The first four frozen vectors and first four indexed corpus works each produced
+one hash-verified success outcome through the pinned `aozora2` adapted binary.
+These temporary smoke artifacts were verified outside the checkout and are not
+presented as full-study results.

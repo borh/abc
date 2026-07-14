@@ -84,3 +84,31 @@ per-work native/adapted executions, and the legacy pair lacks flake
 materialization. Completing it requires a frozen-protocol runner and a flake
 input for the historical adapter source, followed by the actual pinned-corpus
 run. The checked failures make that gap reviewable without overstating results.
+
+## Critical review correction
+
+The initial bundle incorrectly represented absence of an execution harness as
+candidate `run-failure` evidence. Those rows and their hand-authored identity
+files have been deleted. An unattempted parser process is not a parser result.
+
+The raw-manifest contract now requires `attempted: true`; this means the pinned
+candidate process was actually started (or its pinned build derivation was
+actually evaluated for build-failure evidence). A harness or precondition gap
+cannot deserialize as a run. Raw output coordinates also reject POSIX absolute,
+Windows drive-qualified, root-relative/backslash, UNC, empty-segment, dot, and
+traversal spellings before any host filesystem interpretation.
+
+RED was observed for both corrections: an attempted candidate failure was
+initially rejected because the field did not exist, while
+`C:\\tmp\\out.json` was initially accepted. The focused tests passed after the
+contract changes.
+
+No replacement run bundle is committed. The exact pinned source corpus is
+corpus-scale (historically 17,810 valid works), requiring roughly 178,000
+independent candidate/mode executions before registered performance
+repetitions. There is no checked neutral executor that can first prove exact
+inventory selection, per-item completeness/uniqueness, process-group timeout,
+and raw byte/hash verification. Producing results in this session would either
+skip required validation or exceed the available execution envelope. This is
+the explicit corpus-scale blocker; Task 3 remains incomplete rather than
+converting the blocker into candidate evidence.

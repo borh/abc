@@ -480,6 +480,7 @@ pub struct RawRunManifest {
     environment_hash: String,
     timeout_seconds: u64,
     protocol_hash: String,
+    attempted: bool,
     status: RawRunStatus,
     failure_stage: Option<String>,
     failure_detail: Option<String>,
@@ -499,6 +500,7 @@ struct UncheckedRawRunManifest {
     environment_hash: String,
     timeout_seconds: u64,
     protocol_hash: String,
+    attempted: bool,
     status: RawRunStatus,
     failure_stage: Option<String>,
     failure_detail: Option<String>,
@@ -522,6 +524,7 @@ impl<'de> Deserialize<'de> for RawRunManifest {
             environment_hash: raw.environment_hash,
             timeout_seconds: raw.timeout_seconds,
             protocol_hash: raw.protocol_hash,
+            attempted: raw.attempted,
             status: raw.status,
             failure_stage: raw.failure_stage,
             failure_detail: raw.failure_detail,
@@ -540,6 +543,7 @@ impl RawRunManifest {
         if self.study_id.is_empty()
             || self.parser_revision.is_empty()
             || self.timeout_seconds == 0
+            || !self.attempted
             || !valid_sha256(&self.corpus_hash)
             || !valid_sha256(&self.environment_hash)
             || !valid_sha256(&self.protocol_hash)
@@ -556,8 +560,7 @@ impl RawRunManifest {
         }
         if self.raw_outputs.iter().any(|output| {
             output.work_id.is_empty()
-                || output.path.starts_with('/')
-                || output.path.contains("..")
+                || !portable_relative_path(&output.path)
                 || !valid_sha256(&output.sha256)
         }) {
             return Err(ContractError::InvalidRunManifest);
@@ -595,6 +598,17 @@ impl RawRunManifest {
     pub const fn measurement_mode(&self) -> MeasurementMode {
         self.measurement_mode
     }
+}
+
+fn portable_relative_path(path: &str) -> bool {
+    let bytes = path.as_bytes();
+    !(path.is_empty()
+        || path.starts_with(['/', '\\'])
+        || (bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':')
+        || path
+            .replace('\\', "/")
+            .split('/')
+            .any(|segment| segment.is_empty() || matches!(segment, "." | "..")))
 }
 
 /// Report-contract validation failure.

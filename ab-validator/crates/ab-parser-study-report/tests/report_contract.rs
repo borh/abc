@@ -239,6 +239,7 @@ fn raw_run_manifest_requires_all_frozen_identity_hashes() {
         "corpus_hash": HASH,
         "timeout_seconds": 300,
         "protocol_hash": HASH,
+        "attempted": true,
         "status": "build-failure",
         "raw_outputs": []
     });
@@ -258,6 +259,7 @@ fn raw_run_manifest_retains_build_failure_without_outputs() {
         "environment_hash": HASH,
         "timeout_seconds": 300,
         "protocol_hash": HASH,
+        "attempted": true,
         "status": "build-failure",
         "failure_stage": "parser-build",
         "failure_detail": "pinned derivation did not build",
@@ -280,38 +282,11 @@ fn adapted_run_requires_adapter_revision_and_content_addressed_outputs() {
         "environment_hash": HASH,
         "timeout_seconds": 300,
         "protocol_hash": HASH,
+        "attempted": true,
         "status": "measured",
         "raw_outputs": [{"work_id":"1", "path":"raw/1.json", "sha256":HASH}]
     });
     assert!(serde_json::from_value::<RawRunManifest>(invalid).is_err());
-}
-
-#[test]
-fn checked_raw_run_bundle_validates_every_included_lane() {
-    let manifests: Vec<RawRunManifest> = serde_json::from_str(include_str!(
-        "../../../reports/parser-study/runs/aozora-parser-neutral-comparison-2026-07/run-manifests.json"
-    ))
-    .expect("checked raw manifests validate");
-    assert_eq!(manifests.len(), 10);
-    let actual: std::collections::BTreeSet<_> = manifests
-        .iter()
-        .map(|manifest| (manifest.candidate(), manifest.measurement_mode()))
-        .collect();
-    let expected: std::collections::BTreeSet<_> = [
-        Candidate::Aozora,
-        Candidate::Aozora2,
-        Candidate::AozoraRs,
-        Candidate::Aozora2html,
-        Candidate::AozoraEpub3,
-    ]
-    .into_iter()
-    .flat_map(|candidate| {
-        [MeasurementMode::Native, MeasurementMode::AdapterNormalized]
-            .into_iter()
-            .map(move |mode| (candidate, mode))
-    })
-    .collect();
-    assert_eq!(actual, expected);
 }
 
 #[test]
@@ -320,7 +295,50 @@ fn measured_run_requires_at_least_one_raw_work_output() {
         "schema_version": 1, "study_id": "study", "candidate": "aozora2",
         "measurement_mode": "native", "parser_revision": "rev", "adapter_revision": null,
         "corpus_hash": HASH, "environment_hash": HASH, "timeout_seconds": 300,
-        "protocol_hash": HASH, "status": "measured", "raw_outputs": []
+        "protocol_hash": HASH, "attempted": true, "status": "measured", "raw_outputs": []
     });
     assert!(serde_json::from_value::<RawRunManifest>(empty).is_err());
+}
+
+#[test]
+fn harness_gap_cannot_be_deserialized_as_candidate_run_failure() {
+    let unattempted = serde_json::json!({
+        "schema_version": 1, "study_id": "study", "candidate": "aozora2",
+        "measurement_mode": "native", "parser_revision": "rev", "adapter_revision": null,
+        "corpus_hash": HASH, "environment_hash": HASH, "timeout_seconds": 300,
+        "protocol_hash": HASH, "attempted": false, "status": "run-failure",
+        "failure_stage": "harness", "failure_detail": "runner unavailable", "raw_outputs": []
+    });
+    assert!(serde_json::from_value::<RawRunManifest>(unattempted).is_err());
+
+    let attempted = serde_json::json!({
+        "schema_version": 1, "study_id": "study", "candidate": "aozora2",
+        "measurement_mode": "native", "parser_revision": "rev", "adapter_revision": null,
+        "corpus_hash": HASH, "environment_hash": HASH, "timeout_seconds": 300,
+        "protocol_hash": HASH, "attempted": true, "status": "run-failure",
+        "failure_stage": "native-parser", "failure_detail": "process exited 1", "raw_outputs": []
+    });
+    serde_json::from_value::<RawRunManifest>(attempted)
+        .expect("an observed candidate-process failure remains valid evidence");
+}
+
+#[test]
+fn raw_output_paths_reject_cross_host_absolute_spellings() {
+    for path in [
+        r"C:\tmp\out.json",
+        r"\tmp\out.json",
+        r"\\server\share\out.json",
+    ] {
+        let invalid = serde_json::json!({
+            "schema_version": 1, "study_id": "study", "candidate": "aozora2",
+            "measurement_mode": "native", "parser_revision": "rev", "adapter_revision": null,
+            "corpus_hash": HASH, "environment_hash": HASH, "timeout_seconds": 300,
+            "protocol_hash": HASH, "attempted": true, "status": "measured",
+            "raw_outputs": [{"work_id": "work", "path": path, "sha256": HASH}]
+        });
+        assert!(
+            serde_json::from_value::<RawRunManifest>(invalid).is_err(),
+            "{path}"
+        );
+    }
 }

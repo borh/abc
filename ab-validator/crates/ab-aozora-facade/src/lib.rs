@@ -113,9 +113,10 @@ pub use splice::{CoupledKind, Coupling, Region, RegionRole, SpliceError, SpliceS
 
 pub use incremental::{DiagBaseRef, DiagSplice, PieceSeq, SanitizedSrc};
 
+/// Incrementally reparses diagnostics without rebuilding the full tree.
 ///
-/// Diagnostics-only incremental re-parse — the LSP's per-keystroke hot path
-///. Splices the maintained [`PieceSeq`] (the next edit's
+/// This is the LSP's per-keystroke hot path. It splices the maintained
+/// [`PieceSeq`] (the next edit's
 /// region-find base, from which the LSP flattens this edit's diagnostics) from
 /// the store-free [`DiagBaseRef`] of the prior parse, **without building an
 /// [`LexOutput`]** — no normalized/sanitized string rebuild, no store
@@ -147,9 +148,10 @@ pub fn reparse_incremental_diagnostics_only(
     incremental::reparse_incremental_diagnostics_only(&base, &new_sanitized, edit_old)
 }
 
+/// Runs the diagnostics-only incremental path over a generic byte source.
 ///
-/// Generic-source variant of [`reparse_incremental_diagnostics_only`]: the same
-/// diagnostics-only hot path, but over any [`SanitizedSrc`] byte source `S`
+/// This variant of [`reparse_incremental_diagnostics_only`] accepts any
+/// [`SanitizedSrc`] byte source `S`
 /// rather than the `&str`-backed [`DiagBaseRef`]. This is the entry the
 /// in-workspace LSP routes a `ropey`-backed sanitized buffer through, so it can
 /// splice the rope incrementally instead of flattening it to a `String` per

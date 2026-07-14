@@ -228,3 +228,20 @@ of execution identity, the divergence is expected and independently
 hash-matched rather than normalized away. The aozora2html repair audit records
 the recoverable overlap and final-manifest facts while explicitly marking the
 unpreserved rejected bytes and mismatched-ID list unavailable.
+
+## Exact frozen-binding closure
+
+The verifier no longer treats any frozen field in the checked summary as an
+input assertion. It consumes the preregistration bytes, both materialized
+inventory files, content-addressed inventory identities, exact external run
+roots, command/environment preimages, and executable materialization
+attestations. It independently derives study ID, protocol hash, timeout,
+candidate parser/adapter revisions, corpus/vector revisions, inventory hashes
+and counts, corpus hash, execution and external manifest hashes, and outcome
+counts before byte-comparing the complete regenerated summary.
+
+Materialization attestations bind each execution to candidate/mode, frozen
+source revisions, executable byte hash, and the Nix store derivation identity
+or content-addressed workspace build. Mutation-negative tests cover protocol,
+study ID, timeout, candidate revision, and inventory content/hash/count. The
+full 20-lane external verification remains the acceptance gate.

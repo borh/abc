@@ -4,10 +4,11 @@
   "title": "Custom parser quarterly maintenance evidence",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "protocol_version", "quarter", "period_start", "period_end", "recorded_at", "review_after", "expires_on", "focused_session", "categories", "trial_merge", "revisit_predicates"],
+  "required": ["schema_version", "protocol_version", "status", "quarter", "period_start", "period_end", "recorded_at", "review_after", "expires_on", "focused_session", "categories", "observations", "trial_merge", "revisit_predicates"],
   "properties": {
     "schema_version": {"const": "1.0.0"},
     "protocol_version": {"const": "1.0.0"},
+    "status": {"enum": ["initial", "observed", "quarter_closed"]},
     "quarter": {"type": "string", "pattern": "^[0-9]{4}-Q[1-4]$"},
     "period_start": {"$ref": "#/$defs/date"},
     "period_end": {"$ref": "#/$defs/date"},
@@ -34,6 +35,17 @@
         "planned_divergence": {"$ref": "#/$defs/category"},
         "remeasurement": {"$ref": "#/$defs/category"},
         "maintainer_availability": {"$ref": "#/$defs/category"}
+      }
+    },
+    "observations": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rolling_quarter_maintenance_minutes", "selective_port_samples_minutes", "selective_port_p90_minutes", "maximum_missed_fix_severity", "maintainer_available"],
+      "properties": {
+        "rolling_quarter_maintenance_minutes": {"type": "integer", "minimum": 0},
+        "selective_port_samples_minutes": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+        "selective_port_p90_minutes": {"type": "integer", "minimum": 0},
+        "maximum_missed_fix_severity": {"type": "integer", "minimum": 0, "maximum": 5},
+        "maintainer_available": {"type": "boolean"}
       }
     },
     "trial_merge": {
@@ -90,7 +102,7 @@
     },
     "benchmark": {
       "type": "object", "additionalProperties": false,
-      "required": ["evidence_kind", "metric", "scaled_integer", "unit", "command", "environment", "result_hash"],
+      "required": ["evidence_kind", "metric", "scaled_integer", "unit", "command", "environment", "result_hash", "raw_artifact_path", "raw_artifact_hash"],
       "properties": {
         "evidence_kind": {"const": "benchmark"},
         "metric": {"type": "string", "minLength": 1},
@@ -98,18 +110,34 @@
         "unit": {"enum": ["milliseconds", "count", "bytes"]},
         "command": {"type": "string", "minLength": 1},
         "environment": {"type": "string", "minLength": 1},
-        "result_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        "result_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "raw_artifact_path": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+        "raw_artifact_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
       }
     },
     "predicate": {
-      "type": "object", "additionalProperties": false,
-      "required": ["metric", "operator", "threshold", "action"],
-      "properties": {
-        "metric": {"enum": ["rolling_quarter_maintenance_minutes", "selective_port_p90_minutes", "maximum_missed_fix_severity", "maintainer_available"]},
-        "operator": {"enum": [">", ">=", "="]},
-        "threshold": {"type": ["integer", "boolean"]},
-        "action": {"type": "string", "minLength": 1}
-      }
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["metric", "operator", "threshold", "action"],
+          "properties": {
+            "metric": {"enum": ["rolling_quarter_maintenance_minutes", "selective_port_p90_minutes", "maximum_missed_fix_severity"]},
+            "operator": {"enum": [">", ">="]},
+            "threshold": {"type": "integer", "minimum": 0},
+            "action": {"type": "string", "minLength": 1}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["metric", "operator", "threshold", "action"],
+          "properties": {
+            "metric": {"const": "maintainer_available"},
+            "operator": {"const": "="},
+            "threshold": {"type": "boolean"},
+            "action": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
     }
   }
 }

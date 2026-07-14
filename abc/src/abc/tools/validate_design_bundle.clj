@@ -22,6 +22,7 @@
    [abc.tools.snapshot-index :as snapshot-index]
    [abc.tools.metadata-record :as metadata-record]
    [abc.tools.parser-evidence :as parser-evidence]
+   [abc.tools.parser-maintenance-evidence :as parser-maintenance]
    [abc.tools.parser-ir-sentence-policy :as sentence-policy]
    [abc.tools.person-drift :as person-drift]
    [abc.tools.person-record :as person-record]
@@ -319,6 +320,9 @@
     (throw (ex-info (string/join "\n" errors)
                     {:errors errors}))))
 
+(defn validate-maintenance-evidence! [record as-of]
+  (check-errors! (parser-maintenance/problems record as-of)))
+
 (def ^:private design-schema-inputs
   ["schemas/aat-parser-ir-divergence-bundle.schema.json"
    "schemas/aat-parser-ir-divergence.schema.json"
@@ -351,7 +355,8 @@
    "schemas/workflow-run.schema.json"])
 
 (def ^:private design-data-inputs
-  ["data/aat-parser-ir-compatibility.edn"
+  ["docs/adr/governance-as-of.edn"
+   "data/aat-parser-ir-compatibility.edn"
    "data/analysis-recipes/literary-basic-ja-v1.json"
    "data/analysis-recipes/token-basic-ja-v1.json"
    "data/pack-policies/no-pack-v1.json"
@@ -451,8 +456,13 @@
                            ["schemas/person-drift-event.schema.json" person-drift-event-schema]
                            ["schemas/person-drift-index.schema.json" person-drift-index-schema]]]
       (schema-valid! schema path))
-    (validate-json! custom-parser-maintenance-evidence-schema
-                    "docs/evidence/external/custom-parser-maintenance-2026-q3.json")
+    (let [maintenance-path
+          "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
+          maintenance-record (files/read-json maintenance-path)
+          governance-as-of (str (:as-of (files/read-edn
+                                         "docs/adr/governance-as-of.edn")))]
+      (validate-json! custom-parser-maintenance-evidence-schema maintenance-path)
+      (validate-maintenance-evidence! maintenance-record governance-as-of))
     (doseq [path (concat ["examples/v0/example-work/source.manifest.json"
                           "examples/v0/example-work/manifest.json"
                           "examples/v0/example-work/failure-manifest.example.json"]

@@ -10,6 +10,11 @@
     (requiring-resolve symbol)
     (catch Exception _ nil)))
 
+(defn- semantic-problems [record as-of]
+  (try
+    (maintenance/problems record as-of)
+    (catch clojure.lang.ArityException _ [:missing-as-of-validation])))
+
 (deftest maintenance-evidence-protocol-exists-test
   (testing "the maintenance protocol has a callable semantic validator"
     (is (some? (validator-var 'abc.tools.parser-maintenance-evidence/problems)))))
@@ -49,7 +54,8 @@
     (is (contains? inputs
                    "schemas/custom-parser-maintenance-evidence.schema.json"))
     (is (contains? inputs
-                   "docs/evidence/external/custom-parser-maintenance-2026-q3.json"))))
+                   "docs/evidence/external/custom-parser-maintenance-2026-q3.json"))
+    (is (contains? inputs "docs/adr/governance-as-of.edn"))))
 
 (deftest maintenance-validator-rejects-ambiguous-evidence-and-dates-test
   (let [record (files/read-json
@@ -61,6 +67,30 @@
               (assoc-in record ["trial_merge" "benchmarks"]
                         [{"evidence_kind" "expert-assessment"}]))))
     (is (seq (maintenance/problems (assoc record "expires_on" "2026-09-01"))))))
+
+(deftest maintenance-expiry-is-deterministic-from-explicit-as-of-test
+  (let [record (files/read-json
+                "docs/evidence/external/custom-parser-maintenance-2026-q3.json")]
+    (is (empty? (semantic-problems record "2026-10-01")))
+    (is (some #(clojure.string/includes? (str %) "review is due")
+              (semantic-problems record "2026-10-02")))
+    (is (some #(clojure.string/includes? (str %) "expired")
+              (semantic-problems record "2026-10-16")))
+    (is (seq (semantic-problems record "not-a-date")))))
+
+(deftest record-status-and-self-contained-observations-are-required-test
+  (let [record (files/read-json
+                "docs/evidence/external/custom-parser-maintenance-2026-q3.json")]
+    (is (= "initial" (get record "status")))
+    (is (= #{"rolling_quarter_maintenance_minutes"
+             "selective_port_samples_minutes"
+             "selective_port_p90_minutes"
+             "maximum_missed_fix_severity"
+             "maintainer_available"}
+           (set (keys (get record "observations")))))
+    (is (seq (semantic-problems (dissoc record "observations") "2026-07-14")))
+    (is (seq (semantic-problems (assoc record "status" "unknown")
+                                "2026-07-14")))))
 
 (deftest estimate-is-rederived-from-components-test
   (let [record (files/read-json
@@ -77,16 +107,48 @@
         (validator-var 'abc.tools.parser-maintenance-evidence/triggered-reviews)]
     (is (some? triggered-reviews))
     (when triggered-reviews
-      (is (= [] (triggered-reviews
-                 record
-                 {"rolling_quarter_maintenance_minutes" 1200
-                  "selective_port_p90_minutes" 200
-                  "maximum_missed_fix_severity" 1
-                  "maintainer_available" true})))
-      (is (= ["immediate ownership review"]
-             (triggered-reviews
-              record
-              {"rolling_quarter_maintenance_minutes" 1200
-               "selective_port_p90_minutes" 200
-               "maximum_missed_fix_severity" 1
-               "maintainer_available" false}))))))
+      (let [safe-result (try (triggered-reviews record)
+                             (catch clojure.lang.ArityException _
+                               :missing-self-contained-evaluation))
+            unavailable (assoc-in record ["observations" "maintainer_available"]
+                                  false)
+            unavailable-result (try (triggered-reviews unavailable)
+                                    (catch clojure.lang.ArityException _
+                                      :missing-self-contained-evaluation))]
+        (is (= [] safe-result))
+        (is (= ["immediate ownership review"] unavailable-result))))))
+
+(deftest predicate-types-and-benchmark-artifacts-are-closed-by-schema-test
+  (let [record (files/read-json
+                "docs/evidence/external/custom-parser-maintenance-2026-q3.json")
+        schema-value (files/read-json
+                      "schemas/custom-parser-maintenance-evidence.schema.json")
+        unsafe-predicate (assoc-in record ["revisit_predicates" 0 "threshold"]
+                                   false)
+        incomplete-benchmark
+        (assoc-in record ["trial_merge" "benchmarks"]
+                  [{"evidence_kind" "benchmark"
+                    "metric" "conflicted_paths"
+                    "scaled_integer" 0
+                    "unit" "count"
+                    "command" "git diff --name-only --diff-filter=U"
+                    "environment" "disposable worktree"
+                    "result_hash" (files/example-hash "a1")}])]
+    (is (seq (schema/validation-errors schema-value unsafe-predicate)))
+    (is (seq (schema/validation-errors schema-value incomplete-benchmark)))
+    (is (= []
+           (try
+             (maintenance/triggered-reviews unsafe-predicate)
+             (catch ClassCastException _ [:unsafe-operator-dispatch]))))))
+
+(deftest design-validation-runs-maintenance-semantics-test
+  (let [record (files/read-json
+                "docs/evidence/external/custom-parser-maintenance-2026-q3.json")
+        validate-maintenance
+        (validator-var 'abc.tools.validate-design-bundle/validate-maintenance-evidence!)]
+    (is (some? validate-maintenance))
+    (when validate-maintenance
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo
+           #"expired"
+           (validate-maintenance record "2026-10-16"))))))

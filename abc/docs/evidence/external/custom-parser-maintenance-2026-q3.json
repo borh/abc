@@ -1,6 +1,7 @@
 {
   "schema_version": "1.0.0",
   "protocol_version": "1.0.0",
+  "status": "initial",
   "quarter": "2026-Q3",
   "period_start": "2026-07-01",
   "period_end": "2026-09-30",
@@ -20,6 +21,13 @@
     "planned_divergence": {"minutes": 0, "notes": []},
     "remeasurement": {"minutes": 0, "notes": []},
     "maintainer_availability": {"minutes": 0, "notes": ["Initial protocol record; availability must be reassessed at quarter close."]}
+  },
+  "observations": {
+    "rolling_quarter_maintenance_minutes": 0,
+    "selective_port_samples_minutes": [],
+    "selective_port_p90_minutes": 0,
+    "maximum_missed_fix_severity": 0,
+    "maintainer_available": true
   },
   "trial_merge": {
     "procedure": {

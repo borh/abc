@@ -13,14 +13,14 @@
     "docs\/evidence\/adr-capture\/source-bundle-corpus.edn": "sha256:f7187d33e3c5918f7d847747da38795156847332842512a0bfc34f6ad8b6d9e7",
     "docs\/evidence\/adr-inputs\/source-bundle-corpus.edn": "sha256:5be1c874608982bab43d53b5efc1526f685403ee731efa4edc8d82a2dbc92e06",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:bcfbb19ebe3e22648be630593bf3f06b9c49cf12a5ff83ac3bf3321377c70595",
+    "flake.nix": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
-    "src\/abc\/tools\/files.clj": "sha256:5c2300ebcdbf8ba87b5f2836ffb1e4ca5f2828eb2bb180d8348e3b070a9af58f",
+    "src\/abc\/tools\/files.clj": "sha256:d75906597b819f97c8434e9f27e84601da3ca9492f4439bad4b8bd5e1141f241",
     "src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
     "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
-    "src\/abc\/tools\/source_bundle.clj": "sha256:11387cb49f39bbc72006fa6cfd3296eafe9b84b7f8ec313d30d2201dc24de926",
+    "src\/abc\/tools\/source_bundle.clj": "sha256:d66a3de355cea737833faebe8ffc8ddddc2b2bc53775c5769befe003352f263a",
     "src\/abc\/tools\/source_bundle_report.clj": "sha256:4ee08fd0bf904bdff94f5e67e36721b14133353dd89188990b232182b6bb8392",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
   },
@@ -42,7 +42,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix build --no-link .#checks.x86_64-linux.source-bundle-corpus\"",
-    "revision": "d9f82cf96b4aa480b67a6f0daa084f0c0064dfdf",
+    "revision": "53d471ddf7149da238f6f93879739162739799f8",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

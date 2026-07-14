@@ -12,19 +12,19 @@
     "docs\/evidence\/adr-inputs\/workflow-graph-fixtures.edn": "sha256:f24e0a458d94832a1ed9d36093bb1e310d694d5727ca9aa878296d26c81d8d23",
     "examples\/workflow\/passed.workflow-run.json": "sha256:c73d776b5041db6e88bd5c63d695ea363d233f633a0134e3fe313782cd2c950c",
     "schemas\/workflow-run.schema.json": "sha256:48f50bf3778cbdc74b4583fbc21f61f9c67771d7cafaebfc869573f301cbc296",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:0a41103e0138763b50fb8281426fdf33af776db0da8e16189a3a015930a4dbab",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:c96b994aa63fe2513e3ca2a15d61bf3e0900820ab171e25c5759c501c26810ec",
     "src\/abc\/tools\/diagram\/mermaid.clj": "sha256:4a1684f23b52b53141edc0597f3ce3eb1e7a033a6986a98749c15cfe9848688b",
     "src\/abc\/tools\/diagram\/workflow_graph.clj": "sha256:b4f4fbfdd1e648798ab8c5a41c9f2d6019f551426c44b5c1851c250c51820aab",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
-    "src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "src\/abc\/tools\/files.clj": "sha256:d75906597b819f97c8434e9f27e84601da3ca9492f4439bad4b8bd5e1141f241",
     "src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
     "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
     "src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
-    "src\/abc\/tools\/manifest.clj": "sha256:f3a1fdc6cb04ba86c67ed59ab6987971a0e022bf5c4a182b12d5e3c25ea98b6d",
+    "src\/abc\/tools\/manifest.clj": "sha256:ffeaad0f5073f8b8085562c854d76ea893fbc78669246e3601aa187e8a7006b6",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
     "src\/abc\/tools\/schema.clj": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871",
-    "src\/abc\/tools\/workflow.clj": "sha256:07b492821f5c7f670a50512ef0ed28beac7c0bea64020890699c19e616d95c83",
+    "src\/abc\/tools\/workflow.clj": "sha256:98a8c699503ee9b4f37af6eb8540273c54a71ec647131aa4b17279f79ecab09c",
     "test\/abc\/tools\/diagram\/workflow_graph_evidence_test.clj": "sha256:d4518c5579068cef2d0f6b88fe11f9eab8887ae6856c4a5f3afd321e558728f1"
   },
   "observations":
@@ -41,7 +41,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.workflow-graph-evidence-test\/workflow-graph-fixtures-contract\"",
-    "revision": "7593e8d859a93cf46d7bf2850952aaed3ab53dce",
+    "revision": "53d471ddf7149da238f6f93879739162739799f8",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

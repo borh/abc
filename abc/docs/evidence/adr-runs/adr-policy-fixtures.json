@@ -41,9 +41,9 @@
     "docs\/evidence\/adr-capture\/adr-policy-fixtures.edn": "sha256:3338bf9530370d88e76637033a283511e209c14cc89f959ad68e450cb7c53f71",
     "docs\/evidence\/adr-inputs\/adr-policy-fixtures.edn": "sha256:48413793b0b2c29080eba31f01b8f49ea9c35a2c16e3f654d34998f5cdf4d268",
     "src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:0a41103e0138763b50fb8281426fdf33af776db0da8e16189a3a015930a4dbab",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:c96b994aa63fe2513e3ca2a15d61bf3e0900820ab171e25c5759c501c26810ec",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
-    "src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "src\/abc\/tools\/files.clj": "sha256:d75906597b819f97c8434e9f27e84601da3ca9492f4439bad4b8bd5e1141f241",
     "src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
     "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
@@ -64,7 +64,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.adr-policy-evidence-test\/adr-policy-fixtures-contract\"",
-    "revision": "7593e8d859a93cf46d7bf2850952aaed3ab53dce",
+    "revision": "53d471ddf7149da238f6f93879739162739799f8",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

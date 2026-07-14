@@ -45,14 +45,14 @@
     "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
     "schemas\/schema-contracts.json": "sha256:dcf1691be1941c5fd5fa8537f585c9f1739d41b4febd68278f9649946224783d",
     "src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:0a41103e0138763b50fb8281426fdf33af776db0da8e16189a3a015930a4dbab",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:c96b994aa63fe2513e3ca2a15d61bf3e0900820ab171e25c5759c501c26810ec",
     "src\/abc\/tools\/diagram\/adr_graph.clj": "sha256:b444bd7f0cc8bcdc9f42721f51799c9536829e2ab4895e9ae8ed6c7e15134c4b",
     "src\/abc\/tools\/diagram\/architecture_graph.clj": "sha256:e4838a28075504fcaac60f225f2c2c5ff72736bc194b0bd1016b08ed8985cdaa",
     "src\/abc\/tools\/diagram\/core.clj": "sha256:96aa1ef33196954804e778f969df6d0b611920927e96954344bfcc47dea6f49a",
     "src\/abc\/tools\/diagram\/mermaid.clj": "sha256:4a1684f23b52b53141edc0597f3ce3eb1e7a033a6986a98749c15cfe9848688b",
     "src\/abc\/tools\/diagram\/registry.clj": "sha256:53e6e703646f04ee507d59d9f737a1948034beb16772bcf39d947158e1427e48",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
-    "src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "src\/abc\/tools\/files.clj": "sha256:d75906597b819f97c8434e9f27e84601da3ca9492f4439bad4b8bd5e1141f241",
     "src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
     "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
@@ -73,7 +73,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.diagram-registry-evidence-test\/diagram-registry-contract\"",
-    "revision": "7593e8d859a93cf46d7bf2850952aaed3ab53dce",
+    "revision": "53d471ddf7149da238f6f93879739162739799f8",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -13,7 +13,7 @@
     "docs\/evidence\/adr-inputs\/tei-figure-warning.edn": "sha256:ca18cafe65e9bc543e4257b108756b6602f716cdf9c2fd0b0fcd659722da5242",
     "fixtures\/tei\/warnings\/figure-missing-desc.xml": "sha256:a9817a4971db4a2200a3e21a3c0f921bec03f14168fa5036acd488db99c8a532",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:914c69bb961067f50d26f9be7969de9867680d4a6eaf11838544c21574a0fe01",
+    "flake.nix": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/tei-profile.sch": "sha256:608dcce45ba2acd490706691c4e38f885615176744f0db10a5a46aa96fa4da8a",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
@@ -41,7 +41,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-figure-warning\\\"\"",
-    "revision": "93a693027f24a35caaabdd3faa7a0411f1ebf187",
+    "revision": "53d471ddf7149da238f6f93879739162739799f8",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

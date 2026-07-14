@@ -12,20 +12,20 @@
     "abc\/docs\/evidence\/adr-capture\/adr-0001-c4-failure-coordinates.edn": "sha256:1dc7962511970e87c1cbd6abe4938402134cc2a2c1afd23e00755879a92591ae",
     "abc\/docs\/evidence\/adr-inputs\/adr-0001-c4-failure-coordinates.edn": "sha256:4b0182caf3238c0d385dd184a3664ed30e33378d250c55de98ed08a327f83d5b",
     "abc\/examples\/v0\/example-work\/failure-manifest.example.json": "sha256:abf26af7e029e288f46fd33c4d137ded6f918cbd62bb5a064eb2bcd33b5226b9",
-    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:4660b57889dc3b88ad1e697ca665733387b00b8c4b42ff01f4463bdd7dc56a20",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:c96b994aa63fe2513e3ca2a15d61bf3e0900820ab171e25c5759c501c26810ec",
     "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
     "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
-    "abc\/src\/abc\/tools\/files.clj": "sha256:5c2300ebcdbf8ba87b5f2836ffb1e4ca5f2828eb2bb180d8348e3b070a9af58f",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:d75906597b819f97c8434e9f27e84601da3ca9492f4439bad4b8bd5e1141f241",
     "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
     "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
-    "abc\/src\/abc\/tools\/logging.clj": "sha256:eaea004a96bc6cb18d02442df561b00847a8b84f6a0df901eaf446485ebfa019",
+    "abc\/src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
     "abc\/src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
-    "abc\/src\/abc\/tools\/manifest.clj": "sha256:f3a1fdc6cb04ba86c67ed59ab6987971a0e022bf5c4a182b12d5e3c25ea98b6d",
-    "abc\/src\/abc\/tools\/materialize_import.clj": "sha256:c026265cb1f7482deaf9d0b7ee10be3c2fdcf5a48f563a62e416c7177cc374b9",
+    "abc\/src\/abc\/tools\/manifest.clj": "sha256:ffeaad0f5073f8b8085562c854d76ea893fbc78669246e3601aa187e8a7006b6",
+    "abc\/src\/abc\/tools\/materialize_import.clj": "sha256:ba2daa956fbfdcf36b408cfbc588bc0a1d15c843c3c33953f43bf4025c45ac1b",
     "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
     "abc\/src\/abc\/tools\/schema.clj": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871",
-    "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:9eee9eee2b0e831c6e8a881e45f56b5c310f14ceef2ff3fbec11583ef93d5c95",
+    "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
     "abc\/test\/abc\/tools\/foundation_evidence_test.clj": "sha256:8adfbb216f667461c671b4fbb7bbe388b86a0aedb8f585149947ffa309c4dfa6"
   },
   "observations":
@@ -42,7 +42,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.foundation-evidence-test\/failure-manifest-identity-coordinates-test\"",
-    "revision": "d9f82cf96b4aa480b67a6f0daa084f0c0064dfdf",
+    "revision": "53d471ddf7149da238f6f93879739162739799f8",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

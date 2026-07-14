@@ -37,15 +37,15 @@
     "schemas\/workflow-run.schema.json": "sha256:48f50bf3778cbdc74b4583fbc21f61f9c67771d7cafaebfc869573f301cbc296",
     "src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
-    "src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "src\/abc\/tools\/files.clj": "sha256:d75906597b819f97c8434e9f27e84601da3ca9492f4439bad4b8bd5e1141f241",
     "src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
     "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
     "src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
     "src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
-    "src\/abc\/tools\/manifest.clj": "sha256:f3a1fdc6cb04ba86c67ed59ab6987971a0e022bf5c4a182b12d5e3c25ea98b6d",
+    "src\/abc\/tools\/manifest.clj": "sha256:ffeaad0f5073f8b8085562c854d76ea893fbc78669246e3601aa187e8a7006b6",
     "src\/abc\/tools\/manifest_to_rdf.clj": "sha256:bb38316e7aa5e6c0e0aeb6491b39807cb1c40ac3aef1b27a24cc6514799c63e9",
-    "src\/abc\/tools\/materialize_publication.clj": "sha256:f52335095b41fc2fd3c03678b2fccd40eb5775d5e91bf63cdb1b1855e035d3b0",
+    "src\/abc\/tools\/materialize_publication.clj": "sha256:8a891e91f2ab5e4e9f22e14ff95248e4aeaf526182888ff384505ccdaa53bf9a",
     "src\/abc\/tools\/metadata_record.clj": "sha256:b87fd5dbe5831983dc618849593fc08bba2d4bd6a2dbf447b88738253015f36f",
     "src\/abc\/tools\/parallel.clj": "sha256:51b1105b04a52d45a6fb3811e4b3c53b1b44162fd81f5d68ab412039b31a243c",
     "src\/abc\/tools\/parser_ir_plaintext.clj": "sha256:d21da8a17ef2e1d132ba7e05ce6c0d17bd4154d4c7c4bf9b9f72114e087f7d87",
@@ -83,7 +83,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.parser-publication-evidence\\\"\"",
-    "revision": "6166a9619a78579b5a9a892c9582cde248492635",
+    "revision": "53d471ddf7149da238f6f93879739162739799f8",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

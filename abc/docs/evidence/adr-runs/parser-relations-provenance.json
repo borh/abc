@@ -50,9 +50,9 @@
     "abc\/docs\/evidence\/adr-capture\/parser-relations-provenance.edn": "sha256:15a7640cb33913c4e6a7659c5c63871e6a3802e59509cc862e7dbe5301f5d2ad",
     "abc\/docs\/evidence\/adr-inputs\/parser-relations-provenance.edn": "sha256:294ac03cbbdf9f3bc459501b1e464d1c6c8fff5bac50a0fcd868bf47ef828dc0",
     "abc\/src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
-    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:fbb178a0f8e1b813697059b145e0abcc0dfd8d13bc1988fe6c0b627a9d79a009",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:c96b994aa63fe2513e3ca2a15d61bf3e0900820ab171e25c5759c501c26810ec",
     "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
-    "abc\/src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:d75906597b819f97c8434e9f27e84601da3ca9492f4439bad4b8bd5e1141f241",
     "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
     "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
     "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
@@ -73,7 +73,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-relations-provenance-evidence-test\/parser-relations-provenance-contract\"",
-    "revision": "6166a9619a78579b5a9a892c9582cde248492635",
+    "revision": "53d471ddf7149da238f6f93879739162739799f8",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -13,7 +13,7 @@
     "docs\/evidence\/adr-inputs\/tei-upstream-rng.edn": "sha256:9e46424b42e2c1913cd36f3c4a800e2bc89d7cec29b0a5a6208e25e1723f5243",
     "examples\/v0\/example-work\/tei.xml": "sha256:ee79db76b58f715400fe87ccd408c2724b1c85ccde8af15c059b05f98317f5c5",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:914c69bb961067f50d26f9be7969de9867680d4a6eaf11838544c21574a0fe01",
+    "flake.nix": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
@@ -40,7 +40,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-upstream-rng\\\"\"",
-    "revision": "93a693027f24a35caaabdd3faa7a0411f1ebf187",
+    "revision": "53d471ddf7149da238f6f93879739162739799f8",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

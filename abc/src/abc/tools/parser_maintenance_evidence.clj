@@ -23,9 +23,6 @@
 (defn- nonnegative-integer? [value]
   (and (integer? value) (not (neg? value))))
 
-(defn- positive-integer? [value]
-  (and (integer? value) (pos? value)))
-
 (defn- percentile-90 [samples]
   (if (seq samples)
     (nth (vec (sort samples))
@@ -72,7 +69,7 @@
          ["maximum missed-fix severity must be an integer from 0 through 5"])
        (when-not (boolean? (get observations "maintainer_available"))
          ["maintainer_available must be boolean"])
-       (when-not (positive-integer? (get-in record ["focused_session" "duration_minutes"]))
+       (when-not (pos-int? (get-in record ["focused_session" "duration_minutes"]))
          ["focused_session.duration_minutes must be a positive integer"])
        (when-not (and (calendar-date? review-after) (calendar-date? expires-on))
          ["review_after and expires_on must be calendar dates"])

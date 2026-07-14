@@ -2,7 +2,7 @@
 
 Copy the machine-readable record from `docs/evidence/external/custom-parser-maintenance-2026-q3.json`, update every identity and observation, and validate it against `schemas/custom-parser-maintenance-evidence.schema.json` plus `abc.tools.parser-maintenance-evidence/problems`. Never carry an unreviewed zero into a new quarter.
 
-Declare the quarter, measurement period, recording date, `review_after`, and `expires_on`. Set status to `initial`, `observed`, or `quarter_closed`; an initial record is protocol scaffolding rather than a completed zero observation. A record is decision evidence only through its expiry date, and validation uses the explicit governance `as-of` date rather than wall-clock time. Declare the fixed focused-session duration; the protocol baseline is 120 minutes, while partial sessions use exact elapsed minutes.
+Declare the quarter, measurement period, recording date, `review_after`, and `expires_on`. Set status to `initial`, `observed`, or `quarter_closed`; an initial record is protocol scaffolding rather than a completed zero observation. A record is decision evidence only through its expiry date, and validation uses the explicit maintenance governance epoch in `custom-parser-maintenance-as-of.edn` rather than wall-clock time. The epoch cannot predate `recorded_at`. Declare the fixed focused-session duration; the protocol baseline is 120 minutes, while partial sessions use exact elapsed minutes.
 
 ## Quarterly categories
 

@@ -1,4 +1,7 @@
-(ns abc.tools.parser-maintenance-evidence)
+(ns abc.tools.parser-maintenance-evidence
+  (:require [abc.tools.hash :as hash]
+            [abc.tools.path-containment :as path-containment]
+            [clojure.string :as string]))
 
 (def required-categories
   #{"upstream_review" "selective_ports" "security_review" "missed_fixes"
@@ -32,6 +35,7 @@
   ([record as-of]
    (let [categories (get record "categories")
          observations (get record "observations")
+         recorded-at (get record "recorded_at")
          review-after (get record "review_after")
          expires-on (get record "expires_on")
          estimate (get-in record ["trial_merge" "estimate"])
@@ -74,6 +78,9 @@
          ["review_after must be on or before expires_on"])
        (when-not (calendar-date? as-of)
          ["as-of must be an explicit calendar date"])
+       (when (and (calendar-date? recorded-at) (calendar-date? as-of)
+                  (pos? (compare recorded-at as-of)))
+         [(str "recorded_at " recorded-at " is after as-of " as-of)])
        (when (and (calendar-date? as-of) (calendar-date? expires-on)
                   (pos? (compare as-of expires-on)))
          [(str "maintenance evidence expired on " expires-on)])
@@ -94,6 +101,27 @@
          ["trial merge procedure must declare disposable steps"])
        (when-not (seq (get record "revisit_predicates"))
          ["decision review predicates cannot be empty"]))))))
+
+(def benchmark-artifact-root
+  "docs/evidence/external/maintenance-benchmarks/")
+
+(defn benchmark-artifact-problems [repo-root record]
+  (->> (get-in record ["trial_merge" "benchmarks"])
+       (mapcat
+        (fn [benchmark]
+          (let [path (get benchmark "raw_artifact_path")
+                expected (get benchmark "raw_artifact_hash")]
+            (if-not (and (string? path)
+                         (string/starts-with? path benchmark-artifact-root))
+              [(str "benchmark raw artifact is outside allowed root: " path)]
+              (let [{:keys [state path]} (path-containment/path-state repo-root path)]
+                (case state
+                  :ok (let [observed (str "sha256:" (hash/sha256-file path))]
+                        (when-not (= expected observed)
+                          [(str "benchmark raw artifact hash mismatch: " expected
+                                " != " observed)]))
+                  [(str "benchmark raw artifact path is " (name state))]))))))
+       vec))
 
 (defn- predicate-triggered? [observed {operator "operator" threshold "threshold"}]
   (case operator

@@ -1,8 +1,11 @@
 (ns abc.tools.parser-maintenance-evidence-test
   (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.parser-maintenance-evidence :as maintenance]
             [abc.tools.schema :as schema]
             [abc.tools.validate-design-bundle :as validate]
+            [abc.test-fs :refer [with-temp-dir]]
+            [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]]))
 
 (defn- validator-var [symbol]
@@ -55,7 +58,8 @@
                    "schemas/custom-parser-maintenance-evidence.schema.json"))
     (is (contains? inputs
                    "docs/evidence/external/custom-parser-maintenance-2026-q3.json"))
-    (is (contains? inputs "docs/adr/governance-as-of.edn"))))
+    (is (contains? inputs
+                   "docs/evidence/external/custom-parser-maintenance-as-of.edn"))))
 
 (deftest maintenance-validator-rejects-ambiguous-evidence-and-dates-test
   (let [record (files/read-json
@@ -77,6 +81,13 @@
     (is (some #(clojure.string/includes? (str %) "expired")
               (semantic-problems record "2026-10-16")))
     (is (seq (semantic-problems record "not-a-date")))))
+
+(deftest maintenance-record-cannot-postdate-governance-test
+  (let [record (files/read-json
+                "docs/evidence/external/custom-parser-maintenance-2026-q3.json")]
+    (is (some #(clojure.string/includes? (str %) "recorded_at")
+              (semantic-problems record "2026-07-12")))
+    (is (empty? (semantic-problems record "2026-07-14")))))
 
 (deftest record-status-and-self-contained-observations-are-required-test
   (let [record (files/read-json
@@ -152,3 +163,46 @@
            clojure.lang.ExceptionInfo
            #"expired"
            (validate-maintenance record "2026-10-16"))))))
+
+(deftest benchmark-raw-artifacts-are-contained-and-content-addressed-test
+  (with-temp-dir [root]
+    (let [allowed (fs/path root "docs/evidence/external/maintenance-benchmarks")
+          artifact (fs/path allowed "trial-merge.txt")
+          _ (fs/create-dirs allowed)
+          _ (spit (fs/file artifact) "raw trial merge output\n")
+          benchmark {"evidence_kind" "benchmark"
+                     "metric" "conflicted_paths"
+                     "scaled_integer" 0
+                     "unit" "count"
+                     "command" "git diff --name-only --diff-filter=U"
+                     "environment" "disposable worktree"
+                     "result_hash" (files/example-hash "a1")
+                     "raw_artifact_path"
+                     "docs/evidence/external/maintenance-benchmarks/trial-merge.txt"
+                     "raw_artifact_hash"
+                     (str "sha256:" (hash/sha256-file (fs/file artifact)))}
+          record (assoc-in
+                  (files/read-json
+                   "docs/evidence/external/custom-parser-maintenance-2026-q3.json")
+                  ["trial_merge" "benchmarks"] [benchmark])
+          artifact-problems
+          (validator-var
+           'abc.tools.parser-maintenance-evidence/benchmark-artifact-problems)]
+      (is (some? artifact-problems))
+      (when artifact-problems
+        (is (empty? (artifact-problems root record)))
+        (is (seq (artifact-problems
+                  root
+                  (assoc-in record
+                            ["trial_merge" "benchmarks" 0 "raw_artifact_path"]
+                            "docs/evidence/external/maintenance-benchmarks/missing.txt"))))
+        (is (seq (artifact-problems
+                  root
+                  (assoc-in record
+                            ["trial_merge" "benchmarks" 0 "raw_artifact_hash"]
+                            (files/example-hash "ff")))))
+        (is (seq (artifact-problems
+                  root
+                  (assoc-in record
+                            ["trial_merge" "benchmarks" 0 "raw_artifact_path"]
+                            "../trial-merge.txt"))))))))

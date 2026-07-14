@@ -320,8 +320,13 @@
     (throw (ex-info (string/join "\n" errors)
                     {:errors errors}))))
 
-(defn validate-maintenance-evidence! [record as-of]
-  (check-errors! (parser-maintenance/problems record as-of)))
+(defn validate-maintenance-evidence!
+  ([record as-of]
+   (validate-maintenance-evidence! "." record as-of))
+  ([repo-root record as-of]
+   (check-errors! (concat (parser-maintenance/problems record as-of)
+                          (parser-maintenance/benchmark-artifact-problems
+                           repo-root record)))))
 
 (def ^:private design-schema-inputs
   ["schemas/aat-parser-ir-divergence-bundle.schema.json"
@@ -355,7 +360,7 @@
    "schemas/workflow-run.schema.json"])
 
 (def ^:private design-data-inputs
-  ["docs/adr/governance-as-of.edn"
+  ["docs/evidence/external/custom-parser-maintenance-as-of.edn"
    "data/aat-parser-ir-compatibility.edn"
    "data/analysis-recipes/literary-basic-ja-v1.json"
    "data/analysis-recipes/token-basic-ja-v1.json"
@@ -459,10 +464,12 @@
     (let [maintenance-path
           "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
           maintenance-record (files/read-json maintenance-path)
-          governance-as-of (str (:as-of (files/read-edn
-                                         "docs/adr/governance-as-of.edn")))]
+          governance-as-of
+          (str (:as-of
+                (files/read-edn
+                 "docs/evidence/external/custom-parser-maintenance-as-of.edn")))]
       (validate-json! custom-parser-maintenance-evidence-schema maintenance-path)
-      (validate-maintenance-evidence! maintenance-record governance-as-of))
+      (validate-maintenance-evidence! "." maintenance-record governance-as-of))
     (doseq [path (concat ["examples/v0/example-work/source.manifest.json"
                           "examples/v0/example-work/manifest.json"
                           "examples/v0/example-work/failure-manifest.example.json"]

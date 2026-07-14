@@ -8,7 +8,7 @@
   "inputs":
   {
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
-    "deps.edn": "sha256:894f7e821d81919acd281975373f9352435946e26c087bac4c085e4174fc17b7",
+    "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
     "docs\/evidence\/adr-capture\/aozora-history-audit-cli.edn": "sha256:caad1ef7ca886797df3ef339461f2877792f7f09b239a5a953b2b8279f137c4a",
     "docs\/evidence\/adr-inputs\/aozora-history-audit-cli.edn": "sha256:1a0b3418a7c294671a671f3c633dce5fe262a7160432b6a7e091fbdedb748501",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
@@ -64,7 +64,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-aozora-history-audit-cli\\\"\"",
-    "revision": "53d471ddf7149da238f6f93879739162739799f8",
+    "revision": "7351957d87f7e25ee250cf619e9c5d653a01f8c3",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

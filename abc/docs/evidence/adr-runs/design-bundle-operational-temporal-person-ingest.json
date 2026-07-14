@@ -20,7 +20,7 @@
     "data\/request-sets\/full-corpus-publication-basic-ja.json": "sha256:ae1d196c173a8059e4082ce923fd677d4b9cc6f8632ff33066344ca8e435984b",
     "data\/request-sets\/smoke-basic-ja.json": "sha256:69c3b088565d2cd03b1cb869168c9bbfcb0d6e5af957d0b899577a989a0f8503",
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
-    "deps.edn": "sha256:894f7e821d81919acd281975373f9352435946e26c087bac4c085e4174fc17b7",
+    "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
     "docs\/evidence\/adr-capture\/design-bundle-operational-temporal-person-ingest.edn": "sha256:8411220964dbc70b45f89b25dc93ddfa21985cbff04b64ae1ac6790f02b52f14",
     "docs\/evidence\/adr-inputs\/design-bundle-operational-temporal-person-ingest.edn": "sha256:5e3b496de20b62029e80347f78d74d37f38cea9d5599415c8ee70aa8b2d1dd60",
     "examples\/ab-validator-output\/comparison-report.json": "sha256:b39ffecaa8c727cbbfe79ab2e28b29dfe147ea856a63ec44e4a592ac9eaaab4b",
@@ -148,7 +148,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix run .#validate-design-bundle\"",
-    "revision": "53d471ddf7149da238f6f93879739162739799f8",
+    "revision": "7351957d87f7e25ee250cf619e9c5d653a01f8c3",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

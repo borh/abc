@@ -8,7 +8,7 @@
   "inputs":
   {
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
-    "deps.edn": "sha256:894f7e821d81919acd281975373f9352435946e26c087bac4c085e4174fc17b7",
+    "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
     "docs\/evidence\/adr-capture\/tei-project-valid-fixtures.edn": "sha256:7b90c45649b755b2ac8a64b0c8fa9d1181a1eb1e98135cf1fb0c8de004737a0d",
     "docs\/evidence\/adr-inputs\/tei-project-valid-fixtures.edn": "sha256:2fd698595107d2b6ba9a85c378662dd28a28aea51fc033758ef30343543e9d9f",
     "examples\/v0\/example-work\/tei.xml": "sha256:ee79db76b58f715400fe87ccd408c2724b1c85ccde8af15c059b05f98317f5c5",
@@ -86,7 +86,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-project-valid-fixtures\\\"\"",
-    "revision": "53d471ddf7149da238f6f93879739162739799f8",
+    "revision": "7351957d87f7e25ee250cf619e9c5d653a01f8c3",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

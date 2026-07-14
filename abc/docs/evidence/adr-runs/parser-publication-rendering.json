@@ -10,7 +10,7 @@
     "data\/parser-ir-publication-policy-v0.json": "sha256:7f0e47cb5a8217103ccee416bb2ef839f2e41cbbdc9ed40e404925474f23be85",
     "data\/publication-policy.edn": "sha256:fa8267b3e9f88065e20a25f6e29588509e3c3d583f4ac34f8a225e81a1c5885c",
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
-    "deps.edn": "sha256:894f7e821d81919acd281975373f9352435946e26c087bac4c085e4174fc17b7",
+    "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
     "docs\/evidence\/adr-capture\/parser-publication-rendering.edn": "sha256:48596b62309e09cfcd4860b0fdac5c56731d0497bf5827cd318cc8141a53e1d5",
     "docs\/evidence\/adr-inputs\/parser-publication-rendering.edn": "sha256:b59ec8b101aaa00b6cb5e0edbf00de378a6a0286c7c7732908c6286f0c96d1bf",
     "examples\/v0\/example-persons\/000879.json": "sha256:d49931fa2e960922d15c8449b7477e130d0c5565f6485fdee9a2edd76cde374a",
@@ -83,7 +83,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.parser-publication-evidence\\\"\"",
-    "revision": "53d471ddf7149da238f6f93879739162739799f8",
+    "revision": "7351957d87f7e25ee250cf619e9c5d653a01f8c3",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -20,7 +20,8 @@
   (runtime-inputs/with-validated-read-trace!
     {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
      :descriptor {:path "abc/docs/evidence/adr-capture/parser-ir-schema-regression.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/parser-ir-schema-regression.edn")}}
+                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-ir-schema-regression.edn")
+                                 :runtime-input-manifest #(str "abc/" %))}}
     (fn []
       (doseq [path ["examples/ab-validator-output/manifest-inputs.json" "examples/v0/example-work/manifest.json"
                     "examples/v0/example-work/metadata-record.json" "examples/v0/example-work/parser-ir.json"

@@ -21,7 +21,8 @@
   (runtime-inputs/with-validated-read-trace!
     {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
      :descriptor {:path "abc/docs/evidence/adr-capture/parser-citation-identity.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/parser-citation-identity.edn")}}
+                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-citation-identity.edn")
+                                 :runtime-input-manifest #(str "abc/" %))}}
     (fn []
       (doseq [path ["data/parser-evidence-citations.edn"
                     "../ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md"

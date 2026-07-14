@@ -68,7 +68,8 @@
   (runtime-inputs/with-validated-read-trace!
     {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
      :descriptor {:path "abc/docs/evidence/adr-capture/parser-relations-provenance.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/parser-relations-provenance.edn")}}
+                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-relations-provenance.edn")
+                                 :runtime-input-manifest #(str "abc/" %))}}
     parser-relations-provenance-operation))
 
 (deftest parser-family-reciprocal-amendments-test

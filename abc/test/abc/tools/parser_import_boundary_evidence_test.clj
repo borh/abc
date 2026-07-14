@@ -19,7 +19,8 @@
   (runtime-inputs/with-validated-read-trace!
     {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
      :descriptor {:path "abc/docs/evidence/adr-capture/parser-import-boundary.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/parser-import-boundary.edn")}}
+                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-import-boundary.edn")
+                                 :runtime-input-manifest #(str "abc/" %))}}
     (fn []
       (doseq [path ["data/aat-parser-ir-compatibility.edn"
                     "examples/ab-validator-output/README.md"

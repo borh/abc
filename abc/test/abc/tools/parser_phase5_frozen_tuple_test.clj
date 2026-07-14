@@ -39,7 +39,8 @@
   (runtime-inputs/with-validated-read-trace!
     {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
      :descriptor {:path "abc/docs/evidence/adr-capture/parser-phase5-frozen-tuple.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/parser-phase5-frozen-tuple.edn")}}
+                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-phase5-frozen-tuple.edn")
+                                 :runtime-input-manifest #(str "abc/" %))}}
     (fn []
       (doseq [path evidence-files]
         (files/read-text (fs/file ".." path)))

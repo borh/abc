@@ -64,7 +64,8 @@
   (runtime-inputs/with-validated-read-trace!
     {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
      :descriptor {:path "abc/docs/evidence/adr-capture/parser-ownership-assessment.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/parser-ownership-assessment.edn")}}
+                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-ownership-assessment.edn")
+                                 :runtime-input-manifest #(str "abc/" %))}}
     custom-parser-ownership-assessment-operation))
 
 (deftest custom-parser-ownership-assessment-contract-test

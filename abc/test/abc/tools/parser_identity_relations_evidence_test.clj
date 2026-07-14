@@ -13,7 +13,8 @@
   (runtime-inputs/with-validated-read-trace!
     {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
      :descriptor {:path "abc/docs/evidence/adr-capture/parser-identity-relations.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/parser-identity-relations.edn")}}
+                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-identity-relations.edn")
+                                 :runtime-input-manifest #(str "abc/" %))}}
     (fn []
       (doseq [path ["docs/adr/0033-source-bundle-identity.md" "examples/ab-validator-output/manifest-inputs.json"
                     "examples/ab-validator-output/parser-ir.json" "fixtures/source-bundle/abc-source-bundle-v1-known-answer.json"

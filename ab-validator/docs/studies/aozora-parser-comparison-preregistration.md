@@ -55,6 +55,21 @@ unqualified aggregate score or overall winner is prohibited. Any weighting
 must name its downstream use case and publish the registered sensitivity
 analysis.
 
+Malformed-input robustness uses every case in
+`fixtures/parser-comparison-robustness-v1.json`; diagnostic scoring uses every
+prelabelled case, severity, and UTF-8 byte span in
+`fixtures/parser-comparison-diagnostics-v1.json`. Their hashes and exact
+per-parser/per-mode inclusion rules are frozen in the machine contract.
+
+Performance uses `fixtures/performance-largest-six-v1.json`, selected by
+descending uncompressed size with ascending work-ID tie breaking. Each
+executable existing parser runs in the registered candidate and work order with
+one warm-up and five measured repetitions, single-process concurrency, the
+registered x86_64-linux root-flake environment, networking disabled, and a
+300-second limit. Timeouts are right-censored at 300 seconds and also counted
+as timeout failures; they are never discarded from denominators or latency
+summaries.
+
 ## Integrated baseline observation
 
 Commit `ac2be926738f919faf44300e2999b3548d724297` is an ancestor of the

@@ -24,6 +24,10 @@
     {"id": "official-notation-vectors", "revision": "b60665fd50b596c967254f99b61f418495656fef", "selection": "Every schema-valid vector present at the pin; no post-result filtering.", "unit": "vector", "denominator": "All selected vectors for construct-level rates, including failure, timeout, unsupported, and silent-drop outcomes."},
     {"id": "aozorabunko-source-snapshot", "revision": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165", "selection": "Every valid primary text member emitted by the pinned extractor; invalid archive/member selection is reported separately and never removed after parser results are seen.", "unit": "work", "denominator": "All selected works for work rates; all source bytes or authoritative construct occurrences across those same works for frequency-weighted rates."}
   ],
+  "fixture_manifests": {
+    "robustness": {"path": "docs/studies/fixtures/parser-comparison-robustness-v1.json", "sha256": "sha256:b23aa44c7920287edd619b0f5bdbc53db59313194dcd7d3047da4acdf19892a4", "inclusion": "All four manifest cases, in manifest order, exactly once per executable included parser and measurement mode; no result-dependent additions, removals, or relabelling."},
+    "diagnostics": {"path": "docs/studies/fixtures/parser-comparison-diagnostics-v1.json", "sha256": "sha256:392f1e4787c09d314208d1cac0ab6a3b6f629c59dcf2622d861105856a72c0e0", "inclusion": "All four prelabelled cases, labels, severities, and UTF-8 byte spans, in manifest order, exactly once per executable included parser and measurement mode."}
+  },
   "measurement_modes": ["native", "adapter_normalized"],
   "outcome_rules": {
     "failure": "Non-zero exit, signal, crash, invalid native artifact, or invalid adapted artifact. Count in every applicable denominator and publish the stage.",
@@ -44,6 +48,18 @@
     {"id": "packaging", "outputs": ["reproducible build result", "locked dependencies", "runtime/toolchain requirements", "artifact size"], "denominator": "Every inventoried candidate, including build failures."},
     {"id": "license", "outputs": ["declared project and bundled dependency licenses", "redistribution constraints", "unknown/conflict flags"], "denominator": "Every inventoried candidate; absence or ambiguity is missing/flagged, not a failing quality score."}
   ],
+  "performance_protocol": {
+    "workset_id": "performance-largest-six-v1",
+    "workset_sha256": "sha256:fa67e8b2816be8a2f9bd68ef408c02990041dc7e6e668bc1fb23bc0bc5bc568d",
+    "warmup_repetitions": 1,
+    "measured_repetitions": 5,
+    "candidate_order": ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3"],
+    "work_order": "manifest_order",
+    "concurrency": 1,
+    "environment": "x86_64-linux; root flake devShell; RUSTC_WRAPPER=; SCCACHE_DISABLE=1; LC_ALL=C.UTF-8; TZ=UTC; network disabled",
+    "timeout_seconds": 300,
+    "timeout_treatment": "right_censored_at_300_seconds_and_counted_as_timeout_failure"
+  },
   "analysis": {
     "unqualified_aggregate_score": "prohibited",
     "reporting_order": "Publish candidate rows in the inventory order and axes in the registered order; separate observations, interpretations, limitations, native results, and adapter-normalized results.",

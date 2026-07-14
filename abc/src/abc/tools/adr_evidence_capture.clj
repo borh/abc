@@ -325,7 +325,9 @@
                                            :workspace-root workspace-root
                                            :descriptor runtime-descriptor}
                          _ (runtime-inputs/validate-runtime-input-manifest! manifest-options)
-                         analysis-root repo-root]
+                         analysis-root (if component?
+                                         (fs/file repo-root component-root)
+                                         repo-root)]
                      (when (= :kaocha (:kind contract))
                        (runtime-inputs/validate-focused-deftests!
                         analysis-root (:vars contract)))

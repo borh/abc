@@ -1,0 +1,68 @@
+{
+  "candidate": {
+    "ab-aozora": {
+      "adapter_revision": null,
+      "derivation_identity": "/nix/store/p5wzii1dv99dngz3jlrrh6147i2j9cqa-ab-aozora-0.1.0",
+      "measured_git_rev": "ac2be926738f919faf44300e2999b3548d724297",
+      "parser_revision": "ac2be926738f919faf44300e2999b3548d724297",
+      "program_sha256": "sha256:42a7095d5488827f579ce1e9fc73925047222842be6ea03c1d2bd4db7bbaa980",
+      "version_banner": "ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git ac2be926738f919faf44300e2999b3548d724297)"
+    }
+  },
+  "execution_contracts": {
+    "sha256:b97400ab08ca37a5613df9a90b796c28eb42a023adb0d4b4072ba51f18dad706": {
+      "candidate": "ab-aozora",
+      "derivation_identity": "/nix/store/p5wzii1dv99dngz3jlrrh6147i2j9cqa-ab-aozora-0.1.0",
+      "measured_git_rev": "ac2be926738f919faf44300e2999b3548d724297",
+      "mode": "native",
+      "program_sha256": "sha256:42a7095d5488827f579ce1e9fc73925047222842be6ea03c1d2bd4db7bbaa980",
+      "required_argv": [
+        "--mode",
+        "aat"
+      ],
+      "required_program_basename": "ab-aozora"
+    }
+  },
+  "inventories": {
+    "aozorabunko-source-snapshot": {
+      "corpus_sha256": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "inventory_sha256": "sha256:5573de6f174b66cd1e7e30e62ebb7003984c79657fc5f81394ee5116e0d2a07c",
+      "items": 17886,
+      "revision": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
+    },
+    "official-notation-vectors": {
+      "inventory_sha256": "sha256:cdfb40a49f5d52dd8274efb71aa6f512f9305f034e502b6d9c44c98c4779c787",
+      "items": 127,
+      "revision": "b60665fd50b596c967254f99b61f418495656fef"
+    }
+  },
+  "protocol_sha256": "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe",
+  "role": "custom_baseline_shared_instrument_appendix",
+  "runs": [
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/appendix/vectors/ab-aozora-native",
+      "candidate": "ab-aozora",
+      "execution_sha256": "sha256:b97400ab08ca37a5613df9a90b796c28eb42a023adb0d4b4072ba51f18dad706",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:db265b0e58a79cac7c5b6746b042b3b55b18f6f7e9cddc148c1af796f9d690d6",
+      "mode": "native",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/appendix/corpus/ab-aozora-native",
+      "candidate": "ab-aozora",
+      "execution_sha256": "sha256:b97400ab08ca37a5613df9a90b796c28eb42a023adb0d4b4072ba51f18dad706",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:42d96af3fe6072b2aebc8eaf84ef613d2c7bbabdf5e370540b0d9d126457a95f",
+      "mode": "native",
+      "outcomes": {
+        "success": 17886
+      }
+    }
+  ],
+  "schema_version": 1,
+  "study_id": "aozora-parser-neutral-comparison-2026-07",
+  "timeout_seconds": 300
+}

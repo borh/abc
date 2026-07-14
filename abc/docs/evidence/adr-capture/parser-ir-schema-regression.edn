@@ -1,6 +1,6 @@
 {:schema-version "abc-adr-evidence-capture-v3" :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus" "abc.tools.parser-ir-schema-evidence-test/parser-ir-schema-regression-contract"]
- :runtime-input-manifest "abc/docs/evidence/adr-inputs/parser-ir-schema-regression.edn"
+ :runtime-input-manifest "docs/evidence/adr-inputs/parser-ir-schema-regression.edn"
  :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
  :observation-id :parser-ir-schema-regression :observation-contract-sha256 "sha256:bf773e521cf948b08cf4c86094532362cb352725cd981a35e473854721979bde"
  :input-profile {:kind "component-clojure-test-v1" :component-root "abc" :roots ["abc.tools.parser-ir-schema-evidence-test"]

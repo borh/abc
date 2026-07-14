@@ -1,6 +1,6 @@
 {:schema-version "abc-adr-evidence-capture-v3" :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus" "abc.tools.parser-import-boundary-evidence-test/parser-import-boundary-contract"]
- :runtime-input-manifest "abc/docs/evidence/adr-inputs/parser-import-boundary.edn"
+ :runtime-input-manifest "docs/evidence/adr-inputs/parser-import-boundary.edn"
  :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
  :observation-id :parser-import-boundary
  :observation-contract-sha256 "sha256:dbb0a1f64f619d7345058fb1995521411cb4e338624d300aa363d89f2760d705"

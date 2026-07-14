@@ -713,7 +713,10 @@
           (is (map? (operational/validate-operational-manifest! context)) stem))
         (is (map? (runtime/validate-runtime-input-manifest!
                    {:repo-root "." :workspace-root ".."
-                    :descriptor {:path (str "abc/" path) :value value}})) stem)))))
+                    :descriptor {:path (str "abc/" path)
+                                 :value (update value
+                                                :runtime-input-manifest
+                                                #(str "abc/" %))}})) stem)))))
 
 (deftest v2-capture-lints-the-focused-var-and-binds-its-closed-inputs-test
   (let [repo (git-repo)

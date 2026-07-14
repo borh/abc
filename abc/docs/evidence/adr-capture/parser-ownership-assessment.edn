@@ -1,6 +1,6 @@
 {:schema-version "abc-adr-evidence-capture-v3" :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus" "abc.tools.parser-ownership-assessment-evidence-test/custom-parser-ownership-assessment-contract"]
- :runtime-input-manifest "abc/docs/evidence/adr-inputs/parser-ownership-assessment.edn"
+ :runtime-input-manifest "docs/evidence/adr-inputs/parser-ownership-assessment.edn"
  :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
  :observation-id :custom-parser-ownership-assessment :observation-contract-sha256 "sha256:70b67a6bc77f9f2bb886750d6458d7fc103d6dd84614b493986c9494bf0081e3"
  :input-profile {:kind "component-clojure-test-v1" :component-root "abc" :roots ["abc.tools.parser-ownership-assessment-evidence-test"]

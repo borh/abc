@@ -1,7 +1,7 @@
 {:schema-version "abc-adr-evidence-capture-v3"
  :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus" "abc.tools.parser-evidence-test/historical-parser-citations-contract"]
- :runtime-input-manifest "abc/docs/evidence/adr-inputs/parser-citation-identity.edn"
+ :runtime-input-manifest "docs/evidence/adr-inputs/parser-citation-identity.edn"
  :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
  :observation-id :historical-parser-citations
  :observation-contract-sha256 "sha256:25a4b51afe71aa78babae06df3b3995d00d2a6a0eef076ebcb6220e5d7d9be63"

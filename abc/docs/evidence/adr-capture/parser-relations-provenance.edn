@@ -1,6 +1,6 @@
 {:schema-version "abc-adr-evidence-capture-v3" :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus" "abc.tools.parser-relations-provenance-evidence-test/parser-relations-provenance-contract"]
- :runtime-input-manifest "abc/docs/evidence/adr-inputs/parser-relations-provenance.edn"
+ :runtime-input-manifest "docs/evidence/adr-inputs/parser-relations-provenance.edn"
  :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
  :observation-id :parser-relations-provenance :observation-contract-sha256 "sha256:c7142855a0ebac44281bcf6cf0a9198f8773fbfb6cb7704868c57a1346b565f6"
  :input-profile {:kind "component-clojure-test-v1" :component-root "abc" :roots ["abc.tools.parser-relations-provenance-evidence-test"]

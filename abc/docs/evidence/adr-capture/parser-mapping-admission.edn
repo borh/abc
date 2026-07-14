@@ -1,6 +1,6 @@
 {:schema-version "abc-adr-evidence-capture-v3" :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus" "abc.tools.parser-mapping-admission-evidence-test/parser-mapping-admission-contract"]
- :runtime-input-manifest "abc/docs/evidence/adr-inputs/parser-mapping-admission.edn"
+ :runtime-input-manifest "docs/evidence/adr-inputs/parser-mapping-admission.edn"
  :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
  :observation-id :parser-mapping-admission :observation-contract-sha256 "sha256:43be4188722aacdb6640a024985d088ce371bc3c6e7372c9e78c587fa91e7ad4"
  :input-profile {:kind "component-clojure-test-v1" :component-root "abc" :roots ["abc.tools.parser-mapping-admission-evidence-test"]

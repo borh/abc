@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "candidate": "aozora2html",
+  "cause": "overlapping executors with the same execution identity rewrote durable outcome bytes after the first manifest was assembled",
+  "overlap_identity": {
+    "native": "sha256:e3e41492e21618debc920accfcb500cb4ad61b96fc224627d08b794ed578fea9",
+    "adapter_normalized": "sha256:6c2a491ae97e8092104dad0a05fe396dd41bb090da2c9d52c43744e516165551"
+  },
+  "rejected_evidence": {
+    "manifest_bytes": {"status": "unavailable", "reason": "superseded_manifest_was_not_preserved_before_isolated_resume"},
+    "mismatched_item_ids": {"status": "unavailable", "reason": "verifier_failed_at_first_hash_mismatch_and_superseded_outcomes_were_not_preserved"}
+  },
+  "repair_command": ["neutral_executor.py", "--inventory", "${INVENTORY}", "--source-root", "${SOURCE_ROOT}", "--output", "${ARTIFACT_ROOT}", "--timeout", "300", "--jobs", "8", "${EXACT_ORIGINAL_COMMAND_VECTOR}"],
+  "repair_isolation": "one executor per artifact root after every overlapping executor and child process exited",
+  "final_manifests": {
+    "native": "sha256:959014b9b017b30b33131d8ada71680a2ed8594487c524ff99f3c89686e5a962",
+    "adapter_normalized": "sha256:32b04be40090971c5075e5c61de8ff10888f78e37f95486c72d6b212e9bd25b9"
+  },
+  "final_verification": "complete_ordered_manifest_and_all_outcome_stdout_stderr_hashes_verified"
+}

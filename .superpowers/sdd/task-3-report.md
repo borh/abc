@@ -203,3 +203,28 @@ accepted. After all overlapping executors exited, one isolated resume pass per
 lane rewrote only mismatches; both complete manifests then passed independent
 verification. This demonstrates that the executor failed closed on corrupted
 run identity rather than silently accepting the row counts.
+
+## Final evidence-verifier closure
+
+The compact summary is now canonical generated data with a checked verifier.
+An explicit untracked resolver maps logical artifact roots to local evidence
+and supplies each exact command/environment preimage. Verification recomputes
+execution identities, proves candidate/mode command bindings, runs the full
+per-item artifact verifier, checks exact counts and manifest hashes, and
+requires byte-identical checked-summary regeneration.
+
+The preregistered immediately-before-run host fields were not captured for the
+original lanes. They are classified as unavailable, making performance host
+comparability unavailable without weakening behavioral artifact integrity.
+No post-hoc host state was substituted. The exact original `aozora-rs` native
+command preimage was also unrecoverable, so that one fast vector/corpus lane
+was rerun into separate replacement roots after capturing all required host
+fields. The superseded roots remain preserved.
+
+Different vector/corpus execution hashes for adapted `aozora2` and
+`aozora-rs` reflect different Nix store paths from separate builds of the same
+pinned source revisions. Because concrete command paths are intentionally part
+of execution identity, the divergence is expected and independently
+hash-matched rather than normalized away. The aozora2html repair audit records
+the recoverable overlap and final-manifest facts while explicitly marking the
+unpreserved rejected bytes and mismatched-ID list unavailable.

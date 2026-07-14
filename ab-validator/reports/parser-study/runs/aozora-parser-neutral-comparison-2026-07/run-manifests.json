@@ -1,39 +1,397 @@
 {
+  "candidates": {
+    "aozora": {
+      "adapter_revision": "75057f147404ea0077b10c58f009510487c929de",
+      "parser_revision": "1a4f864603970983719655aa4af4525958ac2d38"
+    },
+    "aozora-epub3": {
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo="
+    },
+    "aozora-rs": {
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c"
+    },
+    "aozora2": {
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879"
+    },
+    "aozora2html": {
+      "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943",
+      "parser_revision": "rubygems:aozora2html:3.0.1"
+    }
+  },
+  "execution_contracts": {
+    "sha256:0bc44493e71dc24bc4bc1bdb4e9817933f1ad5dbe168e913084ca47fca3a867e": {
+      "candidate": "aozora-rs",
+      "mode": "adapter_normalized",
+      "required_argv": [
+        "--mode",
+        "aat"
+      ],
+      "required_program_basename": "aozora-rs-adapter"
+    },
+    "sha256:193a523c57ae88b96ad17a2e2441a98279ac5c7305d8b86c5b5d14e5636acf8f": {
+      "candidate": "aozora-rs",
+      "mode": "adapter_normalized",
+      "required_argv": [
+        "--mode",
+        "aat"
+      ],
+      "required_program_basename": "aozora-rs-adapter"
+    },
+    "sha256:266154266c00105d87de8edde8672ca180ca7698ed3c774fc1c3f99a7b85d887": {
+      "candidate": "aozora",
+      "mode": "native",
+      "required_argv": [
+        "inspect",
+        "nodes",
+        "-"
+      ],
+      "required_program_basename": "aozora"
+    },
+    "sha256:2bf31df25242c709e5e0940c81ced8b808cdbd4eafbe699c10bd27e8cb2d5f3d": {
+      "candidate": "aozora-epub3",
+      "mode": "adapter_normalized",
+      "required_argv": [
+        "--mode",
+        "aat"
+      ],
+      "required_program_basename": "aozora-epub3-adapter"
+    },
+    "sha256:44a3e2bd9fe661768577b2b7f855cdfdf3879798a7f94e726efd97bb5b595a28": {
+      "candidate": "aozora2",
+      "mode": "native",
+      "required_argv": [
+        "html",
+        "--encoding",
+        "utf-8"
+      ],
+      "required_program_basename": "aozora2"
+    },
+    "sha256:461d0e28df438acd66ef3ebe7fe24a9ba037bc7ccdbbaaae8ffcf39c6efdc59b": {
+      "candidate": "aozora2",
+      "mode": "adapter_normalized",
+      "required_argv": [
+        "--mode",
+        "aat"
+      ],
+      "required_program_basename": "aozora2-adapter"
+    },
+    "sha256:6c2a491ae97e8092104dad0a05fe396dd41bb090da2c9d52c43744e516165551": {
+      "candidate": "aozora2html",
+      "mode": "adapter_normalized",
+      "required_argv": [
+        "--mode",
+        "aat"
+      ],
+      "required_program_basename": "aozora2html-adapter"
+    },
+    "sha256:9024a6265c6fdb52b6df58fa6ffcc057a30b46b81207e364cd0f34cd76e62c82": {
+      "candidate": "aozora",
+      "mode": "adapter_normalized",
+      "required_argv": [
+        "--mode",
+        "aat"
+      ],
+      "required_program_basename": "aozora-adapter"
+    },
+    "sha256:9658373229a15407efc0a7dc8ea0d11e16d5becb4b1ab18668778fbf763ba2d0": {
+      "candidate": "aozora-epub3",
+      "mode": "native",
+      "required_argv": [
+        "--mode",
+        "html"
+      ],
+      "required_program_basename": "aozora-epub3-adapter"
+    },
+    "sha256:e3e41492e21618debc920accfcb500cb4ad61b96fc224627d08b794ed578fea9": {
+      "candidate": "aozora2html",
+      "mode": "native",
+      "required_argv": [
+        "--mode",
+        "html"
+      ],
+      "required_program_basename": "aozora2html-adapter"
+    },
+    "sha256:f3cb5f541b1e1c73780627bf50b9659231537761130c2e4a17b3c1f2c4b621ee": {
+      "candidate": "aozora-rs",
+      "mode": "native",
+      "required_argv": [],
+      "required_program_basename": "aozora-rs-native"
+    },
+    "sha256:ffb20b25a671fd847c40b3a08957a47390fc2bfec97d039395d5fd59360b6757": {
+      "candidate": "aozora2",
+      "mode": "adapter_normalized",
+      "required_argv": [
+        "--mode",
+        "aat"
+      ],
+      "required_program_basename": "aozora2-adapter"
+    }
+  },
+  "host_capture": {
+    "by_execution": {
+      "sha256:f3cb5f541b1e1c73780627bf50b9659231537761130c2e4a17b3c1f2c4b621ee": {
+        "cpu_governor": "performance",
+        "cpu_model": "AMD Ryzen 9 7950X3D 16-Core Processor",
+        "isolated_cpu_set": "",
+        "kernel_release": "7.1.2",
+        "load_1m": "7.81",
+        "logical_cpu_count": 32,
+        "ram_bytes": 100817031168,
+        "status": "captured_immediately_before_run"
+      }
+    },
+    "default": {
+      "applies_to": "all_other_runs",
+      "performance_host_comparability": "unavailable",
+      "reason": "not_captured_immediately_before_run",
+      "status": "unavailable"
+    }
+  },
+  "inventories": {
+    "aozorabunko-source-snapshot": {
+      "corpus_sha256": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8",
+      "inventory_sha256": "sha256:5573de6f174b66cd1e7e30e62ebb7003984c79657fc5f81394ee5116e0d2a07c",
+      "items": 17886,
+      "revision": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
+    },
+    "official-notation-vectors": {
+      "inventory_sha256": "sha256:cdfb40a49f5d52dd8274efb71aa6f512f9305f034e502b6d9c44c98c4779c787",
+      "items": 127,
+      "revision": "b60665fd50b596c967254f99b61f418495656fef"
+    }
+  },
+  "protocol_sha256": "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe",
+  "runs": [
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-native",
+      "candidate": "aozora",
+      "execution_sha256": "sha256:266154266c00105d87de8edde8672ca180ca7698ed3c774fc1c3f99a7b85d887",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:d9cb85064d0f44254a4f5995183060d2049daa54dc32a34db0266f8222d495c0",
+      "mode": "native",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-adapted",
+      "candidate": "aozora",
+      "execution_sha256": "sha256:9024a6265c6fdb52b6df58fa6ffcc057a30b46b81207e364cd0f34cd76e62c82",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:87af35740538162e9e1cdf5132fe37709bcf65165a24d0675bb8f833fc03e941",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora2-native",
+      "candidate": "aozora2",
+      "execution_sha256": "sha256:44a3e2bd9fe661768577b2b7f855cdfdf3879798a7f94e726efd97bb5b595a28",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:a6f4226763ef2fe0ebc300cfb73a245f0ee1a66719f8b26765f600017f8976c2",
+      "mode": "native",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora2-adapted",
+      "candidate": "aozora2",
+      "execution_sha256": "sha256:461d0e28df438acd66ef3ebe7fe24a9ba037bc7ccdbbaaae8ffcf39c6efdc59b",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:d83eaf2b9267b84bb9d2ddb683fef007f28ee6e588ddfa9bbaf770e0d207cfe5",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/replacement/vectors/aozora-rs-native",
+      "candidate": "aozora-rs",
+      "execution_sha256": "sha256:f3cb5f541b1e1c73780627bf50b9659231537761130c2e4a17b3c1f2c4b621ee",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:5e54f3a0564a0b491b4d891e88f4ae9221eb8d60bfd234a63ff750108cb4041b",
+      "mode": "native",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-rs-adapted",
+      "candidate": "aozora-rs",
+      "execution_sha256": "sha256:193a523c57ae88b96ad17a2e2441a98279ac5c7305d8b86c5b5d14e5636acf8f",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:ce90bad5e0f99be529a40875639d614e401f59abcc6ca8718a51f87438a9c98b",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora2html-native",
+      "candidate": "aozora2html",
+      "execution_sha256": "sha256:e3e41492e21618debc920accfcb500cb4ad61b96fc224627d08b794ed578fea9",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:2a982b2712434d2d05b118af361ec3df7f8fbcf1ca5e4f41f27ebeed61de3dc8",
+      "mode": "native",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora2html-adapted",
+      "candidate": "aozora2html",
+      "execution_sha256": "sha256:6c2a491ae97e8092104dad0a05fe396dd41bb090da2c9d52c43744e516165551",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:cae24e4bd88d36a0307def862688526742e8e8b9535939f0830cb72954ecf076",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-epub3-native",
+      "candidate": "aozora-epub3",
+      "execution_sha256": "sha256:9658373229a15407efc0a7dc8ea0d11e16d5becb4b1ab18668778fbf763ba2d0",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:a1698c8def24dfe345574e8e5730de5e9e93f64f0cc569d3238fb83ba8efe1c6",
+      "mode": "native",
+      "outcomes": {
+        "success": 127
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-epub3-adapted",
+      "candidate": "aozora-epub3",
+      "execution_sha256": "sha256:2bf31df25242c709e5e0940c81ced8b808cdbd4eafbe699c10bd27e8cb2d5f3d",
+      "inventory": "official-notation-vectors",
+      "manifest_sha256": "sha256:bf1eb119fd19efbc5d9c448cb9181c5956c513d039423f54cb261823b76734e7",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "failure": 4,
+        "success": 123
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-native",
+      "candidate": "aozora",
+      "execution_sha256": "sha256:266154266c00105d87de8edde8672ca180ca7698ed3c774fc1c3f99a7b85d887",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:7d2dcd86b4e5844cd1985af60896c2f2c166725588b5c5b2205c58a1575fc43a",
+      "mode": "native",
+      "outcomes": {
+        "failure": 1,
+        "success": 17885
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-adapted",
+      "candidate": "aozora",
+      "execution_sha256": "sha256:9024a6265c6fdb52b6df58fa6ffcc057a30b46b81207e364cd0f34cd76e62c82",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:57fc971690c3b21d896571c165590cb1563240a5af6920c37b5fe320b308b5fb",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "success": 17886
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora2-native",
+      "candidate": "aozora2",
+      "execution_sha256": "sha256:44a3e2bd9fe661768577b2b7f855cdfdf3879798a7f94e726efd97bb5b595a28",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:fd5b0bf2834451391e93839ff541b81604c76a365ea8593e0372b2e00131e890",
+      "mode": "native",
+      "outcomes": {
+        "success": 17886
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora2-adapted",
+      "candidate": "aozora2",
+      "execution_sha256": "sha256:ffb20b25a671fd847c40b3a08957a47390fc2bfec97d039395d5fd59360b6757",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:8ba78bb6674032f1a07c2245da17d1e2260a47657eeaa8a3859b08a5a89700af",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "success": 17874,
+        "timeout": 12
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/replacement/corpus/aozora-rs-native",
+      "candidate": "aozora-rs",
+      "execution_sha256": "sha256:f3cb5f541b1e1c73780627bf50b9659231537761130c2e4a17b3c1f2c4b621ee",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:034065401f66c2fb481723b4e5ee23cba60edb57bd40aa2f503c5adcc1bd7700",
+      "mode": "native",
+      "outcomes": {
+        "success": 17886
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-rs-adapted",
+      "candidate": "aozora-rs",
+      "execution_sha256": "sha256:0bc44493e71dc24bc4bc1bdb4e9817933f1ad5dbe168e913084ca47fca3a867e",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:af78ccedf4a73e95c15dd835764e3a9a60525311696f198e032b9137e737af21",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "success": 17886
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora2html-native",
+      "candidate": "aozora2html",
+      "execution_sha256": "sha256:e3e41492e21618debc920accfcb500cb4ad61b96fc224627d08b794ed578fea9",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:959014b9b017b30b33131d8ada71680a2ed8594487c524ff99f3c89686e5a962",
+      "mode": "native",
+      "outcomes": {
+        "success": 17886
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora2html-adapted",
+      "candidate": "aozora2html",
+      "execution_sha256": "sha256:6c2a491ae97e8092104dad0a05fe396dd41bb090da2c9d52c43744e516165551",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:32b04be40090971c5075e5c61de8ff10888f78e37f95486c72d6b212e9bd25b9",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "success": 17886
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-epub3-native",
+      "candidate": "aozora-epub3",
+      "execution_sha256": "sha256:9658373229a15407efc0a7dc8ea0d11e16d5becb4b1ab18668778fbf763ba2d0",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:11b6d7af63a59dffdc4e42351f376c5bd67e17536bb8a97375f6baedeff0e144",
+      "mode": "native",
+      "outcomes": {
+        "failure": 50,
+        "success": 17836
+      }
+    },
+    {
+      "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-epub3-adapted",
+      "candidate": "aozora-epub3",
+      "execution_sha256": "sha256:2bf31df25242c709e5e0940c81ced8b808cdbd4eafbe699c10bd27e8cb2d5f3d",
+      "inventory": "aozorabunko-source-snapshot",
+      "manifest_sha256": "sha256:51ef56e40a312112118e0ef35817440430b1fc16de0b32eef7191e9b3588d339",
+      "mode": "adapter_normalized",
+      "outcomes": {
+        "failure": 113,
+        "success": 17773
+      }
+    }
+  ],
   "schema_version": 1,
   "study_id": "aozora-parser-neutral-comparison-2026-07",
-  "protocol_sha256": "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe",
-  "timeout_seconds": 300,
-  "inventories": {
-    "aozorabunko-source-snapshot": {"revision": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165", "corpus_sha256": "sha256:398f092d8aef466ae1b24706545347aafe8533f287c1a9757defde518ba86fb8", "inventory_sha256": "sha256:5573de6f174b66cd1e7e30e62ebb7003984c79657fc5f81394ee5116e0d2a07c", "items": 17886},
-    "official-notation-vectors": {"revision": "b60665fd50b596c967254f99b61f418495656fef", "inventory_sha256": "sha256:cdfb40a49f5d52dd8274efb71aa6f512f9305f034e502b6d9c44c98c4779c787", "items": 127}
-  },
-  "candidates": {
-    "aozora": {"parser_revision": "1a4f864603970983719655aa4af4525958ac2d38", "adapter_revision": "75057f147404ea0077b10c58f009510487c929de"},
-    "aozora2": {"parser_revision": "93420b53c7d52579a0ca3fde466cef8ce6d89879", "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943"},
-    "aozora-rs": {"parser_revision": "2b2b8f641aee9fd92ed282f03ab060c18542700c", "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943"},
-    "aozora2html": {"parser_revision": "rubygems:aozora2html:3.0.1", "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943"},
-    "aozora-epub3": {"parser_revision": "release:1.3.6-jdk21:sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=", "adapter_revision": "36bf29005719b58fe744b7c96d3a45e451f6c943"}
-  },
-  "runs": [
-    {"candidate": "aozora", "mode": "native", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-native", "execution_sha256": "sha256:266154266c00105d87de8edde8672ca180ca7698ed3c774fc1c3f99a7b85d887", "manifest_sha256": "sha256:d9cb85064d0f44254a4f5995183060d2049daa54dc32a34db0266f8222d495c0", "outcomes": {"success": 127}},
-    {"candidate": "aozora", "mode": "adapter_normalized", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-adapted", "execution_sha256": "sha256:9024a6265c6fdb52b6df58fa6ffcc057a30b46b81207e364cd0f34cd76e62c82", "manifest_sha256": "sha256:87af35740538162e9e1cdf5132fe37709bcf65165a24d0675bb8f833fc03e941", "outcomes": {"success": 127}},
-    {"candidate": "aozora2", "mode": "native", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora2-native", "execution_sha256": "sha256:44a3e2bd9fe661768577b2b7f855cdfdf3879798a7f94e726efd97bb5b595a28", "manifest_sha256": "sha256:a6f4226763ef2fe0ebc300cfb73a245f0ee1a66719f8b26765f600017f8976c2", "outcomes": {"success": 127}},
-    {"candidate": "aozora2", "mode": "adapter_normalized", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora2-adapted", "execution_sha256": "sha256:461d0e28df438acd66ef3ebe7fe24a9ba037bc7ccdbbaaae8ffcf39c6efdc59b", "manifest_sha256": "sha256:d83eaf2b9267b84bb9d2ddb683fef007f28ee6e588ddfa9bbaf770e0d207cfe5", "outcomes": {"success": 127}},
-    {"candidate": "aozora-rs", "mode": "native", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-rs-native", "execution_sha256": "sha256:a262f31637f0d2dee926b69bdff6696ae85f74f3e808f257c05d583883e84de4", "manifest_sha256": "sha256:c42da571f6f2089fded84d51abc55d82a6db9b40c52a3bd425ddd42cb2998843", "outcomes": {"success": 127}},
-    {"candidate": "aozora-rs", "mode": "adapter_normalized", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-rs-adapted", "execution_sha256": "sha256:193a523c57ae88b96ad17a2e2441a98279ac5c7305d8b86c5b5d14e5636acf8f", "manifest_sha256": "sha256:ce90bad5e0f99be529a40875639d614e401f59abcc6ca8718a51f87438a9c98b", "outcomes": {"success": 127}},
-    {"candidate": "aozora2html", "mode": "native", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora2html-native", "execution_sha256": "sha256:e3e41492e21618debc920accfcb500cb4ad61b96fc224627d08b794ed578fea9", "manifest_sha256": "sha256:2a982b2712434d2d05b118af361ec3df7f8fbcf1ca5e4f41f27ebeed61de3dc8", "outcomes": {"success": 127}},
-    {"candidate": "aozora2html", "mode": "adapter_normalized", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora2html-adapted", "execution_sha256": "sha256:6c2a491ae97e8092104dad0a05fe396dd41bb090da2c9d52c43744e516165551", "manifest_sha256": "sha256:cae24e4bd88d36a0307def862688526742e8e8b9535939f0830cb72954ecf076", "outcomes": {"success": 127}},
-    {"candidate": "aozora-epub3", "mode": "native", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-epub3-native", "execution_sha256": "sha256:9658373229a15407efc0a7dc8ea0d11e16d5becb4b1ab18668778fbf763ba2d0", "manifest_sha256": "sha256:a1698c8def24dfe345574e8e5730de5e9e93f64f0cc569d3238fb83ba8efe1c6", "outcomes": {"success": 127}},
-    {"candidate": "aozora-epub3", "mode": "adapter_normalized", "inventory": "official-notation-vectors", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/vectors/aozora-epub3-adapted", "execution_sha256": "sha256:2bf31df25242c709e5e0940c81ced8b808cdbd4eafbe699c10bd27e8cb2d5f3d", "manifest_sha256": "sha256:bf1eb119fd19efbc5d9c448cb9181c5956c513d039423f54cb261823b76734e7", "outcomes": {"failure": 4, "success": 123}},
-    {"candidate": "aozora", "mode": "native", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-native", "execution_sha256": "sha256:266154266c00105d87de8edde8672ca180ca7698ed3c774fc1c3f99a7b85d887", "manifest_sha256": "sha256:7d2dcd86b4e5844cd1985af60896c2f2c166725588b5c5b2205c58a1575fc43a", "outcomes": {"failure": 1, "success": 17885}},
-    {"candidate": "aozora", "mode": "adapter_normalized", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-adapted", "execution_sha256": "sha256:9024a6265c6fdb52b6df58fa6ffcc057a30b46b81207e364cd0f34cd76e62c82", "manifest_sha256": "sha256:57fc971690c3b21d896571c165590cb1563240a5af6920c37b5fe320b308b5fb", "outcomes": {"success": 17886}},
-    {"candidate": "aozora2", "mode": "native", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora2-native", "execution_sha256": "sha256:44a3e2bd9fe661768577b2b7f855cdfdf3879798a7f94e726efd97bb5b595a28", "manifest_sha256": "sha256:fd5b0bf2834451391e93839ff541b81604c76a365ea8593e0372b2e00131e890", "outcomes": {"success": 17886}},
-    {"candidate": "aozora2", "mode": "adapter_normalized", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora2-adapted", "execution_sha256": "sha256:ffb20b25a671fd847c40b3a08957a47390fc2bfec97d039395d5fd59360b6757", "manifest_sha256": "sha256:8ba78bb6674032f1a07c2245da17d1e2260a47657eeaa8a3859b08a5a89700af", "outcomes": {"success": 17874, "timeout": 12}},
-    {"candidate": "aozora-rs", "mode": "native", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-rs-native", "execution_sha256": "sha256:a262f31637f0d2dee926b69bdff6696ae85f74f3e808f257c05d583883e84de4", "manifest_sha256": "sha256:e68c95cfbe9e366ccd7f3ea242ae4ba35beb7e7c5f8e0d628ec4227999b3c526", "outcomes": {"success": 17886}},
-    {"candidate": "aozora-rs", "mode": "adapter_normalized", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-rs-adapted", "execution_sha256": "sha256:0bc44493e71dc24bc4bc1bdb4e9817933f1ad5dbe168e913084ca47fca3a867e", "manifest_sha256": "sha256:af78ccedf4a73e95c15dd835764e3a9a60525311696f198e032b9137e737af21", "outcomes": {"success": 17886}},
-    {"candidate": "aozora2html", "mode": "native", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora2html-native", "execution_sha256": "sha256:e3e41492e21618debc920accfcb500cb4ad61b96fc224627d08b794ed578fea9", "manifest_sha256": "sha256:959014b9b017b30b33131d8ada71680a2ed8594487c524ff99f3c89686e5a962", "outcomes": {"success": 17886}},
-    {"candidate": "aozora2html", "mode": "adapter_normalized", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora2html-adapted", "execution_sha256": "sha256:6c2a491ae97e8092104dad0a05fe396dd41bb090da2c9d52c43744e516165551", "manifest_sha256": "sha256:32b04be40090971c5075e5c61de8ff10888f78e37f95486c72d6b212e9bd25b9", "outcomes": {"success": 17886}},
-    {"candidate": "aozora-epub3", "mode": "native", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-epub3-native", "execution_sha256": "sha256:9658373229a15407efc0a7dc8ea0d11e16d5becb4b1ab18668778fbf763ba2d0", "manifest_sha256": "sha256:11b6d7af63a59dffdc4e42351f376c5bd67e17536bb8a97375f6baedeff0e144", "outcomes": {"failure": 50, "success": 17836}},
-    {"candidate": "aozora-epub3", "mode": "adapter_normalized", "inventory": "aozorabunko-source-snapshot", "artifact_root": "external/parser-study/aozora-parser-neutral-comparison-2026-07/corpus/aozora-epub3-adapted", "execution_sha256": "sha256:2bf31df25242c709e5e0940c81ced8b808cdbd4eafbe699c10bd27e8cb2d5f3d", "manifest_sha256": "sha256:51ef56e40a312112118e0ef35817440430b1fc16de0b32eef7191e9b3588d339", "outcomes": {"failure": 113, "success": 17773}}
-  ]
+  "timeout_seconds": 300
 }

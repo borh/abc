@@ -1,0 +1,52 @@
+{
+  "input_profile":
+  {
+    "component_root": "abc",
+    "explicit": ["ab-validator\/data\/aat-to-parser-ir-mapping-v2-0.4.0.json","ab-validator\/docs\/superpowers\/reports\/2026-07-12-ab-aozora-phase5-c5-compat.edn","ab-validator\/docs\/superpowers\/reports\/2026-07-12-ab-aozora-phase5-c5-conversion-audit.summary.json","ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-c5-conformance-gate.summary.json","ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-c5-conversion-gate.summary.json","ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-c5-delta.summary.json","ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-c5-perf.summary.json","ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-checkpoint.txt","abc\/bin\/kaocha","abc\/data\/aat-parser-ir-compatibility.edn","abc\/docs\/evidence\/adr-capture\/parser-phase5-frozen-tuple.edn","abc\/docs\/evidence\/adr-inputs\/parser-phase5-frozen-tuple.edn","abc\/schemas\/parser-ir.schema.json"],
+    "kind": "component-clojure-test-v1",
+    "roots": ["abc.tools.parser-phase5-frozen-tuple-test"]
+  },
+  "inputs":
+  {
+    "ab-validator\/data\/aat-to-parser-ir-mapping-v2-0.4.0.json": "sha256:8ebd74dcd0f29973e375a9c89654ffbccc9f15fb2f5c5b7a5c97a0bef6206a56",
+    "ab-validator\/docs\/superpowers\/reports\/2026-07-12-ab-aozora-phase5-c5-compat.edn": "sha256:79e9317b3e39fac38328a44e479c1e23c70dc3a10becca6bf081c422bba71d9a",
+    "ab-validator\/docs\/superpowers\/reports\/2026-07-12-ab-aozora-phase5-c5-conversion-audit.summary.json": "sha256:433407411248d56d00e9310675c986bd81513d4f5ac0bad56abb8dfa6710bcab",
+    "ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-c5-conformance-gate.summary.json": "sha256:6d39c21751613dafb4528dc4579e4d0c78c7dc8864cab8092da51c5958dadcb9",
+    "ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-c5-conversion-gate.summary.json": "sha256:c1a184cc8c773a49d802968eedc9b75fdbace96decc0084fb5de47cd8535503d",
+    "ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-c5-delta.summary.json": "sha256:3fdee71228a6ad72e377bea15793b0b223462bbc795d2be171df84a283d751b0",
+    "ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-c5-perf.summary.json": "sha256:fae9c17ec80ba3f877b69c3adbe63a44e3e08a2cb9e746e53f20f8f99bf1e13a",
+    "ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-checkpoint.txt": "sha256:db0a31d72d861aa77930b7e3c467be1e525602baa14360b72851b2f181916000",
+    "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
+    "abc\/data\/aat-parser-ir-compatibility.edn": "sha256:16b4e5ad5e266d4b3a6e2802d83a6f37533374e0e10d5605509c4bbc715de4c8",
+    "abc\/docs\/evidence\/adr-capture\/parser-phase5-frozen-tuple.edn": "sha256:c2b800d7e5f2ea6ca5ba5a41d98f1cfb20886357e9a6a967ae3638d96aded437",
+    "abc\/docs\/evidence\/adr-inputs\/parser-phase5-frozen-tuple.edn": "sha256:9999df4790f4c9e39bc7ca3e25b936807425113e5814e8edf1a533246db11709",
+    "abc\/schemas\/parser-ir.schema.json": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:fbb178a0f8e1b813697059b145e0abcc0dfd8d13bc1988fe6c0b627a9d79a009",
+    "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
+    "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
+    "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "abc\/src\/abc\/tools\/parser_phase5_frozen_tuple.clj": "sha256:4c1a77d6b2fd46385a1b9aece6542e76adfe5d20953bfb66be4937e7d6e72bac",
+    "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "abc\/test\/abc\/tools\/parser_phase5_frozen_tuple_test.clj": "sha256:66e47540cec1ca7274e3bbe96aa032a3194185b9c1dad275801348c00f6fc2b6"
+  },
+  "observations":
+  {
+    "phase5-frozen-tuple-pass":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-phase5-frozen-tuple-test\/phase5-frozen-tuple-contract\"",
+    "revision": "12de1f842c15873e80a9fcc9017a0c54b86d731b",
+    "tool": "bin\/kaocha"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

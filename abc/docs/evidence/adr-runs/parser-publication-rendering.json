@@ -1,0 +1,90 @@
+{
+  "input_profile":
+  {
+    "explicit": ["data\/parser-ir-publication-policy-v0.json","data\/publication-policy.edn","deps-lock.json","deps.edn","docs\/evidence\/adr-capture\/parser-publication-rendering.edn","docs\/evidence\/adr-inputs\/parser-publication-rendering.edn","examples\/v0\/example-persons\/000879.json","examples\/v0\/example-persons\/_events\/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json","examples\/v0\/example-persons\/_indexes\/000879.json","examples\/v0\/example-persons\/_indexes\/abc-000000000001.json","examples\/v0\/example-persons\/_indexes\/abc-000000000002.json","examples\/v0\/example-work\/manifest.json","examples\/v0\/example-work\/metadata-record.json","examples\/v0\/example-work\/parser-ir.json","examples\/v0\/example-work\/source.manifest.json","flake.lock","flake.nix","nix\/tei-profile-artifacts.nix","schemas\/manifest.schema.json","schemas\/metadata-record.schema.json","schemas\/parser-ir-publication-preservation.schema.json","schemas\/parser-ir.schema.json","schemas\/person-record.schema.json","schemas\/tei-profile.odd","schemas\/tei-profile.rng","schemas\/tei-profile.sch","schemas\/tei-validation-result.schema.json","schemas\/workflow-run.schema.json","src\/abc\/tools\/cli.clj","src\/abc\/tools\/evidence_io.clj","src\/abc\/tools\/files.clj","src\/abc\/tools\/hash.clj","src\/abc\/tools\/jcs.clj","src\/abc\/tools\/json.clj","src\/abc\/tools\/logging.clj","src\/abc\/tools\/malli.clj","src\/abc\/tools\/manifest.clj","src\/abc\/tools\/manifest_to_rdf.clj","src\/abc\/tools\/materialize_publication.clj","src\/abc\/tools\/metadata_record.clj","src\/abc\/tools\/parallel.clj","src\/abc\/tools\/parser_ir_plaintext.clj","src\/abc\/tools\/parser_ir_publication_policy.clj","src\/abc\/tools\/parser_ir_publication_whitespace.clj","src\/abc\/tools\/parser_ir_sentence_policy.clj","src\/abc\/tools\/parser_ir_tei.clj","src\/abc\/tools\/parser_ir_vocabulary.clj","src\/abc\/tools\/path_containment.clj","src\/abc\/tools\/person_record.clj","src\/abc\/tools\/publication_policy.clj","src\/abc\/tools\/rdf_prefixes.clj","src\/abc\/tools\/schema.clj","src\/abc\/tools\/schematron.clj","src\/abc\/tools\/tei.clj","src\/abc\/tools\/tei_header.clj","test\/abc\/tools\/parser_publication_evidence_test.clj","tests.edn"],
+    "kind": "repo-files-v1",
+    "roots": []
+  },
+  "inputs":
+  {
+    "data\/parser-ir-publication-policy-v0.json": "sha256:7f0e47cb5a8217103ccee416bb2ef839f2e41cbbdc9ed40e404925474f23be85",
+    "data\/publication-policy.edn": "sha256:fa8267b3e9f88065e20a25f6e29588509e3c3d583f4ac34f8a225e81a1c5885c",
+    "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
+    "deps.edn": "sha256:894f7e821d81919acd281975373f9352435946e26c087bac4c085e4174fc17b7",
+    "docs\/evidence\/adr-capture\/parser-publication-rendering.edn": "sha256:48596b62309e09cfcd4860b0fdac5c56731d0497bf5827cd318cc8141a53e1d5",
+    "docs\/evidence\/adr-inputs\/parser-publication-rendering.edn": "sha256:b59ec8b101aaa00b6cb5e0edbf00de378a6a0286c7c7732908c6286f0c96d1bf",
+    "examples\/v0\/example-persons\/000879.json": "sha256:d49931fa2e960922d15c8449b7477e130d0c5565f6485fdee9a2edd76cde374a",
+    "examples\/v0\/example-persons\/_events\/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json": "sha256:2a7dd0af704d00209cd07f80b09e4d6904ed7e73330a856ac11fbd547d3e90d0",
+    "examples\/v0\/example-persons\/_indexes\/000879.json": "sha256:92ac336e9c77d57ffa6c5b04da7f732cae2d5871d16f62c23fadca072bc3825e",
+    "examples\/v0\/example-persons\/_indexes\/abc-000000000001.json": "sha256:ec1ab22dc2fbd50be6fe208d4593c3dbfbe9bc1a709150379d5bd41846c9cd55",
+    "examples\/v0\/example-persons\/_indexes\/abc-000000000002.json": "sha256:a763558c9d2c1c0661090bad5a3ab788301093ede12e195e36dc0bdd7c8bcb42",
+    "examples\/v0\/example-work\/manifest.json": "sha256:5736ea050d3a80d4656ec89993d91d88d1585024ee3c7d5d2c4acca43c9b85bc",
+    "examples\/v0\/example-work\/metadata-record.json": "sha256:9b72442e6bb821ffb67ec8cbd2602709cce80cd16db36835629a9456ebca6d50",
+    "examples\/v0\/example-work\/parser-ir.json": "sha256:63a3d9cda911859bc0f93950e196f4c455ec9a5cf4bbb6a4863e4012637f8037",
+    "examples\/v0\/example-work\/source.manifest.json": "sha256:a618de2d65f84a55b5243aaa1aa60d7e7c470228dc6ac7907ffd202fb3e0cc81",
+    "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
+    "flake.nix": "sha256:b04b5ea7a848296b0c13f2546df61b1934c0b7837ca74d56e0188e11d69080f5",
+    "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
+    "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
+    "schemas\/metadata-record.schema.json": "sha256:cb1c773f86f0ae16f613b342be80b87f8a7829417bcdcd36b5737eeab6a85129",
+    "schemas\/parser-ir-publication-preservation.schema.json": "sha256:b073df014a2b7c685059d3681dbfcbbde10ec66adfb0253ab80b6287c70c5599",
+    "schemas\/parser-ir.schema.json": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5",
+    "schemas\/person-record.schema.json": "sha256:35e5c3aac75d03f7bf228b05e331dea4df3e791256f14fa8b498fcd405888bcb",
+    "schemas\/tei-profile.odd": "sha256:b4b12fd7591f2ebe1f9417f8fa2bb938d025694c4202ef48c0bfe16045b120ac",
+    "schemas\/tei-profile.rng": "sha256:071479ba8eb10f93a46f4b3616a1c0007bdeafd7a4c321e49cd567d648768413",
+    "schemas\/tei-profile.sch": "sha256:608dcce45ba2acd490706691c4e38f885615176744f0db10a5a46aa96fa4da8a",
+    "schemas\/tei-validation-result.schema.json": "sha256:a6b046e38f617e8eb412a15b6a3451ceb20e0b9a0e3aeb6c8305d27ad937eeb3",
+    "schemas\/workflow-run.schema.json": "sha256:48f50bf3778cbdc74b4583fbc21f61f9c67771d7cafaebfc869573f301cbc296",
+    "src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
+    "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
+    "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
+    "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
+    "src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
+    "src\/abc\/tools\/manifest.clj": "sha256:f3a1fdc6cb04ba86c67ed59ab6987971a0e022bf5c4a182b12d5e3c25ea98b6d",
+    "src\/abc\/tools\/manifest_to_rdf.clj": "sha256:bb38316e7aa5e6c0e0aeb6491b39807cb1c40ac3aef1b27a24cc6514799c63e9",
+    "src\/abc\/tools\/materialize_publication.clj": "sha256:f52335095b41fc2fd3c03678b2fccd40eb5775d5e91bf63cdb1b1855e035d3b0",
+    "src\/abc\/tools\/metadata_record.clj": "sha256:b87fd5dbe5831983dc618849593fc08bba2d4bd6a2dbf447b88738253015f36f",
+    "src\/abc\/tools\/parallel.clj": "sha256:51b1105b04a52d45a6fb3811e4b3c53b1b44162fd81f5d68ab412039b31a243c",
+    "src\/abc\/tools\/parser_ir_plaintext.clj": "sha256:d21da8a17ef2e1d132ba7e05ce6c0d17bd4154d4c7c4bf9b9f72114e087f7d87",
+    "src\/abc\/tools\/parser_ir_publication_policy.clj": "sha256:f2315b7375ba189077ee34eee402e18ee711e84c5abcd92c60ef9ad91020d6f8",
+    "src\/abc\/tools\/parser_ir_publication_whitespace.clj": "sha256:649c5ad727df611eed3271856873f642066f5f62aa8c3648d6072a4ff467f8ad",
+    "src\/abc\/tools\/parser_ir_sentence_policy.clj": "sha256:a2c91542a06fbd97f4f0433127143bf0645d3b1828f7d13dfc2b38c0cb1bdd6b",
+    "src\/abc\/tools\/parser_ir_tei.clj": "sha256:6683b4a741ac1ea1967653f1f218fd1af804eb60ec950a26858ae057502d32ec",
+    "src\/abc\/tools\/parser_ir_vocabulary.clj": "sha256:63b58f821933a337324866e69768b7d2515879f0c18d536ac0498f21acb2697c",
+    "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "src\/abc\/tools\/person_record.clj": "sha256:e9b2323dc7adba721d269bebab37bc9f13c4b89d3e504f0a6f63ff3bfb95b974",
+    "src\/abc\/tools\/publication_policy.clj": "sha256:d47280892c3bc350db264e86aff8eb5907f872d8a99508719103ec616cb17080",
+    "src\/abc\/tools\/rdf_prefixes.clj": "sha256:464ac0a7365d92a37084664c1af77aa5525c6eabbc86fad4358ff2637d993e29",
+    "src\/abc\/tools\/schema.clj": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871",
+    "src\/abc\/tools\/schematron.clj": "sha256:c1541ab6d3859b39601dafba06808b1cb95564d664875f375413ef64cbfd3737",
+    "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
+    "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
+    "test\/abc\/tools\/parser_publication_evidence_test.clj": "sha256:23dd51a4042461d4cef884b6337669a19b4ff893f08ac26d46e303866d4f118a",
+    "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
+  },
+  "observations":
+  {
+    "parser-publication-rendering-pass":
+    {
+      "details":
+      {
+        "command_id": "parser-publication-evidence",
+        "environment_policy": "nix-local-v1",
+        "exit_code": 0,
+        "nix_system": "x86_64-linux",
+        "nix_version": "nix (Determinate Nix 3.21.5) 2.34.8"
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.parser-publication-evidence\\\"\"",
+    "revision": "12de1f842c15873e80a9fcc9017a0c54b86d731b",
+    "tool": "bash"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

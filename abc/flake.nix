@@ -430,6 +430,10 @@
                 cp ${../flake.nix} flake.nix
                 cp ${../flake.lock} flake.lock
                 ${copyWritableSource}
+                cp -R . ../abc
+                cd ../abc
+                cp -R ${../ab-validator} ../ab-validator
+                chmod -R u+w ../ab-validator
                 patchShebangs bin/kaocha
                 ${cljSandboxEnv}
                 # Keep TEI schema-backed tests active in the sandbox. The schema is

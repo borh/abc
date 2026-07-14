@@ -1,0 +1,54 @@
+{
+  "input_profile":
+  {
+    "component_root": "abc",
+    "explicit": ["ab-validator\/docs\/handoffs\/2026-07-10-parser-fork-provenance.md","ab-validator\/docs\/superpowers\/reports\/2026-07-08-aozora-parser-comparison-study.md","ab-validator\/docs\/superpowers\/reports\/2026-07-08-parser-fork-candidacy-faithful-comparison.md","ab-validator\/docs\/superpowers\/specs\/2026-07-09-parser-comparison-followups-handoff.md","abc\/bin\/kaocha","abc\/data\/parser-ir-publication-policy-v0.json","abc\/data\/publication-policy.edn","abc\/docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md","abc\/docs\/adr\/governance-as-of.edn","abc\/docs\/evidence\/adr-capture\/parser-ownership-assessment.edn","abc\/docs\/evidence\/adr-inputs\/parser-ownership-assessment.edn","abc\/docs\/evidence\/external\/custom-parser-ownership-assessment.md","abc\/schemas\/manifest.schema.json","abc\/schemas\/parser-ir-publication-preservation.schema.json","abc\/schemas\/parser-ir.schema.json","abc\/schemas\/tei-validation-result.schema.json"],
+    "kind": "component-clojure-test-v1",
+    "roots": ["abc.tools.parser-ownership-assessment-evidence-test"]
+  },
+  "inputs":
+  {
+    "ab-validator\/docs\/handoffs\/2026-07-10-parser-fork-provenance.md": "sha256:ec67203db8894ed416bee12c8c08e656c321f551d71a72f2bc75a45fa4e04dab",
+    "ab-validator\/docs\/superpowers\/reports\/2026-07-08-aozora-parser-comparison-study.md": "sha256:8f68178186c9ccad2514c833098f3ffbc725183699757d5dc8182678c5826a59",
+    "ab-validator\/docs\/superpowers\/reports\/2026-07-08-parser-fork-candidacy-faithful-comparison.md": "sha256:ec0e5b7cdef6ea0c14b6ba59af8a35eb7b742b12a3da74683f771873330933e8",
+    "ab-validator\/docs\/superpowers\/specs\/2026-07-09-parser-comparison-followups-handoff.md": "sha256:e13c904f36ddc4180f1326cdc375e6939716487e55318349c86c64e5158d2aa0",
+    "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
+    "abc\/data\/parser-ir-publication-policy-v0.json": "sha256:7f0e47cb5a8217103ccee416bb2ef839f2e41cbbdc9ed40e404925474f23be85",
+    "abc\/data\/publication-policy.edn": "sha256:fa8267b3e9f88065e20a25f6e29588509e3c3d583f4ac34f8a225e81a1c5885c",
+    "abc\/docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md": "sha256:bd7addd48c6d8cd7400e3dc90a957a167ffc567968490d821d736820809c7352",
+    "abc\/docs\/adr\/governance-as-of.edn": "sha256:a0e9acce81ffb4ee09b9fac168a90a732e708aa378d4df15ad387b0e60e67d3b",
+    "abc\/docs\/evidence\/adr-capture\/parser-ownership-assessment.edn": "sha256:759da5f335fad0e3d61277fa9563e15206c318fda8e4957f311f2eae9b7f7398",
+    "abc\/docs\/evidence\/adr-inputs\/parser-ownership-assessment.edn": "sha256:798622ef150245fb88acab500afebb5ef8a7f88e7827d9ede88c68755bc0fed6",
+    "abc\/docs\/evidence\/external\/custom-parser-ownership-assessment.md": "sha256:23dca3cbec3c4c257073113a2e8c4424c7f5f8198df539124a660b81723cdcb8",
+    "abc\/schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
+    "abc\/schemas\/parser-ir-publication-preservation.schema.json": "sha256:b073df014a2b7c685059d3681dbfcbbde10ec66adfb0253ab80b6287c70c5599",
+    "abc\/schemas\/parser-ir.schema.json": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5",
+    "abc\/schemas\/tei-validation-result.schema.json": "sha256:a6b046e38f617e8eb412a15b6a3451ceb20e0b9a0e3aeb6c8305d27ad937eeb3",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:fbb178a0f8e1b813697059b145e0abcc0dfd8d13bc1988fe6c0b627a9d79a009",
+    "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
+    "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
+    "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "abc\/test\/abc\/tools\/parser_ownership_assessment_evidence_test.clj": "sha256:b56a3920e78803ae633905eece9184b3efb6a7621d9ef24dfddbf0771bc966e8"
+  },
+  "observations":
+  {
+    "custom-parser-ownership-assessment-pass":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-ownership-assessment-evidence-test\/custom-parser-ownership-assessment-contract\"",
+    "revision": "12de1f842c15873e80a9fcc9017a0c54b86d731b",
+    "tool": "bin\/kaocha"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

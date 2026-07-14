@@ -1,0 +1,62 @@
+{
+  "input_profile":
+  {
+    "component_root": "abc",
+    "explicit": ["abc\/bin\/kaocha","abc\/docs\/adr\/0033-source-bundle-identity.md","abc\/docs\/evidence\/adr-capture\/parser-identity-relations.edn","abc\/docs\/evidence\/adr-inputs\/parser-identity-relations.edn","abc\/examples\/ab-validator-output\/manifest-inputs.json","abc\/examples\/ab-validator-output\/parser-ir.json","abc\/fixtures\/source-bundle\/abc-source-bundle-v1-known-answer.json","abc\/schemas\/parser-ir.schema.json","abc\/schemas\/source-bundle.schema.json"],
+    "kind": "component-clojure-test-v1",
+    "roots": ["abc.tools.parser-identity-relations-evidence-test"]
+  },
+  "inputs":
+  {
+    "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
+    "abc\/docs\/adr\/0033-source-bundle-identity.md": "sha256:8dc84c890b8a1a7fcf08d8ac6eb0200b2af3d0d8e27a6fa4e814bf7ab115e752",
+    "abc\/docs\/evidence\/adr-capture\/parser-identity-relations.edn": "sha256:4040f3ae4418b854b527013581fdbc7561e2756626691fa8addfb61449ac4666",
+    "abc\/docs\/evidence\/adr-inputs\/parser-identity-relations.edn": "sha256:1488e4372a87e8e349fbb3e47a54885b60667edb7a52251a2f0e328a65fc80a0",
+    "abc\/examples\/ab-validator-output\/manifest-inputs.json": "sha256:2b21736e16c5b085967c1c57e3df8b48c5244f318c45b047c7194be622cc9b47",
+    "abc\/examples\/ab-validator-output\/parser-ir.json": "sha256:ef7f57e4cc1e88e992f88f992f2ec145ff891757c7a98ddd9542a3efa2eafb70",
+    "abc\/fixtures\/source-bundle\/abc-source-bundle-v1-known-answer.json": "sha256:b2350265aa07d01096a668cc5ba9a0916cfdf3a9f333a1566fb95ac31b56b7f6",
+    "abc\/schemas\/parser-ir.schema.json": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5",
+    "abc\/schemas\/source-bundle.schema.json": "sha256:1e813b527619642152501704f83ebbc3ee191fe0e6f1e105801bcdc1e7d13f48",
+    "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:fbb178a0f8e1b813697059b145e0abcc0dfd8d13bc1988fe6c0b627a9d79a009",
+    "abc\/src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
+    "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
+    "abc\/src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "abc\/src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "abc\/src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
+    "abc\/src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
+    "abc\/src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "abc\/src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
+    "abc\/src\/abc\/tools\/malli.clj": "sha256:c53c767e26df84263590d2822bf33c0ea14d260de1794e994169221709b3ac90",
+    "abc\/src\/abc\/tools\/manifest.clj": "sha256:f3a1fdc6cb04ba86c67ed59ab6987971a0e022bf5c4a182b12d5e3c25ea98b6d",
+    "abc\/src\/abc\/tools\/manifest_to_rdf.clj": "sha256:bb38316e7aa5e6c0e0aeb6491b39807cb1c40ac3aef1b27a24cc6514799c63e9",
+    "abc\/src\/abc\/tools\/materialize_import.clj": "sha256:c026265cb1f7482deaf9d0b7ee10be3c2fdcf5a48f563a62e416c7177cc374b9",
+    "abc\/src\/abc\/tools\/materialize_source_snapshot.clj": "sha256:b7ab6fce3558774a403477891290dc22817d7f34a5f9efb266ec0cfa3478ad9d",
+    "abc\/src\/abc\/tools\/metadata_record.clj": "sha256:b87fd5dbe5831983dc618849593fc08bba2d4bd6a2dbf447b88738253015f36f",
+    "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "abc\/src\/abc\/tools\/person_record.clj": "sha256:e9b2323dc7adba721d269bebab37bc9f13c4b89d3e504f0a6f63ff3bfb95b974",
+    "abc\/src\/abc\/tools\/rdf_prefixes.clj": "sha256:464ac0a7365d92a37084664c1af77aa5525c6eabbc86fad4358ff2637d993e29",
+    "abc\/src\/abc\/tools\/schema.clj": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871",
+    "abc\/src\/abc\/tools\/source_bundle.clj": "sha256:11387cb49f39bbc72006fa6cfd3296eafe9b84b7f8ec313d30d2201dc24de926",
+    "abc\/src\/abc\/tools\/source_snapshot_workset.clj": "sha256:46b870c330a2ac3fd7c07d0c1915977b91dbb12d87c4df3a95fe84f3083f2036",
+    "abc\/test\/abc\/tools\/parser_identity_relations_evidence_test.clj": "sha256:9578b1fe0ffa5948a4ff5f3c5e72c7ffd3183903d969bb3d4ffe081673b13a46",
+    "abc\/test\/abc\/tools\/source_snapshot_fixture.clj": "sha256:9fc48b304f47475964d30de4e2477cca7423205735cd8fc8a72c12f00ed61476"
+  },
+  "observations":
+  {
+    "parser-identity-relations-pass":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-identity-relations-evidence-test\/parser-identity-relations-contract\"",
+    "revision": "12de1f842c15873e80a9fcc9017a0c54b86d731b",
+    "tool": "bin\/kaocha"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

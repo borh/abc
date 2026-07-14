@@ -303,6 +303,7 @@
     (fail! :unreadable-zip archive-path {:cause cause})))
 
 (defn- open-zip-archive [archive-path stable-file]
+  (evidence-io/record-read! stable-file)
   (try
     (-> (ZipFile/builder)
         (.setFile (io/file stable-file))
@@ -358,7 +359,7 @@
        :stats
        {:member-count (count members)
         :max-member-bytes (reduce max 0 actuals)
-        :total-bytes @total-bytes
+        :total-bytes (.deref ^clojure.lang.IDeref total-bytes)
         :utf8-count (count (filter :efs-utf8-flag? reads))
         :legacy-count (count (remove :efs-utf8-flag? reads))
         :declared-actual-size-mismatches
@@ -374,6 +375,7 @@
        (:primary-bytes (first (filter :primary-bytes reads)))})))
 
 (defn- stage-archive! [zip-file temp-root]
+  (evidence-io/record-read! zip-file)
   (let [attributes (make-array java.nio.file.attribute.FileAttribute 0)
         staged (if temp-root
                  (Files/createTempFile (.toPath (fs/file temp-root))
@@ -395,7 +397,7 @@
   (let [staged (stage-archive! zip-file temp-root)]
     (try
       (scan-open-zip zip-file staged (merge default-limits limits))
-      (finally (Files/deleteIfExists (.toPath staged))))))
+      (finally (files/delete-file! staged)))))
 
 (defn scan-zip
   ([zip-file] (scan-zip zip-file default-limits))

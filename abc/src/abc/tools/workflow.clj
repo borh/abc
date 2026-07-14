@@ -1,5 +1,6 @@
 (ns abc.tools.workflow
   (:require [abc.tools.manifest :as manifest]
+            [abc.tools.files :as files]
             [babashka.fs :as fs]
             [clojure.set :as set]))
 
@@ -213,31 +214,37 @@
                     "message" (.getMessage error)
                     "data" (or (ex-data error) {})})))
 
+(defn invoke-step-run [run state]
+  (run state))
+
+(defn invoke-clock [clock]
+  (clock))
+
 (defn run-workflow!
   [{:keys [workflow-id run-id output-root initial-state steps clock]
     :or {clock now-utc
          run-id "local-run"}}]
   (let [output-root (fs/path output-root)
-        _ (fs/create-dirs output-root)
+        _ (files/create-dirs! output-root)
         plan (validate-plan! {:steps steps} initial-state)
         ordered-steps (:steps plan)
-        started-at (clock)]
+        started-at (invoke-clock clock)]
     (manifest/write-json-file! (fs/file (fs/path output-root "workflow-plan.json"))
                                (json-plan workflow-id ordered-steps))
     (loop [state initial-state
            remaining ordered-steps
            records []]
       (if (empty? remaining)
-        (let [ended-at (clock)
+        (let [ended-at (invoke-clock clock)
               run (summarize-run workflow-id run-id started-at ended-at records)]
           (write-run! output-root run)
           {:state state :run run :plan plan})
         (let [step (first remaining)
-              step-start (clock)
+              step-start (invoke-clock clock)
               result (try
-                       ((:run step) state)
+                       (invoke-step-run (:run step) state)
                        (catch Throwable t
-                         (let [step-end (clock)
+                         (let [step-end (invoke-clock clock)
                                record (step-record {:step step
                                                     :status "failed"
                                                     :started-at step-start
@@ -252,7 +259,7 @@
                            (write-run! output-root run)
                            (throw t))))
               status (name (or (:status result) :passed))
-              step-end (clock)
+              step-end (invoke-clock clock)
               record (step-record {:step step
                                    :status status
                                    :started-at step-start

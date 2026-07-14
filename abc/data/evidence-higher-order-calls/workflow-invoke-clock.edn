@@ -1,0 +1,3 @@
+{:schema-version :abc-evidence-higher-order-call-v1
+ :caller abc.tools.workflow/invoke-clock
+ :parameters {clock [abc.tools.workflow/now-utc]}}

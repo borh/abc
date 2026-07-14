@@ -12,13 +12,14 @@
    :official-source-path "official-source.json"
    :source-bundle-path "source-bundle.json"})
 
-(def resolved-path-key
-  {:aat_path :resolved_aat_path
-   :parser_ir_path :resolved_parser_ir_path
-   :metadata_record_path :resolved_metadata_record_path
-   :official_source_path :resolved_official_source_path
-   :source_bundle_path :resolved_source_bundle_path
-   :source_manifest_path :resolved_source_manifest_path})
+(defn resolved-path-key [k]
+  (case k
+    :aat_path :resolved_aat_path
+    :parser_ir_path :resolved_parser_ir_path
+    :metadata_record_path :resolved_metadata_record_path
+    :official_source_path :resolved_official_source_path
+    :source_bundle_path :resolved_source_bundle_path
+    :source_manifest_path :resolved_source_manifest_path))
 
 (def official-text-zip-relpath-pattern
   #"^cards/[0-9]{6}/files/[^/]+\.zip$")
@@ -45,7 +46,7 @@
   (when path
     (if (absolute-path? path)
       path
-      (str (fs/canonicalize (fs/path base-dir path))))))
+      (str (files/canonicalize (fs/path base-dir path))))))
 
 (defn- resolve-work-paths [work base-dir]
   (reduce (fn [resolved k]
@@ -54,27 +55,28 @@
                      (resolve-path base-dir path))
               resolved))
           work
-          (keys resolved-path-key)))
+          [:aat_path :parser_ir_path :metadata_record_path
+           :official_source_path :source_bundle_path :source_manifest_path]))
 
 (defn- relative-path [from-dir to-file]
-  (files/relative-path (fs/canonicalize from-dir) (fs/canonicalize to-file)))
+  (files/relative-path (files/canonicalize from-dir) (files/canonicalize to-file)))
 
 (defn- candidate-work-dir? [dir]
-  (some #(fs/exists? (fs/path dir %)) (vals required-file-names)))
+  (some #(files/exists? (fs/path dir %)) (vals required-file-names)))
 
 (defn- directories-below [root]
   (files/sorted-path-seq root))
 
 (defn- work-dirs [input-root]
   (->> (directories-below input-root)
-       (filter fs/directory?)
+       (filter files/directory?)
        (filter candidate-work-dir?)
        (sort-by #(normalize-path (fs/relativize input-root %)))
        vec))
 
 (defn- required-file [work-dir file-name label]
   (let [file (fs/file work-dir file-name)]
-    (when-not (fs/regular-file? file)
+    (when-not (files/file? file)
       (throw (ex-info (str "work directory " (normalize-path work-dir)
                            " missing " file-name)
                       {:work-dir (str work-dir)
@@ -146,15 +148,18 @@
                                           (fs/file work-dir
                                                    "source.manifest.json"))}))
 
+(defn- work-order-key [work]
+  [(:work_id work) (:slug work)])
+
 (defn workset-from-root
   [{:keys [input-root path-base snapshot-scope snapshot-date]}]
-  (let [input-root-file (fs/canonicalize
+  (let [input-root-file (files/canonicalize
                          (or input-root
                              (throw (ex-info "input-root is required" {}))))
-        path-base-file (fs/canonicalize (or path-base input-root-file))
+        path-base-file (files/canonicalize (or path-base input-root-file))
         works (->> (work-dirs input-root-file)
                    (map #(work-entry path-base-file %))
-                   (sort-by (juxt :work_id :slug))
+                   (sort-by work-order-key)
                    vec)]
     (when-not (seq works)
       (throw (ex-info "input root contains no materialized work directories"
@@ -171,14 +176,14 @@
                                  (throw (ex-info "output-path is required" {}))))
         output-parent (or (fs/parent output-file) (fs/path "."))
         value (workset-from-root (assoc opts :path-base output-parent))]
-    (fs/create-dirs output-parent)
-    (spit output-file (str (pr-str value) "\n"))
+    (files/create-dirs! output-parent)
+    (files/write-text! output-file (str (pr-str value) "\n"))
     {:output output-file
      :works-count (count (:works value))}))
 
 (defn read-workset [path]
   (let [workset-file (fs/file path)
-        base-dir (fs/parent (fs/canonicalize workset-file))
+        base-dir (fs/parent (files/canonicalize workset-file))
         value (files/read-edn workset-file)]
     (when-not (seq (map-value value :works))
       (throw (ex-info "workset must contain non-empty :works"

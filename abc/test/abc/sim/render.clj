@@ -245,6 +245,11 @@
                                          :primary-text-member :members
                                          :identity-object]))]))))))
 
+(defn- write-render-bytes! [dir relpath bytes]
+  (let [file (io/file dir relpath)]
+    (files/create-parent-dirs! file)
+    (files/write-bytes! file bytes)))
+
 (defn write-aozora-root!
   "Render a model state as a plain aozora-root: catalog ZIP, per-work
   content ZIPs (from content-sources, so paths/hashes agree with the
@@ -252,18 +257,15 @@
   provenance is best-effort in the SUT)."
   ([dir m] (write-aozora-root! dir m {}))
   ([dir m {:keys [zip-layouts] :or {zip-layouts {}}}]
-   (let [write-bytes! (fn [relpath ^bytes bs]
-                        (let [f (io/file dir relpath)]
-                          (files/create-parent-dirs! f)
-                          (with-open [o (io/output-stream f)] (.write o bs))))]
-     (write-bytes! zip-path (csv->zip-bytes (rows->csv (model->rows m))))
+   (do
+     (write-render-bytes! dir zip-path (csv->zip-bytes (rows->csv (model->rows m))))
      (doseq [[_wid {:keys [relpath archive-bytes]}] (content-sources m zip-layouts)]
-       (write-bytes! relpath archive-bytes))
-     (write-bytes! "cards/999999/files/decoy.zip" (text->zip-bytes "decoy 999999" "999999"))
-     (write-bytes! "support/tools.zip" (text->zip-bytes "tools 000000" "000000"))
+       (write-render-bytes! dir relpath archive-bytes))
+     (write-render-bytes! dir "cards/999999/files/decoy.zip" (text->zip-bytes "decoy 999999" "999999"))
+     (write-render-bytes! dir "support/tools.zip" (text->zip-bytes "tools 000000" "000000"))
      (let [head (io/file dir ".git/HEAD")]
        (files/create-parent-dirs! head)
-       (spit head "sim-fixture-head\n")))))
+       (files/write-text! head "sim-fixture-head\n")))))
 
 (defn init-repo! [dir]
   (-> (Git/init) (.setDirectory (io/file (str dir))) .call))

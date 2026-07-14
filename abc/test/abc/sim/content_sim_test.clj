@@ -153,7 +153,7 @@
 (defn- overwrite-zip! [aozora-root m wid ^bytes zip-bytes]
   (let [rel (get-in (render/content-sources m) [wid :relpath])
         f (io/file aozora-root rel)]
-    (with-open [o (io/output-stream f)] (.write o zip-bytes))))
+    (files/write-bytes! f zip-bytes)))
 
 (defn- no-text-zip-bytes []
   (let [out (ByteArrayOutputStream.)]

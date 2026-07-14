@@ -154,7 +154,10 @@
    'abc.tools.adr/validate-repository* "adr-validate-repository-star.edn"
    'abc.tools.edn-registry/call-entry-error "edn-registry-call-entry-error.edn"
    'abc.tools.edn-registry/call-duplicate-error "edn-registry-call-duplicate-error.edn"
-   'abc.tools.parser-evidence/duplicate-values "parser-evidence-duplicate-errors.edn"})
+   'abc.tools.parser-evidence/duplicate-values "parser-evidence-duplicate-errors.edn"
+   'abc.tools.parallel/ordered-pmap "parallel-ordered-pmap.edn"
+   'abc.tools.workflow/invoke-clock "workflow-invoke-clock.edn"
+   'abc.tools.workflow/invoke-step-run "workflow-invoke-step-run.edn"})
 
 (def ^:private forbidden-vars
   '#{clojure.core/slurp clojure.core/line-seq clojure.core/file-seq
@@ -190,7 +193,9 @@
      abc.tools.files/with-zip-file abc.tools.files/load-jena-model
      abc.tools.files/parse-xml-document abc.tools.files/copy-file!
      abc.tools.files/create-dirs! abc.tools.files/create-parent-dirs!
-     abc.tools.files/write-bytes! abc.tools.files/write-text!
+     abc.tools.files/write-bytes! abc.tools.files/write-text! abc.tools.files/delete-file!
+     abc.tools.files/canonicalize
+     abc.tools.files/sorted-path-seq
      abc.tools.validate-design-bundle/load-turtle-graph
      abc.sim.render/init-repo!
      abc.git/load-git-repo
@@ -198,6 +203,19 @@
      abc.git/write-blob-at!
      abc.tools.logging/log!
      abc.tools.shacl/load-shapes-graph
+     abc.tools.source-bundle/open-zip-archive
+     abc.tools.source-bundle/decoded-entries
+     abc.tools.source-bundle/read-member!
+     abc.tools.source-bundle/stage-archive!
+     abc.tools.soranoha-build-publication/git-sh
+     abc.tools.parallel/ordered-pmap
+     abc.tools.materialize-publication/materialize-publication!
+     abc.tools.soranoha-build-publication/prepare-output-root!
+     abc.tools.soranoha-build-publication/promote-output-root!
+     abc.tools.soranoha-build-publication/read-catalog-zip
+     abc.tools.soranoha-build-publication/resolve-invocation-path
+     abc.tools.soranoha-build-publication/invoke-derive-parser-ir!
+     abc.tools.workflow/now-utc
      abc.tools.aozora-history-audit/prepare-owned-path!
      abc.tools.aozora-ingest/open-zip
      abc.tools.aozora-ingest/read-zip-csv
@@ -208,6 +226,14 @@
 
 (def ^:private audited-structural-leaf-vars
   '#{abc.tools.hash/sha256-bytes
+     abc.sim.content-sim-test/no-text-zip-bytes
+     abc.sim.content-sim-test/unsafe-path-zip-bytes
+     abc.sim.content-sim-test/named-text-zip-bytes
+     abc.sim.render/rows->csv
+     abc.sim.render/content->zip-bytes
+     abc.tools.source-bundle-test/write-zip!
+     abc.tools.source-bundle-test/understate-first-central-size!
+     abc.tools.source-snapshot-fixture/write-source-zip!
      abc.tools.jcs/canonical-json-string
      abc.tools.jcs/rfc8785-string-domain-json-bytes
      abc.tools.malli/explain-contract
@@ -289,9 +315,33 @@
     abc.git/commit-at! {PersonIdent 1 from 1 parse 1 getTimeZone 1}
     abc.git/load-git-repo {load-repo 1}
     abc.git/write-blob-at! {make-parents 1 output-stream 1 write 1}
-    abc.sim.content-sim-test/ex-chain {getCause 1}
+    abc.sim.content-sim-test/ex-chain {}
+    abc.sim.content-sim-test/no-text-zip-bytes
+    {ByteArrayOutputStream 1 ZipEntry 1 setTime 1 ZipOutputStream 1
+     putNextEntry 1 write 1 closeEntry 1 toByteArray 1}
+    abc.sim.content-sim-test/unsafe-path-zip-bytes
+    {ByteArrayOutputStream 1 ZipEntry 1 setTime 1 ZipOutputStream 1
+     putNextEntry 1 write 1 closeEntry 1 toByteArray 1}
+    abc.sim.content-sim-test/named-text-zip-bytes
+    {ByteArrayOutputStream 1 ZipEntry 1 setTime 1 ZipOutputStream 1
+     putNextEntry 1 write 1 closeEntry 1 toByteArray 1}
     abc.sim.oracle/expected-selection {}
     abc.sim.render/content-sources {}
+    abc.sim.render/rows->csv {}
+    abc.sim.render/content->zip-bytes
+    {ZipEntry 1 ZipOutputStream 1 putNextEntry 1 getValue 1 setCompressedSize 1
+     setMethod 1 closeEntry 1 update 1 setSize 1 setTime 1 write 1 finish 1
+     ByteArrayOutputStream 1 setComment 1 setCrc 1 toByteArray 1 CRC32 1}
+    abc.tools.source-bundle-test/write-zip!
+    {ZipArchiveEntry 1 putArchiveEntry 1 closeArchiveEntry 1 setEncoding 1
+     setCreateUnicodeExtraFields 1 addExtraField 1 getValue 1 setMethod 1
+     update 1 setSize 1 setTime 1 write 1 ZipArchiveOutputStream 1
+     setUseLanguageEncodingFlag 1 setComment 1 setCrc 1 CRC32 1}
+    abc.tools.source-bundle-test/understate-first-central-size!
+    {wrap 1 order 1 putInt 1}
+    abc.tools.source-snapshot-fixture/write-source-zip!
+    {ZipOutputStream 1 output-stream 1 ZipEntry 1 setTime 1
+     putNextEntry 1 write 1 closeEntry 1}
     abc.sim.render/csv->zip-bytes
     {ByteArrayOutputStream 1 ZipEntry 1 setTime 1 ZipOutputStream 1
      putNextEntry 2 write 2 closeEntry 1 toByteArray 1}
@@ -328,6 +378,9 @@
     abc.tools.files/with-zip-file {ZipFile 1}
     abc.tools.files/write-bytes! {output-stream 1 write 1}
     abc.tools.files/write-text! {spit 1}
+    abc.tools.files/delete-file! {deleteIfExists 1 toPath 1}
+    abc.tools.files/canonicalize {canonicalize 1}
+    abc.tools.files/sorted-path-seq {}
     abc.tools.hash/byte-length {}
     abc.tools.hash/sha256-bytes {update 1 digest 1}
     abc.tools.hash/sha256-file {input-stream 1 read 1 update 1 digest 1}
@@ -350,6 +403,27 @@
     abc.tools.schema/validation-errors {}
     abc.tools.workflow/validate-run {}
     abc.tools.shacl/load-shapes-graph {input-stream 1 read 1 getGraph 1}
+    abc.tools.source-bundle/open-zip-archive
+    {builder 1 setFile 1 setCharset 1 setUseUnicodeExtraFields 1 get 1}
+    abc.tools.source-bundle/decoded-entries {isDirectory 1}
+    abc.tools.source-bundle/read-member!
+    {DigestInputStream 1 usesUTF8ForNames 1 read 1
+     getGeneralPurposeBit 1 digest 1 write 1 ByteArrayOutputStream 1
+     getInputStream 1 toByteArray 1}
+    abc.tools.source-bundle/stage-archive!
+    {createTempFile 2 toPath 2 copy 1 setReadOnly 1 toFile 2 IOException 1
+     deleteIfExists 1}
+    abc.tools.soranoha-build-publication/git-sh {sh 1}
+    abc.tools.parallel/ordered-pmap
+    {newFixedThreadPool 1 invokeAll 1 get 1 shutdown 1}
+    abc.tools.materialize-publication/materialize-publication! {read-json 2}
+    abc.tools.soranoha-build-publication/prepare-output-root! {exists? 1 nanoTime 1}
+    abc.tools.soranoha-build-publication/promote-output-root! {exists? 1 move 1 toPath 2}
+    abc.tools.soranoha-build-publication/read-catalog-zip
+    {ZipFile 1 entries 1 getInputStream 1 readAllBytes 1 String 1}
+    abc.tools.soranoha-build-publication/resolve-invocation-path {getenv 1}
+    abc.tools.soranoha-build-publication/invoke-derive-parser-ir! {}
+    abc.tools.workflow/now-utc {now 1}
     abc.tools.validate-design-bundle/load-turtle-graph {read 1}})
 
 (def ^:private trusted-adapter-traced-loaders
@@ -454,12 +528,14 @@
      clojure.core/> clojure.core/>= clojure.core/+ clojure.core/- clojure.core/max
      clojure.core/* clojure.core// clojure.core/inc clojure.core/dec
      clojure.core/identity clojure.core/constantly clojure.core/if-not
-     clojure.core/atom clojure.core/deref clojure.core/swap! clojure.core/ex-data
-     clojure.core/ex-info clojure.core/ex-message clojure.core/instance?
+     clojure.core/atom clojure.core/volatile! clojure.core/deref clojure.core/swap! clojure.core/vswap! clojure.core/ex-data
+     clojure.core/ex-info clojure.core/ex-message clojure.core/instance? clojure.core/class
      clojure.core/enumeration-seq clojure.core/iterator-seq clojure.core/make-array
      clojure.core/str clojure.core/pr-str clojure.core/format
+     clojure.core/println
      clojure.core/name clojure.core/namespace
      clojure.core/symbol clojure.core/keyword clojure.core/boolean
+     clojure.core/long
      clojure.core/key clojure.core/val
      clojure.core/count clojure.core/empty? clojure.core/seq clojure.core/first
      clojure.core/second clojure.core/ffirst clojure.core/rest clojure.core/next clojure.core/last clojure.core/nth
@@ -476,7 +552,7 @@
      clojure.core/take clojure.core/drop clojure.core/take-while
      clojure.core/drop-while clojure.core/subvec
      clojure.core/take-nth clojure.core/concat clojure.core/cons clojure.core/reverse clojure.core/repeat
-     clojure.core/byte-array clojure.core/unchecked-byte
+     clojure.core/byte-array clojure.core/unchecked-byte clojure.core/alength clojure.core/aget
      clojure.core/string? clojure.core/symbol? clojure.core/keyword? clojure.core/bytes?
      clojure.core/map? clojure.core/set? clojure.core/vector? clojure.core/seq?
      clojure.core/coll? clojure.core/integer? clojure.core/number?
@@ -487,6 +563,7 @@
      clojure.core/subs
      clojure.test/is clojure.string/includes? clojure.string/starts-with?
      clojure.string/ends-with? clojure.string/blank? clojure.string/split
+     clojure.string/lower-case
      clojure.string/split-lines clojure.string/replace clojure.string/replace-first
      clojure.string/join clojure.string/trim
      clojure.set/union clojure.set/difference clojure.set/intersection
@@ -522,16 +599,16 @@
 ;; constructors, static JVM I/O, network, and process APIs go through named
 ;; adapters instead.
 (def ^:private audited-safe-jvm-heads
-  '#{.add .close .contains .find .getBlankNodeLabel .getBytes .getLiteralDatatypeURI
+  '#{.add .availableProcessors .close .contains .deref .find .getCause .getSize .getBlankNodeLabel .getBytes .getLiteralDatatypeURI
      .getLiteralLanguage .getLiteralLexicalForm .getName .getObject
      .focusNode .getEntries .getMessage .getPredicate .getSafeTypeByName .getSchema .getScheme
      .getSubject .getURI .lastIndexOf .level .message .resultPath .severity .source
-     .charAt .conforms .isAbsolute .isBefore .isBlank .length .substring .validate
+     .charAt .conforms .isAbsolute .isBefore .isBlank .length .substring .toMillis .validate
      .isLiteral .isURI})
 
 (def ^:private audited-safe-jvm-vars
-  '#{BaseDatatype. ByteArrayInputStream. Integer/parseInt JsonDocument/of LocalDate/parse Normalizer/normalize
-     ShaclValidator/get YearMonth/parse java.net.URI.
+  '#{BaseDatatype. ByteArrayInputStream. StringWriter. java.io.StringWriter. Integer/parseInt JsonDocument/of LocalDate/parse java.time.Instant/parse java.time.Duration/between Normalizer/normalize
+     ShaclValidator/get YearMonth/parse UCharacter/foldCase Runtime/getRuntime java.net.URI.
      MessageDigest/getInstance GraphUtil/addInto ModelFactory/createDefaultModel NodeFactory/createBlankNode
      NodeFactory/createLiteral NodeFactory/createURI Triple/create TypeMapper/getInstance})
 

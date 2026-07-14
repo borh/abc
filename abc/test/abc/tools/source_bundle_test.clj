@@ -2,6 +2,7 @@
   (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
             [abc.tools.evidence-io :as evidence-io]
             [abc.tools.evidence-test-support :as evidence-support]
+            [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.schema :as schema]
@@ -105,7 +106,7 @@
     file))
 
 (defn- understate-first-central-size! [file declared-size]
-  (let [data (Files/readAllBytes (.toPath file))
+  (let [data (files/read-bytes file)
         signature (byte-array [0x50 0x4b 0x01 0x02])
         offset (first
                 (for [start (range (inc (- (alength data) (alength signature))))
@@ -119,7 +120,7 @@
     (-> (ByteBuffer/wrap data)
         (.order ByteOrder/LITTLE_ENDIAN)
         (.putInt (+ offset 24) (int declared-size)))
-    (Files/write (.toPath file) data (make-array java.nio.file.OpenOption 0))
+    (files/write-bytes! file data)
     file))
 
 (deftest inspect-zip-separates-identities-test

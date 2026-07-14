@@ -111,7 +111,7 @@
   (.getBytes value StandardCharsets/UTF_8))
 
 (defn- write-source-zip! [file work-id]
-  (.mkdirs (.getParentFile (io/file file)))
+  (files/create-dirs! (fs/parent file))
   (with-open [out (ZipOutputStream. (io/output-stream file))]
     (doseq [[path bytes] [[(str work-id ".txt")
                            (utf8-bytes (str "本文 " work-id))]
@@ -135,7 +135,7 @@
 
 (defn write-work-files!
   [work-dir {:keys [title work-id person-id work-hash legacy?]}]
-  (.mkdirs (io/file work-dir))
+  (files/create-dirs! (io/file work-dir))
   (let [identity (when-not legacy? (new-source-fixture! work-dir work-id))
         parser-work-hash (or (:bundle-hash identity) work-hash)
         parser-primary-hash (:primary-text-hash identity)]

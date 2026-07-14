@@ -30,8 +30,8 @@
 
 (defn- write-string-file! [file value]
   (when-let [parent (fs/parent file)]
-    (fs/create-dirs parent))
-  (spit file value)
+    (files/create-dirs! parent))
+  (files/write-text! file value)
   file)
 
 (defn- resolve-header-input [metadata-record persons-dir]
@@ -173,7 +173,7 @@
   (let [parent (fs/parent parser-ir-path)
         source-manifest (when parent
                           (fs/file parent "source.manifest.json"))]
-    (when (and source-manifest (fs/exists? source-manifest))
+    (when (and source-manifest (files/exists? source-manifest))
       (str source-manifest))))
 
 (defn- read-source-manifest [parser-ir-path source-manifest-path]
@@ -579,7 +579,7 @@
            source-manifest-path generated-at]
     :or {generated-at default-generated-at}}]
   (let [output-dir (fs/file output-dir)
-        _ (fs/create-dirs output-dir)
+        _ (files/create-dirs! output-dir)
         parser-ir (files/read-json parser-ir-path)
         parser-ir (sentence-policy/ensure-publication-sentence-evidence! parser-ir)
         metadata-record (files/read-json metadata-record-path)

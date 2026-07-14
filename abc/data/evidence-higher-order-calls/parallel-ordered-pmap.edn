@@ -1,0 +1,4 @@
+{:schema-version :abc-evidence-higher-order-call-v1
+ :caller abc.tools.parallel/ordered-pmap
+ :parameters {f [abc.tools.soranoha-build-publication/derive-selected-candidate
+                 abc.tools.soranoha-build-publication/materialize-publication-item]}}

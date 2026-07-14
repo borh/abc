@@ -19,10 +19,10 @@
 
 (defn- workset! [root works]
   (let [workset-file (fs/file root "workset.edn")]
-    (spit workset-file
-          (pr-str {:snapshot_scope "unit-test-source-snapshot"
-                   :snapshot_date "2026-07-04"
-                   :works works}))
+    (files/write-text! workset-file
+                       (pr-str {:snapshot_scope "unit-test-source-snapshot"
+                                :snapshot_date "2026-07-04"
+                                :works works}))
     workset-file))
 
 (defn- update-json! [path f]

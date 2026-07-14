@@ -68,6 +68,12 @@
 (defn write-text! [path text]
   (spit path text))
 
+(defn delete-file! [path]
+  (java.nio.file.Files/deleteIfExists (.toPath (fs/file path))))
+
+(defn canonicalize [path]
+  (fs/canonicalize (evidence-io/record-read! path)))
+
 (defn exists? [path]
   (fs/exists? (evidence-io/record-read! path)))
 

@@ -31,8 +31,8 @@
       (required-work-value work k)))
 
 (defn- relative-path [from-file to-file]
-  (files/relative-path (fs/canonicalize (fs/parent from-file))
-                       (fs/canonicalize to-file)))
+  (files/relative-path (fs/normalize (fs/absolutize (fs/parent from-file)))
+                       (fs/normalize (fs/absolutize to-file))))
 
 (defn- compact-hashes [& values]
   (vec (keep identity values)))
@@ -251,8 +251,8 @@
    "snapshot_date" (map-value workset :snapshot_date)
    "snapshot_inputs" (->> (map-value workset :works)
                           (map snapshot-input)
-                          (sort-by (juxt #(get % "work_id")
-                                         #(get % "slug")))
+                          (sort-by (fn [input]
+                                     [(get input "work_id") (get input "slug")]))
                           vec)})
 
 (defn- source-identity-object

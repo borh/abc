@@ -142,3 +142,96 @@ Hinoki (`feat/parser-release-qualification` @ `5ae76598`, pushed via
 - `abc/data/parser-evidence-citations.edn` — GOV-2 hash recapture (2 rows).
 - 7 pairs under `abc/docs/evidence/adr-capture/` + `abc/docs/evidence/adr-inputs/`
   — GOV-1 closure recapture.
+
+---
+
+# Task 6 GOV-2 completion — recapture design-bundle output snapshots (fix subagent)
+
+Status: **DONE** — `just validate-migration` exits **0** on hinoki.
+
+## Root cause (broader than the original GOV-2 note)
+
+`monorepo-adr-governance` (root `flake.nix`, `clojure -M:abc/adr-governance --mode
+enforce` with `--repo-root <mono>/abc --workspace-root <mono>`) recomputes every
+registered evidence bundle's recorded input hashes against real bytes and each
+bundle's canonical JCS hash against the registry. Branch changes to
+`src/abc/tools/malli.clj`, `parser_evidence.clj`, `validate_design_bundle.clj`,
+`data/parser-evidence-citations.edn` (+ two `ab-validator/crates/ab-aozora-*`
+sources) and GOV-1's addition of `parser-maintenance-evidence` to the
+`validate-design-bundle` closure left **88 registered bundles** stale, producing
+`input-hash-mismatch` / `missing-evidence-input` / `operational-input-set-mismatch`
+/ `artifact-hash-mismatch` findings against the pinned empty migration baseline
+(`abc/docs/reports/adr-evidence-migration.json` = `{"problems":[]}`). The original
+note only traced the 4 `design-bundle-operational*` snapshots; the `abc/`-prefixed
+`component-clojure-test-v1` bundles pin the same changed files and were also stale.
+
+## Recapture mechanism (no hand-edited hashes/JSON)
+
+The real tool is `clojure -M:abc/adr-evidence-capture` (deps alias
+`:abc/adr-evidence-capture`), one invocation per descriptor, output written to a
+staging dir **outside** the tree:
+
+```
+clojure -M:abc/adr-evidence-capture -- \
+  --repo-root <mono>/abc --workspace-root <mono> \
+  --descriptor docs/evidence/adr-capture/<stem>.edn \
+  --output <staging>/<stem>.json --staging-root <staging>
+```
+
+`component-clojure-test-v1` descriptors resolve their analysis root at
+`<repo-root>/<component-root>` = `abc/abc`; captured them with a git-excluded
+self-symlink `abc/abc -> .` so `repo-root/component-root` resolves to the abc
+component (the tree stays clean; `require-clean!` passes). All 88 recaptured on
+hinoki with **0 failures**, every observation `value=true`.
+
+## Two latent capability-gate defects GOV-1/8fbb581f introduced (fixed at the gate, not masked)
+
+`8fbb581f` made `validate-json-schemas!` call `validate-maintenance-evidence!`,
+pulling `abc.tools.parser-maintenance-evidence/problems` into the derived call
+graph of every focused evidence test reaching `validate-design-bundle`. `problems`
+is pure but its callees use pure JVM internals (`java.time.LocalDate/parse`,
+`Math/ceil`) and `clojure.core/pos-int?`, none in the reviewed capture vocabulary,
+so those focused captures failed `:forbidden-evidence-capability`. Registered
+`problems` as a reviewed structural leaf in `adr_evidence_runtime_inputs.clj`
+(`audited-structural-leaf-vars` + empty `trusted-adapter-operation-counts` entry —
+its own body invokes no raw capability), mirroring `jcs/canonical-json-string` and
+`malli/explain-contract`. `adr-evidence-runtime-inputs-test` (38 tests) stays green.
+
+## Registry re-registration
+
+Re-registered via `clojure -M:abc/adr-evidence-register`. Sequential per-template
+registration clobbers cross-template corroborations (`candidate-registry` removes
+all entries for a template's owned claim-ids; e.g. ADR-0006-C1 is backed by three
+design bundles owned by three templates). Rebuilt in one pass by materializing all
+six templates through the tool's own `materialize-template` (each `:artifact-hash`
+= the recaptured bundle's canonical JCS hash) and combining via
+`candidate-registry` against an empty base → original 163-entry structure, only the
+156 `:artifact-hash` values refreshed, no structural change.
+
+## Verification (hinoki, commit `ce28b127`, exact commands + exit codes)
+
+- `clojure -M:abc/adr-governance -- --repo-root <mono>/abc --workspace-root <mono>
+  --mode enforce` → `ADR governance valid`, `{"ok":true, problems:0}`; identity
+  transform (`abc/nix/adr-problem-identities.jq`) of the report equals the pinned
+  `{"problems":[]}` baseline (`cmp` clean).
+- `nix build .#checks.x86_64-linux.monorepo-adr-governance` → **exit 0** (a first
+  standalone run reported exit 1 purely from a Harmonia post-build-hook cache-copy
+  failure — `nix log` ends `ADR governance valid`; a cached re-run is exit 0).
+- `just validate-migration` → **exit 0** (acceptance gate; runs check-no-build +
+  phase5-checkpoint + monorepo-adr-governance).
+- `nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests` → **exit 0**,
+  `1209 tests, 8046 assertions, 0 failures` (adr-evidence-capture-test 0 errors).
+- No Task 6 source regressed: `malli.clj`, `parser_evidence.clj`, and the Task 6
+  tests are untouched; `parser_maintenance_evidence.clj` restored to its committed
+  bytes.
+
+## Commits (on `feat/parser-release-qualification`)
+
+| sha | message |
+| --- | --- |
+| `97788b3c` | `fix(abc): register maintenance validator as a reviewed evidence leaf` |
+| `5e8f8785` | `fix(abc): recapture design-bundle output snapshots for neutral-comparison + maintenance evidence` (88 bundles + registry) |
+| `ce28b127` | `fix(abc): rebuild evidence registry preserving cross-template corroborations` |
+
+(`9a973576` — a superseded `positive-integer?` helper — was reverted inside
+`97788b3c` once `problems` became a leaf, so the descend-time check is moot.)

@@ -2112,24 +2112,6 @@
       "message": "current evidence input hash does not match the artifact"
     },
     {
-      "actual": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
-      "affected-claim-ids": ["ADR-0006-C1","ADR-0007-C4","ADR-0008-C2","ADR-0010-C5","ADR-0011-C1","ADR-0023-C5","ADR-0024-C6","ADR-0025-C6"],
-      "artifact-path": "docs\/evidence\/adr-runs\/design-bundle-operational-parser-ir-publication.json",
-      "expected": "sha256:b04b5ea7a848296b0c13f2546df61b1934c0b7837ca74d56e0188e11d69080f5",
-      "input-path": "flake.nix",
-      "kind": "input-hash-mismatch",
-      "message": "current evidence input hash does not match the artifact"
-    },
-    {
-      "actual": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
-      "affected-claim-ids": ["ADR-0006-C1","ADR-0007-C4","ADR-0008-C2","ADR-0010-C5","ADR-0011-C1","ADR-0023-C5","ADR-0024-C6","ADR-0025-C6"],
-      "artifact-path": "docs\/evidence\/adr-runs\/design-bundle-operational-parser-ir-publication.json",
-      "expected": "sha256:b04b5ea7a848296b0c13f2546df61b1934c0b7837ca74d56e0188e11d69080f5",
-      "input-path": "flake.nix",
-      "kind": "input-hash-mismatch",
-      "message": "operational input hash does not match current bytes"
-    },
-    {
       "actual": "sha256:fbb178a0f8e1b813697059b145e0abcc0dfd8d13bc1988fe6c0b627a9d79a009",
       "affected-claim-ids": ["ADR-0009-C5","ADR-0010-C4"],
       "artifact-path": "docs\/evidence\/adr-runs\/diagnostic-schema-exact-current.json",
@@ -3694,24 +3676,6 @@
       "input-path": "abc\/test\/abc\/tools\/schema_validation_evidence_test.clj",
       "kind": "input-hash-mismatch",
       "message": "current evidence input hash does not match the artifact"
-    },
-    {
-      "actual": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
-      "affected-claim-ids": ["ADR-0024-C4","ADR-0025-C1","ADR-0025-C2","ADR-0025-C3","ADR-0025-C4","ADR-0025-C5"],
-      "artifact-path": "docs\/evidence\/adr-runs\/parser-publication-rendering.json",
-      "expected": "sha256:b04b5ea7a848296b0c13f2546df61b1934c0b7837ca74d56e0188e11d69080f5",
-      "input-path": "flake.nix",
-      "kind": "input-hash-mismatch",
-      "message": "current evidence input hash does not match the artifact"
-    },
-    {
-      "actual": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
-      "affected-claim-ids": ["ADR-0024-C4","ADR-0025-C1","ADR-0025-C2","ADR-0025-C3","ADR-0025-C4","ADR-0025-C5"],
-      "artifact-path": "docs\/evidence\/adr-runs\/parser-publication-rendering.json",
-      "expected": "sha256:b04b5ea7a848296b0c13f2546df61b1934c0b7837ca74d56e0188e11d69080f5",
-      "input-path": "flake.nix",
-      "kind": "input-hash-mismatch",
-      "message": "operational input hash does not match current bytes"
     },
     {
       "actual": "sha256:e0421a125765546187c5ef92b1a2c13f3b85c759471263c82fb452e9bb5fa4bc",

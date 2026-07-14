@@ -50,7 +50,7 @@
     "examples\/workflow\/passed.workflow-run.json": "sha256:c73d776b5041db6e88bd5c63d695ea363d233f633a0134e3fe313782cd2c950c",
     "fixtures\/tei-eaj-comparison\/workset-export.json": "sha256:75ef3259683bfc2ad0395e5d04c4466f7a18d5c2d1420ccbdccc325a3ca969c4",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:b04b5ea7a848296b0c13f2546df61b1934c0b7837ca74d56e0188e11d69080f5",
+    "flake.nix": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/aat-parser-ir-divergence-bundle.schema.json": "sha256:93719c5f2a3cc899d3ef59a4ecd6b3de722c0980ae024e38c355b32a0264b401",
     "schemas\/aat-parser-ir-divergence.schema.json": "sha256:c8e1c08a0da295a3ecea8e2c5fb685b8624133c1cc306e84565efa8010c54bfc",
@@ -148,7 +148,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix run .#validate-design-bundle\"",
-    "revision": "12de1f842c15873e80a9fcc9017a0c54b86d731b",
+    "revision": "6166a9619a78579b5a9a892c9582cde248492635",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

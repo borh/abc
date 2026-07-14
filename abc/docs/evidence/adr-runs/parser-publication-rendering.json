@@ -23,7 +23,7 @@
     "examples\/v0\/example-work\/parser-ir.json": "sha256:63a3d9cda911859bc0f93950e196f4c455ec9a5cf4bbb6a4863e4012637f8037",
     "examples\/v0\/example-work\/source.manifest.json": "sha256:a618de2d65f84a55b5243aaa1aa60d7e7c470228dc6ac7907ffd202fb3e0cc81",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:b04b5ea7a848296b0c13f2546df61b1934c0b7837ca74d56e0188e11d69080f5",
+    "flake.nix": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
     "schemas\/metadata-record.schema.json": "sha256:cb1c773f86f0ae16f613b342be80b87f8a7829417bcdcd36b5737eeab6a85129",
@@ -83,7 +83,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.parser-publication-evidence\\\"\"",
-    "revision": "12de1f842c15873e80a9fcc9017a0c54b86d731b",
+    "revision": "6166a9619a78579b5a9a892c9582cde248492635",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -86,6 +86,36 @@
         (str/replace "\\" "/"))
     "bin/kaocha"))
 
+(defn- wrapped-v2-contract [descriptor]
+  (let [profile (:input-profile descriptor)
+        component? (= "component-clojure-test-v1" (:kind profile))
+        component (when component? (normalized-component-root profile))
+        argv (:argv descriptor)
+        command (when (= ["bash" "-lc"] (subvec argv 0 (min 2 (count argv))))
+                  (nth argv 2 nil))
+        kaocha-prefix (str "cd " component " && bin/kaocha --focus ")
+        bootstrap-command
+        (str "cd " component
+             " && clojure -M:abc/adr-evidence-bootstrap -- --repo-root ."
+             " --workspace-root .. --verify"
+             " docs/evidence/adr-bootstrap/pre-promotion.json")]
+    (cond
+      (and component?
+           (= "bash" (:tool descriptor))
+           (string? command)
+           (str/starts-with? command kaocha-prefix))
+      (let [focus (subs command (count kaocha-prefix))]
+        (when (and (qualified-symbol? (symbol focus))
+                   (not (str/includes? focus " ")))
+          {:kind :kaocha :vars [(symbol focus)]}))
+
+      (and component?
+           (= "bash" (:tool descriptor))
+           (= command bootstrap-command))
+      {:kind :cli :vars ['abc.tools.adr-evidence-bootstrap/-main]}
+
+      :else nil)))
+
 (defn- focus-vars! [descriptor]
   (let [profile (:input-profile descriptor)
         runner (expected-runner profile)
@@ -103,18 +133,22 @@
                                           (qualified-symbol? (symbol value))))
                                    pairs)
                            (= (count pairs) (count (distinct pairs))))
-                  (mapv (comp symbol second) pairs))]
-    (when-not (seq focuses)
+                  (mapv (comp symbol second) pairs))
+        contract (or (when (seq focuses) {:kind :kaocha :vars focuses})
+                     (wrapped-v2-contract descriptor))]
+    (when-not contract
       (throw (ex-info "version-2 capture requires a bound repository Kaocha runner and exact focuses"
                       {:exit-code 2 :kind :invalid-focused-evidence-runner})))
-    focuses))
+    contract))
 
 (defn- validate-runner! [repo-root descriptor]
-  (let [runner (expected-runner (:input-profile descriptor))
+  (let [wrapped (wrapped-v2-contract descriptor)
+        runner (expected-runner (:input-profile descriptor))
         state (containment/path-state repo-root runner)]
-    (when-not (and (= :ok (:state state))
-                   (fs/regular-file? (:path state))
-                   (fs/executable? (:path state)))
+    (when-not (or wrapped
+                  (and (= :ok (:state state))
+                       (fs/regular-file? (:path state))
+                       (fs/executable? (:path state))))
       (throw (ex-info "version-2 Kaocha runner must be a contained executable file"
                       {:exit-code 2 :kind :invalid-focused-evidence-runner
                        :runner runner :state (:state state)})))
@@ -123,13 +157,19 @@
 (def ^:private kaocha-summary-pattern
   #"(\d+) tests?, (\d+) assertions?(?:, (\d+) errors?)?, (\d+) failures?\.")
 
-(defn- validate-v2-command-result! [focuses command-result]
-  (let [summaries (re-seq kaocha-summary-pattern (:stdout command-result))
+(defn- validate-v2-command-result! [contract command-result]
+  (let [contract (if (map? contract) contract {:kind :kaocha :vars contract})
+        summaries (re-seq kaocha-summary-pattern (:stdout command-result))
         test-count (some-> summaries first second parse-long)
-        expected (count (distinct focuses))]
-    (when-not (and (= 1 (count summaries))
-                   (pos? expected)
-                   (= expected test-count))
+        expected (count (distinct (:vars contract)))
+        valid? (case (:kind contract)
+                 :kaocha (and (= 1 (count summaries))
+                              (pos? expected)
+                              (= expected test-count))
+                 :cli (and (zero? (:exit-code command-result))
+                           (empty? summaries))
+                 false)]
+    (when-not valid?
       (throw (ex-info "Kaocha did not execute each focused evidence test exactly once"
                       {:exit-code 2 :kind :invalid-focused-evidence-runner
                        :expected-tests expected :actual-tests test-count})))
@@ -263,10 +303,10 @@
                          (normalized-component-root (:input-profile descriptor)))
         focused? (contains? #{"abc-adr-evidence-capture-v2"
                               "abc-adr-evidence-capture-v3"} version)
-        focuses (when focused?
-                  (if (= version "abc-adr-evidence-capture-v3")
-                    [(:focus-var (:catalog-row context))]
-                    (focus-vars! descriptor)))
+        contract (when focused?
+                   (if (= version "abc-adr-evidence-capture-v3")
+                     {:kind :kaocha :vars [(:focus-var (:catalog-row context))]}
+                     (focus-vars! descriptor)))
         _ (when focused?
             (if (= version "abc-adr-evidence-capture-v3")
               (validate-focused-runner! repo-root descriptor)
@@ -285,10 +325,11 @@
                                            :descriptor runtime-descriptor}
                          _ (runtime-inputs/validate-runtime-input-manifest! manifest-options)
                          analysis-root repo-root]
-                     (runtime-inputs/validate-focused-deftests!
-                      analysis-root focuses)
+                     (when (= :kaocha (:kind contract))
+                       (runtime-inputs/validate-focused-deftests!
+                        analysis-root (:vars contract)))
                      (-> (runtime-inputs/analyze-reachable-vars
-                          analysis-root focuses)
+                          analysis-root (:vars contract))
                          runtime-inputs/assert-v2-boundary-ownership!)))
         prefix (if component? (str (str/replace component-root #"/+$" "") "/") "")
         analyzed-paths (when analysis
@@ -301,7 +342,7 @@
                            (run-process repo-root (:argv descriptor)))]
       (require-clean! workspace-root :after-command)
       (let [command-result (if focused?
-                             (validate-v2-command-result! focuses
+                             (validate-v2-command-result! contract
                                                           command-result)
                              command-result)
             profile (:input-profile descriptor)

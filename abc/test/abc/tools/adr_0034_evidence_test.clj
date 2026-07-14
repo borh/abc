@@ -56,6 +56,8 @@
   (runtime/with-validated-read-trace!
     (boundary-options "adr-0034-c1")
     (fn []
+      (files/read-text "schemas/adr-evidence-run.schema.json")
+      (files/read-text "schemas/adr-external-evidence.schema.json")
       (testing "the compatibility matrix and entry shape are closed"
         (is (= matrix (evidence/load-matrix)))
         (doseq [key [:observed :inputs :verdict]]

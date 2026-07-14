@@ -645,6 +645,21 @@
     (is (= ordinary (@validate! ordinary descriptor-path)))
     (is (= component (@validate! component component-descriptor-path)))
     (is (= normalized-component (@validate! normalized-component component-descriptor-path)))
+    (let [wrapped (assoc component
+                         :tool "bash"
+                         :argv ["bash" "-lc"
+                                "cd abc && bin/kaocha --focus example.core-test/contract"])
+          cli (assoc component
+                     :tool "bash"
+                     :argv ["bash" "-lc"
+                            (str "cd abc && clojure -M:abc/adr-evidence-bootstrap -- "
+                                 "--repo-root . --workspace-root .. --verify "
+                                 "docs/evidence/adr-bootstrap/pre-promotion.json")])]
+      (is (= wrapped (@validate! wrapped component-descriptor-path)))
+      (is (= cli (@validate! cli component-descriptor-path)))
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (@validate! (update-in wrapped [:argv 2] str " --randomize false")
+                               component-descriptor-path))))
     (doseq [[label invalid]
             [["generic true" (assoc ordinary :tool "true" :argv ["true" "--focus"
                                                                  "example.core-test/contract"])]

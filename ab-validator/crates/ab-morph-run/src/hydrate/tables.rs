@@ -437,7 +437,7 @@ pub(crate) mod tests {
         Arc::from(s)
     }
 
-    /// Also used by `hydrate::tests::write_e2e_fixture` 
+    /// Also used by `hydrate::tests::write_e2e_fixture`
     /// end-to-end orchestration fixture); `pub(crate)` for that cross-module
     /// `#[cfg(test)]` reuse.
     pub(crate) fn write_fixture(root: &std::path::Path) -> std::path::PathBuf {

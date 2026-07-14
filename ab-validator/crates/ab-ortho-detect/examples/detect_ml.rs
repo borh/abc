@@ -6,7 +6,7 @@
 //! same `recall_floor.clj` consumer works without changes).
 //!
 //! This is the ML train-accuracy ceiling measurement: the model was trained
-//! on the same 300 records it is being evaluated on 
+//! on the same 300 records it is being evaluated on
 //! measurement report for the upper-bound caveat). It is NOT a
 //! generalization estimate.
 //!

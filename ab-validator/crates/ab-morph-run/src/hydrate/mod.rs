@@ -550,7 +550,7 @@ pub(crate) mod tests {
     /// the typed AAT fixture's 12 projected chars), the typed AAT file,
     /// an ABC catalog, an aozora_works.parquet mapping src-a→000080,
     /// and a ranking JSON whose single row exemplifies chars [2,5) region 2.
-    /// `pub(crate)` for cross-module `#[cfg(test)]` reuse — 
+    /// `pub(crate)` for cross-module `#[cfg(test)]` reuse —
     /// `render::tests::markdown_renders_all_layers` drives this same
     /// end-to-end fixture through `run_hydrate_interesting` to pin the
     /// renderer against real bundle output.

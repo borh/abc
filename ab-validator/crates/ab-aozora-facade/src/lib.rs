@@ -113,7 +113,6 @@ pub use splice::{CoupledKind, Coupling, Region, RegionRole, SpliceError, SpliceS
 
 pub use incremental::{DiagBaseRef, DiagSplice, PieceSeq, SanitizedSrc};
 
- 
 ///
 /// Diagnostics-only incremental re-parse — the LSP's per-keystroke hot path
 ///. Splices the maintained [`PieceSeq`] (the next edit's
@@ -148,7 +147,6 @@ pub fn reparse_incremental_diagnostics_only(
     incremental::reparse_incremental_diagnostics_only(&base, &new_sanitized, edit_old)
 }
 
- 
 ///
 /// Generic-source variant of [`reparse_incremental_diagnostics_only`]: the same
 /// diagnostics-only hot path, but over any [`SanitizedSrc`] byte source `S`

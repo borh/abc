@@ -4,8 +4,7 @@
    semantic-sidecar rules locally.
    See ADR 0029."
   (:require [abc.tools.adr :as adr]
-            [abc.tools.files :as files]
-            [babashka.fs :as fs]))
+            [abc.tools.files :as files]))
 
 (def adr-dir "docs/adr")
 (def out-path "docs/adr/adr-graph.mmd")
@@ -33,13 +32,15 @@
    :extends "extends"})
 
 (defn load-relations []
-  (if (fs/exists? relations-path)
+  (if (files/exists? relations-path)
     (:relations (files/read-edn relations-path))
     []))
 
 ;; --- lint (pure core + IO wrapper) ------------------------------------------
 (defn lint-adrs [adrs relations]
-  (let [by-num (into {} (map (juxt :num identity)) adrs)
+  (let [by-num (into {} (map (fn [adr-value]
+                               [(:num adr-value) adr-value])
+                             adrs))
         exists? (set (keys by-num))]
     (vec
      (concat
@@ -52,19 +53,19 @@
         (format "adr-relations edge %s->%s :note must be a string"
                 (:from r) (:to r)))
       ;; sidecar: single ownership — header-owned types forbidden here
-      (for [r relations :when (header-owned-types (:type r))]
+      (for [r relations :when (contains? header-owned-types (:type r))]
         (format "adr-relations edge %04d->%04d uses header-owned type %s; put it in the ADR header"
                 (:from r) (:to r) (:type r)))
       ;; sidecar: unknown types
       (for [r relations
             :when (and (keyword? (:type r))
-                       (not (relation-types (:type r)))
-                       (not (header-owned-types (:type r))))]
+                       (not (contains? relation-types (:type r)))
+                       (not (contains? header-owned-types (:type r))))]
         (format "adr-relations edge %04d->%04d uses unknown relation type %s"
                 (:from r) (:to r) (:type r)))
       ;; sidecar: referential integrity
       (for [r relations n [(:from r) (:to r)]
-            :when (and (integer? n) (not (exists? n)))]
+            :when (and (integer? n) (not (contains? exists? n)))]
         (format "adr-relations edge references non-existent ADR %04d" n))))))
 
 (defn lint* []
@@ -101,7 +102,8 @@
 (defn graph-from [adrs relations]
   (let [nums (set (map :num adrs))
         edges (for [e (all-edges adrs relations)
-                    :when (and (nums (:from e)) (nums (:to e)))
+                    :when (and (contains? nums (:from e))
+                               (contains? nums (:to e)))
                     :let [[style label] (or (get edge-style (:type e))
                                             [:dashed (get relation-label (:type e) (name (:type e)))])]]
                 {:from (node-id (:from e)) :to (node-id (:to e))

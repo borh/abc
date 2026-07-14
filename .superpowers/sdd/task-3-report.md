@@ -165,3 +165,10 @@ multiple primary source members with the same work ID. The materializer now
 uses the established `ab-check` identity `work_id` plus the first twelve hex
 digits of the indexed-path SHA-256. This retains every selected member without
 collision or reordering; the focused test pins the composite identity.
+
+The `aozora-rs` native lane now has a dedicated stdin runner. It decodes input
+and directly calls the pinned core's `tokenize`, `scopenize`, and `retokenize`
+APIs over the entire text, then emits the native retokenized stream. It does
+not call adapter body selection, fallback, mapping, or AAT projection. RED was
+the missing native function; its focused test proves ruby recognition and
+retention of header text. The adapter-crate tests, formatter, and clippy pass.

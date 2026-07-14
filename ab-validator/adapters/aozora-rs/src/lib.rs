@@ -10,7 +10,7 @@ mod parser;
 mod projection;
 mod source;
 
-pub use dump::retokenized_dump_json;
+pub use dump::{native_retokenized_dump_json, retokenized_dump_json};
 use metrics::{AdapterMetrics, AdapterMetricsParts, FallbackDecision, FallbackReason};
 use parser::ParsedSource;
 pub use source::{DecodedSource, decode_source_bytes};

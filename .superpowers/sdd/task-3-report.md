@@ -179,3 +179,27 @@ content-addressed outcome files when no manifest exists, reusing a row only if
 its embedded execution identity matches. The final completeness and artifact
 hash verifier remains mandatory. RED showed identical execution rewrote rows
 after deleting the manifest; GREEN preserves them byte-for-byte.
+
+## Completed preregistered execution
+
+All ten included parser/mode lanes were executed independently over all 127
+frozen notation vectors and all 17,886 pinned corpus items. Every one of the 20
+external manifests now passes a fresh verifier run that checks ordered
+completeness plus every outcome, stdout, stderr, source, and manifest-entry
+hash. The compact checked manifest records the frozen protocol, corpus,
+inventory, parser, adapter, and execution identities without committing
+corpus-scale artifacts or machine-local paths.
+
+Corpus outcomes are exact: `aozora` native 17,885 success/1 failure and adapted
+17,886 success; `aozora2` native 17,886 success and adapted 17,874 success/12
+timeouts; both `aozora-rs` lanes and both `aozora2html` lanes have 17,886
+success; `aozora-epub3` native has 17,836 success/50 failures and adapted has
+17,773 success/113 failures. Vector lanes have 127 successes except adapted
+`aozora-epub3`, which has 123 successes/4 failures.
+
+The first aozora2html manifests detected outcome-hash mismatches caused by
+workers surviving an earlier overlapping launch. Neither manifest was
+accepted. After all overlapping executors exited, one isolated resume pass per
+lane rewrote only mismatches; both complete manifests then passed independent
+verification. This demonstrates that the executor failed closed on corrupted
+run identity rather than silently accepting the row counts.

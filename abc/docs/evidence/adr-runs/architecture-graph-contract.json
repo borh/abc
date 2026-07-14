@@ -1,0 +1,74 @@
+{
+  "input_profile":
+  {
+    "explicit": ["bin\/kaocha","docs\/adr\/0001-manifest-identity.md","docs\/adr\/0002-parser-evaluation.md","docs\/adr\/0006-v0-design-bundle-validation.md","docs\/adr\/0007-external-parser-validation-boundary.md","docs\/adr\/0008-abc-tools-runtime.md","docs\/adr\/0009-imported-output-materialization.md","docs\/adr\/0010-manifest-identity-hardening.md","docs\/adr\/0011-generated-fixture-policy.md","docs\/adr\/0012-tei-odd-schematron-validation.md","docs\/adr\/0013-cultural-heritage-lod-profile.md","docs\/adr\/0014-iiif-applicability.md","docs\/adr\/0015-temporal-modeling.md","docs\/adr\/0016-edtf-level1-decade-century.md","docs\/adr\/0017-vocabulary-review.md","docs\/adr\/0018-predicate-rename-batch-1.md","docs\/adr\/0020-person-identity-drift-data-model.md","docs\/adr\/0021-person-identity-drift-harness.md","docs\/adr\/0022-upstream-ingest-drift-awareness.md","docs\/adr\/0023-owned-aat-parser-ir-mapping.md","docs\/adr\/0024-parser-ir-span-and-ruby-direction.md","docs\/adr\/0025-parser-ir-publication-rendering.md","docs\/adr\/0029-diagrams-as-gated-derived-views.md","docs\/adr\/0030-aozora-parser-selection.md","docs\/adr\/0031-adr-governance-validation.md","docs\/adr\/0032-parser-fork-hard-detach.md","docs\/adr\/0033-source-bundle-identity.md","docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md","docs\/architecture-stages.edn","docs\/architecture.md","docs\/architecture.mmd","docs\/evidence\/adr-capture\/architecture-graph-contract.edn","docs\/evidence\/adr-inputs\/architecture-graph-contract.edn","schemas\/manifest.schema.json","schemas\/schema-contracts.json"],
+    "kind": "clojure-test-v1",
+    "roots": ["abc.tools.diagram.architecture-graph-evidence-test"]
+  },
+  "inputs":
+  {
+    "bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
+    "docs\/adr\/0001-manifest-identity.md": "sha256:4dc7f51f661abc61b65d933a07234009e93966c73121f8af197b66cd7c68f5c2",
+    "docs\/adr\/0002-parser-evaluation.md": "sha256:d9f0b2b546a3980d1533c750973351ae2539220dce089586ef5c22a5c35935cf",
+    "docs\/adr\/0006-v0-design-bundle-validation.md": "sha256:c63dced858d86e301bd747f880aba8826fbaa896af83034e2d5c3427a1e32a2a",
+    "docs\/adr\/0007-external-parser-validation-boundary.md": "sha256:956da6e03f723cf52ea164cb964e8b8fd4a1ec94c8c308af406cc0c615ae46aa",
+    "docs\/adr\/0008-abc-tools-runtime.md": "sha256:03d966f9984b578470b405ff0f15ae048f06e7380657e55b3061f19ac6dd711e",
+    "docs\/adr\/0009-imported-output-materialization.md": "sha256:001ab454f690c7074c78fd1493f8f4347d3d3e1be1f7aaaa919fae665f3c0cff",
+    "docs\/adr\/0010-manifest-identity-hardening.md": "sha256:68799501519915641cc0344f078495b57650abcc7ee96bd35af31c36e3999c56",
+    "docs\/adr\/0011-generated-fixture-policy.md": "sha256:d35e374af0464d26230cbf2b113df583bebeda6371146aeb40b97b2e29a12aff",
+    "docs\/adr\/0012-tei-odd-schematron-validation.md": "sha256:b1e8e86524a2e9c58c9552fb57340ffeaa31ff1a8434bcdae598e122c72f207b",
+    "docs\/adr\/0013-cultural-heritage-lod-profile.md": "sha256:3c57d1d8458ffb6059589995ade8e10fc5567c1cf240be9793d0bf30a3f60ce2",
+    "docs\/adr\/0014-iiif-applicability.md": "sha256:4147ee095146b909b9ee34b7a79bc0827bbb3901b2cad6c8e4430997fc99ce01",
+    "docs\/adr\/0015-temporal-modeling.md": "sha256:72688ad7c033cf683da0110a3fac1a9111a2cffdf8a290cac2095e48b4aa99d8",
+    "docs\/adr\/0016-edtf-level1-decade-century.md": "sha256:ded2fc127fb3212c182334301768be126acf72a7bc4da4b05ebab0f358c5f6ca",
+    "docs\/adr\/0017-vocabulary-review.md": "sha256:a8ab11de7eac9477296e6086fbc55b9ccdb20abbd9adaa60ec0f24e587aa6ac8",
+    "docs\/adr\/0018-predicate-rename-batch-1.md": "sha256:969410675ec1488279d77d0d7f1f2411b6267e858f62e07201c09f13a6138d40",
+    "docs\/adr\/0020-person-identity-drift-data-model.md": "sha256:ed3eb8e97f7bd8841cf5cab0a13aaaa0eb5ffa2a12d1b8eec7245e78fd51c8c9",
+    "docs\/adr\/0021-person-identity-drift-harness.md": "sha256:97fe40c4346f2f7440390d550d2f6126d218fa9a412dc74e3c7f959d5046deaf",
+    "docs\/adr\/0022-upstream-ingest-drift-awareness.md": "sha256:1ef8de7d19423a6c67324538e624ca297b7608bd509d330745ad6cc9193dea52",
+    "docs\/adr\/0023-owned-aat-parser-ir-mapping.md": "sha256:5633bbac76ac1aa8ff833a32505af7cf78c76f33762d418d440836f330d01b10",
+    "docs\/adr\/0024-parser-ir-span-and-ruby-direction.md": "sha256:be419cbb59c13da93fcdb68968ec3edecbb8ee80e646b24175c7837bf0e00f4e",
+    "docs\/adr\/0025-parser-ir-publication-rendering.md": "sha256:d9d2ff8a7d4b200ef015e49a07d56b4af1309e35c2a6f35027b0f54d91f6c0fc",
+    "docs\/adr\/0029-diagrams-as-gated-derived-views.md": "sha256:b32b5a9d13e3c8379a328573e4ababd89339afefbe151cab93d96bddd872e391",
+    "docs\/adr\/0030-aozora-parser-selection.md": "sha256:fab228ee1cb081d532d708f530c58fa80fecda16af7d7e587428ae9db6e3f1b2",
+    "docs\/adr\/0031-adr-governance-validation.md": "sha256:65253eb4aec74053edb34534ac5adc000765502afcffb669602d2c708604fbcf",
+    "docs\/adr\/0032-parser-fork-hard-detach.md": "sha256:5bef3338b06d9ad5fa61352316e938b7fc49bdd2a7c95531873859f8727c1f02",
+    "docs\/adr\/0033-source-bundle-identity.md": "sha256:8dc84c890b8a1a7fcf08d8ac6eb0200b2af3d0d8e27a6fa4e814bf7ab115e752",
+    "docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md": "sha256:bd7addd48c6d8cd7400e3dc90a957a167ffc567968490d821d736820809c7352",
+    "docs\/architecture-stages.edn": "sha256:27bb043a7e9af7fb89662c21528717a8d42bdc7d3a4a7de08673ec1ae0302637",
+    "docs\/architecture.md": "sha256:0967767f9bb17c0353fc6df848b865b43f4a006e7351868bba511b801a8ffcb0",
+    "docs\/architecture.mmd": "sha256:663f8a679fd444843a8a027f1f87226f0adb648bc3e979be1cc8c5900b0629e8",
+    "docs\/evidence\/adr-capture\/architecture-graph-contract.edn": "sha256:7d3ec0fbbe82f331dcb4e49f5ade2b0450f24db009a5619c502a03993bc4b593",
+    "docs\/evidence\/adr-inputs\/architecture-graph-contract.edn": "sha256:cd4cbef59097704d1d46ea47a6e8f61650c5934587a3b2687e313b1f1c7a077d",
+    "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
+    "schemas\/schema-contracts.json": "sha256:dcf1691be1941c5fd5fa8537f585c9f1739d41b4febd68278f9649946224783d",
+    "src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:0a41103e0138763b50fb8281426fdf33af776db0da8e16189a3a015930a4dbab",
+    "src\/abc\/tools\/diagram\/architecture_graph.clj": "sha256:e4838a28075504fcaac60f225f2c2c5ff72736bc194b0bd1016b08ed8985cdaa",
+    "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "src\/abc\/tools\/files.clj": "sha256:03fe0bcd04f8315c89fb8eba76e75281533419fa9c0709a7565977db66839bae",
+    "src\/abc\/tools\/hash.clj": "sha256:382fcb4b8e86dc5d80469afadae553b0ee6908ccbea9d47ec779487c92bcd4b9",
+    "src\/abc\/tools\/jcs.clj": "sha256:93535b8059812223aa144c09e76a9903634a6936bc5c03c88da285e2b35f442a",
+    "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "test\/abc\/tools\/diagram\/architecture_graph_evidence_test.clj": "sha256:449cc192aa6c30d21a9f1bc3d8be1a67c54c9d3fbe411238c36b15cdd5721780"
+  },
+  "observations":
+  {
+    "architecture-graph-contracts-pass":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.architecture-graph-evidence-test\/architecture-graph-contract\"",
+    "revision": "369a747bca533a6b5af2d295ab2854037c547f98",
+    "tool": "bin\/kaocha"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

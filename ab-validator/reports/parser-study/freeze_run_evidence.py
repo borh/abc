@@ -17,6 +17,24 @@ from typing import Any
 CANDIDATES = ("aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3")
 MODES = ("native", "adapter_normalized")
 INVENTORIES = ("official-notation-vectors", "aozorabunko-source-snapshot")
+COMMAND_BINDINGS = {
+    ("aozora", "native"): ("aozora", ["inspect", "nodes", "-"]),
+    ("aozora", "adapter_normalized"): ("aozora-adapter", ["--mode", "aat"]),
+    ("aozora2", "native"): ("aozora2", ["html", "--encoding", "utf-8"]),
+    ("aozora2", "adapter_normalized"): ("aozora2-adapter", ["--mode", "aat"]),
+    ("aozora-rs", "native"): ("aozora-rs-native", []),
+    ("aozora-rs", "adapter_normalized"): ("aozora-rs-adapter", ["--mode", "aat"]),
+    ("aozora2html", "native"): ("aozora2html-adapter", ["--mode", "html"]),
+    ("aozora2html", "adapter_normalized"): (
+        "aozora2html-adapter",
+        ["--mode", "aat"],
+    ),
+    ("aozora-epub3", "native"): ("aozora-epub3-adapter", ["--mode", "html"]),
+    ("aozora-epub3", "adapter_normalized"): (
+        "aozora-epub3-adapter",
+        ["--mode", "aat"],
+    ),
+}
 HOST_UNAVAILABLE = {
     "status": "unavailable",
     "reason": "not_captured_immediately_before_run",
@@ -193,6 +211,9 @@ def project_summary(
         for row in preregistration["candidates"]
         if row["disposition"] == "included"
     }
+    projected["schema_version"] = 1
+    projected["host_capture"] = copy.deepcopy(resolver["host_capture"])
+    projected["execution_contracts"] = {}
     corpora = {row["id"]: row for row in preregistration["corpora"]}
     inventories: dict[str, Any] = {}
     for inventory_id, path_value in resolver["inventories"].items():
@@ -219,6 +240,9 @@ def project_summary(
         rows = neutral.verify(inventory_path, output)
         run["outcomes"] = dict(sorted(Counter(row["status"] for row in rows).items()))
         materialization = resolver["materializations"][run["execution_sha256"]]
+        program_basename, required_argv = COMMAND_BINDINGS[
+            (run["candidate"], run["mode"])
+        ]
         materialization_projection = {
             key: materialization[key]
             for key in (
@@ -230,9 +254,15 @@ def project_summary(
                 "derivation_identity",
             )
         }
-        projected["execution_contracts"][run["execution_sha256"]][
-            "materialization_binding_sha256"
-        ] = sha256(canonical_bytes(materialization_projection))
+        projected["execution_contracts"][run["execution_sha256"]] = {
+            "candidate": run["candidate"],
+            "mode": run["mode"],
+            "required_program_basename": program_basename,
+            "required_argv": required_argv,
+            "materialization_binding_sha256": sha256(
+                canonical_bytes(materialization_projection)
+            ),
+        }
     validate_summary(projected)
     validate_frozen_bindings(
         preregistration_bytes,

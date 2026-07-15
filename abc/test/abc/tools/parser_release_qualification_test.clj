@@ -79,16 +79,10 @@
     (is (= :not-qualified (q/gate-status (q/evaluate preds one-fail))))
     (is (= "Proposed" (q/adr-0039-status (q/evaluate preds one-fail))))))
 
-;; --- Release-evidence class boundary (Task 6 / ADR 0038) ----------------------
-
-(deftest comparison-and-neutral-evidence-cannot-qualify-release-test
-  (testing "a conversion-compatibility entry is a valid release evidence class"
-    (is (map? (q/release-evidence-guard! {:evidence_id "x"
-                                          :evidence_class :conversion-compatibility}))))
-  (doseq [cls [:parser-selection :neutral-comparison :comparator-oracle]]
-    (testing (str cls " is structurally rejected as release evidence")
-      (is (thrown? clojure.lang.ExceptionInfo
-                   (q/release-evidence-guard! {:evidence_id "x" :evidence_class cls}))))))
+;; The release evidence-class boundary itself (assert-release-evidence! /
+;; entry-release-qualifying?) is exercised directly in
+;; abc.tools.parser-evidence-test; this gate consumes a measurement bundle and
+;; never ingests citations, so there is no wrapper to test here.
 
 ;; --- Report assembly + schema -------------------------------------------------
 

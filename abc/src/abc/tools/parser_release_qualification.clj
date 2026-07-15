@@ -12,14 +12,14 @@
     `:instrument-missing` has verdict `:unavailable`. It is NEVER `:pass` and
     NEVER a fabricated number.
   - Numeric comparison is exact. A `0.969` observation FAILS a `1.0` predicate.
-  - Release evidence must be a release evidence class (ADR 0038 / Task 6
-    boundary in `abc.tools.parser-evidence`). Comparison / neutral citations are
-    structurally rejected by `assert-release-evidence!` and can never qualify a
-    release."
+  - This gate consumes a captured measurement bundle (`:measurements`), never
+    citation evidence, so comparison / neutral citations cannot reach it at all.
+    The release evidence-class boundary itself lives in `abc.tools.parser-evidence`
+    (`assert-release-evidence!`, ADR 0038 / Task 6) for any path that does ingest
+    citations."
   (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
-            [abc.tools.parser-evidence :as parser-evidence]
             [clojure.string :as string]
             [malli.core :as m]))
 
@@ -168,16 +168,6 @@
   (if (= :release-qualified (gate-status results))
     "Accepted"
     "Proposed"))
-
-;; --- Release-evidence class boundary (Task 6 / ADR 0038) ----------------------
-
-(defn release-evidence-guard!
-  "Delegate to the Task 6 structural boundary: only a release evidence class
-  (`:conversion-compatibility`) may back a release claim; comparison / neutral
-  citations throw. Consumed by the gate so comparison evidence is structurally
-  incapable of qualifying a release."
-  [entry]
-  (parser-evidence/assert-release-evidence! entry))
 
 ;; --- Report schema + assembly -------------------------------------------------
 

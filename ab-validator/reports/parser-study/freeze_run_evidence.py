@@ -135,7 +135,28 @@ def load_neutral_executor(path: Path) -> Any:
 
 
 def verify_external(summary: dict[str, Any], resolver: dict[str, Any], executor_path: Path) -> None:
+    """Full external count-authenticity gate.
+
+    The committed summary must be the exact study lane matrix (`validate_summary`)
+    AND every recorded count and provenance hash must bind to the resolved real
+    run artifacts (`verify_external_bindings`). The two concerns are separated so
+    the binding core can be exercised on a synthetic run without standing up the
+    whole 20-lane matrix.
+    """
     validate_summary(summary)
+    verify_external_bindings(summary, resolver, executor_path)
+
+
+def verify_external_bindings(
+    summary: dict[str, Any], resolver: dict[str, Any], executor_path: Path
+) -> None:
+    """Bind each committed run's outcome counts and provenance hashes to the
+    resolved real artifacts: the resolved command/environment must hash to the
+    recorded ``execution_sha256``, the on-disk program must hash to the recorded
+    ``program_sha256`` through the materialization binding, the run manifest must
+    match ``manifest_sha256``, and every recorded outcome count must re-derive
+    from re-hashing the real per-item outcomes. Any mismatch raises ``ValueError``.
+    """
     neutral = load_neutral_executor(executor_path)
     inventories = resolver.get("inventories", {})
     artifacts = resolver.get("artifact_roots", {})
@@ -270,16 +291,42 @@ def project_summary(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=(
+            "Freeze/verify parser-study run evidence. Without --verify-external it "
+            "projects and (optionally) writes the canonical committed summary; with "
+            "--verify-external it runs only the count-authenticity gate that binds "
+            "each committed outcome count and provenance hash to the resolved real "
+            "run artifacts."
+        )
+    )
     parser.add_argument("--summary", type=Path, required=True)
     parser.add_argument("--resolver", type=Path, required=True)
     parser.add_argument("--executor", type=Path, required=True)
-    parser.add_argument("--preregistration", type=Path, required=True)
+    # Only the projection/freeze flow needs the preregistration; the external
+    # count-authenticity gate does not.
+    parser.add_argument("--preregistration", type=Path)
+    parser.add_argument(
+        "--verify-external",
+        action="store_true",
+        help=(
+            "Run only the external count-authenticity gate over the committed "
+            "summary and an untracked resolver: bind program_sha256 to the real "
+            "binary, re-hash each item's outcome, and re-derive every recorded "
+            "outcome count from the resolved run artifacts. Exits non-zero on any "
+            "mismatch."
+        ),
+    )
     parser.add_argument("--verify-checked-bytes", action="store_true")
     parser.add_argument("--write", action="store_true")
     args = parser.parse_args()
     raw = args.summary.read_bytes()
     checked = json.loads(raw)
+    if args.verify_external:
+        verify_external(checked, json.loads(args.resolver.read_bytes()), args.executor)
+        return
+    if args.preregistration is None:
+        parser.error("--preregistration is required unless --verify-external is given")
     generated = canonical_bytes(
         project_summary(
             checked,

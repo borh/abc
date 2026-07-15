@@ -101,6 +101,28 @@ def test_materialize_index_extracts_zip_members_without_reordering(tmp_path: Pat
     assert (output / "sources" / inventory[0]["path"]).read_bytes() == b"alpha"
 
 
+def test_materialize_index_is_smoke_only_not_the_authoritative_inventory(tmp_path: Path) -> None:
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    (corpus / "a.txt").write_bytes(b"alpha")
+    index = tmp_path / "index.json"
+    index.write_text(json.dumps({"works": [{"id": "work-a", "txt_path": "a.txt"}]}))
+    output = tmp_path / "materialized"
+    executor.materialize_index(index, corpus, output, 0)
+    document = json.loads((output / "inventory.json").read_bytes())
+    # The smoke helper uses a different identity scheme than the authoritative
+    # Rust `ab-materialize-study-inventory` ({work_id}-{sha12}): here the id is the
+    # raw work id and the path is sha256(work_id). Pin that so it cannot be
+    # mistaken for, or used to reproduce, the study inventory hash.
+    item = document["items"][0]
+    assert item["id"] == "work-a"
+    assert "-" not in item["id"] or not item["id"].startswith("work-a-")
+    assert item["path"] == hashlib.sha256(b"work-a").hexdigest() + ".txt"
+    # The artifact must self-identify as non-authoritative.
+    assert document.get("materializer") == "neutral_executor.smoke"
+    assert "authoritative" not in document  # never claims authority
+
+
 def test_verifier_rejects_output_symlink_escape(tmp_path: Path) -> None:
     output = tmp_path / "out"
     output.mkdir()

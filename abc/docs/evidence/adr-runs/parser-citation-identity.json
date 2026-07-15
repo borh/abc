@@ -12,7 +12,7 @@
     "ab-validator\/docs\/superpowers\/reports\/2026-07-08-parser-fork-candidacy-faithful-comparison.md": "sha256:ec0e5b7cdef6ea0c14b6ba59af8a35eb7b742b12a3da74683f771873330933e8",
     "ab-validator\/docs\/superpowers\/specs\/2026-07-09-parser-comparison-followups-handoff.md": "sha256:e13c904f36ddc4180f1326cdc375e6939716487e55318349c86c64e5158d2aa0",
     "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
-    "abc\/data\/parser-evidence-citations.edn": "sha256:0299d3a015a9ce764dbf2af2c5279408b7aa81ecc69855139f8490bbb6af723d",
+    "abc\/data\/parser-evidence-citations.edn": "sha256:7f8e9923bc1801606a260f4ba4528067ae88022ad0d415e14bcbf01a1385f0f1",
     "abc\/docs\/evidence\/adr-capture\/parser-citation-identity.edn": "sha256:3847870f26974c42a96ba62c518ecbcd91eec9cc13c571b222e47a5dcf283738",
     "abc\/docs\/evidence\/adr-inputs\/parser-citation-identity.edn": "sha256:078bc2eea5cc1bf4aa63e1897f583ce35057cbb39e21b11cb6381ff9fdcd9119",
     "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
@@ -42,7 +42,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-evidence-test\/historical-parser-citations-contract\"",
-    "revision": "97788b3cc03334d60dc815c06648b31b2203bb89",
+    "revision": "d90d91d931ec153a2b2503db428cbd67cf88369f",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

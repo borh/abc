@@ -88,7 +88,24 @@ def materialize_vectors(vector_root: Path, output: Path) -> None:
     write_json(output / "inventory.json", {"items": items})
 
 
+#: Marker stamped into the smoke inventory so the artifact self-identifies as
+#: non-authoritative and cannot be mistaken for the study inventory.
+SMOKE_MATERIALIZER = "neutral_executor.smoke"
+
+
 def materialize_index(index_path: Path, corpus: Path, output: Path, limit: int) -> None:
+    """Smoke-only inventory materializer for local `--limit` runs.
+
+    This is NOT the authoritative study-inventory materializer. It uses a
+    different identity scheme than the Rust `ab-materialize-study-inventory`
+    (`ab-check` bin): here each item's ``id`` is the raw work id and its ``path``
+    is ``sha256(work_id)``, whereas the authoritative materializer keys items as
+    ``{work_id}-{sha12}`` and produced the committed ``aozorabunko-source-snapshot``
+    corpus hash. The two therefore yield different ``inventory.json`` bytes, and
+    this one MUST NOT be used to reproduce or stand in for the study inventory.
+    The output is stamped with ``"materializer": SMOKE_MATERIALIZER`` to make that
+    non-authority explicit and checkable.
+    """
     works = json.loads(index_path.read_bytes()).get("works")
     if not isinstance(works, list):
         raise ValueError("index works must be an array")
@@ -112,7 +129,7 @@ def materialize_index(index_path: Path, corpus: Path, output: Path, limit: int) 
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(data)
         items.append({"id": work_id, "path": relative, "sha256": sha256(data)})
-    write_json(output / "inventory.json", {"items": items})
+    write_json(output / "inventory.json", {"materializer": SMOKE_MATERIALIZER, "items": items})
 
 
 def run_item(

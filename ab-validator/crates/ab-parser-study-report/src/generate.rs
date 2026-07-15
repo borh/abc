@@ -668,8 +668,8 @@ fn render_narrative(
          parse-outcome counts are reported here only as a secondary parse-completion observation \
          and never as construct coverage.\n\n",
     );
-    out.push_str("| Candidate | Mode | Successes | Denominator |\n");
-    out.push_str("| --- | --- | ---: | ---: |\n");
+    out.push_str("| Candidate | Mode | Successes | Denominator | Lane manifest |\n");
+    out.push_str("| --- | --- | ---: | ---: | --- |\n");
     for run in &manifests.runs {
         if run.inventory != VECTORS_INVENTORY {
             continue;
@@ -682,8 +682,8 @@ fn render_narrative(
         };
         let _ = writeln!(
             out,
-            "| `{}` | {mode} | {} | {den} |",
-            run.candidate, run.outcomes.success
+            "| `{}` | {mode} | {} | {den} | `{}` |",
+            run.candidate, run.outcomes.success, run.manifest_sha256
         );
     }
     out.push('\n');
@@ -1004,6 +1004,10 @@ struct CompactRun {
     candidate: String,
     inventory: String,
     mode: String,
+    /// Hash of this lane's recorded run manifest; stamped next to the reported
+    /// count so a count cannot silently drift from its provenance.
+    #[serde(default)]
+    manifest_sha256: String,
     #[serde(default)]
     outcomes: Outcomes,
 }

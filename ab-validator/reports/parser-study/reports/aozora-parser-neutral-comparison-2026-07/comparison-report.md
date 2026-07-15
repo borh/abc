@@ -39,18 +39,18 @@ Only parse-completion robustness is backed by the committed parse-outcome counts
 
 The notation vectors are the construct-coverage corpus, not a robustness corpus; their parse-outcome counts are reported here only as a secondary parse-completion observation and never as construct coverage.
 
-| Candidate | Mode | Successes | Denominator |
-| --- | --- | ---: | ---: |
-| `aozora` | native | 127 | 127 |
-| `aozora` | adapter-normalized | 127 | 127 |
-| `aozora2` | native | 127 | 127 |
-| `aozora2` | adapter-normalized | 127 | 127 |
-| `aozora-rs` | native | 127 | 127 |
-| `aozora-rs` | adapter-normalized | 127 | 127 |
-| `aozora2html` | native | 127 | 127 |
-| `aozora2html` | adapter-normalized | 127 | 127 |
-| `aozora-epub3` | native | 127 | 127 |
-| `aozora-epub3` | adapter-normalized | 123 | 127 |
+| Candidate | Mode | Successes | Denominator | Lane manifest |
+| --- | --- | ---: | ---: | --- |
+| `aozora` | native | 127 | 127 | `sha256:d9cb85064d0f44254a4f5995183060d2049daa54dc32a34db0266f8222d495c0` |
+| `aozora` | adapter-normalized | 127 | 127 | `sha256:87af35740538162e9e1cdf5132fe37709bcf65165a24d0675bb8f833fc03e941` |
+| `aozora2` | native | 127 | 127 | `sha256:a6f4226763ef2fe0ebc300cfb73a245f0ee1a66719f8b26765f600017f8976c2` |
+| `aozora2` | adapter-normalized | 127 | 127 | `sha256:d83eaf2b9267b84bb9d2ddb683fef007f28ee6e588ddfa9bbaf770e0d207cfe5` |
+| `aozora-rs` | native | 127 | 127 | `sha256:5e54f3a0564a0b491b4d891e88f4ae9221eb8d60bfd234a63ff750108cb4041b` |
+| `aozora-rs` | adapter-normalized | 127 | 127 | `sha256:ce90bad5e0f99be529a40875639d614e401f59abcc6ca8718a51f87438a9c98b` |
+| `aozora2html` | native | 127 | 127 | `sha256:2a982b2712434d2d05b118af361ec3df7f8fbcf1ca5e4f41f27ebeed61de3dc8` |
+| `aozora2html` | adapter-normalized | 127 | 127 | `sha256:cae24e4bd88d36a0307def862688526742e8e8b9535939f0830cb72954ecf076` |
+| `aozora-epub3` | native | 127 | 127 | `sha256:a1698c8def24dfe345574e8e5730de5e9e93f64f0cc569d3238fb83ba8efe1c6` |
+| `aozora-epub3` | adapter-normalized | 123 | 127 | `sha256:bf1eb119fd19efbc5d9c448cb9181c5956c513d039423f54cb261823b76734e7` |
 
 ## Interpretations
 

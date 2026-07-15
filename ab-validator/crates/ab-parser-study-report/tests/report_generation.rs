@@ -253,6 +253,38 @@ fn native_wrapper_lanes_are_disclosed_and_revision_is_data_derived() {
 }
 
 #[test]
+fn secondary_vectors_table_is_provenance_stamped() {
+    let generated = generate();
+    // Each official-notation-vectors lane's recorded manifest hash must appear in
+    // the secondary parse-completion table, binding its reported count to the lane
+    // it came from so a count cannot silently drift from its provenance.
+    let manifests: serde_json::Value =
+        serde_json::from_str(RUN_MANIFESTS).expect("run manifests parse");
+    let vectors_hashes: Vec<String> = manifests["runs"]
+        .as_array()
+        .expect("runs array")
+        .iter()
+        .filter(|run| run["inventory"] == "official-notation-vectors")
+        .map(|run| {
+            run["manifest_sha256"]
+                .as_str()
+                .expect("manifest_sha256 present")
+                .to_string()
+        })
+        .collect();
+    assert!(
+        !vectors_hashes.is_empty(),
+        "there must be official-notation-vectors lanes to stamp"
+    );
+    for hash in vectors_hashes {
+        assert!(
+            generated.narrative_markdown.contains(&hash),
+            "the secondary vectors table must stamp each lane's manifest hash ({hash})"
+        );
+    }
+}
+
+#[test]
 fn committed_reports_match_regeneration_from_raw_manifests() {
     let generated = generate();
     let committed_machine = fs::read_to_string(COMMITTED_MACHINE_REPORT)

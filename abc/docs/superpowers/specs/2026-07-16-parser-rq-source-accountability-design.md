@@ -41,13 +41,29 @@ For every work, the instrument consumes immutable values:
 5. the versioned ignored-region taxonomy.
 
 The instrument does not trust a separately supplied decoded-text file. It calls
-`ab_aozora_aat::decode_source_bytes`, the same public decoder and span-rebasing
-boundary used by the owned parser, and measures the resulting
-`DecodedSource.text`. This prevents two decoding implementations from silently
-creating different coordinate spaces. The original source hash and detected
-encoding remain provenance coordinates. They do not change the arithmetic
-coordinate system. Every measured interval is half-open `[start,end)` in
-decoded UTF-8 bytes.
+`ab_aozora_aat::decode_source_bytes`, the same public decoder that establishes
+the decoded value and offset maps used by the owned parser; downstream span
+emission performs the actual rebasing through those maps. P1 measures the
+resulting `DecodedSource.text`. This prevents two decoding implementations from
+silently creating different coordinate spaces.
+
+Lossy decoding is not a valid measured value. If `DecodedSource.encoding` is
+`windows-31j-lossy`, the work is unavailable even if Parser-IR spans cover every
+replacement byte. U+FFFD replacement destroys source information before the
+denominator exists and therefore cannot support a source-accountability pass.
+The original source hash and non-lossy detected encoding remain provenance
+coordinates. They do not change the arithmetic coordinate system.
+
+The load-bearing coordinate invariant is explicit:
+
+```text
+Every accepted Parser-IR node span is a half-open [start,end) interval into the
+exact full DecodedSource.text produced from the pinned original bytes.
+```
+
+It is not body-relative or sanitized-text-relative. P1 characterizes this by
+round-tripping rebased body and tail node spans against the full decoded text,
+including BOM, CRLF, body-offset, sanitize-map, and terminal-provenance fixtures.
 
 ## Architecture
 
@@ -62,12 +78,12 @@ It remains separate from both the parser implementation and the older generic
   rule language and derives no ignored intervals;
 - `analyze`: extract Parser-IR node spans and produce one deterministic work
   record;
-- `reconcile`: join uncovered intervals to validated diagnostic spans without
-  deciding whether the diagnostic capture is admissible;
-- `aggregate`: authenticate the work set, calculate R1, and conditionally expose
-  R2 only when its diagnostic precondition is satisfied.
+- `reconcile`: partition uncovered intervals using P4-authorized source-loss
+  intervals without interpreting raw diagnostics;
+- `aggregate`: authenticate the work set, calculate R1, and emit R2 as
+  unavailable until P4 supplies its authorization boundary.
 
-The CLI exposes two commands:
+The CLI exposes focused fixture and aggregate commands:
 
 ```text
 ab-parser-rq-source-accountability analyze-work \
@@ -79,10 +95,26 @@ ab-parser-rq-source-accountability aggregate \
   --qualification-identity <path> --out <path>
 ```
 
+The corpus-scale producer is a third command:
+
+```text
+ab-parser-rq-source-accountability analyze-corpus \
+  --corpus <path> --source-root <path> --parser-ir-root <path> \
+  --qualification-identity <path> --taxonomy <path> \
+  --store-root <path> --index-out <path>
+```
+
 `analyze-work` is pure apart from file I/O. `aggregate` consumes an explicit,
 closed record index rather than enumerating a mutable directory. The index names
 exactly one work record and logical blob identity per corpus member; ordering is
 irrelevant and extras are rejected.
+
+`analyze-corpus` is the only production producer of that index. It iterates the
+pinned corpus entries—not a directory glob—runs the work analyzer once per entry,
+writes content-identified records to the configured external store, and emits the
+closed index in canonical corpus order. Regeneration from identical inputs must
+be byte-identical. Tests may construct index values directly; committed or
+authoritative indexes are never hand-authored.
 
 ABC does not repeat the Rust interval arithmetic. A small Clojure derivation
 boundary consumes a verified aggregate summary, confirms its denominator unit,
@@ -122,7 +154,7 @@ every work and aggregate record.
 Each work record contains:
 
 - qualification identity reference and instrument version;
-- work ID; original-source blob hash/length; decoded-source hash, detected
+- work ID; original-source blob hash/length; decoded-source hash, non-lossy detected
   encoding, and decoded byte length;
 - Parser-IR schema ID/hash and document hash;
 - taxonomy version/hash and coordinate system;
@@ -135,9 +167,13 @@ are derived views and would double-count or allow synthesized aggregate ranges
 to hide missing primary nodes. Nested and overlapping node spans are normalized
 into a union before counting. A node span with `start > end`, an endpoint beyond
 the decoded buffer, a coordinate-system mismatch, a malformed Parser-IR
-document, a P0 identity mismatch, or a source-identity mismatch makes the work
-record unavailable. P1 measures whether source bytes have an explicit Parser-IR
-node claim; semantic span accuracy remains Track S3.
+document, a missing or non-`decoded_utf8` node `coordinate_system`, a lossy
+decode, a P0 identity mismatch, or a source-identity mismatch makes the work
+record unavailable. Although the Parser-IR schema permits omission for legacy
+compatibility, the current converter emits the coordinate explicitly and release
+evidence fails closed rather than relying on the schema's documented default.
+P1 measures whether source bytes have an explicit Parser-IR node claim; semantic
+span accuracy remains Track S3.
 
 The analyzer validates every qualification coordinate represented in
 Parser-IR—schema ID/hash and all `derived_from` adapter/mapping fields—against
@@ -177,12 +213,11 @@ The serialized aggregate retains the integer numerator and denominator. The
 gate pass condition is exact integer equality, not floating-point equality:
 `covered_eligible_bytes == eligible_bytes`. The report's numeric display value
 is derived in Clojure by decimal division with scale
-`decimal_digits(eligible_bytes) + 1` and `RoundingMode/DOWN`. For a positive
-integer denominator, that value equals `1.0` if and only if the numerator equals
-the denominator; a one-byte deficit cannot round upward into a pass. The numeric
-display is therefore a projection of the exact integers, not a separately
-trusted claim. A result below `1.0` is an honest gate failure with uncovered
-witnesses, not an instrumentation failure.
+`decimal_digits(eligible_bytes) + 1` and `RoundingMode/DOWN`. Exact integer
+equality is the pass guardrail; rounding down prevents the display projection
+from contradicting it, while the chosen scale keeps a one-byte deficit visible.
+The numeric display is not a separately trusted claim. A result below `1.0` is
+an honest gate failure with uncovered witnesses, not an instrumentation failure.
 
 The committed P1 capture manifest uses P0's logical blob references and records
 the denominator as:
@@ -217,11 +252,25 @@ intervals, P1 exposes the pure function for tests but derives `:silent_drops` as
 `:instrument-missing`. An empty raw diagnostic stream is never passed to this
 boundary as evidence of zero.
 
+`silent_drop` is an interval witness count, not a dropped-construct census. Two
+adjacent dropped constructs with no covered byte between them form one maximal
+silent interval. This is sufficient for the gate's `0` versus `> 0` predicate;
+P4 and downstream reports must not reinterpret the count as construct prevalence.
+
+`DecodedSource.sanitize_diagnostics` is captured and content-identified as raw
+P4 input because its spans already participate in the parser's sanitize-to-
+decoded rebase. P1 does not treat those diagnostics as authorization. Bytes
+not claimed by Parser-IR nodes remain uncovered for R1 regardless of sanitizer
+diagnostics, and R2 remains unavailable until P4 explicitly maps validated
+sanitizer diagnostics to authorized source-loss intervals.
+
 ## Failure semantics
 
 All contract failures fail closed:
 
 - invalid or out-of-bounds interval -> work unavailable;
+- `windows-31j-lossy` decode -> work unavailable;
+- absent or non-`decoded_utf8` node coordinate system -> work unavailable;
 - source, schema, taxonomy, or qualification identity mismatch -> unavailable;
 - missing, duplicate, or unexpected work -> aggregate unavailable;
 - zero eligible-byte denominator -> aggregate unavailable;
@@ -235,9 +284,11 @@ missing work, or substitutes work count for bytes.
 ## Testing strategy
 
 Ordinary Rust tests pin exact JSON contracts and failures for malformed spans,
-out-of-bounds endpoints, BOM stripping before decoded coordinates, nested spans,
-derived-view exclusion, missing/duplicate work, zero eligible bytes, and absent
-P4 authorization. Clojure tests prove that only a verified aggregate with unit
+out-of-bounds endpoints, lossy Shift-JIS replacement, absent coordinate systems,
+BOM stripping before decoded coordinates, full-text rebasing across body/tail and
+sanitize maps, nested spans, derived-view exclusion, deterministic index
+regeneration, missing/duplicate work, zero eligible bytes, and absent P4
+authorization. Clojure tests prove that only a verified aggregate with unit
 `decoded_utf8_bytes`, exact numerator/denominator integrity, matching taxonomy
 identity, and matching qualification identity can become a source-span envelope.
 
@@ -268,6 +319,8 @@ for deciding whether uncovered bytes were diagnosed.
 | Parser-IR spans use decoded UTF-8 byte offsets. | Observation | Live `parser-ir.schema.json` span contract. | High | The denominator and spans would be incomparable. |
 | `decode_source_bytes` is the owned parser's decode/rebase boundary. | Observation | Live `ab-aozora-aat` implementation and `DecodedSource` contract. | High | A separate decoder could manufacture gaps or coverage. |
 | UTF-8 BOM bytes are absent from `DecodedSource.text`. | Observation | BOM branch slices `bytes[3..]` before constructing `text`. | High | The original v1 taxonomy rule was unreachable. |
+| Lossy Shift-JIS decoding inserts U+FFFD into `DecodedSource.text`. | Observation | `SHIFT_JIS.decode` plus the `windows-31j-lossy` encoding tag. | High | Replacement bytes could receive spans and manufacture a 1.0 over corrupted content. |
+| Emitted node spans are full-decoded-text coordinates after rebasing. | Observation requiring characterization | `SpanContext` maps sanitized/body offsets back to decoded offsets; current converter emits `decoded_utf8`. | High | A body-relative edge case would silently corrupt coverage. |
 | Parser-IR nodes are primary output claims; paragraph/sentence spans are derived views. | Observation + inference | Schema structure and converter implementation derive paragraph spans from nodes. | High | Counting derived views could hide missing nodes. |
 | Existing source-region coverage machinery measures occurrence dispositions, not byte-span accountability. | Observation | `source-region-coverage.schema.json` counters and `reports/lib/source_region.py`. | High | Reusing it would conflate different units and authorities. |
 | Raw diagnostic overlap is sufficient to excuse uncovered bytes. | Rejected assumption | Counterexample: a one-byte diagnostic overlapping a large uncovered range. | High | A large silent loss could be reported as diagnosed. |
@@ -315,7 +368,7 @@ already removed before the measured decoded value
 | decoder boundary | Produce the exact measured coordinate value. | Original source bytes. | `DecodedSource.text`, detected encoding, original hash. | Pure per invocation; implementation version belongs to instrument identity. |
 | interval algebra | Normalize and partition half-open intervals. | Bounded interval values. | Sorted disjoint interval values and lengths. | Stateless; union is order-independent and idempotent. |
 | work analyzer | Authenticate one source/IR pair and measure nodes. | Source, Parser-IR, corpus entry, taxonomy, qualification identity. | Closed work record. | No mutable shared state; record identity includes every input blob and contract identity. |
-| record index | Name the exact corpus-scale record set. | Work IDs and logical blob references. | Closed immutable index value. | Replaces directory enumeration; order is irrelevant, content hash is identity. |
+| corpus analyzer/index producer | Analyze exactly the pinned work set and name its records. | Corpus entries, runtime roots, contracts, qualification identity. | Work-record blobs and closed immutable index. | Iterates corpus values, never directory membership; canonical output is byte-identical for identical inputs. |
 | aggregate | Authenticate completeness and sum exact integers. | Corpus, index, records, taxonomy, qualification identity. | Closed aggregate summary. | Deterministic fold; no clock or host fields enter the result identity. |
 | R2 reconciler | Partition uncovered bytes using already-authorized intervals. | Two interval values. | Diagnosed and silent interval values. | Pure; does not own diagnostic trust policy. |
 | ABC derivation | Bind a verified aggregate to the gate. | Verified blob, aggregate, qualification identity. | Observation envelope or unavailable result. | Trust boundary; recomputes identities and exact equality rather than trusting reported ratio/status. |
@@ -327,12 +380,12 @@ ABC owns publication schemas and manifest identity while `ab-validator` owns
 measurement execution.
 
 ```text
-original bytes + Parser-IR + corpus entry + qualification identity
+corpus entries --drive--> original bytes + Parser-IR + qualification identity
                  |
                  v
-      [decoder + work analyzer] --commutative per work--> work record blobs
+      [corpus producer + work analyzer] --commutative per work--> work record blobs
                                                         |
-                          explicit logical-blob index --+
+                      generated logical-blob index -----+
                                                         v
                                                [pure aggregate]
                                                         |
@@ -355,14 +408,20 @@ completion order affects a content value.
 | Severity | Classification | Observation, risk, and resolution |
 |---|---|---|
 | Blocker | Mitigated | A separately supplied decoded file braided measurement with an untrusted decoding place. Consume original bytes and reuse `decode_source_bytes`. |
+| Blocker | Mitigated | Lossy Shift-JIS replacement created eligible U+FFFD bytes that could still receive spans. `windows-31j-lossy` makes the work unavailable. |
 | Blocker | Mitigated | The BOM taxonomy rule lived outside the decoded coordinate value and could never match. V1 is now an explicit empty taxonomy. |
+| Strong suggestion | Mitigated | Full-text accounting depended on an unstated sanitize/body rebase invariant. The invariant is normative and receives body, tail, BOM, CRLF, and sanitizer characterization tests. Sanitizer diagnostics remain raw P4 input. |
 | Blocker | Mitigated | Whole-region diagnostic overlap allowed a tiny warning to excuse a large loss. R2 now uses interval intersection/subtraction and retains residual silent bytes. |
 | Blocker | Mitigated | Raw diagnostics mixed P1 interval arithmetic with P4 trust policy. P1 accepts only P4-authorized intervals; P4 owns code/severity/schema interpretation. |
 | Blocker | Mitigated | Directory enumeration made the record set a time-varying place. A closed, content-identified work-record index is now the aggregate input. |
+| Strong suggestion | Mitigated | An unnamed index producer allowed human corpus selection to re-enter. `analyze-corpus` derives membership only from the pinned corpus and must regenerate byte-identically. |
 | Blocker | Mitigated by P5 boundary | A full identity reference on a prebuilt Parser-IR file is a claim, not proof of producer identity. P1 checks all embedded coordinates; P5 must invoke/hash pinned binaries and bind operational provenance. |
 | Strong suggestion | Mitigated | Counting paragraph/sentence spans braided primary claims with derived views. Only node spans count. |
 | Strong suggestion | Mitigated | A generic ignored-region rule engine was configuration without a v1 use case. V1 is a closed empty value; later policy needs an explicit versioned change. |
 | Strong suggestion | Mitigated | A supplied floating ratio could diverge from integer evidence. ABC derives the pass condition from exact numerator/denominator equality. |
+| Question | Decided fail-closed | Legacy omission of node `coordinate_system` is schema-valid but insufficient for release evidence. P1 requires explicit `decoded_utf8`. |
+| Question | Clarified | `silent_drop` counts maximal byte intervals for a zero/nonzero gate; it is not a construct census. |
+| Nit | Corrected | Decimal scale preserves display visibility; integer equality, not scale, is the pass guarantee. |
 | Question | Accepted | A dedicated crate adds a workspace member, but keeps release measurement separate from parser behavior and occurrence-level publication policy. |
 | Question | Unknown, plan blocker | Hegel is available from crates.io, but its native engine must pass the repository's offline Nix checks. The implementation plan begins with a disposable packaging probe. |
 
@@ -371,9 +430,12 @@ completion order affects a content value.
 | Decision | Status | Reversibility | Evidence / rejected alternative | Revisit trigger |
 |---|---|---|---|---|
 | Measure full `DecodedSource.text` in decoded UTF-8 bytes. | Accepted | Contract-breaking after capture. | Matches live span schema; original-byte offsets require a reverse map. | Parser-IR changes coordinate systems. |
+| Reject lossy decoded values. | Accepted | New instrument version to relax, requiring separate evidence. | U+FFFD is destroyed source content, unlike removable BOM framing. | Only if a future loss map can account for every original byte without imputation. |
+| Require explicit node `coordinate_system = decoded_utf8`. | Accepted | New instrument version. | Current converter emits it; legacy default is too weak for release evidence. | Parser-IR makes another explicit coordinate system authoritative. |
 | V1 taxonomy has no ignored regions or rule engine. | Accepted | New taxonomy version. | BOM is already outside decoded value; no other framing is proven. | A decoded region is proven non-content by parser contract. |
 | Count only Parser-IR node spans. | Accepted | New instrument version. | Paragraph/sentence spans are derived; AAT is wrong authority. | Parser-IR adds an explicit primary source-mapping relation. |
 | Bind every work record to the full qualification identity. | Accepted | Additive schema migration only before first authoritative capture. | Prevents mixing records from different builds/instruments. | Never silently relax; only supersede with an equally strong identity relation. |
+| Generate the record index from the pinned corpus. | Accepted | Producer implementation can change under new instrument identity. | Removes human selection and filesystem membership from the trust path. | Capture orchestration adopts an equally deterministic corpus-driven index. |
 | Defer diagnostic authorization to P4. | Accepted | R2 interface can be extended by version. | Keeps trust policy out of interval algebra. | P4's diagnostic contract cannot emit exact authorized intervals. |
 | Use Hegel for interval properties. | Proposed pending probe | Easily reversible before tests land. | User requested skill-driven testing; crate exists and Rust floor is compatible. | Nix/offline integration fails or introduces an unacceptable runtime dependency. |
 
@@ -398,7 +460,8 @@ P1 is complete when:
 2. the Rust work analyzer, aggregate, CLI, and pure R2 reconciler pass unit and
    Hegel property tests;
 3. the ABC derivation boundary passes focused Clojure tests;
-4. a small fixture capture proves Capture -> Derive -> Drift locally;
+4. a small fixture capture proves Capture -> Derive -> Drift locally, and its
+   corpus-produced record index regenerates byte-identically;
 5. R1 is capturable under P0 and R2 remains explicitly unavailable pending P4;
 6. comment hygiene and `just validate-migration` pass.
 

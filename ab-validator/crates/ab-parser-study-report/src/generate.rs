@@ -387,6 +387,8 @@ fn build_appendix_row(
                 expected,
             });
         }
+        let short_rev: String = parser_revision.chars().take(8).collect();
+        let timeout_seconds = appendix.timeout_seconds;
         return ResultRow::new(
             candidate,
             axis,
@@ -402,10 +404,10 @@ fn build_appendix_row(
                 "Project-owned custom baseline; ownership grants no comparison pass. \
                  Parse-completion (successful native `--mode aat` parses / all {denominator} \
                  attempted works) over the pinned {ROBUSTNESS_INVENTORY} corpus at the frozen \
-                 baseline revision ac2be926, failures and timeouts retained in the denominator \
-                 under the frozen 300 s per-work timeout. A completed parse is not an assertion \
-                 of output fidelity, and this count excludes the malformed-input robustness \
-                 fixture, whose executable run is not committed here."
+                 baseline revision {short_rev}, failures and timeouts retained in the denominator \
+                 under the frozen {timeout_seconds} s per-work timeout. A completed parse is not \
+                 an assertion of output fidelity, and this count excludes the malformed-input \
+                 robustness fixture, whose executable run is not committed here."
             )],
             provenance,
         )
@@ -549,6 +551,25 @@ fn mode_label(mode: MeasurementMode) -> &'static str {
     }
 }
 
+/// Candidates whose *native* lane is produced by a `*-adapter` wrapper binary
+/// run in `--mode html` rather than a direct parser invocation, derived from the
+/// committed execution contracts. Sorted and deduped for deterministic output.
+fn wrapper_native_candidates(manifests: &RunManifests) -> Vec<String> {
+    let mut names: Vec<String> = manifests
+        .execution_contracts
+        .values()
+        .filter(|contract| {
+            contract.mode == "native"
+                && contract.required_program_basename.ends_with("-adapter")
+                && contract.required_argv.iter().any(|arg| arg == "html")
+        })
+        .map(|contract| contract.candidate.clone())
+        .collect();
+    names.sort();
+    names.dedup();
+    names
+}
+
 fn render_narrative(
     report: &StudyReport,
     manifests: &RunManifests,
@@ -684,6 +705,22 @@ fn render_narrative(
           more failures than its native lane). Adapter-introduced behavior is never credited as \
           native capability.\n",
     );
+    let wrapper_native = wrapper_native_candidates(manifests);
+    if !wrapper_native.is_empty() {
+        let list = wrapper_native
+            .iter()
+            .map(|candidate| format!("`{candidate}`"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let _ = writeln!(
+            out,
+            "- Native-lane attribution: for {list} the \"native\" lane is produced by the \
+              parser's `*-adapter` binary run in `--mode html`, so \"native\" here denotes the \
+              parser-native output format produced via a thin wrapper, not a direct parser \
+              invocation; that same binary's adapter-normalized lane is `--mode aat`, so the two \
+              lanes share one binary differing only by `--mode`."
+        );
+    }
     out.push_str(
         "- Because only one axis is measured, no cross-axis ranking is possible; any downstream \
           conclusion must name its use case and its weighting.\n\n",
@@ -790,13 +827,24 @@ fn render_custom_parser_appendix(
     report: &StudyReport,
     appendix: &AppendixManifests,
 ) {
+    // Revision and timeout are stamped from data (the ab-aozora machine row's
+    // parser revision and the committed appendix timeout), not literals.
+    let baseline_revision = report
+        .rows()
+        .iter()
+        .find(|row| row.candidate() == Candidate::AbAozora)
+        .map(|row| row.parser_revision().to_string())
+        .unwrap_or_default();
+    let timeout_seconds = appendix.timeout_seconds;
+
     out.push_str("## Custom-parser shared-instrument appendix\n\n");
-    out.push_str(
+    let _ = write!(
+        out,
         "`ab-aozora` is the project-owned baseline. It is measured here separately, native-only \
          (it emits parser-IR/AAT natively via `--mode aat`; it has no adapter-normalized lane), on \
          the same frozen instruments as the existing parsers and at the frozen baseline revision \
-         `ac2be926738f919faf44300e2999b3548d724297`. Ownership grants it no comparison pass: this \
-         appendix can neither admit nor release-qualify the parser, and no axis is imputed.\n\n",
+         `{baseline_revision}`. Ownership grants it no comparison pass: this \
+         appendix can neither admit nor release-qualify the parser, and no axis is imputed.\n\n"
     );
 
     // Measured native robustness, with the same denominator and Wilson interval
@@ -837,11 +885,12 @@ fn render_custom_parser_appendix(
              the strongest existing parsers. This is a comparative claim between measured lanes, \
              so it is falsifiable.\n\n",
         );
-        out.push_str(
+        let _ = write!(
+            out,
             "Adversarial failure/timeout reweighting: reclassify the k worst works as failures \
-             (the frozen 300 s run produced zero ab-aozora failures or timeouts), for k drawn from \
-             the failure/timeout counts actually observed on competitor lanes. The reweighted rate \
-             is (den − k) / den with a two-sided 95% Wilson interval:\n\n",
+             (the frozen {timeout_seconds} s run produced zero ab-aozora failures or timeouts), \
+             for k drawn from the failure/timeout counts actually observed on competitor lanes. \
+             The reweighted rate is (den − k) / den with a two-sided 95% Wilson interval:\n\n"
         );
         out.push_str(
             "| Adversarial k | Source of k | Reweighted successes | Rate | Wilson 95% CI |\n",
@@ -865,13 +914,14 @@ fn render_custom_parser_appendix(
             );
         }
         out.push('\n');
-        out.push_str(
+        let _ = write!(
+            out,
             "Falsifier: for any k ≥ 1 the reweighted rate drops below 1 and its Wilson upper bound \
              falls below 1, so the exact-ceiling reading is fragile to even a single adversarial \
              reclassification. The measured result must be read as \"parse-completion ceiling under \
-             the frozen 300 s per-work timeout on the measurement host,\" not as an absolute or \
-             host-independent guarantee, and never as fidelity, diagnostics, span, or performance \
-             superiority (those axes are non-comparable or missing below).\n\n",
+             the frozen {timeout_seconds} s per-work timeout on the measurement host,\" not as an \
+             absolute or host-independent guarantee, and never as fidelity, diagnostics, span, or \
+             performance superiority (those axes are non-comparable or missing below).\n\n"
         );
     }
 
@@ -911,6 +961,22 @@ struct RunManifests {
     timeout_seconds: u64,
     inventories: BTreeMap<String, Inventory>,
     runs: Vec<CompactRun>,
+    /// Per-lane execution contracts, keyed by program hash. Used to disclose
+    /// which candidates' "native" lane is actually produced by a `*-adapter`
+    /// wrapper binary rather than a direct parser invocation.
+    #[serde(default)]
+    execution_contracts: BTreeMap<String, ExecutionContract>,
+}
+
+/// One lane's frozen execution contract. Only the fields the report reads are
+/// named; the committed provenance hashes are ignored here.
+#[derive(Debug, Deserialize)]
+struct ExecutionContract {
+    candidate: String,
+    mode: String,
+    required_program_basename: String,
+    #[serde(default)]
+    required_argv: Vec<String>,
 }
 
 /// Custom-baseline appendix: ab-aozora's native parse-outcome counts and run
@@ -919,6 +985,7 @@ struct RunManifests {
 #[derive(Debug, Deserialize)]
 struct AppendixManifests {
     study_id: String,
+    timeout_seconds: u64,
     inventories: BTreeMap<String, Inventory>,
     runs: Vec<CompactRun>,
 }

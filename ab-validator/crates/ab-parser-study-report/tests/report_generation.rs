@@ -196,6 +196,62 @@ fn ab_aozora_appendix_is_measured_noncomparable_or_missing_never_zero() {
     }
 }
 
+const PLACEHOLDER_REV: &str = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
+
+#[test]
+fn native_wrapper_lanes_are_disclosed_and_revision_is_data_derived() {
+    let real_rev = "ac2be926738f919faf44300e2999b3548d724297";
+
+    // (1) Revision derivation, not value-equality: substitute the baseline
+    // revision at its source (the preregistration candidate revision, which
+    // feeds row.parser_revision()) and assert both reports track the data. A
+    // hardcoded literal equal to the current revision would fail both arms.
+    let altered_prereg = PREREGISTRATION.replace(real_rev, PLACEHOLDER_REV);
+    let gen_rev = generate_reports(RUN_MANIFESTS, &altered_prereg, APPENDIX_MANIFESTS)
+        .expect("generation succeeds");
+    assert!(
+        gen_rev.narrative_markdown.contains(PLACEHOLDER_REV),
+        "appendix prose must interpolate the revision from data, not hardcode it"
+    );
+    assert!(
+        !gen_rev.narrative_markdown.contains(real_rev),
+        "no stale literal of the committed revision may survive in the prose"
+    );
+    assert!(
+        gen_rev.machine_json.contains(&PLACEHOLDER_REV[..8]),
+        "the short-form revision stamp in the robustness caveat must track the data"
+    );
+
+    // (2) Timeout derivation: substitute the appendix timeout and assert the
+    // appendix prose tracks it rather than a `300` literal.
+    let altered_timeout =
+        APPENDIX_MANIFESTS.replace("\"timeout_seconds\": 300", "\"timeout_seconds\": 999");
+    let gen_to = generate_reports(RUN_MANIFESTS, PREREGISTRATION, &altered_timeout)
+        .expect("generation succeeds");
+    assert!(
+        gen_to.narrative_markdown.contains("999 s"),
+        "appendix timeout prose must interpolate timeout_seconds from data"
+    );
+
+    // (3) Wrapper-native disclosure: aozora2html / aozora-epub3 "native" lanes
+    // run through their `*-adapter` binary in `--mode html`; the report must
+    // disclose that "native" means the parser-native output format via a thin
+    // wrapper, not a direct parser invocation.
+    let reports = generate();
+    assert!(
+        reports
+            .narrative_markdown
+            .contains("parser-native output format"),
+        "the wrapper-native lanes must be disclosed"
+    );
+    assert!(
+        reports
+            .narrative_markdown
+            .contains("not a direct parser invocation"),
+        "the wrapper-native disclosure must state it is not a direct invocation"
+    );
+}
+
 #[test]
 fn committed_reports_match_regeneration_from_raw_manifests() {
     let generated = generate();

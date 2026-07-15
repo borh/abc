@@ -58,6 +58,7 @@ The following statements are interpretation, not measurement. The preregistratio
 
 - High native parse-completion over the pinned corpus indicates only that a parser terminated without a hard failure on the corpus; it says nothing about output fidelity, diagnostics, spans, or performance, all of which are unmeasured here.
 - Adapter-normalized completion may differ from native completion for the same parser (for example the aozora2 adapter incurs timeouts, and the aozora-epub3 adapter incurs more failures than its native lane). Adapter-introduced behavior is never credited as native capability.
+- Native-lane attribution: for `aozora-epub3`, `aozora2html` the "native" lane is produced by the parser's `*-adapter` binary run in `--mode html`, so "native" here denotes the parser-native output format produced via a thin wrapper, not a direct parser invocation; that same binary's adapter-normalized lane is `--mode aat`, so the two lanes share one binary differing only by `--mode`.
 - Because only one axis is measured, no cross-axis ranking is possible; any downstream conclusion must name its use case and its weighting.
 
 ## Limitations

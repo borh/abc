@@ -154,6 +154,17 @@
     (is (some #(re-find #"parser_git_rev" %) (get-in report [:coherence :errors])))
     (is (some #(re-find #"instrument_versions" %) (get-in report [:coherence :errors])))))
 
+(deftest gate-not-qualified-when-identity-values-are-malformed
+  (doseq [malformed [(assoc admitted-identity :parser_git_rev nil)
+                     (assoc admitted-identity :parser_git_rev "  ")
+                     (assoc admitted-identity :instrument_versions {:fixture nil})
+                     (assoc admitted-identity :instrument_versions {"" "v1"})]]
+    (let [report (q/build-report
+                  (report-input malformed (envelopes malformed all-pass-values)))]
+      (is (= :not-qualified (:gate_status report)))
+      (is (some #(re-find #"qualification identity values" %)
+                (get-in report [:coherence :errors]))))))
+
 (deftest gate-release-qualified-requires-precondition-and-nine-pass
   (let [report (q/build-report
                 (report-input admitted-identity (envelopes admitted-identity all-pass-values)))]

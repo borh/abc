@@ -219,6 +219,36 @@
         [:parser_git_rev :corpus_snapshot_hash :corpus_list_hash
          :predicate_set_hash :instrument_versions]))
 
+(def qualification-hash-keys
+  [:mapping_hash :mapping_schema_hash :parser_ir_schema_hash
+   :corpus_snapshot_hash :corpus_list_hash :predicate_set_hash])
+
+(def qualification-string-keys
+  [:aat_adapter :aat_adapter_version :mapping_id :mapping_version
+   :parser_ir_schema_id :parser_git_rev])
+
+(defn- nonblank-string?
+  [value]
+  (and (string? value) (not (string/blank? value))))
+
+(defn- valid-instrument-versions?
+  [versions]
+  (and (map? versions)
+       (seq versions)
+       (every? (fn [[instrument version]]
+                 (and (or (keyword? instrument) (nonblank-string? instrument))
+                      (nonblank-string? version)))
+               versions)))
+
+(defn- qualification-identity-values-valid?
+  [identity]
+  (and (pos-int? (:aat_version identity))
+       (every? #(nonblank-string? (get identity %)) qualification-string-keys)
+       (every? #(and (string? (get identity %))
+                     (re-matches hash/hash-pattern (get identity %)))
+               qualification-hash-keys)
+       (valid-instrument-versions? (:instrument_versions identity))))
+
 (defn admission-query
   [identity]
   (into (array-map)
@@ -272,9 +302,8 @@
       (conj (str "qualification identity has unexpected fields: "
                  (string/join ", " unexpected)))
 
-      (not (and (map? (:instrument_versions identity))
-                (seq (:instrument_versions identity))))
-      (conj "qualification identity instrument_versions must be a non-empty map")
+      (not (qualification-identity-values-valid? identity))
+      (conj "qualification identity values violate the typed, nonblank identity contract")
 
       (not= (:corpus_list_hash identity) (:list_hash corpus))
       (conj "qualification identity corpus_list_hash does not match the pinned corpus")

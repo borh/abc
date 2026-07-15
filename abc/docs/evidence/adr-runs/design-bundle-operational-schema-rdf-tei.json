@@ -13,7 +13,7 @@
     "data\/analysis-recipes\/token-basic-ja-v1.json": "sha256:3d2655f9216c8f721ae9451168a0a34354062505f482de55b5f2c3aa8f755ff3",
     "data\/pack-policies\/no-pack-v1.json": "sha256:801916cdf7fff1670bb3fd048765bb777afdf1c580f7c14aa761037cc5218866",
     "data\/pack-policies\/parquet-basic-v1.json": "sha256:fe2943171a3532f8c5e18483cef4c28853485312d858932f0c64e5b130fd8333",
-    "data\/parser-evidence-citations.edn": "sha256:0299d3a015a9ce764dbf2af2c5279408b7aa81ecc69855139f8490bbb6af723d",
+    "data\/parser-evidence-citations.edn": "sha256:7f8e9923bc1801606a260f4ba4528067ae88022ad0d415e14bcbf01a1385f0f1",
     "data\/request-sets\/demo-basic-ja.json": "sha256:6a507397f6c2bb099e52b52311bde6037aca227f7a60fc0fefbc2b4f2e3b79ad",
     "data\/request-sets\/full-corpus-analysis-basic-ja.json": "sha256:db8073e8d9b460dc5524ca24aa50c505695c4b90c5bcf789d2ef7ac4fa0f3813",
     "data\/request-sets\/full-corpus-basic-ja.json": "sha256:9be3daaf89b5bfaf58adb51da9fbb6f90b48e1d1d247ed1b92e8dd7abf2d1a04",
@@ -149,7 +149,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix run .#validate-design-bundle\"",
-    "revision": "97788b3cc03334d60dc815c06648b31b2203bb89",
+    "revision": "d90d91d931ec153a2b2503db428cbd67cf88369f",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

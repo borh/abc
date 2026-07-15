@@ -214,11 +214,20 @@ weakness. This design settles them:
    value **and** a reference/hash to the `qualification_identity` it was captured
    under. `evaluate-predicate` reads `.value`; the precondition checks every
    envelope's identity reference is equal.
-3. **Admission equality is *derived from the registry*, not hand-asserted.** The
-   precondition loads the ADR-0023 compatibility registry and computes whether the
-   observed tuple exact-matches an admitted row (reusing `aat-parser-ir-compat`
-   match-key logic), instead of trusting a human-typed `:admitted_tuple_matches`
-   boolean.
+3. **Admission is a *projection* of the identity, not full-identity equality.**
+   `qualification_identity` is a superset of the ADR-0023 match key: the registry
+   row has no corpus, predicate-set, or instrument-version fields (`match-keys`,
+   `aat_parser_ir_compat.clj:11` — nine fields: aat version/adapter/adapter
+   version, mapping id/version/hash/schema-hash, parser-IR schema id/hash). So
+   "the tuple matches a row" is two *separate* relations, and conflating them
+   would demand impossible map equality or silently drop fields:
+   - **Observation coherence:** every observation envelope references the same
+     complete `qualification_identity` (`coherent-observations?`).
+   - **Admission:** the *admission projection* of that identity onto the nine
+     `match-keys` fields (`admission-query`) is present in the registry —
+     `(compatible? registry (admission-query identity))`, the match-key membership
+     predicate, **not** a human-typed `:admitted_tuple_matches`. (R6 separately
+     uses the stricter full-evidence `admission-report` to *add* the row.)
 4. **`gate-status` requires *both*.** The gate is `:release-qualified` only when
    the coherence precondition holds **and** all nine verdicts are `:pass`. Any
    incoherent bundle is `:not-qualified` regardless of the tally — this is the
@@ -339,14 +348,15 @@ subsumed by coherence; both remain independent must-pass claims.**
     and — per ADR 0039's own rule that predicate changes require a separately
     evidenced ADR — cannot be swapped in silently. The probe cannot answer this;
     it is a scope decision for the plan.
-- **Parser-IR schema validation (5) — keep it, re-measure against the admitted
-  tuple.** Predicate 5 independently asserts that successful outputs *validate*
-  against the schema; the coherence precondition separately guarantees that
-  validation was done against the **admitted** schema hash (not the live-drifted
-  0.5.0/`43a6a6d8…`). A coherent run can still emit schema-invalid output, so
-  predicate 5 is not redundant with coherence and must not be folded into it. The
-  work here is re-measuring under the pinned admitted tuple, not removing the
-  predicate.
+- **Parser-IR schema validation (5) — keep it, re-measure against the pinned
+  candidate tuple.** Predicate 5 independently asserts that successful outputs
+  *validate* against the schema, and it is measured against the **pinned
+  candidate identity** (its own mapping + parser-IR schema hash) — capturing
+  schema validation needs only the candidate, *not* registry admission, so this
+  does not depend on R6. The coherence precondition and R7 separately derive
+  whether that same candidate is admitted; a coherent run can still emit
+  schema-invalid output, so predicate 5 is not redundant with coherence and must
+  not be folded into it.
 
 ### R6 — Admit the exact release-candidate tuple (ADR 0023)
 
@@ -660,18 +670,31 @@ Settled (user-confirmed 2026-07-15, and hardened by the second review round):
 What remains genuinely open — the plan must resolve or explicitly defer each,
 and none should be forced to a false "done":
 
-- **Predicate 4's identity** — does the release claim stay
-  *envelope-completeness* (zero-over-corpus is a legitimate pass, vacuity
-  disclosed in the observation) or become *diagnostic recall* over a versioned
-  challenge corpus (a different predicate needing an oracle and, per ADR 0039, its
-  own evidenced ADR)? A **disposable probe** settles only the plumbing sub-question
-  (can the parser emit and the capture record diagnostics); the identity choice is
-  a scope decision, not a probe result.
 - **The bundle/schema migration shape** — the exact envelope schema, how the
   precondition is expressed (Malli precondition fn ahead of the tally), and the
   report-schema version bump. Design when the capture-manifest schema is designed.
 - **Whether Track S and Track R share one `ab-aozora` capture-manifest format** —
   an attractive simplification that must not delay Track R.
+
+**Settled since the second review round:**
+
+- **Predicate 4 stays envelope-completeness for this campaign.** Zero-over-corpus
+  is a legitimate pass whose vacuity is disclosed in the observation; a *diagnostic
+  recall* claim (does the parser diagnose every expected construct?) is a
+  different predicate needing an oracle + a versioned challenge corpus + its own
+  evidenced ADR, and is recorded as a **separate future workstream** that does not
+  change this campaign's predicate set or dependency graph. The disposable probe
+  tests only plumbing and cannot justify switching to recall.
+- **External-store lifecycle.** A capture manifest commits a **logical blob
+  identity** — `sha256:<digest>` + byte length + media type — never a
+  machine-local path; `artifact_root` is a *configured store locator resolved at
+  runtime*, distinct from the committed content identity, and must not be called a
+  content address. Resolution goes through explicit runtime configuration (who
+  sets the store root is a config concern, not committed evidence). A blob that is
+  **absent or hash-mismatched yields `:unavailable`/error, never a derived
+  observation**; the rebinding verifier streams and re-hashes blobs (it does not
+  trust store metadata), and durability is a stated retention guarantee of the
+  store, not of the repo.
 
 Honest status: Track R's *what, why, architecture, and the five review findings*
 are settled; what remains is one genuine scope decision (predicate 4's identity)

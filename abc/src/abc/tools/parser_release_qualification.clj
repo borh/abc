@@ -15,11 +15,14 @@
   - This gate consumes a captured measurement bundle (`:measurements`), never
     citation evidence, so comparison / neutral citations cannot reach it at all.
     The release evidence-class boundary itself lives in `abc.tools.parser-evidence`
-    (`assert-release-evidence!`, ADR 0038 / Task 6) for any path that does ingest
+    (`assert-release-evidence!`, ADR 0038) for any path that does ingest
     citations."
   (:require [abc.tools.files :as files]
+            [abc.tools.aat-parser-ir-compat :as compat]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
+            [abc.tools.parser-rq-capture :as capture]
+            [clojure.walk :as walk]
             [clojure.string :as string]
             [malli.core :as m]))
 
@@ -95,9 +98,36 @@
   ([] (load-corpus (files/read-edn corpus-path)))
   ([corpus] (validate-corpus! corpus)))
 
+(declare predicate-set-hash)
+
 (defn load-predicates
   ([] (load-predicates (files/read-edn predicates-path)))
-  ([predicates] predicates))
+  ([predicates]
+   (let [actual (predicate-set-hash predicates)]
+     (when-not (= (:predicate_set_hash predicates) actual)
+       (throw (ex-info "predicate_set_hash mismatch"
+                       {:pinned (:predicate_set_hash predicates)
+                        :recomputed actual})))
+     predicates)))
+
+(defn- canonical-json-value
+  [value]
+  (walk/postwalk
+   (fn [node]
+     (cond
+       (map? node) (into {} (map (fn [[k v]] [(if (keyword? k) (name k) k) v])) node)
+       (keyword? node) (name node)
+       :else node))
+   value))
+
+(defn predicate-set-hash
+  "Hash the predicate contract without its pinned hash field."
+  [predicate-set]
+  (-> predicate-set
+      (dissoc :predicate_set_hash)
+      canonical-json-value
+      hash/sha256-json-jcs
+      hash/format-sha256))
 
 ;; --- Predicate evaluation -----------------------------------------------------
 
@@ -130,7 +160,8 @@
   verdict. No instrument -> `:unavailable`."
   [{:keys [predicate_id dimension instrument observed_key expected unit]}
    measurements]
-  (let [observed (get measurements observed_key)
+  (let [observed (some-> (get measurements observed_key)
+                         capture/observation-value)
         base {:predicate_id predicate_id
               :dimension dimension
               :instrument instrument
@@ -155,19 +186,81 @@
 
 (defn gate-status
   "The gate is `:release-qualified` only when EVERY predicate verdict is
-  `:pass`. Any `:fail` or `:unavailable` verdict yields `:not-qualified`."
-  [results]
-  (if (and (seq results) (every? #(= :pass (:verdict %)) results))
+  `:pass` and the coherence/admission precondition holds."
+  [precondition-ok? results]
+  (if (and precondition-ok?
+           (seq results)
+           (every? #(= :pass (:verdict %)) results))
     :release-qualified
     :not-qualified))
 
 (defn adr-0039-status
   "ADR 0039 promotion rule: `Accepted` only on a fully passing gate; otherwise
   it stays `Proposed`."
-  [results]
-  (if (= :release-qualified (gate-status results))
+  [precondition-ok? results]
+  (if (= :release-qualified (gate-status precondition-ok? results))
     "Accepted"
     "Proposed"))
+
+;; --- Qualification coherence + admission ------------------------------------
+
+(def admission-identity-keys
+  "The exact ADR-0023 compatibility projection used for admission. This is a
+  strict subset of qualification identity; corpus, predicate, and instrument
+  coordinates participate in observation coherence but not registry admission."
+  [:aat_version :aat_adapter :aat_adapter_version
+   :mapping_id :mapping_version :mapping_hash :mapping_schema_hash
+   :parser_ir_schema_id :parser_ir_schema_hash])
+
+(defn admission-query
+  [identity]
+  (into (array-map)
+        (map (fn [key] [key (get identity key)]))
+        admission-identity-keys))
+
+(defn admitted?
+  [registry identity]
+  (and (= admission-identity-keys compat/match-keys)
+       (= (set admission-identity-keys)
+          (set (keys (admission-query identity))))
+       (compat/compatible? registry (admission-query identity))))
+
+(defn qualification-identity-ref
+  "Canonical content identity of the full qualification identity value."
+  [identity]
+  (let [json-value (canonical-json-value identity)]
+    (hash/format-sha256 (hash/sha256-json-jcs json-value))))
+
+(defn coherence-errors
+  [identity observations]
+  (let [expected (qualification-identity-ref identity)]
+    (->> observations
+         (keep (fn [[observed-key envelope]]
+                 (cond
+                   (seq (capture/envelope-errors envelope))
+                   (str (name observed-key) " has an invalid observation envelope")
+
+                   (not= expected (:identity_ref envelope))
+                   (str (name observed-key) " identity_ref does not match qualification identity")
+
+                   :else nil)))
+         vec)))
+
+(defn coherent-observations?
+  [identity observations]
+  (empty? (coherence-errors identity observations)))
+
+(defn- pinned-contract-errors
+  [identity corpus predicate-set]
+  (cond-> []
+    (not= (:corpus_list_hash identity) (:list_hash corpus))
+    (conj "qualification identity corpus_list_hash does not match the pinned corpus")
+
+    (not= (:corpus_snapshot_hash identity) (:corpus_snapshot_hash corpus))
+    (conj "qualification identity corpus_snapshot_hash does not match the pinned corpus")
+
+    (not= (:predicate_set_hash identity) (:predicate_set_hash predicate-set))
+    (conj "qualification identity predicate_set_hash does not match the pinned predicate set")))
 
 ;; --- Report schema + assembly -------------------------------------------------
 
@@ -183,16 +276,18 @@
 
 (def report-schema
   [:map
+   [:report_schema_version [:= "abc/parser-release-qualification-report/v2"]]
    [:report_id :string]
    [:gate_status [:enum :release-qualified :not-qualified]]
    [:adr_0039_status [:enum "Accepted" "Proposed"]]
-   [:identity [:map
-               [:parser :string]
-               [:adapter_version :string]
-               [:admitted_tuple_adapter_version :string]
-               [:admitted_tuple_matches :boolean]
-               [:corpus_list_hash :string]
-               [:corpus_snapshot_hash :string]]]
+   [:identity [:map-of :keyword :any]]
+   [:coherence [:map
+                [:status [:enum :ok :error]]
+                [:identity_ref :string]
+                [:errors [:vector :string]]]]
+   [:admission [:map
+                [:status [:enum :admitted :unadmitted]]
+                [:query [:map-of :keyword :any]]]]
    [:predicate_verdicts [:vector predicate-result-schema]]
    [:verdict_tally [:map-of :keyword :int]]])
 
@@ -208,14 +303,25 @@
   "Assemble the machine-readable qualification report from a captured
   measurement bundle. `identity` records the running parser tuple and the
   admitted-tuple comparison; `measurements` supplies the observed values."
-  [{:keys [report_id corpus predicate-set identity measurements]}]
-  (let [results (evaluate predicate-set measurements)]
-    {:report_id report_id
-     :gate_status (gate-status results)
-     :adr_0039_status (adr-0039-status results)
+  [{:keys [report_id corpus predicate-set registry identity measurements]}]
+  (let [registry (or registry (compat/load-registry))
+        results (evaluate predicate-set measurements)
+        errors (into (coherence-errors identity measurements)
+                     (pinned-contract-errors identity corpus predicate-set))
+        admitted (admitted? registry identity)
+        precondition-ok? (and (empty? errors) admitted)]
+    {:report_schema_version "abc/parser-release-qualification-report/v2"
+     :report_id report_id
+     :gate_status (gate-status precondition-ok? results)
+     :adr_0039_status (adr-0039-status precondition-ok? results)
      :identity (assoc identity
                       :corpus_list_hash (:list_hash corpus)
                       :corpus_snapshot_hash (:corpus_snapshot_hash corpus))
+     :coherence {:status (if (empty? errors) :ok :error)
+                 :identity_ref (qualification-identity-ref identity)
+                 :errors errors}
+     :admission {:status (if admitted :admitted :unadmitted)
+                 :query (admission-query identity)}
      :predicate_verdicts results
      :verdict_tally (verdict-tally results)}))
 

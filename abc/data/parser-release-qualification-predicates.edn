@@ -6,6 +6,7 @@
 ;; fabricated number). Comparators are exact: `:=` is value equality, so a
 ;; 0.969 observation fails a 1.0 predicate.
 {:predicate_set_id "abc/parser-release-qualification/v1"
+ :predicate_set_hash "sha256:ca6ee8dc403e2c901076b0dde5c8008ecfb35864b46a4172a42232725be4a077"
  :description
  "ADR 0002 must-pass release predicates over the pinned qualification corpus."
  :predicates

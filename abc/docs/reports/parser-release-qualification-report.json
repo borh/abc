@@ -1,30 +1,47 @@
 {
+  "admission":
+  {
+    "query":
+    {
+      "aat_adapter": "ab-aozora",
+      "aat_adapter_version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 90967157f31687eeb8a994eb6d61810f19de5010)",
+      "aat_version": 2,
+      "mapping_hash": "sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142",
+      "mapping_id": "https:\/\/w3id.org\/abc\/mappings\/aat-v2-to-parser-ir-v1\/generated-probe",
+      "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
+      "mapping_version": "0.5.0",
+      "parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
+      "parser_ir_schema_id": "https:\/\/w3id.org\/abc\/schemas\/parser-ir.schema.json"
+    },
+    "status": "unadmitted"
+  },
   "adr_0039_status": "Proposed",
+  "coherence":
+  {
+    "errors": [],
+    "identity_ref": "sha256:e05d1c62dde4aba44004b7bcc4380f438ba9a5a07084031024202e894d70c5b5",
+    "status": "ok"
+  },
   "gate_status": "not-qualified",
   "identity":
   {
-    "adapter_version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 90967157f31687eeb8a994eb6d61810f19de5010)",
-    "admitted_git_rev": "004deaf548f34a36abbc17d0f7a162df010a6292",
-    "admitted_mapping_version": "0.4.0",
-    "admitted_parser_ir_schema_hash": "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2",
-    "admitted_tuple_adapter_version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 004deaf548f34a36abbc17d0f7a162df010a6292)",
-    "admitted_tuple_matches": false,
-    "baked_git_rev": "90967157f31687eeb8a994eb6d61810f19de5010",
+    "aat_adapter": "ab-aozora",
+    "aat_adapter_version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 90967157f31687eeb8a994eb6d61810f19de5010)",
+    "aat_version": 2,
     "corpus_list_hash": "sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd",
     "corpus_snapshot_hash": "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e",
-    "current_parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
-    "diagnostic_count": 0,
-    "divergence_loss_by_work":
+    "instrument_versions":
     {
-      "000001_1": 1,
-      "000002_2": 1,
-      "000003_3": 1
+      "legacy_capture": "2026-07-15"
     },
-    "mapping_used": "data\/aat-to-parser-ir-mapping-v2.json",
-    "mapping_version_used": "0.5.0",
-    "measurement_host": "hinoki",
-    "notes": ["Baked git coordinate 90967157 != admitted 004deaf; the release candidate is NOT the admitted ADR-0023 tuple.","Convert under the admitted mapping 0.4.0 fails closed: it pins parser-IR schema hash a1e1b506 but the current parser-ir.schema.json computes 43a6a6d8 (schema drifted since admission).","parser_ir_schema_validation was measured against the CURRENT parser-ir.schema.json via live mapping 0.5.0, not the admitted 0.4.0 tuple.","diagnostic_completeness is vacuous: the parser emitted 0 diagnostics over the corpus, so no diagnostic lacks the code\/severity\/span triple.","silent_drops is unavailable: the AAT->parser-IR divergence LOSS count (1\/work) is a mapping-layer signal, not the ADR-0002 source silent-drop instrument (source construct dropped without a diagnostic)."],
-    "parser": "ab-aozora"
+    "mapping_hash": "sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142",
+    "mapping_id": "https:\/\/w3id.org\/abc\/mappings\/aat-v2-to-parser-ir-v1\/generated-probe",
+    "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
+    "mapping_version": "0.5.0",
+    "parser_git_rev": "90967157f31687eeb8a994eb6d61810f19de5010",
+    "parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
+    "parser_ir_schema_id": "https:\/\/w3id.org\/abc\/schemas\/parser-ir.schema.json",
+    "predicate_set_hash": "sha256:ca6ee8dc403e2c901076b0dde5c8008ecfb35864b46a4172a42232725be4a077"
   },
   "predicate_verdicts": [
     {
@@ -145,6 +162,7 @@
       "verdict": "pass"
     }],
   "report_id": "abc\/parser-release-qualification\/2026-07-15",
+  "report_schema_version": "abc\/parser-release-qualification-report\/v2",
   "verdict_tally":
   {
     "pass": 5,

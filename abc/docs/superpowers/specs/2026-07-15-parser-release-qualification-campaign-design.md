@@ -243,10 +243,12 @@ against the *admitted* schema hash; predicate 5 independently asserts the output
 *validate*. A coherent run can still emit schema-invalid output, so both are
 required (see R5).
 
-The campaign must first **pin the release candidate** (an exact git rev + baked
-coordinates + mapping version + schema hash), then produce admission and all
-instrument evidence against that single frozen tuple, and the gate precondition
-must mechanically reject any bundle whose parts disagree.
+The campaign must finish the instrument implementation first, then **pin the
+release candidate** (an exact git rev + baked coordinates + mapping version +
+schema hash) before any authoritative capture. `ab-aozora` bakes the flake
+`self.rev`, so pinning before implementation commits would immediately stale the
+identity. Admission and all instrument evidence are then produced against that
+single frozen tuple, and the gate precondition mechanically rejects disagreement.
 
 ## Track R — Release-Qualification Instruments
 
@@ -666,6 +668,11 @@ Settled (user-confirmed 2026-07-15, and hardened by the second review round):
   complementary, not a replacement. (Earlier open question, now closed.)
 - **R1 denominator is the eligible source-byte inventory** under a versioned
   ignored-region taxonomy; work-completeness is a separate check.
+- **Diagnostic plumbing is present.** A disposable probe on
+  `hinoki.hyakutake-barbel.ts.net` (2026-07-16) ran `ab-aozora --mode
+  diagnostics` against the committed `broken-ruby-utf8.txt` fixture and emitted
+  a schema-v3 `unclosed-bracket` diagnostic with severity, source, and byte span.
+  This is plumbing evidence only, not a release measurement.
 
 What remains genuinely open — the plan must resolve or explicitly defer each,
 and none should be forced to a false "done":
@@ -696,10 +703,10 @@ and none should be forced to a false "done":
   trust store metadata), and durability is a stated retention guarantee of the
   store, not of the repo.
 
-Honest status: Track R's *what, why, architecture, and the five review findings*
-are settled; what remains is one genuine scope decision (predicate 4's identity)
-and the concrete schema/migration shapes — work for the plan's first steps, not a
-claim that everything is decided.
+Honest status: Track R's *what, why, architecture, predicate-4 identity, and the
+five review findings* are settled. The concrete bundle/schema migration is owned
+by the P0 focused implementation plan; the Track-R/Track-S capture convergence
+remains an optional follow-up that cannot delay release qualification.
 
 ## Program Invariants (inherited, binding)
 
@@ -741,9 +748,9 @@ Track S is independent of Track R end-to-end. Within Track S, S4 depends on the
 host-comparability capture; S2 is nearly ready; S1 and S3 need reference
 artifacts (S3 may terminate `non_comparable` for adapter lanes).
 
-Cross-cutting: pin the release-candidate tuple **first** — it is the shared
-input to R1–R6 and its choice (which git rev is "the release candidate") is a
-decision the plan must record before any measurement.
+Cross-cutting: pin the release-candidate tuple after instrument code is complete
+but **before any authoritative measurement**. It is the shared capture input to
+R1–R6; the plan records the chosen final implementation revision.
 
 ## Acceptance Criteria (campaign-level)
 

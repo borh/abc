@@ -27,8 +27,8 @@ manifests, drift-tested — no hand-authored numbers.
 **Tech Stack:** Clojure (`abc.tools.parser-release-qualification`,
 `abc.tools.aat-parser-ir-compat`, Malli), Rust (`ab-aat-to-parser-ir audit-corpus`,
 `ab-check`), Python (capture/derivation harnesses, ruff), Nix checks, EDN/JSON
-manifests. Heavy captures/audits run on hinoki (`.superpowers/sdd/hinoki-exec.md`);
-governance recapture per `.superpowers/sdd/task-6-report.md`.
+manifests. Heavy captures/audits run on `hinoki.hyakutake-barbel.ts.net`;
+governance recapture follows `.superpowers/sdd/task-6-report.md`.
 
 ## Global Constraints
 
@@ -102,12 +102,12 @@ reviewable systems and must land first.
 
 | # | Focused plan (to write) | Delivers | Depends on |
 |---|---|---|---|
-| P0 | `…-parser-rq-foundation.md` | Contracts 1 & 2 made real: pin+probe, manifest contract, envelope contract, external-store + rebinding verifier, gate coherence precondition | — |
+| P0 | `…-parser-rq-foundation.md` | Contracts 1 & 2 made real: plumbing probe, manifest contract, envelope contract, external-store + rebinding verifier, gate coherence precondition | — |
 | P1 | `…-parser-rq-source-accountability.md` | R1 source-span coverage (byte denominator + versioned taxonomy) → R2 silent-drops | P0 |
 | P2 | `…-parser-rq-publication.md` | R3 publication-structure validation | P0 |
 | P3 | `…-parser-rq-resource.md` | R4 per-work memory (single mechanism, chosen in-plan) | P0 |
-| P4 | `…-parser-rq-predicate-hardening.md` | R5 (predicates 4 & 5) | P0, P1, and the pinned candidate (P0) — **not** admission |
-| P5 | `…-parser-rq-admission-promotion.md` | R6 admit the candidate tuple; R7 recapture + gate + conditional ADR 0039 | P0–P4 (barrier) |
+| P4 | `…-parser-rq-predicate-hardening.md` | R5 (predicates 4 & 5) instrument code | P0, P1 |
+| P5 | `…-parser-rq-admission-promotion.md` | Pin the final implementation commit; capture R1–R5; R6 admit; R7 recapture + gate + conditional ADR 0039 | P0–P4 (barrier) |
 | PS | `…-parser-rq-study-axes.md` (or its own spec) | Track S: S2, S1, S3, S4 | P0 contracts only; never gates Track R |
 
 ```
@@ -119,11 +119,9 @@ PS runs parallel to everything; S4 (host-controlled KM latency) is the long pole
 ```
 
 **Corrections baked into the split:**
-- **P4/R5 depends on the pinned candidate, not admission** (fixes prior Blocker 2):
-  predicate 5 is measured against the **pinned candidate identity** (its own
-  mapping + schema hash) — capturing schema validation needs only the candidate,
-  not a registry row. P0's precondition and P5 separately derive whether that
-  candidate is admitted. So P4 does not depend on P5.
+- **P4/R5 instrument code does not depend on admission.** P5 first pins the final
+  implementation commit, then captures predicate 5 against that candidate's own
+  mapping + schema hash and separately derives whether the candidate is admitted.
 - **Predicate 4 is settled as envelope-completeness** (fixes prior Suggestion 4):
   it stays predicate 4 and discloses vacuity. A *diagnostic-recall* predicate is a
   separate future ADR/workstream (oracle + challenge corpus) that does **not**
@@ -137,8 +135,8 @@ interfaces, **named tests with code and expected failure**, exact commands,
 minimal implementation, independently testable tasks. Their entry contracts:
 
 - **P0 Foundation** — see the companion focused plan
-  `2026-07-16-parser-rq-foundation.md` (written now). Tasks: (0a) pin the release
-  candidate + disposable diagnostic-plumbing probe; (0b) capture-manifest Malli
+  `2026-07-16-parser-rq-foundation.md` (written now). Tasks: (0a) disposable
+  diagnostic-plumbing probe; (0b) capture-manifest Malli
   contract + tests; (0c) observation-envelope contract + tests; (0d) external-store
   config + rebinding verifier (`verify_external`-style) + tests; (0e) gate
   coherence precondition (`admission-query`/`admitted?`/`coherent-observations?`,
@@ -158,7 +156,9 @@ minimal implementation, independently testable tasks. Their entry contracts:
   leave three open. Host pinned + disclosed in the manifest.
 - **P4 Predicate hardening** — predicate 4 discloses vacuity (envelope-completeness,
   settled); predicate 5 re-measured against the **pinned candidate** schema.
-- **P5 Admission + promotion** — R6: `ab-aat-to-parser-ir audit-corpus … --compat-edn-out`
+- **P5 Admission + promotion** — pin the final implementation commit before any
+  authoritative capture (the binary bakes `self.rev`); capture R1–R5 for that
+  identity; then R6: `ab-aat-to-parser-ir audit-corpus … --compat-edn-out`
   → append a **new** registry generation → `clojure -M:abc/aat-compat-admission --
   --candidates <row>` requires `:admitted`. R7 (barrier): generate the bundle from
   committed manifests, drift-test, conditional ADR 0039 promotion (honest fail

@@ -24,26 +24,24 @@ focused Nix suite before P0's final commit: `just validate-migration` from repo 
 
 ---
 
-## Task 0a: Pin the release candidate + disposable diagnostic-plumbing probe
+## Task 0a: Disposable diagnostic-plumbing probe; defer the candidate pin
 
-**Interfaces:** produces the frozen candidate `qualification_identity` (recorded in
-the design spec) and a throwaway probe result. No gate code.
+**Interfaces:** produces a throwaway plumbing result. The release candidate is
+not pinned in P0: `ab-validator/flake.nix` bakes `self.rev` into `ab-aozora`, so
+every later instrument implementation commit would invalidate an earlier pin.
+P5 pins the final implementation commit before any authoritative capture.
 
-- [ ] **Step 1:** Choose the exact `ab-aozora` git rev that is the release
-  candidate; record its baked adapter coordinates, mapping id/version/hash +
-  mapping-schema hash, and parser-IR schema id/hash. These become the decomposed
-  match-key fields the bundle `:identity` must carry (Contract 1).
-- [ ] **Step 2 (disposable probe):** on hinoki, run `ab-aozora --mode diagnostics`
+- [ ] **Step 1 (disposable probe):** on hinoki, run `ab-aozora --mode diagnostics`
   over a small diagnostic-triggering fixture; confirm it can emit and a capture can
   record `{code,severity,span}`. Label the probe disposable (not committed as
   production code). It validates *plumbing only* — it does not decide predicate 4
   (settled: envelope-completeness).
-- [ ] **Step 3:** record the pinned tuple in the design spec's "Settled decisions".
-  Commit `docs(parser-rq): pin release candidate identity`.
+- [ ] **Step 2:** record the observed plumbing behavior. Do not cite the probe as
+  release evidence and do not freeze its build as the candidate.
 
 ## Task 0b: Capture-manifest Malli contract (Contract 2)
 
-**Interfaces:** consumes 0a's identity; produces `manifest-schema` +
+**Interfaces:** produces `manifest-schema` +
 `manifest-errors` in `parser_rq_capture.clj`.
 
 - [ ] **Step 1 — failing test** `parser_rq_capture_test.clj`:
@@ -135,7 +133,7 @@ modeled on `ab-validator/reports/parser-study/freeze_run_evidence.py`
 
 ```clojure
 (def ADMITTED-IDENTITY
-  ;; decomposed match-key projection of the pinned candidate (0a), present in the registry
+  ;; decomposed match-key projection of a known admitted fixture
   {:aat_version 2 :aat_adapter "ab-aozora"
    :aat_adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 004deaf548f34a36abbc17d0f7a162df010a6292)"
    :mapping_id "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe"
@@ -210,8 +208,8 @@ modeled on `ab-validator/reports/parser-study/freeze_run_evidence.py`
   regression test for the live gap (`gate-status:156` ignores admission); it fails
   before the migration and passes after, proving ADR-0039-C5 is now enforced in code.
 - No predicate is added or weakened; P0 produces zero new measurements (four
-  predicates stay `:instrument-missing`), so the gate honestly stays
-  `not-qualified` after P0.
+  predicates stay `:instrument-missing`). The migrated historical bundle is
+  coherent but unadmitted, so the gate honestly stays `not-qualified` after P0.
 - Contract 2 is enforced by 0b/0d tests: committed manifests carry logical blob
   identities (paths rejected), and the verifier streams + re-hashes, returning
   `:unavailable` on absence/mismatch — never a derived value.

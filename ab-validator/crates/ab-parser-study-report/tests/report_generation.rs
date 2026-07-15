@@ -196,6 +196,136 @@ fn ab_aozora_appendix_is_measured_noncomparable_or_missing_never_zero() {
     }
 }
 
+const PLACEHOLDER_REV: &str = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
+
+#[test]
+fn native_wrapper_lanes_are_disclosed_and_revision_is_data_derived() {
+    let real_rev = "ac2be926738f919faf44300e2999b3548d724297";
+
+    // (1) Revision derivation, not value-equality: substitute the baseline
+    // revision at its source (the preregistration candidate revision, which
+    // feeds row.parser_revision()) and assert both reports track the data. A
+    // hardcoded literal equal to the current revision would fail both arms.
+    let altered_prereg = PREREGISTRATION.replace(real_rev, PLACEHOLDER_REV);
+    let gen_rev = generate_reports(RUN_MANIFESTS, &altered_prereg, APPENDIX_MANIFESTS)
+        .expect("generation succeeds");
+    assert!(
+        gen_rev.narrative_markdown.contains(PLACEHOLDER_REV),
+        "appendix prose must interpolate the revision from data, not hardcode it"
+    );
+    assert!(
+        !gen_rev.narrative_markdown.contains(real_rev),
+        "no stale literal of the committed revision may survive in the prose"
+    );
+    assert!(
+        gen_rev.machine_json.contains(&PLACEHOLDER_REV[..8]),
+        "the short-form revision stamp in the robustness caveat must track the data"
+    );
+
+    // (2) Timeout derivation: substitute the appendix timeout and assert the
+    // appendix prose tracks it rather than a `300` literal.
+    let altered_timeout =
+        APPENDIX_MANIFESTS.replace("\"timeout_seconds\": 300", "\"timeout_seconds\": 999");
+    let gen_to = generate_reports(RUN_MANIFESTS, PREREGISTRATION, &altered_timeout)
+        .expect("generation succeeds");
+    assert!(
+        gen_to.narrative_markdown.contains("999 s"),
+        "appendix timeout prose must interpolate timeout_seconds from data"
+    );
+
+    // (3) Wrapper-native disclosure: aozora2html / aozora-epub3 "native" lanes
+    // run through their `*-adapter` binary in `--mode html`; the report must
+    // disclose that "native" means the parser-native output format via a thin
+    // wrapper, not a direct parser invocation.
+    let reports = generate();
+    assert!(
+        reports
+            .narrative_markdown
+            .contains("parser-native output format"),
+        "the wrapper-native lanes must be disclosed"
+    );
+    assert!(
+        reports
+            .narrative_markdown
+            .contains("not a direct parser invocation"),
+        "the wrapper-native disclosure must state it is not a direct invocation"
+    );
+}
+
+#[test]
+fn secondary_vectors_table_is_provenance_stamped() {
+    let generated = generate();
+    // Each official-notation-vectors lane's recorded manifest hash must appear in
+    // the secondary parse-completion table, binding its reported count to the lane
+    // it came from so a count cannot silently drift from its provenance.
+    let manifests: serde_json::Value =
+        serde_json::from_str(RUN_MANIFESTS).expect("run manifests parse");
+    let vectors_hashes: Vec<String> = manifests["runs"]
+        .as_array()
+        .expect("runs array")
+        .iter()
+        .filter(|run| run["inventory"] == "official-notation-vectors")
+        .map(|run| {
+            run["manifest_sha256"]
+                .as_str()
+                .expect("manifest_sha256 present")
+                .to_string()
+        })
+        .collect();
+    assert!(
+        !vectors_hashes.is_empty(),
+        "there must be official-notation-vectors lanes to stamp"
+    );
+    for hash in vectors_hashes {
+        assert!(
+            generated.narrative_markdown.contains(&hash),
+            "the secondary vectors table must stamp each lane's manifest hash ({hash})"
+        );
+    }
+}
+
+#[test]
+fn robustness_rows_are_scoped_to_the_measured_corpus_arm() {
+    let generated = generate();
+    let report: StudyReport = serde_json::from_str(&generated.machine_json).expect("parse report");
+    let measured_robustness: Vec<_> = report
+        .rows()
+        .iter()
+        .filter(|r| r.axis() == Axis::Robustness && r.status() == RowStatus::Measured)
+        .collect();
+    assert!(
+        !measured_robustness.is_empty(),
+        "expected measured robustness rows"
+    );
+    // A measured robustness status covers only the corpus parse-completion arm;
+    // the preregistered malformed-input fixture arm is unmeasured. The caveat must
+    // say both, so the status cannot be read as the complete robustness axis.
+    for row in measured_robustness {
+        let caveat = row.caveats().first().cloned().unwrap_or_default();
+        assert!(
+            caveat.contains("corpus parse-completion arm"),
+            "a measured robustness row must name the corpus parse-completion arm: {caveat}"
+        );
+        assert!(
+            caveat.contains("malformed-input robustness fixture arm is unmeasured"),
+            "a measured robustness row must state the fixture arm is unmeasured: {caveat}"
+        );
+    }
+    // The narrative must scope its robustness section the same way.
+    assert!(
+        generated
+            .narrative_markdown
+            .contains("corpus parse-completion arm"),
+        "narrative must scope robustness to the corpus arm"
+    );
+    assert!(
+        generated
+            .narrative_markdown
+            .contains("malformed-input robustness fixture arm is unmeasured"),
+        "narrative must disclose the unmeasured fixture arm"
+    );
+}
+
 #[test]
 fn committed_reports_match_regeneration_from_raw_manifests() {
     let generated = generate();

@@ -1,5 +1,5 @@
 {
-  "candidate": {
+  "candidates": {
     "ab-aozora": {
       "adapter_revision": null,
       "derivation_identity": "/nix/store/p5wzii1dv99dngz3jlrrh6147i2j9cqa-ab-aozora-0.1.0",

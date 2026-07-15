@@ -254,6 +254,10 @@ mod tests {
         assert_eq!(m.get(&2), Some(&'b'));
     }
 
+    // The rejection is a `debug_assert!`, compiled out in release builds (the
+    // nix workspace check runs `--release`), so this only fires under debug
+    // assertions; gate it so release `cargo test` does not see a missing panic.
+    #[cfg(debug_assertions)]
     #[test]
     #[should_panic(expected = "sorted ascending")]
     fn debug_panic_on_unsorted_keys() {

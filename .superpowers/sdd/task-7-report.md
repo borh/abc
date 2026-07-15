@@ -5,7 +5,7 @@ honestly reports `not-qualified`, so ADR 0039 stays **Proposed** and the
 `feat(parser): qualify project-owned parser for release` commit was NOT made, as
 the admission≠release rule requires).
 
-Branch: `feat/parser-release-qualification`. Final HEAD: `052ee416`.
+Branch: `feat/parser-release-qualification`. Final code HEAD: `052ee416`; this report was recorded at `bfcd91e7` and the branch merged to `main` at `1388022a`.
 
 ## Commits
 

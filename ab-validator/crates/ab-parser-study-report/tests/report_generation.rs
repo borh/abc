@@ -285,6 +285,48 @@ fn secondary_vectors_table_is_provenance_stamped() {
 }
 
 #[test]
+fn robustness_rows_are_scoped_to_the_measured_corpus_arm() {
+    let generated = generate();
+    let report: StudyReport = serde_json::from_str(&generated.machine_json).expect("parse report");
+    let measured_robustness: Vec<_> = report
+        .rows()
+        .iter()
+        .filter(|r| r.axis() == Axis::Robustness && r.status() == RowStatus::Measured)
+        .collect();
+    assert!(
+        !measured_robustness.is_empty(),
+        "expected measured robustness rows"
+    );
+    // A measured robustness status covers only the corpus parse-completion arm;
+    // the preregistered malformed-input fixture arm is unmeasured. The caveat must
+    // say both, so the status cannot be read as the complete robustness axis.
+    for row in measured_robustness {
+        let caveat = row.caveats().first().cloned().unwrap_or_default();
+        assert!(
+            caveat.contains("corpus parse-completion arm"),
+            "a measured robustness row must name the corpus parse-completion arm: {caveat}"
+        );
+        assert!(
+            caveat.contains("malformed-input robustness fixture arm is unmeasured"),
+            "a measured robustness row must state the fixture arm is unmeasured: {caveat}"
+        );
+    }
+    // The narrative must scope its robustness section the same way.
+    assert!(
+        generated
+            .narrative_markdown
+            .contains("corpus parse-completion arm"),
+        "narrative must scope robustness to the corpus arm"
+    );
+    assert!(
+        generated
+            .narrative_markdown
+            .contains("malformed-input robustness fixture arm is unmeasured"),
+        "narrative must disclose the unmeasured fixture arm"
+    );
+}
+
+#[test]
 fn committed_reports_match_regeneration_from_raw_manifests() {
     let generated = generate();
     let committed_machine = fs::read_to_string(COMMITTED_MACHINE_REPORT)

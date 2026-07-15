@@ -315,11 +315,13 @@ fn build_row(
             Some(denominator),
             Missingness::None,
             vec![format!(
-                "Parse-completion (successful parses / all {denominator} attempted works) over \
-                 the pinned {ROBUSTNESS_INVENTORY} corpus, failures and timeouts retained in the \
-                 denominator. A completed parse is not an assertion of output fidelity, and this \
-                 count excludes the malformed-input robustness fixture, whose executable run is \
-                 not committed here."
+                "This is the corpus parse-completion arm of the robustness axis (successful \
+                 parses / all {denominator} attempted works) over the pinned \
+                 {ROBUSTNESS_INVENTORY} corpus, failures and timeouts retained in the \
+                 denominator. A completed parse is not an assertion of output fidelity. The \
+                 preregistered malformed-input robustness fixture arm is unmeasured (its \
+                 executable run is not committed here), so a measured status here is the corpus \
+                 arm only, not the complete robustness axis."
             )],
             provenance,
         )
@@ -401,13 +403,15 @@ fn build_appendix_row(
             Some(denominator),
             Missingness::None,
             vec![format!(
-                "Project-owned custom baseline; ownership grants no comparison pass. \
-                 Parse-completion (successful native `--mode aat` parses / all {denominator} \
-                 attempted works) over the pinned {ROBUSTNESS_INVENTORY} corpus at the frozen \
-                 baseline revision {short_rev}, failures and timeouts retained in the denominator \
-                 under the frozen {timeout_seconds} s per-work timeout. A completed parse is not \
-                 an assertion of output fidelity, and this count excludes the malformed-input \
-                 robustness fixture, whose executable run is not committed here."
+                "Project-owned custom baseline; ownership grants no comparison pass. This is the \
+                 corpus parse-completion arm of the robustness axis (successful native \
+                 `--mode aat` parses / all {denominator} attempted works) over the pinned \
+                 {ROBUSTNESS_INVENTORY} corpus at the frozen baseline revision {short_rev}, \
+                 failures and timeouts retained in the denominator under the frozen \
+                 {timeout_seconds} s per-work timeout. A completed parse is not an assertion of \
+                 output fidelity. The preregistered malformed-input robustness fixture arm is \
+                 unmeasured (its executable run is not committed here), so a measured status here \
+                 is the corpus arm only, not the complete robustness axis."
             )],
             provenance,
         )
@@ -617,7 +621,10 @@ fn render_narrative(
         "Only parse-completion robustness is backed by the committed parse-outcome counts. Each \
          count below is exact, with failures and timeouts retained in the denominator, and a \
          two-sided 95% Wilson score interval. The denominator is the pinned corpus size \
-         (`aozorabunko-source-snapshot`, unit = work).\n\n",
+         (`aozorabunko-source-snapshot`, unit = work). This is the corpus parse-completion arm \
+         of the robustness axis only: the preregistered malformed-input robustness fixture arm \
+         is unmeasured (not committed here), so a measured robustness status is the corpus arm, \
+         not the complete robustness axis.\n\n",
     );
 
     for mode in [MeasurementMode::Native, MeasurementMode::AdapterNormalized] {

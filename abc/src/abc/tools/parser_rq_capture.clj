@@ -3,6 +3,7 @@
   logical blob identities to an explicitly configured external store."
   (:require [abc.tools.hash :as hash]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [malli.core :as m]))
 
 (def sha256-schema
@@ -22,7 +23,10 @@
 
 (def manifest-schema
   [:map {:closed true}
-   [:blob blob-reference-schema]
+   [:blobs [:vector {:min 1}
+            [:map {:closed true}
+             [:locator [:string {:min 1}]]
+             [:ref blob-reference-schema]]]]
    [:denominator {:optional true} denominator-schema]])
 
 (def envelope-schema
@@ -81,3 +85,20 @@
         {:status :ok}))
     (catch Exception error
       (unavailable (.getMessage error)))))
+
+(defn verify-manifest
+  "Verify every logical blob in a closed capture manifest against the runtime
+  store. One invalid, absent, or mismatched blob makes the whole capture
+  unavailable; partial verification never yields observations."
+  [store manifest]
+  (let [errors (manifest-errors manifest)]
+    (if (seq errors)
+      (unavailable (string/join "; " errors))
+      (let [results (mapv (fn [{:keys [ref locator]}]
+                            (verify-blob store ref locator))
+                          (:blobs manifest))]
+        (if (every? #(= :ok (:status %)) results)
+          {:status :ok :blob_count (count results)}
+          {:status :unavailable
+           :reason "one or more manifest blobs are unavailable"
+           :blob_results results})))))

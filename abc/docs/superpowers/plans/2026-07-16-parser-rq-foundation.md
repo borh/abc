@@ -49,24 +49,29 @@ P5 pins the final implementation commit before any authoritative capture.
 ```clojure
 (deftest manifest-requires-logical-blob-identity-not-a-path
   ;; A committed manifest addresses blobs by content identity, never a filesystem path.
-  (let [ok  {:blob {:sha256 "sha256:aa" :bytes 12 :media_type "application/json"}}
-        bad {:blob {:artifact_root "/db/hinoki/run-7/out.json"}}] ; machine path -> reject
+  (let [ok  {:blobs [{:locator "run-7/out.json"
+                      :ref {:sha256 "sha256:aa" :bytes 12
+                            :media_type "application/json"}}]}
+        bad {:blobs [{:locator "run-7/out.json"
+                      :ref {:artifact_root "/db/hinoki/run-7/out.json"}}]}] ; machine path -> reject
     (is (nil? (seq (capture/manifest-errors ok))))
     (is (seq (capture/manifest-errors bad)))
     (is (some #(re-find #"sha256|logical blob identity" %) (capture/manifest-errors bad)))))
 
 (deftest manifest-denominator-carries-explicit-units
-  (let [bad {:blob {:sha256 "sha256:aa" :bytes 1 :media_type "x"}
+  (let [bad {:blobs [{:locator "capture.bin"
+                      :ref {:sha256 "sha256:aa" :bytes 1 :media_type "x"}}]
              :denominator {:value 17886}}]                     ; unit missing -> reject
     (is (seq (capture/manifest-errors bad)))))
 ```
 
 - [ ] **Step 2 — run → FAIL:** `bin/kaocha --focus abc.tools.parser-rq-capture-test`
   → `Unable to resolve: capture/manifest-errors` (ns/fn absent).
-- [ ] **Step 3 — minimal impl:** define `manifest-schema` (Malli): each blob ref is
-  `{:sha256 :string :bytes :int :media_type :string}` (no `:artifact_root` / path
-  keys permitted in a *committed* manifest); denominators are `{:value :int :unit
-  :string}`. `manifest-errors` returns humanized Malli errors.
+- [ ] **Step 3 — minimal impl:** define `manifest-schema` (Malli): each `:blobs`
+  entry pairs a runtime-resolved relative `:locator` with a logical `:ref` of
+  `{:sha256 :string :bytes :int :media_type :string}` (no `:artifact_root` or
+  machine-local path is embedded in the logical ref); denominators are
+  `{:value :int :unit :string}`. `manifest-errors` returns Malli errors.
 - [ ] **Step 4 — run → PASS.** Commit `feat(parser-rq): capture-manifest contract`.
 
 ## Task 0c: Observation-envelope contract

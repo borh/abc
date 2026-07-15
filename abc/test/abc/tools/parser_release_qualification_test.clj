@@ -141,7 +141,18 @@
         report (q/build-report (report-input wrong-corpus
                                              (envelopes wrong-corpus all-pass-values)))]
     (is (= :not-qualified (:gate_status report)))
-    (is (some #(re-find #"corpus_list_hash" %) (get-in report [:coherence :errors])))))
+    (is (some #(re-find #"corpus_list_hash" %) (get-in report [:coherence :errors])))
+    (is (= (:identity report) wrong-corpus))
+    (is (= (q/qualification-identity-ref wrong-corpus)
+           (get-in report [:coherence :identity_ref])))))
+
+(deftest gate-not-qualified-when-full-identity-is-incomplete
+  (let [incomplete (dissoc admitted-identity :parser_git_rev :instrument_versions)
+        report (q/build-report (report-input incomplete
+                                             (envelopes incomplete all-pass-values)))]
+    (is (= :not-qualified (:gate_status report)))
+    (is (some #(re-find #"parser_git_rev" %) (get-in report [:coherence :errors])))
+    (is (some #(re-find #"instrument_versions" %) (get-in report [:coherence :errors])))))
 
 (deftest gate-release-qualified-requires-precondition-and-nine-pass
   (let [report (q/build-report

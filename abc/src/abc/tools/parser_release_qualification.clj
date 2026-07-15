@@ -22,6 +22,7 @@
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.parser-rq-capture :as capture]
+            [clojure.set :as set]
             [clojure.walk :as walk]
             [clojure.string :as string]
             [malli.core :as m]))
@@ -212,6 +213,12 @@
    :mapping_id :mapping_version :mapping_hash :mapping_schema_hash
    :parser_ir_schema_id :parser_ir_schema_hash])
 
+(def qualification-identity-keys
+  "The closed identity tuple to which every observation envelope is bound."
+  (into admission-identity-keys
+        [:parser_git_rev :corpus_snapshot_hash :corpus_list_hash
+         :predicate_set_hash :instrument_versions]))
+
 (defn admission-query
   [identity]
   (into (array-map)
@@ -252,15 +259,31 @@
 
 (defn- pinned-contract-errors
   [identity corpus predicate-set]
-  (cond-> []
-    (not= (:corpus_list_hash identity) (:list_hash corpus))
-    (conj "qualification identity corpus_list_hash does not match the pinned corpus")
+  (let [present (set (keys identity))
+        required (set qualification-identity-keys)
+        missing (sort (map name (set/difference required present)))
+        unexpected (sort (map name (set/difference present required)))]
+    (cond-> []
+      (seq missing)
+      (conj (str "qualification identity is missing required fields: "
+                 (string/join ", " missing)))
 
-    (not= (:corpus_snapshot_hash identity) (:corpus_snapshot_hash corpus))
-    (conj "qualification identity corpus_snapshot_hash does not match the pinned corpus")
+      (seq unexpected)
+      (conj (str "qualification identity has unexpected fields: "
+                 (string/join ", " unexpected)))
 
-    (not= (:predicate_set_hash identity) (:predicate_set_hash predicate-set))
-    (conj "qualification identity predicate_set_hash does not match the pinned predicate set")))
+      (not (and (map? (:instrument_versions identity))
+                (seq (:instrument_versions identity))))
+      (conj "qualification identity instrument_versions must be a non-empty map")
+
+      (not= (:corpus_list_hash identity) (:list_hash corpus))
+      (conj "qualification identity corpus_list_hash does not match the pinned corpus")
+
+      (not= (:corpus_snapshot_hash identity) (:corpus_snapshot_hash corpus))
+      (conj "qualification identity corpus_snapshot_hash does not match the pinned corpus")
+
+      (not= (:predicate_set_hash identity) (:predicate_set_hash predicate-set))
+      (conj "qualification identity predicate_set_hash does not match the pinned predicate set"))))
 
 ;; --- Report schema + assembly -------------------------------------------------
 
@@ -314,9 +337,7 @@
      :report_id report_id
      :gate_status (gate-status precondition-ok? results)
      :adr_0039_status (adr-0039-status precondition-ok? results)
-     :identity (assoc identity
-                      :corpus_list_hash (:list_hash corpus)
-                      :corpus_snapshot_hash (:corpus_snapshot_hash corpus))
+     :identity identity
      :coherence {:status (if (empty? errors) :ok :error)
                  :identity_ref (qualification-identity-ref identity)
                  :errors errors}

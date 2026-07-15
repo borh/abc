@@ -4,7 +4,11 @@
 
 **Goal:** Close the deferred, non-blocking polish items from the final whole-branch review of the parser-comparison-and-qualification remediation (merged to `main` at `1388022a`), tightening report honesty, provenance, and consistency without changing any measured outcome.
 
-**Architecture:** `ab-validator` owns the Rust report generator + committed report artifacts; the byte-identical regeneration (drift) test is the safety net — every narrative/data change must regenerate the two committed report files and keep `cargo test -p ab-parser-study-report` green. `abc` owns the evidence-class boundary. No new measurements are produced here; the larger measurement campaign is explicitly out of scope (see "Deferred").
+**Architecture:** `ab-validator` owns the Rust report generator + committed report artifacts. Two distinct gates protect these tasks, and conflating them is a trap:
+- The **drift test** (`committed_reports_match_regeneration_from_raw_manifests`) only asserts `generator_output == committed_golden`. Because every task *regenerates the golden*, this test passes by construction after any prose change — it is a **change-detector** (catches a hand-edited golden or a generator/golden desync), not a correctness or honesty gate.
+- The **honesty gate** is the value-asserting content test (as `robustness_rows_carry_exact_preregistered_parse_completion_counts` and `ab_aozora_appendix_is_measured_...` already are). Every task below MUST land a content assertion that would fail on the *wrong* prose/number, not merely keep the drift test green.
+
+`abc` owns the evidence-class boundary. No new measurements are produced here; the larger measurement campaign is explicitly out of scope (see "Deferred").
 
 **Tech Stack:** Rust (`ab-parser-study-report`, `ab-check`), Python (`reports/parser-study/*.py`, ruff), Clojure (`abc` evidence), Nix checks, run heavy builds on hinoki (`.superpowers/sdd/hinoki-exec.md`).
 
@@ -18,6 +22,7 @@
 - Every measured/non_comparable/missing row's disposition is fixed — you may reword caveats and add provenance, never flip a status or change a count.
 - ABC governance stays green: if you touch `abc/src/abc/tools/malli.clj`, `abc/data/parser-evidence-citations.edn`, or any file inside an ADR evidence closure, recapture the affected bundles through the real tool (`clojure -M:abc/adr-evidence-capture` on hinoki) so `just validate-migration` still exits 0. See `.superpowers/sdd/task-6-report.md` for the recapture procedure.
 - Heavy Nix builds / regeneration verification run on hinoki, not locally.
+- **Task sequencing (shared mutable place):** Tasks 1, 4, 5, and Task 6 Step 1 all edit `generate.rs` and regenerate the *same two* committed report files. They MUST run as a **serial chain under one owner**, not as parallel subagents — parallel agents merge-conflict `generate.rs` and race on golden regeneration (last writer silently wins). Only genuinely disjoint work may parallelize: Task 2 (Python verifier docs) and Task 3 (materializer). Task 7 (evidence guard) touches an ABC evidence-closure file and serializes against nothing here but carries the governance-recapture cost.
 
 ## Completed prerequisite (already done, 2026-07-15)
 
@@ -46,21 +51,36 @@
 - Consumes: the appendix `parser_revision` (`ac2be926…`) and `timeout_seconds` (300) already parsed from `appendix-run-manifests.json`; the per-candidate `required_program_basename`/mode from `run-manifests.json` execution contracts.
 - Produces: no API change — only report text and the committed report bytes change.
 
-- [ ] **Step 1: Add a failing assertion to the drift test that the narrative no longer hardcodes the baseline literal disconnected from data.** In `report_generation.rs`, add a test asserting the narrative contains the revision string taken from the parsed appendix manifest field (so a stale literal would diverge), and that the "native" wording for `aozora2html`/`aozora-epub3` includes the clarifying phrase.
+- [ ] **Step 1: Add a failing test that proves *derivation*, not value-equality.** A `contains(&rev)` check against the real committed manifest is satisfied equally by an interpolated value and by a hardcoded literal that happens to equal the current revision — it proves nothing about data-derivation and only bites if the manifest later changes while the literal doesn't. Instead, feed a manifest whose revision is *substituted* and assert the narrative tracks the substitute and drops the original literal. This is the honesty gate for this task (the drift test alone cannot catch a stale literal — see Architecture).
 
 ```rust
+const PLACEHOLDER_REV: &str = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
+
 #[test]
 fn native_wrapper_lanes_are_disclosed_and_revision_is_data_derived() {
-    let reports = generate();
-    // baseline revision text must equal the appendix-manifest field, not a literal
-    let rev = appendix_parser_revision(); // helper reading APPENDIX_MANIFESTS
-    assert!(reports.narrative_markdown.contains(&rev));
+    // Derivation, not value-equality: swap the revision in the appendix manifest
+    // and assert the prose follows it. A hardcoded literal would fail both arms.
+    let real_rev = appendix_parser_revision(APPENDIX_MANIFESTS); // helper reading the field
+    let altered = APPENDIX_MANIFESTS.replace(&real_rev, PLACEHOLDER_REV);
+    let reports = generate_reports(RUN_MANIFESTS, PREREGISTRATION, &altered)
+        .expect("generation succeeds");
+    assert!(
+        reports.narrative_markdown.contains(PLACEHOLDER_REV),
+        "narrative must interpolate the manifest revision, not hardcode it"
+    );
+    assert!(
+        !reports.narrative_markdown.contains(&real_rev),
+        "no stale literal of the committed revision may survive in the prose"
+    );
     // aozora2html / aozora-epub3 "native" lanes run through their *-adapter
-    // binary in --mode html; the report must say so.
+    // binary in --mode html; the report must disclose the wrapper.
+    let reports = generate(); // real manifests for the disclosure-wording assertions
     assert!(reports.narrative_markdown.contains("parser-native output format"));
     assert!(reports.narrative_markdown.contains("not a direct parser invocation"));
 }
 ```
+
+  (If `timeout_seconds` prose is likewise hardcoded, apply the same substitute-and-track pattern to `300`.)
 
 - [ ] **Step 2: Run it and watch it fail.** `cargo test -p ab-parser-study-report native_wrapper_lanes_are_disclosed_and_revision_is_data_derived` → FAIL (phrase absent / literal not derived).
 
@@ -100,7 +120,7 @@ fn native_wrapper_lanes_are_disclosed_and_revision_is_data_derived() {
 
 - [ ] **Step 1: Write a failing test** in `study_inventory.rs` asserting the Rust materializer's inventory identity for a known small member set equals the documented authoritative value, and add a Python test (or docstring assertion) pinning that `materialize_index` is smoke-only and does NOT claim to reproduce `aozorabunko-source-snapshot`'s study hash (they use different id/path schemes: Rust `{work_id}-{sha12}` vs Python `id=work_id,path=sha256`).
 - [ ] **Step 2: Run → FAIL.**
-- [ ] **Step 3: Pick the reconciliation:** the Rust materializer is authoritative (it produced the committed `corpus_hash`). Either (a) make `neutral_executor.materialize_index` reuse the same `{work_id}-{sha12}` identity, or (b) if it is only ever used for `--limit` smoke runs, add an explicit comment + a guard so it cannot be mistaken for the authoritative inventory. Prefer (b) unless a real caller needs full-inventory parity.
+- [ ] **Step 3: Reconcile → (b), grounded.** The Rust materializer is authoritative: `ab-materialize-study-inventory.rs:57` emits `{work_id}-{sha12}` and produced the committed `corpus_hash`. The Python `materialize_index` has **no caller that needs full-inventory parity** — its only non-test caller is the `--materialize-index` CLI branch that passes `args.limit` (smoke/limit runs), and its test asserts member-extraction ordering, not the authoritative hash. So option (a) (make them agree) buys nothing. Take **(b)**: add an explicit comment + a guard so the Python helper cannot be mistaken for the authoritative inventory (Rust stays the single source of `corpus_hash`). Confirm the caller shape hasn't changed before committing.
 - [ ] **Step 4: Run tests → PASS** (`cargo test -p ab-check study_inventory`; python test green).
 - [ ] **Step 5: Commit.** `git commit -m "fix(parser-study): mark the authoritative study-inventory materializer"`
 
@@ -138,21 +158,41 @@ fn native_wrapper_lanes_are_disclosed_and_revision_is_data_derived() {
 - [ ] **Step 4: Regenerate reports; run drift test → PASS.**
 - [ ] **Step 5: Commit.** `git commit -m "docs(parser-study): scope the robustness row to the measured corpus arm"`
 
-### Task 6: Small consistency cleanups (MIN-4, MIN-7, MIN-8)
+### Task 6: Small consistency cleanups (MIN-4, MIN-8)
 
 **Files:**
 - Modify: `ab-validator/reports/parser-study/runs/aozora-parser-neutral-comparison-2026-07/appendix-run-manifests.json` (MIN-4: top-level `"candidate"` → `"candidates"`), the generator field it reads if the key name is bound there, and `freeze_run_evidence.py` if it writes that key.
-- Modify: `abc/src/abc/tools/parser_evidence.clj` + `abc/test/abc/tools/parser_evidence_test.clj` (MIN-7)
 - Modify: `.superpowers/sdd/task-7-report.md` (MIN-8, doc lag — low value; skip if it is gitignored scratch in your checkout)
 
 **Interfaces:**
-- Consumes/Produces: no behavioral change; naming + a wired-or-documented guard.
+- Consumes/Produces: no behavioral change; naming parity only. (MIN-7, the evidence-guard decision, is split into Task 7 — it is a trust-boundary design decision with governance cost, not a "small cleanup," and does not belong bundled with a rename and a doc typo.)
 
 - [ ] **Step 1 (MIN-4):** rename the appendix manifest top-level key to `"candidates"` for parity with `run-manifests.json`; update the generator's deserialization if it names that key (the generator reads `study_id`/`inventories`/`runs`, so report output must stay byte-identical — verify via the drift test). Run drift test → PASS.
-- [ ] **Step 2 (MIN-7):** decide the guard's home: either (a) invoke `release-evidence-guard!` at a real evidence-ingestion point so comparison/neutral evidence is rejected at runtime, or (b) add a docstring + a test asserting the gate consumes a measurements bundle (not citations) so there is no live ingestion path, making the guard a structural/API-level contract. Add/adjust the test so the chosen decision is asserted.
-- [ ] **Step 3 (MIN-8):** correct the `Final HEAD` reference in the Task 7 report if that file is tracked in your checkout.
-- [ ] **Step 4:** run `cargo test -p ab-parser-study-report`, the abc focused `parser_evidence_test`, and (if any ABC evidence-closure file changed) recapture bundles + `just validate-migration` exit 0 on hinoki.
-- [ ] **Step 5: Commit.** `git commit -m "chore(parser-study): naming + evidence-guard consistency cleanups"`
+- [ ] **Step 2 (MIN-8):** correct the `Final HEAD` reference in the Task 7 report if that file is tracked in your checkout.
+- [ ] **Step 3:** run `cargo test -p ab-parser-study-report`. (No ABC evidence-closure file is touched here, so no recapture is required.)
+- [ ] **Step 4: Commit.** `git commit -m "chore(parser-study): appendix-manifest key naming parity + doc reference fix"`
+
+### Task 7: Make the release-evidence guard real, or delete it (MIN-7)
+
+**Files:**
+- Modify: `abc/src/abc/tools/parser_release_qualification.clj` (the `release-evidence-guard!` wrapper + its gate call site) and/or `abc/src/abc/tools/parser_evidence.clj`
+- Modify: `abc/test/abc/tools/parser_release_qualification_test.clj` + `abc/test/abc/tools/parser_evidence_test.clj`
+
+**Problem (verified):** `release-evidence-guard!`'s docstring claims it is *"Consumed by the gate,"* but its only references in the source tree are its own `defn` and two unit-test assertions — **there is no gate call site.** The guard is a decorative control: a reviewer trusts a boundary that is not on any evidence-ingestion path, and the docstring actively asserts a wiring that does not exist. A trust-boundary control that gives false assurance is worse than none.
+
+**Grounded decision → (b), delete the no-op.** The gate's ingestion path is `-main` → `report-from-bundle` → `build-report`, and `build-report` consumes `{:measurements ...}` — a captured **measurement bundle**, not citations (see the docstring at `parser_release_qualification.clj:~234` and `evaluate`, which operates on a `measurements` map). Citation evidence classes cannot appear on this path at all: the input *type* already structurally excludes them. So `release-evidence-guard!` guards a threat the gate's input shape has already eliminated — wiring it in (a) would have nothing to wire to. The real boundary is the input type; the wrapper is redundant decoration with a false docstring. Confirm the entrypoint still takes a measurement bundle (a one-line check of `-main`/`build-report`) before deleting.
+
+**Interfaces:**
+- Consumes: an evidence-index entry (`:evidence_class`).
+- Produces: either a guard genuinely on the gate path, or an honest absence — never a no-op that claims to be wired.
+
+- [ ] **Step 1: Add a failing test** pinning the grounded resolution (b): assert the gate entrypoint's contract is a measurement bundle (not citations) — e.g. a test that `build-report`/`report-from-bundle` consume `:measurements` and that the dead `release-evidence-guard!` wrapper and its false "Consumed by the gate" docstring are gone. (If the one-line confirmation in Step 3 surprises you and the gate *does* ingest citations, pin the wiring instead: a test feeding a `:neutral-comparison` citation into the real entrypoint and asserting it throws.)
+- [ ] **Step 2: Run → FAIL.**
+- [ ] **Step 3: Resolve → (b) delete, grounded.** Confirm the one-line fact first: does `-main`/`build-report` take a measurement bundle (`:measurements`) or ingest citation entries? Per the grounded decision above it takes a bundle, so:
+  - **(b) Delete it (grounded default):** remove the `release-evidence-guard!` wrapper and its false docstring — the gate's input type already structurally excludes citations, so there is no path to guard. Keep the underlying `assert-release-evidence!` predicate (a tested, reusable boundary) but stop advertising a consumer that does not exist.
+  - **(a) Wire it (only if the fact flips):** if `-main` is found to ingest citations after all, invoke `release-evidence-guard!` on that real path so the docstring's claim becomes true, instead of deleting.
+- [ ] **Step 4: Run tests → PASS.** This touches an ABC evidence-closure file: recapture affected bundles (`clojure -M:abc/adr-evidence-capture` on hinoki) and confirm `just validate-migration` exits 0. See `.superpowers/sdd/task-6-report.md`.
+- [ ] **Step 5: Commit.** `git commit -m "fix(parser-study): put the release-evidence guard on the real gate path (or remove the no-op)"`
 
 ---
 
@@ -169,7 +209,11 @@ Do not start these under this plan; open a brainstorming session and a dedicated
 
 ## Self-review
 
-- Every task ends with the drift test (or the relevant focused test) as its acceptance gate; no task flips a measured status or invents a number (integrity mandate honored).
+- Every task's acceptance gate is a **value-asserting content test**, not the drift test alone: the drift test is a change-detector that passes by construction once the golden is regenerated, so it cannot catch a wrong/stale prose change (Architecture makes this explicit). No task flips a measured status or invents a number (integrity mandate honored).
+- Task 1's revision test proves *derivation* (substitute-and-track a manifest field), not value-equality against the current manifest — the latter would pass for a hardcoded literal.
+- Report-touching tasks (1, 4, 5, 6.1) are declared a serial chain under one owner: they share `generate.rs` and the two golden files, so parallel subagents would clobber each other (see Global Constraints → Task sequencing).
+- MIN-7 is split into its own Task 7 because it is a trust-boundary decision, not a small cleanup. Grounded: `release-evidence-guard!` has no gate call site, and the gate entrypoint consumes a measurement bundle (`:measurements`) whose input type already structurally excludes citations — so the guard protects an eliminated threat. Task 7 resolves to **delete the no-op** (keep the reusable `assert-release-evidence!` predicate), confirmed by a one-line entrypoint check during the task. Carries the ABC evidence-closure recapture cost.
+- Task 3 is likewise grounded to (b): no caller needs Python↔Rust inventory-hash parity, so the Python `materialize_index` is marked smoke-only rather than forced to reproduce the authoritative `{work_id}-{sha12}` identity.
 - Exact file paths and the concrete regeneration command are given; the regeneration bin and drift-test include paths were verified to exist.
 - The debug-assert fix is recorded as a completed prerequisite, not a task to redo.
 - The large measurement campaign is explicitly deferred to its own spec rather than smuggled in as vague tasks.

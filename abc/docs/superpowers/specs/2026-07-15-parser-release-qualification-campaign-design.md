@@ -136,8 +136,9 @@ are independent — closing one does nothing for the other:
 - **Instrument gate:** all nine predicate observations resolve to `pass` from
   committed instruments (fixing predicates 2, 3, 6, 8 and de-weakening 4, 5).
 - **Admission gate:** the exact release-candidate tuple is admitted through ADR
-  0023 (`:admitted_tuple_matches true`), backed by a fresh full-corpus
-  conversion audit.
+  0023, backed by a fresh full-corpus conversion audit — and the gate precondition
+  *derives* that equality from the registry (the live gate does not check this
+  today; see Coherence).
 
 Bundling these — or bundling either with the neutral-study axes — is the central
 entanglement this spec exists to prevent. Even a perfect instrument suite leaves
@@ -186,27 +187,57 @@ qualification_identity =
 ```
 
 Two qualification results are the same run iff all fields are equal. The gate
-today records some of these (`:baked_git_rev`, schema hashes) but **only
-compares one of them** (`:admitted_tuple_matches`) and does so as recorded data,
-not an enforced predicate.
+today records some of these (`:baked_git_rev`, schema hashes) but **enforces none
+of them**: `gate-status` (`parser_release_qualification.clj:156`) computes
+`:release-qualified` purely from the nine predicate verdicts and never consults
+`:identity` or the admission registry. So ADR-0039-C5 ("release-qualified only …
+for an admitted build") is *aspirational in code* — the runtime gate would
+green-light a fully-passing run of an unadmitted build. And each predicate result
+(`evaluate-predicate:127`) carries only a bare scalar `:observed`, with no
+observation-level identity to bind it to a tuple.
 
-**This is the design's first blocker finding (Hickey, correctness/trust): the
-coherence requirement is currently prose and reviewer discipline, so the gate can
-green-light a build it did not measure.** Promote it to a mechanized structural
-invariant — a gate predicate that *fails closed* unless the observed tuple's git
-rev, mapping version, and schema hash equal the admitted tuple's, and unless
-every predicate observation in the bundle carries the same
-`qualification_identity`. Under this invariant, weak pass #5 (schema validated
-against the live 0.5.0 mapping while admission pins 0.4.0/`a1e1b506…`) cannot
-recur: a schema-hash mismatch between the validation observation and the admitted
-tuple would fail the coherence predicate before the gate ever tallied a `pass`.
-`:admitted_tuple_matches true` then becomes a *derived consequence* of the
-invariant holding, not a human-asserted boolean.
+**Blocker (correctness/trust): the coherence requirement is asserted as an
+invariant, but the spec has not chosen the data contract or enforcement semantics
+that make it real.** Promoting a prose invariant without settling those is the
+weakness. This design settles them:
+
+1. **Coherence is a gate-level qualification *precondition*, distinct from the
+   nine scientific predicates — not a tenth predicate.** A tenth predicate would
+   change the predeclared nine-predicate set and its hash (violating ADR-0039-C2,
+   which pins exactly nine dimensions). A CI-only check would not make the runtime
+   gate fail closed. A bundle schema constraint can validate *shape* but cannot by
+   itself derive *registry equality*. So coherence lives at the gate as a
+   precondition evaluated **before** the verdict tally, alongside — not inside —
+   the predicate set.
+2. **Structured observation envelopes.** The measurement bundle migrates from a
+   flat map of scalars to per-observation envelopes: each observation carries its
+   value **and** a reference/hash to the `qualification_identity` it was captured
+   under. `evaluate-predicate` reads `.value`; the precondition checks every
+   envelope's identity reference is equal.
+3. **Admission equality is *derived from the registry*, not hand-asserted.** The
+   precondition loads the ADR-0023 compatibility registry and computes whether the
+   observed tuple exact-matches an admitted row (reusing `aat-parser-ir-compat`
+   match-key logic), instead of trusting a human-typed `:admitted_tuple_matches`
+   boolean.
+4. **`gate-status` requires *both*.** The gate is `:release-qualified` only when
+   the coherence precondition holds **and** all nine verdicts are `:pass`. Any
+   incoherent bundle is `:not-qualified` regardless of the tally — this is the
+   fix for the current code's admission-blind qualification.
+
+This is a **bundle/schema version migration** (flat scalars → identity-bearing
+envelopes; a new gate precondition). The migration cost is real but *already
+follows from the claimed invariant* — you cannot enforce one-tuple coherence over
+a data shape that cannot express per-observation identity. Note this makes the gate
+precondition and predicate 5 (schema validation) **complementary, not
+overlapping**: the precondition asserts predicate 5's observation was captured
+against the *admitted* schema hash; predicate 5 independently asserts the outputs
+*validate*. A coherent run can still emit schema-invalid output, so both are
+required (see R5).
 
 The campaign must first **pin the release candidate** (an exact git rev + baked
 coordinates + mapping version + schema hash), then produce admission and all
-instrument evidence against that single frozen tuple, and the gate must
-mechanically reject any bundle whose parts disagree.
+instrument evidence against that single frozen tuple, and the gate precondition
+must mechanically reject any bundle whose parts disagree.
 
 ## Track R — Release-Qualification Instruments
 
@@ -223,12 +254,21 @@ honest outcomes it may legitimately produce.
   Note this is a *self-measurement* of the owned parser, distinct from the
   cross-parser span-accuracy axis in Track S (S3).
 - **Build:** a per-work analyzer over `ab-aozora`'s parser-IR output that sums
-  covered source bytes vs total source bytes, classifies uncovered bytes into a
-  predeclared ignored-region taxonomy, and emits a per-work + corpus-aggregate
-  observation with a pinned denominator equal to the qualification-corpus size.
-- **Honest outcomes:** `1.0` (pass); `< 1.0` (fail, with the uncovered-region
-  taxonomy naming exactly what is dropped). A fail here is a truthful,
-  publishable result, not a campaign failure.
+  covered source bytes over the **eligible source-byte inventory** — total source
+  bytes minus the regions removed by a **versioned ignored-region taxonomy**. The
+  denominator is a *byte* count, not a work count: `covered_eligible_bytes /
+  eligible_bytes`. Commit and hash both the per-work eligible-byte counts and the
+  aggregate eligible-byte total; **separately** assert (a distinct, work-unit
+  check) that every work in the qualification corpus contributed exactly one
+  record, so completeness of *works* and the byte-ratio *denominator* are two
+  independent authentications, never conflated.
+- **Instrument identity:** the ignored-region taxonomy version is part of the
+  instrument's identity (Design Deepening → identity). Changing what counts as
+  "eligible" changes the result, so a taxonomy revision is a new instrument
+  version, not a silent re-measure.
+- **Honest outcomes:** `1.0` (every eligible source byte covered → pass); `< 1.0`
+  (fail, with the uncovered-region taxonomy naming exactly what is dropped). A
+  fail here is a truthful, publishable result, not a campaign failure.
 
 ### R2 — Silent-drop detection instrument (predicate 3)
 
@@ -277,20 +317,36 @@ honest outcomes it may legitimately produce.
 ### R5 — Weak-pass hardening (predicates 4 and 5)
 
 Not new predicates — de-weakening two existing green rows so their `pass` means
-what the predicate claims, under the coherent tuple (Coherence Requirement).
+what the predicate claims, under the coherent tuple. **Neither predicate is
+subsumed by coherence; both remain independent must-pass claims.**
 
-- **Diagnostic completeness (4):** the vacuous 0-diagnostic pass must be replaced
-  by a measurement over a real diagnostic stream. Either the release candidate
-  genuinely emits zero diagnostics over the corpus (in which case the vacuity
-  must be *disclosed in the predicate observation itself*, not only in a bundle
-  note, and the predicate's meaning re-examined), or a diagnostic-emitting run is
-  measured for the code/severity/span triple. The design decision — is "0
-  diagnostics" a legitimate pass or a missing instrument? — must be made
-  explicitly and grounded, not left as an undisclosed vacuous pass.
-- **Parser-IR schema validation (5):** re-measure against the **admitted tuple's**
-  mapping and schema hash once the Coherence Requirement is satisfied, so the
-  pass describes the admitted build rather than a live mapping that diverges from
-  admission.
+- **Diagnostic completeness (4) — separate the plumbing from the semantics.**
+  Predicate 4's dimension is literally *"every **emitted** diagnostic carries
+  code/severity/span"* (`predicates.edn:38`). Under that definition, zero emitted
+  diagnostics is **mathematically a pass** — vacuously true over an empty set. So
+  the fix is *not* "measure a real diagnostic stream to make it non-vacuous"; that
+  conflates two distinct questions:
+  - **Plumbing (settle with a disposable probe):** can `ab-aozora --mode
+    diagnostics` emit and can the capture record diagnostics at all? Run the
+    parser over a diagnostic-triggering fixture and observe. This validates the
+    *instrument*, nothing more.
+  - **Semantics (a design decision, possibly ADR-gated):** *should* predicate 4
+    stay envelope-completeness (in which case zero-over-corpus is a legitimate
+    pass, but the **vacuity must be disclosed in the observation itself**, not a
+    bundle note), **or** should the release claim actually be *diagnostic recall*
+    — "the parser diagnoses every expected unsupported/malformed construct"? Recall
+    is a **different predicate**, needs an oracle + a versioned challenge corpus,
+    and — per ADR 0039's own rule that predicate changes require a separately
+    evidenced ADR — cannot be swapped in silently. The probe cannot answer this;
+    it is a scope decision for the plan.
+- **Parser-IR schema validation (5) — keep it, re-measure against the admitted
+  tuple.** Predicate 5 independently asserts that successful outputs *validate*
+  against the schema; the coherence precondition separately guarantees that
+  validation was done against the **admitted** schema hash (not the live-drifted
+  0.5.0/`43a6a6d8…`). A coherent run can still emit schema-invalid output, so
+  predicate 5 is not redundant with coherence and must not be folded into it. The
+  work here is re-measuring under the pinned admitted tuple, not removing the
+  predicate.
 
 ### R6 — Admit the exact release-candidate tuple (ADR 0023)
 
@@ -322,13 +378,15 @@ what the predicate claims, under the coherent tuple (Coherence Requirement).
 ### R7 — Recapture, re-run, conditional promotion
 
 - Produce the measurement bundle for the single pinned tuple by **generating it
-  from committed per-work captures** (decision B) via a deterministic tool with a
-  drift test — not hand-authored — with R1–R4 observations as pure projections of
-  the captures, R5's hardened passes, and `:admitted_tuple_matches` a derived
-  consequence of the coherence invariant.
-- Enforce the **coherence invariant** (Coherence section): the gate fails closed
-  unless the observed tuple's git rev, mapping version, and schema hash equal the
-  admitted tuple's, and every observation shares one `qualification_identity`.
+  from committed capture manifests** (decision B) via a deterministic tool with a
+  drift test — not hand-authored — with R1–R4 observations as pure projections in
+  identity-bearing envelopes, R5's hardened passes, and admission equality left
+  for the gate to derive from the registry.
+- Enforce the **coherence precondition** (Coherence section): `gate-status` is
+  `:release-qualified` only when the precondition holds (every observation shares
+  one `qualification_identity`, and that tuple exact-matches an admitted ADR-0023
+  row) **and** all nine verdicts are `:pass`; an incoherent bundle is
+  `:not-qualified` regardless of tally.
 - Regenerate `parser-release-qualification-report.json` via the gate.
 - **Conditional promotion:** promote ADR 0039 to Accepted (Status +
   `Accepted:` date, release authority toward publication, typed acceptance
@@ -392,11 +450,19 @@ An observation may only leave `unavailable`/`instrument-missing` if it lands the
 same evidence chain that backs the one currently-`measured` study axis. This is
 the non-negotiable protocol:
 
-- **Content-hashed inputs.** Any oracle/fixture/reference is committed and
-  content-addressed; runs record `execution_sha256`, `manifest_sha256`,
-  `program_sha256`, and `artifact_root`.
-- **Pinned denominators.** Every ratio's denominator equals a hashed inventory
-  size (the gate/study hard-errors on denominator mismatch — do not weaken this).
+- **Content-hashed inputs, durable locators.** Any oracle/fixture/reference is
+  committed and content-addressed; runs record `execution_sha256`,
+  `manifest_sha256`, `program_sha256`. `artifact_root` must be a **content
+  address into the evidence store, not a machine-local path** — a bare filesystem
+  locator is not durable evidence and must not be what binds a count to its bytes
+  (see Capture tiering below).
+- **Pinned denominators, in the ratio's own units.** Every ratio's denominator
+  equals a committed, hashed inventory **measured in the ratio's own unit** — byte
+  ratios get a byte-inventory denominator, work ratios a work-count denominator
+  (the R1 blocker was a byte-ratio given a work-count denominator). "Every work
+  contributed a record" is a **separate** completeness assertion, not the ratio
+  denominator. The gate/study hard-errors on denominator mismatch — do not weaken
+  this.
 - **Per-mode provenance.** Native vs adapter provenance is stamped, never
   conflated; ownership grants no pass (owned axes with no analogue stay
   `non_comparable`, competitors are never assigned zero).
@@ -415,9 +481,9 @@ Applying the design lenses to *this spec* surfaced a root cause that reframes
 Track R: the current gate consumes a **hand-authored** measurement bundle, and
 that is where the honesty debt entered. The two weak passes are not incidental —
 they are the predictable failure mode of a trust boundary that sits inside a
-file a human types. This section proposes the decomplection that removes it. It
-is a **recommended direction to confirm**, not a settled decision (see
-Incubation).
+file a human types. This section records the decomplection that removes it —
+**adopted** (decision B), and hardened by a second expert review round into the
+three-tier capture policy and the gate-precondition coherence contract below.
 
 ### The root complection: capture braided with derivation, mediated by a human
 
@@ -443,24 +509,40 @@ literal cannot survive because the report regenerates from data. Release
 qualification should adopt the same three-part shape:
 
 - **Capture (once, expensive, place-bound, on hinoki):** run the pinned build
-  over the corpus and emit a content-hashed **per-work capture record** — parser-IR
-  output, diagnostic stream, resource stats (peak RSS, wall time), and the
-  publication bundle. This is the immutable evidence; it is a *place* side-effects
-  land, addressed by hash.
-- **Derive (pure, cheap, reproducible anywhere):** each predicate observation is
-  a **deterministic function of the capture record**. The measurement bundle is
-  *generated* by a tool that projects each predicate from the captures, not typed.
-  Span coverage, silent drops, diagnostic completeness, memory, wall time, and
-  timeouts all become pure projections over one capture.
+  over the corpus and produce, per work, the parser-IR output, diagnostic stream,
+  resource stats (peak RSS, wall time), and publication bundle. This is the raw
+  evidence — but it is **corpus-scale generated data and MUST NOT be committed to
+  the repository**. It follows the study's own model (the parser-study README
+  documents exactly why corpus-scale bytes are not committed) via a **three-tier
+  split**:
+  1. **In-repo (committed):** capture *manifests*, per-work and aggregate
+     *hashes/inventories/summaries*, and *small diagnostic witnesses* — never the
+     corpus-scale blobs.
+  2. **External evidence store (not in repo):** the corpus-scale per-work blobs,
+     placed in an explicitly configured **content-addressed store**, addressed by
+     the committed manifest hashes (not by machine-local paths).
+  3. **Rebinding verifier (on hinoki):** a checkable step that re-binds the
+     committed manifest hashes to the external blobs and confirms integrity —
+     mirroring the study's `verify_external` count-authenticity gate. This is what
+     makes the external evidence *verifiable* without bloating the repo.
+- **Derive (pure, cheap):** each predicate observation is a **deterministic
+  function of the committed capture manifests** (and, where a blob is needed, of
+  the store contents rebound by hash on hinoki). The measurement bundle is
+  *generated* by a tool that projects each predicate from the manifests, not
+  typed. Span coverage, silent drops, diagnostic completeness, memory, wall time,
+  and timeouts become pure projections.
 - **Drift test:** the generated bundle regenerates byte-identically from the
-  committed captures — the same change-detector the study uses, catching a
-  hand-edited bundle or a capture/bundle desync.
+  committed manifests — the same change-detector the study uses, catching a
+  hand-edited bundle or a manifest/bundle desync.
 
-This makes the Coherence Requirement **structural rather than aspirational**: all
-nine predicates provably read the *same* per-work captures of the *same* build,
-because they are projections of one artifact. It also removes the human from the
-observation trust path — a person can still write interpretation prose, but the
-numbers are machine-derived and drift-tested.
+This makes coherence **structural rather than aspirational**: all nine predicates
+provably read the *same* committed manifests of the *same* build, because they are
+projections of one manifest set. It also removes the human from the observation
+trust path — a person can still write interpretation prose, but the numbers are
+machine-derived and drift-tested. Tradeoff (acknowledged): derivation is **not**
+reproducible from a bare clone, since the corpus-scale blobs live in the external
+store; but *evidence identity and verification* remain reproducible on hinoki
+without committing or machine-binding corpus-scale artifacts.
 
 ### Decision: provenance of predicate observations
 
@@ -469,7 +551,7 @@ glyph.
 
 | Criterion | (A) Hand-authored bundle (status quo) | (B) Generated from captures (recommended) | (C) Hybrid: instruments emit, human assembles |
 |---|---|---|---|
-| Integrity / trust | Weak — trust boundary is inside a human-typed file; the two weak passes are the demonstrated leak. *Falsifier: if review reliably caught such errors, the weak passes wouldn't have shipped — they did.* | Strong — numbers are machine-derived; a wrong number requires a wrong capture, which is hash-addressed and drift-tested. *Falsifier: a capture that silently measures the wrong build — mitigated by the coherence invariant.* | Medium — observations are machine-made but re-keyed by hand; assembly can still mis-bind an observation to the wrong tuple. |
+| Integrity / trust | Weak — trust boundary is inside a human-typed file; the two weak passes are the demonstrated leak. *Falsifier: if review reliably caught such errors, the weak passes wouldn't have shipped — they did.* | Strong — numbers are machine-derived; a wrong number requires a wrong capture, which is hash-addressed and drift-tested. *Falsifier: a capture that silently measures the wrong build — mitigated by the coherence precondition.* | Medium — observations are machine-made but re-keyed by hand; assembly can still mis-bind an observation to the wrong tuple. |
 | Coherence guarantee | None — nothing forces all observations to describe one build. | Structural — all predicates are projections of one capture. | Partial — depends on assembler discipline. |
 | Reproducibility | Low — re-deriving means re-typing. | High — pure derivation, drift-tested, matches study. | Medium. |
 | Build cost | Zero new machinery, but the instruments (R1–R4) must exist anyway. | Marginal cost over (A): a capture schema + a projection tool. The instruments are the same work; only *bundle assembly* moves from human to tool. | Between the two. |
@@ -509,68 +591,92 @@ The follow-on plan builds Track R on this shape unconditionally.
   proportionate. Reflexively reaching for event sourcing here would add
   complexity the risk does not justify.
 
-### Severity-tagged findings (Hickey review of this spec)
+### Severity-tagged findings (two review rounds)
 
-- **Blocker (correctness/trust):** Coherence is prose, not a mechanized gate
-  invariant → the gate can qualify a build it did not measure. *Fix:* coherence
-  predicate that fails closed on tuple-hash mismatch (Coherence section).
+First-round findings (structural, resolved in this spec):
+
 - **Blocker (trust/composition):** Hand-authored bundle puts the observation
   trust boundary inside a human-typed file; the two weak passes are the
-  demonstrated leak. *Fix:* Capture→Derive→Drift, decision (B) above.
-- **Strong suggestion (composition):** Decomplect expensive place-bound capture
-  from pure predicate derivation — one capture, N predicate projections — so
-  coherence is structural and derivation is cheap and reproducible.
+  demonstrated leak. *Resolved:* Capture→Derive→Drift, decision (B).
+- **Strong suggestion (composition):** Decomplect place-bound capture from pure
+  derivation — one capture-manifest set, N predicate projections.
 - **Strong suggestion (identity):** Fold instrument versions into
   `qualification_identity`; a changed observer changes what an observation means.
-- **Question (design decision, needs grounding):** Is "0 diagnostics over the
-  corpus" a legitimate `diagnostic-completeness` pass, or evidence the instrument
-  is absent? Resolve by grounding what `ab-aozora` is *expected* to diagnose on
-  this corpus; if it should surface conditions and emits none, the pass is
-  vacuous and the observation must disclose it (or the predicate is measuring the
-  wrong thing). Do not leave it an undisclosed vacuous green.
-- **Question:** Should predicate 5 (schema validation) stop being a standalone
-  "weak pass" and instead be *subsumed* by the coherence invariant — i.e. schema
-  validation is only meaningful against the admitted schema hash, so it is one
-  face of coherence, not an independent predicate? Worth deciding in the plan.
+
+Second-round findings (from expert review, resolved above — these are the ones
+that made "coherence-as-invariant" real rather than aspirational):
+
+- **Blocker (protocol, resolved):** Coherence was promoted to an invariant
+  without a data contract or enforcement semantics; the live gate ignores
+  admission entirely (`gate-status:156`) and observations are bare scalars
+  (`evaluate-predicate:127`). *Resolved:* coherence is a **gate-level
+  precondition** (not a tenth predicate, not CI-only, not mere schema), backed by
+  **identity-bearing observation envelopes** and **registry-derived admission
+  equality**, with `gate-status` requiring precondition ∧ nine passes. A
+  bundle/schema version migration follows and is accepted (Coherence section).
+- **Blocker (units, resolved):** R1 gave a byte-coverage ratio a work-count
+  denominator. *Resolved:* the denominator is the eligible **source-byte**
+  inventory under a versioned ignored-region taxonomy; "every work contributed a
+  record" is a separate work-unit completeness check (R1, Rigor Bar).
+- **Strong suggestion (artifact policy, resolved):** "commit per-work captures"
+  would check corpus-scale generated blobs into source, against repo policy and
+  the study's own model. *Resolved:* three-tier capture — committed
+  manifests/hashes/summaries/small witnesses; external content-addressed blob
+  store; hinoki rebinding verifier. `artifact_root` is a content address, not a
+  machine path (Capture section, Rigor Bar).
+- **Strong suggestion (probe scope, resolved):** the diagnostic probe can only
+  validate capture *plumbing*, not the *semantic* question of whether zero-over-
+  corpus is a legitimate completeness pass. *Resolved:* probe = plumbing only;
+  predicate 4's identity (envelope-completeness-with-disclosed-vacuity vs
+  diagnostic-recall-over-a-challenge-corpus, the latter an ADR-gated predicate
+  change) is a separate scope decision (R5).
+- **Strong suggestion (predicate 5, resolved):** do not subsume predicate 5 into
+  coherence — they answer different questions and subsumption would delete an
+  independent must-pass and change the predicate set (a non-goal). *Resolved:*
+  predicate 5 retained; coherence is complementary (R5, Coherence section).
+
 - **Follow-up (not this campaign):** the study's `missing` axes (Track S) and the
-  gate share a provenance model; if Capture→Derive lands for the gate, consider
-  whether the two capture formats should converge, so an `ab-aozora` corpus run
-  serves both the release gate and the study's owned-parser appendix from one
-  capture. Track, don't bundle.
+  gate share a provenance model; consider whether the two capture-manifest formats
+  should converge, so one `ab-aozora` corpus run serves both the release gate and
+  the study's owned-parser appendix. Track, don't bundle.
 
 ### Settled decisions and remaining open questions
 
-Two design decisions are now settled (user-confirmed 2026-07-15):
+Settled (user-confirmed 2026-07-15, and hardened by the second review round):
 
-- **Capture→Derive→Drift (decision B) is adopted.** The gate's observation
-  provenance moves from a hand-authored bundle to a tool-generated, drift-tested
-  projection over committed captures. The plan builds Track R on it
-  unconditionally.
+- **Capture→Derive→Drift (decision B) is adopted**, with the **three-tier capture
+  policy** (committed manifests + external content-addressed blobs + hinoki
+  rebinding verifier) — no corpus-scale artifact is committed.
 - **Track S is in scope**, running in parallel and never gating Track R.
+- **Coherence is a gate-level precondition** (not a tenth predicate, not CI-only,
+  not mere schema): identity-bearing observation envelopes + registry-derived
+  admission equality + `gate-status` requiring precondition ∧ nine passes. This
+  answers the earlier open "where does the coherence check live" question.
+- **Predicate 5 is retained** as an independent must-pass; coherence is
+  complementary, not a replacement. (Earlier open question, now closed.)
+- **R1 denominator is the eligible source-byte inventory** under a versioned
+  ignored-region taxonomy; work-completeness is a separate check.
 
 What remains genuinely open — the plan must resolve or explicitly defer each,
 and none should be forced to a false "done":
 
-- Where the **coherence check lives** — a gate predicate, a separate CI check, or
-  a Malli/schema constraint on the bundle. Three viable homes; pick by where it
-  fails most loudly and earliest. *(Recommendation to test in the plan: a gate
-  predicate, so `not-qualified` is the single honest outcome of any mismatch.)*
-- The **diagnostic-vacuity** semantics (Question in the findings): a genuine
-  unknown about parser behavior, not a coding choice. Settle it with a small
-  **throwaway probe** — run `ab-aozora` over a diagnostic-triggering fixture and
-  observe whether zero diagnostics is real behavior or a missing capture. Label
-  the probe disposable; it is a design experiment, not production code.
-- Whether **predicate 5 is subsumed by the coherence invariant** rather than
-  standing alone (Question in the findings).
-- Whether Track S and Track R **share one `ab-aozora` capture** — an attractive
-  simplification (the follow-up above) that must not delay Track R; decide when
-  the capture schema is designed.
+- **Predicate 4's identity** — does the release claim stay
+  *envelope-completeness* (zero-over-corpus is a legitimate pass, vacuity
+  disclosed in the observation) or become *diagnostic recall* over a versioned
+  challenge corpus (a different predicate needing an oracle and, per ADR 0039, its
+  own evidenced ADR)? A **disposable probe** settles only the plumbing sub-question
+  (can the parser emit and the capture record diagnostics); the identity choice is
+  a scope decision, not a probe result.
+- **The bundle/schema migration shape** — the exact envelope schema, how the
+  precondition is expressed (Malli precondition fn ahead of the tally), and the
+  report-schema version bump. Design when the capture-manifest schema is designed.
+- **Whether Track S and Track R share one `ab-aozora` capture-manifest format** —
+  an attractive simplification that must not delay Track R.
 
-Honest status: Track R's *what, why, and architecture* are settled; the three
-open questions above are localization/semantics decisions for the plan, one of
-which (diagnostic vacuity) wants a disposable probe before it is answered. That
-is the honest state — the plan can proceed, resolving these as its first steps,
-not "everything is decided."
+Honest status: Track R's *what, why, architecture, and the five review findings*
+are settled; what remains is one genuine scope decision (predicate 4's identity)
+and the concrete schema/migration shapes — work for the plan's first steps, not a
+claim that everything is decided.
 
 ## Program Invariants (inherited, binding)
 
@@ -585,8 +691,9 @@ not "everything is decided."
 4. **Historical manifests are immutable.** Admission adds a new registry
    generation; it does not rewrite the existing `004deaf`/0.4.0 row.
 5. **One coherent tuple.** All Track-R evidence describes one identical build
-   (Coherence Requirement); the recaptured bundle asserts
-   `:admitted_tuple_matches true`.
+   (Coherence Requirement); the gate precondition *derives* admission equality
+   from the ADR-0023 registry — it does not trust a hand-asserted
+   `:admitted_tuple_matches` boolean.
 6. **Governance stays green.** Any ADR-evidence-closure change is recaptured
    through the real tool on hinoki; `just validate-migration` exits 0.
 7. **Heavy work on hinoki.** Full-corpus audits, memory/latency captures, and
@@ -623,20 +730,26 @@ The campaign is **complete** (independent of whether ADR 0039 promotes) when:
   a committed instrument over the coherent tuple — zero `unavailable` remain, or
   any remaining `unavailable` has an ADR-recorded, evidenced reason it cannot be
   instrumented.
-- The two weak passes (diagnostic completeness, schema validation) are
-  de-weakened: the diagnostic-vacuity decision is made explicitly and disclosed
-  in the observation; schema validation is measured against the admitted tuple.
+- The two weak passes are de-weakened without predicate reinterpretation:
+  predicate 4's identity (envelope-completeness with disclosed vacuity, or an
+  ADR-gated recall predicate) is decided and the chosen observation discloses its
+  meaning; predicate 5 is retained and measured against the admitted tuple's
+  schema.
 - The release-candidate tuple is pinned and its admission is resolved through ADR
   0023 to `:admitted` (or an honest `:conflict`/`:missing` blocker is recorded).
-- The recaptured bundle shows `:admitted_tuple_matches true` under the coherent
-  tuple, and the regenerated report reflects real verdicts.
+- The regenerated report reflects real verdicts, and the gate precondition
+  confirms admission equality by *deriving* it from the registry (not a
+  hand-asserted boolean).
 - ADR 0039 is promoted to **Accepted** iff the tally is all-`pass` **and**
   admission matches; otherwise it stays Proposed with the blocker named.
 - Every new instrument lands the Rigor Bar (content-hashed inputs, pinned
   denominators, non-imputation) and is cited as executable evidence.
-- The **coherence invariant** is mechanized: the gate fails closed on a
-  tuple-hash mismatch, so a `pass` provably describes the admitted build.
-- The measurement bundle is generated from committed per-work captures and
+- The **coherence precondition** is mechanized at the gate: `gate-status`
+  requires the precondition (identity-envelope agreement ∧ registry-derived
+  admission equality) **and** nine passes, so a `pass` provably describes the
+  admitted build; an incoherent bundle is `not-qualified` regardless of tally.
+- The measurement bundle is generated from committed capture **manifests** (not
+  corpus-scale blobs, which live in the external content-addressed store) and
   regenerates byte-identically under a drift test; no predicate observation is
   hand-keyed (decision B).
 - **(Track S, in scope)** each of the four study axes is `measured` or a
@@ -689,11 +802,13 @@ change to a predicate requires a separately evidenced ADR.
 This design produces:
 
 - Track R: four release instruments (R1–R4), weak-pass hardening (R5), a fresh
-  ADR-0023 admission (R6), a bundle + regenerated report + the mechanized
-  coherence invariant, and a conditional ADR 0039 promotion (R7). **If decision
-  (B) is confirmed:** a committed per-work capture schema and a deterministic
-  bundle-projection tool with a drift test (the Capture→Derive→Drift shape).
-- Track S (if in scope): four study-axis instruments feeding the neutral report.
+  ADR-0023 admission (R6), a generated bundle + regenerated report + the mechanized
+  coherence **precondition**, and a conditional ADR 0039 promotion (R7). Under
+  decision (B): a **capture-manifest schema** (three-tier: committed manifests +
+  external content-addressed blob store + hinoki rebinding verifier), the
+  identity-bearing observation-envelope bundle migration, and a deterministic
+  bundle-projection tool with a drift test.
+- Track S (in scope): four study-axis instruments feeding the neutral report.
 
 Next step is a **task-by-task implementation plan** (a
 `docs/superpowers/plans/2026-…-parser-release-qualification-campaign.md`) that

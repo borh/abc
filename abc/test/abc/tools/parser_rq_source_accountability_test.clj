@@ -394,6 +394,34 @@
         (doseq [file (reverse (file-seq root))]
           (.delete file))))))
 
+(defn- replace-manifest-blob
+  [manifest blob]
+  (update manifest :blobs
+          (fn [blobs]
+            (mapv #(if (= (:locator blob) (:locator %)) blob %) blobs))))
+
+(defn- reseal-recognition-work!
+  [{:keys [root manifest index aggregate]} work aggregate-f]
+  (let [work-blob (write-blob! root "records/fixture-work/recognition.json" work)
+        entry (merge {:work_id "fixture-work"
+                      :capture_generation_ref (:capture_generation_ref work)}
+                     (:ref work-blob)
+                     {:locator (:locator work-blob)})
+        index-with-entry (assoc index :records [entry])
+        new-index (assoc index-with-entry :corpus_generation_ref
+                         (corpus-generation-ref index-with-entry))
+        new-aggregate (-> aggregate
+                          (assoc :corpus_generation_ref
+                                 (:corpus_generation_ref new-index))
+                          aggregate-f)
+        index-blob (write-blob! root "recognition-index.json" new-index)
+        aggregate-blob (write-blob! root "recognition-aggregate.json" new-aggregate)]
+    {:manifest (-> manifest
+                   (replace-manifest-blob work-blob)
+                   (replace-manifest-blob index-blob)
+                   (replace-manifest-blob aggregate-blob))
+     :aggregate new-aggregate}))
+
 (deftest semantic-recognition-not-accountability-drives-r1
   (with-recognition-capture 9 10 10
     (fn [{:keys [store manifest aggregate]}]
@@ -452,6 +480,57 @@
                (rq-source/derive-source-recognition-envelope
                 store manifest nil recognition-identity)))))
     (is (= 0.9M (:value legacy-envelope)))))
+
+(deftest authenticated-recognition-declaration-distinguishes-history-from-deletion
+  (with-recognition-capture 9 10 10
+    (fn [{:keys [store manifest aggregate]}]
+      (doseq [removed-locators [#{"recognition-aggregate.json"}
+                                #{"recognition-index.json"}
+                                #{"recognition-aggregate.json"
+                                  "recognition-index.json"}]]
+        (let [changed (update manifest :blobs
+                              #(filterv (comp not removed-locators :locator) %))]
+          (is (= :unavailable
+                 (:status (rq-source/derive-source-recognition-envelope
+                           store changed aggregate recognition-identity))))))
+      (let [changed (update manifest :blobs
+                            (fn [blobs]
+                              (mapv #(if (= "recognition-index.json" (:locator %))
+                                       (dissoc % :locator)
+                                       %)
+                                    blobs)))]
+        (is (= :unavailable
+               (:status (rq-source/derive-source-recognition-envelope
+                         store changed aggregate recognition-identity))))))))
+
+(deftest recognition-projections-must-be-canonical-nested-sets
+  (with-recognition-capture 5 5 10
+    (fn [{:keys [store] :as captured}]
+      (let [{:keys [work]} (recognition-values 5 5 10)
+            disjoint (assoc work
+                            :recognized [{:start 5 :end 10}]
+                            :accounted [{:start 0 :end 5}]
+                            :semantic_gaps [{:start 0 :end 5}]
+                            :unaccounted [{:start 5 :end 10}])
+            {:keys [manifest aggregate]}
+            (reseal-recognition-work!
+             captured disjoint
+             #(assoc % :semantic_gaps [{:work_id "fixture-work"
+                                        :start 0 :end 5}]))]
+        (is (= :unavailable
+               (:status (rq-source/derive-source-recognition-envelope
+                         store manifest aggregate recognition-identity)))))))
+  (doseq [recognized [[{:start 0 :end 2} {:start 2 :end 5}]
+                      [{:start 0 :end 3} {:start 2 :end 4}]]]
+    (with-recognition-capture 5 5 10
+      (fn [{:keys [store] :as captured}]
+        (let [{:keys [work]} (recognition-values 5 5 10)
+              mutated (assoc work :recognized recognized)
+              {:keys [manifest aggregate]}
+              (reseal-recognition-work! captured mutated identity)]
+          (is (= :unavailable
+                 (:status (rq-source/derive-source-recognition-envelope
+                           store manifest aggregate recognition-identity)))))))))
 
 (deftest ambiguous-recognition-binding-is-unavailable-not-instrument-missing
   (with-recognition-capture 9 10 10

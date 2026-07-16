@@ -229,8 +229,28 @@
                  (and (int? start) (int? end)
                       (<= 0 start) (< start end) (<= end eligible)))
                intervals)
-       (every? (fn [[left right]] (<= (:end left) (:start right)))
+       ;; Producers emit maximal, canonical intervals.  Adjacent intervals are
+       ;; therefore as invalid as overlapping intervals at this trust boundary.
+       (every? (fn [[left right]] (< (:end left) (:start right)))
                (partition 2 1 intervals))))
+
+(defn- interval-subset?
+  "True when every byte in canonical `subset` occurs in canonical `superset`."
+  [subset superset]
+  (loop [remaining-subset subset
+         remaining-superset superset]
+    (if-let [{sub-start :start sub-end :end} (first remaining-subset)]
+      (if-let [{super-start :start super-end :end} (first remaining-superset)]
+        (cond
+          (<= super-end sub-start)
+          (recur remaining-subset (next remaining-superset))
+
+          (and (<= super-start sub-start) (<= sub-end super-end))
+          (recur (next remaining-subset) remaining-superset)
+
+          :else false)
+        false)
+      true)))
 
 (defn- interval-complement
   [intervals eligible]
@@ -264,7 +284,7 @@
          (= accounted_bytes (interval-bytes accounted))
          (= semantic_gap_bytes (interval-bytes semantic_gaps))
          (= unaccounted_bytes (interval-bytes unaccounted))
-         (<= recognized_bytes accounted_bytes eligible_bytes)
+         (interval-subset? recognized accounted)
          (= semantic_gaps (interval-complement recognized eligible_bytes))
          (= unaccounted (interval-complement accounted eligible_bytes))
          (= eligible_bytes (+ recognized_bytes semantic_gap_bytes))
@@ -323,21 +343,32 @@
         recognition-present? (some #(contains? recognition-locator-set (:locator %))
                                    (:blobs manifest))
         aggregate-member (selected-member manifest (:aggregate recognition-locators))
-        index-member (selected-member manifest (:index recognition-locators))]
-    (if-not recognition-present?
+        index-member (selected-member manifest (:index recognition-locators))
+        verified (capture/verify-manifest store manifest)
+        identity-member (selected-member manifest (:identity recognition-locators))
+        authenticated-identity (some->> identity-member
+                                        (authenticated-json-value store))
+        authenticated-declares-recognition?
+        (= source-recognition-instrument-version
+           (get-in authenticated-identity [:instrument_versions :source_recognition]))]
+    (cond
+      (not= :ok (:status verified)) verified
+      (not (valid-identity? authenticated-identity))
+      (unavailable "qualification identity is absent or invalid in verified manifest evidence")
+      (and (not authenticated-declares-recognition?) (not recognition-present?))
       {:value :instrument-missing :identity_ref expected}
-      (let [verified (capture/verify-manifest store manifest)
-            identity-member (selected-member manifest (:identity recognition-locators))
-            authenticated-aggregate (some->> aggregate-member
+      (not authenticated-declares-recognition?)
+      (unavailable "recognition evidence is present but the authenticated identity does not declare it")
+      (not recognition-present?)
+      (unavailable "authenticated identity declares recognition but its evidence is absent")
+      :else
+      (let [authenticated-aggregate (some->> aggregate-member
                                              (authenticated-json-value store))
             index (some->> index-member (authenticated-json-value store))
-            authenticated-identity (some->> identity-member
-                                            (authenticated-json-value store))
             records (when index
                       (mapv #(manifest-record store manifest %) (:records index)))
             denominator (:denominator manifest)]
         (cond
-          (not= :ok (:status verified)) verified
           (not (recognition-identity-valid? identity))
           (unavailable "qualification identity lacks the source-recognition instrument")
           (not= identity authenticated-identity)

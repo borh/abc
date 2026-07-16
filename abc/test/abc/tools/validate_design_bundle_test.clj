@@ -29,7 +29,7 @@
 (defn- with-corpus-generation-ref [index]
   (assoc index "corpus_generation_ref"
          (hash/format-sha256
-          (hash/sha256-json-rfc8785-v1
+          (hash/sha256-json-rfc8785-safe-integer-v1
            (dissoc index "corpus_generation_ref")))))
 
 (deftest parser-rq-source-recognition-protocols
@@ -75,6 +75,12 @@
       (is (seq (schema/validation-errors
                 aggregate-schema
                 (assoc aggregate "corpus_generation_algorithm" "legacy-jcs")))))
+    (testing "corpus numeric identity is safe-integer only and fails as data"
+      (doseq [value [9007199254740992 1.5 Double/MIN_VALUE]]
+        (let [candidate (assoc index "expected_work_count" value)]
+          (is (seq (schema/validation-errors index-schema candidate)))
+          (is (seq (validate/parser-rq-source-recognition-index-errors
+                    candidate))))))
     (testing "projections are ordered subsets with exact byte conservation"
       (doseq [invalid [(assoc work "recognized_bytes" 11)
                        (assoc work "accounted_bytes" 11)

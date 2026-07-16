@@ -1,27 +1,31 @@
 {
   "schema_version": "abc/rfc8785-cross-language-vectors/v1",
-  "algorithm_id": "sha256-rfc8785-jcs-abc-v1",
-  "numeric_domain": "finite-ieee754-with-safe-integral-host-values",
+  "algorithm_id": "sha256-rfc8785-safe-integer-domain-abc-v1",
+  "numeric_domain": "integers-minus-or-plus-9007199254740991",
   "vectors": [
     {
-      "name": "rfc8785-section-3.2.2",
-      "source": "RFC 8785 section 3.2.2",
+      "name": "rfc8785-section-3.2.3-property-sorting",
+      "source": "RFC 8785 section 3.2.3",
       "input": {
-        "numbers": [333333333.33333329, 1e30, 4.50, 2e-3, 1e-27],
-        "string": "€$\u000f\nA'B\"\\\\\"/",
-        "literals": [null, true, false]
+        "€": "Euro Sign",
+        "\r": "Carriage Return",
+        "דּ": "Hebrew Letter Dalet With Dagesh",
+        "1": "One",
+        "😀": "Emoji",
+        "": "Control",
+        "ö": "Latin Small Letter O With Diaeresis"
       },
-      "canonical_json": "{\"literals\":[null,true,false],\"numbers\":[333333333.3333333,1e+30,4.5,0.002,1e-27],\"string\":\"€$\\u000f\\nA'B\\\"\\\\\\\\\\\"/\"}",
-      "sha256": "2d5e01a318d0f0879ab568c4be289c8b1f64ef8921a53c6277d5e069978baacb"
+      "canonical_json": "{\"\\r\":\"Carriage Return\",\"1\":\"One\",\"\":\"Control\",\"ö\":\"Latin Small Letter O With Diaeresis\",\"€\":\"Euro Sign\",\"😀\":\"Emoji\",\"דּ\":\"Hebrew Letter Dalet With Dagesh\"}",
+      "sha256": "1e8c3e92f238849d50410dbb84b2345288bc4efd9bf16181b78a85d1da5443d8"
     },
     {
-      "name": "unicode-slash-control-safe-integer",
+      "name": "unicode-slash-control-safe-integer-boundary",
       "input": {
         "作品/😀": [{"control": "\u0000\n", "count": 9007199254740991}],
-        "negative": -42
+        "negative": -9007199254740991
       },
-      "canonical_json": "{\"negative\":-42,\"作品/😀\":[{\"control\":\"\\u0000\\n\",\"count\":9007199254740991}]}",
-      "sha256": "6b166c4d700f2b75513a90e50a0b75e33e6a3f240182e19ff270069c8b123cac"
+      "canonical_json": "{\"negative\":-9007199254740991,\"作品/😀\":[{\"control\":\"\\u0000\\n\",\"count\":9007199254740991}]}",
+      "sha256": "bfd1442d6b3534ef0205b757402312c57692495d049c742469020d534e8a2250"
     },
     {
       "name": "recognition-corpus-index-projection",

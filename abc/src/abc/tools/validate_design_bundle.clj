@@ -578,12 +578,20 @@
   (let [expected-ids (get index "expected_work_ids" [])
         record-ids (mapv #(get % "work_id") (get index "records" []))
         asserted-ref (get index "corpus_generation_ref")
-        computed-ref (hash/format-sha256
-                      (hash/sha256-json-rfc8785-v1
-                       (dissoc index "corpus_generation_ref")))]
+        canonical-result
+        (try
+          {:computed-ref
+           (hash/format-sha256
+            (hash/sha256-json-rfc8785-safe-integer-v1
+             (dissoc index "corpus_generation_ref")))}
+          (catch clojure.lang.ExceptionInfo error
+            {:canonical-error (ex-data error)}))]
     (vec
      (concat
-      (when-not (= asserted-ref computed-ref)
+      (when (:canonical-error canonical-result)
+        ["corpus generation index is outside the authenticated safe-integer JSON domain"])
+      (when (and (:computed-ref canonical-result)
+                 (not= asserted-ref (:computed-ref canonical-result)))
         ["corpus_generation_ref does not authenticate the closed record index"])
       (when-not (= (count expected-ids) (get index "expected_work_count"))
         ["expected_work_count does not equal expected membership"])

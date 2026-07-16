@@ -45,8 +45,8 @@
 (defn sha256-json-jcs [value]
   (sha256-bytes (jcs/canonical-json-bytes value)))
 
-(defn sha256-json-rfc8785-v1 [value]
-  (sha256-bytes (jcs/rfc8785-json-bytes-v1 value)))
+(defn sha256-json-rfc8785-safe-integer-v1 [value]
+  (sha256-bytes (jcs/rfc8785-safe-integer-json-bytes-v1 value)))
 
 (defn byte-length [file]
   (.length (io/file (evidence-io/record-read! file))))

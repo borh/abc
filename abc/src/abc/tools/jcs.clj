@@ -135,9 +135,9 @@
   (.getBytes (rfc8785-string-domain-json-string value)
              StandardCharsets/UTF_8))
 
-;; Full JSON-domain RFC 8785 path for new protocols. Historical callers of
-;; canonical-json-* above remain byte-for-byte frozen.
-(declare rfc8785-json-string-v1*)
+;; Safe-integer JSON-domain RFC 8785 path for new protocols. Historical callers
+;; of canonical-json-* above remain byte-for-byte frozen.
+(declare rfc8785-safe-integer-json-string-v1*)
 
 (def ^:private max-safe-json-integer 9007199254740991N)
 
@@ -147,38 +147,10 @@
                    :path path
                    :value value})))
 
-(defn- es6-double-string [value path]
-  (let [number (double value)]
-    (when (or (Double/isNaN number) (Double/isInfinite number))
-      (unsupported-rfc8785-number! value path))
-    (if (zero? number)
-      "0"
-      (let [negative? (neg? number)
-            decimal (.stripTrailingZeros
-                     (BigDecimal/valueOf (Math/abs number)))
-            digits (.toString (.unscaledValue decimal))
-            exponent (- (count digits) (.scale decimal) 1)
-            sign (if negative? "-" "")]
-        (if (or (>= exponent 21) (<= exponent -7))
-          (str sign (subs digits 0 1)
-               (when (< 1 (count digits))
-                 (str "." (subs digits 1)))
-               "e" (when (not (neg? exponent)) "+") exponent)
-          (str sign (.toPlainString decimal)))))))
-
 (defn- rfc8785-number-v1 [value path]
-  (cond
-    (integer? value)
-    (if (<= (- max-safe-json-integer) value max-safe-json-integer)
-      (str value)
-      (unsupported-rfc8785-number! value path))
-
-    (or (instance? Double value)
-        (instance? Float value)
-        (instance? BigDecimal value))
-    (es6-double-string value path)
-
-    :else
+  (if (and (integer? value)
+           (<= (- max-safe-json-integer) value max-safe-json-integer))
+    (str value)
     (unsupported-rfc8785-number! value path)))
 
 (defn- rfc8785-object-v1 [value path]
@@ -193,11 +165,12 @@
             (sort-by key)
             (map (fn [[key item]]
                    (str (rfc8785-string key path :object-key) ":"
-                        (rfc8785-json-string-v1* item (conj path key)))))
+                        (rfc8785-safe-integer-json-string-v1*
+                         item (conj path key)))))
             (string/join ","))
        "}"))
 
-(defn- rfc8785-json-string-v1* [value path]
+(defn- rfc8785-safe-integer-json-string-v1* [value path]
   (cond
     (nil? value) "null"
     (true? value) "true"
@@ -209,7 +182,7 @@
                              (->> value
                                   (map-indexed
                                    (fn [index item]
-                                     (rfc8785-json-string-v1*
+                                     (rfc8785-safe-integer-json-string-v1*
                                       item (conj path index))))
                                   (string/join ","))
                              "]")
@@ -218,13 +191,13 @@
                            :path path
                            :value value}))))
 
-(defn rfc8785-json-string-v1
-  "RFC 8785 canonical JSON for new protocols. JSON numbers are interpreted as
-  IEEE-754 doubles and rendered with ES6 thresholds. Integral host values must
-  be within the interoperable integer range; non-finite and other numeric host
-  types fail closed."
+(defn rfc8785-safe-integer-json-string-v1
+  "RFC 8785 canonical JSON restricted to integral numbers in the interoperable
+  range [-9007199254740991, 9007199254740991]. Every other numeric host value
+  fails closed."
   [value]
-  (rfc8785-json-string-v1* value []))
+  (rfc8785-safe-integer-json-string-v1* value []))
 
-(defn rfc8785-json-bytes-v1 [value]
-  (.getBytes (rfc8785-json-string-v1 value) StandardCharsets/UTF_8))
+(defn rfc8785-safe-integer-json-bytes-v1 [value]
+  (.getBytes (rfc8785-safe-integer-json-string-v1 value)
+             StandardCharsets/UTF_8))

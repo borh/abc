@@ -85,15 +85,16 @@
     (is (= "\"fig\\/\\u4e00.png\""
            (jcs/canonical-json-string "fig/一.png")))))
 
-(deftest rfc8785-full-domain-canonical-json-v1-test
-  (testing "RFC 8785 section 3.2.2 canonicalization example"
-    (is (= (str "{\"literals\":[null,true,false],"
-                "\"numbers\":[333333333.3333333,1e+30,4.5,0.002,1e-27],"
-                "\"string\":\"€$\\u000f\\nA'B\\\"\\\\\\\\\\\"/\"}")
-           (jcs/rfc8785-json-string-v1
-            {"numbers" [333333333.33333329 1.0e30 4.50 2e-3 1.0e-27]
-             "string" "€$\u000f\nA'B\"\\\\\"/"
-             "literals" [nil true false]}))))
+(deftest rfc8785-safe-integer-domain-canonical-json-v1-test
+  (testing "RFC 8785 section 3.2.3 UTF-16 property sorting"
+    (is (= (str "{\"\\r\":\"Carriage Return\",\"1\":\"One\","
+                "\"\":\"Control\",\"ö\":\"Latin Small Letter O With Diaeresis\","
+                "\"€\":\"Euro Sign\",\"😀\":\"Emoji\",\"דּ\":\"Hebrew Letter Dalet With Dagesh\"}")
+           (jcs/rfc8785-safe-integer-json-string-v1
+            {"€" "Euro Sign" "\r" "Carriage Return"
+             "דּ" "Hebrew Letter Dalet With Dagesh" "1" "One"
+             "😀" "Emoji" "" "Control"
+             "ö" "Latin Small Letter O With Diaeresis"}))))
   (testing "Unicode, slash, controls, nested values, and safe integers compose"
     (let [value {"作品/😀" [{"control" "\u0000\n"
                            "count" 9007199254740991}]
@@ -101,21 +102,31 @@
       (is (= (str "{\"negative\":-42,\"作品/😀\":[{"
                   "\"control\":\"\\u0000\\n\","
                   "\"count\":9007199254740991}]}")
-             (jcs/rfc8785-json-string-v1 value)))
-      (is (= (hash/sha256-bytes (jcs/rfc8785-json-bytes-v1 value))
-             (hash/sha256-json-rfc8785-v1 value)))))
-  (testing "non-finite and unsafe integral values fail closed"
+             (jcs/rfc8785-safe-integer-json-string-v1 value)))
+      (is (= (hash/sha256-bytes
+              (jcs/rfc8785-safe-integer-json-bytes-v1 value))
+             (hash/sha256-json-rfc8785-safe-integer-v1 value)))))
+  (testing "the exact safe-integer boundaries are accepted"
+    (is (= "[-9007199254740991,9007199254740991]"
+           (jcs/rfc8785-safe-integer-json-string-v1
+            [-9007199254740991 9007199254740991]))))
+  (testing "floats, subnormals, non-finite, and unsafe integers fail closed"
     (doseq [value [Double/NaN Double/POSITIVE_INFINITY
-                   Double/NEGATIVE_INFINITY
+                   Double/NEGATIVE_INFINITY Double/MIN_VALUE
+                   1.0 1.5
                    9007199254740992 -9007199254740992]]
       (is (= :unsupported-rfc8785-number
              (:reason (exception-data
-                       #(jcs/rfc8785-json-string-v1 {"number" value}))))))))
+                       #(jcs/rfc8785-safe-integer-json-string-v1
+                         {"number" value}))))))))
 
 (deftest rfc8785-cross-language-vectors-test
   (let [fixture (files/read-json
-                 "test/fixtures/canonicalization/rfc8785-jcs-abc-v1-vectors.json")]
-    (is (= "sha256-rfc8785-jcs-abc-v1" (get fixture "algorithm_id")))
+                 "test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json")]
+    (is (= "sha256-rfc8785-safe-integer-domain-abc-v1"
+           (get fixture "algorithm_id")))
     (doseq [{:strs [input canonical_json sha256]} (get fixture "vectors")]
-      (is (= canonical_json (jcs/rfc8785-json-string-v1 input)))
-      (is (= sha256 (hash/sha256-json-rfc8785-v1 input))))))
+      (is (= canonical_json
+             (jcs/rfc8785-safe-integer-json-string-v1 input)))
+      (is (= sha256
+             (hash/sha256-json-rfc8785-safe-integer-v1 input))))))

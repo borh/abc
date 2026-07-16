@@ -9,20 +9,20 @@
     "schema_version": {"const": "abc/parser-rq-source-recognition-index/v1"},
     "qualification_identity_ref": {"$ref": "#/$defs/hash"},
     "corpus_generation_ref": {"$ref": "#/$defs/hash"},
-    "corpus_generation_algorithm": {"const": "sha256-rfc8785-jcs-abc-v1"},
+    "corpus_generation_algorithm": {"const": "sha256-rfc8785-safe-integer-domain-abc-v1"},
     "policy_hash": {"$ref": "#/$defs/hash"},
     "membership_ref": {"$ref": "#/$defs/hash"},
     "coordinate_system": {"const": "decoded_utf8"},
     "status": {"enum": ["ok", "unavailable"]},
     "expected_work_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-    "expected_work_count": {"type": "integer", "minimum": 0},
-    "record_count": {"type": "integer", "minimum": 0},
+    "expected_work_count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "record_count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
     "records": {"type": "array", "items": {"$ref": "#/$defs/entry"}},
     "errors": {"type": "array", "items": {"type": "string", "minLength": 1}}
   },
   "allOf": [{"if": {"properties": {"status": {"const": "ok"}}}, "then": {"properties": {"errors": {"maxItems": 0}}}, "else": {"properties": {"errors": {"minItems": 1}}}}],
   "$defs": {
     "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-    "entry": {"type": "object", "required": ["work_id", "capture_generation_ref", "sha256", "bytes", "media_type", "locator"], "additionalProperties": false, "properties": {"work_id": {"type": "string", "minLength": 1}, "capture_generation_ref": {"$ref": "#/$defs/hash"}, "sha256": {"$ref": "#/$defs/hash"}, "bytes": {"type": "integer", "minimum": 0}, "media_type": {"const": "application/json"}, "locator": {"type": "string", "minLength": 1}}}
+    "entry": {"type": "object", "required": ["work_id", "capture_generation_ref", "sha256", "bytes", "media_type", "locator"], "additionalProperties": false, "properties": {"work_id": {"type": "string", "minLength": 1}, "capture_generation_ref": {"$ref": "#/$defs/hash"}, "sha256": {"$ref": "#/$defs/hash"}, "bytes": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}, "media_type": {"const": "application/json"}, "locator": {"type": "string", "minLength": 1}}}
   }
 }

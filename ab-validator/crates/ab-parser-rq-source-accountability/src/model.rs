@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
 macro_rules! wire_enum {
@@ -54,6 +56,14 @@ pub struct QualificationIdentity {
 pub struct CorpusEntry {
     pub work_id: String,
     pub original_sha256: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CorpusSourceEntry {
+    #[serde(flatten)]
+    pub corpus_entry: CorpusEntry,
+    pub source_path: PathBuf,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -149,6 +159,36 @@ pub struct WorkRecord {
 pub struct WorkAnalysis {
     pub record: WorkRecord,
     pub diagnostics_bytes: Option<Vec<u8>>,
+}
+
+#[derive(Clone, Debug)]
+pub struct CorpusInput {
+    pub entries: Vec<CorpusSourceEntry>,
+    pub source_root: PathBuf,
+    pub parser_ir_root: PathBuf,
+    pub store_root: PathBuf,
+    pub index_out: PathBuf,
+    pub qualification_identity: QualificationIdentity,
+    pub taxonomy: TaxonomyIdentity,
+}
+
+wire_enum!(RecordIndexSchemaVersion { V1 => "abc/parser-rq-source-accountability-index/v1" });
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecordIndexEntry {
+    pub work_id: String,
+    pub sha256: String,
+    pub bytes: u64,
+    pub media_type: JsonMediaType,
+    pub locator: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecordIndex {
+    pub schema_version: RecordIndexSchemaVersion,
+    pub records: Vec<RecordIndexEntry>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -106,9 +106,9 @@ reviewable systems and must land first.
 | P1 | `…-parser-rq-source-accountability.md` | R1 source-span coverage (byte denominator + versioned taxonomy) → R2 silent-drops | P0 |
 | P2 | `…-parser-rq-publication.md` | R3 publication-structure validation | P0 |
 | P3 | `…-parser-rq-resource.md` | R4 per-work memory (single mechanism, chosen in-plan) | P0 |
-| P4A1 | `…-parser-rq-source-claim-ledger.md` | Decomplect classified-span recovery provenance; ABC claim protocol/policy; ledger projection in the existing fused fold | P0, P1 |
-| P4A2 | `…-parser-rq-source-claim-r1-migration.md` | Ledger-authoritative R1; retain node-span coverage as supporting evidence | P4A1 |
-| P4A3 | `…-parser-rq-diagnostic-gap-partition.md` | Versioned diagnostic authorization and R2 partition over ledger gaps | P4A2 |
+| P4A1 | `2026-07-16-parser-rq-classified-source-ledger.md` | Decomplect classified-span recovery provenance; ABC claim protocol/policy; ledger projection in the existing fused fold | P0, P1 |
+| P4A2 | `2026-07-16-parser-rq-source-claim-r1-migration.md` | Ledger-authoritative R1; retain node-span coverage as supporting evidence | P4A1 |
+| P4A3 | `2026-07-16-parser-rq-diagnostic-gap-partition.md` | Versioned diagnostic authorization and R2 partition over ledger gaps | P4A2 |
 | P4B | `…-parser-rq-predicate-hardening.md` | R5 (predicates 4 & 5) instrument code | P0, P1 |
 | P5 | `…-parser-rq-admission-promotion.md` | Pin the final implementation commit; capture R1–R5; R6 admit; R7 recapture + gate + conditional ADR 0039 | P0–P4 (barrier) |
 | PS | `…-parser-rq-study-axes.md` (or its own spec) | Track S: S2, S1, S3, S4 | P0 contracts only; never gates Track R |

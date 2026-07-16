@@ -4,6 +4,9 @@
 > falsified the proposed authority model. Replace this plan with the P4A1-P4A3
 > plans derived from
 > `../specs/2026-07-16-parser-rq-source-claim-ledger-design.md`.
+> The replacements are `2026-07-16-parser-rq-classified-source-ledger.md`,
+> `2026-07-16-parser-rq-source-claim-r1-migration.md`, and
+> `2026-07-16-parser-rq-diagnostic-gap-partition.md`.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` (recommended) or

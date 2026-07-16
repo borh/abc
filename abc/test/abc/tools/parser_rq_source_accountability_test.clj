@@ -70,6 +70,17 @@
      :identity (read-keyword-json (io/file root "store/identity.json"))
      :aggregate (read-keyword-json (io/file root "store/recognition-aggregate.json"))}))
 
+(defn- staged-diagnostic-gap-capture
+  []
+  (let [root (.toFile (java.nio.file.Files/createTempDirectory
+                       "parser-rq-diagnostic-gap-production"
+                       (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (copy-tree! diagnostic-gap-capture-fixture-root root)
+    {:root root
+     :store {:root (.getPath (io/file root "store"))}
+     :manifest (read-keyword-json (io/file root "manifest.json"))
+     :identity (read-keyword-json (io/file root "store/identity.json"))}))
+
 (defn- delete-tree!
   [root]
   (doseq [file (reverse (file-seq root))] (.delete file)))
@@ -214,6 +225,23 @@
                   {:id :source_span_coverage :operator :eq :threshold 1.0}
                   {:source_span_coverage envelope})]))))
       (finally (delete-tree! root)))))
+
+(deftest recognition-derivation-rejects-a-symlinked-manifest-destination
+  (let [{:keys [root store manifest identity aggregate]}
+        (staged-production-recognition)
+        identity-path (.toPath (io/file root "store/identity.json"))
+        real-path (.toPath (io/file root "store/identity-real.json"))]
+    (try
+      (java.nio.file.Files/move identity-path real-path
+                                (into-array java.nio.file.CopyOption []))
+      (java.nio.file.Files/createSymbolicLink
+       identity-path real-path (make-array java.nio.file.attribute.FileAttribute 0))
+      (is (= :unavailable
+             (:status (rq-source/derive-source-recognition-envelope
+                       store manifest aggregate identity))))
+      (finally (java.nio.file.Files/deleteIfExists identity-path)
+               (java.nio.file.Files/deleteIfExists real-path)
+               (delete-tree! root)))))
 
 (deftest production-recognition-fixture-identity-edges-fail-closed
   (doseq [[label mutation]
@@ -523,7 +551,7 @@
                        (assoc (aggregate-value) :covered_eligible_bytes 8)
                        qualification-identity)))))))
 
-(deftest aggregate-reread-is-rehashed-after-manifest-verification
+(deftest aggregate-consumption-uses-the-bytes-authenticated-by-manifest-verification
   (with-capture (aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
     (fn [{:keys [store manifest]}]
       (let [verify capture/verify-manifest]
@@ -534,10 +562,10 @@
                                 (json/write-deterministic-json-str
                                  (aggregate-value)))
                           result))]
-          (is (= :unavailable
-                 (:status (rq-source/derive-source-span-envelope
-                           store manifest (aggregate-value)
-                           qualification-identity)))))))))
+          (is (= identity-ref
+                 (:identity_ref (rq-source/derive-source-span-envelope
+                                 store manifest (aggregate-value)
+                                 qualification-identity)))))))))
 
 (deftest manifest-blob-mismatch-is-unavailable
   (with-capture (aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
@@ -923,7 +951,7 @@
              (:status (rq-source/silent-drops-envelope
                        recognition-identity candidate index r1)))))))
 
-(deftest authenticated-diagnostic-gap-artifacts-derive-r2-and-reject-resealing
+(deftest detached-diagnostic-gap-artifacts-cannot-derive-r2-even-when-resealed
   (let [{:keys [root store manifest identity]} (staged-production-recognition)]
     (try
       (let [index (read-keyword-json (io/file root "store/recognition-index.json"))
@@ -996,11 +1024,11 @@
                               :ref (blob-ref-for aggregate-file "application/json")}
             manifest (update (:manifest state) :blobs conj aggregate-member)
             last-result-member (some #(when (= (last (:results state))
-                                                    (#'rq-source/authenticated-json-value store %)) %)
+                                               (#'rq-source/authenticated-json-value store %)) %)
                                      (:blobs manifest))]
-        (is (= {:value (:silent_drop_count aggregate)
-                :identity_ref recognition-identity-ref}
-               (rq-source/silent-drops-envelope store manifest identity)))
+        (is (= :unavailable
+               (:status (rq-source/silent-drops-envelope store manifest identity)))
+            "a raw artifact absent from each asserted generation is detached evidence")
         (let [original (last (:results state))
               observe-raw {:schemaVersion 3
                            :data [{:kind "unclosed_bracket" :code "unclosed-bracket"
@@ -1024,11 +1052,11 @@
               observed-manifest (reseal-existing-json! root result-resealed
                                                        "diagnostic-gap-aggregate.json"
                                                        observed-aggregate)]
-          (is (= {:value (:silent_drop_count aggregate)
-                  :identity_ref recognition-identity-ref}
-                 (rq-source/silent-drops-envelope store observed-manifest identity)))
+          (is (= :unavailable
+                 (:status (rq-source/silent-drops-envelope
+                           store observed-manifest identity))))
           (let [swapped-result (assoc observed-result :authorizing_diagnostic_count 1
-                                     :observe_only_diagnostic_count 0)
+                                      :observe_only_diagnostic_count 0)
                 swapped-result-manifest (reseal-existing-json!
                                          root observed-manifest (:locator result-member)
                                          swapped-result)
@@ -1106,6 +1134,55 @@
     (is (= 5 (count (set (vals (:outcomes expected))))))
     (is (= before (slurp (io/file root "store/recognition-aggregate.json")))
         "R2 leaves the exact R1 artifact byte-identical")))
+
+(deftest r2-rejects-a-fully-resealed-cross-generation-raw-substitution
+  (let [{:keys [root store manifest identity]} (staged-diagnostic-gap-capture)]
+    (try
+      (let [values (keep (fn [member]
+                           (when-let [value (#'rq-source/authenticated-json-value store member)]
+                             [member value]))
+                         (:blobs manifest))
+            [result-member result]
+            (some (fn [[member value]]
+                    (when (and (= "abc/parser-rq-diagnostic-gap-result/v1"
+                                  (:schema_version value))
+                               (= 1 (:authorizing_diagnostic_count value)))
+                      [member value])) values)
+            alternate-raw-member
+            (some (fn [[member value]]
+                    (when (and (= 3 (:schemaVersion value))
+                               (= "unclosed-bracket" (get-in value [:data 0 :code])))
+                      member)) values)
+            substituted (-> result
+                            (assoc-in [:diagnostic_authorization_evidence
+                                       :raw_diagnostics_hash]
+                                      (get-in alternate-raw-member [:ref :sha256]))
+                            (assoc-in [:diagnostic_authorization_evidence
+                                       :raw_diagnostics_bytes]
+                                      (get-in alternate-raw-member [:ref :bytes]))
+                            (assoc :authorized_intervals []
+                                   :silent_intervals [{:start 0 :end 3}]
+                                   :authorized_bytes 0 :silent_bytes 3
+                                   :silent_drop_count 1
+                                   :authorizing_diagnostic_count 0
+                                   :observe_only_diagnostic_count 1))
+            manifest (reseal-existing-json! root manifest (:locator result-member)
+                                            substituted)
+            aggregate (read-keyword-json
+                       (io/file root "store/diagnostic-gap-aggregate.json"))
+            aggregate (-> aggregate
+                          (update :authorized_bytes - 3)
+                          (update :silent_bytes + 3)
+                          (update :silent_drop_count inc)
+                          (update :authorizing_diagnostic_count dec)
+                          (update :observe_only_diagnostic_count inc)
+                          (update :authorized_interval_count dec))
+            manifest (reseal-existing-json! root manifest
+                                            "diagnostic-gap-aggregate.json" aggregate)]
+        (is (= :unavailable
+               (:status (rq-source/silent-drops-envelope store manifest identity)))
+            "the result/raw/aggregate/P0 seals cannot replace generation membership"))
+      (finally (delete-tree! root)))))
 
 (deftest production-diagnostic-gap-fixture-rejects-outer-edge-tampering
   (let [root diagnostic-gap-capture-fixture-root

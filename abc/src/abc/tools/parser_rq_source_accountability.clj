@@ -6,7 +6,6 @@
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.schema :as schema]
-            [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.walk :as walk]))
 
@@ -79,15 +78,16 @@
     (.divide (bigdec covered) (bigdec eligible)
              scale java.math.RoundingMode/DOWN)))
 
-(defn- authenticated-json-value
+(defn- authenticated-member-bytes
   [store {:keys [locator ref]}]
+  (if-let [authenticated (:authenticated_blobs store)]
+    (get authenticated locator)
+    (some-> (capture/authenticated-read store ref locator) :bytes)))
+
+(defn- authenticated-json-value
+  [store {:keys [ref] :as member}]
   (try
-    (let [root-file (.getCanonicalFile (io/file (:root store)))
-          blob-file (.getCanonicalFile (io/file root-file locator))
-          root-path (.toPath root-file)
-          blob-path (.toPath blob-file)
-          bytes (when (.startsWith blob-path root-path)
-                  (java.nio.file.Files/readAllBytes blob-path))]
+    (let [bytes (authenticated-member-bytes store member)]
       (when (and bytes
                  (= (:bytes ref) (alength bytes))
                  (= (:sha256 ref)
@@ -196,6 +196,7 @@
   "Reverify a P0 capture and derive R1 only from authenticated integer totals."
   [store manifest aggregate identity]
   (let [verified (capture/verify-manifest store manifest)
+        store (assoc store :authenticated_blobs (:authenticated_blobs verified))
         expected (qualification/qualification-identity-ref identity)
         denominator (:denominator manifest)
         aggregate-member (selected-member manifest (:aggregate expected-locators))
@@ -244,14 +245,7 @@
 
 (defn- authenticated-blob-bytes
   [store member]
-  (when member
-    (let [root (.getCanonicalFile (io/file (:root store)))
-          file (.getCanonicalFile (io/file root (:locator member)))]
-      (when (and (.startsWith (.toPath file) (.toPath root)) (.isFile file)
-                 (= (get-in member [:ref :bytes]) (hash/byte-length file))
-                 (= (get-in member [:ref :sha256])
-                    (hash/format-sha256 (hash/sha256-file file))))
-        (java.nio.file.Files/readAllBytes (.toPath file))))))
+  (when member (authenticated-member-bytes store member)))
 
 (defn- strict-utf8
   [bytes]
@@ -301,11 +295,16 @@
               (conj {:start cursor :end (:end source)})))))
 
 (declare valid-recognition-fold? manifest-record)
+(declare authenticated-generation)
 
 (defn- valid-gap-result?
   [store manifest result expected policy-hash policy-artifact-hash qualification-ref policy]
   (let [recognition (:source_recognition_evidence result)
         authorization (:diagnostic_authorization_evidence result)
+        generation (authenticated-generation store manifest
+                                             (:capture_generation_ref result))
+        generation-raw (get-in generation [:members :raw_diagnostics])
+        generation-source (get-in generation [:members :decoded_source])
         r1-member (unique-member-by-hash manifest (:value_hash recognition))
         raw-member (unique-member-by-hash manifest (:raw_diagnostics_hash authorization))
         source-member (unique-member-by-hash manifest (:decoded_source_hash authorization))
@@ -355,6 +354,16 @@
             (:qualification_identity_ref recognition))
          (= (:capture_generation_ref expected) (:capture_generation_ref result)
             (:capture_generation_ref recognition))
+         generation
+         (= qualification-ref (:qualification_identity_ref generation))
+         (= (:work_id result) (:work_id generation))
+         (= (:raw_diagnostics_hash authorization) (:value_hash generation-raw)
+            (get-in raw-member [:ref :sha256]))
+         (= (:artifact_ref generation-raw) (:locator raw-member))
+         (= (:raw_diagnostics_bytes authorization) (get-in raw-member [:ref :bytes]))
+         (= (:decoded_source_hash authorization) (:value_hash generation-source)
+            (get-in source-member [:ref :sha256]))
+         (= (:artifact_ref generation-source) (:locator source-member))
          (= (:sha256 expected) (:value_hash recognition)
             (:source_recognition_hash authorization))
          (= policy-hash (:policy_hash result) (:policy_hash authorization))
@@ -422,6 +431,7 @@
   ([store manifest identity]
    (let [expected (qualification/qualification-identity-ref identity)
          verified (capture/verify-manifest store manifest)
+         store (assoc store :authenticated_blobs (:authenticated_blobs verified))
          identity-member (selected-member manifest "identity.json")
          aggregate-member (selected-member manifest "diagnostic-gap-aggregate.json")
          index-member (selected-member manifest "recognition-index.json")
@@ -743,6 +753,7 @@
         aggregate-member (selected-member manifest (:aggregate recognition-locators))
         index-member (selected-member manifest (:index recognition-locators))
         verified (capture/verify-manifest store manifest)
+        store (assoc store :authenticated_blobs (:authenticated_blobs verified))
         identity-member (selected-member manifest (:identity recognition-locators))
         authenticated-identity (some->> identity-member
                                         (authenticated-json-value store))

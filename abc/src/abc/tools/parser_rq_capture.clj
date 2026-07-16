@@ -57,34 +57,67 @@
   [reason]
   {:status :unavailable :reason reason})
 
+(def ^:dynamic *after-authenticated-read*
+  "Test seam invoked after a locator's bytes have been read and authenticated."
+  nil)
+
+(defn- no-symlink-path?
+  [root-path blob-path]
+  (every? (fn [path]
+            (not (java.nio.file.Files/isSymbolicLink path)))
+          (rest (reductions #(.resolve ^java.nio.file.Path %1 ^java.nio.file.Path %2)
+                            root-path (iterator-seq
+                                       (.iterator (.relativize root-path blob-path)))))))
+
+(defn authenticated-read
+  "Read and authenticate one immutable-store value exactly once.
+
+  Locators are relative, remain beneath the canonical store root, and may not
+  contain symlink components. The returned bytes are the bytes whose length and
+  digest were authenticated; consumers must not reopen the locator."
+  [{:keys [root]} blob-ref locator]
+  (try
+    (let [root-path (.toPath (.getCanonicalFile (io/file root)))
+          locator-path (java.nio.file.Paths/get locator (make-array String 0))
+          blob-path (.normalize (.resolve root-path locator-path))]
+      (cond
+        (.isAbsolute locator-path)
+        (unavailable "blob locator must be relative to the configured store root")
+
+        (not (.startsWith blob-path root-path))
+        (unavailable "blob locator escapes the configured store root")
+
+        (not (no-symlink-path? root-path blob-path))
+        (unavailable "blob locator contains a symbolic link")
+
+        (not (java.nio.file.Files/isRegularFile
+              blob-path (into-array java.nio.file.LinkOption
+                                    [java.nio.file.LinkOption/NOFOLLOW_LINKS])))
+        (unavailable "blob is absent from the configured store")
+
+        :else
+        (let [bytes (java.nio.file.Files/readAllBytes blob-path)]
+          (cond
+            (not= (:bytes blob-ref) (alength bytes))
+            (unavailable "blob byte length does not match its logical identity")
+
+            (not= (:sha256 blob-ref)
+                  (hash/format-sha256 (hash/sha256-bytes bytes)))
+            (unavailable "blob hash does not match its logical identity")
+
+            :else
+            (do
+              (when *after-authenticated-read* (*after-authenticated-read* blob-path))
+              {:status :ok :bytes bytes})))))
+    (catch Exception error
+      (unavailable (.getMessage error)))))
+
 (defn verify-blob
   "Resolve `locator` below the runtime-configured store root, then stream and
   re-hash it. Store metadata is never trusted. Missing, escaping, or mismatched
   blobs are unavailable and cannot yield an observation."
   [{:keys [root]} blob-ref locator]
-  (try
-    (let [root-file (.getCanonicalFile (io/file root))
-          blob-file (.getCanonicalFile (io/file root-file locator))
-          root-path (.toPath root-file)
-          blob-path (.toPath blob-file)]
-      (cond
-        (not (.startsWith blob-path root-path))
-        (unavailable "blob locator escapes the configured store root")
-
-        (not (.isFile blob-file))
-        (unavailable "blob is absent from the configured store")
-
-        (not= (:bytes blob-ref) (hash/byte-length blob-file))
-        (unavailable "blob byte length does not match its logical identity")
-
-        (not= (:sha256 blob-ref)
-              (hash/format-sha256 (hash/sha256-file blob-file)))
-        (unavailable "blob hash does not match its logical identity")
-
-        :else
-        {:status :ok}))
-    (catch Exception error
-      (unavailable (.getMessage error)))))
+  (dissoc (authenticated-read {:root root} blob-ref locator) :bytes))
 
 (defn verify-manifest
   "Verify every logical blob in a closed capture manifest against the runtime
@@ -95,10 +128,13 @@
     (if (seq errors)
       (unavailable (string/join "; " errors))
       (let [results (mapv (fn [{:keys [ref locator]}]
-                            (verify-blob store ref locator))
+                            (assoc (authenticated-read store ref locator)
+                                   :locator locator))
                           (:blobs manifest))]
         (if (every? #(= :ok (:status %)) results)
-          {:status :ok :blob_count (count results)}
+          {:status :ok
+           :blob_count (count results)
+           :authenticated_blobs (into {} (map (juxt :locator :bytes) results))}
           {:status :unavailable
            :reason "one or more manifest blobs are unavailable"
            :blob_results results})))))

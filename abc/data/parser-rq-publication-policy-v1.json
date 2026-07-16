@@ -1,0 +1,32 @@
+{
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-publication-policy.schema.json",
+  "schema_version": "1.0.0",
+  "policy_id": "abc/parser-rq-publication-policy/v1",
+  "policy_hash": "sha256:d1004f711281e2b78ed70d141a9347ec246a2337741770ef507f2c171272c8cd",
+  "structure_checks": [
+    "tei_profile_valid",
+    "preservation_schema_valid",
+    "tei_manifest_valid",
+    "plaintext_manifest_valid",
+    "tei_manifest_references_preservation",
+    "tei_manifest_references_validation_result",
+    "tei_abc_projection_resolves_to_sidecar",
+    "preservation_tei_pointers_resolve",
+    "preservation_source_pointers_resolve",
+    "plaintext_body_only",
+    "required_construct_census_valid"
+  ],
+  "supporting_checks": [
+    "parser_ir_schema_valid",
+    "source_region_coverage_valid",
+    "source_region_sidecar_role_available"
+  ],
+  "preservation_schema": {
+    "id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
+    "hash": "sha256:b073df014a2b7c685059d3681dbfcbbde10ec66adfb0253ab80b6287c70c5599"
+  },
+  "validator": {
+    "id": "ab-validator/publication-bundle-validate/v2",
+    "semantics_hash": "sha256:80a573b202be7054706dab0f1b1651e621d1c09524a84326395bb732981d8283"
+  }
+}

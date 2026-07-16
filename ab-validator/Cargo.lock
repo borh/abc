@@ -387,6 +387,7 @@ version = "0.1.0"
 dependencies = [
  "ab-aozora-aat",
  "ab-diff-utils",
+ "ab-rq-artifact-store",
  "anyhow",
  "clap",
  "hegeltest",
@@ -415,6 +416,15 @@ dependencies = [
  "proptest",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "ab-rq-artifact-store"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "sha2 0.10.9",
+ "tempfile",
 ]
 
 [[package]]

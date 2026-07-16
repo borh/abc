@@ -1,9 +1,8 @@
 use std::collections::HashSet;
-use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::fs;
 use std::path::{Component, Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
 
+use ab_rq_artifact_store::{publish_blob, write_atomic_summary};
 use anyhow::{Context, Result, bail};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -17,8 +16,6 @@ use crate::{
 // configuration. Input containment is checked, but callers must keep these
 // roots immutable during a run. Content blobs may remain orphaned after a
 // publication failure; the index is the final atomic commit and sole summary.
-
-static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
@@ -114,137 +111,6 @@ fn existing_below(root: &Path, relative: &Path, label: &str) -> Result<PathBuf> 
     Ok(path)
 }
 
-fn locator(digest: &str) -> String {
-    format!("sha256/{}/{}.json", &digest[..2], digest)
-}
-
-fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
-    let parent = path.parent().context("output has no parent directory")?;
-    fs::create_dir_all(parent)?;
-    let name = path
-        .file_name()
-        .context("output has no file name")?
-        .to_string_lossy();
-    let temp = parent.join(format!(
-        ".{name}.tmp-{}-{}",
-        std::process::id(),
-        TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
-    ));
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&temp)?;
-    file.write_all(bytes)?;
-    file.sync_all()?;
-    drop(file);
-    if let Err(error) = fs::rename(&temp, path) {
-        let _ = fs::remove_file(&temp);
-        return Err(error).with_context(|| format!("replace {}", path.display()));
-    }
-    Ok(())
-}
-
-fn blob_identity(bytes: &[u8]) -> (String, String) {
-    let hash = digest(bytes);
-    let relative = locator(&hash);
-    (format!("sha256:{hash}"), relative)
-}
-
-fn verify_destination(path: &Path, bytes: &[u8]) -> Result<()> {
-    let metadata = fs::symlink_metadata(path)?;
-    if metadata.file_type().is_symlink() || !metadata.is_file() {
-        bail!("CAS destination is not a regular file: {}", path.display());
-    }
-    let actual = fs::read(path)?;
-    if actual != bytes || digest(&actual) != digest(bytes) {
-        bail!("content-address collision at {}", path.display());
-    }
-    Ok(())
-}
-
-fn destination_exists(path: &Path) -> Result<bool> {
-    match fs::symlink_metadata(path) {
-        Ok(_) => Ok(true),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
-        Err(error) => Err(error).with_context(|| format!("inspect {}", path.display())),
-    }
-}
-
-fn preflight_destination(root: &Path, relative: &str, bytes: &[u8]) -> Result<()> {
-    secure_cas_parent(root, Path::new(relative))?;
-    let path = root.join(relative);
-    if destination_exists(&path)? {
-        verify_destination(&path, bytes)?;
-    }
-    Ok(())
-}
-
-fn secure_cas_parent(root: &Path, relative: &Path) -> Result<()> {
-    reject_lexical_escape(relative, "CAS locator")?;
-    fs::create_dir_all(root)?;
-    let trusted_root = fs::canonicalize(root)?;
-    let parent = relative.parent().context("CAS path has no parent")?;
-    let mut current = root.to_path_buf();
-    for component in parent.components() {
-        current.push(component.as_os_str());
-        match fs::symlink_metadata(&current) {
-            Ok(metadata) if metadata.file_type().is_symlink() => {
-                bail!("CAS ancestor must not be a symlink: {}", current.display());
-            }
-            Ok(metadata) if !metadata.is_dir() => {
-                bail!("CAS ancestor must be a directory: {}", current.display());
-            }
-            Ok(_) => {}
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                fs::create_dir(&current)?;
-            }
-            Err(error) => return Err(error.into()),
-        }
-        if !fs::canonicalize(&current)?.starts_with(&trusted_root) {
-            bail!(
-                "CAS locator escapes trusted store root: {}",
-                relative.display()
-            );
-        }
-    }
-    Ok(())
-}
-
-fn publish_blob(root: &Path, relative: &str, bytes: &[u8]) -> Result<()> {
-    secure_cas_parent(root, Path::new(relative))?;
-    let path = root.join(relative);
-    let parent = path.parent().context("CAS path has no parent")?;
-    if destination_exists(&path)? {
-        return verify_destination(&path, bytes);
-    }
-    let name = path
-        .file_name()
-        .context("CAS path has no file name")?
-        .to_string_lossy();
-    let temp = parent.join(format!(
-        ".{name}.tmp-{}-{}",
-        std::process::id(),
-        TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
-    ));
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&temp)?;
-    file.write_all(bytes)?;
-    file.sync_all()?;
-    drop(file);
-    match fs::hard_link(&temp, &path) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
-        Err(error) => {
-            let _ = fs::remove_file(&temp);
-            return Err(error).with_context(|| format!("publish {}", path.display()));
-        }
-    }
-    fs::remove_file(&temp)?;
-    verify_destination(&path, bytes)
-}
-
 pub fn analyze_corpus(mut input: CorpusInput) -> Result<RecordIndex> {
     let mut ids = HashSet::new();
     for entry in &input.entries {
@@ -285,49 +151,32 @@ pub fn analyze_corpus(mut input: CorpusInput) -> Result<RecordIndex> {
             diagnostics_locator: "content-addressed".to_owned(),
         });
         if let Some(bytes) = analysis.diagnostics_bytes.as_deref() {
-            let (_, diagnostic_locator) = blob_identity(bytes);
+            let diagnostic = publish_blob(&input.store_root, "json", bytes)?;
             analysis
                 .record
                 .diagnostics
                 .as_mut()
                 .expect("bytes imply reference")
-                .locator = diagnostic_locator;
+                .locator = diagnostic.locator;
         }
         analyses.push(analysis);
     }
 
-    let mut publications: Vec<(String, Vec<u8>)> = Vec::new();
     let mut records = Vec::with_capacity(analyses.len());
     let mut errors = Vec::new();
     for analysis in analyses {
         if analysis.record.status == WorkStatus::Unavailable {
             errors.push(format!("work-unavailable:{}", analysis.record.work_id));
         }
-        if let Some(bytes) = analysis.diagnostics_bytes {
-            let (_, relative) = blob_identity(&bytes);
-            publications.push((relative, bytes));
-        }
         let record_bytes = canonical_json(&analysis.record)?.into_bytes();
-        let (sha256, record_locator) = blob_identity(&record_bytes);
+        let published = publish_blob(&input.store_root, "json", &record_bytes)?;
         records.push(RecordIndexEntry {
             work_id: analysis.record.work_id,
-            sha256,
-            bytes: record_bytes.len() as u64,
+            sha256: published.sha256,
+            bytes: published.bytes,
             media_type: JsonMediaType::ApplicationJson,
-            locator: record_locator,
+            locator: published.locator,
         });
-        publications.push((
-            records.last().expect("record just pushed").locator.clone(),
-            record_bytes,
-        ));
-    }
-    publications.sort_by(|a, b| a.0.cmp(&b.0));
-    publications.dedup_by(|a, b| a.0 == b.0 && a.1 == b.1);
-    for (relative, bytes) in &publications {
-        preflight_destination(&input.store_root, relative, bytes)?;
-    }
-    for (relative, bytes) in &publications {
-        publish_blob(&input.store_root, relative, bytes)?;
     }
     let index = RecordIndex {
         schema_version: RecordIndexSchemaVersion::V1,
@@ -345,6 +194,6 @@ pub fn analyze_corpus(mut input: CorpusInput) -> Result<RecordIndex> {
         records,
         errors,
     };
-    write_atomic(&input.index_out, canonical_json(&index)?.as_bytes())?;
+    write_atomic_summary(&input.index_out, canonical_json(&index)?.as_bytes())?;
     Ok(index)
 }

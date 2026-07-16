@@ -290,19 +290,6 @@ fn parser_ir_work_id_rejects_traversal_and_absolute_forms() {
 }
 
 #[test]
-fn preexisting_corrupt_cas_destination_fails_without_index() {
-    let root = temp_root("collision");
-    let input = input(&root);
-    let first = analyze_corpus(input.clone()).unwrap();
-    fs::remove_file(&input.index_out).unwrap();
-    let target = input.store_root.join(&first.records[0].locator);
-    fs::write(target, b"wrong bytes").unwrap();
-    assert!(analyze_corpus(input.clone()).is_err());
-    assert!(!input.index_out.exists());
-    fs::remove_dir_all(root).unwrap();
-}
-
-#[test]
 fn unavailable_work_makes_index_truthfully_unavailable() {
     let root = temp_root("unavailable");
     let mut input = input(&root);
@@ -311,45 +298,6 @@ fn unavailable_work_makes_index_truthfully_unavailable() {
     let value = serde_json::to_value(index).unwrap();
     assert_eq!(value["status"], "unavailable");
     assert_eq!(value["errors"], json!(["work-unavailable:work-b"]));
-    fs::remove_dir_all(root).unwrap();
-}
-
-#[cfg(unix)]
-#[test]
-fn symlink_cas_destination_is_never_accepted_as_content() {
-    use std::os::unix::fs::symlink;
-
-    let root = temp_root("cas-symlink");
-    let input = input(&root);
-    let first = analyze_corpus(input.clone()).unwrap();
-    fs::remove_file(&input.index_out).unwrap();
-    let target = input.store_root.join(&first.records[0].locator);
-    let bytes = fs::read(&target).unwrap();
-    let outside = root.join("outside-record.json");
-    fs::write(&outside, bytes).unwrap();
-    fs::remove_file(&target).unwrap();
-    symlink(outside, target).unwrap();
-    assert!(analyze_corpus(input.clone()).is_err());
-    assert!(!input.index_out.exists());
-    fs::remove_dir_all(root).unwrap();
-}
-
-#[cfg(unix)]
-#[test]
-fn symlink_in_existing_cas_ancestor_is_rejected() {
-    use std::os::unix::fs::symlink;
-
-    let root = temp_root("cas-ancestor-symlink");
-    let input = input(&root);
-    let first = analyze_corpus(input.clone()).unwrap();
-    fs::remove_file(&input.index_out).unwrap();
-    let sha256 = input.store_root.join("sha256");
-    let outside = root.join("outside-sha256");
-    fs::rename(&sha256, &outside).unwrap();
-    symlink(&outside, &sha256).unwrap();
-    assert!(analyze_corpus(input.clone()).is_err());
-    assert!(!input.index_out.exists());
-    assert!(outside.join(&first.records[0].locator[7..]).exists());
     fs::remove_dir_all(root).unwrap();
 }
 

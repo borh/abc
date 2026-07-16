@@ -8,6 +8,7 @@ publish = false
 [dependencies]
 ab-aozora-aat = { path = "../ab-aozora-aat" }
 ab-diff-utils = { path = "../ab-diff-utils" }
+ab-rq-artifact-store = { path = "../ab-rq-artifact-store" }
 anyhow.workspace = true
 clap.workspace = true
 jsonschema.workspace = true

@@ -1,8 +1,7 @@
 use std::collections::HashSet;
-use std::fs::{self, File};
-use std::io::{BufReader, Read};
-use std::path::{Component, Path};
+use std::path::Path;
 
+use ab_rq_artifact_store::authenticate_blob;
 use anyhow::Result;
 use sha2::{Digest, Sha256};
 
@@ -15,26 +14,6 @@ use crate::{
 
 fn digest(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
-}
-
-fn stream_identity(path: &Path) -> Result<(String, u64, Vec<u8>)> {
-    let mut reader = BufReader::new(File::open(path)?);
-    let mut hasher = Sha256::new();
-    let mut bytes = Vec::new();
-    let mut buffer = [0_u8; 64 * 1024];
-    let mut length = 0_u64;
-    loop {
-        let read = reader.read(&mut buffer)?;
-        if read == 0 {
-            break;
-        }
-        hasher.update(&buffer[..read]);
-        bytes.extend_from_slice(&buffer[..read]);
-        length = length
-            .checked_add(read as u64)
-            .ok_or_else(|| anyhow::anyhow!("record byte length overflow"))?;
-    }
-    Ok((format!("sha256:{:x}", hasher.finalize()), length, bytes))
 }
 
 fn intervals(wire: &[crate::WireInterval], bound: u64) -> Result<Vec<Interval>> {
@@ -192,43 +171,16 @@ pub fn aggregate(
         errors.push("taxonomy-blob-mismatch".to_owned());
     }
 
-    let root = match fs::canonicalize(records_root) {
-        Ok(root) => Some(root),
-        Err(_) => {
-            errors.push("records-root-unavailable".to_owned());
-            None
-        }
-    };
     let mut records = Vec::new();
     for entry in &index.records {
-        let relative = Path::new(&entry.locator);
-        if relative.is_absolute()
-            || relative
-                .components()
-                .any(|part| matches!(part, Component::ParentDir))
-        {
-            errors.push(format!("record-locator-invalid:{}", entry.work_id));
-            continue;
-        }
-        let Some(root) = &root else { continue };
-        let path = match fs::canonicalize(root.join(relative)) {
-            Ok(path) if path.starts_with(root) => path,
-            _ => {
-                errors.push(format!("record-locator-unavailable:{}", entry.work_id));
-                continue;
-            }
-        };
-        let (hash, length, bytes) = match stream_identity(&path) {
-            Ok(value) => value,
-            Err(_) => {
-                errors.push(format!("record-read-failed:{}", entry.work_id));
-                continue;
-            }
-        };
-        if hash != entry.sha256 || length != entry.bytes {
-            errors.push(format!("record-blob-mismatch:{}", entry.work_id));
-            continue;
-        }
+        let bytes =
+            match authenticate_blob(records_root, &entry.locator, &entry.sha256, entry.bytes) {
+                Ok(bytes) => bytes,
+                Err(_) => {
+                    errors.push(format!("record-blob-mismatch:{}", entry.work_id));
+                    continue;
+                }
+            };
         match serde_json::from_slice::<WorkRecord>(&bytes) {
             Ok(record) if record.work_id == entry.work_id => records.push(record),
             Ok(_) => errors.push(format!("record-index-work-id-mismatch:{}", entry.work_id)),

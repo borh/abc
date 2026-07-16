@@ -31,6 +31,7 @@ members = [
     "crates/ab-aozora",
     "crates/ab-parser-study-report",
     "crates/ab-parser-rq-source-accountability",
+    "crates/ab-rq-artifact-store",
 ]
 resolver = "2"
 exclude = [

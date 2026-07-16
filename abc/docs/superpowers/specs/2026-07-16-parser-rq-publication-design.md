@@ -88,6 +88,25 @@ from the publication-structure policy:
 An unknown, missing, duplicate, or extra policy check makes derivation
 unavailable. Adding, removing, or renaming a predicate-6 check creates a new
 policy version and identity; it cannot silently reinterpret an old capture.
+This is intentionally closed-world behavior: adding even a diagnostic-only
+validator check requires an explicit policy review before new captures can be
+derived. Temporary unavailability is preferable to silently changing the
+predicate.
+
+Check names do not identify check semantics. The policy also pins an
+authoritative validator id and a logical `validator_semantics_hash` over the
+reviewed source/dependency closure that computes the detailed checks. The
+analyzer requires both values to equal the work record. Any semantic validator
+change requires a new validator and policy identity even when the check names
+remain unchanged. The qualification identity records the same validator
+coordinate as an instrument version; neither coordinate substitutes for the
+other during validation.
+
+The closure is itself a committed canonical manifest of logical hashes: the
+validator source, every repository module imported on the predicate-6 path, and
+the pinned Python plus JSON Schema validator runtime coordinates. Hashing only
+`publication-bundle-validate.py` is insufficient because helper or dependency
+changes can alter check semantics without changing that file.
 
 `preservation_schema_valid` means full JSON Schema validation against the
 authenticated authoritative `0.3.0` schema, including its schema id, version,
@@ -120,6 +139,26 @@ Reusing unrelated example metadata is prohibited because it would create false
 work-identity joins. Replacing the pinned corpus with production works is
 outside P2 because it would invalidate prior corpus-bound captures.
 
+### Fixture non-vacuity census
+
+Schema-valid emptiness is not proof that a fixture exercised publication
+structure. Each qualification fixture therefore carries an identity-bearing
+minimum construct census:
+
+| Work | Required preservation constructs |
+|---|---|
+| `000001_1` (ruby) | `source_identity >= 1`, `mapping_identity >= 1`, `span_coordinates >= 1` |
+| `000002_2` (gaiji) | `source_identity >= 1`, `mapping_identity >= 1`, `span_coordinates >= 1`, `gaiji_resolution >= 1` |
+| `000003_3` (ruby + gaiji) | `source_identity >= 1`, `mapping_identity >= 1`, `span_coordinates >= 1`, `gaiji_resolution >= 1` |
+
+The census is a fixture-exercise assertion, not a new release predicate and
+not a claim that these are the only valid constructs. Every parsed work record
+discloses total preservation-record count, TEI preservation-reference count,
+non-null TEI-pointer count, non-null source-pointer count, and actual counts by
+construct. Missing a required minimum is a complete, available
+publication-structure failure, not unavailable evidence. A `1.0` result can
+therefore never silently mean that zero relevant structures were emitted.
+
 ## Immutable Contracts
 
 ### Publication policy
@@ -129,7 +168,8 @@ The closed policy carries:
 - schema id and version;
 - ordered unique predicate-6 check names;
 - supporting-precondition check names;
-- the authoritative preservation schema id and logical hash; and
+- the authoritative preservation schema id and logical hash;
+- the authoritative validator id and semantic-closure hash; and
 - its own canonical policy identity.
 
 ### Publication work record
@@ -142,6 +182,8 @@ timeouts. A record carries:
 - parser disposition (`parsed`, `failed`, or `timeout`);
 - publication policy identity;
 - preservation-schema identity;
+- validator id and semantic-closure identity;
+- expected-construct census identity;
 - for parsed records, logical blob references for materialization inputs,
   generated artifacts, and detailed validator evidence, the exact detailed
   check map, the projected publication-structure verdict, and bounded failure
@@ -190,6 +232,18 @@ is not a measured structural failure. A complete eligible record with one or
 more failed policy checks contributes zero to the numerator and yields an honest
 ratio below `1.0`.
 
+`structure_eligible_works` is load-bearing only as the availability guard. Any
+emitted numeric ratio necessarily has
+`structure_eligible_works = successful_works`; inequality produces no ratio.
+
+A member whose pinned `:expected_status :parsed` regresses to `failed` or
+`timeout` remains in the P2 index and shrinks the predicate-6 denominator. That
+shrink is deliberate: predicate 6 is defined over successful works, while
+predicates 1 and 9 reject the regression for the overall gate. The P2 aggregate
+discloses expected, parsed, failed, and timed-out counts and emits a bounded
+denominator-shrink witness, so a `1.0` ratio cannot conceal its smaller
+population even though P2 does not double-count the failure.
+
 The derived aggregate carries integer numerator and denominator counts. Decimal
 rendering is descriptive; ADR 0039's equality-to-`1.0` decision is additionally
 guarded by integer equality `structure_passed_works = successful_works`.
@@ -199,8 +253,9 @@ guarded by integer equality `structure_passed_works = successful_works`.
 P2 distinguishes measured failure from unavailable evidence:
 
 - **Available failure:** a complete authenticated publication bundle fails a
-  policy check. The work record names the failed checks and the aggregate ratio
-  is below `1.0`.
+  policy check or its fixture non-vacuity census. The work record names the
+  failed checks and actual construct counts, and the aggregate ratio is below
+  `1.0`.
 - **Unavailable:** malformed policy or record; missing, duplicate, or extra
   member; zero successful denominator; qualification, corpus, policy, or schema
   identity mismatch; unknown check vocabulary; missing blob; hash/length/media
@@ -227,8 +282,33 @@ evidence.
 Work equality uses work id plus source content hash. Artifact equality uses
 logical SHA-256 identity plus byte length and media type. Run coherence uses the
 full qualification identity reference. Policy and schema equality use canonical
-content identity. No basename, directory position, timestamp, or human boolean
-substitutes for these relations.
+content identity. Validator equality uses its id plus semantic-closure hash.
+Fixture-exercise equality uses the expected-census content hash. No basename,
+directory position, timestamp, or human boolean substitutes for these relations.
+
+## Publication Joinability Versus Predicate 5
+
+Predicate 6 does not consume predicate 5's verdict, but it cannot interpret an
+arbitrary malformed parser-IR document. P2 owns a narrower structural
+precondition, `publication_join_input_valid`, covering only values its
+materializer and validator read:
+
+- the document is a JSON object with a `nodes` array;
+- every visited node and inline child is an object with a recognized node type
+  and the type-correct fields used by the visible-body projection;
+- every present `source_pointer` is a non-empty string and the pointer universe
+  is deterministically extractable; and
+- preservation pointers can be compared with that universe without coercion or
+  ignored malformed values.
+
+Failure makes P2 unavailable because the structure claim cannot be interpreted;
+it is not a measured publication failure. Predicate 5 remains the authority for
+the complete `parser-ir.schema.json`. A parser-IR may fail predicate 5 for an
+unrelated schema constraint yet remain join-valid, in which case P2 can render
+its independent verdict. Conversely, changing a stored predicate-5 status
+cannot rescue a join-invalid document. Tests exercise both a
+schema-invalid-but-join-valid document and a join-invalid document; merely
+flipping a status flag is not an adequate independence test.
 
 ## Capture, Derive, Drift
 
@@ -271,15 +351,21 @@ The implementation plan must cover:
 
 - policy schema acceptance and rejection of missing, duplicate, extra, reordered
   where order is identity-bearing, and unknown checks;
+- validator semantic-closure mismatch and the required policy-identity change
+  when validator semantics change without renaming a check;
 - full `0.3.0` preservation-schema validation, including a fixture that would
   pass the old shallow `0.2.0` string/count check but fails the real schema;
+- the per-work non-vacuity census, disclosed structure counts, and an
+  empty-but-schema-valid preservation bundle that must fail predicate 6;
 - separate publication and supporting verdicts;
-- the independence property that changing only R1 or predicate-5 supporting
-  status cannot change `publication_structure`;
+- the independence property using schema-invalid-but-join-valid and join-invalid
+  parser-IR fixtures, in addition to supporting-status mutation;
 - deterministic materialization from qualification-only metadata;
 - exact three-work index completeness and canonical ordering;
 - missing/extra/duplicate member, empty denominator, wrong identity, stale
   policy/schema, blob corruption, locator escape, and cross-work substitution;
+- parsed-to-failed denominator shrink with explicit disposition counts and a
+  bounded witness while predicates 1 and 9 retain gate authority;
 - a complete structural failure producing an available ratio below `1.0`;
 - incomplete successful-work evidence producing unavailable rather than fail;
 - exact numerator/denominator derivation and observation-envelope identity;
@@ -323,8 +409,13 @@ P2 is complete when:
 - every pinned corpus member has exactly one authenticated work record;
 - every successfully parsed work has a complete publication capture;
 - predicate 6 is derived only from the closed publication-structure policy;
+- every parsed fixture satisfies its identity-bound minimum construct census and
+  the observation discloses record/reference/pointer counts;
 - preservation sidecars are actually validated against authenticated schema
   version `0.3.0`;
+- policy identity binds the validator semantic closure as well as check names;
+- joinability is validated independently from the complete predicate-5 schema
+  verdict;
 - supporting source/schema checks remain visible but cannot affect predicate 6;
 - structural failures yield an available value below `1.0`, while trust and
   completeness failures yield unavailable;

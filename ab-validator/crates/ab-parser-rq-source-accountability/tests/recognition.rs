@@ -115,6 +115,15 @@ fn assert_unavailable_without_totals(input: RecognitionInput, error: &str) {
     assert!(analysis.record.errors.iter().any(|actual| actual == error));
 }
 
+fn assert_schema_valid(record: &impl serde::Serialize) {
+    let schema: Value = serde_json::from_slice(WORK_SCHEMA).unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let value = serde_json::to_value(record).unwrap();
+    validator
+        .validate(&value)
+        .unwrap_or_else(|error| panic!("record violates work schema: {error}; record={value}"));
+}
+
 #[test]
 fn fully_typed_source_is_fully_recognized_and_accounted() {
     let analysis = analyze_recognition(input("本文｜青梅《おうめ》\n"));
@@ -286,21 +295,74 @@ fn successful_analysis_does_not_mutate_or_reinterpret_legacy_p1() {
 
 #[test]
 fn available_and_unavailable_records_validate_against_the_abc_protocol() {
-    let schema: Value = serde_json::from_slice(WORK_SCHEMA).unwrap();
-    let validator = jsonschema::validator_for(&schema).unwrap();
     let available = analyze_recognition(input("本文")).record;
-    assert!(
-        validator
-            .validate(&serde_json::to_value(available).unwrap())
-            .is_ok()
-    );
+    assert_schema_valid(&available);
 
     let mut invalid = input("本文");
     invalid.work_id = "different-work".to_owned();
     let unavailable = analyze_recognition(invalid).record;
-    assert!(
-        validator
-            .validate(&serde_json::to_value(unavailable).unwrap())
-            .is_ok()
-    );
+    assert_schema_valid(&unavailable);
+}
+
+#[test]
+fn malformed_untrusted_metadata_always_yields_a_schema_valid_unavailable_record() {
+    let mut cases = Vec::new();
+
+    let mut malformed_generation = input("本文");
+    let mut manifest: Value =
+        serde_json::from_slice(&malformed_generation.generation_manifest).unwrap();
+    manifest["generation_ref"] = Value::String("not-a-hash".to_owned());
+    malformed_generation.generation_manifest = canonical_bytes(&manifest);
+    cases.push(malformed_generation);
+
+    let mut missing_generation = input("本文");
+    let mut manifest: Value =
+        serde_json::from_slice(&missing_generation.generation_manifest).unwrap();
+    manifest.as_object_mut().unwrap().remove("generation_ref");
+    missing_generation.generation_manifest = canonical_bytes(&manifest);
+    cases.push(missing_generation);
+
+    let mut malformed_manifest_qualification = input("本文");
+    let mut manifest: Value =
+        serde_json::from_slice(&malformed_manifest_qualification.generation_manifest).unwrap();
+    manifest["qualification_identity_ref"] = Value::String("not-a-hash".to_owned());
+    malformed_manifest_qualification.generation_manifest = canonical_bytes(&manifest);
+    cases.push(malformed_manifest_qualification);
+
+    let mut empty_manifest_work_id = input("本文");
+    let mut manifest: Value =
+        serde_json::from_slice(&empty_manifest_work_id.generation_manifest).unwrap();
+    manifest["work_id"] = Value::String(String::new());
+    empty_manifest_work_id.generation_manifest = canonical_bytes(&manifest);
+    cases.push(empty_manifest_work_id);
+
+    let mut malformed_policy = input("本文");
+    let mut ledger: Value = serde_json::from_slice(&malformed_policy.ledger_bytes).unwrap();
+    ledger["policy_hash"] = Value::String("not-a-hash".to_owned());
+    refresh_generation(&mut malformed_policy, ledger);
+    cases.push(malformed_policy);
+
+    let mut missing_policy = input("本文");
+    let mut ledger: Value = serde_json::from_slice(&missing_policy.ledger_bytes).unwrap();
+    ledger.as_object_mut().unwrap().remove("policy_hash");
+    refresh_generation(&mut missing_policy, ledger);
+    cases.push(missing_policy);
+
+    let mut malformed_qualification = input("本文");
+    malformed_qualification.qualification_identity_ref = "not-a-hash".to_owned();
+    cases.push(malformed_qualification);
+
+    let mut empty_locator = input("本文");
+    empty_locator.ledger_locator.clear();
+    cases.push(empty_locator);
+
+    let mut empty_work_id = input("本文");
+    empty_work_id.work_id.clear();
+    cases.push(empty_work_id);
+
+    for case in cases {
+        let record = analyze_recognition(case).record;
+        assert_eq!(record.status, RecognitionStatus::Unavailable);
+        assert_schema_valid(&record);
+    }
 }

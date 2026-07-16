@@ -69,12 +69,33 @@ fn both_complements_conserve_eligible_bytes(tc: hegel::TestCase) {
     let record = analyze_recognition(input(&source)).record;
     assert_eq!(record.status, RecognitionStatus::Ok);
     let eligible = record.eligible_bytes.unwrap();
-    assert_eq!(
-        record.recognized_bytes.unwrap() + record.semantic_gap_bytes.unwrap(),
-        eligible
-    );
-    assert_eq!(
-        record.accounted_bytes.unwrap() + record.unaccounted_bytes.unwrap(),
-        eligible
-    );
+    let recognized = record.recognized.unwrap();
+    let accounted = record.accounted.unwrap();
+    let semantic_gaps = record.semantic_gaps.unwrap();
+    let unaccounted = record.unaccounted.unwrap();
+    for byte in 0..eligible {
+        assert_ne!(covered(&recognized, byte), covered(&semantic_gaps, byte));
+        assert_ne!(covered(&accounted, byte), covered(&unaccounted, byte));
+    }
+}
+
+#[hegel::test(test_cases = 100)]
+fn semantic_fragments_match_an_independent_disposition_oracle(tc: hegel::TestCase) {
+    let opaque = "［＃未知］";
+    let fragments =
+        tc.draw(generators::vecs(generators::sampled_from(vec!["文", opaque])).max_size(12));
+    let source = fragments.concat();
+    let record = analyze_recognition(input(&source)).record;
+    assert_eq!(record.status, RecognitionStatus::Ok);
+    let recognized = record.recognized.unwrap();
+    let accounted = record.accounted.unwrap();
+    let mut cursor = 0_u64;
+    for fragment in fragments {
+        let end = cursor + fragment.len() as u64;
+        for byte in cursor..end {
+            assert_eq!(covered(&recognized, byte), fragment != opaque);
+            assert!(covered(&accounted, byte));
+        }
+        cursor = end;
+    }
 }

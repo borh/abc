@@ -51,13 +51,18 @@ pub struct RecognitionBlobRef {
 #[serde(deny_unknown_fields)]
 pub struct RecognitionWorkRecord {
     pub schema_version: String,
-    pub qualification_identity_ref: String,
-    pub generation_ref: String,
-    pub policy_hash: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub qualification_identity_ref: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub generation_ref: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub policy_hash: Option<String>,
     pub instrument_version: String,
-    pub work_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub work_id: Option<String>,
     pub coordinate_system: String,
-    pub ledger: RecognitionBlobRef,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ledger: Option<RecognitionBlobRef>,
     pub status: RecognitionStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub eligible_bytes: Option<u64>,
@@ -207,33 +212,16 @@ fn wire(intervals: &[Interval]) -> Vec<RecognitionInterval> {
         .collect()
 }
 
-fn base_record(input: &RecognitionInput) -> RecognitionWorkRecord {
-    let manifest: Option<Value> = serde_json::from_slice(&input.generation_manifest).ok();
-    let ledger: Option<Value> = serde_json::from_slice(&input.ledger_bytes).ok();
+fn base_record() -> RecognitionWorkRecord {
     RecognitionWorkRecord {
         schema_version: "abc/parser-rq-source-recognition-work/v1".to_owned(),
-        qualification_identity_ref: input.qualification_identity_ref.clone(),
-        generation_ref: manifest
-            .as_ref()
-            .and_then(|value| value.get("generation_ref"))
-            .and_then(Value::as_str)
-            .unwrap_or("sha256:0000000000000000000000000000000000000000000000000000000000000000")
-            .to_owned(),
-        policy_hash: ledger
-            .as_ref()
-            .and_then(|value| value.get("policy_hash"))
-            .and_then(Value::as_str)
-            .unwrap_or("sha256:0000000000000000000000000000000000000000000000000000000000000000")
-            .to_owned(),
+        qualification_identity_ref: None,
+        generation_ref: None,
+        policy_hash: None,
         instrument_version: INSTRUMENT_VERSION.to_owned(),
-        work_id: input.work_id.clone(),
+        work_id: None,
         coordinate_system: "decoded_utf8".to_owned(),
-        ledger: RecognitionBlobRef {
-            sha256: sha256(&input.ledger_bytes),
-            bytes: input.ledger_bytes.len() as u64,
-            media_type: "application/json".to_owned(),
-            locator: input.ledger_locator.clone(),
-        },
+        ledger: None,
         status: RecognitionStatus::Unavailable,
         eligible_bytes: None,
         recognized_bytes: None,
@@ -388,7 +376,7 @@ fn validate_entry_evidence(
 /// invoking or reinterpreting parser behavior.
 #[must_use]
 pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
-    let mut record = base_record(&input);
+    let mut record = base_record();
     let generation = CaptureGeneration {
         decoded_source: input.decoded_source.clone(),
         parser_output: input.parser_output.clone(),
@@ -405,6 +393,11 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     if canonical_json(&manifest).as_deref() != Some(input.generation_manifest.as_slice()) {
         return unavailable(record, "capture-generation-invalid");
     }
+    record.qualification_identity_ref = manifest["qualification_identity_ref"]
+        .as_str()
+        .map(str::to_owned);
+    record.generation_ref = manifest["generation_ref"].as_str().map(str::to_owned);
+    record.work_id = manifest["work_id"].as_str().map(str::to_owned);
     if manifest["qualification_identity_ref"].as_str()
         != Some(input.qualification_identity_ref.as_str())
     {
@@ -416,12 +409,22 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     let Some((policy, _policy_value)) = validate_policy(&input.policy_bytes) else {
         return unavailable(record, "classified-source-policy-invalid");
     };
+    record.policy_hash = Some(policy.policy_hash.clone());
     let Ok(ledger) = serde_json::from_slice::<Ledger>(&input.ledger_bytes) else {
         return unavailable(record, "classified-source-ledger-invalid");
     };
     if ledger.policy_hash != policy.policy_hash || ledger.policy_id != policy.policy_id {
         return unavailable(record, "ledger-policy-identity-mismatch");
     }
+    if input.ledger_locator.is_empty() {
+        return unavailable(record, "ledger-locator-invalid");
+    }
+    record.ledger = Some(RecognitionBlobRef {
+        sha256: sha256(&input.ledger_bytes),
+        bytes: input.ledger_bytes.len() as u64,
+        media_type: "application/json".to_owned(),
+        locator: input.ledger_locator.clone(),
+    });
     let Ok(decoded) = std::str::from_utf8(&input.decoded_source) else {
         return unavailable(record, "decoded-source-invalid-utf8");
     };

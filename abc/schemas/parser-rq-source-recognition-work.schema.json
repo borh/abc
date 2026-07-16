@@ -3,7 +3,7 @@
   "$id": "https://w3id.org/abc/schemas/parser-rq-source-recognition-work.schema.json",
   "title": "Parser release qualification source-recognition work record",
   "type": "object",
-  "required": ["schema_version", "qualification_identity_ref", "generation_ref", "policy_hash", "instrument_version", "work_id", "coordinate_system", "ledger", "status"],
+  "required": ["schema_version", "instrument_version", "coordinate_system", "status"],
   "additionalProperties": false,
   "properties": {
     "schema_version": {"const": "abc/parser-rq-source-recognition-work/v1"},
@@ -29,7 +29,7 @@
   "oneOf": [
     {
       "properties": {"status": {"const": "ok"}},
-      "required": ["eligible_bytes", "recognized_bytes", "accounted_bytes", "semantic_gap_bytes", "unaccounted_bytes", "recognized", "accounted", "semantic_gaps", "unaccounted"],
+      "required": ["qualification_identity_ref", "generation_ref", "policy_hash", "work_id", "ledger", "eligible_bytes", "recognized_bytes", "accounted_bytes", "semantic_gap_bytes", "unaccounted_bytes", "recognized", "accounted", "semantic_gaps", "unaccounted"],
       "not": {"required": ["errors"]}
     },
     {

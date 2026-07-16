@@ -1257,7 +1257,9 @@ where
                 let Some(span) = other.span() else {
                     return;
                 };
-                let provenance = if matches!(other, PairEvent::Text { .. }) {
+                let provenance = if stream.kind != PairKind::Tortoise
+                    && matches!(other, PairEvent::Text { .. })
+                {
                     PlainProvenance::Text
                 } else {
                     PlainProvenance::RecoveredVerbatim

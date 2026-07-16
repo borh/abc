@@ -485,6 +485,7 @@ const _: fn() = || {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lexer::PlainSpan;
     use ab_aozora_spec::{NormalizedOffset, Sentinel};
     use ab_aozora_syntax::ast::Content;
     use ab_aozora_syntax::{
@@ -718,5 +719,22 @@ mod tests {
         );
         assert!(close_after + 2 <= bytes.len());
         assert_eq!(&bytes[close_after..close_after + 2], b"\n\n");
+    }
+
+    #[test]
+    fn independently_emitted_identical_claim_candidates_preserve_multiplicity() {
+        let source = "｜";
+        let span = ClassifiedSpan {
+            kind: SpanKind::Plain(PlainSpan {
+                provenance: PlainProvenance::RecoveredVerbatim,
+            }),
+            source_span: Span::new(0, 3),
+        };
+        let mut normalizer = Normalizer::new(source, 2);
+
+        normalizer.emit(&span);
+        normalizer.emit(&span);
+
+        assert_eq!(normalizer.recorder.classified_source_facts.len(), 2);
     }
 }

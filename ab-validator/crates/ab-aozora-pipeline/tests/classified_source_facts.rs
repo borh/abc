@@ -157,6 +157,25 @@ fn canonicalization_preserves_duplicates_for_fail_closed_validation() {
     );
 }
 
+#[test]
+fn streamed_tortoise_recovery_emits_one_fact_for_its_one_classified_span() {
+    let recovered = lex("〔cafe'〕")
+        .classified_source_facts
+        .into_iter()
+        .filter(|fact| fact.construct_id == ConstructId::RecoveredVerbatim)
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        recovered.len(),
+        1,
+        "one classified span must produce one fact"
+    );
+    assert_eq!(
+        (recovered[0].source_span.start, recovered[0].source_span.end),
+        (0, 11)
+    );
+}
+
 #[hegel::test(test_cases = 100)]
 fn permutation_canonicalizes_identically(tc: hegel::TestCase) {
     use hegel::generators;

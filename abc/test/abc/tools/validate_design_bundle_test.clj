@@ -45,11 +45,11 @@
       (is (= (get ledger "ledger_schema_hash")
              (hash/format-sha256 (hash/sha256-json-jcs ledger-schema)))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:c79b292fe8f55ff1fded1a7756abce75c9bd809467243a48199e959552a2d23d"
+            "sha256:3e6f2d51d0890c43c8afb48a5a270df23b039c97792e8bc0db422754b58fff03"
             "schemas/parser-rq-classified-source-ledger.schema.json"
-            "sha256:3ac486489101f77ce805df7ef14db10310abc8b352e5723fe538ad72bab6b6f7"
+            "sha256:360e3e9a2e727456ff6223884ce04be37b965fad9c1b3e0b14b3df128e449af1"
             "schemas/parser-rq-capture-generation.schema.json"
-            "sha256:99b9f63562f52f2302eb15496173430c936c7cea12eaa33cf8767766787663e3"}
+            "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"}
            (into {} (map (fn [path]
                            [path (hash/format-sha256
                                   (hash/sha256-json-jcs
@@ -57,7 +57,17 @@
                          ["schemas/parser-rq-classified-source-policy.schema.json"
                           "schemas/parser-rq-classified-source-ledger.schema.json"
                           "schemas/parser-rq-capture-generation.schema.json"]))))
-    (is (= 36 (count (get policy "rules"))))
+    (is (= ["visible_text" "structural_newline" "ruby" "typography"
+            "gaiji" "layout" "break" "heading" "illustration" "kunten"
+            "source_annotation" "container_syntax" "terminal_provenance"
+            "publication_metadata" "unrecognized_source_form"]
+           (get policy "roles")))
+    (is (every? #(contains? % "construct_id") (get policy "rules")))
+    (is (not-any? #(contains? % "case") (get policy "rules")))
+    (is (empty? (validate/parser-rq-classified-source-characterization-errors
+                 policy
+                 (files/read-json
+                  (str root "/characterization-policy-map.json")))))
     (is (empty? (validate/parser-rq-capture-generation-errors generation)))
     (testing "unknown fields and duplicate policy rows are rejected"
       (is (seq (schema/validation-errors policy-schema (assoc policy "unknown" true))))
@@ -92,10 +102,85 @@
                               (assoc "source_role" "structural_newline"
                                      "disposition" "structural_control")
                               (dissoc "target_identity"))]))))))
-    (testing "all capture members share one generation reference"
+    (testing "generation identity is acyclic and authenticates real member bytes"
+      (is (not-any? #(contains? % "generation_ref")
+                    (vals (get generation "members"))))
+      (doseq [[_ member] (get generation "members")]
+        (is (= (get member "value_hash")
+               (hash/format-sha256
+                (hash/sha256-file (str root "/" (get member "artifact_ref")))))))
       (is (seq (validate/parser-rq-capture-generation-errors
-                (assoc-in generation ["members" "raw_diagnostics" "generation_ref"]
-                          (str "sha256:" (apply str (repeat 64 "f"))))))))))
+                (assoc-in generation ["members" "raw_diagnostics" "value_hash"]
+                          (str "sha256:" (apply str (repeat 64 "f"))))))))
+    (testing "structural witnesses are role-specific and span-bound"
+      (let [structural (files/read-json (str root "/structural-ledger.json"))
+            forms {"newline" "\n"
+                   "warichu_open" "［＃割り注］"
+                   "page_break" "［＃改ページ］"
+                   "section_break" "［＃改丁］"
+                   "body_end" "［＃本文終わり］"
+                   "forced_break" "［＃改行］"
+                   "container_open" "［＃ここから］"
+                   "container_close" "［＃ここで終わり］"}
+            structural-rules (filter #(= "structural_control"
+                                         (get % "disposition"))
+                                     (get policy "rules"))]
+        (is (nil? (schema/validation-errors ledger-schema structural)))
+        (is (empty? (validate/parser-rq-classified-source-ledger-errors
+                     policy structural "\n")))
+        (doseq [rule structural-rules
+                :let [source-form (get forms (get rule "witness_kind"))
+                      end (alength (.getBytes ^String source-form "UTF-8"))
+                      entry (-> (get-in structural ["entries" 0])
+                                (assoc "end" end
+                                       "construct_id" (get rule "construct_id")
+                                       "source_role" (get rule "source_role")
+                                       "evidence_class" (get rule "evidence_class"))
+                                (assoc "construct_witness"
+                                       {"construct_id" (get rule "witness_kind")
+                                        "start" 0 "end" end
+                                        "source_form" source-form}))
+                      ledger-for-rule (assoc structural "entries" [entry])]]
+          (is (empty? (validate/parser-rq-classified-source-ledger-errors
+                       policy ledger-for-rule source-form)))
+          (is (seq (validate/parser-rq-classified-source-ledger-errors
+                    policy
+                    (assoc-in ledger-for-rule ["entries" 0 "source_role"]
+                              "publication_metadata")
+                    source-form))))
+        (doseq [invalid [(assoc-in structural ["entries" 0 "construct_witness"
+                                               "construct_id"] "page_break")
+                         (assoc-in structural ["entries" 0 "construct_witness"
+                                               "end"] 2)
+                         (assoc-in structural ["entries" 0 "construct_witness"
+                                               "source_form"] "x")]]
+          (is (seq (validate/parser-rq-classified-source-ledger-errors
+                    policy invalid "\n"))))
+        (let [opaque-entry {"start" 0 "end" 3
+                            "construct_id" "recovered_verbatim"
+                            "source_role" "unrecognized_source_form"
+                            "disposition" "preserved_opaque"
+                            "evidence_class" "recovered_verbatim"
+                            "parser_evidence_code" "recovered-verbatim"
+                            "construct_witness"
+                            {"construct_id" "recovered_verbatim"
+                             "start" 0 "end" 3 "source_form" "※"}}
+              opaque (assoc structural "entries" [opaque-entry])]
+          (is (empty? (validate/parser-rq-classified-source-ledger-errors
+                       policy opaque "※")))
+          (is (seq (validate/parser-rq-classified-source-ledger-errors
+                    policy
+                    (assoc-in opaque ["entries" 0 "evidence_class"]
+                              "accepted_text")
+                    "※")))
+          (is (seq (validate/parser-rq-classified-source-ledger-errors
+                    policy
+                    (-> opaque
+                        (assoc-in ["entries" 0 "end"] 1)
+                        (assoc-in ["entries" 0 "construct_witness" "end"] 1)
+                        (assoc-in ["entries" 0 "construct_witness" "source_form"]
+                                  "�"))
+                    "※"))))))))
 
 (deftest parser-rq-source-accountability-schemas-are-closed-test
   (let [pairs [["schemas/parser-rq-ignored-regions.schema.json"

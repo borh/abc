@@ -331,36 +331,87 @@
 
 (defn parser-rq-classified-source-policy-errors [policy]
   (->> (get policy "rules" [])
-       (map #(select-keys % ["case" "classified_kind" "plain_provenance"
-                             "source_role" "disposition" "parser_evidence_code"]))
+       (map #(select-keys % ["construct_id"]))
        frequencies
        (keep (fn [[row count]]
                (when (> count 1)
-                 (str "classified-source policy contains duplicate row " row))))
+                 (str "classified-source policy contains ambiguous selector " row))))
        sort
        vec))
 
-(defn parser-rq-capture-generation-errors [generation]
-  (let [expected (get generation "generation_ref")
-        identity (-> generation
-                     (dissoc "generation_ref")
-                     (update "members"
-                             (fn [members]
-                               (into {} (map (fn [[k v]]
-                                               [k (dissoc v "generation_ref")])
-                                             members)))))
-        computed (hash/format-sha256 (hash/sha256-json-jcs identity))]
+(defn parser-rq-classified-source-characterization-errors [policy mapping]
+  (let [constructs (set (map #(get % "construct_id") (get policy "rules" [])))
+        observations (get mapping "observations" [])]
     (vec
      (concat
-      (when (not= expected computed)
-        [(str "capture generation_ref does not match canonical identity: "
-              expected " != " computed)])
-      (->> (get generation "members" {})
-           (keep (fn [[member value]]
-                   (when (not= expected (get value "generation_ref"))
-                     (str "capture generation member " member
-                          " has mismatched generation_ref"))))
+      (when-not (= 36 (count observations))
+        [(str "characterization map must contain 36 observations, found "
+              (count observations))])
+      (->> observations
+           (keep (fn [observation]
+                   (when-not (contains? constructs (get observation "construct_id"))
+                     (str "characterization case " (get observation "case")
+                          " maps to unknown construct "
+                          (get observation "construct_id")))))
            sort)))))
+
+(defn- decoded-slice [decoded start end]
+  (let [bytes (.getBytes ^String decoded "UTF-8")]
+    (when (and (<= 0 start) (< start end) (<= end (alength bytes))
+               (or (zero? start)
+                   (not= 128 (bit-and 192 (aget bytes start))))
+               (or (= end (alength bytes))
+                   (not= 128 (bit-and 192 (aget bytes end)))))
+      (String. bytes start (- end start) "UTF-8"))))
+
+(defn parser-rq-classified-source-ledger-errors [policy ledger decoded]
+  (let [rules (into {} (map (juxt #(get % "construct_id") identity)
+                            (get policy "rules" [])))]
+    (->> (get ledger "entries" [])
+         (mapcat
+          (fn [entry]
+            (let [construct (get entry "construct_id")
+                  rule (get rules construct)
+                  witness (get entry "construct_witness")
+                  target (get entry "target_identity")
+                  expected (select-keys rule ["source_role" "disposition"
+                                              "evidence_class"])
+                  actual (select-keys entry ["source_role" "disposition"
+                                             "evidence_class"])]
+              (concat
+               (when-not rule
+                 [(str "ledger entry uses unknown construct " construct)])
+               (when (and rule (not= expected actual))
+                 [(str "ledger entry does not match policy for " construct)])
+               (when (and rule (contains? rule "target_relation")
+                          (not= (get rule "target_relation")
+                                (get target "relation")))
+                 [(str "ledger target relation does not match policy for " construct)])
+               (when (and rule (contains? rule "witness_kind")
+                          (not= (get rule "witness_kind")
+                                (get witness "construct_id")))
+                 [(str "ledger witness does not match policy for " construct)])
+               (when (and witness
+                          (not= [(get entry "start") (get entry "end")]
+                                [(get witness "start") (get witness "end")]))
+                 [(str "ledger witness span does not match entry for " construct)])
+               (when (and witness
+                          (not= (get witness "source_form")
+                                (decoded-slice decoded (get entry "start")
+                                               (get entry "end"))))
+                 [(str "ledger witness source form does not match decoded bytes for "
+                       construct)])))))
+         sort
+         vec)))
+
+(defn parser-rq-capture-generation-errors [generation]
+  (let [expected (get generation "generation_ref")
+        identity (dissoc generation "generation_ref")
+        computed (hash/format-sha256 (hash/sha256-json-jcs identity))]
+    (vec
+     (when (not= expected computed)
+       [(str "capture generation_ref does not match canonical identity: "
+             expected " != " computed)]))))
 
 (def ^:private design-schema-inputs
   ["schemas/aat-parser-ir-divergence-bundle.schema.json"

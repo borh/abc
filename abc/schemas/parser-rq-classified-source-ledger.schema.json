@@ -2,12 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-rq-classified-source-ledger.schema.json",
   "type": "object",
-  "required": ["schema_version", "ledger_schema_hash", "generation_ref", "qualification_identity_ref", "parser", "instrument_version", "original_source", "decoded_source", "policy_id", "policy_hash", "coordinate_system", "parser_status", "entries", "errors"],
+  "required": ["schema_version", "ledger_schema_hash", "qualification_identity_ref", "parser", "instrument_version", "original_source", "decoded_source", "policy_id", "policy_hash", "coordinate_system", "parser_status", "entries", "errors"],
   "additionalProperties": false,
   "properties": {
     "schema_version": {"const": "abc/parser-rq-classified-source-ledger/v1"},
     "ledger_schema_hash": {"$ref": "#/$defs/hash"},
-    "generation_ref": {"$ref": "#/$defs/hash"},
     "qualification_identity_ref": {"$ref": "#/$defs/hash"},
     "parser": {"const": "ab-aozora"},
     "instrument_version": {"type": "string", "minLength": 1},
@@ -28,11 +27,11 @@
     "blob": {"type": "object", "required": ["artifact_ref", "value_hash"], "additionalProperties": false, "properties": {"artifact_ref": {"type": "string", "minLength": 1}, "value_hash": {"$ref": "#/$defs/hash"}}},
     "decoded": {"type": "object", "required": ["artifact_ref", "value_hash", "encoding", "bytes"], "additionalProperties": false, "properties": {"artifact_ref": {"type": "string", "minLength": 1}, "value_hash": {"$ref": "#/$defs/hash"}, "encoding": {"enum": ["utf-8", "utf-8-bom", "windows-31j"]}, "bytes": {"type": "integer", "minimum": 0}}},
     "target": {"type": "object", "required": ["artifact_ref", "value_hash", "relation"], "additionalProperties": false, "properties": {"artifact_ref": {"type": "string", "minLength": 1}, "value_hash": {"$ref": "#/$defs/hash"}, "relation": {"enum": ["emits", "preserves"]}}},
-    "witness": {"type": "object", "required": ["kind", "start", "end", "source_bytes_hash"], "additionalProperties": false, "properties": {"kind": {"enum": ["newline", "directive", "container_open", "container_close", "opaque_source"]}, "start": {"type": "integer", "minimum": 0}, "end": {"type": "integer", "minimum": 1}, "source_bytes_hash": {"$ref": "#/$defs/hash"}}},
+    "witness": {"type": "object", "required": ["construct_id", "start", "end", "source_form"], "additionalProperties": false, "properties": {"construct_id": {"enum": ["newline", "warichu_open", "page_break", "section_break", "body_end", "forced_break", "container_open", "container_close", "recovered_verbatim", "unknown_directive"]}, "start": {"type": "integer", "minimum": 0}, "end": {"type": "integer", "minimum": 1}, "source_form": {"type": "string", "minLength": 1}}},
     "normalization": {"type": "object", "required": ["source_bytes_hash", "normalized_bytes_hash", "inverse_rule"], "additionalProperties": false, "properties": {"source_bytes_hash": {"$ref": "#/$defs/hash"}, "normalized_bytes_hash": {"$ref": "#/$defs/hash"}, "inverse_rule": {"enum": ["crlf", "bare_cr", "accent_decomposition"]}}},
     "entry": {
-      "type": "object", "required": ["start", "end", "source_role", "disposition", "parser_evidence_code"], "additionalProperties": false,
-      "properties": {"start": {"type": "integer", "minimum": 0}, "end": {"type": "integer", "minimum": 1}, "source_role": {"$ref": "#/$defs/role"}, "disposition": {"$ref": "#/$defs/disposition"}, "target_identity": {"$ref": "#/$defs/target"}, "target_pointer": {"type": "string", "pattern": "^(|/.*)$"}, "parser_evidence_code": {"type": "string", "minLength": 1}, "construct_witness": {"$ref": "#/$defs/witness"}, "normalization_proof": {"$ref": "#/$defs/normalization"}},
+      "type": "object", "required": ["start", "end", "construct_id", "source_role", "disposition", "evidence_class", "parser_evidence_code"], "additionalProperties": false,
+      "properties": {"start": {"type": "integer", "minimum": 0}, "end": {"type": "integer", "minimum": 1}, "construct_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "source_role": {"$ref": "#/$defs/role"}, "disposition": {"$ref": "#/$defs/disposition"}, "evidence_class": {"enum": ["accepted_text", "recovered_verbatim", "typed_node", "structural_token", "typed_container", "unknown_directive"]}, "target_identity": {"$ref": "#/$defs/target"}, "target_pointer": {"type": "string", "pattern": "^(|/.*)$"}, "parser_evidence_code": {"type": "string", "minLength": 1}, "construct_witness": {"$ref": "#/$defs/witness"}, "normalization_proof": {"$ref": "#/$defs/normalization"}},
       "allOf": [
         {"if": {"properties": {"disposition": {"enum": ["emitted_semantic_value", "preserved_sidecar_value"]}}}, "then": {"required": ["target_identity"]}},
         {"if": {"properties": {"disposition": {"const": "structural_control"}}}, "then": {"required": ["construct_witness"]}},

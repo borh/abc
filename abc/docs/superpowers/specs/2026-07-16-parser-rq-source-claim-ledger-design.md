@@ -227,10 +227,14 @@ disagree with its entries.
 Parser output, raw diagnostics, decoded-source value, and classified-source
 ledger belong to one capture generation. A closed generation manifest names
 the logical identity of every member and is published only after every member
-has been content-authenticated. `generation_ref` is the canonical hash of the
-closed manifest identity fields, excluding runtime locators and the reference
-itself. Every member embeds that same reference. Derivation rejects
-cross-generation mixing even when individual source hashes happen to match.
+has been content-authenticated. Member `value_hash` values are ordinary hashes
+of the complete published member bytes; members do not embed the generation
+reference. `generation_ref` is the canonical hash of the closed manifest
+identity fields, including those member logical identities and excluding only
+the reference itself. This acyclic construction authenticates members first
+and binds them together last. Derivation accepts members only through that
+manifest and rejects cross-generation mixing even when individual source hashes
+happen to match.
 
 ## Capture and derivation
 

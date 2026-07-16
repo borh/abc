@@ -11,5 +11,8 @@
     "work_id": {"type": "string", "minLength": 1},
     "members": {"type": "object", "required": ["decoded_source", "parser_output", "raw_diagnostics", "classified_source_ledger"], "additionalProperties": false, "properties": {"decoded_source": {"$ref": "#/$defs/member"}, "parser_output": {"$ref": "#/$defs/member"}, "raw_diagnostics": {"$ref": "#/$defs/member"}, "classified_source_ledger": {"$ref": "#/$defs/member"}}}
   },
-  "$defs": {"hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}, "member": {"type": "object", "required": ["artifact_ref", "value_hash", "generation_ref"], "additionalProperties": false, "properties": {"artifact_ref": {"type": "string", "minLength": 1}, "value_hash": {"$ref": "#/$defs/hash"}, "generation_ref": {"$ref": "#/$defs/hash"}}}}
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "member": {"type": "object", "required": ["artifact_ref", "value_hash"], "additionalProperties": false, "properties": {"artifact_ref": {"type": "string", "minLength": 1}, "value_hash": {"$ref": "#/$defs/hash"}}}
+  }
 }

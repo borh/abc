@@ -1,12 +1,12 @@
 {
   "schema_version": "abc/parser-rq-capture-generation/v1",
-  "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611",
+  "generation_ref": "sha256:44d3b0b70c87108e331f9df9054120c0e7f7b65158b7ec31788d4f11620b043d",
   "qualification_identity_ref": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
   "work_id": "fixture-work",
   "members": {
-    "decoded_source": {"artifact_ref": "source/decoded", "value_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611"},
-    "parser_output": {"artifact_ref": "aat/output", "value_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611"},
-    "raw_diagnostics": {"artifact_ref": "diagnostics/raw", "value_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666", "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611"},
-    "classified_source_ledger": {"artifact_ref": "ledger/classified", "value_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777", "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611"}
+    "decoded_source": {"artifact_ref":"decoded.txt","value_hash":"sha256:dacf36547c7774a0a170806363b5d412991fbc0d6260b2c00b1d3a80a816c23f"},
+    "parser_output": {"artifact_ref":"parser-output.json","value_hash":"sha256:192aaab1b0032df12fa225ab9d4ba3d25fa33b98a708edab98b2479f5960f33d"},
+    "raw_diagnostics": {"artifact_ref":"raw-diagnostics.json","value_hash":"sha256:37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"},
+    "classified_source_ledger": {"artifact_ref":"ledger.json","value_hash":"sha256:5be69cfc9262f74971b09aca98a5d956eb9fc74ebed5a5fbd9dfbc7357de1f13"}
   }
 }

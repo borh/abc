@@ -25,7 +25,8 @@ Charred; Draft 2020-12 JSON Schema; Nix flakes and Kaocha.
 - Public spans are nonempty half-open `decoded_utf8` intervals.
 - ABC owns public roles/dispositions; parser-private codes are evidence only.
 - `DirectiveKind::Unknown` is `preserved_opaque`, never recognized.
-- Source, parser output, diagnostics, ledger, and policy share `generation_ref`.
+- One content-addressed manifest binds source, parser output, diagnostics,
+  ledger, and policy; members do not embed the manifest's `generation_ref`.
 - Corpus-scale artifacts stay external.
 - Follow `docs/comment-standards.md` and run comment hygiene.
 
@@ -159,13 +160,16 @@ cargo test -p ab-aozora-aat
 - [ ] Write RED tests rejecting unknown fields, duplicate rows,
   `preserved_opaque` with any role except `unrecognized_source_form`,
   semantic dispositions without target identity, structural claims without
-  witnesses, and mismatched `generation_ref`.
+  witnesses, member-content hash mismatches, and a mismatched manifest
+  `generation_ref`.
 - [ ] Run
   `cd abc && bin/kaocha --focus abc.tools.validate-design-bundle-test/parser-rq-classified-source`.
   Expected: missing-schema failure.
 - [ ] Implement closed schemas. `target_identity` is exactly
-  `{artifact_ref,value_hash,relation}`, relation `emits|preserves`. Copy the
-  complete Task 2/3 matrix; no wildcard role or disposition.
+  `{artifact_ref,value_hash,relation}`, relation `emits|preserves`. Define
+  finite runtime construct/evidence/witness rules independently of Task 2/3;
+  retain the complete matrix as characterization evidence and assert that each
+  observation maps to one runtime rule. No wildcard role or disposition.
 - [ ] Compute and assert schema/policy hashes via
   `abc.tools.hash/sha256-json-jcs`.
 - [ ] Run focused Kaocha and `nix run .#schema-drift`; commit as
@@ -246,8 +250,9 @@ pub fn capture_generation_from_bytes(bytes: &[u8]) -> anyhow::Result<CaptureGene
 ```
 
 - [ ] Write RED tests for BOM, CRLF, accent, decorative insertion, PUA,
-  typed syntax, opaque unknown, and malformed recovery. Assert UTF-8 boundaries
-  and one common `generation_ref`.
+  typed syntax, opaque unknown, and malformed recovery. Assert UTF-8 boundaries,
+  content-authenticated members, and one manifest `generation_ref` binding the
+  exact member tuple without embedding that reference in member content.
 - [ ] Rebase through existing `SpanContext`; emit reversible proofs for
   CRLF/accent, no claim for inserted blank lines, and a semantic gap for PUA.
 - [ ] Publish immutable members first and canonical manifest last using

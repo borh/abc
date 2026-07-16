@@ -4444,6 +4444,29 @@ fn adapter_conversion_spans_address_full_source_across_body_and_terminal_provena
             "span must land on UTF-8 boundaries: {span}"
         );
     }
+    let post_collision_start = decoded.text.find('\u{e001}').unwrap() + '\u{e001}'.len_utf8();
+    let post_collision_end = post_collision_start + "文です".len();
+    let post_collision = nodes
+        .iter()
+        .find(|node| {
+            node["span"]["start"]
+                .as_u64()
+                .is_some_and(|start| start as usize <= post_collision_start)
+                && node["span"]["end"]
+                    .as_u64()
+                    .is_some_and(|end| end as usize >= post_collision_end)
+        })
+        .expect("a body node must span across the sanitizer collision");
+    let start = post_collision["span"]["start"].as_u64().unwrap() as usize;
+    let end = post_collision["span"]["end"].as_u64().unwrap() as usize;
+    assert_eq!(
+        &decoded.text[start..end],
+        "作品名\r\n著者名\r\n\r\n本\u{e001}文です"
+    );
+    assert_eq!(
+        &decoded.text[post_collision_start..post_collision_end],
+        "文です"
+    );
     let tail_start = decoded.text.find("底本：").unwrap();
     let tail_node = nodes
         .iter()

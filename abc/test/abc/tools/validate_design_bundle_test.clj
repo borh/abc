@@ -58,6 +58,12 @@
                   "schemas/parser-rq-source-accountability-work.schema.json")
         document (files/read-json
                   "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json")
+        unavailable-lossy (-> document
+                              (assoc "status" "unavailable"
+                                     "errors" ["lossy-source-decode"])
+                              (assoc-in ["decoded_source" "encoding"]
+                                        "windows-31j-lossy"))
+        unavailable-no-diagnostics (dissoc unavailable-lossy "diagnostics")
         invalid-documents [(dissoc document "coverage_basis")
                            (assoc document "coverage_basis" "parser_ir.paragraphs[*].span")
                            (update document "diagnostics" dissoc "profile")
@@ -65,7 +71,11 @@
                                      "abc/authorized-parser-diagnostics-schema-v3")
                            (assoc-in document ["decoded_source" "encoding"]
                                      "windows-31j-lossy")
+                           (dissoc document "diagnostics")
+                           (assoc unavailable-lossy "status" "ok" "errors" [])
                            (assoc-in document ["diagnostics" "unexpected"] true)]]
+    (doseq [valid [unavailable-lossy unavailable-no-diagnostics]]
+      (is (nil? (schema/validation-errors contract valid))))
     (doseq [invalid invalid-documents]
       (is (seq (schema/validation-errors contract invalid))))))
 

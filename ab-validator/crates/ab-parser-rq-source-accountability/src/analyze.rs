@@ -4,8 +4,10 @@ use sha2::{Digest, Sha256};
 
 use crate::interval::{Interval, normalize, subtract, total_len};
 use crate::model::{
-    BlobRef, DecodedBlobRef, DerivedFrom, DiagnosticBlobRef, NodeSpan, ParserIrBlobRef,
-    WireInterval, WorkAnalysis, WorkInput, WorkRecord,
+    BlobRef, CoordinateSystem, CoverageBasis, DecodedBlobRef, DecodedEncoding, DerivedFrom,
+    DiagnosticBlobRef, DiagnosticProfile, InstrumentVersion, JsonMediaType, NodeSpan,
+    ParserIrBlobRef, WireInterval, WorkAnalysis, WorkInput, WorkRecord, WorkSchemaVersion,
+    WorkStatus,
 };
 
 fn hash(bytes: &[u8]) -> String {
@@ -53,10 +55,16 @@ fn wire(intervals: &[Interval]) -> Vec<WireInterval> {
 }
 
 pub fn analyze_work(input: WorkInput) -> WorkAnalysis {
+    analyze_work_with_diagnostics(input, diagnostics_json_from_bytes)
+}
+
+pub fn analyze_work_with_diagnostics<F>(input: WorkInput, diagnostics: F) -> WorkAnalysis
+where
+    F: FnOnce(&[u8]) -> anyhow::Result<Vec<u8>>,
+{
     let decoded =
         decode_source_bytes(&input.original_bytes).expect("decoder is total for byte input");
-    let diagnostics_result = diagnostics_json_from_bytes(&input.original_bytes);
-    let diagnostics_bytes = diagnostics_result.as_deref().unwrap_or_default().to_vec();
+    let diagnostics_result = diagnostics(&input.original_bytes);
     let parser_value: Option<Value> = serde_json::from_slice(&input.parser_ir_bytes).ok();
     let schema_id = parser_value
         .as_ref()
@@ -89,9 +97,6 @@ pub fn analyze_work(input: WorkInput) -> WorkAnalysis {
     }
     if hash(&input.taxonomy.taxonomy_jcs_bytes) != input.taxonomy.taxonomy_hash {
         errors.push("taxonomy-identity-mismatch".to_owned());
-    }
-    if input.taxonomy.taxonomy_version != "parser-rq-ignored-regions-v1" {
-        errors.push("taxonomy-version-mismatch".to_owned());
     }
     if schema_id != input.qualification_identity.parser_ir_schema_id
         || schema_hash != input.qualification_identity.parser_ir_schema_hash
@@ -173,9 +178,9 @@ pub fn analyze_work(input: WorkInput) -> WorkAnalysis {
     }
 
     let record = WorkRecord {
-        schema_version: "abc/parser-rq-source-accountability-work/v1".into(),
+        schema_version: WorkSchemaVersion::V1,
         identity_ref: hash(&identity_bytes),
-        instrument_version: "parser-rq-source-accountability-v1".into(),
+        instrument_version: InstrumentVersion::V1,
         work_id: input.corpus_entry.work_id,
         original_source: BlobRef {
             sha256: hash(&input.original_bytes),
@@ -184,7 +189,13 @@ pub fn analyze_work(input: WorkInput) -> WorkAnalysis {
         decoded_source: DecodedBlobRef {
             sha256: hash(decoded.text.as_bytes()),
             bytes: decoded_len as u64,
-            encoding: decoded.encoding.trim_end_matches("-lossy").into(),
+            encoding: match decoded.encoding {
+                "utf-8" => DecodedEncoding::Utf8,
+                "utf-8-bom" => DecodedEncoding::Utf8Bom,
+                "windows-31j" => DecodedEncoding::Windows31j,
+                "windows-31j-lossy" => DecodedEncoding::Windows31jLossy,
+                _ => unreachable!("decoder returned an unknown encoding"),
+            },
         },
         parser_ir: ParserIrBlobRef {
             schema_id,
@@ -192,23 +203,25 @@ pub fn analyze_work(input: WorkInput) -> WorkAnalysis {
             sha256: hash(&input.parser_ir_bytes),
             bytes: input.parser_ir_bytes.len() as u64,
         },
-        diagnostics: DiagnosticBlobRef {
-            profile: "abc/raw-parser-diagnostics-schema-v3".into(),
-            sha256: hash(&diagnostics_bytes),
-            bytes: diagnostics_bytes.len() as u64,
-            media_type: "application/json".into(),
-            locator: input.diagnostics_locator,
-        },
+        diagnostics: diagnostics_result
+            .as_ref()
+            .ok()
+            .map(|bytes| DiagnosticBlobRef {
+                profile: DiagnosticProfile::RawSchemaV3,
+                sha256: hash(bytes),
+                bytes: bytes.len() as u64,
+                media_type: JsonMediaType::ApplicationJson,
+                locator: input.diagnostics_locator,
+            }),
         taxonomy_version: input.taxonomy.taxonomy_version,
         taxonomy_hash: input.taxonomy.taxonomy_hash,
-        coordinate_system: "decoded_utf8".into(),
-        coverage_basis: "parser_ir.nodes[*].span".into(),
+        coordinate_system: CoordinateSystem::DecodedUtf8,
+        coverage_basis: CoverageBasis::NodeSpans,
         status: if errors.is_empty() {
-            "ok"
+            WorkStatus::Ok
         } else {
-            "unavailable"
-        }
-        .into(),
+            WorkStatus::Unavailable
+        },
         ignored: vec![],
         eligible: wire(&eligible),
         covered_eligible: wire(&covered),
@@ -222,6 +235,6 @@ pub fn analyze_work(input: WorkInput) -> WorkAnalysis {
     };
     WorkAnalysis {
         record,
-        diagnostics_bytes,
+        diagnostics_bytes: diagnostics_result.ok(),
     }
 }

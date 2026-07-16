@@ -1,5 +1,29 @@
 use serde::{Deserialize, Serialize};
 
+macro_rules! wire_enum {
+    ($name:ident { $($variant:ident => $wire:literal),+ $(,)? }) => {
+        #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+        pub enum $name {
+            $(#[serde(rename = $wire)] $variant),+
+        }
+    };
+}
+
+wire_enum!(WorkSchemaVersion { V1 => "abc/parser-rq-source-accountability-work/v1" });
+wire_enum!(InstrumentVersion { V1 => "parser-rq-source-accountability-v1" });
+wire_enum!(DecodedEncoding {
+    Utf8 => "utf-8",
+    Utf8Bom => "utf-8-bom",
+    Windows31j => "windows-31j",
+    Windows31jLossy => "windows-31j-lossy",
+});
+wire_enum!(DiagnosticProfile { RawSchemaV3 => "abc/raw-parser-diagnostics-schema-v3" });
+wire_enum!(JsonMediaType { ApplicationJson => "application/json" });
+wire_enum!(TaxonomyVersion { V1 => "parser-rq-ignored-regions-v1" });
+wire_enum!(CoordinateSystem { DecodedUtf8 => "decoded_utf8" });
+wire_enum!(CoverageBasis { NodeSpans => "parser_ir.nodes[*].span" });
+wire_enum!(WorkStatus { Ok => "ok", Unavailable => "unavailable" });
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AdapterCoordinates {
@@ -35,7 +59,7 @@ pub struct CorpusEntry {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct TaxonomyIdentity {
-    pub taxonomy_version: String,
+    pub taxonomy_version: TaxonomyVersion,
     pub taxonomy_hash: String,
     #[serde(skip)]
     pub taxonomy_jcs_bytes: Vec<u8>,
@@ -63,7 +87,7 @@ pub struct BlobRef {
 pub struct DecodedBlobRef {
     pub sha256: String,
     pub bytes: u64,
-    pub encoding: String,
+    pub encoding: DecodedEncoding,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -78,10 +102,10 @@ pub struct ParserIrBlobRef {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DiagnosticBlobRef {
-    pub profile: String,
+    pub profile: DiagnosticProfile,
     pub sha256: String,
     pub bytes: u64,
-    pub media_type: String,
+    pub media_type: JsonMediaType,
     pub locator: String,
 }
 
@@ -95,19 +119,20 @@ pub struct WireInterval {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct WorkRecord {
-    pub schema_version: String,
+    pub schema_version: WorkSchemaVersion,
     pub identity_ref: String,
-    pub instrument_version: String,
+    pub instrument_version: InstrumentVersion,
     pub work_id: String,
     pub original_source: BlobRef,
     pub decoded_source: DecodedBlobRef,
     pub parser_ir: ParserIrBlobRef,
-    pub diagnostics: DiagnosticBlobRef,
-    pub taxonomy_version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diagnostics: Option<DiagnosticBlobRef>,
+    pub taxonomy_version: TaxonomyVersion,
     pub taxonomy_hash: String,
-    pub coordinate_system: String,
-    pub coverage_basis: String,
-    pub status: String,
+    pub coordinate_system: CoordinateSystem,
+    pub coverage_basis: CoverageBasis,
+    pub status: WorkStatus,
     pub ignored: Vec<WireInterval>,
     pub eligible: Vec<WireInterval>,
     pub covered_eligible: Vec<WireInterval>,
@@ -123,7 +148,7 @@ pub struct WorkRecord {
 #[derive(Clone, Debug)]
 pub struct WorkAnalysis {
     pub record: WorkRecord,
-    pub diagnostics_bytes: Vec<u8>,
+    pub diagnostics_bytes: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -387,6 +387,8 @@
      (concat
       (when-not (= (count tuples) (count (distinct tuples)))
         ["diagnostic-gap policy contains duplicate or ambiguous selectors"])
+      (when-not (= (count rules) (count (distinct (map #(get % "code") rules))))
+        ["diagnostic-gap policy contains duplicate selector codes"])
       (when-not (= parser-rq-diagnostic-gap-vocabulary tuples)
         ["diagnostic-gap policy does not equal the closed ABC vocabulary"])
       (when-not (= expected-schema-hash

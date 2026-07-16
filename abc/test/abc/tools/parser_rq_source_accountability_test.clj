@@ -889,6 +889,19 @@
     (is (= :unavailable (:status envelope)))
     (is (= before [index r1]) "R2 derivation leaves R1 evidence byte-values unchanged")))
 
+(deftest empty-diagnostics-do-not-bypass-whole-source-utf8-validation
+  (is (nil? (#'rq-source/strict-utf8 (byte-array [(unchecked-byte 0xff)]))))
+  (is (= "" (#'rq-source/strict-utf8 (byte-array 0)))))
+
+(deftest disposition-audit-counts-are-derived-not-merely-summed
+  (let [honest {:diagnostic_count 2 :authorizing_diagnostic_count 1
+                :observe_only_diagnostic_count 1}
+        swapped {:diagnostic_count 2 :authorizing_diagnostic_count 0
+                 :observe_only_diagnostic_count 2}
+        dispositions ["authorize_exact_span" "observe_only"]]
+    (is (#'rq-source/disposition-counts-coherent? honest dispositions))
+    (is (not (#'rq-source/disposition-counts-coherent? swapped dispositions)))))
+
 (deftest diagnostic-gap-aggregate-fails-closed-without-mutating-r1
   (let [index {:qualification_identity_ref recognition-identity-ref
                :corpus_generation_ref (str "sha256:" (apply str (repeat 64 "a")))
@@ -978,10 +991,53 @@
             _ (json/write-deterministic-json-file! aggregate-file aggregate)
             aggregate-member {:locator "diagnostic-gap-aggregate.json"
                               :ref (blob-ref-for aggregate-file "application/json")}
-            manifest (update (:manifest state) :blobs conj aggregate-member)]
+            manifest (update (:manifest state) :blobs conj aggregate-member)
+            last-result-member (some #(when (= (last (:results state))
+                                                    (#'rq-source/authenticated-json-value store %)) %)
+                                     (:blobs manifest))]
         (is (= {:value (:silent_drop_count aggregate)
                 :identity_ref recognition-identity-ref}
                (rq-source/silent-drops-envelope store manifest identity)))
+        (let [original (last (:results state))
+              observe-raw {:schemaVersion 3
+                           :data [{:kind "unclosed_bracket" :code "unclosed-bracket"
+                                   :severity "error" :source "source"
+                                   :span {:start 0 :end 3}}]}
+              raw-published (publish-json! root manifest observe-raw)
+              observed-result (-> original
+                                  (assoc-in [:diagnostic_authorization_evidence :raw_diagnostics_hash]
+                                            (get-in raw-published [:member :ref :sha256]))
+                                  (assoc-in [:diagnostic_authorization_evidence :raw_diagnostics_bytes]
+                                            (get-in raw-published [:member :ref :bytes]))
+                                  (assoc :diagnostic_count 1
+                                         :authorizing_diagnostic_count 0
+                                         :observe_only_diagnostic_count 1
+                                         :vacuous false))
+              result-member last-result-member
+              result-resealed (reseal-existing-json! root (:manifest raw-published)
+                                                     (:locator result-member) observed-result)
+              observed-aggregate (assoc aggregate :diagnostic_count 1
+                                        :observe_only_diagnostic_count 1 :vacuous false)
+              observed-manifest (reseal-existing-json! root result-resealed
+                                                       "diagnostic-gap-aggregate.json"
+                                                       observed-aggregate)]
+          (is (= {:value (:silent_drop_count aggregate)
+                  :identity_ref recognition-identity-ref}
+                 (rq-source/silent-drops-envelope store observed-manifest identity)))
+          (let [swapped-result (assoc observed-result :authorizing_diagnostic_count 1
+                                     :observe_only_diagnostic_count 0)
+                swapped-result-manifest (reseal-existing-json!
+                                         root observed-manifest (:locator result-member)
+                                         swapped-result)
+                swapped-aggregate (assoc observed-aggregate
+                                         :authorizing_diagnostic_count 1
+                                         :observe_only_diagnostic_count 0)
+                swapped-manifest (reseal-existing-json!
+                                  root swapped-result-manifest
+                                  "diagnostic-gap-aggregate.json" swapped-aggregate)]
+            (is (= :unavailable
+                   (:status (rq-source/silent-drops-envelope store swapped-manifest identity)))
+                "resealed disposition counts are derived from diagnostics")))
         (let [original (last (:results state))
               forged-raw {:schemaVersion 3
                           :data [{:kind "source_contains_pua"
@@ -999,9 +1055,7 @@
                                        :authorized_bytes 3 :silent_bytes 3
                                        :diagnostic_count 1 :authorizing_diagnostic_count 1
                                        :vacuous false))
-              result-member (some #(when (= original (#'rq-source/authenticated-json-value
-                                                      store %)) %)
-                                  (:blobs manifest))
+              result-member last-result-member
               result-resealed (reseal-existing-json! root (:manifest raw-published)
                                                      (:locator result-member) forged-result)
               forged-aggregate (assoc aggregate :authorized_bytes 3 :silent_bytes 18

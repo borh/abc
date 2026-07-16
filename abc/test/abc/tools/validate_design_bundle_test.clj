@@ -89,7 +89,9 @@
                         (first (get capture "data")))
                 "本文\uE001終わり")))
       (is (seq (validate/parser-rq-diagnostic-gap-policy-errors
-                (update policy "rules" conj (first (get policy "rules")))))))
+                (update policy "rules" conj (first (get policy "rules"))))))
+      (is (seq (validate/parser-rq-diagnostic-gap-policy-errors
+                (assoc-in policy ["rules" 20] (first (get policy "rules")))))))
     (testing "code, kind, severity, source, PUA, and interval rules are enforced"
       (doseq [invalid [(assoc-in capture ["data" 0 "kind"]
                                  "unclosed_bracket")

@@ -56,6 +56,19 @@
 (def source-recognition-instrument-version
   "parser-rq-source-recognition-v1")
 
+(def ^:private diagnostic-gap-policy-v1-hash
+  "sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5")
+
+(def ^:private diagnostic-gap-live-codes
+  ["source-contains-pua" "unclosed-bracket" "unmatched-close"
+   "accent-decomposition-applied" "unresolved-gaiji" "mismatched-container-close"
+   "empty-ruby-reading" "nested-ruby" "unrecognised-container-directive"
+   "tcy-target-not-found" "bouten-target-ambiguous" "forward-referent-not-stylable"
+   "break-in-single-line-container" "bracketed-kaeriten-no-pair"
+   "kaeriten-outside-kanbun" "mismatched-bouten-container" "non-canonical-directive"
+   "residual-annotation-marker" "unregistered-sentinel" "registry-out-of-order"
+   "registry-position-mismatch"])
+
 (defn- unavailable
   [reason]
   {:status :unavailable :reason reason})
@@ -240,12 +253,32 @@
                     (hash/format-sha256 (hash/sha256-file file))))
         (java.nio.file.Files/readAllBytes (.toPath file))))))
 
+(defn- strict-utf8
+  [bytes]
+  (when bytes
+    (try
+      (let [decoder (doto (.newDecoder java.nio.charset.StandardCharsets/UTF_8)
+                      (.onMalformedInput java.nio.charset.CodingErrorAction/REPORT)
+                      (.onUnmappableCharacter java.nio.charset.CodingErrorAction/REPORT))]
+        (str (.decode decoder (java.nio.ByteBuffer/wrap bytes))))
+      (catch Exception _ nil))))
+
 (defn- projected-policy-hash
   [policy]
   (try
     (hash/format-sha256
      (hash/sha256-json-jcs (walk/stringify-keys (dissoc policy :policy_hash))))
     (catch Exception _ nil)))
+
+(defn- disposition-counts-coherent?
+  [result dispositions]
+  (let [counts (frequencies dispositions)]
+    (and (= (:diagnostic_count result) (count dispositions))
+         (= (:authorizing_diagnostic_count result)
+            (get counts "authorize_exact_span" 0))
+         (= (:observe_only_diagnostic_count result)
+            (get counts "observe_only" 0))
+         (zero? (get counts "reject_internal" 0)))))
 
 (defn- normalized-intervals
   [intervals]
@@ -280,6 +313,7 @@
         raw (some->> raw-member (authenticated-json-value store))
         r1 (some->> r1-member (authenticated-json-value store))
         source-bytes (authenticated-blob-bytes store source-member)
+        decoded-source (strict-utf8 source-bytes)
         decoded-slice (fn [{:keys [start end]}]
                         (when (and source-bytes (int? start) (int? end)
                                    (<= 0 start) (< start end) (<= end (alength source-bytes)))
@@ -291,6 +325,7 @@
                                             (java.nio.ByteBuffer/wrap source-bytes start (- end start)))))
                             (catch Exception _ nil))))
         rules (into {} (map (juxt :code clojure.core/identity) (:rules policy)))
+        policy-codes (mapv :code (:rules policy))
         diagnostics (:data raw)
         dispositions (mapv #(get-in rules [(:code %) :disposition]) diagnostics)
         authorized (normalized-intervals
@@ -327,6 +362,10 @@
             (get-in policy-member [:ref :sha256]))
          (= (:policy_artifact_bytes authorization) (get-in policy-member [:ref :bytes]))
          (= policy-hash (:policy_hash policy) (projected-policy-hash policy))
+         (= diagnostic-gap-policy-v1-hash policy-hash)
+         (= 21 (count (:rules policy)) (count rules))
+         (= diagnostic-gap-live-codes policy-codes)
+         (= (count policy-codes) (count (set policy-codes)))
          (= (:raw_diagnostic_schema_hash policy)
             (hash/format-sha256
              (hash/sha256-json-jcs @raw-diagnostics-schema)))
@@ -334,9 +373,10 @@
          (= (assoc (:ref r1-member) :locator (:locator r1-member))
             (:artifact_ref recognition))
          source-member policy-member raw-member
+         (string? decoded-source)
          (= (:raw_diagnostics_bytes authorization) (get-in raw-member [:ref :bytes]))
          (nil? (schema/validation-errors @raw-diagnostics-schema raw))
-         (= (:diagnostic_count result) (count (:data raw)))
+         (disposition-counts-coherent? result dispositions)
          (every? some? dispositions)
          (every? #(some? (decoded-slice (:span %))) diagnostics)
          (not-any? #{"reject_internal"} dispositions)

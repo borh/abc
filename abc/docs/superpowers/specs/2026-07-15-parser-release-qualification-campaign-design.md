@@ -283,18 +283,23 @@ honest outcomes it may legitimately produce.
 
 ### R2 — Silent-drop detection instrument (predicate 3)
 
-- **Demands:** silent drops `<= 0` — zero source constructs dropped **without a
-  diagnostic**. Per ADR 0002 this is the source-construct definition, explicitly
+- **Demands:** silent drops `<= 0` — zero maximal connected decoded-byte
+  intervals left uncovered **without an authorized diagnostic interval**. This
+  is a canonical witness count, not a dropped-construct census. Per ADR 0002 the
+  authority remains source-side, explicitly
   *not* the AAT→parser-IR mapping-layer LOSS count (the bundle note is emphatic:
   the 1/work divergence LOSS signal is a mapping-layer artifact, not the source
   silent-drop instrument).
 - **Blocker:** no committed silent-drop instrument. It requires reconciling
   span-coverage (R1) against emitted diagnostics: a source region that is neither
   covered by output nor accompanied by a diagnostic is a silent drop.
-- **Build:** an instrument that joins R1's uncovered-region set with the parser's
-  diagnostic stream and counts uncovered regions lacking a corresponding
-  diagnostic. Depends on R1 and on R5's diagnostic emission being real (a vacuous
-  0-diagnostic stream makes every uncovered region a silent drop).
+- **Build:** a versioned `ab-aozora` authorization adapter validates the
+  authenticated schema-v3 capture and maps only reviewed diagnostic codes to
+  exact decoded-byte intervals. P1's pure reconciler then partitions R1's
+  uncovered set and counts maximal silent intervals within each work. Raw
+  warning overlap alone never authorizes bytes; unknown vocabulary makes R2
+  unavailable. Depends on R1 and the P4A authorization boundary (a valid empty
+  diagnostic stream makes every uncovered region silent and discloses vacuity).
 - **Honest outcomes:** `0` (pass); `> 0` (fail, enumerating the silently dropped
   constructs). Strongly coupled to R1 and R5 — see Sequencing.
 

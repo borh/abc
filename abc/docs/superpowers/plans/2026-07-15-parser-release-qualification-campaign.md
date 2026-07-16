@@ -97,7 +97,7 @@ function (all in `abc.tools.parser-release-qualification`, reusing
 
 ## Dependency graph and the plan split (fixes prior Blocker 3)
 
-Seven focused plans; the crux is that Foundation contains four separately
+Eight focused plans; the crux is that Foundation contains four separately
 reviewable systems and must land first.
 
 | # | Focused plan (to write) | Delivers | Depends on |
@@ -106,20 +106,22 @@ reviewable systems and must land first.
 | P1 | `…-parser-rq-source-accountability.md` | R1 source-span coverage (byte denominator + versioned taxonomy) → R2 silent-drops | P0 |
 | P2 | `…-parser-rq-publication.md` | R3 publication-structure validation | P0 |
 | P3 | `…-parser-rq-resource.md` | R4 per-work memory (single mechanism, chosen in-plan) | P0 |
-| P4 | `…-parser-rq-predicate-hardening.md` | R5 (predicates 4 & 5) instrument code | P0, P1 |
+| P4A | `…-parser-rq-diagnostic-authorization.md` | Versioned `ab-aozora` diagnostic authorization boundary and R2 activation | P0, P1 |
+| P4B | `…-parser-rq-predicate-hardening.md` | R5 (predicates 4 & 5) instrument code | P0, P1 |
 | P5 | `…-parser-rq-admission-promotion.md` | Pin the final implementation commit; capture R1–R5; R6 admit; R7 recapture + gate + conditional ADR 0039 | P0–P4 (barrier) |
 | PS | `…-parser-rq-study-axes.md` (or its own spec) | Track S: S2, S1, S3, S4 | P0 contracts only; never gates Track R |
 
 ```
-P0 ──┬── P1 ─┐
-     ├── P2  ├──► P5 (barrier: needs P0–P4)
-     ├── P3  │
-     └── P4 ─┘
+P0 ──┬── P1 ──┬── P4A ─┐
+     │        └── P4B  ├──► P5 (barrier: needs P0–P4)
+     ├── P2           │
+     └── P3 ──────────┘
 PS runs parallel to everything; S4 (host-controlled KM latency) is the long pole.
 ```
 
 **Corrections baked into the split:**
-- **P4/R5 instrument code does not depend on admission.** P5 first pins the final
+- **P4A/R2 authorization and P4B/R5 instrument code do not depend on
+  admission.** P5 first pins the final
   implementation commit, then captures predicate 5 against that candidate's own
   mapping + schema hash and separately derives whether the candidate is admitted.
 - **Predicate 4 is settled as envelope-completeness** (fixes prior Suggestion 4):
@@ -154,7 +156,12 @@ minimal implementation, independently testable tasks. Their entry contracts:
 - **P3 Resource** — **choose one** peak-RSS mechanism in-plan (GNU `time -v`
   `getrusage` vs cgroup `memory.peak` vs a wrapper) with the rationale; do not
   leave three open. Host pinned + disclosed in the manifest.
-- **P4 Predicate hardening** — predicate 4 discloses vacuity (envelope-completeness,
+- **P4A Diagnostic authorization** — consumes P1's authenticated R1 work
+  records/raw schema-v3 captures, a closed ABC-owned `ab-aozora` policy, and
+  produces exact authorized decoded-byte intervals or unavailable. Unknown
+  vocabulary and internal diagnostics fail closed; authenticated empty streams
+  are available and disclose vacuity. Raw diagnostics never enter reconciliation.
+- **P4B Predicate hardening** — predicate 4 discloses vacuity (envelope-completeness,
   settled); predicate 5 re-measured against the **pinned candidate** schema.
 - **P5 Admission + promotion** — pin the final implementation commit before any
   authoritative capture (the binary bakes `self.rev`); capture R1–R5 for that
@@ -180,7 +187,7 @@ minimal implementation, independently testable tasks. Their entry contracts:
 - Prior Blocker 1 fixed: admission is a *projection* (`admission-query` → nine
   match-keys) checked with `compatible?`, distinct from full-identity coherence;
   named functions, not implicit `match-keys` reuse.
-- Prior Blocker 2 fixed: P4/R5 depends on the **pinned candidate**, not admission;
+- Prior Blocker 2 fixed: P4B/R5 depends on the **pinned candidate**, not admission;
   the graph and the R5 language now agree (measurement ⟂ admission).
 - Prior Suggestion 4 fixed: predicate 4 settled as envelope-completeness; recall is
   a separate future ADR that does not perturb this graph.

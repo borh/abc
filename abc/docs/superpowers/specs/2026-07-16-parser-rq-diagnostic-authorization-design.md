@@ -11,6 +11,12 @@ their later retirement is a separate milestone and does not block this work.
 and activation of the R2 `:silent_drops` observation over P1's existing pure
 reconciler.
 
+**Program placement:** This is P4A. The roadmap splits its former P4 entry into
+P4A (this diagnostic trust boundary) and P4B (the existing predicate-4/5
+hardening). Both depend on P0 and P1, neither depends on admission, and P5
+remains the barrier. This is an explicit roadmap correction rather than a new
+dependency hidden inside P1.
+
 ## Problem
 
 P1 deliberately stopped at a pure interval operation:
@@ -78,7 +84,7 @@ The policy binds:
 
 - policy ID/version and canonical SHA-256;
 - parser identity `ab-aozora`;
-- raw diagnostic schema version `3`;
+- raw diagnostic schema ID, canonical SHA-256, and version `3`;
 - coordinate system `decoded_utf8`;
 - every permitted wire code;
 - exact permitted `source` and severity set per code;
@@ -88,23 +94,52 @@ The policy is a complete vocabulary, not a prefix match or default rule.
 Duplicate policy codes are invalid. A raw code absent from the policy makes the
 entire authorization result unavailable; it is never silently ignored.
 
-### 3. Initial v1 classification
+The parser vocabulary may generate a **candidate** policy skeleton, but cannot
+approve it. ABC's reviewed, canonical policy document is the authority. Runtime
+code never regenerates policy, infers disposition from a namespace, or imports a
+parser match statement as authorization. A drift test compares the independent
+policy code set with the live vocabulary and fails on either addition or
+removal.
 
-The v1 policy is generated and drift-tested against the complete live
-`ab_aozora_spec::diagnostic::codes` vocabulary, then reviewed as data. Source
-diagnostics in the `aozora::lex` family that describe malformed input or an
-explicit recovery receive `authorize_exact_span`. The advisory
-`non-canonical-directive` lint receives `observe_only`: it is authoring guidance,
-not evidence that source bytes were dropped. The four internal invariant codes
+### 3. Initial v1 classification requires characterization, not namespace rules
+
+Before v1 is frozen, a disposable characterization command must exercise one
+representative source for every live code and join three values without
+conflating them:
+
+```text
+diagnostic entry
+R1 coverage over the same decoded source
+documented parser recovery/output for that code
+```
+
+Its committed small summary records, per code, severity/source, diagnostic
+span, whether the span is already covered, recovery behavior, and a proposed
+disposition with rationale. The disposable command is not shipped as policy and
+does not write the final policy. The reviewed summary is the evidence used to
+author ABC's exact table.
+
+This gate matters because the live vocabulary already contains distinct
+semantics: `accent-decomposition-applied` is documented as loss-free;
+`non-canonical-directive` is advisory; `bouten-target-ambiguous` still applies a
+best-effort choice; other diagnostics explicitly degrade a construct or preserve
+it as unknown/raw. Sharing a `lex` namespace is not evidence that all should
+excuse uncovered bytes.
+
+The final v1 document enumerates all 21 live code identities exactly. The four
+internal invariant codes
 (`residual-annotation-marker`, `unregistered-sentinel`,
 `registry-out-of-order`, and `registry-position-mismatch`) receive
 `reject_internal`; their appearance makes authorization unavailable because it
-signals a parser defect rather than source loss.
+signals a parser defect rather than source loss. Loss-free/advisory recoveries
+receive `observe_only`. Only codes whose reviewed recovery contract establishes
+that their exact diagnostic span is the intended accountable source-loss region
+may receive `authorize_exact_span`.
 
-The checked-in policy contains every exact code and severity/source constraint;
-the implementation plan must generate the initial document from the live
-vocabulary and fail drift if either side changes. There is no runtime rule such
-as “all lex codes authorize.”
+If characterization cannot justify `authorize_exact_span` for any code, v1 may
+contain no authorizing codes. R2 still activates correctly: uncovered bytes stay
+silent. The purpose of the policy is to preserve truth, not manufacture a green
+predicate.
 
 ### 4. Exact spans only
 
@@ -118,15 +153,25 @@ The adapter rejects:
 - absent or non-integer endpoints;
 - `start >= end`;
 - endpoints beyond that work's decoded-source byte length;
+- endpoints that are not UTF-8 character boundaries in the authenticated
+  decoded-source value;
 - a coordinate system other than the policy's implicit `decoded_utf8` capture
   contract;
 - a code whose `source` or severity differs from policy;
+- a `kind` that is not the underscore form of the same stable identity as the
+  kebab-case `code`;
+- `codepoint` on any code other than `source-contains-pua`, or a missing/invalid
+  `codepoint` for that code;
 - duplicate raw entries with the same complete semantic identity
   `(code,severity,source,start,end)`;
 - any `source = internal` entry.
 
 Overlapping authorized diagnostics are normalized only after every entry has
 been validated. Normalization cannot make an invalid entry acceptable.
+
+The raw schema is a first-class pinned protocol. The adapter validates the
+envelope against the canonical schema whose ID/hash is named by policy; checking
+only `schemaVersion: 3` is insufficient.
 
 ### 5. Unknown vocabulary makes R2 unavailable
 
@@ -164,7 +209,7 @@ The adapter consumes one closed input value per work:
 ```text
 qualification identity
 work ID
-decoded-source byte length
+decoded-source logical ref, exact UTF-8 bytes, and byte length
 original-source logical ref
 raw-diagnostic logical ref and exact bytes
 authorization-policy logical ref and exact bytes
@@ -175,6 +220,12 @@ JSON decoding. The raw capture must be the diagnostic ref already bound into
 the corresponding authenticated P1 work record. Qualification identity, work
 ID, source identity, and decoded length must match that record. A locator is
 runtime configuration, never content identity.
+
+The decoded-source bytes are required even though the reconciler operates on
+intervals: numeric bounds alone cannot prove that diagnostic endpoints lie on
+UTF-8 character boundaries. The I/O boundary authenticates the decoded blob
+against the P1 work record; the pure authorizer requires every endpoint to be a
+valid boundary in that exact value.
 
 ### Authorization result
 
@@ -189,12 +240,26 @@ An `ok` result contains:
   `observe_only_diagnostic_count`;
 - `vacuous`;
 - normalized exact `authorized_intervals`;
-- bounded diagnostic witnesses sufficient to audit each disposition;
+- a content-addressed full decision ledger with one decision for every raw
+  diagnostic, plus bounded report witnesses;
 - empty errors.
 
 An `unavailable` result retains identities, policy/capture refs when they were
 authenticated, and nonempty stable errors. It omits interval and count claims
 that were not established.
+
+The deep module is intentionally narrow:
+
+```text
+authorize(validated capture value, validated policy value, work context)
+  -> available authorization value | unavailable value
+```
+
+Blob lookup, streaming authentication, CAS publication, and corpus orchestration
+remain outside this pure decision function. This is a real seam: the pure
+function has independent property tests, while the I/O boundary has tamper,
+locator, and atomic-publication tests. It is not an interface introduced for
+hypothetical parser variation.
 
 ### Corpus authorization index
 
@@ -223,7 +288,8 @@ silent    = uncovered subtract authorized
 ```
 
 The `:silent_drops` observation value is the number of maximal connected silent
-byte intervals across work-tagged results. It is not a dropped-construct census.
+byte intervals, normalized and counted within each work and then summed. No
+interval ever merges across work identities. It is not a dropped-construct census.
 The release predicate remains exact `silent_drop_count <= 0`.
 
 The envelope also records total diagnostic count, authorizing count, diagnosed
@@ -239,6 +305,7 @@ diagnosed intersect silent = empty
 diagnosed union silent = uncovered
 diagnosed_bytes + silent_bytes = uncovered_bytes
 authorized intervals are within [0, decoded_source_bytes)
+one decision-ledger entry exists for every raw diagnostic
 ```
 
 Across the corpus:
@@ -247,6 +314,7 @@ Across the corpus:
 observed work IDs = expected work IDs
 sum(work uncovered_bytes) = R1 uncovered_eligible_bytes
 sum(work silent_bytes) = corpus silent_bytes
+corpus vacuous = (sum(work diagnostic_count) = 0)
 ```
 
 Integer interval values are authoritative. No rounded ratio controls R2.
@@ -257,7 +325,9 @@ The adapter or R2 derivation becomes unavailable for:
 
 - missing, unreadable, mismatched, or malformed blobs;
 - raw diagnostic schema version other than `3`;
+- raw diagnostic schema ID/hash mismatch;
 - unknown/duplicate diagnostic fields or invalid envelope shape;
+- disagreement between redundant `kind` and `code` identities;
 - policy hash/version drift or incomplete/duplicate policy vocabulary;
 - unknown code, disallowed severity/source, invalid span, or internal diagnostic;
 - P1 work identity/source/diagnostic-ref mismatch;
@@ -278,6 +348,8 @@ or reclassifying codes during capture.
 - Derive the identity-bound R2 envelope from authenticated values.
 - Keep predicate 4 as diagnostic-envelope completeness; diagnostic recall
   remains a separate future ADR/workstream.
+- Review and own the disposition rationale. Parser code can expose vocabulary
+  and examples but cannot authorize itself.
 
 ### ab-validator
 
@@ -287,6 +359,8 @@ or reclassifying codes during capture.
   index/aggregate.
 - Reuse P1 interval normalization and reconciliation; do not duplicate interval
   arithmetic.
+- Keep validation/authorization pure after blob authentication; keep capture,
+  storage, and orchestration at the shell.
 
 ### P5
 
@@ -295,10 +369,32 @@ or reclassifying codes during capture.
   `hinoki.hyakutake-barbel.ts.net`.
 - Admit/promote only after P0-P4 evidence and governance recapture pass.
 
+## Identity, time, and rotation
+
+Authorization is a value derived at one explicit release-candidate identity; it
+is not mutable current policy. The qualification identity's
+`instrument_versions` map gains exact entries for the diagnostic authorizer and
+R2 derivation instrument. Capture manifests additionally bind the raw schema
+hash and authorization policy hash.
+
+Any change to the raw schema, live vocabulary, code severity/source, span
+semantics, or disposition rationale requires review before capture. A compatible
+implementation change may retain the policy version only when canonical policy
+bytes are unchanged; otherwise the policy version/hash rotates. Old results
+remain immutable and derivable against their old policy. No registry row is
+rewritten in place.
+
+The only state transition is publication of new immutable artifacts followed by
+an atomic index/manifest update. Partial CAS blobs are unreferenced values, not
+current evidence. Rollback is selection of the prior manifest/policy identity,
+not mutation of results.
+
 ## Testing strategy
 
-- Golden classification tests cover every v1 code exactly once and drift-test
-  the policy against the live Rust vocabulary.
+- A disposable pre-freeze characterization covers every live code and records
+  recovery/coverage evidence; reviewed v1 golden tests then cover every code
+  exactly once and drift-test the independent policy against the Rust
+  vocabulary.
 - Closed-schema tests reject unknown fields, missing identities, duplicate
   codes, and unavailable results carrying trusted intervals.
 - Adapter tests cover unknown code, severity/source mismatch, internal code,
@@ -312,6 +408,8 @@ or reclassifying codes during capture.
   mutation of capture, policy, identity, or R1 witnesses fails closed.
 - A compile-fail or module-privacy test proves raw diagnostic types cannot be
   supplied to the public reconciler.
+- Raw-schema tests pin `kind`/`code`, conditional `codepoint`, source/severity,
+  and schema ID/hash coherence.
 - Historical captures without this authorization evidence continue to derive
   R2 as `:instrument-missing`.
 - Full validation includes root `just validate-migration`, Rust tests/clippy/fmt,
@@ -320,11 +418,12 @@ or reclassifying codes during capture.
 
 ## Rollout and non-goals
 
-1. Land and drift-test policy/protocols.
-2. Land the authorization adapter and deterministic fixture capture.
-3. Activate R2 derivation while historical evidence remains unavailable.
-4. P5 pins identities and performs full-corpus capture.
-5. After the third-party parser research report/publication is complete, run a
+1. Run the disposable all-code characterization and review its summary.
+2. Land and drift-test independently authored policy/protocols.
+3. Land the authorization adapter and deterministic fixture capture.
+4. Activate R2 derivation while historical evidence remains unavailable.
+5. P5 pins identities and performs full-corpus capture.
+6. After the third-party parser research report/publication is complete, run a
    separate retirement plan that removes those parsers from active operational
    and qualification surfaces while retaining immutable research artifacts.
 
@@ -337,7 +436,8 @@ capture, admit a release, promote ADR 0039, or retire third-party parser code.
 The design is implemented when:
 
 1. every live `ab-aozora` diagnostic code has exactly one reviewed v1 policy
-   disposition and vocabulary drift fails closed;
+   disposition grounded in the committed characterization summary, and
+   vocabulary drift fails closed;
 2. raw schema-v3 capture is authenticated and cannot reach reconciliation
    without an available authorization result;
 3. unknown/internal/malformed diagnostics make R2 unavailable;
@@ -348,3 +448,30 @@ The design is implemented when:
 7. `:silent_drops` becomes an identity-bound derived observation while legacy
    evidence remains `:instrument-missing`;
 8. `just validate-migration` exits zero, including governance.
+
+## Architecture review record
+
+The Hickey/deep-module review changed the draft in six material ways:
+
+1. **Authority circularity — Blocker, resolved.** Parser vocabulary may produce
+   a candidate skeleton but cannot approve dispositions; reviewed ABC policy is
+   independent authority.
+2. **Namespace authorization — Blocker, resolved.** A disposable per-code
+   recovery/coverage characterization precedes policy freeze; `lex` membership
+   is never an authorization rule.
+3. **Protocol identity — Blocker, resolved.** Raw schema ID/hash and redundant
+   `kind`/`code` identity are validated, not only `schemaVersion: 3`.
+4. **Coordinate validity — Blocker, resolved.** Authorization consumes the
+   authenticated decoded value and checks UTF-8 boundaries, not numeric bounds
+   alone.
+5. **Audit truncation — Strong suggestion, resolved.** Full per-diagnostic
+   decisions live in a content-addressed ledger; bounded witnesses are only a
+   report projection.
+6. **Roadmap/metric ambiguity — Strong suggestion, resolved.** P4 is explicitly
+   split into P4A/P4B, and R2 is defined as a per-work maximal byte-interval
+   witness count rather than a construct census.
+
+The resulting authorization module qualifies as a deep module: one cohesive
+decision concern, a small pure interface, explicit trust/identity/error
+semantics, and separate I/O orchestration. It is not a generic multi-parser
+strategy seam.

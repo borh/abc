@@ -170,6 +170,12 @@ cargo test -p ab-aozora-aat
   finite runtime construct/evidence/witness rules independently of Task 2/3;
   retain the complete matrix as characterization evidence and assert that each
   observation maps to one runtime rule. No wildcard role or disposition.
+- [ ] Define the separate sanitizer-transform vocabulary:
+  `crlf_normalization`, `bare_cr_normalization`, and `accent_normalization`.
+  Each requires `sanitizer_transform` evidence, an `emits` target identity,
+  and a slice-bound proof containing literal source/normalized forms, their
+  UTF-8 hashes, and the matching inverse rule. Do not map these through the
+  classifier characterization matrix.
 - [ ] Compute and assert schema/policy hashes via
   `abc.tools.hash/sha256-json-jcs`.
 - [ ] Run focused Kaocha and `nix run .#schema-drift`; commit as
@@ -254,7 +260,11 @@ pub fn capture_generation_from_bytes(bytes: &[u8]) -> anyhow::Result<CaptureGene
   content-authenticated members, and one manifest `generation_ref` binding the
   exact member tuple without embedding that reference in member content.
 - [ ] Rebase through existing `SpanContext`; emit reversible proofs for
-  CRLF/accent, no claim for inserted blank lines, and a semantic gap for PUA.
+  CRLF, live bare-CR, and accent transforms from `sanitize_mapped` edits and
+  matching sanitizer diagnostics. Resolve every proof's `emits` target to the
+  authenticated parser-output member. Emit no normalization claim when the
+  edit/diagnostic/rebase/slice/target evidence is incomplete; emit no claim
+  for inserted blank lines and leave a semantic gap for PUA.
 - [ ] Publish immutable members first and canonical manifest last using
   `ab-rq-artifact-store`. Reject cross-generation replacement.
 - [ ] Generate a small production fixture, bless once, and regenerate twice.

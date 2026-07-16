@@ -26,12 +26,12 @@
         "construct_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
         "source_role": {"$ref": "#/$defs/role"},
         "disposition": {"$ref": "#/$defs/disposition"},
-        "evidence_class": {"enum": ["accepted_text", "recovered_verbatim", "typed_node", "structural_token", "typed_container", "unknown_directive"]},
+        "evidence_class": {"enum": ["accepted_text", "recovered_verbatim", "typed_node", "structural_token", "typed_container", "unknown_directive", "sanitizer_transform"]},
         "target_relation": {"enum": ["emits", "preserves"]},
         "witness_kind": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}
       },
       "allOf": [
-        {"if": {"properties": {"disposition": {"enum": ["emitted_semantic_value", "preserved_sidecar_value"]}}}, "then": {"required": ["target_relation"]}, "else": {"not": {"required": ["target_relation"]}}},
+        {"if": {"properties": {"disposition": {"enum": ["emitted_semantic_value", "preserved_sidecar_value", "lossless_normalization"]}}}, "then": {"required": ["target_relation"]}, "else": {"not": {"required": ["target_relation"]}}},
         {"if": {"properties": {"disposition": {"enum": ["structural_control", "preserved_opaque"]}}}, "then": {"required": ["witness_kind"]}, "else": {"not": {"required": ["witness_kind"]}}},
         {"if": {"properties": {"disposition": {"const": "preserved_opaque"}}}, "then": {"properties": {"source_role": {"const": "unrecognized_source_form"}, "witness_kind": {"enum": ["recovered_verbatim", "unknown_directive"]}}}}
       ]

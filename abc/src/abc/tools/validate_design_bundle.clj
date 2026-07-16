@@ -364,6 +364,43 @@
                    (not= 128 (bit-and 192 (aget bytes end)))))
       (String. bytes start (- end start) "UTF-8"))))
 
+(defn- utf8-value-hash [value]
+  (hash/format-sha256 (hash/sha256-bytes (.getBytes ^String value "UTF-8"))))
+
+(defn- normalization-errors [construct proof source-slice]
+  (let [source-form (get proof "source_form")
+        normalized-form (get proof "normalized_form")
+        inverse-rule (get proof "inverse_rule")
+        expected-rule {"crlf_normalization" "crlf"
+                       "bare_cr_normalization" "bare_cr"
+                       "accent_normalization" "accent_decomposition"}
+        exact-forms {"crlf" ["\r\n" "\n"]
+                     "bare_cr" ["\r" "\n"]}]
+    (concat
+     (when-not (= source-slice source-form)
+       [(str "normalization source form does not match decoded bytes for "
+             construct)])
+     (when-not (= (get expected-rule construct) inverse-rule)
+       [(str "normalization inverse rule does not match policy for " construct)])
+     (when (and (contains? exact-forms inverse-rule)
+                (not= (get exact-forms inverse-rule)
+                      [source-form normalized-form]))
+       [(str "normalization forms do not match inverse rule for " construct)])
+     (when (and (= "accent_decomposition" inverse-rule)
+                (or (= source-form normalized-form)
+                    (not (and (string/starts-with? source-form "〔")
+                              (string/ends-with? source-form "〕")))))
+       [(str "accent normalization proof is not a reversible source form for "
+             construct)])
+     (when (and (string? source-form)
+                (not= (get proof "source_bytes_hash")
+                      (utf8-value-hash source-form)))
+       [(str "normalization source hash does not match proof for " construct)])
+     (when (and (string? normalized-form)
+                (not= (get proof "normalized_bytes_hash")
+                      (utf8-value-hash normalized-form)))
+       [(str "normalization target hash does not match proof for " construct)]))))
+
 (defn parser-rq-classified-source-ledger-errors [policy ledger decoded]
   (let [rules (into {} (map (juxt #(get % "construct_id") identity)
                             (get policy "rules" [])))]
@@ -373,6 +410,7 @@
             (let [construct (get entry "construct_id")
                   rule (get rules construct)
                   witness (get entry "construct_witness")
+                  proof (get entry "normalization_proof")
                   target (get entry "target_identity")
                   expected (select-keys rule ["source_role" "disposition"
                                               "evidence_class"])
@@ -391,6 +429,9 @@
                           (not= (get rule "witness_kind")
                                 (get witness "construct_id")))
                  [(str "ledger witness does not match policy for " construct)])
+               (when (and (= "lossless_normalization" (get rule "disposition"))
+                          (nil? proof))
+                 [(str "ledger normalization proof is missing for " construct)])
                (when (and witness
                           (not= [(get entry "start") (get entry "end")]
                                 [(get witness "start") (get witness "end")]))
@@ -400,7 +441,12 @@
                                 (decoded-slice decoded (get entry "start")
                                                (get entry "end"))))
                  [(str "ledger witness source form does not match decoded bytes for "
-                       construct)])))))
+                       construct)])
+               (when proof
+                 (normalization-errors
+                  construct proof
+                  (decoded-slice decoded (get entry "start")
+                                 (get entry "end"))))))))
          sort
          vec)))
 

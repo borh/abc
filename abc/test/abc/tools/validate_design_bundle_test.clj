@@ -45,9 +45,9 @@
       (is (= (get ledger "ledger_schema_hash")
              (hash/format-sha256 (hash/sha256-json-jcs ledger-schema)))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:3e6f2d51d0890c43c8afb48a5a270df23b039c97792e8bc0db422754b58fff03"
+            "sha256:c698d92e00570d569db8131a91c5f975b43811b0dd31714f858cb7a6fa8437ba"
             "schemas/parser-rq-classified-source-ledger.schema.json"
-            "sha256:360e3e9a2e727456ff6223884ce04be37b965fad9c1b3e0b14b3df128e449af1"
+            "sha256:f508dfeecb44cebbfb36ede4cfb72cee94cf44e5716041071345dae9c5e1530f"
             "schemas/parser-rq-capture-generation.schema.json"
             "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"}
            (into {} (map (fn [path]
@@ -64,6 +64,18 @@
            (get policy "roles")))
     (is (every? #(contains? % "construct_id") (get policy "rules")))
     (is (not-any? #(contains? % "case") (get policy "rules")))
+    (is (= #{["crlf_normalization" "structural_newline" "crlf"]
+             ["bare_cr_normalization" "structural_newline" "bare_cr"]
+             ["accent_normalization" "visible_text" "accent_decomposition"]}
+           (set (for [rule (get policy "rules")
+                      :when (= "lossless_normalization"
+                               (get rule "disposition"))]
+                  [(get rule "construct_id")
+                   (get rule "source_role")
+                   ({"crlf_normalization" "crlf"
+                     "bare_cr_normalization" "bare_cr"
+                     "accent_normalization" "accent_decomposition"}
+                    (get rule "construct_id"))]))))
     (is (empty? (validate/parser-rq-classified-source-characterization-errors
                  policy
                  (files/read-json
@@ -112,6 +124,30 @@
       (is (seq (validate/parser-rq-capture-generation-errors
                 (assoc-in generation ["members" "raw_diagnostics" "value_hash"]
                           (str "sha256:" (apply str (repeat 64 "f"))))))))
+    (testing "lossless normalization is closed, target-bound, and reversible"
+      (let [normalization (files/read-json (str root "/normalization-ledger.json"))
+            invalid [(update-in normalization ["entries" 0] dissoc "target_identity")
+                     (update-in normalization ["entries" 0] dissoc "normalization_proof")
+                     (assoc-in normalization ["entries" 0 "normalization_proof"
+                                              "inverse_rule"] "structural_newline")
+                     (assoc-in normalization ["entries" 0 "normalization_proof"
+                                              "source_form"] "\n")
+                     (assoc-in normalization ["entries" 0 "normalization_proof"
+                                              "normalized_form"] "\r\n")
+                     (assoc-in normalization ["entries" 0 "target_identity"
+                                              "relation"] "preserves")]]
+        (is (nil? (schema/validation-errors ledger-schema normalization)))
+        (is (empty? (validate/parser-rq-classified-source-ledger-errors
+                     policy normalization "\r\n")))
+        (doseq [ledger invalid]
+          (is (seq (validate/parser-rq-classified-source-ledger-errors
+                    policy ledger "\r\n"))))
+        (is (seq (schema/validation-errors
+                  ledger-schema
+                  (-> normalization
+                      (assoc-in ["entries" 0 "construct_id"] "newline")
+                      (assoc-in ["entries" 0 "disposition"]
+                                "structural_control")))))))
     (testing "structural witnesses are role-specific and span-bound"
       (let [structural (files/read-json (str root "/structural-ledger.json"))
             forms {"newline" "\n"

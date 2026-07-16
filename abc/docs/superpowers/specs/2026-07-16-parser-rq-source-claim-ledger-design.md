@@ -180,8 +180,11 @@ Evidence requirements are policy-owned:
   the validator independently checks that the witness bytes equal the
   authenticated decoded slice and that its closed shape is permitted for the
   named role;
-- lossless normalization requires an approved reversible transformation record
-  binding source interval, source bytes, normalized bytes, and inverse rule.
+- lossless normalization requires both an emitted target identity and an
+  approved reversible transformation record binding source interval, literal
+  source form, literal normalized form, their UTF-8 byte hashes, and inverse
+  rule. The target relation is `emits`; a proof is not a substitute for an
+  authenticated result artifact.
 - preserved opaque entries require byte-exact source witnesses and
   `PlainProvenance::RecoveredVerbatim`; they prohibit semantic target
   identities. Diagnostics and parser-private evidence may explain recovery but
@@ -285,6 +288,31 @@ Sanitizer transformations are not one generic normalization class:
   the ledger coordinate domain.
 
 No catch-all sanitizer disposition exists.
+
+V1 names exactly three sanitizer-produced claim constructs:
+
+| Construct | Role | Inverse rule | Required source/normalized shape |
+| --- | --- | --- | --- |
+| `crlf_normalization` | `structural_newline` | `crlf` | `"\r\n" -> "\n"` |
+| `bare_cr_normalization` | `structural_newline` | `bare_cr` | `"\r" -> "\n"` |
+| `accent_normalization` | `visible_text` | `accent_decomposition` | exact `〔...〕` source form and its non-identical normalized value |
+
+These are `lossless_normalization` claims with evidence class
+`sanitizer_transform`; they are not the classifier's `newline` /
+`structural_control` claim. Capture projects CR/LF facts from the live
+`sanitize_mapped` line-ending edits and accent facts from the matching
+sanitize diagnostic plus the composed offset map. It rebases the sanitized
+result interval to the exact decoded-source interval, hashes both literal
+forms, and binds the emitted parser-output artifact. If the edit, diagnostic,
+rebase, source slice, normalized value, or target identity cannot be proved,
+the producer emits no normalization claim. Decorative insertion has no source
+interval and PUA substitution has no approved rule, so neither can enter this
+vocabulary.
+
+The Task 2 classifier matrix remains characterization evidence for classifier
+constructs. Sanitizer transforms are a separate producer-stage protocol and
+are tested against live sanitize/rebase behavior; they are not retroactively
+added to that 36-case matrix.
 
 ## R1 semantics
 

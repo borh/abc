@@ -1,12 +1,15 @@
 {
   "schema_version": "abc/parser-rq-classified-source-policy/v1",
   "policy_id": "parser-rq-ab-aozora-classified-source-v1",
-  "policy_hash": "sha256:99dfcd2d67ed0b76c4b3a69fdb2f3b211c0931c04ff4aae4dd0d5c39f35b09e3",
+  "policy_hash": "sha256:3d8d378b7c35f459b3f352d082b94710ff6c8f9479aa2e01e5b4ab424b38120c",
   "parser": "ab-aozora",
   "coordinate_system": "decoded_utf8",
   "roles": ["visible_text", "structural_newline", "ruby", "typography", "gaiji", "layout", "break", "heading", "illustration", "kunten", "source_annotation", "container_syntax", "terminal_provenance", "publication_metadata", "unrecognized_source_form"],
   "dispositions": ["emitted_semantic_value", "preserved_sidecar_value", "structural_control", "lossless_normalization", "preserved_opaque"],
   "rules": [
+    {"construct_id":"crlf_normalization","source_role":"structural_newline","disposition":"lossless_normalization","evidence_class":"sanitizer_transform","target_relation":"emits"},
+    {"construct_id":"bare_cr_normalization","source_role":"structural_newline","disposition":"lossless_normalization","evidence_class":"sanitizer_transform","target_relation":"emits"},
+    {"construct_id":"accent_normalization","source_role":"visible_text","disposition":"lossless_normalization","evidence_class":"sanitizer_transform","target_relation":"emits"},
     {"construct_id":"plain_text","source_role":"visible_text","disposition":"emitted_semantic_value","evidence_class":"accepted_text","target_relation":"emits"},
     {"construct_id":"recovered_verbatim","source_role":"unrecognized_source_form","disposition":"preserved_opaque","evidence_class":"recovered_verbatim","witness_kind":"recovered_verbatim"},
     {"construct_id":"newline","source_role":"structural_newline","disposition":"structural_control","evidence_class":"structural_token","witness_kind":"newline"},

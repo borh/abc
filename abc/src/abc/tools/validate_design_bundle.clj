@@ -775,6 +775,12 @@
         (when-not (= eligible (+ accounted unaccounted-bytes))
           ["aggregate accounted byte conservation does not hold"]))))))
 
+(defn- source-recognition-aggregate-gaps [records key]
+  (vec (mapcat (fn [record]
+                 (map #(assoc % "work_id" (get record "work_id"))
+                      (get record key)))
+               records)))
+
 (defn parser-rq-source-recognition-coherence-errors [index aggregate records]
   (let [identity-keys ["qualification_identity_ref" "policy_hash"
                        "coordinate_system"]
@@ -784,13 +790,7 @@
         records-by-id (group-by #(get % "work_id") records)
         ok-records (->> (get index "records" [])
                         (map #(first (get records-by-id (get % "work_id"))))
-                        (filter #(= "ok" (get % "status"))))
-        aggregate-gaps
-        (fn [key]
-          (vec (mapcat (fn [record]
-                         (map #(assoc % "work_id" (get record "work_id"))
-                              (get record key)))
-                       ok-records)))]
+                        (filter #(= "ok" (get % "status"))))]
     (vec
      (concat
       (when-not (= indexed-ids (set (keys records-by-id)))
@@ -852,10 +852,12 @@
                :when (not= expected (get aggregate field))]
            (str "aggregate " field " does not equal work records"))
          (when-not (= (get aggregate "semantic_gaps")
-                      (aggregate-gaps "semantic_gaps"))
+                      (source-recognition-aggregate-gaps
+                       ok-records "semantic_gaps"))
            ["aggregate semantic gaps do not equal work records"])
          (when-not (= (get aggregate "unaccounted")
-                      (aggregate-gaps "unaccounted"))
+                      (source-recognition-aggregate-gaps
+                       ok-records "unaccounted"))
            ["aggregate unaccounted intervals do not equal work records"])))))))
 
 (def ^:private design-schema-inputs

@@ -6,6 +6,7 @@ version = 4
 name = "ab-aat-to-parser-ir"
 version = "0.1.0"
 dependencies = [
+ "ab-aozora-aat",
  "ab-check",
  "ab-diff-utils",
  "ab-morph-analyzers",
@@ -383,6 +384,7 @@ dependencies = [
 name = "ab-parser-rq-source-accountability"
 version = "0.1.0"
 dependencies = [
+ "ab-aozora-aat",
  "anyhow",
  "clap",
  "hegeltest",

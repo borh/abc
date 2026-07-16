@@ -27,6 +27,7 @@ serde_stacker = { workspace = true }
 sha2 = { workspace = true }
 
 [dev-dependencies]
+ab-aozora-aat = { path = "../ab-aozora-aat" }
 criterion = { workspace = true }
 tempfile = { workspace = true }
 

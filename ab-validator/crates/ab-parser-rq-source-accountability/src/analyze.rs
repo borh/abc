@@ -1,0 +1,227 @@
+use ab_aozora_aat::{decode_source_bytes, diagnostics_json_from_bytes};
+use serde_json::Value;
+use sha2::{Digest, Sha256};
+
+use crate::interval::{Interval, normalize, subtract, total_len};
+use crate::model::{
+    BlobRef, DecodedBlobRef, DerivedFrom, DiagnosticBlobRef, NodeSpan, ParserIrBlobRef,
+    WireInterval, WorkAnalysis, WorkInput, WorkRecord,
+};
+
+fn hash(bytes: &[u8]) -> String {
+    format!("sha256:{:x}", Sha256::digest(bytes))
+}
+
+fn canonical_json(value: &Value, out: &mut Vec<u8>) {
+    match value {
+        Value::Object(object) => {
+            out.push(b'{');
+            let mut entries = object.iter().collect::<Vec<_>>();
+            entries.sort_unstable_by_key(|(key, _)| *key);
+            for (index, (key, value)) in entries.into_iter().enumerate() {
+                if index != 0 {
+                    out.push(b',');
+                }
+                out.extend(serde_json::to_vec(key).expect("JSON key serializes"));
+                out.push(b':');
+                canonical_json(value, out);
+            }
+            out.push(b'}');
+        }
+        Value::Array(values) => {
+            out.push(b'[');
+            for (index, value) in values.iter().enumerate() {
+                if index != 0 {
+                    out.push(b',');
+                }
+                canonical_json(value, out);
+            }
+            out.push(b']');
+        }
+        _ => out.extend(serde_json::to_vec(value).expect("JSON scalar serializes")),
+    }
+}
+
+fn wire(intervals: &[Interval]) -> Vec<WireInterval> {
+    intervals
+        .iter()
+        .map(|i| WireInterval {
+            start: i.start() as u64,
+            end: i.end() as u64,
+        })
+        .collect()
+}
+
+pub fn analyze_work(input: WorkInput) -> WorkAnalysis {
+    let decoded =
+        decode_source_bytes(&input.original_bytes).expect("decoder is total for byte input");
+    let diagnostics_result = diagnostics_json_from_bytes(&input.original_bytes);
+    let diagnostics_bytes = diagnostics_result.as_deref().unwrap_or_default().to_vec();
+    let parser_value: Option<Value> = serde_json::from_slice(&input.parser_ir_bytes).ok();
+    let schema_id = parser_value
+        .as_ref()
+        .and_then(|v| v.get("schema_id"))
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_owned();
+    let schema_hash = parser_value
+        .as_ref()
+        .and_then(|v| v.get("schema_hash"))
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_owned();
+    let identity_value =
+        serde_json::to_value(&input.qualification_identity).expect("identity serializes");
+    let mut identity_bytes = Vec::new();
+    canonical_json(&identity_value, &mut identity_bytes);
+    let decoded_len = decoded.text.len();
+    let full = Interval::new(0, decoded_len, decoded_len).expect("full decoded interval");
+    let mut errors = Vec::new();
+
+    if diagnostics_result.is_err() {
+        errors.push("diagnostics-unavailable".to_owned());
+    }
+    if decoded.encoding == "windows-31j-lossy" {
+        errors.push("lossy-source-decode".to_owned());
+    }
+    if hash(&input.original_bytes) != input.corpus_entry.original_sha256 {
+        errors.push("source-identity-mismatch".to_owned());
+    }
+    if hash(&input.taxonomy.taxonomy_jcs_bytes) != input.taxonomy.taxonomy_hash {
+        errors.push("taxonomy-identity-mismatch".to_owned());
+    }
+    if input.taxonomy.taxonomy_version != "parser-rq-ignored-regions-v1" {
+        errors.push("taxonomy-version-mismatch".to_owned());
+    }
+    if schema_id != input.qualification_identity.parser_ir_schema_id
+        || schema_hash != input.qualification_identity.parser_ir_schema_hash
+    {
+        errors.push("parser-ir-schema-identity-mismatch".to_owned());
+    }
+
+    let mut claimed = Vec::new();
+    if let Some(value) = parser_value.as_ref() {
+        let source_hash = value
+            .pointer("/source/work_content_hash")
+            .and_then(Value::as_str);
+        if source_hash != Some(input.corpus_entry.original_sha256.as_str()) {
+            errors.push("parser-ir-source-identity-mismatch".to_owned());
+        }
+        match value
+            .get("derived_from")
+            .cloned()
+            .and_then(|v| serde_json::from_value::<DerivedFrom>(v).ok())
+        {
+            Some(d)
+                if d.aat_version
+                    == input.qualification_identity.adapter_coordinates.aat_version
+                    && d.aat_adapter
+                        == input.qualification_identity.adapter_coordinates.aat_adapter
+                    && d.aat_adapter_version
+                        == input
+                            .qualification_identity
+                            .adapter_coordinates
+                            .aat_adapter_version
+                    && d.mapping_id == input.qualification_identity.mapping_id
+                    && d.mapping_version == input.qualification_identity.mapping_version
+                    && d.mapping_schema_hash
+                        == input.qualification_identity.mapping_schema_hash => {}
+            _ => errors.push("parser-ir-derived-from-identity-mismatch".to_owned()),
+        }
+        match value.get("nodes").and_then(Value::as_array) {
+            Some(nodes) => {
+                for node in nodes {
+                    let Some(span_value) = node.get("span").cloned() else {
+                        errors.push("node-span-missing".to_owned());
+                        continue;
+                    };
+                    match serde_json::from_value::<NodeSpan>(span_value) {
+                        Ok(span) if span.coordinate_system.is_none() => {
+                            errors.push("node-span-coordinate-system-missing".to_owned())
+                        }
+                        Ok(span) if span.coordinate_system.as_deref() != Some("decoded_utf8") => {
+                            errors.push("node-span-coordinate-system-mismatch".to_owned())
+                        }
+                        Ok(span) => match Interval::new(span.start, span.end, decoded_len) {
+                            Ok(interval) => claimed.push(interval),
+                            Err(_) => errors.push("node-span-out-of-bounds".to_owned()),
+                        },
+                        Err(_) => errors.push("node-span-malformed".to_owned()),
+                    }
+                }
+            }
+            None => errors.push("parser-ir-nodes-malformed".to_owned()),
+        }
+    } else {
+        errors.push("parser-ir-malformed".to_owned());
+    }
+
+    let covered = normalize(claimed);
+    let eligible = vec![full];
+    let uncovered = subtract(&eligible, &covered);
+    let eligible_bytes = total_len(&eligible).expect("bounded totals");
+    let covered_bytes = total_len(&covered).expect("bounded totals");
+    let uncovered_bytes = total_len(&uncovered).expect("bounded totals");
+    if eligible_bytes == 0 {
+        errors.push("zero-eligible-bytes".to_owned());
+    }
+    if covered_bytes.checked_add(uncovered_bytes) != Some(eligible_bytes) {
+        errors.push("coverage-conservation-failed".to_owned());
+    }
+    if eligible_bytes != decoded_len as u64 {
+        errors.push("eligibility-conservation-failed".to_owned());
+    }
+
+    let record = WorkRecord {
+        schema_version: "abc/parser-rq-source-accountability-work/v1".into(),
+        identity_ref: hash(&identity_bytes),
+        instrument_version: "parser-rq-source-accountability-v1".into(),
+        work_id: input.corpus_entry.work_id,
+        original_source: BlobRef {
+            sha256: hash(&input.original_bytes),
+            bytes: input.original_bytes.len() as u64,
+        },
+        decoded_source: DecodedBlobRef {
+            sha256: hash(decoded.text.as_bytes()),
+            bytes: decoded_len as u64,
+            encoding: decoded.encoding.trim_end_matches("-lossy").into(),
+        },
+        parser_ir: ParserIrBlobRef {
+            schema_id,
+            schema_hash,
+            sha256: hash(&input.parser_ir_bytes),
+            bytes: input.parser_ir_bytes.len() as u64,
+        },
+        diagnostics: DiagnosticBlobRef {
+            profile: "abc/raw-parser-diagnostics-schema-v3".into(),
+            sha256: hash(&diagnostics_bytes),
+            bytes: diagnostics_bytes.len() as u64,
+            media_type: "application/json".into(),
+            locator: input.diagnostics_locator,
+        },
+        taxonomy_version: input.taxonomy.taxonomy_version,
+        taxonomy_hash: input.taxonomy.taxonomy_hash,
+        coordinate_system: "decoded_utf8".into(),
+        coverage_basis: "parser_ir.nodes[*].span".into(),
+        status: if errors.is_empty() {
+            "ok"
+        } else {
+            "unavailable"
+        }
+        .into(),
+        ignored: vec![],
+        eligible: wire(&eligible),
+        covered_eligible: wire(&covered),
+        uncovered_eligible: wire(&uncovered),
+        decoded_source_bytes: decoded_len as u64,
+        ignored_bytes: 0,
+        eligible_bytes,
+        covered_eligible_bytes: covered_bytes,
+        uncovered_eligible_bytes: uncovered_bytes,
+        errors,
+    };
+    WorkAnalysis {
+        record,
+        diagnostics_bytes,
+    }
+}

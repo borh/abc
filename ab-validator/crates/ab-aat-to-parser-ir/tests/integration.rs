@@ -4405,3 +4405,53 @@ fn ruby_node_span_is_decoded_not_raw_source() {
     // sentence projection over the now-consistent decoded spans succeeds.
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
+
+#[test]
+fn adapter_conversion_spans_address_full_source_across_body_and_terminal_provenance() {
+    let source = "\u{feff}作品名\r\n著者名\r\n\r\n本\u{e001}文です。\r\n\r\n底本：テスト本\r\n";
+    let bytes = source.as_bytes();
+    let decoded = ab_aozora_aat::decode_source_bytes(bytes).unwrap();
+    assert!(decoded.span_text.len() < decoded.text.len());
+    assert!(decoded.tail_offset > decoded.span_text.len());
+
+    let aat: Value =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(bytes).unwrap()).unwrap();
+    let version = aat["version"].as_u64().unwrap();
+    let (repo_root, abc_root) = roots();
+    let mapping = MappingDocument::from_path(
+        &repo_root.join(format!("data/aat-to-parser-ir-mapping-v{version}.json")),
+    )
+    .unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, version).unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let nodes = output.parser_ir["nodes"].as_array().unwrap();
+    assert!(!nodes.is_empty());
+    for node in nodes {
+        let span = &node["span"];
+        assert_eq!(span["coordinate_system"], "decoded_utf8");
+        let start = span["start"].as_u64().unwrap() as usize;
+        let end = span["end"].as_u64().unwrap() as usize;
+        assert!(start <= end && end <= decoded.text.len());
+        assert!(
+            decoded.text.get(start..end).is_some(),
+            "span must land on UTF-8 boundaries: {span}"
+        );
+    }
+    let tail_start = decoded.text.find("底本：").unwrap();
+    let tail_node = nodes
+        .iter()
+        .find(|node| {
+            node["span"]["start"]
+                .as_u64()
+                .is_some_and(|start| start as usize >= tail_start)
+        })
+        .expect("terminal provenance must be represented by a full-source node span");
+    assert!(tail_node["span"]["start"].as_u64().unwrap() as usize > decoded.span_text.len());
+}

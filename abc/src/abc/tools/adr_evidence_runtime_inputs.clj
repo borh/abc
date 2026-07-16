@@ -571,6 +571,7 @@
      clojure.core/frequencies
      clojure.core/vector clojure.core/vec clojure.core/set clojure.core/hash-map clojure.core/zipmap
      clojure.core/sorted-map clojure.core/sorted-set clojure.core/range
+     clojure.core/partition
      clojure.core/take clojure.core/drop clojure.core/take-while
      clojure.core/drop-while clojure.core/subvec
      clojure.core/take-nth clojure.core/concat clojure.core/cons clojure.core/reverse clojure.core/repeat

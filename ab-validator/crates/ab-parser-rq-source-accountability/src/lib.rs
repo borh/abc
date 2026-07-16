@@ -11,6 +11,7 @@ mod analyze;
 mod index;
 pub mod interval;
 mod model;
+mod recognition;
 mod reconcile;
 
 pub use aggregate::aggregate;
@@ -18,6 +19,10 @@ pub use analyze::analyze_work;
 pub use index::{analyze_corpus, canonical_json, qualification_identity_ref};
 pub use interval::Interval;
 pub use model::*;
+pub use recognition::{
+    RecognitionAnalysis, RecognitionBlobRef, RecognitionInput, RecognitionInterval,
+    RecognitionStatus, RecognitionWorkRecord, analyze_recognition,
+};
 pub use reconcile::{Reconciliation, reconcile};
 
 pub const fn hegel_probe_value(value: u16) -> u16 {

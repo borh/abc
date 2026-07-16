@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fs;
 use std::path::Path;
 
 use ab_rq_artifact_store::{AuthenticateErrorKind, authenticate_blob};
@@ -171,8 +172,18 @@ pub fn aggregate(
         errors.push("taxonomy-blob-mismatch".to_owned());
     }
 
+    let records_root = match fs::canonicalize(records_root) {
+        Ok(root) => Some(root),
+        Err(_) => {
+            errors.push("records-root-unavailable".to_owned());
+            None
+        }
+    };
     let mut records = Vec::new();
     for entry in &index.records {
+        let Some(records_root) = &records_root else {
+            continue;
+        };
         let bytes =
             match authenticate_blob(records_root, &entry.locator, &entry.sha256, entry.bytes) {
                 Ok(bytes) => bytes,

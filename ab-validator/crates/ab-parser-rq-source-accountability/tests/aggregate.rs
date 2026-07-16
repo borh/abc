@@ -397,6 +397,40 @@ fn unreadable_record_preserves_read_failed_wire_reason() {
 }
 
 #[test]
+fn unavailable_records_root_is_one_root_error_and_skips_all_members() {
+    let mut f = fixture(&[("a", 1, 1), ("b", 1, 1)]);
+    f.index.records[0].locator = "../invalid.json".into();
+    f.index.records[1].locator = "missing.json".into();
+    fs::remove_dir_all(&f.root).unwrap();
+
+    let aggregate = run(&f);
+    assert_eq!(
+        aggregate.errors.clone().unwrap(),
+        ["records-root-unavailable", "zero-eligible-byte-denominator"]
+    );
+    let bytes = canonical_json(&aggregate).unwrap();
+    assert_eq!(
+        bytes,
+        format!(
+            concat!(
+                "{{\"coordinate_system\":\"decoded_utf8\",",
+                "\"errors\":[\"records-root-unavailable\",",
+                "\"zero-eligible-byte-denominator\"],",
+                "\"identity_ref\":\"{}\",",
+                "\"schema_version\":\"abc/parser-rq-source-accountability-aggregate/v1\",",
+                "\"status\":\"unavailable\",",
+                "\"taxonomy_hash\":\"{}\",",
+                "\"taxonomy_version\":\"parser-rq-ignored-regions-v1\",",
+                "\"work_completeness\":{{\"complete\":true,\"expected\":2,",
+                "\"observed\":2}}}}"
+            ),
+            identity_ref(&f.q),
+            f.t.taxonomy_hash
+        )
+    );
+}
+
+#[test]
 fn aggregate_wire_records_validate_against_live_schema() {
     let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()

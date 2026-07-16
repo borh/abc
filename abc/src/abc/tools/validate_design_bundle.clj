@@ -709,6 +709,7 @@
 (defn parser-rq-source-recognition-index-errors [index]
   (let [expected-ids (get index "expected_work_ids" [])
         record-ids (mapv #(get % "work_id") (get index "records" []))
+        record-id-set (set record-ids)
         asserted-ref (get index "corpus_generation_ref")
         canonical-result
         (try
@@ -733,10 +734,11 @@
         ["expected membership contains duplicate work IDs"])
       (when-not (= (count record-ids) (count (distinct record-ids)))
         ["record index contains duplicate work IDs"])
-      (when-not (= record-ids (filterv (set record-ids) expected-ids))
+      (when-not (= record-ids
+                   (filterv #(contains? record-id-set %) expected-ids))
         ["record index is not an ordered subset of expected membership"])
       (when (and (= "ok" (get index "status"))
-                 (not= (set expected-ids) (set record-ids)))
+                 (not= (set expected-ids) record-id-set))
         ["available record index does not exactly match expected membership"])))))
 
 (defn- work-interval-errors [label intervals]

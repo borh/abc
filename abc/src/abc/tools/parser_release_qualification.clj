@@ -189,6 +189,11 @@
     (contains? measurements :source_span_coverage)
     (assoc :parser_ir_node_span_coverage (:source_span_coverage measurements))))
 
+(defn install-publication-observation
+  "Install the authenticated publication envelope; no scalar bypass is accepted."
+  [measurements envelope]
+  (assoc measurements :publication_structure envelope))
+
 (defn verdict-tally
   [results]
   (frequencies (map :verdict results)))

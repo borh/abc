@@ -3,6 +3,8 @@
             [abc.tools.hash :as hash]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.person-record :as person-record]
+            [abc.tools.parser-rq-publication :as publication]
+            [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.schema :as schema]
             [clojure.test :refer [deftest is]]))
 
@@ -40,7 +42,7 @@
                    "../ab-validator/data/parser-rq-publication-validator-v1.json")]
     (is (= expected-structure-checks (get policy "structure_checks")))
     (is (= (str "sha256:" (files/sha256-file
-                            "schemas/parser-ir-publication-preservation.schema.json"))
+                           "schemas/parser-ir-publication-preservation.schema.json"))
            (get-in policy ["preservation_schema" "hash"])))
     (is (= (get validator "validator_semantics_hash")
            (get-in policy ["validator" "semantics_hash"])))
@@ -69,3 +71,24 @@
       (is (= :ok (metadata-record/validate!
                   (files/read-json (str root "/" work-id
                                         "/metadata-record.json"))))))))
+
+(deftest publication-envelope-uses-exact-work-denominator
+  (let [root "test/fixtures/parser-rq/publication-capture"
+        envelope (publication/derive-publication-envelope
+                  {:root (str root "/store")}
+                  (files/read-json (str root "/manifest.json"))
+                  (files/read-json (str root "/index.json"))
+                  (files/read-json (str root "/identity.json")))]
+    (is (= 1.0000M (:value envelope)))
+    (is (= "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+           (:identity_ref envelope)))
+    (is (= {:expected 3 :parsed 3 :eligible 3 :passed 3 :failed 0 :timed_out 0}
+           (:counts envelope)))))
+
+(deftest publication-observation-installs-an-envelope-not-a-scalar
+  (let [envelope {:value 1.0M
+                  :identity_ref
+                  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]
+    (is (= envelope
+           (:publication_structure
+            (qualification/install-publication-observation {} envelope))))))

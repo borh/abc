@@ -167,6 +167,11 @@ minimal implementation, independently testable tasks. Their entry contracts:
   captures under a closed ABC-owned `ab-aozora` policy. Unknown vocabulary and
   internal diagnostics fail closed; authenticated empty streams are available
   and disclose vacuity. Diagnostics classify gaps but never increase R1 claims.
+  **Implementation status (2026-07-16): P4A1-P4A3 are implemented and
+  drift-checked.** The committed production fixtures cover semantic recognition,
+  opaque accountability, recovery gaps, diagnostic authorization, silent-gap
+  partitioning, and fail-closed identity mutations. P5 authoritative corpus
+  capture, registry admission, and ADR 0039 promotion have not started.
 - **P4B Predicate hardening** — predicate 4 discloses vacuity (envelope-completeness,
   settled); predicate 5 re-measured against the **pinned candidate** schema.
 - **P5 Admission + promotion** — pin the final implementation commit before any

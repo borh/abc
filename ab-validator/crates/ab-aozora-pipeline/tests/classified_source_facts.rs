@@ -4,6 +4,15 @@ use ab_aozora_pipeline::{
     ClassifiedSourceDisposition as Disposition, ClassifiedSourceEvidenceClass as EvidenceClass,
     ClassifiedSourceRole as Role, ConstructId, canonicalize_classified_source_facts, lex,
 };
+use std::collections::BTreeSet;
+use std::iter::once;
+
+fn byte_union(facts: impl IntoIterator<Item = (u32, u32)>) -> BTreeSet<u32> {
+    facts
+        .into_iter()
+        .flat_map(|(start, end)| start..end)
+        .collect()
+}
 
 fn projection(source: &str) -> Vec<(u32, u32, ConstructId, Role, Disposition, EvidenceClass)> {
     lex(source)
@@ -170,26 +179,71 @@ fn permutation_canonicalizes_identically(tc: hegel::TestCase) {
 fn semantic_intervals_are_a_subset_of_accounted(tc: hegel::TestCase) {
     use hegel::generators;
 
-    let source = tc.draw(generators::text().max_size(96));
+    let parts = tc.draw(generators::vecs(generators::booleans()).max_size(64));
+    let source: String = parts
+        .iter()
+        .map(|semantic| if *semantic { "文" } else { "｜" })
+        .collect();
     let facts = lex(&source).classified_source_facts;
-    for semantic in facts.iter().filter(|fact| fact.is_semantic()) {
-        assert!(facts.iter().any(|accounted| {
-            accounted.is_accounted()
-                && accounted.source_span.start <= semantic.source_span.start
-                && accounted.source_span.end >= semantic.source_span.end
-        }));
-    }
+    let accounted = byte_union(
+        facts
+            .iter()
+            .map(|fact| (fact.source_span.start, fact.source_span.end)),
+    );
+    let semantic = byte_union(
+        facts
+            .iter()
+            .filter(|fact| fact.disposition != Disposition::PreservedOpaque)
+            .map(|fact| (fact.source_span.start, fact.source_span.end)),
+    );
+    let expected_semantic = byte_union(
+        parts
+            .iter()
+            .enumerate()
+            .filter(|(_, is_semantic)| **is_semantic)
+            .map(|(index, _)| {
+                let start = u32::try_from(index * 3).unwrap();
+                (start, start + 3)
+            }),
+    );
+    let expected_accounted = byte_union(once((0, u32::try_from(source.len()).unwrap())));
+    assert_eq!(semantic, expected_semantic);
+    assert_eq!(accounted, expected_accounted);
+    assert!(semantic.is_subset(&accounted));
 }
 
 #[hegel::test(test_cases = 100)]
-fn opaque_facts_are_never_semantic(tc: hegel::TestCase) {
+fn removing_opaque_facts_does_not_change_semantic_union(tc: hegel::TestCase) {
     use hegel::generators;
 
-    let source = tc.draw(generators::text().max_size(96));
-    for fact in lex(&source).classified_source_facts {
-        if fact.disposition == Disposition::PreservedOpaque {
-            assert!(!fact.is_semantic());
-            assert!(fact.is_accounted());
-        }
-    }
+    let parts = tc.draw(generators::vecs(generators::booleans()).max_size(64));
+    let source: String = parts
+        .iter()
+        .map(|semantic| if *semantic { "文" } else { "｜" })
+        .collect();
+    let facts = lex(&source).classified_source_facts;
+    let semantic = byte_union(
+        facts
+            .iter()
+            .filter(|fact| fact.disposition != Disposition::PreservedOpaque)
+            .map(|fact| (fact.source_span.start, fact.source_span.end)),
+    );
+    let opaque = byte_union(
+        facts
+            .iter()
+            .filter(|fact| fact.disposition == Disposition::PreservedOpaque)
+            .map(|fact| (fact.source_span.start, fact.source_span.end)),
+    );
+    let expected_opaque = byte_union(
+        parts
+            .iter()
+            .enumerate()
+            .filter(|(_, is_semantic)| !**is_semantic)
+            .map(|(index, _)| {
+                let start = u32::try_from(index * 3).unwrap();
+                (start, start + 3)
+            }),
+    );
+    assert_eq!(opaque, expected_opaque);
+    assert!(semantic.is_disjoint(&opaque));
 }

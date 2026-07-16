@@ -157,16 +157,7 @@ fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceCl
     let typed = EvidenceClass::TypedNode;
     Some(match node {
         Node::Ruby(_) => (ConstructId::Ruby, Role::Ruby, semantic, typed),
-        Node::Format(format) => match format.attr {
-            ForwardAttr::Bouten { .. } => (ConstructId::Bouten, Role::Typography, semantic, typed),
-            ForwardAttr::CombineUpright => (
-                ConstructId::CombineUpright,
-                Role::Typography,
-                semantic,
-                typed,
-            ),
-            _ => (ConstructId::Emphasis, Role::Typography, semantic, typed),
-        },
+        Node::Format(format) => forward_attr_policy(format.attr)?,
         Node::Gaiji(_) => (ConstructId::Gaiji, Role::Gaiji, semantic, typed),
         Node::Line(line) => match line {
             LineFormat::Indent { .. } => (ConstructId::Indent, Role::Layout, semantic, typed),
@@ -246,6 +237,43 @@ fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceCl
         ),
         // No fact is invented for parser variants absent from the approved
         // policy. Policy evolution must add an explicit arm.
+        _ => return None,
+    })
+}
+
+/// Project only forward attributes explicitly admitted by the current ABC
+/// policy. `ForwardAttr` is non-exhaustive across this crate boundary, so the
+/// residual arm must fail closed when the parser vocabulary grows.
+const fn forward_attr_policy(
+    attr: ForwardAttr,
+) -> Option<(ConstructId, Role, Disposition, EvidenceClass)> {
+    let semantic = Disposition::EmittedSemanticValue;
+    let typed = EvidenceClass::TypedNode;
+    Some(match attr {
+        ForwardAttr::Bouten { .. } => (ConstructId::Bouten, Role::Typography, semantic, typed),
+        ForwardAttr::CombineUpright => (
+            ConstructId::CombineUpright,
+            Role::Typography,
+            semantic,
+            typed,
+        ),
+        ForwardAttr::Bold
+        | ForwardAttr::Gothic
+        | ForwardAttr::Italic
+        | ForwardAttr::SuperScript
+        | ForwardAttr::SubScript
+        | ForwardAttr::SmallScript(_)
+        | ForwardAttr::Framed(_)
+        | ForwardAttr::Horizontal
+        | ForwardAttr::Caption
+        | ForwardAttr::FontSize(_)
+        | ForwardAttr::FontSizeAbsolute(_)
+        | ForwardAttr::Fraction
+        | ForwardAttr::AccentDot
+        | ForwardAttr::Accent(_)
+        | ForwardAttr::AlignEnd { .. } => {
+            (ConstructId::Emphasis, Role::Typography, semantic, typed)
+        }
         _ => return None,
     })
 }
@@ -458,8 +486,60 @@ const _: fn() = || {
 mod tests {
     use super::*;
     use ab_aozora_spec::{NormalizedOffset, Sentinel};
-    use ab_aozora_syntax::IndentBlock;
     use ab_aozora_syntax::ast::Content;
+    use ab_aozora_syntax::{
+        AbsoluteSize, AccentMark, BoutenKind, BoutenPosition, EnclosureKind, FontShift, IndentBlock,
+    };
+    use core::num::NonZeroI8;
+
+    #[test]
+    fn every_current_forward_attribute_has_an_explicit_policy_mapping() {
+        let emphasis = [
+            ForwardAttr::Bold,
+            ForwardAttr::Gothic,
+            ForwardAttr::Italic,
+            ForwardAttr::SuperScript,
+            ForwardAttr::SubScript,
+            ForwardAttr::SmallScript(BoutenPosition::Right),
+            ForwardAttr::Framed(EnclosureKind::Rule),
+            ForwardAttr::Horizontal,
+            ForwardAttr::Caption,
+            ForwardAttr::FontSize(FontShift(NonZeroI8::new(1).unwrap())),
+            ForwardAttr::FontSizeAbsolute(AbsoluteSize::Large),
+            ForwardAttr::Fraction,
+            ForwardAttr::AccentDot,
+            ForwardAttr::Accent(AccentMark::Acute),
+            ForwardAttr::AlignEnd { offset: 1 },
+        ];
+        for attr in emphasis {
+            assert_eq!(
+                forward_attr_policy(attr),
+                Some((
+                    ConstructId::Emphasis,
+                    Role::Typography,
+                    Disposition::EmittedSemanticValue,
+                    EvidenceClass::TypedNode,
+                )),
+                "missing explicit mapping for {attr:?}"
+            );
+        }
+        assert_eq!(
+            forward_attr_policy(ForwardAttr::Bouten {
+                kind: BoutenKind::Goma,
+                position: BoutenPosition::Right,
+            })
+            .unwrap()
+            .0,
+            ConstructId::Bouten
+        );
+        assert_eq!(
+            forward_attr_policy(ForwardAttr::CombineUpright).unwrap().0,
+            ConstructId::CombineUpright
+        );
+        // `ForwardAttr` is non-exhaustive, so downstream code cannot construct
+        // a future variant here. The residual arm in `forward_attr_policy`
+        // returning `None` is the executable fail-closed boundary.
+    }
 
     #[test]
     fn lex_materialises_ruby_resolving_back_to_source_text() {

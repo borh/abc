@@ -632,7 +632,8 @@
 
 (def ^:private audited-safe-jvm-vars
   '#{BaseDatatype. ByteArrayInputStream. String. StringWriter. java.io.StringWriter. Integer/parseInt JsonDocument/of LocalDate/parse java.time.Instant/parse java.time.Duration/between Normalizer/normalize
-     ShaclValidator/get YearMonth/parse UCharacter/foldCase Runtime/getRuntime java.net.URI.
+     Character/isHighSurrogate Character/isLowSurrogate ShaclValidator/get YearMonth/parse
+     UCharacter/foldCase Runtime/getRuntime java.net.URI.
      MessageDigest/getInstance GraphUtil/addInto ModelFactory/createDefaultModel NodeFactory/createBlankNode
      NodeFactory/createLiteral NodeFactory/createURI Triple/create TypeMapper/getInstance})
 

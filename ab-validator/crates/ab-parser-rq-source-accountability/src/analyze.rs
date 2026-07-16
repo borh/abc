@@ -58,7 +58,7 @@ pub fn analyze_work(input: WorkInput) -> WorkAnalysis {
     analyze_work_with_diagnostics(input, diagnostics_json_from_bytes)
 }
 
-pub fn analyze_work_with_diagnostics<F>(input: WorkInput, diagnostics: F) -> WorkAnalysis
+fn analyze_work_with_diagnostics<F>(input: WorkInput, diagnostics: F) -> WorkAnalysis
 where
     F: FnOnce(&[u8]) -> anyhow::Result<Vec<u8>>,
 {
@@ -236,5 +236,94 @@ where
     WorkAnalysis {
         record,
         diagnostics_bytes: diagnostics_result.ok(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+    use crate::model::{
+        AdapterCoordinates, CorpusEntry, QualificationIdentity, TaxonomyIdentity, TaxonomyVersion,
+    };
+
+    fn input() -> WorkInput {
+        let original_bytes = b"x".to_vec();
+        let original_sha256 = hash(&original_bytes);
+        let schema_hash = format!("sha256:{}", "3".repeat(64));
+        let mapping_schema_hash = format!("sha256:{}", "2".repeat(64));
+        let parser_ir_bytes = serde_json::to_vec(&json!({
+            "schema_id": "https://example.test/parser-ir",
+            "schema_hash": schema_hash,
+            "derived_from": {
+                "aat_version": 2,
+                "aat_adapter": "ab-aozora-aat",
+                "aat_adapter_version": "0.1.0",
+                "mapping_id": "https://example.test/mapping",
+                "mapping_version": "1",
+                "mapping_schema_hash": mapping_schema_hash,
+            },
+            "source": {"work_content_hash": original_sha256},
+            "nodes": [{"span": {
+                "start": 0, "end": 1, "coordinate_system": "decoded_utf8"
+            }}],
+        }))
+        .unwrap();
+        let taxonomy_jcs_bytes = br#"{"coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec();
+        WorkInput {
+            original_bytes,
+            parser_ir_bytes,
+            corpus_entry: CorpusEntry {
+                work_id: "work-1".into(),
+                original_sha256,
+            },
+            qualification_identity: QualificationIdentity {
+                parser_git_rev: "abc123".into(),
+                adapter_coordinates: AdapterCoordinates {
+                    aat_version: 2,
+                    aat_adapter: "ab-aozora-aat".into(),
+                    aat_adapter_version: Some("0.1.0".into()),
+                },
+                mapping_id: "https://example.test/mapping".into(),
+                mapping_version: "1".into(),
+                mapping_hash: format!("sha256:{}", "1".repeat(64)),
+                mapping_schema_hash,
+                parser_ir_schema_id: "https://example.test/parser-ir".into(),
+                parser_ir_schema_hash: schema_hash,
+                corpus_snapshot_hash: format!("sha256:{}", "4".repeat(64)),
+                corpus_list_hash: format!("sha256:{}", "5".repeat(64)),
+                predicate_set_hash: format!("sha256:{}", "6".repeat(64)),
+                instrument_versions: vec!["parser-rq-source-accountability-v1".into()],
+            },
+            taxonomy: TaxonomyIdentity {
+                taxonomy_version: TaxonomyVersion::V1,
+                taxonomy_hash: hash(&taxonomy_jcs_bytes),
+                taxonomy_jcs_bytes,
+            },
+            diagnostics_locator: "work-1.diagnostics.json".into(),
+        }
+    }
+
+    #[test]
+    fn diagnostic_failure_is_unavailable_without_a_blob_claim() {
+        let result = analyze_work_with_diagnostics(input(), |_| {
+            anyhow::bail!("injected diagnostic failure")
+        });
+        assert_eq!(result.record.status, WorkStatus::Unavailable);
+        assert!(result.record.diagnostics.is_none());
+        assert!(result.diagnostics_bytes.is_none());
+        assert!(
+            serde_json::to_value(&result.record)
+                .unwrap()
+                .get("diagnostics")
+                .is_none()
+        );
+        assert!(
+            result
+                .record
+                .errors
+                .contains(&"diagnostics-unavailable".into())
+        );
     }
 }

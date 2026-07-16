@@ -1,10 +1,16 @@
 #![forbid(unsafe_code)]
 
+//! The production analyzer owns diagnostic capture; callers cannot inject it.
+//!
+//! ```compile_fail
+//! use ab_parser_rq_source_accountability::analyze_work_with_diagnostics;
+//! ```
+
 mod analyze;
 pub mod interval;
 mod model;
 
-pub use analyze::{analyze_work, analyze_work_with_diagnostics};
+pub use analyze::analyze_work;
 pub use model::*;
 
 pub const fn hegel_probe_value(value: u16) -> u16 {

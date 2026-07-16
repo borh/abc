@@ -1,7 +1,6 @@
 use ab_parser_rq_source_accountability::{
     AdapterCoordinates, CorpusEntry, DecodedEncoding, QualificationIdentity, TaxonomyIdentity,
     TaxonomyVersion, WorkInput, WorkRecord, WorkStatus, analyze_work,
-    analyze_work_with_diagnostics,
 };
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -91,32 +90,6 @@ fn lossy_shift_jis_is_unavailable_even_when_span_covers_replacement() {
         DecodedEncoding::Windows31jLossy
     );
     assert_eq!(result.record.errors, ["lossy-source-decode"]);
-}
-
-#[test]
-fn diagnostic_failure_is_unavailable_without_a_blob_claim() {
-    let result = analyze_work_with_diagnostics(
-        input(
-            b"x".to_vec(),
-            json!([{"span":{"start":0,"end":1,"coordinate_system":"decoded_utf8"}}]),
-        ),
-        |_| anyhow::bail!("injected diagnostic failure"),
-    );
-    assert_eq!(result.record.status, WorkStatus::Unavailable);
-    assert!(result.record.diagnostics.is_none());
-    assert!(result.diagnostics_bytes.is_none());
-    assert!(
-        serde_json::to_value(&result.record)
-            .unwrap()
-            .get("diagnostics")
-            .is_none()
-    );
-    assert!(
-        result
-            .record
-            .errors
-            .contains(&"diagnostics-unavailable".into())
-    );
 }
 
 #[test]

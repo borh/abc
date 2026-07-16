@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use ab_parser_rq_source_accountability::RecognitionWorkRecord;
+use ab_parser_rq_source_accountability::{RecognitionBlobRef, RecognitionWorkRecord};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -113,6 +113,96 @@ pub struct AuthorizationAnalysis {
     pub observe_only_diagnostic_count: Option<u64>,
     pub vacuous: Option<bool>,
     pub authorized_intervals: Option<Vec<Interval>>,
+    pub errors: Vec<String>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DiagnosticGapWorkStatus {
+    Ok,
+    Unavailable,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceRecognitionEvidence {
+    pub relation: String,
+    pub artifact_ref: RecognitionBlobRef,
+    pub value_hash: String,
+    pub qualification_identity_ref: String,
+    pub capture_generation_ref: String,
+    pub work_id: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct DiagnosticGapWorkInput<'a> {
+    pub source_recognition: &'a RecognitionWorkRecord,
+    pub source_recognition_bytes: &'a [u8],
+    pub source_recognition_artifact_ref: RecognitionBlobRef,
+    pub source_recognition_value_hash: String,
+    pub authorization: &'a AuthorizationAnalysis,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DiagnosticGapWorkResult {
+    pub status: DiagnosticGapWorkStatus,
+    pub work_id: Option<String>,
+    pub capture_generation_ref: Option<String>,
+    pub qualification_identity_ref: Option<String>,
+    pub policy_hash: Option<String>,
+    pub source_recognition_evidence: Option<SourceRecognitionEvidence>,
+    pub authorized_intervals: Option<Vec<Interval>>,
+    pub silent_intervals: Option<Vec<Interval>>,
+    pub authorized_bytes: Option<u64>,
+    pub silent_bytes: Option<u64>,
+    pub silent_drop_count: Option<u64>,
+    pub errors: Vec<String>,
+}
+
+impl DiagnosticGapWorkResult {
+    pub(crate) fn unavailable(error: &str) -> Self {
+        Self {
+            status: DiagnosticGapWorkStatus::Unavailable,
+            work_id: None,
+            capture_generation_ref: None,
+            qualification_identity_ref: None,
+            policy_hash: None,
+            source_recognition_evidence: None,
+            authorized_intervals: None,
+            silent_intervals: None,
+            authorized_bytes: None,
+            silent_bytes: None,
+            silent_drop_count: None,
+            errors: vec![error.to_owned()],
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct DiagnosticGapAggregateInput<'a> {
+    pub expected_works: &'a [DiagnosticGapExpectedWork],
+    pub qualification_identity_ref: &'a str,
+    pub corpus_generation_ref: &'a str,
+    pub policy_hash: &'a str,
+    pub works: &'a [DiagnosticGapWorkResult],
+}
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct DiagnosticGapExpectedWork {
+    pub work_id: String,
+    pub capture_generation_ref: String,
+    pub source_recognition_value_hash: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DiagnosticGapAggregate {
+    pub status: DiagnosticGapWorkStatus,
+    pub qualification_identity_ref: Option<String>,
+    pub corpus_generation_ref: Option<String>,
+    pub policy_hash: Option<String>,
+    pub expected_work_ids: Vec<String>,
+    pub observed_work_ids: Vec<String>,
+    pub authorized_bytes: Option<u64>,
+    pub silent_bytes: Option<u64>,
+    pub silent_drop_count: Option<u64>,
     pub errors: Vec<String>,
 }
 

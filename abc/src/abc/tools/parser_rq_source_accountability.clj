@@ -213,9 +213,37 @@
        :identity_ref expected})))
 
 (defn silent-drops-envelope
-  [identity]
-  {:value :instrument-missing
-   :identity_ref (qualification/qualification-identity-ref identity)})
+  "Derive the existing R2 observation from an exact diagnostic-gap corpus fold.
+  The one-argument form preserves the pre-instrument historical state."
+  ([identity]
+   {:value :instrument-missing
+    :identity_ref (qualification/qualification-identity-ref identity)})
+  ([identity diagnostic-gap-aggregate recognition-index recognition-aggregate]
+   (let [expected (qualification/qualification-identity-ref identity)
+         expected-work-ids (:expected_work_ids recognition-index)
+         authorized (:authorized_bytes diagnostic-gap-aggregate)
+         silent (:silent_bytes diagnostic-gap-aggregate)
+         semantic-gaps (:semantic_gap_bytes recognition-aggregate)
+         silent-count (:silent_drop_count diagnostic-gap-aggregate)
+         coherent? (and (= "ok" (:status diagnostic-gap-aggregate))
+                        (= expected
+                           (:qualification_identity_ref recognition-index)
+                           (:qualification_identity_ref recognition-aggregate)
+                           (:qualification_identity_ref diagnostic-gap-aggregate))
+                        (= (:corpus_generation_ref recognition-index)
+                           (:corpus_generation_ref recognition-aggregate)
+                           (:corpus_generation_ref diagnostic-gap-aggregate))
+                        (= expected-work-ids
+                           (:expected_work_ids diagnostic-gap-aggregate)
+                           (:observed_work_ids diagnostic-gap-aggregate))
+                        (= (count expected-work-ids)
+                           (count (set expected-work-ids)))
+                        (every? #(and (int? %) (<= 0 %))
+                                [authorized silent semantic-gaps silent-count])
+                        (= semantic-gaps (+ authorized silent)))]
+     (if coherent?
+       {:value silent-count :identity_ref expected}
+       (unavailable "diagnostic-gap aggregate is not the exact R1-bound corpus partition")))))
 
 (defn- recognition-identity-valid?
   [identity]

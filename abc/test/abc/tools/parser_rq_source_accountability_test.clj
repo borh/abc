@@ -862,3 +862,47 @@
   (let [value (#'rq-source/exact-display-ratio 999999 1000000)]
     (is (= 0.9999990M value))
     (is (< value 1M))))
+
+(defn- diagnostic-gap-aggregate
+  []
+  {:status "ok"
+   :qualification_identity_ref recognition-identity-ref
+   :corpus_generation_ref (str "sha256:" (apply str (repeat 64 "a")))
+   :policy_hash (str "sha256:" (apply str (repeat 64 "b")))
+   :expected_work_ids ["work-a" "work-b"]
+   :observed_work_ids ["work-a" "work-b"]
+   :authorized_bytes 3
+   :silent_bytes 1
+   :semantic_gap_bytes 4
+   :silent_drop_count 1})
+
+(deftest diagnostic-gap-aggregate-derives-existing-r2-observation
+  (let [index {:qualification_identity_ref recognition-identity-ref
+               :corpus_generation_ref (str "sha256:" (apply str (repeat 64 "a")))
+               :expected_work_ids ["work-a" "work-b"]}
+        r1 {:qualification_identity_ref recognition-identity-ref
+            :corpus_generation_ref (:corpus_generation_ref index)
+            :semantic_gap_bytes 4}
+        before [index r1]
+        envelope (rq-source/silent-drops-envelope
+                  recognition-identity (diagnostic-gap-aggregate) index r1)]
+    (is (= {:value 1 :identity_ref recognition-identity-ref} envelope))
+    (is (= before [index r1]) "R2 derivation leaves R1 evidence byte-values unchanged")))
+
+(deftest diagnostic-gap-aggregate-fails-closed-without-mutating-r1
+  (let [index {:qualification_identity_ref recognition-identity-ref
+               :corpus_generation_ref (str "sha256:" (apply str (repeat 64 "a")))
+               :expected_work_ids ["work-a" "work-b"]}
+        r1 {:qualification_identity_ref recognition-identity-ref
+            :corpus_generation_ref (:corpus_generation_ref index)
+            :semantic_gap_bytes 4}
+        base (diagnostic-gap-aggregate)]
+    (doseq [candidate [(assoc base :status "unavailable")
+                       (assoc base :observed_work_ids ["work-a"])
+                       (assoc base :corpus_generation_ref
+                              (str "sha256:" (apply str (repeat 64 "c"))))
+                       (assoc base :silent_bytes 0)
+                       (assoc base :silent_drop_count -1)]]
+      (is (= :unavailable
+             (:status (rq-source/silent-drops-envelope
+                       recognition-identity candidate index r1)))))))

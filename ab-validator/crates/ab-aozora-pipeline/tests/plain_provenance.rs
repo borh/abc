@@ -23,6 +23,56 @@ fn plain_provenance(source: &str) -> Vec<(u32, u32, PlainProvenance)> {
         .collect()
 }
 
+fn classified_spans(source: &str) -> Vec<(u32, u32, &'static str)> {
+    let sanitized = sanitize(source);
+    let tokens = tokenize(&sanitized.text);
+    let pairs = pair(tokens);
+    let mut alloc = Allocator::default();
+    classify(pairs, &sanitized.text, &mut alloc)
+        .map(|span| {
+            let kind = match span.kind {
+                SpanKind::Plain(_) => "plain",
+                SpanKind::Aozora(_) => "aozora",
+                SpanKind::BlockOpen(_) => "block-open",
+                SpanKind::BlockClose(_) => "block-close",
+                SpanKind::Newline => "newline",
+                _ => "unknown",
+            };
+            (span.source_span.start, span.source_span.end, kind)
+        })
+        .collect()
+}
+
+#[test]
+fn interior_forward_decoration_does_not_overlap_queued_plain() {
+    for source in [
+        "前に青空の後［＃「青空」に傍点］末尾",
+        // The restored explicit ruby-base bar is recovered while the target
+        // text remains ordinary, so the queued run has mixed provenance.
+        "｜青空の後［＃「青空」に傍点］末尾",
+    ] {
+        let spans = classified_spans(source);
+        assert_eq!(spans.first().map(|span| span.0), Some(0), "{spans:?}");
+        assert_eq!(
+            spans.last().map(|span| span.1),
+            Some(source.len() as u32),
+            "{spans:?}"
+        );
+        for pair in spans.windows(2) {
+            assert_eq!(
+                pair[0].1, pair[1].0,
+                "classifier spans must tile {source:?}: {spans:?}"
+            );
+        }
+    }
+
+    use PlainProvenance::{RecoveredVerbatim as R, Text as T};
+    assert_eq!(
+        plain_provenance("｜青空の後［＃「青空」に傍点］末尾"),
+        vec![(0, 3, R), (9, 15, T), (45, 51, T)]
+    );
+}
+
 #[test]
 fn accepted_plain_recovery_paths_are_distinct_from_text() {
     use PlainProvenance::{RecoveredVerbatim as R, Text as T};

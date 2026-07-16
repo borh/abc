@@ -736,6 +736,21 @@ where
     fn splice_plain_around(&mut self, deco: Node, deco_span: Span) {
         // Head plain run before the referent (often empty → emits nothing).
         self.flush_plain_up_to(deco_span.start);
+        // `flush_plain_up_to` may have split one provenance segment at the
+        // referent start. Remove every queued piece covered by the decoration,
+        // retaining the provenance of a segment tail that begins after it.
+        while self
+            .pending_plain
+            .front()
+            .is_some_and(|plain| plain.source_span.start < deco_span.end)
+        {
+            let mut plain = self.pending_plain.pop_front().expect("checked Some");
+            if plain.source_span.end > deco_span.end {
+                plain.source_span.start = deco_span.end;
+                self.pending_plain.push_front(plain);
+                break;
+            }
+        }
         self.push_output(ClassifiedSpan {
             kind: SpanKind::Aozora(deco),
             source_span: deco_span,

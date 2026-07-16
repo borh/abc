@@ -59,7 +59,10 @@
                 work-schema (assoc unavailable-work "eligible_bytes" 10))))
       (is (seq (schema/validation-errors
                 aggregate-schema
-                (assoc unavailable-aggregate "recognized_bytes" 0)))))
+                (assoc unavailable-aggregate "recognized_bytes" 0))))
+      (is (seq (schema/validation-errors
+                aggregate-schema
+                (assoc-in aggregate ["work_completeness" "complete"] false)))))
     (testing "projections are ordered subsets with exact byte conservation"
       (doseq [invalid [(assoc work "recognized_bytes" 11)
                        (assoc work "accounted_bytes" 11)
@@ -75,11 +78,49 @@
                 (assoc index "records" []))))
       (is (seq (validate/parser-rq-source-recognition-index-errors
                 (assoc index "expected_work_ids" ["another-work"]))))
+      (is (seq (validate/parser-rq-source-recognition-index-errors
+                (assoc index
+                       "expected_work_ids" ["fixture-work" "fixture-work"]
+                       "expected_work_count" 2))))
       (is (seq (validate/parser-rq-source-recognition-coherence-errors
                 index aggregate [])))
       (is (seq (validate/parser-rq-source-recognition-coherence-errors
                 index aggregate [(assoc work "generation_ref"
                                         (str "sha256:" (apply str (repeat 64 "f"))))]))))
+    (testing "available aggregates require an available complete exact fold"
+      (doseq [[candidate-index candidate-aggregate candidate-records]
+              [[(assoc index "status" "unavailable" "errors" ["index failed"])
+                aggregate [work]]
+               [index (assoc-in aggregate ["work_completeness" "complete"] false)
+                [work]]
+               [index (assoc-in aggregate ["work_completeness" "expected"] 99)
+                [work]]
+               [index (assoc-in aggregate ["work_completeness" "observed"] 0)
+                [work]]
+               [index aggregate [work work]]
+               [index aggregate []]
+               [index aggregate [(assoc work "work_id" "extra-work")]]]]
+        (is (seq (validate/parser-rq-source-recognition-coherence-errors
+                  candidate-index candidate-aggregate candidate-records))))
+      (let [empty-index (assoc index
+                               "expected_work_ids" []
+                               "expected_work_count" 0
+                               "record_count" 0
+                               "records" [])
+            empty-aggregate (assoc aggregate
+                                   "work_completeness"
+                                   {"expected" 0 "observed" 0 "complete" true}
+                                   "eligible_bytes" 0
+                                   "recognized_bytes" 0
+                                   "accounted_bytes" 0
+                                   "semantic_gap_bytes" 0
+                                   "unaccounted_bytes" 0
+                                   "semantic_gaps" []
+                                   "unaccounted" [])]
+        (is (empty? (validate/parser-rq-source-recognition-index-errors
+                     empty-index)))
+        (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+                     empty-index empty-aggregate [])))))
     (testing "aggregate totals and work witnesses are coherent"
       (is (seq (validate/parser-rq-source-recognition-aggregate-errors
                 (assoc aggregate "recognized_bytes" 11))))

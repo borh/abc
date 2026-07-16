@@ -583,6 +583,8 @@
         ["expected_work_count does not equal expected membership"])
       (when-not (= (count record-ids) (get index "record_count"))
         ["record_count does not equal records"])
+      (when-not (= (count expected-ids) (count (distinct expected-ids)))
+        ["expected membership contains duplicate work IDs"])
       (when-not (= (count record-ids) (count (distinct record-ids)))
         ["record index contains duplicate work IDs"])
       (when-not (= (set expected-ids) (set record-ids))
@@ -627,6 +629,7 @@
 (defn parser-rq-source-recognition-coherence-errors [index aggregate records]
   (let [identity-keys ["qualification_identity_ref" "generation_ref"
                        "policy_hash" "coordinate_system"]
+        completeness (get aggregate "work_completeness")
         indexed-ids (set (map #(get % "work_id") (get index "records" [])))
         records-by-id (group-by #(get % "work_id") records)
         ok-records (filter #(= "ok" (get % "status")) records)
@@ -658,6 +661,21 @@
         ["aggregate has mismatched membership_ref"])
       (when (= "ok" (get aggregate "status"))
         (concat
+         (when-not (= "ok" (get index "status"))
+           ["available aggregate requires an available index"])
+         (when-not (true? (get completeness "complete"))
+           ["available aggregate requires complete work membership"])
+         (when-not (= (get completeness "expected")
+                      (get index "expected_work_count"))
+           ["aggregate expected count does not equal index membership"])
+         (when-not (= (get completeness "observed")
+                      (get index "record_count"))
+           ["aggregate observed count does not equal index records"])
+         (when-not (= (get completeness "observed") (count records))
+           ["aggregate observed count does not equal loaded records"])
+         (when-not (= (get completeness "expected")
+                      (get completeness "observed"))
+           ["available aggregate expected and observed counts differ"])
          (when-not (every? #(= "ok" (get % "status")) records)
            ["available aggregate contains unavailable records"])
          (for [[field key] [["eligible_bytes" "eligible_bytes"]

@@ -27,6 +27,14 @@
 (def identity-ref
   (qualification/qualification-identity-ref qualification-identity))
 
+(def recognition-identity
+  (assoc-in qualification-identity
+            [:instrument_versions :source_recognition]
+            "parser-rq-source-recognition-v1"))
+
+(def recognition-identity-ref
+  (qualification/qualification-identity-ref recognition-identity))
+
 (deftest qualification-identity-ref-matches-rust-golden
   (is (= "sha256:8823c4600a7b9cff9b03728247dbd991474a8bbdf528cec8752b63219e68ae85"
          identity-ref)))
@@ -54,6 +62,7 @@
 (defn- write-blob!
   [root locator value]
   (let [file (io/file root locator)]
+    (.mkdirs (.getParentFile file))
     (json/write-deterministic-json-file! file value)
     {:locator locator
      :ref {:sha256 (hash/format-sha256 (hash/sha256-file file))
@@ -278,3 +287,187 @@
                          store changed-manifest changed-aggregate identity)))))
       (finally
         (doseq [file (reverse (file-seq root))] (.delete file))))))
+
+(defn- corpus-generation-ref
+  [index]
+  (hash/format-sha256
+   (hash/sha256-json-rfc8785-safe-integer-v1
+    (walk/stringify-keys (dissoc index :corpus_generation_ref)))))
+
+(defn- recognition-values
+  [recognized accounted eligible]
+  (let [work {:schema_version "abc/parser-rq-source-recognition-work/v1"
+              :qualification_identity_ref recognition-identity-ref
+              :capture_generation_ref (str "sha256:" (apply str (repeat 64 "2")))
+              :policy_hash (str "sha256:" (apply str (repeat 64 "3")))
+              :instrument_version "parser-rq-source-recognition-v1"
+              :work_id "fixture-work"
+              :coordinate_system "decoded_utf8"
+              :ledger {:sha256 (str "sha256:" (apply str (repeat 64 "4")))
+                       :bytes 1
+                       :media_type "application/json"
+                       :locator "unused-ledger.json"}
+              :status "ok"
+              :eligible_bytes eligible
+              :recognized_bytes recognized
+              :accounted_bytes accounted
+              :semantic_gap_bytes (- eligible recognized)
+              :unaccounted_bytes (- eligible accounted)
+              :recognized (if (pos? recognized) [{:start 0 :end recognized}] [])
+              :accounted (if (pos? accounted) [{:start 0 :end accounted}] [])
+              :semantic_gaps (if (< recognized eligible)
+                               [{:start recognized :end eligible}]
+                               [])
+              :unaccounted (if (< accounted eligible)
+                             [{:start accounted :end eligible}]
+                             [])}
+        policy-hash (:policy_hash work)
+        membership-ref (str "sha256:" (apply str (repeat 64 "5")))
+        base-index {:schema_version "abc/parser-rq-source-recognition-index/v1"
+                    :qualification_identity_ref recognition-identity-ref
+                    :corpus_generation_ref capture/sha256-schema
+                    :corpus_generation_algorithm "sha256-rfc8785-safe-integer-domain-abc-v1"
+                    :policy_hash policy-hash
+                    :membership_ref membership-ref
+                    :coordinate_system "decoded_utf8"
+                    :status "ok"
+                    :expected_work_ids ["fixture-work"]
+                    :expected_work_count 1
+                    :record_count 1
+                    :records []
+                    :errors []}]
+    {:work work
+     :base-index base-index
+     :aggregate-base {:schema_version "abc/parser-rq-source-recognition-aggregate/v1"
+                      :qualification_identity_ref recognition-identity-ref
+                      :corpus_generation_algorithm "sha256-rfc8785-safe-integer-domain-abc-v1"
+                      :policy_hash policy-hash
+                      :membership_ref membership-ref
+                      :coordinate_system "decoded_utf8"
+                      :status "ok"
+                      :work_completeness {:expected 1 :observed 1 :complete true}
+                      :eligible_bytes eligible
+                      :recognized_bytes recognized
+                      :accounted_bytes accounted
+                      :semantic_gap_bytes (- eligible recognized)
+                      :unaccounted_bytes (- eligible accounted)
+                      :semantic_gaps (mapv #(assoc % :work_id "fixture-work")
+                                           (:semantic_gaps work))
+                      :unaccounted (mapv #(assoc % :work_id "fixture-work")
+                                         (:unaccounted work))}}))
+
+(defn- recognition-capture
+  [recognized accounted eligible]
+  (let [root (.toFile (java.nio.file.Files/createTempDirectory
+                       "parser-rq-recognition"
+                       (make-array java.nio.file.attribute.FileAttribute 0)))
+        {:keys [work base-index aggregate-base]}
+        (recognition-values recognized accounted eligible)
+        work-blob (write-blob! root "records/fixture-work/recognition.json" work)
+        entry (merge {:work_id "fixture-work"
+                      :capture_generation_ref (:capture_generation_ref work)}
+                     (:ref work-blob)
+                     {:locator (:locator work-blob)})
+        index-with-entry (assoc base-index :records [entry])
+        index (assoc index-with-entry :corpus_generation_ref
+                     (corpus-generation-ref index-with-entry))
+        aggregate (assoc aggregate-base :corpus_generation_ref
+                         (:corpus_generation_ref index))
+        aggregate-blob (write-blob! root "recognition-aggregate.json" aggregate)
+        index-blob (write-blob! root "recognition-index.json" index)
+        identity-blob (write-blob! root "identity.json" recognition-identity)
+        manifest {:blobs [aggregate-blob index-blob identity-blob work-blob]
+                  :denominator {:value eligible :unit "decoded_utf8_bytes"}}]
+    {:root root
+     :store {:root (.getPath root)}
+     :manifest manifest
+     :aggregate aggregate
+     :index index}))
+
+(defn- with-recognition-capture
+  [recognized accounted eligible f]
+  (let [{:keys [root] :as captured}
+        (recognition-capture recognized accounted eligible)]
+    (try
+      (f captured)
+      (finally
+        (doseq [file (reverse (file-seq root))]
+          (.delete file))))))
+
+(deftest semantic-recognition-not-accountability-drives-r1
+  (with-recognition-capture 9 10 10
+    (fn [{:keys [store manifest aggregate]}]
+      (is (= {:value 0.9M :identity_ref recognition-identity-ref}
+             (rq-source/derive-source-recognition-envelope
+              store manifest aggregate recognition-identity))))))
+
+(deftest complete-and-empty-semantic-domains-pass-exactly
+  (doseq [eligible [10 0]]
+    (with-recognition-capture eligible eligible eligible
+      (fn [{:keys [store manifest aggregate]}]
+        (is (= {:value 1.0M :identity_ref recognition-identity-ref}
+               (rq-source/derive-source-recognition-envelope
+                store manifest aggregate recognition-identity)))))))
+
+(deftest recognition-unavailability-and-resealed-summaries-fail-closed
+  (with-recognition-capture 9 10 10
+    (fn [{:keys [store manifest aggregate]}]
+      (doseq [candidate [(assoc aggregate :status "unavailable")
+                         (assoc aggregate :recognized_bytes 10
+                                :semantic_gap_bytes 0
+                                :semantic_gaps [])]]
+        (let [aggregate-blob (write-blob! (:root store)
+                                          "recognition-aggregate.json"
+                                          candidate)
+              resealed (update manifest :blobs
+                               (fn [blobs]
+                                 (mapv #(if (= "recognition-aggregate.json"
+                                               (:locator %))
+                                          aggregate-blob
+                                          %)
+                                       blobs)))]
+          (is (= :unavailable
+                 (:status (rq-source/derive-source-recognition-envelope
+                           store resealed candidate recognition-identity)))))))))
+
+(deftest malformed-or-missing-recognition-evidence-cannot-fall-back-to-node-spans
+  (with-recognition-capture 9 10 10
+    (fn [{:keys [store manifest aggregate]}]
+      (let [malformed (update manifest :blobs
+                              (fn [blobs]
+                                (mapv #(if (= "recognition-index.json" (:locator %))
+                                         (assoc-in % [:ref :bytes]
+                                                   (inc (get-in % [:ref :bytes])))
+                                         %)
+                                      blobs)))]
+        (is (= :unavailable
+               (:status (rq-source/derive-source-recognition-envelope
+                         store malformed aggregate recognition-identity)))))))
+  (let [legacy-envelope (derive-envelope (aggregate-value)
+                                         {:value 10 :unit "decoded_utf8_bytes"})]
+    (with-capture (aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
+      (fn [{:keys [store manifest]}]
+        (is (= {:value :instrument-missing
+                :identity_ref recognition-identity-ref}
+               (rq-source/derive-source-recognition-envelope
+                store manifest nil recognition-identity)))))
+    (is (= 0.9M (:value legacy-envelope)))))
+
+(deftest ambiguous-recognition-binding-is-unavailable-not-instrument-missing
+  (with-recognition-capture 9 10 10
+    (fn [{:keys [store manifest aggregate]}]
+      (let [aggregate-member (first (filter #(= "recognition-aggregate.json"
+                                                (:locator %))
+                                            (:blobs manifest)))
+            ambiguous (update manifest :blobs conj aggregate-member)]
+        (is (= :unavailable
+               (:status (rq-source/derive-source-recognition-envelope
+                         store ambiguous aggregate recognition-identity))))))))
+
+(deftest recognition-ratio-keeps-a-one-byte-deficit-visible
+  (with-recognition-capture 999999 1000000 1000000
+    (fn [{:keys [store manifest aggregate]}]
+      (let [envelope (rq-source/derive-source-recognition-envelope
+                      store manifest aggregate recognition-identity)]
+        (is (= 0.9999990M (:value envelope)))
+        (is (< (:value envelope) 1M))))))

@@ -84,6 +84,19 @@
     (testing "only an exact 1.0 passes"
       (is (= :pass (:verdict (q/evaluate-predicate pred {:source_span_coverage {:value 1.0}})))))))
 
+(deftest semantic-source-recognition-replaces-r1-without-hiding-node-evidence
+  (let [identity-ref (q/qualification-identity-ref admitted-identity)
+        node-envelope {:value 1.0M :identity_ref identity-ref}
+        recognition-envelope {:value 0.9M :identity_ref identity-ref}
+        migrated (q/install-source-recognition-observation
+                  {:source_span_coverage node-envelope}
+                  recognition-envelope)
+        pred (first (filter #(= :source-span-coverage (:predicate_id %))
+                            (:predicates (q/load-predicates))))]
+    (is (= recognition-envelope (:source_span_coverage migrated)))
+    (is (= node-envelope (:parser_ir_node_span_coverage migrated)))
+    (is (= :fail (:verdict (q/evaluate-predicate pred migrated))))))
+
 (deftest compare-observed-is-exact-test
   (is (false? (q/compare-observed := 1.0 0.969)))
   (is (true? (q/compare-observed := 1.0 1.0)))

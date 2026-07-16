@@ -181,6 +181,14 @@
   [predicate-set measurements]
   (mapv #(evaluate-predicate % measurements) (:predicates predicate-set)))
 
+(defn install-source-recognition-observation
+  "Install ledger-authoritative R1 evidence while retaining the former
+  Parser-IR node-span observation under its explicit supporting name."
+  [measurements recognition-envelope]
+  (cond-> (assoc measurements :source_span_coverage recognition-envelope)
+    (contains? measurements :source_span_coverage)
+    (assoc :parser_ir_node_span_coverage (:source_span_coverage measurements))))
+
 (defn verdict-tally
   [results]
   (frequencies (map :verdict results)))

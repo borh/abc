@@ -13,6 +13,9 @@
 (def aggregate-schema
   (delay (files/read-json "schemas/parser-rq-source-accountability-aggregate.schema.json")))
 
+(def taxonomy-schema
+  (delay (files/read-json "schemas/parser-rq-ignored-regions.schema.json")))
+
 (def source-accountability-instrument-version
   "parser-rq-source-accountability-v1")
 
@@ -44,13 +47,23 @@
             walk/keywordize-keys)))
     (catch Exception _ nil)))
 
-(defn- blob-value-present?
-  [store manifest expected]
-  (some #(= expected (authenticated-json-value store %)) (:blobs manifest)))
+(def expected-locators
+  {:aggregate "aggregate.json"
+   :identity "identity.json"
+   :taxonomy "taxonomy.json"})
 
-(defn- logical-ref-present?
-  [manifest expected]
-  (some #(= expected (get-in % [:ref :sha256])) (:blobs manifest)))
+(defn- unambiguous-manifest?
+  [manifest]
+  (let [blobs (:blobs manifest)]
+    (and (every? #(= 1 %) (vals (frequencies (map :locator blobs))))
+         (every? #(= 1 %)
+                 (vals (frequencies (map #(get-in % [:ref :sha256]) blobs)))))))
+
+(defn- selected-member
+  [manifest locator]
+  (when (unambiguous-manifest? manifest)
+    (let [matches (filterv #(= locator (:locator %)) (:blobs manifest))]
+      (when (= 1 (count matches)) (first matches)))))
 
 (defn- valid-uncovered?
   [uncovered uncovered-bytes eligible-bytes]
@@ -100,7 +113,7 @@
                  instruments))))
 
 (defn- valid-aggregate?
-  [aggregate identity-ref manifest]
+  [aggregate identity-ref]
   (let [{:keys [eligible_bytes covered_eligible_bytes uncovered_eligible_bytes
                 taxonomy_hash work_completeness uncovered]} aggregate]
     (and (nil? (schema/validation-errors @aggregate-schema aggregate))
@@ -108,19 +121,37 @@
          (= "decoded_utf8" (:coordinate_system aggregate))
          (= identity-ref (:identity_ref aggregate))
          (= "parser-rq-ignored-regions-v1" (:taxonomy_version aggregate))
-         (logical-ref-present? manifest taxonomy_hash)
+         (string? taxonomy_hash)
+         (re-matches hash/hash-pattern taxonomy_hash)
          (true? (:complete work_completeness))
          (= (:expected work_completeness) (:observed work_completeness))
          (pos-int? eligible_bytes)
          (= eligible_bytes (+ covered_eligible_bytes uncovered_eligible_bytes))
          (valid-uncovered? uncovered uncovered_eligible_bytes eligible_bytes))))
 
+(defn- valid-taxonomy?
+  [taxonomy taxonomy-member aggregate]
+  (and taxonomy
+       (nil? (schema/validation-errors @taxonomy-schema taxonomy))
+       (= (:taxonomy_version aggregate) (:taxonomy_version taxonomy))
+       (= (:coordinate_system aggregate) (:coordinate_system taxonomy))
+       (= (:taxonomy_hash aggregate) (get-in taxonomy-member [:ref :sha256]))))
+
 (defn derive-source-span-envelope
   "Reverify a P0 capture and derive R1 only from authenticated integer totals."
   [store manifest aggregate identity]
   (let [verified (capture/verify-manifest store manifest)
         expected (qualification/qualification-identity-ref identity)
-        denominator (:denominator manifest)]
+        denominator (:denominator manifest)
+        aggregate-member (selected-member manifest (:aggregate expected-locators))
+        identity-member (selected-member manifest (:identity expected-locators))
+        taxonomy-member (selected-member manifest (:taxonomy expected-locators))
+        authenticated-aggregate (some->> aggregate-member
+                                         (authenticated-json-value store))
+        authenticated-identity (some->> identity-member
+                                        (authenticated-json-value store))
+        taxonomy (some->> taxonomy-member
+                          (authenticated-json-value store))]
     (cond
       (not= :ok (:status verified))
       verified
@@ -128,11 +159,14 @@
       (not (valid-identity? identity))
       (unavailable "qualification identity violates the closed P0 contract")
 
-      (not (blob-value-present? store manifest identity))
+      (not= identity authenticated-identity)
       (unavailable "qualification identity is absent from verified manifest evidence")
 
-      (not (blob-value-present? store manifest aggregate))
+      (not= aggregate authenticated-aggregate)
       (unavailable "aggregate argument does not match verified aggregate bytes")
+
+      (not (valid-taxonomy? taxonomy taxonomy-member aggregate))
+      (unavailable "taxonomy is absent, ambiguous, invalid, or inconsistent")
 
       (not= "decoded_utf8_bytes" (:unit denominator))
       (unavailable "manifest denominator is not decoded UTF-8 bytes")
@@ -140,7 +174,7 @@
       (not= (:eligible_bytes aggregate) (:value denominator))
       (unavailable "manifest denominator does not equal aggregate eligible bytes")
 
-      (not (valid-aggregate? aggregate expected manifest))
+      (not (valid-aggregate? aggregate expected))
       (unavailable "aggregate violates schema, identity, taxonomy, or conservation contracts")
 
       :else

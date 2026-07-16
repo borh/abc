@@ -32,7 +32,7 @@
          identity-ref)))
 
 (def taxonomy-text
-  "{\"coordinate_system\":\"decoded_utf8\",\"rules\":[],\"schema_version\":\"abc/parser-rq-ignored-regions/v1\",\"taxonomy_version\":\"parser-rq-ignored-regions-v1\"}")
+  "{\"$schema\":\"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json\",\"coordinate_system\":\"decoded_utf8\",\"rules\":[],\"schema_version\":\"abc/parser-rq-ignored-regions/v1\",\"taxonomy_version\":\"parser-rq-ignored-regions-v1\"}")
 
 (def taxonomy-hash
   (hash/format-sha256 (hash/sha256-string taxonomy-text)))
@@ -59,6 +59,29 @@
      :ref {:sha256 (hash/format-sha256 (hash/sha256-file file))
            :bytes (hash/byte-length file)
            :media_type "application/json"}}))
+
+(def fixture-root
+  (io/file "test/fixtures/parser-rq/source-accountability"))
+
+(def fixture-names
+  ["aggregate.json" "identity.json" "index.json" "manifest.json" "taxonomy.json"])
+
+(defn- blob-ref
+  [file]
+  {:sha256 (hash/format-sha256 (hash/sha256-file file))
+   :bytes (hash/byte-length file)
+   :media_type "application/json"})
+
+(defn- stage-committed-capture
+  []
+  (let [root (.toFile (java.nio.file.Files/createTempDirectory
+                       "parser-rq-committed"
+                       (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (doseq [name fixture-names]
+      (java.nio.file.Files/copy (.toPath (io/file fixture-root name))
+                                (.toPath (io/file root name))
+                                (into-array java.nio.file.CopyOption [])))
+    root))
 
 (defn- capture
   [aggregate denominator]
@@ -192,12 +215,66 @@
                        store manifest (aggregate-value)
                        qualification-identity)))))))
 
-(deftest generated-fixture-aggregate-derives-without-an-observation-seam
-  (let [aggregate (-> "test/fixtures/parser-rq/source-accountability/aggregate.json"
-                      json/read-json-file
-                      walk/keywordize-keys)]
-    (is (= {:value 1.0M :identity_ref identity-ref}
-           (derive-envelope aggregate
-                            {:value 9 :unit "decoded_utf8_bytes"})))
-    (is (= {:value :instrument-missing :identity_ref identity-ref}
-           (rq-source/silent-drops-envelope qualification-identity)))))
+(deftest committed-capture-derives-and-authenticated-mutation-is-rejected
+  (let [root (stage-committed-capture)
+        store {:root (.getPath root)}
+        manifest (-> (io/file root "manifest.json") json/read-json-file walk/keywordize-keys)
+        aggregate (-> (io/file root "aggregate.json") json/read-json-file walk/keywordize-keys)
+        identity (-> (io/file root "identity.json") json/read-json-file walk/keywordize-keys)]
+    (try
+      (is (= {:value 1.0M :identity_ref identity-ref}
+             (rq-source/derive-source-span-envelope store manifest aggregate identity)))
+      (spit (io/file root "aggregate.json") "\n" :append true)
+      (is (= :unavailable (:status (capture/verify-manifest store manifest))))
+      (is (= :unavailable
+             (:status (rq-source/derive-source-span-envelope
+                       store manifest aggregate identity))))
+      (finally
+        (doseq [file (reverse (file-seq root))] (.delete file))))))
+
+(deftest taxonomy-member-is-schema-validated-and-unambiguous
+  (let [root (stage-committed-capture)
+        store {:root (.getPath root)}
+        manifest (-> (io/file root "manifest.json") json/read-json-file walk/keywordize-keys)
+        aggregate-file (io/file root "aggregate.json")
+        aggregate (-> aggregate-file json/read-json-file walk/keywordize-keys)
+        identity (-> (io/file root "identity.json") json/read-json-file walk/keywordize-keys)
+        taxonomy-file (io/file root "taxonomy.json")]
+    (try
+      (let [taxonomy-blob (first (filter #(= "taxonomy.json" (:locator %))
+                                         (:blobs manifest)))
+            taxonomy-copy (io/file root "taxonomy-copy.json")]
+        (java.nio.file.Files/copy (.toPath taxonomy-file)
+                                  (.toPath taxonomy-copy)
+                                  (into-array java.nio.file.CopyOption []))
+        (doseq [ambiguous-manifest
+                [(update manifest :blobs conj taxonomy-blob)
+                 (update manifest :blobs conj
+                         (-> taxonomy-blob
+                             (assoc :locator "taxonomy-copy.json")
+                             (assoc-in [:ref :media_type]
+                                       "application/vnd.example+json")))]]
+          (is (= :unavailable
+                 (:status (rq-source/derive-source-span-envelope
+                           store ambiguous-manifest aggregate identity))))))
+      (spit taxonomy-file
+            "{\"coordinate_system\":\"decoded_utf8\",\"rules\":[],\"schema_version\":\"abc/parser-rq-ignored-regions/v1\",\"taxonomy_version\":\"parser-rq-ignored-regions-v1\"}")
+      (let [taxonomy-ref (blob-ref taxonomy-file)
+            changed-aggregate (assoc aggregate :taxonomy_hash (:sha256 taxonomy-ref))
+            _ (spit aggregate-file (json/write-deterministic-json-str changed-aggregate))
+            aggregate-ref (blob-ref aggregate-file)
+            changed-manifest
+            (update manifest :blobs
+                    (fn [blobs]
+                      (mapv (fn [blob]
+                              (case (:locator blob)
+                                "aggregate.json" (assoc blob :ref aggregate-ref)
+                                "taxonomy.json" (assoc blob :ref taxonomy-ref)
+                                blob))
+                            blobs)))]
+        (is (= :ok (:status (capture/verify-manifest store changed-manifest))))
+        (is (= :unavailable
+               (:status (rq-source/derive-source-span-envelope
+                         store changed-manifest changed-aggregate identity)))))
+      (finally
+        (doseq [file (reverse (file-seq root))] (.delete file))))))

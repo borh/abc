@@ -6,7 +6,7 @@ use ab_parser_rq_source_accountability::{
     CorpusEntry, CorpusInput, CorpusSourceEntry, QualificationIdentity, TaxonomyIdentity,
     TaxonomyVersion, aggregate, analyze_corpus, canonical_json,
 };
-use serde_json::{Value, json};
+use serde_json::json;
 use sha2::{Digest, Sha256};
 
 fn hash(bytes: &[u8]) -> String {
@@ -72,17 +72,24 @@ fn temp_root(label: &str) -> PathBuf {
 }
 
 fn taxonomy_bytes() -> Vec<u8> {
-    br#"{"coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec()
+    br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec()
 }
 
-fn capture(root: &Path) -> (String, String, String) {
+fn capture(root: &Path, mutate_source: bool) -> BTreeMap<String, String> {
     let source_root = root.join("source");
     let ir_root = root.join("ir");
     let store = root.join("store");
     fs::create_dir_all(&source_root).unwrap();
     fs::create_dir_all(&ir_root).unwrap();
     fs::create_dir_all(&store).unwrap();
-    let works = [("fixture-a", "a.txt", "青空"), ("fixture-b", "b.txt", "海")];
+    let works = [
+        (
+            "fixture-a",
+            "a.txt",
+            if mutate_source { "青空!" } else { "青空" },
+        ),
+        ("fixture-b", "b.txt", "海"),
+    ];
     let entries = works
         .iter()
         .map(|(work_id, source_path, source)| {
@@ -155,7 +162,16 @@ fn capture(root: &Path) -> (String, String, String) {
         "denominator": {"value": 9, "unit": "decoded_utf8_bytes"}
     }))
     .unwrap();
-    (index_bytes, aggregate_bytes, manifest)
+    BTreeMap::from([
+        ("aggregate.json".into(), aggregate_bytes),
+        ("identity.json".into(), identity_bytes),
+        ("index.json".into(), index_bytes),
+        ("manifest.json".into(), manifest),
+        (
+            "taxonomy.json".into(),
+            String::from_utf8(taxonomy_bytes).unwrap(),
+        ),
+    ])
 }
 
 fn fixture(name: &str) -> String {
@@ -171,28 +187,43 @@ fn fixture_path(name: &str) -> PathBuf {
         .join(name)
 }
 
+fn verify_committed_witnesses(artifacts: &BTreeMap<String, String>) -> Result<(), Vec<String>> {
+    let fixture_root = fixture_path("index.json").parent().unwrap().to_path_buf();
+    let committed_names = fs::read_dir(&fixture_root)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .collect::<std::collections::BTreeSet<_>>();
+    let generated_names = artifacts.keys().cloned().collect();
+    let mut drift = committed_names
+        .symmetric_difference(&generated_names)
+        .cloned()
+        .collect::<Vec<_>>();
+    drift.extend(
+        artifacts
+            .iter()
+            .filter_map(|(name, bytes)| (bytes != &fixture(name)).then_some(name.clone())),
+    );
+    if drift.is_empty() { Ok(()) } else { Err(drift) }
+}
+
 #[test]
 fn capture_derives_byte_identical_witnesses_and_mutation_drifts() {
     let first_root = temp_root("first");
     let second_root = temp_root("second");
-    let first = capture(&first_root);
-    let second = capture(&second_root);
+    let mutation_root = temp_root("mutation");
+    let first = capture(&first_root, false);
+    let second = capture(&second_root, false);
     assert_eq!(first, second);
     if std::env::var_os("BLESS_PARSER_RQ_FIXTURE").is_some() {
         fs::create_dir_all(fixture_path("index.json").parent().unwrap()).unwrap();
-        fs::write(fixture_path("index.json"), &first.0).unwrap();
-        fs::write(fixture_path("aggregate.json"), &first.1).unwrap();
-        fs::write(fixture_path("manifest.json"), &first.2).unwrap();
+        for (name, bytes) in &first {
+            fs::write(fixture_path(name), bytes).unwrap();
+        }
     }
-    assert_eq!(first.0, fixture("index.json"));
-    assert_eq!(first.1, fixture("aggregate.json"));
-    assert_eq!(first.2, fixture("manifest.json"));
-    let mut mutation: Value = serde_json::from_str(&first.1).unwrap();
-    mutation["covered_eligible_bytes"] = json!(8);
-    assert_ne!(
-        canonical_json(&mutation).unwrap(),
-        fixture("aggregate.json")
-    );
+    verify_committed_witnesses(&first).unwrap();
+    let mutated = capture(&mutation_root, true);
+    assert!(verify_committed_witnesses(&mutated).is_err());
     fs::remove_dir_all(first_root).unwrap();
     fs::remove_dir_all(second_root).unwrap();
+    fs::remove_dir_all(mutation_root).unwrap();
 }

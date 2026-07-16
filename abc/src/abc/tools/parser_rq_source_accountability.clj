@@ -25,6 +25,16 @@
 (def recognition-work-schema
   (delay (files/read-json "schemas/parser-rq-source-recognition-work.schema.json")))
 
+(def source-accountability-index-schema
+  (delay (files/read-json "schemas/parser-rq-source-accountability-index.schema.json")))
+
+(def classified-source-ledger-schema
+  (delay (files/read-json "schemas/parser-rq-classified-source-ledger.schema.json")))
+
+(def classified-source-authority
+  (delay (-> (files/read-json "data/parser-rq-classified-source-authority-v1.json")
+             walk/keywordize-keys)))
+
 (def source-accountability-instrument-version
   "parser-rq-source-accountability-v1")
 
@@ -218,6 +228,83 @@
       (walk/stringify-keys (dissoc index :corpus_generation_ref))))
     (catch Exception _ nil)))
 
+(defn- projected-ref
+  [value excluded-key]
+  (try
+    (hash/format-sha256
+     (hash/sha256-json-rfc8785-safe-integer-v1
+      (walk/stringify-keys (dissoc value excluded-key))))
+    (catch Exception _ nil)))
+
+(defn- content-locator
+  [sha256 extension]
+  (when (and (string? sha256) (re-matches hash/hash-pattern sha256))
+    (let [digest (subs sha256 7)]
+      (str "sha256/" (subs digest 0 2) "/" digest "." extension))))
+
+(defn- authenticated-generation
+  [store p0-manifest capture-ref]
+  (let [generation (->> (:blobs p0-manifest)
+                        (keep #(authenticated-json-value store %))
+                        (filter #(= capture-ref (:generation_ref %)))
+                        first)]
+    (when (and generation
+               (= "abc/parser-rq-capture-generation/v1" (:schema_version generation))
+               (= capture-ref (:generation_ref generation))
+               (= capture-ref (projected-ref generation :generation_ref)))
+      generation)))
+
+(defn- valid-generation-member?
+  [store p0-manifest generation member-name extension]
+  (let [{:keys [artifact_ref value_hash]} (get-in generation [:members member-name])
+        expected-locator (content-locator value_hash extension)
+        p0-member (selected-member p0-manifest artifact_ref)]
+    (and (= artifact_ref expected-locator)
+         p0-member
+         (= value_hash (get-in p0-member [:ref :sha256])))))
+
+(defn- valid-ledger-chain?
+  [store p0-manifest record index-entry index]
+  (let [generation (authenticated-generation store p0-manifest
+                                             (:capture_generation_ref record))
+        ledger-member (get-in generation [:members :classified_source_ledger])
+        ledger-p0-member (selected-member p0-manifest (:artifact_ref ledger-member))
+        ledger (some->> ledger-p0-member (authenticated-json-value store))
+        authority @classified-source-authority
+        parser-member (get-in generation [:members :parser_output])]
+    (and generation
+         (= (:work_id index-entry) (:work_id generation))
+         (= (:qualification_identity_ref index)
+            (:qualification_identity_ref generation))
+         (= (:ledger record)
+            {:sha256 (:value_hash ledger-member)
+             :bytes (get-in ledger-p0-member [:ref :bytes])
+             :media_type "application/json"
+             :locator (:artifact_ref ledger-member)})
+         (nil? (schema/validation-errors @classified-source-ledger-schema ledger))
+         (= (:qualification_identity_ref index)
+            (:qualification_identity_ref ledger))
+         (= (:work_id index-entry) (get-in ledger [:original_source :value_hash]))
+         (= "decoded_utf8" (:coordinate_system ledger))
+         (= (:policy_hash index) (:policy_hash ledger)
+            (get-in authority [:policy :identity_hash]))
+         (= (:ledger_schema_hash ledger)
+            (get-in authority [:ledger_schema :identity_hash]))
+         (= (select-keys (get-in generation [:members :decoded_source])
+                         [:artifact_ref :value_hash])
+            (select-keys (:decoded_source ledger) [:artifact_ref :value_hash]))
+         (valid-generation-member? store p0-manifest generation :decoded_source "txt")
+         (valid-generation-member? store p0-manifest generation :parser_output "json")
+         (valid-generation-member? store p0-manifest generation :raw_diagnostics "json")
+         (valid-generation-member? store p0-manifest generation
+                                   :classified_source_ledger "json")
+         (every? (fn [entry]
+                   (if-let [target (:target_identity entry)]
+                     (= (select-keys target [:artifact_ref :value_hash])
+                        (select-keys parser-member [:artifact_ref :value_hash]))
+                     true))
+                 (:entries ledger)))))
+
 (defn- interval-bytes
   [intervals]
   (reduce + 0 (map #(- (:end %) (:start %)) intervals)))
@@ -266,12 +353,14 @@
               (conj {:start cursor :end eligible})))))
 
 (defn- valid-recognition-work?
-  [record index-entry index]
+  [store p0-manifest record index-entry index]
   (let [{:keys [eligible_bytes recognized_bytes accounted_bytes
                 semantic_gap_bytes unaccounted_bytes recognized accounted
                 semantic_gaps unaccounted]} record]
     (and (nil? (schema/validation-errors @recognition-work-schema record))
+         (valid-ledger-chain? store p0-manifest record index-entry index)
          (= "ok" (:status record))
+         (= source-recognition-instrument-version (:instrument_version record))
          (= (:qualification_identity_ref index)
             (:qualification_identity_ref record))
          (= (:policy_hash index) (:policy_hash record))
@@ -305,20 +394,31 @@
            records)))
 
 (defn- valid-recognition-fold?
-  [index aggregate records]
+  [store p0-manifest index aggregate records]
   (let [identity-keys [:qualification_identity_ref :corpus_generation_ref
                        :corpus_generation_algorithm :policy_hash
                        :membership_ref :coordinate_system]
         entries (:records index)
         record-ids (mapv :work_id records)
-        completeness (:work_completeness aggregate)]
+        completeness (:work_completeness aggregate)
+        membership-member (selected-member
+                           p0-manifest
+                           (content-locator (:membership_ref index) "json"))
+        membership (some->> membership-member (authenticated-json-value store))]
     (and (nil? (schema/validation-errors @recognition-index-schema index))
          (nil? (schema/validation-errors @recognition-aggregate-schema aggregate))
+         (nil? (schema/validation-errors @source-accountability-index-schema membership))
+         (= "ok" (:status membership))
+         (= (:membership_ref index) (get-in membership-member [:ref :sha256]))
+         (= (:qualification_identity_ref index) (:identity_ref membership))
+         (= (:coordinate_system index) (:coordinate_system membership))
+         (= (:expected_work_ids index) (mapv :work_id (:records membership)))
          (= "ok" (:status index) (:status aggregate))
          (= (:corpus_generation_ref index) (corpus-generation-ref index))
          (= (:expected_work_ids index) (mapv :work_id entries) record-ids)
          (= (:expected_work_count index) (:record_count index) (count records))
-         (every? true? (map valid-recognition-work? records entries (repeat index)))
+         (every? true? (map #(valid-recognition-work? store p0-manifest %1 %2 index)
+                            records entries))
          (every? #(= (get index %) (get aggregate %)) identity-keys)
          (= {:expected (count records) :observed (count records) :complete true}
             completeness)
@@ -384,7 +484,7 @@
           (unavailable "manifest denominator is not decoded UTF-8 bytes")
           (not= (:eligible_bytes aggregate) (:value denominator))
           (unavailable "manifest denominator does not equal recognition eligible bytes")
-          (not (valid-recognition-fold? index aggregate records))
+          (not (valid-recognition-fold? store manifest index aggregate records))
           (unavailable "recognition aggregate is not the authenticated exact corpus fold")
           :else
           {:value (if (zero? (:eligible_bytes aggregate))

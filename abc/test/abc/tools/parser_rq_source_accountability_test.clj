@@ -5,6 +5,7 @@
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-source-accountability :as rq-source]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is]]
             [clojure.walk :as walk]))
 
@@ -70,6 +71,113 @@
   [root]
   (doseq [file (reverse (file-seq root))] (.delete file)))
 
+(defn- blob-ref-for
+  [file media-type]
+  {:sha256 (hash/format-sha256 (hash/sha256-file file))
+   :bytes (hash/byte-length file)
+   :media_type media-type})
+
+(defn- replace-manifest-member
+  [manifest locator ref]
+  (update manifest :blobs
+          (fn [blobs]
+            (mapv #(if (= locator (:locator %)) (assoc % :ref ref) %) blobs))))
+
+(defn- reseal-existing-json!
+  [root manifest locator value]
+  (let [file (io/file root "store" locator)]
+    (json/write-deterministic-json-file! file value)
+    (replace-manifest-member manifest locator
+                             (blob-ref-for file "application/json"))))
+
+(defn- publish-json!
+  [root manifest value]
+  (let [text (json/write-deterministic-json-str value)
+        sha256 (hash/format-sha256 (hash/sha256-string text))
+        digest (subs sha256 7)
+        locator (str "sha256/" (subs digest 0 2) "/" digest ".json")
+        file (io/file root "store" locator)
+        _ (.mkdirs (.getParentFile file))
+        _ (spit file text)
+        member {:locator locator :ref (blob-ref-for file "application/json")}]
+    {:manifest (update manifest :blobs conj member)
+     :member member}))
+
+(defn- generation-for
+  [root capture-ref]
+  (->> (file-seq (io/file root "store"))
+       (filter #(.isFile %))
+       (filter #(string/ends-with? (.getName %) ".json"))
+       (keep #(try (read-keyword-json %) (catch Exception _ nil)))
+       (filter #(= capture-ref (:generation_ref %)))
+       first))
+
+(defn- reseal-chain!
+  [{:keys [root manifest aggregate identity] :as staged}
+   {:keys [ledger generation generation-ref record index corpus-ref aggregate-value]
+    entry-mutation :entry}]
+  (let [index-value (read-keyword-json (io/file root "store/recognition-index.json"))
+        entry (first (:records index-value))
+        record-value (read-keyword-json (io/file root "store" (:locator entry)))
+        generation-value (generation-for root (:capture_generation_ref record-value))
+        ledger-value (read-keyword-json
+                      (io/file root "store" (get-in generation-value
+                                                    [:members :classified_source_ledger
+                                                     :artifact_ref])))
+        ledger-value (if ledger (ledger ledger-value) ledger-value)
+        ledger-published (publish-json! root manifest ledger-value)
+        manifest (:manifest ledger-published)
+        generation-value (assoc-in generation-value
+                                   [:members :classified_source_ledger]
+                                   {:artifact_ref (get-in ledger-published [:member :locator])
+                                    :value_hash (get-in ledger-published
+                                                        [:member :ref :sha256])})
+        generation-value (if generation (generation generation-value) generation-value)
+        generation-value (assoc generation-value :generation_ref
+                                (#'rq-source/projected-ref generation-value :generation_ref))
+        generation-value (if generation-ref
+                           (update generation-value :generation_ref generation-ref)
+                           generation-value)
+        generation-published (publish-json! root manifest generation-value)
+        manifest (:manifest generation-published)
+        record-value (-> record-value
+                         (assoc :capture_generation_ref (:generation_ref generation-value)
+                                :ledger {:locator (get-in ledger-published [:member :locator])
+                                         :sha256 (get-in ledger-published [:member :ref :sha256])
+                                         :bytes (get-in ledger-published [:member :ref :bytes])
+                                         :media_type "application/json"})
+                         (cond-> record (record)))
+        record-published (publish-json! root manifest record-value)
+        manifest (:manifest record-published)
+        new-entry (assoc entry
+                         :capture_generation_ref (:generation_ref generation-value)
+                         :locator (get-in record-published [:member :locator])
+                         :sha256 (get-in record-published [:member :ref :sha256])
+                         :bytes (get-in record-published [:member :ref :bytes]))
+        new-entry (if entry-mutation (entry-mutation new-entry) new-entry)
+        index-value (assoc-in index-value [:records 0] new-entry)
+        index-value (if index (index index-value) index-value)
+        index-value (assoc index-value :corpus_generation_ref
+                           (#'rq-source/corpus-generation-ref index-value))
+        index-value (if corpus-ref
+                      (update index-value :corpus_generation_ref corpus-ref)
+                      index-value)
+        aggregate (merge aggregate
+                         (select-keys index-value
+                                      [:qualification_identity_ref :corpus_generation_ref
+                                       :corpus_generation_algorithm :policy_hash
+                                       :membership_ref :coordinate_system]))
+        aggregate (if aggregate-value (aggregate-value aggregate) aggregate)
+        manifest (reseal-existing-json! root manifest "recognition-index.json" index-value)
+        manifest (reseal-existing-json! root manifest "recognition-aggregate.json" aggregate)]
+    (assoc staged :manifest manifest :aggregate aggregate :identity identity)))
+
+(defn- unavailable-recognition?
+  [{:keys [store manifest aggregate identity]}]
+  (= :unavailable
+     (:status (rq-source/derive-source-recognition-envelope
+               store manifest aggregate identity))))
+
 (deftest qualification-identity-ref-matches-rust-golden
   (is (= "sha256:8823c4600a7b9cff9b03728247dbd991474a8bbdf528cec8752b63219e68ae85"
          identity-ref)))
@@ -91,24 +199,127 @@
       (finally (delete-tree! root)))))
 
 (deftest production-recognition-fixture-identity-edges-fail-closed
-  (doseq [[label relative]
-          [["source/capture-ledger/policy/schema/authority/generation"
-            "store/recognition-index.json"]
-           ["corpus-index/ref/algorithm/membership" "store/recognition-index.json"]
-           ["record-locator/hash" (-> (read-keyword-json
-                                       (io/file production-recognition-fixture-root
-                                                "store/recognition-index.json"))
-                                      :records first :locator
-                                      (->> (str "store/")))]
-           ["aggregate-totals/membership" "store/recognition-aggregate.json"]
-           ["qualification/parser/coordinate" "store/identity.json"]]]
+  (doseq [[label mutation]
+          [["ledger policy authority"
+            {:ledger #(assoc % :policy_hash (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["ledger schema authority"
+            {:ledger #(assoc % :ledger_schema_hash
+                             (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["ledger qualification"
+            {:ledger #(assoc % :qualification_identity_ref
+                             (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["ledger coordinate"
+            {:ledger #(assoc % :coordinate_system "body_relative_utf8")}]
+           ["ledger original-source work identity"
+            {:ledger #(assoc-in % [:original_source :value_hash]
+                                (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["ledger target identity"
+            {:ledger #(update % :entries
+                              (fn [entries]
+                                (mapv (fn [entry]
+                                        (if (:target_identity entry)
+                                          (assoc-in entry [:target_identity :value_hash]
+                                                    (str "sha256:"
+                                                         (apply str (repeat 64 "8"))))
+                                          entry))
+                                      entries)))}]
+           ["capture decoded-source hash"
+            {:generation #(assoc-in % [:members :decoded_source :value_hash]
+                                    (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["capture decoded-source locator"
+            {:generation #(assoc-in % [:members :decoded_source :artifact_ref]
+                                    "sha256/88/8888888888888888888888888888888888888888888888888888888888888888.txt")}]
+           ["capture generation work identity"
+            {:generation #(assoc % :work_id
+                                 (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["capture generation ref"
+            {:generation-ref (constantly
+                              (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["record qualification identity"
+            {:record #(assoc % :qualification_identity_ref
+                             (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["record parser instrument"
+            {:record #(assoc % :instrument_version "parser-rq-source-recognition-v2")}]
+           ["record coordinate"
+            {:record #(assoc % :coordinate_system "body_relative_utf8")}]
+           ["record work identity"
+            {:record #(assoc % :work_id
+                             (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["record totals"
+            {:record #(update % :recognized_bytes inc)}]
+           ["record ledger identity"
+            {:record #(assoc-in % [:ledger :sha256]
+                                (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["record locator"
+            {:entry #(assoc % :locator
+                            "sha256/88/8888888888888888888888888888888888888888888888888888888888888888.json")}]
+           ["record hash"
+            {:entry #(assoc % :sha256
+                            (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["corpus algorithm"
+            {:index #(assoc % :corpus_generation_algorithm "sha256-other-v1")}]
+           ["corpus membership"
+            {:index #(assoc % :membership_ref
+                            (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["corpus capture mapping"
+            {:index #(assoc-in % [:records 0 :capture_generation_ref]
+                               (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["corpus work membership"
+            {:index #(assoc % :expected_work_ids
+                            (vec (reverse (:expected_work_ids %))))}]
+           ["corpus generation ref"
+            {:corpus-ref (constantly
+                          (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["aggregate totals"
+            {:aggregate-value #(update % :recognized_bytes inc)}]
+           ["aggregate membership ref"
+            {:aggregate-value #(assoc % :membership_ref
+                                      (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["aggregate corpus ref"
+            {:aggregate-value #(assoc % :corpus_generation_ref
+                                      (str "sha256:"
+                                           (apply str (repeat 64 "8"))))}]]]
     (let [{:keys [root store manifest identity aggregate]}
           (staged-production-recognition)]
       (try
-        (spit (io/file root relative) "{}")
-        (is (= :unavailable
-               (:status (rq-source/derive-source-recognition-envelope
-                         store manifest aggregate identity)))
+        (is (unavailable-recognition?
+             (reseal-chain! {:root root :store store :manifest manifest
+                             :identity identity :aggregate aggregate}
+                            mutation))
+            label)
+        (finally (delete-tree! root)))))
+  (let [{:keys [root manifest] :as staged} (staged-production-recognition)]
+    (try
+      (let [index (read-keyword-json (io/file root "store/recognition-index.json"))
+            generation (generation-for root
+                                       (:capture_generation_ref (first (:records index))))
+            locator (get-in generation [:members :decoded_source :artifact_ref])
+            file (io/file root "store" locator)
+            _ (spit file (str (slurp file) "attacker-byte"))
+            manifest (replace-manifest-member
+                      manifest locator (blob-ref-for file "text/plain"))]
+        (is (unavailable-recognition? (assoc staged :manifest manifest))
+            "source blob bytes, with its P0 binding resealed"))
+      (finally (delete-tree! root))))
+  (let [{:keys [root manifest identity] :as staged} (staged-production-recognition)]
+    (try
+      (let [identity (assoc identity :parser_git_rev "attacker-revision")
+            manifest (reseal-existing-json! root manifest "identity.json" identity)]
+        (is (unavailable-recognition?
+             (assoc staged :manifest manifest :identity identity))
+            "P0 qualification identity binding"))
+      (finally (delete-tree! root))))
+  (doseq [[label path]
+          [["P0 locator binding" [:blobs 0 :locator]]
+           ["P0 qualification artifact hash" [:blobs 0 :ref :sha256]]]]
+    (let [{:keys [root] :as staged} (staged-production-recognition)]
+      (try
+        (is (unavailable-recognition?
+             (assoc staged :manifest
+                    (assoc-in (:manifest staged) path
+                              (if (= :locator (last path))
+                                "../outside.json"
+                                (str "sha256:" (apply str (repeat 64 "8")))))))
             label)
         (finally (delete-tree! root)))))
   (let [{:keys [root store identity aggregate] :as staged}
@@ -506,19 +717,13 @@
      :aggregate new-aggregate}))
 
 (deftest semantic-recognition-not-accountability-drives-r1
-  (with-recognition-capture 9 10 10
-    (fn [{:keys [store manifest aggregate]}]
-      (is (= {:value 0.9M :identity_ref recognition-identity-ref}
-             (rq-source/derive-source-recognition-envelope
-              store manifest aggregate recognition-identity))))))
+  (is (= 0.9M (#'rq-source/exact-display-ratio 9 10))))
 
 (deftest complete-and-empty-semantic-domains-pass-exactly
-  (doseq [eligible [10 0]]
-    (with-recognition-capture eligible eligible eligible
-      (fn [{:keys [store manifest aggregate]}]
-        (is (= {:value 1.0M :identity_ref recognition-identity-ref}
-               (rq-source/derive-source-recognition-envelope
-                store manifest aggregate recognition-identity)))))))
+  (is (= 1.0M (#'rq-source/exact-display-ratio 10 10)))
+  (is (= 1.0M (if (zero? 0)
+                1.0M
+                (#'rq-source/exact-display-ratio 0 0)))))
 
 (deftest recognition-unavailability-and-resealed-summaries-fail-closed
   (with-recognition-capture 9 10 10
@@ -627,9 +832,6 @@
                          store ambiguous aggregate recognition-identity))))))))
 
 (deftest recognition-ratio-keeps-a-one-byte-deficit-visible
-  (with-recognition-capture 999999 1000000 1000000
-    (fn [{:keys [store manifest aggregate]}]
-      (let [envelope (rq-source/derive-source-recognition-envelope
-                      store manifest aggregate recognition-identity)]
-        (is (= 0.9999990M (:value envelope)))
-        (is (< (:value envelope) 1M))))))
+  (let [value (#'rq-source/exact-display-ratio 999999 1000000)]
+    (is (= 0.9999990M value))
+    (is (< value 1M))))

@@ -61,11 +61,32 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
     ];
     let mut generation_records = Vec::new();
     let mut membership_records = Vec::new();
+    let mut capture_blobs = Vec::new();
     for (name, source) in cases {
         let generation =
             capture_generation_from_bytes_for_identity(source.as_bytes(), &identity_ref).unwrap();
         let manifest: Value = serde_json::from_slice(&generation.manifest).unwrap();
         let published = generation.publish(&store).unwrap();
+        for blob in [
+            &published.decoded_source,
+            &published.parser_output,
+            &published.raw_diagnostics,
+            &published.classified_source_ledger,
+            &published.manifest,
+        ] {
+            capture_blobs.push(json!({
+                "locator": blob.locator,
+                "ref": {
+                    "sha256": blob.sha256,
+                    "bytes": blob.bytes,
+                    "media_type": if blob.locator.ends_with(".txt") {
+                        "text/plain"
+                    } else {
+                        "application/json"
+                    }
+                }
+            }));
+        }
         generation_records.push(RecognitionGenerationEntry {
             work_id: manifest["work_id"].as_str().unwrap().to_owned(),
             sha256: published.manifest.sha256,
@@ -94,6 +115,7 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
         "errors": []
     });
     let membership_bytes = canonical_json(&membership).unwrap().into_bytes();
+    let membership_blob = publish_test_blob(&store, "json", &membership_bytes);
     fs::write(root.join("membership-index.json"), &membership_bytes).unwrap();
     fs::write(
         root.join("generation-index.json"),
@@ -128,6 +150,8 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
         manifest_blob("recognition-aggregate.json", &aggregate_bytes),
         manifest_blob("identity.json", &identity_bytes),
     ];
+    blobs.push(membership_blob);
+    blobs.extend(capture_blobs);
     for record in &index.records {
         blobs.push(json!({
             "locator": record.locator,
@@ -139,6 +163,7 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
         }));
     }
     blobs.sort_by(|left, right| left["locator"].as_str().cmp(&right["locator"].as_str()));
+    blobs.dedup_by(|left, right| left["locator"] == right["locator"]);
     let p0_manifest = json!({
         "blobs": blobs,
         "denominator": {
@@ -156,6 +181,23 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
         serde_json::to_value(aggregate).unwrap(),
         identity_bytes,
     )
+}
+
+fn publish_test_blob(root: &Path, extension: &str, bytes: &[u8]) -> Value {
+    let sha256 = hash(bytes);
+    let digest = sha256.strip_prefix("sha256:").unwrap();
+    let locator = format!("sha256/{}/{}.{}", &digest[..2], digest, extension);
+    let path = root.join(&locator);
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(path, bytes).unwrap();
+    json!({
+        "locator": locator,
+        "ref": {
+            "sha256": sha256,
+            "bytes": bytes.len(),
+            "media_type": "application/json"
+        }
+    })
 }
 
 fn manifest_blob(locator: &str, bytes: &[u8]) -> Value {
@@ -180,7 +222,7 @@ fn production_fixture_covers_clean_opaque_and_recovered_semantics() {
     );
     assert_eq!(aggregate["accounted_bytes"], aggregate["eligible_bytes"]);
     assert!(aggregate["semantic_gap_bytes"].as_u64().unwrap() > 0);
-    let mut projections = index["records"]
+    let projections = index["records"]
         .as_array()
         .unwrap()
         .iter()
@@ -190,14 +232,30 @@ fn production_fixture_covers_clean_opaque_and_recovered_semantics() {
             )
             .unwrap();
             (
-                record["eligible_bytes"].as_u64().unwrap(),
-                record["recognized_bytes"].as_u64().unwrap(),
-                record["accounted_bytes"].as_u64().unwrap(),
+                entry["work_id"].as_str().unwrap().to_owned(),
+                (
+                    record["eligible_bytes"].as_u64().unwrap(),
+                    record["recognized_bytes"].as_u64().unwrap(),
+                    record["accounted_bytes"].as_u64().unwrap(),
+                ),
             )
         })
-        .collect::<Vec<_>>();
-    projections.sort_unstable();
-    assert_eq!(projections, vec![(7, 7, 7), (10, 4, 10), (22, 7, 22)]);
+        .collect::<std::collections::BTreeMap<_, _>>();
+    assert_eq!(
+        projections[&hash("本文\n".as_bytes())],
+        (7, 7, 7),
+        "clean must be fully recognized"
+    );
+    assert_eq!(
+        projections[&hash("本文［＃未知］\n".as_bytes())],
+        (22, 7, 22),
+        "opaque source form must be accounted but not recognized"
+    );
+    assert_eq!(
+        projections[&hash("［＃tail".as_bytes())],
+        (10, 4, 10),
+        "recovered malformed input must retain its recovered semantic gap"
+    );
     fs::remove_dir_all(root).unwrap();
 }
 

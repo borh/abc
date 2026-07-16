@@ -101,13 +101,29 @@
   (let [root (.toFile (java.nio.file.Files/createTempDirectory
                        "parser-rq-store-locators"
                        (make-array java.nio.file.attribute.FileAttribute 0)))
-        ref {:sha256 valid-sha256 :bytes 0 :media_type "application/octet-stream"}]
+        real-dir (doto (io/file root "real") .mkdirs)
+        blob (doto (io/file real-dir "blob") (spit "ok"))
+        encoded-dir (doto (io/file root "%2e%2e") .mkdirs)
+        encoded-blob (doto (io/file encoded-dir "blob") (spit "ok"))
+        ref {:sha256 (hash/format-sha256 (hash/sha256-string "ok"))
+             :bytes 2 :media_type "application/octet-stream"}]
     (try
       (is (= :unavailable (:status (capture/authenticated-read
                                     {:root (.getPath root)} ref "../outside"))))
       (is (= :unavailable (:status (capture/authenticated-read
+                                    {:root (.getPath root)} ref
+                                    "real/../real/blob"))))
+      (is (= :unavailable (:status (capture/authenticated-read
                                     {:root (.getPath root)} ref "/tmp/outside"))))
-      (finally (.delete root)))))
+      (is (= :unavailable (:status (capture/authenticated-read
+                                    {:root (.getPath root)} ref ""))))
+      (is (= :ok (:status (capture/authenticated-read
+                           {:root (.getPath root)} ref "real/./blob"))))
+      (is (= :ok (:status (capture/authenticated-read
+                           {:root (.getPath root)} ref "%2e%2e/blob")))
+          "locators are filesystem paths, not URL-decoded strings")
+      (finally (.delete encoded-blob) (.delete encoded-dir)
+               (.delete blob) (.delete real-dir) (.delete root)))))
 
 (deftest manifest-authentication-retains-the-exact-bytes-that-were-hashed
   (let [root (.toFile (java.nio.file.Files/createTempDirectory

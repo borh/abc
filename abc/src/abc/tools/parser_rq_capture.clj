@@ -69,6 +69,10 @@
                             root-path (iterator-seq
                                        (.iterator (.relativize root-path blob-path)))))))
 
+(defn- parent-component?
+  [path]
+  (some #(= ".." (str %)) (iterator-seq (.iterator path))))
+
 (defn authenticated-read
   "Read and authenticate one immutable-store value exactly once.
 
@@ -83,6 +87,9 @@
       (cond
         (.isAbsolute locator-path)
         (unavailable "blob locator must be relative to the configured store root")
+
+        (parent-component? locator-path)
+        (unavailable "blob locator contains a parent-directory component")
 
         (not (.startsWith blob-path root-path))
         (unavailable "blob locator escapes the configured store root")

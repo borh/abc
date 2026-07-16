@@ -175,6 +175,7 @@ pub struct CorpusInput {
 }
 
 wire_enum!(RecordIndexSchemaVersion { V1 => "abc/parser-rq-source-accountability-index/v1" });
+wire_enum!(AggregateSchemaVersion { V1 => "abc/parser-rq-source-accountability-aggregate/v1" });
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -199,6 +200,52 @@ pub struct RecordIndex {
     pub record_count: u64,
     pub records: Vec<RecordIndexEntry>,
     pub errors: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct WorkCompleteness {
+    pub expected: u64,
+    pub observed: u64,
+    pub complete: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct WorkInterval {
+    pub work_id: String,
+    pub start: u64,
+    pub end: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct AggregateRecord {
+    pub schema_version: AggregateSchemaVersion,
+    pub identity_ref: String,
+    pub taxonomy_version: TaxonomyVersion,
+    pub taxonomy_hash: String,
+    pub coordinate_system: CoordinateSystem,
+    pub status: WorkStatus,
+    pub work_completeness: WorkCompleteness,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub eligible_bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub covered_eligible_bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uncovered_eligible_bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uncovered: Option<Vec<WorkInterval>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub errors: Option<Vec<String>>,
+}
+
+impl AggregateRecord {
+    pub fn exactly_covered(&self) -> bool {
+        self.status == WorkStatus::Ok
+            && self.covered_eligible_bytes == self.eligible_bytes
+            && self.eligible_bytes.is_some()
+    }
 }
 
 #[derive(Debug, Deserialize)]

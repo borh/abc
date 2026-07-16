@@ -2,8 +2,8 @@ use std::fs;
 use std::path::PathBuf;
 
 use ab_parser_rq_source_accountability::{
-    CorpusInput, CorpusSourceEntry, QualificationIdentity, TaxonomyIdentity, WorkInput,
-    analyze_corpus, analyze_work, canonical_json,
+    CorpusEntry, CorpusInput, CorpusSourceEntry, QualificationIdentity, RecordIndex,
+    TaxonomyIdentity, WorkInput, aggregate, analyze_corpus, analyze_work, canonical_json,
 };
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -48,6 +48,19 @@ enum Command {
         store_root: PathBuf,
         #[arg(long)]
         index_out: PathBuf,
+    },
+    /// Authenticate a closed work-record index and aggregate exact byte evidence.
+    Aggregate {
+        #[arg(long)]
+        corpus: PathBuf,
+        #[arg(long = "work-record-index")]
+        work_record_index: PathBuf,
+        #[arg(long = "qualification-identity")]
+        qualification_identity: PathBuf,
+        #[arg(long)]
+        taxonomy: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
     },
 }
 
@@ -111,6 +124,28 @@ fn main() -> Result<()> {
                 taxonomy: taxonomy(&taxonomy_path)?,
             })?;
             println!("{}", canonical_json(&index)?);
+        }
+        Command::Aggregate {
+            corpus,
+            work_record_index,
+            qualification_identity,
+            taxonomy: taxonomy_path,
+            out,
+        } => {
+            let corpus: Vec<CorpusEntry> = read_json::<Vec<CorpusSourceEntry>>(&corpus)?
+                .into_iter()
+                .map(|entry| entry.corpus_entry)
+                .collect();
+            let index = read_json::<RecordIndex>(&work_record_index)?;
+            let records_root = work_record_index
+                .parent()
+                .ok_or_else(|| anyhow::anyhow!("work record index has no parent directory"))?;
+            let identity = read_json::<QualificationIdentity>(&qualification_identity)?;
+            let taxonomy = taxonomy(&taxonomy_path)?;
+            let result = aggregate(&corpus, &index, records_root, &identity, &taxonomy)?;
+            let bytes = canonical_json(&result)?;
+            fs::write(out, &bytes)?;
+            println!("{bytes}");
         }
     }
     Ok(())

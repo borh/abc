@@ -33,9 +33,9 @@ if [[ "${#active_files[@]}" -eq 0 ]]; then
   exit 1
 fi
 
-if rg -n --fixed-strings \
-  -e "../abc/" \
-  -e "../ab-validator/" \
+if rg -n \
+  -e '(^|["'"'"'=[:space:]])\.\./abc/' \
+  -e '(^|["'"'"'=[:space:]])\.\./ab-validator/' \
   -e "references/parsers/" \
   -e "abc/references/TEI/P5" \
   "${active_files[@]}"; then

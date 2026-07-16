@@ -39,6 +39,9 @@
 (def production-recognition-fixture-root
   (io/file "test/fixtures/parser-rq/source-recognition-capture"))
 
+(def diagnostic-gap-capture-fixture-root
+  (io/file "test/fixtures/parser-rq/diagnostic-gap-capture"))
+
 (defn- read-keyword-json
   [file]
   (-> file slurp json/read-json-str walk/keywordize-keys))
@@ -1088,3 +1091,40 @@
           (is (= :unavailable
                  (:status (rq-source/silent-drops-envelope store resealed identity))))))
       (finally (delete-tree! root)))))
+
+(deftest production-diagnostic-gap-fixture-drives-the-real-p0-r2-boundary
+  (let [root diagnostic-gap-capture-fixture-root
+        store {:root (.getPath (io/file root "store"))}
+        manifest (read-keyword-json (io/file root "manifest.json"))
+        identity (read-keyword-json (io/file root "store/identity.json"))
+        expected (read-keyword-json (io/file root "expected-outcomes.json"))
+        before (slurp (io/file root "store/recognition-aggregate.json"))]
+    (is (= {:value 3 :identity_ref recognition-identity-ref}
+           (rq-source/silent-drops-envelope store manifest identity)))
+    (is (= #{:clean-vacuous :authorized-pua :observe-only :opaque-unknown :silent-gap}
+           (set (keys (:outcomes expected)))))
+    (is (= 5 (count (set (vals (:outcomes expected))))))
+    (is (= before (slurp (io/file root "store/recognition-aggregate.json")))
+        "R2 leaves the exact R1 artifact byte-identical")))
+
+(deftest production-diagnostic-gap-fixture-rejects-outer-edge-tampering
+  (let [root diagnostic-gap-capture-fixture-root
+        store {:root (.getPath (io/file root "store"))}
+        manifest (read-keyword-json (io/file root "manifest.json"))
+        identity (read-keyword-json (io/file root "store/identity.json"))
+        members (:blobs manifest)
+        raw-member (some #(when (and (= "application/json" (get-in % [:ref :media_type]))
+                                     (string/includes? (:locator %) "/"))
+                            (let [value (#'rq-source/authenticated-json-value store %)]
+                              (when (= 3 (:schemaVersion value)) %))) members)
+        aggregate-member (some #(when (= "diagnostic-gap-aggregate.json" (:locator %)) %) members)]
+    (doseq [[label changed-manifest changed-identity]
+            [["raw diagnostic member removed"
+              (update manifest :blobs #(vec (remove #{raw-member} %))) identity]
+             ["aggregate member duplicated"
+              (update manifest :blobs conj aggregate-member) identity]
+             ["qualification identity changed"
+              manifest (assoc-in identity [:instrument_versions :source_recognition] "forged")]]]
+      (is (= :unavailable
+             (:status (rq-source/silent-drops-envelope store changed-manifest changed-identity)))
+          label))))

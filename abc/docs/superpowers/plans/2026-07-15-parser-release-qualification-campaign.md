@@ -106,7 +106,7 @@ reviewable systems and must land first.
 | P1 | `…-parser-rq-source-accountability.md` | R1 source-span coverage (byte denominator + versioned taxonomy) → R2 silent-drops | P0 |
 | P2 | `…-parser-rq-publication.md` | R3 publication-structure validation | P0 |
 | P3 | `…-parser-rq-resource.md` | R4 per-work memory (single mechanism, chosen in-plan) | P0 |
-| P4A1 | `…-parser-rq-source-claim-ledger.md` | Characterize consumption paths; ABC claim protocol/policy; custom-parser ledger emission | P0, P1 |
+| P4A1 | `…-parser-rq-source-claim-ledger.md` | Decomplect classified-span recovery provenance; ABC claim protocol/policy; ledger projection in the existing fused fold | P0, P1 |
 | P4A2 | `…-parser-rq-source-claim-r1-migration.md` | Ledger-authoritative R1; retain node-span coverage as supporting evidence | P4A1 |
 | P4A3 | `…-parser-rq-diagnostic-gap-partition.md` | Versioned diagnostic authorization and R2 partition over ledger gaps | P4A2 |
 | P4B | `…-parser-rq-predicate-hardening.md` | R5 (predicates 4 & 5) instrument code | P0, P1 |
@@ -157,9 +157,9 @@ minimal implementation, independently testable tasks. Their entry contracts:
 - **P3 Resource** — **choose one** peak-RSS mechanism in-plan (GNU `time -v`
   `getrusage` vs cgroup `memory.peak` vs a wrapper) with the rationale; do not
   leave three open. Host pinned + disclosed in the manifest.
-- **P4A1 Source claims** — characterizes live consumption paths, freezes the
-  closed ABC role/result policy, and emits authenticated ledgers from the custom
-  parser.
+- **P4A1 Source claims** — characterizes and decomplects the live tiled
+  classified-span stream, freezes the closed ABC role/disposition policy, and
+  projects authenticated ledgers in the existing fused normalize/fold traversal.
 - **P4A2 R1 migration** — derives claimed/unclaimed bytes from validated ledgers
   and retains node-span coverage under a separately named supporting
   observation.

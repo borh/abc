@@ -39,36 +39,73 @@ semantics are acceptable.
 
 ## Objective
 
-For every authenticated decoded source value, capture an immutable source-claim
-ledger whose entries state:
+For every authenticated decoded source value, capture one immutable classified
+source ledger whose entries state:
 
 1. the exact half-open decoded-byte interval consumed;
 2. an ABC-owned source role;
-3. an ABC-owned consumption result;
+3. an ABC-owned disposition;
 4. evidence connecting the claim to the parser path and resulting value, when
    one exists.
 
-R1 derives claimed coverage from the validated ledger. Parser-IR node-span
-coverage remains a separately named supporting observation and drift witness.
-R2 partitions R1's remaining gaps into authorized recovery and silent loss;
-diagnostics never increase R1 coverage.
+Two pure projections derive semantic recognition and broader byte
+accountability from the same validated entries. R1 gates semantic recognition,
+not merely byte survival. Parser-IR node-span coverage remains a separately
+named supporting observation and drift witness. R2 partitions R1's remaining
+semantic gaps into authorized recovery and silent loss; diagnostics never
+increase R1 coverage.
 
 ## Authority model
 
 Authority is deliberately split:
 
-- `ab-aozora` observes consumption at the earliest layer that knows why bytes
-  were consumed and emits candidate claim entries.
-- ABC owns the closed claim vocabulary, permitted role/result combinations,
+- `ab-aozora` observes consumption in its existing classified-span pipeline and
+  projects candidate ledger entries during the existing fused normalize/fold
+  traversal.
+- ABC owns the closed claim vocabulary, permitted role/disposition combinations,
   conditional evidence requirements, schema, and immutable policy generation.
 - The RQ validator authenticates source, ledger, policy, and qualification
   identity, then validates every claim before performing interval arithmetic.
 - Parser-IR and AAT are evidence targets, not claim authorities.
-- Raw diagnostics are recovery observations, not claims.
+- Raw diagnostics are recovery observations, not recognized claims.
 
-Parser completion does not imply full coverage. A parser cannot authorize a new
-claim class by adding an internal enum or evidence code. Unknown vocabulary or
-policy drift makes the ledger unavailable.
+Parser completion does not imply full recognition. A parser cannot authorize a
+new claim class by adding an internal enum or evidence code. Unknown public
+vocabulary or policy drift makes the ledger unavailable. A parser-recognized
+`DirectiveKind::Unknown` is not unknown protocol vocabulary: it is a valid
+`preserved_opaque` observation that remains outside semantic recognition.
+
+## Existing deep module and simplification boundary
+
+The live lexer already owns the cohesive consumption stream. `ClassifyStream`
+produces `ClassifiedSpan` values whose source spans tile the sanitized input
+end-to-end. The fused normalizer consumes that stream once while building the
+normalized text, AST store, placeholder registry, diagnostics, and
+`SourceNode` table.
+
+P4A1 extends that one traversal. It does not add a parser-wide event bus, a
+second visitor, a post-parse reconstruction pass, or an independently mutable
+ledger builder. Candidate classified-source facts are produced alongside the
+existing normalization effect and become another immutable field of the owned
+parse output.
+
+Before adding facts, a behavior-preserving refactor separates the current
+`SpanKind::Plain`, which braids successful prose with recovery:
+
+```text
+PlainText
+RecoveredVerbatim(reason)
+Aozora(typed node)
+BlockOpen(typed region)
+BlockClose(typed region)
+Newline
+```
+
+The refactor must leave normalized text, AST, rendering, serialization,
+diagnostics, and public parser output byte-identical. It changes only internal
+provenance. Existing characterization tests are written first. Semantic ledger
+emission lands in a later commit so a structural refactor cannot launder a
+behavior change.
 
 ## Public claim model
 
@@ -91,9 +128,9 @@ These are families for characterization, not wildcard runtime values. The
 frozen policy contains exact closed role identifiers. It has no `other`,
 `unknown`, parser namespace, prefix rule, or extension bag.
 
-### Consumption result
+### Disposition
 
-V1 supports four results:
+V1 supports five dispositions:
 
 - `emitted_semantic_value`: source contributes to an emitted AAT, Parser-IR, or
   approved publication-side value;
@@ -103,9 +140,14 @@ V1 supports four results:
   becoming visible text;
 - `lossless_normalization`: source is transformed under an approved reversible
   mapping.
+- `preserved_opaque`: source is retained byte-exactly because no approved
+  semantic role was recognized;
 
-Role and result remain separate. A label such as `markup` cannot conceal whether
-the information was emitted, preserved, used only as control, or transformed.
+Role and disposition remain separate. A label such as `markup` cannot conceal
+whether information was emitted, preserved, used only as control, transformed,
+or retained without understanding. `preserved_opaque` permits only the closed
+role `unrecognized_source_form`; it can contribute to accountability but never
+to semantic recognition.
 
 ### Claim entry
 
@@ -114,8 +156,9 @@ Every entry contains exactly:
 ```text
 start, end
 source_role
-consumption_result
-result_pointer?       # conditional
+disposition
+target_identity?      # conditional stable value identity
+target_pointer?       # optional diagnostic locator within target
 parser_evidence_code  # audit evidence, never authority
 construct_witness?    # conditional closed token/construct value
 normalization_proof?  # conditional
@@ -127,8 +170,11 @@ boundaries and within the decoded byte length.
 
 Evidence requirements are policy-owned:
 
-- emitted and preserved results require a typed pointer into an authenticated
-  output artifact;
+- emitted and preserved results require `target_identity = {artifact_ref,
+  value_hash, relation}`. `artifact_ref` is the authenticated logical blob
+  reference, `value_hash` is the canonical hash of the closed target value, and
+  `relation` is an ABC-owned enum: `emits` or `preserves` in v1.
+  A JSON pointer is optional diagnostic location, never the durable relation;
 - structural-control results require an approved evidence code plus a closed
   token/construct witness containing the recognized source form and exact span;
   the validator independently checks that the witness bytes equal the
@@ -136,9 +182,13 @@ Evidence requirements are policy-owned:
   named role;
 - lossless normalization requires an approved reversible transformation record
   binding source interval, source bytes, normalized bytes, and inverse rule.
+- preserved opaque entries require byte-exact source witnesses and an approved
+  recovery reason; they prohibit semantic target identities.
 
 `parser_evidence_code` helps characterize and debug parser paths. It cannot
-select a disposition, relax a requirement, or create a claim class.
+select a disposition, relax a requirement, or create a claim class. The
+validator resolves target identities against authenticated artifacts but does
+not make their current JSON layout part of claim identity.
 
 ABC does not implement a second Aozora parser to prove the semantic meaning of
 each witness. The pinned parser implementation, path-level tests, and
@@ -161,22 +211,32 @@ One work ledger binds:
 - the ordered audit entries;
 - stable unavailable reasons, if any.
 
-The audit entry order is deterministic but not semantically significant.
-Coverage normalizes the accepted interval union after every entry validates.
-Overlaps are permitted because one source interval may participate in more than
-one semantic fact; duplicates with identical complete claim identity are
-rejected as producer ambiguity. Empty spans never contribute coverage.
+The audit entry order is deterministic but not semantically significant. The
+canonical form sorts by the complete entry value after validation; producer
+order is not retained as authority. Overlaps are permitted because one source
+interval may participate in more than one semantic fact. Duplicates with
+identical complete claim identity are rejected as producer ambiguity. Empty
+spans never contribute coverage.
 
-The ledger contains no precomputed authoritative totals. Totals and normalized
-witnesses are derived values so a producer cannot disagree with its entries.
+The ledger contains no precomputed authoritative totals. Semantic-recognition,
+accountability, and gap witnesses are derived values so a producer cannot
+disagree with its entries.
+
+Parser output, raw diagnostics, decoded-source value, and classified-source
+ledger belong to one capture generation. A closed generation manifest names
+the logical identity of every member and is published only after every member
+has been content-authenticated. `generation_ref` is the canonical hash of the
+closed manifest identity fields, excluding runtime locators and the reference
+itself. Every member embeds that same reference. Derivation rejects
+cross-generation mixing even when individual source hashes happen to match.
 
 ## Capture and derivation
 
 ```text
 authenticated source bytes
   -> decode and sanitize
-  -> custom parser
-  -> AAT + raw diagnostics + source-claim ledger
+  -> custom parser's existing classified-span -> normalize/fold traversal
+  -> AAT + raw diagnostics + classified-source ledger
   -> independently authenticate and validate each artifact
   -> derive R1 from accepted claim union
   -> authorize diagnostic recovery independently
@@ -184,15 +244,14 @@ authenticated source bytes
   -> aggregate exact corpus membership
 ```
 
-Claims originate at the earliest component that knows the consumption reason.
-Sanitizer and parser claims retain distinct producer-stage evidence. They are
-rebased through the same span context into full decoded-source coordinates
-before capture. Emission is integrated with the typed token/construct creation
-path rather than a second post-parse visitor: one accepted construct value and
-its claim witness are produced together, preventing the claim stream from
-silently drifting away from actual consumption.
+Facts originate at the earliest existing component that knows their
+disposition. Sanitizer and classifier facts retain distinct producer-stage
+evidence. They are rebased through the same span context into full
+decoded-source coordinates before capture. Projection occurs in the fused
+normalize/fold walk: one classified span produces its existing normalization
+effect and, where policy permits, one or more immutable candidate facts.
 
-Claims must not be reconstructed from broad parent spans, Parser-IR nodes,
+Facts must not be reconstructed from broad parent spans, Parser-IR nodes,
 rendered text, diagnostics, or the absence of parser errors. A parent construct
 may claim its complete extent only when the policy defines that precise syntax
 role and the parser evidence identifies the matching consumed extent; it cannot
@@ -203,24 +262,49 @@ is pure: it receives authenticated values and cannot invoke the parser, invent a
 claim, enumerate a mutable directory, or interpret parser-private rule names.
 Corpus membership comes only from P1's authenticated record index.
 
+### Sanitizer dispositions
+
+Sanitizer transformations are not one generic normalization class:
+
+- CRLF and bare-CR normalization may be `lossless_normalization` only with an
+  inverse proof bound to the original decoded slice;
+- accent decomposition may be `lossless_normalization` only when its existing
+  source-preservation path proves the inverse;
+- decorative-rule blank-line insertion has no source interval and contributes
+  no eligible bytes or claim;
+- PUA collision substitution is destructive defensive recovery. Its source
+  interval is not semantically recognized; it remains a gap that the
+  independently authorized diagnostic may classify for R2;
+- a leading UTF-8 BOM remains outside `DecodedSource.text` and therefore outside
+  the ledger coordinate domain.
+
+No catch-all sanitizer disposition exists.
+
 ## R1 semantics
 
 The v1 eligible set remains every byte in `DecodedSource.text`. BOM bytes are
 absent because decoding consumes the UTF-8 BOM before this value exists. Lossy
 decoding remains unavailable.
 
-For each work:
+For each work, two interval projections are derived:
 
 ```text
-claimed = normalize(union(all validated claim spans))
-unclaimed = eligible - claimed
-claimed_bytes + unclaimed_bytes = eligible_bytes
-coverage = claimed_bytes / eligible_bytes
+recognized = normalize(union(entries with an approved semantic disposition))
+accounted = normalize(union(recognized + preserved_opaque entries))
+semantic_gap = eligible - recognized
+unaccounted = eligible - accounted
+
+recognized_bytes + semantic_gap_bytes = eligible_bytes
+accounted_bytes + unaccounted_bytes = eligible_bytes
 ```
 
-The gate uses exact integer equality `claimed_bytes == eligible_bytes`; decimal
-coverage is reporting only. A valid ledger with gaps is an available failing
-measurement. An invalid ledger has no trusted numerator or gap value.
+R1 is explicitly **semantic source recognition coverage** and gates exact
+integer equality `recognized_bytes == eligible_bytes`; its decimal ratio is
+reporting only. Broader byte accountability is a named supporting observation,
+not an alternative way to pass R1. Thus an unknown directive preserved
+byte-exactly can be fully accounted while remaining a semantic gap. A valid
+ledger with gaps is an available failing measurement. An invalid ledger has no
+trusted numerator or gap value.
 
 Parser-IR node-span coverage is renamed as a non-authoritative supporting
 observation. It may detect drift such as a claimed emitted value lacking a
@@ -228,16 +312,16 @@ corresponding node, but it cannot reduce or expand the claim ledger.
 
 ## R2 semantics
 
-R2 classifies but never erases the R1 gap set:
+R2 classifies but never erases R1's semantic gap set:
 
 ```text
-authorized_recovery = intersect(unclaimed, authorized diagnostic intervals)
-silent = unclaimed - authorized_recovery
-authorized_recovery union silent = unclaimed
+authorized_recovery = intersect(semantic_gap, authorized diagnostic intervals)
+silent = semantic_gap - authorized_recovery
+authorized_recovery union silent = semantic_gap
 ```
 
 Diagnostic authorization remains closed, identity-bound, and exact-span. It
-cannot turn an unclaimed byte into a claimed byte. R1 can therefore fail while
+cannot turn a semantic gap into a recognized byte. R1 can therefore fail while
 R2 reports zero silent intervals; the release gate sees both independent facts.
 
 An authenticated empty diagnostic stream is available and vacuous. With gaps,
@@ -255,9 +339,10 @@ The ledger and R1 are unavailable for:
 - lossy decoding;
 - incomplete or failed parser execution;
 - malformed, reversed, empty, out-of-bounds, or mid-codepoint spans;
-- unknown source roles, consumption results, or forbidden combinations;
+- unknown source roles, dispositions, or forbidden combinations;
 - missing or invalid conditional evidence;
-- pointers that do not resolve into the authenticated named artifact;
+- target identities that do not resolve into the authenticated capture
+  generation or whose optional pointer names a different value;
 - lossless-normalization proofs that do not round-trip;
 - duplicate complete claim identities;
 - vocabulary drift between the parser adapter, ABC policy, and validator.
@@ -267,25 +352,26 @@ remain ordinary available evidence and are never patched to green.
 
 ## Characterization before vocabulary freeze
 
-A disposable probe must enumerate every live sanitizer, lexer, and parser
-consumption path and join:
+A disposable probe must enumerate every live sanitizer and classifier
+disposition path and join:
 
 ```text
-consumed decoded-byte interval
-internal parser evidence path
-candidate ABC role/result
+classified decoded-byte interval
+internal classified-span kind and recovery provenance
+candidate ABC role/disposition
 emitted or preserved target, when applicable
 raw diagnostic, when applicable
 ```
 
-It compares the union of observed consumption events with the proposed public
-ledger over representative and generated sources. The vocabulary cannot freeze
-if:
+It compares the existing tiled `ClassifiedSpan` stream with the proposed public
+ledger over representative and generated sources. It separately proves that the
+`PlainText`/`RecoveredVerbatim` refactor leaves every pre-existing parser output
+byte-identical. The vocabulary cannot freeze if:
 
 - a successfully consumed byte has no approved mapping;
 - a claim covers a byte the named path did not consume;
 - a broad claim hides an unknown or rejected subregion;
-- event order changes canonical ledger bytes;
+- classified-span order changes canonical ledger bytes;
 - a claim depends on a diagnostic or reconstructed Parser-IR span;
 - a claimed emitted/preserved value lacks its required authenticated target;
 - a normalization proof fails its inverse.
@@ -299,15 +385,15 @@ protocol implementation commit.
 Permanent examples and property tests cover:
 
 - UTF-8 boundary, bounds, overlap, adjacency, duplicate, and ordering rules;
-- every accepted and forbidden role/result combination and every closed
+- every accepted and forbidden role/disposition combination and every closed
   structural witness shape;
 - source, policy, vocabulary, and qualification identity drift;
-- R1 conservation and exact integer gate behavior;
+- recognition and accountability conservation plus exact R1 integer behavior;
 - R2 partition conservation and vacuity;
 - empty source, empty diagnostics, successful full coverage, honest gaps,
   parser failure, BOM, CRLF, sanitizer transformations, and lossy decoding;
-- pointer authentication, decoded-slice/witness agreement, and normalization
-  round trips;
+- target-identity authentication, optional-pointer agreement,
+  decoded-slice/witness agreement, and normalization round trips;
 - exact corpus membership and absence of cross-work merging;
 - end-to-end production fixture regeneration;
 - mutations of source, claim, target, policy, diagnostic, and identity values.
@@ -320,8 +406,9 @@ trust-path test.
 
 P4A becomes three focused deliverables:
 
-- **P4A1:** characterize consumption paths; define the ABC source-claim
-  protocol/policy; emit ledgers from the custom parser.
+- **P4A1:** characterize and decomplect classified-span provenance; define the
+  ABC classified-source protocol/policy; project ledgers in the existing fused
+  traversal.
 - **P4A2:** migrate R1 derivation from Parser-IR node spans to authenticated
   claim ledgers; retain node-span coverage under a new supporting name.
 - **P4A3:** apply the independently reviewed diagnostic policy only to partition
@@ -350,6 +437,18 @@ Rejected. It couples release evidence to implementation structure and lets the
 parser define its own accountability semantics. Internal events may feed the
 adapter and characterization probe only.
 
+### Add a separate parser claim event system
+
+Rejected. `ClassifyStream` and the fused normalize/fold traversal already own
+the cohesive consumption lifecycle. A parallel visitor, event bus, or mutable
+ledger builder would create a second history and ordering protocol.
+
+### Count byte-exact opaque preservation as semantic recognition
+
+Rejected. It would allow `DirectiveKind::Unknown` to make syntax coverage green
+without understanding the construct. Opaque preservation contributes only to
+the supporting accountability projection.
+
 ### Expand diagnostic authorization until R1 is green
 
 Rejected. Diagnostics describe exceptional recovery and cannot account for
@@ -365,8 +464,20 @@ eligible byte.
 
 | Decision | Reason | Falsifier |
 |---|---|---|
-| Parser emits source claims at the consumption boundary. | That layer knows why exact bytes were consumed. | A production path cannot expose exact decoded coordinates without reconstructing them downstream. |
-| ABC owns the closed role/result vocabulary. | Parser vocabulary cannot authorize itself. | Independent validation cannot describe a required construct without depending on parser-private identity. |
+| Project ledger facts in the existing classified-span fold. | It is already the single tiled consumption lifecycle and typed-construction seam. | It cannot expose exact decoded coordinates or recovery provenance without a parallel state machine. |
+| ABC owns the closed role/disposition vocabulary. | Parser vocabulary cannot authorize itself. | Independent validation cannot describe a required construct without depending on parser-private identity. |
+| R1 gates semantic recognition; accountability is supporting evidence. | Opaque byte survival is valuable but does not prove syntax understanding. | Qualification explicitly decides that lossless opaque preservation satisfies syntax support. |
 | Ledger claims replace node spans as R1 numerator authority. | Live characterization proved node spans measure emitted output, not consumed source. | Claim-ledger capture cannot be authenticated or conserved against decoded bytes. |
 | Diagnostics affect R2 only. | Recovery explanation and ordinary consumption are different facts. | A diagnostic is proven to be the only possible evidence of ordinary successful consumption. |
 | Existing evidence is not migrated. | Reinterpretation would manufacture observations under a new authority model. | A byte-identical old artifact already contains the complete authenticated new protocol. |
+
+## Architecture review record
+
+| Severity | Finding | Resolution |
+|---|---|---|
+| Blocker | A new claim-emission mechanism duplicated the live tiled `ClassifyStream` and fused fold. | Reuse the existing traversal; forbid a second visitor/event system. |
+| Blocker | `SpanKind::Plain` braided accepted prose with stray/unclosed/unmatched recovery. | Behavior-preserving provenance split lands before ledger semantics. |
+| Blocker | `preserved_sidecar_value` could let opaque unknown directives satisfy R1. | Separate semantic-recognition and accountability projections; R1 gates recognition. |
+| Strong suggestion | JSON pointers made claim identity depend on output layout. | Bind stable target identities; retain pointers only as optional diagnostic locators. |
+| Strong suggestion | Sanitizer transformations were treated as uniformly lossless. | Specify reversible, source-free, and destructive cases independently; no catch-all. |
+| Strong suggestion | Independently published artifacts could mix capture generations. | One closed generation manifest binds source, parser output, diagnostics, and ledger. |

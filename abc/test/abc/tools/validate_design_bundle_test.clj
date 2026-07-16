@@ -1168,6 +1168,27 @@
         (is (= {:entries []} @registry-checked))
         (is (= {:entries []} @parser-evidence-checked))))))
 
+(deftest validate-json-schemas-includes-parser-rq-publication-contracts-test
+  (let [checked-paths (atom [])]
+    (with-redefs [validate/schema-valid! (fn [_schema path]
+                                           (swap! checked-paths conj path))
+                  validate/validate-json! (fn [& _args])
+                  validate/validate-json-lines! (fn [& _args])
+                  validate/validation-errors (fn [_schema value]
+                                               (when-not (and (map? value)
+                                                              (contains? value "rule_id"))
+                                                 [:expected-error]))
+                  compat/load-registry (fn [] {:entries []})
+                  compat/validate-registry! (fn [_registry] :ok)
+                  parser-evidence/load-index (fn [] {:entries []})
+                  parser-evidence/validate-index! (fn [_index] :ok)]
+      (validate/validate-json-schemas! [])
+      (is (every? (set @checked-paths)
+                  ["schemas/parser-rq-publication-policy.schema.json"
+                   "schemas/parser-rq-publication-work.schema.json"
+                   "schemas/parser-rq-publication-index.schema.json"
+                   "schemas/parser-rq-publication-aggregate.schema.json"])))))
+
 (deftest validate-json-schemas-includes-source-region-coverage-contract-test
   (testing "design-bundle schema pass validates the source-region coverage contract"
     (let [checked-paths (atom [])]

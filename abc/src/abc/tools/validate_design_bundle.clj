@@ -895,6 +895,10 @@
    "schemas/parser-rq-source-recognition-aggregate.schema.json"
    "schemas/parser-rq-source-recognition-index.schema.json"
    "schemas/parser-rq-source-recognition-work.schema.json"
+   "schemas/parser-rq-publication-aggregate.schema.json"
+   "schemas/parser-rq-publication-index.schema.json"
+   "schemas/parser-rq-publication-policy.schema.json"
+   "schemas/parser-rq-publication-work.schema.json"
    "schemas/parser-ir-publication-preservation.schema.json"
    "schemas/parser-ir.schema.json"
    "schemas/person-drift-event.schema.json"
@@ -998,6 +1002,10 @@
         parser-rq-source-recognition-aggregate-schema (files/read-json "schemas/parser-rq-source-recognition-aggregate.schema.json")
         parser-rq-source-recognition-index-schema (files/read-json "schemas/parser-rq-source-recognition-index.schema.json")
         parser-rq-source-recognition-work-schema (files/read-json "schemas/parser-rq-source-recognition-work.schema.json")
+        parser-rq-publication-aggregate-schema (files/read-json "schemas/parser-rq-publication-aggregate.schema.json")
+        parser-rq-publication-index-schema (files/read-json "schemas/parser-rq-publication-index.schema.json")
+        parser-rq-publication-policy-schema (files/read-json "schemas/parser-rq-publication-policy.schema.json")
+        parser-rq-publication-work-schema (files/read-json "schemas/parser-rq-publication-work.schema.json")
         source-assertion-schema (files/read-json "schemas/source-assertion.schema.json")
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
         tei-eaj-comparison-schema (files/read-json "schemas/tei-eaj-comparison.schema.json")
@@ -1041,6 +1049,10 @@
                            ["schemas/parser-rq-source-recognition-aggregate.schema.json" parser-rq-source-recognition-aggregate-schema]
                            ["schemas/parser-rq-source-recognition-index.schema.json" parser-rq-source-recognition-index-schema]
                            ["schemas/parser-rq-source-recognition-work.schema.json" parser-rq-source-recognition-work-schema]
+                           ["schemas/parser-rq-publication-aggregate.schema.json" parser-rq-publication-aggregate-schema]
+                           ["schemas/parser-rq-publication-index.schema.json" parser-rq-publication-index-schema]
+                           ["schemas/parser-rq-publication-policy.schema.json" parser-rq-publication-policy-schema]
+                           ["schemas/parser-rq-publication-work.schema.json" parser-rq-publication-work-schema]
                            ["schemas/source-assertion.schema.json" source-assertion-schema]
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
                            ["schemas/tei-eaj-comparison.schema.json" tei-eaj-comparison-schema]

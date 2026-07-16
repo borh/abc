@@ -557,7 +557,7 @@
      clojure.core/println
      clojure.core/name clojure.core/namespace
      clojure.core/symbol clojure.core/keyword clojure.core/boolean
-     clojure.core/long
+     clojure.core/int clojure.core/long
      clojure.core/key clojure.core/val
      clojure.core/count clojure.core/empty? clojure.core/seq clojure.core/first
      clojure.core/second clojure.core/ffirst clojure.core/rest clojure.core/next clojure.core/last clojure.core/nth

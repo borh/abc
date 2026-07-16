@@ -113,6 +113,13 @@ pub fn authorize(
 - [ ] Write RED tests for exact work sets, generation identity, partition
   conservation, empty vacuity, one-byte residual silence, and no cross-work
   merging.
+- [ ] Retain the authorizer's opaque originating evidence identity through the
+  work partition. Canonicalize corpus output to authenticated R1 index order,
+  validate every redundant evidence field, and checked-sum all diagnostic and
+  vacuity audit totals.
+- [ ] Expose no map-only gate path: R2 must re-hash the P0-bound raw diagnostics,
+  policy, decoded source, R1 records, work results, and corpus aggregate under
+  closed schemas before emitting an observation.
 - [ ] Use P1 `reconcile(semantic_gap, authorized)`; do not duplicate interval
   algebra. Count per-work maximal silent intervals.
 - [ ] Prove R1 values are byte-identical before/after diagnostic evidence.

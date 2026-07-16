@@ -426,6 +426,20 @@ capture-generation, and qualification identities. Replaying a different R1
 record therefore makes R2 unavailable rather than repartitioning unauthenticated
 gaps.
 
+The authorization value retains its originating authenticated context as an
+opaque capability: decoded-source, raw-diagnostics, policy, and R1 hashes plus
+work, capture-generation, and qualification identities. Partitioning rejects a
+capability paired with any other work. The corpus fold accepts work results in
+any input order but emits the authenticated R1 index order; duplicate, missing,
+extra, swapped, or redundantly inconsistent evidence is unavailable. Its
+checked audit fold retains diagnostic, authorizing, observe-only, authorized
+interval, byte, silent-interval, and vacuity totals.
+
+The gate-facing R2 derivation accepts only a verified P0 manifest and runtime
+store. It re-reads and hashes the closed aggregate and per-work result schemas,
+raw diagnostics, policy, decoded source, and R1 artifacts. Caller-supplied maps
+cannot derive R2, even when mutually coherent or resealed.
+
 An authenticated empty diagnostic stream is available and vacuous. With gaps,
 all gaps remain silent; without gaps, both partitions are empty. Unknown or
 invalid diagnostics make R2 unavailable without changing R1.

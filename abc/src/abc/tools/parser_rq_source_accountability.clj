@@ -25,6 +25,18 @@
 (def recognition-work-schema
   (delay (files/read-json "schemas/parser-rq-source-recognition-work.schema.json")))
 
+(def diagnostic-gap-result-schema
+  (delay (files/read-json "schemas/parser-rq-diagnostic-gap-result.schema.json")))
+
+(def diagnostic-gap-aggregate-schema
+  (delay (files/read-json "schemas/parser-rq-diagnostic-gap-aggregate.schema.json")))
+
+(def raw-diagnostics-schema
+  (delay (files/read-json "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")))
+
+(def diagnostic-gap-policy-schema
+  (delay (files/read-json "schemas/parser-rq-diagnostic-gap-policy.schema.json")))
+
 (def source-accountability-index-schema
   (delay (files/read-json "schemas/parser-rq-source-accountability-index.schema.json")))
 
@@ -212,20 +224,133 @@
                                    (:eligible_bytes aggregate))
        :identity_ref expected})))
 
+(defn- unique-member-by-hash
+  [manifest expected-hash]
+  (let [members (filterv #(= expected-hash (get-in % [:ref :sha256])) (:blobs manifest))]
+    (when (= 1 (count members)) (first members))))
+
+(defn- normalized-intervals
+  [intervals]
+  (reduce (fn [result interval]
+            (if-let [previous (peek result)]
+              (if (<= (:start interval) (:end previous))
+                (conj (pop result) (assoc previous :end (max (:end previous) (:end interval))))
+                (conj result interval))
+              [interval]))
+          [] (sort-by (juxt :start :end) intervals)))
+
+(defn- subtract-interval
+  [source cuts]
+  (loop [cursor (:start source), remaining cuts, result []]
+    (if-let [cut (first remaining)]
+      (let [result (if (< cursor (:start cut))
+                     (conj result {:start cursor :end (:start cut)}) result)]
+        (recur (max cursor (:end cut)) (next remaining) result))
+      (cond-> result (< cursor (:end source))
+        (conj {:start cursor :end (:end source)})))))
+
+(defn- valid-gap-result?
+  [store manifest result expected policy-hash qualification-ref policy]
+  (let [recognition (:source_recognition_evidence result)
+        authorization (:diagnostic_authorization_evidence result)
+        r1-member (unique-member-by-hash manifest (:value_hash recognition))
+        raw-member (unique-member-by-hash manifest (:raw_diagnostics_hash authorization))
+        source-member (unique-member-by-hash manifest (:decoded_source_hash authorization))
+        policy-member (unique-member-by-hash manifest policy-hash)
+        raw (some->> raw-member (authenticated-json-value store))
+        r1 (some->> r1-member (authenticated-json-value store))
+        rules (into {} (map (juxt :code clojure.core/identity) (:rules policy)))
+        diagnostics (:data raw)
+        dispositions (mapv #(get-in rules [(:code %) :disposition]) diagnostics)
+        authorized (normalized-intervals
+                    (mapv :span (keep-indexed
+                                 (fn [index diagnostic]
+                                   (when (= "authorize_exact_span" (nth dispositions index))
+                                     diagnostic)) diagnostics)))
+        gaps (:semantic_gaps r1)
+        authorized-in-gap? (every? (fn [interval]
+                                     (some #(and (<= (:start %) (:start interval))
+                                                 (<= (:end interval) (:end %))) gaps))
+                                   authorized)
+        silent (when authorized-in-gap?
+                 (vec (mapcat (fn [gap]
+                                (subtract-interval gap
+                                                   (filter #(and (< (:start %) (:end gap))
+                                                                 (< (:start gap) (:end %)))
+                                                           authorized))) gaps)))
+        interval-bytes (fn [intervals]
+                         (reduce + 0 (map #(- (:end %) (:start %)) intervals)))]
+    (and (nil? (schema/validation-errors @diagnostic-gap-result-schema result))
+         (nil? (schema/validation-errors @diagnostic-gap-policy-schema policy))
+         (= "ok" (:status result))
+         (= (:work_id expected) (:work_id result) (:work_id recognition)
+            (:decoded_source_hash authorization))
+         (= qualification-ref (:qualification_identity_ref result)
+            (:qualification_identity_ref recognition))
+         (= (:capture_generation_ref expected) (:capture_generation_ref result)
+            (:capture_generation_ref recognition))
+         (= (:sha256 expected) (:value_hash recognition)
+            (:source_recognition_hash authorization))
+         (= policy-hash (:policy_hash result) (:policy_hash authorization))
+         (= "partitions-semantic-gaps-of" (:relation recognition))
+         (= (assoc (:ref r1-member) :locator (:locator r1-member))
+            (:artifact_ref recognition))
+         source-member policy-member raw-member
+         (= (:raw_diagnostics_bytes authorization) (get-in raw-member [:ref :bytes]))
+         (nil? (schema/validation-errors @raw-diagnostics-schema raw))
+         (= (:diagnostic_count result) (count (:data raw)))
+         (every? some? dispositions)
+         (every? (fn [diagnostic]
+                   (= (select-keys diagnostic [:code :kind :severity :source])
+                      (select-keys (get rules (:code diagnostic))
+                                   [:code :kind :severity :source])))
+                 diagnostics)
+         (= authorized (:authorized_intervals result))
+         (= silent (:silent_intervals result))
+         (= (:authorized_bytes result) (interval-bytes authorized))
+         (= (:silent_bytes result) (interval-bytes silent))
+         (= (:silent_drop_count result) (count silent))
+         (= (:diagnostic_count result)
+            (+ (:authorizing_diagnostic_count result)
+               (:observe_only_diagnostic_count result)))
+         (= (:vacuous result) (zero? (:diagnostic_count result))))))
+
 (defn silent-drops-envelope
   "Derive the existing R2 observation from an exact diagnostic-gap corpus fold.
   The one-argument form preserves the pre-instrument historical state."
   ([identity]
    {:value :instrument-missing
     :identity_ref (qualification/qualification-identity-ref identity)})
-  ([identity diagnostic-gap-aggregate recognition-index recognition-aggregate]
+  ([identity _diagnostic-gap-aggregate _recognition-index _recognition-aggregate]
+   (unavailable "R2 requires authenticated capture artifacts, not caller-supplied maps"))
+  ([store manifest identity]
    (let [expected (qualification/qualification-identity-ref identity)
+         verified (capture/verify-manifest store manifest)
+         identity-member (selected-member manifest "identity.json")
+         aggregate-member (selected-member manifest "diagnostic-gap-aggregate.json")
+         index-member (selected-member manifest "recognition-index.json")
+         recognition-member (selected-member manifest "recognition-aggregate.json")
+         authenticated-identity (some->> identity-member (authenticated-json-value store))
+         diagnostic-gap-aggregate (some->> aggregate-member (authenticated-json-value store))
+         recognition-index (some->> index-member (authenticated-json-value store))
+         recognition-aggregate (some->> recognition-member (authenticated-json-value store))
          expected-work-ids (:expected_work_ids recognition-index)
          authorized (:authorized_bytes diagnostic-gap-aggregate)
          silent (:silent_bytes diagnostic-gap-aggregate)
          semantic-gaps (:semantic_gap_bytes recognition-aggregate)
          silent-count (:silent_drop_count diagnostic-gap-aggregate)
-         coherent? (and (= "ok" (:status diagnostic-gap-aggregate))
+         results (->> (:blobs manifest)
+                      (keep #(authenticated-json-value store %))
+                      (filter #(and (map? %) (= "abc/parser-rq-diagnostic-gap-result/v1"
+                                                 (:schema_version %))))
+                      vec)
+         result-by-work (into {} (map (fn [result] [(:work_id result) result]) results))
+         expected-records (:records recognition-index)
+         coherent? (and (= :ok (:status verified))
+                        (nil? (schema/validation-errors @diagnostic-gap-aggregate-schema
+                                                        diagnostic-gap-aggregate))
+                        (= identity authenticated-identity)
+                        (= "ok" (:status diagnostic-gap-aggregate))
                         (= expected
                            (:qualification_identity_ref recognition-index)
                            (:qualification_identity_ref recognition-aggregate)
@@ -238,8 +363,38 @@
                            (:observed_work_ids diagnostic-gap-aggregate))
                         (= (count expected-work-ids)
                            (count (set expected-work-ids)))
+                        (= expected-work-ids (mapv :work_id expected-records))
+                        (= (set expected-work-ids) (set (keys result-by-work)))
+                        (= (count results) (count result-by-work))
+                        (every? (fn [record]
+                                  (when-let [result (get result-by-work (:work_id record))]
+                                    (valid-gap-result? store manifest result record
+                                                       (:policy_hash diagnostic-gap-aggregate)
+                                                       expected
+                                                       (some->> (unique-member-by-hash
+                                                                 manifest
+                                                                 (:policy_hash diagnostic-gap-aggregate))
+                                                                (authenticated-json-value store)))))
+                                expected-records)
+                        (every? (fn [key]
+                                  (= (get diagnostic-gap-aggregate key)
+                                     (reduce + 0 (map #(get % key) results))))
+                                [:authorized_bytes :silent_bytes :silent_drop_count
+                                 :diagnostic_count :authorizing_diagnostic_count
+                                 :observe_only_diagnostic_count])
+                        (= (:authorized_interval_count diagnostic-gap-aggregate)
+                           (reduce + 0 (map #(count (:authorized_intervals %)) results)))
                         (every? #(and (int? %) (<= 0 %))
-                                [authorized silent semantic-gaps silent-count])
+                                [authorized silent semantic-gaps silent-count
+                                 (:diagnostic_count diagnostic-gap-aggregate)
+                                 (:authorizing_diagnostic_count diagnostic-gap-aggregate)
+                                 (:observe_only_diagnostic_count diagnostic-gap-aggregate)
+                                 (:authorized_interval_count diagnostic-gap-aggregate)])
+                        (= (:diagnostic_count diagnostic-gap-aggregate)
+                           (+ (:authorizing_diagnostic_count diagnostic-gap-aggregate)
+                              (:observe_only_diagnostic_count diagnostic-gap-aggregate)))
+                        (= (:vacuous diagnostic-gap-aggregate)
+                           (zero? (:diagnostic_count diagnostic-gap-aggregate)))
                         (= semantic-gaps (+ authorized silent)))]
      (if coherent?
        {:value silent-count :identity_ref expected}

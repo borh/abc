@@ -876,7 +876,7 @@
    :semantic_gap_bytes 4
    :silent_drop_count 1})
 
-(deftest diagnostic-gap-aggregate-derives-existing-r2-observation
+(deftest caller-supplied-diagnostic-gap-maps-cannot-derive-r2
   (let [index {:qualification_identity_ref recognition-identity-ref
                :corpus_generation_ref (str "sha256:" (apply str (repeat 64 "a")))
                :expected_work_ids ["work-a" "work-b"]}
@@ -886,7 +886,7 @@
         before [index r1]
         envelope (rq-source/silent-drops-envelope
                   recognition-identity (diagnostic-gap-aggregate) index r1)]
-    (is (= {:value 1 :identity_ref recognition-identity-ref} envelope))
+    (is (= :unavailable (:status envelope)))
     (is (= before [index r1]) "R2 derivation leaves R1 evidence byte-values unchanged")))
 
 (deftest diagnostic-gap-aggregate-fails-closed-without-mutating-r1
@@ -906,3 +906,94 @@
       (is (= :unavailable
              (:status (rq-source/silent-drops-envelope
                        recognition-identity candidate index r1)))))))
+
+(deftest authenticated-diagnostic-gap-artifacts-derive-r2-and-reject-resealing
+  (let [{:keys [root store manifest identity] :as staged} (staged-production-recognition)]
+    (try
+      (let [index (read-keyword-json (io/file root "store/recognition-index.json"))
+            r1 (read-keyword-json (io/file root "store/recognition-aggregate.json"))
+            raw {:schemaVersion 3 :data []}
+            raw-published (publish-json! root manifest raw)
+            policy (read-keyword-json (io/file "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"))
+            policy-published (publish-json! root (:manifest raw-published) policy)
+            policy-hash (get-in policy-published [:member :ref :sha256])
+            raw-hash (get-in raw-published [:member :ref :sha256])
+            raw-bytes (get-in raw-published [:member :ref :bytes])
+            state (reduce
+                   (fn [{:keys [manifest results]} entry]
+                     (let [record (read-keyword-json (io/file root "store" (:locator entry)))
+                           result {:schema_version "abc/parser-rq-diagnostic-gap-result/v1"
+                                   :status "ok"
+                                   :work_id (:work_id entry)
+                                   :capture_generation_ref (:capture_generation_ref entry)
+                                   :qualification_identity_ref recognition-identity-ref
+                                   :policy_hash policy-hash
+                                   :source_recognition_evidence
+                                   {:relation "partitions-semantic-gaps-of"
+                                    :artifact_ref (select-keys entry [:sha256 :bytes :media_type :locator])
+                                    :value_hash (:sha256 entry)
+                                    :qualification_identity_ref recognition-identity-ref
+                                    :capture_generation_ref (:capture_generation_ref entry)
+                                    :work_id (:work_id entry)}
+                                   :diagnostic_authorization_evidence
+                                   {:decoded_source_hash (:work_id entry)
+                                    :raw_diagnostics_hash raw-hash
+                                    :raw_diagnostics_bytes raw-bytes
+                                    :policy_hash policy-hash
+                                    :source_recognition_hash (:sha256 entry)}
+                                   :authorized_intervals []
+                                   :silent_intervals (:semantic_gaps record)
+                                   :authorized_bytes 0
+                                   :silent_bytes (:semantic_gap_bytes record)
+                                   :silent_drop_count (count (:semantic_gaps record))
+                                   :diagnostic_count 0
+                                   :authorizing_diagnostic_count 0
+                                   :observe_only_diagnostic_count 0
+                                   :vacuous true}
+                           published (publish-json! root manifest result)]
+                       {:manifest (:manifest published) :results (conj results result)}))
+                   {:manifest (:manifest policy-published) :results []}
+                   (:records index))
+            aggregate {:status "ok"
+                       :qualification_identity_ref recognition-identity-ref
+                       :corpus_generation_ref (:corpus_generation_ref index)
+                       :policy_hash policy-hash
+                       :expected_work_ids (:expected_work_ids index)
+                       :observed_work_ids (:expected_work_ids index)
+                       :authorized_bytes 0
+                       :silent_bytes (:semantic_gap_bytes r1)
+                       :silent_drop_count (reduce + (map :silent_drop_count (:results state)))
+                       :diagnostic_count 0
+                       :authorizing_diagnostic_count 0
+                       :observe_only_diagnostic_count 0
+                       :authorized_interval_count 0
+                       :vacuous true}
+            aggregate-file (io/file root "store/diagnostic-gap-aggregate.json")
+            _ (json/write-deterministic-json-file! aggregate-file aggregate)
+            aggregate-member {:locator "diagnostic-gap-aggregate.json"
+                              :ref (blob-ref-for aggregate-file "application/json")}
+            manifest (update (:manifest state) :blobs conj aggregate-member)]
+        (is (= {:value (:silent_drop_count aggregate)
+                :identity_ref recognition-identity-ref}
+               (rq-source/silent-drops-envelope store manifest identity)))
+        (let [result-member (last (:blobs manifest))
+              policy-hash policy-hash]
+          (doseq [mutated [(update manifest :blobs pop)
+                           (update manifest :blobs conj result-member)
+                           (update manifest :blobs
+                                   #(vec (concat (butlast (butlast %)) [(last %)])))
+                           (update manifest :blobs
+                                   #(vec (remove (fn [member]
+                                                   (= policy-hash (get-in member [:ref :sha256])))
+                                                 %)))]]
+            (is (= :unavailable
+                   (:status (rq-source/silent-drops-envelope store mutated identity))))))
+        (let [forged (assoc aggregate :silent_drop_count 0)
+              forged-file (io/file root "store/diagnostic-gap-aggregate.json")
+              _ (json/write-deterministic-json-file! forged-file forged)
+              resealed (replace-manifest-member
+                        manifest "diagnostic-gap-aggregate.json"
+                        (blob-ref-for forged-file "application/json"))]
+          (is (= :unavailable
+                 (:status (rq-source/silent-drops-envelope store resealed identity))))))
+      (finally (delete-tree! root)))))

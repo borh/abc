@@ -7,8 +7,9 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::model::{
-    AuthorizationAnalysis, AuthorizationStatus, BoundaryInput, DiagnosticEntry, Disposition,
-    Interval, PolicyRule, ValidatedDiagnosticCapture, ValidatedGapPolicy, WorkContext,
+    AuthorizationAnalysis, AuthorizationOrigin, AuthorizationStatus, BoundaryInput,
+    DiagnosticEntry, Disposition, Interval, PolicyRule, ValidatedDiagnosticCapture,
+    ValidatedGapPolicy, WorkContext,
 };
 
 const RAW_SCHEMA: &[u8] =
@@ -207,6 +208,8 @@ pub fn validate_work_context<'a>(
         capture_generation_ref,
         qualification_identity_ref,
         source_recognition,
+        decoded_source_hash: decoded_source_hash.to_owned(),
+        source_recognition_hash: source_recognition_hash.to_owned(),
     })
 }
 
@@ -310,6 +313,7 @@ pub fn authorize(
             Disposition::RejectInternal => unreachable!(),
         }
     }
+    let authorized_intervals = normalized(authorized);
     AuthorizationAnalysis {
         status: AuthorizationStatus::Ok,
         policy_hash: Some(policy.policy_hash.clone()),
@@ -317,7 +321,22 @@ pub fn authorize(
         authorizing_diagnostic_count: Some(authorizing),
         observe_only_diagnostic_count: Some(observed),
         vacuous: Some(capture.entries.is_empty()),
-        authorized_intervals: Some(normalized(authorized)),
+        authorized_intervals: Some(authorized_intervals.clone()),
+        origin: Some(AuthorizationOrigin {
+            work_id: context.work_id.to_owned(),
+            capture_generation_ref: context.capture_generation_ref.to_owned(),
+            qualification_identity_ref: context.qualification_identity_ref.to_owned(),
+            decoded_source_hash: context.decoded_source_hash.clone(),
+            raw_diagnostics_hash: String::new(),
+            raw_diagnostics_bytes: 0,
+            policy_hash: policy.policy_hash.clone(),
+            source_recognition_hash: context.source_recognition_hash.clone(),
+            diagnostic_count: capture.entries.len() as u64,
+            authorizing_diagnostic_count: authorizing,
+            observe_only_diagnostic_count: observed,
+            vacuous: capture.entries.is_empty(),
+            authorized_intervals,
+        }),
         errors: vec![],
     }
 }
@@ -350,7 +369,12 @@ pub fn authorize_boundary(input: BoundaryInput<'_>) -> AuthorizationAnalysis {
         Ok(value) => value,
         Err(error) => return AuthorizationAnalysis::unavailable(error),
     };
-    authorize(&capture, &policy, context)
+    let mut result = authorize(&capture, &policy, context);
+    if let Some(origin) = result.origin.as_mut() {
+        origin.raw_diagnostics_hash = input.raw_diagnostics_hash.to_owned();
+        origin.raw_diagnostics_bytes = input.raw_diagnostics_bytes;
+    }
+    result
 }
 
 #[cfg(test)]

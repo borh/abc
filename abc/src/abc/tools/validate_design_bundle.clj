@@ -877,6 +877,7 @@
    "schemas/parser-rq-classified-source-policy.schema.json"
    "schemas/parser-rq-classified-source-authority.schema.json"
    "schemas/parser-rq-diagnostic-gap-policy.schema.json"
+   "schemas/parser-rq-diagnostic-gap-aggregate.schema.json"
    "schemas/parser-rq-diagnostic-gap-result.schema.json"
    "schemas/parser-rq-source-accountability-aggregate.schema.json"
    "schemas/parser-rq-source-accountability-index.schema.json"
@@ -981,6 +982,7 @@
         parser-rq-classified-source-ledger-schema (files/read-json "schemas/parser-rq-classified-source-ledger.schema.json")
         parser-rq-classified-source-policy-schema (files/read-json "schemas/parser-rq-classified-source-policy.schema.json")
         parser-rq-diagnostic-gap-policy-schema (files/read-json "schemas/parser-rq-diagnostic-gap-policy.schema.json")
+        parser-rq-diagnostic-gap-aggregate-schema (files/read-json "schemas/parser-rq-diagnostic-gap-aggregate.schema.json")
         parser-rq-diagnostic-gap-result-schema (files/read-json "schemas/parser-rq-diagnostic-gap-result.schema.json")
         parser-rq-ignored-regions-schema (files/read-json "schemas/parser-rq-ignored-regions.schema.json")
         parser-rq-source-accountability-aggregate-schema (files/read-json "schemas/parser-rq-source-accountability-aggregate.schema.json")
@@ -1023,6 +1025,7 @@
                            ["schemas/parser-rq-classified-source-ledger.schema.json" parser-rq-classified-source-ledger-schema]
                            ["schemas/parser-rq-classified-source-policy.schema.json" parser-rq-classified-source-policy-schema]
                            ["schemas/parser-rq-diagnostic-gap-policy.schema.json" parser-rq-diagnostic-gap-policy-schema]
+                           ["schemas/parser-rq-diagnostic-gap-aggregate.schema.json" parser-rq-diagnostic-gap-aggregate-schema]
                            ["schemas/parser-rq-diagnostic-gap-result.schema.json" parser-rq-diagnostic-gap-result-schema]
                            ["schemas/parser-rq-ignored-regions.schema.json" parser-rq-ignored-regions-schema]
                            ["schemas/parser-rq-source-accountability-aggregate.schema.json" parser-rq-source-accountability-aggregate-schema]

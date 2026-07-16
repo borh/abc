@@ -72,13 +72,15 @@ pub struct ValidatedGapPolicy {
 ///     source_recognition: panic!(),
 /// };
 /// ```
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct WorkContext<'a> {
     pub(crate) decoded_source: &'a [u8],
     pub(crate) work_id: &'a str,
     pub(crate) capture_generation_ref: &'a str,
     pub(crate) qualification_identity_ref: &'a str,
     pub(crate) source_recognition: &'a RecognitionWorkRecord,
+    pub(crate) decoded_source_hash: String,
+    pub(crate) source_recognition_hash: String,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -105,6 +107,23 @@ pub enum AuthorizationStatus {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AuthorizationOrigin {
+    pub(crate) work_id: String,
+    pub(crate) capture_generation_ref: String,
+    pub(crate) qualification_identity_ref: String,
+    pub(crate) decoded_source_hash: String,
+    pub(crate) raw_diagnostics_hash: String,
+    pub(crate) raw_diagnostics_bytes: u64,
+    pub(crate) policy_hash: String,
+    pub(crate) source_recognition_hash: String,
+    pub(crate) diagnostic_count: u64,
+    pub(crate) authorizing_diagnostic_count: u64,
+    pub(crate) observe_only_diagnostic_count: u64,
+    pub(crate) vacuous: bool,
+    pub(crate) authorized_intervals: Vec<Interval>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AuthorizationAnalysis {
     pub status: AuthorizationStatus,
     pub policy_hash: Option<String>,
@@ -113,6 +132,7 @@ pub struct AuthorizationAnalysis {
     pub observe_only_diagnostic_count: Option<u64>,
     pub vacuous: Option<bool>,
     pub authorized_intervals: Option<Vec<Interval>>,
+    pub(crate) origin: Option<AuthorizationOrigin>,
     pub errors: Vec<String>,
 }
 
@@ -132,6 +152,15 @@ pub struct SourceRecognitionEvidence {
     pub work_id: String,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DiagnosticAuthorizationEvidence {
+    pub decoded_source_hash: String,
+    pub raw_diagnostics_hash: String,
+    pub raw_diagnostics_bytes: u64,
+    pub policy_hash: String,
+    pub source_recognition_hash: String,
+}
+
 #[derive(Clone, Debug)]
 pub struct DiagnosticGapWorkInput<'a> {
     pub source_recognition: &'a RecognitionWorkRecord,
@@ -149,11 +178,16 @@ pub struct DiagnosticGapWorkResult {
     pub qualification_identity_ref: Option<String>,
     pub policy_hash: Option<String>,
     pub source_recognition_evidence: Option<SourceRecognitionEvidence>,
+    pub diagnostic_authorization_evidence: Option<DiagnosticAuthorizationEvidence>,
     pub authorized_intervals: Option<Vec<Interval>>,
     pub silent_intervals: Option<Vec<Interval>>,
     pub authorized_bytes: Option<u64>,
     pub silent_bytes: Option<u64>,
     pub silent_drop_count: Option<u64>,
+    pub diagnostic_count: Option<u64>,
+    pub authorizing_diagnostic_count: Option<u64>,
+    pub observe_only_diagnostic_count: Option<u64>,
+    pub vacuous: Option<bool>,
     pub errors: Vec<String>,
 }
 
@@ -166,11 +200,16 @@ impl DiagnosticGapWorkResult {
             qualification_identity_ref: None,
             policy_hash: None,
             source_recognition_evidence: None,
+            diagnostic_authorization_evidence: None,
             authorized_intervals: None,
             silent_intervals: None,
             authorized_bytes: None,
             silent_bytes: None,
             silent_drop_count: None,
+            diagnostic_count: None,
+            authorizing_diagnostic_count: None,
+            observe_only_diagnostic_count: None,
+            vacuous: None,
             errors: vec![error.to_owned()],
         }
     }
@@ -203,6 +242,11 @@ pub struct DiagnosticGapAggregate {
     pub authorized_bytes: Option<u64>,
     pub silent_bytes: Option<u64>,
     pub silent_drop_count: Option<u64>,
+    pub diagnostic_count: Option<u64>,
+    pub authorizing_diagnostic_count: Option<u64>,
+    pub observe_only_diagnostic_count: Option<u64>,
+    pub authorized_interval_count: Option<u64>,
+    pub vacuous: Option<bool>,
     pub errors: Vec<String>,
 }
 
@@ -216,6 +260,7 @@ impl AuthorizationAnalysis {
             observe_only_diagnostic_count: None,
             vacuous: None,
             authorized_intervals: None,
+            origin: None,
             errors: vec![error.to_owned()],
         }
     }

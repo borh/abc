@@ -1,9 +1,9 @@
 use std::collections::BTreeSet;
 
 use crate::{
-    AuthorizationStatus, DiagnosticGapAggregate, DiagnosticGapAggregateInput,
-    DiagnosticGapWorkInput, DiagnosticGapWorkResult, DiagnosticGapWorkStatus, Interval,
-    SourceRecognitionEvidence,
+    AuthorizationStatus, DiagnosticAuthorizationEvidence, DiagnosticGapAggregate,
+    DiagnosticGapAggregateInput, DiagnosticGapWorkInput, DiagnosticGapWorkResult,
+    DiagnosticGapWorkStatus, Interval, SourceRecognitionEvidence,
 };
 use ab_parser_rq_source_accountability::{
     Interval as R1Interval, RecognitionStatus, canonical_json, reconcile,
@@ -29,6 +29,11 @@ fn unavailable_aggregate(expected: &[String], error: &str) -> DiagnosticGapAggre
         authorized_bytes: None,
         silent_bytes: None,
         silent_drop_count: None,
+        diagnostic_count: None,
+        authorizing_diagnostic_count: None,
+        observe_only_diagnostic_count: None,
+        authorized_interval_count: None,
+        vacuous: None,
         errors: vec![error.to_owned()],
     }
 }
@@ -64,6 +69,37 @@ pub fn derive_gap_partition(input: DiagnosticGapWorkInput<'_>) -> DiagnosticGapW
     let Some(authorized) = auth.authorized_intervals.as_deref() else {
         return DiagnosticGapWorkResult::unavailable("diagnostic-authorization-incomplete");
     };
+    let Some(origin) = auth.origin.as_ref() else {
+        return DiagnosticGapWorkResult::unavailable("diagnostic-authorization-origin-missing");
+    };
+    if origin.work_id != work_id
+        || origin.capture_generation_ref != generation
+        || origin.qualification_identity_ref != qualification
+        || origin.policy_hash != policy_hash
+        || origin.source_recognition_hash != input.source_recognition_value_hash
+        || origin.decoded_source_hash != work_id
+        || origin.raw_diagnostics_hash.is_empty()
+    {
+        return DiagnosticGapWorkResult::unavailable("diagnostic-authorization-origin-mismatch");
+    }
+    let (Some(diagnostic_count), Some(authorizing_count), Some(observe_only_count), Some(vacuous)) = (
+        auth.diagnostic_count,
+        auth.authorizing_diagnostic_count,
+        auth.observe_only_diagnostic_count,
+        auth.vacuous,
+    ) else {
+        return DiagnosticGapWorkResult::unavailable("diagnostic-authorization-incomplete");
+    };
+    if authorizing_count.checked_add(observe_only_count) != Some(diagnostic_count)
+        || vacuous != (diagnostic_count == 0)
+        || origin.diagnostic_count != diagnostic_count
+        || origin.authorizing_diagnostic_count != authorizing_count
+        || origin.observe_only_diagnostic_count != observe_only_count
+        || origin.vacuous != vacuous
+        || origin.authorized_intervals.as_slice() != authorized
+    {
+        return DiagnosticGapWorkResult::unavailable("diagnostic-authorization-audit-mismatch");
+    }
     let bound = match r1
         .eligible_bytes
         .and_then(|value| usize::try_from(value).ok())
@@ -155,11 +191,22 @@ pub fn derive_gap_partition(input: DiagnosticGapWorkInput<'_>) -> DiagnosticGapW
             capture_generation_ref: generation.to_owned(),
             work_id: work_id.to_owned(),
         }),
+        diagnostic_authorization_evidence: Some(DiagnosticAuthorizationEvidence {
+            decoded_source_hash: origin.decoded_source_hash.clone(),
+            raw_diagnostics_hash: origin.raw_diagnostics_hash.clone(),
+            raw_diagnostics_bytes: origin.raw_diagnostics_bytes,
+            policy_hash: origin.policy_hash.clone(),
+            source_recognition_hash: origin.source_recognition_hash.clone(),
+        }),
         authorized_intervals: Some(diagnosed),
         silent_intervals: Some(silent),
         authorized_bytes: Some(authorized_bytes),
         silent_bytes: Some(silent_bytes),
         silent_drop_count: Some(partition.silent_drops),
+        diagnostic_count: Some(diagnostic_count),
+        authorizing_diagnostic_count: Some(authorizing_count),
+        observe_only_diagnostic_count: Some(observe_only_count),
+        vacuous: Some(vacuous),
         errors: vec![],
     }
 }
@@ -194,15 +241,33 @@ pub fn aggregate_gap_partitions(input: DiagnosticGapAggregateInput<'_>) -> Diagn
                     .find(|item| item.work_id == work_id)
             });
             let exact_r1 = work.source_recognition_evidence.as_ref().zip(expected_work);
+            let authorization = work.diagnostic_authorization_evidence.as_ref();
             work.status != DiagnosticGapWorkStatus::Ok
                 || work.qualification_identity_ref.as_deref()
                     != Some(input.qualification_identity_ref)
                 || work.policy_hash.as_deref() != Some(input.policy_hash)
+                || authorization.is_none_or(|evidence| {
+                    evidence.policy_hash != input.policy_hash
+                        || evidence.source_recognition_hash
+                            != work
+                                .source_recognition_evidence
+                                .as_ref()
+                                .map_or("", |value| value.value_hash.as_str())
+                        || evidence.decoded_source_hash != work.work_id.as_deref().unwrap_or("")
+                        || evidence.raw_diagnostics_hash.is_empty()
+                })
                 || exact_r1.is_none_or(|(evidence, expected)| {
                     work.capture_generation_ref.as_deref()
                         != Some(expected.capture_generation_ref.as_str())
+                        || evidence.work_id != expected.work_id
+                        || evidence.qualification_identity_ref != input.qualification_identity_ref
+                        || evidence.relation != "partitions-semantic-gaps-of"
                         || evidence.capture_generation_ref != expected.capture_generation_ref
                         || evidence.value_hash != expected.source_recognition_value_hash
+                        || evidence.artifact_ref.sha256 != expected.source_recognition_value_hash
+                        || evidence.artifact_ref.sha256 != evidence.value_hash
+                        || evidence.artifact_ref.media_type != "application/json"
+                        || evidence.artifact_ref.bytes == 0
                 })
         })
     {
@@ -217,11 +282,26 @@ pub fn aggregate_gap_partitions(input: DiagnosticGapAggregateInput<'_>) -> Diagn
             .iter()
             .try_fold(0_u64, |sum, work| sum.checked_add(f(work)?))
     };
-    let (Some(authorized_bytes), Some(silent_bytes), Some(silent_drop_count)) = (
+    let (
+        Some(authorized_bytes),
+        Some(silent_bytes),
+        Some(silent_drop_count),
+        Some(diagnostic_count),
+        Some(authorizing_count),
+        Some(observe_only_count),
+        Some(authorized_interval_count),
+    ) = (
         sum(|w| w.authorized_bytes),
         sum(|w| w.silent_bytes),
         sum(|w| w.silent_drop_count),
-    ) else {
+        sum(|w| w.diagnostic_count),
+        sum(|w| w.authorizing_diagnostic_count),
+        sum(|w| w.observe_only_diagnostic_count),
+        input.works.iter().try_fold(0_u64, |sum, work| {
+            sum.checked_add(u64::try_from(work.authorized_intervals.as_ref()?.len()).ok()?)
+        }),
+    )
+    else {
         return unavailable_aggregate(&expected_work_ids, "diagnostic-gap-total-overflow");
     };
     DiagnosticGapAggregate {
@@ -229,11 +309,16 @@ pub fn aggregate_gap_partitions(input: DiagnosticGapAggregateInput<'_>) -> Diagn
         qualification_identity_ref: Some(input.qualification_identity_ref.to_owned()),
         corpus_generation_ref: Some(input.corpus_generation_ref.to_owned()),
         policy_hash: Some(input.policy_hash.to_owned()),
-        expected_work_ids,
-        observed_work_ids: observed,
+        expected_work_ids: expected_work_ids.clone(),
+        observed_work_ids: expected_work_ids.clone(),
         authorized_bytes: Some(authorized_bytes),
         silent_bytes: Some(silent_bytes),
         silent_drop_count: Some(silent_drop_count),
+        diagnostic_count: Some(diagnostic_count),
+        authorizing_diagnostic_count: Some(authorizing_count),
+        observe_only_diagnostic_count: Some(observe_only_count),
+        authorized_interval_count: Some(authorized_interval_count),
+        vacuous: Some(diagnostic_count == 0),
         errors: vec![],
     }
 }

@@ -1,0 +1,12 @@
+{
+  "schema_version": "abc/parser-rq-capture-generation/v1",
+  "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611",
+  "qualification_identity_ref": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "work_id": "fixture-work",
+  "members": {
+    "decoded_source": {"artifact_ref": "source/decoded", "value_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611"},
+    "parser_output": {"artifact_ref": "aat/output", "value_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611"},
+    "raw_diagnostics": {"artifact_ref": "diagnostics/raw", "value_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666", "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611"},
+    "classified_source_ledger": {"artifact_ref": "ledger/classified", "value_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777", "generation_ref": "sha256:98bbbcb3f9601b5515e3d8625555465223828f5cb5271c9af9d74fc2dea36611"}
+  }
+}

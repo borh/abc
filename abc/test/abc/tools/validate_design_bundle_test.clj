@@ -3,6 +3,7 @@
             [abc.tools.adr-evidence-runtime-inputs :as runtime]
             [abc.tools.evidence-test-support :as evidence-support]
             [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.evidence-io :as evidence-io]
             [abc.tools.json :as abc-json]
             [abc.tools.malli :as am]
@@ -24,6 +25,77 @@
             [malli.generator :as mg]))
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
+
+(deftest parser-rq-classified-source
+  (let [root "test/fixtures/parser-rq/classified-source"
+        policy-schema (files/read-json "schemas/parser-rq-classified-source-policy.schema.json")
+        ledger-schema (files/read-json "schemas/parser-rq-classified-source-ledger.schema.json")
+        generation-schema (files/read-json "schemas/parser-rq-capture-generation.schema.json")
+        policy (files/read-json "data/parser-rq-ab-aozora-classified-source-v1.json")
+        ledger (files/read-json (str root "/ledger.json"))
+        generation (files/read-json (str root "/generation.json"))]
+    (testing "closed valid fixtures and canonical hashes"
+      (doseq [[contract value] [[policy-schema policy]
+                                [ledger-schema ledger]
+                                [generation-schema generation]]]
+        (is (nil? (schema/validation-errors contract value))))
+      (is (= (get policy "policy_hash")
+             (hash/format-sha256
+              (hash/sha256-json-jcs (dissoc policy "policy_hash")))))
+      (is (= (get ledger "ledger_schema_hash")
+             (hash/format-sha256 (hash/sha256-json-jcs ledger-schema)))))
+    (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
+            "sha256:c79b292fe8f55ff1fded1a7756abce75c9bd809467243a48199e959552a2d23d"
+            "schemas/parser-rq-classified-source-ledger.schema.json"
+            "sha256:3ac486489101f77ce805df7ef14db10310abc8b352e5723fe538ad72bab6b6f7"
+            "schemas/parser-rq-capture-generation.schema.json"
+            "sha256:99b9f63562f52f2302eb15496173430c936c7cea12eaa33cf8767766787663e3"}
+           (into {} (map (fn [path]
+                           [path (hash/format-sha256
+                                  (hash/sha256-json-jcs
+                                   (files/read-json path)))])
+                         ["schemas/parser-rq-classified-source-policy.schema.json"
+                          "schemas/parser-rq-classified-source-ledger.schema.json"
+                          "schemas/parser-rq-capture-generation.schema.json"]))))
+    (is (= 36 (count (get policy "rules"))))
+    (is (empty? (validate/parser-rq-capture-generation-errors generation)))
+    (testing "unknown fields and duplicate policy rows are rejected"
+      (is (seq (schema/validation-errors policy-schema (assoc policy "unknown" true))))
+      (is (seq (schema/validation-errors ledger-schema (assoc ledger "unknown" true))))
+      (is (seq (schema/validation-errors generation-schema
+                                         (assoc generation "unknown" true))))
+      (is (seq (validate/parser-rq-classified-source-policy-errors
+                (update policy "rules" conj (first (get policy "rules")))))))
+    (testing "closed role/disposition and evidence combinations"
+      (let [entry (first (get ledger "entries"))]
+        (is (seq (schema/validation-errors
+                  ledger-schema
+                  (assoc-in ledger ["entries" 0 "source_role"] "*"))))
+        (is (seq (schema/validation-errors
+                  ledger-schema
+                  (-> ledger
+                      (assoc-in ["entries" 0 "disposition"] "preserved_opaque")
+                      (assoc-in ["entries" 0 "source_role"] "visible_text")))))
+        (is (seq (schema/validation-errors
+                  ledger-schema
+                  (update-in ledger ["entries" 0] dissoc "target_identity"))))
+        (is (seq (schema/validation-errors
+                  ledger-schema
+                  (assoc-in ledger ["entries" 0 "target_identity" "unknown"] true))))
+        (is (seq (schema/validation-errors
+                  ledger-schema
+                  (update ledger "entries" conj entry))))
+        (is (seq (schema/validation-errors
+                  ledger-schema
+                  (assoc ledger "entries"
+                         [(-> entry
+                              (assoc "source_role" "structural_newline"
+                                     "disposition" "structural_control")
+                              (dissoc "target_identity"))]))))))
+    (testing "all capture members share one generation reference"
+      (is (seq (validate/parser-rq-capture-generation-errors
+                (assoc-in generation ["members" "raw_diagnostics" "generation_ref"]
+                          (str "sha256:" (apply str (repeat 64 "f"))))))))))
 
 (deftest parser-rq-source-accountability-schemas-are-closed-test
   (let [pairs [["schemas/parser-rq-ignored-regions.schema.json"

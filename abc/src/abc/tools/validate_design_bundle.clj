@@ -7,6 +7,7 @@
    [abc.tools.analysis-identity :as analysis-identity]
    [abc.tools.evidence-io :as evidence-io]
    [abc.tools.files :as files]
+   [abc.tools.hash :as hash]
    [abc.tools.iiif :as iiif]
    [abc.tools.linked-art :as linked-art]
    [abc.tools.malli :as am]
@@ -328,6 +329,39 @@
                           (parser-maintenance/benchmark-artifact-problems
                            repo-root record)))))
 
+(defn parser-rq-classified-source-policy-errors [policy]
+  (->> (get policy "rules" [])
+       (map #(select-keys % ["case" "classified_kind" "plain_provenance"
+                             "source_role" "disposition" "parser_evidence_code"]))
+       frequencies
+       (keep (fn [[row count]]
+               (when (> count 1)
+                 (str "classified-source policy contains duplicate row " row))))
+       sort
+       vec))
+
+(defn parser-rq-capture-generation-errors [generation]
+  (let [expected (get generation "generation_ref")
+        identity (-> generation
+                     (dissoc "generation_ref")
+                     (update "members"
+                             (fn [members]
+                               (into {} (map (fn [[k v]]
+                                               [k (dissoc v "generation_ref")])
+                                             members)))))
+        computed (hash/format-sha256 (hash/sha256-json-jcs identity))]
+    (vec
+     (concat
+      (when (not= expected computed)
+        [(str "capture generation_ref does not match canonical identity: "
+              expected " != " computed)])
+      (->> (get generation "members" {})
+           (keep (fn [[member value]]
+                   (when (not= expected (get value "generation_ref"))
+                     (str "capture generation member " member
+                          " has mismatched generation_ref"))))
+           sort)))))
+
 (def ^:private design-schema-inputs
   ["schemas/aat-parser-ir-divergence-bundle.schema.json"
    "schemas/aat-parser-ir-divergence.schema.json"
@@ -346,6 +380,9 @@
    "schemas/manifest.schema.json"
    "schemas/pack-policy.schema.json"
    "schemas/parser-rq-ignored-regions.schema.json"
+   "schemas/parser-rq-capture-generation.schema.json"
+   "schemas/parser-rq-classified-source-ledger.schema.json"
+   "schemas/parser-rq-classified-source-policy.schema.json"
    "schemas/parser-rq-source-accountability-aggregate.schema.json"
    "schemas/parser-rq-source-accountability-index.schema.json"
    "schemas/parser-rq-source-accountability-work.schema.json"
@@ -371,6 +408,7 @@
    "data/pack-policies/no-pack-v1.json"
    "data/pack-policies/parquet-basic-v1.json"
    "data/parser-evidence-citations.edn"
+   "data/parser-rq-ab-aozora-classified-source-v1.json"
    "data/request-sets/demo-basic-ja.json"
    "data/request-sets/full-corpus-analysis-basic-ja.json"
    "data/request-sets/full-corpus-basic-ja.json"
@@ -397,7 +435,9 @@
    "examples/v0/snapshot/snapshot-index.json"
    "examples/workflow/passed.workflow-run.json"
    "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
-   "fixtures/tei-eaj-comparison/workset-export.json"])
+   "fixtures/tei-eaj-comparison/workset-export.json"
+   "test/fixtures/parser-rq/classified-source/generation.json"
+   "test/fixtures/parser-rq/classified-source/ledger.json"])
 
 (defn evidence-input-paths []
   (->> (concat design-schema-inputs design-data-inputs design-fixture-inputs)
@@ -426,6 +466,9 @@
         request-set-schema (files/read-json "schemas/request-set.schema.json")
         snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
         pack-policy-schema (files/read-json "schemas/pack-policy.schema.json")
+        parser-rq-capture-generation-schema (files/read-json "schemas/parser-rq-capture-generation.schema.json")
+        parser-rq-classified-source-ledger-schema (files/read-json "schemas/parser-rq-classified-source-ledger.schema.json")
+        parser-rq-classified-source-policy-schema (files/read-json "schemas/parser-rq-classified-source-policy.schema.json")
         parser-rq-ignored-regions-schema (files/read-json "schemas/parser-rq-ignored-regions.schema.json")
         parser-rq-source-accountability-aggregate-schema (files/read-json "schemas/parser-rq-source-accountability-aggregate.schema.json")
         parser-rq-source-accountability-index-schema (files/read-json "schemas/parser-rq-source-accountability-index.schema.json")
@@ -459,6 +502,9 @@
                            ["schemas/request-set.schema.json" request-set-schema]
                            ["schemas/snapshot-index.schema.json" snapshot-index-schema]
                            ["schemas/pack-policy.schema.json" pack-policy-schema]
+                           ["schemas/parser-rq-capture-generation.schema.json" parser-rq-capture-generation-schema]
+                           ["schemas/parser-rq-classified-source-ledger.schema.json" parser-rq-classified-source-ledger-schema]
+                           ["schemas/parser-rq-classified-source-policy.schema.json" parser-rq-classified-source-policy-schema]
                            ["schemas/parser-rq-ignored-regions.schema.json" parser-rq-ignored-regions-schema]
                            ["schemas/parser-rq-source-accountability-aggregate.schema.json" parser-rq-source-accountability-aggregate-schema]
                            ["schemas/parser-rq-source-accountability-index.schema.json" parser-rq-source-accountability-index-schema]
@@ -473,6 +519,16 @@
                            ["schemas/person-drift-event.schema.json" person-drift-event-schema]
                            ["schemas/person-drift-index.schema.json" person-drift-index-schema]]]
       (schema-valid! schema path))
+    (let [policy (files/read-json "data/parser-rq-ab-aozora-classified-source-v1.json")
+          generation-path "test/fixtures/parser-rq/classified-source/generation.json"
+          generation (files/read-json generation-path)]
+      (validate-json! parser-rq-classified-source-policy-schema
+                      "data/parser-rq-ab-aozora-classified-source-v1.json")
+      (check-errors! (parser-rq-classified-source-policy-errors policy))
+      (validate-json! parser-rq-classified-source-ledger-schema
+                      "test/fixtures/parser-rq/classified-source/ledger.json")
+      (validate-json! parser-rq-capture-generation-schema generation-path)
+      (check-errors! (parser-rq-capture-generation-errors generation)))
     (let [maintenance-path
           "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
           maintenance-record (files/read-json maintenance-path)

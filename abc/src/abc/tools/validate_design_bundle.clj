@@ -680,8 +680,10 @@
                  ["unaccounted" unaccounted]])
         (when-not (interval-subset? recognized accounted)
           ["recognized intervals are not a subset of accounted intervals"])
-        (when-not (= recognized (sort-by (juxt #(get % "start") #(get % "end"))
-                                         recognized))
+        (when-not (= recognized
+                     (sort-by (fn [interval]
+                                [(get interval "start") (get interval "end")])
+                              recognized))
           ["recognized intervals are not in canonical order"])
         (when-not (= (get record "recognized_bytes")
                      (interval-bytes recognized))

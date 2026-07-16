@@ -113,7 +113,7 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:0d2f8fd57ca9f4c2d9635957dfa2b440d08dda53c0bfa03f59b154966784a645",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:eab408fac16adc5ea7e2f1b7c25d8b6b6a4f7452b86fd089b91ffe67e6f431f3",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
   },
   "observations":
@@ -134,7 +134,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix run .#validate-design-bundle\"",
-    "revision": "d90d91d931ec153a2b2503db428cbd67cf88369f",
+    "revision": "2ae6cc27f1f0cbf1d86f480417bdd66947493bfc",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

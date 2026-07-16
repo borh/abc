@@ -61,7 +61,7 @@
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
     "src\/abc\/tools\/validate_corpus.clj": "sha256:2923a63a97e589cf81881539f6719cb5917c86b85ad17c63ff976acdca8714e3",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:0d2f8fd57ca9f4c2d9635957dfa2b440d08dda53c0bfa03f59b154966784a645",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:eab408fac16adc5ea7e2f1b7c25d8b6b6a4f7452b86fd089b91ffe67e6f431f3",
     "test\/abc\/sim\/oracle.clj": "sha256:b25546934d3a9c1765bb12af27f37155a292c67a8bacbbd089835988dccb4728",
     "test\/abc\/sim\/render.clj": "sha256:bceb6a6b96fdbce4e52fa589b4977dfe076414c1b4b4b97206e04ec4f3ca6de0",
     "test\/abc\/tools\/temporal_evidence_input_test.clj": "sha256:8b99237f675d628229adea725155ba588a267c231375a966aa163f3999cb2b94"
@@ -80,7 +80,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.temporal-evidence-input-test\/temporal-person-record-contract\"",
-    "revision": "97788b3cc03334d60dc815c06648b31b2203bb89",
+    "revision": "2ae6cc27f1f0cbf1d86f480417bdd66947493bfc",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

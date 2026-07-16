@@ -1,0 +1,15 @@
+{
+  "schema_version": "abc/parser-rq-classified-source-authority/v1",
+  "policy": {
+    "raw_bytes_hash": "sha256:4700e0eef5718c123e94e2226add57d6217e65f4ff8feefacd6e29be7ebb294f",
+    "identity_hash": "sha256:defc1c9bd3ac7a3a3ce63ea4aae6948698b37d4de8071d6b3ac66176984b980a"
+  },
+  "ledger_schema": {
+    "raw_bytes_hash": "sha256:90aa461e93293d0973ad9226a901e9a2121fcf900c61dd2c6fff6f5f510c8d81",
+    "identity_hash": "sha256:f508dfeecb44cebbfb36ede4cfb72cee94cf44e5716041071345dae9c5e1530f"
+  },
+  "generation_schema": {
+    "raw_bytes_hash": "sha256:d41410f21b43981e6b6c79d4e251dd96c2eb13415b1cb26648022f61452a6b86",
+    "identity_hash": "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"
+  }
+}

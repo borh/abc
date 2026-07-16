@@ -9,6 +9,7 @@
    [abc.tools.files :as files]
    [abc.tools.hash :as hash]
    [abc.tools.iiif :as iiif]
+   [abc.tools.jcs :as jcs]
    [abc.tools.linked-art :as linked-art]
    [abc.tools.malli :as am]
    [abc.tools.manifest-index :as manifest-index]
@@ -484,7 +485,9 @@
 (defn parser-rq-capture-generation-errors [generation]
   (let [expected (get generation "generation_ref")
         identity (dissoc generation "generation_ref")
-        computed (hash/format-sha256 (hash/sha256-json-jcs identity))]
+        computed (hash/format-sha256
+                  (hash/sha256-bytes
+                   (jcs/rfc8785-string-domain-json-bytes identity)))]
     (vec
      (when (not= expected computed)
        [(str "capture generation_ref does not match canonical identity: "

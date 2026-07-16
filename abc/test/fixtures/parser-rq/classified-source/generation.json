@@ -1,6 +1,6 @@
 {
   "schema_version": "abc/parser-rq-capture-generation/v1",
-  "generation_ref": "sha256:f2c9d8c93e083394b73037edc3ff4f4a54a1a0c7aba8acfc85ad94046ca0fa37",
+  "generation_ref": "sha256:fb4b43cf993269ccb60c03475ec42019342e809862fca1339cc9862f0302a73c",
   "qualification_identity_ref": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
   "work_id": "fixture-work",
   "members": {

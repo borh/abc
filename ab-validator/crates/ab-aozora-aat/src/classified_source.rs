@@ -21,12 +21,13 @@ const POLICY_BYTES: &[u8] =
     include_bytes!("../../../../abc/data/parser-rq-ab-aozora-classified-source-v1.json");
 const LEDGER_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../abc/schemas/parser-rq-classified-source-ledger.schema.json");
+const GENERATION_SCHEMA_BYTES: &[u8] =
+    include_bytes!("../../../../abc/schemas/parser-rq-capture-generation.schema.json");
+const AUTHORITY_BYTES: &[u8] =
+    include_bytes!("../../../../abc/data/parser-rq-classified-source-authority-v1.json");
 const POLICY_ID: &str = "parser-rq-ab-aozora-classified-source-v1";
 const LEDGER_VERSION: &str = "abc/parser-rq-classified-source-ledger/v1";
 const GENERATION_VERSION: &str = "abc/parser-rq-capture-generation/v1";
-const POLICY_HASH: &str = "sha256:defc1c9bd3ac7a3a3ce63ea4aae6948698b37d4de8071d6b3ac66176984b980a";
-const LEDGER_SCHEMA_HASH: &str =
-    "sha256:f508dfeecb44cebbfb36ede4cfb72cee94cf44e5716041071345dae9c5e1530f";
 
 /// In-memory member bytes for one closed capture generation.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -150,85 +151,66 @@ fn canonical_hash_without(value: &Value, excluded: &str) -> Result<String> {
         .as_object_mut()
         .context("hash identity must be an object")?
         .remove(excluded);
-    let mut bytes = String::new();
-    abc_legacy_identity_json(&identity, &mut bytes);
-    Ok(sha256(bytes.as_bytes()))
+    let mut bytes = canonical_json(&identity);
+    bytes.pop();
+    Ok(sha256(&bytes))
 }
 
-// ABC's published identities intentionally retain Charred's historical slash
-// and non-ASCII escaping. This is the same compatibility encoder already used
-// by P0 qualification identities; ordinary member JSON remains canonical UTF-8.
-fn abc_legacy_string(value: &str) -> String {
-    let mut encoded = String::from("\"");
-    for character in value.chars() {
-        match character {
-            '/' => encoded.push_str("\\/"),
-            character if character.is_ascii() => {
-                let scalar = serde_json::to_string(&character.to_string())
-                    .expect("string scalar serializes");
-                encoded.push_str(&scalar[1..scalar.len() - 1]);
-            }
-            character => {
-                for unit in character.encode_utf16(&mut [0_u16; 2]) {
-                    use std::fmt::Write as _;
-                    write!(encoded, "\\u{unit:04x}").expect("write to string");
-                }
-            }
-        }
-    }
-    encoded.push('"');
-    encoded
+fn authority_hash(section: &str, field: &str) -> Result<String> {
+    let authority: Value = serde_json::from_slice(AUTHORITY_BYTES)?;
+    ensure!(
+        authority["schema_version"] == "abc/parser-rq-classified-source-authority/v1",
+        "ABC classified-source authority descriptor version mismatch"
+    );
+    authority[section][field]
+        .as_str()
+        .map(str::to_owned)
+        .with_context(|| format!("ABC authority {section}.{field} is absent"))
 }
 
-fn abc_legacy_identity_json(value: &Value, output: &mut String) {
-    match value {
-        Value::Object(object) => {
-            output.push('{');
-            let ordered = object.iter().collect::<BTreeMap<_, _>>();
-            for (index, (key, value)) in ordered.into_iter().enumerate() {
-                if index != 0 {
-                    output.push(',');
-                }
-                output.push_str(&abc_legacy_string(key));
-                output.push(':');
-                abc_legacy_identity_json(value, output);
-            }
-            output.push('}');
-        }
-        Value::Array(values) => {
-            output.push('[');
-            for (index, value) in values.iter().enumerate() {
-                if index != 0 {
-                    output.push(',');
-                }
-                abc_legacy_identity_json(value, output);
-            }
-            output.push(']');
-        }
-        Value::String(value) => output.push_str(&abc_legacy_string(value)),
-        value => output.push_str(&serde_json::to_string(value).expect("JSON scalar serializes")),
-    }
+fn authenticate_authority_bytes(section: &str, bytes: &[u8]) -> Result<()> {
+    ensure!(
+        sha256(bytes) == authority_hash(section, "raw_bytes_hash")?,
+        "compiled ABC {section} bytes drift from the authority descriptor"
+    );
+    Ok(())
 }
 
 fn policy_hash() -> Result<String> {
+    authenticate_authority_bytes("policy", POLICY_BYTES)?;
     let policy: Value = serde_json::from_slice(POLICY_BYTES)?;
     let asserted = policy["policy_hash"]
         .as_str()
         .context("policy_hash is absent")?;
+    let authoritative = authority_hash("policy", "identity_hash")?;
     ensure!(
-        asserted == POLICY_HASH,
-        "compiled classified-source policy hash differs from the ABC-published legacy identity"
+        asserted == authoritative,
+        "compiled classified-source policy identity differs from ABC authority"
     );
-    Ok(POLICY_HASH.to_owned())
+    Ok(authoritative)
 }
 
 fn ledger_schema_hash() -> Result<String> {
+    authenticate_authority_bytes("ledger_schema", LEDGER_SCHEMA_BYTES)?;
     let schema: Value = serde_json::from_slice(LEDGER_SCHEMA_BYTES)?;
-    ensure!(
-        schema.is_object(),
-        "compiled classified-source ledger schema is invalid"
-    );
-    Ok(LEDGER_SCHEMA_HASH.to_owned())
+    jsonschema::validator_for(&schema).context("compiled ledger schema is invalid")?;
+    authority_hash("ledger_schema", "identity_hash")
+}
+
+fn authenticate_generation_schema() -> Result<Value> {
+    authenticate_authority_bytes("generation_schema", GENERATION_SCHEMA_BYTES)?;
+    let schema: Value = serde_json::from_slice(GENERATION_SCHEMA_BYTES)?;
+    jsonschema::validator_for(&schema).context("compiled generation schema is invalid")?;
+    Ok(schema)
+}
+
+fn validate_schema(schema: &Value, instance: &Value, label: &str) -> Result<()> {
+    let validator = jsonschema::validator_for(schema)
+        .with_context(|| format!("invalid compiled {label} schema"))?;
+    if let Err(error) = validator.validate(instance) {
+        anyhow::bail!("{label} contract violation: {error}");
+    }
+    Ok(())
 }
 
 fn wire_construct(value: ConstructId) -> &'static str {
@@ -672,6 +654,65 @@ pub fn capture_generation_from_bytes(bytes: &[u8]) -> Result<CaptureGeneration> 
     Ok(generation)
 }
 
+fn verify_ledger_contract(generation: &CaptureGeneration, manifest: &Value) -> Result<()> {
+    let ledger: Value = serde_json::from_slice(&generation.classified_source_ledger)?;
+    let ledger_schema: Value = serde_json::from_slice(LEDGER_SCHEMA_BYTES)?;
+    validate_schema(&ledger_schema, &ledger, "classified-source ledger")?;
+    ensure!(
+        ledger["qualification_identity_ref"] == manifest["qualification_identity_ref"],
+        "ledger qualification identity mismatch"
+    );
+    ensure!(ledger["parser"] == "ab-aozora", "ledger parser mismatch");
+    ensure!(
+        ledger["coordinate_system"] == "decoded_utf8",
+        "ledger coordinate system mismatch"
+    );
+    ensure!(ledger["policy_id"] == POLICY_ID, "policy ID mismatch");
+    ensure!(
+        ledger["policy_hash"] == policy_hash()?,
+        "policy hash mismatch"
+    );
+    ensure!(
+        ledger["ledger_schema_hash"] == ledger_schema_hash()?,
+        "ledger schema hash mismatch"
+    );
+    ensure!(
+        ledger["decoded_source"]
+            == json!({
+                "artifact_ref": member_identity("txt", &generation.decoded_source).artifact_ref,
+                "value_hash": sha256(&generation.decoded_source),
+                "encoding": ledger["decoded_source"]["encoding"],
+                "bytes": generation.decoded_source.len()
+            }),
+        "decoded ledger identity mismatch"
+    );
+    ensure!(
+        ledger["original_source"]["value_hash"] == manifest["work_id"],
+        "original source and manifest work identity mismatch"
+    );
+    ensure!(
+        ledger["original_source"]["artifact_ref"]
+            == format!(
+                "source/{}",
+                manifest["work_id"].as_str().unwrap_or_default()
+            ),
+        "original source artifact relation mismatch"
+    );
+    let parser = member_identity("json", &generation.parser_output);
+    for entry in ledger["entries"]
+        .as_array()
+        .context("ledger entries absent")?
+    {
+        if let Some(target) = entry.get("target_identity") {
+            ensure!(
+                target == &target_identity(&parser),
+                "entry target is outside parser-output member"
+            );
+        }
+    }
+    Ok(())
+}
+
 /// Authenticate a generation's exact member tuple and acyclic reference.
 ///
 /// # Errors
@@ -680,6 +721,11 @@ pub fn capture_generation_from_bytes(bytes: &[u8]) -> Result<CaptureGeneration> 
 /// cross-generation mixing, or policy/schema drift.
 pub fn verify_capture_generation(generation: &CaptureGeneration) -> Result<()> {
     let manifest: Value = serde_json::from_slice(&generation.manifest)?;
+    validate_schema(
+        &authenticate_generation_schema()?,
+        &manifest,
+        "capture generation",
+    )?;
     ensure!(
         manifest["schema_version"] == GENERATION_VERSION,
         "manifest version mismatch"
@@ -719,39 +765,7 @@ pub fn verify_capture_generation(generation: &CaptureGeneration) -> Result<()> {
             "member embeds generation reference"
         );
     }
-    let ledger: Value = serde_json::from_slice(&generation.classified_source_ledger)?;
-    ensure!(
-        ledger["policy_hash"] == policy_hash()?,
-        "policy hash mismatch"
-    );
-    ensure!(
-        ledger["ledger_schema_hash"] == ledger_schema_hash()?,
-        "ledger schema hash mismatch"
-    );
-    ensure!(
-        ledger["decoded_source"]
-            == json!({
-                "artifact_ref": member_identity("txt", &generation.decoded_source).artifact_ref,
-                "value_hash": sha256(&generation.decoded_source),
-                "encoding": ledger["decoded_source"]["encoding"],
-                "bytes": generation.decoded_source.len()
-            }),
-        "decoded ledger identity mismatch"
-    );
-    let parser = member_identity("json", &generation.parser_output);
-    for entry in ledger["entries"]
-        .as_array()
-        .context("ledger entries absent")?
-    {
-        if let Some(target) = entry.get("target_identity") {
-            ensure!(
-                target["artifact_ref"] == parser.artifact_ref
-                    && target["value_hash"] == parser.value_hash,
-                "entry target is outside parser-output member"
-            );
-        }
-    }
-    Ok(())
+    verify_ledger_contract(generation, &manifest)
 }
 
 #[cfg(test)]
@@ -779,6 +793,26 @@ mod tests {
             .iter()
             .filter(|entry| entry["construct_id"] == "recovered_verbatim")
             .collect()
+    }
+
+    #[test]
+    fn abc_authority_rejects_stale_identity_after_content_drift() {
+        for (section, bytes) in [
+            ("policy", POLICY_BYTES),
+            ("ledger_schema", LEDGER_SCHEMA_BYTES),
+            ("generation_schema", GENERATION_SCHEMA_BYTES),
+        ] {
+            authenticate_authority_bytes(section, bytes).unwrap();
+            let mut changed = bytes.to_vec();
+            changed.push(b' ');
+            assert!(
+                authenticate_authority_bytes(section, &changed)
+                    .unwrap_err()
+                    .to_string()
+                    .contains("drift"),
+                "{section}"
+            );
+        }
     }
 
     #[test]

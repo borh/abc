@@ -33,7 +33,9 @@
         generation-schema (files/read-json "schemas/parser-rq-capture-generation.schema.json")
         policy (files/read-json "data/parser-rq-ab-aozora-classified-source-v1.json")
         ledger (files/read-json (str root "/ledger.json"))
-        generation (files/read-json (str root "/generation.json"))]
+        generation (files/read-json (str root "/generation.json"))
+        authority (files/read-json
+                   "data/parser-rq-classified-source-authority-v1.json")]
     (testing "closed valid fixtures and canonical hashes"
       (doseq [[contract value] [[policy-schema policy]
                                 [ledger-schema ledger]
@@ -44,6 +46,20 @@
               (hash/sha256-json-jcs (dissoc policy "policy_hash")))))
       (is (= (get ledger "ledger_schema_hash")
              (hash/format-sha256 (hash/sha256-json-jcs ledger-schema)))))
+    (testing "the compiled authority descriptor authenticates exact ABC bytes and identities"
+      (doseq [[section path value identity]
+              [["policy" "data/parser-rq-ab-aozora-classified-source-v1.json"
+                (dissoc policy "policy_hash") (get policy "policy_hash")]
+               ["ledger_schema" "schemas/parser-rq-classified-source-ledger.schema.json"
+                ledger-schema (get ledger "ledger_schema_hash")]
+               ["generation_schema" "schemas/parser-rq-capture-generation.schema.json"
+                generation-schema
+                "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"]]]
+        (is (= (get-in authority [section "raw_bytes_hash"])
+               (hash/format-sha256 (hash/sha256-file path))))
+        (is (= (get-in authority [section "identity_hash"])
+               (hash/format-sha256 (hash/sha256-json-jcs value))))
+        (is (= identity (get-in authority [section "identity_hash"])))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
             "sha256:c9f68f073afcbdd2fca81e0e926c1428e7fcbb3f00307b5eff016a7c25276e60"
             "schemas/parser-rq-classified-source-ledger.schema.json"

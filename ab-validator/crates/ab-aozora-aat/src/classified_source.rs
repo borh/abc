@@ -146,6 +146,7 @@ fn canonical_json(value: &Value) -> Vec<u8> {
 }
 
 fn canonical_hash_without(value: &Value, excluded: &str) -> Result<String> {
+    authenticate_generation_ref_contract(excluded)?;
     let mut identity = value.clone();
     identity
         .as_object_mut()
@@ -154,6 +155,32 @@ fn canonical_hash_without(value: &Value, excluded: &str) -> Result<String> {
     let mut bytes = canonical_json(&identity);
     bytes.pop();
     Ok(sha256(&bytes))
+}
+
+fn authenticate_generation_ref_contract(excluded: &str) -> Result<()> {
+    let authority: Value = serde_json::from_slice(AUTHORITY_BYTES)?;
+    validate_generation_ref_contract(&authority, excluded)
+}
+
+fn validate_generation_ref_contract(authority: &Value, excluded: &str) -> Result<()> {
+    ensure!(
+        authority["generation_ref_contract"]
+            == json!({
+                "algorithm_id": "sha256-rfc8785-string-domain-v1",
+                "canonicalization": "RFC 8785 JCS",
+                "hash": "SHA-256",
+                "projection": "closed-manifest-minus-generation_ref",
+                "excluded_fields": ["generation_ref"],
+                "value_domain": "objects-arrays-strings-only",
+                "object_key_domain": "schema-fixed-ascii"
+            }),
+        "ABC generation-reference contract is unsupported"
+    );
+    ensure!(
+        excluded == "generation_ref",
+        "generation-reference projection excludes an unauthorized field"
+    );
+    Ok(())
 }
 
 fn authority_hash(section: &str, field: &str) -> Result<String> {
@@ -813,6 +840,33 @@ mod tests {
                 "{section}"
             );
         }
+    }
+
+    #[test]
+    fn abc_authority_rejects_generation_algorithm_or_projection_drift() {
+        let authority: Value = serde_json::from_slice(AUTHORITY_BYTES).unwrap();
+        validate_generation_ref_contract(&authority, "generation_ref").unwrap();
+        for (field, changed) in [
+            ("algorithm_id", "sha256-legacy-json-v0"),
+            ("projection", "closed-manifest-all-fields"),
+            ("value_domain", "all-json-values"),
+        ] {
+            let mut mutated = authority.clone();
+            mutated["generation_ref_contract"][field] = json!(changed);
+            assert!(
+                validate_generation_ref_contract(&mutated, "generation_ref")
+                    .unwrap_err()
+                    .to_string()
+                    .contains("unsupported"),
+                "{field}"
+            );
+        }
+        assert!(
+            validate_generation_ref_contract(&authority, "policy_hash")
+                .unwrap_err()
+                .to_string()
+                .contains("unauthorized")
+        );
     }
 
     #[test]

@@ -1,5 +1,14 @@
 {
   "schema_version": "abc/parser-rq-classified-source-authority/v1",
+  "generation_ref_contract": {
+    "algorithm_id": "sha256-rfc8785-string-domain-v1",
+    "canonicalization": "RFC 8785 JCS",
+    "hash": "SHA-256",
+    "projection": "closed-manifest-minus-generation_ref",
+    "excluded_fields": ["generation_ref"],
+    "value_domain": "objects-arrays-strings-only",
+    "object_key_domain": "schema-fixed-ascii"
+  },
   "policy": {
     "raw_bytes_hash": "sha256:4700e0eef5718c123e94e2226add57d6217e65f4ff8feefacd6e29be7ebb294f",
     "identity_hash": "sha256:defc1c9bd3ac7a3a3ce63ea4aae6948698b37d4de8071d6b3ac66176984b980a"

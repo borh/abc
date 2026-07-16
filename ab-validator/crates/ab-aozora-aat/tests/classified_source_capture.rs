@@ -236,6 +236,34 @@ fn self_consistent_contract_mutations_are_rejected() {
         );
     }
 
+    let mut changed = original.clone();
+    let mut ledger = json(&changed.classified_source_ledger);
+    let targeted = ledger["entries"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|entry| entry.get("target_identity").is_some())
+        .unwrap();
+    targeted["target_identity"]["relation"] = Value::String("preserves".into());
+    reseal_ledger(&mut changed, &ledger);
+    assert!(
+        verify_capture_generation(&changed)
+            .unwrap_err()
+            .to_string()
+            .contains("outside parser-output member")
+    );
+
+    let mut changed = original.clone();
+    let mut manifest = json(&changed.manifest);
+    manifest["work_id"] = Value::String(format!("sha256:{}", "2".repeat(64)));
+    reseal_manifest(&mut changed, manifest);
+    assert!(
+        verify_capture_generation(&changed)
+            .unwrap_err()
+            .to_string()
+            .contains("original source")
+    );
+
     let mut changed = original;
     let mut manifest = json(&changed.manifest);
     manifest["members"]["extra"] = manifest["members"]["decoded_source"].clone();

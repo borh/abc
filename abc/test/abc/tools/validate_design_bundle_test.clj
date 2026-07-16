@@ -31,6 +31,7 @@
         policy-schema (files/read-json "schemas/parser-rq-classified-source-policy.schema.json")
         ledger-schema (files/read-json "schemas/parser-rq-classified-source-ledger.schema.json")
         generation-schema (files/read-json "schemas/parser-rq-capture-generation.schema.json")
+        authority-schema (files/read-json "schemas/parser-rq-classified-source-authority.schema.json")
         policy (files/read-json "data/parser-rq-ab-aozora-classified-source-v1.json")
         ledger (files/read-json (str root "/ledger.json"))
         generation (files/read-json (str root "/generation.json"))
@@ -47,6 +48,11 @@
       (is (= (get ledger "ledger_schema_hash")
              (hash/format-sha256 (hash/sha256-json-jcs ledger-schema)))))
     (testing "the compiled authority descriptor authenticates exact ABC bytes and identities"
+      (is (nil? (schema/validation-errors authority-schema authority)))
+      (is (seq (schema/validation-errors
+                authority-schema
+                (assoc-in authority ["generation_ref_contract" "projection"]
+                          "all-fields"))))
       (doseq [[section path value identity]
               [["policy" "data/parser-rq-ab-aozora-classified-source-v1.json"
                 (dissoc policy "policy_hash") (get policy "policy_hash")]
@@ -62,6 +68,8 @@
         (is (= identity (get-in authority [section "identity_hash"])))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
             "sha256:c9f68f073afcbdd2fca81e0e926c1428e7fcbb3f00307b5eff016a7c25276e60"
+            "schemas/parser-rq-classified-source-authority.schema.json"
+            "sha256:cfe47129b725e29c4a5a5922ccbf7e2a17e9e8c5db716a3d1baf083fbb41fe1c"
             "schemas/parser-rq-classified-source-ledger.schema.json"
             "sha256:f508dfeecb44cebbfb36ede4cfb72cee94cf44e5716041071345dae9c5e1530f"
             "schemas/parser-rq-capture-generation.schema.json"
@@ -71,6 +79,7 @@
                                   (hash/sha256-json-jcs
                                    (files/read-json path)))])
                          ["schemas/parser-rq-classified-source-policy.schema.json"
+                          "schemas/parser-rq-classified-source-authority.schema.json"
                           "schemas/parser-rq-classified-source-ledger.schema.json"
                           "schemas/parser-rq-capture-generation.schema.json"]))))
     (is (= ["visible_text" "structural_newline" "ruby" "typography"

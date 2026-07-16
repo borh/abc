@@ -232,9 +232,15 @@ ledger belong to one capture generation. A closed generation manifest names
 the logical identity of every member and is published only after every member
 has been content-authenticated. Member `value_hash` values are ordinary hashes
 of the complete published member bytes; members do not embed the generation
-reference. `generation_ref` is the canonical hash of the closed manifest
-identity fields, including those member logical identities and excluding only
-the reference itself. This acyclic construction authenticates members first
+reference. In v1, `generation_ref` is SHA-256 over RFC 8785 JCS canonical bytes
+of the closed manifest, excluding exactly the top-level `generation_ref` field
+and retaining every other identity field, including the member logical
+identities. The generation schema restricts this projection to objects, arrays,
+and string leaves under schema-fixed ASCII object keys; no number-format or
+cross-language key-order ambiguity is admitted. The ABC authority descriptor
+binds this rule as `sha256-rfc8785-string-domain-v1`; a producer must reject an
+unknown algorithm, projection, exclusion set, or value domain rather than infer
+canonicalization from fixtures. This acyclic construction authenticates members first
 and binds them together last. Derivation accepts members only through that
 manifest and rejects cross-generation mixing even when individual source hashes
 happen to match.

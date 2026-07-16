@@ -499,9 +499,9 @@
   (let [bytes (.getBytes ^String decoded "UTF-8")]
     (when (and (<= 0 start) (< start end) (<= end (alength bytes))
                (or (zero? start)
-                   (not= 128 (bit-and 192 (aget bytes start))))
+                   (not (<= -128 (aget bytes start) -65)))
                (or (= end (alength bytes))
-                   (not= 128 (bit-and 192 (aget bytes end)))))
+                   (not (<= -128 (aget bytes end) -65))))
       (String. bytes start (- end start) "UTF-8"))))
 
 (defn- utf8-value-hash [value]

@@ -1,44 +1,62 @@
 # Classified-source provenance characterization
 
-Status: **BLOCKED** at source commit `3316a11690125e17d07d30a5cf2d85589b236d10`.
+Status: **characterized; Task 3 blocked on the existing `ClassifiedSpan` seam**.
 
-The live tiled classifier cannot distinguish recovery provenance before
-`flush_plain_up_to`. No recovery-reason vocabulary is frozen, and Task 3 is not
-authorized.
+The disposable probe recorded 36 deterministic cases at three levels: pair
+events, classifier-local branch observations, and emitted `ClassifiedSpan`s.
+Each case also records input bytes, all diagnostics, normalized and verbatim
+SHA-256 hashes, and final registry `NodeKind`s. The complete machine-readable
+matrix is `2026-07-16-classified-source-provenance.json`.
 
-## Exact blocker
+## Empirical result
 
-`ClassifyStream` retains a plain run as a byte start plus, transiently, a pending
-refmark. `flush_plain_up_to` emits only `SpanKind::Plain` and the half-open source
-span (`lexer/classify/mod.rs:645-663`). It has no field containing the originating
-`PairEvent`, recognizer outcome, or recovery reason.
+Recovery identity exists at the individual classifier branches. The probe
+observed, before pending-state convergence:
 
-The same state and output are reached by semantically different paths:
+- ordinary top-level and replayed plain events, including `Solo` and
+  `Unmatched` variants;
+- held solo refmarks;
+- literal Quote/Tortoise stream-through;
+- skipped synthetic `Unclosed` events during declined-frame replay;
+- recognizer decline, including gaiji decline before its refmark becomes plain.
 
-| Input path | Evidence | State reaching the flush |
-|---|---|---|
-| ordinary text, solo markers, unmatched closes | `lexer/classify/mod.rs:1039-1047` | `pending_plain_start` |
-| declined gaiji plus declined bracket | `lexer/classify/mod.rs:882-900` | replay into `pending_plain_start` |
-| any declined buffered recognition | `lexer/classify/mod.rs:913-925` | replay into `pending_plain_start` |
-| literal quote/tortoise punctuation | `lexer/classify/mod.rs:981-1000` | `pending_plain_start` |
-| unclosed frame at EOF | `lexer/classify/mod.rs:1631-1644` | replay into `pending_plain_start` |
-| solo refmark at a boundary | `lexer/classify/mod.rs:645-663` | folded into `pending_plain_start` |
+These observations are not present in the emitted `ClassifiedSpan`. The cases
+show distinct event/branch histories converging to `SpanKind::Plain`; adjacent
+paths may fuse into one source interval. Recovery provenance is therefore
+discarded when the branches seed or reuse `pending_plain_start` /
+`pending_refmark`, before `flush_plain_up_to` emits a reasonless plain span.
+This is a limitation of the unchanged output seam, not an absence of a viable
+pre-flush observation point.
 
-This is stronger than a missing downstream label: adjacent paths can coalesce
-into one `Plain` interval, so the recovery subinterval boundary is also gone.
-Recovering it later would require replaying token/pair history or inferring it
-from AAT/Parser-IR/diagnostics, all forbidden by the governing design.
+No AAT or Parser-IR reconstruction was used. Reconstructing pair history is
+necessary only if the classifier remains unchanged. A durable downstream
+contract would instead require a classifier-local provenance split at these
+branches.
 
-## Fail-stop decision
+## Case and node coverage
 
-The requested full matrix and two-run JSON comparison cannot produce truthful
-recovery reasons through the live classified-span interface. Continuing would
-invent reasons not observed at the required seam. The temporary probe was
-therefore not retained, no `Other` reason was introduced, and the recovery
-matrix remains deliberately empty rather than falsely closed.
+The matrix covers ordinary text, newline, Quote/Tortoise punctuation, solo
+refmark/bar/hash, unclosed open, unmatched close, gaiji decline, unknown
+directive, block open, block close, a balanced block, and representative live
+node producers.
 
-The required prerequisite is the behavior-preserving provenance split described
-by the design: make `PlainText` and `RecoveredVerbatim(reason)` distinguishable
-at the point each parser path is handled, before merging or flushing. That work
-belongs to the subsequent explicitly authorized refactor, not this
-characterization commit.
+Of the 26 declared `NodeKind` tags, 23 were observed through the live pipeline:
+`ruby`, `bouten`, `combineUpright`, `gaiji`, `indent`, `alignEnd`, `center`,
+`lineGothic`, `lineFontSize`, `pageBreak`, `sectionBreak`, `bodyEnd`,
+`forcedBreak`, `heading`, `headingHint`, `illustration`, `kaeriten`, `directive`,
+`angleQuote`, `emphasis`, `marginNote`, `containerOpen`, and `containerClose`.
+The probe did not manufacture coverage for `warichu`, `framed`, or `container`:
+their attempted directive shapes surfaced through other live representations
+(`Directive` or block-container sentinels), and no classifier case in this
+matrix emitted those three node tags.
+
+## Determinism and authorization
+
+Both ignored-probe runs passed and `cmp` reported identical JSON. The observer,
+probe, and temporary dependencies were deleted after generating the evidence.
+
+The observations do not support freezing a closed recovery-reason enum: they
+identify branch families but do not establish that the temporary labels are a
+durable exhaustive vocabulary. Task 3 is therefore not authorized against the
+existing `ClassifiedSpan` seam. No `Other` variant or Task 3 implementation was
+added.

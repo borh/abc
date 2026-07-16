@@ -80,15 +80,14 @@
 //! between stages, removing iterator chains) rather than attribute
 //! hints.
 
-use core::mem;
-use core::ops::Range;
-use std::collections::VecDeque;
-
 #[cfg(feature = "classify-instrument")]
 use super::instrumentation::{
     Subsystem, SubsystemGuard, YieldKind, record_pending_size, record_replay_body_size,
     record_yield,
 };
+use core::mem;
+use core::ops::Range;
+use std::collections::VecDeque;
 
 // The classify stage builds the owned AST directly via `Allocator`'s
 // inherent methods (single intern, no arena); the produced `Node`s thread

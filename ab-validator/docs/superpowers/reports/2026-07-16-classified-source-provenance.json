@@ -1,71 +1,1996 @@
 {
-  "schema": "soranoha.classified-source-provenance-characterization.v1",
-  "status": "blocked",
-  "source_commit": "3316a11690125e17d07d30a5cf2d85589b236d10",
-  "decision": "recovery provenance cannot be distinguished before flush_plain_up_to without reconstructing PairEvent history",
-  "public_span_kinds": [
-    "Plain",
-    "Aozora",
-    "BlockOpen",
-    "BlockClose",
-    "Newline"
-  ],
-  "plain_state": {
-    "retained_before_flush": [
-      "pending_plain_start",
-      "pending_refmark"
-    ],
-    "emitted_at_flush": [
-      "kind=Plain",
-      "source_span.start",
-      "source_span.end"
-    ],
-    "recovery_reason_retained": false
-  },
-  "converging_paths": [
+  "cases": [
     {
-      "path": "ordinary text and unmatched/solo events",
-      "source_lines": "lexer/classify/mod.rs:1039-1047",
-      "terminal_state": "pending_plain_start"
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 5 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 5 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "plain",
+      "input_bytes": [
+        112,
+        108,
+        97,
+        105,
+        110
+      ],
+      "name": "ordinary_text",
+      "node_kinds": [],
+      "normalized": "plain",
+      "normalized_sha256": "sha256:a116c9ed46d6207734a43317d30fd88f52ac8634c37d904bbf4e41d865f90475",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 5 } }"
+      ],
+      "verbatim_sha256": "sha256:a116c9ed46d6207734a43317d30fd88f52ac8634c37d904bbf4e41d865f90475"
     },
     {
-      "path": "declined gaiji and declined bracket",
-      "source_lines": "lexer/classify/mod.rs:882-900",
-      "terminal_state": "replay_unrecognised_body -> pending_plain_start"
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 1 } }",
+        "top_level_plain_event:Text { range: Span { start: 2, end: 3 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 1 } }",
+        "ClassifiedSpan { kind: Newline, source_span: Span { start: 1, end: 2 } }",
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 2, end: 3 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "a\nb",
+      "input_bytes": [
+        97,
+        10,
+        98
+      ],
+      "name": "newline",
+      "node_kinds": [],
+      "normalized": "a\nb",
+      "normalized_sha256": "sha256:7e18f737311b2dc3b2f269dd78396b0351f14fb66efa879f768cb23181883c78",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 1 } }",
+        "Newline { pos: 1 }",
+        "Text { range: Span { start: 2, end: 3 } }"
+      ],
+      "verbatim_sha256": "sha256:7e18f737311b2dc3b2f269dd78396b0351f14fb66efa879f768cb23181883c78"
     },
     {
-      "path": "declined recognition",
-      "source_lines": "lexer/classify/mod.rs:913-925",
-      "terminal_state": "replay_unrecognised_body -> pending_plain_start"
+      "branch_observations": [
+        "literal_pair_stream:(Quote, Span { start: 0, end: 3 })"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 13 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "「literal」",
+      "input_bytes": [
+        227,
+        128,
+        140,
+        108,
+        105,
+        116,
+        101,
+        114,
+        97,
+        108,
+        227,
+        128,
+        141
+      ],
+      "name": "literal_quote",
+      "node_kinds": [],
+      "normalized": "「literal」",
+      "normalized_sha256": "sha256:0dd6453ab9350414206b8fc872008594274ebaa434fe51d7a442fecc39bda27b",
+      "pair_events": [
+        "PairOpen { kind: Quote, span: Span { start: 0, end: 3 } }",
+        "Text { range: Span { start: 3, end: 10 } }",
+        "PairClose { kind: Quote, span: Span { start: 10, end: 13 } }"
+      ],
+      "verbatim_sha256": "sha256:0dd6453ab9350414206b8fc872008594274ebaa434fe51d7a442fecc39bda27b"
     },
     {
-      "path": "literal quote and tortoise punctuation",
-      "source_lines": "lexer/classify/mod.rs:981-1000",
-      "terminal_state": "pending_plain_start"
+      "branch_observations": [
+        "literal_pair_stream:(Tortoise, Span { start: 0, end: 3 })"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 13 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "〔literal〕",
+      "input_bytes": [
+        227,
+        128,
+        148,
+        108,
+        105,
+        116,
+        101,
+        114,
+        97,
+        108,
+        227,
+        128,
+        149
+      ],
+      "name": "literal_tortoise",
+      "node_kinds": [],
+      "normalized": "〔literal〕",
+      "normalized_sha256": "sha256:2f58b16cf445b74d32e0f06e12fc6dd688989eaa39c688dd121f1e09dd14b8d0",
+      "pair_events": [
+        "PairOpen { kind: Tortoise, span: Span { start: 0, end: 3 } }",
+        "Text { range: Span { start: 3, end: 10 } }",
+        "PairClose { kind: Tortoise, span: Span { start: 10, end: 13 } }"
+      ],
+      "verbatim_sha256": "sha256:2f58b16cf445b74d32e0f06e12fc6dd688989eaa39c688dd121f1e09dd14b8d0"
     },
     {
-      "path": "unclosed frame at EOF",
-      "source_lines": "lexer/classify/mod.rs:1631-1644",
-      "terminal_state": "replay_unrecognised_body -> pending_plain_start"
+      "branch_observations": [
+        "solo_refmark_held:Span { start: 0, end: 3 }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 3 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "※",
+      "input_bytes": [
+        226,
+        128,
+        187
+      ],
+      "name": "solo_refmark",
+      "node_kinds": [],
+      "normalized": "※",
+      "normalized_sha256": "sha256:0eaf29bb40975e849d389b860f8b79ee02a1466c79529393897c3dd82dde4299",
+      "pair_events": [
+        "Solo { kind: RefMark, span: Span { start: 0, end: 3 } }"
+      ],
+      "verbatim_sha256": "sha256:0eaf29bb40975e849d389b860f8b79ee02a1466c79529393897c3dd82dde4299"
     },
     {
-      "path": "solo refmark at flush",
-      "source_lines": "lexer/classify/mod.rs:645-663",
-      "terminal_state": "pending_plain_start"
+      "branch_observations": [
+        "top_level_plain_event:Solo { kind: Bar, span: Span { start: 0, end: 3 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 3 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "｜",
+      "input_bytes": [
+        239,
+        189,
+        156
+      ],
+      "name": "solo_bar",
+      "node_kinds": [],
+      "normalized": "｜",
+      "normalized_sha256": "sha256:a722353a12f7199de9719c96b2b52063b4cdf485d1d5271cd041261c1452de83",
+      "pair_events": [
+        "Solo { kind: Bar, span: Span { start: 0, end: 3 } }"
+      ],
+      "verbatim_sha256": "sha256:a722353a12f7199de9719c96b2b52063b4cdf485d1d5271cd041261c1452de83"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Solo { kind: Hash, span: Span { start: 0, end: 3 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 3 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "＃",
+      "input_bytes": [
+        239,
+        188,
+        131
+      ],
+      "name": "solo_hash",
+      "node_kinds": [],
+      "normalized": "＃",
+      "normalized_sha256": "sha256:4e687f4c78e810db365b25e458100d9e8e3e61501a78ea9d17fbf34744571ad3",
+      "pair_events": [
+        "Solo { kind: Hash, span: Span { start: 0, end: 3 } }"
+      ],
+      "verbatim_sha256": "sha256:4e687f4c78e810db365b25e458100d9e8e3e61501a78ea9d17fbf34744571ad3"
+    },
+    {
+      "branch_observations": [
+        "replayed_plain_event:PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "replayed_plain_event:Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "replayed_plain_event:Text { range: Span { start: 6, end: 10 } }",
+        "replayed_unclosed:Unclosed { kind: Bracket, span: Span { start: 0, end: 3 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 10 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [
+          "UnclosedBracket { at: SourceSpan { offset: SourceOffset(0), length: 3 }, kind: Bracket, span: Span { start: 0, end: 3 } }"
+        ],
+        "paired": [
+          "UnclosedBracket { at: SourceSpan { offset: SourceOffset(0), length: 3 }, kind: Bracket, span: Span { start: 0, end: 3 } }"
+        ]
+      },
+      "input": "［＃tail",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        116,
+        97,
+        105,
+        108
+      ],
+      "name": "unclosed_open",
+      "node_kinds": [],
+      "normalized": "［＃tail",
+      "normalized_sha256": "sha256:5276852ac6edac7641fae7492d55ef6d5c6be3e51a8adb288992d969934d5de2",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 10 } }",
+        "Unclosed { kind: Bracket, span: Span { start: 0, end: 3 } }"
+      ],
+      "verbatim_sha256": "sha256:5276852ac6edac7641fae7492d55ef6d5c6be3e51a8adb288992d969934d5de2"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 5 } }",
+        "top_level_plain_event:Unmatched { kind: Bracket, span: Span { start: 5, end: 8 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 8 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [
+          "UnmatchedClose { at: SourceSpan { offset: SourceOffset(5), length: 3 }, kind: Bracket, span: Span { start: 5, end: 8 } }"
+        ],
+        "paired": [
+          "UnmatchedClose { at: SourceSpan { offset: SourceOffset(5), length: 3 }, kind: Bracket, span: Span { start: 5, end: 8 } }"
+        ]
+      },
+      "input": "stray］",
+      "input_bytes": [
+        115,
+        116,
+        114,
+        97,
+        121,
+        239,
+        188,
+        189
+      ],
+      "name": "unmatched_close",
+      "node_kinds": [],
+      "normalized": "stray］",
+      "normalized_sha256": "sha256:b0ac0a1a5b4809da5013a0dc260dc1bd3e91f4909b2c764b385fd19275ad4dc6",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 5 } }",
+        "Unmatched { kind: Bracket, span: Span { start: 5, end: 8 } }"
+      ],
+      "verbatim_sha256": "sha256:b0ac0a1a5b4809da5013a0dc260dc1bd3e91f4909b2c764b385fd19275ad4dc6"
+    },
+    {
+      "branch_observations": [
+        "solo_refmark_held:Span { start: 0, end: 3 }",
+        "declined_gaiji_refmark:Span { start: 0, end: 3 }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 3 } }",
+        "ClassifiedSpan { kind: Aozora(Directive(Directive { raw: StrId(0), kind: Unknown })), source_span: Span { start: 3, end: 27 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "※［＃［＃nested］］",
+      "input_bytes": [
+        226,
+        128,
+        187,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        110,
+        101,
+        115,
+        116,
+        101,
+        100,
+        239,
+        188,
+        189,
+        239,
+        188,
+        189
+      ],
+      "name": "declined_gaiji",
+      "node_kinds": [
+        "directive"
+      ],
+      "normalized": "※",
+      "normalized_sha256": "sha256:830474a062538cf49d8e4b690ae624158c5675e2f5e088f3b6a0dcf865d13826",
+      "pair_events": [
+        "Solo { kind: RefMark, span: Span { start: 0, end: 3 } }",
+        "PairOpen { kind: Bracket, span: Span { start: 3, end: 6 } }",
+        "Solo { kind: Hash, span: Span { start: 6, end: 9 } }",
+        "PairOpen { kind: Bracket, span: Span { start: 9, end: 12 } }",
+        "Solo { kind: Hash, span: Span { start: 12, end: 15 } }",
+        "Text { range: Span { start: 15, end: 21 } }",
+        "PairClose { kind: Bracket, span: Span { start: 21, end: 24 } }",
+        "PairClose { kind: Bracket, span: Span { start: 24, end: 27 } }"
+      ],
+      "verbatim_sha256": "sha256:29312970abf4de1dd99596f136860da1b53db6d4dd05acfabc3a0afbb19bd175"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Directive(Directive { raw: StrId(0), kind: Unknown })), source_span: Span { start: 0, end: 42 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃まったく未知の注記です］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        129,
+        190,
+        227,
+        129,
+        163,
+        227,
+        129,
+        159,
+        227,
+        129,
+        143,
+        230,
+        156,
+        170,
+        231,
+        159,
+        165,
+        227,
+        129,
+        174,
+        230,
+        179,
+        168,
+        232,
+        168,
+        152,
+        227,
+        129,
+        167,
+        227,
+        129,
+        153,
+        239,
+        188,
+        189
+      ],
+      "name": "unknown_directive",
+      "node_kinds": [
+        "directive"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 39 } }",
+        "PairClose { kind: Bracket, span: Span { start: 39, end: 42 } }"
+      ],
+      "verbatim_sha256": "sha256:84a5560c56b7da1c88bb52a7f75c30180cb53aaf8d1278500acd162fab249a1f"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Solo { kind: Bar, span: Span { start: 0, end: 3 } }",
+        "top_level_plain_event:Text { range: Span { start: 3, end: 9 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Ruby(Ruby { base: ContentRange { start: 0, len: 1 }, reading: ContentRange { start: 1, len: 1 }, side: Right, base_emphasis: None })), source_span: Span { start: 0, end: 24 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "｜青梅《おうめ》",
+      "input_bytes": [
+        239,
+        189,
+        156,
+        233,
+        157,
+        146,
+        230,
+        162,
+        133,
+        227,
+        128,
+        138,
+        227,
+        129,
+        138,
+        227,
+        129,
+        134,
+        227,
+        130,
+        129,
+        227,
+        128,
+        139
+      ],
+      "name": "ruby",
+      "node_kinds": [
+        "ruby"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "Solo { kind: Bar, span: Span { start: 0, end: 3 } }",
+        "Text { range: Span { start: 3, end: 9 } }",
+        "PairOpen { kind: Ruby, span: Span { start: 9, end: 12 } }",
+        "Text { range: Span { start: 12, end: 21 } }",
+        "PairClose { kind: Ruby, span: Span { start: 21, end: 24 } }"
+      ],
+      "verbatim_sha256": "sha256:ef3460114b9e639c3a9fa243b5808e1d93f44f3dc11a6c845c1400e8ea15a16b"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 6 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Format(ForwardFormat { attr: Bouten { kind: Goma, position: Right }, target: ContentRange { start: 0, len: 1 }, origin: Reclaimed, accent_body: None })), source_span: Span { start: 0, end: 36 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "青空［＃「青空」に傍点］",
+      "input_bytes": [
+        233,
+        157,
+        146,
+        231,
+        169,
+        186,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        128,
+        140,
+        233,
+        157,
+        146,
+        231,
+        169,
+        186,
+        227,
+        128,
+        141,
+        227,
+        129,
+        171,
+        229,
+        130,
+        141,
+        231,
+        130,
+        185,
+        239,
+        188,
+        189
+      ],
+      "name": "bouten",
+      "node_kinds": [
+        "bouten"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 6 } }",
+        "PairOpen { kind: Bracket, span: Span { start: 6, end: 9 } }",
+        "Solo { kind: Hash, span: Span { start: 9, end: 12 } }",
+        "PairOpen { kind: Quote, span: Span { start: 12, end: 15 } }",
+        "Text { range: Span { start: 15, end: 21 } }",
+        "PairClose { kind: Quote, span: Span { start: 21, end: 24 } }",
+        "Text { range: Span { start: 24, end: 33 } }",
+        "PairClose { kind: Bracket, span: Span { start: 33, end: 36 } }"
+      ],
+      "verbatim_sha256": "sha256:71e948351177c70614c62d21a24178930c0b473acbda8ab73d3cd087aa85ee53"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 2 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Format(ForwardFormat { attr: CombineUpright, target: ContentRange { start: 0, len: 1 }, origin: Reclaimed, accent_body: None })), source_span: Span { start: 0, end: 31 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "12［＃「12」は縦中横］",
+      "input_bytes": [
+        49,
+        50,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        128,
+        140,
+        49,
+        50,
+        227,
+        128,
+        141,
+        227,
+        129,
+        175,
+        231,
+        184,
+        166,
+        228,
+        184,
+        173,
+        230,
+        168,
+        170,
+        239,
+        188,
+        189
+      ],
+      "name": "combine_upright",
+      "node_kinds": [
+        "combineUpright"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 2 } }",
+        "PairOpen { kind: Bracket, span: Span { start: 2, end: 5 } }",
+        "Solo { kind: Hash, span: Span { start: 5, end: 8 } }",
+        "PairOpen { kind: Quote, span: Span { start: 8, end: 11 } }",
+        "Text { range: Span { start: 11, end: 13 } }",
+        "PairClose { kind: Quote, span: Span { start: 13, end: 16 } }",
+        "Text { range: Span { start: 16, end: 28 } }",
+        "PairClose { kind: Bracket, span: Span { start: 28, end: 31 } }"
+      ],
+      "verbatim_sha256": "sha256:f817372d909c80570780906fb76c1b3bd10e60eb6c341300d8df3de22a78fce7"
+    },
+    {
+      "branch_observations": [
+        "solo_refmark_held:Span { start: 0, end: 3 }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Gaiji(Gaiji { hint: StrId(0), canonical: MenKuTen(MenKuTen { plane: 1, ku: 85, ten: 54 }), standalone: false })), source_span: Span { start: 0, end: 59 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "※［＃「木＋吶のつくり」、第3水準1-85-54］",
+      "input_bytes": [
+        226,
+        128,
+        187,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        128,
+        140,
+        230,
+        156,
+        168,
+        239,
+        188,
+        139,
+        229,
+        144,
+        182,
+        227,
+        129,
+        174,
+        227,
+        129,
+        164,
+        227,
+        129,
+        143,
+        227,
+        130,
+        138,
+        227,
+        128,
+        141,
+        227,
+        128,
+        129,
+        231,
+        172,
+        172,
+        51,
+        230,
+        176,
+        180,
+        230,
+        186,
+        150,
+        49,
+        45,
+        56,
+        53,
+        45,
+        53,
+        52,
+        239,
+        188,
+        189
+      ],
+      "name": "gaiji",
+      "node_kinds": [
+        "gaiji"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "Solo { kind: RefMark, span: Span { start: 0, end: 3 } }",
+        "PairOpen { kind: Bracket, span: Span { start: 3, end: 6 } }",
+        "Solo { kind: Hash, span: Span { start: 6, end: 9 } }",
+        "PairOpen { kind: Quote, span: Span { start: 9, end: 12 } }",
+        "Text { range: Span { start: 12, end: 33 } }",
+        "PairClose { kind: Quote, span: Span { start: 33, end: 36 } }",
+        "Text { range: Span { start: 36, end: 56 } }",
+        "PairClose { kind: Bracket, span: Span { start: 56, end: 59 } }"
+      ],
+      "verbatim_sha256": "sha256:072d6e0f7a514f114525f415a83620b1c97dd286fa32aab90d5777a3eb04bb62"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Line(Indent { amount: 2, end_offset: None })), source_span: Span { start: 0, end: 19 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃2字下げ］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        50,
+        229,
+        173,
+        151,
+        228,
+        184,
+        139,
+        227,
+        129,
+        146,
+        239,
+        188,
+        189
+      ],
+      "name": "indent",
+      "node_kinds": [
+        "indent"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 16 } }",
+        "PairClose { kind: Bracket, span: Span { start: 16, end: 19 } }"
+      ],
+      "verbatim_sha256": "sha256:5b2875a6183d3ea7e717942a35b8cef775b8899a3c04fd8913ed419a447de8da"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Line(AlignEnd { offset: 0 })), source_span: Span { start: 0, end: 18 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃地付き］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        229,
+        156,
+        176,
+        228,
+        187,
+        152,
+        227,
+        129,
+        141,
+        239,
+        188,
+        189
+      ],
+      "name": "align_end",
+      "node_kinds": [
+        "alignEnd"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 15 } }",
+        "PairClose { kind: Bracket, span: Span { start: 15, end: 18 } }"
+      ],
+      "verbatim_sha256": "sha256:5228c68647e14319698f24cd101e4815250c59b37d16c992203c364262d30b4c"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Line(Center { page: true })), source_span: Span { start: 0, end: 33 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃ページの左右中央］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        131,
+        154,
+        227,
+        131,
+        188,
+        227,
+        130,
+        184,
+        227,
+        129,
+        174,
+        229,
+        183,
+        166,
+        229,
+        143,
+        179,
+        228,
+        184,
+        173,
+        229,
+        164,
+        174,
+        239,
+        188,
+        189
+      ],
+      "name": "center",
+      "node_kinds": [
+        "center"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 30 } }",
+        "PairClose { kind: Bracket, span: Span { start: 30, end: 33 } }"
+      ],
+      "verbatim_sha256": "sha256:705c6a6e7f5aed3bf65116e07fa51eacaeecc40a33b1964238a35ea5e3ecc7e6"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Directive(Directive { raw: StrId(0), kind: WarichuOpen })), source_span: Span { start: 0, end: 18 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃割り注］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        229,
+        137,
+        178,
+        227,
+        130,
+        138,
+        230,
+        179,
+        168,
+        239,
+        188,
+        189
+      ],
+      "name": "warichu",
+      "node_kinds": [
+        "directive"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 15 } }",
+        "PairClose { kind: Bracket, span: Span { start: 15, end: 18 } }"
+      ],
+      "verbatim_sha256": "sha256:1383b638660a964c7f53faaceccf5699a11bdc9940491714692e41c5e56ce223"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: BlockOpen(Framed(Rule)), source_span: Span { start: 0, end: 18 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃罫囲み］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        231,
+        189,
+        171,
+        229,
+        155,
+        178,
+        227,
+        129,
+        191,
+        239,
+        188,
+        189
+      ],
+      "name": "framed",
+      "node_kinds": [
+        "containerOpen"
+      ],
+      "normalized": "\n\n\n\n",
+      "normalized_sha256": "sha256:943c0a5690d986cd95e5922688eae226e46367615e5b984b03e9c039bc9e9576",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 15 } }",
+        "PairClose { kind: Bracket, span: Span { start: 15, end: 18 } }"
+      ],
+      "verbatim_sha256": "sha256:f5d0dd9332c34588ce282b8628913eb58519acb781806781b8460fa7bc6ffc48"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Line(Gothic)), source_span: Span { start: 0, end: 36 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃この行はゴシック体］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        129,
+        147,
+        227,
+        129,
+        174,
+        232,
+        161,
+        140,
+        227,
+        129,
+        175,
+        227,
+        130,
+        180,
+        227,
+        130,
+        183,
+        227,
+        131,
+        131,
+        227,
+        130,
+        175,
+        228,
+        189,
+        147,
+        239,
+        188,
+        189
+      ],
+      "name": "line_gothic",
+      "node_kinds": [
+        "lineGothic"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 33 } }",
+        "PairClose { kind: Bracket, span: Span { start: 33, end: 36 } }"
+      ],
+      "verbatim_sha256": "sha256:a64751b86f38cff4948eb338717ddba3db8c2b14da38b80f780eb6d5f8376056"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Line(FontSizeAbsolute { size: Large, bold: false })), source_span: Span { start: 0, end: 18 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃大文字］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        229,
+        164,
+        167,
+        230,
+        150,
+        135,
+        229,
+        173,
+        151,
+        239,
+        188,
+        189
+      ],
+      "name": "line_font_size",
+      "node_kinds": [
+        "lineFontSize"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 15 } }",
+        "PairClose { kind: Bracket, span: Span { start: 15, end: 18 } }"
+      ],
+      "verbatim_sha256": "sha256:53c09c18e8f18f0a683fdc7f8789b8f590ec2cc754523b83629033776d0b490e"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(PageBreak), source_span: Span { start: 0, end: 21 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃改ページ］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        230,
+        148,
+        185,
+        227,
+        131,
+        154,
+        227,
+        131,
+        188,
+        227,
+        130,
+        184,
+        239,
+        188,
+        189
+      ],
+      "name": "page_break",
+      "node_kinds": [
+        "pageBreak"
+      ],
+      "normalized": "\n\n\n\n",
+      "normalized_sha256": "sha256:84c8b6dd2d2f4c5ab0bef3fef73169c72f06eeb7de8eb2bde1811ce63f3a154d",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 18 } }",
+        "PairClose { kind: Bracket, span: Span { start: 18, end: 21 } }"
+      ],
+      "verbatim_sha256": "sha256:06edb6ae4db43cb945c790e7a5d1818a4a0a16505c2c00035fc3348eec8fe58c"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(SectionBreak(Kaicho)), source_span: Span { start: 0, end: 15 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃改丁］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        230,
+        148,
+        185,
+        228,
+        184,
+        129,
+        239,
+        188,
+        189
+      ],
+      "name": "section_break",
+      "node_kinds": [
+        "sectionBreak"
+      ],
+      "normalized": "\n\n\n\n",
+      "normalized_sha256": "sha256:84c8b6dd2d2f4c5ab0bef3fef73169c72f06eeb7de8eb2bde1811ce63f3a154d",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 12 } }",
+        "PairClose { kind: Bracket, span: Span { start: 12, end: 15 } }"
+      ],
+      "verbatim_sha256": "sha256:29090bdabcf4b2dfdf7303aca5f43a5619937513f91640fa872919304c239655"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(BodyEnd), source_span: Span { start: 0, end: 24 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃本文終わり］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        230,
+        156,
+        172,
+        230,
+        150,
+        135,
+        231,
+        181,
+        130,
+        227,
+        130,
+        143,
+        227,
+        130,
+        138,
+        239,
+        188,
+        189
+      ],
+      "name": "body_end",
+      "node_kinds": [
+        "bodyEnd"
+      ],
+      "normalized": "\n\n\n\n",
+      "normalized_sha256": "sha256:84c8b6dd2d2f4c5ab0bef3fef73169c72f06eeb7de8eb2bde1811ce63f3a154d",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 21 } }",
+        "PairClose { kind: Bracket, span: Span { start: 21, end: 24 } }"
+      ],
+      "verbatim_sha256": "sha256:f8e0438640bc4dd037a04776a39c502e11704bd7f8aa0af010b930425724687e"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(ForcedBreak), source_span: Span { start: 0, end: 15 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃改行］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        230,
+        148,
+        185,
+        232,
+        161,
+        140,
+        239,
+        188,
+        189
+      ],
+      "name": "forced_break",
+      "node_kinds": [
+        "forcedBreak"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 12 } }",
+        "PairClose { kind: Bracket, span: Span { start: 12, end: 15 } }"
+      ],
+      "verbatim_sha256": "sha256:975e3f3a0338ade3d7040f9ea7e977dee9ab4b9c4209b2cb083b3edf320e7378"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 3 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 3 } }",
+        "ClassifiedSpan { kind: Newline, source_span: Span { start: 3, end: 4 } }",
+        "ClassifiedSpan { kind: Aozora(HeadingHint(HeadingHint { level: Large, style: Standard, target: StrId(0), self_contained: false })), source_span: Span { start: 4, end: 37 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "題\n［＃「題」は大見出し］",
+      "input_bytes": [
+        233,
+        161,
+        140,
+        10,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        128,
+        140,
+        233,
+        161,
+        140,
+        227,
+        128,
+        141,
+        227,
+        129,
+        175,
+        229,
+        164,
+        167,
+        232,
+        166,
+        139,
+        229,
+        135,
+        186,
+        227,
+        129,
+        151,
+        239,
+        188,
+        189
+      ],
+      "name": "heading",
+      "node_kinds": [
+        "heading"
+      ],
+      "normalized": "\n\n\n\n",
+      "normalized_sha256": "sha256:84c8b6dd2d2f4c5ab0bef3fef73169c72f06eeb7de8eb2bde1811ce63f3a154d",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 3 } }",
+        "Newline { pos: 3 }",
+        "PairOpen { kind: Bracket, span: Span { start: 4, end: 7 } }",
+        "Solo { kind: Hash, span: Span { start: 7, end: 10 } }",
+        "PairOpen { kind: Quote, span: Span { start: 10, end: 13 } }",
+        "Text { range: Span { start: 13, end: 16 } }",
+        "PairClose { kind: Quote, span: Span { start: 16, end: 19 } }",
+        "Text { range: Span { start: 19, end: 34 } }",
+        "PairClose { kind: Bracket, span: Span { start: 34, end: 37 } }"
+      ],
+      "verbatim_sha256": "sha256:2c49690fb5ac1eb39865538de24414e704b3476b0b9210c4cbc10896cb7d8fe4"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 6 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 6 } }",
+        "ClassifiedSpan { kind: Aozora(HeadingHint(HeadingHint { level: Large, style: Standard, target: StrId(0), self_contained: true })), source_span: Span { start: 6, end: 42 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "前文［＃「別題」は大見出し］",
+      "input_bytes": [
+        229,
+        137,
+        141,
+        230,
+        150,
+        135,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        128,
+        140,
+        229,
+        136,
+        165,
+        233,
+        161,
+        140,
+        227,
+        128,
+        141,
+        227,
+        129,
+        175,
+        229,
+        164,
+        167,
+        232,
+        166,
+        139,
+        229,
+        135,
+        186,
+        227,
+        129,
+        151,
+        239,
+        188,
+        189
+      ],
+      "name": "heading_hint",
+      "node_kinds": [
+        "headingHint"
+      ],
+      "normalized": "前文",
+      "normalized_sha256": "sha256:b27caff60d1f1b89f1e0699906d8773eed7e68bc7449b35461176698e85377a1",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 6 } }",
+        "PairOpen { kind: Bracket, span: Span { start: 6, end: 9 } }",
+        "Solo { kind: Hash, span: Span { start: 9, end: 12 } }",
+        "PairOpen { kind: Quote, span: Span { start: 12, end: 15 } }",
+        "Text { range: Span { start: 15, end: 21 } }",
+        "PairClose { kind: Quote, span: Span { start: 21, end: 24 } }",
+        "Text { range: Span { start: 24, end: 39 } }",
+        "PairClose { kind: Bracket, span: Span { start: 39, end: 42 } }"
+      ],
+      "verbatim_sha256": "sha256:7c7179c1ab40896e3889bff9a26028ed218228055e7504ed13dfbf581bb87838"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Illustration(Illustration { file: StrId(0), number: None, dimensions: None, caption: None, description: None })), source_span: Span { start: 0, end: 34 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃挿絵（fig.png）入る］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        230,
+        140,
+        191,
+        231,
+        181,
+        181,
+        239,
+        188,
+        136,
+        102,
+        105,
+        103,
+        46,
+        112,
+        110,
+        103,
+        239,
+        188,
+        137,
+        229,
+        133,
+        165,
+        227,
+        130,
+        139,
+        239,
+        188,
+        189
+      ],
+      "name": "illustration",
+      "node_kinds": [
+        "illustration"
+      ],
+      "normalized": "\n\n\n\n",
+      "normalized_sha256": "sha256:84c8b6dd2d2f4c5ab0bef3fef73169c72f06eeb7de8eb2bde1811ce63f3a154d",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 31 } }",
+        "PairClose { kind: Bracket, span: Span { start: 31, end: 34 } }"
+      ],
+      "verbatim_sha256": "sha256:df02706d0e4d59f607480ba59e6de8a03fb9221ae5408d99fa97b0bc0eda09b6"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 3 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 0, end: 3 } }",
+        "ClassifiedSpan { kind: Aozora(Kaeriten(Kaeriten { mark: StrId(0) })), source_span: Span { start: 3, end: 21 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "天［＃（レ）］",
+      "input_bytes": [
+        229,
+        164,
+        169,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        239,
+        188,
+        136,
+        227,
+        131,
+        172,
+        239,
+        188,
+        137,
+        239,
+        188,
+        189
+      ],
+      "name": "kaeriten",
+      "node_kinds": [
+        "kaeriten"
+      ],
+      "normalized": "天",
+      "normalized_sha256": "sha256:e48879285a03443bce642da34fcc2c3b3241edc87b83dedf1773a4247233ca03",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 3 } }",
+        "PairOpen { kind: Bracket, span: Span { start: 3, end: 6 } }",
+        "Solo { kind: Hash, span: Span { start: 6, end: 9 } }",
+        "Text { range: Span { start: 9, end: 18 } }",
+        "PairClose { kind: Bracket, span: Span { start: 18, end: 21 } }"
+      ],
+      "verbatim_sha256": "sha256:3c28abff929acbd05655422c193cbc5fb982e8244df3538237fa25b1774e3797"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(AngleQuote(AngleQuote { content: ContentRange { start: 0, len: 1 } })), source_span: Span { start: 0, end: 12 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "≪重要≫",
+      "input_bytes": [
+        226,
+        137,
+        170,
+        233,
+        135,
+        141,
+        232,
+        166,
+        129,
+        226,
+        137,
+        171
+      ],
+      "name": "angle_quote",
+      "node_kinds": [
+        "angleQuote"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "PairOpen { kind: AngleQuote, span: Span { start: 0, end: 3 } }",
+        "Text { range: Span { start: 3, end: 9 } }",
+        "PairClose { kind: AngleQuote, span: Span { start: 9, end: 12 } }"
+      ],
+      "verbatim_sha256": "sha256:b110aa4aa28fc5d9bd49d1adc533dffec74a56290bd05abae26992605402a9df"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 3 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(Format(ForwardFormat { attr: Bold, target: ContentRange { start: 0, len: 1 }, origin: Reclaimed, accent_body: None })), source_span: Span { start: 0, end: 30 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "語［＃「語」は太字］",
+      "input_bytes": [
+        232,
+        170,
+        158,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        128,
+        140,
+        232,
+        170,
+        158,
+        227,
+        128,
+        141,
+        227,
+        129,
+        175,
+        229,
+        164,
+        170,
+        229,
+        173,
+        151,
+        239,
+        188,
+        189
+      ],
+      "name": "emphasis",
+      "node_kinds": [
+        "emphasis"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 3 } }",
+        "PairOpen { kind: Bracket, span: Span { start: 3, end: 6 } }",
+        "Solo { kind: Hash, span: Span { start: 6, end: 9 } }",
+        "PairOpen { kind: Quote, span: Span { start: 9, end: 12 } }",
+        "Text { range: Span { start: 12, end: 15 } }",
+        "PairClose { kind: Quote, span: Span { start: 15, end: 18 } }",
+        "Text { range: Span { start: 18, end: 27 } }",
+        "PairClose { kind: Bracket, span: Span { start: 27, end: 30 } }"
+      ],
+      "verbatim_sha256": "sha256:4d2d3a84358e7d2cf17a98fe7d1010a6ef3b7ff579912a989288e9ce4edf133e"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 0, end: 3 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: Aozora(MarginNote(MarginNote { kind: Gloss, base: ContentRange { start: 0, len: 1 }, note: ContentRange { start: 1, len: 1 } })), source_span: Span { start: 0, end: 48 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "語［＃「語」の左に「注」の注記］",
+      "input_bytes": [
+        232,
+        170,
+        158,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        128,
+        140,
+        232,
+        170,
+        158,
+        227,
+        128,
+        141,
+        227,
+        129,
+        174,
+        229,
+        183,
+        166,
+        227,
+        129,
+        171,
+        227,
+        128,
+        140,
+        230,
+        179,
+        168,
+        227,
+        128,
+        141,
+        227,
+        129,
+        174,
+        230,
+        179,
+        168,
+        232,
+        168,
+        152,
+        239,
+        188,
+        189
+      ],
+      "name": "margin_note",
+      "node_kinds": [
+        "marginNote"
+      ],
+      "normalized": "",
+      "normalized_sha256": "sha256:5af0acca57065538ce20fc8615fdc9f2eb55664a4a8201649ea88188217db540",
+      "pair_events": [
+        "Text { range: Span { start: 0, end: 3 } }",
+        "PairOpen { kind: Bracket, span: Span { start: 3, end: 6 } }",
+        "Solo { kind: Hash, span: Span { start: 6, end: 9 } }",
+        "PairOpen { kind: Quote, span: Span { start: 9, end: 12 } }",
+        "Text { range: Span { start: 12, end: 15 } }",
+        "PairClose { kind: Quote, span: Span { start: 15, end: 18 } }",
+        "Text { range: Span { start: 18, end: 27 } }",
+        "PairOpen { kind: Quote, span: Span { start: 27, end: 30 } }",
+        "Text { range: Span { start: 30, end: 33 } }",
+        "PairClose { kind: Quote, span: Span { start: 33, end: 36 } }",
+        "Text { range: Span { start: 36, end: 45 } }",
+        "PairClose { kind: Bracket, span: Span { start: 45, end: 48 } }"
+      ],
+      "verbatim_sha256": "sha256:4cd836cd7db3a6b56d22f662c4effc728a8fd2b78224b2d39d654d95b9524a24"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: BlockOpen(Indent(IndentBlock { amount: 2, wrap: None, center: false, layout: None, styles: BlockStyles { gothic: false, horizontal: false, framed: false, font: None } })), source_span: Span { start: 0, end: 31 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃ここから2字下げ］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        129,
+        147,
+        227,
+        129,
+        147,
+        227,
+        129,
+        139,
+        227,
+        130,
+        137,
+        50,
+        229,
+        173,
+        151,
+        228,
+        184,
+        139,
+        227,
+        129,
+        146,
+        239,
+        188,
+        189
+      ],
+      "name": "block_open",
+      "node_kinds": [
+        "containerOpen"
+      ],
+      "normalized": "\n\n\n\n",
+      "normalized_sha256": "sha256:943c0a5690d986cd95e5922688eae226e46367615e5b984b03e9c039bc9e9576",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 28 } }",
+        "PairClose { kind: Bracket, span: Span { start: 28, end: 31 } }"
+      ],
+      "verbatim_sha256": "sha256:f10d0697909ddd2dc330f4b6db69e230194b00cdc1ff4e4dda481b9fe0a4c26a"
+    },
+    {
+      "branch_observations": [],
+      "classified_spans": [
+        "ClassifiedSpan { kind: BlockClose(Indent { kumi_width: None }), source_span: Span { start: 0, end: 36 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃ここで字下げ終わり］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        129,
+        147,
+        227,
+        129,
+        147,
+        227,
+        129,
+        167,
+        229,
+        173,
+        151,
+        228,
+        184,
+        139,
+        227,
+        129,
+        146,
+        231,
+        181,
+        130,
+        227,
+        130,
+        143,
+        227,
+        130,
+        138,
+        239,
+        188,
+        189
+      ],
+      "name": "block_close",
+      "node_kinds": [
+        "containerClose"
+      ],
+      "normalized": "\n\n\n\n",
+      "normalized_sha256": "sha256:c48b0f4ac67463a2e2bd0d8d0e5216fcc5dc30e075f967a475f4a2ea319083cb",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 33 } }",
+        "PairClose { kind: Bracket, span: Span { start: 33, end: 36 } }"
+      ],
+      "verbatim_sha256": "sha256:b8b8703f104a8971d834c3796bc563b96ee5b7faa0f2582dc341b87fed5cc28e"
+    },
+    {
+      "branch_observations": [
+        "top_level_plain_event:Text { range: Span { start: 32, end: 38 } }"
+      ],
+      "classified_spans": [
+        "ClassifiedSpan { kind: BlockOpen(Indent(IndentBlock { amount: 2, wrap: None, center: false, layout: None, styles: BlockStyles { gothic: false, horizontal: false, framed: false, font: None } })), source_span: Span { start: 0, end: 31 } }",
+        "ClassifiedSpan { kind: Newline, source_span: Span { start: 31, end: 32 } }",
+        "ClassifiedSpan { kind: Plain, source_span: Span { start: 32, end: 38 } }",
+        "ClassifiedSpan { kind: Newline, source_span: Span { start: 38, end: 39 } }",
+        "ClassifiedSpan { kind: BlockClose(Indent { kumi_width: None }), source_span: Span { start: 39, end: 75 } }"
+      ],
+      "diagnostics": {
+        "classified": [],
+        "final": [],
+        "paired": []
+      },
+      "input": "［＃ここから2字下げ］\n本文\n［＃ここで字下げ終わり］",
+      "input_bytes": [
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        129,
+        147,
+        227,
+        129,
+        147,
+        227,
+        129,
+        139,
+        227,
+        130,
+        137,
+        50,
+        229,
+        173,
+        151,
+        228,
+        184,
+        139,
+        227,
+        129,
+        146,
+        239,
+        188,
+        189,
+        10,
+        230,
+        156,
+        172,
+        230,
+        150,
+        135,
+        10,
+        239,
+        188,
+        187,
+        239,
+        188,
+        131,
+        227,
+        129,
+        147,
+        227,
+        129,
+        147,
+        227,
+        129,
+        167,
+        229,
+        173,
+        151,
+        228,
+        184,
+        139,
+        227,
+        129,
+        146,
+        231,
+        181,
+        130,
+        227,
+        130,
+        143,
+        227,
+        130,
+        138,
+        239,
+        188,
+        189
+      ],
+      "name": "balanced_block",
+      "node_kinds": [
+        "containerOpen",
+        "containerClose"
+      ],
+      "normalized": "\n\n\n\n\n本文\n\n\n\n\n",
+      "normalized_sha256": "sha256:ff817a2800dfca6774da0e82ea629eafda3714eb5c5455ba46a4a90eda465635",
+      "pair_events": [
+        "PairOpen { kind: Bracket, span: Span { start: 0, end: 3 } }",
+        "Solo { kind: Hash, span: Span { start: 3, end: 6 } }",
+        "Text { range: Span { start: 6, end: 28 } }",
+        "PairClose { kind: Bracket, span: Span { start: 28, end: 31 } }",
+        "Newline { pos: 31 }",
+        "Text { range: Span { start: 32, end: 38 } }",
+        "Newline { pos: 38 }",
+        "PairOpen { kind: Bracket, span: Span { start: 39, end: 42 } }",
+        "Solo { kind: Hash, span: Span { start: 42, end: 45 } }",
+        "Text { range: Span { start: 45, end: 72 } }",
+        "PairClose { kind: Bracket, span: Span { start: 72, end: 75 } }"
+      ],
+      "verbatim_sha256": "sha256:4db0a96b55ab1bd20727957028d415e5dbda662a3c387ab9639f60e89c162fdc"
     }
   ],
-  "counterexample": {
-    "observation": "distinct parser paths emit the same SpanKind::Plain representation",
-    "lost_fields": [
-      "PairEvent variant",
-      "PairKind",
-      "recognizer decline path",
-      "unclosed versus unmatched status",
-      "recovery reason"
+  "live_node_kind_coverage": {
+    "declared": [
+      "ruby",
+      "bouten",
+      "combineUpright",
+      "gaiji",
+      "indent",
+      "alignEnd",
+      "center",
+      "warichu",
+      "framed",
+      "lineGothic",
+      "lineFontSize",
+      "pageBreak",
+      "sectionBreak",
+      "bodyEnd",
+      "forcedBreak",
+      "heading",
+      "headingHint",
+      "illustration",
+      "kaeriten",
+      "directive",
+      "angleQuote",
+      "emphasis",
+      "marginNote",
+      "container",
+      "containerOpen",
+      "containerClose"
     ],
-    "downstream_reconstruction_required": true
+    "not_observed": [
+      "warichu",
+      "framed",
+      "container"
+    ],
+    "observed": [
+      "alignEnd",
+      "angleQuote",
+      "bodyEnd",
+      "bouten",
+      "center",
+      "combineUpright",
+      "containerClose",
+      "containerOpen",
+      "directive",
+      "emphasis",
+      "forcedBreak",
+      "gaiji",
+      "heading",
+      "headingHint",
+      "illustration",
+      "indent",
+      "kaeriten",
+      "lineFontSize",
+      "lineGothic",
+      "marginNote",
+      "pageBreak",
+      "ruby",
+      "sectionBreak"
+    ]
   },
-  "recovery_reason_matrix": [],
-  "reason_matrix_frozen": false,
-  "task_3_authorized": false
+  "observer": "temporary classifier-local branch observer before pending_plain_start/pending_refmark coalescing",
+  "schema": "soranoha.classified-source-provenance-characterization.v2"
 }

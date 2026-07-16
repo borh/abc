@@ -77,6 +77,7 @@ checks:
 - `preservation_tei_pointers_resolve`
 - `preservation_source_pointers_resolve`
 - `plaintext_body_only`
+- `required_construct_census_valid`
 
 The following existing checks remain supporting preconditions and are excluded
 from the publication-structure policy:

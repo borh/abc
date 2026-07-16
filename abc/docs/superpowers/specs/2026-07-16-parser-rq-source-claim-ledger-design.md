@@ -255,6 +255,19 @@ identity, status, and each ordered tuple of `work_id`,
 `capture_generation_ref`, and recognition-record logical blob identity. This is
 acyclic because work captures and record blobs exist before the index is hashed.
 
+The index and aggregate bind the algorithm as
+`corpus_generation_algorithm = sha256-rfc8785-jcs-abc-v1`. This is a new ABC
+canonicalization path, not the historical `sha256-json-jcs` helper whose legacy
+escaping and number behavior remain frozen for published artifacts. The new
+path implements RFC 8785 string escaping and UTF-16 key ordering, JSON
+objects/arrays, strings, booleans, and null, plus finite IEEE-754 numbers with
+ES6 formatting. Integral host values outside `[-(2^53-1), 2^53-1]`, non-finite
+values, malformed UTF-16, non-string keys, and unsupported host numeric types
+fail closed. Cross-language conformance is pinned by
+`abc/test/fixtures/canonicalization/rfc8785-jcs-abc-v1-vectors.json`, including
+the RFC 8785 section 3.2.2 vector and corpus-shaped Unicode, slash, control, and
+numeric cases.
+
 The aggregate copies `corpus_generation_ref`; it does not contain or imply one
 shared capture identity. Validation resolves every work record through exactly
 one index entry and requires its `capture_generation_ref` to equal that entry.

@@ -29,7 +29,8 @@
 (defn- with-corpus-generation-ref [index]
   (assoc index "corpus_generation_ref"
          (hash/format-sha256
-          (hash/sha256-json-jcs (dissoc index "corpus_generation_ref")))))
+          (hash/sha256-json-rfc8785-v1
+           (dissoc index "corpus_generation_ref")))))
 
 (deftest parser-rq-source-recognition-protocols
   (let [root "test/fixtures/parser-rq/source-recognition"
@@ -67,7 +68,13 @@
                 (assoc unavailable-aggregate "recognized_bytes" 0))))
       (is (seq (schema/validation-errors
                 aggregate-schema
-                (assoc-in aggregate ["work_completeness" "complete"] false)))))
+                (assoc-in aggregate ["work_completeness" "complete"] false))))
+      (is (seq (schema/validation-errors
+                index-schema
+                (assoc index "corpus_generation_algorithm" "legacy-jcs"))))
+      (is (seq (schema/validation-errors
+                aggregate-schema
+                (assoc aggregate "corpus_generation_algorithm" "legacy-jcs")))))
     (testing "projections are ordered subsets with exact byte conservation"
       (doseq [invalid [(assoc work "recognized_bytes" 11)
                        (assoc work "accounted_bytes" 11)
@@ -91,7 +98,11 @@
                 index aggregate [])))
       (is (seq (validate/parser-rq-source-recognition-coherence-errors
                 index aggregate [(assoc work "capture_generation_ref"
-                                        (str "sha256:" (apply str (repeat 64 "f"))))]))))
+                                        (str "sha256:" (apply str (repeat 64 "f"))))])))
+      (is (seq (validate/parser-rq-source-recognition-coherence-errors
+                index
+                (assoc aggregate "corpus_generation_algorithm" "legacy-jcs")
+                [work]))))
     (testing "corpus identity authenticates distinct per-work capture mappings"
       (let [other-capture (str "sha256:" (apply str (repeat 64 "7")))
             other-work (assoc work

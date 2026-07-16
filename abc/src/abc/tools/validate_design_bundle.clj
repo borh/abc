@@ -579,7 +579,7 @@
         record-ids (mapv #(get % "work_id") (get index "records" []))
         asserted-ref (get index "corpus_generation_ref")
         computed-ref (hash/format-sha256
-                      (hash/sha256-json-jcs
+                      (hash/sha256-json-rfc8785-v1
                        (dissoc index "corpus_generation_ref")))]
     (vec
      (concat
@@ -675,6 +675,9 @@
       (when-not (= (get index "corpus_generation_ref")
                    (get aggregate "corpus_generation_ref"))
         ["aggregate has mismatched corpus_generation_ref"])
+      (when-not (= (get index "corpus_generation_algorithm")
+                   (get aggregate "corpus_generation_algorithm"))
+        ["aggregate has mismatched corpus_generation_algorithm"])
       (when-not (= (get index "membership_ref")
                    (get aggregate "membership_ref"))
         ["aggregate has mismatched membership_ref"])

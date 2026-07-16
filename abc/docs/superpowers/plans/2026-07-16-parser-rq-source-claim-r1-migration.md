@@ -45,7 +45,9 @@ Draft 2020-12 JSON Schema; Nix and Kaocha.
 
 **Interfaces:** Closed protocols with recognized/accounted intervals, semantic
 gaps, unaccounted intervals, exact completeness, per-work
-`capture_generation_ref`, and index/aggregate `corpus_generation_ref`.
+`capture_generation_ref`, and index/aggregate `corpus_generation_ref`. Both
+corpus artifacts bind `corpus_generation_algorithm` to
+`sha256-rfc8785-jcs-abc-v1`.
 
 - [ ] Write RED tests rejecting unknown fields, `recognized_bytes >
   accounted_bytes`, either projection beyond eligible, missing work membership,
@@ -99,10 +101,13 @@ summary last.
 
 The producer writes `capture_generation_ref` into each work record and its
 corresponding index entry. After all recognition-record blobs exist, it computes
-`corpus_generation_ref = sha256(JCS(index - corpus_generation_ref))`; the
-aggregate copies that exact reference. This excludes only the self-reference
+`corpus_generation_ref = sha256(rfc8785-json-bytes-v1(index -
+corpus_generation_ref))`; the aggregate copies that exact reference and the
+algorithm ID `sha256-rfc8785-jcs-abc-v1`. This excludes only the self-reference
 and includes membership, ordered entries, each capture reference, and each
-record blob identity.
+record blob identity. Rust must pass the shared vectors in
+`abc/test/fixtures/canonicalization/rfc8785-jcs-abc-v1-vectors.json`; it must not
+use serde map order or the historical ABC canonicalizer as a substitute.
 
 - [ ] Write RED trust tests for exact membership, authenticated locators,
   distinct multi-work capture references, swapped/missing/duplicate mappings,

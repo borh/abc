@@ -1,6 +1,8 @@
 (ns abc.tools.jcs-test
   (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
             [abc.tools.evidence-test-support :as evidence-support]
+            [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.jcs :as jcs]
             [clojure.test :refer [deftest is testing]]))
 
@@ -82,3 +84,38 @@
   (testing "the historical serializer retains its frozen escaping behavior"
     (is (= "\"fig\\/\\u4e00.png\""
            (jcs/canonical-json-string "fig/一.png")))))
+
+(deftest rfc8785-full-domain-canonical-json-v1-test
+  (testing "RFC 8785 section 3.2.2 canonicalization example"
+    (is (= (str "{\"literals\":[null,true,false],"
+                "\"numbers\":[333333333.3333333,1e+30,4.5,0.002,1e-27],"
+                "\"string\":\"€$\\u000f\\nA'B\\\"\\\\\\\\\\\"/\"}")
+           (jcs/rfc8785-json-string-v1
+            {"numbers" [333333333.33333329 1.0e30 4.50 2e-3 1.0e-27]
+             "string" "€$\u000f\nA'B\"\\\\\"/"
+             "literals" [nil true false]}))))
+  (testing "Unicode, slash, controls, nested values, and safe integers compose"
+    (let [value {"作品/😀" [{"control" "\u0000\n"
+                           "count" 9007199254740991}]
+                 "negative" -42}]
+      (is (= (str "{\"negative\":-42,\"作品/😀\":[{"
+                  "\"control\":\"\\u0000\\n\","
+                  "\"count\":9007199254740991}]}")
+             (jcs/rfc8785-json-string-v1 value)))
+      (is (= (hash/sha256-bytes (jcs/rfc8785-json-bytes-v1 value))
+             (hash/sha256-json-rfc8785-v1 value)))))
+  (testing "non-finite and unsafe integral values fail closed"
+    (doseq [value [Double/NaN Double/POSITIVE_INFINITY
+                   Double/NEGATIVE_INFINITY
+                   9007199254740992 -9007199254740992]]
+      (is (= :unsupported-rfc8785-number
+             (:reason (exception-data
+                       #(jcs/rfc8785-json-string-v1 {"number" value}))))))))
+
+(deftest rfc8785-cross-language-vectors-test
+  (let [fixture (files/read-json
+                 "test/fixtures/canonicalization/rfc8785-jcs-abc-v1-vectors.json")]
+    (is (= "sha256-rfc8785-jcs-abc-v1" (get fixture "algorithm_id")))
+    (doseq [{:strs [input canonical_json sha256]} (get fixture "vectors")]
+      (is (= canonical_json (jcs/rfc8785-json-string-v1 input)))
+      (is (= sha256 (hash/sha256-json-rfc8785-v1 input))))))

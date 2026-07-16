@@ -351,7 +351,49 @@ fn zero_denominator_is_unavailable() {
 fn locator_must_stay_below_record_root() {
     let mut f = fixture(&[("a", 1, 1)]);
     f.index.records[0].locator = "../a.json".into();
-    unavailable_without_numbers(&run(&f));
+    assert_eq!(
+        run(&f).errors.unwrap(),
+        ["record-locator-invalid:a", "zero-eligible-byte-denominator"]
+    );
+}
+
+#[test]
+fn missing_locator_preserves_unavailable_wire_reason() {
+    let mut f = fixture(&[("a", 1, 1)]);
+    f.index.records[0].locator = "missing.json".into();
+    assert_eq!(
+        run(&f).errors.unwrap(),
+        [
+            "record-locator-unavailable:a",
+            "zero-eligible-byte-denominator"
+        ]
+    );
+}
+
+#[test]
+fn authenticated_mismatch_preserves_blob_mismatch_wire_reason() {
+    let mut f = fixture(&[("a", 1, 1)]);
+    f.index.records[0].sha256 = hash(b"other");
+    assert_eq!(
+        run(&f).errors.unwrap(),
+        ["record-blob-mismatch:a", "zero-eligible-byte-denominator"]
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn unreadable_record_preserves_read_failed_wire_reason() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let f = fixture(&[("a", 1, 1)]);
+    let path = f.root.join(&f.index.records[0].locator);
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o000)).unwrap();
+    let result = run(&f);
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    assert_eq!(
+        result.errors.unwrap(),
+        ["record-read-failed:a", "zero-eligible-byte-denominator"]
+    );
 }
 
 #[test]

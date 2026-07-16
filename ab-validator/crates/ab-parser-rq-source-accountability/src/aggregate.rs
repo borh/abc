@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::Path;
 
-use ab_rq_artifact_store::authenticate_blob;
+use ab_rq_artifact_store::{AuthenticateErrorKind, authenticate_blob};
 use anyhow::Result;
 use sha2::{Digest, Sha256};
 
@@ -176,8 +176,14 @@ pub fn aggregate(
         let bytes =
             match authenticate_blob(records_root, &entry.locator, &entry.sha256, entry.bytes) {
                 Ok(bytes) => bytes,
-                Err(_) => {
-                    errors.push(format!("record-blob-mismatch:{}", entry.work_id));
+                Err(error) => {
+                    let reason = match error.kind() {
+                        AuthenticateErrorKind::LocatorInvalid => "record-locator-invalid",
+                        AuthenticateErrorKind::LocatorUnavailable => "record-locator-unavailable",
+                        AuthenticateErrorKind::ReadFailed => "record-read-failed",
+                        AuthenticateErrorKind::BlobMismatch => "record-blob-mismatch",
+                    };
+                    errors.push(format!("{reason}:{}", entry.work_id));
                     continue;
                 }
             };

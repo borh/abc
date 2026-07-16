@@ -1,7 +1,9 @@
 use std::fs;
 use std::sync::{Arc, Barrier};
 
-use ab_rq_artifact_store::{authenticate_blob, publish_blob, write_atomic_summary};
+use ab_rq_artifact_store::{
+    AuthenticateErrorKind, authenticate_blob, publish_blob, write_atomic_summary,
+};
 use sha2::{Digest, Sha256};
 use tempfile::tempdir;
 
@@ -28,7 +30,12 @@ fn authentication_rejects_absolute_and_parent_locators() {
     let outside = root.path().parent().unwrap().join("artifact-store-outside");
     fs::write(&outside, b"outside").unwrap();
     for locator in [outside.to_str().unwrap(), "../artifact-store-outside"] {
-        assert!(authenticate_blob(root.path(), locator, &identity(b"outside"), 7).is_err());
+        assert_eq!(
+            authenticate_blob(root.path(), locator, &identity(b"outside"), 7)
+                .unwrap_err()
+                .kind(),
+            AuthenticateErrorKind::LocatorInvalid
+        );
     }
     fs::remove_file(outside).unwrap();
 }
@@ -37,8 +44,29 @@ fn authentication_rejects_absolute_and_parent_locators() {
 fn authentication_rejects_length_and_hash_mismatch() {
     let root = tempdir().unwrap();
     let published = publish_blob(root.path(), "json", b"content").unwrap();
-    assert!(authenticate_blob(root.path(), &published.locator, &published.sha256, 8).is_err());
-    assert!(authenticate_blob(root.path(), &published.locator, &identity(b"other"), 7).is_err());
+    assert_eq!(
+        authenticate_blob(root.path(), &published.locator, &published.sha256, 8)
+            .unwrap_err()
+            .kind(),
+        AuthenticateErrorKind::BlobMismatch
+    );
+    assert_eq!(
+        authenticate_blob(root.path(), &published.locator, &identity(b"other"), 7)
+            .unwrap_err()
+            .kind(),
+        AuthenticateErrorKind::BlobMismatch
+    );
+}
+
+#[test]
+fn authentication_classifies_missing_locator_as_unavailable() {
+    let root = tempdir().unwrap();
+    assert_eq!(
+        authenticate_blob(root.path(), "missing.json", &identity(b"content"), 7)
+            .unwrap_err()
+            .kind(),
+        AuthenticateErrorKind::LocatorUnavailable
+    );
 }
 
 #[cfg(unix)]
@@ -124,4 +152,65 @@ fn atomic_summary_replaces_complete_previous_value() {
     write_atomic_summary(&path, b"new summary").unwrap();
     assert_eq!(fs::read(&path).unwrap(), b"new summary");
     assert_eq!(fs::read_dir(root.path()).unwrap().count(), 1);
+}
+
+#[test]
+fn concurrent_summary_readers_observe_only_complete_values() {
+    let root = Arc::new(tempdir().unwrap());
+    let path = root.path().join("summary.json");
+    let old = vec![b'a'; 64 * 1024];
+    let new = vec![b'b'; 96 * 1024];
+    write_atomic_summary(&path, &old).unwrap();
+    let reader_path = path.clone();
+    let old_for_reader = old.clone();
+    let new_for_reader = new.clone();
+    let barrier = Arc::new(Barrier::new(2));
+    let reader_barrier = Arc::clone(&barrier);
+    let reader = std::thread::spawn(move || {
+        reader_barrier.wait();
+        for _ in 0..200 {
+            let observed = fs::read(&reader_path).unwrap();
+            assert!(observed == old_for_reader || observed == new_for_reader);
+        }
+    });
+    barrier.wait();
+    for value in [&new, &old] {
+        for _ in 0..20 {
+            write_atomic_summary(&path, value).unwrap();
+        }
+    }
+    reader.join().unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn authentication_classifies_open_permission_failure_as_read_failed() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tempdir().unwrap();
+    let path = root.path().join("unreadable.json");
+    fs::write(&path, b"content").unwrap();
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o000)).unwrap();
+    let result = authenticate_blob(root.path(), "unreadable.json", &identity(b"content"), 7);
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    assert_eq!(
+        result.unwrap_err().kind(),
+        AuthenticateErrorKind::ReadFailed
+    );
+}
+
+#[test]
+fn summary_replacement_is_complete_and_uses_new_file_metadata() {
+    let root = tempdir().unwrap();
+    let path = root.path().join("summary.json");
+    write_atomic_summary(&path, b"old").unwrap();
+    let old_identity = fs::metadata(&path).unwrap();
+    write_atomic_summary(&path, b"new").unwrap();
+    let new_identity = fs::metadata(&path).unwrap();
+    assert_eq!(fs::read(&path).unwrap(), b"new");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        assert_ne!(old_identity.ino(), new_identity.ino());
+    }
 }

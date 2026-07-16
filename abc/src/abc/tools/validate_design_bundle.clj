@@ -330,22 +330,24 @@
                           (parser-maintenance/benchmark-artifact-problems
                            repo-root record)))))
 
+(defn- classified-source-duplicate-errors [label values]
+  (->> values frequencies
+       (keep (fn [[value count]]
+               (when (> count 1)
+                 (str "classified-source policy contains ambiguous "
+                      label " " value))))))
+
 (defn parser-rq-classified-source-policy-errors [policy]
-  (let [duplicate-errors
-        (fn [label values]
-          (->> values frequencies
-               (keep (fn [[value count]]
-                       (when (> count 1)
-                         (str "classified-source policy contains ambiguous "
-                              label " " value))))))]
-    (->> (concat
-          (duplicate-errors "selector"
-                            (map #(select-keys % ["construct_id"])
-                                 (get policy "rules" [])))
-          (duplicate-errors "accent source"
-                            (map #(get % "source")
-                                 (get policy "accent_mappings" []))))
-         sort vec)))
+  (->> (concat
+        (classified-source-duplicate-errors
+         "selector"
+         (map #(select-keys % ["construct_id"])
+              (get policy "rules" [])))
+        (classified-source-duplicate-errors
+         "accent source"
+         (map #(get % "source")
+              (get policy "accent_mappings" []))))
+       sort vec))
 
 (def ^:private parser-rq-diagnostic-gap-vocabulary
   [["source-contains-pua" "source_contains_pua" "warning" "source" "authorize_exact_span"]

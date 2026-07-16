@@ -330,14 +330,21 @@
                            repo-root record)))))
 
 (defn parser-rq-classified-source-policy-errors [policy]
-  (->> (get policy "rules" [])
-       (map #(select-keys % ["construct_id"]))
-       frequencies
-       (keep (fn [[row count]]
-               (when (> count 1)
-                 (str "classified-source policy contains ambiguous selector " row))))
-       sort
-       vec))
+  (let [duplicate-errors
+        (fn [label values]
+          (->> values frequencies
+               (keep (fn [[value count]]
+                       (when (> count 1)
+                         (str "classified-source policy contains ambiguous "
+                              label " " value))))))]
+    (->> (concat
+          (duplicate-errors "selector"
+                            (map #(select-keys % ["construct_id"])
+                                 (get policy "rules" [])))
+          (duplicate-errors "accent source"
+                            (map #(get % "source")
+                                 (get policy "accent_mappings" []))))
+         sort vec)))
 
 (defn parser-rq-classified-source-characterization-errors [policy mapping]
   (let [constructs (set (map #(get % "construct_id") (get policy "rules" [])))
@@ -367,7 +374,31 @@
 (defn- utf8-value-hash [value]
   (hash/format-sha256 (hash/sha256-bytes (.getBytes ^String value "UTF-8"))))
 
-(defn- normalization-errors [construct proof source-slice]
+(defn- accent-normalized-form [policy source-form]
+  (when (and (string/starts-with? source-form "〔")
+             (string/ends-with? source-form "〕"))
+    (let [body (subs source-form 1 (dec (count source-form)))
+          mappings (into {} (map (juxt #(get % "source")
+                                       #(get % "normalized"))
+                                 (get policy "accent_mappings" [])))]
+      (str "〔"
+           (loop [index 0 output (StringBuilder.)]
+             (if (= index (count body))
+               (str output)
+               (let [remaining (- (count body) index)
+                     source (or (when (<= 3 remaining)
+                                  (let [candidate (subs body index (+ index 3))]
+                                    (when (contains? mappings candidate) candidate)))
+                                (when (<= 2 remaining)
+                                  (let [candidate (subs body index (+ index 2))]
+                                    (when (contains? mappings candidate) candidate))))]
+                 (if source
+                   (recur (+ index (count source))
+                          (.append output ^String (get mappings source)))
+                   (recur (inc index) (.append output (.charAt body index)))))))
+           "〕"))))
+
+(defn- normalization-errors [policy construct proof source-slice]
   (let [source-form (get proof "source_form")
         normalized-form (get proof "normalized_form")
         inverse-rule (get proof "inverse_rule")
@@ -388,9 +419,9 @@
        [(str "normalization forms do not match inverse rule for " construct)])
      (when (and (= "accent_decomposition" inverse-rule)
                 (or (= source-form normalized-form)
-                    (not (and (string/starts-with? source-form "〔")
-                              (string/ends-with? source-form "〕")))))
-       [(str "accent normalization proof is not a reversible source form for "
+                    (not= normalized-form
+                          (accent-normalized-form policy source-form))))
+       [(str "accent normalization proof does not match the closed mapping for "
              construct)])
      (when (and (string? source-form)
                 (not= (get proof "source_bytes_hash")
@@ -444,7 +475,7 @@
                        construct)])
                (when proof
                  (normalization-errors
-                  construct proof
+                  policy construct proof
                   (decoded-slice decoded (get entry "start")
                                  (get entry "end"))))))))
          sort

@@ -45,7 +45,7 @@
       (is (= (get ledger "ledger_schema_hash")
              (hash/format-sha256 (hash/sha256-json-jcs ledger-schema)))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:c698d92e00570d569db8131a91c5f975b43811b0dd31714f858cb7a6fa8437ba"
+            "sha256:c9f68f073afcbdd2fca81e0e926c1428e7fcbb3f00307b5eff016a7c25276e60"
             "schemas/parser-rq-classified-source-ledger.schema.json"
             "sha256:f508dfeecb44cebbfb36ede4cfb72cee94cf44e5716041071345dae9c5e1530f"
             "schemas/parser-rq-capture-generation.schema.json"
@@ -64,6 +64,7 @@
            (get policy "roles")))
     (is (every? #(contains? % "construct_id") (get policy "rules")))
     (is (not-any? #(contains? % "case") (get policy "rules")))
+    (is (= 114 (count (get policy "accent_mappings"))))
     (is (= #{["crlf_normalization" "structural_newline" "crlf"]
              ["bare_cr_normalization" "structural_newline" "bare_cr"]
              ["accent_normalization" "visible_text" "accent_decomposition"]}
@@ -87,7 +88,11 @@
       (is (seq (schema/validation-errors generation-schema
                                          (assoc generation "unknown" true))))
       (is (seq (validate/parser-rq-classified-source-policy-errors
-                (update policy "rules" conj (first (get policy "rules")))))))
+                (update policy "rules" conj (first (get policy "rules"))))))
+      (is (seq (validate/parser-rq-classified-source-policy-errors
+                (update policy "accent_mappings" conj
+                        (assoc (first (get policy "accent_mappings"))
+                               "normalized" "x"))))))
     (testing "closed role/disposition and evidence combinations"
       (let [entry (first (get ledger "entries"))]
         (is (seq (schema/validation-errors
@@ -148,6 +153,37 @@
                       (assoc-in ["entries" 0 "construct_id"] "newline")
                       (assoc-in ["entries" 0 "disposition"]
                                 "structural_control")))))))
+    (testing "accent normalization equals the closed live mapping"
+      (let [accent (files/read-json
+                    (str root "/accent-normalization-ledger.json"))
+            arbitrary (-> accent
+                          (assoc-in ["entries" 0 "normalization_proof"
+                                     "normalized_form"] "〔arbitrary〕")
+                          (assoc-in ["entries" 0 "normalization_proof"
+                                     "normalized_bytes_hash"]
+                                    "sha256:00354980966b90c6ebc563c850cebb14b3a3057a216383cc832113e81455dc83"))
+            wrong-source (-> accent
+                             (assoc-in ["entries" 0 "normalization_proof"
+                                        "source_form"] "〔cafe`〕")
+                             (assoc-in ["entries" 0 "normalization_proof"
+                                        "source_bytes_hash"]
+                                       "sha256:3d23d9c487249a3de1ffe1854e535765bd9039ff7b9a216c1a57b84b35b5f5df"))
+            unsupported (-> accent
+                            (assoc-in ["entries" 0 "end"] 8)
+                            (assoc-in ["entries" 0 "normalization_proof"
+                                       "source_form"] "〔q^〕")
+                            (assoc-in ["entries" 0 "normalization_proof"
+                                       "source_bytes_hash"]
+                                      "sha256:36d9432b7d410d455ac3655e4a7e83d430ffe89e6dfcd5a2805795e7f8bd9236"))]
+        (is (nil? (schema/validation-errors ledger-schema accent)))
+        (is (empty? (validate/parser-rq-classified-source-ledger-errors
+                     policy accent "〔cafe'〕")))
+        (is (seq (validate/parser-rq-classified-source-ledger-errors
+                  policy arbitrary "〔cafe'〕")))
+        (is (seq (validate/parser-rq-classified-source-ledger-errors
+                  policy wrong-source "〔cafe`〕")))
+        (is (seq (validate/parser-rq-classified-source-ledger-errors
+                  policy unsupported "〔q^〕")))))
     (testing "structural witnesses are role-specific and span-bound"
       (let [structural (files/read-json (str root "/structural-ledger.json"))
             forms {"newline" "\n"

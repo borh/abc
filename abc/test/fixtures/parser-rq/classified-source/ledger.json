@@ -7,7 +7,7 @@
   "original_source": {"artifact_ref": "source/original", "value_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333"},
   "decoded_source": {"artifact_ref": "source/decoded", "value_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "encoding": "utf-8", "bytes": 5},
   "policy_id": "parser-rq-ab-aozora-classified-source-v1",
-  "policy_hash": "sha256:3d8d378b7c35f459b3f352d082b94710ff6c8f9479aa2e01e5b4ab424b38120c",
+  "policy_hash": "sha256:defc1c9bd3ac7a3a3ce63ea4aae6948698b37d4de8071d6b3ac66176984b980a",
   "coordinate_system": "decoded_utf8",
   "parser_status": "complete",
   "entries": [{"start": 0, "end": 5, "construct_id": "plain_text", "source_role": "visible_text", "disposition": "emitted_semantic_value", "evidence_class": "accepted_text", "target_identity": {"artifact_ref": "aat/output", "value_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "relation": "emits"}, "parser_evidence_code": "plain-text"}],

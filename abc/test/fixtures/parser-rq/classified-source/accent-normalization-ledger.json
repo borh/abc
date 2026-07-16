@@ -1,0 +1,15 @@
+{
+  "schema_version":"abc/parser-rq-classified-source-ledger/v1",
+  "ledger_schema_hash":"sha256:f508dfeecb44cebbfb36ede4cfb72cee94cf44e5716041071345dae9c5e1530f",
+  "qualification_identity_ref":"sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "parser":"ab-aozora",
+  "instrument_version":"parser-rq-classified-source-v1",
+  "original_source":{"artifact_ref":"source/original","value_hash":"sha256:3333333333333333333333333333333333333333333333333333333333333333"},
+  "decoded_source":{"artifact_ref":"source/decoded","value_hash":"sha256:4444444444444444444444444444444444444444444444444444444444444444","encoding":"utf-8","bytes":11},
+  "policy_id":"parser-rq-ab-aozora-classified-source-v1",
+  "policy_hash":"sha256:defc1c9bd3ac7a3a3ce63ea4aae6948698b37d4de8071d6b3ac66176984b980a",
+  "coordinate_system":"decoded_utf8",
+  "parser_status":"complete",
+  "entries":[{"start":0,"end":11,"construct_id":"accent_normalization","source_role":"visible_text","disposition":"lossless_normalization","evidence_class":"sanitizer_transform","target_identity":{"artifact_ref":"aat/output","value_hash":"sha256:5555555555555555555555555555555555555555555555555555555555555555","relation":"emits"},"parser_evidence_code":"sanitize-accent-decomposition","normalization_proof":{"source_form":"〔cafe'〕","normalized_form":"〔café〕","source_bytes_hash":"sha256:ba00563cdf46b628967e437a5b3620d42430275365f5fe63537b556e9ae2797f","normalized_bytes_hash":"sha256:4afe3f610a740857f84bafdd205b98fc1c14d7f3d166ba393e31acade07c2c0f","inverse_rule":"accent_decomposition"}}],
+  "errors":[]
+}

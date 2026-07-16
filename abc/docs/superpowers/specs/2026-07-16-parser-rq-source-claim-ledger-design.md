@@ -295,7 +295,16 @@ V1 names exactly three sanitizer-produced claim constructs:
 | --- | --- | --- | --- |
 | `crlf_normalization` | `structural_newline` | `crlf` | `"\r\n" -> "\n"` |
 | `bare_cr_normalization` | `structural_newline` | `bare_cr` | `"\r" -> "\n"` |
-| `accent_normalization` | `visible_text` | `accent_decomposition` | exact `〔...〕` source form and its non-identical normalized value |
+| `accent_normalization` | `visible_text` | `accent_decomposition` | exact `〔...〕` source form transformed by the policy's closed 114-pair longest-match table |
+
+The accent table is embedded in and authenticated by the ABC policy; its four
+three-character ligatures take precedence over two-character digraphs, matching
+the characterized live sanitizer. The validator independently applies that
+closed table to the whole bracketed source form and requires byte-exact equality
+with `normalized_form`. Bracketing plus non-identity is never sufficient.
+Unsupported and near-miss digraphs therefore remain gaps rather than becoming
+producer-selected substitutions. A characterization test must compare every
+policy pair with the live sanitizer before a policy generation is admitted.
 
 These are `lossless_normalization` claims with evidence class
 `sanitizer_transform`; they are not the classifier's `newline` /

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-rq-classified-source-policy.schema.json",
   "type": "object",
-  "required": ["schema_version", "policy_id", "policy_hash", "parser", "coordinate_system", "roles", "dispositions", "rules"],
+  "required": ["schema_version", "policy_id", "policy_hash", "parser", "coordinate_system", "roles", "dispositions", "accent_mappings", "rules"],
   "additionalProperties": false,
   "properties": {
     "schema_version": {"const": "abc/parser-rq-classified-source-policy/v1"},
@@ -12,12 +12,14 @@
     "coordinate_system": {"const": "decoded_utf8"},
     "roles": {"const": ["visible_text", "structural_newline", "ruby", "typography", "gaiji", "layout", "break", "heading", "illustration", "kunten", "source_annotation", "container_syntax", "terminal_provenance", "publication_metadata", "unrecognized_source_form"]},
     "dispositions": {"const": ["emitted_semantic_value", "preserved_sidecar_value", "structural_control", "lossless_normalization", "preserved_opaque"]},
+    "accent_mappings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/accent_mapping"}},
     "rules": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/rule"}}
   },
   "$defs": {
     "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
     "role": {"enum": ["visible_text", "structural_newline", "ruby", "typography", "gaiji", "layout", "break", "heading", "illustration", "kunten", "source_annotation", "container_syntax", "terminal_provenance", "publication_metadata", "unrecognized_source_form"]},
     "disposition": {"enum": ["emitted_semantic_value", "preserved_sidecar_value", "structural_control", "lossless_normalization", "preserved_opaque"]},
+    "accent_mapping": {"type": "object", "required": ["source", "normalized"], "additionalProperties": false, "properties": {"source": {"type": "string", "pattern": "^[A-Za-z]{1,2}['`^:~&,/_]$"}, "normalized": {"type": "string", "minLength": 1, "maxLength": 1}}},
     "rule": {
       "type": "object",
       "required": ["construct_id", "source_role", "disposition", "evidence_class"],

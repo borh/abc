@@ -174,8 +174,11 @@ cargo test -p ab-aozora-aat
   `crlf_normalization`, `bare_cr_normalization`, and `accent_normalization`.
   Each requires `sanitizer_transform` evidence, an `emits` target identity,
   and a slice-bound proof containing literal source/normalized forms, their
-  UTF-8 hashes, and the matching inverse rule. Do not map these through the
-  classifier characterization matrix.
+  UTF-8 hashes, and the matching inverse rule. Embed the closed 114-pair live
+  accent table in the authenticated ABC policy, apply longest-match exactly,
+  and test all pairs against the live sanitizer; reject arbitrary results,
+  unsupported digraphs, and correct values paired with a different source.
+  Do not map these through the classifier characterization matrix.
 - [ ] Compute and assert schema/policy hashes via
   `abc.tools.hash/sha256-json-jcs`.
 - [ ] Run focused Kaocha and `nix run .#schema-drift`; commit as

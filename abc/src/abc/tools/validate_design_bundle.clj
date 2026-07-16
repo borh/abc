@@ -345,6 +345,10 @@
    "schemas/manifest-inputs.schema.json"
    "schemas/manifest.schema.json"
    "schemas/pack-policy.schema.json"
+   "schemas/parser-rq-ignored-regions.schema.json"
+   "schemas/parser-rq-source-accountability-aggregate.schema.json"
+   "schemas/parser-rq-source-accountability-index.schema.json"
+   "schemas/parser-rq-source-accountability-work.schema.json"
    "schemas/parser-ir-publication-preservation.schema.json"
    "schemas/parser-ir.schema.json"
    "schemas/person-drift-event.schema.json"
@@ -422,6 +426,10 @@
         request-set-schema (files/read-json "schemas/request-set.schema.json")
         snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
         pack-policy-schema (files/read-json "schemas/pack-policy.schema.json")
+        parser-rq-ignored-regions-schema (files/read-json "schemas/parser-rq-ignored-regions.schema.json")
+        parser-rq-source-accountability-aggregate-schema (files/read-json "schemas/parser-rq-source-accountability-aggregate.schema.json")
+        parser-rq-source-accountability-index-schema (files/read-json "schemas/parser-rq-source-accountability-index.schema.json")
+        parser-rq-source-accountability-work-schema (files/read-json "schemas/parser-rq-source-accountability-work.schema.json")
         source-assertion-schema (files/read-json "schemas/source-assertion.schema.json")
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
         tei-eaj-comparison-schema (files/read-json "schemas/tei-eaj-comparison.schema.json")
@@ -451,6 +459,10 @@
                            ["schemas/request-set.schema.json" request-set-schema]
                            ["schemas/snapshot-index.schema.json" snapshot-index-schema]
                            ["schemas/pack-policy.schema.json" pack-policy-schema]
+                           ["schemas/parser-rq-ignored-regions.schema.json" parser-rq-ignored-regions-schema]
+                           ["schemas/parser-rq-source-accountability-aggregate.schema.json" parser-rq-source-accountability-aggregate-schema]
+                           ["schemas/parser-rq-source-accountability-index.schema.json" parser-rq-source-accountability-index-schema]
+                           ["schemas/parser-rq-source-accountability-work.schema.json" parser-rq-source-accountability-work-schema]
                            ["schemas/source-assertion.schema.json" source-assertion-schema]
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
                            ["schemas/tei-eaj-comparison.schema.json" tei-eaj-comparison-schema]

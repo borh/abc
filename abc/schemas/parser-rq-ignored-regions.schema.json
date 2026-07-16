@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json",
+  "title": "Parser release qualification ignored-region taxonomy",
+  "type": "object",
+  "required": ["$schema", "schema_version", "taxonomy_version", "coordinate_system", "rules"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {"const": "https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json"},
+    "schema_version": {"const": "abc/parser-rq-ignored-regions/v1"},
+    "taxonomy_version": {"const": "parser-rq-ignored-regions-v1"},
+    "coordinate_system": {"const": "decoded_utf8"},
+    "rules": {"type": "array", "maxItems": 0}
+  },
+  "$defs": {
+    "interval": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": {"type": "integer", "minimum": 0},
+        "end": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

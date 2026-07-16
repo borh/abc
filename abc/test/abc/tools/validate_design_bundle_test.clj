@@ -25,6 +25,40 @@
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
+(deftest parser-rq-source-accountability-schemas-are-closed-test
+  (let [pairs [["schemas/parser-rq-ignored-regions.schema.json"
+                "test/fixtures/parser-rq/parser-rq-ignored-regions.schema.json"]
+               ["schemas/parser-rq-source-accountability-work.schema.json"
+                "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json"]
+               ["schemas/parser-rq-source-accountability-index.schema.json"
+                "test/fixtures/parser-rq/parser-rq-source-accountability-index.schema.json"]
+               ["schemas/parser-rq-source-accountability-aggregate.schema.json"
+                "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate.schema.json"]]]
+    (doseq [[path fixture] pairs]
+      (let [contract (files/read-json path)]
+        (is (= false (get contract "additionalProperties")) path)
+        (is (nil? (schema/validation-errors contract
+                                            (files/read-json fixture))) path)))))
+
+(deftest parser-rq-source-accountability-schemas-reject-unknown-fields-test
+  (doseq [[path fixture] [["schemas/parser-rq-ignored-regions.schema.json"
+                           "test/fixtures/parser-rq/parser-rq-ignored-regions.schema.json"]
+                          ["schemas/parser-rq-source-accountability-work.schema.json"
+                           "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json"]
+                          ["schemas/parser-rq-source-accountability-index.schema.json"
+                           "test/fixtures/parser-rq/parser-rq-source-accountability-index.schema.json"]
+                          ["schemas/parser-rq-source-accountability-aggregate.schema.json"
+                           "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate.schema.json"]]]
+    (let [contract (files/read-json path)
+          document (assoc (files/read-json fixture) "unexpected" true)]
+      (is (seq (schema/validation-errors contract document)) path))))
+
+(deftest parser-rq-v1-taxonomy-is-empty-test
+  (let [taxonomy (files/read-json "data/parser-rq-ignored-regions-v1.json")]
+    (is (= "parser-rq-ignored-regions-v1" (get taxonomy "taxonomy_version")))
+    (is (= "decoded_utf8" (get taxonomy "coordinate_system")))
+    (is (= [] (get taxonomy "rules")))))
+
 (deftest design-bundle-does-not-run-repository-history-checks-test
   (let [git-cliff-var (ns-resolve 'abc.tools.validate-design-bundle
                                   'validate-git-cliff!)

@@ -1,0 +1,12 @@
+{
+  "schema_version": "abc/parser-rq-source-accountability-index/v1",
+  "identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "taxonomy_version": "parser-rq-ignored-regions-v1",
+  "taxonomy_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "coordinate_system": "decoded_utf8",
+  "status": "ok",
+  "expected_work_count": 1,
+  "record_count": 1,
+  "records": [{"work_id": "w1", "sha256": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "bytes": 100, "media_type": "application/json", "locator": "blobs/sha256/cc"}],
+  "errors": []
+}

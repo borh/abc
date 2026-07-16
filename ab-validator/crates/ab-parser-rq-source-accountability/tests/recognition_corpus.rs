@@ -4,12 +4,14 @@ use std::path::{Path, PathBuf};
 use ab_aozora_aat::{CaptureGeneration, capture_generation_from_bytes};
 use ab_parser_rq_source_accountability::{
     RecognitionCorpusInput, RecognitionGenerationEntry, RecognitionGenerationIndex,
-    RecognitionStatus, aggregate_recognition, analyze_recognition_corpus, canonical_json,
-    rfc8785_safe_integer_json,
+    RecognitionIndex, RecognitionStatus, RecognitionWorkRecord, aggregate_recognition,
+    analyze_recognition_corpus, canonical_json, rfc8785_safe_integer_json,
 };
 use ab_rq_artifact_store::publish_blob;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
+
+type ProtocolMutation = (&'static str, fn(&mut Value, &mut Value));
 
 fn hash(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
@@ -86,6 +88,27 @@ fn publish_capture(store: &Path, generation: &CaptureGeneration) -> RecognitionG
         media_type: "application/json".into(),
         locator: published.manifest.locator,
     }
+}
+
+fn reseal_index(index: &mut Value) {
+    index["corpus_generation_ref"] = json!(format!("sha256:{}", "0".repeat(64)));
+    let mut projection = index.clone();
+    projection
+        .as_object_mut()
+        .unwrap()
+        .remove("corpus_generation_ref");
+    index["corpus_generation_ref"] = json!(hash(
+        rfc8785_safe_integer_json(&projection).unwrap().as_bytes()
+    ));
+}
+
+fn republish_record(store: &Path, index: &mut Value, record: &Value) {
+    let bytes = canonical_json(record).unwrap().into_bytes();
+    let blob = publish_blob(store, "json", &bytes).unwrap();
+    index["records"][0]["sha256"] = json!(blob.sha256);
+    index["records"][0]["bytes"] = json!(blob.bytes);
+    index["records"][0]["locator"] = json!(blob.locator);
+    reseal_index(index);
 }
 
 fn inputs(root: &Path) -> RecognitionCorpusInput {
@@ -198,6 +221,185 @@ fn unavailable_work_is_published_but_cannot_contribute_aggregate_totals() {
         "parser-rq-source-recognition-aggregate.schema.json",
         &aggregate,
     );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn unauthenticated_capture_identity_is_absent_from_closed_index() {
+    let root = temp("wrong-generation-ref");
+    let mut input = inputs(&root);
+    let original = &input.generation_index.records[0];
+    let bytes = fs::read(input.store_root.join(&original.locator)).unwrap();
+    let mut manifest: Value = serde_json::from_slice(&bytes).unwrap();
+    manifest["generation_ref"] = json!(format!("sha256:{}", "f".repeat(64)));
+    let mutated = canonical_json(&manifest).unwrap().into_bytes();
+    let blob = publish_blob(&input.store_root, "json", &mutated).unwrap();
+    input.generation_index.records[0].sha256 = blob.sha256;
+    input.generation_index.records[0].bytes = blob.bytes;
+    input.generation_index.records[0].locator = blob.locator;
+
+    let index = analyze_recognition_corpus(input.clone()).unwrap();
+    assert_eq!(index.status, RecognitionStatus::Unavailable);
+    assert_eq!(index.record_count, 0);
+    assert!(index.records.is_empty());
+    assert_schema("parser-rq-source-recognition-index.schema.json", &index);
+    let aggregate = aggregate_recognition(&index, &input.store_root).unwrap();
+    assert_eq!(aggregate.status, RecognitionStatus::Unavailable);
+    assert_schema(
+        "parser-rq-source-recognition-aggregate.schema.json",
+        &aggregate,
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn resealed_protocol_mutations_cannot_contribute_aggregate_totals() {
+    let cases: &[ProtocolMutation] = &[
+        ("index-schema", |index, _| {
+            index["schema_version"] = json!("wrong")
+        }),
+        ("index-coordinate", |index, _| {
+            index["coordinate_system"] = json!("wrong")
+        }),
+        ("index-qualification", |index, _| {
+            index["qualification_identity_ref"] = json!("sha256:wrong")
+        }),
+        ("index-policy", |index, _| {
+            index["policy_hash"] = json!("sha256:wrong")
+        }),
+        ("index-membership", |index, _| {
+            index["membership_ref"] = json!("sha256:wrong")
+        }),
+        ("index-expected-count", |index, _| {
+            index["expected_work_count"] = json!(2)
+        }),
+        ("index-record-count", |index, _| {
+            index["record_count"] = json!(0)
+        }),
+        ("index-entry-work", |index, _| {
+            index["records"][0]["work_id"] = json!("another-work")
+        }),
+        ("entry-capture", |index, _| {
+            index["records"][0]["capture_generation_ref"] = json!("sha256:wrong")
+        }),
+        ("entry-capture-well-formed", |index, _| {
+            index["records"][0]["capture_generation_ref"] =
+                json!(format!("sha256:{}", "e".repeat(64)))
+        }),
+        ("entry-media", |index, _| {
+            index["records"][0]["media_type"] = json!("text/plain")
+        }),
+        ("work-schema", |_, record| {
+            record["schema_version"] = json!("wrong")
+        }),
+        ("work-instrument", |_, record| {
+            record["instrument_version"] = json!("wrong")
+        }),
+        ("work-coordinate", |_, record| {
+            record["coordinate_system"] = json!("wrong")
+        }),
+        ("work-qualification", |_, record| {
+            record["qualification_identity_ref"] = json!(format!("sha256:{}", "e".repeat(64)))
+        }),
+        ("work-policy", |_, record| {
+            record["policy_hash"] = json!(format!("sha256:{}", "e".repeat(64)))
+        }),
+        ("work-capture", |_, record| {
+            record["capture_generation_ref"] = json!(format!("sha256:{}", "e".repeat(64)))
+        }),
+        ("work-qualification-absent", |_, record| {
+            record
+                .as_object_mut()
+                .unwrap()
+                .remove("qualification_identity_ref");
+        }),
+        ("work-capture-absent", |_, record| {
+            record
+                .as_object_mut()
+                .unwrap()
+                .remove("capture_generation_ref");
+        }),
+        ("work-policy-absent", |_, record| {
+            record.as_object_mut().unwrap().remove("policy_hash");
+        }),
+        ("work-id-absent", |_, record| {
+            record.as_object_mut().unwrap().remove("work_id");
+        }),
+        ("work-status", |_, record| {
+            record["status"] = json!("unavailable");
+            record["errors"] = json!(["mutated"]);
+        }),
+        ("work-ledger-absent", |_, record| {
+            record.as_object_mut().unwrap().remove("ledger");
+        }),
+        ("work-ledger-hash", |_, record| {
+            record["ledger"]["sha256"] = json!(format!("sha256:{}", "f".repeat(64)))
+        }),
+        ("work-ledger-bytes", |_, record| {
+            record["ledger"]["bytes"] = json!(record["ledger"]["bytes"].as_u64().unwrap() + 1)
+        }),
+        ("work-ledger-media", |_, record| {
+            record["ledger"]["media_type"] = json!("text/plain")
+        }),
+        ("work-ledger-locator", |_, record| {
+            record["ledger"]["locator"] = json!(
+                "sha256/ff/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.json"
+            )
+        }),
+    ];
+    for (name, mutate) in cases {
+        let root = temp(name);
+        let input = inputs(&root);
+        let valid = analyze_recognition_corpus(input.clone()).unwrap();
+        let mut index = serde_json::to_value(&valid).unwrap();
+        let record_bytes = fs::read(
+            input
+                .store_root
+                .join(index["records"][0]["locator"].as_str().unwrap()),
+        )
+        .unwrap();
+        let mut record: Value = serde_json::from_slice(&record_bytes).unwrap();
+        mutate(&mut index, &mut record);
+        if name.starts_with("work-") {
+            republish_record(&input.store_root, &mut index, &record);
+        } else {
+            reseal_index(&mut index);
+        }
+        let index = serde_json::from_value(index).unwrap();
+        let aggregate = aggregate_recognition(&index, &input.store_root).unwrap();
+        assert_eq!(aggregate.status, RecognitionStatus::Unavailable, "{name}");
+        assert!(aggregate.eligible_bytes.is_none(), "{name}");
+        let aggregate_value = serde_json::to_value(&aggregate).unwrap();
+        if *name == "index-qualification" {
+            assert!(aggregate_value.get("qualification_identity_ref").is_none());
+        }
+        if *name == "index-policy" {
+            assert!(aggregate_value.get("policy_hash").is_none());
+        }
+        if *name == "index-membership" {
+            assert!(aggregate_value.get("membership_ref").is_none());
+        }
+        assert_schema(
+            "parser-rq-source-recognition-aggregate.schema.json",
+            &aggregate,
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[test]
+fn closed_protocol_types_reject_unknown_fields() {
+    let root = temp("unknown-fields");
+    let input = inputs(&root);
+    let index = analyze_recognition_corpus(input.clone()).unwrap();
+    let mut index_value = serde_json::to_value(&index).unwrap();
+    index_value["unknown"] = json!(true);
+    assert!(serde_json::from_value::<RecognitionIndex>(index_value).is_err());
+
+    let record_bytes = fs::read(input.store_root.join(&index.records[0].locator)).unwrap();
+    let mut record: Value = serde_json::from_slice(&record_bytes).unwrap();
+    record["unknown"] = json!(true);
+    assert!(serde_json::from_value::<RecognitionWorkRecord>(record).is_err());
     fs::remove_dir_all(root).unwrap();
 }
 

@@ -3,7 +3,7 @@
   "$id": "https://w3id.org/abc/schemas/parser-rq-source-recognition-aggregate.schema.json",
   "title": "Parser release qualification source-recognition aggregate",
   "type": "object",
-  "required": ["schema_version", "qualification_identity_ref", "corpus_generation_ref", "corpus_generation_algorithm", "policy_hash", "membership_ref", "coordinate_system", "status", "work_completeness"],
+  "required": ["schema_version", "corpus_generation_algorithm", "coordinate_system", "status", "work_completeness"],
   "additionalProperties": false,
   "properties": {
     "schema_version": {"const": "abc/parser-rq-source-recognition-aggregate/v1"},
@@ -25,7 +25,7 @@
     "errors": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
   },
   "oneOf": [
-    {"properties": {"status": {"const": "ok"}, "work_completeness": {"properties": {"complete": {"const": true}}}}, "required": ["eligible_bytes", "recognized_bytes", "accounted_bytes", "semantic_gap_bytes", "unaccounted_bytes", "semantic_gaps", "unaccounted"], "not": {"required": ["errors"]}},
+    {"properties": {"status": {"const": "ok"}, "work_completeness": {"properties": {"complete": {"const": true}}}}, "required": ["qualification_identity_ref", "corpus_generation_ref", "policy_hash", "membership_ref", "eligible_bytes", "recognized_bytes", "accounted_bytes", "semantic_gap_bytes", "unaccounted_bytes", "semantic_gaps", "unaccounted"], "not": {"required": ["errors"]}},
     {"properties": {"status": {"const": "unavailable"}}, "required": ["errors"], "not": {"anyOf": [
       {"required": ["eligible_bytes"]}, {"required": ["recognized_bytes"]},
       {"required": ["accounted_bytes"]}, {"required": ["semantic_gap_bytes"]},

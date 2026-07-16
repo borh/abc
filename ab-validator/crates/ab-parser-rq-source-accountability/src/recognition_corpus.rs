@@ -256,39 +256,38 @@ pub fn analyze_recognition_corpus(input: RecognitionCorpusInput) -> Result<Recog
                     entry.bytes,
                 )?;
                 let manifest: Value = serde_json::from_slice(&manifest_bytes)?;
-                let capture_generation_ref = manifest["generation_ref"]
-                    .as_str()
-                    .ok_or_else(|| anyhow::anyhow!("capture generation ref absent"))?
-                    .to_owned();
-                anyhow::ensure!(
-                    valid_hash(&capture_generation_ref),
-                    "capture generation ref invalid"
-                );
                 let (decoded_source, _) = member(&input.store_root, &manifest, "decoded_source")?;
                 let (parser_output, _) = member(&input.store_root, &manifest, "parser_output")?;
                 let (raw_diagnostics, _) = member(&input.store_root, &manifest, "raw_diagnostics")?;
                 let (ledger_bytes, ledger_locator) =
                     member(&input.store_root, &manifest, "classified_source_ledger")?;
-                Ok((
-                    capture_generation_ref,
-                    analyze_recognition(RecognitionInput {
-                        decoded_source,
-                        parser_output,
-                        raw_diagnostics,
-                        ledger_bytes,
-                        policy_bytes: POLICY_BYTES.to_vec(),
-                        generation_manifest: manifest_bytes,
-                        qualification_identity_ref: membership.identity_ref.clone(),
-                        work_id: entry.work_id.clone(),
-                        ledger_locator,
-                    }),
-                ))
+                Ok(analyze_recognition(RecognitionInput {
+                    decoded_source,
+                    parser_output,
+                    raw_diagnostics,
+                    ledger_bytes,
+                    policy_bytes: POLICY_BYTES.to_vec(),
+                    generation_manifest: manifest_bytes,
+                    qualification_identity_ref: membership.identity_ref.clone(),
+                    work_id: entry.work_id.clone(),
+                    ledger_locator,
+                }))
             })();
             match analysis {
-                Ok((capture_generation_ref, analysis)) => {
+                Ok(analysis) => {
                     if analysis.record.status == RecognitionStatus::Unavailable {
                         errors.push(format!("work-unavailable:{}", entry.work_id));
                     }
+                    let Some(capture_generation_ref) =
+                        analysis.record.capture_generation_ref.clone()
+                    else {
+                        errors.push(format!("capture-generation-unavailable:{}", entry.work_id));
+                        continue;
+                    };
+                    anyhow::ensure!(
+                        valid_hash(&capture_generation_ref),
+                        "authenticated capture generation ref invalid"
+                    );
                     let bytes = canonical_json(&analysis.record)?.into_bytes();
                     let blob = publish_blob(&input.store_root, "json", &bytes)?;
                     anyhow::ensure!(

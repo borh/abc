@@ -601,8 +601,11 @@
         ["expected membership contains duplicate work IDs"])
       (when-not (= (count record-ids) (count (distinct record-ids)))
         ["record index contains duplicate work IDs"])
-      (when-not (= (set expected-ids) (set record-ids))
-        ["record index does not exactly match expected membership"])))))
+      (when-not (= record-ids (filterv (set record-ids) expected-ids))
+        ["record index is not an ordered subset of expected membership"])
+      (when (and (= "ok" (get index "status"))
+                 (not= (set expected-ids) (set record-ids)))
+        ["available record index does not exactly match expected membership"])))))
 
 (defn- work-interval-errors [label intervals]
   (mapcat

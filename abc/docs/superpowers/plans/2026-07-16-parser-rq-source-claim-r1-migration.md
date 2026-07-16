@@ -108,6 +108,11 @@ and includes membership, ordered entries, each capture reference, and each
 record blob identity. Rust must pass the shared vectors in
 `abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json`; it must not
 use serde map order or the historical ABC canonicalizer as a substitute.
+If capture generation authentication fails, the producer omits that work record
+and index entry while retaining the work in `expected_work_ids`; it never copies
+the manifest's unauthenticated generation assertion. Such an index is
+`unavailable`, and its records are an authenticated ordered subset. An `ok`
+index requires exact membership.
 
 - [ ] Write RED trust tests for exact membership, authenticated locators,
   distinct multi-work capture references, swapped/missing/duplicate mappings,

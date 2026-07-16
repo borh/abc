@@ -31,11 +31,15 @@ pub struct RecognitionWorkInterval {
 #[serde(deny_unknown_fields)]
 pub struct RecognitionAggregate {
     pub schema_version: String,
-    pub qualification_identity_ref: String,
-    pub corpus_generation_ref: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub qualification_identity_ref: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub corpus_generation_ref: Option<String>,
     pub corpus_generation_algorithm: String,
-    pub policy_hash: String,
-    pub membership_ref: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub policy_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub membership_ref: Option<String>,
     pub coordinate_system: String,
     pub status: RecognitionStatus,
     pub work_completeness: RecognitionWorkCompleteness,
@@ -87,13 +91,96 @@ fn semantic_intervals(intervals: &[RecognitionInterval], bound: u64) -> Result<V
     Ok(raw)
 }
 
-fn validate_record(record: &RecognitionWorkRecord, index: &RecognitionIndex) -> Result<()> {
+const INDEX_SCHEMA: &str = "abc/parser-rq-source-recognition-index/v1";
+const WORK_SCHEMA: &str = "abc/parser-rq-source-recognition-work/v1";
+const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v1";
+const GENERATION_ALGORITHM: &str = "sha256-rfc8785-safe-integer-domain-abc-v1";
+fn valid_hash(value: &str) -> bool {
+    value.strip_prefix("sha256:").is_some_and(|digest| {
+        digest.len() == 64
+            && digest
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    })
+}
+
+fn valid_content_address(locator: &str, identity: &str) -> bool {
+    let Some(digest) = identity.strip_prefix("sha256:") else {
+        return false;
+    };
+    valid_hash(identity) && locator.starts_with(&format!("sha256/{}/{}.", &digest[..2], digest))
+}
+
+fn validate_index(index: &RecognitionIndex) -> Result<()> {
+    anyhow::ensure!(index.schema_version == INDEX_SCHEMA);
+    anyhow::ensure!(index.corpus_generation_algorithm == GENERATION_ALGORITHM);
+    anyhow::ensure!(index.coordinate_system == "decoded_utf8");
+    anyhow::ensure!(valid_hash(&index.qualification_identity_ref));
+    anyhow::ensure!(valid_hash(&index.corpus_generation_ref));
+    anyhow::ensure!(valid_hash(&index.policy_hash));
+    anyhow::ensure!(valid_hash(&index.membership_ref));
+    anyhow::ensure!(index.expected_work_count <= MAX_SAFE_INTEGER);
+    anyhow::ensure!(index.record_count <= MAX_SAFE_INTEGER);
+    anyhow::ensure!(index.expected_work_count == index.expected_work_ids.len() as u64);
+    anyhow::ensure!(index.record_count == index.records.len() as u64);
+    anyhow::ensure!(index.expected_work_ids.iter().all(|id| !id.is_empty()));
+    anyhow::ensure!(
+        index.expected_work_ids.iter().collect::<HashSet<_>>().len()
+            == index.expected_work_ids.len()
+    );
+    let mut expected = index.expected_work_ids.iter();
+    anyhow::ensure!(index.records.iter().all(|entry| {
+        let ordered_member = expected.by_ref().any(|work_id| work_id == &entry.work_id);
+        !entry.work_id.is_empty()
+            && ordered_member
+            && valid_hash(&entry.capture_generation_ref)
+            && valid_hash(&entry.sha256)
+            && entry.bytes <= MAX_SAFE_INTEGER
+            && entry.media_type == "application/json"
+            && valid_content_address(&entry.locator, &entry.sha256)
+    }));
+    match index.status {
+        RecognitionStatus::Ok => {
+            anyhow::ensure!(index.errors.is_empty());
+            anyhow::ensure!(index.record_count == index.expected_work_count);
+        }
+        RecognitionStatus::Unavailable => anyhow::ensure!(!index.errors.is_empty()),
+    }
+    Ok(())
+}
+
+fn validate_record(
+    record: &RecognitionWorkRecord,
+    index: &RecognitionIndex,
+    store: &Path,
+) -> Result<()> {
+    anyhow::ensure!(record.schema_version == WORK_SCHEMA);
+    anyhow::ensure!(record.instrument_version == INSTRUMENT_VERSION);
+    anyhow::ensure!(record.coordinate_system == "decoded_utf8");
     anyhow::ensure!(record.status == RecognitionStatus::Ok && record.errors.is_empty());
     anyhow::ensure!(
         record.qualification_identity_ref.as_deref()
             == Some(index.qualification_identity_ref.as_str())
             && record.policy_hash.as_deref() == Some(index.policy_hash.as_str())
     );
+    anyhow::ensure!(record.work_id.as_deref().is_some_and(|id| !id.is_empty()));
+    anyhow::ensure!(
+        record
+            .capture_generation_ref
+            .as_deref()
+            .is_some_and(valid_hash)
+    );
+    let ledger = record
+        .ledger
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("ledger absent"))?;
+    anyhow::ensure!(
+        valid_hash(&ledger.sha256)
+            && ledger.bytes <= MAX_SAFE_INTEGER
+            && ledger.media_type == "application/json"
+            && valid_content_address(&ledger.locator, &ledger.sha256)
+    );
+    authenticate_blob(store, &ledger.locator, &ledger.sha256, ledger.bytes)?;
     let eligible = record
         .eligible_bytes
         .ok_or_else(|| anyhow::anyhow!("eligible absent"))?;
@@ -158,8 +245,8 @@ pub fn aggregate_recognition(
     index: &RecognitionIndex,
     store: &Path,
 ) -> Result<RecognitionAggregate> {
-    let expected = index.expected_work_count;
-    let observed = index.record_count;
+    let expected = index.expected_work_count.min(MAX_SAFE_INTEGER);
+    let observed = index.record_count.min(MAX_SAFE_INTEGER);
     let expected_set = index.expected_work_ids.iter().collect::<HashSet<_>>();
     let record_set = index
         .records
@@ -172,6 +259,9 @@ pub fn aggregate_recognition(
         && expected == observed
         && observed == index.records.len() as u64;
     let mut errors = Vec::new();
+    if validate_index(index).is_err() {
+        errors.push("recognition-index-invalid".to_owned());
+    }
     if index.status != RecognitionStatus::Ok || !index.errors.is_empty() {
         errors.push("recognition-index-unavailable".to_owned());
     }
@@ -210,7 +300,7 @@ pub fn aggregate_recognition(
                 let record: RecognitionWorkRecord = serde_json::from_slice(&bytes)?;
                 anyhow::ensure!(canonical_json(&record)?.as_bytes() == bytes);
                 anyhow::ensure!(record.work_id.as_deref() == Some(entry.work_id.as_str()));
-                validate_record(&record, index)?;
+                validate_record(&record, index, store)?;
                 anyhow::ensure!(
                     record.capture_generation_ref.as_deref()
                         == Some(entry.capture_generation_ref.as_str()),
@@ -282,11 +372,13 @@ pub fn aggregate_recognition(
     }
     let base = RecognitionAggregate {
         schema_version: "abc/parser-rq-source-recognition-aggregate/v1".to_owned(),
-        qualification_identity_ref: index.qualification_identity_ref.clone(),
-        corpus_generation_ref: index.corpus_generation_ref.clone(),
-        corpus_generation_algorithm: index.corpus_generation_algorithm.clone(),
-        policy_hash: index.policy_hash.clone(),
-        membership_ref: index.membership_ref.clone(),
+        qualification_identity_ref: valid_hash(&index.qualification_identity_ref)
+            .then(|| index.qualification_identity_ref.clone()),
+        corpus_generation_ref: valid_hash(&index.corpus_generation_ref)
+            .then(|| index.corpus_generation_ref.clone()),
+        corpus_generation_algorithm: GENERATION_ALGORITHM.to_owned(),
+        policy_hash: valid_hash(&index.policy_hash).then(|| index.policy_hash.clone()),
+        membership_ref: valid_hash(&index.membership_ref).then(|| index.membership_ref.clone()),
         coordinate_system: "decoded_utf8".to_owned(),
         status: if errors.is_empty() {
             RecognitionStatus::Ok

@@ -277,6 +277,16 @@ one index entry and requires its `capture_generation_ref` to equal that entry.
 Missing, duplicate, or swapped mappings are unavailable. A zero-work corpus has
 one authenticated empty index and a corresponding zero aggregate; a single-work
 corpus uses the same protocol without collapsing the two identity levels.
+When a capture manifest fails generation authentication, its asserted
+`generation_ref` is not evidence and must not enter either a work record or the
+index. The unavailable index retains the complete expected membership but lists
+only the ordered subset whose capture identities authenticated; its
+`record_count` counts that subset. Exact expected-to-record membership is
+required only for an available index. This keeps honest failure output closed
+and schema-valid without laundering an attacker-controlled identity.
+Likewise, an unavailable aggregate omits any malformed index identity rather
+than replacing it with a sentinel or copying it as evidence. All aggregate
+identity bindings remain mandatory when status is `ok`.
 
 ## Capture and derivation
 

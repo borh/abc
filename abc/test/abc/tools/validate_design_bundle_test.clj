@@ -66,6 +66,14 @@
       (is (seq (schema/validation-errors
                 aggregate-schema
                 (assoc unavailable-aggregate "recognized_bytes" 0))))
+      (is (nil? (schema/validation-errors
+                 aggregate-schema
+                 (apply dissoc unavailable-aggregate
+                        ["qualification_identity_ref" "corpus_generation_ref"
+                         "policy_hash" "membership_ref"]))))
+      (is (seq (schema/validation-errors
+                aggregate-schema
+                (dissoc aggregate "qualification_identity_ref"))))
       (is (seq (schema/validation-errors
                 aggregate-schema
                 (assoc-in aggregate ["work_completeness" "complete"] false))))
@@ -109,6 +117,23 @@
                 index
                 (assoc aggregate "corpus_generation_algorithm" "legacy-jcs")
                 [work]))))
+    (testing "unavailable indexes may omit records lacking authenticated capture identity"
+      (let [unavailable-index (-> index
+                                  (assoc "status" "unavailable"
+                                         "record_count" 0
+                                         "records" []
+                                         "errors" ["capture-generation-unavailable:fixture-work"])
+                                  with-corpus-generation-ref)
+            unavailable (assoc unavailable-aggregate
+                               "corpus_generation_ref"
+                               (get unavailable-index "corpus_generation_ref")
+                               "work_completeness"
+                               {"expected" 1 "observed" 0 "complete" false})]
+        (is (nil? (schema/validation-errors index-schema unavailable-index)))
+        (is (empty? (validate/parser-rq-source-recognition-index-errors
+                     unavailable-index)))
+        (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+                     unavailable-index unavailable [])))))
     (testing "corpus identity authenticates distinct per-work capture mappings"
       (let [other-capture (str "sha256:" (apply str (repeat 64 "7")))
             other-work (assoc work

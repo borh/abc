@@ -28,6 +28,9 @@
 (def source-accountability-index-schema
   (delay (files/read-json "schemas/parser-rq-source-accountability-index.schema.json")))
 
+(def capture-generation-schema
+  (delay (files/read-json "schemas/parser-rq-capture-generation.schema.json")))
+
 (def classified-source-ledger-schema
   (delay (files/read-json "schemas/parser-rq-classified-source-ledger.schema.json")))
 
@@ -249,6 +252,7 @@
                         (filter #(= capture-ref (:generation_ref %)))
                         first)]
     (when (and generation
+               (nil? (schema/validation-errors @capture-generation-schema generation))
                (= "abc/parser-rq-capture-generation/v1" (:schema_version generation))
                (= capture-ref (:generation_ref generation))
                (= capture-ref (projected-ref generation :generation_ref)))
@@ -285,6 +289,8 @@
          (= (:qualification_identity_ref index)
             (:qualification_identity_ref ledger))
          (= (:work_id index-entry) (get-in ledger [:original_source :value_hash]))
+         (= (str "source/" (:work_id index-entry))
+            (get-in ledger [:original_source :artifact_ref]))
          (= "decoded_utf8" (:coordinate_system ledger))
          (= (:policy_hash index) (:policy_hash ledger)
             (get-in authority [:policy :identity_hash]))
@@ -404,15 +410,21 @@
         membership-member (selected-member
                            p0-manifest
                            (content-locator (:membership_ref index) "json"))
-        membership (some->> membership-member (authenticated-json-value store))]
+        membership (some->> membership-member (authenticated-json-value store))
+        membership-work-ids (mapv :work_id (:records membership))]
     (and (nil? (schema/validation-errors @recognition-index-schema index))
          (nil? (schema/validation-errors @recognition-aggregate-schema aggregate))
          (nil? (schema/validation-errors @source-accountability-index-schema membership))
          (= "ok" (:status membership))
+         (empty? (:errors membership))
          (= (:membership_ref index) (get-in membership-member [:ref :sha256]))
          (= (:qualification_identity_ref index) (:identity_ref membership))
          (= (:coordinate_system index) (:coordinate_system membership))
-         (= (:expected_work_ids index) (mapv :work_id (:records membership)))
+         (= (:expected_work_count membership)
+            (:record_count membership)
+            (count (:records membership)))
+         (= (count membership-work-ids) (count (set membership-work-ids)))
+         (= (:expected_work_ids index) membership-work-ids)
          (= "ok" (:status index) (:status aggregate))
          (= (:corpus_generation_ref index) (corpus-generation-ref index))
          (= (:expected_work_ids index) (mapv :work_id entries) record-ids)

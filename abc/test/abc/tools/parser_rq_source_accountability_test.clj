@@ -114,7 +114,7 @@
 
 (defn- reseal-chain!
   [{:keys [root manifest aggregate identity] :as staged}
-   {:keys [ledger generation generation-ref record index corpus-ref aggregate-value]
+   {:keys [ledger generation generation-ref record membership index corpus-ref aggregate-value]
     entry-mutation :entry}]
   (let [index-value (read-keyword-json (io/file root "store/recognition-index.json"))
         entry (first (:records index-value))
@@ -156,6 +156,20 @@
                          :bytes (get-in record-published [:member :ref :bytes]))
         new-entry (if entry-mutation (entry-mutation new-entry) new-entry)
         index-value (assoc-in index-value [:records 0] new-entry)
+        membership-value (read-keyword-json
+                          (io/file root "store"
+                                   (#'rq-source/content-locator
+                                    (:membership_ref index-value) "json")))
+        membership-published (when membership
+                               (publish-json! root manifest
+                                              (membership membership-value)))
+        manifest (if membership-published
+                   (:manifest membership-published)
+                   manifest)
+        index-value (if membership-published
+                      (assoc index-value :membership_ref
+                             (get-in membership-published [:member :ref :sha256]))
+                      index-value)
         index-value (if index (index index-value) index-value)
         index-value (assoc index-value :corpus_generation_ref
                            (#'rq-source/corpus-generation-ref index-value))
@@ -213,6 +227,9 @@
            ["ledger original-source work identity"
             {:ledger #(assoc-in % [:original_source :value_hash]
                                 (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["ledger original-source locator"
+            {:ledger #(assoc-in % [:original_source :artifact_ref]
+                                "source/sha256:8888888888888888888888888888888888888888888888888888888888888888")}]
            ["ledger target identity"
             {:ledger #(update % :entries
                               (fn [entries]
@@ -235,6 +252,11 @@
            ["capture generation ref"
             {:generation-ref (constantly
                               (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["capture generation unknown top-level field"
+            {:generation #(assoc % :attacker_field "resealed")}]
+           ["capture generation unknown member"
+            {:generation #(assoc-in % [:members :attacker_member]
+                                    (get-in % [:members :decoded_source]))}]
            ["record qualification identity"
             {:record #(assoc % :qualification_identity_ref
                              (str "sha256:" (apply str (repeat 64 "8"))))}]
@@ -261,6 +283,11 @@
            ["corpus membership"
             {:index #(assoc % :membership_ref
                             (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ["membership wrong expected count"
+            {:membership #(update % :expected_work_count inc)}]
+           ["membership duplicate work identity"
+            {:membership #(assoc-in % [:records 1 :work_id]
+                                    (get-in % [:records 0 :work_id]))}]
            ["corpus capture mapping"
             {:index #(assoc-in % [:records 0 :capture_generation_ref]
                                (str "sha256:" (apply str (repeat 64 "8"))))}]

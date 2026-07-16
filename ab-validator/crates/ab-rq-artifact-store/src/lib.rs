@@ -223,6 +223,29 @@ pub fn authenticate_blob(
     expected_sha256: &str,
     expected_bytes: u64,
 ) -> std::result::Result<Vec<u8>, AuthenticateError> {
+    authenticate_blob_inner(root, locator, expected_sha256, Some(expected_bytes))
+}
+
+/// Authenticates a content-addressed blob when its manifest carries the hash
+/// but not a redundant byte length.
+///
+/// Locator confinement and streaming hash verification are identical to
+/// [`authenticate_blob`]. The returned bytes determine the authenticated
+/// length; callers must not obtain it through a separate filesystem read.
+pub fn authenticate_blob_identity(
+    root: &Path,
+    locator: &str,
+    expected_sha256: &str,
+) -> std::result::Result<Vec<u8>, AuthenticateError> {
+    authenticate_blob_inner(root, locator, expected_sha256, None)
+}
+
+fn authenticate_blob_inner(
+    root: &Path,
+    locator: &str,
+    expected_sha256: &str,
+    expected_bytes: Option<u64>,
+) -> std::result::Result<Vec<u8>, AuthenticateError> {
     let relative = Path::new(locator);
     reject_lexical_escape(relative, "artifact locator")
         .map_err(|error| AuthenticateError::new(AuthenticateErrorKind::LocatorInvalid, error))?;
@@ -253,7 +276,7 @@ pub fn authenticate_blob(
             )
         })?;
     }
-    if length != expected_bytes {
+    if expected_bytes.is_some_and(|expected| length != expected) {
         return Err(AuthenticateError::new(
             AuthenticateErrorKind::BlobMismatch,
             anyhow::anyhow!("artifact byte length mismatch"),

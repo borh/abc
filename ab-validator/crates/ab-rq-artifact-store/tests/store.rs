@@ -2,7 +2,8 @@ use std::fs;
 use std::sync::{Arc, Barrier};
 
 use ab_rq_artifact_store::{
-    AuthenticateErrorKind, authenticate_blob, publish_blob, write_atomic_summary,
+    AuthenticateErrorKind, authenticate_blob, authenticate_blob_identity, publish_blob,
+    write_atomic_summary,
 };
 use sha2::{Digest, Sha256};
 use tempfile::tempdir;
@@ -20,6 +21,10 @@ fn publish_and_authenticate_round_trip() {
     assert!(published.locator.ends_with(".json"));
     assert_eq!(
         authenticate_blob(root.path(), &published.locator, &published.sha256, 7).unwrap(),
+        b"content"
+    );
+    assert_eq!(
+        authenticate_blob_identity(root.path(), &published.locator, &published.sha256).unwrap(),
         b"content"
     );
 }

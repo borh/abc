@@ -12,6 +12,8 @@ mod index;
 pub mod interval;
 mod model;
 mod recognition;
+mod recognition_aggregate;
+mod recognition_corpus;
 mod reconcile;
 
 pub use aggregate::aggregate;
@@ -22,6 +24,15 @@ pub use model::*;
 pub use recognition::{
     RecognitionAnalysis, RecognitionBlobRef, RecognitionInput, RecognitionInterval,
     RecognitionStatus, RecognitionWorkRecord, analyze_recognition,
+};
+pub use recognition_aggregate::{
+    RecognitionAggregate, RecognitionWorkCompleteness, RecognitionWorkInterval,
+    aggregate_recognition,
+};
+pub use recognition_corpus::{
+    RecognitionCorpusInput, RecognitionGenerationEntry, RecognitionGenerationIndex,
+    RecognitionIndex, RecognitionRecordEntry, analyze_recognition_corpus,
+    rfc8785_safe_integer_json,
 };
 pub use reconcile::{Reconciliation, reconcile};
 

@@ -2,9 +2,12 @@ use std::fs;
 use std::path::PathBuf;
 
 use ab_parser_rq_source_accountability::{
-    CorpusEntry, CorpusInput, CorpusSourceEntry, QualificationIdentity, RecordIndex,
-    TaxonomyIdentity, WorkInput, aggregate, analyze_corpus, analyze_work, canonical_json,
+    CorpusEntry, CorpusInput, CorpusSourceEntry, QualificationIdentity, RecognitionCorpusInput,
+    RecognitionGenerationIndex, RecognitionIndex, RecordIndex, TaxonomyIdentity, WorkInput,
+    aggregate, aggregate_recognition, analyze_corpus, analyze_recognition_corpus, analyze_work,
+    canonical_json,
 };
+use ab_rq_artifact_store::write_atomic_summary;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
@@ -61,6 +64,26 @@ enum Command {
         qualification_identity: PathBuf,
         #[arg(long)]
         taxonomy: PathBuf,
+        #[arg(long)]
+        store_root: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
+    },
+    /// Derive one authenticated recognition record for every exact P1 member.
+    AnalyzeRecognitionCorpus {
+        #[arg(long)]
+        membership_index: PathBuf,
+        #[arg(long)]
+        generation_index: PathBuf,
+        #[arg(long)]
+        store_root: PathBuf,
+        #[arg(long)]
+        index_out: PathBuf,
+    },
+    /// Authenticate and aggregate a closed source-recognition record index.
+    AggregateRecognition {
+        #[arg(long)]
+        recognition_index: PathBuf,
         #[arg(long)]
         store_root: PathBuf,
         #[arg(long)]
@@ -172,6 +195,31 @@ fn main() -> Result<()> {
             fs::write(out, &bytes)?;
             println!("{bytes}");
         }
+        Command::AnalyzeRecognitionCorpus {
+            membership_index,
+            generation_index,
+            store_root,
+            index_out,
+        } => {
+            let index = analyze_recognition_corpus(RecognitionCorpusInput {
+                membership_index_bytes: fs::read(membership_index)?,
+                generation_index: read_json::<RecognitionGenerationIndex>(&generation_index)?,
+                store_root,
+                index_out,
+            })?;
+            println!("{}", canonical_json(&index)?);
+        }
+        Command::AggregateRecognition {
+            recognition_index,
+            store_root,
+            out,
+        } => {
+            let index = read_json::<RecognitionIndex>(&recognition_index)?;
+            let aggregate = aggregate_recognition(&index, &store_root)?;
+            let bytes = canonical_json(&aggregate)?;
+            write_atomic_summary(&out, bytes.as_bytes())?;
+            println!("{bytes}");
+        }
     }
     Ok(())
 }
@@ -218,6 +266,30 @@ mod tests {
             "aggregate.json",
         ]);
         assert!(aggregate.is_ok());
+        let recognition = Cli::try_parse_from([
+            "tool",
+            "analyze-recognition-corpus",
+            "--membership-index",
+            "p1-index.json",
+            "--generation-index",
+            "generations.json",
+            "--store-root",
+            "store",
+            "--index-out",
+            "recognition-index.json",
+        ]);
+        assert!(recognition.is_ok());
+        let aggregate_recognition = Cli::try_parse_from([
+            "tool",
+            "aggregate-recognition",
+            "--recognition-index",
+            "recognition-index.json",
+            "--store-root",
+            "store",
+            "--out",
+            "aggregate.json",
+        ]);
+        assert!(aggregate_recognition.is_ok());
     }
 
     #[test]

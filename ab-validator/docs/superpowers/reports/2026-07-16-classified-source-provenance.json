@@ -1,0 +1,71 @@
+{
+  "schema": "soranoha.classified-source-provenance-characterization.v1",
+  "status": "blocked",
+  "source_commit": "3316a11690125e17d07d30a5cf2d85589b236d10",
+  "decision": "recovery provenance cannot be distinguished before flush_plain_up_to without reconstructing PairEvent history",
+  "public_span_kinds": [
+    "Plain",
+    "Aozora",
+    "BlockOpen",
+    "BlockClose",
+    "Newline"
+  ],
+  "plain_state": {
+    "retained_before_flush": [
+      "pending_plain_start",
+      "pending_refmark"
+    ],
+    "emitted_at_flush": [
+      "kind=Plain",
+      "source_span.start",
+      "source_span.end"
+    ],
+    "recovery_reason_retained": false
+  },
+  "converging_paths": [
+    {
+      "path": "ordinary text and unmatched/solo events",
+      "source_lines": "lexer/classify/mod.rs:1039-1047",
+      "terminal_state": "pending_plain_start"
+    },
+    {
+      "path": "declined gaiji and declined bracket",
+      "source_lines": "lexer/classify/mod.rs:882-900",
+      "terminal_state": "replay_unrecognised_body -> pending_plain_start"
+    },
+    {
+      "path": "declined recognition",
+      "source_lines": "lexer/classify/mod.rs:913-925",
+      "terminal_state": "replay_unrecognised_body -> pending_plain_start"
+    },
+    {
+      "path": "literal quote and tortoise punctuation",
+      "source_lines": "lexer/classify/mod.rs:981-1000",
+      "terminal_state": "pending_plain_start"
+    },
+    {
+      "path": "unclosed frame at EOF",
+      "source_lines": "lexer/classify/mod.rs:1631-1644",
+      "terminal_state": "replay_unrecognised_body -> pending_plain_start"
+    },
+    {
+      "path": "solo refmark at flush",
+      "source_lines": "lexer/classify/mod.rs:645-663",
+      "terminal_state": "pending_plain_start"
+    }
+  ],
+  "counterexample": {
+    "observation": "distinct parser paths emit the same SpanKind::Plain representation",
+    "lost_fields": [
+      "PairEvent variant",
+      "PairKind",
+      "recognizer decline path",
+      "unclosed versus unmatched status",
+      "recovery reason"
+    ],
+    "downstream_reconstruction_required": true
+  },
+  "recovery_reason_matrix": [],
+  "reason_matrix_frozen": false,
+  "task_3_authorized": false
+}

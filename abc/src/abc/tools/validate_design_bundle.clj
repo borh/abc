@@ -493,6 +493,188 @@
        [(str "capture generation_ref does not match canonical identity: "
              expected " != " computed)]))))
 
+(defn- interval-bytes [intervals]
+  (reduce + 0 (map #(- (get % "end") (get % "start")) intervals)))
+
+(defn- canonical-interval-errors [label intervals eligible-bytes]
+  (let [pairs (partition 2 1 intervals)]
+    (vec
+     (concat
+      (keep-indexed
+       (fn [index interval]
+         (let [start (get interval "start") end (get interval "end")]
+           (when (or (not (integer? start)) (not (integer? end))
+                     (>= start end) (neg? start) (> end eligible-bytes))
+             (str label " interval " index " is outside eligible bytes"))))
+       intervals)
+      (keep-indexed
+       (fn [index [left right]]
+         (when (>= (get left "end") (get right "start"))
+           (str label " intervals " index " and " (inc index)
+                " overlap or are not maximally normalized")))
+       pairs)))))
+
+(defn- interval-subset? [inner outer]
+  (every? (fn [interval]
+            (some #(and (<= (get % "start") (get interval "start"))
+                        (>= (get % "end") (get interval "end")))
+                  outer))
+          inner))
+
+(defn- interval-complement [intervals eligible-bytes]
+  (loop [cursor 0 remaining intervals result []]
+    (if-let [interval (first remaining)]
+      (recur (get interval "end") (next remaining)
+             (cond-> result
+               (< cursor (get interval "start"))
+               (conj {"start" cursor "end" (get interval "start")})))
+      (cond-> result
+        (< cursor eligible-bytes)
+        (conj {"start" cursor "end" eligible-bytes})))))
+
+(defn parser-rq-source-recognition-work-errors [record]
+  (if (not= "ok" (get record "status"))
+    []
+    (let [eligible (get record "eligible_bytes")
+          recognized (get record "recognized")
+          accounted (get record "accounted")
+          semantic-gaps (get record "semantic_gaps")
+          unaccounted (get record "unaccounted")]
+      (vec
+       (concat
+        (mapcat #(canonical-interval-errors (first %) (second %) eligible)
+                [["recognized" recognized] ["accounted" accounted]
+                 ["semantic_gaps" semantic-gaps]
+                 ["unaccounted" unaccounted]])
+        (when-not (interval-subset? recognized accounted)
+          ["recognized intervals are not a subset of accounted intervals"])
+        (when-not (= recognized (sort-by (juxt #(get % "start") #(get % "end"))
+                                         recognized))
+          ["recognized intervals are not in canonical order"])
+        (when-not (= (get record "recognized_bytes")
+                     (interval-bytes recognized))
+          ["recognized_bytes does not equal recognized intervals"])
+        (when-not (= (get record "accounted_bytes")
+                     (interval-bytes accounted))
+          ["accounted_bytes does not equal accounted intervals"])
+        (when-not (= (get record "semantic_gap_bytes")
+                     (interval-bytes semantic-gaps))
+          ["semantic_gap_bytes does not equal semantic gaps"])
+        (when-not (= (get record "unaccounted_bytes")
+                     (interval-bytes unaccounted))
+          ["unaccounted_bytes does not equal unaccounted intervals"])
+        (when-not (= semantic-gaps (interval-complement recognized eligible))
+          ["semantic gaps are not the exact recognized complement"])
+        (when-not (= unaccounted (interval-complement accounted eligible))
+          ["unaccounted intervals are not the exact accounted complement"])
+        (when-not (= eligible (+ (get record "recognized_bytes")
+                                 (get record "semantic_gap_bytes")))
+          ["recognized byte conservation does not hold"])
+        (when-not (= eligible (+ (get record "accounted_bytes")
+                                 (get record "unaccounted_bytes")))
+          ["accounted byte conservation does not hold"]))))))
+
+(defn parser-rq-source-recognition-index-errors [index]
+  (let [expected-ids (get index "expected_work_ids" [])
+        record-ids (mapv #(get % "work_id") (get index "records" []))]
+    (vec
+     (concat
+      (when-not (= (count expected-ids) (get index "expected_work_count"))
+        ["expected_work_count does not equal expected membership"])
+      (when-not (= (count record-ids) (get index "record_count"))
+        ["record_count does not equal records"])
+      (when-not (= (count record-ids) (count (distinct record-ids)))
+        ["record index contains duplicate work IDs"])
+      (when-not (= (set expected-ids) (set record-ids))
+        ["record index does not exactly match expected membership"])))))
+
+(defn- work-interval-errors [label intervals]
+  (mapcat
+   (fn [[work-id work-intervals]]
+     (canonical-interval-errors
+      (str label " for " work-id)
+      (mapv #(select-keys % ["start" "end"]) work-intervals)
+      (reduce max 0 (map #(get % "end") work-intervals))))
+   (group-by #(get % "work_id") intervals)))
+
+(defn parser-rq-source-recognition-aggregate-errors [aggregate]
+  (if (not= "ok" (get aggregate "status"))
+    []
+    (let [eligible (get aggregate "eligible_bytes")
+          recognized (get aggregate "recognized_bytes")
+          accounted (get aggregate "accounted_bytes")
+          semantic-gap (get aggregate "semantic_gap_bytes")
+          unaccounted-bytes (get aggregate "unaccounted_bytes")
+          semantic-gaps (get aggregate "semantic_gaps")
+          unaccounted (get aggregate "unaccounted")]
+      (vec
+       (concat
+        (work-interval-errors "semantic gaps" semantic-gaps)
+        (work-interval-errors "unaccounted" unaccounted)
+        (when (> recognized accounted)
+          ["aggregate recognized_bytes exceeds accounted_bytes"])
+        (when (> accounted eligible)
+          ["aggregate accounted_bytes exceeds eligible_bytes"])
+        (when-not (= semantic-gap (interval-bytes semantic-gaps))
+          ["aggregate semantic_gap_bytes does not equal witnesses"])
+        (when-not (= unaccounted-bytes (interval-bytes unaccounted))
+          ["aggregate unaccounted_bytes does not equal witnesses"])
+        (when-not (= eligible (+ recognized semantic-gap))
+          ["aggregate recognized byte conservation does not hold"])
+        (when-not (= eligible (+ accounted unaccounted-bytes))
+          ["aggregate accounted byte conservation does not hold"]))))))
+
+(defn parser-rq-source-recognition-coherence-errors [index aggregate records]
+  (let [identity-keys ["qualification_identity_ref" "generation_ref"
+                       "policy_hash" "coordinate_system"]
+        indexed-ids (set (map #(get % "work_id") (get index "records" [])))
+        records-by-id (group-by #(get % "work_id") records)
+        ok-records (filter #(= "ok" (get % "status")) records)
+        aggregate-gaps
+        (fn [key]
+          (vec (mapcat (fn [record]
+                         (map #(assoc % "work_id" (get record "work_id"))
+                              (get record key)))
+                       ok-records)))]
+    (vec
+     (concat
+      (when-not (= indexed-ids (set (keys records-by-id)))
+        ["loaded records do not exactly match indexed membership"])
+      (when-not (every? #(= 1 (count %)) (vals records-by-id))
+        ["loaded records contain duplicate work IDs"])
+      (mapcat
+       (fn [record]
+         (keep (fn [key]
+                 (when-not (= (get index key) (get record key))
+                   (str "work " (get record "work_id") " has mismatched " key)))
+               identity-keys))
+       records)
+      (keep (fn [key]
+              (when-not (= (get index key) (get aggregate key))
+                (str "aggregate has mismatched " key)))
+            identity-keys)
+      (when-not (= (get index "membership_ref")
+                   (get aggregate "membership_ref"))
+        ["aggregate has mismatched membership_ref"])
+      (when (= "ok" (get aggregate "status"))
+        (concat
+         (when-not (every? #(= "ok" (get % "status")) records)
+           ["available aggregate contains unavailable records"])
+         (for [[field key] [["eligible_bytes" "eligible_bytes"]
+                            ["recognized_bytes" "recognized_bytes"]
+                            ["accounted_bytes" "accounted_bytes"]
+                            ["semantic_gap_bytes" "semantic_gap_bytes"]
+                            ["unaccounted_bytes" "unaccounted_bytes"]]
+               :let [expected (reduce + 0 (map #(get % key) ok-records))]
+               :when (not= expected (get aggregate field))]
+           (str "aggregate " field " does not equal work records"))
+         (when-not (= (get aggregate "semantic_gaps")
+                      (aggregate-gaps "semantic_gaps"))
+           ["aggregate semantic gaps do not equal work records"])
+         (when-not (= (get aggregate "unaccounted")
+                      (aggregate-gaps "unaccounted"))
+           ["aggregate unaccounted intervals do not equal work records"])))))))
+
 (def ^:private design-schema-inputs
   ["schemas/aat-parser-ir-divergence-bundle.schema.json"
    "schemas/aat-parser-ir-divergence.schema.json"
@@ -518,6 +700,9 @@
    "schemas/parser-rq-source-accountability-aggregate.schema.json"
    "schemas/parser-rq-source-accountability-index.schema.json"
    "schemas/parser-rq-source-accountability-work.schema.json"
+   "schemas/parser-rq-source-recognition-aggregate.schema.json"
+   "schemas/parser-rq-source-recognition-index.schema.json"
+   "schemas/parser-rq-source-recognition-work.schema.json"
    "schemas/parser-ir-publication-preservation.schema.json"
    "schemas/parser-ir.schema.json"
    "schemas/person-drift-event.schema.json"
@@ -572,7 +757,12 @@
    "test/fixtures/parser-rq/classified-source-capture/generation.json"
    "test/fixtures/parser-rq/classified-source-capture/ledger.json"
    "test/fixtures/parser-rq/classified-source/generation.json"
-   "test/fixtures/parser-rq/classified-source/ledger.json"])
+   "test/fixtures/parser-rq/classified-source/ledger.json"
+   "test/fixtures/parser-rq/source-recognition/aggregate-ok.json"
+   "test/fixtures/parser-rq/source-recognition/aggregate-unavailable.json"
+   "test/fixtures/parser-rq/source-recognition/index-ok.json"
+   "test/fixtures/parser-rq/source-recognition/work-ok.json"
+   "test/fixtures/parser-rq/source-recognition/work-unavailable.json"])
 
 (defn evidence-input-paths []
   (->> (concat design-schema-inputs design-data-inputs design-fixture-inputs)
@@ -608,6 +798,9 @@
         parser-rq-source-accountability-aggregate-schema (files/read-json "schemas/parser-rq-source-accountability-aggregate.schema.json")
         parser-rq-source-accountability-index-schema (files/read-json "schemas/parser-rq-source-accountability-index.schema.json")
         parser-rq-source-accountability-work-schema (files/read-json "schemas/parser-rq-source-accountability-work.schema.json")
+        parser-rq-source-recognition-aggregate-schema (files/read-json "schemas/parser-rq-source-recognition-aggregate.schema.json")
+        parser-rq-source-recognition-index-schema (files/read-json "schemas/parser-rq-source-recognition-index.schema.json")
+        parser-rq-source-recognition-work-schema (files/read-json "schemas/parser-rq-source-recognition-work.schema.json")
         source-assertion-schema (files/read-json "schemas/source-assertion.schema.json")
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
         tei-eaj-comparison-schema (files/read-json "schemas/tei-eaj-comparison.schema.json")
@@ -644,6 +837,9 @@
                            ["schemas/parser-rq-source-accountability-aggregate.schema.json" parser-rq-source-accountability-aggregate-schema]
                            ["schemas/parser-rq-source-accountability-index.schema.json" parser-rq-source-accountability-index-schema]
                            ["schemas/parser-rq-source-accountability-work.schema.json" parser-rq-source-accountability-work-schema]
+                           ["schemas/parser-rq-source-recognition-aggregate.schema.json" parser-rq-source-recognition-aggregate-schema]
+                           ["schemas/parser-rq-source-recognition-index.schema.json" parser-rq-source-recognition-index-schema]
+                           ["schemas/parser-rq-source-recognition-work.schema.json" parser-rq-source-recognition-work-schema]
                            ["schemas/source-assertion.schema.json" source-assertion-schema]
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
                            ["schemas/tei-eaj-comparison.schema.json" tei-eaj-comparison-schema]
@@ -664,6 +860,23 @@
                       "test/fixtures/parser-rq/classified-source/ledger.json")
       (validate-json! parser-rq-capture-generation-schema generation-path)
       (check-errors! (parser-rq-capture-generation-errors generation)))
+    (let [root "test/fixtures/parser-rq/source-recognition"
+          work (files/read-json (str root "/work-ok.json"))
+          index (files/read-json (str root "/index-ok.json"))
+          aggregate (files/read-json (str root "/aggregate-ok.json"))]
+      (doseq [path ["work-ok.json" "work-unavailable.json"]]
+        (validate-json! parser-rq-source-recognition-work-schema
+                        (str root "/" path)))
+      (validate-json! parser-rq-source-recognition-index-schema
+                      (str root "/index-ok.json"))
+      (doseq [path ["aggregate-ok.json" "aggregate-unavailable.json"]]
+        (validate-json! parser-rq-source-recognition-aggregate-schema
+                        (str root "/" path)))
+      (check-errors! (parser-rq-source-recognition-work-errors work))
+      (check-errors! (parser-rq-source-recognition-index-errors index))
+      (check-errors! (parser-rq-source-recognition-aggregate-errors aggregate))
+      (check-errors! (parser-rq-source-recognition-coherence-errors
+                      index aggregate [work])))
     (let [maintenance-path
           "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
           maintenance-record (files/read-json maintenance-path)

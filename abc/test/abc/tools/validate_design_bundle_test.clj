@@ -26,6 +26,75 @@
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
+(deftest parser-rq-source-recognition-protocols
+  (let [root "test/fixtures/parser-rq/source-recognition"
+        work-schema (files/read-json
+                     "schemas/parser-rq-source-recognition-work.schema.json")
+        index-schema (files/read-json
+                      "schemas/parser-rq-source-recognition-index.schema.json")
+        aggregate-schema (files/read-json
+                          "schemas/parser-rq-source-recognition-aggregate.schema.json")
+        work (files/read-json (str root "/work-ok.json"))
+        unavailable-work (files/read-json (str root "/work-unavailable.json"))
+        index (files/read-json (str root "/index-ok.json"))
+        aggregate (files/read-json (str root "/aggregate-ok.json"))
+        unavailable-aggregate
+        (files/read-json (str root "/aggregate-unavailable.json"))]
+    (testing "closed valid fixtures"
+      (doseq [[contract value] [[work-schema work]
+                                [work-schema unavailable-work]
+                                [index-schema index]
+                                [aggregate-schema aggregate]
+                                [aggregate-schema unavailable-aggregate]]]
+        (is (nil? (schema/validation-errors contract value))))
+      (is (empty? (validate/parser-rq-source-recognition-work-errors work)))
+      (is (empty? (validate/parser-rq-source-recognition-index-errors index)))
+      (is (empty? (validate/parser-rq-source-recognition-aggregate-errors
+                   aggregate)))
+      (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+                   index aggregate [work]))))
+    (testing "unknown fields and unavailable trusted totals are rejected"
+      (is (seq (schema/validation-errors work-schema (assoc work "unknown" true))))
+      (is (seq (schema/validation-errors
+                work-schema (assoc unavailable-work "eligible_bytes" 10))))
+      (is (seq (schema/validation-errors
+                aggregate-schema
+                (assoc unavailable-aggregate "recognized_bytes" 0)))))
+    (testing "projections are ordered subsets with exact byte conservation"
+      (doseq [invalid [(assoc work "recognized_bytes" 11)
+                       (assoc work "accounted_bytes" 11)
+                       (assoc work "recognized"
+                              [{"start" 0 "end" 6}
+                               {"start" 4 "end" 10}])
+                       (assoc work "recognized" [{"start" 0 "end" 11}])
+                       (assoc work "recognized" [{"start" 0 "end" 10}])
+                       (assoc work "semantic_gaps" [{"start" 5 "end" 6}])]]
+        (is (seq (validate/parser-rq-source-recognition-work-errors invalid)))))
+    (testing "membership and identity bindings are exact"
+      (is (seq (validate/parser-rq-source-recognition-index-errors
+                (assoc index "records" []))))
+      (is (seq (validate/parser-rq-source-recognition-index-errors
+                (assoc index "expected_work_ids" ["another-work"]))))
+      (is (seq (validate/parser-rq-source-recognition-coherence-errors
+                index aggregate [])))
+      (is (seq (validate/parser-rq-source-recognition-coherence-errors
+                index aggregate [(assoc work "generation_ref"
+                                        (str "sha256:" (apply str (repeat 64 "f"))))]))))
+    (testing "aggregate totals and work witnesses are coherent"
+      (is (seq (validate/parser-rq-source-recognition-aggregate-errors
+                (assoc aggregate "recognized_bytes" 11))))
+      (is (seq (validate/parser-rq-source-recognition-aggregate-errors
+                (assoc aggregate "semantic_gaps"
+                       [{"work_id" "fixture-work" "start" 4 "end" 11}]))))
+      (is (seq (validate/parser-rq-source-recognition-aggregate-errors
+                (assoc aggregate
+                       "semantic_gap_bytes" 3
+                       "semantic_gaps"
+                       [{"work_id" "fixture-work" "start" 4 "end" 6}
+                        {"work_id" "fixture-work" "start" 5 "end" 6}]))))
+      (is (seq (validate/parser-rq-source-recognition-coherence-errors
+                index (assoc aggregate "recognized_bytes" 7) [work]))))))
+
 (deftest parser-rq-classified-source
   (let [root "test/fixtures/parser-rq/classified-source"
         policy-schema (files/read-json "schemas/parser-rq-classified-source-policy.schema.json")

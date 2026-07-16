@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-source-recognition-work.schema.json",
+  "title": "Parser release qualification source-recognition work record",
+  "type": "object",
+  "required": ["schema_version", "qualification_identity_ref", "generation_ref", "policy_hash", "instrument_version", "work_id", "coordinate_system", "ledger", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "abc/parser-rq-source-recognition-work/v1"},
+    "qualification_identity_ref": {"$ref": "#/$defs/hash"},
+    "generation_ref": {"$ref": "#/$defs/hash"},
+    "policy_hash": {"$ref": "#/$defs/hash"},
+    "instrument_version": {"type": "string", "minLength": 1},
+    "work_id": {"type": "string", "minLength": 1},
+    "coordinate_system": {"const": "decoded_utf8"},
+    "ledger": {"$ref": "#/$defs/blob"},
+    "status": {"enum": ["ok", "unavailable"]},
+    "eligible_bytes": {"type": "integer", "minimum": 0},
+    "recognized_bytes": {"type": "integer", "minimum": 0},
+    "accounted_bytes": {"type": "integer", "minimum": 0},
+    "semantic_gap_bytes": {"type": "integer", "minimum": 0},
+    "unaccounted_bytes": {"type": "integer", "minimum": 0},
+    "recognized": {"$ref": "#/$defs/intervals"},
+    "accounted": {"$ref": "#/$defs/intervals"},
+    "semantic_gaps": {"$ref": "#/$defs/intervals"},
+    "unaccounted": {"$ref": "#/$defs/intervals"},
+    "errors": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "oneOf": [
+    {
+      "properties": {"status": {"const": "ok"}},
+      "required": ["eligible_bytes", "recognized_bytes", "accounted_bytes", "semantic_gap_bytes", "unaccounted_bytes", "recognized", "accounted", "semantic_gaps", "unaccounted"],
+      "not": {"required": ["errors"]}
+    },
+    {
+      "properties": {"status": {"const": "unavailable"}},
+      "required": ["errors"],
+      "not": {"anyOf": [
+        {"required": ["eligible_bytes"]}, {"required": ["recognized_bytes"]},
+        {"required": ["accounted_bytes"]}, {"required": ["semantic_gap_bytes"]},
+        {"required": ["unaccounted_bytes"]}, {"required": ["recognized"]},
+        {"required": ["accounted"]}, {"required": ["semantic_gaps"]},
+        {"required": ["unaccounted"]}
+      ]}
+    }
+  ],
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "interval": {"type": "object", "required": ["start", "end"], "additionalProperties": false, "properties": {"start": {"type": "integer", "minimum": 0}, "end": {"type": "integer", "minimum": 1}}},
+    "intervals": {"type": "array", "items": {"$ref": "#/$defs/interval"}},
+    "blob": {"type": "object", "required": ["sha256", "bytes", "media_type", "locator"], "additionalProperties": false, "properties": {"sha256": {"$ref": "#/$defs/hash"}, "bytes": {"type": "integer", "minimum": 0}, "media_type": {"const": "application/json"}, "locator": {"type": "string", "minLength": 1}}}
+  }
+}

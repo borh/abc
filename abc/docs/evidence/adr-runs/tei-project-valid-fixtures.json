@@ -22,7 +22,7 @@
     "schemas\/tei-profile.rng": "sha256:071479ba8eb10f93a46f4b3616a1c0007bdeafd7a4c321e49cd567d648768413",
     "schemas\/tei-profile.sch": "sha256:608dcce45ba2acd490706691c4e38f885615176744f0db10a5a46aa96fa4da8a",
     "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
     "src\/abc\/tools\/edn_registry.clj": "sha256:4d75f858bd14f6808d110ad9c252e643fcebfc3176eda65a3a6b7bfc9651eafb",
@@ -64,7 +64,7 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:041eba430a026e2135222674cfde64f59fc8fa75b32f2cfeea1222856474500a",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:4fa513a8a3814d116d77d9d6f1e9315e18896bdcce05c3a5e690a5864301748f",
     "test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
     "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:e43f1d041e720d41f20544281f39bca76dc6fd010c34fd5fc5ec96de28b5f804",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
@@ -87,7 +87,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-project-valid-fixtures\\\"\"",
-    "revision": "0443bf233d97f8cc63b97c1188d34ab00d4a4ed2",
+    "revision": "4ee929bebac7c431b39334aa9f6789607671f4df",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

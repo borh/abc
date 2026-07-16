@@ -20,7 +20,7 @@
     "schemas\/person-record.schema.json": "sha256:35e5c3aac75d03f7bf228b05e331dea4df3e791256f14fa8b498fcd405888bcb",
     "src\/abc\/git.clj": "sha256:1c2c88483e6b758eb802c40bbe9f6b89aff350274a40db74eb500d406b68d0bd",
     "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "src\/abc\/tools\/aozora_csv.clj": "sha256:2ed5ae1b94a4e9230d8954ed98b3820cb0ca2f8145025b7b1fc279fccb9e1835",
     "src\/abc\/tools\/aozora_history_audit.clj": "sha256:c03d320bf612519bdac183ce0e982b1dcdb014ac36eeef82eed7dbaf5b4e1af3",
@@ -67,7 +67,7 @@
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
     "src\/abc\/tools\/validate_corpus.clj": "sha256:2923a63a97e589cf81881539f6719cb5917c86b85ad17c63ff976acdca8714e3",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:041eba430a026e2135222674cfde64f59fc8fa75b32f2cfeea1222856474500a",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:4fa513a8a3814d116d77d9d6f1e9315e18896bdcce05c3a5e690a5864301748f",
     "test\/abc\/sim\/oracle.clj": "sha256:b25546934d3a9c1765bb12af27f37155a292c67a8bacbbd089835988dccb4728",
     "test\/abc\/sim\/render.clj": "sha256:bceb6a6b96fdbce4e52fa589b4977dfe076414c1b4b4b97206e04ec4f3ca6de0",
     "test\/abc\/tools\/temporal_evidence_input_test.clj": "sha256:8b99237f675d628229adea725155ba588a267c231375a966aa163f3999cb2b94"
@@ -86,7 +86,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.temporal-evidence-input-test\/aozora-ingest-drift-invariants-contract\"",
-    "revision": "0443bf233d97f8cc63b97c1188d34ab00d4a4ed2",
+    "revision": "4ee929bebac7c431b39334aa9f6789607671f4df",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

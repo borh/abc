@@ -12,7 +12,7 @@
     "docs\/evidence\/adr-inputs\/workflow-graph-fixtures.edn": "sha256:f24e0a458d94832a1ed9d36093bb1e310d694d5727ca9aa878296d26c81d8d23",
     "examples\/workflow\/passed.workflow-run.json": "sha256:c73d776b5041db6e88bd5c63d695ea363d233f633a0134e3fe313782cd2c950c",
     "schemas\/workflow-run.schema.json": "sha256:48f50bf3778cbdc74b4583fbc21f61f9c67771d7cafaebfc869573f301cbc296",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "src\/abc\/tools\/diagram\/mermaid.clj": "sha256:4a1684f23b52b53141edc0597f3ce3eb1e7a033a6986a98749c15cfe9848688b",
     "src\/abc\/tools\/diagram\/workflow_graph.clj": "sha256:b4f4fbfdd1e648798ab8c5a41c9f2d6019f551426c44b5c1851c250c51820aab",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
@@ -41,7 +41,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.workflow-graph-evidence-test\/workflow-graph-fixtures-contract\"",
-    "revision": "0443bf233d97f8cc63b97c1188d34ab00d4a4ed2",
+    "revision": "4ee929bebac7c431b39334aa9f6789607671f4df",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

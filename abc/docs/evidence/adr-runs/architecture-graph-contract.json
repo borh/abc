@@ -44,7 +44,7 @@
     "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
     "schemas\/schema-contracts.json": "sha256:dcf1691be1941c5fd5fa8537f585c9f1739d41b4febd68278f9649946224783d",
     "src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
-    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:47453200fbc1db1604ed3a2f2cb00a9f54cff020c2eb4b769b5d74d9f7721798",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "src\/abc\/tools\/diagram\/architecture_graph.clj": "sha256:e4838a28075504fcaac60f225f2c2c5ff72736bc194b0bd1016b08ed8985cdaa",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
@@ -68,7 +68,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.architecture-graph-evidence-test\/architecture-graph-contract\"",
-    "revision": "0443bf233d97f8cc63b97c1188d34ab00d4a4ed2",
+    "revision": "4ee929bebac7c431b39334aa9f6789607671f4df",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

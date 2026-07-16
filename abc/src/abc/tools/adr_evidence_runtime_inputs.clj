@@ -628,7 +628,8 @@
      .getLiteralLanguage .getLiteralLexicalForm .getName .getObject
      .focusNode .getEntries .getMessage .getPredicate .getSafeTypeByName .getSchema .getScheme
      .getSubject .getURI .lastIndexOf .level .message .resultPath .severity .source
-     .charAt .conforms .isAbsolute .isBefore .isBlank .length .substring .toMillis .validate
+     .charAt .codePointAt .codePointCount .conforms .isAbsolute .isBefore .isBlank
+     .length .substring .toMillis .validate
      .isLiteral .isURI})
 
 (def ^:private audited-safe-jvm-vars

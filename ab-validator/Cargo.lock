@@ -102,6 +102,7 @@ dependencies = [
  "ab-aozora-spec",
  "ab-aozora-syntax",
  "aho-corasick",
+ "hegeltest",
  "insta",
  "memchr",
  "proptest",

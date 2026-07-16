@@ -26,11 +26,15 @@ use core::mem::discriminant;
 
 use crate::lexer::{
     BLOCK_CLOSE_SENTINEL, BLOCK_LEAF_SENTINEL, BLOCK_OPEN_SENTINEL, ClassifiedSpan,
-    INLINE_SENTINEL, SpanKind,
+    INLINE_SENTINEL, PlainProvenance, SpanKind,
 };
 use ab_aozora_spec::{Diagnostic, NormalizedOffset, Span};
-use ab_aozora_syntax::ast::{ContainerPair, LexOutput, Node, NodeRef, SourceNode};
-use ab_aozora_syntax::{DirectiveKind, LineFormat, RegionClose, RegionFormat};
+use ab_aozora_syntax::ast::{
+    ClassifiedSourceDisposition as Disposition, ClassifiedSourceEvidenceClass as EvidenceClass,
+    ClassifiedSourceFact, ClassifiedSourceRole as Role, ConstructId, ContainerPair, LexOutput,
+    Node, NodeRef, SourceNode,
+};
+use ab_aozora_syntax::{DirectiveKind, ForwardAttr, LineFormat, RegionClose, RegionFormat};
 
 /// Run the lex pipeline and materialise the result as an owned, lifetime-free
 /// [`LexOutput`] (`Send + Sync`).
@@ -56,6 +60,7 @@ pub fn lex(source: &str) -> LexOutput {
 pub(crate) struct Recorder {
     pub(crate) entries: Vec<(u32, NodeRef)>,
     pub(crate) source_nodes: Vec<SourceNode>,
+    pub(crate) classified_source_facts: Vec<ClassifiedSourceFact>,
 }
 
 impl Recorder {
@@ -63,6 +68,7 @@ impl Recorder {
         Self {
             entries: Vec::with_capacity(hint),
             source_nodes: Vec::with_capacity(hint),
+            classified_source_facts: Vec::with_capacity(hint),
         }
     }
 
@@ -89,6 +95,159 @@ impl Recorder {
     fn record_block_close(&mut self, pos: u32, source_span: Span, close: RegionClose) {
         self.push(pos, source_span, NodeRef::BlockClose(close));
     }
+
+    fn record_classified_source(&mut self, span: &ClassifiedSpan) {
+        if let Some(fact) = classified_source_fact(span) {
+            self.classified_source_facts.push(fact);
+        }
+    }
+}
+
+fn classified_source_fact(span: &ClassifiedSpan) -> Option<ClassifiedSourceFact> {
+    let (construct_id, source_role, disposition, evidence_class) = match &span.kind {
+        SpanKind::Plain(plain) => match plain.provenance {
+            PlainProvenance::Text => (
+                ConstructId::PlainText,
+                Role::VisibleText,
+                Disposition::EmittedSemanticValue,
+                EvidenceClass::AcceptedText,
+            ),
+            PlainProvenance::RecoveredVerbatim => (
+                ConstructId::RecoveredVerbatim,
+                Role::UnrecognizedSourceForm,
+                Disposition::PreservedOpaque,
+                EvidenceClass::RecoveredVerbatim,
+            ),
+        },
+        SpanKind::Newline => (
+            ConstructId::Newline,
+            Role::StructuralNewline,
+            Disposition::StructuralControl,
+            EvidenceClass::StructuralToken,
+        ),
+        SpanKind::Aozora(node) => node_policy(*node)?,
+        SpanKind::BlockOpen(_) => (
+            ConstructId::ContainerOpen,
+            Role::ContainerSyntax,
+            Disposition::StructuralControl,
+            EvidenceClass::TypedContainer,
+        ),
+        SpanKind::BlockClose(_) => (
+            ConstructId::ContainerClose,
+            Role::ContainerSyntax,
+            Disposition::StructuralControl,
+            EvidenceClass::TypedContainer,
+        ),
+    };
+    Some(ClassifiedSourceFact {
+        source_span: span.source_span,
+        construct_id,
+        source_role,
+        disposition,
+        evidence_class,
+    })
+}
+
+#[allow(
+    clippy::too_many_lines,
+    reason = "one exhaustive projection keeps the closed policy mapping auditable at its fold seam"
+)]
+fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceClass)> {
+    let semantic = Disposition::EmittedSemanticValue;
+    let typed = EvidenceClass::TypedNode;
+    Some(match node {
+        Node::Ruby(_) => (ConstructId::Ruby, Role::Ruby, semantic, typed),
+        Node::Format(format) => match format.attr {
+            ForwardAttr::Bouten { .. } => (ConstructId::Bouten, Role::Typography, semantic, typed),
+            ForwardAttr::CombineUpright => (
+                ConstructId::CombineUpright,
+                Role::Typography,
+                semantic,
+                typed,
+            ),
+            _ => (ConstructId::Emphasis, Role::Typography, semantic, typed),
+        },
+        Node::Gaiji(_) => (ConstructId::Gaiji, Role::Gaiji, semantic, typed),
+        Node::Line(line) => match line {
+            LineFormat::Indent { .. } => (ConstructId::Indent, Role::Layout, semantic, typed),
+            LineFormat::AlignEnd { .. } => (ConstructId::AlignEnd, Role::Layout, semantic, typed),
+            LineFormat::Center { .. } => (ConstructId::Center, Role::Layout, semantic, typed),
+            LineFormat::Framed(_) => (
+                ConstructId::FramedOpen,
+                Role::ContainerSyntax,
+                Disposition::StructuralControl,
+                EvidenceClass::TypedContainer,
+            ),
+            LineFormat::Gothic => (ConstructId::LineGothic, Role::Typography, semantic, typed),
+            LineFormat::FontSizeAbsolute { .. } => {
+                (ConstructId::LineFontSize, Role::Typography, semantic, typed)
+            }
+            _ => return None,
+        },
+        Node::PageBreak => (
+            ConstructId::PageBreak,
+            Role::Break,
+            Disposition::StructuralControl,
+            EvidenceClass::StructuralToken,
+        ),
+        Node::SectionBreak(_) => (
+            ConstructId::SectionBreak,
+            Role::Break,
+            Disposition::StructuralControl,
+            EvidenceClass::StructuralToken,
+        ),
+        Node::BodyEnd => (
+            ConstructId::BodyEnd,
+            Role::TerminalProvenance,
+            Disposition::StructuralControl,
+            EvidenceClass::StructuralToken,
+        ),
+        Node::ForcedBreak => (
+            ConstructId::ForcedBreak,
+            Role::Break,
+            Disposition::StructuralControl,
+            EvidenceClass::StructuralToken,
+        ),
+        Node::Heading(_) => (ConstructId::Heading, Role::Heading, semantic, typed),
+        Node::HeadingHint(_) => (ConstructId::HeadingHint, Role::Heading, semantic, typed),
+        Node::Illustration(_) => (
+            ConstructId::Illustration,
+            Role::Illustration,
+            semantic,
+            typed,
+        ),
+        Node::Kaeriten(_) => (ConstructId::Kaeriten, Role::Kunten, semantic, typed),
+        Node::Directive(directive) => match directive.kind {
+            DirectiveKind::Unknown => (
+                ConstructId::UnknownDirective,
+                Role::UnrecognizedSourceForm,
+                Disposition::PreservedOpaque,
+                EvidenceClass::UnknownDirective,
+            ),
+            DirectiveKind::WarichuOpen => (
+                ConstructId::WarichuOpen,
+                Role::SourceAnnotation,
+                Disposition::StructuralControl,
+                EvidenceClass::StructuralToken,
+            ),
+            _ => return None,
+        },
+        Node::AngleQuote(_) => (
+            ConstructId::AngleQuote,
+            Role::SourceAnnotation,
+            semantic,
+            typed,
+        ),
+        Node::MarginNote(_) => (
+            ConstructId::MarginNote,
+            Role::SourceAnnotation,
+            semantic,
+            typed,
+        ),
+        // No fact is invented for parser variants absent from the approved
+        // policy. Policy evolution must add an explicit arm.
+        _ => return None,
+    })
 }
 
 /// Single-pass owned normalizer.
@@ -141,6 +300,7 @@ impl<'src> Normalizer<'src> {
     }
 
     pub(crate) fn emit(&mut self, span: &ClassifiedSpan) {
+        self.recorder.record_classified_source(span);
         match &span.kind {
             SpanKind::Plain(_) => {
                 self.out.push_str(span.source_span.slice(self.source));

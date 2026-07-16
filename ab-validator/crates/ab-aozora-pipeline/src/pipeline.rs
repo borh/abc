@@ -45,6 +45,7 @@ use crate::lexer::{
 use ab_aozora_spec::{Diagnostic, PairLink};
 
 use ab_aozora_syntax::alloc::Allocator;
+use ab_aozora_syntax::ast::canonicalize_classified_source_facts;
 use ab_aozora_syntax::ast::{LexOutput, Node, NodeStore, Registry};
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::{ForwardAttr, RegionClose, RegionFormat, Span};
@@ -307,6 +308,8 @@ impl Pipeline<'_, Paired> {
         // Classifier emits in source order, so the recorder's entries are already
         // sorted by position; `from_sorted_slice` skips the redundant sort.
         let registry = Registry::from_sorted_slice(&recorder.entries);
+        let classified_source_facts =
+            canonicalize_classified_source_facts(recorder.classified_source_facts);
 
         LexOutput::new(
             normalized,
@@ -316,6 +319,7 @@ impl Pipeline<'_, Paired> {
             sanitized_len,
             links,
             recorder.source_nodes,
+            classified_source_facts,
             container_pairs,
             intern_stats,
             store,

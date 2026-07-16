@@ -8,6 +8,7 @@
 
 use ab_aozora_spec::{Diagnostic, PairLink, SourceOffset, Span};
 
+use super::ClassifiedSourceFact;
 use super::intern::InternStats;
 use super::registry::{ContainerPair, NodeRef, Registry};
 use super::store::NodeStore;
@@ -52,6 +53,8 @@ pub struct LexOutput {
     pub pairs: Vec<PairLink>,
     /// Source-keyed node side-table, sorted by `source_span.start`.
     pub source_nodes: Vec<SourceNode>,
+    /// Immutable policy facts projected in the classified-span fold.
+    pub classified_source_facts: Vec<ClassifiedSourceFact>,
     /// Resolved container open/close pairs in normalized coordinates.
     pub container_pairs: Vec<ContainerPair>,
     /// Interner dedup/probe counters.
@@ -84,6 +87,7 @@ impl LexOutput {
         sanitized_len: u32,
         pairs: Vec<PairLink>,
         source_nodes: Vec<SourceNode>,
+        classified_source_facts: Vec<ClassifiedSourceFact>,
         container_pairs: Vec<ContainerPair>,
         intern_stats: InternStats,
         store: NodeStore,
@@ -96,6 +100,7 @@ impl LexOutput {
             sanitized_len,
             pairs,
             source_nodes,
+            classified_source_facts,
             container_pairs,
             intern_stats,
             store,

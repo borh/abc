@@ -44,7 +44,11 @@ pub mod pipeline;
 // `lex`'s return type is nameable at the crate root (keeps intra-doc links
 // resolvable under `-D warnings`) and downstream crates that depend only on
 // `aozora-pipeline` (e.g. `aozora-cst`) can name the owned node types.
-pub use ab_aozora_syntax::ast::{LexOutput, NodeRef, SourceNode};
+pub use ab_aozora_syntax::ast::{
+    ClassifiedSourceDisposition, ClassifiedSourceEvidenceClass, ClassifiedSourceFact,
+    ClassifiedSourceRole, ConstructId, LexOutput, NodeRef, SourceNode,
+    canonicalize_classified_source_facts,
+};
 pub use fold::lex;
 pub use pipeline::{Paired, Pipeline, Sanitized, Source, Tokenized};
 

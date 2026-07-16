@@ -25,12 +25,17 @@
 //! builds it directly via [`Allocator`](crate::alloc::Allocator)
 //! and the fold records it into an [`LexOutput`] that every consumer reads.
 
+mod classified_source;
 mod intern;
 mod output;
 mod payload;
 mod registry;
 mod store;
 
+pub use classified_source::{
+    ClassifiedSourceDisposition, ClassifiedSourceEvidenceClass, ClassifiedSourceFact,
+    ClassifiedSourceRole, ConstructId, canonicalize_classified_source_facts,
+};
 pub use intern::{InternStats, StrId, StrInterner};
 pub use output::{LexOutput, SourceNode};
 pub use payload::{
@@ -91,6 +96,7 @@ mod tests {
             sanitized_len: 6,
             pairs: Vec::new(),
             source_nodes,
+            classified_source_facts: Vec::new(),
             container_pairs: Vec::new(),
             intern_stats: store.interner.stats,
             store,

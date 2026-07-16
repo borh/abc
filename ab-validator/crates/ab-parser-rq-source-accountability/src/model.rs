@@ -163,6 +163,8 @@ pub struct WorkAnalysis {
 
 #[derive(Clone, Debug)]
 pub struct CorpusInput {
+    /// Immutable, campaign-owned capture inputs. Callers must not mutate either
+    /// input root while analysis is running.
     pub entries: Vec<CorpusSourceEntry>,
     pub source_root: PathBuf,
     pub parser_ir_root: PathBuf,
@@ -188,7 +190,15 @@ pub struct RecordIndexEntry {
 #[serde(deny_unknown_fields)]
 pub struct RecordIndex {
     pub schema_version: RecordIndexSchemaVersion,
+    pub identity_ref: String,
+    pub taxonomy_version: TaxonomyVersion,
+    pub taxonomy_hash: String,
+    pub coordinate_system: CoordinateSystem,
+    pub status: WorkStatus,
+    pub expected_work_count: u64,
+    pub record_count: u64,
     pub records: Vec<RecordIndexEntry>,
+    pub errors: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]

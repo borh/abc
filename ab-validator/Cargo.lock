@@ -385,6 +385,7 @@ name = "ab-parser-rq-source-accountability"
 version = "0.1.0"
 dependencies = [
  "ab-aozora-aat",
+ "ab-diff-utils",
  "anyhow",
  "clap",
  "hegeltest",

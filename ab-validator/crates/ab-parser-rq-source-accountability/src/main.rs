@@ -17,6 +17,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Analyze one work from immutable campaign capture inputs.
     AnalyzeWork {
         #[arg(long)]
         original: PathBuf,
@@ -31,6 +32,7 @@ enum Command {
         #[arg(long)]
         diagnostics_locator: String,
     },
+    /// Analyze an explicit closed corpus from immutable campaign capture roots.
     AnalyzeCorpus {
         #[arg(long)]
         corpus: PathBuf,

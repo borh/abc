@@ -142,3 +142,155 @@ fn duplicate_work_ids_fail_before_writing_index() {
     assert!(!input.store_root.exists());
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn generated_index_validates_against_live_abc_schema() {
+    let root = temp_root("schema");
+    let input = input(&root);
+    let index = analyze_corpus(input).unwrap();
+    let instance = serde_json::to_value(index).unwrap();
+    let schema: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../../abc/schemas/parser-rq-source-accountability-index.schema.json"
+    )))
+    .unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let errors = validator
+        .iter_errors(&instance)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(errors.is_empty(), "schema errors: {errors:?}");
+    assert_eq!(instance["expected_work_count"], 2);
+    assert_eq!(instance["record_count"], 2);
+    assert_eq!(instance["status"], "ok");
+    assert_eq!(instance["errors"], json!([]));
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn record_index_references_exact_content_addressed_bytes() {
+    let root = temp_root("content-address");
+    let input = input(&root);
+    let index = analyze_corpus(input.clone()).unwrap();
+    for entry in &index.records {
+        let bytes = fs::read(input.store_root.join(&entry.locator)).unwrap();
+        assert_eq!(entry.bytes, bytes.len() as u64);
+        assert_eq!(entry.sha256, hash(&bytes));
+        assert!(
+            entry
+                .locator
+                .ends_with(&format!("{}.json", &entry.sha256[7..]))
+        );
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn missing_declared_input_fails_before_any_publication() {
+    for missing in ["source", "ir"] {
+        let root = temp_root(missing);
+        let input = input(&root);
+        if missing == "source" {
+            fs::remove_file(input.source_root.join("a.txt")).unwrap();
+        } else {
+            fs::remove_file(input.parser_ir_root.join("work-a.json")).unwrap();
+        }
+        assert!(analyze_corpus(input.clone()).is_err());
+        assert!(!input.index_out.exists());
+        assert!(!input.store_root.exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[test]
+fn source_paths_reject_traversal_absolute_and_symlink_escape() {
+    let root = temp_root("escape");
+    let outside = root.join("outside.txt");
+    fs::write(&outside, b"a").unwrap();
+    for escaped in [PathBuf::from("../outside.txt"), outside.clone()] {
+        let mut input = input(&root);
+        input.entries[1].source_path = escaped;
+        assert!(analyze_corpus(input.clone()).is_err());
+        assert!(!input.index_out.exists());
+        assert!(!input.store_root.exists());
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        let mut input = input(&root);
+        let link = input.source_root.join("escape.txt");
+        symlink(&outside, &link).unwrap();
+        input.entries[1].source_path = "escape.txt".into();
+        assert!(analyze_corpus(input.clone()).is_err());
+        assert!(!input.index_out.exists());
+        assert!(!input.store_root.exists());
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn parser_ir_work_id_rejects_traversal_and_absolute_forms() {
+    for work_id in ["../escape", "/absolute"] {
+        let root = temp_root("work-id-escape");
+        let mut input = input(&root);
+        input.entries[0].corpus_entry.work_id = work_id.into();
+        assert!(analyze_corpus(input.clone()).is_err());
+        assert!(!input.index_out.exists());
+        assert!(!input.store_root.exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[test]
+fn preexisting_corrupt_cas_destination_fails_without_index() {
+    let root = temp_root("collision");
+    let input = input(&root);
+    let first = analyze_corpus(input.clone()).unwrap();
+    fs::remove_file(&input.index_out).unwrap();
+    let target = input.store_root.join(&first.records[0].locator);
+    fs::write(target, b"wrong bytes").unwrap();
+    assert!(analyze_corpus(input.clone()).is_err());
+    assert!(!input.index_out.exists());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn unavailable_work_makes_index_truthfully_unavailable() {
+    let root = temp_root("unavailable");
+    let mut input = input(&root);
+    input.entries[0].corpus_entry.original_sha256 = hash(b"not-the-source");
+    let index = analyze_corpus(input).unwrap();
+    let value = serde_json::to_value(index).unwrap();
+    assert_eq!(value["status"], "unavailable");
+    assert_eq!(value["errors"], json!(["work-unavailable:work-b"]));
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink_cas_destination_is_never_accepted_as_content() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_root("cas-symlink");
+    let input = input(&root);
+    let first = analyze_corpus(input.clone()).unwrap();
+    fs::remove_file(&input.index_out).unwrap();
+    let target = input.store_root.join(&first.records[0].locator);
+    let bytes = fs::read(&target).unwrap();
+    let outside = root.join("outside-record.json");
+    fs::write(&outside, bytes).unwrap();
+    fs::remove_file(&target).unwrap();
+    symlink(outside, target).unwrap();
+    assert!(analyze_corpus(input.clone()).is_err());
+    assert!(!input.index_out.exists());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn canonical_json_rejects_floating_point_numbers() {
+    assert!(canonical_json(&json!({"value": 1.5})).is_err());
+    assert_eq!(
+        canonical_json(&json!({"b": 2, "a": {"d": 4, "c": 3}})).unwrap(),
+        r#"{"a":{"c":3,"d":4},"b":2}"#
+    );
+}

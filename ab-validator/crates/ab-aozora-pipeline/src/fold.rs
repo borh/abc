@@ -142,7 +142,7 @@ impl<'src> Normalizer<'src> {
 
     pub(crate) fn emit(&mut self, span: &ClassifiedSpan) {
         match &span.kind {
-            SpanKind::Plain => {
+            SpanKind::Plain(_) => {
                 self.out.push_str(span.source_span.slice(self.source));
             }
             SpanKind::Newline => {

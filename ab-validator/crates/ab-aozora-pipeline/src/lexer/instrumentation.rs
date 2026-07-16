@@ -333,6 +333,10 @@ pub fn reset_replay_sizes() {
 pub struct YieldCounters {
     /// `SpanKind::Plain` spans yielded.
     pub plain: u64,
+    /// Ordinary-text `SpanKind::Plain` spans yielded.
+    pub plain_text: u64,
+    /// Recovered-verbatim `SpanKind::Plain` spans yielded.
+    pub plain_recovered_verbatim: u64,
     /// `SpanKind::Newline` spans yielded.
     pub newline: u64,
     /// `SpanKind::Aozora` spans yielded.
@@ -348,8 +352,11 @@ pub struct YieldCounters {
 /// concrete variant set.
 #[derive(Debug, Clone, Copy)]
 pub enum YieldKind {
-    /// Bumps [`YieldCounters::plain`].
-    Plain,
+    /// Bumps [`YieldCounters::plain`] and [`YieldCounters::plain_text`].
+    PlainText,
+    /// Bumps [`YieldCounters::plain`] and
+    /// [`YieldCounters::plain_recovered_verbatim`].
+    PlainRecoveredVerbatim,
     /// Bumps [`YieldCounters::newline`].
     Newline,
     /// Bumps [`YieldCounters::aozora`].
@@ -366,7 +373,14 @@ pub fn record_yield(kind: YieldKind) {
     YIELD_COUNTERS.with(|c| {
         let mut counters = c.borrow_mut();
         match kind {
-            YieldKind::Plain => counters.plain += 1,
+            YieldKind::PlainText => {
+                counters.plain += 1;
+                counters.plain_text += 1;
+            }
+            YieldKind::PlainRecoveredVerbatim => {
+                counters.plain += 1;
+                counters.plain_recovered_verbatim += 1;
+            }
             YieldKind::Newline => counters.newline += 1,
             YieldKind::Aozora => counters.aozora += 1,
             YieldKind::BlockOpen => counters.block_open += 1,

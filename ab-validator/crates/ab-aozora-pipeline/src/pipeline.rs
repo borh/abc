@@ -350,7 +350,7 @@ fn lower_spans(
     for span in spans {
         while let Some(back) = out.last() {
             let (bs, be) = (back.source_span.start, back.source_span.end);
-            let back_is_plain = matches!(back.kind, SpanKind::Plain);
+            let back_is_plain = matches!(back.kind, SpanKind::Plain(_));
             let (ss, se) = (span.source_span.start, span.source_span.end);
             if ss <= bs && be <= se && (ss < bs || se > be) {
                 // Full superset: `span` reclaimed all of `back` (a promoted
@@ -441,7 +441,7 @@ fn decorate_ruby_bases(out: &mut [ClassifiedSpan], source: &str, store: &NodeSto
                 // Any preceding plain run that carries the target text — before
                 // the ruby, so invisible to the classifier's reset window — is a
                 // competing referent that forces a decline.
-                SpanKind::Plain => {
+                SpanKind::Plain(_) => {
                     let s =
                         &source[out[j].source_span.start as usize..out[j].source_span.end as usize];
                     if s.contains(target) {
@@ -574,7 +574,7 @@ fn try_fold_inline(
         || !frame
             .collected
             .iter()
-            .all(|s| matches!(s.kind, SpanKind::Plain))
+            .all(|s| matches!(s.kind, SpanKind::Plain(_)))
     {
         return None;
     }

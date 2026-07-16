@@ -8,9 +8,9 @@
 //! The span kinds are:
 //!
 //! * [`SpanKind::Plain`] — a run of text that carries no Aozora
-//!   construct. Adjacent un-classified events (text, stray triggers,
-//!   unclosed opens, unmatched closes) are merged into one span so
-//!   the normalize stage can emit them verbatim in a single write.
+//!   construct. Adjacent events with equal [`PlainProvenance`] are merged;
+//!   recovery boundaries remain visible while the normalize stage emits all
+//!   plain spans verbatim.
 //! * [`SpanKind::Aozora`] — a classified Aozora construct, carrying the
 //!   concrete [`Node`] that the normalize stage will replace
 //!   with a PUA placeholder sentinel (see [`crate::INLINE_SENTINEL`] and friends).
@@ -122,6 +122,22 @@ pub struct ClassifiedSpan {
     pub source_span: Span,
 }
 
+/// Classifier-local origin of bytes emitted verbatim as plain source.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlainProvenance {
+    /// Ordinary source text accepted as visible prose.
+    Text,
+    /// Source syntax preserved byte-exactly after recognition declined.
+    RecoveredVerbatim,
+}
+
+/// Metadata carried by a plain classified span.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PlainSpan {
+    /// Whether the bytes are ordinary text or byte-exact recovery.
+    pub provenance: PlainProvenance,
+}
+
 /// Classification of a [`ClassifiedSpan`].
 ///
 /// The normalize stage (now folded into `crate::lex`'s
@@ -153,7 +169,7 @@ pub struct ClassifiedSpan {
 pub enum SpanKind {
     /// Source bytes that carry no Aozora construct. Emitted verbatim
     /// by the normalizer.
-    Plain,
+    Plain(PlainSpan),
     /// Classified Aozora construct (inline span or block-leaf line).
     /// The normalizer replaces the source span with an `E001` (inline)
     /// or `E002` (block-leaf) sentinel and records the node in the
@@ -235,8 +251,8 @@ where
 ///   `PairOpen`/`PairClose` adjust the buffer-local stack so `close_idx`
 ///   slots can be patched and the OUTER pair can be detected as
 ///   "matching close at depth 0".
-/// * `pending_plain_start`: byte position where the current Plain run
-///   began (top-level only).
+/// * `pending_plain`: adjacent provenance segments for the current top-level
+///   plain run. Equal adjacent provenance merges before emission.
 /// * `pending_refmark`: a top-level `Solo(RefMark)` waiting to be
 ///   absorbed by the next `PairOpen(Bracket)` (gaiji shape). If the
 ///   following event is anything else the refmark is folded into the
@@ -279,7 +295,7 @@ where
     /// in replay); with stream-through that becomes a single forward
     /// walk.
     streaming: Option<StreamingFrame>,
-    pending_plain_start: Option<u32>,
+    pending_plain: VecDeque<PendingPlain>,
     pending_refmark: Option<Span>,
     /// A just-recognised gaiji held back one step so an immediately-
     /// following `《…》` ruby can take it as its base (`※［＃…］《みは》`).
@@ -307,6 +323,12 @@ where
 struct StreamingFrame {
     kind: PairKind,
     depth: u32,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct PendingPlain {
+    source_span: Span,
+    provenance: PlainProvenance,
 }
 
 /// One deferred gaiji: its ready-to-yield standalone span (used when no
@@ -570,7 +592,7 @@ where
             pending_outputs: VecDeque::new(),
             frame: None,
             streaming: None,
-            pending_plain_start: None,
+            pending_plain: VecDeque::new(),
             pending_refmark: None,
             pending_ruby_base: None,
             diagnostics: Vec::new(),
@@ -632,7 +654,12 @@ where
     fn push_output(&mut self, span: ClassifiedSpan) {
         #[cfg(feature = "classify-instrument")]
         record_yield(match &span.kind {
-            SpanKind::Plain => YieldKind::Plain,
+            SpanKind::Plain(PlainSpan {
+                provenance: PlainProvenance::Text,
+            }) => YieldKind::PlainText,
+            SpanKind::Plain(PlainSpan {
+                provenance: PlainProvenance::RecoveredVerbatim,
+            }) => YieldKind::PlainRecoveredVerbatim,
             SpanKind::Newline => YieldKind::Newline,
             SpanKind::Aozora(_) => YieldKind::Aozora,
             SpanKind::BlockOpen(_) => YieldKind::BlockOpen,
@@ -644,22 +671,58 @@ where
     /// Emit any pending top-level plain run whose end is `end`. The
     /// pending refmark, if any, is folded into the plain run's coverage
     /// (its span is contiguous with the surrounding text).
+    fn pending_plain_start(&self) -> Option<u32> {
+        self.pending_plain
+            .front()
+            .map(|plain| plain.source_span.start)
+    }
+
+    fn push_plain(&mut self, source_span: Span, provenance: PlainProvenance) {
+        if source_span.start >= source_span.end {
+            return;
+        }
+        if let Some(back) = self.pending_plain.back_mut()
+            && back.provenance == provenance
+            && back.source_span.end == source_span.start
+        {
+            back.source_span.end = source_span.end;
+            return;
+        }
+        self.pending_plain.push_back(PendingPlain {
+            source_span,
+            provenance,
+        });
+    }
+
+    fn fold_pending_refmark(&mut self) {
+        if let Some(rm) = self.pending_refmark.take() {
+            self.push_plain(rm, PlainProvenance::RecoveredVerbatim);
+        }
+    }
+
     fn flush_plain_up_to(&mut self, end: u32) {
         #[cfg(feature = "classify-instrument")]
         let _classify_guard = SubsystemGuard::new(Subsystem::FlushPlain);
         // A pending refmark contributes its bytes to the plain run.
-        if let Some(rm) = self.pending_refmark.take()
-            && self.pending_plain_start.is_none()
+        self.fold_pending_refmark();
+        while self
+            .pending_plain
+            .front()
+            .is_some_and(|plain| plain.source_span.start < end)
         {
-            self.pending_plain_start = Some(rm.start);
-        }
-        if let Some(start) = self.pending_plain_start.take()
-            && end > start
-        {
+            let mut plain = self.pending_plain.pop_front().expect("checked Some");
+            let emitted_end = plain.source_span.end.min(end);
             self.push_output(ClassifiedSpan {
-                kind: SpanKind::Plain,
-                source_span: Span::new(start, end),
+                kind: SpanKind::Plain(PlainSpan {
+                    provenance: plain.provenance,
+                }),
+                source_span: Span::new(plain.source_span.start, emitted_end),
             });
+            if emitted_end < plain.source_span.end {
+                plain.source_span.start = emitted_end;
+                self.pending_plain.push_front(plain);
+                break;
+            }
         }
     }
 
@@ -677,9 +740,8 @@ where
             kind: SpanKind::Aozora(deco),
             source_span: deco_span,
         });
-        // Re-seed: the tail from the referent's end up to the bracket stays
-        // plain and is flushed by the caller's `flush_plain_up_to`.
-        self.pending_plain_start = Some(deco_span.end);
+        // The unconsumed tail remains queued and is flushed by the caller's
+        // `flush_plain_up_to`.
     }
 
     /// Open a new top-level frame. `gaiji_refmark` is `Some(span)` when
@@ -887,9 +949,7 @@ where
                     if let Some(pending) = self.pending_ruby_base.take() {
                         self.emit_pending_gaiji(pending);
                     }
-                    if self.pending_plain_start.is_none() {
-                        self.pending_plain_start = Some(rm_span.start);
-                    }
+                    self.push_plain(rm_span, PlainProvenance::RecoveredVerbatim);
                     if let Some(span) = self.try_bracket_emit(view, open_idx, close_idx) {
                         self.push_output(span);
                         return;
@@ -942,10 +1002,8 @@ where
         let _classify_guard = SubsystemGuard::new(Subsystem::ReplayBody);
         #[cfg(feature = "classify-instrument")]
         record_replay_body_size(body.len() as u64);
-        if let Some(rm) = refmark
-            && self.pending_plain_start.is_none()
-        {
-            self.pending_plain_start = Some(rm.start);
+        if let Some(rm) = refmark {
+            self.push_plain(rm, PlainProvenance::RecoveredVerbatim);
         }
         for ev in body {
             if matches!(ev, PairEvent::Unclosed { .. }) {
@@ -992,9 +1050,7 @@ where
                         .take()
                         .map_or(span.start, |rm| rm.start);
                     self.flush_plain_up_to(pre_open);
-                    if self.pending_plain_start.is_none() {
-                        self.pending_plain_start = Some(span.start);
-                    }
+                    self.push_plain(span, PlainProvenance::RecoveredVerbatim);
                     self.streaming = Some(StreamingFrame { kind, depth: 1 });
                     return;
                 }
@@ -1041,9 +1097,12 @@ where
                 let Some(span) = other.span() else {
                     return;
                 };
-                if self.pending_plain_start.is_none() {
-                    self.pending_plain_start = Some(span.start);
-                }
+                let provenance = if matches!(other, PairEvent::Text { .. }) {
+                    PlainProvenance::Text
+                } else {
+                    PlainProvenance::RecoveredVerbatim
+                };
+                self.push_plain(span, provenance);
             }
         }
     }
@@ -1074,9 +1133,7 @@ where
             )
         {
             let rm = self.pending_refmark.take().expect("checked Some");
-            if self.pending_plain_start.is_none() {
-                self.pending_plain_start = Some(rm.start);
-            }
+            self.push_plain(rm, PlainProvenance::RecoveredVerbatim);
         }
     }
 
@@ -1136,16 +1193,13 @@ where
             }
             PairEvent::PairOpen { kind, span } if kind == stream.kind => {
                 stream.depth = stream.depth.saturating_add(1);
-                if self.pending_plain_start.is_none() {
-                    self.pending_plain_start = Some(span.start);
-                }
+                self.push_plain(span, PlainProvenance::RecoveredVerbatim);
             }
             PairEvent::PairClose { kind, span } if kind == stream.kind => {
                 stream.depth = stream.depth.saturating_sub(1);
-                if self.pending_plain_start.is_none() {
-                    self.pending_plain_start = Some(span.start);
-                }
-                if stream.depth == 0 {
+                let streaming_finished = stream.depth == 0;
+                self.push_plain(span, PlainProvenance::RecoveredVerbatim);
+                if streaming_finished {
                     self.streaming = None;
                 }
             }
@@ -1188,9 +1242,12 @@ where
                 let Some(span) = other.span() else {
                     return;
                 };
-                if self.pending_plain_start.is_none() {
-                    self.pending_plain_start = Some(span.start);
-                }
+                let provenance = if matches!(other, PairEvent::Text { .. }) {
+                    PlainProvenance::Text
+                } else {
+                    PlainProvenance::RecoveredVerbatim
+                };
+                self.push_plain(span, provenance);
             }
         }
     }
@@ -1213,7 +1270,7 @@ where
         else {
             return GaijiBaseRuby::NotApplicable;
         };
-        let gaiji_base = self.pending_plain_start.is_none()
+        let gaiji_base = self.pending_plain_start().is_none()
             && self
                 .pending_ruby_base
                 .as_ref()
@@ -1317,7 +1374,7 @@ where
         // Determine the preceding plain run (the ruby base lives here) and
         // detect the explicit `｜` form by scanning it for a bar. The
         // streaming model has no preceding events, so we synthesise them.
-        let preceding_start = self.pending_plain_start.unwrap_or(open_span.start);
+        let preceding_start = self.pending_plain_start().unwrap_or(open_span.start);
         if preceding_start >= open_span.start {
             return None;
         }
@@ -1366,7 +1423,7 @@ where
         self.flush_plain_up_to(m.consume_start);
         let base_content = self.alloc.content_plain(m.base);
         let node = self.alloc.ruby(base_content, m.reading);
-        self.pending_plain_start = None;
+        self.pending_plain.clear();
         Some(ClassifiedSpan {
             kind: SpanKind::Aozora(node),
             source_span: Span::new(m.consume_start, m.consume_end),
@@ -1427,7 +1484,7 @@ where
         }
         self.flush_plain_up_to(open_span.start);
         let node = self.alloc.angle_quote(content);
-        self.pending_plain_start = None;
+        self.pending_plain.clear();
         Some(ClassifiedSpan {
             kind: SpanKind::Aozora(node),
             source_span: Span::new(open_span.start, close_span.end),
@@ -1442,13 +1499,14 @@ where
     ) -> Option<ClassifiedSpan> {
         #[cfg(feature = "classify-instrument")]
         let _classify_guard = SubsystemGuard::new(Subsystem::TryBracketEmit);
+        let pending_plain_start = self.pending_plain_start();
         let mut ctx = RecogniseCtx {
             alloc: self.alloc,
             source: self.source,
             diagnostics: Vec::new(),
             // The forward recognizers resolve a non-adjacent referent inside
             // the current pending plain run (#333); hand them its start.
-            pending_plain_start: self.pending_plain_start,
+            pending_plain_start,
             pending_decoration: None,
         };
         let m = ctx.recognize_annotation(body, open_idx, close_idx)?;
@@ -1467,7 +1525,7 @@ where
         // moved the run — in which case we decline and leave today's bytes).
         if let Some((deco, deco_span)) = decoration
             && self
-                .pending_plain_start
+                .pending_plain_start()
                 .is_some_and(|ps| ps <= deco_span.start)
             && deco_span.end <= m.consume_start
         {
@@ -1479,7 +1537,7 @@ where
             EmitKind::BlockOpen(container) => SpanKind::BlockOpen(container),
             EmitKind::BlockClose(container) => SpanKind::BlockClose(container),
         };
-        self.pending_plain_start = None;
+        self.pending_plain.clear();
         // Surface any non-fatal warning the recogniser attached
         // (unrecognised container directive / 縦中横 target not found /
         // ambiguous bouten target). The emitted node is unaffected — for
@@ -1543,7 +1601,7 @@ where
         });
         self.flush_plain_up_to(bar.map_or(m.consume_start, |b| b.start));
         let node = self.alloc.gaiji(m.payload);
-        self.pending_plain_start = None;
+        self.pending_plain.clear();
         // The gaiji still renders best-effort (as its description text)
         // when resolution misses; flag the miss so authors know the glyph
         // won't appear. `m.payload` is a `Copy` value and the
@@ -1579,7 +1637,9 @@ where
     fn emit_pending_gaiji(&mut self, pending: PendingRubyBase) {
         if let Some(bar) = pending.bar {
             self.push_output(ClassifiedSpan {
-                kind: SpanKind::Plain,
+                kind: SpanKind::Plain(PlainSpan {
+                    provenance: PlainProvenance::RecoveredVerbatim,
+                }),
                 source_span: bar,
             });
         }
@@ -1591,11 +1651,7 @@ where
     /// Final flush: emit any trailing Plain run covering the source
     /// tail. Called once when the upstream iterator hits None.
     fn finalize(&mut self) {
-        if let Some(rm) = self.pending_refmark.take()
-            && self.pending_plain_start.is_none()
-        {
-            self.pending_plain_start = Some(rm.start);
-        }
+        self.fold_pending_refmark();
         let end = self.source_len;
         self.flush_plain_up_to(end);
     }
@@ -1744,9 +1800,7 @@ where
             )
         {
             let rm = self.pending_refmark.take().expect("checked Some");
-            if self.pending_plain_start.is_none() {
-                self.pending_plain_start = Some(rm.start);
-            }
+            self.push_plain(rm, PlainProvenance::RecoveredVerbatim);
         }
 
         self.handle_top_level(event, /*replay=*/ false);
@@ -2366,7 +2420,7 @@ mod tests {
     fn plain_ascii_becomes_single_plain_span() {
         run!(out, "hello");
         assert_eq!(out.spans.len(), 1);
-        assert_eq!(out.spans[0].kind, SpanKind::Plain);
+        assert!(matches!(out.spans[0].kind, SpanKind::Plain(_)));
         assert_eq!(out.spans[0].source_span, Span::new(0, 5));
     }
 
@@ -2374,9 +2428,9 @@ mod tests {
     fn newline_in_middle_splits_into_three_spans() {
         run!(out, "a\nb");
         assert_eq!(out.spans.len(), 3);
-        assert_eq!(out.spans[0].kind, SpanKind::Plain);
+        assert!(matches!(out.spans[0].kind, SpanKind::Plain(_)));
         assert_eq!(out.spans[1].kind, SpanKind::Newline);
-        assert_eq!(out.spans[2].kind, SpanKind::Plain);
+        assert!(matches!(out.spans[2].kind, SpanKind::Plain(_)));
     }
 
     #[test]

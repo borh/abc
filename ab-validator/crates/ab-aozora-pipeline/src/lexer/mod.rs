@@ -73,7 +73,9 @@ pub mod sanitize;
 pub mod token;
 mod tokenize;
 
-pub use classify::{ClassifiedSpan, ClassifyStream, SpanKind, classify};
+pub use classify::{
+    ClassifiedSpan, ClassifyStream, PlainProvenance, PlainSpan, SpanKind, classify,
+};
 pub use offset::{OffsetMap, offset_map};
 pub use pair::{PairEvent, PairKind, PairStream, pair};
 pub use sanitize::{SanitizeOutput, sanitize};

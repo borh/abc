@@ -120,6 +120,10 @@ pub fn authorize(
 - [ ] Expose no map-only gate path: R2 must re-hash the P0-bound raw diagnostics,
   policy, decoded source, R1 records, work results, and corpus aggregate under
   closed schemas before emitting an observation.
+- [ ] Bind the exact policy artifact hash separately from its projected
+  `policy_hash`; reuse the complete R1 fold validator and pin cross-language
+  authorization parity for UTF-8 endpoints, duplicate identity, and exact PUA
+  source slices.
 - [ ] Use P1 `reconcile(semantic_gap, authorized)`; do not duplicate interval
   algebra. Count per-work maximal silent intervals.
 - [ ] Prove R1 values are byte-identical before/after diagnostic evidence.

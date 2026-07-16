@@ -151,6 +151,8 @@ fn validate_policy(bytes: &[u8]) -> Option<ValidatedGapPolicy> {
     Some(ValidatedGapPolicy {
         rules,
         policy_hash: policy.policy_hash,
+        artifact_hash: sha256(bytes),
+        artifact_bytes: bytes.len() as u64,
     })
 }
 
@@ -330,6 +332,8 @@ pub fn authorize(
             raw_diagnostics_hash: String::new(),
             raw_diagnostics_bytes: 0,
             policy_hash: policy.policy_hash.clone(),
+            policy_artifact_hash: policy.artifact_hash.clone(),
+            policy_artifact_bytes: policy.artifact_bytes,
             source_recognition_hash: context.source_recognition_hash.clone(),
             diagnostic_count: capture.entries.len() as u64,
             authorizing_diagnostic_count: authorizing,

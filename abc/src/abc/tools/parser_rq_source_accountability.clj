@@ -229,6 +229,24 @@
   (let [members (filterv #(= expected-hash (get-in % [:ref :sha256])) (:blobs manifest))]
     (when (= 1 (count members)) (first members))))
 
+(defn- authenticated-blob-bytes
+  [store member]
+  (when member
+    (let [root (.getCanonicalFile (io/file (:root store)))
+          file (.getCanonicalFile (io/file root (:locator member)))]
+      (when (and (.startsWith (.toPath file) (.toPath root)) (.isFile file)
+                 (= (get-in member [:ref :bytes]) (hash/byte-length file))
+                 (= (get-in member [:ref :sha256])
+                    (hash/format-sha256 (hash/sha256-file file))))
+        (java.nio.file.Files/readAllBytes (.toPath file))))))
+
+(defn- projected-policy-hash
+  [policy]
+  (try
+    (hash/format-sha256
+     (hash/sha256-json-jcs (walk/stringify-keys (dissoc policy :policy_hash))))
+    (catch Exception _ nil)))
+
 (defn- normalized-intervals
   [intervals]
   (reduce (fn [result interval]
@@ -247,18 +265,31 @@
                      (conj result {:start cursor :end (:start cut)}) result)]
         (recur (max cursor (:end cut)) (next remaining) result))
       (cond-> result (< cursor (:end source))
-        (conj {:start cursor :end (:end source)})))))
+              (conj {:start cursor :end (:end source)})))))
+
+(declare valid-recognition-fold? manifest-record)
 
 (defn- valid-gap-result?
-  [store manifest result expected policy-hash qualification-ref policy]
+  [store manifest result expected policy-hash policy-artifact-hash qualification-ref policy]
   (let [recognition (:source_recognition_evidence result)
         authorization (:diagnostic_authorization_evidence result)
         r1-member (unique-member-by-hash manifest (:value_hash recognition))
         raw-member (unique-member-by-hash manifest (:raw_diagnostics_hash authorization))
         source-member (unique-member-by-hash manifest (:decoded_source_hash authorization))
-        policy-member (unique-member-by-hash manifest policy-hash)
+        policy-member (unique-member-by-hash manifest policy-artifact-hash)
         raw (some->> raw-member (authenticated-json-value store))
         r1 (some->> r1-member (authenticated-json-value store))
+        source-bytes (authenticated-blob-bytes store source-member)
+        decoded-slice (fn [{:keys [start end]}]
+                        (when (and source-bytes (int? start) (int? end)
+                                   (<= 0 start) (< start end) (<= end (alength source-bytes)))
+                          (try
+                            (let [decoder (doto (.newDecoder java.nio.charset.StandardCharsets/UTF_8)
+                                            (.onMalformedInput java.nio.charset.CodingErrorAction/REPORT)
+                                            (.onUnmappableCharacter java.nio.charset.CodingErrorAction/REPORT))]
+                              (str (.decode decoder
+                                            (java.nio.ByteBuffer/wrap source-bytes start (- end start)))))
+                            (catch Exception _ nil))))
         rules (into {} (map (juxt :code clojure.core/identity) (:rules policy)))
         diagnostics (:data raw)
         dispositions (mapv #(get-in rules [(:code %) :disposition]) diagnostics)
@@ -292,6 +323,13 @@
          (= (:sha256 expected) (:value_hash recognition)
             (:source_recognition_hash authorization))
          (= policy-hash (:policy_hash result) (:policy_hash authorization))
+         (= policy-artifact-hash (:policy_artifact_hash authorization)
+            (get-in policy-member [:ref :sha256]))
+         (= (:policy_artifact_bytes authorization) (get-in policy-member [:ref :bytes]))
+         (= policy-hash (:policy_hash policy) (projected-policy-hash policy))
+         (= (:raw_diagnostic_schema_hash policy)
+            (hash/format-sha256
+             (hash/sha256-json-jcs @raw-diagnostics-schema)))
          (= "partitions-semantic-gaps-of" (:relation recognition))
          (= (assoc (:ref r1-member) :locator (:locator r1-member))
             (:artifact_ref recognition))
@@ -300,10 +338,28 @@
          (nil? (schema/validation-errors @raw-diagnostics-schema raw))
          (= (:diagnostic_count result) (count (:data raw)))
          (every? some? dispositions)
+         (every? #(some? (decoded-slice (:span %))) diagnostics)
+         (not-any? #{"reject_internal"} dispositions)
+         (= (count diagnostics)
+            (count (set (map (juxt :code :severity :source
+                                   #(get-in % [:span :start]) #(get-in % [:span :end]))
+                             diagnostics))))
          (every? (fn [diagnostic]
                    (= (select-keys diagnostic [:code :kind :severity :source])
                       (select-keys (get rules (:code diagnostic))
                                    [:code :kind :severity :source])))
+                 diagnostics)
+         (every? (fn [diagnostic]
+                   (if (= "source-contains-pua" (:code diagnostic))
+                     (let [codepoint (:codepoint diagnostic)
+                           slice (decoded-slice (:span diagnostic))
+                           scalar (when (and (string? codepoint) (= 1 (.codePointCount codepoint 0 (.length codepoint))))
+                                    (.codePointAt codepoint 0))]
+                       (and (= slice codepoint) scalar
+                            (or (<= 0xE000 scalar 0xF8FF)
+                                (<= 0xF0000 scalar 0xFFFFD)
+                                (<= 0x100000 scalar 0x10FFFD))))
+                     (nil? (:codepoint diagnostic))))
                  diagnostics)
          (= authorized (:authorized_intervals result))
          (= silent (:silent_intervals result))
@@ -334,6 +390,9 @@
          diagnostic-gap-aggregate (some->> aggregate-member (authenticated-json-value store))
          recognition-index (some->> index-member (authenticated-json-value store))
          recognition-aggregate (some->> recognition-member (authenticated-json-value store))
+         recognition-records (when recognition-index
+                               (mapv #(manifest-record store manifest %)
+                                     (:records recognition-index)))
          expected-work-ids (:expected_work_ids recognition-index)
          authorized (:authorized_bytes diagnostic-gap-aggregate)
          silent (:silent_bytes diagnostic-gap-aggregate)
@@ -342,7 +401,7 @@
          results (->> (:blobs manifest)
                       (keep #(authenticated-json-value store %))
                       (filter #(and (map? %) (= "abc/parser-rq-diagnostic-gap-result/v1"
-                                                 (:schema_version %))))
+                                                (:schema_version %))))
                       vec)
          result-by-work (into {} (map (fn [result] [(:work_id result) result]) results))
          expected-records (:records recognition-index)
@@ -350,6 +409,9 @@
                         (nil? (schema/validation-errors @diagnostic-gap-aggregate-schema
                                                         diagnostic-gap-aggregate))
                         (= identity authenticated-identity)
+                        (not-any? nil? recognition-records)
+                        (valid-recognition-fold? store manifest recognition-index
+                                                 recognition-aggregate recognition-records)
                         (= "ok" (:status diagnostic-gap-aggregate))
                         (= expected
                            (:qualification_identity_ref recognition-index)
@@ -370,10 +432,11 @@
                                   (when-let [result (get result-by-work (:work_id record))]
                                     (valid-gap-result? store manifest result record
                                                        (:policy_hash diagnostic-gap-aggregate)
+                                                       (:policy_artifact_hash diagnostic-gap-aggregate)
                                                        expected
                                                        (some->> (unique-member-by-hash
                                                                  manifest
-                                                                 (:policy_hash diagnostic-gap-aggregate))
+                                                                 (:policy_artifact_hash diagnostic-gap-aggregate))
                                                                 (authenticated-json-value store)))))
                                 expected-records)
                         (every? (fn [key]

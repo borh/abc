@@ -161,6 +161,12 @@ fn partitions_exact_gap_and_keeps_one_byte_residual_silent() {
     assert_eq!(result.authorized_bytes, Some(3));
     assert_eq!(result.silent_bytes, Some(1));
     assert_eq!(result.silent_drop_count, Some(1));
+    let evidence = result.diagnostic_authorization_evidence.as_ref().unwrap();
+    assert_eq!(evidence.policy_artifact_hash, digest(POLICY));
+    assert_ne!(
+        evidence.policy_artifact_hash,
+        result.policy_hash.as_deref().unwrap()
+    );
 }
 
 #[test]
@@ -201,6 +207,10 @@ fn corpus_fold_requires_exact_work_and_generation_identities() {
         works: &[a.clone(), b.clone()],
     });
     assert_eq!(result.status, DiagnosticGapWorkStatus::Ok);
+    assert_eq!(
+        result.schema_version.as_deref(),
+        Some("abc/parser-rq-diagnostic-gap-aggregate/v1")
+    );
     assert_eq!(result.silent_drop_count, Some(2));
     assert_eq!(result.silent_bytes, Some(5));
 
@@ -301,7 +311,33 @@ fn corpus_fold_is_expected_index_ordered_and_rejects_redundant_evidence_drift() 
         .unwrap()
         .relation = "forged".into();
     assert_eq!(
-        aggregate(&[forged, b]).status,
+        aggregate(&[forged, b.clone()]).status,
         DiagnosticGapWorkStatus::Unavailable
     );
+
+    let mut mutations = Vec::new();
+    let mut value = a.clone();
+    value.silent_bytes = Some(999);
+    mutations.push(value);
+    let mut value = a.clone();
+    value.silent_drop_count = Some(999);
+    mutations.push(value);
+    let mut value = a.clone();
+    value.diagnostic_count = Some(999);
+    mutations.push(value);
+    let mut value = a.clone();
+    value.vacuous = Some(false);
+    mutations.push(value);
+    let mut value = a.clone();
+    value.silent_intervals = Some(vec![]);
+    mutations.push(value);
+    let mut value = a.clone();
+    value.errors.push("forged".into());
+    mutations.push(value);
+    for mutated in mutations {
+        assert_eq!(
+            aggregate(&[mutated, b.clone()]).status,
+            DiagnosticGapWorkStatus::Unavailable
+        );
+    }
 }

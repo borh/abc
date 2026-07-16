@@ -1,1 +1,44 @@
-{"schema_version":"abc/parser-rq-diagnostic-gap-result/v1","status":"ok","work_id":"fixture-work","capture_generation_ref":"sha256:1111111111111111111111111111111111111111111111111111111111111111","qualification_identity_ref":"sha256:4444444444444444444444444444444444444444444444444444444444444444","policy_hash":"sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5","source_recognition_evidence":{"relation":"partitions-semantic-gaps-of","artifact_ref":{"sha256":"sha256:2222222222222222222222222222222222222222222222222222222222222222","bytes":512,"media_type":"application/json","locator":"sha256/22/2222222222222222222222222222222222222222222222222222222222222222.json"},"value_hash":"sha256:3333333333333333333333333333333333333333333333333333333333333333","qualification_identity_ref":"sha256:4444444444444444444444444444444444444444444444444444444444444444","capture_generation_ref":"sha256:1111111111111111111111111111111111111111111111111111111111111111","work_id":"fixture-work"},"diagnostic_authorization_evidence":{"decoded_source_hash":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","raw_diagnostics_hash":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","raw_diagnostics_bytes":64,"policy_hash":"sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5","source_recognition_hash":"sha256:3333333333333333333333333333333333333333333333333333333333333333"},"authorized_intervals":[{"start":6,"end":9}],"silent_intervals":[],"authorized_bytes":3,"silent_bytes":0,"silent_drop_count":0,"diagnostic_count":1,"authorizing_diagnostic_count":1,"observe_only_diagnostic_count":0,"vacuous":false}
+{
+  "schema_version": "abc/parser-rq-diagnostic-gap-result/v1",
+  "status": "ok",
+  "work_id": "fixture-work",
+  "capture_generation_ref": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "qualification_identity_ref": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "policy_hash": "sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5",
+  "source_recognition_evidence": {
+    "relation": "partitions-semantic-gaps-of",
+    "artifact_ref": {
+      "sha256": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "bytes": 512,
+      "media_type": "application/json",
+      "locator": "sha256/22/2222222222222222222222222222222222222222222222222222222222222222.json"
+    },
+    "value_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "qualification_identity_ref": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "capture_generation_ref": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "work_id": "fixture-work"
+  },
+  "diagnostic_authorization_evidence": {
+    "decoded_source_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "raw_diagnostics_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "raw_diagnostics_bytes": 64,
+    "policy_hash": "sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5",
+    "policy_artifact_hash": "sha256:e5601988e35cada9de106ae3659c122176c83a4996a3070a00869e1e38e4d1dd",
+    "policy_artifact_bytes": 3478,
+    "source_recognition_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "authorized_intervals": [
+    {
+      "start": 6,
+      "end": 9
+    }
+  ],
+  "silent_intervals": [],
+  "authorized_bytes": 3,
+  "silent_bytes": 0,
+  "silent_drop_count": 0,
+  "diagnostic_count": 1,
+  "authorizing_diagnostic_count": 1,
+  "observe_only_diagnostic_count": 0,
+  "vacuous": false
+}

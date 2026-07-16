@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use crate::{
     AuthorizationStatus, DiagnosticAuthorizationEvidence, DiagnosticGapAggregate,
     DiagnosticGapAggregateInput, DiagnosticGapWorkInput, DiagnosticGapWorkResult,
-    DiagnosticGapWorkStatus, Interval, SourceRecognitionEvidence,
+    DiagnosticGapWorkStatus, Interval, SourceRecognitionEvidence, WorkResultSeal,
 };
 use ab_parser_rq_source_accountability::{
     Interval as R1Interval, RecognitionStatus, canonical_json, reconcile,
@@ -20,10 +20,12 @@ fn total(intervals: &[Interval]) -> Option<u64> {
 }
 fn unavailable_aggregate(expected: &[String], error: &str) -> DiagnosticGapAggregate {
     DiagnosticGapAggregate {
+        schema_version: None,
         status: DiagnosticGapWorkStatus::Unavailable,
         qualification_identity_ref: None,
         corpus_generation_ref: None,
         policy_hash: None,
+        policy_artifact_hash: None,
         expected_work_ids: expected.to_vec(),
         observed_work_ids: vec![],
         authorized_bytes: None,
@@ -45,6 +47,9 @@ pub fn derive_gap_partition(input: DiagnosticGapWorkInput<'_>) -> DiagnosticGapW
     let auth = input.authorization;
     if auth.status != AuthorizationStatus::Ok {
         return DiagnosticGapWorkResult::unavailable("diagnostic-authorization-unavailable");
+    }
+    if !auth.errors.is_empty() {
+        return DiagnosticGapWorkResult::unavailable("diagnostic-authorization-audit-mismatch");
     }
     let (Some(work_id), Some(generation), Some(qualification), Some(gaps), Some(policy_hash)) = (
         r1.work_id.as_deref(),
@@ -196,10 +201,12 @@ pub fn derive_gap_partition(input: DiagnosticGapWorkInput<'_>) -> DiagnosticGapW
             raw_diagnostics_hash: origin.raw_diagnostics_hash.clone(),
             raw_diagnostics_bytes: origin.raw_diagnostics_bytes,
             policy_hash: origin.policy_hash.clone(),
+            policy_artifact_hash: origin.policy_artifact_hash.clone(),
+            policy_artifact_bytes: origin.policy_artifact_bytes,
             source_recognition_hash: origin.source_recognition_hash.clone(),
         }),
-        authorized_intervals: Some(diagnosed),
-        silent_intervals: Some(silent),
+        authorized_intervals: Some(diagnosed.clone()),
+        silent_intervals: Some(silent.clone()),
         authorized_bytes: Some(authorized_bytes),
         silent_bytes: Some(silent_bytes),
         silent_drop_count: Some(partition.silent_drops),
@@ -208,12 +215,28 @@ pub fn derive_gap_partition(input: DiagnosticGapWorkInput<'_>) -> DiagnosticGapW
         observe_only_diagnostic_count: Some(observe_only_count),
         vacuous: Some(vacuous),
         errors: vec![],
+        seal: Some(WorkResultSeal {
+            authorized_intervals: diagnosed,
+            silent_intervals: silent,
+            authorized_bytes,
+            silent_bytes,
+            silent_drop_count: partition.silent_drops,
+            diagnostic_count,
+            authorizing_diagnostic_count: authorizing_count,
+            observe_only_diagnostic_count: observe_only_count,
+            vacuous,
+        }),
     }
 }
 
 /// Fold work partitions only when they exactly match the declared corpus work set.
 #[must_use]
 pub fn aggregate_gap_partitions(input: DiagnosticGapAggregateInput<'_>) -> DiagnosticGapAggregate {
+    let policy_artifact_hash = input
+        .works
+        .first()
+        .and_then(|work| work.diagnostic_authorization_evidence.as_ref())
+        .map(|evidence| evidence.policy_artifact_hash.clone());
     let expected = input
         .expected_works
         .iter()
@@ -242,10 +265,25 @@ pub fn aggregate_gap_partitions(input: DiagnosticGapAggregateInput<'_>) -> Diagn
             });
             let exact_r1 = work.source_recognition_evidence.as_ref().zip(expected_work);
             let authorization = work.diagnostic_authorization_evidence.as_ref();
+            let sealed = work.seal.as_ref();
             work.status != DiagnosticGapWorkStatus::Ok
                 || work.qualification_identity_ref.as_deref()
                     != Some(input.qualification_identity_ref)
                 || work.policy_hash.as_deref() != Some(input.policy_hash)
+                || !work.errors.is_empty()
+                || sealed.is_none_or(|seal| {
+                    work.authorized_intervals.as_ref() != Some(&seal.authorized_intervals)
+                        || work.silent_intervals.as_ref() != Some(&seal.silent_intervals)
+                        || work.authorized_bytes != Some(seal.authorized_bytes)
+                        || work.silent_bytes != Some(seal.silent_bytes)
+                        || work.silent_drop_count != Some(seal.silent_drop_count)
+                        || work.diagnostic_count != Some(seal.diagnostic_count)
+                        || work.authorizing_diagnostic_count
+                            != Some(seal.authorizing_diagnostic_count)
+                        || work.observe_only_diagnostic_count
+                            != Some(seal.observe_only_diagnostic_count)
+                        || work.vacuous != Some(seal.vacuous)
+                })
                 || authorization.is_none_or(|evidence| {
                     evidence.policy_hash != input.policy_hash
                         || evidence.source_recognition_hash
@@ -255,6 +293,7 @@ pub fn aggregate_gap_partitions(input: DiagnosticGapAggregateInput<'_>) -> Diagn
                                 .map_or("", |value| value.value_hash.as_str())
                         || evidence.decoded_source_hash != work.work_id.as_deref().unwrap_or("")
                         || evidence.raw_diagnostics_hash.is_empty()
+                        || Some(&evidence.policy_artifact_hash) != policy_artifact_hash.as_ref()
                 })
                 || exact_r1.is_none_or(|(evidence, expected)| {
                     work.capture_generation_ref.as_deref()
@@ -305,10 +344,12 @@ pub fn aggregate_gap_partitions(input: DiagnosticGapAggregateInput<'_>) -> Diagn
         return unavailable_aggregate(&expected_work_ids, "diagnostic-gap-total-overflow");
     };
     DiagnosticGapAggregate {
+        schema_version: Some("abc/parser-rq-diagnostic-gap-aggregate/v1".to_owned()),
         status: DiagnosticGapWorkStatus::Ok,
         qualification_identity_ref: Some(input.qualification_identity_ref.to_owned()),
         corpus_generation_ref: Some(input.corpus_generation_ref.to_owned()),
         policy_hash: Some(input.policy_hash.to_owned()),
+        policy_artifact_hash,
         expected_work_ids: expected_work_ids.clone(),
         observed_work_ids: expected_work_ids.clone(),
         authorized_bytes: Some(authorized_bytes),

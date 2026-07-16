@@ -908,7 +908,7 @@
                        recognition-identity candidate index r1)))))))
 
 (deftest authenticated-diagnostic-gap-artifacts-derive-r2-and-reject-resealing
-  (let [{:keys [root store manifest identity] :as staged} (staged-production-recognition)]
+  (let [{:keys [root store manifest identity]} (staged-production-recognition)]
     (try
       (let [index (read-keyword-json (io/file root "store/recognition-index.json"))
             r1 (read-keyword-json (io/file root "store/recognition-aggregate.json"))
@@ -916,7 +916,9 @@
             raw-published (publish-json! root manifest raw)
             policy (read-keyword-json (io/file "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"))
             policy-published (publish-json! root (:manifest raw-published) policy)
-            policy-hash (get-in policy-published [:member :ref :sha256])
+            policy-artifact-hash (get-in policy-published [:member :ref :sha256])
+            policy-artifact-bytes (get-in policy-published [:member :ref :bytes])
+            policy-hash (:policy_hash policy)
             raw-hash (get-in raw-published [:member :ref :sha256])
             raw-bytes (get-in raw-published [:member :ref :bytes])
             state (reduce
@@ -940,6 +942,8 @@
                                     :raw_diagnostics_hash raw-hash
                                     :raw_diagnostics_bytes raw-bytes
                                     :policy_hash policy-hash
+                                    :policy_artifact_hash policy-artifact-hash
+                                    :policy_artifact_bytes policy-artifact-bytes
                                     :source_recognition_hash (:sha256 entry)}
                                    :authorized_intervals []
                                    :silent_intervals (:semantic_gaps record)
@@ -954,10 +958,12 @@
                        {:manifest (:manifest published) :results (conj results result)}))
                    {:manifest (:manifest policy-published) :results []}
                    (:records index))
-            aggregate {:status "ok"
+            aggregate {:schema_version "abc/parser-rq-diagnostic-gap-aggregate/v1"
+                       :status "ok"
                        :qualification_identity_ref recognition-identity-ref
                        :corpus_generation_ref (:corpus_generation_ref index)
                        :policy_hash policy-hash
+                       :policy_artifact_hash policy-artifact-hash
                        :expected_work_ids (:expected_work_ids index)
                        :observed_work_ids (:expected_work_ids index)
                        :authorized_bytes 0
@@ -976,8 +982,39 @@
         (is (= {:value (:silent_drop_count aggregate)
                 :identity_ref recognition-identity-ref}
                (rq-source/silent-drops-envelope store manifest identity)))
+        (let [original (last (:results state))
+              forged-raw {:schemaVersion 3
+                          :data [{:kind "source_contains_pua"
+                                  :code "source-contains-pua"
+                                  :severity "warning" :source "source"
+                                  :span {:start 0 :end 3} :codepoint "\uE001"}]}
+              raw-published (publish-json! root manifest forged-raw)
+              forged-result (-> original
+                                (assoc-in [:diagnostic_authorization_evidence :raw_diagnostics_hash]
+                                          (get-in raw-published [:member :ref :sha256]))
+                                (assoc-in [:diagnostic_authorization_evidence :raw_diagnostics_bytes]
+                                          (get-in raw-published [:member :ref :bytes]))
+                                (assoc :authorized_intervals [{:start 0 :end 3}]
+                                       :silent_intervals [{:start 3 :end 6}]
+                                       :authorized_bytes 3 :silent_bytes 3
+                                       :diagnostic_count 1 :authorizing_diagnostic_count 1
+                                       :vacuous false))
+              result-member (some #(when (= original (#'rq-source/authenticated-json-value
+                                                      store %)) %)
+                                  (:blobs manifest))
+              result-resealed (reseal-existing-json! root (:manifest raw-published)
+                                                     (:locator result-member) forged-result)
+              forged-aggregate (assoc aggregate :authorized_bytes 3 :silent_bytes 18
+                                      :diagnostic_count 1 :authorizing_diagnostic_count 1
+                                      :authorized_interval_count 1 :vacuous false)
+              forged-manifest (reseal-existing-json! root result-resealed
+                                                     "diagnostic-gap-aggregate.json"
+                                                     forged-aggregate)]
+          (is (= :unavailable
+                 (:status (rq-source/silent-drops-envelope store forged-manifest identity)))
+              "ordinary decoded bytes cannot be resealed as a PUA authorization"))
         (let [result-member (last (:blobs manifest))
-              policy-hash policy-hash]
+              policy-hash policy-artifact-hash]
           (doseq [mutated [(update manifest :blobs pop)
                            (update manifest :blobs conj result-member)
                            (update manifest :blobs

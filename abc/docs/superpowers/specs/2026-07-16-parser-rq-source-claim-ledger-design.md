@@ -440,6 +440,15 @@ store. It re-reads and hashes the closed aggregate and per-work result schemas,
 raw diagnostics, policy, decoded source, and R1 artifacts. Caller-supplied maps
 cannot derive R2, even when mutually coherent or resealed.
 
+Policy provenance has two deliberately distinct identities. The policy
+artifact hash authenticates the exact captured bytes; `policy_hash` is the
+policy document's self-excluding RFC 8785 projected identity. Every work and
+aggregate carries both, and derivation recomputes the projection only after
+authenticating the artifact. R2 reuses the complete R1 fold verifier (including
+membership, ledger, generation, work, index, and aggregate chains) and applies
+the same diagnostic selector, UTF-8 endpoint, duplicate, PUA scalar, and exact
+decoded-slice rules as the Rust authorizer.
+
 An authenticated empty diagnostic stream is available and vacuous. With gaps,
 all gaps remain silent; without gaps, both partitions are empty. Unknown or
 invalid diagnostics make R2 unavailable without changing R1.

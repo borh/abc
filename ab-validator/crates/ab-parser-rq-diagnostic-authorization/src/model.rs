@@ -54,6 +54,8 @@ pub(crate) struct PolicyRule {
 pub struct ValidatedGapPolicy {
     pub(crate) rules: BTreeMap<String, PolicyRule>,
     pub(crate) policy_hash: String,
+    pub(crate) artifact_hash: String,
+    pub(crate) artifact_bytes: u64,
 }
 
 /// An exact-byte-authenticated source-accountability context.
@@ -115,6 +117,8 @@ pub struct AuthorizationOrigin {
     pub(crate) raw_diagnostics_hash: String,
     pub(crate) raw_diagnostics_bytes: u64,
     pub(crate) policy_hash: String,
+    pub(crate) policy_artifact_hash: String,
+    pub(crate) policy_artifact_bytes: u64,
     pub(crate) source_recognition_hash: String,
     pub(crate) diagnostic_count: u64,
     pub(crate) authorizing_diagnostic_count: u64,
@@ -158,6 +162,8 @@ pub struct DiagnosticAuthorizationEvidence {
     pub raw_diagnostics_hash: String,
     pub raw_diagnostics_bytes: u64,
     pub policy_hash: String,
+    pub policy_artifact_hash: String,
+    pub policy_artifact_bytes: u64,
     pub source_recognition_hash: String,
 }
 
@@ -170,6 +176,13 @@ pub struct DiagnosticGapWorkInput<'a> {
     pub authorization: &'a AuthorizationAnalysis,
 }
 
+/// A partition derived by this crate. Its private seal prevents callers from
+/// constructing an apparently available result.
+///
+/// ```compile_fail
+/// use ab_parser_rq_diagnostic_authorization::DiagnosticGapWorkResult;
+/// let _forged = DiagnosticGapWorkResult { /* public summaries are insufficient */ };
+/// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DiagnosticGapWorkResult {
     pub status: DiagnosticGapWorkStatus,
@@ -189,6 +202,20 @@ pub struct DiagnosticGapWorkResult {
     pub observe_only_diagnostic_count: Option<u64>,
     pub vacuous: Option<bool>,
     pub errors: Vec<String>,
+    pub(crate) seal: Option<WorkResultSeal>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct WorkResultSeal {
+    pub(crate) authorized_intervals: Vec<Interval>,
+    pub(crate) silent_intervals: Vec<Interval>,
+    pub(crate) authorized_bytes: u64,
+    pub(crate) silent_bytes: u64,
+    pub(crate) silent_drop_count: u64,
+    pub(crate) diagnostic_count: u64,
+    pub(crate) authorizing_diagnostic_count: u64,
+    pub(crate) observe_only_diagnostic_count: u64,
+    pub(crate) vacuous: bool,
 }
 
 impl DiagnosticGapWorkResult {
@@ -211,6 +238,7 @@ impl DiagnosticGapWorkResult {
             observe_only_diagnostic_count: None,
             vacuous: None,
             errors: vec![error.to_owned()],
+            seal: None,
         }
     }
 }
@@ -233,10 +261,12 @@ pub struct DiagnosticGapExpectedWork {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DiagnosticGapAggregate {
+    pub schema_version: Option<String>,
     pub status: DiagnosticGapWorkStatus,
     pub qualification_identity_ref: Option<String>,
     pub corpus_generation_ref: Option<String>,
     pub policy_hash: Option<String>,
+    pub policy_artifact_hash: Option<String>,
     pub expected_work_ids: Vec<String>,
     pub observed_work_ids: Vec<String>,
     pub authorized_bytes: Option<u64>,

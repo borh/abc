@@ -53,6 +53,30 @@
           document (assoc (files/read-json fixture) "unexpected" true)]
       (is (seq (schema/validation-errors contract document)) path))))
 
+(deftest parser-rq-source-accountability-work-provenance-boundaries-test
+  (let [contract (files/read-json
+                  "schemas/parser-rq-source-accountability-work.schema.json")
+        document (files/read-json
+                  "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json")
+        invalid-documents [(dissoc document "coverage_basis")
+                           (assoc document "coverage_basis" "parser_ir.paragraphs[*].span")
+                           (update document "diagnostics" dissoc "profile")
+                           (assoc-in document ["diagnostics" "profile"]
+                                     "abc/authorized-parser-diagnostics-schema-v3")
+                           (assoc-in document ["decoded_source" "encoding"]
+                                     "windows-31j-lossy")
+                           (assoc-in document ["diagnostics" "unexpected"] true)]]
+    (doseq [invalid invalid-documents]
+      (is (seq (schema/validation-errors contract invalid))))))
+
+(deftest parser-rq-source-accountability-unavailable-aggregate-rejects-numeric-test
+  (let [contract (files/read-json
+                  "schemas/parser-rq-source-accountability-aggregate.schema.json")
+        document (-> (files/read-json
+                      "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate.schema.json")
+                     (assoc "status" "unavailable" "errors" ["record unavailable"]))]
+    (is (seq (schema/validation-errors contract document)))))
+
 (deftest parser-rq-v1-taxonomy-is-empty-test
   (let [taxonomy (files/read-json "data/parser-rq-ignored-regions-v1.json")]
     (is (= "parser-rq-ignored-regions-v1" (get taxonomy "taxonomy_version")))

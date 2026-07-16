@@ -66,3 +66,19 @@ see them, no Task 2 or evidence-catalog failure remained.
   added.
 - Aggregate unavailable status cannot carry numerator, denominator, uncovered
   count, or interval witnesses.
+
+## Reviewer provenance follow-up
+
+The work protocol now requires `coverage_basis` with the sole value
+`parser_ir.nodes[*].span`. The Parser-IR schema ID remains candidate-bound and is
+not const-pinned. The opaque diagnostic logical blob now requires profile
+`abc/raw-parser-diagnostics-schema-v3`, distinguishing the complete raw
+schema-v3 capture (including sanitizer diagnostics) without implying P4
+authorization.
+
+RED against the pre-follow-up schema rejected the updated valid fixture because
+both new properties were unknown (`3 tests, 15 assertions, 1 failure`). After
+the minimal schema change, focused GREEN covered wrong/missing coverage basis,
+wrong/missing diagnostic profile, lossy encoding, a nested unknown diagnostic
+field, unavailable aggregate numeric observations, closure, taxonomy, and the
+read catalog: `6 tests, 23 assertions, 0 failures`.

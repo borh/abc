@@ -72,7 +72,8 @@ git commit -m "docs(parser-rq): preserve diagnostic gap falsification"
 - Create: `ab-validator/docs/superpowers/reports/2026-07-16-classified-source-provenance.md`
 - Delete before commit: temporary test above
 
-**Interfaces:** Produces the closed recovery-reason matrix consumed by Tasks 3-4.
+**Interfaces:** Proves where the classifier must preserve the binary distinction
+between accepted text and recovered verbatim bytes.
 
 - [ ] Write an ignored probe covering ordinary text, newline, literal
   quote/tortoise punctuation, solo refmark/bar/hash, unclosed open, unmatched
@@ -89,9 +90,10 @@ CLASSIFIED_SOURCE_OUT=/tmp/classified-source-2.json \
 cmp /tmp/classified-source-1.json /tmp/classified-source-2.json
 ```
 
-- [ ] Stop before Task 3 if recovery cannot be distinguished before
-  `flush_plain_up_to` or requires AAT/Parser-IR reconstruction. Freeze exactly
-  the observed reviewed recovery reasons; no `Other` member.
+- [ ] Stop before Task 3 if recovered bytes cannot be distinguished before
+  `flush_plain_up_to` or require AAT/Parser-IR reconstruction. The public output
+  is intentionally binary; branch-specific explanations remain private
+  evidence and diagnostics.
 - [ ] Delete the probe and commit the two reports as
   `docs(parser-rq): characterize classified-source provenance`.
 
@@ -107,7 +109,7 @@ cmp /tmp/classified-source-1.json /tmp/classified-source-2.json
 **Interfaces:**
 
 ```rust
-pub enum PlainProvenance { Text, Recovered(RecoveryReason) }
+pub enum PlainProvenance { Text, RecoveredVerbatim }
 pub struct PlainSpan { pub provenance: PlainProvenance }
 pub enum SpanKind {
     Plain(PlainSpan),
@@ -118,20 +120,9 @@ pub enum SpanKind {
 }
 ```
 
-The pre-registered enum is:
-
-```rust
-pub enum RecoveryReason {
-    UnclosedDelimiter,
-    UnmatchedClose,
-    DeclinedConstruct,
-    StrayTrigger,
-}
-```
-
-Task 2 is a fail-stop gate: if live paths require a fifth semantic reason or
-show that one listed reason is not recovery, revise the reviewed design and
-this plan before Task 3 rather than adding a catch-all.
+Task 2 proved the binary distinction at classifier-local branches. Do not add a
+reason enum: R1 consumes only binary provenance, while diagnostics retain
+specific recovery explanations.
 
 - [ ] Write RED tests asserting distinct provenance for every accepted recovery
   case while pinning normalized bytes, AST projection, diagnostics JSON, AAT
@@ -174,7 +165,7 @@ cargo test -p ab-aozora-aat
   Expected: missing-schema failure.
 - [ ] Implement closed schemas. `target_identity` is exactly
   `{artifact_ref,value_hash,relation}`, relation `emits|preserves`. Copy the
-  complete Task 2/3 matrix; no wildcard role, disposition, or recovery reason.
+  complete Task 2/3 matrix; no wildcard role or disposition.
 - [ ] Compute and assert schema/policy hashes via
   `abc.tools.hash/sha256-json-jcs`.
 - [ ] Run focused Kaocha and `nix run .#schema-drift`; commit as

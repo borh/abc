@@ -182,8 +182,10 @@ Evidence requirements are policy-owned:
   named role;
 - lossless normalization requires an approved reversible transformation record
   binding source interval, source bytes, normalized bytes, and inverse rule.
-- preserved opaque entries require byte-exact source witnesses and an approved
-  recovery reason; they prohibit semantic target identities.
+- preserved opaque entries require byte-exact source witnesses and
+  `PlainProvenance::RecoveredVerbatim`; they prohibit semantic target
+  identities. Diagnostics and parser-private evidence may explain recovery but
+  are not part of the public provenance vocabulary.
 
 `parser_evidence_code` helps characterize and debug parser paths. It cannot
 select a disposition, relax a requirement, or create a claim class. The
@@ -357,7 +359,7 @@ disposition path and join:
 
 ```text
 classified decoded-byte interval
-internal classified-span kind and recovery provenance
+internal classified-span kind and binary plain provenance
 candidate ABC role/disposition
 emitted or preserved target, when applicable
 raw diagnostic, when applicable
@@ -464,7 +466,7 @@ eligible byte.
 
 | Decision | Reason | Falsifier |
 |---|---|---|
-| Project ledger facts in the existing classified-span fold. | It is already the single tiled consumption lifecycle and typed-construction seam. | It cannot expose exact decoded coordinates or recovery provenance without a parallel state machine. |
+| Project ledger facts in the existing classified-span fold. | It is already the single tiled consumption lifecycle and typed-construction seam. | It cannot expose exact decoded coordinates or binary recovery provenance without a parallel state machine. |
 | ABC owns the closed role/disposition vocabulary. | Parser vocabulary cannot authorize itself. | Independent validation cannot describe a required construct without depending on parser-private identity. |
 | R1 gates semantic recognition; accountability is supporting evidence. | Opaque byte survival is valuable but does not prove syntax understanding. | Qualification explicitly decides that lossless opaque preservation satisfies syntax support. |
 | Ledger claims replace node spans as R1 numerator authority. | Live characterization proved node spans measure emitted output, not consumed source. | Claim-ledger capture cannot be authenticated or conserved against decoded bytes. |

@@ -1,0 +1,35 @@
+{
+  "schema_version": "parser-rq-publication-validator-identity-v1",
+  "validator_id": "ab-validator/publication-bundle-validate/v2",
+  "runtime": {
+    "python": "3.13.13",
+    "jsonschema": "4.26.0"
+  },
+  "sources": [
+    {
+      "path": "reports/parser-ir/publication-bundle-validate.py",
+      "sha256": "sha256:8a1bfaf83e5bb351cdba89731d5a5d073eccfdbed68fe64bd106130a630519ee"
+    },
+    {
+      "path": "reports/lib/evidence.py",
+      "sha256": "sha256:f1112d8424f71cb213109554ce76b7dee82aabdf9b7ffc7d03d633e8a24ccafa"
+    },
+    {
+      "path": "reports/lib/hashing.py",
+      "sha256": "sha256:9f2ec88bfffd1a701d4482abe5ad6cbe3226bebcbf2c6391245a4a064dfaabfe"
+    },
+    {
+      "path": "reports/lib/io.py",
+      "sha256": "sha256:7a0d8d1964e15ffa1b440216e22acbe7f06053b6c7bb69ae8d213d11895759bd"
+    },
+    {
+      "path": "reports/lib/paths.py",
+      "sha256": "sha256:7227a89fd6fdb73c25750a2b03a4a7b4653d296c90024f86f92b2e8cdb1ffa18"
+    },
+    {
+      "path": "reports/lib/source_region.py",
+      "sha256": "sha256:a4c2e972851706a543b2e52400f62c199e7f1fdbe49490a16c2b731704d67991"
+    }
+  ],
+  "validator_semantics_hash": "sha256:80a573b202be7054706dab0f1b1651e621d1c09524a84326395bb732981d8283"
+}

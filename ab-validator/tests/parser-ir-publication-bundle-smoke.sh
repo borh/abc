@@ -34,19 +34,16 @@ cat > "$parser_ir" <<'JSON'
     {
       "type": "text",
       "text": "吾輩",
-      "span": {"start": 0, "end": 2},
-      "source_pointer": "blocks[0]"
+      "span": {"start": 0, "end": 2}
     },
     {
       "type": "ruby",
       "span": {"start": 2, "end": 8},
-      "source_pointer": "blocks[0]",
-      "ruby": {"base": "猫", "reading": "ねこ"}
+      "ruby": {"base": "猫", "reading": "ねこ", "scope": "explicit"}
     },
     {
       "type": "layout-span",
       "span": {"start": 8, "end": 10},
-      "source_pointer": "blocks[0]",
       "text": "10",
       "layout": {"kind": "tcy", "source": "aat-inline"}
     },
@@ -54,6 +51,7 @@ cat > "$parser_ir" <<'JSON'
       "type": "source-note",
       "span": {"start": 10, "end": 30},
       "text": "（古伝説と、シルレルの詩から。）",
+      "note_type": "source-attribution",
       "placement": "back",
       "classification": "heuristic",
       "source_pointer": "blocks[1]"
@@ -62,6 +60,8 @@ cat > "$parser_ir" <<'JSON'
   "paragraphs": [
     {
       "id": "p000000",
+      "span": {"start": 0, "end": 10},
+      "span_source": "direct",
       "node_range": {"start": 0, "end": 3},
       "role": "body",
       "classification": "direct",
@@ -69,6 +69,8 @@ cat > "$parser_ir" <<'JSON'
     },
     {
       "id": "p000001",
+      "span": {"start": 10, "end": 30},
+      "span_source": "direct",
       "node_range": {"start": 3, "end": 4},
       "role": "source-note",
       "classification": "heuristic",
@@ -137,8 +139,13 @@ JSON
 cat > "$bundle_dir/preservation.json" <<'JSON'
 {
   "schema_id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
-  "schema_version": "0.2.0",
+  "schema_version": "0.3.0",
   "schema_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "parser_ir": {"schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json", "schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "work_id": "fixture"},
+  "tei": {"profile_id": "tei-eaj-v0", "profile_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444"},
+  "source": {"corpus_snapshot_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777", "source_path": "cards/000000/files/example.txt", "encoding": "Shift_JIS", "normalization": "source"},
+  "producer": {"agent": "publication-bundle-smoke", "generated_at": "2026-07-17T00:00:00Z"},
+  "mapping": null,
   "coverage": {"record_count": 2, "classes": ["custom_sidecar", "tei_profile_projection"]},
   "records": [
     {
@@ -198,20 +205,25 @@ JSON
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --parser-ir "$parser_ir" \
   --source-region-summary "$source_region" \
+  --parser-ir-schema "$repo_root/../abc/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/../abc/schemas/parser-ir-publication-preservation.schema.json" \
+  --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --publication-dir "$bundle_dir" \
   --summary-json "$summary_json" \
   --report-md "$report_md"
 
-jq -e '.schema_version == "publication-bundle-validation-evidence-v1"' "$summary_json" >/dev/null
+jq -e '.schema_version == "publication-bundle-validation-evidence-v2"' "$summary_json" >/dev/null
 jq -e '.verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"' "$summary_json" >/dev/null
 jq -e '.validated_bundle.tei.hash == "'"$tei_hash"'"' "$summary_json" >/dev/null
 jq -e '.validated_bundle.plaintext.hash == "'"$plain_hash"'"' "$summary_json" >/dev/null
-jq -e '.checks.tei_manifest_references_preservation == true' "$summary_json" >/dev/null
-jq -e '.checks.tei_manifest_references_validation_result == true' "$summary_json" >/dev/null
-jq -e '.checks.tei_abc_projection_resolves_to_sidecar == true' "$summary_json" >/dev/null
-jq -e '.checks.preservation_tei_pointers_resolve == true' "$summary_json" >/dev/null
-jq -e '.checks.preservation_source_pointers_resolve == true' "$summary_json" >/dev/null
-jq -e '.checks.plaintext_body_only == true' "$summary_json" >/dev/null
+jq -e '.structure_check_candidates.tei_manifest_references_preservation == true' "$summary_json" >/dev/null
+jq -e '.structure_check_candidates.tei_manifest_references_validation_result == true' "$summary_json" >/dev/null
+jq -e '.structure_check_candidates.tei_abc_projection_resolves_to_sidecar == true' "$summary_json" >/dev/null
+jq -e '.structure_check_candidates.preservation_tei_pointers_resolve == true' "$summary_json" >/dev/null
+jq -e '.structure_check_candidates.preservation_source_pointers_resolve == true' "$summary_json" >/dev/null
+jq -e '.structure_check_candidates.plaintext_body_only == true' "$summary_json" >/dev/null
+jq -e '.supporting_preconditions.parser_ir_schema_valid == true' "$summary_json" >/dev/null
+jq -e '.join_input.status == "valid" and .counts.preservation_records > 0' "$summary_json" >/dev/null
 rg -n "Publication Bundle Validation" "$report_md" >/dev/null
 
 printf '吾輩猫ねこ\n（古伝説と、シルレルの詩から。）\n' > "$bundle_dir/plain.txt"
@@ -219,10 +231,13 @@ printf '吾輩猫ねこ\n（古伝説と、シルレルの詩から。）\n' > "
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --parser-ir "$parser_ir" \
   --source-region-summary "$source_region" \
+  --parser-ir-schema "$repo_root/../abc/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/../abc/schemas/parser-ir-publication-preservation.schema.json" \
+  --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --publication-dir "$bundle_dir" \
   --summary-json "$failed_summary_json" \
   --report-md "$failed_report_md"
 
 jq -e '.verdict == "PUBLICATION_BUNDLE_VALIDATION_FAILED"' "$failed_summary_json" >/dev/null
-jq -e '.checks.plaintext_body_only == false' "$failed_summary_json" >/dev/null
+jq -e '.structure_check_candidates.plaintext_body_only == false' "$failed_summary_json" >/dev/null
 jq -e '.failures[] | select(.check == "plaintext_body_only")' "$failed_summary_json" >/dev/null

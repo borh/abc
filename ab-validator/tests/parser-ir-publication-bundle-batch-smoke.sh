@@ -68,25 +68,25 @@ write_row_bundle() {
     "normalization": "source"
   },
   "nodes": [
-    {"type": "text", "text": "吾輩", "span": {"start": 0, "end": 2}, "source_pointer": "blocks[0]"},
+    {"type": "text", "text": "吾輩", "span": {"start": 0, "end": 2}},
     {
       "type": "ruby",
       "span": {"start": 2, "end": 8},
-      "source_pointer": "blocks[0]",
-      "ruby": {"base": "猫", "reading": "$reading"}
+      "ruby": {"base": "猫", "reading": "$reading", "scope": "explicit"}
     },
     {
       "type": "source-note",
       "span": {"start": 8, "end": 28},
       "text": "$source_note",
+      "note_type": "source-attribution",
       "placement": "back",
       "classification": "heuristic",
       "source_pointer": "blocks[1]"
     }
   ],
   "paragraphs": [
-    {"id": "p000000", "node_range": {"start": 0, "end": 2}, "role": "body", "classification": "direct", "source_pointer": "blocks[0]"},
-    {"id": "p000001", "node_range": {"start": 2, "end": 3}, "role": "source-note", "classification": "heuristic", "source_pointer": "blocks[1]"}
+    {"id": "p000000", "span": {"start": 0, "end": 8}, "span_source": "direct", "node_range": {"start": 0, "end": 2}, "role": "body", "classification": "direct", "source_pointer": "blocks[0]"},
+    {"id": "p000001", "span": {"start": 8, "end": 28}, "span_source": "direct", "node_range": {"start": 2, "end": 3}, "role": "source-note", "classification": "heuristic", "source_pointer": "blocks[1]"}
   ],
   "warnings": [],
   "errors": []
@@ -116,8 +116,13 @@ JSON
   cat > "$publication_dir/preservation.json" <<'JSON'
 {
   "schema_id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
-  "schema_version": "0.2.0",
+  "schema_version": "0.3.0",
   "schema_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "parser_ir": {"schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json", "schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "work_id": "fixture"},
+  "tei": {"profile_id": "tei-eaj-v0", "profile_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444"},
+  "source": {"corpus_snapshot_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777", "source_path": "cards/000000/files/example.txt", "encoding": "Shift_JIS", "normalization": "source"},
+  "producer": {"agent": "publication-bundle-batch-smoke", "generated_at": "2026-07-17T00:00:00Z"},
+  "mapping": null,
   "coverage": {"record_count": 2, "classes": ["custom_sidecar", "tei_profile_projection"]},
   "records": [
     {
@@ -185,15 +190,18 @@ write_row_bundle "$out_dir/rows/row-b" "ねこ" "底本：「fixture」" "吾輩
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --batch-root "$out_dir" \
   --source-region-summary "$source_region" \
+  --parser-ir-schema "$repo_root/../abc/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/../abc/schemas/parser-ir-publication-preservation.schema.json" \
+  --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --abc-commit "abc1234" \
   --command "fixture batch materialization" \
   --summary-json "$summary_json" \
   --report-md "$report_md"
 
-jq -e '.schema_version == "publication-bundle-batch-validation-evidence-v1"' "$summary_json" >/dev/null
+jq -e '.schema_version == "publication-bundle-batch-validation-evidence-v2"' "$summary_json" >/dev/null
 jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"' "$summary_json" >/dev/null
 jq -e '.scope.rows_discovered == 2 and .scope.rows_validated == 2 and .scope.rows_failed == 0' "$summary_json" >/dev/null
-jq -e '.checks.plaintext_body_only == true' "$summary_json" >/dev/null
+jq -e '.structure_check_candidates.plaintext_body_only == true' "$summary_json" >/dev/null
 jq -e '.rows | length == 2' "$summary_json" >/dev/null
 jq -e '.rows[] | select(.row_id == "row-a" and .verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED")' "$summary_json" >/dev/null
 rg -n "Publication Bundle Batch Validation" "$report_md" >/dev/null
@@ -203,6 +211,9 @@ write_row_bundle "$out_dir/rows/row-c" "ねこ" "底本：「fixture」" "吾輩
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --batch-root "$out_dir" \
   --source-region-summary "$source_region" \
+  --parser-ir-schema "$repo_root/../abc/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/../abc/schemas/parser-ir-publication-preservation.schema.json" \
+  --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --abc-commit "abc1234" \
   --command "fixture batch materialization" \
   --summary-json "$failed_summary_json" \
@@ -210,6 +221,6 @@ python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
 
 jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED"' "$failed_summary_json" >/dev/null
 jq -e '.scope.rows_discovered == 3 and .scope.rows_failed == 1' "$failed_summary_json" >/dev/null
-jq -e '.checks.plaintext_body_only == false' "$failed_summary_json" >/dev/null
+jq -e '.structure_check_candidates.plaintext_body_only == false' "$failed_summary_json" >/dev/null
 jq -e '.failures[] | select(.row_id == "row-c" and .check == "plaintext_body_only")' "$failed_summary_json" >/dev/null
 jq -e '.failures[] | select(.row_id == "row-c" and .check == "plaintext_body_only" and .details.kind == "plaintext_mismatch" and .details.expected_length == 3 and .details.actual_length == 5)' "$failed_summary_json" >/dev/null

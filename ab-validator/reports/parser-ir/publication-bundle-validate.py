@@ -19,6 +19,8 @@ import sys
 import xml.etree.ElementTree as ET
 from typing import Any
 
+from jsonschema import Draft202012Validator, FormatChecker
+
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -28,35 +30,40 @@ from reports.lib.io import read_json, write_json
 from reports.lib.paths import display_path
 from reports.lib.source_region import coverage_passes_source_authority
 
-SCHEMA_VERSION = "publication-bundle-validation-evidence-v1"
-BATCH_SCHEMA_VERSION = "publication-bundle-batch-validation-evidence-v1"
+SCHEMA_VERSION = "publication-bundle-validation-evidence-v2"
+BATCH_SCHEMA_VERSION = "publication-bundle-batch-validation-evidence-v2"
 PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"
 FAILED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_FAILED"
 BATCH_PASSED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"
 BATCH_FAILED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED"
 ABC_NS = "{https://w3id.org/abc/ns/tei}"
 XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
-REQUIRED_CHECKS = (
-    "parser_ir_schema_valid",
-    "source_region_coverage_valid",
+STRUCTURE_CHECK_CANDIDATES = (
     "tei_profile_valid",
     "preservation_schema_valid",
     "tei_manifest_valid",
     "plaintext_manifest_valid",
     "tei_manifest_references_preservation",
     "tei_manifest_references_validation_result",
-    "source_region_sidecar_role_available",
     "tei_abc_projection_resolves_to_sidecar",
     "preservation_tei_pointers_resolve",
     "preservation_source_pointers_resolve",
     "plaintext_body_only",
+)
+SUPPORTING_PRECONDITIONS = (
+    "parser_ir_schema_valid",
+    "source_region_coverage_valid",
+    "source_region_sidecar_role_available",
 )
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--parser-ir", type=pathlib.Path)
-    parser.add_argument("--source-region-summary", required=True, type=pathlib.Path)
+    parser.add_argument("--source-region-summary", type=pathlib.Path)
+    parser.add_argument("--parser-ir-schema", required=True, type=pathlib.Path)
+    parser.add_argument("--preservation-schema", required=True, type=pathlib.Path)
+    parser.add_argument("--validator-identity", required=True, type=pathlib.Path)
     parser.add_argument("--publication-dir", type=pathlib.Path)
     parser.add_argument("--batch-root", type=pathlib.Path)
     parser.add_argument("--batch-scope", default="representative")
@@ -254,6 +261,204 @@ def plaintext_mismatch_details(parser_ir: dict[str, Any], plaintext: str) -> dic
     }
 
 
+def validate_schema(instance: object, contract: dict[str, Any]) -> list[str]:
+    validator = Draft202012Validator(contract, format_checker=FormatChecker())
+    return [
+        f"{'.'.join(str(part) for part in error.absolute_path) or '$'}: {error.message}"
+        for error in sorted(validator.iter_errors(instance), key=lambda item: list(item.path))
+    ]
+
+
+def _join_node_errors(node: object, path: str) -> list[str]:
+    if not isinstance(node, dict):
+        return [f"{path} must be an object"]
+    node_type = node.get("type")
+    known = {
+        "text",
+        "ruby",
+        "gaiji",
+        "emphasis",
+        "heading",
+        "layout-span",
+        "indentation",
+        "quote",
+        "caption",
+        "editor-note",
+        "line-break",
+        "page-break",
+        "source-note",
+    }
+    errors = []
+    if node_type not in known:
+        errors.append(f"{path}.type is not recognized")
+        return errors
+    pointer = node.get("source_pointer")
+    if pointer is not None and (not isinstance(pointer, str) or not pointer):
+        errors.append(f"{path}.source_pointer must be a non-empty string")
+    if node_type in {"text", "indentation", "quote", "caption", "editor-note", "source-note"}:
+        if not isinstance(node.get("text"), str):
+            errors.append(f"{path}.text must be a string")
+    elif node_type == "ruby":
+        ruby = node.get("ruby")
+        if not isinstance(ruby, dict) or not isinstance(ruby.get("base"), str):
+            errors.append(f"{path}.ruby.base must be a string")
+    elif node_type == "gaiji":
+        if not isinstance(node.get("gaiji"), dict):
+            errors.append(f"{path}.gaiji must be an object")
+    elif node_type in {"emphasis", "heading", "layout-span"}:
+        children = node.get("inline_children")
+        if children is not None:
+            if not isinstance(children, list):
+                errors.append(f"{path}.inline_children must be an array")
+            else:
+                for offset, child in enumerate(children):
+                    errors.extend(_join_node_errors(child, f"{path}.inline_children[{offset}]"))
+        elif not isinstance(node.get("text"), str):
+            errors.append(f"{path} requires string text or inline_children")
+    return errors
+
+
+def publication_join_input_errors(parser_ir: object) -> list[str]:
+    if not isinstance(parser_ir, dict):
+        return ["parser-IR must be an object"]
+    nodes = parser_ir.get("nodes")
+    if not isinstance(nodes, list):
+        return ["parser-IR nodes must be an array"]
+    errors = []
+    for offset, node in enumerate(nodes):
+        errors.extend(_join_node_errors(node, f"nodes[{offset}]"))
+    return errors
+
+
+def publication_counts(
+    parser_ir: dict[str, Any], preservation: dict[str, Any], tei_root: ET.Element
+) -> dict[str, Any]:
+    records = preservation.get("records", [])
+    records = records if isinstance(records, list) else []
+    constructs: dict[str, int] = {}
+    for record in records:
+        if isinstance(record, dict) and isinstance(record.get("construct"), str):
+            construct = record["construct"]
+            constructs[construct] = constructs.get(construct, 0) + 1
+    tei_pointers = [record.get("tei_pointer") for record in records if isinstance(record, dict)]
+    source_pointers = [
+        record.get("source_pointer") for record in records if isinstance(record, dict)
+    ]
+    return {
+        "preservation_records": len(records),
+        "tei_preservation_references": len(preservation_record_refs(tei_root)),
+        "non_null_tei_pointers": sum(pointer is not None for pointer in tei_pointers),
+        "non_null_source_pointers": sum(pointer is not None for pointer in source_pointers),
+        "by_construct": dict(sorted(constructs.items())),
+    }
+
+
+def validate_values(
+    *,
+    parser_ir: object,
+    preservation: object,
+    tei_root: ET.Element,
+    plaintext: str,
+    tei_manifest: dict[str, Any],
+    plaintext_manifest: dict[str, Any],
+    tei_validation: dict[str, Any],
+    source_region: dict[str, Any] | None,
+    parser_ir_schema: dict[str, Any],
+    preservation_schema: dict[str, Any],
+    paths: dict[str, pathlib.Path] | None = None,
+) -> dict[str, Any]:
+    parser_ir_errors = validate_schema(parser_ir, parser_ir_schema)
+    preservation_errors = validate_schema(preservation, preservation_schema)
+    supporting = {
+        "parser_ir_schema_valid": not parser_ir_errors,
+        "source_region_coverage_valid": bool(
+            source_region is not None and source_region_valid(source_region)
+        ),
+        "source_region_sidecar_role_available": bool(
+            source_region is not None and source_region_valid(source_region)
+        ),
+    }
+    join_errors = publication_join_input_errors(parser_ir)
+    join_input = {
+        "status": "valid" if not join_errors else "invalid",
+        "errors": join_errors,
+    }
+    if join_errors or not isinstance(parser_ir, dict) or not isinstance(preservation, dict):
+        return {
+            "structure_check_candidates": None,
+            "supporting_preconditions": supporting,
+            "join_input": join_input,
+            "counts": None,
+            "schema_errors": {
+                "parser_ir": parser_ir_errors,
+                "preservation": preservation_errors,
+            },
+        }
+
+    record_ids = {
+        record.get("record_id")
+        for record in preservation.get("records", [])
+        if isinstance(record, dict) and isinstance(record.get("record_id"), str)
+    }
+    tei_ids = tei_id_set(tei_root)
+    source_pointers = collect_values_by_key(parser_ir, "source_pointer")
+    checks = {
+        "tei_profile_valid": tei_validation.get("status") == "passed",
+        "preservation_schema_valid": not preservation_errors,
+        "tei_manifest_valid": bool(
+            paths
+            and tei_manifest.get("artifact_kind") == "tei"
+            and tei_manifest.get("validation_status") == "passed"
+            and content_hash_matches(tei_manifest, paths["tei"])
+        ),
+        "plaintext_manifest_valid": bool(
+            paths
+            and plaintext_manifest.get("artifact_kind") == "plaintext"
+            and plaintext_manifest.get("validation_status") == "passed"
+            and content_hash_matches(plaintext_manifest, paths["plaintext"])
+        ),
+        "tei_manifest_references_preservation": bool(
+            paths
+            and sidecar_hash_matches(
+                tei_manifest, "preservation", "preservation.json", paths["preservation"]
+            )
+        ),
+        "tei_manifest_references_validation_result": bool(
+            paths
+            and sidecar_hash_matches(
+                tei_manifest,
+                "validation-result",
+                "tei-validation-result.json",
+                paths["tei_validation_result"],
+            )
+        ),
+        "tei_abc_projection_resolves_to_sidecar": all(
+            ref in record_ids for ref in preservation_record_refs(tei_root)
+        ),
+        "preservation_tei_pointers_resolve": all(
+            tei_pointer_resolves(record.get("tei_pointer"), tei_ids)
+            for record in preservation.get("records", [])
+            if isinstance(record, dict)
+        ),
+        "preservation_source_pointers_resolve": all(
+            record.get("source_pointer") in source_pointers
+            for record in preservation.get("records", [])
+            if isinstance(record, dict) and record.get("source_pointer") is not None
+        ),
+        "plaintext_body_only": plaintext_body_only(parser_ir, plaintext),
+    }
+    return {
+        "structure_check_candidates": checks,
+        "supporting_preconditions": supporting,
+        "join_input": join_input,
+        "counts": publication_counts(parser_ir, preservation, tei_root),
+        "schema_errors": {
+            "parser_ir": parser_ir_errors,
+            "preservation": preservation_errors,
+        },
+    }
+
+
 def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
     publication_dir = args.publication_dir
     paths = {
@@ -261,11 +466,12 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
         "tei": publication_dir / "tei.xml",
         "plaintext": publication_dir / "plain.txt",
         "preservation": publication_dir / "preservation.json",
-        "source_region_coverage": args.source_region_summary,
         "tei_manifest": publication_dir / "tei.manifest.json",
         "plaintext_manifest": publication_dir / "plaintext.manifest.json",
         "tei_validation_result": publication_dir / "tei-validation-result.json",
     }
+    if args.source_region_summary is not None:
+        paths["source_region_coverage"] = args.source_region_summary
     validated_bundle = {
         key: artifact_record(path) for key, path in paths.items() if key != "tei_validation_result"
     }
@@ -273,7 +479,14 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
 
     try:
         parser_ir = read_json(args.parser_ir)
-        source_region = read_json(args.source_region_summary)
+        source_region = (
+            read_json(args.source_region_summary)
+            if args.source_region_summary is not None
+            else None
+        )
+        parser_ir_schema = read_json(args.parser_ir_schema)
+        preservation_schema = read_json(args.preservation_schema)
+        validator_identity = read_json(args.validator_identity)
         preservation = read_json(paths["preservation"])
         tei_manifest = read_json(paths["tei_manifest"])
         plaintext_manifest = read_json(paths["plaintext_manifest"])
@@ -288,71 +501,28 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
             "command": args.command,
             "abc_commit": args.abc_commit,
             "validated_bundle": validated_bundle,
-            "checks": {},
+            "structure_check_candidates": None,
+            "supporting_preconditions": {},
+            "join_input": {"status": "invalid", "errors": ["bundle unreadable"]},
+            "counts": None,
             "failures": [{"check": "bundle_readable", "message": str(error)}],
         }
 
-    record_ids = {
-        record.get("record_id")
-        for record in preservation.get("records", [])
-        if isinstance(record, dict) and isinstance(record.get("record_id"), str)
-    }
-    tei_ids = tei_id_set(tei_root)
-    source_pointers = collect_values_by_key(parser_ir, "source_pointer")
-
-    checks: dict[str, bool] = {}
-    checks["parser_ir_schema_valid"] = bool(
-        parser_ir.get("schema_id") == "https://w3id.org/abc/schemas/parser-ir.schema.json"
-        and isinstance(parser_ir.get("schema_hash"), str)
-        and parser_ir.get("schema_hash", "").startswith("sha256:")
+    detailed = validate_values(
+        parser_ir=parser_ir,
+        preservation=preservation,
+        tei_root=tei_root,
+        plaintext=plaintext,
+        tei_manifest=tei_manifest,
+        plaintext_manifest=plaintext_manifest,
+        tei_validation=tei_validation,
+        source_region=source_region,
+        parser_ir_schema=parser_ir_schema,
+        preservation_schema=preservation_schema,
+        paths=paths,
     )
-    checks["source_region_coverage_valid"] = source_region_valid(source_region)
-    checks["tei_profile_valid"] = bool(tei_validation.get("status") == "passed")
-    checks["preservation_schema_valid"] = bool(
-        preservation.get("schema_id")
-        == "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
-        and preservation.get("schema_version") == "0.2.0"
-        and preservation.get("coverage", {}).get("record_count")
-        == len(preservation.get("records", []))
-    )
-    checks["tei_manifest_valid"] = bool(
-        tei_manifest.get("artifact_kind") == "tei"
-        and tei_manifest.get("validation_status") == "passed"
-        and content_hash_matches(tei_manifest, paths["tei"])
-    )
-    checks["plaintext_manifest_valid"] = bool(
-        plaintext_manifest.get("artifact_kind") == "plaintext"
-        and plaintext_manifest.get("validation_status") == "passed"
-        and content_hash_matches(plaintext_manifest, paths["plaintext"])
-    )
-    checks["tei_manifest_references_preservation"] = sidecar_hash_matches(
-        tei_manifest,
-        "preservation",
-        "preservation.json",
-        paths["preservation"],
-    )
-    checks["tei_manifest_references_validation_result"] = sidecar_hash_matches(
-        tei_manifest,
-        "validation-result",
-        "tei-validation-result.json",
-        paths["tei_validation_result"],
-    )
-    checks["source_region_sidecar_role_available"] = checks["source_region_coverage_valid"]
-    checks["tei_abc_projection_resolves_to_sidecar"] = all(
-        ref in record_ids for ref in preservation_record_refs(tei_root)
-    )
-    checks["preservation_tei_pointers_resolve"] = all(
-        tei_pointer_resolves(record.get("tei_pointer"), tei_ids)
-        for record in preservation.get("records", [])
-        if isinstance(record, dict)
-    )
-    checks["preservation_source_pointers_resolve"] = all(
-        record.get("source_pointer") in source_pointers
-        for record in preservation.get("records", [])
-        if isinstance(record, dict) and record.get("source_pointer") is not None
-    )
+    checks = detailed["structure_check_candidates"] or {}
     plaintext_details = plaintext_mismatch_details(parser_ir, plaintext)
-    checks["plaintext_body_only"] = plaintext_details is None
 
     messages = {
         "parser_ir_schema_valid": "Parser-IR JSON does not carry the expected ABC parser-IR schema identity.",
@@ -369,19 +539,32 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
         "preservation_source_pointers_resolve": "A preservation source_pointer does not resolve to a parser-IR source_pointer.",
         "plaintext_body_only": "Plaintext differs from the parser-IR body-only projection.",
     }
-    for check, passed in checks.items():
+    for check, passed in {
+        **(detailed["supporting_preconditions"] or {}),
+        **checks,
+    }.items():
         if not passed:
             details = plaintext_details if check == "plaintext_body_only" else None
             add_failure(failures, check, messages[check], details)
 
     return {
         "schema_version": SCHEMA_VERSION,
-        "verdict": PASSED_VERDICT if not failures else FAILED_VERDICT,
+        "verdict": (
+            PASSED_VERDICT
+            if detailed["join_input"]["status"] == "valid" and not failures
+            else FAILED_VERDICT
+        ),
         "validator": "ab-validator publication-bundle-validate",
         "command": args.command,
         "abc_commit": args.abc_commit,
         "validated_bundle": validated_bundle,
-        "checks": checks,
+        "validator_identity": {
+            "validator_id": validator_identity.get("validator_id"),
+            "validator_semantics_hash": validator_identity.get("validator_semantics_hash"),
+        },
+        "parser_ir_schema_hash": optional_file_sha256(args.parser_ir_schema),
+        "preservation_schema_hash": optional_file_sha256(args.preservation_schema),
+        **detailed,
         "failures": failures,
     }
 
@@ -415,6 +598,9 @@ def validate_batch(args: argparse.Namespace) -> dict[str, Any]:
             publication_dir=publication_dir,
             abc_commit=args.abc_commit,
             command=args.command,
+            parser_ir_schema=args.parser_ir_schema,
+            preservation_schema=args.preservation_schema,
+            validator_identity=args.validator_identity,
         )
         row_summary = validate_bundle(row_args)
         row_failures = row_summary.get("failures", [])
@@ -423,7 +609,10 @@ def validate_batch(args: argparse.Namespace) -> dict[str, Any]:
             "row_dir": display_path(parser_ir.parent),
             "verdict": row_summary.get("verdict"),
             "validated_bundle": row_summary.get("validated_bundle", {}),
-            "checks": row_summary.get("checks", {}),
+            "structure_check_candidates": row_summary.get("structure_check_candidates"),
+            "supporting_preconditions": row_summary.get("supporting_preconditions", {}),
+            "join_input": row_summary.get("join_input", {}),
+            "counts": row_summary.get("counts"),
             "failures": row_failures,
         }
         rows.append(row)
@@ -451,9 +640,15 @@ def validate_batch(args: argparse.Namespace) -> dict[str, Any]:
             }
         )
 
-    checks = {
-        check: bool(rows) and all(row.get("checks", {}).get(check) is True for row in rows)
-        for check in REQUIRED_CHECKS
+    structure_checks = {
+        check: bool(rows)
+        and all((row.get("structure_check_candidates") or {}).get(check) is True for row in rows)
+        for check in STRUCTURE_CHECK_CANDIDATES
+    }
+    supporting_checks = {
+        check: bool(rows)
+        and all(row.get("supporting_preconditions", {}).get(check) is True for row in rows)
+        for check in SUPPORTING_PRECONDITIONS
     }
     rows_failed = sum(1 for row in rows if row.get("verdict") != PASSED_VERDICT)
     scope = {
@@ -472,7 +667,16 @@ def validate_batch(args: argparse.Namespace) -> dict[str, Any]:
         "command": args.command,
         "abc_commit": args.abc_commit,
         "scope": scope,
-        "checks": checks,
+        "structure_check_candidates": structure_checks,
+        "supporting_preconditions": supporting_checks,
+        "join_input": {
+            "status": (
+                "valid"
+                if bool(rows)
+                and all(row.get("join_input", {}).get("status") == "valid" for row in rows)
+                else "invalid"
+            )
+        },
         "rows": rows,
         "failures": failures,
     }
@@ -494,13 +698,20 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "",
             f"Rows failed: `{scope.get('rows_failed')}`",
             "",
-            "## Checks",
+            "## Structure check candidates",
             "",
             "| Check | Passed |",
             "|---|---:|",
         ]
-        for check, passed in summary.get("checks", {}).items():
+        for check, passed in summary.get("structure_check_candidates", {}).items():
             lines.append(f"| `{check}` | `{str(passed).lower()}` |")
+        lines.extend(
+            ["", "## Join input", "", f"Status: `{summary.get('join_input', {}).get('status')}`"]
+        )
+        lines.extend(["", "## Supporting preconditions", "", "| Check | Passed |", "|---|---:|"])
+        for check, passed in summary.get("supporting_preconditions", {}).items():
+            lines.append(f"| `{check}` | `{str(passed).lower()}` |")
+        lines.extend(["", "## Counts", "", f"Rows: `{len(summary.get('rows', []))}`"])
         if summary.get("failures"):
             lines.extend(["", "## Failures", ""])
             for failure in summary["failures"][:50]:
@@ -525,13 +736,29 @@ def render_markdown(summary: dict[str, Any]) -> str:
         "",
         f"Verdict: `{summary['verdict']}`",
         "",
-        "## Checks",
+        "## Structure check candidates",
         "",
         "| Check | Passed |",
         "|---|---:|",
     ]
-    for check, passed in summary.get("checks", {}).items():
+    for check, passed in (summary.get("structure_check_candidates") or {}).items():
         lines.append(f"| `{check}` | `{str(passed).lower()}` |")
+    lines.extend(
+        ["", "## Join input", "", f"Status: `{summary.get('join_input', {}).get('status')}`"]
+    )
+    lines.extend(["", "## Supporting preconditions", "", "| Check | Passed |", "|---|---:|"])
+    for check, passed in summary.get("supporting_preconditions", {}).items():
+        lines.append(f"| `{check}` | `{str(passed).lower()}` |")
+    lines.extend(
+        [
+            "",
+            "## Counts",
+            "",
+            "```json",
+            json.dumps(summary.get("counts"), ensure_ascii=False, sort_keys=True),
+            "```",
+        ]
+    )
     if summary.get("failures"):
         lines.extend(["", "## Failures", ""])
         for failure in summary["failures"]:

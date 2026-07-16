@@ -1315,6 +1315,20 @@
               touch "$out"
             '';
 
+        parserRqPublicationPytestCheck =
+          pkgs.runCommand "parser-rq-publication-pytest-check"
+            {
+              nativeBuildInputs = [ pythonWithAatSchemaDeps ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+              python -m pytest reports/parser-ir/tests -q
+              touch "$out"
+            '';
+
         phase5CheckpointCheck =
           pkgs.runCommand "phase5-checkpoint-check"
             {
@@ -1955,6 +1969,7 @@
           aat-fidelity-duckdb-smoke = aatFidelityDuckdbSmokeCheck;
           aat-oracle-audit-smoke = aatOracleAuditSmokeCheck;
           reports-pytest = reportsPytestCheck;
+          parser-rq-publication-pytest = parserRqPublicationPytestCheck;
           phase5-checkpoint = phase5CheckpointCheck;
         };
 

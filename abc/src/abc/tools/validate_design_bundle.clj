@@ -412,8 +412,9 @@
 (defn parser-rq-raw-diagnostics-errors [policy capture decoded]
   (let [raw-schema (files/read-json
                     "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")
-        policy-by-code (into {} (map (juxt #(get % "code") identity)
-                                     (get policy "rules" [])))]
+        policy-by-code (into {}
+                             (map (fn [rule] [(get rule "code") rule])
+                                  (get policy "rules" [])))]
     (vec
      (concat
       (when-let [errors (schema/validation-errors raw-schema capture)]

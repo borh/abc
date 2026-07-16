@@ -45,6 +45,8 @@ fn classified_spans(source: &str) -> Vec<(u32, u32, &'static str)> {
 
 #[test]
 fn interior_forward_decoration_does_not_overlap_queued_plain() {
+    use PlainProvenance::{RecoveredVerbatim as R, Text as T};
+
     for source in [
         "前に青空の後［＃「青空」に傍点］末尾",
         // The restored explicit ruby-base bar is recovered while the target
@@ -55,7 +57,7 @@ fn interior_forward_decoration_does_not_overlap_queued_plain() {
         assert_eq!(spans.first().map(|span| span.0), Some(0), "{spans:?}");
         assert_eq!(
             spans.last().map(|span| span.1),
-            Some(source.len() as u32),
+            Some(u32::try_from(source.len()).unwrap()),
             "{spans:?}"
         );
         for pair in spans.windows(2) {
@@ -66,7 +68,6 @@ fn interior_forward_decoration_does_not_overlap_queued_plain() {
         }
     }
 
-    use PlainProvenance::{RecoveredVerbatim as R, Text as T};
     assert_eq!(
         plain_provenance("｜青空の後［＃「青空」に傍点］末尾"),
         vec![(0, 3, R), (9, 15, T), (45, 51, T)]

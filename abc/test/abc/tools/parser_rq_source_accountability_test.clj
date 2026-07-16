@@ -35,9 +35,92 @@
 (def recognition-identity-ref
   (qualification/qualification-identity-ref recognition-identity))
 
+(def production-recognition-fixture-root
+  (io/file "test/fixtures/parser-rq/source-recognition-capture"))
+
+(defn- read-keyword-json
+  [file]
+  (-> file slurp json/read-json-str walk/keywordize-keys))
+
+(defn- copy-tree!
+  [source destination]
+  (doseq [file (file-seq source)
+          :let [relative (.relativize (.toPath source) (.toPath file))
+                target (.toFile (.resolve (.toPath destination) relative))]]
+    (if (.isDirectory file)
+      (.mkdirs target)
+      (do
+        (.mkdirs (.getParentFile target))
+        (java.nio.file.Files/copy (.toPath file) (.toPath target)
+                                  (into-array java.nio.file.CopyOption []))))))
+
+(defn- staged-production-recognition
+  []
+  (let [root (.toFile (java.nio.file.Files/createTempDirectory
+                       "parser-rq-recognition-production"
+                       (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (copy-tree! production-recognition-fixture-root root)
+    {:root root
+     :store {:root (.getPath (io/file root "store"))}
+     :manifest (read-keyword-json (io/file root "manifest.json"))
+     :identity (read-keyword-json (io/file root "store/identity.json"))
+     :aggregate (read-keyword-json (io/file root "store/recognition-aggregate.json"))}))
+
+(defn- delete-tree!
+  [root]
+  (doseq [file (reverse (file-seq root))] (.delete file)))
+
 (deftest qualification-identity-ref-matches-rust-golden
   (is (= "sha256:8823c4600a7b9cff9b03728247dbd991474a8bbdf528cec8752b63219e68ae85"
          identity-ref)))
+
+(deftest production-recognition-fixture-drives-the-real-envelope-and-gate
+  (let [{:keys [root store manifest identity aggregate]}
+        (staged-production-recognition)]
+    (try
+      (let [envelope (rq-source/derive-source-recognition-envelope
+                      store manifest aggregate identity)]
+        (is (= recognition-identity-ref (:identity_ref envelope)))
+        (is (= 0.461M (:value envelope)))
+        (is (= :not-qualified
+               (qualification/gate-status
+                true
+                [(qualification/evaluate-predicate
+                  {:id :source_span_coverage :operator :eq :threshold 1.0}
+                  {:source_span_coverage envelope})]))))
+      (finally (delete-tree! root)))))
+
+(deftest production-recognition-fixture-identity-edges-fail-closed
+  (doseq [[label relative]
+          [["source/capture-ledger/policy/schema/authority/generation"
+            "store/recognition-index.json"]
+           ["corpus-index/ref/algorithm/membership" "store/recognition-index.json"]
+           ["record-locator/hash" (-> (read-keyword-json
+                                       (io/file production-recognition-fixture-root
+                                                "store/recognition-index.json"))
+                                      :records first :locator
+                                      (->> (str "store/")))]
+           ["aggregate-totals/membership" "store/recognition-aggregate.json"]
+           ["qualification/parser/coordinate" "store/identity.json"]]]
+    (let [{:keys [root store manifest identity aggregate]}
+          (staged-production-recognition)]
+      (try
+        (spit (io/file root relative) "{}")
+        (is (= :unavailable
+               (:status (rq-source/derive-source-recognition-envelope
+                         store manifest aggregate identity)))
+            label)
+        (finally (delete-tree! root)))))
+  (let [{:keys [root store identity aggregate] :as staged}
+        (staged-production-recognition)]
+    (try
+      (let [manifest (assoc-in (:manifest staged) [:blobs 0 :locator]
+                               "../outside.json")]
+        (is (= :unavailable
+               (:status (rq-source/derive-source-recognition-envelope
+                         store manifest aggregate identity)))
+            "P0 manifest binding"))
+      (finally (delete-tree! root)))))
 
 (def taxonomy-text
   "{\"$schema\":\"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json\",\"coordinate_system\":\"decoded_utf8\",\"rules\":[],\"schema_version\":\"abc/parser-rq-ignored-regions/v1\",\"taxonomy_version\":\"parser-rq-ignored-regions-v1\"}")

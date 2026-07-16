@@ -571,7 +571,12 @@ fn reconcile_accent_edit_facts(
     facts
 }
 
-fn build_ledger(bytes: &[u8], decoded: &DecodedSource, parser_output: &[u8]) -> Result<Value> {
+fn build_ledger(
+    bytes: &[u8],
+    decoded: &DecodedSource,
+    parser_output: &[u8],
+    identity_ref: &str,
+) -> Result<Value> {
     ensure!(
         decoded.encoding != "windows-31j-lossy",
         "lossy source decoding"
@@ -596,7 +601,7 @@ fn build_ledger(bytes: &[u8], decoded: &DecodedSource, parser_output: &[u8]) -> 
     Ok(json!({
         "schema_version": LEDGER_VERSION,
         "ledger_schema_hash": ledger_schema_hash()?,
-        "qualification_identity_ref": qualification_identity_ref(),
+        "qualification_identity_ref": identity_ref,
         "parser": "ab-aozora",
         "instrument_version": adapter_version(),
         "original_source": {
@@ -635,6 +640,7 @@ pub fn classified_source_ledger_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
         bytes,
         &decoded,
         &parser_output,
+        &qualification_identity_ref(),
     )?))
 }
 
@@ -645,18 +651,44 @@ pub fn classified_source_ledger_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
 /// Returns an error when any member cannot be produced or the resulting
 /// generation fails its closed authentication checks.
 pub fn capture_generation_from_bytes(bytes: &[u8]) -> Result<CaptureGeneration> {
+    capture_generation_from_bytes_for_identity(bytes, &qualification_identity_ref())
+}
+
+/// Capture all member bytes under an explicit qualification identity.
+///
+/// # Errors
+///
+/// Returns an error for a malformed identity reference or any capture failure.
+pub fn capture_generation_from_bytes_for_identity(
+    bytes: &[u8],
+    identity_ref: &str,
+) -> Result<CaptureGeneration> {
+    ensure!(
+        identity_ref.strip_prefix("sha256:").is_some_and(|digest| {
+            digest.len() == 64
+                && digest
+                    .bytes()
+                    .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        }),
+        "qualification identity must be a lowercase SHA-256 reference"
+    );
     let decoded = decode_source_bytes(bytes)?;
     let decoded_source = decoded.text.as_bytes().to_vec();
     let parser_output = aat_json_from_bytes(bytes)?;
     let raw_diagnostics = diagnostics_json_from_bytes(bytes)?;
-    let classified_source_ledger = canonical_json(&build_ledger(bytes, &decoded, &parser_output)?);
+    let classified_source_ledger = canonical_json(&build_ledger(
+        bytes,
+        &decoded,
+        &parser_output,
+        identity_ref,
+    )?);
     let decoded_identity = member_identity("txt", &decoded_source);
     let parser_identity = member_identity("json", &parser_output);
     let diagnostics_identity = member_identity("json", &raw_diagnostics);
     let ledger_identity = member_identity("json", &classified_source_ledger);
     let mut manifest = json!({
         "schema_version": GENERATION_VERSION,
-        "qualification_identity_ref": qualification_identity_ref(),
+        "qualification_identity_ref": identity_ref,
         "work_id": decoded.source_hash,
         "members": {
             "decoded_source": member_json(&decoded_identity),
@@ -758,7 +790,14 @@ pub fn verify_capture_generation(generation: &CaptureGeneration) -> Result<()> {
         "manifest version mismatch"
     );
     ensure!(
-        manifest["qualification_identity_ref"] == qualification_identity_ref(),
+        manifest["qualification_identity_ref"]
+            .as_str()
+            .is_some_and(|value| value.strip_prefix("sha256:").is_some_and(|digest| {
+                digest.len() == 64
+                    && digest
+                        .bytes()
+                        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+            })),
         "qualification identity mismatch"
     );
     let asserted_ref = manifest["generation_ref"]

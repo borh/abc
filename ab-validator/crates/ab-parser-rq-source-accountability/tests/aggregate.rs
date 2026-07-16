@@ -292,6 +292,56 @@ fn supplied_totals_cannot_override_interval_conservation() {
 }
 
 #[test]
+fn v1_rejects_forged_ignored_regions() {
+    let mut f = fixture(&[("a", 1, 2)]);
+    mutate_record(&mut f, |r| {
+        r.ignored = vec![WireInterval { start: 0, end: 1 }];
+        r.ignored_bytes = 1;
+        r.eligible = vec![WireInterval { start: 1, end: 2 }];
+        r.eligible_bytes = 1;
+        r.covered_eligible = vec![WireInterval { start: 1, end: 2 }];
+        r.covered_eligible_bytes = 1;
+        r.uncovered_eligible.clear();
+        r.uncovered_eligible_bytes = 0;
+    });
+    unavailable_without_numbers(&run(&f));
+}
+
+#[test]
+fn v1_rejects_lossy_ok_records() {
+    let mut f = fixture(&[("a", 1, 1)]);
+    mutate_record(&mut f, |r| {
+        r.decoded_source.encoding = DecodedEncoding::Windows31jLossy
+    });
+    unavailable_without_numbers(&run(&f));
+}
+
+#[test]
+fn v1_requires_one_full_eligible_interval() {
+    let mut split = fixture(&[("a", 2, 2)]);
+    mutate_record(&mut split, |r| {
+        r.eligible = vec![
+            WireInterval { start: 0, end: 1 },
+            WireInterval { start: 1, end: 2 },
+        ];
+    });
+    unavailable_without_numbers(&run(&split));
+
+    let mut non_full = fixture(&[("a", 1, 2)]);
+    mutate_record(&mut non_full, |r| {
+        r.eligible = vec![WireInterval { start: 0, end: 1 }];
+        r.eligible_bytes = 1;
+        r.ignored = vec![WireInterval { start: 1, end: 2 }];
+        r.ignored_bytes = 1;
+        r.covered_eligible = vec![WireInterval { start: 0, end: 1 }];
+        r.covered_eligible_bytes = 1;
+        r.uncovered_eligible.clear();
+        r.uncovered_eligible_bytes = 0;
+    });
+    unavailable_without_numbers(&run(&non_full));
+}
+
+#[test]
 fn zero_denominator_is_unavailable() {
     let f = fixture(&[("a", 0, 0)]);
     unavailable_without_numbers(&run(&f));

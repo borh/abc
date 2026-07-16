@@ -20,17 +20,19 @@ enum Command {
     /// Analyze one work from immutable campaign capture inputs.
     AnalyzeWork {
         #[arg(long)]
-        original: PathBuf,
+        source: PathBuf,
         #[arg(long)]
         parser_ir: PathBuf,
         #[arg(long)]
         corpus_entry: PathBuf,
         #[arg(long)]
-        qualification: PathBuf,
+        qualification_identity: PathBuf,
         #[arg(long)]
         taxonomy: PathBuf,
         #[arg(long)]
         diagnostics_locator: String,
+        #[arg(long)]
+        out: PathBuf,
     },
     /// Analyze an explicit closed corpus from immutable campaign capture roots.
     AnalyzeCorpus {
@@ -60,6 +62,8 @@ enum Command {
         #[arg(long)]
         taxonomy: PathBuf,
         #[arg(long)]
+        store_root: PathBuf,
+        #[arg(long)]
         out: PathBuf,
     },
 }
@@ -68,16 +72,36 @@ fn read_json<T: serde::de::DeserializeOwned>(path: &PathBuf) -> Result<T> {
     Ok(serde_json::from_slice(&fs::read(path)?)?)
 }
 
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(deny_unknown_fields)]
+struct V1Taxonomy {
+    #[serde(rename = "$schema")]
+    schema: String,
+    coordinate_system: ab_parser_rq_source_accountability::CoordinateSystem,
+    rules: Vec<serde_json::Value>,
+    schema_version: String,
+    taxonomy_version: ab_parser_rq_source_accountability::TaxonomyVersion,
+}
+
 fn taxonomy(path: &PathBuf) -> Result<TaxonomyIdentity> {
     let bytes = fs::read(path)?;
-    let value: serde_json::Value = serde_json::from_slice(&bytes)?;
+    let value: V1Taxonomy = serde_json::from_slice(&bytes)?;
+    anyhow::ensure!(
+        value.schema == "https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json",
+        "taxonomy $schema mismatch"
+    );
+    anyhow::ensure!(
+        value.schema_version == "abc/parser-rq-ignored-regions/v1",
+        "taxonomy schema_version mismatch"
+    );
+    anyhow::ensure!(value.rules.is_empty(), "v1 taxonomy rules must be empty");
+    let canonical = canonical_json(&value)?;
+    anyhow::ensure!(
+        canonical.as_bytes() == bytes,
+        "taxonomy is not canonical JSON"
+    );
     Ok(TaxonomyIdentity {
-        taxonomy_version: serde_json::from_value(
-            value
-                .get("taxonomy_version")
-                .cloned()
-                .unwrap_or(serde_json::Value::Null),
-        )?,
+        taxonomy_version: value.taxonomy_version,
         taxonomy_hash: format!("sha256:{:x}", sha2::Sha256::digest(&bytes)),
         taxonomy_jcs_bytes: bytes,
     })
@@ -88,22 +112,25 @@ use sha2::Digest;
 fn main() -> Result<()> {
     match Cli::parse().command {
         Command::AnalyzeWork {
-            original,
+            source,
             parser_ir,
             corpus_entry,
-            qualification,
+            qualification_identity,
             taxonomy: taxonomy_path,
             diagnostics_locator,
+            out,
         } => {
             let result = analyze_work(WorkInput {
-                original_bytes: fs::read(original)?,
+                original_bytes: fs::read(source)?,
                 parser_ir_bytes: fs::read(parser_ir)?,
                 corpus_entry: read_json(&corpus_entry)?,
-                qualification_identity: read_json(&qualification)?,
+                qualification_identity: read_json(&qualification_identity)?,
                 taxonomy: taxonomy(&taxonomy_path)?,
                 diagnostics_locator,
             });
-            println!("{}", canonical_json(&result.record)?);
+            let bytes = canonical_json(&result.record)?;
+            fs::write(out, &bytes)?;
+            println!("{bytes}");
         }
         Command::AnalyzeCorpus {
             corpus,
@@ -130,6 +157,7 @@ fn main() -> Result<()> {
             work_record_index,
             qualification_identity,
             taxonomy: taxonomy_path,
+            store_root,
             out,
         } => {
             let corpus: Vec<CorpusEntry> = read_json::<Vec<CorpusSourceEntry>>(&corpus)?
@@ -137,16 +165,77 @@ fn main() -> Result<()> {
                 .map(|entry| entry.corpus_entry)
                 .collect();
             let index = read_json::<RecordIndex>(&work_record_index)?;
-            let records_root = work_record_index
-                .parent()
-                .ok_or_else(|| anyhow::anyhow!("work record index has no parent directory"))?;
             let identity = read_json::<QualificationIdentity>(&qualification_identity)?;
             let taxonomy = taxonomy(&taxonomy_path)?;
-            let result = aggregate(&corpus, &index, records_root, &identity, &taxonomy)?;
+            let result = aggregate(&corpus, &index, &store_root, &identity, &taxonomy)?;
             let bytes = canonical_json(&result)?;
             fs::write(out, &bytes)?;
             println!("{bytes}");
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn public_cli_uses_designed_work_and_store_flags() {
+        let cli = Cli::try_parse_from([
+            "tool",
+            "analyze-work",
+            "--source",
+            "source.txt",
+            "--parser-ir",
+            "ir.json",
+            "--corpus-entry",
+            "entry.json",
+            "--qualification-identity",
+            "identity.json",
+            "--taxonomy",
+            "taxonomy.json",
+            "--diagnostics-locator",
+            "diag.json",
+            "--out",
+            "record.json",
+        ]);
+        assert!(cli.is_ok());
+        let aggregate = Cli::try_parse_from([
+            "tool",
+            "aggregate",
+            "--corpus",
+            "corpus.json",
+            "--work-record-index",
+            "index.json",
+            "--store-root",
+            "store",
+            "--qualification-identity",
+            "identity.json",
+            "--taxonomy",
+            "taxonomy.json",
+            "--out",
+            "aggregate.json",
+        ]);
+        assert!(aggregate.is_ok());
+    }
+
+    #[test]
+    fn taxonomy_parser_rejects_non_v1_and_noncanonical_documents() {
+        let root = std::env::temp_dir().join(format!("taxonomy-cli-{}", std::process::id()));
+        let cases = [
+            br#"{"#.as_slice(),
+            br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","extra":true,"rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.as_slice(),
+            br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[{}],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.as_slice(),
+            br#"{"$schema":"wrong","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.as_slice(),
+            br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"bytes","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v2"}"#.as_slice(),
+            br#"{ "coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1","$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json"}"#.as_slice(),
+        ];
+        for (index, bytes) in cases.iter().enumerate() {
+            let path = root.with_extension(index.to_string());
+            fs::write(&path, bytes).unwrap();
+            assert!(taxonomy(&path).is_err(), "case {index} was accepted");
+            fs::remove_file(path).unwrap();
+        }
+    }
 }

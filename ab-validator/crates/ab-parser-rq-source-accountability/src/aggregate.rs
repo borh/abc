@@ -8,9 +8,9 @@ use sha2::{Digest, Sha256};
 
 use crate::interval::{Interval, intersect, normalize, subtract, total_len};
 use crate::{
-    AggregateRecord, AggregateSchemaVersion, CoordinateSystem, CorpusEntry, QualificationIdentity,
-    RecordIndex, TaxonomyIdentity, WorkCompleteness, WorkInterval, WorkRecord, WorkStatus,
-    index::qualification_identity_ref,
+    AggregateRecord, AggregateSchemaVersion, CoordinateSystem, CorpusEntry, DecodedEncoding,
+    QualificationIdentity, RecordIndex, TaxonomyIdentity, WireInterval, WorkCompleteness,
+    WorkInterval, WorkRecord, WorkStatus, index::qualification_identity_ref,
 };
 
 fn digest(bytes: &[u8]) -> String {
@@ -56,6 +56,10 @@ fn valid_record(
 ) -> Result<Vec<WorkInterval>> {
     anyhow::ensure!(record.status == WorkStatus::Ok, "work unavailable");
     anyhow::ensure!(record.errors.is_empty(), "ok work has errors");
+    anyhow::ensure!(
+        record.decoded_source.encoding != DecodedEncoding::Windows31jLossy,
+        "lossy decoded source"
+    );
     anyhow::ensure!(record.work_id == corpus.work_id, "record work ID mismatch");
     anyhow::ensure!(
         record.original_source.sha256 == corpus.original_sha256,
@@ -73,6 +77,18 @@ fn valid_record(
     anyhow::ensure!(
         record.coordinate_system == CoordinateSystem::DecodedUtf8,
         "coordinate system mismatch"
+    );
+    anyhow::ensure!(
+        record.ignored.is_empty() && record.ignored_bytes == 0,
+        "v1 ignored regions must be empty"
+    );
+    anyhow::ensure!(
+        record.eligible
+            == [WireInterval {
+                start: 0,
+                end: record.decoded_source_bytes,
+            }],
+        "v1 eligible region must be the full decoded source"
     );
 
     let ignored = normalize(intervals(&record.ignored, record.decoded_source_bytes)?);

@@ -171,6 +171,7 @@ fn destination_exists(path: &Path) -> Result<bool> {
 }
 
 fn preflight_destination(root: &Path, relative: &str, bytes: &[u8]) -> Result<()> {
+    secure_cas_parent(root, Path::new(relative))?;
     let path = root.join(relative);
     if destination_exists(&path)? {
         verify_destination(&path, bytes)?;
@@ -178,13 +179,41 @@ fn preflight_destination(root: &Path, relative: &str, bytes: &[u8]) -> Result<()
     Ok(())
 }
 
+fn secure_cas_parent(root: &Path, relative: &Path) -> Result<()> {
+    reject_lexical_escape(relative, "CAS locator")?;
+    fs::create_dir_all(root)?;
+    let trusted_root = fs::canonicalize(root)?;
+    let parent = relative.parent().context("CAS path has no parent")?;
+    let mut current = root.to_path_buf();
+    for component in parent.components() {
+        current.push(component.as_os_str());
+        match fs::symlink_metadata(&current) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                bail!("CAS ancestor must not be a symlink: {}", current.display());
+            }
+            Ok(metadata) if !metadata.is_dir() => {
+                bail!("CAS ancestor must be a directory: {}", current.display());
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                fs::create_dir(&current)?;
+            }
+            Err(error) => return Err(error.into()),
+        }
+        if !fs::canonicalize(&current)?.starts_with(&trusted_root) {
+            bail!(
+                "CAS locator escapes trusted store root: {}",
+                relative.display()
+            );
+        }
+    }
+    Ok(())
+}
+
 fn publish_blob(root: &Path, relative: &str, bytes: &[u8]) -> Result<()> {
+    secure_cas_parent(root, Path::new(relative))?;
     let path = root.join(relative);
     let parent = path.parent().context("CAS path has no parent")?;
-    fs::create_dir_all(parent)?;
-    if fs::symlink_metadata(parent)?.file_type().is_symlink() {
-        bail!("CAS parent must not be a symlink: {}", parent.display());
-    }
     if destination_exists(&path)? {
         return verify_destination(&path, bytes);
     }

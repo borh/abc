@@ -88,11 +88,12 @@ The CLI exposes focused fixture and aggregate commands:
 ```text
 ab-parser-rq-source-accountability analyze-work \
   --source <path> --parser-ir <path> --corpus-entry <path> \
-  --qualification-identity <path> --taxonomy <path> --out <path>
+  --qualification-identity <path> --taxonomy <path> \
+  --diagnostics-locator <locator> --out <path>
 
 ab-parser-rq-source-accountability aggregate \
   --corpus <path> --work-record-index <path> --taxonomy <path> \
-  --qualification-identity <path> --out <path>
+  --qualification-identity <path> --store-root <path> --out <path>
 ```
 
 The corpus-scale producer is a third command:

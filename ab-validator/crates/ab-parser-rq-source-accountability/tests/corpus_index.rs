@@ -94,7 +94,7 @@ fn input(root: &std::path::Path) -> CorpusInput {
         });
     }
     fs::write(source_root.join("unrelated.txt"), b"unrelated").unwrap();
-    let taxonomy_jcs_bytes = br#"{"coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec();
+    let taxonomy_jcs_bytes = br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec();
     CorpusInput {
         entries,
         source_root,
@@ -185,6 +185,51 @@ fn record_index_references_exact_content_addressed_bytes() {
                 .ends_with(&format!("{}.json", &entry.sha256[7..]))
         );
     }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn aggregate_cli_resolves_index_locators_against_separate_store_root() {
+    let root = temp_root("aggregate-cli-store-root");
+    let input = input(&root);
+    let corpus_path = root.join("corpus.json");
+    let identity_path = root.join("identity.json");
+    let taxonomy_path = root.join("taxonomy.json");
+    fs::write(&corpus_path, serde_json::to_vec(&input.entries).unwrap()).unwrap();
+    fs::write(
+        &identity_path,
+        serde_json::to_vec(&input.qualification_identity).unwrap(),
+    )
+    .unwrap();
+    fs::write(&taxonomy_path, &input.taxonomy.taxonomy_jcs_bytes).unwrap();
+    analyze_corpus(input.clone()).unwrap();
+    assert_ne!(input.index_out.parent(), Some(input.store_root.as_path()));
+
+    let out = root.join("aggregate.json");
+    let status =
+        std::process::Command::new(env!("CARGO_BIN_EXE_ab-parser-rq-source-accountability"))
+            .args([
+                "aggregate",
+                "--corpus",
+                corpus_path.to_str().unwrap(),
+                "--work-record-index",
+                input.index_out.to_str().unwrap(),
+                "--store-root",
+                input.store_root.to_str().unwrap(),
+                "--qualification-identity",
+                identity_path.to_str().unwrap(),
+                "--taxonomy",
+                taxonomy_path.to_str().unwrap(),
+                "--out",
+                out.to_str().unwrap(),
+            ])
+            .status()
+            .unwrap();
+    assert!(status.success());
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&fs::read(out).unwrap()).unwrap()["status"],
+        "ok"
+    );
     fs::remove_dir_all(root).unwrap();
 }
 
@@ -286,6 +331,25 @@ fn symlink_cas_destination_is_never_accepted_as_content() {
     symlink(outside, target).unwrap();
     assert!(analyze_corpus(input.clone()).is_err());
     assert!(!input.index_out.exists());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink_in_existing_cas_ancestor_is_rejected() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_root("cas-ancestor-symlink");
+    let input = input(&root);
+    let first = analyze_corpus(input.clone()).unwrap();
+    fs::remove_file(&input.index_out).unwrap();
+    let sha256 = input.store_root.join("sha256");
+    let outside = root.join("outside-sha256");
+    fs::rename(&sha256, &outside).unwrap();
+    symlink(&outside, &sha256).unwrap();
+    assert!(analyze_corpus(input.clone()).is_err());
+    assert!(!input.index_out.exists());
+    assert!(outside.join(&first.records[0].locator[7..]).exists());
     fs::remove_dir_all(root).unwrap();
 }
 

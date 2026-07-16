@@ -490,11 +490,13 @@
               pkgs.ruff
             ];
             shellHook = ''
-              # sccache creates a Unix startup-notification socket beneath TMPDIR.
-              # NIMAS session TMPDIR paths can exceed the socket-path limit.
-              export TMPDIR=/tmp
-              export TMP="$TMPDIR"
-              export TEMPDIR="$TMPDIR"
+              if command -v sccache > /dev/null 2>&1; then
+                # sccache creates a Unix startup-notification socket beneath TMPDIR.
+                # NIMAS session TMPDIR paths can exceed the socket-path limit.
+                export TMPDIR=/tmp
+                export TMP="$TMPDIR"
+                export TEMPDIR="$TMPDIR"
+              fi
               if [ -f scripts/soranoha-runtime-env.sh ]; then
                 source scripts/soranoha-runtime-env.sh
               fi

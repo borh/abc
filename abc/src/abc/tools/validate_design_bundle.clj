@@ -576,9 +576,15 @@
 
 (defn parser-rq-source-recognition-index-errors [index]
   (let [expected-ids (get index "expected_work_ids" [])
-        record-ids (mapv #(get % "work_id") (get index "records" []))]
+        record-ids (mapv #(get % "work_id") (get index "records" []))
+        asserted-ref (get index "corpus_generation_ref")
+        computed-ref (hash/format-sha256
+                      (hash/sha256-json-jcs
+                       (dissoc index "corpus_generation_ref")))]
     (vec
      (concat
+      (when-not (= asserted-ref computed-ref)
+        ["corpus_generation_ref does not authenticate the closed record index"])
       (when-not (= (count expected-ids) (get index "expected_work_count"))
         ["expected_work_count does not equal expected membership"])
       (when-not (= (count record-ids) (get index "record_count"))
@@ -627,12 +633,15 @@
           ["aggregate accounted byte conservation does not hold"]))))))
 
 (defn parser-rq-source-recognition-coherence-errors [index aggregate records]
-  (let [identity-keys ["qualification_identity_ref" "generation_ref"
-                       "policy_hash" "coordinate_system"]
+  (let [identity-keys ["qualification_identity_ref" "policy_hash"
+                       "coordinate_system"]
         completeness (get aggregate "work_completeness")
         indexed-ids (set (map #(get % "work_id") (get index "records" [])))
+        entries-by-id (group-by #(get % "work_id") (get index "records" []))
         records-by-id (group-by #(get % "work_id") records)
-        ok-records (filter #(= "ok" (get % "status")) records)
+        ok-records (->> (get index "records" [])
+                        (map #(first (get records-by-id (get % "work_id"))))
+                        (filter #(= "ok" (get % "status"))))
         aggregate-gaps
         (fn [key]
           (vec (mapcat (fn [record]
@@ -647,15 +656,25 @@
         ["loaded records contain duplicate work IDs"])
       (mapcat
        (fn [record]
-         (keep (fn [key]
-                 (when-not (= (get index key) (get record key))
-                   (str "work " (get record "work_id") " has mismatched " key)))
-               identity-keys))
+         (let [work-id (get record "work_id")
+               entry (first (get entries-by-id work-id))]
+           (concat
+            (keep (fn [key]
+                    (when-not (= (get index key) (get record key))
+                      (str "work " work-id " has mismatched " key)))
+                  identity-keys)
+            (when-not (= (get entry "capture_generation_ref")
+                         (get record "capture_generation_ref"))
+              [(str "work " work-id
+                    " does not match its indexed capture_generation_ref")]))))
        records)
       (keep (fn [key]
               (when-not (= (get index key) (get aggregate key))
                 (str "aggregate has mismatched " key)))
             identity-keys)
+      (when-not (= (get index "corpus_generation_ref")
+                   (get aggregate "corpus_generation_ref"))
+        ["aggregate has mismatched corpus_generation_ref"])
       (when-not (= (get index "membership_ref")
                    (get aggregate "membership_ref"))
         ["aggregate has mismatched membership_ref"])

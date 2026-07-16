@@ -245,6 +245,23 @@ and binds them together last. Derivation accepts members only through that
 manifest and rejects cross-generation mixing even when individual source hashes
 happen to match.
 
+The source-recognition protocols preserve that identity under the unambiguous
+name `capture_generation_ref` on each work record. Corpus publication introduces
+a different identity, `corpus_generation_ref`: the SHA-256 hash of RFC 8785 JCS
+canonical bytes of the complete, closed source-recognition index after excluding
+exactly its top-level `corpus_generation_ref`. The hashed index retains the P1
+`membership_ref`, expected membership and counts, qualification identity, policy
+identity, status, and each ordered tuple of `work_id`,
+`capture_generation_ref`, and recognition-record logical blob identity. This is
+acyclic because work captures and record blobs exist before the index is hashed.
+
+The aggregate copies `corpus_generation_ref`; it does not contain or imply one
+shared capture identity. Validation resolves every work record through exactly
+one index entry and requires its `capture_generation_ref` to equal that entry.
+Missing, duplicate, or swapped mappings are unavailable. A zero-work corpus has
+one authenticated empty index and a corresponding zero aggregate; a single-work
+corpus uses the same protocol without collapsing the two identity levels.
+
 ## Capture and derivation
 
 ```text

@@ -9,9 +9,11 @@
 accountability from authenticated P4A1 ledgers without reinterpreting P1 records.
 
 **Architecture:** New source-recognition protocols coexist with immutable P1
-v1. Rust authenticates one capture generation and derives two interval
-projections. Clojure gates R1 only on semantic integer equality; node-span
-coverage receives a new supporting key.
+v1. Rust authenticates each per-work capture generation and derives two interval
+projections. A closed corpus index separately authenticates the mapping from
+work membership to distinct captures and recognition records. Clojure gates R1
+only on semantic integer equality; node-span coverage receives a new supporting
+key.
 
 **Tech Stack:** Rust 2024, serde/serde_json, Hegel; Clojure, Malli, Charred;
 Draft 2020-12 JSON Schema; Nix and Kaocha.
@@ -23,6 +25,9 @@ Draft 2020-12 JSON Schema; Nix and Kaocha.
 - R1 gates `recognized_bytes == eligible_bytes`; accounted cannot pass R1.
 - `recognized ⊆ accounted ⊆ eligible`; both complements conserve bytes.
 - Corpus membership remains the authenticated P1 index set.
+- `capture_generation_ref` identifies one P4A1 work capture;
+  `corpus_generation_ref` identifies the closed P4A2 index. Never substitute
+  one for the other.
 - Invalid ledgers are unavailable; valid semantic gaps are available failures.
 - Node-span evidence remains visible as `:parser_ir_node_span_coverage`.
 
@@ -39,11 +44,14 @@ Draft 2020-12 JSON Schema; Nix and Kaocha.
 - Modify: `abc/test/abc/tools/validate_design_bundle_test.clj`
 
 **Interfaces:** Closed protocols with recognized/accounted intervals, semantic
-gaps, unaccounted intervals, exact completeness, and `generation_ref`.
+gaps, unaccounted intervals, exact completeness, per-work
+`capture_generation_ref`, and index/aggregate `corpus_generation_ref`.
 
 - [ ] Write RED tests rejecting unknown fields, `recognized_bytes >
   accounted_bytes`, either projection beyond eligible, missing work membership,
-  and unavailable records containing trusted totals.
+  unavailable records containing trusted totals, and missing/duplicate/swapped
+  work-to-capture mappings. Exercise distinct captures in a multi-work corpus
+  plus single- and zero-work corpora.
 - [ ] Run focused Kaocha. Expected: missing-schema failure.
 - [ ] Implement schema IDs
   `abc/parser-rq-source-recognition-{work,index,aggregate}/v1`; do not edit P1
@@ -89,8 +97,16 @@ bytes, generation manifest, qualification identity, and work ID.
 `aggregate-recognition` consume explicit index/store roots and publish their
 summary last.
 
+The producer writes `capture_generation_ref` into each work record and its
+corresponding index entry. After all recognition-record blobs exist, it computes
+`corpus_generation_ref = sha256(JCS(index - corpus_generation_ref))`; the
+aggregate copies that exact reference. This excludes only the self-reference
+and includes membership, ordered entries, each capture reference, and each
+record blob identity.
+
 - [ ] Write RED trust tests for exact membership, authenticated locators,
-  duplicates/extras, unavailable propagation, checked totals, and byte-identical
+  distinct multi-work capture references, swapped/missing/duplicate mappings,
+  single/zero work, unavailable propagation, checked totals, and byte-identical
   repeated runs.
 - [ ] Reuse the shared authenticated blob-store API; do not copy CAS code.
 - [ ] Aggregate per-work intervals without cross-work merging. Run focused tests

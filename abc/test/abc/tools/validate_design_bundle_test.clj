@@ -26,6 +26,11 @@
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
+(defn- with-corpus-generation-ref [index]
+  (assoc index "corpus_generation_ref"
+         (hash/format-sha256
+          (hash/sha256-json-jcs (dissoc index "corpus_generation_ref")))))
+
 (deftest parser-rq-source-recognition-protocols
   (let [root "test/fixtures/parser-rq/source-recognition"
         work-schema (files/read-json
@@ -85,8 +90,65 @@
       (is (seq (validate/parser-rq-source-recognition-coherence-errors
                 index aggregate [])))
       (is (seq (validate/parser-rq-source-recognition-coherence-errors
-                index aggregate [(assoc work "generation_ref"
+                index aggregate [(assoc work "capture_generation_ref"
                                         (str "sha256:" (apply str (repeat 64 "f"))))]))))
+    (testing "corpus identity authenticates distinct per-work capture mappings"
+      (let [other-capture (str "sha256:" (apply str (repeat 64 "7")))
+            other-work (assoc work
+                              "work_id" "other-work"
+                              "capture_generation_ref" other-capture)
+            other-entry {"work_id" "other-work"
+                         "capture_generation_ref" other-capture
+                         "sha256" (str "sha256:" (apply str (repeat 64 "8")))
+                         "bytes" 513
+                         "media_type" "application/json"
+                         "locator" "records/other-work/recognition.json"}
+            multi-index (-> index
+                            (assoc "expected_work_ids"
+                                   ["fixture-work" "other-work"]
+                                   "expected_work_count" 2
+                                   "record_count" 2
+                                   "records" [(first (get index "records")) other-entry])
+                            with-corpus-generation-ref)
+            multi-aggregate (-> aggregate
+                                (assoc "corpus_generation_ref"
+                                       (get multi-index "corpus_generation_ref")
+                                       "work_completeness"
+                                       {"expected" 2 "observed" 2 "complete" true}
+                                       "eligible_bytes" 20
+                                       "recognized_bytes" 16
+                                       "accounted_bytes" 20
+                                       "semantic_gap_bytes" 4
+                                       "semantic_gaps"
+                                       [{"work_id" "fixture-work" "start" 4 "end" 6}
+                                        {"work_id" "other-work" "start" 4 "end" 6}]))]
+        (is (not= (get work "capture_generation_ref")
+                  (get other-work "capture_generation_ref")))
+        (is (empty? (validate/parser-rq-source-recognition-index-errors
+                     multi-index)))
+        (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+                     multi-index multi-aggregate [work other-work])))
+        (doseq [bad-index [(with-corpus-generation-ref
+                             (update multi-index "records" pop))
+                           (with-corpus-generation-ref
+                             (assoc multi-index "records"
+                                    [(first (get multi-index "records"))
+                                     (first (get multi-index "records"))]))]]
+          (is (seq (validate/parser-rq-source-recognition-index-errors
+                    bad-index))))
+        (let [swapped-index
+              (with-corpus-generation-ref
+                (assoc-in multi-index ["records" 0 "capture_generation_ref"]
+                          other-capture))]
+          (is (empty? (validate/parser-rq-source-recognition-index-errors
+                       swapped-index)))
+          (is (seq (validate/parser-rq-source-recognition-coherence-errors
+                    swapped-index
+                    (assoc multi-aggregate "corpus_generation_ref"
+                           (get swapped-index "corpus_generation_ref"))
+                    [work other-work]))))
+        (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+                     multi-index multi-aggregate [other-work work])))))
     (testing "available aggregates require an available complete exact fold"
       (doseq [[candidate-index candidate-aggregate candidate-records]
               [[(assoc index "status" "unavailable" "errors" ["index failed"])
@@ -102,12 +164,15 @@
                [index aggregate [(assoc work "work_id" "extra-work")]]]]
         (is (seq (validate/parser-rq-source-recognition-coherence-errors
                   candidate-index candidate-aggregate candidate-records))))
-      (let [empty-index (assoc index
-                               "expected_work_ids" []
-                               "expected_work_count" 0
-                               "record_count" 0
-                               "records" [])
+      (let [empty-index (with-corpus-generation-ref
+                          (assoc index
+                                 "expected_work_ids" []
+                                 "expected_work_count" 0
+                                 "record_count" 0
+                                 "records" []))
             empty-aggregate (assoc aggregate
+                                   "corpus_generation_ref"
+                                   (get empty-index "corpus_generation_ref")
                                    "work_completeness"
                                    {"expected" 0 "observed" 0 "complete" true}
                                    "eligible_bytes" 0

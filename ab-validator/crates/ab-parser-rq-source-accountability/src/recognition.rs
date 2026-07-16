@@ -54,7 +54,7 @@ pub struct RecognitionWorkRecord {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub qualification_identity_ref: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub generation_ref: Option<String>,
+    pub capture_generation_ref: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy_hash: Option<String>,
     pub instrument_version: String,
@@ -216,7 +216,7 @@ fn base_record() -> RecognitionWorkRecord {
     RecognitionWorkRecord {
         schema_version: "abc/parser-rq-source-recognition-work/v1".to_owned(),
         qualification_identity_ref: None,
-        generation_ref: None,
+        capture_generation_ref: None,
         policy_hash: None,
         instrument_version: INSTRUMENT_VERSION.to_owned(),
         work_id: None,
@@ -396,7 +396,7 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     record.qualification_identity_ref = manifest["qualification_identity_ref"]
         .as_str()
         .map(str::to_owned);
-    record.generation_ref = manifest["generation_ref"].as_str().map(str::to_owned);
+    record.capture_generation_ref = manifest["generation_ref"].as_str().map(str::to_owned);
     record.work_id = manifest["work_id"].as_str().map(str::to_owned);
     if manifest["qualification_identity_ref"].as_str()
         != Some(input.qualification_identity_ref.as_str())

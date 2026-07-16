@@ -26,6 +26,71 @@
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
+(deftest parser-rq-diagnostic-gap-protocols
+  (let [root "test/fixtures/parser-rq/diagnostic-gap"
+        raw-schema (files/read-json
+                    "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")
+        policy-schema (files/read-json
+                       "schemas/parser-rq-diagnostic-gap-policy.schema.json")
+        result-schema (files/read-json
+                       "schemas/parser-rq-diagnostic-gap-result.schema.json")
+        policy (files/read-json
+                "data/parser-rq-ab-aozora-diagnostic-gap-v1.json")
+        capture (files/read-json (str root "/raw-diagnostics-valid.json"))
+        available (files/read-json (str root "/result-available.json"))
+        unavailable (files/read-json (str root "/result-unavailable.json"))]
+    (testing "closed contracts and pinned RFC 8785 identities"
+      (is (nil? (schema/validation-errors raw-schema capture)))
+      (is (nil? (schema/validation-errors policy-schema policy)))
+      (is (nil? (schema/validation-errors result-schema available)))
+      (is (nil? (schema/validation-errors result-schema unavailable)))
+      (is (= 21 (count (get policy "rules"))))
+      (is (= (get policy "policy_hash")
+             (hash/format-sha256
+              (hash/sha256-json-jcs (dissoc policy "policy_hash")))))
+      (is (= (get policy "raw_diagnostic_schema_hash")
+             (hash/format-sha256 (hash/sha256-json-jcs raw-schema)))))
+    (testing "runtime policy is the accepted closed code vocabulary"
+      (is (= #{"authorize_exact_span" "observe_only" "reject_internal"}
+             (set (map #(get % "disposition") (get policy "rules")))))
+      (is (= ["source-contains-pua"]
+             (mapv #(get % "code")
+                   (filter #(= "authorize_exact_span"
+                               (get % "disposition"))
+                           (get policy "rules")))))
+      (is (empty? (validate/parser-rq-diagnostic-gap-policy-errors policy))))
+    (testing "unknown fields, codes, and selector ambiguity fail closed"
+      (is (seq (schema/validation-errors raw-schema (assoc capture "unknown" true))))
+      (is (seq (schema/validation-errors
+                raw-schema
+                (assoc-in capture ["diagnostics" 0 "code"] "future-code"))))
+      (is (seq (validate/parser-rq-raw-diagnostics-errors
+                policy
+                (update capture "diagnostics" conj
+                        (first (get capture "diagnostics")))
+                "本文\uE001終わり")))
+      (is (seq (validate/parser-rq-diagnostic-gap-policy-errors
+                (update policy "rules" conj (first (get policy "rules")))))))
+    (testing "code, kind, severity, source, PUA, and interval rules are enforced"
+      (doseq [invalid [(assoc-in capture ["diagnostics" 0 "kind"]
+                                 "unclosed_bracket")
+                       (assoc-in capture ["diagnostics" 0 "severity"] "note")
+                       (assoc-in capture ["diagnostics" 0 "source"] "internal")
+                       (update-in capture ["diagnostics" 0] dissoc "codepoint")
+                       (assoc-in capture ["diagnostics" 0 "codepoint"] "A")
+                       (update-in capture ["diagnostics" 0 "span"]
+                                  dissoc "start")
+                       (assoc-in capture ["diagnostics" 0 "span"]
+                                 {"start" 1 "end" 2})]]
+        (is (seq (validate/parser-rq-raw-diagnostics-errors policy invalid "本文\uE001終わり")))))
+    (testing "unavailable results cannot claim intervals or totals"
+      (is (seq (schema/validation-errors
+                result-schema
+                (assoc unavailable "authorized_intervals" []))))
+      (is (seq (schema/validation-errors
+                result-schema
+                (assoc unavailable "authorized_bytes" 0)))))))
+
 (defn- with-corpus-generation-ref [index]
   (assoc index "corpus_generation_ref"
          (hash/format-sha256

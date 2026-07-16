@@ -347,6 +347,109 @@
                                  (get policy "accent_mappings" []))))
          sort vec)))
 
+(def ^:private parser-rq-diagnostic-gap-vocabulary
+  [["source-contains-pua" "source_contains_pua" "warning" "source" "authorize_exact_span"]
+   ["unclosed-bracket" "unclosed_bracket" "error" "source" "observe_only"]
+   ["unmatched-close" "unmatched_close" "error" "source" "observe_only"]
+   ["accent-decomposition-applied" "accent_decomposition_applied" "note" "source" "observe_only"]
+   ["unresolved-gaiji" "unresolved_gaiji" "warning" "source" "observe_only"]
+   ["mismatched-container-close" "mismatched_container_close" "error" "source" "observe_only"]
+   ["empty-ruby-reading" "empty_ruby_reading" "error" "source" "observe_only"]
+   ["nested-ruby" "nested_ruby" "error" "source" "observe_only"]
+   ["unrecognised-container-directive" "unrecognised_container_directive" "warning" "source" "observe_only"]
+   ["tcy-target-not-found" "tcy_target_not_found" "warning" "source" "observe_only"]
+   ["bouten-target-ambiguous" "bouten_target_ambiguous" "warning" "source" "observe_only"]
+   ["forward-referent-not-stylable" "forward_referent_not_stylable" "warning" "source" "observe_only"]
+   ["break-in-single-line-container" "break_in_single_line_container" "warning" "source" "observe_only"]
+   ["bracketed-kaeriten-no-pair" "bracketed_kaeriten_no_pair" "error" "source" "observe_only"]
+   ["kaeriten-outside-kanbun" "kaeriten_outside_kanbun" "warning" "source" "observe_only"]
+   ["mismatched-bouten-container" "mismatched_bouten_container" "error" "source" "observe_only"]
+   ["non-canonical-directive" "non_canonical_directive" "warning" "source" "observe_only"]
+   ["residual-annotation-marker" "residual_annotation_marker" "error" "internal" "reject_internal"]
+   ["unregistered-sentinel" "unregistered_sentinel" "error" "internal" "reject_internal"]
+   ["registry-out-of-order" "registry_out_of_order" "error" "internal" "reject_internal"]
+   ["registry-position-mismatch" "registry_position_mismatch" "error" "internal" "reject_internal"]])
+
+(defn parser-rq-diagnostic-gap-policy-errors [policy]
+  (let [rules (get policy "rules" [])
+        tuples (mapv (fn [rule]
+                       (mapv #(get rule %)
+                             ["code" "kind" "severity" "source" "disposition"]))
+                     rules)
+        raw-schema (files/read-json
+                    "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")
+        expected-schema-hash (hash/format-sha256
+                              (hash/sha256-json-jcs raw-schema))
+        expected-policy-hash (hash/format-sha256
+                              (hash/sha256-json-jcs
+                               (dissoc policy "policy_hash")))]
+    (vec
+     (concat
+      (when-not (= (count tuples) (count (distinct tuples)))
+        ["diagnostic-gap policy contains duplicate or ambiguous selectors"])
+      (when-not (= parser-rq-diagnostic-gap-vocabulary tuples)
+        ["diagnostic-gap policy does not equal the closed ABC vocabulary"])
+      (when-not (= expected-schema-hash
+                   (get policy "raw_diagnostic_schema_hash"))
+        ["diagnostic-gap policy raw diagnostic schema hash mismatch"])
+      (when-not (= expected-policy-hash (get policy "policy_hash"))
+        ["diagnostic-gap policy identity hash mismatch"])))))
+
+(defn- unicode-private-use? [value]
+  (when (and (string? value)
+             (= 1 (.codePointCount ^String value 0 (.length ^String value))))
+    (let [codepoint (.codePointAt ^String value 0)]
+      (or (<= 0xE000 codepoint 0xF8FF)
+          (<= 0xF0000 codepoint 0xFFFFD)
+          (<= 0x100000 codepoint 0x10FFFD)))))
+
+(declare decoded-slice)
+
+(defn parser-rq-raw-diagnostics-errors [policy capture decoded]
+  (let [raw-schema (files/read-json
+                    "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")
+        policy-by-code (into {} (map (juxt #(get % "code") identity)
+                                     (get policy "rules" [])))]
+    (vec
+     (concat
+      (when-let [errors (schema/validation-errors raw-schema capture)]
+        (map #(str "raw diagnostics schema: " %) errors))
+      (parser-rq-diagnostic-gap-policy-errors policy)
+      (when-not (= (count (get capture "diagnostics" []))
+                   (count (distinct (get capture "diagnostics" []))))
+        ["raw diagnostics contain duplicate complete diagnostic identities"])
+      (mapcat
+       (fn [diagnostic]
+         (let [code (get diagnostic "code")
+               rule (get policy-by-code code)
+               span (get diagnostic "span")
+               source-slice (when (and (map? span)
+                                       (integer? (get span "start"))
+                                       (integer? (get span "end"))
+                                       (string? decoded))
+                              (decoded-slice decoded
+                                             (get span "start")
+                                             (get span "end")))
+               selector (select-keys diagnostic
+                                     ["code" "kind" "severity" "source"])
+               expected (select-keys rule
+                                     ["code" "kind" "severity" "source"])]
+           (concat
+            (when-not (= selector expected)
+              [(str "raw diagnostic selector does not match policy for " code)])
+            (when (= "internal" (get diagnostic "source"))
+              [(str "raw diagnostic uses rejected internal source for " code)])
+            (when-not source-slice
+              [(str "raw diagnostic span is not a nonempty decoded UTF-8 interval for " code)])
+            (when (= code "source-contains-pua")
+              (let [codepoint (get diagnostic "codepoint")]
+                (concat
+                 (when-not (unicode-private-use? codepoint)
+                   ["source-contains-pua codepoint is not one Unicode private-use scalar"])
+                 (when-not (= source-slice codepoint)
+                   ["source-contains-pua span does not equal its codepoint"])))))))
+       (get capture "diagnostics" []))))))
+
 (defn parser-rq-classified-source-characterization-errors [policy mapping]
   (let [constructs (set (map #(get % "construct_id") (get policy "rules" [])))
         observations (get mapping "observations" [])]
@@ -745,9 +848,12 @@
    "schemas/pack-policy.schema.json"
    "schemas/parser-rq-ignored-regions.schema.json"
    "schemas/parser-rq-capture-generation.schema.json"
+   "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
    "schemas/parser-rq-classified-source-ledger.schema.json"
    "schemas/parser-rq-classified-source-policy.schema.json"
    "schemas/parser-rq-classified-source-authority.schema.json"
+   "schemas/parser-rq-diagnostic-gap-policy.schema.json"
+   "schemas/parser-rq-diagnostic-gap-result.schema.json"
    "schemas/parser-rq-source-accountability-aggregate.schema.json"
    "schemas/parser-rq-source-accountability-index.schema.json"
    "schemas/parser-rq-source-accountability-work.schema.json"
@@ -777,6 +883,7 @@
    "data/pack-policies/parquet-basic-v1.json"
    "data/parser-evidence-citations.edn"
    "data/parser-rq-ab-aozora-classified-source-v1.json"
+   "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
    "data/parser-rq-classified-source-authority-v1.json"
    "data/request-sets/demo-basic-ja.json"
    "data/request-sets/full-corpus-analysis-basic-ja.json"
@@ -809,6 +916,9 @@
    "test/fixtures/parser-rq/classified-source-capture/ledger.json"
    "test/fixtures/parser-rq/classified-source/generation.json"
    "test/fixtures/parser-rq/classified-source/ledger.json"
+   "test/fixtures/parser-rq/diagnostic-gap/raw-diagnostics-valid.json"
+   "test/fixtures/parser-rq/diagnostic-gap/result-available.json"
+   "test/fixtures/parser-rq/diagnostic-gap/result-unavailable.json"
    "test/fixtures/parser-rq/source-recognition/aggregate-ok.json"
    "test/fixtures/parser-rq/source-recognition/aggregate-unavailable.json"
    "test/fixtures/parser-rq/source-recognition/index-ok.json"
@@ -843,8 +953,11 @@
         snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
         pack-policy-schema (files/read-json "schemas/pack-policy.schema.json")
         parser-rq-capture-generation-schema (files/read-json "schemas/parser-rq-capture-generation.schema.json")
+        parser-rq-raw-diagnostics-schema (files/read-json "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")
         parser-rq-classified-source-ledger-schema (files/read-json "schemas/parser-rq-classified-source-ledger.schema.json")
         parser-rq-classified-source-policy-schema (files/read-json "schemas/parser-rq-classified-source-policy.schema.json")
+        parser-rq-diagnostic-gap-policy-schema (files/read-json "schemas/parser-rq-diagnostic-gap-policy.schema.json")
+        parser-rq-diagnostic-gap-result-schema (files/read-json "schemas/parser-rq-diagnostic-gap-result.schema.json")
         parser-rq-ignored-regions-schema (files/read-json "schemas/parser-rq-ignored-regions.schema.json")
         parser-rq-source-accountability-aggregate-schema (files/read-json "schemas/parser-rq-source-accountability-aggregate.schema.json")
         parser-rq-source-accountability-index-schema (files/read-json "schemas/parser-rq-source-accountability-index.schema.json")
@@ -882,8 +995,11 @@
                            ["schemas/snapshot-index.schema.json" snapshot-index-schema]
                            ["schemas/pack-policy.schema.json" pack-policy-schema]
                            ["schemas/parser-rq-capture-generation.schema.json" parser-rq-capture-generation-schema]
+                           ["schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json" parser-rq-raw-diagnostics-schema]
                            ["schemas/parser-rq-classified-source-ledger.schema.json" parser-rq-classified-source-ledger-schema]
                            ["schemas/parser-rq-classified-source-policy.schema.json" parser-rq-classified-source-policy-schema]
+                           ["schemas/parser-rq-diagnostic-gap-policy.schema.json" parser-rq-diagnostic-gap-policy-schema]
+                           ["schemas/parser-rq-diagnostic-gap-result.schema.json" parser-rq-diagnostic-gap-result-schema]
                            ["schemas/parser-rq-ignored-regions.schema.json" parser-rq-ignored-regions-schema]
                            ["schemas/parser-rq-source-accountability-aggregate.schema.json" parser-rq-source-accountability-aggregate-schema]
                            ["schemas/parser-rq-source-accountability-index.schema.json" parser-rq-source-accountability-index-schema]
@@ -911,6 +1027,19 @@
                       "test/fixtures/parser-rq/classified-source/ledger.json")
       (validate-json! parser-rq-capture-generation-schema generation-path)
       (check-errors! (parser-rq-capture-generation-errors generation)))
+    (let [root "test/fixtures/parser-rq/diagnostic-gap"
+          policy-path "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
+          policy (files/read-json policy-path)
+          capture-path (str root "/raw-diagnostics-valid.json")
+          capture (files/read-json capture-path)]
+      (validate-json! parser-rq-diagnostic-gap-policy-schema policy-path)
+      (validate-json! parser-rq-raw-diagnostics-schema capture-path)
+      (doseq [path ["result-available.json" "result-unavailable.json"]]
+        (validate-json! parser-rq-diagnostic-gap-result-schema
+                        (str root "/" path)))
+      (check-errors! (parser-rq-diagnostic-gap-policy-errors policy))
+      (check-errors! (parser-rq-raw-diagnostics-errors
+                      policy capture "本文\uE001終わり")))
     (let [root "test/fixtures/parser-rq/source-recognition"
           work (files/read-json (str root "/work-ok.json"))
           index (files/read-json (str root "/index-ok.json"))

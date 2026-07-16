@@ -1,0 +1,1 @@
+{"schema_version":"abc/parser-rq-ab-aozora-diagnostics/v3","parser":"ab-aozora","coordinate_system":"decoded_utf8","diagnostics":[{"kind":"source_contains_pua","code":"source-contains-pua","severity":"warning","source":"source","span":{"start":6,"end":9},"codepoint":""}]}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-gap-policy.schema.json",
+  "type": "object",
+  "required": ["schema_version", "policy_id", "policy_hash", "raw_diagnostic_schema_hash", "identity", "parser", "coordinate_system", "rules"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "abc/parser-rq-diagnostic-gap-policy/v1"},
+    "policy_id": {"const": "parser-rq-ab-aozora-diagnostic-gap-v1"},
+    "policy_hash": {"$ref": "#/$defs/hash"},
+    "raw_diagnostic_schema_hash": {"$ref": "#/$defs/hash"},
+    "identity": {"const": {"algorithm": "SHA-256", "canonicalization": "RFC 8785 JCS", "projection": "complete-policy-minus-policy_hash"}},
+    "parser": {"const": "ab-aozora"},
+    "coordinate_system": {"const": "decoded_utf8"},
+    "rules": {"type": "array", "minItems": 21, "maxItems": 21, "uniqueItems": true, "items": {"$ref": "#/$defs/rule"}}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "rule": {"type": "object", "required": ["code", "kind", "severity", "source", "disposition"], "additionalProperties": false, "properties": {"code": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"}, "kind": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "severity": {"enum": ["note", "warning", "error"]}, "source": {"enum": ["source", "internal"]}, "disposition": {"enum": ["authorize_exact_span", "observe_only", "reject_internal"]}}}
+  }
+}

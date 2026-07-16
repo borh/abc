@@ -372,7 +372,7 @@
     abc.tools.aozora-ingest/open-zip {ZipFile 1}
     abc.tools.aozora-ingest/read-zip-csv
     {entries 1 getInputStream 1 readAllBytes 1 getLastModifiedTime 1
-     toInstant 1 String 1}
+     toInstant 1}
     abc.tools.evidence-io/record-read! {}
     abc.tools.evidence-io/with-ephemeral-root {}
     abc.tools.evidence-io/with-owned-ephemeral-root {with-temp-dir 1}
@@ -441,7 +441,7 @@
     abc.tools.soranoha-build-publication/prepare-output-root! {exists? 1 nanoTime 1}
     abc.tools.soranoha-build-publication/promote-output-root! {exists? 1 move 1 toPath 2}
     abc.tools.soranoha-build-publication/read-catalog-zip
-    {ZipFile 1 entries 1 getInputStream 1 readAllBytes 1 String 1}
+    {ZipFile 1 entries 1 getInputStream 1 readAllBytes 1}
     abc.tools.soranoha-build-publication/resolve-invocation-path {getenv 1}
     abc.tools.soranoha-build-publication/invoke-derive-parser-ir! {}
     abc.tools.workflow/now-utc {now 1}
@@ -631,7 +631,7 @@
      .isLiteral .isURI})
 
 (def ^:private audited-safe-jvm-vars
-  '#{BaseDatatype. ByteArrayInputStream. StringWriter. java.io.StringWriter. Integer/parseInt JsonDocument/of LocalDate/parse java.time.Instant/parse java.time.Duration/between Normalizer/normalize
+  '#{BaseDatatype. ByteArrayInputStream. String. StringWriter. java.io.StringWriter. Integer/parseInt JsonDocument/of LocalDate/parse java.time.Instant/parse java.time.Duration/between Normalizer/normalize
      ShaclValidator/get YearMonth/parse UCharacter/foldCase Runtime/getRuntime java.net.URI.
      MessageDigest/getInstance GraphUtil/addInto ModelFactory/createDefaultModel NodeFactory/createBlankNode
      NodeFactory/createLiteral NodeFactory/createURI Triple/create TypeMapper/getInstance})

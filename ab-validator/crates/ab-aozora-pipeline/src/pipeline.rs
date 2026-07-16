@@ -45,11 +45,8 @@ use crate::lexer::{
 use ab_aozora_spec::{Diagnostic, PairLink};
 
 use ab_aozora_syntax::alloc::Allocator;
-use ab_aozora_syntax::ast::{
-    ClassifiedSourceDisposition as Disposition, ClassifiedSourceEvidenceClass as EvidenceClass,
-    ClassifiedSourceFact, ClassifiedSourceRole as Role, ConstructId, LexOutput, Node, NodeStore,
-    Registry, canonicalize_classified_source_facts,
-};
+use ab_aozora_syntax::ast::canonicalize_classified_source_facts;
+use ab_aozora_syntax::ast::{LexOutput, Node, NodeStore, Registry};
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::{ForwardAttr, RegionClose, RegionFormat, Span};
 
@@ -311,9 +308,8 @@ impl Pipeline<'_, Paired> {
         // Classifier emits in source order, so the recorder's entries are already
         // sorted by position; `from_sorted_slice` skips the redundant sort.
         let registry = Registry::from_sorted_slice(&recorder.entries);
-        let classified_source_facts = canonicalize_classified_source_facts(
-            reconcile_accent_rewrite_recovery(recorder.classified_source_facts, &self.diagnostics),
-        );
+        let classified_source_facts =
+            canonicalize_classified_source_facts(recorder.classified_source_facts);
 
         LexOutput::new(
             normalized,
@@ -329,39 +325,6 @@ impl Pipeline<'_, Paired> {
             store,
         )
     }
-}
-
-/// Replace classifier recovery fragments inside each authenticated accent
-/// rewrite with the one logical recovered source-form candidate. The sanitizer
-/// records one coarse map edit for the complete tortoise run, so fragments
-/// cannot be rebased independently without acquiring the same decoded span.
-/// Literal tortoise forms have no accent diagnostic and retain their original
-/// classifier provenance boundaries.
-fn reconcile_accent_rewrite_recovery(
-    mut facts: Vec<ClassifiedSourceFact>,
-    diagnostics: &[Diagnostic],
-) -> Vec<ClassifiedSourceFact> {
-    for span in diagnostics
-        .iter()
-        .filter_map(|diagnostic| match diagnostic {
-            Diagnostic::AccentDecompositionApplied { span, .. } => Some(*span),
-            _ => None,
-        })
-    {
-        facts.retain(|fact| {
-            fact.construct_id != ConstructId::RecoveredVerbatim
-                || fact.source_span.start < span.start
-                || fact.source_span.end > span.end
-        });
-        facts.push(ClassifiedSourceFact {
-            source_span: span,
-            construct_id: ConstructId::RecoveredVerbatim,
-            source_role: Role::UnrecognizedSourceForm,
-            disposition: Disposition::PreservedOpaque,
-            evidence_class: EvidenceClass::RecoveredVerbatim,
-        });
-    }
-    facts
 }
 
 /// NORMALIZE (lowering) pass over the materialized classified-span list.

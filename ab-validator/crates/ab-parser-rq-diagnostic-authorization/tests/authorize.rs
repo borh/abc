@@ -65,6 +65,7 @@ fn run_with_record(
 #[test]
 fn every_closed_policy_row_has_its_declared_effect() {
     let policy: serde_json::Value = serde_json::from_slice(POLICY).unwrap();
+    assert_eq!(policy["rules"].as_array().unwrap().len(), 21);
     for row in policy["rules"].as_array().unwrap() {
         let pua = row["code"] == "source-contains-pua";
         let mut entry = serde_json::json!({"kind":row["kind"],"code":row["code"],
@@ -198,4 +199,20 @@ fn boundary_constructors_fail_before_pure_authorization() {
         )
         .is_err()
     );
+
+    let mut forged_bytes = r1_bytes.clone();
+    forged_bytes.push(b' ');
+    assert!(matches!(
+        validate_work_context(
+            source,
+            &hash(source),
+            &hash(source),
+            &format!("sha256:{}", "1".repeat(64)),
+            &format!("sha256:{}", "4".repeat(64)),
+            &forged_bytes,
+            &hash(&forged_bytes),
+            &r1
+        ),
+        Err("source-recognition-authentication-failed")
+    ));
 }

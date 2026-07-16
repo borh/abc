@@ -53,16 +53,32 @@ pub(crate) struct PolicyRule {
 #[derive(Clone, Debug)]
 pub struct ValidatedGapPolicy {
     pub(crate) rules: BTreeMap<String, PolicyRule>,
-    pub policy_hash: String,
+    pub(crate) policy_hash: String,
 }
 
+/// An exact-byte-authenticated source-accountability context.
+///
+/// Values cannot be assembled by callers; use
+/// [`crate::validate_work_context`].
+///
+/// ```compile_fail
+/// use ab_parser_rq_diagnostic_authorization::WorkContext;
+///
+/// let _forged = WorkContext {
+///     decoded_source: b"",
+///     work_id: "",
+///     capture_generation_ref: "",
+///     qualification_identity_ref: "",
+///     source_recognition: panic!(),
+/// };
+/// ```
 #[derive(Clone, Copy, Debug)]
 pub struct WorkContext<'a> {
-    pub decoded_source: &'a [u8],
-    pub work_id: &'a str,
-    pub capture_generation_ref: &'a str,
-    pub qualification_identity_ref: &'a str,
-    pub source_recognition: &'a RecognitionWorkRecord,
+    pub(crate) decoded_source: &'a [u8],
+    pub(crate) work_id: &'a str,
+    pub(crate) capture_generation_ref: &'a str,
+    pub(crate) qualification_identity_ref: &'a str,
+    pub(crate) source_recognition: &'a RecognitionWorkRecord,
 }
 
 #[derive(Clone, Copy, Debug)]

@@ -109,6 +109,15 @@ fn wire_code(code: &str) -> Option<String> {
     code.rsplit("::").next().map(|s| s.replace('_', "-"))
 }
 
+fn injective_wire_codes<'a>(codes: impl IntoIterator<Item = &'a str>) -> Option<BTreeSet<String>> {
+    let projected = codes
+        .into_iter()
+        .map(wire_code)
+        .collect::<Option<Vec<_>>>()?;
+    let unique = projected.iter().cloned().collect::<BTreeSet<_>>();
+    (unique.len() == projected.len()).then_some(unique)
+}
+
 fn validate_policy(bytes: &[u8]) -> Option<ValidatedGapPolicy> {
     let mut value: Value = serde_json::from_slice(bytes).ok()?;
     if !schema_valid(POLICY_SCHEMA, &value) {
@@ -124,10 +133,7 @@ fn validate_policy(bytes: &[u8]) -> Option<ValidatedGapPolicy> {
     if policy.policy_hash != sha256(projection.as_bytes()) {
         return None;
     }
-    let live = Diagnostic::ALL_CODES
-        .iter()
-        .map(|c| wire_code(c))
-        .collect::<Option<BTreeSet<_>>>()?;
+    let live = injective_wire_codes(Diagnostic::ALL_CODES.iter().copied())?;
     let declared = policy
         .rules
         .iter()
@@ -345,4 +351,20 @@ pub fn authorize_boundary(input: BoundaryInput<'_>) -> AuthorizationAnalysis {
         Err(error) => return AuthorizationAnalysis::unavailable(error),
     };
     authorize(&capture, &policy, context)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::injective_wire_codes;
+
+    #[test]
+    fn live_wire_projection_rejects_distinct_namespaced_code_collisions() {
+        assert!(injective_wire_codes(["aozora::syntax::same_code", "other::same_code"]).is_none());
+        assert_eq!(
+            injective_wire_codes(["aozora::syntax::first_code", "other::second_code"])
+                .unwrap()
+                .len(),
+            2
+        );
+    }
 }

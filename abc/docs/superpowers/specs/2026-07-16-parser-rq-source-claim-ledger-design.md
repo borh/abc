@@ -26,7 +26,7 @@ diagnostic policy:
 
 - `source-contains-pua`, the sole proposed authorizing code, intersected no R1
   uncovered byte;
-- eleven proposed `observe_only` diagnostics intersected R1 uncovered bytes;
+- twelve proposed `observe_only` diagnostics intersected R1 uncovered bytes;
 - three documented repros did not emit their named code;
 - ordinary successfully parsed Aozora syntax remained uncovered by Parser-IR
   node spans.

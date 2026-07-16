@@ -47,7 +47,7 @@ Charred; Draft 2020-12 JSON Schema; Nix flakes and Kaocha.
 - [ ] Assert every source row has `r1_status = "ok"` and empty `r1_errors`.
   Record the three non-emitting documented repros without rewriting them.
 - [ ] Record exact observed counts: one proposed authorizer with zero gap
-  intersection, eleven observe-only codes with gap intersection, three
+  intersection, twelve observe-only codes with gap intersection, three
   non-emitting source repros, and four internal codes.
 - [ ] Delete the test and restore dependency files. Verify:
 

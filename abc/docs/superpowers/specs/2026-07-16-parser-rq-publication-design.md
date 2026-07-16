@@ -143,14 +143,18 @@ outside P2 because it would invalidate prior corpus-bound captures.
 ### Fixture non-vacuity census
 
 Schema-valid emptiness is not proof that a fixture exercised publication
-structure. Each qualification fixture therefore carries an identity-bearing
-minimum construct census:
-
-| Work | Required preservation constructs |
-|---|---|
-| `000001_1` (ruby) | `source_identity >= 1`, `mapping_identity >= 1`, `span_coordinates >= 1` |
-| `000002_2` (gaiji) | `source_identity >= 1`, `mapping_identity >= 1`, `span_coordinates >= 1`, `gaiji_resolution >= 1` |
-| `000003_3` (ruby + gaiji) | `source_identity >= 1`, `mapping_identity >= 1`, `span_coordinates >= 1`, `gaiji_resolution >= 1` |
+structure. Before freezing policy, P2 runs the production parser, conversion,
+and materializer twice over the three fixtures and commits the deterministic
+per-construct characterization. The identity-bearing minimum census is then
+derived mechanically: for candidate constructs `source_identity`,
+`mapping_identity`, `span_coordinates`, and `gaiji_resolution`, retain every
+strictly positive observed count and use that observed count as the minimum.
+Zero is never promoted to a requirement, and a desired construct is never
+invented because its fixture name suggests it should exist. Any deliberate
+departure from this selection rule requires design review rather than tuning
+during implementation. If any work emits zero preservation records or has no
+strictly positive candidate construct, characterization blocks implementation;
+an empty census cannot be frozen as a non-vacuity guard.
 
 The census is a fixture-exercise assertion, not a new release predicate and
 not a claim that these are the only valid constructs. Every parsed work record
@@ -187,8 +191,9 @@ timeouts. A record carries:
 - expected-construct census identity;
 - for parsed records, logical blob references for materialization inputs,
   generated artifacts, and detailed validator evidence, the exact detailed
-  check map, the projected publication-structure verdict, and bounded failure
-  witnesses naming failed checks without embedding corpus-scale artifacts; and
+  raw structure-check candidates, joinability, counts, and supporting evidence;
+  projected verdicts and failure witnesses exist only in the analyzer's
+  aggregate output; and
 - for failed or timed-out records, the authenticated parser disposition and no
   fabricated publication evidence.
 
@@ -332,14 +337,18 @@ bounded witnesses, and deterministic drift fixtures only.
 1. **ABC policy and schemas** own the check vocabulary, immutable record/index
    contracts, and qualification metadata fixtures.
 2. **The existing ab-validator deep validator** owns reading a materialized
-   bundle once, evaluating detailed joins, actual preservation-schema
-   validation, and emitting separate structure/supporting blocks.
+   bundle once, evaluating raw detailed joins, actual preservation-schema
+   validation, and emitting named structure-check candidates, joinability,
+   counts, and supporting evidence. It does not consume policy or decide the
+   predicate-6 verdict.
 3. **The P2 capture command** owns corpus traversal from the explicit index,
    materializer invocation, external-store writes, and deterministic record-index
    production. It does not calculate the final ratio.
-4. **The pure P2 analyzer** owns authentication, closed-set validation, exact
-   corpus folding, aggregation, and observation-envelope derivation. It does not
-   invoke the parser or materializer and does not resolve arbitrary paths.
+4. **The pure P2 analyzer** is the sole policy consumer. It owns authentication,
+   closed-set validation, required-census evaluation, per-work verdict
+   projection, exact corpus folding, aggregation, and observation-envelope
+   derivation. It does not invoke the parser or materializer and does not
+   resolve arbitrary paths.
 5. **The existing release bundle generator** consumes only the analyzer's
    authenticated observation envelope. It never accepts a hand-keyed scalar.
 
@@ -358,7 +367,8 @@ The implementation plan must cover:
   pass the old shallow `0.2.0` string/count check but fails the real schema;
 - the per-work non-vacuity census, disclosed structure counts, and an
   empty-but-schema-valid preservation bundle that must fail predicate 6;
-- separate publication and supporting verdicts;
+- separate raw structure-check candidates, joinability, counts, and supporting
+  evidence, with no policy projection in the validator;
 - the independence property using schema-invalid-but-join-valid and join-invalid
   parser-IR fixtures, in addition to supporting-status mutation;
 - deterministic materialization from qualification-only metadata;
@@ -384,7 +394,7 @@ The focused implementation plan will contain independently reviewable TDD
 slices for:
 
 1. publication policy and record/index schemas;
-2. deep-validator schema correction and verdict separation;
+2. deep-validator schema correction and raw evidence separation;
 3. deterministic qualification metadata and batch materialization;
 4. per-work capture records and closed corpus index;
 5. pure aggregation and adversarial identity/completeness tests;

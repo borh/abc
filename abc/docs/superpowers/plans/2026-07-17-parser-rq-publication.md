@@ -10,8 +10,8 @@ identity-bound, non-vacuous publication-structure observation derived from
 authenticated per-work captures over the pinned qualification corpus.
 
 **Architecture:** The existing Python validator remains the single reader of a
-materialized publication bundle and emits separate publication-structure and
-supporting-precondition blocks. ABC owns closed schemas, policy, fixture census,
+materialized publication bundle and emits raw structure-check candidates,
+joinability, counts, and supporting-precondition blocks. ABC owns closed schemas, policy, fixture census,
 and the pure Clojure aggregate/observation boundary; a Python capture command
 materializes and validates explicit indexed inputs, writes immutable blobs, and
 never decides the final ratio.
@@ -55,7 +55,7 @@ Python 3.13, jsonschema, pytest; JSON Schema 2020-12; Nix flakes and `just`.
 - `abc/data/parser-rq-publication-fixtures-v1.json` owns the three-work minimum
   construct census and qualification-input identities.
 - `ab-validator/reports/parser-ir/publication-bundle-validate.py` remains the
-  detailed bundle reader and validator.
+  detailed bundle reader and emits raw checks/counts without consuming policy.
 - `ab-validator/reports/parser-ir/publication-validator-identity.py` generates
   the semantic-closure manifest.
 - `ab-validator/reports/parser-ir/publication-rq-capture.py` orchestrates an
@@ -122,7 +122,7 @@ policy: schema_id/version, policy_id/hash, ordered unique structure_checks,
 work: schema_id/version, work_id, source_sha256, qualification_identity_ref,
       parser_disposition, policy_hash, preservation_schema_hash,
       validator_semantics_hash, census_hash, and exactly one conditional branch:
-      parsed -> publication block; failed|timeout -> disposition witness only
+      parsed -> raw publication evidence block; failed|timeout -> disposition witness only
 index: schema_id/version, corpus_id/snapshot_hash/list_hash,
        qualification_identity_ref, policy/schema/validator/census hashes,
        expected_work_ids, records[{work_id,source_sha256,locator,ref}]
@@ -154,8 +154,7 @@ work-id arrays, and `if/then/else` to prohibit publication evidence on
 ```json
 {
   "join_input_valid": true,
-  "detailed_checks": {},
-  "publication_structure": {"status": "pass", "failed_checks": []},
+  "structure_check_candidates": {},
   "counts": {
     "preservation_records": 1,
     "tei_preservation_references": 1,
@@ -167,8 +166,9 @@ work-id arrays, and `if/then/else` to prohibit publication evidence on
 }
 ```
 
-`publication_structure.status` is exactly `pass|fail`; unavailable is an
-aggregate/derivation state, never a fabricated parsed-work verdict.
+The work schema contains no projected predicate verdict. Projection is solely
+the Task 6 analyzer's responsibility; capture records contain raw authenticated
+checks and counts.
 
 - [ ] **Step 4: Wire all four schemas into design-bundle validation**
 
@@ -198,22 +198,113 @@ git commit -m "feat(parser-rq): define publication evidence protocols"
 
 ---
 
-### Task 2: Correct and deepen the single publication-bundle validator
+### Task 2: Bind validator semantics to a mechanically checked import closure
+
+**Files:**
+- Create: `ab-validator/reports/parser-ir/publication-validator-identity.py`
+- Create: `ab-validator/reports/parser-ir/tests/test_publication_validator_identity.py`
+
+**Interfaces:**
+- Consumes: the validator's actual transitive local Python import graph and
+  exact Python/jsonschema runtime versions.
+- Produces: a generator/checker for canonical semantic-closure manifests. Task
+  3 creates the authoritative manifest after validator v2 semantics are final.
+
+- [ ] **Step 1: Write failing import-closure and identity tests**
+
+```python
+def test_reviewed_sources_equal_actual_transitive_local_imports(module):
+    actual = module.transitive_local_imports(VALIDATOR, REPORTS_ROOT)
+    assert actual == set(module.REVIEWED_SOURCE_PATHS)
+
+def test_added_local_import_fails_closed(module, tmp_path):
+    validator = copy_validator_tree(tmp_path)
+    validator.write_text(validator.read_text() + "\nfrom reports.lib.freshness import x\n")
+    with pytest.raises(ValueError, match="reviewed semantic closure differs"):
+        module.build_manifest(validator.parents[2])
+
+def test_manifest_hash_recomputes_and_check_detects_drift(module):
+    manifest = module.build_manifest(REPO_ROOT)
+    assert manifest["validator_semantics_hash"] == module.projected_hash(manifest)
+    assert module.check_manifest(manifest, manifest) == []
+```
+
+- [ ] **Step 2: Run and verify module absence fails**
+
+```bash
+nix develop ./ab-validator# --command python -m pytest \
+  ab-validator/reports/parser-ir/tests/test_publication_validator_identity.py -q
+```
+
+Expected: FAIL importing `publication-validator-identity.py`.
+
+- [ ] **Step 3: Implement static transitive import discovery and canonical identity**
+
+Parse every visited module with `ast`. Follow only absolute
+`reports.*` imports that resolve beneath the repository's `reports/` directory;
+ignore standard-library and installed-package imports. Recurse to a fixed point,
+reject cycles only if traversal cannot terminate, and compare the actual set in
+both directions with this reviewed closed set:
+
+```text
+reports/parser-ir/publication-bundle-validate.py
+reports/lib/evidence.py
+reports/lib/hashing.py
+reports/lib/io.py
+reports/lib/paths.py
+reports/lib/source_region.py
+```
+
+The manifest records validator id
+`ab-validator/publication-bundle-validate/v2`, exact runtime coordinates from
+`sys.version_info` and `importlib.metadata.version("jsonschema")`, and the
+ordered full SHA-256 identity of every reviewed source. Compute
+`validator_semantics_hash` over canonical JSON with its own field removed.
+Support `--check`, `--write`, `--repo-root`, and `--out`.
+
+- [ ] **Step 4: Generate twice to temporary files and prove determinism**
+
+```bash
+nix develop ./ab-validator# --command python \
+  ab-validator/reports/parser-ir/publication-validator-identity.py \
+  --repo-root ab-validator --write \
+  --out /tmp/parser-rq-publication-validator-1.json
+nix develop ./ab-validator# --command python \
+  ab-validator/reports/parser-ir/publication-validator-identity.py \
+  --repo-root ab-validator --write \
+  --out /tmp/parser-rq-publication-validator-2.json
+cmp /tmp/parser-rq-publication-validator-1.json \
+    /tmp/parser-rq-publication-validator-2.json
+```
+
+Expected: both commands and `cmp` exit zero; the import-closure tests prove that
+adding or removing a local transitive import fails before stale identity use.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add ab-validator/reports/parser-ir/publication-validator-identity.py \
+  ab-validator/reports/parser-ir/tests/test_publication_validator_identity.py
+git commit -m "feat(parser-rq): bind publication validator semantics"
+```
+
+---
+
+### Task 3: Correct and deepen the single publication-bundle validator
 
 **Files:**
 - Modify: `ab-validator/reports/parser-ir/publication-bundle-validate.py`
-- Create: `ab-validator/reports/parser-ir/publication-validator-identity.py`
 - Create: `ab-validator/reports/parser-ir/tests/test_publication_bundle_validate.py`
 - Modify: `ab-validator/tests/parser-ir-publication-bundle-smoke.sh`
 - Modify: `ab-validator/tests/parser-ir-publication-bundle-batch-smoke.sh`
 - Create: `ab-validator/data/parser-rq-publication-validator-v1.json`
 
 **Interfaces:**
-- Consumes: explicit authoritative preservation schema, policy, census, and
-  validator-identity paths.
-- Produces: detailed evidence v2 with
-  `publication_structure`, `supporting_preconditions`, `join_input`, `counts`,
-  and validator/schema/policy identities.
+- Consumes: explicit authoritative parser-IR/preservation schemas and
+  validator-identity path.
+- Produces: detailed evidence v2 with raw `structure_check_candidates`,
+  `supporting_preconditions`, `join_input`, `counts`, and validator/schema
+  identities. It does not consume policy or emit a predicate-6 verdict.
 
 - [ ] **Step 1: Write failing Python tests for the four review gaps**
 
@@ -221,38 +312,33 @@ Load the hyphenated CLI with `importlib.util.spec_from_file_location` and test
 pure helpers before the CLI:
 
 ```python
-def test_empty_schema_valid_preservation_fails_required_census(module, fixture):
+def test_empty_schema_valid_preservation_discloses_zero_counts(module, fixture):
     result = module.validate_values(
         **fixture(preservation_records=[]),
-        required_constructs={"span_coordinates": 1},
     )
-    assert result["checks"]["preservation_schema_valid"] is True
-    assert result["publication_structure"] == {
-        "status": "fail",
-        "failed_checks": ["required_construct_census_valid"],
-    }
+    assert result["structure_check_candidates"]["preservation_schema_valid"] is True
     assert result["counts"]["preservation_records"] == 0
 
-def test_schema_invalid_but_join_valid_ir_keeps_independent_structure_verdict(module, fixture):
+def test_schema_invalid_but_join_valid_ir_keeps_independent_structure_evidence(module, fixture):
     result = module.validate_values(**fixture(parser_ir_extra_field=True))
     assert result["supporting_preconditions"]["parser_ir_schema_valid"] is False
     assert result["join_input"] == {"status": "valid", "errors": []}
-    assert result["publication_structure"]["status"] == "pass"
+    assert result["structure_check_candidates"]["plaintext_body_only"] is True
 
 def test_join_invalid_ir_is_unavailable_not_structure_failure(module, fixture):
     result = module.validate_values(**fixture(node={"type": "text", "text": 7}))
     assert result["join_input"]["status"] == "invalid"
-    assert result["publication_structure"]["status"] == "unavailable"
+    assert result["structure_check_candidates"] is None
 
 def test_supporting_source_status_does_not_change_structure(module, fixture):
     green = module.validate_values(**fixture(source_gate="pass"))
     red = module.validate_values(**fixture(source_gate="fail"))
-    assert green["publication_structure"] == red["publication_structure"]
+    assert green["structure_check_candidates"] == red["structure_check_candidates"]
 ```
 
 Also assert that a `0.2.0` sidecar and a `0.3.0` sidecar with an extra property
-fail full JSON Schema validation, and that unknown/missing/extra policy check
-names yield `unavailable` rather than changing membership.
+fail full JSON Schema validation. Policy membership is not present in Python and
+is tested only at the Task 6 analyzer boundary.
 
 - [ ] **Step 2: Run tests and verify current behavior fails**
 
@@ -261,8 +347,9 @@ nix develop ./ab-validator# --command python -m pytest \
   ab-validator/reports/parser-ir/tests/test_publication_bundle_validate.py -q
 ```
 
-Expected: FAIL because `validate_values`, joinability, census, and split verdict
-blocks do not exist and the live validator still expects preservation `0.2.0`.
+Expected: FAIL because `validate_values`, joinability, raw split-check, and
+count blocks do not exist and the live validator still expects preservation
+`0.2.0`.
 
 - [ ] **Step 3: Implement full schema validation and joinability**
 
@@ -271,8 +358,6 @@ Add required CLI options:
 ```python
 parser.add_argument("--parser-ir-schema", required=True, type=pathlib.Path)
 parser.add_argument("--preservation-schema", required=True, type=pathlib.Path)
-parser.add_argument("--publication-policy", required=True, type=pathlib.Path)
-parser.add_argument("--fixture-census", required=True, type=pathlib.Path)
 parser.add_argument("--validator-identity", required=True, type=pathlib.Path)
 ```
 
@@ -281,42 +366,27 @@ under `supporting_preconditions`.
 
 Implement and call these exact pure interfaces from `validate_bundle`:
 `publication_join_input_errors(parser_ir: object) -> list[str]`,
-`validate_schema(instance: object, contract: dict[str, Any]) -> list[str]`,
+`validate_schema(instance: object, contract: dict[str, Any]) -> list[str]`, and
 `publication_counts(parser_ir: dict[str, Any], preservation: dict[str, Any],
-tei_root: ET.Element) -> dict[str, Any]`,
-`required_census_passes(counts: dict[str, Any], minimums: dict[str, int]) -> bool`,
-and `project_publication_structure(checks: dict[str, bool], policy:
-dict[str, Any], join_errors: list[str]) -> dict[str, Any]`.
+tei_root: ET.Element) -> dict[str, Any]`.
 
 `publication_join_input_errors` rejects unknown node types and malformed fields
 used by `node_visible_body_text`; it must not silently turn an unknown node into
 empty text. `validate_schema` uses `Draft202012Validator` with a format checker.
 
-- [ ] **Step 4: Bind validator semantics, not only its filename**
+- [ ] **Step 4: Migrate batch aggregation and Markdown as one v2 contract**
 
-The identity generator writes canonical JSON with validator id
-`ab-validator/publication-bundle-validate/v2`, exact runtime coordinates from
-`sys.version_info` and `importlib.metadata.version("jsonschema")`, and ordered source rows for
-`publication-bundle-validate.py`, `reports/lib/evidence.py`,
-`reports/lib/hashing.py`, `reports/lib/io.py`, `reports/lib/paths.py`, and
-`reports/lib/source_region.py`. Each row contains the computed full SHA-256
-identity. `validator_semantics_hash` is computed over the whole value with that
-field removed.
+Replace `REQUIRED_CHECKS` with separate closed
+`STRUCTURE_CHECK_CANDIDATES` and `SUPPORTING_PRECONDITIONS` tuples.
+`validate_batch` must retain every row's nested blocks, aggregate each block by
+name, aggregate join status separately, and preserve the legacy overall verdict
+only as the conjunction of readable/join-valid/detailed results. It must never
+look up the removed flat `row["checks"]`.
 
-The generator discovers no imports dynamically: it owns this reviewed closed
-path list, rejects missing/extra configured sources, hashes the canonical value
-without `validator_semantics_hash`, and supports `--check` and `--write`.
-
-Run:
-
-```bash
-nix develop ./ab-validator# --command python \
-  ab-validator/reports/parser-ir/publication-validator-identity.py \
-  --repo-root ab-validator --write \
-  --out ab-validator/data/parser-rq-publication-validator-v1.json
-```
-
-Expected: one canonical manifest whose recomputed hash equals its pinned hash.
+`render_markdown` renders distinct “Structure check candidates,” “Join input,”
+“Supporting preconditions,” and “Counts” sections for single and batch output.
+Add tests that fail if any section is absent or if batch aggregation reads a
+flat `checks` key.
 
 - [ ] **Step 5: Update both smoke fixtures to v2**
 
@@ -324,16 +394,33 @@ Use real schema `0.3.0` values including required `parser_ir`, `tei`, `source`,
 `producer`, and `mapping` blocks. Pass all explicit authority paths. Assert:
 
 ```bash
-jq -e '.publication_structure.status == "pass"' "$summary_json"
+jq -e '.structure_check_candidates.plaintext_body_only == true' "$summary_json"
 jq -e '.supporting_preconditions.parser_ir_schema_valid == true' "$summary_json"
+jq -e '.join_input.status == "valid"' "$summary_json"
 jq -e '.counts.preservation_records > 0' "$summary_json"
+jq -e '.rows[0].structure_check_candidates.plaintext_body_only == true' "$batch_summary_json"
 ```
 
-Add one empty-record fixture that remains schema-valid but has
-`publication_structure.status == "fail"` and
-`required_construct_census_valid == false`.
+Add one empty-record fixture that remains schema-valid and reports zero counts;
+the analyzer task proves that policy+census projection turns it into a measured
+failure.
 
-- [ ] **Step 6: Run focused and Nix checks**
+- [ ] **Step 6: Generate and check the final v2 semantic manifest**
+
+```bash
+nix develop ./ab-validator# --command python \
+  ab-validator/reports/parser-ir/publication-validator-identity.py \
+  --repo-root ab-validator --write \
+  --out ab-validator/data/parser-rq-publication-validator-v1.json
+nix develop ./ab-validator# --command python \
+  ab-validator/reports/parser-ir/publication-validator-identity.py \
+  --repo-root ab-validator --check \
+  --out ab-validator/data/parser-rq-publication-validator-v1.json
+```
+
+Expected: both exit zero against the final Task 3 validator bytes.
+
+- [ ] **Step 7: Run focused and Nix checks**
 
 ```bash
 nix develop ./ab-validator# --command python -m pytest \
@@ -345,21 +432,20 @@ nix build ./ab-validator#checks.x86_64-linux.reports-pytest
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add ab-validator/reports/parser-ir/publication-bundle-validate.py \
-  ab-validator/reports/parser-ir/publication-validator-identity.py \
   ab-validator/reports/parser-ir/tests/test_publication_bundle_validate.py \
   ab-validator/tests/parser-ir-publication-bundle-smoke.sh \
   ab-validator/tests/parser-ir-publication-bundle-batch-smoke.sh \
   ab-validator/data/parser-rq-publication-validator-v1.json
-git commit -m "feat(parser-rq): separate publication structure verdict"
+git commit -m "feat(parser-rq): separate raw publication structure evidence"
 ```
 
 ---
 
-### Task 3: Freeze policy, non-vacuity census, and qualification-only metadata
+### Task 4: Characterize then freeze policy, census, and qualification metadata
 
 **Files:**
 - Create: `abc/data/parser-rq-publication-policy-v1.json`
@@ -368,14 +454,64 @@ git commit -m "feat(parser-rq): separate publication structure verdict"
 - Create: `abc/test/fixtures/parser-rq/publication-inputs/000001_1/metadata-record.json`
 - Create: `abc/test/fixtures/parser-rq/publication-inputs/000002_2/metadata-record.json`
 - Create: `abc/test/fixtures/parser-rq/publication-inputs/000003_3/metadata-record.json`
+- Create: `abc/docs/superpowers/reports/2026-07-17-parser-rq-publication-census-characterization.json`
+- Create: `abc/docs/superpowers/reports/2026-07-17-parser-rq-publication-census-characterization.md`
 - Modify: `abc/test/abc/tools/materialize_publication_test.clj`
 - Modify: `abc/test/abc/tools/parser_rq_publication_test.clj`
 
 **Interfaces:**
-- Consumes: Task 1 schemas, Task 2 validator manifest, pinned three-work corpus.
+- Consumes: Task 1 schemas, Task 2 identity generator, Task 3 final validator
+  manifest, and the pinned three-work corpus.
 - Produces: immutable policy/census identities and deterministic metadata inputs.
 
-- [ ] **Step 1: Write failing authority and non-vacuity tests**
+- [ ] **Step 1: Add and validate qualification-only metadata inputs**
+
+Use person id `abc-000000000001`; titles are `Parser RQ Fixture 000001_1`,
+`Parser RQ Fixture 000002_2`, and `Parser RQ Fixture 000003_3`; contributor
+relation is `著者`; provenance is deterministic. Metadata work ids are the
+six-digit card prefixes (`000001`, `000002`, `000003`). The fixture contract
+maps each prefix to the corpus work id and source hash and carries:
+
+```json
+{"authority": "qualification-fixture-only", "bibliographic_authority": false}
+```
+
+Add a test that all metadata/person records validate, every mapping is exact,
+and the immutable work record identity source is always the corpus id plus
+`source_sha256`; the bare metadata prefix is never accepted as record/index
+identity.
+
+- [ ] **Step 2: Run a disposable production-chain census characterization twice**
+
+Create a temporary, uncommitted shell probe that, for each explicit corpus row:
+
+1. runs `cargo run -p ab-aozora -- --mode aat` on the pinned source;
+2. runs `cargo run -p ab-aat-to-parser-ir -- convert` with
+   `data/aat-to-parser-ir-mapping-v1.json`, the exact source hash, and ABC root;
+3. writes a source manifest with the pinned corpus and work hashes;
+4. invokes `clojure -M:abc/materialize-publication` with the qualification
+   metadata, person directory, and fixed `2026-07-17T00:00:00Z`; and
+5. emits canonical per-work counts grouped by preservation `construct`, plus
+   record/reference/pointer totals.
+
+Run the probe twice into `/tmp/parser-rq-publication-census-1.json` and
+`/tmp/parser-rq-publication-census-2.json`; `cmp` must exit zero. If either
+materialization fails or the observations differ, stop and diagnose rather than
+freezing an oracle. Also stop if any work has zero total preservation records or
+no strictly positive candidate construct; never freeze an empty non-vacuity
+census.
+
+- [ ] **Step 3: Commit the characterization report, then freeze by rule**
+
+Copy the canonical observation and a Markdown rendering to the two report paths
+in this task. Derive each work's minimum census mechanically from candidate
+constructs `source_identity`, `mapping_identity`, `span_coordinates`, and
+`gaiji_resolution`: retain every strictly positive observed count and use the
+observed count as the minimum. Do not require a zero-count construct merely
+because the fixture name suggests it. Record the selection rule and selected
+rows in Markdown; delete the disposable probe before commit.
+
+- [ ] **Step 4: Write failing frozen-authority tests**
 
 ```clojure
 (deftest publication-policy-binds-check-schema-and-validator-semantics
@@ -390,11 +526,17 @@ git commit -m "feat(parser-rq): separate publication structure verdict"
 (deftest every-pinned-work-has-an-exercise-census
   (is (= #{"000001_1" "000002_2" "000003_3"}
          (set (keys (:works fixture-contract)))))
-  (is (= 1 (get-in fixture-contract [:works "000002_2"
-                                     :required_constructs :gaiji_resolution]))))
+  (is (= (derive-positive-candidate-minimums characterization)
+         (project-required-censuses fixture-contract))))
+
+(deftest work-record-identity-never-uses-metadata-prefix
+  (is (= "000001_1" (get-in fixture-contract [:works "000001_1" :work_id])))
+  (is (= "000001" (get-in fixture-contract [:works "000001_1" :metadata_work_id])))
+  (is (not= (get-in fixture-contract [:works "000001_1" :work_id])
+            (get-in fixture-contract [:works "000001_1" :metadata_work_id]))))
 ```
 
-- [ ] **Step 2: Run and verify missing data fails**
+- [ ] **Step 5: Run and verify missing frozen data fails**
 
 ```bash
 cd abc && clojure -M:test:kaocha -m kaocha.runner \
@@ -403,47 +545,19 @@ cd abc && clojure -M:test:kaocha -m kaocha.runner \
 
 Expected: FAIL reading `data/parser-rq-publication-policy-v1.json`.
 
-- [ ] **Step 3: Create policy and census values**
+- [ ] **Step 6: Create policy and census values**
 
-The policy structure list is exactly the ten names in the approved design plus
-`required_construct_census_valid`. The latter is a predicate-6 structure check,
-not a supporting flag. Supporting names are exactly
+The policy structure list is exactly the ten raw validator candidates in the
+approved design plus analyzer-local `required_construct_census_valid`. The
+latter is a predicate-6 structure check, not a supporting flag. Supporting names are exactly
 `parser_ir_schema_valid`, `source_region_coverage_valid`, and
 `source_region_sidecar_role_available`.
 
-The census minimums are exactly:
+The census values must equal Step 3's characterized projection exactly. Compute
+`policy_hash` and `census_hash` as JCS SHA-256 over each document with its own
+hash field removed. Tests recompute rather than trust them.
 
-```json
-{
-  "000001_1": {"source_identity": 1, "mapping_identity": 1, "span_coordinates": 1},
-  "000002_2": {"source_identity": 1, "mapping_identity": 1, "span_coordinates": 1, "gaiji_resolution": 1},
-  "000003_3": {"source_identity": 1, "mapping_identity": 1, "span_coordinates": 1, "gaiji_resolution": 1}
-}
-```
-
-Compute `policy_hash` and `census_hash` as JCS SHA-256 over each document with
-its own hash field removed. Tests recompute rather than trust them.
-
-- [ ] **Step 4: Add qualification-only metadata and person records**
-
-Use person id `abc-000000000001`; titles are `Parser RQ Fixture 000001_1`,
-`Parser RQ Fixture 000002_2`, and `Parser RQ Fixture 000003_3`; contributor
-relation `著者`, and deterministic source provenance. Each metadata work id must
-equal the six-digit card prefix (`000001`, `000002`, `000003`); the fixture
-contract explicitly maps it to corpus ids `000001_1`, `000002_2`, and
-`000003_3`. Include this non-authority marker in the fixture contract, not in
-production schema fields:
-
-```json
-{"authority": "qualification-fixture-only", "bibliographic_authority": false}
-```
-
-Generate schema hashes and `person_record_hash` using the existing ABC hash
-functions; do not copy example-work hashes. The test and capture command create
-the runtime batch value from three explicit fixture-contract rows, fixed
-`generated_at: 2026-07-17T00:00:00Z`, and no discovered paths.
-
-- [ ] **Step 5: Prove deterministic three-work materialization**
+- [ ] **Step 7: Prove deterministic three-work materialization**
 
 Add a test around `materialize-publications-batch!` that stages three parser-IR
 and source-manifest inputs, uses the committed batch metadata/person values,
@@ -460,11 +574,12 @@ cd abc && clojure -M:test:kaocha -m kaocha.runner \
 
 Expected: PASS and byte-identical outputs at both concurrency settings.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add abc/data/parser-rq-publication-*.json \
   abc/test/fixtures/parser-rq/publication-inputs \
+  abc/docs/superpowers/reports/2026-07-17-parser-rq-publication-census-characterization.* \
   abc/test/abc/tools/materialize_publication_test.clj \
   abc/test/abc/tools/parser_rq_publication_test.clj
 git commit -m "test(parser-rq): freeze publication qualification inputs"
@@ -472,7 +587,7 @@ git commit -m "test(parser-rq): freeze publication qualification inputs"
 
 ---
 
-### Task 4: Build explicit capture-to-CAS and closed-index production
+### Task 5: Build explicit capture-to-CAS and closed-index production
 
 **Files:**
 - Create: `ab-validator/reports/parser-ir/publication-rq-capture.py`
@@ -508,6 +623,11 @@ def test_capture_is_order_independent_and_index_is_canonical(tmp_path, capture_i
     second = capture({**capture_input, "works": list(reversed(capture_input["works"]))},
                      tmp_path / "b")
     assert first.index_bytes == second.index_bytes
+
+def test_metadata_prefix_cannot_become_record_identity(tmp_path, capture_input):
+    capture_input["works"][0]["work_id"] = "000001"
+    with pytest.raises(CaptureError, match="exact pinned corpus membership"):
+        capture(capture_input, tmp_path / "store")
 ```
 
 Also test duplicate/extra work, source hash mismatch, qualification identity
@@ -572,7 +692,7 @@ git commit -m "feat(parser-rq): capture publication structure evidence"
 
 ---
 
-### Task 5: Authenticate the closed fold and derive predicate 6 in ABC
+### Task 6: Authenticate the closed fold and derive predicate 6 in ABC
 
 **Files:**
 - Create: `abc/src/abc/tools/parser_rq_publication.clj`
@@ -601,11 +721,11 @@ git commit -m "feat(parser-rq): capture publication structure evidence"
 
 (deftest complete-census-failure-is-an-available-ratio
   (let [result (derive-after-resealed-mutation
-                #(assoc-in % [:publication :publication_structure]
-                           {:status "fail"
-                            :failed_checks ["required_construct_census_valid"]}))]
+                #(assoc-in % [:publication :counts :by_construct
+                              :span_coordinates] 0))]
     (is (= 0.6666M (:value result)))
-    (is (= 1 (count (:failed_work_witnesses result))))))
+    (is (= ["required_construct_census_valid"]
+           (get-in result [:failed_work_witnesses 0 :failed_checks])))))
 
 (deftest missing-successful-record-is-unavailable
   (is (= :unavailable
@@ -669,8 +789,11 @@ Implementation order:
    unique logical identity; reject ambiguous locators or hashes.
 4. Validate closed schemas before reading semantic fields.
 5. Recompute policy/census/validator/index identities.
-6. Require exact pinned corpus membership and record/source pairing.
-7. Fold dispositions and parsed structure results.
+6. Require exact pinned corpus-id plus source-hash membership and record pairing;
+   metadata's six-digit work id is never a record identity.
+7. Require raw structure-check candidate keys to equal the policy set excluding
+   `required_construct_census_valid`, compute that census check locally from
+   authenticated counts, and project each parsed work exactly once.
 8. Return unavailable if parsed is zero or eligible differs from parsed.
 9. Otherwise return an envelope containing `:value`, `:identity_ref`, `:counts`,
    `:denominator_shrink_witnesses`, and `:failed_work_witnesses`.
@@ -714,7 +837,7 @@ git commit -m "feat(parser-rq): derive publication structure observation"
 
 ---
 
-### Task 6: Commit the drift fixture and wire schema, Nix, and governance checks
+### Task 7: Commit the drift fixture and wire schema, Nix, and governance checks
 
 **Files:**
 - Create: `abc/test/fixtures/parser-rq/publication-capture/manifest.json`
@@ -752,7 +875,7 @@ Expected initial failure: committed fixture path is absent.
 
 - [ ] **Step 2: Generate, inspect, and commit only bounded fixture evidence**
 
-Run the Task 4 capture command against the three small tracked sources. The
+Run the Task 5 capture command against the three small tracked sources. The
 fixture store may contain only the small JSON/XML/text artifacts for those three
 works. Inspect:
 
@@ -824,8 +947,8 @@ git commit -m "test(parser-rq): drift-check publication structure instrument"
 ## Plan Self-Review Checklist
 
 - Every approved design requirement maps to a task: non-vacuity (Tasks 2/3/5),
-  joinability separation (Tasks 2/5), semantic-closure identity (Tasks 2/3/5),
-  denominator disclosure (Task 5), capture/derive/drift (Tasks 4/5/6).
+  joinability separation (Tasks 3/6), semantic-closure identity (Tasks 2/4/6),
+  denominator disclosure (Task 6), capture/derive/drift (Tasks 5/6/7).
 - Task interfaces agree on the names `publication_structure`,
   `publication_join_input_valid`, `validator_semantics_hash`, `policy_hash`,
   `census_hash`, and `derive-publication-envelope`.

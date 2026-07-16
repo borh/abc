@@ -1,0 +1,536 @@
+[
+  {
+    "namespaced_code": "aozora::lex::source_contains_pua",
+    "wire_code": "source-contains-pua",
+    "severity": "warning",
+    "source": "source",
+    "documented_repro": "（不可視の U+E001 などが混入した行）",
+    "executable_repro": "本文終わり",
+    "documented_recovery": "（その 1 文字を削除した行）",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      6,
+      9
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [],
+    "diagnostic_intersection_with_r1_uncovered": [],
+    "proposed_disposition": "authorize_exact_span",
+    "rationale": "the sanitizer neutralizes a source-side reserved sentinel, so only the exact authenticated source span may account for the otherwise unclaimed bytes"
+  },
+  {
+    "namespaced_code": "aozora::lex::unclosed_bracket",
+    "wire_code": "unclosed-bracket",
+    "severity": "error",
+    "source": "source",
+    "documented_repro": "本文［＃改ページ",
+    "executable_repro": "本文［＃改ページ",
+    "documented_recovery": "本文［＃改ページ］",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      6,
+      9
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        0,
+        24
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        6,
+        9
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::unmatched_close",
+    "wire_code": "unmatched-close",
+    "severity": "error",
+    "source": "source",
+    "documented_repro": "本文 ］",
+    "executable_repro": "本文 ］",
+    "documented_recovery": "本文",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      7,
+      10
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [],
+    "diagnostic_intersection_with_r1_uncovered": [],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::accent_decomposition_applied",
+    "wire_code": "accent-decomposition-applied",
+    "severity": "note",
+    "source": "source",
+    "documented_repro": "Cre〔e'〕vez",
+    "executable_repro": "Cre〔e'〕vez",
+    "documented_recovery": "（修正不要。保存時に元の〔…〕へ復元されます）",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      3,
+      11
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        0,
+        14
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        3,
+        11
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::unresolved_gaiji",
+    "wire_code": "unresolved-gaiji",
+    "severity": "warning",
+    "source": "source",
+    "documented_repro": "※［＃「ある字」の説明］",
+    "executable_repro": "※［＃「ある字」の説明］",
+    "documented_recovery": "※［＃「ある字」、第3水準1-15-23］（面区点か U+ を補う）",
+    "emitted_by_repro": false,
+    "diagnostic_span": null,
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        0,
+        36
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::mismatched_container_close",
+    "wire_code": "mismatched-container-close",
+    "severity": "error",
+    "source": "source",
+    "documented_repro": "［＃ここから2字下げ］\n本文\n［＃ここで地付き終わり］",
+    "executable_repro": "［＃ここから2字下げ］\n本文\n［＃ここで地付き終わり］",
+    "documented_recovery": "［＃ここから2字下げ］\n本文\n［＃ここで字下げ終わり］",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      39,
+      75
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        6,
+        75
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        39,
+        75
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::empty_ruby_reading",
+    "wire_code": "empty-ruby-reading",
+    "severity": "error",
+    "source": "source",
+    "documented_repro": "｜青空《》",
+    "executable_repro": "｜青空《》",
+    "documented_recovery": "｜青空《あおぞら》",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      0,
+      15
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        0,
+        15
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        0,
+        15
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::nested_ruby",
+    "wire_code": "nested-ruby",
+    "severity": "error",
+    "source": "source",
+    "documented_repro": "｜漢《字《かん》》",
+    "executable_repro": "｜漢《字《かん》》",
+    "documented_recovery": "｜漢字《かんじ》",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      12,
+      15
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        3,
+        27
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        12,
+        15
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::unrecognised_container_directive",
+    "wire_code": "unrecognised-container-directive",
+    "severity": "warning",
+    "source": "source",
+    "documented_repro": "［＃ここから謎レイアウト］",
+    "executable_repro": "［＃ここから謎レイアウト］",
+    "documented_recovery": "［＃ここから2字下げ］（既知のコンテナ名にする）",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      0,
+      39
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        0,
+        39
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        0,
+        39
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::tcy_target_not_found",
+    "wire_code": "tcy-target-not-found",
+    "severity": "warning",
+    "source": "source",
+    "documented_repro": "本文［＃「25」は縦中横］",
+    "executable_repro": "本文［＃「25」は縦中横］",
+    "documented_recovery": "25［＃「25」は縦中横］（対象を注記より前に置く）",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      6,
+      35
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        6,
+        35
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        6,
+        35
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::bouten_target_ambiguous",
+    "wire_code": "bouten-target-ambiguous",
+    "severity": "warning",
+    "source": "source",
+    "documented_repro": "花と花［＃「花」に傍点］",
+    "executable_repro": "花と花［＃「花」に傍点］",
+    "documented_recovery": "赤い花と白い花［＃「白い花」に傍点］（対象を一意にする）",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      9,
+      36
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        9,
+        36
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        9,
+        36
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::forward_referent_not_stylable",
+    "wire_code": "forward-referent-not-stylable",
+    "severity": "warning",
+    "source": "source",
+    "documented_repro": "｜我《われ》は […]［＃「我」に傍点］",
+    "executable_repro": "｜我《われ》は […]［＃「我」に傍点］",
+    "documented_recovery": "我［＃「我」に傍点］（プレーンな出現の隣に置く）",
+    "emitted_by_repro": false,
+    "diagnostic_span": null,
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        15,
+        54
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::break_in_single_line_container",
+    "wire_code": "break-in-single-line-container",
+    "severity": "warning",
+    "source": "source",
+    "documented_repro": "［＃地付き］本文［＃改ページ］",
+    "executable_repro": "［＃地付き］本文［＃改ページ］",
+    "documented_recovery": "本文［＃改ページ］\n［＃地付き］本文（改ページを行外に出す）",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      24,
+      45
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        6,
+        45
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        24,
+        45
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::bracketed_kaeriten_no_pair",
+    "wire_code": "bracketed-kaeriten-no-pair",
+    "severity": "error",
+    "source": "source",
+    "documented_repro": "学而時習之［＃二］",
+    "executable_repro": "学而時習之［＃二］",
+    "documented_recovery": "学而［＃一］時習之［＃二］（家系の基点［＃一］を置く）",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      15,
+      27
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        15,
+        27
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        15,
+        27
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::kaeriten_outside_kanbun",
+    "wire_code": "kaeriten-outside-kanbun",
+    "severity": "warning",
+    "source": "source",
+    "documented_repro": "ふつうの文章です［＃レ］",
+    "executable_repro": "ふつうの文章です［＃レ］",
+    "documented_recovery": "（返り点でないなら注記を削除、本物の漢文文脈で使う）",
+    "emitted_by_repro": false,
+    "diagnostic_span": null,
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        24,
+        36
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::mismatched_bouten_container",
+    "wire_code": "mismatched-bouten-container",
+    "severity": "error",
+    "source": "source",
+    "documented_repro": "［＃傍点］本文［＃傍線終わり］",
+    "executable_repro": "［＃傍点］本文［＃傍線終わり］",
+    "documented_recovery": "［＃傍点］本文［＃傍点終わり］",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      21,
+      45
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        6,
+        45
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        21,
+        45
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lint::non_canonical_directive",
+    "wire_code": "non-canonical-directive",
+    "severity": "warning",
+    "source": "source",
+    "documented_repro": "本文［＃字下げ終わり］",
+    "executable_repro": "本文［＃字下げ終わり］",
+    "documented_recovery": "本文［＃ここで字下げ終わり］",
+    "emitted_by_repro": true,
+    "diagnostic_span": [
+      6,
+      33
+    ],
+    "r1_status": "ok",
+    "r1_errors": [],
+    "r1_uncovered": [
+      [
+        6,
+        33
+      ]
+    ],
+    "diagnostic_intersection_with_r1_uncovered": [
+      [
+        6,
+        33
+      ]
+    ],
+    "proposed_disposition": "observe_only",
+    "rationale": "the diagnostic records recovery or advisory semantics but does not independently prove source-byte loss"
+  },
+  {
+    "namespaced_code": "aozora::lex::residual_annotation_marker",
+    "wire_code": "residual-annotation-marker",
+    "severity": "error",
+    "source": "internal",
+    "documented_repro": "本文［＃なぞの注記］",
+    "executable_repro": "本文［＃なぞの注記］",
+    "documented_recovery": "本文［＃改ページ］",
+    "emitted_by_repro": false,
+    "diagnostic_span": null,
+    "r1_status": null,
+    "r1_errors": [],
+    "r1_uncovered": [],
+    "diagnostic_intersection_with_r1_uncovered": [],
+    "proposed_disposition": "reject_internal",
+    "rationale": "an internal invariant failure cannot authorize user-source bytes"
+  },
+  {
+    "namespaced_code": "aozora::lex::unregistered_sentinel",
+    "wire_code": "unregistered-sentinel",
+    "severity": "error",
+    "source": "internal",
+    "documented_repro": "（通常のソースからは発生しません）",
+    "executable_repro": null,
+    "documented_recovery": "（パイプラインのバグ。手元の修正では直せません）",
+    "emitted_by_repro": false,
+    "diagnostic_span": null,
+    "r1_status": null,
+    "r1_errors": [],
+    "r1_uncovered": [],
+    "diagnostic_intersection_with_r1_uncovered": [],
+    "proposed_disposition": "reject_internal",
+    "rationale": "an internal invariant failure cannot authorize user-source bytes"
+  },
+  {
+    "namespaced_code": "aozora::lex::registry_out_of_order",
+    "wire_code": "registry-out-of-order",
+    "severity": "error",
+    "source": "internal",
+    "documented_repro": "（通常のソースからは発生しません）",
+    "executable_repro": null,
+    "documented_recovery": "（パイプラインのバグ。手元の修正では直せません）",
+    "emitted_by_repro": false,
+    "diagnostic_span": null,
+    "r1_status": null,
+    "r1_errors": [],
+    "r1_uncovered": [],
+    "diagnostic_intersection_with_r1_uncovered": [],
+    "proposed_disposition": "reject_internal",
+    "rationale": "an internal invariant failure cannot authorize user-source bytes"
+  },
+  {
+    "namespaced_code": "aozora::lex::registry_position_mismatch",
+    "wire_code": "registry-position-mismatch",
+    "severity": "error",
+    "source": "internal",
+    "documented_repro": "（通常のソースからは発生しません）",
+    "executable_repro": null,
+    "documented_recovery": "（パイプラインのバグ。手元の修正では直せません）",
+    "emitted_by_repro": false,
+    "diagnostic_span": null,
+    "r1_status": null,
+    "r1_errors": [],
+    "r1_uncovered": [],
+    "diagnostic_intersection_with_r1_uncovered": [],
+    "proposed_disposition": "reject_internal",
+    "rationale": "an internal invariant failure cannot authorize user-source bytes"
+  }
+]

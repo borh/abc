@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -28,17 +29,11 @@ wire_enum!(WorkStatus { Ok => "ok", Unavailable => "unavailable" });
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct AdapterCoordinates {
+pub struct QualificationIdentity {
     pub aat_version: u64,
     pub aat_adapter: String,
-    pub aat_adapter_version: Option<String>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct QualificationIdentity {
+    pub aat_adapter_version: String,
     pub parser_git_rev: String,
-    pub adapter_coordinates: AdapterCoordinates,
     pub mapping_id: String,
     pub mapping_version: String,
     pub mapping_hash: String,
@@ -48,7 +43,7 @@ pub struct QualificationIdentity {
     pub corpus_snapshot_hash: String,
     pub corpus_list_hash: String,
     pub predicate_set_hash: String,
-    pub instrument_versions: Vec<String>,
+    pub instrument_versions: BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

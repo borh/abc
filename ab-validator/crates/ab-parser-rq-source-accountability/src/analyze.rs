@@ -2,6 +2,7 @@ use ab_aozora_aat::{decode_source_bytes, diagnostics_json_from_bytes};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
+use crate::index::qualification_identity_ref;
 use crate::interval::{Interval, normalize, subtract, total_len};
 use crate::model::{
     BlobRef, CoordinateSystem, CoverageBasis, DecodedBlobRef, DecodedEncoding, DerivedFrom,
@@ -12,36 +13,6 @@ use crate::model::{
 
 fn hash(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
-}
-
-fn canonical_json(value: &Value, out: &mut Vec<u8>) {
-    match value {
-        Value::Object(object) => {
-            out.push(b'{');
-            let mut entries = object.iter().collect::<Vec<_>>();
-            entries.sort_unstable_by_key(|(key, _)| *key);
-            for (index, (key, value)) in entries.into_iter().enumerate() {
-                if index != 0 {
-                    out.push(b',');
-                }
-                out.extend(serde_json::to_vec(key).expect("JSON key serializes"));
-                out.push(b':');
-                canonical_json(value, out);
-            }
-            out.push(b'}');
-        }
-        Value::Array(values) => {
-            out.push(b'[');
-            for (index, value) in values.iter().enumerate() {
-                if index != 0 {
-                    out.push(b',');
-                }
-                canonical_json(value, out);
-            }
-            out.push(b']');
-        }
-        _ => out.extend(serde_json::to_vec(value).expect("JSON scalar serializes")),
-    }
 }
 
 fn wire(intervals: &[Interval]) -> Vec<WireInterval> {
@@ -78,10 +49,8 @@ where
         .and_then(Value::as_str)
         .unwrap_or("")
         .to_owned();
-    let identity_value =
-        serde_json::to_value(&input.qualification_identity).expect("identity serializes");
-    let mut identity_bytes = Vec::new();
-    canonical_json(&identity_value, &mut identity_bytes);
+    let identity_ref =
+        qualification_identity_ref(&input.qualification_identity).expect("identity serializes");
     let decoded_len = decoded.text.len();
     let full = Interval::new(0, decoded_len, decoded_len).expect("full decoded interval");
     let mut errors = Vec::new();
@@ -118,15 +87,10 @@ where
             .and_then(|v| serde_json::from_value::<DerivedFrom>(v).ok())
         {
             Some(d)
-                if d.aat_version
-                    == input.qualification_identity.adapter_coordinates.aat_version
-                    && d.aat_adapter
-                        == input.qualification_identity.adapter_coordinates.aat_adapter
-                    && d.aat_adapter_version
-                        == input
-                            .qualification_identity
-                            .adapter_coordinates
-                            .aat_adapter_version
+                if d.aat_version == input.qualification_identity.aat_version
+                    && d.aat_adapter == input.qualification_identity.aat_adapter
+                    && d.aat_adapter_version.as_deref()
+                        == Some(input.qualification_identity.aat_adapter_version.as_str())
                     && d.mapping_id == input.qualification_identity.mapping_id
                     && d.mapping_version == input.qualification_identity.mapping_version
                     && d.mapping_schema_hash
@@ -179,7 +143,7 @@ where
 
     let record = WorkRecord {
         schema_version: WorkSchemaVersion::V1,
-        identity_ref: hash(&identity_bytes),
+        identity_ref,
         instrument_version: InstrumentVersion::V1,
         work_id: input.corpus_entry.work_id,
         original_source: BlobRef {
@@ -244,9 +208,7 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::model::{
-        AdapterCoordinates, CorpusEntry, QualificationIdentity, TaxonomyIdentity, TaxonomyVersion,
-    };
+    use crate::model::{CorpusEntry, QualificationIdentity, TaxonomyIdentity, TaxonomyVersion};
 
     fn input() -> WorkInput {
         let original_bytes = b"x".to_vec();
@@ -280,11 +242,9 @@ mod tests {
             },
             qualification_identity: QualificationIdentity {
                 parser_git_rev: "abc123".into(),
-                adapter_coordinates: AdapterCoordinates {
-                    aat_version: 2,
-                    aat_adapter: "ab-aozora-aat".into(),
-                    aat_adapter_version: Some("0.1.0".into()),
-                },
+                aat_version: 2,
+                aat_adapter: "ab-aozora-aat".into(),
+                aat_adapter_version: "0.1.0".into(),
                 mapping_id: "https://example.test/mapping".into(),
                 mapping_version: "1".into(),
                 mapping_hash: format!("sha256:{}", "1".repeat(64)),
@@ -294,7 +254,10 @@ mod tests {
                 corpus_snapshot_hash: format!("sha256:{}", "4".repeat(64)),
                 corpus_list_hash: format!("sha256:{}", "5".repeat(64)),
                 predicate_set_hash: format!("sha256:{}", "6".repeat(64)),
-                instrument_versions: vec!["parser-rq-source-accountability-v1".into()],
+                instrument_versions: std::collections::BTreeMap::from([(
+                    "source_accountability".into(),
+                    "parser-rq-source-accountability-v1".into(),
+                )]),
             },
             taxonomy: TaxonomyIdentity {
                 taxonomy_version: TaxonomyVersion::V1,

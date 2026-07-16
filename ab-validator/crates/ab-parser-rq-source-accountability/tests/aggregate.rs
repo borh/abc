@@ -1,12 +1,12 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use ab_parser_rq_source_accountability::{
-    AdapterCoordinates, BlobRef, CoordinateSystem, CorpusEntry, CoverageBasis, DecodedBlobRef,
-    DecodedEncoding, InstrumentVersion, JsonMediaType, QualificationIdentity, RecordIndex,
-    RecordIndexEntry, RecordIndexSchemaVersion, TaxonomyIdentity, TaxonomyVersion, WireInterval,
-    WorkRecord, WorkSchemaVersion, WorkStatus, aggregate, canonical_json,
+    BlobRef, CoordinateSystem, CorpusEntry, CoverageBasis, DecodedBlobRef, DecodedEncoding,
+    InstrumentVersion, JsonMediaType, QualificationIdentity, RecordIndex, RecordIndexEntry,
+    RecordIndexSchemaVersion, TaxonomyIdentity, TaxonomyVersion, WireInterval, WorkRecord,
+    WorkSchemaVersion, WorkStatus, aggregate, canonical_json,
 };
 use sha2::{Digest, Sha256};
 
@@ -19,11 +19,9 @@ fn hash(bytes: &[u8]) -> String {
 fn qualification() -> QualificationIdentity {
     QualificationIdentity {
         parser_git_rev: "rev".into(),
-        adapter_coordinates: AdapterCoordinates {
-            aat_version: 1,
-            aat_adapter: "aat".into(),
-            aat_adapter_version: None,
-        },
+        aat_version: 1,
+        aat_adapter: "aat".into(),
+        aat_adapter_version: "fixture".into(),
         mapping_id: "mapping".into(),
         mapping_version: "1".into(),
         mapping_hash: hash(b"m"),
@@ -33,7 +31,10 @@ fn qualification() -> QualificationIdentity {
         corpus_snapshot_hash: hash(b"snapshot"),
         corpus_list_hash: hash(b"list"),
         predicate_set_hash: hash(b"predicates"),
-        instrument_versions: vec!["parser-rq-source-accountability-v1".into()],
+        instrument_versions: std::collections::BTreeMap::from([(
+            "source_accountability".into(),
+            "parser-rq-source-accountability-v1".into(),
+        )]),
     }
 }
 
@@ -305,11 +306,13 @@ fn locator_must_stay_below_record_root() {
 
 #[test]
 fn aggregate_wire_records_validate_against_live_schema() {
-    let schema: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../../abc/schemas/parser-rq-source-accountability-aggregate.schema.json"
-    )))
-    .unwrap();
+    let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(3)
+        .unwrap()
+        .join("abc/schemas/parser-rq-source-accountability-aggregate.schema.json");
+    let schema: serde_json::Value =
+        serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
     let validator = jsonschema::validator_for(&schema).unwrap();
     let ok = fixture(&[("a", 1, 2)]);
     let mut unavailable = fixture(&[("a", 1, 1)]);

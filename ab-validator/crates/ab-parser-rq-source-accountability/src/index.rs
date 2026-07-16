@@ -9,8 +9,8 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    CoordinateSystem, CorpusInput, JsonMediaType, RecordIndex, RecordIndexEntry,
-    RecordIndexSchemaVersion, WorkInput, WorkStatus, analyze_work,
+    CoordinateSystem, CorpusInput, JsonMediaType, QualificationIdentity, RecordIndex,
+    RecordIndexEntry, RecordIndexSchemaVersion, WorkInput, WorkStatus, analyze_work,
 };
 
 // `source_root`, `parser_ir_root`, and `store_root` are campaign-owned runtime
@@ -31,6 +31,65 @@ fn digest(bytes: &[u8]) -> String {
 pub fn canonical_json<T: Serialize>(value: &T) -> Result<String> {
     let value = serde_json::to_value(value)?;
     ab_diff_utils::canonical_json_string(&value)
+}
+
+fn p0_string(value: &str) -> String {
+    let mut encoded = String::from("\"");
+    for character in value.chars() {
+        match character {
+            '/' => encoded.push_str("\\/"),
+            character if character.is_ascii() => {
+                let scalar =
+                    serde_json::to_string(&character.to_string()).expect("string serializes");
+                encoded.push_str(&scalar[1..scalar.len() - 1]);
+            }
+            character => {
+                for unit in character.encode_utf16(&mut [0_u16; 2]) {
+                    encoded.push_str(&format!("\\u{unit:04x}"));
+                }
+            }
+        }
+    }
+    encoded.push('"');
+    encoded
+}
+
+fn p0_canonical_json(value: &serde_json::Value, output: &mut String) {
+    match value {
+        serde_json::Value::Object(object) => {
+            output.push('{');
+            let mut entries = object.iter().collect::<Vec<_>>();
+            entries.sort_unstable_by_key(|(key, _)| *key);
+            for (index, (key, value)) in entries.into_iter().enumerate() {
+                if index != 0 {
+                    output.push(',');
+                }
+                output.push_str(&p0_string(key));
+                output.push(':');
+                p0_canonical_json(value, output);
+            }
+            output.push('}');
+        }
+        serde_json::Value::Array(values) => {
+            output.push('[');
+            for (index, value) in values.iter().enumerate() {
+                if index != 0 {
+                    output.push(',');
+                }
+                p0_canonical_json(value, output);
+            }
+            output.push(']');
+        }
+        serde_json::Value::String(value) => output.push_str(&p0_string(value)),
+        value => output.push_str(&serde_json::to_string(value).expect("JSON scalar serializes")),
+    }
+}
+
+pub fn qualification_identity_ref(identity: &QualificationIdentity) -> Result<String> {
+    let value = serde_json::to_value(identity)?;
+    let mut bytes = String::new();
+    p0_canonical_json(&value, &mut bytes);
+    Ok(format!("sha256:{}", digest(bytes.as_bytes())))
 }
 
 fn reject_lexical_escape(path: &Path, label: &str) -> Result<()> {
@@ -185,10 +244,7 @@ pub fn analyze_corpus(mut input: CorpusInput) -> Result<RecordIndex> {
     }
 
     let expected_work_count = prepared.len() as u64;
-    let identity_ref = {
-        let bytes = canonical_json(&input.qualification_identity)?;
-        format!("sha256:{}", digest(bytes.as_bytes()))
-    };
+    let identity_ref = qualification_identity_ref(&input.qualification_identity)?;
     let mut analyses = Vec::with_capacity(prepared.len());
     for (entry, original_bytes, parser_ir_bytes) in prepared {
         let mut analysis = analyze_work(WorkInput {

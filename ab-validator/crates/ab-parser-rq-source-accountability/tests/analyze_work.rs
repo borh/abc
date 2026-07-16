@@ -1,6 +1,6 @@
 use ab_parser_rq_source_accountability::{
-    AdapterCoordinates, CorpusEntry, DecodedEncoding, QualificationIdentity, TaxonomyIdentity,
-    TaxonomyVersion, WorkInput, WorkRecord, WorkStatus, analyze_work,
+    CorpusEntry, DecodedEncoding, QualificationIdentity, TaxonomyIdentity, TaxonomyVersion,
+    WorkInput, WorkRecord, WorkStatus, analyze_work,
 };
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -12,11 +12,9 @@ fn hash(bytes: &[u8]) -> String {
 fn qualification() -> QualificationIdentity {
     QualificationIdentity {
         parser_git_rev: "abc123".into(),
-        adapter_coordinates: AdapterCoordinates {
-            aat_version: 2,
-            aat_adapter: "ab-aozora-aat".into(),
-            aat_adapter_version: Some("0.1.0".into()),
-        },
+        aat_version: 2,
+        aat_adapter: "ab-aozora-aat".into(),
+        aat_adapter_version: "0.1.0".into(),
         mapping_id: "https://example.test/mapping".into(),
         mapping_version: "1".into(),
         mapping_hash: format!("sha256:{}", "1".repeat(64)),
@@ -26,7 +24,10 @@ fn qualification() -> QualificationIdentity {
         corpus_snapshot_hash: format!("sha256:{}", "4".repeat(64)),
         corpus_list_hash: format!("sha256:{}", "5".repeat(64)),
         predicate_set_hash: format!("sha256:{}", "6".repeat(64)),
-        instrument_versions: vec!["parser-rq-source-accountability-v1".into()],
+        instrument_versions: std::collections::BTreeMap::from([(
+            "source_accountability".into(),
+            "parser-rq-source-accountability-v1".into(),
+        )]),
     }
 }
 
@@ -37,9 +38,9 @@ fn parser_ir(nodes: Value) -> Vec<u8> {
         "schema_id": q.parser_ir_schema_id,
         "schema_hash": q.parser_ir_schema_hash,
         "derived_from": {
-            "aat_version": q.adapter_coordinates.aat_version,
-            "aat_adapter": q.adapter_coordinates.aat_adapter,
-            "aat_adapter_version": q.adapter_coordinates.aat_adapter_version,
+            "aat_version": q.aat_version,
+            "aat_adapter": q.aat_adapter,
+            "aat_adapter_version": q.aat_adapter_version,
             "mapping_id": q.mapping_id,
             "mapping_version": q.mapping_version,
             "mapping_schema_hash": q.mapping_schema_hash

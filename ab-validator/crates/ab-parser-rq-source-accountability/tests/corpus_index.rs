@@ -1,9 +1,9 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use ab_parser_rq_source_accountability::{
-    AdapterCoordinates, CorpusEntry, CorpusInput, CorpusSourceEntry, QualificationIdentity,
-    TaxonomyIdentity, TaxonomyVersion, analyze_corpus, canonical_json,
+    CorpusEntry, CorpusInput, CorpusSourceEntry, QualificationIdentity, TaxonomyIdentity,
+    TaxonomyVersion, analyze_corpus, canonical_json,
 };
 use serde_json::json;
 use sha2::{Digest, Sha256};
@@ -28,11 +28,9 @@ fn temp_root(name: &str) -> PathBuf {
 fn qualification() -> QualificationIdentity {
     QualificationIdentity {
         parser_git_rev: "abc123".into(),
-        adapter_coordinates: AdapterCoordinates {
-            aat_version: 2,
-            aat_adapter: "ab-aozora-aat".into(),
-            aat_adapter_version: Some("0.1.0".into()),
-        },
+        aat_version: 2,
+        aat_adapter: "ab-aozora-aat".into(),
+        aat_adapter_version: "0.1.0".into(),
         mapping_id: "https://example.test/mapping".into(),
         mapping_version: "1".into(),
         mapping_hash: format!("sha256:{}", "1".repeat(64)),
@@ -42,7 +40,10 @@ fn qualification() -> QualificationIdentity {
         corpus_snapshot_hash: format!("sha256:{}", "4".repeat(64)),
         corpus_list_hash: format!("sha256:{}", "5".repeat(64)),
         predicate_set_hash: format!("sha256:{}", "6".repeat(64)),
-        instrument_versions: vec!["parser-rq-source-accountability-v1".into()],
+        instrument_versions: std::collections::BTreeMap::from([(
+            "source_accountability".into(),
+            "parser-rq-source-accountability-v1".into(),
+        )]),
     }
 }
 
@@ -52,9 +53,9 @@ fn parser_ir(source: &[u8]) -> Vec<u8> {
         "schema_id": q.parser_ir_schema_id,
         "schema_hash": q.parser_ir_schema_hash,
         "derived_from": {
-            "aat_version": q.adapter_coordinates.aat_version,
-            "aat_adapter": q.adapter_coordinates.aat_adapter,
-            "aat_adapter_version": q.adapter_coordinates.aat_adapter_version,
+            "aat_version": q.aat_version,
+            "aat_adapter": q.aat_adapter,
+            "aat_adapter_version": q.aat_adapter_version,
             "mapping_id": q.mapping_id,
             "mapping_version": q.mapping_version,
             "mapping_schema_hash": q.mapping_schema_hash
@@ -149,11 +150,13 @@ fn generated_index_validates_against_live_abc_schema() {
     let input = input(&root);
     let index = analyze_corpus(input).unwrap();
     let instance = serde_json::to_value(index).unwrap();
-    let schema: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../../abc/schemas/parser-rq-source-accountability-index.schema.json"
-    )))
-    .unwrap();
+    let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(3)
+        .unwrap()
+        .join("abc/schemas/parser-rq-source-accountability-index.schema.json");
+    let schema: serde_json::Value =
+        serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
     let validator = jsonschema::validator_for(&schema).unwrap();
     let errors = validator
         .iter_errors(&instance)

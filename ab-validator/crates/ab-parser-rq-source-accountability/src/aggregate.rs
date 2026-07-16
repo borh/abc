@@ -10,7 +10,7 @@ use crate::interval::{Interval, intersect, normalize, subtract, total_len};
 use crate::{
     AggregateRecord, AggregateSchemaVersion, CoordinateSystem, CorpusEntry, QualificationIdentity,
     RecordIndex, TaxonomyIdentity, WorkCompleteness, WorkInterval, WorkRecord, WorkStatus,
-    canonical_json,
+    index::qualification_identity_ref,
 };
 
 fn digest(bytes: &[u8]) -> String {
@@ -153,7 +153,7 @@ pub fn aggregate(
         && corpus_ids.len() == corpus.len()
         && index_ids.len() == index.records.len()
         && expected == observed;
-    let identity_ref = digest(canonical_json(identity)?.as_bytes());
+    let identity_ref = qualification_identity_ref(identity)?;
     let mut errors = Vec::new();
     if !complete {
         errors.push("work-set-mismatch".to_owned());

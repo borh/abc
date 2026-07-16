@@ -386,6 +386,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ab-parser-rq-diagnostic-authorization"
+version = "0.1.0"
+dependencies = [
+ "ab-aozora-spec",
+ "ab-diff-utils",
+ "ab-parser-rq-source-accountability",
+ "hegeltest",
+ "jsonschema",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "ab-parser-rq-source-accountability"
 version = "0.1.0"
 dependencies = [

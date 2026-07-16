@@ -82,6 +82,17 @@
                  (files/read-json
                   (str root "/characterization-policy-map.json")))))
     (is (empty? (validate/parser-rq-capture-generation-errors generation)))
+    (testing "production capture fixture satisfies the ABC protocols"
+      (let [capture-root "test/fixtures/parser-rq/classified-source-capture"
+            capture-ledger (files/read-json (str capture-root "/ledger.json"))
+            capture-generation (files/read-json (str capture-root "/generation.json"))
+            decoded (slurp (str capture-root "/decoded.txt"))]
+        (is (nil? (schema/validation-errors ledger-schema capture-ledger)))
+        (is (nil? (schema/validation-errors generation-schema capture-generation)))
+        (is (empty? (validate/parser-rq-classified-source-ledger-errors
+                     policy capture-ledger decoded)))
+        (is (empty? (validate/parser-rq-capture-generation-errors
+                     capture-generation)))))
     (testing "unknown fields and duplicate policy rows are rejected"
       (is (seq (schema/validation-errors policy-schema (assoc policy "unknown" true))))
       (is (seq (schema/validation-errors ledger-schema (assoc ledger "unknown" true))))

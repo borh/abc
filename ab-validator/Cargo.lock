@@ -40,13 +40,16 @@ version = "0.6.0"
 dependencies = [
  "ab-aozora-facade",
  "ab-aozora-pipeline",
+ "ab-rq-artifact-store",
  "anyhow",
  "encoding_rs",
+ "hegeltest",
  "proptest",
  "regex",
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "tempfile",
 ]
 
 [[package]]

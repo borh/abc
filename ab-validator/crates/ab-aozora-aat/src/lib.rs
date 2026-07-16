@@ -9,6 +9,13 @@ use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+
+mod classified_source;
+
+pub use classified_source::{
+    CaptureGeneration, PublishedCaptureGeneration, capture_generation_from_bytes,
+    classified_source_ledger_from_bytes, verify_capture_generation,
+};
 use sha2::{Digest, Sha256};
 
 use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json};
@@ -41,6 +48,8 @@ pub struct DecodedSource {
     pub text: String,
     /// Decoded text with sanitization for span alignment.
     pub span_text: String,
+    /// Complete sanitized text before the body/tail projection.
+    pub(crate) sanitized_text: String,
     /// The encoding that was successfully decoded (utf-8, utf-8-bom, windows-31j, or lossy variant).
     pub encoding: &'static str,
     /// Hex-encoded SHA256 hash of the input bytes.
@@ -249,6 +258,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
         return Ok(DecodedSource {
             text,
             span_text: sanitized.body,
+            sanitized_text: sanitized.full,
             encoding: "utf-8-bom",
             source_hash,
             sanitize_diagnostics: sanitized.diagnostics,
@@ -268,6 +278,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
         return Ok(DecodedSource {
             text,
             span_text: sanitized.body,
+            sanitized_text: sanitized.full,
             encoding: "utf-8",
             source_hash,
             sanitize_diagnostics: sanitized.diagnostics,
@@ -287,6 +298,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     Ok(DecodedSource {
         text,
         span_text: sanitized.body,
+        sanitized_text: sanitized.full,
         encoding: if had_errors {
             "windows-31j-lossy"
         } else {
@@ -308,6 +320,7 @@ struct SanitizedForAat {
     /// The BODY slice (`sanitized[body_range]`), same content
     /// `sanitize_for_aat` always returned as its first element.
     body: String,
+    full: String,
     diagnostics: Vec<AozoraSanitizeDiagnostic>,
     maps: SanitizeMaps,
     /// `body_range.start`, sanitized coordinates.
@@ -325,12 +338,15 @@ fn sanitize_for_aat(text: &str) -> SanitizedForAat {
     let sanitize_diagnostics = mapped.diagnostics;
     let sanitized = mapped.text.into_owned();
     let (body, tail_start) = aozora_body_range(&sanitized);
+    let body_text = sanitized[body.clone()].to_owned();
+    let tail = sanitized[tail_start..].to_owned();
     SanitizedForAat {
-        body: sanitized[body.clone()].to_owned(),
+        body: body_text,
+        full: sanitized,
         diagnostics: sanitize_diagnostics,
         maps: mapped.maps,
         body_offset: body.start,
-        tail: sanitized[tail_start..].to_owned(),
+        tail,
         tail_offset: tail_start,
     }
 }

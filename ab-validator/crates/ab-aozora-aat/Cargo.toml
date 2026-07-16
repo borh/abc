@@ -26,6 +26,7 @@ encoding_rs = "0.8"
 # 1a4f864-lifted implementation, byte-equivalence proven corpus-wide in
 # docs/superpowers/reports/2026-07-11-phase3-stage0-sanitize-parity.md.
 ab-aozora-pipeline = { path = "../ab-aozora-pipeline" }
+ab-rq-artifact-store = { path = "../ab-rq-artifact-store" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"
@@ -35,3 +36,5 @@ sha2 = "0.10"
 # (tests/bare_toggle_model.rs). Workspace-pinned at 1.5
 # (ab-validator/Cargo.toml:201) — never add a second literal version here.
 proptest.workspace = true
+hegeltest = "0.28"
+tempfile.workspace = true

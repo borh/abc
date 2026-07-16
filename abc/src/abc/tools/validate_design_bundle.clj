@@ -564,6 +564,8 @@
    "examples/workflow/passed.workflow-run.json"
    "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
    "fixtures/tei-eaj-comparison/workset-export.json"
+   "test/fixtures/parser-rq/classified-source-capture/generation.json"
+   "test/fixtures/parser-rq/classified-source-capture/ledger.json"
    "test/fixtures/parser-rq/classified-source/generation.json"
    "test/fixtures/parser-rq/classified-source/ledger.json"])
 

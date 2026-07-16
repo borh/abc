@@ -1,5 +1,10 @@
 # Parser RQ Diagnostic Authorization and R2 Activation Implementation Plan
 
+> **Superseded:** Do not execute Tasks 2-7. Task 1's live characterization
+> falsified the proposed authority model. Replace this plan with the P4A1-P4A3
+> plans derived from
+> `../specs/2026-07-16-parser-rq-source-claim-ledger-design.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` (recommended) or
 > `superpowers:executing-plans` to implement this plan task-by-task. Steps use
@@ -148,7 +153,7 @@ For each source code, pass `DiagnosticInfo.repro` through the production chain:
 ```text
 repro bytes
   -> ab_aozora_aat::aat_json_from_bytes
-  -> ab_aat_to_parser_ir::convert with the checked-in v1 mapping/schema tuple
+  -> ab_aat_to_parser_ir::convert with the checked-in v2 mapping/schema tuple
   -> ab_parser_rq_source_accountability::analyze_work
 ```
 

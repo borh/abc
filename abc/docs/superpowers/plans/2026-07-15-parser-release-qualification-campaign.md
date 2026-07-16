@@ -106,21 +106,23 @@ reviewable systems and must land first.
 | P1 | `…-parser-rq-source-accountability.md` | R1 source-span coverage (byte denominator + versioned taxonomy) → R2 silent-drops | P0 |
 | P2 | `…-parser-rq-publication.md` | R3 publication-structure validation | P0 |
 | P3 | `…-parser-rq-resource.md` | R4 per-work memory (single mechanism, chosen in-plan) | P0 |
-| P4A | `…-parser-rq-diagnostic-authorization.md` | Versioned `ab-aozora` diagnostic authorization boundary and R2 activation | P0, P1 |
+| P4A1 | `…-parser-rq-source-claim-ledger.md` | Characterize consumption paths; ABC claim protocol/policy; custom-parser ledger emission | P0, P1 |
+| P4A2 | `…-parser-rq-source-claim-r1-migration.md` | Ledger-authoritative R1; retain node-span coverage as supporting evidence | P4A1 |
+| P4A3 | `…-parser-rq-diagnostic-gap-partition.md` | Versioned diagnostic authorization and R2 partition over ledger gaps | P4A2 |
 | P4B | `…-parser-rq-predicate-hardening.md` | R5 (predicates 4 & 5) instrument code | P0, P1 |
 | P5 | `…-parser-rq-admission-promotion.md` | Pin the final implementation commit; capture R1–R5; R6 admit; R7 recapture + gate + conditional ADR 0039 | P0–P4 (barrier) |
 | PS | `…-parser-rq-study-axes.md` (or its own spec) | Track S: S2, S1, S3, S4 | P0 contracts only; never gates Track R |
 
 ```
-P0 ──┬── P1 ──┬── P4A ─┐
-     │        └── P4B  ├──► P5 (barrier: needs P0–P4)
+P0 ──┬── P1 ──┬── P4A1 ── P4A2 ── P4A3 ─┐
+     │        └── P4B                   ├──► P5 (barrier: needs P0–P4)
      ├── P2           │
      └── P3 ──────────┘
 PS runs parallel to everything; S4 (host-controlled KM latency) is the long pole.
 ```
 
 **Corrections baked into the split:**
-- **P4A/R2 authorization and P4B/R5 instrument code do not depend on
+- **P4A1-P4A3/R2 work and P4B/R5 instrument code do not depend on
   admission.** P5 first pins the final
   implementation commit, then captures predicate 5 against that candidate's own
   mapping + schema hash and separately derives whether the candidate is admitted.
@@ -145,22 +147,26 @@ minimal implementation, independently testable tasks. Their entry contracts:
   `gate-status` requires precondition ∧ nine passes) + tests. Migrate the committed
   bundle to envelope form (predicates 2/3/6/8 stay `:instrument-missing`).
 - **P1 Source accountability** — Consumes P0's manifest/envelope contracts.
-  R1 first test pins the **byte** denominator (`covered_eligible_bytes /
-  eligible_bytes`, `eligible = total − ignored(taxonomy_version)`); a work-count
-  denominator must fail. Work-completeness is a *separate* assertion. R2 reconciles
-  R1 uncovered regions vs the captured diagnostic stream (ADR-0002 source
-  definition, not the mapping LOSS count).
+  The implemented generation pins the **byte** denominator and measures
+  Parser-IR node-span coverage as supporting evidence. P4A2 supersedes its R1
+  numerator with authenticated source claims; a work-count denominator remains
+  invalid. Work-completeness is a separate assertion.
 - **P2 Publication** — wire `publication-bundle-validate.py` against
   `parser-ir-publication-preservation.schema.json` over the pinned build's
   publication output; ratio denominator in works, every work contributes a record.
 - **P3 Resource** — **choose one** peak-RSS mechanism in-plan (GNU `time -v`
   `getrusage` vs cgroup `memory.peak` vs a wrapper) with the rationale; do not
   leave three open. Host pinned + disclosed in the manifest.
-- **P4A Diagnostic authorization** — consumes P1's authenticated R1 work
-  records/raw schema-v3 captures, a closed ABC-owned `ab-aozora` policy, and
-  produces exact authorized decoded-byte intervals or unavailable. Unknown
-  vocabulary and internal diagnostics fail closed; authenticated empty streams
-  are available and disclose vacuity. Raw diagnostics never enter reconciliation.
+- **P4A1 Source claims** — characterizes live consumption paths, freezes the
+  closed ABC role/result policy, and emits authenticated ledgers from the custom
+  parser.
+- **P4A2 R1 migration** — derives claimed/unclaimed bytes from validated ledgers
+  and retains node-span coverage under a separately named supporting
+  observation.
+- **P4A3 Diagnostic gap partition** — consumes P4A2 gaps and raw schema-v3
+  captures under a closed ABC-owned `ab-aozora` policy. Unknown vocabulary and
+  internal diagnostics fail closed; authenticated empty streams are available
+  and disclose vacuity. Diagnostics classify gaps but never increase R1 claims.
 - **P4B Predicate hardening** — predicate 4 discloses vacuity (envelope-completeness,
   settled); predicate 5 re-measured against the **pinned candidate** schema.
 - **P5 Admission + promotion** — pin the final implementation commit before any

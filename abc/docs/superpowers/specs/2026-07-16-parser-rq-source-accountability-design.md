@@ -1,7 +1,7 @@
 # Parser Release Qualification P1: Source Accountability Design
 
-**Status:** Revised after hammock-driven design and Rich Hickey review;
-written-spec review pending
+**Status:** Implemented P1 generation; R1 numerator authority superseded by
+`2026-07-16-parser-rq-source-claim-ledger-design.md`
 **Parent design:** `2026-07-15-parser-release-qualification-campaign-design.md`  
 **Consumes:** P0 capture manifests, observation envelopes, external-store
 verification, and qualification identity  
@@ -27,10 +27,12 @@ barrier actions after P1-P4 are complete.
 
 ## Coordinate and authority model
 
-The authoritative R1 input is Parser-IR JSON, not AAT JSON. Parser-IR is the
-claimed publication intermediate representation, and its live schema defines
-`span.start` and `span.end` as UTF-8 byte offsets into the decoded source string.
-Measuring AAT spans would prove coverage at the wrong layer.
+The implemented P1 generation uses Parser-IR JSON as its numerator input. Live
+P4A characterization subsequently proved that Parser-IR node spans measure
+emitted publication values rather than all source bytes recognized and consumed
+by the parser. Existing P1 evidence remains immutable under that meaning. The
+source-claim-ledger design replaces it as the future R1 authority; neither AAT
+nor Parser-IR spans are promoted into that role.
 
 For every work, the instrument consumes immutable values:
 
@@ -434,10 +436,10 @@ completion order affects a content value.
 | Reject lossy decoded values. | Accepted | New instrument version to relax, requiring separate evidence. | U+FFFD is destroyed source content, unlike removable BOM framing. | Only if a future loss map can account for every original byte without imputation. |
 | Require explicit node `coordinate_system = decoded_utf8`. | Accepted | New instrument version. | Current converter emits it; legacy default is too weak for release evidence. | Parser-IR makes another explicit coordinate system authoritative. |
 | V1 taxonomy has no ignored regions or rule engine. | Accepted | New taxonomy version. | BOM is already outside decoded value; no other framing is proven. | A decoded region is proven non-content by parser contract. |
-| Count only Parser-IR node spans. | Accepted | New instrument version. | Paragraph/sentence spans are derived; AAT is wrong authority. | Parser-IR adds an explicit primary source-mapping relation. |
+| Count only Parser-IR node spans in the implemented P1 generation. | Superseded as R1 authority; retained as supporting evidence. | Existing evidence stays immutable; the new ledger uses a new instrument generation. | Live characterization proved node spans omit successfully consumed syntax; AAT is also the wrong authority. | The source-claim-ledger design fails its characterization or trust gates. |
 | Bind every work record to the full qualification identity. | Accepted | Additive schema migration only before first authoritative capture. | Prevents mixing records from different builds/instruments. | Never silently relax; only supersede with an equally strong identity relation. |
 | Generate the record index from the pinned corpus. | Accepted | Producer implementation can change under new instrument identity. | Removes human selection and filesystem membership from the trust path. | Capture orchestration adopts an equally deterministic corpus-driven index. |
-| Defer diagnostic authorization to P4. | Accepted | R2 interface can be extended by version. | Keeps trust policy out of interval algebra. | P4's diagnostic contract cannot emit exact authorized intervals. |
+| Defer diagnostic authorization to P4A3. | Accepted for R2 only. | R2 interface can be extended by version. | Keeps trust policy out of interval algebra and out of R1 claims. | P4A3 cannot partition ledger-derived gaps exactly. |
 | Use Hegel for interval properties. | Proposed pending probe | Easily reversible before tests land. | User requested skill-driven testing; crate exists and Rust floor is compatible. | Nix/offline integration fails or introduces an unacceptable runtime dependency. |
 
 ### Incubation and remaining unknowns

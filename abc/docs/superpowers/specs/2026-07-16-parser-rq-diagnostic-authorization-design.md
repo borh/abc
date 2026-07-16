@@ -1,6 +1,13 @@
 # Parser RQ Diagnostic Authorization and R2 Activation Design
 
-**Status:** Approved for planning
+**Status:** Superseded in part by
+`2026-07-16-parser-rq-source-claim-ledger-design.md`
+
+**Supersession note:** The live characterization falsified the assumption that
+Parser-IR node-span gaps are principally diagnostic recovery regions. This
+design remains applicable to the independent R2 partition of ledger-derived
+gaps, but diagnostics no longer participate in the R1 coverage authority. Its
+original P4A implementation shape is replaced by P4A1-P4A3.
 
 **Scope:** The custom `ab-aozora` parser only. Third-party parsers remain
 research instruments until their comprehensive report/publication is complete;
@@ -11,11 +18,11 @@ their later retirement is a separate milestone and does not block this work.
 and activation of the R2 `:silent_drops` observation over P1's existing pure
 reconciler.
 
-**Program placement:** This is P4A. The roadmap splits its former P4 entry into
-P4A (this diagnostic trust boundary) and P4B (the existing predicate-4/5
-hardening). Both depend on P0 and P1, neither depends on admission, and P5
-remains the barrier. This is an explicit roadmap correction rather than a new
-dependency hidden inside P1.
+**Historical program placement:** This was P4A. The source-claim-ledger design
+now decomposes that slot into P4A1-P4A3. The diagnostic trust boundary survives
+as P4A3 and depends on ledger-authoritative R1 gaps from P4A2. P4B remains the
+existing predicate-4/5 hardening work. None depends on admission; P5 remains the
+barrier.
 
 ## Problem
 

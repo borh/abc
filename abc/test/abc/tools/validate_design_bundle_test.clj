@@ -38,7 +38,26 @@
                 "data/parser-rq-ab-aozora-diagnostic-gap-v1.json")
         capture (files/read-json (str root "/raw-diagnostics-valid.json"))
         available (files/read-json (str root "/result-available.json"))
-        unavailable (files/read-json (str root "/result-unavailable.json"))]
+        unavailable (files/read-json (str root "/result-unavailable.json"))
+        recognition (files/read-json
+                     "test/fixtures/parser-rq/source-recognition/work-ok.json")
+        artifact-ref (get-in available
+                             ["source_recognition_evidence" "artifact_ref"])
+        coherent-available
+        (-> available
+            (assoc "work_id" (get recognition "work_id")
+                   "capture_generation_ref"
+                   (get recognition "capture_generation_ref"))
+            (assoc-in ["source_recognition_evidence" "work_id"]
+                      (get recognition "work_id"))
+            (assoc-in ["source_recognition_evidence" "capture_generation_ref"]
+                      (get recognition "capture_generation_ref"))
+            (assoc-in ["source_recognition_evidence"
+                       "qualification_identity_ref"]
+                      (get recognition "qualification_identity_ref"))
+            (assoc-in ["source_recognition_evidence" "value_hash"]
+                      (hash/format-sha256
+                       (hash/sha256-json-jcs recognition))))]
     (testing "closed contracts and pinned RFC 8785 identities"
       (is (nil? (schema/validation-errors raw-schema capture)))
       (is (nil? (schema/validation-errors policy-schema policy)))
@@ -63,24 +82,24 @@
       (is (seq (schema/validation-errors raw-schema (assoc capture "unknown" true))))
       (is (seq (schema/validation-errors
                 raw-schema
-                (assoc-in capture ["diagnostics" 0 "code"] "future-code"))))
+                (assoc-in capture ["data" 0 "code"] "future-code"))))
       (is (seq (validate/parser-rq-raw-diagnostics-errors
                 policy
-                (update capture "diagnostics" conj
-                        (first (get capture "diagnostics")))
+                (update capture "data" conj
+                        (first (get capture "data")))
                 "本文\uE001終わり")))
       (is (seq (validate/parser-rq-diagnostic-gap-policy-errors
                 (update policy "rules" conj (first (get policy "rules")))))))
     (testing "code, kind, severity, source, PUA, and interval rules are enforced"
-      (doseq [invalid [(assoc-in capture ["diagnostics" 0 "kind"]
+      (doseq [invalid [(assoc-in capture ["data" 0 "kind"]
                                  "unclosed_bracket")
-                       (assoc-in capture ["diagnostics" 0 "severity"] "note")
-                       (assoc-in capture ["diagnostics" 0 "source"] "internal")
-                       (update-in capture ["diagnostics" 0] dissoc "codepoint")
-                       (assoc-in capture ["diagnostics" 0 "codepoint"] "A")
-                       (update-in capture ["diagnostics" 0 "span"]
+                       (assoc-in capture ["data" 0 "severity"] "note")
+                       (assoc-in capture ["data" 0 "source"] "internal")
+                       (update-in capture ["data" 0] dissoc "codepoint")
+                       (assoc-in capture ["data" 0 "codepoint"] "A")
+                       (update-in capture ["data" 0 "span"]
                                   dissoc "start")
-                       (assoc-in capture ["diagnostics" 0 "span"]
+                       (assoc-in capture ["data" 0 "span"]
                                  {"start" 1 "end" 2})]]
         (is (seq (validate/parser-rq-raw-diagnostics-errors policy invalid "本文\uE001終わり")))))
     (testing "unavailable results cannot claim intervals or totals"
@@ -89,7 +108,40 @@
                 (assoc unavailable "authorized_intervals" []))))
       (is (seq (schema/validation-errors
                 result-schema
-                (assoc unavailable "authorized_bytes" 0)))))))
+                (assoc unavailable "authorized_bytes" 0)))))
+    (testing "available results authenticate the exact R1 evidence"
+      (is (seq (schema/validation-errors
+                result-schema
+                (dissoc available "source_recognition_evidence"))))
+      (doseq [path [["source_recognition_evidence" "artifact_ref" "sha256"]
+                    ["source_recognition_evidence" "value_hash"]
+                    ["source_recognition_evidence" "qualification_identity_ref"]
+                    ["source_recognition_evidence" "capture_generation_ref"]
+                    ["source_recognition_evidence" "work_id"]]]
+        (is (seq (schema/validation-errors
+                  result-schema
+                  (assoc-in available path nil)))))
+      (is (seq (schema/validation-errors
+                result-schema
+                (assoc unavailable "source_recognition_evidence"
+                       (get available "source_recognition_evidence"))))))
+    (testing "R1 evidence identity is replay-resistant and coherent"
+      (is (empty?
+           (validate/parser-rq-diagnostic-gap-result-coherence-errors
+            coherent-available recognition artifact-ref)))
+      (doseq [mutated [(assoc-in coherent-available
+                                 ["source_recognition_evidence" "value_hash"]
+                                 (str "sha256:" (apply str (repeat 64 "f"))))
+                       (assoc-in coherent-available
+                                 ["source_recognition_evidence" "artifact_ref"
+                                  "sha256"]
+                                 (str "sha256:" (apply str (repeat 64 "e"))))
+                       (assoc-in coherent-available
+                                 ["source_recognition_evidence" "work_id"]
+                                 "replayed-work")]]
+        (is (seq
+             (validate/parser-rq-diagnostic-gap-result-coherence-errors
+              mutated recognition artifact-ref)))))))
 
 (defn- with-corpus-generation-ref [index]
   (assoc index "corpus_generation_ref"

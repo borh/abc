@@ -1,8 +1,8 @@
 {
   "schema_version": "abc/parser-rq-diagnostic-gap-policy/v1",
   "policy_id": "parser-rq-ab-aozora-diagnostic-gap-v1",
-  "policy_hash": "sha256:8dee540d4040b282104b38cc4901c6205a48090d6281817c9e11e04218beaf7a",
-  "raw_diagnostic_schema_hash": "sha256:6665689bf89467080b10851e56c4f44988131173db46320297de51470f1e3096",
+  "policy_hash": "sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5",
+  "raw_diagnostic_schema_hash": "sha256:e467a46ac8196b0193d658012375fda69f55a780e8edb9d1976e36fcf8417592",
   "identity": {"algorithm": "SHA-256", "canonicalization": "RFC 8785 JCS", "projection": "complete-policy-minus-policy_hash"},
   "parser": "ab-aozora",
   "coordinate_system": "decoded_utf8",

@@ -415,8 +415,8 @@
       (when-let [errors (schema/validation-errors raw-schema capture)]
         (map #(str "raw diagnostics schema: " %) errors))
       (parser-rq-diagnostic-gap-policy-errors policy)
-      (when-not (= (count (get capture "diagnostics" []))
-                   (count (distinct (get capture "diagnostics" []))))
+      (when-not (= (count (get capture "data" []))
+                   (count (distinct (get capture "data" []))))
         ["raw diagnostics contain duplicate complete diagnostic identities"])
       (mapcat
        (fn [diagnostic]
@@ -448,7 +448,31 @@
                    ["source-contains-pua codepoint is not one Unicode private-use scalar"])
                  (when-not (= source-slice codepoint)
                    ["source-contains-pua span does not equal its codepoint"])))))))
-       (get capture "diagnostics" []))))))
+       (get capture "data" []))))))
+
+(defn parser-rq-diagnostic-gap-result-coherence-errors
+  [result source-recognition-work source-recognition-artifact-ref]
+  (if (not= "ok" (get result "status"))
+    []
+    (let [evidence (get result "source_recognition_evidence")
+          expected-value-hash
+          (hash/format-sha256 (hash/sha256-json-jcs source-recognition-work))]
+      (vec
+       (concat
+        (when-not (= source-recognition-artifact-ref
+                     (get evidence "artifact_ref"))
+          ["diagnostic-gap result source-recognition artifact reference mismatch"])
+        (when-not (= expected-value-hash (get evidence "value_hash"))
+          ["diagnostic-gap result source-recognition value hash mismatch"])
+        (for [[field outer-value]
+              [["work_id" (get result "work_id")]
+               ["capture_generation_ref" (get result "capture_generation_ref")]
+               ["qualification_identity_ref"
+                (get source-recognition-work "qualification_identity_ref")]]
+              :when (or (not= outer-value (get evidence field))
+                        (not= outer-value (get source-recognition-work field)))]
+          (str "diagnostic-gap result source-recognition " field
+               " is not coherent")))))))
 
 (defn parser-rq-classified-source-characterization-errors [policy mapping]
   (let [constructs (set (map #(get % "construct_id") (get policy "rules" [])))

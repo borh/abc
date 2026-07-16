@@ -416,6 +416,16 @@ Diagnostic authorization remains closed, identity-bound, and exact-span. It
 cannot turn a semantic gap into a recognized byte. R1 can therefore fail while
 R2 reports zero silent intervals; the release gate sees both independent facts.
 
+The authorized input is the captured production diagnostics-v3 wire value
+itself: `{ "schemaVersion": 3, "data": [...] }`. Parser, decoded-coordinate,
+work, and qualification identity come from the authenticated capture context;
+there is no translated diagnostics envelope between Capture and Derive. Every
+available R2 work result also names the exact immutable R1 source-recognition
+work artifact it partitions, its canonical value hash, and the shared work,
+capture-generation, and qualification identities. Replaying a different R1
+record therefore makes R2 unavailable rather than repartitioning unauthenticated
+gaps.
+
 An authenticated empty diagnostic stream is available and vacuous. With gaps,
 all gaps remain silent; without gaps, both partitions are empty. Unknown or
 invalid diagnostics make R2 unavailable without changing R1.

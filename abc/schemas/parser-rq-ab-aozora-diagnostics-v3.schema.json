@@ -2,13 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
   "type": "object",
-  "required": ["schema_version", "parser", "coordinate_system", "diagnostics"],
+  "required": ["schemaVersion", "data"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"const": "abc/parser-rq-ab-aozora-diagnostics/v3"},
-    "parser": {"const": "ab-aozora"},
-    "coordinate_system": {"const": "decoded_utf8"},
-    "diagnostics": {"type": "array", "items": {"$ref": "#/$defs/diagnostic"}}
+    "schemaVersion": {"const": 3},
+    "data": {"type": "array", "items": {"$ref": "#/$defs/diagnostic"}}
   },
   "$defs": {
     "code": {"enum": ["source-contains-pua", "unclosed-bracket", "unmatched-close", "accent-decomposition-applied", "unresolved-gaiji", "mismatched-container-close", "empty-ruby-reading", "nested-ruby", "unrecognised-container-directive", "tcy-target-not-found", "bouten-target-ambiguous", "forward-referent-not-stylable", "break-in-single-line-container", "bracketed-kaeriten-no-pair", "kaeriten-outside-kanbun", "mismatched-bouten-container", "non-canonical-directive", "residual-annotation-marker", "unregistered-sentinel", "registry-out-of-order", "registry-position-mismatch"]},

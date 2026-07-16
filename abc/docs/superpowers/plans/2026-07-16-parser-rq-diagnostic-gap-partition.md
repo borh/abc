@@ -60,8 +60,14 @@ Draft 2020-12 JSON Schema; Nix and Kaocha.
 - [ ] Write RED tests for the complete 21-code table, unknown fields/codes,
   kind/code mismatch, conditional PUA codepoint, internal source, and
   unavailable values containing intervals.
+- [ ] Validate the exact production `{schemaVersion: 3, data: [...]}` bytes;
+  parser and coordinate identity come from capture context, never a translated
+  raw-diagnostic wrapper. Drift-check a fixture emitted by the production path.
 - [ ] Copy Task 1's accepted disposition table verbatim. Runtime code may not
   generate or infer it. Pin raw-schema and policy JCS hashes.
+- [ ] Require every available result to bind the exact R1 source-recognition
+  work artifact, its canonical value hash, and coherent work, generation, and
+  qualification identity. Unavailable results expose no partition values.
 - [ ] Run focused Kaocha and schema drift; commit as
   `feat(parser-rq): define diagnostic gap policy`.
 

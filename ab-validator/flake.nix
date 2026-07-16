@@ -1970,6 +1970,11 @@
             AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
 
             shellHook = ''
+              # sccache creates a Unix startup-notification socket beneath TMPDIR.
+              # NIMAS session TMPDIR paths can exceed the socket-path limit.
+              export TMPDIR=/tmp
+              export TMP="$TMPDIR"
+              export TEMPDIR="$TMPDIR"
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"
               export RUST_BACKTRACE="1"
 

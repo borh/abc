@@ -84,18 +84,35 @@ APPROVED_ROOTS = {
     "$SORANOHA_WORKSPACE_ROOT",
 }
 TOKEN = re.compile(r"[^\s\"'`]+")
-TRIM = "()[],:;"
+TRIM = "()[],:;{}"
+
+
+def token_suffixes(token: str) -> list[str]:
+    """Expose assignment/option value suffixes without interpreting expressions."""
+    cleaned = token.strip(TRIM)
+    if "://" in cleaned:
+        return [cleaned]
+    suffixes = [cleaned]
+    for index, character in enumerate(cleaned):
+        if character in "=:":
+            suffix = cleaned[index + 1 :].strip(TRIM).lstrip("-")
+            if suffix:
+                suffixes.append(suffix)
+    return suffixes
 
 
 def candidate_tokens(text: str) -> list[str]:
     """Return path-shaped lexical tokens without evaluating source-language syntax."""
-    return [
-        token.strip(TRIM)
-        for token in TOKEN.findall(text)
-        if "/" in token
-        and any(f"{target}/" in token for target in TARGETS)
-        and (".." in PurePosixPath(token.strip(TRIM)).parts or token.startswith("/"))
-    ]
+    candidates = []
+    for token in TOKEN.findall(text):
+        for suffix in token_suffixes(token):
+            if (
+                "/" in suffix
+                and any(f"{target}/" in suffix for target in TARGETS)
+                and (".." in PurePosixPath(suffix).parts or suffix.startswith("/"))
+            ):
+                candidates.append(suffix)
+    return candidates
 
 
 def lexical_base(repo: PurePosixPath, source: PurePosixPath) -> PurePosixPath:
@@ -166,6 +183,29 @@ def self_test() -> None:
         actual = forbidden_candidate(repo, PurePosixPath(source), stripped)
         if actual != expected:
             raise AssertionError(f"{source}: {candidate!r}: expected {expected}, got {actual}")
+
+    source_cases = [
+        ("ROOT=../abc/x", True),
+        ("--root=../abc/x", True),
+        ("ROOT=/home/user/abc/x", True),
+        ('ROOT="../abc/x"', True),
+        ("A=B=../abc/x", True),
+        ("ROOT:../abc/x", True),
+        ("ROOT=${BASE:-../abc/x}", True),
+        ("ROOT=${BASE:-${OTHER:-../abc/x}}", True),
+        ("https://w3id.org/abc/schemas/x", False),
+        ("schema=sha256:abc/012345", False),
+        ("label=abc/source", False),
+        ("ROOT=$repo_root/abc/x", False),
+    ]
+    source = PurePosixPath("scripts/check.sh")
+    for text, expected in source_cases:
+        actual = any(forbidden_candidate(repo, source, value) for value in candidate_tokens(text))
+        if actual != expected:
+            raise AssertionError(
+                f"source text {text!r}: expected {expected}, got {actual}; "
+                f"tokens={candidate_tokens(text)!r}"
+            )
 
 
 def scan(repo: Path, sources: list[Path]) -> int:

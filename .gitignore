@@ -4,6 +4,7 @@
 .lsp/
 .clj-kondo/
 .cargo/
+.hegel/
 .soranoha/
 .worktrees/
 .claude/

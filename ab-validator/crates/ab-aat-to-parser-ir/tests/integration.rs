@@ -5,6 +5,7 @@ use ab_aat_to_parser_ir::{
     ConversionOptions, ConversionRequest, MappingDocument, QualificationConversion, SchemaSet,
     divergence::{AatMeta, DivergenceRecorder},
     mapping::MappingRule,
+    qualification::{QualificationRequest, QualificationStatus, qualify_work},
     schema::{read_json, schema_hash, validate_value},
 };
 use serde_json::{Value, json};
@@ -128,6 +129,66 @@ fn qualification_and_production_valid_outputs_are_identical() {
         qualification.divergence_bundle
     );
     assert_eq!(production.emitted_rule_ids, qualification.emitted_rule_ids);
+}
+
+#[test]
+fn qualification_capture_records_valid_parser_ir_bytes() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let converter = ab_aat_to_parser_ir::PreparedConverter::new(mapping, schemas).unwrap();
+    let capture = qualify_work(QualificationRequest {
+        converter: &converter,
+        aat: include_fixture_json("nested-sentence-basic.aat.json"),
+        options: default_test_options(),
+        work_id: "fixture".to_owned(),
+        qualification_identity_ref:
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_owned(),
+        policy_hash: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            .to_owned(),
+    })
+    .unwrap();
+    assert_eq!(capture.record.status, QualificationStatus::SchemaValid);
+    assert!(capture.parser_ir_bytes.is_some());
+    assert!(capture.validation_ledger_bytes.is_none());
+}
+
+#[test]
+fn qualification_capture_records_invalid_value_and_full_ledger() {
+    let converter = converter_with_rejecting_parser_ir_schema();
+    let capture = qualify_work(QualificationRequest {
+        converter: &converter,
+        aat: include_fixture_json("nested-sentence-basic.aat.json"),
+        options: default_test_options(),
+        work_id: "fixture".to_owned(),
+        qualification_identity_ref:
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_owned(),
+        policy_hash: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            .to_owned(),
+    })
+    .unwrap();
+    assert_eq!(capture.record.status, QualificationStatus::SchemaInvalid);
+    assert!(capture.parser_ir_bytes.is_some());
+    assert!(capture.validation_ledger_bytes.is_some());
+    assert!(!capture.record.validation_witnesses.unwrap().is_empty());
+}
+
+#[test]
+fn qualification_capture_turns_conversion_failure_into_no_output() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let converter = ab_aat_to_parser_ir::PreparedConverter::new(mapping, schemas).unwrap();
+    let capture = qualify_work(QualificationRequest {
+        converter: &converter,
+        aat: Value::Null,
+        options: default_test_options(),
+        work_id: "fixture".to_owned(),
+        qualification_identity_ref:
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_owned(),
+        policy_hash: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            .to_owned(),
+    })
+    .unwrap();
+    assert_eq!(capture.record.status, QualificationStatus::NoOutput);
+    assert!(capture.parser_ir_bytes.is_none());
+    assert!(capture.record.failure.is_some());
 }
 
 #[test]

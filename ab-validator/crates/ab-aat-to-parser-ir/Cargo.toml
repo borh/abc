@@ -29,6 +29,7 @@ sha2 = { workspace = true }
 [dev-dependencies]
 ab-aozora-aat = { path = "../ab-aozora-aat" }
 criterion = { workspace = true }
+hegeltest = "0.28"
 tempfile = { workspace = true }
 
 [[bench]]

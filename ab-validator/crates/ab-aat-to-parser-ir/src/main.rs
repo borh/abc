@@ -14,6 +14,7 @@ use ab_aat_to_parser_ir::{
 };
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use serde::Deserialize;
 
 mod audit;
 
@@ -45,6 +46,30 @@ enum Command {
         expect_mapping_version: Option<String>,
         /// Fail closed unless the loaded mapping's content hash equals this
         /// (`sha256:…`, the same hash the audit summary reports as `mapping_hash`).
+        #[arg(long = "expect-mapping-hash")]
+        expect_mapping_hash: Option<String>,
+    },
+    Qualify {
+        #[arg(long)]
+        aat: PathBuf,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long)]
+        work_id: String,
+        #[arg(long)]
+        qualification_identity_ref: String,
+        #[arg(long)]
+        policy: PathBuf,
+        #[arg(long)]
+        parser_ir_out: PathBuf,
+        #[arg(long)]
+        ledger_out: PathBuf,
+        #[arg(long)]
+        record_out: PathBuf,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
+        #[arg(long = "expect-mapping-version")]
+        expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
         expect_mapping_hash: Option<String>,
     },
@@ -175,6 +200,65 @@ fn main() -> Result<()> {
             std::fs::write(
                 divergence_out,
                 ab_aat_to_parser_ir::to_canonical_json_pretty(output.divergence_bundle)? + "\n",
+            )?;
+        }
+        Command::Qualify {
+            aat,
+            mapping,
+            work_id,
+            qualification_identity_ref,
+            policy,
+            parser_ir_out,
+            ledger_out,
+            record_out,
+            abc_root,
+            expect_mapping_version,
+            expect_mapping_hash,
+        } => {
+            let repo_root = resolve_repo_root(&mapping)?;
+            let abc_root = abc_root
+                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let policy: ParserIrQualificationPolicy =
+                serde_json::from_value(ab_aat_to_parser_ir::schema::read_json(&policy)?)
+                    .context("invalid Parser-IR qualification policy")?;
+            anyhow::ensure!(
+                policy
+                    .expected_work_ids
+                    .iter()
+                    .any(|expected| expected == &work_id),
+                "work id {work_id:?} is not in the qualification policy's closed workset"
+            );
+            let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
+            let mapping = MappingDocument::from_path(&mapping)?;
+            mapping.check_expected_generation(
+                expect_mapping_version.as_deref(),
+                expect_mapping_hash.as_deref(),
+            )?;
+            let schemas =
+                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
+            let converter = PreparedConverter::new(mapping, schemas)?;
+            let capture = ab_aat_to_parser_ir::qualification::qualify_work(
+                ab_aat_to_parser_ir::qualification::QualificationRequest {
+                    converter: &converter,
+                    aat,
+                    options: ConversionOptions::default(),
+                    work_id,
+                    qualification_identity_ref,
+                    policy_hash: policy.policy_hash,
+                },
+            )?;
+            if let Some(bytes) = capture.parser_ir_bytes {
+                std::fs::write(parser_ir_out, bytes)?;
+            }
+            if let Some(bytes) = capture.validation_ledger_bytes {
+                std::fs::write(ledger_out, bytes)?;
+            }
+            std::fs::write(
+                record_out,
+                ab_aat_to_parser_ir::to_canonical_json_pretty(serde_json::to_value(
+                    capture.record,
+                )?)? + "\n",
             )?;
         }
         Command::DetectOrthoAnnotations {
@@ -336,6 +420,12 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+struct ParserIrQualificationPolicy {
+    policy_hash: String,
+    expected_work_ids: Vec<String>,
 }
 
 fn resolve_repo_root(mapping: &std::path::Path) -> Result<PathBuf> {

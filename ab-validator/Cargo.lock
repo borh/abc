@@ -15,6 +15,7 @@ dependencies = [
  "anyhow",
  "clap",
  "criterion",
+ "hegeltest",
  "jsonschema",
  "rayon",
  "regex",

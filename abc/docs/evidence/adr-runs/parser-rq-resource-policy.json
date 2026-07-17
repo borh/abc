@@ -1,0 +1,50 @@
+{
+  "input_profile":
+  {
+    "explicit": ["bin\/kaocha","data\/parser-release-qualification-predicates.edn","data\/parser-rq-resource-policy-v1.json","docs\/evidence\/adr-capture\/parser-rq-resource-policy.edn","docs\/evidence\/adr-inputs\/parser-rq-resource-policy.edn"],
+    "kind": "clojure-test-v1",
+    "roots": ["abc.tools.parser-rq-resource-test"]
+  },
+  "inputs":
+  {
+    "bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
+    "data\/parser-release-qualification-predicates.edn": "sha256:132bf7ede90f695f18e811c0fdaa4ddde8179af7e4ce974877291a935a829c12",
+    "data\/parser-rq-resource-policy-v1.json": "sha256:529058c688bbe8856f40a284f0a290072147349956230fc2e60dc2458e0697a1",
+    "docs\/evidence\/adr-capture\/parser-rq-resource-policy.edn": "sha256:f73fad11683ff72ff4b764d25377e3ec3f73195312f6e24970333e3fddcfa4ba",
+    "docs\/evidence\/adr-inputs\/parser-rq-resource-policy.edn": "sha256:8c52daa1e2b02b0c8e997c02db338d0181a8b3e97bb278bf08e0a225ffe3a4ed",
+    "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
+    "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
+    "src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
+    "src\/abc\/tools\/edn_registry.clj": "sha256:4d75f858bd14f6808d110ad9c252e643fcebfc3176eda65a3a6b7bfc9651eafb",
+    "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
+    "src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
+    "src\/abc\/tools\/hash.clj": "sha256:e49befc2ce08401bb3161af5cedcf0555eec6a639510ca31445da30b32e2cfb5",
+    "src\/abc\/tools\/jcs.clj": "sha256:4a35835c6b905a54e9b72f78d4e9f4f8d8a19567c6b4b18500d04770d8493fc4",
+    "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
+    "src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
+    "src\/abc\/tools\/malli.clj": "sha256:16c04c051ac5829e36b7d0e7707c0057cef22ac2c20f778ad08f0d3b40df471e",
+    "src\/abc\/tools\/parser_release_qualification.clj": "sha256:effebdd0700705a57e0fbaa48e8b40f96f69adec2e9a90ccc223b651419c492e",
+    "src\/abc\/tools\/parser_rq_capture.clj": "sha256:a2490742eb037fa6d452f44b2ddd66004d89ace5be983ad7208b4bdb6a4b8c16",
+    "src\/abc\/tools\/parser_rq_resource.clj": "sha256:aa25aa46c418ec38c01f4f6e0ebe36f4f6d2f4d67b4f8b3be564cdb3f53ca035",
+    "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
+    "test\/abc\/tools\/parser_rq_resource_test.clj": "sha256:b3f1b6ab96fdb3314aca9d8c1d8dddbb83b4d37e21de4e4b947ecdfde37f3f58"
+  },
+  "observations":
+  {
+    "parser-rq-resource-policy-pass":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-rq-resource-test\/process-tree-memory-policy-contract\"",
+    "revision": "9319f6b218ca418f6d58bff71648b8df08569a96",
+    "tool": "bin\/kaocha"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

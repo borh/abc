@@ -187,7 +187,8 @@ Using the same rejecting schema, assert `convert_for_qualification` returns `Qua
 - [ ] **Step 3: Confirm red**
 
 ```bash
-nix develop ./ab-validator#checks --command cargo test \
+nix develop ./ab-validator --command cargo test \
+  --manifest-path ab-validator/Cargo.toml \
   -p ab-aat-to-parser-ir --test integration qualification_
 ```
 
@@ -200,7 +201,8 @@ Add `validation_errors(&jsonschema::Validator, &Value, &str) -> Vec<String>` in 
 - [ ] **Step 5: Run all converter tests and commit**
 
 ```bash
-nix develop ./ab-validator#checks --command cargo test -p ab-aat-to-parser-ir
+nix develop ./ab-validator --command cargo test \
+  --manifest-path ab-validator/Cargo.toml -p ab-aat-to-parser-ir
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
 nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
 nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
@@ -241,7 +243,8 @@ Add `hegeltest = "0.28"` as a dev dependency. Generate unique work IDs and statu
 - [ ] **Step 3: Confirm red**
 
 ```bash
-nix develop ./ab-validator#checks --command cargo test \
+nix develop ./ab-validator --command cargo test \
+  --manifest-path ab-validator/Cargo.toml \
   -p ab-aat-to-parser-ir --test qualification_properties
 ```
 
@@ -258,7 +261,8 @@ The new subcommand calls `convert_for_qualification`; the existing `Convert` arm
 - [ ] **Step 6: Verify and commit**
 
 ```bash
-nix develop ./ab-validator#checks --command cargo test -p ab-aat-to-parser-ir
+nix develop ./ab-validator --command cargo test \
+  --manifest-path ab-validator/Cargo.toml -p ab-aat-to-parser-ir
 git add ab-validator/crates/ab-aat-to-parser-ir/Cargo.toml \
   ab-validator/crates/ab-aat-to-parser-ir/src/{qualification.rs,lib.rs,main.rs} \
   ab-validator/crates/ab-aat-to-parser-ir/tests/qualification_properties.rs
@@ -379,7 +383,7 @@ Model the existing `publication-validator-identity.py` generator, but keep this 
 - [ ] **Step 2: Confirm red**
 
 ```bash
-nix develop ./ab-validator#checks --command pytest -q \
+nix develop ./ab-validator --command pytest -q \
   ab-validator/reports/parser-ir/tests/test_predicate_hardening_identity.py
 ```
 
@@ -392,10 +396,10 @@ The diagnostic closure contains its now-existing Clojure analyzer, shared protoc
 - [ ] **Step 4: Generate twice, compare, and install**
 
 ```bash
-nix develop ./ab-validator#checks --command python \
+nix develop ./ab-validator --command python \
   ab-validator/reports/parser-ir/predicate-hardening-identity.py \
   --repo-root . --instrument diagnostic-completeness --out /tmp/diag-1.json
-nix develop ./ab-validator#checks --command python \
+nix develop ./ab-validator --command python \
   ab-validator/reports/parser-ir/predicate-hardening-identity.py \
   --repo-root . --instrument diagnostic-completeness --out /tmp/diag-2.json
 cmp /tmp/diag-1.json /tmp/diag-2.json
@@ -410,7 +414,7 @@ Load the committed policies in both analyzer suites. Assert each policy validate
 - [ ] **Step 6: Verify and commit**
 
 ```bash
-nix develop ./ab-validator#checks --command pytest -q \
+nix develop ./ab-validator --command pytest -q \
   ab-validator/reports/parser-ir/tests/test_predicate_hardening_identity.py
 nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-diagnostic-completeness-test \
@@ -501,8 +505,9 @@ Add `parser-rq-predicate-hardening-capture-smoke` to `ab-validator/flake.nix`. I
 - [ ] **Step 4: Run focused cross-language verification**
 
 ```bash
-nix develop ./ab-validator#checks --command cargo test -p ab-aat-to-parser-ir
-nix develop ./ab-validator#checks --command pytest -q \
+nix develop ./ab-validator --command cargo test \
+  --manifest-path ab-validator/Cargo.toml -p ab-aat-to-parser-ir
+nix develop ./ab-validator --command pytest -q \
   ab-validator/reports/parser-ir/tests/test_predicate_hardening_identity.py
 nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-capture-test \

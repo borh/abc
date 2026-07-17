@@ -3,6 +3,7 @@
   logical blob identities to an explicitly configured external store."
   (:require [abc.tools.hash :as hash]
             [clojure.java.io :as io]
+            [clojure.set :as set]
             [clojure.string :as string]
             [malli.core :as m]))
 
@@ -32,7 +33,8 @@
 (def envelope-schema
   [:map {:closed true}
    [:value :any]
-   [:identity_ref sha256-schema]])
+   [:identity_ref sha256-schema]
+   [:details {:optional true} [:map-of :keyword :any]]])
 
 (defn- validation-errors
   [schema value label]
@@ -52,6 +54,80 @@
 (defn observation-value
   [envelope]
   (:value envelope))
+
+(defn closed-membership-errors
+  "Compare explicit expected work IDs with record work IDs as closed sets.
+
+  Ordering has no meaning. Duplicate expected IDs, duplicate records, missing
+  IDs, extra IDs, and malformed IDs are all errors."
+  [expected-work-ids records]
+  (let [record-work-ids (mapv :work_id records)
+        expected-frequencies (frequencies expected-work-ids)
+        record-frequencies (frequencies record-work-ids)
+        expected-set (set expected-work-ids)
+        record-set (set record-work-ids)
+        duplicate-expected (->> expected-frequencies
+                                (keep (fn [[work-id n]] (when (> n 1) work-id)))
+                                sort)
+        duplicate-records (->> record-frequencies
+                               (keep (fn [[work-id n]] (when (> n 1) work-id)))
+                               sort)
+        missing (sort (set/difference expected-set record-set))
+        extra (sort (set/difference record-set expected-set))]
+    (cond-> []
+      (or (some #(not (and (string? %) (not (string/blank? %)))) expected-work-ids)
+          (some #(not (and (string? %) (not (string/blank? %)))) record-work-ids))
+      (conj "work IDs must be nonblank strings")
+
+      (seq duplicate-expected)
+      (conj (str "expected membership contains duplicate work IDs: "
+                 (string/join ", " duplicate-expected)))
+
+      (seq duplicate-records)
+      (conj (str "record index contains duplicate work IDs: "
+                 (string/join ", " duplicate-records)))
+
+      (seq missing)
+      (conj (str "record index is missing expected work IDs: "
+                 (string/join ", " missing)))
+
+      (seq extra)
+      (conj (str "record index contains extra work IDs: "
+                 (string/join ", " extra))))))
+
+(defn capture-generation-ref
+  "Canonical content identity for a complete capture-generation value."
+  [generation-value]
+  (hash/format-sha256 (hash/sha256-json-jcs generation-value)))
+
+(defn observation-envelope
+  "Construct an identity-bound observation with optional typed disclosure."
+  [identity-ref value details]
+  (cond-> {:value value :identity_ref identity-ref}
+    (some? details) (assoc :details details)))
+
+(defn- valid-status-map?
+  [{:keys [allowed_statuses values] :as status-map}]
+  (and (= #{:allowed_statuses :values} (set (keys status-map)))
+       (vector? allowed_statuses)
+       (seq allowed_statuses)
+       (every? #(and (string? %) (not (string/blank? %))) allowed_statuses)
+       (= (count allowed_statuses) (count (set allowed_statuses)))
+       (map? values)
+       (= (set allowed_statuses) (set (keys values)))
+       (every? some? (vals values))
+       (= (count values) (count (set (vals values))))))
+
+(defn map-wire-status
+  "Map one closed JSON status to its instrument observation value.
+
+  The authenticated policy supplies the complete allowed status vector and an
+  injective value map. Invalid policy shape or an unknown status fails closed."
+  [status-map json-status]
+  (if (and (valid-status-map? status-map)
+           (contains? (:values status-map) json-status))
+    (get-in status-map [:values json-status])
+    {:status :unavailable :reason :status-mapping-invalid}))
 
 (defn- unavailable
   [reason]

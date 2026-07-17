@@ -2,7 +2,10 @@
   (:require [abc.tools.hash :as hash]
             [abc.tools.parser-rq-capture :as capture]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is]]))
+            [clojure.test :refer [deftest is]]
+            [clojure.test.check :as tc]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]))
 
 (def valid-sha256
   "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
@@ -33,6 +36,80 @@
     (is (empty? (capture/envelope-errors env)))
     (is (seq (capture/envelope-errors {:value 1.0})))
     (is (seq (capture/envelope-errors {:identity_ref valid-sha256})))))
+
+(deftest closed-membership-is-order-independent-test
+  (is (empty? (capture/closed-membership-errors
+               ["a" "b"]
+               [{:work_id "b"} {:work_id "a"}]))))
+
+(deftest closed-membership-rejects-omission-extra-and-duplicate-test
+  (is (seq (capture/closed-membership-errors
+            ["a" "b"]
+            [{:work_id "a"}])))
+  (is (seq (capture/closed-membership-errors
+            ["a" "b"]
+            [{:work_id "a"} {:work_id "b"} {:work_id "c"}])))
+  (is (seq (capture/closed-membership-errors
+            ["a" "b"]
+            [{:work_id "a"} {:work_id "a"}])))
+  (is (seq (capture/closed-membership-errors
+            ["a"]
+            [{}]))))
+
+(deftest closed-membership-permutation-property-test
+  (let [result
+        (tc/quick-check
+         100
+         (prop/for-all [work-ids (gen/vector-distinct
+                                  (gen/such-that seq gen/string-alphanumeric 100)
+                                  {:min-elements 1
+                                   :max-elements 20})
+                        order gen/nat]
+                       (let [records (mapv (fn [work-id] {:work_id work-id}) work-ids)
+                             rotated (if (seq records)
+                                       (let [n (mod order (count records))]
+                                         (vec (concat (drop n records) (take n records))))
+                                       records)]
+                         (empty? (capture/closed-membership-errors work-ids rotated)))))]
+    (is (:pass? result) (pr-str result))))
+
+(deftest generation-identity-is-canonical-and-content-addressed
+  (let [left {"candidate" {"rev" "abc" "schema" "v1"}
+              "blobs" [{"sha256" valid-sha256 "bytes" 2}]}
+        reordered {"blobs" [{"bytes" 2 "sha256" valid-sha256}]
+                   "candidate" {"schema" "v1" "rev" "abc"}}
+        mutated (assoc-in left ["candidate" "rev"] "def")]
+    (is (= (capture/capture-generation-ref left)
+           (capture/capture-generation-ref reordered)))
+    (is (not= (capture/capture-generation-ref left)
+              (capture/capture-generation-ref mutated)))))
+
+(deftest observation-envelope-may-carry-closed-details
+  (let [envelope (capture/observation-envelope
+                  valid-sha256 1.0
+                  {:diagnostic_count 0 :vacuous true})]
+    (is (= {:value 1.0
+            :identity_ref valid-sha256
+            :details {:diagnostic_count 0 :vacuous true}}
+           envelope))
+    (is (empty? (capture/envelope-errors envelope)))
+    (is (seq (capture/envelope-errors (assoc envelope :unexpected true))))))
+
+(deftest wire-status-mapping-is-total-injective-and-closed
+  (let [mapping {:allowed_statuses ["measured" "invalid"]
+                 :values {"measured" 1.0
+                          "invalid" :invalid-envelope}}]
+    (is (= 1.0 (capture/map-wire-status mapping "measured")))
+    (is (= :invalid-envelope (capture/map-wire-status mapping "invalid")))
+    (is (= {:status :unavailable :reason :status-mapping-invalid}
+           (capture/map-wire-status mapping "unknown")))
+    (doseq [bad-mapping [(assoc-in mapping [:values "measured"] :invalid-envelope)
+                         (update mapping :values dissoc "invalid")
+                         (update mapping :allowed_statuses conj "missing")]
+            status ["measured" "unknown"]
+            :when (or (= status "unknown") (not= bad-mapping mapping))]
+      (is (= {:status :unavailable :reason :status-mapping-invalid}
+             (capture/map-wire-status bad-mapping status))))))
 
 (deftest verifier-streams-and-rehashes-never-trusts-metadata
   (let [f (doto (java.io.File/createTempFile "blob" ".bin")

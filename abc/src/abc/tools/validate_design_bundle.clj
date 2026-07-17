@@ -24,6 +24,7 @@
    [abc.tools.snapshot-index :as snapshot-index]
    [abc.tools.metadata-record :as metadata-record]
    [abc.tools.parser-evidence :as parser-evidence]
+   [abc.tools.parser-rq-publication :as parser-rq-publication]
    [abc.tools.parser-maintenance-evidence :as parser-maintenance]
    [abc.tools.parser-ir-sentence-policy :as sentence-policy]
    [abc.tools.person-drift :as person-drift]
@@ -1112,6 +1113,25 @@
       (check-errors! (parser-rq-source-recognition-aggregate-errors aggregate))
       (check-errors! (parser-rq-source-recognition-coherence-errors
                       index aggregate [work])))
+    (let [root "test/fixtures/parser-rq/publication-capture"
+          work-paths
+          [(str root "/store/sha256/9b/9b970ba594d27c48cce4aa7abcb2f4818d09a0154c0c2d286c949e5aff91ba8f.json")
+           (str root "/store/sha256/57/571f89970cf7c2f13fae68db0b9b1f4665a53bbd8986cb417ff3636792995131.json")
+           (str root "/store/sha256/0e/0ec0f64b6eabe45ff4858d515a4ce7a067e166e64a042a342ece31b8a11152a9.json")]
+          authenticated-index-path
+          (str root "/store/sha256/bc/bcc00b7c0a77191e143c27db03d1b6a819599d1fa2e139c2a6a63b113679c014.json")
+          envelope
+          (parser-rq-publication/derive-publication-envelope
+           {:root (str root "/store")}
+           (files/read-json (str root "/manifest.json"))
+           (files/read-json (str root "/index.json"))
+           (files/read-json (str root "/identity.json")))]
+      (doseq [path work-paths]
+        (validate-json! parser-rq-publication-work-schema path))
+      (validate-json! parser-rq-publication-index-schema authenticated-index-path)
+      (when-not (= 1.0000M (:value envelope))
+        (throw (ex-info "publication qualification fixture is invalid"
+                        {:envelope envelope}))))
     (let [maintenance-path
           "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
           maintenance-record (files/read-json maintenance-path)

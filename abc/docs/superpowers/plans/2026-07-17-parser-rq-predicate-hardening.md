@@ -76,7 +76,7 @@ Assert map-key order cannot change `capture-generation-ref`; changing one logica
 Run:
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha --focus abc.tools.parser-rq-capture-test
+nix develop ./abc --command abc/bin/kaocha --focus abc.tools.parser-rq-capture-test
 ```
 
 Expected: FAIL with unresolved vars for the four interfaces.
@@ -88,7 +88,7 @@ Use sets only after detecting duplicate records. Hash generation values with `ha
 - [ ] **Step 5: Verify and commit**
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha --focus abc.tools.parser-rq-capture-test
+nix develop ./abc --command abc/bin/kaocha --focus abc.tools.parser-rq-capture-test
 git add abc/src/abc/tools/parser_rq_capture.clj \
   abc/test/abc/tools/parser_rq_capture_test.clj
 git commit -m "feat(parser-rq): deepen shared capture protocol"
@@ -122,7 +122,7 @@ Register all eight paths in `validate-design-bundle-test`. Add minimal positive 
 - [ ] **Step 2: Confirm red**
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha --focus abc.tools.validate-design-bundle-test
+nix develop ./abc --command abc/bin/kaocha --focus abc.tools.validate-design-bundle-test
 ```
 
 Expected: FAIL because the eight schemas do not exist.
@@ -134,7 +134,7 @@ Every object uses `additionalProperties: false`. Both indexes require explicit `
 - [ ] **Step 4: Verify and commit**
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha --focus abc.tools.validate-design-bundle-test
+nix develop ./abc --command abc/bin/kaocha --focus abc.tools.validate-design-bundle-test
 git add abc/schemas/parser-rq-diagnostic-completeness-*.schema.json \
   abc/schemas/parser-rq-parser-ir-conformance-*.schema.json \
   abc/src/abc/tools/validate_design_bundle.clj \
@@ -147,6 +147,7 @@ git commit -m "feat(parser-rq): define predicate hardening record contracts"
 **Files:**
 - Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/schema.rs`
 - Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/convert.rs`
+- Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/divergence.rs`
 - Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/lib.rs`
 - Modify: `ab-validator/crates/ab-aat-to-parser-ir/tests/integration.rs`
 
@@ -158,9 +159,12 @@ pub enum ParserIrValidation {
     Invalid { errors: Vec<String> },
 }
 
-pub struct QualificationConversion {
-    pub output: ConversionOutput,
-    pub validation: ParserIrValidation,
+pub enum QualificationConversion {
+    Valid(ConversionOutput),
+    Invalid {
+        parser_ir: Value,
+        errors: Vec<String>,
+    },
 }
 
 impl PreparedConverter {
@@ -174,11 +178,11 @@ impl PreparedConverter {
 
 - [ ] **Step 1: Characterize current production failure behavior**
 
-Add `production-convert-still-hard-aborts-on-invalid-parser-ir`. Construct a test-only Parser-IR schema that rejects a known generated field, invoke `PreparedConverter::convert`, and pin that it returns an error beginning `parser-IR validation failed at` and exposes no `ConversionOutput`.
+Add `production-convert-still-hard-aborts-on-invalid-parser-ir`. Construct a test-only Parser-IR schema that rejects a known generated field, invoke `PreparedConverter::convert`, and pin that it returns an error beginning `parser-IR validation failed at` and exposes no `ConversionOutput`. In a module unit test compiled with the library's `cfg(test)`, add a bundle-invocation counter at `DivergenceRecorder::bundle`; assert the invalid production path does not invoke it. This pins the current validation boundary, not merely its error text.
 
 - [ ] **Step 2: Add failing qualification-path tests**
 
-Using the same rejecting schema, assert `convert_for_qualification` returns the generated value and a nonempty sorted/deduplicated validation-error vector. Add a validator-call test seam under `cfg(test)` and assert exactly one Parser-IR validation call for both the valid and invalid qualification cases. Assert production and qualification valid outputs are byte-identical.
+Using the same rejecting schema, assert `convert_for_qualification` returns `QualificationConversion::Invalid` with the generated value and a nonempty sorted/deduplicated validation-error vector, but no divergence bundle. Add a validator-call test seam under `cfg(test)` and assert exactly one Parser-IR validation call for both the valid and invalid qualification cases. Assert valid qualification returns `QualificationConversion::Valid`, production and qualification valid outputs are byte-identical, and divergence bundling runs exactly once only for valid conversion.
 
 - [ ] **Step 3: Confirm red**
 
@@ -191,7 +195,7 @@ Expected: FAIL because `ParserIrValidation`, `QualificationConversion`, and `con
 
 - [ ] **Step 4: Refactor validation without changing conversion timing**
 
-Add `validation_errors(&jsonschema::Validator, &Value, &str) -> Vec<String>` in `schema.rs`; have `validate_compiled` adapt its first structured error back to the current `anyhow` prefix. Split `convert_preflighted` only after the Parser-IR value and divergence bundle are constructed: build once, validate once, then either return the structured qualification result or adapt invalid to the old production error. Do not set `validate_output_parser_ir: false` and validate later; that would create a second semantic path.
+Add `validation_errors(&jsonschema::Validator, &Value, &str) -> Vec<String>` in `schema.rs`; have `validate_compiled` adapt its first structured error back to the current `anyhow` prefix. Validate at the existing boundary: after the Parser-IR value is constructed but before `aat_meta`, `recorder.bundle`, or divergence-schema validation. On invalid, return `QualificationConversion::Invalid` immediately; the production adapter immediately restores the old error. On valid, construct the divergence bundle once and return `QualificationConversion::Valid`. Do not set `validate_output_parser_ir: false`, validate later, or execute new invalid-path work.
 
 - [ ] **Step 5: Run all converter tests and commit**
 
@@ -200,7 +204,7 @@ nix develop ./ab-validator#checks --command cargo test -p ab-aat-to-parser-ir
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
 nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
 nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
-git add ab-validator/crates/ab-aat-to-parser-ir/src/{schema.rs,convert.rs,lib.rs} \
+git add ab-validator/crates/ab-aat-to-parser-ir/src/{schema.rs,convert.rs,divergence.rs,lib.rs} \
   ab-validator/crates/ab-aat-to-parser-ir/tests/integration.rs
 git commit -m "feat(parser-ir): expose qualification validation outcome"
 ```
@@ -278,7 +282,7 @@ git commit -m "feat(parser-rq): capture parser ir conformance records"
 
 - [ ] **Step 1: Add failing valid and vacuous tests**
 
-Assert a schema-valid diagnostic envelope counts all entries complete. Assert an authenticated empty `{ "schemaVersion": 3, "data": [] }` corpus produces value `1.0` and details `{:diagnostic_count 0 :works_with_diagnostics 0 :vacuous true}`. Assert adding or changing a P4A authorization value cannot change this result for unchanged raw bytes and policy.
+Assert a schema-valid diagnostic envelope counts all entries complete. Assert an authenticated empty `{ "schemaVersion": 3, "data": [] }` corpus produces the Clojure double value `1.0` and details `{:diagnostic_count 0 :works_with_diagnostics 0 :vacuous true}`. Assert adding or changing a P4A authorization value cannot change this result for unchanged raw bytes and policy.
 
 - [ ] **Step 2: Add the disposable malformed-byte probe**
 
@@ -291,7 +295,7 @@ Assert missing/authentication-failed bytes, policy/schema/validator/identity mis
 - [ ] **Step 4: Confirm red**
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha \
+nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-diagnostic-completeness-test
 ```
 
@@ -299,12 +303,12 @@ Expected: FAIL because the namespace does not exist.
 
 - [ ] **Step 5: Implement the pure projection**
 
-Parse only the exact authenticated byte array returned by `authenticated-read`. Validate with the pinned raw diagnostic schema. For a valid envelope, `emitted == complete == count(data)`. For malformed or schema-invalid authenticated bytes, return canonical complete-ledger bytes alongside the work record and their computed logical reference; the capture caller writes those exact bytes before publishing its index. Emit the failure sentinel rather than inventing a denominator. Use `capture/map-wire-status` for the JSON-to-Clojure mapping.
+Parse only the exact authenticated byte array returned by `authenticated-read`. Validate with the pinned raw diagnostic schema. For a valid envelope, `emitted == complete == count(data)`, so emit the double `1.0` directly; the inherited ratio unit is degenerate and no fractional value is reachable. For an empty valid set, emit the same `1.0` with explicit vacuity counts—never evaluate `0/0`. For malformed or schema-invalid authenticated bytes, return canonical complete-ledger bytes alongside the work record and their computed logical reference; the capture caller writes those exact bytes before publishing its index. Emit the failure sentinel rather than inventing a denominator. Use `capture/map-wire-status` for the JSON-to-Clojure mapping.
 
 - [ ] **Step 6: Verify and commit**
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha \
+nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-diagnostic-completeness-test
 git add abc/src/abc/tools/parser_rq_diagnostic_completeness.clj \
   abc/test/abc/tools/parser_rq_diagnostic_completeness_test.clj
@@ -331,12 +335,12 @@ Assert record, Parser-IR, and validation-ledger logical references are re-hashed
 
 - [ ] **Step 2: Add failing denominator and sentinel tests**
 
-For `[valid, invalid, no_output]`, assert ratio `1/2` and exact counts `expected=3, generated=2, valid=1, invalid=1, no_output=1`. For all `no_output`, assert value `:no-parser-ir-output` and available/fail. Assert removing a no-output work from the index is unavailable rather than a smaller passing denominator.
+For `[valid, invalid, no_output]`, assert ratio `1/2` and exact counts `expected=3, generated=2, valid=1, invalid=1, no_output=1`. For all-valid records, assert the observation value is specifically the Clojure double `1.0`—not `1M`, an integer, Ratio, or string. For all `no_output`, assert value `:no-parser-ir-output` and available/fail. Assert removing a no-output work from the index is unavailable rather than a smaller passing denominator.
 
 - [ ] **Step 3: Confirm red**
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha \
+nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-parser-ir-conformance-test
 ```
 
@@ -344,12 +348,12 @@ Expected: FAIL because the namespace does not exist.
 
 - [ ] **Step 4: Implement pure authentication and folding**
 
-Authenticate the closed index, each work record, every generated Parser-IR blob, and required ledger before folding. Recompute all counts from authenticated work records; never trust aggregate metadata. Use an exact rational internally and emit the repository's deterministic decimal representation. Use `capture/map-wire-status` for `no_parser_ir_output`.
+Authenticate the closed index, each work record, every generated Parser-IR blob, and required ledger before folding. Recompute all counts from authenticated work records; never trust aggregate metadata. Use exact integer numerator/denominator arithmetic internally, then emit a Clojure double; an all-valid result must be exactly the double `1.0` required by the live `:=` comparator. Counts remain the lossless authority disclosed alongside the value. Use `capture/map-wire-status` for `no_parser_ir_output`.
 
 - [ ] **Step 5: Verify and commit**
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha \
+nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-parser-ir-conformance-test
 git add abc/src/abc/tools/parser_rq_parser_ir_conformance.clj \
   abc/test/abc/tools/parser_rq_parser_ir_conformance_test.clj
@@ -408,7 +412,7 @@ Load the committed policies in both analyzer suites. Assert each policy validate
 ```bash
 nix develop ./ab-validator#checks --command pytest -q \
   ab-validator/reports/parser-ir/tests/test_predicate_hardening_identity.py
-nix develop ./abc#clj --command bin/kaocha \
+nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-diagnostic-completeness-test \
   --focus abc.tools.parser-rq-parser-ir-conformance-test
 git add ab-validator/reports/parser-ir/predicate-hardening-identity.py \
@@ -440,7 +444,7 @@ Assert installation succeeds only for two closed results with the exact full tar
 
 - [ ] **Step 2: Pin available typed failures explicitly in the evaluator**
 
-Add `typed-failure-sentinels-are-available-failures-test` to `parser_release_qualification_test.clj`. For predicates 4 and 5, assert `:invalid-diagnostic-envelope` and `:no-parser-ir-output` yield `:fail`, not `:unavailable`. This must not rely solely on the current unavailable allowlist.
+Add `typed-failure-sentinels-are-available-failures-test` to `parser_release_qualification_test.clj`. For predicates 4 and 5, assert `:invalid-diagnostic-envelope` and `:no-parser-ir-output` yield `:fail`, not `:unavailable`. Add `parser-ir-all-valid-double-passes-exact-comparator-test`: install predicate 5's derived all-valid envelope, assert `(double? (:value envelope))`, and run the live predicate through `evaluate-predicate` to obtain `:pass`. These tests must pin both sides of the evaluator contract rather than rely on incidental coercion or the current unavailable allowlist.
 
 - [ ] **Step 3: Pin the defense-in-depth boundary**
 
@@ -449,7 +453,7 @@ Construct an incoherent measurement map without the composer and assert `coheren
 - [ ] **Step 4: Confirm red**
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha \
+nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-predicate-hardening-test \
   --focus abc.tools.parser-release-qualification-test
 ```
@@ -463,7 +467,7 @@ Return a new measurements map. Do not execute commands, open files, calculate ra
 - [ ] **Step 6: Verify and commit**
 
 ```bash
-nix develop ./abc#clj --command bin/kaocha \
+nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-predicate-hardening-test \
   --focus abc.tools.parser-release-qualification-test
 git add abc/src/abc/tools/parser_rq_predicate_hardening.clj \
@@ -500,7 +504,7 @@ Add `parser-rq-predicate-hardening-capture-smoke` to `ab-validator/flake.nix`. I
 nix develop ./ab-validator#checks --command cargo test -p ab-aat-to-parser-ir
 nix develop ./ab-validator#checks --command pytest -q \
   ab-validator/reports/parser-ir/tests/test_predicate_hardening_identity.py
-nix develop ./abc#clj --command bin/kaocha \
+nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-capture-test \
   --focus abc.tools.parser-rq-diagnostic-completeness-test \
   --focus abc.tools.parser-rq-parser-ir-conformance-test \
@@ -536,8 +540,8 @@ Expected: every command exits 0. If a pre-existing unrelated failure occurs, rec
 ```bash
 git diff --exit-code HEAD -- \
   abc/data/parser-release-qualification-predicates.edn \
-  abc/data/aat-parser-compatibility.edn \
-  abc/docs/adr/0039-parser-release-qualification.md \
+  abc/data/aat-parser-ir-compatibility.edn \
+  abc/docs/adr/0039-custom-parser-release-qualification.md \
   abc/docs/reports/parser-release-qualification-measurements.edn
 git add abc/test/fixtures/parser-rq/predicate-hardening-capture \
   ab-validator/tests/parser-rq-predicate-hardening-capture-smoke.sh \

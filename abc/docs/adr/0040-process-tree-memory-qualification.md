@@ -1,8 +1,17 @@
 # ADR 0040: Qualify Process-Tree Cgroup Memory
 
+Status: Proposed
 Date: 2026-07-17
+Amends: ADR 0039 [scope: predicate 8 process-tree cgroup-memory dimension]
+Depends on: ADR 0002, ADR 0039 [scope: release-qualification governance]
+Validation scope: structural
+Release authority: development
 
-Status: Accepted
+## Implementation Status
+
+The bounded instrument, pure analyzer, identity policy, and Hinoki smoke
+witness are implemented. The authoritative P5 corpus recapture remains future
+work, and ADR 0039 remains Proposed.
 
 ## Context
 
@@ -35,6 +44,17 @@ this decision, and are forbidden as current gate evidence.
 P3 may prove the bounded instrument and its derivation. It does not perform the
 authoritative corpus capture, alter compatibility admission, or promote ADR
 0039. A missing or unauthenticated cgroup measurement remains unavailable.
+
+## Acceptance Criteria
+
+- **ADR-0040-C1 — structural-invariant:** Predicate 8 measures process-tree cgroup memory with the unchanged 2 GiB threshold, zero swap, and a content-addressed wrapper identity. Evidence boundary: `test/abc/tools/parser_rq_resource_test.clj`.
+- **ADR-0040-C2 — operational-behavior:** A Hinoki transient-service smoke run
+  records both a measured small workload and a right-censored ceiling-clipped
+  workload. Evidence boundary:
+  `docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json`.
+- **ADR-0040-C3 — structural-invariant:** The predicate-set rotation does not
+  relabel old observations; P5 must recapture all nine envelopes before ADR
+  0039 can be promoted.
 
 ## Evidence
 

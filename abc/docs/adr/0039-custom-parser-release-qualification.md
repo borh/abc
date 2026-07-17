@@ -5,6 +5,7 @@ Date: 2026-07-15
 Validation scope: smoke-corpus
 Release authority: development
 Depends on: ADR 0002, ADR 0023, ADR 0030, ADR 0038
+Amended by: ADR 0040 [scope: predicate 8 process-tree cgroup-memory dimension]
 
 ## Implementation Status
 

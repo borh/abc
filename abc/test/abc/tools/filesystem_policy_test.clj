@@ -35,7 +35,10 @@
      :rationale "Publication installation requires an atomic NIO move"}
     abc.tools.evidence-output
     {:operations #{Files/exists Files/createLink Files/deleteIfExists}
-     :rationale "Exclusive evidence publication requires no-follow existence, hard-link linearization, and failure cleanup"}})
+     :rationale "Exclusive evidence publication requires no-follow existence, hard-link linearization, and failure cleanup"}
+    abc.tools.parser-rq-capture
+    {:operations #{Files/isSymbolicLink Files/isRegularFile Files/readAllBytes}
+     :rationale "Immutable blob authentication requires no-follow path checks and a single byte read"}})
 
 (def permanent-interop-operations
   '{abc.tools.source-bundle
@@ -43,7 +46,10 @@
      :rationale "ZipArchiveEntry predicate, not java.io.File"}
     abc.tools.aozora-history-audit
     {:operations #{:renameTo}
-     :rationale "Preserve File.renameTo same-filesystem boolean failure contract"}})
+     :rationale "Preserve File.renameTo same-filesystem boolean failure contract"}
+    abc.tools.parser-rq-capture
+    {:operations #{:getCanonicalFile :relativize}
+     :rationale "Blob-store containment requires canonical-root and relative-component checks"}})
 
 (defn- dotted-method [x]
   (when (and (symbol? x)

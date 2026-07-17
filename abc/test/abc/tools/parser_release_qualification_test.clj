@@ -17,13 +17,13 @@
    :parser_git_rev "004deaf548f34a36abbc17d0f7a162df010a6292"
    :corpus_snapshot_hash "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e"
    :corpus_list_hash "sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd"
-   :predicate_set_hash "sha256:ca6ee8dc403e2c901076b0dde5c8008ecfb35864b46a4172a42232725be4a077"
+   :predicate_set_hash "sha256:d40f5c8996f3e93165575895b579902d10ec2ad1c06107e1047fe7ac8694f15f"
    :instrument_versions {:fixture "v1"}})
 
 (def all-pass-values
   {:fatal_failures 0 :source_span_coverage 1.0 :silent_drops 0
    :diagnostic_completeness 1.0 :parser_ir_schema_validation 1.0
-   :publication_structure 1.0 :wall_time_seconds 12 :peak_rss_bytes 1024
+   :publication_structure 1.0 :wall_time_seconds 12 :peak_cgroup_memory_bytes 1024
    :timeouts 0})
 
 (defn envelopes [identity values]
@@ -71,6 +71,13 @@
     (is (= (:predicate_set_hash predicates)
            (q/predicate-set-hash predicates)))))
 
+(deftest memory-predicate-is-process-tree-cgroup-memory
+  (let [predicate (first (filter #(= :memory (:predicate_id %))
+                                 (:predicates (q/load-predicates))))]
+    (is (= :peak_cgroup_memory_bytes (:observed_key predicate)))
+    (is (= "parser-rq-resource-v1" (:instrument predicate)))
+    (is (= 2147483648 (get-in predicate [:expected :value])))))
+
 ;; --- Exact numeric boundary: 0.969 FAILS a 1.0 predicate ----------------------
 
 (deftest span-coverage-0969-fails-1_0-predicate-test
@@ -108,13 +115,13 @@
 
 (deftest missing-instrument-is-unavailable-not-pass-test
   (let [pred {:predicate_id :memory :dimension "d" :instrument "none"
-              :observed_key :peak_rss_bytes :unit "bytes"
+              :observed_key :peak_cgroup_memory_bytes :unit "bytes"
               :expected {:comparator :<= :value 2147483648}}]
     (is (= :unavailable (:verdict (q/evaluate-predicate pred {}))))
-    (is (= :unavailable (:verdict (q/evaluate-predicate pred {:peak_rss_bytes {:value :unavailable}}))))
-    (is (= :unavailable (:verdict (q/evaluate-predicate pred {:peak_rss_bytes {:value :instrument-missing}}))))
+    (is (= :unavailable (:verdict (q/evaluate-predicate pred {:peak_cgroup_memory_bytes {:value :unavailable}}))))
+    (is (= :unavailable (:verdict (q/evaluate-predicate pred {:peak_cgroup_memory_bytes {:value :instrument-missing}}))))
     (testing "a real observation within bound still passes"
-      (is (= :pass (:verdict (q/evaluate-predicate pred {:peak_rss_bytes {:value 1024}})))))))
+      (is (= :pass (:verdict (q/evaluate-predicate pred {:peak_cgroup_memory_bytes {:value 1024}})))))))
 
 ;; --- Gate status + ADR promotion rule -----------------------------------------
 
@@ -122,9 +129,9 @@
   (let [preds (q/load-predicates)
         all-pass {:fatal_failures 0 :source_span_coverage 1.0 :silent_drops 0
                   :diagnostic_completeness 1.0 :parser_ir_schema_validation 1.0
-                  :publication_structure 1.0 :wall_time_seconds 12 :peak_rss_bytes 1024
+                  :publication_structure 1.0 :wall_time_seconds 12 :peak_cgroup_memory_bytes 1024
                   :timeouts 0}
-        one-unavailable (dissoc all-pass :peak_rss_bytes)
+        one-unavailable (dissoc all-pass :peak_cgroup_memory_bytes)
         one-fail (assoc all-pass :source_span_coverage 0.969)]
     (is (= "Accepted" (q/adr-0039-status true (q/evaluate preds (envelopes admitted-identity all-pass)))))
     (is (= "Proposed" (q/adr-0039-status true (q/evaluate preds (envelopes admitted-identity one-unavailable)))))
@@ -196,7 +203,7 @@
         values {:fatal_failures 0 :source_span_coverage :instrument-missing
                 :silent_drops :instrument-missing :diagnostic_completeness 1.0
                 :parser_ir_schema_validation 1.0 :publication_structure :instrument-missing
-                :wall_time_seconds 8 :peak_rss_bytes :instrument-missing :timeouts 0}
+                :wall_time_seconds 8 :peak_cgroup_memory_bytes :instrument-missing :timeouts 0}
         measurements (envelopes admitted-identity values)
         report (q/build-report
                 {:report_id "test-report"

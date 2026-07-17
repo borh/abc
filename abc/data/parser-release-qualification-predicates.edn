@@ -6,7 +6,7 @@
 ;; fabricated number). Comparators are exact: `:=` is value equality, so a
 ;; 0.969 observation fails a 1.0 predicate.
 {:predicate_set_id "abc/parser-release-qualification/v1"
- :predicate_set_hash "sha256:ca6ee8dc403e2c901076b0dde5c8008ecfb35864b46a4172a42232725be4a077"
+ :predicate_set_hash "sha256:d40f5c8996f3e93165575895b579902d10ec2ad1c06107e1047fe7ac8694f15f"
  :description
  "ADR 0002 must-pass release predicates over the pinned qualification corpus."
  :predicates
@@ -65,10 +65,9 @@
    :unit "seconds"}
 
   {:predicate_id :memory
-   :dimension "Peak resident memory attributable to the parser over the corpus"
-   :instrument
-   "no committed per-work memory instrument (ab-aozora/ab-check emit no peak-RSS field)"
-   :observed_key :peak_rss_bytes
+   :dimension "Peak cgroup-v2 memory charge for the complete per-work Parser-IR process tree"
+   :instrument "parser-rq-resource-v1"
+   :observed_key :peak_cgroup_memory_bytes
    :expected {:comparator :<= :value 2147483648}
    :unit "bytes"}
 

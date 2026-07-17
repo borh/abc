@@ -293,6 +293,16 @@
 (defn- index-adr-by-number [index item]
   (assoc index (:num item) item))
 
+(defn- select-adrs [accepted-by-number numbers]
+  (loop [remaining (seq numbers)
+         selected []]
+    (if-let [number (first remaining)]
+      (recur (next remaining)
+             (if-let [item (get accepted-by-number number)]
+               (conj selected item)
+               selected))
+      selected)))
+
 (defn- governance-enforced? [workspace-root]
   (let [flake (files/read-text (fs/file workspace-root "flake.nix"))
         start (string/index-of flake "monorepo-adr-governance")
@@ -319,7 +329,7 @@
           pre-count (get snapshot "accepted_adr_count")
           pre-criteria (get snapshot "accepted_criterion_count")
           bootstrap-numbers (conj (set (get snapshot "accepted_adr_numbers")) 34)
-          bootstrap-adrs (keep accepted-by-number bootstrap-numbers)]
+          bootstrap-adrs (select-adrs accepted-by-number bootstrap-numbers)]
       (vec
        (concat
         snapshot-problems

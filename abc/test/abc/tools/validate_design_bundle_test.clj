@@ -26,6 +26,177 @@
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
+(def ^:private parser-rq-test-hash
+  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+
+(def ^:private parser-rq-test-blob
+  {"sha256" parser-rq-test-hash
+   "bytes" 2
+   "media_type" "application/json"})
+
+(deftest parser-rq-predicate-hardening-closed-contracts
+  (let [diag-work-schema
+        (files/read-json
+         "schemas/parser-rq-diagnostic-completeness-work.schema.json")
+        diag-policy-schema
+        (files/read-json
+         "schemas/parser-rq-diagnostic-completeness-policy.schema.json")
+        diag-index-schema
+        (files/read-json
+         "schemas/parser-rq-diagnostic-completeness-index.schema.json")
+        diag-aggregate-schema
+        (files/read-json
+         "schemas/parser-rq-diagnostic-completeness-aggregate.schema.json")
+        ir-work-schema
+        (files/read-json
+         "schemas/parser-rq-parser-ir-conformance-work.schema.json")
+        ir-policy-schema
+        (files/read-json
+         "schemas/parser-rq-parser-ir-conformance-policy.schema.json")
+        ir-index-schema
+        (files/read-json
+         "schemas/parser-rq-parser-ir-conformance-index.schema.json")
+        ir-aggregate-schema
+        (files/read-json
+         "schemas/parser-rq-parser-ir-conformance-aggregate.schema.json")
+        diag-complete
+        {"schema_id" "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-work.schema.json"
+         "schema_version" "1.0.0"
+         "work_id" "w1"
+         "qualification_identity_ref" parser-rq-test-hash
+         "policy_hash" parser-rq-test-hash
+         "attempt_disposition" "parsed"
+         "raw_diagnostics" parser-rq-test-blob
+         "status" "complete"
+         "emitted_diagnostics" 0
+         "complete_diagnostics" 0
+         "vacuous" true}
+        diag-policy
+        {"schema_id" "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-policy.schema.json"
+         "schema_version" "1.0.0"
+         "policy_id" "abc/parser-rq-diagnostic-completeness/v1"
+         "algorithm_version" "diagnostic-envelope-completeness-v1"
+         "policy_hash" parser-rq-test-hash
+         "expected_work_ids" ["w1"]
+         "expected_work_set_hash" parser-rq-test-hash
+         "raw_diagnostic_schema_id" "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
+         "raw_diagnostic_schema_hash" parser-rq-test-hash
+         "diagnostic_wire_version" 3
+         "validator_semantics_hash" parser-rq-test-hash
+         "vacuity_semantics" "valid_empty_passes_with_disclosure"
+         "status_mapping"
+         {"allowed_statuses" ["measured" "invalid_diagnostic_envelope"]
+          "values" {"measured" 1.0
+                    "invalid_diagnostic_envelope" "invalid_diagnostic_envelope"}}}
+        diag-invalid
+        (-> diag-complete
+            (assoc "status" "invalid_diagnostic_envelope"
+                   "validation_ledger" parser-rq-test-blob
+                   "validation_witnesses" ["invalid JSON"])
+            (dissoc "emitted_diagnostics" "complete_diagnostics" "vacuous"))
+        ir-valid
+        {"schema_id" "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-work.schema.json"
+         "schema_version" "1.0.0"
+         "work_id" "w1"
+         "qualification_identity_ref" parser-rq-test-hash
+         "policy_hash" parser-rq-test-hash
+         "status" "schema_valid"
+         "parser_ir" parser-rq-test-blob}
+        ir-policy
+        {"schema_id" "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-policy.schema.json"
+         "schema_version" "1.0.0"
+         "policy_id" "abc/parser-rq-parser-ir-conformance/v1"
+         "algorithm_version" "parser-ir-schema-conformance-v1"
+         "policy_hash" parser-rq-test-hash
+         "expected_work_ids" ["w1"]
+         "expected_work_set_hash" parser-rq-test-hash
+         "parser_ir_schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+         "parser_ir_schema_hash" parser-rq-test-hash
+         "validator_semantics_hash" parser-rq-test-hash
+         "generated_output_denominator" "schema_valid_plus_schema_invalid"
+         "no_output_semantics" "available_failure_when_generated_outputs_zero"
+         "status_mapping"
+         {"allowed_statuses" ["measured" "no_parser_ir_output"]
+          "values" {"measured" 1.0
+                    "no_parser_ir_output" "no_parser_ir_output"}}}
+        ir-invalid
+        (assoc ir-valid
+               "status" "schema_invalid"
+               "validation_ledger" parser-rq-test-blob
+               "validation_witnesses" ["required property missing"])
+        diag-index
+        {"schema_id" "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-index.schema.json"
+         "schema_version" "1.0.0"
+         "qualification_identity_ref" parser-rq-test-hash
+         "policy_hash" parser-rq-test-hash
+         "expected_work_ids" ["w1"]
+         "records" [{"work_id" "w1" "record" parser-rq-test-blob}]}
+        ir-index
+        (assoc diag-index
+               "schema_id"
+               "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-index.schema.json")
+        diag-aggregate
+        {"schema_id" "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-aggregate.schema.json"
+         "schema_version" "1.0.0"
+         "qualification_identity_ref" parser-rq-test-hash
+         "policy_hash" parser-rq-test-hash
+         "status" "measured"
+         "expected_works" 1
+         "work_count" 1
+         "diagnostic_completeness" 1.0
+         "diagnostic_count" 0
+         "works_with_diagnostics" 0
+         "vacuous" true}
+        ir-aggregate
+        {"schema_id" "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json"
+         "schema_version" "1.0.0"
+         "qualification_identity_ref" parser-rq-test-hash
+         "policy_hash" parser-rq-test-hash
+         "status" "measured"
+         "expected_works" 2
+         "generated_outputs" 2
+         "schema_valid_outputs" 1
+         "schema_invalid_outputs" 1
+         "no_output_works" 0
+         "parser_ir_schema_validation" 0.5}]
+    (testing "valid discriminated-union members"
+      (doseq [[schema value] [[diag-work-schema diag-complete]
+                              [diag-policy-schema diag-policy]
+                              [diag-work-schema diag-invalid]
+                              [diag-index-schema diag-index]
+                              [diag-aggregate-schema diag-aggregate]
+                              [ir-work-schema ir-valid]
+                              [ir-policy-schema ir-policy]
+                              [ir-work-schema ir-invalid]
+                              [ir-index-schema ir-index]
+                              [ir-aggregate-schema ir-aggregate]]]
+        (is (nil? (schema/validation-errors schema value)))))
+    (testing "candidate failure and unavailability cannot be conflated"
+      (is (seq (schema/validation-errors
+                diag-work-schema
+                (dissoc diag-complete "complete_diagnostics"))))
+      (is (seq (schema/validation-errors
+                diag-work-schema
+                (dissoc diag-invalid "validation_ledger"))))
+      (is (seq (schema/validation-errors
+                ir-work-schema
+                (dissoc ir-invalid "parser_ir"))))
+      (is (seq (schema/validation-errors
+                ir-work-schema
+                (assoc ir-valid "status" "no_output"))))
+      (is (seq (schema/validation-errors
+                ir-work-schema
+                (assoc ir-valid "status" "unavailable"
+                       "reason" "blob_unavailable")))))
+    (testing "vacuity and closed membership are represented honestly"
+      (is (seq (schema/validation-errors
+                diag-aggregate-schema
+                (assoc diag-aggregate "diagnostic_count" 1))))
+      (is (seq (schema/validation-errors
+                diag-index-schema
+                (update diag-index "records" conj
+                        {"work_id" "w1" "record" parser-rq-test-blob})))))))
+
 (deftest parser-rq-diagnostic-gap-protocols
   (let [root "test/fixtures/parser-rq/diagnostic-gap"
         raw-schema (files/read-json

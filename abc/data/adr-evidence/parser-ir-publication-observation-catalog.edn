@@ -31,11 +31,7 @@
   {:observation-id :parser-relations-provenance
    :descriptor-stem "parser-relations-provenance"
    :observation-key "parser-relations-provenance-pass"
-   :focus-var abc.tools.parser-relations-provenance-evidence-test/parser-relations-provenance-contract}
-  {:observation-id :parser-rq-resource-policy
-   :descriptor-stem "parser-rq-resource-policy"
-   :observation-key "parser-rq-resource-policy-pass"
-   :focus-var abc.tools.parser-rq-resource-test/process-tree-memory-policy-contract}]
+   :focus-var abc.tools.parser-relations-provenance-evidence-test/parser-relations-provenance-contract}]
  :operational-observations
  [{:observation-id :design-bundle-operational-parser-ir-publication
    :descriptor-stem "design-bundle-operational-parser-ir-publication"

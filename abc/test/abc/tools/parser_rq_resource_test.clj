@@ -47,8 +47,8 @@
 
 (deftest process-tree-memory-policy-contract
   (runtime-inputs/with-validated-read-trace!
-    {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
-     :descriptor {:path "abc/docs/evidence/adr-capture/parser-rq-resource-policy.edn"
+    {:identity-root "." :cwd-root "." :repo-root "." :workspace-root "."
+     :descriptor {:path "docs/evidence/adr-capture/parser-rq-resource-policy.edn"
                   :value (files/read-edn
                           "docs/evidence/adr-capture/parser-rq-resource-policy.edn")}}
     (fn []

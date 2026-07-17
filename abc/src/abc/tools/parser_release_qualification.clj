@@ -194,6 +194,11 @@
   [measurements envelope]
   (assoc measurements :publication_structure envelope))
 
+(defn install-resource-observation
+  "Install predicate 8's authenticated process-tree memory envelope."
+  [measurements envelope]
+  (assoc measurements :peak_cgroup_memory_bytes envelope))
+
 (defn verdict-tally
   [results]
   (frequencies (map :verdict results)))

@@ -1,0 +1,20 @@
+{
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-resource-policy.schema.json",
+  "schema_version": "1.0.0",
+  "instrument_id": "parser-rq-resource-v1",
+  "predicate_set_hash": "sha256:d40f5c8996f3e93165575895b579902d10ec2ad1c06107e1047fe7ac8694f15f",
+  "wrapper_identity_hash": "sha256:5d28f798fe173713ba6eb7ee7dc3bd4b271216e1205caa25e88bfe37f40c315f",
+  "production_command_hash": "sha256:b00d28d9e8bf7cf017f03566814663c238504d369f806a0c752cbbd0b2ebdc98",
+  "host_capability_id": "linux-cgroup-v2-memory-peak-v1",
+  "threshold_bytes": 2147483648,
+  "ceiling_bytes": 3221225472,
+  "serial": true,
+  "work_ids": ["000001_1", "000002_2", "000003_3"],
+  "systemd_properties": {
+    "MemoryAccounting": "yes",
+    "MemoryMax": 3221225472,
+    "MemorySwapMax": 0,
+    "OOMPolicy": "continue",
+    "Delegate": "no"
+  }
+}

@@ -1,5 +1,6 @@
 import importlib.util
 import pathlib
+import json
 
 
 MODULE = pathlib.Path(__file__).parents[1] / "parser-rq-resource-identity.py"
@@ -31,3 +32,17 @@ def test_identity_changes_with_dependency_bytes(tmp_path):
     helper.write_text("VALUE = 2\n", encoding="utf-8")
     after = identity.build_identity(entry, pathlib.Path("/proc/self/exe"), "drv")
     assert before["wrapper_identity_hash"] != after["wrapper_identity_hash"]
+
+
+def test_committed_wrapper_identity_is_current():
+    identity = load_module()
+    repo = pathlib.Path(__file__).parents[3]
+    committed = json.loads(
+        (repo / "data/parser-rq-resource-identity-v1.json").read_text(encoding="utf-8")
+    )
+    wrapper = pathlib.Path(__file__).parents[1] / "parser-rq-resource-wrapper.py"
+    closure = identity.discover_local_import_closure(wrapper, (wrapper.parent,))
+    assert [item["path"] for item in committed["sources"]] == [
+        path.name for path in closure
+    ]
+    assert committed["sources"][0]["sha256"] == identity._sha256(wrapper)

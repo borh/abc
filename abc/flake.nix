@@ -590,6 +590,22 @@
                 touch "$out"
               '';
 
+          parser-rq-admission-promotion-smoke =
+            pkgs.runCommand "abc-parser-rq-admission-promotion-smoke"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.clojure
+                ];
+              }
+              ''
+                ${copyWritableSource}
+                patchShebangs bin/kaocha bin/parser-rq-admission-promotion-smoke.sh
+                ${cljSandboxEnv}
+                bash bin/parser-rq-admission-promotion-smoke.sh
+                touch "$out"
+              '';
+
           source-bundle-corpus =
             pkgs.runCommand "abc-source-bundle-corpus"
               {

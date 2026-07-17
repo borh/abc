@@ -394,6 +394,8 @@ dependencies = [
  "ab-aozora-spec",
  "ab-diff-utils",
  "ab-parser-rq-source-accountability",
+ "anyhow",
+ "clap",
  "hegeltest",
  "jsonschema",
  "serde",

@@ -89,6 +89,26 @@ enum Command {
         #[arg(long)]
         out: PathBuf,
     },
+    /// Produce the P1 ledger, recognition records, and both aggregates for one
+    /// explicit corpus generation. Membership is never discovered from output.
+    CaptureCorpus {
+        #[arg(long)]
+        corpus: PathBuf,
+        #[arg(long)]
+        source_root: PathBuf,
+        #[arg(long)]
+        parser_ir_root: PathBuf,
+        #[arg(long)]
+        qualification: PathBuf,
+        #[arg(long)]
+        taxonomy: PathBuf,
+        #[arg(long)]
+        store_root: PathBuf,
+        #[arg(long)]
+        generation_index: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
 }
 
 fn read_json<T: serde::de::DeserializeOwned>(path: &PathBuf) -> Result<T> {
@@ -220,6 +240,57 @@ fn main() -> Result<()> {
             write_atomic_summary(&out, bytes.as_bytes())?;
             println!("{bytes}");
         }
+        Command::CaptureCorpus {
+            corpus,
+            source_root,
+            parser_ir_root,
+            qualification,
+            taxonomy: taxonomy_path,
+            store_root,
+            generation_index,
+            output_dir,
+        } => {
+            fs::create_dir_all(&output_dir)?;
+            let identity = read_json::<QualificationIdentity>(&qualification)?;
+            let taxonomy = taxonomy(&taxonomy_path)?;
+            let corpus_entries = read_json::<Vec<CorpusSourceEntry>>(&corpus)?;
+            let membership_path = output_dir.join("source-accountability-index.json");
+            let membership = analyze_corpus(CorpusInput {
+                entries: corpus_entries.clone(),
+                source_root,
+                parser_ir_root,
+                store_root: store_root.clone(),
+                index_out: membership_path.clone(),
+                qualification_identity: identity.clone(),
+                taxonomy: taxonomy.clone(),
+            })?;
+            let p1_aggregate = aggregate(
+                &corpus_entries
+                    .iter()
+                    .map(|entry| entry.corpus_entry.clone())
+                    .collect::<Vec<_>>(),
+                &membership,
+                &store_root,
+                &identity,
+                &taxonomy,
+            )?;
+            write_atomic_summary(
+                &output_dir.join("source-accountability-aggregate.json"),
+                canonical_json(&p1_aggregate)?.as_bytes(),
+            )?;
+            let recognition = analyze_recognition_corpus(RecognitionCorpusInput {
+                membership_index_bytes: fs::read(&membership_path)?,
+                generation_index: read_json::<RecognitionGenerationIndex>(&generation_index)?,
+                store_root: store_root.clone(),
+                index_out: output_dir.join("source-recognition-index.json"),
+            })?;
+            let recognition_aggregate = aggregate_recognition(&recognition, &store_root)?;
+            write_atomic_summary(
+                &output_dir.join("source-recognition-aggregate.json"),
+                canonical_json(&recognition_aggregate)?.as_bytes(),
+            )?;
+            println!("{}", canonical_json(&recognition)?);
+        }
     }
     Ok(())
 }
@@ -266,6 +337,27 @@ mod tests {
             "aggregate.json",
         ]);
         assert!(aggregate.is_ok());
+        let capture = Cli::try_parse_from([
+            "tool",
+            "capture-corpus",
+            "--corpus",
+            "corpus.json",
+            "--source-root",
+            "sources",
+            "--parser-ir-root",
+            "parser-ir",
+            "--qualification",
+            "identity.json",
+            "--taxonomy",
+            "taxonomy.json",
+            "--store-root",
+            "store",
+            "--generation-index",
+            "generation.json",
+            "--output-dir",
+            "out",
+        ]);
+        assert!(capture.is_ok());
         let recognition = Cli::try_parse_from([
             "tool",
             "analyze-recognition-corpus",

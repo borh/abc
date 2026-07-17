@@ -1,8 +1,8 @@
 {
   "parser_ir": {
-    "bytes": 2036,
+    "bytes": 2012,
     "media_type": "application/json",
-    "sha256": "sha256:644f6b196ab2fbaf3a94ac7e615411ae5ab86742b9a4df1934819f3cc36cbfb8"
+    "sha256": "sha256:e045c9ffcd9d1e3f3ca44b062936bd256c57254e538bbd3fa53e1b53cf16f618"
   },
   "policy_hash": "sha256:07335ded503d97e4e5bbfc806aa6d6ac62a5f5bdec82f14ddfc323183e8653cb",
   "qualification_identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",

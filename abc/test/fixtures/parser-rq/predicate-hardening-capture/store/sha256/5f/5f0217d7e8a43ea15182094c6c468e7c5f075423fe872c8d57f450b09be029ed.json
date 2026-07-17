@@ -11,7 +11,7 @@
       "record": {
         "bytes": 544,
         "media_type": "application/json",
-        "sha256": "sha256:a077dd41003272828581e33978458af7eb5a2592520773d1f85ef214b463193a"
+        "sha256": "sha256:f025b407d3ec4287eeb771a2925f979baa274766ec531f2766637bec8cc82cfe"
       },
       "work_id": "valid"
     },
@@ -19,7 +19,7 @@
       "record": {
         "bytes": 807,
         "media_type": "application/json",
-        "sha256": "sha256:4d0b4a5c9ddfa4c64fec4a2625630425d8f7f3cceebfa289ca5cac01d9569477"
+        "sha256": "sha256:505b0cfcb487a2373ea49e98dd868680952f6809598316bb21ad11d46347272a"
       },
       "work_id": "invalid"
     },

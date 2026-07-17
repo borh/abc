@@ -52,6 +52,7 @@ generate() {
 import hashlib
 import json
 import pathlib
+import re
 import shutil
 import sys
 
@@ -86,6 +87,18 @@ def publish_bytes(data):
 
 def publish(value):
     return publish_bytes(canonical(value))
+
+def fixture_parser_value(path):
+    value = json.loads(path.read_text())
+    derived = value.get("derived_from", {})
+    version = derived.get("aat_adapter_version")
+    # Campaign evidence authenticates the real build revision separately. A
+    # checked-in drift fixture cannot hash the commit that contains itself.
+    if isinstance(version, str):
+        derived["aat_adapter_version"] = re.sub(
+            r"\(git [0-9a-f]+\)$", "(git fixture-revision)", version
+        )
+    return value
 
 diag_entries = []
 ir_entries = []
@@ -126,7 +139,7 @@ for work_id in work_ids:
         assert not (stage / f"{work_id}.ledger.json").exists()
         no_outputs += 1
     elif work_id == "invalid":
-        parser_value = json.loads((stage / f"{work_id}.parser-ir.json").read_text())
+        parser_value = fixture_parser_value(stage / f"{work_id}.parser-ir.json")
         parser_value.pop("schema_id")
         parser_member = publish(parser_value)
         ledger_member = publish({"errors": ["characterization: required schema_id is absent"]})
@@ -138,8 +151,10 @@ for work_id in work_ids:
         })
         invalid_outputs += 1
     else:
-        parser_member = publish_bytes((stage / f"{work_id}.parser-ir.json").read_bytes())
-        assert record["parser_ir"] == parser_member["ref"]
+        parser_path = stage / f"{work_id}.parser-ir.json"
+        assert record["parser_ir"] == reference(parser_path.read_bytes())
+        parser_member = publish(fixture_parser_value(parser_path))
+        record["parser_ir"] = parser_member["ref"]
         valid_outputs += 1
     record_member = publish(record)
     ir_entries.append({"work_id": work_id, "record": record_member["ref"]})

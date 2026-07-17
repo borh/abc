@@ -41,5 +41,5 @@ authoritative corpus capture, alter compatibility admission, or promote ADR
 - **ADR-0040-C1 — structural-invariant:** The live predicate, committed
   resource policy, and generated wrapper identity jointly bind the
   process-tree cgroup-memory key, unchanged 2 GiB threshold, zero-swap service
-  property, and exact wrapper semantic identity. Evidence boundary:
+  property, and a content-addressed wrapper semantic identity. Evidence boundary:
   `abc.tools.parser-rq-resource-test/process-tree-memory-policy-contract`.

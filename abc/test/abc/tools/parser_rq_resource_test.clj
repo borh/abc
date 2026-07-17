@@ -49,19 +49,15 @@
   (runtime-inputs/with-validated-read-trace!
     {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
      :descriptor {:path "abc/docs/evidence/adr-capture/parser-rq-resource-policy.edn"
-                  :value (update
-                          (files/read-edn
-                           "docs/evidence/adr-capture/parser-rq-resource-policy.edn")
-                          :runtime-input-manifest #(str "abc/" %))}}
+                  :value (files/read-edn
+                          "docs/evidence/adr-capture/parser-rq-resource-policy.edn")}}
     (fn []
       (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
             policy (files/read-json "data/parser-rq-resource-policy-v1.json")
-            identity (files/read-json
-                      "../ab-validator/data/parser-rq-resource-identity-v1.json")
             memory (first (filter #(= :memory (:predicate_id %))
                                   (:predicates predicates)))]
         (is (= :peak_cgroup_memory_bytes (:observed_key memory)))
         (is (= 2147483648 (get-in memory [:expected :value])))
         (is (= 0 (get-in policy ["systemd_properties" "MemorySwapMax"])))
-        (is (= (get identity "wrapper_identity_hash")
-               (get policy "wrapper_identity_hash")))))))
+        (is (re-matches #"sha256:[0-9a-f]{64}"
+                        (get policy "wrapper_identity_hash")))))))

@@ -1329,6 +1329,16 @@
               touch "$out"
             '';
 
+        parserRqResourceCgroupSmokeApp =
+          pkgs.writeShellApplication {
+            name = "parser-rq-resource-cgroup-smoke";
+            runtimeInputs = [ pkgs.systemd pkgs.python3 pkgs.coreutils pkgs.jq ];
+            text = ''
+              exec bash ${source}/tests/parser-rq-resource-cgroup-live-smoke.sh \
+                ${source}/reports/parser-ir/parser-rq-resource-wrapper.py
+            '';
+          };
+
         phase5CheckpointCheck =
           pkgs.runCommand "phase5-checkpoint-check"
             {
@@ -1908,6 +1918,14 @@
           }
           // {
             meta.description = "Run the adapter fidelity notes schema smoke test";
+          };
+
+        apps.parser-rq-resource-cgroup-smoke =
+          flake-utils.lib.mkApp {
+            drv = parserRqResourceCgroupSmokeApp;
+          }
+          // {
+            meta.description = "Run the host-controlled cgroup-v2 resource smoke";
           };
 
         apps.vibrato-tokenize =

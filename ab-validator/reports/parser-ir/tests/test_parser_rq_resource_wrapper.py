@@ -1,5 +1,4 @@
 import importlib.util
-import json
 import os
 import pathlib
 import sys
@@ -55,9 +54,7 @@ def test_oom_above_threshold_is_right_censored(tmp_path):
     result = wrapper.capture_work(
         [sys.executable, "-c", "raise SystemExit(1)"],
         0.1,
-        cgroup_dir=fake_cgroup(
-            tmp_path, peak=str(2147483649), events="oom_kill 1\n"
-        ),
+        cgroup_dir=fake_cgroup(tmp_path, peak=str(2147483649), events="oom_kill 1\n"),
     )
     assert result["status"] == "ceiling_clipped"
     assert result["right_censored"] is True

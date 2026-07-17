@@ -31,7 +31,10 @@ def _integer(path: pathlib.Path) -> int:
 
 
 def _events(path: pathlib.Path) -> dict[str, int]:
-    return {key: int(value) for key, value in (line.split() for line in path.read_text(encoding="ascii").splitlines())}
+    return {
+        key: int(value)
+        for key, value in (line.split() for line in path.read_text(encoding="ascii").splitlines())
+    }
 
 
 def capture_work(
@@ -41,30 +44,74 @@ def capture_work(
     completed = subprocess.run(command, check=False)
     deadline = time.monotonic() + closure_timeout_s
     while True:
-        pids = {int(value) for value in (directory / "cgroup.procs").read_text(encoding="ascii").split()}
+        pids = {
+            int(value) for value in (directory / "cgroup.procs").read_text(encoding="ascii").split()
+        }
         if pids <= {os.getpid()}:
             break
         if time.monotonic() >= deadline:
-            return {"status": "unavailable", "reason": "lingering_descendant", "child_exit_code": completed.returncode}
+            return {
+                "status": "unavailable",
+                "reason": "lingering_descendant",
+                "child_exit_code": completed.returncode,
+            }
         time.sleep(0.01)
     try:
         peak = _integer(directory / "memory.peak")
-        swap = _integer(directory / "memory.swap.peak") if (directory / "memory.swap.peak").exists() else 0
+        swap = (
+            _integer(directory / "memory.swap.peak")
+            if (directory / "memory.swap.peak").exists()
+            else 0
+        )
         events = _events(directory / "memory.events")
     except FileNotFoundError:
-        return {"status": "unavailable", "reason": "counter_unavailable", "child_exit_code": completed.returncode}
+        return {
+            "status": "unavailable",
+            "reason": "counter_unavailable",
+            "child_exit_code": completed.returncode,
+        }
     except (ValueError, UnicodeError):
-        return {"status": "unavailable", "reason": "counter_invalid", "child_exit_code": completed.returncode}
+        return {
+            "status": "unavailable",
+            "reason": "counter_invalid",
+            "child_exit_code": completed.returncode,
+        }
     oom = events.get("oom_kill", 0) > 0
     if swap != 0:
-        return {"status": "unavailable", "reason": "identity_mismatch", "child_exit_code": completed.returncode}
+        return {
+            "status": "unavailable",
+            "reason": "identity_mismatch",
+            "child_exit_code": completed.returncode,
+        }
     if oom and peak > THRESHOLD_BYTES:
-        return {"status": "ceiling_clipped", "peak_cgroup_memory_bytes": peak, "peak_swap_bytes": swap, "right_censored": True, "oom_kill": True, "child_exit_code": completed.returncode}
+        return {
+            "status": "ceiling_clipped",
+            "peak_cgroup_memory_bytes": peak,
+            "peak_swap_bytes": swap,
+            "right_censored": True,
+            "oom_kill": True,
+            "child_exit_code": completed.returncode,
+        }
     if oom:
-        return {"status": "unavailable", "reason": "unexpected_oom", "child_exit_code": completed.returncode}
+        return {
+            "status": "unavailable",
+            "reason": "unexpected_oom",
+            "child_exit_code": completed.returncode,
+        }
     if completed.returncode != 0:
-        return {"status": "unavailable", "reason": "command_failed", "child_exit_code": completed.returncode}
-    return {"status": "measured", "peak_cgroup_memory_bytes": peak, "peak_swap_bytes": swap, "right_censored": False, "oom_kill": False, "child_exit_code": completed.returncode}
+        return {
+            "status": "unavailable",
+            "reason": "command_failed",
+            "child_exit_code": completed.returncode,
+        }
+    return {
+        "status": "measured",
+        "peak_cgroup_memory_bytes": peak,
+        "peak_swap_bytes": swap,
+        "right_censored": False,
+        "oom_kill": False,
+        "child_exit_code": completed.returncode,
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -81,7 +128,9 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("a command after -- is required")
     result = capture_work(command, args.closure_timeout)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")
-    temporary.write_text(json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+    temporary.write_text(
+        json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8"
+    )
     os.replace(temporary, args.output)
     return 0
 

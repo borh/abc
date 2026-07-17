@@ -54,7 +54,11 @@ def discover_local_import_closure(
                     raise ValueError(f"relative import is not supported: {current}")
                 if node.module:
                     names = [node.module]
-            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "__import__":
+            elif (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "__import__"
+            ):
                 raise ValueError(f"dynamic import is not supported: {current}")
             pending.extend(path for name in names if (path := _resolve_local(name, roots)))
     return tuple(sorted(visited))
@@ -74,9 +78,7 @@ def build_identity(
             "executable_sha256": _sha256(python.resolve()),
             "nix_derivation": nix_derivation,
         },
-        "sources": [
-            {"path": path.name, "sha256": _sha256(path)} for path in closure
-        ],
+        "sources": [{"path": path.name, "sha256": _sha256(path)} for path in closure],
     }
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
     value["wrapper_identity_hash"] = "sha256:" + hashlib.sha256(encoded).hexdigest()

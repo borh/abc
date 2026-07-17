@@ -42,7 +42,5 @@ def test_committed_wrapper_identity_is_current():
     )
     wrapper = pathlib.Path(__file__).parents[1] / "parser-rq-resource-wrapper.py"
     closure = identity.discover_local_import_closure(wrapper, (wrapper.parent,))
-    assert [item["path"] for item in committed["sources"]] == [
-        path.name for path in closure
-    ]
+    assert [item["path"] for item in committed["sources"]] == [path.name for path in closure]
     assert committed["sources"][0]["sha256"] == identity._sha256(wrapper)

@@ -25,7 +25,7 @@
     "src\/abc\/tools\/malli.clj": "sha256:16c04c051ac5829e36b7d0e7707c0057cef22ac2c20f778ad08f0d3b40df471e",
     "src\/abc\/tools\/parser_release_qualification.clj": "sha256:effebdd0700705a57e0fbaa48e8b40f96f69adec2e9a90ccc223b651419c492e",
     "src\/abc\/tools\/parser_rq_capture.clj": "sha256:a2490742eb037fa6d452f44b2ddd66004d89ace5be983ad7208b4bdb6a4b8c16",
-    "src\/abc\/tools\/parser_rq_resource.clj": "sha256:aa25aa46c418ec38c01f4f6e0ebe36f4f6d2f4d67b4f8b3be564cdb3f53ca035",
+    "src\/abc\/tools\/parser_rq_resource.clj": "sha256:0abe0c76aad470ffe94fb79536e78df05354f4e5caef713277c2357cde56785a",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
     "test\/abc\/tools\/parser_rq_resource_test.clj": "sha256:b3f1b6ab96fdb3314aca9d8c1d8dddbb83b4d37e21de4e4b947ecdfde37f3f58"
   },
@@ -43,7 +43,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-rq-resource-test\/process-tree-memory-policy-contract\"",
-    "revision": "9319f6b218ca418f6d58bff71648b8df08569a96",
+    "revision": "cce5959ee8288fb2342849ed5090ba90583db046",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

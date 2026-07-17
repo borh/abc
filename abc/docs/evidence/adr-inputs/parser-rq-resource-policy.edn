@@ -1,0 +1,4 @@
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["ab-validator/data/parser-rq-resource-identity-v1.json"
+         "abc/data/parser-release-qualification-predicates.edn"
+         "abc/data/parser-rq-resource-policy-v1.json"]}

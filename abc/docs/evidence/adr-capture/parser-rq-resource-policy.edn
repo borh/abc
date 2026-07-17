@@ -1,0 +1,18 @@
+{:schema-version "abc-adr-evidence-capture-v3"
+ :tool "bin/kaocha"
+ :argv ["bin/kaocha" "--focus" "abc.tools.parser-rq-resource-test/process-tree-memory-policy-contract"]
+ :runtime-input-manifest "docs/evidence/adr-inputs/parser-rq-resource-policy.edn"
+ :catalog-path "data/adr-evidence/parser-ir-publication-observation-catalog.edn"
+ :observation-id :parser-rq-resource-policy
+ :observation-contract-sha256 "sha256:6e8a63d5e053b29dec69baf83341f739362b3fd42e57b93c40cec49dc73df3d2"
+ :input-profile
+ {:kind "component-clojure-test-v1"
+  :component-root "abc"
+  :roots ["abc.tools.parser-rq-resource-test"]
+  :explicit ["ab-validator/data/parser-rq-resource-identity-v1.json"
+             "abc/bin/kaocha"
+             "abc/data/parser-release-qualification-predicates.edn"
+             "abc/data/parser-rq-resource-policy-v1.json"
+             "abc/docs/evidence/adr-capture/parser-rq-resource-policy.edn"
+             "abc/docs/evidence/adr-inputs/parser-rq-resource-policy.edn"]}
+ :observation-key "parser-rq-resource-policy-pass"}

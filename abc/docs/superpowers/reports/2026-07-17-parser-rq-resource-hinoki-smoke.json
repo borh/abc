@@ -1,0 +1,30 @@
+{
+  "schema_version": "parser-rq-resource-live-smoke-v1",
+  "host": "hinoki.hyakutake-barbel.ts.net",
+  "captured_at_date": "2026-07-17",
+  "instrument_id": "parser-rq-resource-v1",
+  "wrapper_identity_hash": "sha256:5d28f798fe173713ba6eb7ee7dc3bd4b271216e1205caa25e88bfe37f40c315f",
+  "systemd_properties": {
+    "MemoryAccounting": "yes",
+    "MemoryMax": 3221225472,
+    "MemorySwapMax": 0,
+    "OOMPolicy": "continue",
+    "Delegate": "no"
+  },
+  "cases": [
+    {
+      "case": "small",
+      "status": "measured",
+      "peak_cgroup_memory_bytes": 45785088,
+      "peak_swap_bytes": 0,
+      "right_censored": false
+    },
+    {
+      "case": "ceiling",
+      "status": "ceiling_clipped",
+      "peak_cgroup_memory_bytes": 3221225472,
+      "peak_swap_bytes": 0,
+      "right_censored": true
+    }
+  ]
+}

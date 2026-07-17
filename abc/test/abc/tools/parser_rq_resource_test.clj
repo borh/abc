@@ -1,5 +1,7 @@
 (ns abc.tools.parser-rq-resource-test
-  (:require [abc.tools.parser-rq-resource :as resource]
+  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
+            [abc.tools.files :as files]
+            [abc.tools.parser-rq-resource :as resource]
             [abc.tools.parser-release-qualification :as qualification]
             [clojure.test :refer [deftest is]]))
 
@@ -42,3 +44,24 @@
     (is (= envelope
            (:peak_cgroup_memory_bytes
             (qualification/install-resource-observation {} envelope))))))
+
+(deftest process-tree-memory-policy-contract
+  (runtime-inputs/with-validated-read-trace!
+    {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
+     :descriptor {:path "abc/docs/evidence/adr-capture/parser-rq-resource-policy.edn"
+                  :value (update
+                          (files/read-edn
+                           "docs/evidence/adr-capture/parser-rq-resource-policy.edn")
+                          :runtime-input-manifest #(str "abc/" %))}}
+    (fn []
+      (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
+            policy (files/read-json "data/parser-rq-resource-policy-v1.json")
+            identity (files/read-json
+                      "../ab-validator/data/parser-rq-resource-identity-v1.json")
+            memory (first (filter #(= :memory (:predicate_id %))
+                                  (:predicates predicates)))]
+        (is (= :peak_cgroup_memory_bytes (:observed_key memory)))
+        (is (= 2147483648 (get-in memory [:expected :value])))
+        (is (= 0 (get-in policy ["systemd_properties" "MemorySwapMax"])))
+        (is (= (get identity "wrapper_identity_hash")
+               (get policy "wrapper_identity_hash")))))))

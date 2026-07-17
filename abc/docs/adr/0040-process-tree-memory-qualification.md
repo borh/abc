@@ -36,10 +36,11 @@ P3 may prove the bounded instrument and its derivation. It does not perform the
 authoritative corpus capture, alter compatibility admission, or promote ADR
 0039. A missing or unauthenticated cgroup measurement remains unavailable.
 
-## Acceptance Criteria
+## Evidence
 
-- **ADR-0040-C1 — structural-invariant:** The live predicate, committed
-  resource policy, and generated wrapper identity jointly bind the
-  process-tree cgroup-memory key, unchanged 2 GiB threshold, zero-swap service
-  property, and a content-addressed wrapper semantic identity. Evidence boundary:
-  `abc.tools.parser-rq-resource-test/process-tree-memory-policy-contract`.
+The focused structural observation in
+`docs/evidence/adr-runs/parser-rq-resource-policy.json` binds the live
+predicate, committed resource policy, process-tree cgroup-memory key, unchanged
+2 GiB threshold, zero-swap service property, and content-addressed wrapper
+semantic identity. The Hinoki integration witness is recorded at
+`docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json`.

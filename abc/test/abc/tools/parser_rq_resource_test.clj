@@ -1,6 +1,7 @@
 (ns abc.tools.parser-rq-resource-test
   (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
             [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.parser-rq-resource :as resource]
             [abc.tools.parser-release-qualification :as qualification]
             [clojure.test :refer [deftest is]]))
@@ -59,5 +60,8 @@
         (is (= :peak_cgroup_memory_bytes (:observed_key memory)))
         (is (= 2147483648 (get-in memory [:expected :value])))
         (is (= 0 (get-in policy ["systemd_properties" "MemorySwapMax"])))
+        (is (= (get policy "policy_hash")
+               (hash/format-sha256
+                (hash/sha256-json-jcs (dissoc policy "policy_hash")))))
         (is (re-matches #"sha256:[0-9a-f]{64}"
                         (get policy "wrapper_identity_hash")))))))

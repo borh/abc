@@ -10,8 +10,8 @@
   "sources": [
     {
       "path": "parser-rq-resource-wrapper.py",
-      "sha256": "sha256:d4f19c377363a45079f28616b480e52d403c39b44a0fcf200d9c1fbde862e9e2"
+      "sha256": "sha256:b8233578478bec4f9ac1c8cc84da56d6ccb28f97579645f40c110670e5c9dfce"
     }
   ],
-  "wrapper_identity_hash": "sha256:5d28f798fe173713ba6eb7ee7dc3bd4b271216e1205caa25e88bfe37f40c315f"
+  "wrapper_identity_hash": "sha256:2c2783449d12b69ecc9d7ff4e954fad7439d8bf33df79bf26fe53a6b36e9771a"
 }

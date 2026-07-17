@@ -1,12 +1,1 @@
-{:schema-version :abc-adr-operational-closure-v1,
- :owned-namespace-prefixes [abc],
- :entrypoint-namespaces [abc.tools.source-bundle-report],
- :paths
- ["src/abc/tools/evidence_io.clj"
-  "src/abc/tools/files.clj"
-  "src/abc/tools/hash.clj"
-  "src/abc/tools/jcs.clj"
-  "src/abc/tools/json.clj"
-  "src/abc/tools/path_containment.clj"
-  "src/abc/tools/source_bundle.clj"
-  "src/abc/tools/source_bundle_report.clj"]}
+{:schema-version :abc-adr-operational-closure-v1, :owned-namespace-prefixes [abc], :entrypoint-namespaces [abc.tools.source-bundle-report], :paths ["src/abc/tools/evidence_io.clj" "src/abc/tools/files.clj" "src/abc/tools/hash.clj" "src/abc/tools/jcs.clj" "src/abc/tools/json.clj" "src/abc/tools/path_containment.clj" "src/abc/tools/source_bundle.clj" "src/abc/tools/source_bundle_report.clj"]}

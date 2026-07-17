@@ -9,8 +9,8 @@
   {
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
     "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
-    "docs\/evidence\/adr-capture\/tei-schematron-invalid-ids.edn": "sha256:1f5924d873837801bc3a83cb85c1e65e987c8a30452bc07f433e8601822bce1e",
-    "docs\/evidence\/adr-inputs\/tei-schematron-invalid-ids.edn": "sha256:ca18cafe65e9bc543e4257b108756b6602f716cdf9c2fd0b0fcd659722da5242",
+    "docs\/evidence\/adr-capture\/tei-schematron-invalid-ids.edn": "sha256:6401bf7f37e90ebfc094808a6ae6e0b74727694803507876d5b49d9af3c27db1",
+    "docs\/evidence\/adr-inputs\/tei-schematron-invalid-ids.edn": "sha256:3d4eca3249c48a9a35a67b5b389736c4168a20220628ab4a79ecb5ee0345208b",
     "fixtures\/tei\/invalid\/gaiji-missing-ref.xml": "sha256:c0962c86728126636c13fd5769e8930e61c010c60d86027bc0a81d1c8661c4c6",
     "fixtures\/tei\/invalid\/missing-title.xml": "sha256:d2eb602adcddf2a3e24bc586f9ca17a772029b59c4e1282a24ce0616e4cd1c6c",
     "fixtures\/tei\/invalid\/ruby-missing-reading.xml": "sha256:bb3be25f9e1f37e4a4f3c028c3d38d4d0bc5c0a647e9f1c8182e927ee5870872",
@@ -43,7 +43,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-schematron-invalid-ids\\\"\"",
-    "revision": "7351957d87f7e25ee250cf619e9c5d653a01f8c3",
+    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

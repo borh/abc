@@ -81,7 +81,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.sim.content-sim-test\/repack-and-image-identity-evolution-test\"",
-    "revision": "0adfea6c1e1f405a08f045e58b2e2d5f6705f9d3",
+    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

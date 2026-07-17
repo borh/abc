@@ -65,7 +65,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.adr-policy-evidence-test\/adr-policy-fixtures-contract\"",
-    "revision": "4ee929bebac7c431b39334aa9f6789607671f4df",
+    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

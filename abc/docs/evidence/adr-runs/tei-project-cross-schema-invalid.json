@@ -9,8 +9,8 @@
   {
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
     "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
-    "docs\/evidence\/adr-capture\/tei-project-cross-schema-invalid.edn": "sha256:53d4a84a177e673886563ca1e4d02b2fc959db91ad7017fbc54f200e31c2a353",
-    "docs\/evidence\/adr-inputs\/tei-project-cross-schema-invalid.edn": "sha256:cd2c19b34351103db9047150a40f8dbda12e71683878dedc7d87ebe69d5655fe",
+    "docs\/evidence\/adr-capture\/tei-project-cross-schema-invalid.edn": "sha256:eaee89677c57240fe07310cbf61d73376b81bf8dd022c838eef81c70da1dafc2",
+    "docs\/evidence\/adr-inputs\/tei-project-cross-schema-invalid.edn": "sha256:8a2d1ead96a5c223a39c07b2d79d26ca962c34b63a4c041ae556e5c04d7f136e",
     "fixtures\/tei\/invalid\/abc-bad-layout-params.xml": "sha256:3a2e2dc5847ebdd14ea45513a014e4e9856b241704f5a9e9148d6bf98bc54dab",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
     "flake.nix": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
@@ -61,9 +61,9 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:4fa513a8a3814d116d77d9d6f1e9315e18896bdcce05c3a5e690a5864301748f",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:793e5b8b75e9f872b0b9eb21b38ba23afd14a5a4b421f05c97d4e9420ca4324e",
     "test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
-    "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:e43f1d041e720d41f20544281f39bca76dc6fd010c34fd5fc5ec96de28b5f804",
+    "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:e9098f78c36449841749d35c416a3578f8cbb9fb9f6e7864dc5bebdd17856b78",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
   },
   "observations":
@@ -84,7 +84,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-project-cross-schema-invalid\\\"\"",
-    "revision": "4ee929bebac7c431b39334aa9f6789607671f4df",
+    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

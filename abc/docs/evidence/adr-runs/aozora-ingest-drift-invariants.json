@@ -67,7 +67,7 @@
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
     "src\/abc\/tools\/validate_corpus.clj": "sha256:2923a63a97e589cf81881539f6719cb5917c86b85ad17c63ff976acdca8714e3",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:4fa513a8a3814d116d77d9d6f1e9315e18896bdcce05c3a5e690a5864301748f",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:793e5b8b75e9f872b0b9eb21b38ba23afd14a5a4b421f05c97d4e9420ca4324e",
     "test\/abc\/sim\/oracle.clj": "sha256:b25546934d3a9c1765bb12af27f37155a292c67a8bacbbd089835988dccb4728",
     "test\/abc\/sim\/render.clj": "sha256:bceb6a6b96fdbce4e52fa589b4977dfe076414c1b4b4b97206e04ec4f3ca6de0",
     "test\/abc\/tools\/temporal_evidence_input_test.clj": "sha256:8b99237f675d628229adea725155ba588a267c231375a966aa163f3999cb2b94"
@@ -86,7 +86,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.temporal-evidence-input-test\/aozora-ingest-drift-invariants-contract\"",
-    "revision": "4ee929bebac7c431b39334aa9f6789607671f4df",
+    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

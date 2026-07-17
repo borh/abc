@@ -11,8 +11,8 @@
     "data\/publication-policy.edn": "sha256:fa8267b3e9f88065e20a25f6e29588509e3c3d583f4ac34f8a225e81a1c5885c",
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
     "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
-    "docs\/evidence\/adr-capture\/parser-publication-rendering.edn": "sha256:48596b62309e09cfcd4860b0fdac5c56731d0497bf5827cd318cc8141a53e1d5",
-    "docs\/evidence\/adr-inputs\/parser-publication-rendering.edn": "sha256:b59ec8b101aaa00b6cb5e0edbf00de378a6a0286c7c7732908c6286f0c96d1bf",
+    "docs\/evidence\/adr-capture\/parser-publication-rendering.edn": "sha256:8348dc368c538f2c5556673d65e3c442fe4bb07a502460bbca50ae2dee54f140",
+    "docs\/evidence\/adr-inputs\/parser-publication-rendering.edn": "sha256:46c9472c74205315e20f29ff0456631cfa74ea2f4c8ff48a54a14d15842fcbf8",
     "examples\/v0\/example-persons\/000879.json": "sha256:d49931fa2e960922d15c8449b7477e130d0c5565f6485fdee9a2edd76cde374a",
     "examples\/v0\/example-persons\/_events\/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json": "sha256:2a7dd0af704d00209cd07f80b09e4d6904ed7e73330a856ac11fbd547d3e90d0",
     "examples\/v0\/example-persons\/_indexes\/000879.json": "sha256:92ac336e9c77d57ffa6c5b04da7f732cae2d5871d16f62c23fadca072bc3825e",
@@ -83,7 +83,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.parser-publication-evidence\\\"\"",
-    "revision": "0443bf233d97f8cc63b97c1188d34ab00d4a4ed2",
+    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

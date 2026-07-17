@@ -10,8 +10,8 @@
     "data\/source-bundle\/aozorabunko-0e9ea3e-summary.json": "sha256:bb5962b29c49c8178e0d564da1196bb3e07761f9267a8b769fe712ee281a593a",
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
     "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
-    "docs\/evidence\/adr-capture\/source-bundle-corpus.edn": "sha256:f7187d33e3c5918f7d847747da38795156847332842512a0bfc34f6ad8b6d9e7",
-    "docs\/evidence\/adr-inputs\/source-bundle-corpus.edn": "sha256:5be1c874608982bab43d53b5efc1526f685403ee731efa4edc8d82a2dbc92e06",
+    "docs\/evidence\/adr-capture\/source-bundle-corpus.edn": "sha256:e0411de3ce8575677452435195ab1b3b3b5cc10d469f0909646543b31ec90e60",
+    "docs\/evidence\/adr-inputs\/source-bundle-corpus.edn": "sha256:16ee3c73086a28e1adcaa015b40c9f7732f53372695339e61b14e240c267cda4",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
     "flake.nix": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
@@ -42,7 +42,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix build --no-link .#checks.x86_64-linux.source-bundle-corpus\"",
-    "revision": "0443bf233d97f8cc63b97c1188d34ab00d4a4ed2",
+    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

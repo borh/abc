@@ -290,6 +290,9 @@
 (defn- accepted-criterion-count [adrs]
   (count (filter :claim-id (mapcat :criteria (accepted-adrs adrs)))))
 
+(defn- index-adr-by-number [index item]
+  (assoc index (:num item) item))
+
 (defn- governance-enforced? [workspace-root]
   (let [flake (files/read-text (fs/file workspace-root "flake.nix"))
         start (string/index-of flake "monorepo-adr-governance")
@@ -308,7 +311,7 @@
           snapshot-problems (validate-snapshot-value snapshot)
           adrs (adr/parse-all (fs/file abc-root "docs/adr"))
           accepted (accepted-adrs adrs)
-          accepted-by-number (into {} (map (fn [item] [(:num item) item])) accepted)
+          accepted-by-number (reduce index-adr-by-number {} accepted)
           adr-0034 (first (filter #(= 34 (:num %)) adrs))
           migration-state (migration/load-migration-state abc-root {})
           strict-result (governance/run! abc-root {:mode :enforce

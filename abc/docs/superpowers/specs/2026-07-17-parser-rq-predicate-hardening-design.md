@@ -39,7 +39,8 @@ must deepen that authority rather than create a parallel validator.
 
 ## Decision
 
-Build two independently captured instruments and one pure composer.
+Deepen the existing shared `abc.tools.parser-rq-capture` protocol, then build
+two independently captured measurement projections and one pure composer.
 
 The instruments share the pinned candidate identity, corpus identity, and
 immutable input blobs by value. They do not share record indexes, staging
@@ -54,6 +55,11 @@ This preserves the two real relations:
 
 Fusing them because one candidate execution can produce both artifacts would
 turn operational convenience into semantic and lifecycle coupling.
+
+The shared protocol is the single owner of logical-blob authentication, closed
+membership authentication, capture-generation identity, envelope construction,
+and total JSON-status-to-Clojure-outcome mapping. The two instruments own only
+their measurement-specific policies, work states, arithmetic, and witnesses.
 
 ## Rejected alternatives
 
@@ -78,6 +84,24 @@ compiled validator's outcome at a qualification-facing boundary. Rejected.
 
 ## Common capture protocol
 
+### Classification and owner
+
+**Protocol Design, then Deepen -- owner: `abc.tools.parser-rq-capture`.** The
+existing module already owns logical blob authentication and observation
+envelopes. P4B deepens that cohesive boundary with reusable closed-membership,
+generation-identity, and total status-mapping operations instead of implementing
+those invariants separately in each instrument.
+
+The common interface accepts values and returns values. It does not know
+diagnostic vocabulary, Parser-IR schemas, predicate arithmetic, candidate
+execution, registry admission, or filesystem discovery beyond resolving and
+authenticating an explicitly supplied blob locator.
+
+This classification is disproved if the shared module needs an instrument's
+policy fields or work-state enum. That would be a generic framework braiding
+measurement semantics into transport; the behavior must remain in the owning
+instrument instead.
+
 Each instrument has four closed artifacts:
 
 1. a capture manifest binding candidate, corpus, work membership, logical blob
@@ -98,6 +122,12 @@ metadata. Missing, mismatched, escaped, or symlinked locators are unavailable.
 Capture writes a fresh generation and publishes only after its complete index
 authenticates. Recapture creates a new immutable fact; it never edits an old
 record in place.
+
+The shared protocol owns the exhaustive transport mapping. Instrument schemas
+declare their allowed JSON status strings and their corresponding Clojure
+observation values; an unknown or unmapped status is unavailable due to protocol
+identity failure, never guessed. Instrument code does not carry duplicate
+ad-hoc mapping tables.
 
 ## Outcome algebra
 
@@ -191,6 +221,15 @@ validation authority. A qualification-facing capture path records the generated
 Parser-IR value and the validator outcome at the point where both coexist,
 instead of collapsing schema failure into an undifferentiated process error.
 
+This is a deliberate failure-time behavior addition. Today the production
+conversion path propagates `validate_compiled(...)?`, so schema rejection
+hard-aborts and exposes no output. P4B introduces a structured internal
+validation outcome that retains the generated value and validation witnesses in
+the same pass. The existing production conversion API must continue mapping an
+invalid outcome to the same hard error; only the new qualification-facing path
+records `schema_invalid` and proceeds to its work record. No caller silently
+changes from fail-fast conversion to permissive conversion.
+
 Its policy identity is the JCS hash of a closed value containing:
 
 - policy ID and algorithm version;
@@ -201,6 +240,11 @@ Its policy identity is the JCS hash of a closed value containing:
 - `no_output` semantics.
 
 It depends on the pinned candidate and schema, not compatibility admission.
+
+The proposed deepening is disproved if retaining the invalid generated value
+requires re-running conversion, making a second validator pass, weakening the
+production hard-abort contract, or duplicating the compiled validator. Any of
+those results reopens the design rather than being patched into the plan.
 
 ### Work record
 
@@ -276,6 +320,15 @@ generations, and cross-policy composition.
 The composer performs no execution, filesystem discovery, metric calculation,
 registry lookup, admission decision, or status promotion.
 
+Composition-time identity checking is a build-time guard over these two newly
+installed envelopes. It prevents constructing and committing a locally mixed
+measurements value. It is not the release authority. The gate-level
+`coherent-observations?` precondition remains the authoritative backstop over
+all nine observations and must independently reject any incoherent bundle,
+including bundles produced without this composer. The scopes intentionally
+overlap as defense in depth: the composer checks its construction boundary; the
+gate owns release qualification.
+
 ## Failure handling
 
 Availability reasons are closed and machine-readable. At minimum they
@@ -332,7 +385,8 @@ hygiene, strict ADR governance, and `just validate-migration`.
 
 ## Sequencing
 
-1. Freeze the two work/index/aggregate schemas and independent policy shapes.
+1. Characterize and deepen the shared capture protocol, then freeze the two
+   work/index/aggregate schemas and independent policy shapes.
 2. Deepen `ab-aat-to-parser-ir` to expose its existing validation outcome
    without adding a validator.
 3. Implement diagnostic capture/derivation and its vacuity/failure protocol.
@@ -359,8 +413,10 @@ conventions are frozen. The composer follows both.
 
 P4B is implemented when:
 
-1. predicates 4 and 5 have independent closed manifests, records, indexes,
-   aggregates, policies, and identity-bound envelopes;
+1. one shared capture protocol owns blob authentication, membership closure,
+   generation identity, envelope construction, and total status mapping, while
+   predicates 4 and 5 retain independent closed records, indexes, aggregates,
+   policies, and availability;
 2. authenticated invalid candidate artifacts yield available failures while
    evidence/identity faults yield unavailable;
 3. zero diagnostics pass only with explicit vacuity counts;
@@ -376,22 +432,32 @@ P4B is implemented when:
 
 ## Architecture review record
 
-The hammock and Hickey review changed the initial roadmap entry in six material
-ways:
+The hammock and Hickey review produced six designed resolutions. None is marked
+implemented or verified until its named characterization or contract test is
+green:
 
-1. **Capture coupling -- Blocker, resolved.** Two predicates sharing a
+1. **Capture coupling -- Blocker; resolution designed, pending
+   `independent-instrument-availability-test`.** Two predicates sharing a
    candidate does not justify one lifecycle; capture and availability remain
    independent.
-2. **Authenticated-invalid ambiguity -- Blocker, resolved.** Candidate contract
-   violations are available failures, not infrastructure unavailability.
-3. **Unknowable denominator -- Blocker, resolved.** Malformed diagnostic bytes
-   use a typed failure sentinel rather than fabricated `0.0`.
-4. **Vacuity -- Blocker, resolved.** A zero-diagnostic pass carries exact counts
-   and `vacuous: true` in the observation product.
-5. **Validator duplication -- Strong suggestion, resolved.** Predicate 5
-   deepens the existing compiled validator instead of implementing another.
-6. **Semantic identity -- Strong suggestion, resolved.** Policy identity binds a
-   mechanically guarded transitive closure, not a human version label.
+2. **Authenticated-invalid ambiguity -- Blocker; resolution designed, pending
+   `typed-failure-sentinels-are-available-failures-test`.** Candidate contract
+   violations are available failures, not infrastructure unavailability. This
+   test must pin the evaluator behavior explicitly rather than rely on the
+   current unavailability allowlist incidentally.
+3. **Unknowable denominator -- Blocker; resolution designed, pending
+   `malformed-authenticated-diagnostics-use-failure-sentinel-test`.** Malformed
+   diagnostic bytes use a typed failure sentinel rather than fabricated `0.0`.
+4. **Vacuity -- Blocker; resolution designed, pending
+   `authenticated-empty-diagnostics-disclose-vacuity-test`.** A zero-diagnostic
+   pass carries exact counts and `vacuous: true` in the observation product.
+5. **Validator duplication -- Strong suggestion; resolution designed, pending
+   `qualification-and-production-use-one-compiled-validator-test`.** Predicate 5
+   deepens the existing compiled validator instead of implementing another, and
+   the production path retains its hard-abort behavior.
+6. **Semantic identity -- Strong suggestion; resolution designed, pending
+   `semantic-closure-manifest-equals-derived-closure-test`.** Policy identity
+   binds a mechanically guarded transitive closure, not a human version label.
 
 The resulting modules are deep around two cohesive decisions: diagnostic wire
 conformance and Parser-IR schema conformance. The composer is intentionally
@@ -399,17 +465,23 @@ small because identity coherence, not measurement, is its sole concern.
 
 ### Deepening classification
 
-- **Diagnostic instrument -- Protocol Design, then Deepen.** Observed evidence:
-  the schema-v3 value and P4A capture already exist, while completeness lacks
-  its own outcome and vacuity protocol. The cohesive concern is wire
-  conformance. This classification would be disproved if implementation needed
-  P4A disposition state; that would reveal renewed complection and must stop the
-  plan.
+- **Shared capture protocol -- Protocol Design, then Deepen.** Observed
+  evidence: `abc.tools.parser-rq-capture` already owns logical blob
+  authentication and envelopes, while P1-P3 independently repeat closed-index
+  and status-projection concerns. P4B adds the common invariants to that owner,
+  not measurement semantics. The falsifier is any need for instrument policy
+  fields in the shared interface.
+- **Diagnostic instrument -- Measurement projection.** Observed evidence: the
+  schema-v3 value and P4A capture already exist. The remaining cohesive concern
+  is diagnostic wire conformance and vacuity arithmetic over the shared capture
+  protocol. This classification is disproved if implementation needs P4A
+  disposition state.
 - **Parser-IR instrument -- Implementation Refactor, then Deepen.** Observed
-  evidence: the production validator exists inside conversion, but its outcome
-  is lost at the qualification boundary. Characterization must pin current
-  validation timing and error behavior before the boundary is exposed. This is
-  not authorization to replace or duplicate validation.
+  evidence: the production validator exists behind a fail-fast `?` boundary,
+  but its generated value and structured outcome are lost at the qualification
+  boundary. Characterization must pin current timing and errors before adding
+  the qualification outcome path. The falsifier is any need for a second pass,
+  a second validator, or weakened production failure behavior.
 - **Composer -- Delete/Inline risk controlled.** It is a pure function required
   for adversarial identity tests, not a strategy, factory, service, or extension
   hierarchy. If it accumulates capture, policy, metric, or registry behavior,

@@ -1,13 +1,11 @@
-{:schema-version "abc-adr-evidence-capture-v2"
+{:schema-version "abc-adr-evidence-capture-v1"
  :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus" "abc.tools.parser-rq-resource-test/process-tree-memory-policy-contract"]
- :runtime-input-manifest "docs/evidence/parser-rq-resource/inputs/parser-rq-resource-policy.edn"
  :input-profile
  {:kind "clojure-test-v1"
   :roots ["abc.tools.parser-rq-resource-test"]
   :explicit ["bin/kaocha"
              "data/parser-release-qualification-predicates.edn"
              "data/parser-rq-resource-policy-v1.json"
-             "docs/evidence/parser-rq-resource/capture/parser-rq-resource-policy.edn"
-             "docs/evidence/parser-rq-resource/inputs/parser-rq-resource-policy.edn"]}
+             "docs/evidence/parser-rq-resource/capture/parser-rq-resource-policy.edn"]}
  :observation-key "parser-rq-resource-policy-pass"}

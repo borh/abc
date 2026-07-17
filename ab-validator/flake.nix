@@ -1339,6 +1339,14 @@
             '';
           };
 
+        parserRqResourceCaptureSmokeCheck =
+          pkgs.runCommand "parser-rq-resource-capture-smoke"
+            { nativeBuildInputs = [ pkgs.python3 pkgs.coreutils ]; }
+            ''
+              bash ${source}/tests/parser-rq-resource-capture-smoke.sh ${source}
+              touch "$out"
+            '';
+
         phase5CheckpointCheck =
           pkgs.runCommand "phase5-checkpoint-check"
             {
@@ -1988,6 +1996,7 @@
           aat-oracle-audit-smoke = aatOracleAuditSmokeCheck;
           reports-pytest = reportsPytestCheck;
           parser-rq-publication-pytest = parserRqPublicationPytestCheck;
+          parser-rq-resource-capture-smoke = parserRqResourceCaptureSmokeCheck;
           phase5-checkpoint = phase5CheckpointCheck;
         };
 

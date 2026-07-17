@@ -2,8 +2,7 @@
 
 Status: Proposed
 Date: 2026-07-17
-Amends: ADR 0039 [scope: predicate 8 process-tree cgroup-memory dimension]
-Depends on: ADR 0002, ADR 0039 [scope: release-qualification governance]
+Depends on: ADR 0002
 Validation scope: structural
 Release authority: development
 

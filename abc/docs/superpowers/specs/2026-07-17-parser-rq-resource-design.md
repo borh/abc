@@ -150,6 +150,13 @@ The wrapper then reads `memory.peak`, optionally reads `memory.swap.peak`, write
 its record atomically, and exits. systemd collects the unit afterward. Unit
 names and cgroup paths are runtime locators, not evidence identity.
 
+The live wrapper discovers its own unified-cgroup path from
+`/proc/self/cgroup` and resolves it beneath the cgroup-v2 mount while the unit
+is alive. The orchestrator does not query `ControlGroup` and pass a path into
+the service: doing so would race transient-unit collection. A direct cgroup
+directory parameter exists only as a test seam for fake controller files and
+is not accepted by the production CLI.
+
 ## Components and boundaries
 
 ### 1. Cgroup measurement wrapper — ab-validator
@@ -269,25 +276,27 @@ Every expected work has exactly one record containing:
 - host identity reference; and
 - bounded failure details for unavailable outcomes.
 
-Closed statuses are:
+The top-level status is a closed three-way union:
 
-- `measured`: exact `peak_cgroup_memory_bytes` is present, with
-  `measurement_kind` equal to `exact` or `right_censored`;
-- `timeout`: no complete measurement, aggregate unavailable;
-- `command_failed`: the production command failed before producing its normal
-  result, aggregate unavailable;
-- `accounting_unavailable`: counter absent, unreadable, or non-integer;
-- `wrapper_lost`: the service killed the wrapper or no atomic record exists;
-- `lingering_descendant`: process-tree closure was not established;
-  and
-- `identity_conflict`: work or candidate coordinates disagree.
+- `measured`: an exact, uncapped `peak_cgroup_memory_bytes` is present;
+- `ceiling_clipped`: the exact capped-execution peak is present and is a
+  right-censored lower bound on uncapped demand; or
+- `unavailable`: no qualification value may be derived. Its closed reason enum
+  is `counter_unavailable`, `counter_invalid`, `identity_mismatch`,
+  `lingering_descendant`, `unexpected_oom`, `command_failed`, or
+  `index_incomplete`.
 
-A child killed by `MemoryMax` is `measured` only when the surviving wrapper
+Timeout and wrapper loss are lifecycle details recorded with an unavailable
+work, not additional top-level states. This keeps availability, censoring, and
+cause as separate values instead of encoding all three concerns in one enum.
+
+A child killed by `MemoryMax` is `ceiling_clipped` only when the surviving wrapper
 records a peak above the qualification threshold and the service reports the
-memory-limit event. Its `measurement_kind` is `right_censored`: the recorded
-counter is exact for the capped execution, but is only a lower bound on the
-uncapped workload's demand. This is sufficient for a fail verdict and must not
-be presented as an uncapped peak. Otherwise the status is `wrapper_lost`.
+memory-limit event. The recorded counter is exact for the capped execution, but
+is only a lower bound on the uncapped workload's demand. This is sufficient for
+a fail verdict and must not be presented as an uncapped peak. Otherwise the
+status is `unavailable` with reason `unexpected_oom`; loss of the wrapper is an
+unavailable lifecycle detail because no atomic record exists.
 
 ### Index and aggregate
 

@@ -43,12 +43,12 @@
 - Modify: `abc/test/abc/tools/parser_release_qualification_test.clj`
 
 **Interfaces:**
-- Consumes: `abc.tools.parser-release-qualification/predicate-set-ref` and `qualification-identity-ref`.
+- Consumes: `abc.tools.parser-release-qualification/predicate-set-hash` and `qualification-identity-ref`.
 - Produces: predicate key `:peak_cgroup_memory_bytes`, instrument `"parser-rq-resource-v1"`, unchanged threshold `2147483648`, and a newly computed `:predicate_set_hash`.
 
 - [ ] **Step 1: Add failing identity-rotation tests**
 
-Assert the loaded predicate set has exactly one memory predicate with the new key, threshold, and instrument; assert its declared hash equals `(rq/predicate-set-ref predicates)`; assert replacing the new predicate with the former RSS fields changes both predicate-set and qualification identity refs.
+Assert the loaded predicate set has exactly one memory predicate with the new key, threshold, and instrument; assert its declared hash equals `(rq/predicate-set-hash predicates)`; assert replacing the new predicate with the former RSS fields changes both predicate-set and qualification identity refs. Update the shared `admitted-identity`, `all-pass-values`, predicate-evaluation, gate-status, and report fixtures from the former hash/key to the recomputed hash and `:peak_cgroup_memory_bytes`; do not leave that migration to an `rg` failure.
 
 - [ ] **Step 2: Run the focused test and confirm red**
 
@@ -58,7 +58,7 @@ Expected: FAIL because the checked-in predicate still uses `:peak_rss_bytes` and
 
 - [ ] **Step 3: Write ADR 0040 and rotate the predicate**
 
-ADR 0040 must state: the quantity changes from per-process RSS wording to complete process-tree cgroup memory; the 2 GiB threshold is unchanged; ADR 0039 remains Proposed; all nine observation envelopes require fresh P5 capture; registry admission is untouched. Update the EDN predicate, compute the hash with repository code rather than hand calculation, and write that exact hash.
+ADR 0040 must state: the quantity changes from per-process RSS wording to complete process-tree cgroup memory; the 2 GiB threshold is unchanged; ADR 0039 remains Proposed; all nine observation envelopes require fresh P5 capture; registry admission is untouched. It must also mark the existing measurements EDN and ADR-0039-cited qualification report as `superseded-pending-P5`: historically valid for the former predicate set, intentionally incoherent with the new live set, and forbidden as current gate evidence. Update the EDN predicate, compute the hash with repository code rather than hand calculation, and write that exact hash.
 
 - [ ] **Step 4: Verify green and no stale key remains in active contracts**
 
@@ -123,8 +123,6 @@ git commit -m "feat(parser-rq): define resource evidence contracts"
 **Files:**
 - Create: `ab-validator/reports/parser-ir/parser-rq-resource-identity.py`
 - Create: `ab-validator/tests/test_parser_rq_resource_identity.py`
-- Create generated: `ab-validator/data/parser-rq-resource-identity-v1.json`
-- Create: `abc/data/parser-rq-resource-policy-v1.json`
 
 **Interfaces:**
 - Produces: `discover_local_import_closure(entry: Path, roots: tuple[Path, ...]) -> tuple[Path, ...]` and `build_identity(entry: Path, python: Path, nix_derivation: str) -> dict[str, object]`.
@@ -144,35 +142,13 @@ Expected: FAIL because the module is absent.
 
 Resolve `import` and `from ... import ...` without importing the modules. Reject dynamic local imports and unresolved relative imports. Hash a canonical JSON array of repository-relative path plus SHA-256 pairs. Resolve `sys.executable` and stream-hash its bytes. Serialize with sorted keys and compact separators.
 
-- [ ] **Step 4: Generate the committed identity and policy**
-
-The policy must copy the generated identity fields exactly and add the predicate-set hash, closed fixture membership, production command hash, capability id `linux-cgroup-v2-memory-peak-v1`, threshold `2147483648`, ceiling `3221225472`, and the five exact systemd properties. Generate twice and require byte equality before copying the values into policy.
-
-Run:
-
-```bash
-nix develop ./ab-validator#checks --command python \
-  ab-validator/reports/parser-ir/parser-rq-resource-identity.py \
-  --entry ab-validator/reports/parser-ir/parser-rq-resource-wrapper.py \
-  --out /tmp/resource-identity-1.json
-nix develop ./ab-validator#checks --command python \
-  ab-validator/reports/parser-ir/parser-rq-resource-identity.py \
-  --entry ab-validator/reports/parser-ir/parser-rq-resource-wrapper.py \
-  --out /tmp/resource-identity-2.json
-cmp /tmp/resource-identity-1.json /tmp/resource-identity-2.json
-```
-
-Expected: both commands exit 0 and `cmp` exits 0.
-
-- [ ] **Step 5: Verify and commit**
+- [ ] **Step 4: Verify and commit the generator**
 
 ```bash
 nix develop ./ab-validator#checks --command pytest -q ab-validator/tests/test_parser_rq_resource_identity.py
 git add ab-validator/reports/parser-ir/parser-rq-resource-identity.py \
-  ab-validator/tests/test_parser_rq_resource_identity.py \
-  ab-validator/data/parser-rq-resource-identity-v1.json \
-  abc/data/parser-rq-resource-policy-v1.json
-git commit -m "feat(parser-rq): bind resource wrapper semantics"
+  ab-validator/tests/test_parser_rq_resource_identity.py
+git commit -m "feat(parser-rq): derive resource semantic identity"
 ```
 
 ### Task 4: Capture One Service Cgroup Honestly
@@ -182,7 +158,7 @@ git commit -m "feat(parser-rq): bind resource wrapper semantics"
 - Create: `ab-validator/tests/test_parser_rq_resource_wrapper.py`
 
 **Interfaces:**
-- Produces: `capture_work(command: list[str], cgroup_dir: Path, closure_timeout_s: float) -> dict[str, object]`.
+- Produces: `capture_work(command: list[str], closure_timeout_s: float, *, cgroup_dir: Path | None = None) -> dict[str, object]`.
 - Reads `memory.peak`, optional `memory.swap.peak`, `memory.events`, and `cgroup.procs` directly; never parses localized `systemctl` output.
 
 - [ ] **Step 1: Add failing filesystem-level tests**
@@ -197,7 +173,7 @@ Expected: FAIL because the wrapper is absent.
 
 - [ ] **Step 3: Implement the minimal wrapper**
 
-Launch the command as the wrapper's direct child, wait for it, then poll `cgroup.procs` until it contains only `os.getpid()` or times out. Stream-read counters, parse base-10 integers strictly, and emit one canonical JSON record. Label clipped values with `right_censored: true`; measured values require `right_censored: false`.
+Self-discover the live cgroup from `/proc/self/cgroup`; resolve that relative path beneath the mounted cgroup-v2 root. The keyword-only `cgroup_dir` exists solely for fake-filesystem tests and must be rejected in the production CLI. Launch the command as the wrapper's direct child, wait for it, then poll `cgroup.procs` until it contains only `os.getpid()` or times out. Stream-read counters, parse base-10 integers strictly, and emit one canonical JSON record. Label clipped values with `right_censored: true`; measured values require `right_censored: false`.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -208,7 +184,54 @@ git add ab-validator/reports/parser-ir/parser-rq-resource-wrapper.py \
 git commit -m "feat(parser-rq): capture cgroup memory peak"
 ```
 
-### Task 5: Orchestrate Closed, Serial Transient Services
+### Task 5: Materialize the Wrapper Identity and Qualification Policy
+
+**Files:**
+- Create generated: `ab-validator/data/parser-rq-resource-identity-v1.json`
+- Create: `abc/data/parser-rq-resource-policy-v1.json`
+- Modify: `ab-validator/tests/test_parser_rq_resource_identity.py`
+
+**Interfaces:**
+- Consumes: the real wrapper created by Task 4, the predicate-set hash from Task 1, and the already-pinned qualification corpus membership.
+- Produces: the exact wrapper semantic/runtime identity and closed policy consumed by capture. Bounded test fixtures use separate synthetic policies; they are not qualification membership.
+
+- [ ] **Step 1: Add the failing real-wrapper closure test**
+
+Assert the generated closure for `parser-rq-resource-wrapper.py` equals the committed manifest exactly and currently contains only the wrapper plus any repository-local modules it actually imports. The stdlib is bound through the interpreter/runtime tuple, not listed as repository source. Assert the policy's copied identity fields equal the manifest and its ordered work IDs equal the existing pinned qualification corpus list.
+
+- [ ] **Step 2: Run and confirm red**
+
+Run: `nix develop ./ab-validator#checks --command pytest -q ab-validator/tests/test_parser_rq_resource_identity.py`
+
+Expected: FAIL because the committed manifest and policy are absent.
+
+- [ ] **Step 3: Generate the identity twice and write the policy**
+
+```bash
+nix develop ./ab-validator#checks --command python \
+  ab-validator/reports/parser-ir/parser-rq-resource-identity.py \
+  --entry ab-validator/reports/parser-ir/parser-rq-resource-wrapper.py \
+  --out /tmp/resource-identity-1.json
+nix develop ./ab-validator#checks --command python \
+  ab-validator/reports/parser-ir/parser-rq-resource-identity.py \
+  --entry ab-validator/reports/parser-ir/parser-rq-resource-wrapper.py \
+  --out /tmp/resource-identity-2.json
+cmp /tmp/resource-identity-1.json /tmp/resource-identity-2.json
+```
+
+Expected: both generators exit 0 and `cmp` exits 0. Install that byte-identical manifest at `ab-validator/data/parser-rq-resource-identity-v1.json`. Create the policy by copying its generated identity fields exactly and adding the predicate-set hash, pinned qualification membership, production command hash, capability id `linux-cgroup-v2-memory-peak-v1`, threshold `2147483648`, ceiling `3221225472`, and all five systemd properties.
+
+- [ ] **Step 4: Verify and commit**
+
+```bash
+nix develop ./ab-validator#checks --command pytest -q ab-validator/tests/test_parser_rq_resource_identity.py
+git add ab-validator/data/parser-rq-resource-identity-v1.json \
+  abc/data/parser-rq-resource-policy-v1.json \
+  ab-validator/tests/test_parser_rq_resource_identity.py
+git commit -m "feat(parser-rq): bind resource wrapper semantics"
+```
+
+### Task 6: Orchestrate Closed, Serial Transient Services
 
 **Files:**
 - Create: `ab-validator/reports/parser-ir/parser-rq-resource-capture.py`
@@ -230,7 +253,7 @@ Expected: FAIL because the orchestrator is absent.
 
 - [ ] **Step 3: Implement lifecycle ownership**
 
-Resolve the unit's `ControlGroup` property only to locate its cgroup directory; pass that directory to the wrapper. Record exact kernel/systemd/NixOS/boot/swap/load values under `attempt_context`, not policy identity. Stop after any unavailable work only if configured fail-fast; either mode must emit closed membership and unavailable aggregate state.
+The orchestrator does not resolve or pass `ControlGroup`; the already-running wrapper self-discovers its live cgroup through `/proc/self/cgroup` before systemd can collect the transient unit. Record exact kernel/systemd/NixOS/boot/swap/load values under `attempt_context`, not policy identity. Stop after any unavailable work only if configured fail-fast; either mode must emit closed membership and unavailable aggregate state.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -243,7 +266,7 @@ git add ab-validator/reports/parser-ir/parser-rq-resource-capture.py \
 git commit -m "feat(parser-rq): orchestrate serial resource capture"
 ```
 
-### Task 6: Add a Hinoki-Controlled Live Integration Smoke
+### Task 7: Add a Hinoki-Controlled Live Integration Smoke
 
 **Files:**
 - Create: `ab-validator/tests/parser-rq-resource-cgroup-live-smoke.sh`
@@ -280,7 +303,7 @@ git add ab-validator/tests/parser-rq-resource-cgroup-live-smoke.sh ab-validator/
 git commit -m "test(parser-rq): exercise live cgroup resource capture"
 ```
 
-### Task 7: Derive the Aggregate and Observation Purely
+### Task 8: Derive the Aggregate and Observation Purely
 
 **Files:**
 - Create: `abc/src/abc/tools/parser_rq_resource.clj`
@@ -315,7 +338,7 @@ git add abc/src/abc/tools/parser_rq_resource.clj \
 git commit -m "feat(parser-rq): derive process-tree memory observation"
 ```
 
-### Task 8: Prove Deterministic Bounded Capture
+### Task 9: Prove Deterministic Bounded Capture
 
 **Files:**
 - Create: `ab-validator/tests/parser-rq-resource-capture-smoke.sh`
@@ -354,7 +377,7 @@ git add ab-validator/tests/parser-rq-resource-capture-smoke.sh \
 git commit -m "test(parser-rq): drift-test resource derivation"
 ```
 
-### Task 9: Register Governance Evidence and Verify the Campaign Boundary
+### Task 10: Register Governance Evidence and Verify the Campaign Boundary
 
 **Files:**
 - Create: `abc/data/adr-evidence/parser-rq-resource-observation-catalog.edn`
@@ -457,11 +480,11 @@ git commit -m "docs(parser-rq): evidence process-tree memory amendment"
 
 ## Self-Review Checklist
 
-- Predicate semantics, governance rotation, all-nine-envelope recapture consequence: Task 1.
+- Predicate semantics, governance rotation, all-nine-envelope recapture consequence and interim evidence supersession: Task 1.
 - Closed schemas, no imputation, right-censoring: Tasks 2, 4, and 7.
-- Mechanized semantic/runtime closure: Task 3.
-- Swap prohibition, service properties, lifecycle, serial execution: Tasks 4–6.
-- Capability identity versus volatile attempt context: Tasks 2 and 5.
-- Separate live integration smoke and pure byte drift: Tasks 6 and 8.
-- Pure analyzer, closed denominator, fresh envelope: Task 7.
-- No registry admission, ADR-0039 promotion, or P5 corpus capture: Task 9 boundary audit.
+- Mechanized semantic/runtime closure: Tasks 3–5.
+- Swap prohibition, service properties, lifecycle, serial execution: Tasks 4, 6, and 7.
+- Capability identity versus volatile attempt context: Tasks 2 and 6.
+- Separate live integration smoke and pure byte drift: Tasks 7 and 9.
+- Pure analyzer, closed denominator, fresh envelope: Task 8.
+- No registry admission, ADR-0039 promotion, or P5 corpus capture: Task 10 boundary audit.

@@ -24,7 +24,6 @@
    [abc.tools.snapshot-index :as snapshot-index]
    [abc.tools.metadata-record :as metadata-record]
    [abc.tools.parser-evidence :as parser-evidence]
-   [abc.tools.parser-rq-publication :as parser-rq-publication]
    [abc.tools.parser-maintenance-evidence :as parser-maintenance]
    [abc.tools.parser-ir-sentence-policy :as sentence-policy]
    [abc.tools.person-drift :as person-drift]
@@ -1114,24 +1113,41 @@
       (check-errors! (parser-rq-source-recognition-coherence-errors
                       index aggregate [work])))
     (let [root "test/fixtures/parser-rq/publication-capture"
+          policy-path "data/parser-rq-publication-policy-v1.json"
+          census-path "data/parser-rq-publication-fixtures-v1.json"
           work-paths
           [(str root "/store/sha256/9b/9b970ba594d27c48cce4aa7abcb2f4818d09a0154c0c2d286c949e5aff91ba8f.json")
            (str root "/store/sha256/57/571f89970cf7c2f13fae68db0b9b1f4665a53bbd8986cb417ff3636792995131.json")
            (str root "/store/sha256/0e/0ec0f64b6eabe45ff4858d515a4ce7a067e166e64a042a342ece31b8a11152a9.json")]
           authenticated-index-path
           (str root "/store/sha256/bc/bcc00b7c0a77191e143c27db03d1b6a819599d1fa2e139c2a6a63b113679c014.json")
-          envelope
-          (parser-rq-publication/derive-publication-envelope
-           {:root (str root "/store")}
-           (files/read-json (str root "/manifest.json"))
-           (files/read-json (str root "/index.json"))
-           (files/read-json (str root "/identity.json")))]
+          policy (files/read-json policy-path)
+          census (files/read-json census-path)
+          manifest (files/read-json (str root "/manifest.json"))
+          index (files/read-json (str root "/index.json"))
+          identity (files/read-json (str root "/identity.json"))
+          authenticated-index (files/read-json authenticated-index-path)]
+      (validate-json! parser-rq-publication-policy-schema policy-path)
       (doseq [path work-paths]
         (validate-json! parser-rq-publication-work-schema path))
       (validate-json! parser-rq-publication-index-schema authenticated-index-path)
-      (when-not (= 1.0000M (:value envelope))
-        (throw (ex-info "publication qualification fixture is invalid"
-                        {:envelope envelope}))))
+      (check-errors!
+       (cond-> []
+         (not= index authenticated-index)
+         (conj "publication fixture index is not the authenticated index blob")
+         (not= (get identity "identity_ref")
+               (get index "qualification_identity_ref"))
+         (conj "publication fixture identity does not match the index")
+         (not= (get policy "policy_hash") (get index "policy_hash"))
+         (conj "publication fixture policy does not match the index")
+         (not= (get census "census_hash") (get index "census_hash"))
+         (conj "publication fixture census does not match the index")
+         (not= (set (map #(get-in % ["ref" "sha256"])
+                         (get manifest "blobs")))
+               (set (concat [(str "sha256:" (files/sha256-file authenticated-index-path))]
+                            (map #(get-in % ["ref" "sha256"])
+                                 (get index "records")))))
+         (conj "publication fixture manifest does not close the index blobs"))))
     (let [maintenance-path
           "docs/evidence/external/custom-parser-maintenance-2026-q3.json"
           maintenance-record (files/read-json maintenance-path)

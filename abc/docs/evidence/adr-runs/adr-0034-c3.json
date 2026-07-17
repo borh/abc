@@ -16,7 +16,7 @@
     "abc\/src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
     "abc\/src\/abc\/tools\/adr_claim_migration.clj": "sha256:91d7547b4e0172694b30dd9535c3333d8040671f9ffa16eddc1b7307c0debd8b",
     "abc\/src\/abc\/tools\/adr_evidence.clj": "sha256:a890f57b99fd35c81e4753a5da620619858b7752ff507bfe8333ad50ff5d8aa4",
-    "abc\/src\/abc\/tools\/adr_evidence_bootstrap.clj": "sha256:37326a313940d3136aee041ccd6d8773d30b93645968af5db4af70c4cb0731ed",
+    "abc\/src\/abc\/tools\/adr_evidence_bootstrap.clj": "sha256:4d4a024674982126f6d25f7352dffd1213c1267e2c999315334735f16394be17",
     "abc\/src\/abc\/tools\/adr_evidence_bundle.clj": "sha256:83c30601e61eaacaa40ebebcfcb40f57105805a682ecf4a1bbfc7124935c9187",
     "abc\/src\/abc\/tools\/adr_evidence_observation_catalog.clj": "sha256:d71b1f3a0bbc534899cea4cc5f87dbaf8e5cc0b5b0f4504b40b42841a6550b0a",
     "abc\/src\/abc\/tools\/adr_evidence_operational.clj": "sha256:64d6c5099fe7af3ebc79f808da16e730711630e6de8beeae328c0be0b10abd8a",
@@ -47,7 +47,7 @@
   "producer":
   {
     "command": "\"bash\" \"-lc\" \"cd abc && clojure -M:abc\/adr-evidence-bootstrap -- --repo-root . --workspace-root .. --verify docs\/evidence\/adr-bootstrap\/pre-promotion.json\"",
-    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
+    "revision": "85ed3fa79908e04ca25a4b6ab30481cc8f81c42d",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

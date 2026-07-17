@@ -7,7 +7,7 @@
  :observation-contract-sha256 "sha256:6e8a63d5e053b29dec69baf83341f739362b3fd42e57b93c40cec49dc73df3d2"
  :input-profile
  {:kind "component-clojure-test-v1"
-  :component-root "abc"
+  :component-root "."
   :roots ["abc.tools.parser-rq-resource-test"]
   :explicit ["ab-validator/data/parser-rq-resource-identity-v1.json"
              "abc/bin/kaocha"

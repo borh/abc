@@ -25,6 +25,8 @@
 - Corpus-scale execution runs only on `hinoki.hyakutake-barbel.ts.net`; bounded synthetic fixtures remain local.
 - Honest `fail`, `conflict`, and `unavailable` outcomes are successful campaign records and leave ADR 0039 Proposed.
 - Run comment hygiene and every language check required by `/home/bor/Projects/soranoha/AGENTS.md`.
+- Invoke `just validate-migration` without a caller-local `NIX_CONFIG`; the root
+  recipe owns the release gate's explicit uncached Nix-evaluation policy.
 
 ## File Structure
 

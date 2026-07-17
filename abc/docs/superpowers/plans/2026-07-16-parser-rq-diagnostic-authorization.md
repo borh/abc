@@ -737,7 +737,7 @@ nix build ./abc#checks.x86_64-linux.clj-kondo
 nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
 nix run .#schema-drift
 scripts/comment-hygiene-check.sh
-NIX_CONFIG='eval-cache = false' just validate-migration
+just validate-migration
 ```
 
 Expected: every command exits zero. Existing Python mypy informational notes and

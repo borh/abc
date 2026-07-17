@@ -1,3 +1,5 @@
+nix_eval := "nix --option eval-cache false"
+
 schema-drift:
 	@bash scripts/monorepo-schema-drift.sh
 
@@ -37,7 +39,7 @@ nix-format-check:
 		| xargs -0 nixfmt --check
 
 root-flake-check-no-build:
-	@nix flake check --no-build
+	@{{nix_eval}} flake check --no-build
 
 root-flake-output-contract:
 	@bash tests/root-flake-output-contract-smoke.sh
@@ -48,17 +50,20 @@ tei-eaj-alignment-probe *args:
 tei-eaj-reports-with-probes *args:
 	@scripts/run-tei-eaj-probe-workflow.sh reports-with-probes {{args}}
 
-check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check root-flake-check-no-build
-	@(cd abc && nix flake check --no-build)
-	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." nix flake check --no-build)
+validate-migration-eval-cache-smoke:
+	@bash tests/validate-migration-eval-cache-smoke.sh
+
+check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check validate-migration-eval-cache-smoke root-flake-check-no-build
+	@(cd abc && {{nix_eval}} flake check --no-build)
+	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
 
 phase5-checkpoint:
-	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
-	nix build "./ab-validator#checks.$system.phase5-checkpoint" --print-build-logs
+	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
+	{{nix_eval}} build "./ab-validator#checks.$system.phase5-checkpoint" --print-build-logs
 
 monorepo-adr-governance:
-	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
-	nix build ".#checks.$system.monorepo-adr-governance" --print-build-logs
+	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
+	{{nix_eval}} build ".#checks.$system.monorepo-adr-governance" --print-build-logs
 
 validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance
 

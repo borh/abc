@@ -910,7 +910,7 @@ back only generated committed evidence, and run:
 cd abc && clojure -M:test:kaocha -m kaocha.runner \
   --focus abc.tools.parser-rq-publication-test
 scripts/comment-hygiene-check.sh
-NIX_CONFIG='eval-cache = false' just validate-migration
+just validate-migration
 ```
 
 Expected: fixture tests PASS, comment hygiene exits zero, ADR governance reports

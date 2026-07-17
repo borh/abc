@@ -186,6 +186,7 @@
         capture-index {"schema_id" (schema-id "parser-rq-capture-index")
                        "schema_version" "1.0.0"
                        "capture_generation_ref" parser-rq-test-hash
+                       "capture_started_at_utc" "2026-07-17T00:30:00Z"
                        "authorization_ref" parser-rq-test-hash
                        "candidate_ref" parser-rq-test-hash
                        "qualification_identity_ref" parser-rq-test-hash
@@ -239,6 +240,9 @@
                          (assoc authorization "reduction" "minimum")]]
           (is (seq (schema/validation-errors contract invalid))))))
     (testing "capture and evaluation membership are exact"
+      (is (seq (schema/validation-errors
+                (files/read-json "schemas/parser-rq-capture-index.schema.json")
+                (dissoc capture-index "capture_started_at_utc"))))
       (is (seq (schema/validation-errors
                 (files/read-json "schemas/parser-rq-capture-index.schema.json")
                 (assoc-in capture-index ["members" "extra"]

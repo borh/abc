@@ -308,7 +308,7 @@
           snapshot-problems (validate-snapshot-value snapshot)
           adrs (adr/parse-all (fs/file abc-root "docs/adr"))
           accepted (accepted-adrs adrs)
-          accepted-by-number (into {} (map (juxt :num identity)) accepted)
+          accepted-by-number (into {} (map (fn [item] [(:num item) item])) accepted)
           adr-0034 (first (filter #(= 34 (:num %)) adrs))
           migration-state (migration/load-migration-state abc-root {})
           strict-result (governance/run! abc-root {:mode :enforce

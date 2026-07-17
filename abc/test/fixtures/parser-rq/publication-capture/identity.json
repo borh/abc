@@ -1,0 +1,20 @@
+{
+  "identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "instrument_versions": {
+    "publication": "parser-rq-publication-v1"
+  },
+  "entries": [
+    {
+      "work_id": "000001_1",
+      "source_sha256": "sha256:5b301747e172bc6450ea7de1a50f534c3ed1ead43dccd2008e32219f43e46f71"
+    },
+    {
+      "work_id": "000002_2",
+      "source_sha256": "sha256:f52fa5a06842f566238c15c2327f5f2e4ffe43a6e7ae4d6fd7bab8ad4449549c"
+    },
+    {
+      "work_id": "000003_3",
+      "source_sha256": "sha256:94db3f579ed91b8da056aaa32225a732060ee0cb922b11ea1e53e0d2a820b66d"
+    }
+  ]
+}

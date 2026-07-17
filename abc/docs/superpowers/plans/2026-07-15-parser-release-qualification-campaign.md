@@ -154,6 +154,9 @@ minimal implementation, independently testable tasks. Their entry contracts:
 - **P2 Publication** — wire `publication-bundle-validate.py` against
   `parser-ir-publication-preservation.schema.json` over the pinned build's
   publication output; ratio denominator in works, every work contributes a record.
+  **Implementation status (2026-07-17): implemented and drift-checked** with a
+  bounded three-work Capture→Derive fixture. P3, P4B, and P5's authoritative
+  capture, admission, and conditional promotion remain unstarted.
 - **P3 Resource** — **choose one** peak-RSS mechanism in-plan (GNU `time -v`
   `getrusage` vs cgroup `memory.peak` vs a wrapper) with the rationale; do not
   leave three open. Host pinned + disclosed in the manifest.

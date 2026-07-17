@@ -1,1 +1,158 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://w3id.org/abc/schemas/parser-rq-publication-work.schema.json","title":"Parser RQ publication work","version":"1.0.0","type":"object","additionalProperties":false,"required":["schema_id","schema_version","work_id","source_sha256","qualification_identity_ref","parser_disposition","policy_hash","preservation_schema_hash","validator_semantics_hash","census_hash"],"properties":{"schema_id":{"const":"https://w3id.org/abc/schemas/parser-rq-publication-work.schema.json"},"schema_version":{"const":"1.0.0"},"work_id":{"type":"string","minLength":1},"source_sha256":{"$ref":"#/$defs/hash"},"qualification_identity_ref":{"$ref":"#/$defs/hash"},"parser_disposition":{"enum":["parsed","failed","timeout"]},"policy_hash":{"$ref":"#/$defs/hash"},"preservation_schema_hash":{"$ref":"#/$defs/hash"},"validator_semantics_hash":{"$ref":"#/$defs/hash"},"census_hash":{"$ref":"#/$defs/hash"},"publication":{"type":"object"},"failure":{"type":"object"}},"allOf":[{"if":{"properties":{"parser_disposition":{"const":"parsed"}}},"then":{"required":["publication"],"not":{"required":["failure"]}},"else":{"required":["failure"],"not":{"required":["publication"]}}}],"$defs":{"hash":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"}}}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-publication-work.schema.json",
+  "title": "Parser RQ publication work",
+  "version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "work_id",
+    "source_sha256",
+    "qualification_identity_ref",
+    "parser_disposition",
+    "policy_hash",
+    "preservation_schema_hash",
+    "validator_semantics_hash",
+    "census_hash"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "https://w3id.org/abc/schemas/parser-rq-publication-work.schema.json"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "work_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "qualification_identity_ref": {
+      "$ref": "#/$defs/hash"
+    },
+    "parser_disposition": {
+      "enum": [
+        "parsed",
+        "failed",
+        "timeout"
+      ]
+    },
+    "policy_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "preservation_schema_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "validator_semantics_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "census_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "join_input_valid",
+        "structure_check_candidates",
+        "counts",
+        "artifacts"
+      ],
+      "properties": {
+        "join_input_valid": {"type": "boolean"},
+        "structure_check_candidates": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"type": "boolean"}
+        },
+        "counts": {"$ref": "#/$defs/counts"},
+        "artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/blob"}
+        }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1},
+        "code": {"type": "integer"},
+        "message": {"type": "string"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "parser_disposition": {
+            "const": "parsed"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "publication"
+        ],
+        "not": {
+          "required": [
+            "failure"
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "failure"
+        ],
+        "not": {
+          "required": [
+            "publication"
+          ]
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "blob": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "bytes", "media_type"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/hash"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "media_type": {"type": "string", "minLength": 1}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preservation_records",
+        "tei_preservation_references",
+        "non_null_tei_pointers",
+        "non_null_source_pointers",
+        "by_construct"
+      ],
+      "properties": {
+        "preservation_records": {"type": "integer", "minimum": 0},
+        "tei_preservation_references": {"type": "integer", "minimum": 0},
+        "non_null_tei_pointers": {"type": "integer", "minimum": 0},
+        "non_null_source_pointers": {"type": "integer", "minimum": 0},
+        "by_construct": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

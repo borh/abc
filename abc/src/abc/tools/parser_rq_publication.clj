@@ -49,6 +49,10 @@
                                   (when (= (keywordize value) index-value) value)) decoded)
               policy (files/read-json "data/parser-rq-publication-policy-v1.json")
               census (files/read-json "data/parser-rq-publication-fixtures-v1.json")
+              preservation-hash
+              (str "sha256:"
+                   (files/sha256-file
+                    "schemas/parser-ir-publication-preservation.schema.json"))
               work-schema "schemas/parser-rq-publication-work.schema.json"
               index-schema "schemas/parser-rq-publication-index.schema.json"
               identity-ref (or (:identity_ref identity)
@@ -74,6 +78,23 @@
 
             (not= identity-ref (:qualification_identity_ref index-value))
             (unavailable "qualification identity mismatch")
+
+            (not= publication-instrument-version
+                  (get-in identity [:instrument_versions :publication]))
+            (unavailable "qualification identity has the wrong publication instrument")
+
+            (not= (:policy_hash index-value) (get policy "policy_hash"))
+            (unavailable "index policy identity differs from committed authority")
+
+            (not= (:census_hash index-value) (get census "census_hash"))
+            (unavailable "index census identity differs from committed authority")
+
+            (not= (:preservation_schema_hash index-value) preservation-hash)
+            (unavailable "index preservation schema identity differs from authority")
+
+            (not= (:validator_semantics_hash index-value)
+                  (get-in policy ["validator" "semantics_hash"]))
+            (unavailable "index validator semantics identity differs from authority")
 
             (not= expected-by-id
                   (into {} (map (juxt :work_id :source_sha256)

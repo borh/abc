@@ -39,7 +39,13 @@ def capture_input():
     publication = {
         "join_input_valid": True,
         "structure_check_candidates": {"plaintext_body_only": True},
-        "counts": {"preservation_records": 1, "by_construct": {"span_coordinates": 1}},
+        "counts": {
+            "preservation_records": 1,
+            "tei_preservation_references": 0,
+            "non_null_tei_pointers": 0,
+            "non_null_source_pointers": 1,
+            "by_construct": {"span_coordinates": 1},
+        },
         "artifacts": [],
     }
     return {

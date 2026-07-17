@@ -1,0 +1,13 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://w3id.org/abc/schemas/parser-rq-resource-policy.schema.json",
+  "title":"Parser RQ resource policy","type":"object","additionalProperties":false,
+  "required":["schema_id","schema_version","instrument_id","predicate_set_hash","wrapper_identity_hash","production_command_hash","host_capability_id","threshold_bytes","ceiling_bytes","serial","work_ids","systemd_properties"],
+  "properties":{
+    "schema_id":{"const":"https://w3id.org/abc/schemas/parser-rq-resource-policy.schema.json"},"schema_version":{"const":"1.0.0"},
+    "instrument_id":{"const":"parser-rq-resource-v1"},"predicate_set_hash":{"$ref":"#/$defs/hash"},"wrapper_identity_hash":{"$ref":"#/$defs/hash"},"production_command_hash":{"$ref":"#/$defs/hash"},
+    "host_capability_id":{"const":"linux-cgroup-v2-memory-peak-v1"},"threshold_bytes":{"const":2147483648},"ceiling_bytes":{"const":3221225472},"serial":{"const":true},
+    "work_ids":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","minLength":1}},
+    "systemd_properties":{"type":"object","additionalProperties":false,"required":["MemoryAccounting","MemoryMax","MemorySwapMax","OOMPolicy","Delegate"],"properties":{"MemoryAccounting":{"const":"yes"},"MemoryMax":{"const":3221225472},"MemorySwapMax":{"const":0},"OOMPolicy":{"const":"continue"},"Delegate":{"const":"no"}}}
+  },"$defs":{"hash":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"}}
+}

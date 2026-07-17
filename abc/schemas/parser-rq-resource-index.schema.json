@@ -1,0 +1,4 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://w3id.org/abc/schemas/parser-rq-resource-index.schema.json","title":"Parser RQ resource index","type":"object","additionalProperties":false,
+  "required":["schema_id","schema_version","policy_hash","work_ids","records"],"properties":{"schema_id":{"const":"https://w3id.org/abc/schemas/parser-rq-resource-index.schema.json"},"schema_version":{"const":"1.0.0"},"policy_hash":{"$ref":"#/$defs/hash"},"work_ids":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","minLength":1}},"records":{"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["work_id","sha256","bytes","media_type"],"properties":{"work_id":{"type":"string","minLength":1},"sha256":{"$ref":"#/$defs/hash"},"bytes":{"type":"integer","minimum":0},"media_type":{"const":"application/json"}}}}},"$defs":{"hash":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"}}
+}

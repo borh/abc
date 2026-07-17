@@ -883,6 +883,16 @@
    "schemas/pack-policy.schema.json"
    "schemas/parser-rq-ignored-regions.schema.json"
    "schemas/parser-rq-capture-generation.schema.json"
+   "schemas/parser-rq-candidate.schema.json"
+   "schemas/parser-rq-capture-authorization.schema.json"
+   "schemas/parser-rq-capture-index.schema.json"
+   "schemas/parser-rq-core-attempt-aggregate.schema.json"
+   "schemas/parser-rq-core-attempt-index.schema.json"
+   "schemas/parser-rq-core-attempt-policy.schema.json"
+   "schemas/parser-rq-core-attempt-work.schema.json"
+   "schemas/parser-rq-evaluation-index.schema.json"
+   "schemas/parser-rq-executable-provenance.schema.json"
+   "schemas/parser-rq-replication-receipt.schema.json"
    "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
    "schemas/parser-rq-classified-source-ledger.schema.json"
    "schemas/parser-rq-classified-source-policy.schema.json"
@@ -1006,6 +1016,16 @@
         snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
         pack-policy-schema (files/read-json "schemas/pack-policy.schema.json")
         parser-rq-capture-generation-schema (files/read-json "schemas/parser-rq-capture-generation.schema.json")
+        parser-rq-candidate-schema (files/read-json "schemas/parser-rq-candidate.schema.json")
+        parser-rq-capture-authorization-schema (files/read-json "schemas/parser-rq-capture-authorization.schema.json")
+        parser-rq-capture-index-schema (files/read-json "schemas/parser-rq-capture-index.schema.json")
+        parser-rq-core-attempt-aggregate-schema (files/read-json "schemas/parser-rq-core-attempt-aggregate.schema.json")
+        parser-rq-core-attempt-index-schema (files/read-json "schemas/parser-rq-core-attempt-index.schema.json")
+        parser-rq-core-attempt-policy-schema (files/read-json "schemas/parser-rq-core-attempt-policy.schema.json")
+        parser-rq-core-attempt-work-schema (files/read-json "schemas/parser-rq-core-attempt-work.schema.json")
+        parser-rq-evaluation-index-schema (files/read-json "schemas/parser-rq-evaluation-index.schema.json")
+        parser-rq-executable-provenance-schema (files/read-json "schemas/parser-rq-executable-provenance.schema.json")
+        parser-rq-replication-receipt-schema (files/read-json "schemas/parser-rq-replication-receipt.schema.json")
         parser-rq-raw-diagnostics-schema (files/read-json "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")
         parser-rq-classified-source-ledger-schema (files/read-json "schemas/parser-rq-classified-source-ledger.schema.json")
         parser-rq-classified-source-policy-schema (files/read-json "schemas/parser-rq-classified-source-policy.schema.json")
@@ -1061,6 +1081,16 @@
                            ["schemas/snapshot-index.schema.json" snapshot-index-schema]
                            ["schemas/pack-policy.schema.json" pack-policy-schema]
                            ["schemas/parser-rq-capture-generation.schema.json" parser-rq-capture-generation-schema]
+                           ["schemas/parser-rq-candidate.schema.json" parser-rq-candidate-schema]
+                           ["schemas/parser-rq-capture-authorization.schema.json" parser-rq-capture-authorization-schema]
+                           ["schemas/parser-rq-capture-index.schema.json" parser-rq-capture-index-schema]
+                           ["schemas/parser-rq-core-attempt-aggregate.schema.json" parser-rq-core-attempt-aggregate-schema]
+                           ["schemas/parser-rq-core-attempt-index.schema.json" parser-rq-core-attempt-index-schema]
+                           ["schemas/parser-rq-core-attempt-policy.schema.json" parser-rq-core-attempt-policy-schema]
+                           ["schemas/parser-rq-core-attempt-work.schema.json" parser-rq-core-attempt-work-schema]
+                           ["schemas/parser-rq-evaluation-index.schema.json" parser-rq-evaluation-index-schema]
+                           ["schemas/parser-rq-executable-provenance.schema.json" parser-rq-executable-provenance-schema]
+                           ["schemas/parser-rq-replication-receipt.schema.json" parser-rq-replication-receipt-schema]
                            ["schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json" parser-rq-raw-diagnostics-schema]
                            ["schemas/parser-rq-classified-source-ledger.schema.json" parser-rq-classified-source-ledger-schema]
                            ["schemas/parser-rq-classified-source-policy.schema.json" parser-rq-classified-source-policy-schema]

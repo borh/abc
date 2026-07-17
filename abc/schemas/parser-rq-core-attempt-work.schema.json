@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-work.schema.json",
+  "title": "Parser RQ core attempt work record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "schema_version", "work_id", "source_sha256", "qualification_identity_ref", "candidate_ref", "policy_hash", "repetition", "status"],
+  "properties": {
+    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-core-attempt-work.schema.json"},
+    "schema_version": {"const": "1.0.0"},
+    "work_id": {"type": "string", "minLength": 1},
+    "source_sha256": {"$ref": "#/$defs/hash"},
+    "qualification_identity_ref": {"$ref": "#/$defs/hash"},
+    "candidate_ref": {"$ref": "#/$defs/hash"},
+    "policy_hash": {"$ref": "#/$defs/hash"},
+    "repetition": {"type": "integer", "minimum": 1, "maximum": 3},
+    "status": {"enum": ["measured", "protocol_error", "unavailable"]},
+    "disposition": {"enum": ["parsed", "fatal_error", "adapter_timeout"]},
+    "report": {"$ref": "#/$defs/blob"},
+    "reason": {"type": "string", "minLength": 1}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "measured"}}}, "then": {"required": ["disposition", "report"], "not": {"required": ["reason"]}}},
+    {"if": {"properties": {"status": {"const": "protocol_error"}}}, "then": {"required": ["reason"], "not": {"required": ["disposition"]}}},
+    {"if": {"properties": {"status": {"const": "unavailable"}}}, "then": {"required": ["reason"], "not": {"anyOf": [{"required": ["disposition"]}, {"required": ["report"]}]}}}
+  ],
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "blob": {"type": "object", "additionalProperties": false, "required": ["sha256", "bytes", "media_type", "locator"], "properties": {"sha256": {"$ref": "#/$defs/hash"}, "bytes": {"type": "integer", "minimum": 0}, "media_type": {"type": "string", "minLength": 1}, "locator": {"$ref": "#/$defs/locator"}}},
+    "locator": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"}
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-executable-provenance.schema.json",
+  "title": "Parser RQ executable provenance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "schema_version", "candidate_ref", "qualification_identity_ref", "status"],
+  "properties": {
+    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-executable-provenance.schema.json"},
+    "schema_version": {"const": "1.0.0"},
+    "candidate_ref": {"$ref": "#/$defs/hash"},
+    "qualification_identity_ref": {"$ref": "#/$defs/hash"},
+    "status": {"enum": ["reproducible", "unavailable"]},
+    "builds": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"type": "object", "additionalProperties": false, "required": ["build_id", "output_ref"], "properties": {"build_id": {"enum": ["build-a", "build-b"]}, "output_ref": {"$ref": "#/$defs/hash"}}}},
+    "executables": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "object", "additionalProperties": false, "required": ["name", "nix_output", "nar_hash", "sha256", "bytes", "adapter", "adapter_version", "parser_git_rev", "argv_template"], "properties": {"name": {"type": "string", "minLength": 1}, "nix_output": {"type": "string", "pattern": "^/nix/store/"}, "nar_hash": {"$ref": "#/$defs/hash"}, "sha256": {"$ref": "#/$defs/hash"}, "bytes": {"type": "integer", "minimum": 1}, "adapter": {"type": "string", "minLength": 1}, "adapter_version": {"type": "string", "minLength": 1}, "parser_git_rev": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "argv_template": {"type": "array", "minItems": 1, "items": {"type": "string"}}}}},
+    "reason": {"type": "string", "minLength": 1}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "reproducible"}}}, "then": {"required": ["builds", "executables"], "not": {"required": ["reason"]}}},
+    {"if": {"properties": {"status": {"const": "unavailable"}}}, "then": {"required": ["reason"], "not": {"anyOf": [{"required": ["builds"]}, {"required": ["executables"]}]}}}
+  ],
+  "$defs": {"hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}

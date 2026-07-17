@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-candidate.schema.json",
+  "title": "Parser RQ release candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "schema_version", "candidate_ref", "qualification_identity_ref", "qualification_identity", "executable_provenance_ref"],
+  "properties": {
+    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-candidate.schema.json"},
+    "schema_version": {"const": "1.0.0"},
+    "candidate_ref": {"$ref": "#/$defs/hash"},
+    "qualification_identity_ref": {"$ref": "#/$defs/hash"},
+    "qualification_identity": {"$ref": "#/$defs/identity"},
+    "executable_provenance_ref": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["aat_version", "aat_adapter", "aat_adapter_version", "mapping_id", "mapping_version", "mapping_hash", "mapping_schema_hash", "parser_ir_schema_id", "parser_ir_schema_hash", "parser_git_rev", "corpus_snapshot_hash", "corpus_list_hash", "predicate_set_hash", "instrument_versions"],
+      "properties": {
+        "aat_version": {"type": "integer", "minimum": 0},
+        "aat_adapter": {"type": "string", "minLength": 1},
+        "aat_adapter_version": {"type": "string", "minLength": 1},
+        "mapping_id": {"type": "string", "minLength": 1},
+        "mapping_version": {"type": "string", "minLength": 1},
+        "mapping_hash": {"$ref": "#/$defs/hash"},
+        "mapping_schema_hash": {"$ref": "#/$defs/hash"},
+        "parser_ir_schema_id": {"type": "string", "minLength": 1},
+        "parser_ir_schema_hash": {"$ref": "#/$defs/hash"},
+        "parser_git_rev": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "corpus_snapshot_hash": {"$ref": "#/$defs/hash"},
+        "corpus_list_hash": {"$ref": "#/$defs/hash"},
+        "predicate_set_hash": {"$ref": "#/$defs/hash"},
+        "instrument_versions": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}

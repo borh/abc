@@ -34,6 +34,224 @@
    "bytes" 2
    "media_type" "application/json"})
 
+(def ^:private parser-rq-test-located-blob
+  (assoc parser-rq-test-blob "locator" "sha256/aa/value.json"))
+
+(deftest parser-rq-admission-campaign-contracts-are-closed
+  (let [schema-id #(str "https://w3id.org/abc/schemas/" % ".schema.json")
+        identity {"aat_version" 1
+                  "aat_adapter" "ab-aozora-aat"
+                  "aat_adapter_version" "1.0.0"
+                  "mapping_id" "aat-parser-ir"
+                  "mapping_version" "1.0.0"
+                  "mapping_hash" parser-rq-test-hash
+                  "mapping_schema_hash" parser-rq-test-hash
+                  "parser_ir_schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                  "parser_ir_schema_hash" parser-rq-test-hash
+                  "parser_git_rev" "0123456789abcdef0123456789abcdef01234567"
+                  "corpus_snapshot_hash" parser-rq-test-hash
+                  "corpus_list_hash" parser-rq-test-hash
+                  "predicate_set_hash" parser-rq-test-hash
+                  "instrument_versions" {"core_attempt" "1.0.0"}}
+        core-policy {"schema_id" (schema-id "parser-rq-core-attempt-policy")
+                     "schema_version" "1.0.0"
+                     "instrument_id" "parser-rq-core-attempt-v1"
+                     "policy_hash" parser-rq-test-hash
+                     "qualification_identity_ref" parser-rq-test-hash
+                     "expected_work_ids" ["w1"]
+                     "expected_work_set_hash" parser-rq-test-hash
+                     "repetitions" 3
+                     "reduction" "maximum"
+                     "timeout_seconds" 30
+                     "jobs" 1
+                     "serial" true
+                     "lock_policy" {"exclusive" true "retained" true}
+                     "gnu_time" {"executable" parser-rq-test-located-blob
+                                 "format" "%e"
+                                 "locale" "C"}
+                     "argv_template" ["ab-check" "--work" "{work_id}"]
+                     "allowed_dispositions" ["parsed" "fatal_error"
+                                             "adapter_timeout" "protocol_error"]}
+        core-work {"schema_id" (schema-id "parser-rq-core-attempt-work")
+                   "schema_version" "1.0.0"
+                   "work_id" "w1"
+                   "source_sha256" parser-rq-test-hash
+                   "qualification_identity_ref" parser-rq-test-hash
+                   "candidate_ref" parser-rq-test-hash
+                   "policy_hash" parser-rq-test-hash
+                   "repetition" 1
+                   "status" "measured"
+                   "disposition" "parsed"
+                   "report" parser-rq-test-located-blob}
+        core-index {"schema_id" (schema-id "parser-rq-core-attempt-index")
+                    "schema_version" "1.0.0"
+                    "qualification_identity_ref" parser-rq-test-hash
+                    "candidate_ref" parser-rq-test-hash
+                    "policy_hash" parser-rq-test-hash
+                    "expected_work_ids" ["w1"]
+                    "repetitions" 3
+                    "reduction" "maximum"
+                    "attempts"
+                    (mapv (fn [repetition]
+                            {"repetition" repetition
+                             "elapsed_record"
+                             (assoc parser-rq-test-located-blob
+                                    "locator" (str "timing/" repetition ".txt"))
+                             "argv" ["ab-check" "--batch"]
+                             "exit_status" 0
+                             "lock_retained" true
+                             "before" {"captured_at_utc" "2026-07-17T00:00:00Z"
+                                       "load_average_1m" 0.1
+                                       "memory_pressure" {"some_avg10" 0.0
+                                                          "full_avg10" 0.0}
+                                       "competing_units" []}
+                             "after" {"captured_at_utc" "2026-07-17T00:00:01Z"
+                                      "load_average_1m" 0.2
+                                      "memory_pressure" {"some_avg10" 0.0
+                                                         "full_avg10" 0.0}
+                                      "competing_units" []}})
+                          [1 2 3])
+                    "records" [{"work_id" "w1" "repetition" 1
+                                "record" parser-rq-test-located-blob}
+                               {"work_id" "w1" "repetition" 2
+                                "record" (assoc parser-rq-test-located-blob
+                                                "locator" "records/w1-2.json")}
+                               {"work_id" "w1" "repetition" 3
+                                "record" (assoc parser-rq-test-located-blob
+                                                "locator" "records/w1-3.json")}]}
+        core-aggregate {"schema_id" (schema-id "parser-rq-core-attempt-aggregate")
+                        "schema_version" "1.0.0"
+                        "qualification_identity_ref" parser-rq-test-hash
+                        "candidate_ref" parser-rq-test-hash
+                        "policy_hash" parser-rq-test-hash
+                        "status" "measured"
+                        "work_count" 1
+                        "repetition_count" 3
+                        "fatal_failures" 0.0
+                        "wall_time_seconds" 1.25
+                        "timeouts" 0.0
+                        "repetition_values"
+                        [{"repetition" 1 "fatal_failures" 0
+                          "wall_time_seconds" 1.0 "timeouts" 0}
+                         {"repetition" 2 "fatal_failures" 0
+                          "wall_time_seconds" 1.25 "timeouts" 0}
+                         {"repetition" 3 "fatal_failures" 0
+                          "wall_time_seconds" 1.1 "timeouts" 0}]}
+        candidate {"schema_id" (schema-id "parser-rq-candidate")
+                   "schema_version" "1.0.0"
+                   "candidate_ref" parser-rq-test-hash
+                   "qualification_identity_ref" parser-rq-test-hash
+                   "qualification_identity" identity
+                   "executable_provenance_ref" parser-rq-test-hash}
+        provenance {"schema_id" (schema-id "parser-rq-executable-provenance")
+                    "schema_version" "1.0.0"
+                    "candidate_ref" parser-rq-test-hash
+                    "qualification_identity_ref" parser-rq-test-hash
+                    "status" "reproducible"
+                    "builds" [{"build_id" "build-a" "output_ref" parser-rq-test-hash}
+                              {"build_id" "build-b" "output_ref" parser-rq-test-hash}]
+                    "executables"
+                    [{"name" "ab-check"
+                      "nix_output" "/nix/store/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-ab-check"
+                      "nar_hash" parser-rq-test-hash
+                      "sha256" parser-rq-test-hash
+                      "bytes" 1
+                      "adapter" "ab-aozora-aat"
+                      "adapter_version" "1.0.0"
+                      "parser_git_rev" "0123456789abcdef0123456789abcdef01234567"
+                      "argv_template" ["ab-check" "--work" "{work_id}"]}]}
+        authorization {"schema_id" (schema-id "parser-rq-capture-authorization")
+                       "schema_version" "1.0.0"
+                       "authorization_ref" parser-rq-test-hash
+                       "authorization_ordinal" 1
+                       "candidate_ref" parser-rq-test-hash
+                       "qualification_identity_ref" parser-rq-test-hash
+                       "not_before_utc" "2026-07-17T00:00:00Z"
+                       "not_after_utc" "2026-07-18T00:00:00Z"
+                       "repetitions" 3
+                       "reduction" "maximum"
+                       "host_policy_ref" parser-rq-test-hash}
+        capture-members (zipmap ["core_attempt" "source_recognition"
+                                 "diagnostic_gap" "diagnostic_completeness"
+                                 "parser_ir_conformance" "publication_structure"
+                                 "resource" "measurements"]
+                                (repeat parser-rq-test-located-blob))
+        capture-index {"schema_id" (schema-id "parser-rq-capture-index")
+                       "schema_version" "1.0.0"
+                       "capture_generation_ref" parser-rq-test-hash
+                       "authorization_ref" parser-rq-test-hash
+                       "candidate_ref" parser-rq-test-hash
+                       "qualification_identity_ref" parser-rq-test-hash
+                       "members" capture-members}
+        evaluation-index {"schema_id" (schema-id "parser-rq-evaluation-index")
+                          "schema_version" "1.0.0"
+                          "evaluation_generation_ref" parser-rq-test-hash
+                          "candidate_ref" parser-rq-test-hash
+                          "qualification_identity_ref" parser-rq-test-hash
+                          "capture_generation_ref" parser-rq-test-hash
+                          "registry_ref" parser-rq-test-hash
+                          "members" {"admission_candidate" parser-rq-test-located-blob
+                                     "admission_report" parser-rq-test-located-blob
+                                     "qualification_report" parser-rq-test-located-blob}}
+        receipt {"schema_id" (schema-id "parser-rq-replication-receipt")
+                 "schema_version" "1.0.0"
+                 "receipt_ref" parser-rq-test-hash
+                 "candidate_ref" parser-rq-test-hash
+                 "capture_generation_ref" parser-rq-test-hash
+                 "primary_failure_domain" "hinoki-local"
+                 "replica_failure_domain" "off-host-backup"
+                 "status" "replicated"
+                 "blobs" [{"blob" parser-rq-test-located-blob
+                           "primary_rehash" parser-rq-test-hash
+                           "replica_rehash" parser-rq-test-hash}]}
+        documents {"parser-rq-core-attempt-policy" core-policy
+                   "parser-rq-core-attempt-work" core-work
+                   "parser-rq-core-attempt-index" core-index
+                   "parser-rq-core-attempt-aggregate" core-aggregate
+                   "parser-rq-candidate" candidate
+                   "parser-rq-executable-provenance" provenance
+                   "parser-rq-capture-authorization" authorization
+                   "parser-rq-capture-index" capture-index
+                   "parser-rq-evaluation-index" evaluation-index
+                   "parser-rq-replication-receipt" receipt}]
+    (testing "minimal campaign values satisfy all ten contracts"
+      (doseq [[name document] documents
+              :let [contract (files/read-json (str "schemas/" name ".schema.json"))]]
+        (is (nil? (schema/validation-errors contract document)) name)))
+    (testing "every campaign object is closed"
+      (doseq [[name document] documents
+              :let [contract (files/read-json (str "schemas/" name ".schema.json"))]]
+        (is (seq (schema/validation-errors contract
+                                           (assoc document "unexpected" true)))
+            name)))
+    (testing "fixed authorization and reduction policy cannot drift"
+      (let [contract (files/read-json
+                      "schemas/parser-rq-capture-authorization.schema.json")]
+        (doseq [invalid [(assoc authorization "authorization_ordinal" 2)
+                         (assoc authorization "repetitions" 2)
+                         (assoc authorization "reduction" "minimum")]]
+          (is (seq (schema/validation-errors contract invalid))))))
+    (testing "capture and evaluation membership are exact"
+      (is (seq (schema/validation-errors
+                (files/read-json "schemas/parser-rq-capture-index.schema.json")
+                (assoc-in capture-index ["members" "extra"]
+                          parser-rq-test-located-blob))))
+      (is (seq (schema/validation-errors
+                (files/read-json "schemas/parser-rq-evaluation-index.schema.json")
+                (update evaluation-index "members" dissoc "admission_report")))))
+    (testing "duplicate blob records and malformed candidate refs fail closed"
+      (is (seq (schema/validation-errors
+                (files/read-json "schemas/parser-rq-replication-receipt.schema.json")
+                (update receipt "blobs" #(conj % (first %))))))
+      (is (seq (schema/validation-errors
+                (files/read-json "schemas/parser-rq-executable-provenance.schema.json")
+                (assoc provenance "candidate_ref" "sha256:mismatch")))))
+    (testing "unavailable core aggregates cannot carry trusted totals"
+      (is (seq (schema/validation-errors
+                (files/read-json "schemas/parser-rq-core-attempt-aggregate.schema.json")
+                (assoc core-aggregate "status" "unavailable"
+                       "reason" "index_incomplete")))))))
+
 (deftest parser-rq-predicate-hardening-closed-contracts
   (let [diag-work-schema
         (files/read-json

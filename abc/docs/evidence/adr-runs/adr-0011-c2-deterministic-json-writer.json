@@ -54,7 +54,7 @@
     "abc\/src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "abc\/src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "abc\/src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:4b7614e6d78bdf08287926f5fdc46ce59413378e3051f84b09f62d15422bd07b",
+    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:af403ce90cd93aba94f141e237edcde5459f950240572ebf5a6297002c7ed428",
     "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
     "abc\/test\/abc\/tools\/materialize_import_test.clj": "sha256:820096eda3fda8fc438510d2de5aae2f00f68031f16d4058085fd36c129b06a1"
   },
@@ -72,7 +72,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.materialize-import-test\/deterministic-json-writer-test\"",
-    "revision": "49578e63fa07670692f2d566ac74f37d77185bd8",
+    "revision": "987e4da28e1ccef0236b7d37f3348d25d9ed2b5d",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

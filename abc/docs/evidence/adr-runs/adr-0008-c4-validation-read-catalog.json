@@ -57,9 +57,9 @@
     "abc\/src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "abc\/src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "abc\/src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:4b7614e6d78bdf08287926f5fdc46ce59413378e3051f84b09f62d15422bd07b",
+    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:af403ce90cd93aba94f141e237edcde5459f950240572ebf5a6297002c7ed428",
     "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
-    "abc\/test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:e9098f78c36449841749d35c416a3578f8cbb9fb9f6e7864dc5bebdd17856b78"
+    "abc\/test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:fee2f2c640e6e76090c131e06eae38ca7a06418aeec89161cda867c119afab68"
   },
   "observations":
   {
@@ -75,7 +75,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.validate-design-bundle-test\/evidence-input-catalog-equals-the-pure-schema-validation-read-set-test\"",
-    "revision": "d9e80cb6a3f4c3836f613514f8b0c8cd764542db",
+    "revision": "987e4da28e1ccef0236b7d37f3348d25d9ed2b5d",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

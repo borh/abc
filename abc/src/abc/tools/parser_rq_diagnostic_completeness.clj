@@ -25,6 +25,17 @@
 (def ^:private aggregate-schema
   (delay (files/read-json "schemas/parser-rq-diagnostic-completeness-aggregate.schema.json")))
 
+(defn- normalize-policy
+  [policy]
+  (let [policy (into {} (map (fn [[key value]]
+                               [(if (string? key) (keyword key) key) value]))
+                     policy)
+        status-map (:status_mapping policy)]
+    (assoc policy :status_mapping
+           {:allowed_statuses (or (:allowed_statuses status-map)
+                                  (get status-map "allowed_statuses"))
+            :values (or (:values status-map) (get status-map "values"))})))
+
 (defn- projected-hash
   [value field]
   (hash/format-sha256
@@ -92,7 +103,8 @@
   ignored: predicate 4 measures only diagnostic-envelope completeness."
   [policy qualification-identity-ref
    {:keys [work_id attempt_disposition bytes]}]
-  (let [base (base-record policy qualification-identity-ref
+  (let [policy (normalize-policy policy)
+        base (base-record policy qualification-identity-ref
                           work_id attempt_disposition)]
     (cond
       (or (not (valid-policy? policy))
@@ -132,7 +144,8 @@
 (defn aggregate
   "Fold an exact closed workset. Membership or contract incoherence is unavailable."
   [policy expected-work-ids work-records]
-  (let [base {:schema_id aggregate-schema-id
+  (let [policy (normalize-policy policy)
+        base {:schema_id aggregate-schema-id
               :schema_version "1.0.0"
               :qualification_identity_ref (:qualification_identity_ref
                                            (first work-records))
@@ -152,7 +165,7 @@
                                      work-records))]
     (cond
       (or (not (valid-policy? policy))
-          (not= expected-work-ids (:expected_work_ids policy))
+          (not= (set expected-work-ids) (set (:expected_work_ids policy)))
           (empty? expected-work-ids)
           (seq membership-errors)
           (not coherent?))
@@ -188,16 +201,17 @@
 (defn derive-observation
   "Project an authenticated aggregate into predicate 4's identity envelope."
   [policy qualification-identity-ref aggregate]
-  (if (and (valid-policy? policy)
-           (nil? (schema/validation-errors @aggregate-schema aggregate))
-           (= qualification-identity-ref
-              (:qualification_identity_ref aggregate))
-           (= (:policy_hash policy) (:policy_hash aggregate)))
-    (capture/observation-envelope
-     qualification-identity-ref
-     (observation-value policy (:status aggregate))
-     (when (= "measured" (:status aggregate))
-       (select-keys aggregate
-                    [:diagnostic_count :works_with_diagnostics :vacuous])))
-    (capture/observation-envelope qualification-identity-ref :unavailable
-                                  {:reason :identity-mismatch})))
+  (let [policy (normalize-policy policy)]
+    (if (and (valid-policy? policy)
+             (nil? (schema/validation-errors @aggregate-schema aggregate))
+             (= qualification-identity-ref
+                (:qualification_identity_ref aggregate))
+             (= (:policy_hash policy) (:policy_hash aggregate)))
+      (capture/observation-envelope
+       qualification-identity-ref
+       (observation-value policy (:status aggregate))
+       (when (= "measured" (:status aggregate))
+         (select-keys aggregate
+                      [:diagnostic_count :works_with_diagnostics :vacuous])))
+      (capture/observation-envelope qualification-identity-ref :unavailable
+                                    {:reason :identity-mismatch}))))

@@ -54,6 +54,9 @@
       hash/sha256-json-jcs
       hash/format-sha256))
 
+(defn- sha256? [value]
+  (and (string? value) (boolean (re-matches hash/hash-pattern value))))
+
 (defn candidate-ref [candidate]
   (content-ref candidate :candidate_ref))
 
@@ -178,10 +181,74 @@
         evaluations (read-indexes (str candidate-dir "/evaluations"))]
     (resolve-current-evaluation-values registry-ref evaluations)))
 
+(defn provenance-errors
+  "Authenticate the evidence behind a reproducible status.
+
+  A status word alone has no authority: the two independently named builds
+  must resolve to the same output identity and the executable coordinates must
+  be closed, unique, and content-addressed."
+  [{:keys [status builds executables]}]
+  (let [build-ids (mapv :build_id builds)
+        output-refs (mapv :output_ref builds)
+        names (mapv :name executables)
+        executable-keys #{:name :nix_output :nar_hash :sha256 :bytes :adapter
+                          :adapter_version :parser_git_rev :argv_template}]
+    (cond-> []
+      (not= :reproducible status)
+      (conj "provenance status is not reproducible")
+
+      (not= #{"build-a" "build-b"} (set build-ids))
+      (conj "provenance does not contain exactly the two independent builds")
+
+      (or (not= 2 (count output-refs))
+          (not= 1 (count (set output-refs)))
+          (some #(not (sha256? %)) output-refs))
+      (conj "independent build output identities differ or are invalid")
+
+      (or (empty? executables) (not= (count names) (count (set names))))
+      (conj "executable membership is empty or duplicated")
+
+      (some #(or (not= executable-keys (set (keys %)))
+                 (not (sha256? (:nar_hash %)))
+                 (not (sha256? (:sha256 %)))
+                 (not (pos-int? (:bytes %)))
+                 (not (and (string? (:parser_git_rev %))
+                           (re-matches #"[0-9a-f]{40}" (:parser_git_rev %)))))
+            executables)
+      (conj "an executable provenance record is malformed"))))
+
+(defn replication-errors
+  "Recompute receipt membership and both re-hash equalities.
+
+  The receipt's `:status` is disclosure; promotion depends on these member
+  comparisons, including equality with the closed manifest blob set."
+  [{:keys [status blobs]} manifest-blobs]
+  (let [receipt-blobs (mapv :blob blobs)
+        identity #(select-keys % [:sha256 :bytes :media_type :locator])]
+    (cond-> []
+      (not= :replicated status)
+      (conj "replication status is not replicated")
+
+      (or (empty? receipt-blobs)
+          (not= (set (map identity manifest-blobs))
+                (set (map identity receipt-blobs)))
+          (not= (count manifest-blobs) (count receipt-blobs)))
+      (conj "replication receipt membership differs from capture manifests")
+
+      (some (fn [{:keys [blob primary_rehash replica_rehash]}]
+              (or (not= (:sha256 blob) primary_rehash)
+                  (not= (:sha256 blob) replica_rehash)
+                  (not (sha256? (:sha256 blob)))
+                  (not (nat-int? (:bytes blob)))
+                  (not (and (string? (:media_type blob))
+                            (not (string/blank? (:media_type blob)))))))
+            blobs)
+      (conj "replication receipt does not authenticate both stored copies"))))
+
 (defn promotion-errors
   [{:keys [candidate authorization capture evaluation current_registry_ref
            qualification_report provenance replication adr_0040_status
-           adr_0041_status capture_count canonical_equal]}]
+           adr_0041_status capture_count canonical_equal manifest_blobs]}]
   (let [verdicts (:predicate_verdicts qualification_report)
         ids (mapv :predicate_id verdicts)]
     (cond-> []
@@ -212,11 +279,11 @@
           (some #(not= :pass (:verdict %)) verdicts))
       (conj "qualification report does not contain exactly nine passing predicates")
 
-      (not= :reproducible (:status provenance))
-      (conj "candidate executable provenance is not reproducible")
+      (seq (provenance-errors provenance))
+      (into (provenance-errors provenance))
 
-      (not= :replicated (:status replication))
-      (conj "capture blobs are not replicated")
+      (seq (replication-errors replication manifest_blobs))
+      (into (replication-errors replication manifest_blobs))
 
       (not= "Accepted" adr_0040_status)
       (conj "ADR 0040 is not Accepted")

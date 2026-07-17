@@ -1384,6 +1384,21 @@
               touch "$out"
             '';
 
+        parserRqCampaignProvenancePythonTests =
+          pkgs.runCommand "parser-rq-campaign-provenance-python-tests"
+            {
+              nativeBuildInputs = [ pythonWithAatSchemaDeps ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+              python -m pytest \
+                reports/parser-ir/test_parser_rq_campaign_provenance.py -q
+              touch "$out"
+            '';
+
         parserRqResourceCgroupSmokeApp = pkgs.writeShellApplication {
           name = "parser-rq-resource-cgroup-smoke";
           runtimeInputs = [
@@ -2093,6 +2108,7 @@
           reports-pytest = reportsPytestCheck;
           parser-rq-publication-pytest = parserRqPublicationPytestCheck;
           parser-rq-core-attempt-python-tests = parserRqCoreAttemptPythonTests;
+          parser-rq-campaign-provenance-python-tests = parserRqCampaignProvenancePythonTests;
           parser-rq-resource-capture-smoke = parserRqResourceCaptureSmokeCheck;
           parser-rq-predicate-hardening-capture-smoke = parserRqPredicateHardeningCaptureSmokeCheck;
           phase5-checkpoint = phase5CheckpointCheck;

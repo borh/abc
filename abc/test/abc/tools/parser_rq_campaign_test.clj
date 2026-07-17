@@ -110,7 +110,12 @@
                  (campaign/resolve-current-evaluation-values sha [])))))
 
 (deftest promotion-is-fail-closed
-  (let [positive {:candidate candidate
+  (let [blob {:sha256 sha :bytes 1 :media_type "application/json" :locator "blob"}
+        executable {:name "ab-check" :nix_output "/nix/store/parser"
+                    :nar_hash sha :sha256 sha :bytes 1 :adapter "ab-aozora"
+                    :adapter_version "v1" :parser_git_rev (apply str (repeat 40 "a"))
+                    :argv_template ["{executable}"]}
+        positive {:candidate candidate
                   :authorization authorization
                   :capture {:candidate_ref (:candidate_ref candidate)
                             :authorization_ref (:authorization_ref authorization)}
@@ -123,8 +128,14 @@
                                          :predicate_verdicts
                                          (mapv #(hash-map :predicate_id % :verdict :pass)
                                                campaign/predicate-ids)}
-                  :provenance {:status :reproducible}
-                  :replication {:status :replicated}
+                  :provenance {:status :reproducible
+                               :builds [{:build_id "build-a" :output_ref sha}
+                                        {:build_id "build-b" :output_ref sha}]
+                               :executables [executable]}
+                  :replication {:status :replicated
+                                :blobs [{:blob blob :primary_rehash sha
+                                         :replica_rehash sha}]}
+                  :manifest_blobs [blob]
                   :adr_0040_status "Accepted"
                   :adr_0041_status "Accepted"
                   :capture_count 1

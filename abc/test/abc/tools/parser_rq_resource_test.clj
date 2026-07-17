@@ -53,6 +53,8 @@
     (is (= :peak_cgroup_memory_bytes (:observed_key memory)))
     (is (= 2147483648 (get-in memory [:expected :value])))
     (is (= 0 (get-in policy ["systemd_properties" "MemorySwapMax"])))
+    (is (= (:predicate_set_hash predicates)
+           (get policy "predicate_set_hash")))
     (is (= (get policy "policy_hash")
            (hash/format-sha256
             (hash/sha256-json-jcs (dissoc policy "policy_hash")))))

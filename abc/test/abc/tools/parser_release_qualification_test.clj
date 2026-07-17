@@ -17,7 +17,7 @@
    :parser_git_rev "004deaf548f34a36abbc17d0f7a162df010a6292"
    :corpus_snapshot_hash "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e"
    :corpus_list_hash "sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd"
-   :predicate_set_hash "sha256:d40f5c8996f3e93165575895b579902d10ec2ad1c06107e1047fe7ac8694f15f"
+   :predicate_set_hash (q/predicate-set-hash (q/load-predicates))
    :instrument_versions {:fixture "v1"}})
 
 (def all-pass-values
@@ -75,6 +75,41 @@
   (let [predicates (q/load-predicates)]
     (is (= (:predicate_set_hash predicates)
            (q/predicate-set-hash predicates)))))
+
+(deftest final-instrument-binding-rotation-preserves-predicate-semantics
+  (let [predicates (:predicates (q/load-predicates))
+        by-id (into {} (map (juxt :predicate_id identity) predicates))
+        stable-projection #(select-keys % [:predicate_id :dimension :observed_key
+                                           :expected :unit])
+        expected-stable
+        [{:predicate_id :fatal-failures
+          :dimension "Fatal parse failures over the qualification corpus"
+          :observed_key :fatal_failures :expected {:comparator :<= :value 0} :unit "works"}
+         {:predicate_id :source-span-coverage
+          :dimension "Parsed-source span coverage for parsed bytes, excluding documented ignored regions"
+          :observed_key :source_span_coverage :expected {:comparator := :value 1.0} :unit "ratio"}
+         {:predicate_id :silent-drops
+          :dimension "Unsupported constructs dropped without a diagnostic (silent drops)"
+          :observed_key :silent_drops :expected {:comparator :<= :value 0} :unit "constructs"}
+         {:predicate_id :wall-time
+          :dimension "Total wall time to process the qualification corpus"
+          :observed_key :wall_time_seconds :expected {:comparator :<= :value 300} :unit "seconds"}
+         {:predicate_id :timeout-policy
+          :dimension "Works exceeding the per-work timeout policy"
+          :observed_key :timeouts :expected {:comparator :<= :value 0} :unit "works"}]
+        bindings {:fatal-failures "parser-rq-core-attempt-v1"
+                  :source-span-coverage "parser-rq-source-recognition-v1"
+                  :silent-drops "parser-rq-diagnostic-authorization-v1"
+                  :wall-time "parser-rq-core-attempt-v1"
+                  :timeout-policy "parser-rq-core-attempt-v1"}]
+    (is (= expected-stable
+           (mapv (comp stable-projection by-id)
+                 [:fatal-failures :source-span-coverage :silent-drops
+                  :wall-time :timeout-policy])))
+    (is (= bindings
+           (select-keys (update-vals by-id :instrument) (keys bindings))))
+    (is (not= "sha256:d40f5c8996f3e93165575895b579902d10ec2ad1c06107e1047fe7ac8694f15f"
+              (:predicate_set_hash (q/load-predicates))))))
 
 (deftest memory-predicate-is-process-tree-cgroup-memory
   (let [predicate (first (filter #(= :memory (:predicate_id %))

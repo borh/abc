@@ -6,13 +6,13 @@
 ;; fabricated number). Comparators are exact: `:=` is value equality, so a
 ;; 0.969 observation fails a 1.0 predicate.
 {:predicate_set_id "abc/parser-release-qualification/v1"
- :predicate_set_hash "sha256:d40f5c8996f3e93165575895b579902d10ec2ad1c06107e1047fe7ac8694f15f"
+ :predicate_set_hash "sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203"
  :description
  "ADR 0002 must-pass release predicates over the pinned qualification corpus."
  :predicates
  [{:predicate_id :fatal-failures
    :dimension "Fatal parse failures over the qualification corpus"
-   :instrument "ab-check batch fatal_error result count (adapter exit 1)"
+   :instrument "parser-rq-core-attempt-v1"
    :observed_key :fatal_failures
    :expected {:comparator :<= :value 0}
    :unit "works"}
@@ -20,16 +20,14 @@
   {:predicate_id :source-span-coverage
    :dimension
    "Parsed-source span coverage for parsed bytes, excluding documented ignored regions"
-   :instrument
-   "no committed per-work source-span-coverage instrument for ab-aozora"
+   :instrument "parser-rq-source-recognition-v1"
    :observed_key :source_span_coverage
    :expected {:comparator := :value 1.0}
    :unit "ratio"}
 
   {:predicate_id :silent-drops
    :dimension "Unsupported constructs dropped without a diagnostic (silent drops)"
-   :instrument
-   "no committed silent-drop instrument (requires span-coverage vs diagnostic reconciliation)"
+   :instrument "parser-rq-diagnostic-authorization-v1"
    :observed_key :silent_drops
    :expected {:comparator :<= :value 0}
    :unit "constructs"}
@@ -59,7 +57,7 @@
 
   {:predicate_id :wall-time
    :dimension "Total wall time to process the qualification corpus"
-   :instrument "ab-check batch wall time via time(1); threshold from ci-smoke-corpus runtime target"
+   :instrument "parser-rq-core-attempt-v1"
    :observed_key :wall_time_seconds
    :expected {:comparator :<= :value 300}
    :unit "seconds"}
@@ -73,7 +71,7 @@
 
   {:predicate_id :timeout-policy
    :dimension "Works exceeding the per-work timeout policy"
-   :instrument "ab-check --per_work_timeout adapter_timeout result count"
+   :instrument "parser-rq-core-attempt-v1"
    :observed_key :timeouts
    :expected {:comparator :<= :value 0}
    :unit "works"}]}

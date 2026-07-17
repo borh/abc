@@ -17,7 +17,6 @@
         records (mapv keywordize records)
         expected (:work_ids policy)
         actual (mapv :work_id records)
-        statuses (set (map :status records))
         acceptable? #(contains? #{"measured" "ceiling_clipped"} (:status %))]
     (cond
       (not= expected (:work_ids index)) (unavailable "index membership differs from policy")

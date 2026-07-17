@@ -1,0 +1,63 @@
+{
+  "artifacts": [
+    {
+      "path": "abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
+      "sha256": "sha256:71ac5808c775679f60278ce5b3da5f5487a0c7fba996fcc7dcdb05a6e2c3c985"
+    }
+  ],
+  "instrument": "diagnostic-completeness",
+  "runtime": {
+    "canonical_identity": "abc.tools.jcs/canonical-json-bytes",
+    "json_schema_dialect": "2020-12",
+    "language": "clojure"
+  },
+  "schema_version": "parser-rq-predicate-validator-identity-v1",
+  "sources": [
+    {
+      "path": "abc/src/abc/tools/parser_rq_diagnostic_completeness.clj",
+      "sha256": "sha256:67b74471723c119859b6347431d7475b82c4d982cb219d44bb48643abeca7d9f"
+    },
+    {
+      "path": "abc/src/abc/tools/parser_rq_capture.clj",
+      "sha256": "sha256:4953a50f9fc834f4a323ae3ed4b2c3c915e62bcbc6f0f8055ccff7f557bff233"
+    },
+    {
+      "path": "abc/src/abc/tools/schema.clj",
+      "sha256": "sha256:51be6926333fc14d27473dc845a1f3a27ca509aa8148be54928bf265350ff871"
+    },
+    {
+      "path": "abc/src/abc/tools/files.clj",
+      "sha256": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3"
+    },
+    {
+      "path": "abc/src/abc/tools/hash.clj",
+      "sha256": "sha256:e49befc2ce08401bb3161af5cedcf0555eec6a639510ca31445da30b32e2cfb5"
+    },
+    {
+      "path": "abc/src/abc/tools/json.clj",
+      "sha256": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9"
+    },
+    {
+      "path": "abc/src/abc/tools/jcs.clj",
+      "sha256": "sha256:4a35835c6b905a54e9b72f78d4e9f4f8d8a19567c6b4b18500d04770d8493fc4"
+    },
+    {
+      "path": "abc/src/abc/tools/evidence_io.clj",
+      "sha256": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46"
+    },
+    {
+      "path": "abc/src/abc/tools/path_containment.clj",
+      "sha256": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3"
+    },
+    {
+      "path": "abc/src/abc/tools/malli.clj",
+      "sha256": "sha256:16c04c051ac5829e36b7d0e7707c0057cef22ac2c20f778ad08f0d3b40df471e"
+    },
+    {
+      "path": "abc/src/abc/annotation/schema.clj",
+      "sha256": "sha256:4ef86f89de0fe175fd143e097fe1162c4ae0acb95470874a461c8c0d17d0775f"
+    }
+  ],
+  "validator_id": "abc/parser-rq-diagnostic-completeness/v1",
+  "validator_semantics_hash": "sha256:d141d7a5d109d55b5d17f3f4a780a35c787503e73053c6f374a92279a209db15"
+}

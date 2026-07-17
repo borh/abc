@@ -1,5 +1,5 @@
 (ns abc.tools.parser-rq-diagnostic-completeness-test
-  (:require [abc.tools.hash :as hash]
+  (:require [abc.tools.files :as files]
             [abc.tools.json :as json]
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-diagnostic-completeness :as diagnostic]
@@ -7,35 +7,14 @@
             [clojure.test :refer [deftest is testing]]))
 
 (def hash-a (str "sha256:" (apply str (repeat 64 "a"))))
-(def hash-b (str "sha256:" (apply str (repeat 64 "b"))))
-
 (def policy
-  (let [value
-        {:schema_id
-         "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-policy.schema.json"
-         :schema_version "1.0.0"
-         :policy_id "abc/parser-rq-diagnostic-completeness/v1"
-         :algorithm_version "diagnostic-envelope-completeness-v1"
-         :expected_work_ids ["work-a"]
-         :expected_work_set_hash
-         (hash/format-sha256 (hash/sha256-json-jcs ["work-a"]))
-         :raw_diagnostic_schema_id
-         "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
-         :raw_diagnostic_schema_hash
-         (schema/schema-hash
-          "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")
-         :diagnostic_wire_version 3
-         :validator_semantics_hash hash-b
-         :vacuity_semantics "valid_empty_passes_with_disclosure"
-         :status_mapping
-         {:allowed_statuses ["measured" "invalid_diagnostic_envelope"]
-          :values {"measured" 1.0
-                   "invalid_diagnostic_envelope" "invalid_diagnostic_envelope"}}}]
-    (assoc value :policy_hash
-           (hash/format-sha256
-            (hash/sha256-json-jcs
-             (json/read-json-str
-              (json/write-deterministic-json-str value)))))))
+  (let [raw (files/read-json
+             "data/parser-rq-diagnostic-completeness-policy-v1.json")
+        top-level (into {} (map (fn [[key value]] [(keyword key) value])) raw)
+        status-map (get raw "status_mapping")]
+    (assoc top-level :status_mapping
+           {:allowed_statuses (get status-map "allowed_statuses")
+            :values (get status-map "values")})))
 
 (defn- utf8-bytes
   [text]
@@ -46,6 +25,21 @@
   {:work_id "work-a"
    :attempt_disposition "parsed"
    :bytes raw})
+
+(deftest committed-policy-is-schema-valid-and-closed
+  (is (nil? (schema/validation-errors
+             (files/read-json
+              "schemas/parser-rq-diagnostic-completeness-policy.schema.json")
+             (files/read-json
+              "data/parser-rq-diagnostic-completeness-policy-v1.json"))))
+  (doseq [mutated [(assoc policy :raw_diagnostic_schema_hash hash-a)
+                   (update policy :expected_work_ids conj "extra")
+                   (assoc-in policy [:status_mapping :values "measured"] 0.5)]]
+    (is (= "unavailable"
+           (get-in (diagnostic/derive-work
+                    mutated hash-a
+                    (input (utf8-bytes "{\"schemaVersion\":3,\"data\":[]}")))
+                   [:record :status])))))
 
 (deftest valid-empty-envelope-is-an-explicit-vacuous-pass
   (let [raw (utf8-bytes "{\"schemaVersion\":3,\"data\":[]}")

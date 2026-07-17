@@ -1,0 +1,26 @@
+{
+  "algorithm_version": "diagnostic-envelope-completeness-v1",
+  "diagnostic_wire_version": 3,
+  "expected_work_ids": [
+    "work-a"
+  ],
+  "expected_work_set_hash": "sha256:266739136c3eff555b915823a893ba5e18e1baed1d79d1546f31ea8c88fc321e",
+  "policy_hash": "sha256:bc32cff1b29a797925075b47ffe6c781753d6e7b2f87dacc90027388b653c2f2",
+  "policy_id": "abc/parser-rq-diagnostic-completeness/v1",
+  "raw_diagnostic_schema_hash": "sha256:e467a46ac8196b0193d658012375fda69f55a780e8edb9d1976e36fcf8417592",
+  "raw_diagnostic_schema_id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-policy.schema.json",
+  "schema_version": "1.0.0",
+  "status_mapping": {
+    "allowed_statuses": [
+      "measured",
+      "invalid_diagnostic_envelope"
+    ],
+    "values": {
+      "invalid_diagnostic_envelope": "invalid_diagnostic_envelope",
+      "measured": 1.0
+    }
+  },
+  "vacuity_semantics": "valid_empty_passes_with_disclosure",
+  "validator_semantics_hash": "sha256:d141d7a5d109d55b5d17f3f4a780a35c787503e73053c6f374a92279a209db15"
+}

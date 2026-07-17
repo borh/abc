@@ -1,5 +1,6 @@
 (ns abc.tools.parser-rq-parser-ir-conformance-test
   (:require [abc.tools.hash :as hash]
+            [abc.tools.files :as files]
             [abc.tools.json :as json]
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-parser-ir-conformance :as conformance]
@@ -8,34 +9,14 @@
             [clojure.test :refer [deftest is testing]]))
 
 (def identity-ref (str "sha256:" (apply str (repeat 64 "a"))))
-(def validator-ref (str "sha256:" (apply str (repeat 64 "b"))))
-
 (def policy
-  (let [value
-        {:schema_id
-         "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-policy.schema.json"
-         :schema_version "1.0.0"
-         :policy_id "abc/parser-rq-parser-ir-conformance/v1"
-         :algorithm_version "parser-ir-schema-conformance-v1"
-         :expected_work_ids ["valid" "invalid" "no-output"]
-         :expected_work_set_hash
-         (hash/format-sha256
-          (hash/sha256-json-jcs ["valid" "invalid" "no-output"]))
-         :parser_ir_schema_id
-         "https://w3id.org/abc/schemas/parser-ir.schema.json"
-         :parser_ir_schema_hash (schema/schema-hash "schemas/parser-ir.schema.json")
-         :validator_semantics_hash validator-ref
-         :generated_output_denominator "schema_valid_plus_schema_invalid"
-         :no_output_semantics "available_failure_when_generated_outputs_zero"
-         :status_mapping
-         {:allowed_statuses ["measured" "no_parser_ir_output"]
-          :values {"measured" 1.0
-                   "no_parser_ir_output" "no_parser_ir_output"}}}]
-    (assoc value :policy_hash
-           (hash/format-sha256
-            (hash/sha256-json-jcs
-             (json/read-json-str
-              (json/write-deterministic-json-str value)))))))
+  (let [raw (files/read-json
+             "data/parser-rq-parser-ir-conformance-policy-v1.json")
+        top-level (into {} (map (fn [[key value]] [(keyword key) value])) raw)
+        status-map (get raw "status_mapping")]
+    (assoc top-level :status_mapping
+           {:allowed_statuses (get status-map "allowed_statuses")
+            :values (get status-map "values")})))
 
 (defn- fixture-store
   []
@@ -83,6 +64,21 @@
          record-ref (publish! store (record-value record-policy work-id status
                                                   parser-ref ledger-ref))]
      {:work_id work-id :record record-ref})))
+
+(deftest committed-policy-is-schema-valid-and-closed
+  (is (nil? (schema/validation-errors
+             (files/read-json
+              "schemas/parser-rq-parser-ir-conformance-policy.schema.json")
+             (files/read-json
+              "data/parser-rq-parser-ir-conformance-policy-v1.json"))))
+  (let [store (fixture-store)
+        entry (entry! store "valid" "schema_valid")]
+    (doseq [mutated [(assoc policy :parser_ir_schema_hash identity-ref)
+                     (update policy :expected_work_ids conj "extra")
+                     (assoc-in policy [:status_mapping :values "measured"] 0.5)]]
+      (is (= :unavailable
+             (:status (conformance/authenticate-record
+                       store mutated identity-ref entry)))))))
 
 (deftest authenticates-record-and-required-referenced-blobs
   (let [store (fixture-store)

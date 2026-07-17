@@ -1,0 +1,55 @@
+{
+  "artifacts": [
+    {
+      "path": "abc/schemas/parser-ir.schema.json",
+      "sha256": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5"
+    },
+    {
+      "path": "ab-validator/Cargo.lock",
+      "sha256": "sha256:697352c01e5a9be205f22e049bc9c92610ad83ed3c51ad780cc3c6f65f975b3e"
+    }
+  ],
+  "instrument": "parser-ir-conformance",
+  "runtime": {
+    "edition": "2024",
+    "jsonschema_crate": "0.46.9",
+    "language": "rust"
+  },
+  "schema_version": "parser-rq-predicate-validator-identity-v1",
+  "sources": [
+    {
+      "path": "ab-validator/crates/ab-aat-to-parser-ir/src/qualification.rs",
+      "sha256": "sha256:6c9f30cfc44e414f253ab6b2316631b59d0b392b03b6c55ac52450e4ddb55c4e"
+    },
+    {
+      "path": "ab-validator/crates/ab-aat-to-parser-ir/src/convert.rs",
+      "sha256": "sha256:af9d969441eadd0d513d8b6735b9685d36134718b16fb6919319201bffa64db8"
+    },
+    {
+      "path": "ab-validator/crates/ab-aat-to-parser-ir/src/schema.rs",
+      "sha256": "sha256:305863d5aa1817412d1ec051d85064d1ecb5728fc8987fe7bbcd650100ef3352"
+    },
+    {
+      "path": "ab-validator/crates/ab-aat-to-parser-ir/src/canonical_json.rs",
+      "sha256": "sha256:b26833816cb744017125d2470754e1bb675d60a6fad4c7ef8f1f7120a72c1fc5"
+    },
+    {
+      "path": "ab-validator/crates/ab-aat-to-parser-ir/src/divergence.rs",
+      "sha256": "sha256:bd776f9329f951678c3c24aba9aec70b132e5424231d9b0e219ef181a38a953f"
+    },
+    {
+      "path": "ab-validator/crates/ab-aat-to-parser-ir/src/mapping.rs",
+      "sha256": "sha256:1462550cb937e414f9184d59cafba238a6cc85a355e716193b2933bd95d8adfc"
+    },
+    {
+      "path": "ab-validator/crates/ab-aat-to-parser-ir/src/ortho_annotations.rs",
+      "sha256": "sha256:4ae8ca1c6be4727ad28715d0cdcd73be5fcdf4b8983af72afcc7ccfb52cf4ea9"
+    },
+    {
+      "path": "ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs",
+      "sha256": "sha256:1d6059d1188f96980f0ca62de42097605aa7f7fe10daaf59e0f61305ac343bd8"
+    }
+  ],
+  "validator_id": "ab-validator/parser-ir-schema-conformance/v1",
+  "validator_semantics_hash": "sha256:96c923e3ad131088cf585c524a564ce98a475db68d195e2f795bbc52279fc484"
+}

@@ -577,6 +577,19 @@
                 touch "$out"
               '';
 
+          parser-rq-core-attempt =
+            pkgs.runCommand "abc-parser-rq-core-attempt"
+              {
+                nativeBuildInputs = [ pkgs.clojure ];
+              }
+              ''
+                ${copyWritableSource}
+                patchShebangs bin/kaocha
+                ${cljSandboxEnv}
+                bin/kaocha --focus abc.tools.parser-rq-core-attempt-test
+                touch "$out"
+              '';
+
           source-bundle-corpus =
             pkgs.runCommand "abc-source-bundle-corpus"
               {

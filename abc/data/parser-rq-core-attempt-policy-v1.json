@@ -1,0 +1,72 @@
+{
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-policy.schema.json",
+  "schema_version": "1.0.0",
+  "instrument_id": "parser-rq-core-attempt-v1",
+  "policy_hash": "sha256:ce3f6a2626817573cc281409cc473bdc756137f0c4586700321e880f7b977641",
+  "expected_work_ids": ["000001_1", "000002_2", "000003_3"],
+  "expected_sources": [
+    {
+      "work_id": "000001_1",
+      "source_sha256": "sha256:5b301747e172bc6450ea7de1a50f534c3ed1ead43dccd2008e32219f43e46f71"
+    },
+    {
+      "work_id": "000002_2",
+      "source_sha256": "sha256:f52fa5a06842f566238c15c2327f5f2e4ffe43a6e7ae4d6fd7bab8ad4449549c"
+    },
+    {
+      "work_id": "000003_3",
+      "source_sha256": "sha256:94db3f579ed91b8da056aaa32225a732060ee0cb922b11ea1e53e0d2a820b66d"
+    }
+  ],
+  "expected_work_set_hash": "sha256:3b847030730777136a941e2819356736fb8be01c683eed349a533e05d1aa72bb",
+  "repetitions": 3,
+  "reduction": "maximum",
+  "timeout_seconds": 60,
+  "jobs": 1,
+  "serial": true,
+  "lock_policy": {
+    "exclusive": true,
+    "retained": true
+  },
+  "gnu_time": {
+    "executable": {
+      "sha256": "sha256:c7e4770fafbc31242b4b373f2f68450190054bf24c49a12ed3a090a212e2ab80",
+      "bytes": 31040,
+      "media_type": "application/x-executable",
+      "locator": "executables/time"
+    },
+    "format": "%e",
+    "locale": "C"
+  },
+  "argv_template": [
+    "ab-check",
+    "--index",
+    "{index}",
+    "--corpus",
+    "{corpus}",
+    "--adapter",
+    "ab-aozora",
+    "--output",
+    "{report_dir}",
+    "--work-ids",
+    "{work_ids}",
+    "--jobs",
+    "1",
+    "--per-work-timeout",
+    "60s"
+  ],
+  "allowed_dispositions": [
+    "parsed",
+    "fatal_error",
+    "adapter_timeout",
+    "protocol_error"
+  ],
+  "schema_hashes": {
+    "policy": "sha256:940a69e64abc31dbfaa3decd0d85799cbaaacfd3ec7cd55b9e29d64b018e0725",
+    "work": "sha256:5b33ec67abf0528cf768286e3cd1c194a4867c3ace014ad34da1a671f9e7e366",
+    "index": "sha256:49fb3d66f2a6d26fbc412e13a18d29e8e9c0abf4c0eb7d841c07324395c62a2b",
+    "aggregate": "sha256:256026e62eccd4d01ad9811c7e2d8a592e244cc74f68100d6b4c9ddc8c9fb57a"
+  },
+  "capture_semantics_hash": "sha256:16554dc31124d5569c8d30415f9931ae7587bc721ad19f294d4d5821e6777b66",
+  "analyzer_semantics_hash": "sha256:3e4fb4e779d8d0c7decedabbfbc4cb917798e51cc122cace7a4f7173aefc1282"
+}

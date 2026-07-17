@@ -57,8 +57,9 @@
                      "schema_version" "1.0.0"
                      "instrument_id" "parser-rq-core-attempt-v1"
                      "policy_hash" parser-rq-test-hash
-                     "qualification_identity_ref" parser-rq-test-hash
                      "expected_work_ids" ["w1"]
+                     "expected_sources" [{"work_id" "w1"
+                                          "source_sha256" parser-rq-test-hash}]
                      "expected_work_set_hash" parser-rq-test-hash
                      "repetitions" 3
                      "reduction" "maximum"
@@ -71,7 +72,13 @@
                                  "locale" "C"}
                      "argv_template" ["ab-check" "--work" "{work_id}"]
                      "allowed_dispositions" ["parsed" "fatal_error"
-                                             "adapter_timeout" "protocol_error"]}
+                                             "adapter_timeout" "protocol_error"]
+                     "schema_hashes" {"policy" parser-rq-test-hash
+                                      "work" parser-rq-test-hash
+                                      "index" parser-rq-test-hash
+                                      "aggregate" parser-rq-test-hash}
+                     "capture_semantics_hash" parser-rq-test-hash
+                     "analyzer_semantics_hash" parser-rq-test-hash}
         core-work {"schema_id" (schema-id "parser-rq-core-attempt-work")
                    "schema_version" "1.0.0"
                    "work_id" "w1"

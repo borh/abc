@@ -941,6 +941,7 @@
    "data/parser-evidence-citations.edn"
    "data/parser-rq-ab-aozora-classified-source-v1.json"
    "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
+   "data/parser-rq-core-attempt-policy-v1.json"
    "data/parser-rq-publication-fixtures-v1.json"
    "data/parser-rq-publication-policy-v1.json"
    "data/request-sets/demo-basic-ja.json"
@@ -1166,6 +1167,8 @@
       (check-errors! (parser-rq-source-recognition-aggregate-errors aggregate))
       (check-errors! (parser-rq-source-recognition-coherence-errors
                       index aggregate [work])))
+    (validate-json! parser-rq-core-attempt-policy-schema
+                    "data/parser-rq-core-attempt-policy-v1.json")
     (let [root "test/fixtures/parser-rq/publication-capture"
           policy-path "data/parser-rq-publication-policy-v1.json"
           census-path "data/parser-rq-publication-fixtures-v1.json"

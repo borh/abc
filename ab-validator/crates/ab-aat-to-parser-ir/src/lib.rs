@@ -12,7 +12,8 @@ pub(crate) mod tei_eaj_workset;
 
 pub use canonical_json::{sort_keys_deep, to_canonical_json_pretty};
 pub use convert::{
-    ConversionOptions, ConversionOutput, ConversionRequest, PreparedConverter, convert,
+    ConversionOptions, ConversionOutput, ConversionRequest, ParserIrValidation, PreparedConverter,
+    QualificationConversion, convert,
 };
 pub use mapping::MappingDocument;
 pub use schema::SchemaSet;

@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use ab_aat_to_parser_ir::{
-    ConversionOptions, ConversionRequest, MappingDocument, SchemaSet,
+    ConversionOptions, ConversionRequest, MappingDocument, QualificationConversion, SchemaSet,
     divergence::{AatMeta, DivergenceRecorder},
     mapping::MappingRule,
     schema::{read_json, schema_hash, validate_value},
@@ -62,6 +62,72 @@ fn validated_v1_conversion_succeeds_under_v1_tuple() {
         options: default_test_options(),
     })
     .unwrap();
+}
+
+fn converter_with_rejecting_parser_ir_schema() -> ab_aat_to_parser_ir::PreparedConverter {
+    let (mut schemas, mut mapping) = schemas_and_mapping();
+    schemas.parser_ir_schema = json!({
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "not": {}
+    });
+    mapping.target_parser_ir_schema_hash = schema_hash(&schemas.parser_ir_schema).unwrap();
+    ab_aat_to_parser_ir::PreparedConverter::new(mapping, schemas).unwrap()
+}
+
+#[test]
+fn production_convert_still_hard_aborts_on_invalid_parser_ir() {
+    let error = converter_with_rejecting_parser_ir_schema()
+        .convert(
+            include_fixture_json("nested-sentence-basic.aat.json"),
+            default_test_options(),
+        )
+        .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .starts_with("parser-IR validation failed at"),
+        "{error}"
+    );
+}
+
+#[test]
+fn qualification_conversion_retains_invalid_value_without_divergence_bundle() {
+    let outcome = converter_with_rejecting_parser_ir_schema()
+        .convert_for_qualification(
+            include_fixture_json("nested-sentence-basic.aat.json"),
+            default_test_options(),
+        )
+        .unwrap();
+    let QualificationConversion::Invalid { parser_ir, errors } = outcome else {
+        panic!("expected invalid qualification outcome");
+    };
+    assert_eq!(
+        parser_ir["schema_id"],
+        "https://w3id.org/abc/schemas/parser-ir.schema.json"
+    );
+    assert!(!errors.is_empty());
+}
+
+#[test]
+fn qualification_and_production_valid_outputs_are_identical() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let converter = ab_aat_to_parser_ir::PreparedConverter::new(mapping, schemas).unwrap();
+    let aat = include_fixture_json("nested-sentence-basic.aat.json");
+    let production = converter
+        .convert(aat.clone(), default_test_options())
+        .unwrap();
+    let QualificationConversion::Valid(qualification) = converter
+        .convert_for_qualification(aat, default_test_options())
+        .unwrap()
+    else {
+        panic!("expected valid qualification outcome");
+    };
+    assert_eq!(production.parser_ir, qualification.parser_ir);
+    assert_eq!(
+        production.divergence_bundle,
+        qualification.divergence_bundle
+    );
+    assert_eq!(production.emitted_rule_ids, qualification.emitted_rule_ids);
 }
 
 #[test]

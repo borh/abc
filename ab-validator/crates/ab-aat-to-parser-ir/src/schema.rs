@@ -89,12 +89,32 @@ pub fn validate_compiled(
     value: &Value,
     label: &str,
 ) -> Result<()> {
-    validator.validate(value).map_err(|error| {
-        anyhow::anyhow!(
-            "{label} validation failed at {}: {error}",
-            error.instance_path()
-        )
-    })
+    match validation_errors(validator, value, label)
+        .into_iter()
+        .next()
+    {
+        Some(error) => Err(anyhow::anyhow!(error)),
+        None => Ok(()),
+    }
+}
+
+pub fn validation_errors(
+    validator: &jsonschema::Validator,
+    value: &Value,
+    label: &str,
+) -> Vec<String> {
+    let mut errors: Vec<String> = validator
+        .iter_errors(value)
+        .map(|error| {
+            format!(
+                "{label} validation failed at {}: {error}",
+                error.instance_path()
+            )
+        })
+        .collect();
+    errors.sort();
+    errors.dedup();
+    errors
 }
 
 pub fn validate_value(schema: &Value, value: &Value, label: &str) -> Result<()> {

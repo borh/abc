@@ -6,10 +6,26 @@ use std::{
 use anyhow::Result;
 use serde_json::{Value, json};
 
+#[cfg(test)]
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use crate::{
     mapping::{MappingDocument, MappingIndex, MappingRule},
     schema::{SchemaValidators, validate_compiled},
 };
+
+#[cfg(test)]
+static BUNDLE_INVOCATIONS: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(test)]
+pub(crate) fn reset_bundle_invocation_count() {
+    BUNDLE_INVOCATIONS.store(0, Ordering::SeqCst);
+}
+
+#[cfg(test)]
+pub(crate) fn bundle_invocation_count() -> usize {
+    BUNDLE_INVOCATIONS.load(Ordering::SeqCst)
+}
 
 #[derive(Debug, Clone)]
 pub struct AatMeta {
@@ -114,6 +130,9 @@ impl DivergenceRecorder {
         validators: &SchemaValidators,
         mapping: &MappingDocument,
     ) -> Result<Value> {
+        #[cfg(test)]
+        BUNDLE_INVOCATIONS.fetch_add(1, Ordering::SeqCst);
+
         let mut summary = BTreeMap::from([
             ("LOSS", 0_u64),
             ("INVENTION", 0_u64),

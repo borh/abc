@@ -7,7 +7,7 @@ use crate::{
     divergence::{AatMeta, DivergenceRecorder},
     mapping::{MappingDocument, MappingIndex},
     ortho_annotations::OrthoAnnotationsBundle,
-    schema::{SchemaSet, SchemaValidators, validate_compiled},
+    schema::{SchemaSet, SchemaValidators, validate_compiled, validation_errors},
 };
 
 #[derive(Debug, Clone)]
@@ -44,6 +44,21 @@ pub struct ConversionOutput {
     pub emitted_rule_ids: BTreeSet<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ParserIrValidation {
+    Valid,
+    Invalid { errors: Vec<String> },
+}
+
+#[derive(Debug, Clone)]
+pub enum QualificationConversion {
+    Valid(ConversionOutput),
+    Invalid {
+        parser_ir: Value,
+        errors: Vec<String>,
+    },
+}
+
 #[derive(Debug, Clone)]
 pub struct PreparedConverter {
     mapping: MappingDocument,
@@ -65,7 +80,22 @@ impl PreparedConverter {
     }
 
     pub fn convert(&self, aat: Value, options: ConversionOptions) -> Result<ConversionOutput> {
-        convert_preflighted(
+        match self.convert_for_qualification(aat, options)? {
+            QualificationConversion::Valid(output) => Ok(output),
+            QualificationConversion::Invalid { errors, .. } => {
+                Err(anyhow::anyhow!(errors.into_iter().next().expect(
+                    "invalid Parser-IR validation has at least one error"
+                )))
+            }
+        }
+    }
+
+    pub fn convert_for_qualification(
+        &self,
+        aat: Value,
+        options: ConversionOptions,
+    ) -> Result<QualificationConversion> {
+        convert_preflighted_for_qualification(
             aat,
             &self.mapping,
             &self.schemas,
@@ -80,14 +110,14 @@ pub fn convert(request: ConversionRequest) -> Result<ConversionOutput> {
     PreparedConverter::new(request.mapping, request.schemas)?.convert(request.aat, request.options)
 }
 
-fn convert_preflighted(
+fn convert_preflighted_for_qualification(
     mut aat: Value,
     mapping: &MappingDocument,
     schemas: &SchemaSet,
     validators: &SchemaValidators,
     index: Arc<MappingIndex>,
     options: ConversionOptions,
-) -> Result<ConversionOutput> {
+) -> Result<QualificationConversion> {
     if options.validate_input_aat {
         validate_compiled(&validators.aat, &aat, "AAT")?;
     }
@@ -190,17 +220,27 @@ fn convert_preflighted(
         );
     }
 
-    if options.validate_output_parser_ir {
-        validate_compiled(&validators.parser_ir, &parser_ir, "parser-IR")?;
+    let validation = if options.validate_output_parser_ir {
+        let errors = validation_errors(&validators.parser_ir, &parser_ir, "parser-IR");
+        if errors.is_empty() {
+            ParserIrValidation::Valid
+        } else {
+            ParserIrValidation::Invalid { errors }
+        }
+    } else {
+        ParserIrValidation::Valid
+    };
+    if let ParserIrValidation::Invalid { errors } = validation {
+        return Ok(QualificationConversion::Invalid { parser_ir, errors });
     }
 
     let emitted_rule_ids = recorder.emitted_rule_ids();
     let divergence_bundle = recorder.bundle(aat_meta(&mut aat), validators, mapping)?;
-    Ok(ConversionOutput {
+    Ok(QualificationConversion::Valid(ConversionOutput {
         parser_ir,
         divergence_bundle,
         emitted_rule_ids,
-    })
+    }))
 }
 
 fn ensure_schema_declares_orthographic_annotations(schema: &Value) -> Result<()> {
@@ -2309,4 +2349,46 @@ fn aat_meta(aat: &mut Value) -> AatMeta {
 
 fn utf8_len(value: &str) -> u64 {
     value.len() as u64
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use serde_json::json;
+
+    use super::*;
+    use crate::{
+        divergence::{bundle_invocation_count, reset_bundle_invocation_count},
+        schema::{read_json, schema_hash},
+    };
+
+    #[test]
+    fn invalid_production_conversion_stops_before_divergence_bundle() {
+        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let abc_root = repo_root.join("data/abc-schemas");
+        let mut mapping =
+            MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
+                .unwrap();
+        let mut schemas =
+            SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)
+                .unwrap();
+        schemas.parser_ir_schema = json!({
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "not": {}
+        });
+        mapping.target_parser_ir_schema_hash = schema_hash(&schemas.parser_ir_schema).unwrap();
+        let converter = PreparedConverter::new(mapping, schemas).unwrap();
+        let aat = read_json(
+            &repo_root
+                .join("crates/ab-aat-to-parser-ir/tests/fixtures/nested-sentence-basic.aat.json"),
+        )
+        .unwrap();
+
+        reset_bundle_invocation_count();
+        converter
+            .convert(aat, ConversionOptions::default())
+            .unwrap_err();
+        assert_eq!(bundle_invocation_count(), 0);
+    }
 }

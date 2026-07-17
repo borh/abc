@@ -116,9 +116,6 @@
 (def ^:private adr-0034-descriptor-stems
   #{"adr-0034-c1" "adr-0034-c2" "adr-0034-c3"})
 
-(def ^:private parser-rq-resource-descriptor-stems
-  #{"parser-rq-resource-policy"})
-
 (deftest checked-in-foundation-observation-boundary-inventory-is-exact-test
   (let [stems (fn [root]
                 (->> (fs/list-dir root)
@@ -131,16 +128,14 @@
                       temporal-person-ingest-descriptor-stems
                       parser-ir-publication-descriptor-stems
                       diagrams-governance-descriptor-stems
-                      adr-0034-descriptor-stems
-                      parser-rq-resource-descriptor-stems)
+                      adr-0034-descriptor-stems)
            (stems "docs/evidence/adr-capture")))
     (is (= (set/union foundation-descriptor-stems
                       (disj schema-rdf-tei-descriptor-stems "tei-profile-drift")
                       temporal-person-ingest-descriptor-stems
                       parser-ir-publication-descriptor-stems
                       diagrams-governance-descriptor-stems
-                      adr-0034-descriptor-stems
-                      parser-rq-resource-descriptor-stems)
+                      adr-0034-descriptor-stems)
            (stems "docs/evidence/adr-inputs")))
     (is (= 42 (count (:entries (files/read-edn
                                 "docs/evidence/adr-entries/foundation.edn")))))))

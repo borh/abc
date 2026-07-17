@@ -9,10 +9,10 @@
  {:kind "component-clojure-test-v1"
   :component-root "."
   :roots ["abc.tools.parser-rq-resource-test"]
-  :explicit ["ab-validator/data/parser-rq-resource-identity-v1.json"
-             "abc/bin/kaocha"
-             "abc/data/parser-release-qualification-predicates.edn"
-             "abc/data/parser-rq-resource-policy-v1.json"
-             "abc/docs/evidence/adr-capture/parser-rq-resource-policy.edn"
-             "abc/docs/evidence/adr-inputs/parser-rq-resource-policy.edn"]}
+  :explicit ["../ab-validator/data/parser-rq-resource-identity-v1.json"
+             "bin/kaocha"
+             "data/parser-release-qualification-predicates.edn"
+             "data/parser-rq-resource-policy-v1.json"
+             "docs/evidence/adr-capture/parser-rq-resource-policy.edn"
+             "docs/evidence/adr-inputs/parser-rq-resource-policy.edn"]}
  :observation-key "parser-rq-resource-policy-pass"}

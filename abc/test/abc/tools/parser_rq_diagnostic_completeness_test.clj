@@ -1,5 +1,6 @@
 (ns abc.tools.parser-rq-diagnostic-completeness-test
   (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-diagnostic-completeness :as diagnostic]
@@ -16,13 +17,25 @@
            {:allowed_statuses (get status-map "allowed_statuses")
             :values (get status-map "values")})))
 
+(def fixture-policy
+  (let [value (assoc policy
+                     :expected_work_ids ["valid"]
+                     :expected_work_set_hash
+                     (hash/format-sha256 (hash/sha256-json-jcs ["valid"])))]
+    (assoc value :policy_hash
+           (hash/format-sha256
+            (hash/sha256-json-jcs
+             (json/read-json-str
+              (json/write-deterministic-json-str
+               (dissoc value :policy_hash))))))))
+
 (defn- utf8-bytes
   [text]
   (.getBytes text java.nio.charset.StandardCharsets/UTF_8))
 
 (defn- input
   [raw]
-  {:work_id "work-a"
+  {:work_id "valid"
    :attempt_disposition "parsed"
    :bytes raw})
 
@@ -43,13 +56,13 @@
 
 (deftest valid-empty-envelope-is-an-explicit-vacuous-pass
   (let [raw (utf8-bytes "{\"schemaVersion\":3,\"data\":[]}")
-        first-result (diagnostic/derive-work policy hash-a
+        first-result (diagnostic/derive-work fixture-policy hash-a
                                              (assoc (input raw) :authorization :allow))
-        second-result (diagnostic/derive-work policy hash-a
+        second-result (diagnostic/derive-work fixture-policy hash-a
                                               (assoc (input raw) :authorization :deny))
-        aggregate (diagnostic/aggregate policy ["work-a"]
+        aggregate (diagnostic/aggregate fixture-policy ["valid"]
                                         [(:record first-result)])
-        observation (diagnostic/derive-observation policy hash-a aggregate)]
+        observation (diagnostic/derive-observation fixture-policy hash-a aggregate)]
     (is (= first-result second-result))
     (is (= "complete" (get-in first-result [:record :status])))
     (is (= 0 (get-in first-result [:record :emitted_diagnostics])))
@@ -69,8 +82,8 @@
                        :severity "warning"
                        :source "source"
                        :span {:start 0 :end 1}}]}))
-        record (:record (diagnostic/derive-work policy hash-a (input raw)))
-        aggregate (diagnostic/aggregate policy ["work-a"] [record])]
+        record (:record (diagnostic/derive-work fixture-policy hash-a (input raw)))
+        aggregate (diagnostic/aggregate fixture-policy ["valid"] [record])]
     (is (= "complete" (:status record)))
     (is (= 1 (:emitted_diagnostics record)))
     (is (= 1 (:complete_diagnostics record)))
@@ -78,10 +91,10 @@
     (is (false? (:vacuous aggregate)))))
 
 (deftest malformed-authenticated-bytes-are-an-available-failure
-  (let [result (diagnostic/derive-work policy hash-a
+  (let [result (diagnostic/derive-work fixture-policy hash-a
                                        (input (utf8-bytes "{\"schemaVersion\":3,\"data\":[")))
-        aggregate (diagnostic/aggregate policy ["work-a"] [(:record result)])
-        observation (diagnostic/derive-observation policy hash-a aggregate)
+        aggregate (diagnostic/aggregate fixture-policy ["valid"] [(:record result)])
+        observation (diagnostic/derive-observation fixture-policy hash-a aggregate)
         predicate {:predicate_id :diagnostic-completeness
                    :dimension "diagnostics"
                    :instrument "fixture"
@@ -102,7 +115,7 @@
 (deftest unavailable-and-membership-fail-closed
   (testing "absent authenticated bytes"
     (is (= "unavailable"
-           (get-in (diagnostic/derive-work policy hash-a
+           (get-in (diagnostic/derive-work fixture-policy hash-a
                                            (input nil))
                    [:record :status]))))
   (testing "identity and validator-policy mismatches"
@@ -116,8 +129,8 @@
                     hash-a (input (utf8-bytes "{}")))
                    [:record :status]))))
   (testing "closed membership"
-    (let [record (:record (diagnostic/derive-work policy hash-a
+    (let [record (:record (diagnostic/derive-work fixture-policy hash-a
                                                   (input (utf8-bytes "{\"schemaVersion\":3,\"data\":[]}"))))]
       (is (= "unavailable"
-             (:status (diagnostic/aggregate policy ["work-a" "missing"]
+             (:status (diagnostic/aggregate fixture-policy ["valid" "missing"]
                                             [record])))))))

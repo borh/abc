@@ -1,0 +1,13 @@
+{
+  "expected_works": 3,
+  "generated_outputs": 2,
+  "no_output_works": 1,
+  "parser_ir_schema_validation": 0.5,
+  "policy_hash": "sha256:07335ded503d97e4e5bbfc806aa6d6ac62a5f5bdec82f14ddfc323183e8653cb",
+  "qualification_identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json",
+  "schema_invalid_outputs": 1,
+  "schema_valid_outputs": 1,
+  "schema_version": "1.0.0",
+  "status": "measured"
+}

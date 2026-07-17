@@ -155,8 +155,8 @@ minimal implementation, independently testable tasks. Their entry contracts:
   `parser-ir-publication-preservation.schema.json` over the pinned build's
   publication output; ratio denominator in works, every work contributes a record.
   **Implementation status (2026-07-17): implemented and drift-checked** with a
-  bounded three-work Capture→Derive fixture. P3, P4B, and P5's authoritative
-  capture, admission, and conditional promotion remain unstarted.
+  bounded three-work Capture→Derive fixture. P3 and P5's authoritative capture,
+  admission, and conditional promotion remain unstarted.
 - **P3 Resource** — **choose one** peak-RSS mechanism in-plan (GNU `time -v`
   `getrusage` vs cgroup `memory.peak` vs a wrapper) with the rationale; do not
   leave three open. Host pinned + disclosed in the manifest.
@@ -177,6 +177,11 @@ minimal implementation, independently testable tasks. Their entry contracts:
   capture, registry admission, and ADR 0039 promotion have not started.
 - **P4B Predicate hardening** — predicate 4 discloses vacuity (envelope-completeness,
   settled); predicate 5 re-measured against the **pinned candidate** schema.
+  **Implementation status (2026-07-17): implemented and drift-checked** with a
+  bounded three-work Capture→Derive fixture that covers valid, authenticated-invalid,
+  and no-output outcomes. P4B does not change the predicate set, authoritative
+  measurements, compatibility registry, or ADR 0039; P5 remains the authority for
+  final candidate capture, admission, and conditional promotion.
 - **P5 Admission + promotion** — pin the final implementation commit before any
   authoritative capture (the binary bakes `self.rev`); capture R1–R5 for that
   identity; then R6: `ab-aat-to-parser-ir audit-corpus … --compat-edn-out`

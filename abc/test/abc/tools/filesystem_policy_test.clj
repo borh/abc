@@ -258,10 +258,13 @@
            abc.tools.soranoha-build-publication #{Files/move}
            abc.tools.evidence-output
            #{Files/exists Files/createLink Files/deleteIfExists}
-           abc.tools.files #{Files/deleteIfExists}}
+           abc.tools.files #{Files/deleteIfExists}
+           abc.tools.parser-rq-capture
+           #{Files/isRegularFile Files/isSymbolicLink Files/readAllBytes}}
          (update-vals permanent-files-operations :operations)))
   (is (= '{abc.tools.source-bundle #{:isDirectory}
-           abc.tools.aozora-history-audit #{:renameTo}}
+           abc.tools.aozora-history-audit #{:renameTo}
+           abc.tools.parser-rq-capture #{:getCanonicalFile :relativize}}
          (update-vals permanent-interop-operations :operations)))
   (doseq [exceptions [permanent-files-operations permanent-interop-operations]
           [_ {:keys [rationale]}] exceptions]

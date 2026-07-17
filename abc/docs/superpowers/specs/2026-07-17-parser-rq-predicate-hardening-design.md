@@ -432,32 +432,40 @@ P4B is implemented when:
 
 ## Architecture review record
 
-The hammock and Hickey review produced six designed resolutions. None is marked
-implemented or verified until its named characterization or contract test is
-green:
+The hammock and Hickey review produced six designed resolutions. Each is now
+implemented and pinned by named characterization or contract evidence:
 
-1. **Capture coupling -- Blocker; resolution designed, pending
-   `independent-instrument-availability-test`.** Two predicates sharing a
-   candidate does not justify one lifecycle; capture and availability remain
-   independent.
-2. **Authenticated-invalid ambiguity -- Blocker; resolution designed, pending
-   `typed-failure-sentinels-are-available-failures-test`.** Candidate contract
-   violations are available failures, not infrastructure unavailability. This
-   test must pin the evaluator behavior explicitly rather than rely on the
-   current unavailability allowlist incidentally.
-3. **Unknowable denominator -- Blocker; resolution designed, pending
-   `malformed-authenticated-diagnostics-use-failure-sentinel-test`.** Malformed
-   diagnostic bytes use a typed failure sentinel rather than fabricated `0.0`.
-4. **Vacuity -- Blocker; resolution designed, pending
-   `authenticated-empty-diagnostics-disclose-vacuity-test`.** A zero-diagnostic
-   pass carries exact counts and `vacuous: true` in the observation product.
-5. **Validator duplication -- Strong suggestion; resolution designed, pending
-   `qualification-and-production-use-one-compiled-validator-test`.** Predicate 5
-   deepens the existing compiled validator instead of implementing another, and
-   the production path retains its hard-abort behavior.
-6. **Semantic identity -- Strong suggestion; resolution designed, pending
-   `semantic-closure-manifest-equals-derived-closure-test`.** Policy identity
-   binds a mechanically guarded transitive closure, not a human version label.
+1. **Capture coupling -- Blocker; implemented and verified.** Two predicates
+   sharing a candidate do not share availability. The
+   `unavailable-and-membership-fail-closed` and
+   `omission-and-authority-mismatch-are-unavailable` tests pin independent
+   lifecycle and closed membership.
+2. **Authenticated-invalid ambiguity -- Blocker; implemented and verified.**
+   Candidate contract violations are available failures, not infrastructure
+   unavailability. `typed-failure-sentinels-are-available-failures-test` pins
+   that distinction through the live evaluator rather than relying on its
+   unavailable allowlist.
+3. **Unknowable denominator -- Blocker; implemented and verified.**
+   `malformed-authenticated-bytes-are-an-available-failure` pins a typed failure
+   sentinel instead of a fabricated diagnostic ratio.
+4. **Vacuity -- Blocker; implemented and verified.**
+   `valid-empty-envelope-is-an-explicit-vacuous-pass` pins the `1.0` observation
+   together with zero counts and `vacuous: true` disclosure.
+5. **Validator duplication -- Strong suggestion; implemented and verified.**
+   Rust tests `qualification_and_production_valid_outputs_are_identical`,
+   `production_convert_still_hard_aborts_on_invalid_parser_ir`, and
+   `invalid_production_conversion_stops_before_divergence_bundle` pin one
+   compiled validator, production failure behavior, and failure-time work.
+6. **Semantic identity -- Strong suggestion; implemented and verified.**
+   `test_reviewed_sources_equal_discovered_owned_closure` mechanically proves
+   that the reviewed semantic-closure manifest equals the discovered owned
+   transitive closure.
+
+The checked-in three-work capture additionally regenerates twice byte-for-byte
+in the Nix smoke test, then the Clojure consumer authenticates every blob and
+re-derives both observations. This implementation evidence does not alter the
+predicate set, authoritative measurements, compatibility registry, or ADR 0039;
+those remain P5 responsibilities.
 
 The resulting modules are deep around two cohesive decisions: diagnostic wire
 conformance and Parser-IR schema conformance. The composer is intentionally

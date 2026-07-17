@@ -136,6 +136,36 @@
             "$out/schemas/schema-contracts.json"
         '';
 
+        stageParserRqAbcAuthorities = ''
+          mkdir -p \
+            ../abc/data \
+            ../abc/schemas \
+            ../abc/test/fixtures/parser-rq/classified-source-capture \
+            ../abc/test/fixtures/parser-rq/diagnostic-gap
+          cp "${abcSource}/data/parser-rq-ab-aozora-classified-source-v1.json" \
+            ../abc/data/
+          cp "${abcSource}/data/parser-rq-ab-aozora-diagnostic-gap-v1.json" \
+            ../abc/data/
+          cp "${abcSource}/data/parser-rq-classified-source-authority-v1.json" \
+            ../abc/data/
+          cp "${abcSource}/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json" \
+            ../abc/schemas/
+          cp "${abcSource}/schemas/parser-rq-classified-source-ledger.schema.json" \
+            ../abc/schemas/
+          cp "${abcSource}/schemas/parser-rq-classified-source-policy.schema.json" \
+            ../abc/schemas/
+          cp "${abcSource}/schemas/parser-rq-capture-generation.schema.json" \
+            ../abc/schemas/
+          cp "${abcSource}/schemas/parser-rq-diagnostic-gap-policy.schema.json" \
+            ../abc/schemas/
+          cp "${abcSource}/schemas/parser-rq-source-recognition-work.schema.json" \
+            ../abc/schemas/
+          cp "${abcSource}/test/fixtures/parser-rq/classified-source-capture/source.txt" \
+            ../abc/test/fixtures/parser-rq/classified-source-capture/
+          cp "${abcSource}/test/fixtures/parser-rq/diagnostic-gap/raw-diagnostics-valid.json" \
+            ../abc/test/fixtures/parser-rq/diagnostic-gap/
+        '';
+
         buildRustUpstreamParser =
           {
             name,
@@ -470,6 +500,15 @@
         abCargoDeps = pkgs.runCommand "cargo-vendor-dir" { } ''
           cp -Lr --reflink=auto ${rustPlatform.importCargoLock abCargoLock} "$out"
           chmod -R u+w "$out"
+
+          # hegeltest-c ships its generated C header and skips cbindgen when
+          # Cargo packages it. Nix's vendor tree is equivalent, but its path
+          # lacks Cargo's target/package marker; preserve that package boundary
+          # instead of letting cbindgen resolve a second dependency universe.
+          substituteInPlace "$out/hegeltest-c-0.29.0/build.rs" \
+            --replace-fail \
+              'if crate_dir.components().any(|c| c.as_os_str() == "package")' \
+              'if env::var_os("NIX_BUILD_TOP").is_some() || crate_dir.components().any(|c| c.as_os_str() == "package")'
 
           # The locked Sudachi crate lives under sudachi/ in its git repo, but
           # the crate source includes repo-root resources via ../../resources.
@@ -1073,6 +1112,7 @@
           cp -R "$src" source
           chmod -R u+w source
           cd source
+          ${stageParserRqAbcAuthorities}
           export HOME="$TMPDIR/home"
           export CARGO_HOME="$TMPDIR/cargo-home"
           mkdir -p "$HOME" "$CARGO_HOME"
@@ -1353,6 +1393,36 @@
             }
             ''
               bash ${source}/tests/parser-rq-resource-capture-smoke.sh ${source}
+              touch "$out"
+            '';
+
+        parserRqPredicateHardeningCaptureSmokeCheck =
+          pkgs.runCommand "parser-rq-predicate-hardening-capture-smoke"
+            {
+              nativeBuildInputs = [
+                abAozora
+                abAatToParserIr
+                pkgs.clojure
+                pkgs.python3
+                pkgs.coreutils
+                pkgs.diffutils
+              ];
+              AB_AOZORA_BIN = "${abAozora}/bin/ab-aozora";
+              AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
+            }
+            ''
+              bash ${source}/tests/parser-rq-predicate-hardening-capture-smoke.sh \
+                ${source} ${abcSource}
+              export HOME="${abcCljDepsCache}"
+              export JAVA_TOOL_OPTIONS="-Duser.home=${abcCljDepsCache}"
+              export CLJ_CONFIG="$HOME/.clojure"
+              export CLJ_CACHE="$TMPDIR/cp-cache"
+              export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+              export GITLIBS="$HOME/.gitlibs"
+              mkdir -p "$CLJ_CACHE" "$XDG_CONFIG_HOME"
+              cd ${abcSource}
+              clojure -M:test:kaocha -m kaocha.runner \
+                --focus abc.tools.parser-rq-predicate-hardening-capture-test
               touch "$out"
             '';
 
@@ -1661,6 +1731,7 @@
             "--package"
             "ab-aat-to-parser-ir"
           ];
+          extra.preBuild = stageParserRqAbcAuthorities;
         };
 
         # The morphological-analysis engine (`ab-morph-run analyze-aat`). Built
@@ -1728,6 +1799,7 @@
           env = {
             AB_AOZORA_GIT_REV = self.rev or "unknown";
           };
+          extra.preBuild = stageParserRqAbcAuthorities;
         };
 
         abAatToParserIrCheck = mkSmokeCheck {
@@ -2006,6 +2078,7 @@
           reports-pytest = reportsPytestCheck;
           parser-rq-publication-pytest = parserRqPublicationPytestCheck;
           parser-rq-resource-capture-smoke = parserRqResourceCaptureSmokeCheck;
+          parser-rq-predicate-hardening-capture-smoke = parserRqPredicateHardeningCaptureSmokeCheck;
           phase5-checkpoint = phase5CheckpointCheck;
         };
 

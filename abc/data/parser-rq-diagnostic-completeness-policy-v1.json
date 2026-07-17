@@ -2,10 +2,12 @@
   "algorithm_version": "diagnostic-envelope-completeness-v1",
   "diagnostic_wire_version": 3,
   "expected_work_ids": [
-    "work-a"
+    "valid",
+    "invalid",
+    "no-output"
   ],
-  "expected_work_set_hash": "sha256:266739136c3eff555b915823a893ba5e18e1baed1d79d1546f31ea8c88fc321e",
-  "policy_hash": "sha256:bc32cff1b29a797925075b47ffe6c781753d6e7b2f87dacc90027388b653c2f2",
+  "expected_work_set_hash": "sha256:bd650addfb1fa4ce5c44eb75eaa8135dcda2eae17e757023628bb87a0d626be9",
+  "policy_hash": "sha256:5d4d07b34f246d482cb70ba85d25d92057596a74809abeb655c982cab859875a",
   "policy_id": "abc/parser-rq-diagnostic-completeness/v1",
   "raw_diagnostic_schema_hash": "sha256:e467a46ac8196b0193d658012375fda69f55a780e8edb9d1976e36fcf8417592",
   "raw_diagnostic_schema_id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",

@@ -1,0 +1,13 @@
+{
+  "diagnostic_completeness": 1.0,
+  "diagnostic_count": 1,
+  "expected_works": 3,
+  "policy_hash": "sha256:5d4d07b34f246d482cb70ba85d25d92057596a74809abeb655c982cab859875a",
+  "qualification_identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-aggregate.schema.json",
+  "schema_version": "1.0.0",
+  "status": "measured",
+  "vacuous": false,
+  "work_count": 3,
+  "works_with_diagnostics": 1
+}

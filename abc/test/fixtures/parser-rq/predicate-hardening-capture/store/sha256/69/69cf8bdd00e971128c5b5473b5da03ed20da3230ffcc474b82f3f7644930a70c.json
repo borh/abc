@@ -1,0 +1,37 @@
+{
+  "expected_work_ids": [
+    "valid",
+    "invalid",
+    "no-output"
+  ],
+  "policy_hash": "sha256:07335ded503d97e4e5bbfc806aa6d6ac62a5f5bdec82f14ddfc323183e8653cb",
+  "qualification_identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "records": [
+    {
+      "record": {
+        "bytes": 544,
+        "media_type": "application/json",
+        "sha256": "sha256:60f4b4eb1dc8682918e8533c9689675f907dbb626dd857b1aaed7d79615e94ad"
+      },
+      "work_id": "valid"
+    },
+    {
+      "record": {
+        "bytes": 807,
+        "media_type": "application/json",
+        "sha256": "sha256:1274337752a2d91b919075acce14e53b5cff8332b599332f28028c256f615c72"
+      },
+      "work_id": "invalid"
+    },
+    {
+      "record": {
+        "bytes": 506,
+        "media_type": "application/json",
+        "sha256": "sha256:87da62c75a1a5460a9f5be260de4926a02409b630c667faa6c70009db34b8951"
+      },
+      "work_id": "no-output"
+    }
+  ],
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-index.schema.json",
+  "schema_version": "1.0.0"
+}

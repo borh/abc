@@ -3,6 +3,7 @@
 //! usage errors.
 use std::io::Write;
 use std::process::{Command, Stdio};
+use std::str;
 
 fn bin() -> &'static str {
     env!("CARGO_BIN_EXE_ab-aozora")
@@ -89,7 +90,7 @@ fn production_diagnostics_wire_matches_abc_raw_fixture() {
         "../../../../abc/test/fixtures/parser-rq/diagnostic-gap/raw-diagnostics-valid.json"
     )
     .trim_end();
-    assert_eq!(std::str::from_utf8(&actual).unwrap().trim_end(), expected);
+    assert_eq!(str::from_utf8(&actual).unwrap().trim_end(), expected);
 }
 
 #[test]

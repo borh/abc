@@ -1,6 +1,5 @@
 (ns abc.tools.parser-rq-resource-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.parser-rq-resource :as resource]
             [abc.tools.parser-release-qualification :as qualification]
@@ -47,21 +46,15 @@
             (qualification/install-resource-observation {} envelope))))))
 
 (deftest process-tree-memory-policy-contract
-  (runtime-inputs/with-validated-read-trace!
-    {:identity-root "." :cwd-root "." :repo-root "." :workspace-root "."
-     :descriptor {:path "docs/evidence/parser-rq-resource/capture/parser-rq-resource-policy.edn"
-                  :value (files/read-edn
-                          "docs/evidence/parser-rq-resource/capture/parser-rq-resource-policy.edn")}}
-    (fn []
-      (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
-            policy (files/read-json "data/parser-rq-resource-policy-v1.json")
-            memory (first (filter #(= :memory (:predicate_id %))
-                                  (:predicates predicates)))]
-        (is (= :peak_cgroup_memory_bytes (:observed_key memory)))
-        (is (= 2147483648 (get-in memory [:expected :value])))
-        (is (= 0 (get-in policy ["systemd_properties" "MemorySwapMax"])))
-        (is (= (get policy "policy_hash")
-               (hash/format-sha256
-                (hash/sha256-json-jcs (dissoc policy "policy_hash")))))
-        (is (re-matches #"sha256:[0-9a-f]{64}"
-                        (get policy "wrapper_identity_hash")))))))
+  (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
+        policy (files/read-json "data/parser-rq-resource-policy-v1.json")
+        memory (first (filter #(= :memory (:predicate_id %))
+                              (:predicates predicates)))]
+    (is (= :peak_cgroup_memory_bytes (:observed_key memory)))
+    (is (= 2147483648 (get-in memory [:expected :value])))
+    (is (= 0 (get-in policy ["systemd_properties" "MemorySwapMax"])))
+    (is (= (get policy "policy_hash")
+           (hash/format-sha256
+            (hash/sha256-json-jcs (dissoc policy "policy_hash")))))
+    (is (re-matches #"sha256:[0-9a-f]{64}"
+                    (get policy "wrapper_identity_hash")))))

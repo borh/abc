@@ -36,7 +36,7 @@
     "docs\/adr\/0033-source-bundle-identity.md": "sha256:8dc84c890b8a1a7fcf08d8ac6eb0200b2af3d0d8e27a6fa4e814bf7ab115e752",
     "docs\/adr\/0034-typed-evidence-and-lifecycle-closure.md": "sha256:b05b9df35417d08c8ef8c301942bd4b86b114db489d7932b9dfa4e242c3b019b",
     "docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md": "sha256:bd7addd48c6d8cd7400e3dc90a957a167ffc567968490d821d736820809c7352",
-    "docs\/adr\/adr-graph.mmd": "sha256:f9acdd4f8f4775377f80cdca4765513e54dbb7b6f49b8e6e47eb682b2207bb16",
+    "docs\/adr\/adr-graph.mmd": "sha256:60ba4ecb0e1057c7726e95a0e8283d4d0e6807cfe2775f90252abcb8bcb4ab7f",
     "docs\/adr\/adr-relations.edn": "sha256:66034fbb913112841e61e2cfee13e75fb0baae76d63c719d8f186896eacd66b6",
     "docs\/architecture-stages.edn": "sha256:27bb043a7e9af7fb89662c21528717a8d42bdc7d3a4a7de08673ec1ae0302637",
     "docs\/architecture.md": "sha256:0967767f9bb17c0353fc6df848b865b43f4a006e7351868bba511b801a8ffcb0",
@@ -74,7 +74,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.diagram-registry-evidence-test\/diagram-registry-contract\"",
-    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
+    "revision": "1d3d72b0e38425a434224c81788fce78255fa28f",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

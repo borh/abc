@@ -123,6 +123,31 @@
     (testing "a real observation within bound still passes"
       (is (= :pass (:verdict (q/evaluate-predicate pred {:peak_cgroup_memory_bytes {:value 1024}})))))))
 
+(deftest typed-failure-sentinels-are-available-failures-test
+  (let [predicates (into {} (map (juxt :predicate_id identity)
+                                 (:predicates (q/load-predicates))))]
+    (is (= :fail
+           (:verdict (q/evaluate-predicate
+                      (:diagnostic-completeness predicates)
+                      {:diagnostic_completeness
+                       {:value :invalid-diagnostic-envelope}}))))
+    (is (= :fail
+           (:verdict (q/evaluate-predicate
+                      (:parser-ir-schema-validation predicates)
+                      {:parser_ir_schema_validation
+                       {:value :no-parser-ir-output}}))))))
+
+(deftest parser-ir-all-valid-double-passes-exact-comparator-test
+  (let [predicate (first (filter #(= :parser-ir-schema-validation
+                                     (:predicate_id %))
+                                 (:predicates (q/load-predicates))))
+        envelope {:value (double 1.0)
+                  :identity_ref (q/qualification-identity-ref admitted-identity)}]
+    (is (double? (:value envelope)))
+    (is (= :pass
+           (:verdict (q/evaluate-predicate
+                      predicate {:parser_ir_schema_validation envelope}))))))
+
 ;; --- Gate status + ADR promotion rule -----------------------------------------
 
 (deftest predicate-tally-and-adr-status-require-all-pass-test

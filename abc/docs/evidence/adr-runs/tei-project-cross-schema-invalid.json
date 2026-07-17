@@ -61,7 +61,7 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:793e5b8b75e9f872b0b9eb21b38ba23afd14a5a4b421f05c97d4e9420ca4324e",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:4b7614e6d78bdf08287926f5fdc46ce59413378e3051f84b09f62d15422bd07b",
     "test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
     "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:e9098f78c36449841749d35c416a3578f8cbb9fb9f6e7864dc5bebdd17856b78",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
@@ -84,7 +84,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-project-cross-schema-invalid\\\"\"",
-    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
+    "revision": "d9e80cb6a3f4c3836f613514f8b0c8cd764542db",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

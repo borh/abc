@@ -39,8 +39,8 @@
   (conj (set (keys member-observed-keys)) :measurements))
 
 (def capture-keys
-  #{:schema_id :schema_version :capture_generation_ref :authorization_ref
-    :candidate_ref :qualification_identity_ref :members})
+  #{:schema_id :schema_version :capture_generation_ref :capture_started_at_utc
+    :authorization_ref :candidate_ref :qualification_identity_ref :members})
 
 (def blob-keys #{:sha256 :bytes :media_type :locator})
 
@@ -323,7 +323,8 @@
 
 (declare canonical-file-equal? blob-for-value write-canonical-json! write-edn!)
 
-(defn assemble-capture-generation! [candidate authorization capture-root]
+(defn assemble-capture-generation!
+  [candidate authorization capture-root capture-started-at-utc]
   (let [members
         (into {}
               (for [member (keys member-observed-keys)
@@ -344,6 +345,7 @@
         capture-base
         {:schema_id "https://w3id.org/abc/schemas/parser-rq-capture-index.schema.json"
          :schema_version "1.0.0"
+         :capture_started_at_utc capture-started-at-utc
          :authorization_ref (:authorization_ref authorization)
          :candidate_ref (:candidate_ref candidate)
          :qualification_identity_ref (:qualification_identity_ref candidate)
@@ -355,10 +357,11 @@
     (write-edn! (fs/file capture-root "capture-index.edn") capture-index)
     {:capture_index capture-index :members members :measurements measurements}))
 
-(defn verify-capture-errors [candidate authorization capture-root now]
+(defn verify-capture-errors [candidate authorization capture-root]
   (try
     (let [{:keys [capture_index]} (load-capture-generation candidate capture-root)]
-      (cond-> (vec (verify-authorization candidate authorization now))
+      (cond-> (vec (verify-authorization candidate authorization
+                                         (:capture_started_at_utc capture_index)))
         (not= (:authorization_ref authorization) (:authorization_ref capture_index))
         (conj "capture index is not bound to the authorization")))
     (catch Exception error
@@ -548,7 +551,7 @@
         ids (mapv :predicate_id verdicts)]
     (cond-> []
       (seq (verify-authorization candidate authorization
-                                 (:not_before_utc authorization)))
+                                 (:capture_started_at_utc capture)))
       (conj "candidate authorization is invalid")
 
       (not= (:candidate_ref candidate) (:candidate_ref capture))
@@ -916,7 +919,8 @@
                          (assemble-capture-generation!
                           candidate
                           (files/read-edn (required-option options :authorization))
-                          capture-root))]
+                          capture-root
+                          (required-option options :capture_started_at)))]
         (write-edn! (required-option options :out) (:measurements generation))
         (println "ok"))
       "verify-capture"
@@ -924,8 +928,7 @@
             errors (verify-capture-errors
                     (files/read-edn (required-option options :candidate))
                     (files/read-edn (required-option options :authorization))
-                    (required-option options :capture_root)
-                    (or (:utc options) (str (Instant/now))))]
+                    (required-option options :capture_root))]
         (when (seq errors) (throw (ex-info "capture invalid" {:errors errors})))
         (println "ok"))
       "project"

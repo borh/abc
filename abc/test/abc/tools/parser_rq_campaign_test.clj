@@ -95,6 +95,7 @@
    (with-ref
      {:schema_id "https://w3id.org/abc/schemas/parser-rq-capture-index.schema.json"
       :schema_version "1.0.0"
+      :capture_started_at_utc "2026-07-17T00:30:00Z"
       :authorization_ref (:authorization_ref authorization-value)
       :candidate_ref (:candidate_ref candidate-value)
       :qualification_identity_ref (:qualification_identity_ref candidate-value)
@@ -331,6 +332,12 @@
     (is (some #(re-find #"canonical projections" %)
               (campaign/promotion-errors options)))
     (write-canonical-json! report-path report)
+    (write-edn! (fs/file candidate-dir "authorizations" "authorization.edn")
+                (assoc authorization-value :not_after_utc "2026-07-17T00:15:00Z"))
+    (is (some #(re-find #"authorization is invalid" %)
+              (campaign/promotion-errors options)))
+    (write-edn! (fs/file candidate-dir "authorizations" "authorization.edn")
+                authorization-value)
     (write-edn! (fs/file candidate-dir "captures" "sibling" "capture-index.edn")
                 capture-index)
     (is (some #(re-find #"capture resolution requires exactly one" %)

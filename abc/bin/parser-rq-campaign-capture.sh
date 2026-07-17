@@ -51,8 +51,10 @@ flock -n 9
 # candidate/corpus/store coordinates; composition is not caller-delegated.
 clojure -M:abc/parser-rq-campaign verify-provenance \
   --candidate "$candidate" --provenance "$provenance"
+capture_started_at_utc=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
 clojure -M:abc/parser-rq-campaign verify-authorization \
-  --candidate "$candidate" --authorization "$authorization"
+  --candidate "$candidate" --authorization "$authorization" \
+  --utc "$capture_started_at_utc"
 
 export PARSER_RQ_CANDIDATE="$candidate"
 export PARSER_RQ_AUTHORIZATION="$authorization"
@@ -70,7 +72,8 @@ export PARSER_RQ_STAGING_ROOT="$staging_root"
 
 clojure -M:abc/parser-rq-campaign compose \
   --candidate "$candidate" --authorization "$authorization" \
-  --capture-root "$staging_root" --out "$staging_root/measurements.edn"
+  --capture-root "$staging_root" --capture-started-at "$capture_started_at_utc" \
+  --out "$staging_root/measurements.edn"
 clojure -M:abc/parser-rq-campaign verify-capture \
   --candidate "$candidate" --authorization "$authorization" \
   --capture-root "$staging_root"

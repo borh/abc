@@ -23,13 +23,13 @@
     "src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
     "src\/abc\/tools\/malli.clj": "sha256:16c04c051ac5829e36b7d0e7707c0057cef22ac2c20f778ad08f0d3b40df471e",
     "src\/abc\/tools\/parser_release_qualification.clj": "sha256:7b9c628296ade88dc558caeca1c787a3f6d5706e413738cfa7fe3c53879b3ce7",
-    "src\/abc\/tools\/parser_rq_campaign.clj": "sha256:b30931dca29a98bb3a669e5dd3bbd648cc9a2abb9efa0db499da6b6e65114a8b",
+    "src\/abc\/tools\/parser_rq_campaign.clj": "sha256:a4419ee7d7b744526548d1c7390d7ba3c4adc1c62e03837dc0076479a115603d",
     "src\/abc\/tools\/parser_rq_capture.clj": "sha256:4953a50f9fc834f4a323ae3ed4b2c3c915e62bcbc6f0f8055ccff7f557bff233",
     "src\/abc\/tools\/parser_rq_core_attempt.clj": "sha256:3e4fb4e779d8d0c7decedabbfbc4cb917798e51cc122cace7a4f7173aefc1282",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
     "test\/abc\/tools\/parser_release_qualification_test.clj": "sha256:d613394540b378f8445b4b63b1464afa0a4d431b03e447819487df2abf3ccdf4",
     "test\/abc\/tools\/parser_rq_admission_promotion_drift_test.clj": "sha256:aec380ae7b55b5b8efb29ac6617614d5983499a1bfa7840494c9228f9346ee77",
-    "test\/abc\/tools\/parser_rq_campaign_test.clj": "sha256:4f0fff204c1324ae62acf2663c63783a0406bab7e2c468b35c772f9a8ab38419",
+    "test\/abc\/tools\/parser_rq_campaign_test.clj": "sha256:767f06a1109f493595169c8a9c5dd981aa05282590a3e0b901601c0a1b7b8277",
     "test\/abc\/tools\/parser_rq_core_attempt_test.clj": "sha256:0e2c70bed9872e91d786c0f2f0a42be03ca111b513582e7f17f8137025e57db7",
     "test\/fixtures\/parser-rq\/admission-promotion\/summary.edn": "sha256:0ac875de07de31afbf1c2603e0640053f586d3b8335abe285389be67fe226b72"
   },
@@ -47,7 +47,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-release-qualification-test\/final-instrument-binding-rotation-preserves-predicate-semantics\" \"--focus\" \"abc.tools.parser-rq-core-attempt-test\" \"--focus\" \"abc.tools.parser-rq-campaign-test\" \"--focus\" \"abc.tools.parser-rq-admission-promotion-drift-test\"",
-    "revision": "e539c6a30c34b62427fbc1b7a2b566d1e3c1bc2f",
+    "revision": "9201e8dde25ea34eb07aa7a2b364860c8322b87a",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

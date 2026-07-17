@@ -155,11 +155,14 @@ minimal implementation, independently testable tasks. Their entry contracts:
   `parser-ir-publication-preservation.schema.json` over the pinned build's
   publication output; ratio denominator in works, every work contributes a record.
   **Implementation status (2026-07-17): implemented and drift-checked** with a
-  bounded three-work Capture→Derive fixture. P3 and P5's authoritative capture,
+  bounded three-work Capture→Derive fixture. P5's authoritative capture,
   admission, and conditional promotion remain unstarted.
-- **P3 Resource** — **choose one** peak-RSS mechanism in-plan (GNU `time -v`
-  `getrusage` vs cgroup `memory.peak` vs a wrapper) with the rationale; do not
-  leave three open. Host pinned + disclosed in the manifest.
+- **P3 Resource — implemented and drift-checked (2026-07-17).** The selected
+  authority is cgroup-v2 `memory.peak` for the complete per-work
+  process tree inside a transient systemd user service, with swap prohibited,
+  a capability-based hinoki host identity, and separately disclosed attempt
+  context. ADR 0040 governs the predicate-set rotation; P5 still owns the
+  authoritative corpus recapture.
 - **P4A1 Source claims** — characterizes and decomplects the live tiled
   classified-span stream, freezes the closed ABC role/disposition policy, and
   projects authenticated ledgers in the existing fused normalize/fold traversal.
@@ -188,7 +191,12 @@ minimal implementation, independently testable tasks. Their entry contracts:
   → append a **new** registry generation → `clojure -M:abc/aat-compat-admission --
   --candidates <row>` requires `:admitted`. R7 (barrier): generate the bundle from
   committed manifests, drift-test, conditional ADR 0039 promotion (honest fail
-  leaves it Proposed), governance green.
+  leaves it Proposed), governance green. The focused design is
+  `../specs/2026-07-17-parser-rq-admission-promotion-design.md`: it treats the
+  immutable implementation commit as the candidate even though later evidence
+  and governance commits advance repository HEAD, adds Capture -> Derive
+  authority for predicates 1/7/9, and sequences ADR 0040 resolution before any
+  conditional ADR 0039 promotion.
 - **PS Study axes** — S2 diagnostics (nearly ready: fixture + conformance scorer
   exist), S1 fidelity oracle, S3 span accuracy (may end `non_comparable` for
   span-less adapter lanes), S4 KM latency + frozen bootstrap (needs a

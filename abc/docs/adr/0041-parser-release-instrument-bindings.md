@@ -1,10 +1,18 @@
 # ADR 0041: Bind Final Parser Release Instruments
 
-Status: Proposed
+Status: Accepted
 Date: 2026-07-17
-Depends on: ADR 0002, ADR 0039, ADR 0040
+Accepted: 2026-07-17
+Depends on: ADR 0002
 Validation scope: structural
 Release authority: development
+
+## Implementation Status
+
+The five final instrument bindings, generated predicate-set identity, bounded
+core-attempt analyzer, and admission/promotion transaction evidence are
+implemented and registered. The authoritative corpus capture is not part of
+this decision; ADR 0040 and ADR 0039 remain Proposed.
 
 ## Context
 
@@ -48,13 +56,16 @@ predicate verdicts, registry admission, or ADR 0039 promotion.
 
 - **ADR-0041-C1 — structural-invariant:** The five final instrument bindings
   change the predicate-set hash while leaving every predicate semantic field
-  byte-for-value unchanged.
+  byte-for-value unchanged. Evidence:
+  `test/abc/tools/parser_release_qualification_test.clj`.
 - **ADR-0041-C2 — structural-invariant:** The core-attempt analyzer authenticates
   a closed three-repetition index and derives the maximum independently for
-  fatal failures, wall time, and timeouts.
+  fatal failures, wall time, and timeouts. Evidence:
+  `test/abc/tools/parser_rq_core_attempt_test.clj`.
 - **ADR-0041-C3 — fixture-behavior:** The bounded admission/promotion transaction
   rejects sibling captures, stale evaluations, incomplete predicate sets, and
-  canonical drift.
+  canonical drift. Evidence:
+  `test/abc/tools/parser_rq_admission_promotion_drift_test.clj`.
 
 ## Evidence
 

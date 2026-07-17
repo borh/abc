@@ -49,9 +49,9 @@
 (deftest process-tree-memory-policy-contract
   (runtime-inputs/with-validated-read-trace!
     {:identity-root "." :cwd-root "." :repo-root "." :workspace-root "."
-     :descriptor {:path "docs/evidence/parser-rq-resource/descriptor.edn"
+     :descriptor {:path "docs/evidence/parser-rq-resource/capture/parser-rq-resource-policy.edn"
                   :value (files/read-edn
-                          "docs/evidence/parser-rq-resource/descriptor.edn")}}
+                          "docs/evidence/parser-rq-resource/capture/parser-rq-resource-policy.edn")}}
     (fn []
       (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
             policy (files/read-json "data/parser-rq-resource-policy-v1.json")

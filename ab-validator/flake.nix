@@ -1329,19 +1329,28 @@
               touch "$out"
             '';
 
-        parserRqResourceCgroupSmokeApp =
-          pkgs.writeShellApplication {
-            name = "parser-rq-resource-cgroup-smoke";
-            runtimeInputs = [ pkgs.systemd pkgs.python3 pkgs.coreutils pkgs.jq ];
-            text = ''
-              exec bash ${source}/tests/parser-rq-resource-cgroup-live-smoke.sh \
-                ${source}/reports/parser-ir/parser-rq-resource-wrapper.py
-            '';
-          };
+        parserRqResourceCgroupSmokeApp = pkgs.writeShellApplication {
+          name = "parser-rq-resource-cgroup-smoke";
+          runtimeInputs = [
+            pkgs.systemd
+            pkgs.python3
+            pkgs.coreutils
+            pkgs.jq
+          ];
+          text = ''
+            exec bash ${source}/tests/parser-rq-resource-cgroup-live-smoke.sh \
+              ${source}/reports/parser-ir/parser-rq-resource-wrapper.py
+          '';
+        };
 
         parserRqResourceCaptureSmokeCheck =
           pkgs.runCommand "parser-rq-resource-capture-smoke"
-            { nativeBuildInputs = [ pkgs.python3 pkgs.coreutils ]; }
+            {
+              nativeBuildInputs = [
+                pkgs.python3
+                pkgs.coreutils
+              ];
+            }
             ''
               bash ${source}/tests/parser-rq-resource-capture-smoke.sh ${source}
               touch "$out"

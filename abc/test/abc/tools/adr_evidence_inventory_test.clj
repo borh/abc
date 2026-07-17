@@ -216,8 +216,8 @@
         value (inventory/inventory-value adrs state)]
     (is (= 26 (get value "baseline_adr_count"))
         "the immutable baseline contains 26 ADRs")
-    (is (= 28 (count accepted))
-        "ADRs 0034 and 0038 are the additional live Accepted ADRs")
+    (is (= 29 (count accepted))
+        "ADRs 0034, 0038, and 0041 are the additional live Accepted ADRs")
     (is (zero? (get-in value ["families" "unclassified"])))
     (is (= "parser-ir-publication"
            (get (first (filter #(= 38 (get % "adr"))

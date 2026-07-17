@@ -308,12 +308,15 @@
           snapshot-problems (validate-snapshot-value snapshot)
           adrs (adr/parse-all (fs/file abc-root "docs/adr"))
           accepted (accepted-adrs adrs)
+          accepted-by-number (into {} (map (juxt :num identity)) accepted)
           adr-0034 (first (filter #(= 34 (:num %)) adrs))
           migration-state (migration/load-migration-state abc-root {})
           strict-result (governance/run! abc-root {:mode :enforce
                                                    :workspace-root workspace-root})
           pre-count (get snapshot "accepted_adr_count")
-          pre-criteria (get snapshot "accepted_criterion_count")]
+          pre-criteria (get snapshot "accepted_criterion_count")
+          bootstrap-numbers (conj (set (get snapshot "accepted_adr_numbers")) 34)
+          bootstrap-adrs (keep accepted-by-number bootstrap-numbers)]
       (vec
        (concat
         snapshot-problems
@@ -327,13 +330,14 @@
           [(problem :adr-0034-release-authority-mismatch
                     "ADR 0034 must declare no release authority")])
         (when (and (integer? pre-count)
-                   (not= (inc pre-count) (count accepted)))
+                   (not= (inc pre-count) (count bootstrap-adrs)))
           [(problem :accepted-adr-count-mismatch
-                    "final tree must add exactly ADR 0034 to the Accepted set")])
+                    "bootstrap transition must retain its Accepted set and add ADR 0034")])
         (when (and (integer? pre-criteria)
-                   (not= (+ 3 pre-criteria) (accepted-criterion-count adrs)))
+                   (not= (+ 3 pre-criteria)
+                         (accepted-criterion-count bootstrap-adrs)))
           [(problem :accepted-criterion-count-mismatch
-                    "final tree must add exactly three binding criteria")])
+                    "bootstrap transition must add exactly ADR 0034's three binding criteria")])
         (when (seq (:problems migration-state))
           [(problem :incomplete-migration-ledger
                     "final tree has migration ledger problems"

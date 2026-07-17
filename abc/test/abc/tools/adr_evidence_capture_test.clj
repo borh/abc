@@ -616,6 +616,15 @@
                        (spit file (pr-str value)))
                      (capture/capture! (capture-options repo staging path output))))))))
 
+(deftest component-analysis-root-is-workspace-relative-test
+  (let [workspace (temp-dir "abc-evidence-component-workspace")
+        repo (fs/file workspace "abc")
+        analysis-root (ns-resolve 'abc.tools.adr-evidence-capture
+                                  'component-analysis-root)]
+    (fs/create-dirs repo)
+    (is (= (fs/file (fs/canonicalize repo))
+           (analysis-root workspace "abc")))))
+
 (deftest v2-runner-shape-is-repository-bound-and-focus-only-test
   (let [validate! (ns-resolve 'abc.tools.adr-evidence-capture 'validate-descriptor!)
         prefix! (ns-resolve 'abc.tools.adr-evidence-capture 'prefixed-component-path)

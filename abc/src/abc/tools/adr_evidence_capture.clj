@@ -78,6 +78,9 @@
 (defn- normalized-component-root [profile]
   (-> (:component-root profile) fs/path fs/normalize str (str/replace "\\" "/")))
 
+(defn- component-analysis-root [workspace-root component-root]
+  (fs/file (fs/canonicalize (fs/file workspace-root component-root))))
+
 (defn- expected-runner [profile]
   (if (= "component-clojure-test-v1" (:kind profile))
     (-> (fs/path (normalized-component-root profile) "bin/kaocha")
@@ -326,7 +329,7 @@
                                            :descriptor runtime-descriptor}
                          _ (runtime-inputs/validate-runtime-input-manifest! manifest-options)
                          analysis-root (if component?
-                                         (fs/file repo-root component-root)
+                                         (component-analysis-root workspace-root component-root)
                                          repo-root)]
                      (when (= :kaocha (:kind contract))
                        (runtime-inputs/validate-focused-deftests!

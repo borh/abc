@@ -183,14 +183,29 @@
                      :else :admitted)]
         (assoc report :status status)))))
 
+(defn append-missing
+  "Return a new registry containing exactly the missing candidates.
+
+  The input registry is never mutated. Already-admitted, conflicting, or
+  invalid candidate sets are refused so an operator cannot use this function
+  as a general-purpose registry editor."
+  [registry candidates]
+  (let [report (admission-report registry candidates)]
+    (when-not (= :missing (:status report))
+      (throw (ex-info "compatibility append requires only missing candidates"
+                      {:status (:status report)})))
+    (let [missing (sort-by (comp pr-str match-key) (:missing report))]
+      (assoc registry :entries (into (vec (:entries registry)) missing)))))
+
 (def cli-options
   [[nil "--registry PATH" "Registry EDN path"
     :default registry-path]
-   [nil "--candidates PATH" "Producer compatibility candidates EDN path"]])
+   [nil "--candidates PATH" "Producer compatibility candidates EDN path"]
+   [nil "--append-out PATH" "Write an append-only registry value to a new path"]])
 
 (defn usage
   [summary]
-  (str "Usage: clojure -M:abc/aat-compat-admission -- --candidates <path> [--registry <path>]\n\n"
+  (str "Usage: clojure -M:abc/aat-compat-admission -- --candidates <path> [--registry <path>] [--append-out <path>]\n\n"
        summary))
 
 (defn -main
@@ -201,10 +216,15 @@
     :required    [:candidates]
     :usage-fn    usage
     :run         (fn [{:keys [options]}]
-                   (let [report (admission-report
-                                 (files/read-edn (:registry options))
-                                 (files/read-edn (:candidates options)))]
+                   (let [registry (files/read-edn (:registry options))
+                         candidates (files/read-edn (:candidates options))
+                         report (admission-report registry candidates)]
+                     (when-let [out (:append-out options)]
+                       (files/write-text! out
+                                          (str (pr-str (append-missing registry candidates))
+                                               "\n")))
                      ;; report is the primary tool output on stdout
                      (prn report)
                      report))
-    :fail?       (fn [report] (not= :admitted (:status report)))}))
+    :fail?       (fn [report]
+                   (not (contains? #{:admitted :missing} (:status report))))}))

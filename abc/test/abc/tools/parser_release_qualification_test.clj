@@ -31,12 +31,17 @@
     (update-vals values #(hash-map :value % :identity_ref identity-ref))))
 
 (defn report-input [identity measurements]
-  {:report_id "test-report"
-   :corpus (q/load-corpus)
-   :predicate-set (q/load-predicates)
-   :registry (compat/load-registry)
-   :identity identity
-   :measurements measurements})
+  (let [registry (compat/load-registry)
+        candidate (first (filter #(= (select-keys % compat/match-keys)
+                                     (q/admission-query identity))
+                                 (:entries registry)))]
+    {:report_id "test-report"
+     :corpus (q/load-corpus)
+     :predicate-set (q/load-predicates)
+     :registry registry
+     :identity identity
+     :admission_candidate (when candidate {:entries [candidate]})
+     :measurements measurements}))
 
 ;; --- Pinned corpus integrity --------------------------------------------------
 
@@ -171,6 +176,40 @@
         report (q/build-report (report-input unadmitted (envelopes unadmitted all-pass-values)))]
     (is (false? (q/admitted? (compat/load-registry) unadmitted)))
     (is (= :not-qualified (:gate_status report)))))
+
+(deftest full-evidence-conflict-takes-precedence-over-compatible-membership
+  (let [registry (compat/load-registry)
+        admitted-entry (first (filter #(compat/compatible? {:entries [%]}
+                                                           admitted-identity)
+                                      (:entries registry)))
+        conflicting (update admitted-entry :compatibility
+                            {"lossy" "lossless" "lossless" "lossy"})
+        report (q/build-report
+                (assoc (report-input admitted-identity
+                                     (envelopes admitted-identity all-pass-values))
+                       :admission_candidate {:entries [conflicting]}))]
+    (is (= :conflict (get-in report [:admission :status])))
+    (is (= :not-qualified (:gate_status report)))
+    (is (= "Proposed" (:adr_0039_status report)))))
+
+(deftest absent-or-invalid-admission-candidate-cannot-qualify
+  (let [base (report-input admitted-identity
+                           (envelopes admitted-identity all-pass-values))]
+    (doseq [[expected input] [[:invalid (dissoc base :admission_candidate)]
+                              [:invalid (assoc base :admission_candidate {:entries [{}]})]]]
+      (let [report (q/build-report input)]
+        (is (= expected (get-in report [:admission :status])))
+        (is (= :not-qualified (:gate_status report)))))
+    (let [novel-identity (assoc admitted-identity :aat_version 99999)
+          novel-entry (assoc (first (:entries (:admission_candidate base)))
+                             :aat_version 99999)
+          report (q/build-report
+                  (assoc base
+                         :identity novel-identity
+                         :measurements (envelopes novel-identity all-pass-values)
+                         :admission_candidate {:entries [novel-entry]}))]
+      (is (= :unadmitted (get-in report [:admission :status])))
+      (is (= :not-qualified (:gate_status report))))))
 
 (deftest gate-not-qualified-when-observations-incoherent
   (let [measurements (assoc-in (envelopes admitted-identity all-pass-values)

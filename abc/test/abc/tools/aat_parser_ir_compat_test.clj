@@ -29,11 +29,32 @@
     (let [entry (first (:entries registry))
           ;; change a non-match-key numeric evidence field: still schema-valid,
           ;; but differs from the registry entry -> conflict, not admitted.
-          changed (assoc-in entry [:evidence_scope :files_scanned]
-                            (inc (get-in entry [:evidence_scope :files_scanned])))
+          changed (update entry :compatibility
+                          {"lossy" "lossless" "lossless" "lossy"})
           report (compat/admission-report registry {:entries [changed]})]
       (is (= :conflict (:status report)))
       (is (= 1 (count (:conflicts report)))))))
+
+(deftest append-missing-is-exact-and-append-only-test
+  (let [entry (first (:entries registry))
+        novel (assoc entry :aat_version 99999)
+        appended (compat/append-missing registry {:entries [novel]})]
+    (is (= (:entries registry)
+           (subvec (:entries appended) 0 (count (:entries registry)))))
+    (is (= novel (last (:entries appended))))
+    (is (= (inc (count (:entries registry)))
+           (count (:entries appended))))))
+
+(deftest append-missing-refuses-non-missing-input-test
+  (let [entry (first (:entries registry))
+        conflict (update entry :compatibility
+                         {"lossy" "lossless" "lossless" "lossy"})]
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (compat/append-missing registry {:entries [entry]})))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (compat/append-missing registry {:entries [conflict]})))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (compat/append-missing registry {:entries [{}]})))))
 
 ;; --- CLI contract (dispatch-level; full subprocess verified manually) ---
 

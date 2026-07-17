@@ -280,6 +280,27 @@
           (set (keys (admission-query identity))))
        (compat/compatible? registry (admission-query identity))))
 
+(defn admission-resolution
+  "Resolve gate membership and full-evidence admission without conflating them.
+
+  Nine-field compatibility is necessary, but a full-entry conflict or invalid
+  candidate takes precedence and prevents qualification."
+  [registry identity admission-candidate]
+  (let [query (admission-query identity)
+        report (compat/admission-report registry admission-candidate)
+        candidates (:entries admission-candidate)
+        candidate-query (when (= 1 (count candidates))
+                          (select-keys (first candidates) compat/match-keys))
+        membership? (and (= admission-identity-keys compat/match-keys)
+                         (compat/compatible? registry query))
+        status (cond
+                 (contains? #{:invalid-registry :invalid-candidates} (:status report)) :invalid
+                 (not= candidate-query query) :invalid
+                 (= :conflict (:status report)) :conflict
+                 (and membership? (= :admitted (:status report))) :admitted
+                 :else :unadmitted)]
+    {:status status :query query :report report}))
+
 (defn qualification-identity-ref
   "Canonical content identity of the full qualification identity value."
   [identity]
@@ -356,8 +377,9 @@
                 [:identity_ref :string]
                 [:errors [:vector :string]]]]
    [:admission [:map
-                [:status [:enum :admitted :unadmitted]]
-                [:query [:map-of :keyword :any]]]]
+                [:status [:enum :admitted :unadmitted :conflict :invalid]]
+                [:query [:map-of :keyword :any]]
+                [:report :any]]]
    [:predicate_verdicts [:vector predicate-result-schema]]
    [:verdict_tally [:map-of :keyword :int]]])
 
@@ -373,13 +395,14 @@
   "Assemble the machine-readable qualification report from a captured
   measurement bundle. `identity` records the running parser tuple and the
   admitted-tuple comparison; `measurements` supplies the observed values."
-  [{:keys [report_id corpus predicate-set registry identity measurements]}]
+  [{:keys [report_id corpus predicate-set registry identity measurements
+           admission_candidate]}]
   (let [registry (or registry (compat/load-registry))
         results (evaluate predicate-set measurements)
         errors (into (coherence-errors identity measurements)
                      (pinned-contract-errors identity corpus predicate-set))
-        admitted (admitted? registry identity)
-        precondition-ok? (and (empty? errors) admitted)]
+        admission (admission-resolution registry identity admission_candidate)
+        precondition-ok? (and (empty? errors) (= :admitted (:status admission)))]
     {:report_schema_version "abc/parser-release-qualification-report/v2"
      :report_id report_id
      :gate_status (gate-status precondition-ok? results)
@@ -388,8 +411,7 @@
      :coherence {:status (if (empty? errors) :ok :error)
                  :identity_ref (qualification-identity-ref identity)
                  :errors errors}
-     :admission {:status (if admitted :admitted :unadmitted)
-                 :query (admission-query identity)}
+     :admission admission
      :predicate_verdicts results
      :verdict_tally (verdict-tally results)}))
 
@@ -408,6 +430,7 @@
                  :corpus (load-corpus)
                  :predicate-set (load-predicates)
                  :identity (:identity bundle)
+                 :admission_candidate (:admission_candidate bundle)
                  :measurements (:measurements bundle)}))
 
 (defn -main

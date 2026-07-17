@@ -60,7 +60,7 @@
     "abc\/src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "abc\/src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "abc\/src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:793e5b8b75e9f872b0b9eb21b38ba23afd14a5a4b421f05c97d4e9420ca4324e",
+    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:4b7614e6d78bdf08287926f5fdc46ce59413378e3051f84b09f62d15422bd07b",
     "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
     "abc\/test\/abc\/tools\/schema_validation_evidence_test.clj": "sha256:26545378cdf7f6c390556306120c19fd6065b27bc249ab5faaa2a37301fb65fd"
   },
@@ -78,7 +78,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.schema-validation-evidence-test\/current-linked-art-parity-and-context-hash-contract-test\"",
-    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
+    "revision": "49578e63fa07670692f2d566ac74f37d77185bd8",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

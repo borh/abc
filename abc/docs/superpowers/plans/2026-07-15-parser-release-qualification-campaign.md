@@ -97,10 +97,10 @@ function (all in `abc.tools.parser-release-qualification`, reusing
 
 ## Dependency graph and the plan split (fixes prior Blocker 3)
 
-Eight focused plans; the crux is that Foundation contains four separately
+Ten focused plans; the crux is that Foundation contains four separately
 reviewable systems and must land first.
 
-| # | Focused plan (to write) | Delivers | Depends on |
+| # | Focused plan | Delivers | Depends on |
 |---|---|---|---|
 | P0 | `…-parser-rq-foundation.md` | Contracts 1 & 2 made real: plumbing probe, manifest contract, envelope contract, external-store + rebinding verifier, gate coherence precondition | — |
 | P1 | `…-parser-rq-source-accountability.md` | R1 source-span coverage (byte denominator + versioned taxonomy) → R2 silent-drops | P0 |
@@ -186,17 +186,21 @@ minimal implementation, independently testable tasks. Their entry contracts:
   measurements, compatibility registry, or ADR 0039; P5 remains the authority for
   final candidate capture, admission, and conditional promotion.
 - **P5 Admission + promotion** — pin the final implementation commit before any
-  authoritative capture (the binary bakes `self.rev`); capture R1–R5 for that
-  identity; then R6: `ab-aat-to-parser-ir audit-corpus … --compat-edn-out`
-  → append a **new** registry generation → `clojure -M:abc/aat-compat-admission --
-  --candidates <row>` requires `:admitted`. R7 (barrier): generate the bundle from
-  committed manifests, drift-test, conditional ADR 0039 promotion (honest fail
-  leaves it Proposed), governance green. The focused design is
+  authoritative capture (the binary bakes `self.rev`); require reproducible
+  executable bytes; pre-authorize one non-retryable volatile capture; and capture
+  R1–R5 for that identity. Then R6 runs
+  `ab-aat-to-parser-ir audit-corpus --compat-edn-out` and resolves strict admission:
+  an already byte-equal row is admitted, a missing row is appended exactly, and a
+  nine-field match with different evidence is a blocking conflict. R7 (barrier)
+  generates the bundle from committed manifests, verifies two storage failure
+  domains, drift-tests canonical projections, and conditionally promotes ADR 0039
+  (honest fail leaves it Proposed). The focused design is
   `../specs/2026-07-17-parser-rq-admission-promotion-design.md`: it treats the
   immutable implementation commit as the candidate even though later evidence
   and governance commits advance repository HEAD, adds Capture -> Derive
   authority for predicates 1/7/9, and sequences ADR 0040 resolution before any
-  conditional ADR 0039 promotion.
+  conditional ADR 0039 promotion. The execution plan is
+  `2026-07-17-parser-rq-admission-promotion.md`.
 - **PS Study axes** — S2 diagnostics (nearly ready: fixture + conformance scorer
   exist), S1 fidelity oracle, S3 span accuracy (may end `non_comparable` for
   span-less adapter lanes), S4 KM latency + frozen bootstrap (needs a
@@ -205,12 +209,10 @@ minimal implementation, independently testable tasks. Their entry contracts:
 
 ## Self-review
 
-- The roadmap no longer overclaims: it is a program that decomposes into seven
-  independently-testable focused plans, matching the reviewer's split and the
-  writing-plans rule. Only P0 (Foundation) is fully written now; the rest are
-  written just-in-time as their predecessors' contracts settle (P1–P5 all bind to
-  P0's manifest/envelope contracts, so writing them before P0 lands would speculate
-  on an unfixed contract).
+- The roadmap no longer overclaims: it is a program that decomposes into ten
+  independently testable focused plans, matching the reviewer's split and the
+  writing-plans rule. P0–P5 are written against settled predecessor contracts;
+  PS remains a later, non-gating study plan.
 - Prior Blocker 1 fixed: admission is a *projection* (`admission-query` → nine
   match-keys) checked with `compatible?`, distinct from full-identity coherence;
   named functions, not implicit `match-keys` reuse.

@@ -2,7 +2,7 @@
 
 Date: 2026-07-17
 
-Status: Approved direction; implementation pending
+Status: Revised after depth-4 review; implementation pending
 
 Depends on: P0 Foundation, P1/P4A source accountability and diagnostic gap
 partition, P2 publication structure, P3 process-tree resource qualification,
@@ -82,8 +82,9 @@ not maintain a mutable campaign-status flag. The authoritative facts are:
 - a conversion-audit candidate row and its admission report;
 - a deterministic nine-observation measurement bundle;
 - a deterministic gate report; and
-- governance commits that may accept ADR 0040 and ADR 0039 only when their
-  independently checked preconditions hold.
+- governance commits that accept the instrument-binding ADR before freeze and
+  may accept ADR 0040 and ADR 0039 only when their independently checked
+  preconditions hold.
 
 Capture, admission, evaluation, and promotion are separate boundaries. No
 capture program edits the registry or an ADR. No admission program changes an
@@ -150,6 +151,15 @@ candidate descriptor. A prebuilt binary whose labels merely claim the candidate
 identity is unavailable unless its recorded Nix output and byte identity match
 the built candidate outputs.
 
+Bit-reproducible candidate builds are an explicit eligibility precondition.
+Before authorization, hinoki performs two clean, independent Nix rebuilds of
+every measured executable and compares output/NAR identities, executable byte
+counts, and SHA-256 digests. Any disagreement makes the candidate unavailable
+and blocks capture. The accepted output closure is then preserved by logical
+identity in the replicated external store; recovery first re-resolves those
+preserved bytes. Rebuilding is a valid recovery only because the candidate has
+already passed the two-build reproducibility check.
+
 ### Instrument and policy identity
 
 The final `instrument_versions` map is closed over every producer used by the
@@ -193,17 +203,27 @@ metadata ADR.
 
 ## Artifact model
 
-P5 separates measurement time from registry time. A qualification identity may
-have more than one honest capture attempt, and the same capture may be evaluated
-before and after an append-only registry admission. Keying a mutable directory
-only by qualification identity would erase those successions.
+P5 separates measurement time from registry time. One candidate has one
+authorized capture, but that capture may be evaluated before and after an
+append-only registry admission. Keying a mutable directory only by
+qualification identity would erase that evaluation succession.
+
+The repository may preserve captures for many candidate identities, but P5
+authorizes exactly one authoritative volatile capture for any one candidate.
+Before execution, a committed capture authorization binds the candidate
+identity, hinoki host policy, fixed execution window, fixed repetition schedule,
+and ordinal `1`. The capture tool refuses to start outside that window, and the
+capture index must reference the authorization hash. Production-shaped probes
+use fixture identities and finish before candidate freeze; they cannot become
+authoritative captures by relabeling.
 
 The planned committed layout is:
 
 ```text
 abc/docs/reports/parser-rq/runs/<identity-ref-without-sha256-prefix>/
+  candidate.edn
+  authorizations/<authorization-ref-without-prefix>.edn
   captures/<capture-generation-ref-without-prefix>/
-    candidate.edn
     capture-index.edn
     measurements.edn
     capture-manifests/
@@ -220,14 +240,26 @@ artifacts stay in the configured external content-addressed store on hinoki.
 Committed manifests contain logical identity (`sha256:<digest>`, bytes, media
 type) and a runtime-resolved relative locator. The locator is not identity.
 
+Every manifest-referenced blob, including accepted executable closures, must
+exist in two independently configured failure domains before an evidence commit
+or promotion is eligible. P5 records a replication receipt containing the same
+logical identities and independently re-hashes both replicas. One replica may
+be offline, but it cannot share hinoki's storage failure domain. Missing or
+mismatched replication makes the owning capture unavailable. Garbage collection
+requires both that no committed manifest references the blob and that the
+replica-retention policy permits deletion; reference counting alone is not a
+durability policy.
+
 Every capture and evaluation directory is append-only after publication.
 Corrections and retries create new generation references or, before
 publication, replace the entire staged directory.
 The stable historical paths
 `docs/reports/parser-release-qualification-measurements.edn` and
 `docs/reports/parser-release-qualification-report.json` become deterministic
-canonical projections of one explicitly selected capture/evaluation pair, not
-independent hand-edited authorities. Their bytes must equal the corresponding
+canonical projections, not operator selections or independent hand-edited
+authorities. Measurements project the candidate's one authorized capture. The
+report projects the unique evaluation whose `registry_ref` equals the hash of
+the current committed registry. Their bytes must equal the corresponding
 immutable generation artifacts.
 
 The capture index is a closed set of named references. It names exactly one
@@ -245,40 +277,68 @@ same projected-hash rule. Registry admission therefore creates a new evaluation
 of unchanged measurements rather than mutating the capture or pretending the
 registry had always contained the candidate.
 
+The promotion verifier enumerates the candidate's generation directory rather
+than trusting a selected path. It requires exactly one capture bearing the
+committed authorization, no second authoritative capture for that candidate,
+and exactly one valid evaluation for the current registry hash. A second
+volatile capture makes that candidate permanently ineligible for promotion;
+the next attempt requires a new implementation candidate and a new baked
+`parser_git_rev`. This deliberately trades retry convenience for removal of the
+favorable-sample selection seam.
+
 ## Core attempt capture for predicates 1, 7, and 9
 
 P5 adds one small instrument rather than preserving three legacy scalars.
 
-The capture runs the declared `ab-check` batch command once over the exact
-qualification membership, with the committed per-work timeout and job count.
-The Nix-pinned GNU `time(1)` wraps that batch under `LC_ALL=C` and writes one
-`%e` elapsed-real value to a dedicated output. The analyzer rejects an empty,
-multi-line, negative, non-finite, or otherwise non-decimal timing record and
-emits the accepted value as the Clojure double required by the live `:<=`
-comparator. The capture records:
+One authorized core capture runs exactly three serial repetitions of the
+declared `ab-check` batch command over the exact qualification membership, with
+the committed per-work timeout and job count. Repetition count and reduction are
+part of the instrument-binding ADR and policy; the operator cannot stop after a
+favorable repetition. The Nix-pinned GNU `time(1)` wraps each batch under
+`LC_ALL=C` and writes one `%e` elapsed-real value to a dedicated output. The
+analyzer rejects an empty, multi-line, negative, non-finite, or otherwise
+non-decimal timing record and emits the maximum of the three accepted values as
+the Clojure double required by the live `:<=` comparator.
+
+The orchestrator acquires the exclusive hinoki campaign lock before any
+volatile lane starts. Core repetitions and the resource lane run serially; no
+other P5 lane may execute concurrently. Lock identity, competing parser-related
+user units, load, and memory pressure are recorded before and after every
+repetition. Failure to acquire or retain the lock makes the capture unavailable.
+Load and pressure remain disclosed context rather than operator-controlled
+rejection criteria; the fixed maximum-of-three reduction absorbs ordinary
+jitter conservatively.
+
+The capture records:
 
 - exact expected work IDs and source hashes;
-- one authenticated `ab-check` report per work;
+- one authenticated `ab-check` report per work per repetition;
 - adapter and adapter-version coordinates;
 - per-work disposition `parsed`, `fatal_error`, `adapter_timeout`, or
   `protocol_error`;
 - the timeout policy;
 - GNU time executable identity and raw timing record;
 - batch argv, exit status, start/end attempt context, and host label; and
-- total wall time as captured by the declared instrument.
+- all three wall times and the fixed reduction rule.
 
 The pure analyzer authenticates the closed index and derives three independent
 envelopes:
 
-- `fatal_failures` = count of `fatal_error` dispositions;
-- `wall_time_seconds` = authenticated GNU-time elapsed-real value; and
-- `timeouts` = count of `adapter_timeout` dispositions.
+- `fatal_failures` = maximum per-repetition count of `fatal_error`
+  dispositions;
+- `wall_time_seconds` = maximum authenticated GNU-time elapsed-real value; and
+- `timeouts` = maximum per-repetition count of `adapter_timeout` dispositions.
 
 Protocol errors, missing work reports, malformed timing output, command-level
 failure that prevents a closed report set, identity mismatch, or unknown
 disposition make all affected core observations unavailable. Fatal errors and
 timeouts themselves are available measurements and normally yield predicate
 failure; they are not transformed into unavailability.
+
+The shared blast radius is intentional: an unknown protocol status or
+incomplete repetition means the core instrument did not establish a closed
+execution set, so none of its three projections is trusted. It cannot retain a
+favorable wall time while discarding an unclassifiable work outcome.
 
 The wall-time observation is host-sensitive but does not reuse P3's memory
 attempt as if both came from one OS execution. Both captures bind the same
@@ -321,9 +381,10 @@ The operational sequence is:
    change;
 2. select that implementation commit as the candidate;
 3. create a detached, clean worktree at the candidate on hinoki;
-4. build the exact flake outputs and verify baked coordinates;
-5. generate the candidate descriptor from repository values and observed build
-   identities;
+4. perform two independent clean builds, require byte-identical outputs, and
+   verify baked coordinates;
+5. generate and commit the candidate descriptor and its sole capture
+   authorization from repository values and observed build identities;
 6. run each capture lane into a fresh staging root and external blob store;
 7. authenticate every blob and derive every aggregate without re-executing the
    parser;
@@ -339,10 +400,14 @@ content identity into a separate clean evidence worktree based on current main.
 No capture command writes into the candidate source tree or commits from
 hinoki's mutable staging directory.
 
-Retries create new attempt context and a new capture generation. P5 never
-merges records from attempts. A failed partial attempt may be retained outside
-source for diagnosis, but it cannot be referenced by an authoritative capture
-index.
+P5 has no authoritative retry for one candidate. Once the first volatile lane
+starts under its committed authorization, an interruption, partial result,
+failed predicate, unavailable instrument, or host disturbance resolves that
+candidate's one capture honestly. Diagnostic bytes may remain outside source,
+but the capture index records the unavailable result; it is not silently
+discarded. Another production-shaped attempt requires a new implementation
+candidate, authorization, and baked revision. P5 never merges records from
+attempts.
 
 ## Admission transaction
 
@@ -360,14 +425,41 @@ registry:
   either entry; or
 - invalid registry/candidate: stop and report unavailable governance input.
 
-Only the nine-field `admission-query` projection determines membership for the
-release gate. The stricter full-entry `admission-report` governs whether a
-candidate may be appended. These relations remain named and separate.
+A conflict has the live `abc.tools.aat-parser-ir-compat` meaning: a registry row
+and candidate have equal values for all nine `match-keys`, but their complete
+entries differ, including evidence scope or compatibility evidence. This is not
+an admitted result.
+
+The two relations remain named and separate, but conflict has precedence. The
+gate owns both derivations: it projects the qualification identity through
+`admission-query` and calls `compatible?` for membership, then calls
+`admission-report` with the authenticated audit candidate for full-evidence
+resolution. It reports `admitted` only when membership is true and the strict
+report is `:admitted`. A nine-field match plus full-entry disagreement is
+`conflict`; it makes the coherence/admission precondition false even though
+`compatible?` alone is true. Missing is `unadmitted`; malformed candidate or
+registry input is `invalid`.
+
+This requires the live gate report contract to accept the authenticated
+admission candidate value and expose the closed admission statuses `admitted`,
+`unadmitted`, `conflict`, and `invalid`. It does not accept a caller-supplied
+admission boolean. The gate recomputes both relations from registry and
+candidate values.
 
 Registry updates are append-only. Existing rows and their evidence scopes are
 never edited to make the candidate match. Because the registry is an ADR
 evidence-closure input, every append is followed by real evidence recapture on
 hinoki and `just validate-migration`.
+
+The current affected closure is explicitly budgeted, not left for execution to
+discover. It includes the four observation catalogs that name the registry and
+the eight current focused runs: ADR-0009 C5 conversion compatibility; the base,
+parser-publication, schema/RDF/TEI, and temporal-person design-bundle runs;
+parser-import-boundary; parser-mapping-admission; and
+parser-phase5-frozen-tuple. The pre-promotion governance snapshot is refreshed
+when its generated closure includes the registry. The implementation plan must
+derive this affected set from the live catalogs before recapture and fail on
+either an omitted live read or an unexpected new one.
 
 ## Bundle composition and gate evaluation
 
@@ -382,7 +474,7 @@ descriptor, capture index, and instrument aggregates. It rejects:
 - overwrite of an already installed observation;
 - an aggregate that reports unavailable while carrying trusted measurement
   totals; and
-- a canonical report path whose bytes differ from its selected immutable
+- a canonical report path whose bytes differ from its uniquely resolved immutable
   capture or evaluation generation.
 
 The composer produces exactly the nine observed keys declared by the live
@@ -391,7 +483,8 @@ predicate set. It does not derive admission or verdicts.
 `abc.tools.parser-release-qualification` remains the sole verdict owner. It
 recomputes corpus and predicate hashes, validates every envelope, checks full
 observation coherence, projects the nine admission keys, queries the committed
-registry, evaluates exact comparators, and derives `gate_status` and
+registry, resolves full-evidence conflict against the authenticated audit
+candidate, evaluates exact comparators, and derives `gate_status` and
 `adr_0039_status`.
 
 An authenticated value that misses a threshold is `fail`. Trust, identity,
@@ -401,6 +494,16 @@ pass.
 ## Governance ordering
 
 P5 uses distinct reviewable commits:
+
+Decision content and ADR status are different time coordinates. Both ADR 0040's
+process-tree-memory content and the instrument-binding ADR's content are
+committed before freeze, and those content bytes determine the predicate-set
+hash. No predicate identity field depends on an ADR status string. The
+instrument-binding ADR can be Accepted before freeze because its criteria are
+bounded structural/derivation evidence. ADR 0040 remains Proposed until after
+capture only because ADR-0040-C3 explicitly consumes the fresh all-nine-envelope
+run. Its later status stamp cannot change the already captured predicate
+identity.
 
 1. **Instrument-binding governance.** Land the core-attempt instrument and the
    separately evidenced predicate metadata rotation; accept that ADR after its
@@ -437,9 +540,10 @@ continues under ADR 0038.
 
 | Condition | Recorded outcome | Allowed next action |
 |---|---|---|
-| Candidate binary identity mismatch | campaign unavailable | rebuild from the same candidate or select a new candidate |
-| Missing/mismatched blob | owning observation unavailable | repair store publication and re-authenticate; never edit the digest |
-| Predicate value outside threshold | available `fail` | publish result; change parser in a new candidate if desired |
+| Candidate binary identity mismatch or non-reproducible rebuild | campaign unavailable | re-resolve preserved bytes; otherwise fix the build and select a new candidate |
+| Missing/mismatched blob or replica | owning observation unavailable | repair replica publication and re-authenticate; never edit the digest |
+| Predicate value outside threshold | available `fail` | publish result and inspect attempt context; any new measurement requires a new candidate |
+| Authorized capture interrupted or host lock lost | unavailable capture | publish the outcome; any new measurement requires a new candidate |
 | Unknown/malformed instrument status | unavailable | fix instrument under a new candidate |
 | Admission missing | precondition unadmitted | append exact audited row, recapture governance, re-evaluate |
 | Admission conflict | conflict report | investigate; never rewrite either row |
@@ -450,7 +554,8 @@ continues under ADR 0038.
 Rollback never mutates a published generation. Operational rollback selects a
 prior generation for inspection; release-authority rollback uses a separately
 governed ADR transition. External unreferenced blobs may be garbage-collected
-under the P0 retention policy only after no committed manifest names them.
+under the P0 retention policy only after no committed manifest names them and
+the two-replica retention rule authorizes deletion.
 
 ## Trust and composition review
 
@@ -490,20 +595,33 @@ The design is wrong and must be reopened if:
 
 - a candidate cannot be built and its baked coordinates verified without using
   mutable evidence-tree state;
+- two independent clean builds of the candidate do not produce byte-identical
+  executable outputs;
 - any predicate requires combining records from different candidate identities;
+- promotion can choose among two volatile captures for one candidate rather
+  than rejecting the candidate;
 - a full, honest failed run cannot be committed without also mutating an ADR;
 - the composer must execute a parser, discover corpus membership, or decide
   admission;
 - registry admission cannot be separated from full-evidence conflict checking;
   or
-- promotion eligibility cannot be proven from committed artifacts alone.
+- promotion eligibility cannot be proven from committed artifacts alone; or
+- a manifest-referenced blob cannot be re-hashed from two independent failure
+  domains.
 
 ## Verification strategy
 
 Implementation must provide:
 
-- closed-schema and hash tests for candidate descriptors, capture/evaluation indexes,
-  core attempt records, aggregates, and promotion inputs;
+- closed-schema and hash tests for candidate descriptors, capture/evaluation
+  indexes, core attempt records, aggregates, and promotion inputs;
+- authorization tests proving exactly one authoritative capture per candidate,
+  rejecting a sibling capture, and selecting the unique current-registry
+  evaluation without a caller-provided path;
+- fixed-repetition tests requiring exactly three complete core repetitions and
+  deriving the maximum fatal, timeout, and wall-time values independent of
+  record order;
+- two-build reproducibility and two-replica mutation tests;
 - a test that evidence commit HEAD may differ from `parser_git_rev` while every
   observation remains coherent with the candidate;
 - executable-provenance mutation tests for Git revision, Nix output, binary
@@ -517,7 +635,8 @@ Implementation must provide:
 - admission tests for already admitted, missing then appended, conflict, invalid
   candidate, and invalid registry;
 - a test proving `compatible?` uses the nine-key projection while
-  `admission-report` requires full evidence equality;
+  `admission-report` requires full evidence equality, plus an end-to-end gate
+  test proving a matching projection with conflicting evidence is not qualified;
 - capture/evaluation generation tests proving that registry changes produce a
   new evaluation without changing the measurement capture;
 - canonical-projection drift tests for measurements and qualification report;
@@ -543,9 +662,11 @@ bundle/report projections regenerate byte-identically from fixed inputs.
    capture/evaluation indexes, composer, canonical projections, and promotion
    verifier.
 5. Run all bounded tests and repository validation.
-6. Freeze the final implementation candidate.
-7. Execute authoritative capture and full-corpus audit on hinoki.
-8. Publish the immutable capture and evaluation generations, resolve admission,
+6. Freeze the final implementation candidate, prove two-build reproducibility,
+   and commit its one capture authorization.
+7. Execute the fixed authoritative capture and full-corpus audit on hinoki.
+8. Verify two independent blob replicas, publish the immutable capture and
+   evaluation generations, resolve admission,
    and recapture governance.
 9. Regenerate and drift-check the report.
 10. Resolve ADR 0040, then conditionally promote ADR 0039.
@@ -566,6 +687,7 @@ provided they do not alter any candidate input or executable closure.
 - Hand-keying observations, admission, or gate status.
 - Rewriting a compatibility registry row.
 - Promoting ADR 0039 in the same operation that captures measurements.
+- Retrying or selecting among volatile captures for one candidate.
 - Making Track S or third-party parser availability gate custom-parser release.
 - Retiring third-party parsers before their comprehensive report/publication.
 
@@ -574,18 +696,22 @@ provided they do not alter any candidate input or executable closure.
 P5 is complete, whether or not ADR 0039 promotes, when:
 
 1. one immutable custom-parser candidate is identified independently of later
-   evidence and governance commit HEADs;
+   evidence and governance commit HEADs, and two clean builds reproduce its
+   executable bytes;
 2. the live predicate contract truthfully names every committed instrument and
    its final hash was fixed before capture;
-3. all nine observations are generated from authenticated manifests for exactly
-   one qualification identity, with no hand-authored scalar;
+3. all nine observations are generated from the one pre-authorized capture for
+   exactly one qualification identity, with no hand-authored scalar or
+   operator-selected sibling generation;
 4. every predicate is `pass` or `fail`, or any remaining `unavailable` has a
    committed, machine-derived reason;
 5. the full-corpus compatibility audit resolves to admitted, conflict, missing,
-   or invalid without rewriting history;
+   or invalid without rewriting history, and full-evidence conflict overrides a
+   matching nine-field membership projection;
 6. the gate derives coherence and admission from committed authorities;
-7. the immutable capture/evaluation generations and canonical projections regenerate
-   byte-identically;
+7. the immutable capture/evaluation generations and canonical projections
+   regenerate byte-identically, and every manifest-referenced blob is re-hashed
+   from two independent failure domains;
 8. the instrument-binding ADR is Accepted before candidate freeze, and ADR 0040
    is resolved before ADR 0039 can depend on their predicate decisions;
 9. ADR 0039 is Accepted if and only if the committed gate is release-qualified;

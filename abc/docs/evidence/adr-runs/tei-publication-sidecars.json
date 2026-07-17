@@ -10,7 +10,7 @@
     "data\/parser-ir-publication-policy-v0.json": "sha256:7f0e47cb5a8217103ccee416bb2ef839f2e41cbbdc9ed40e404925474f23be85",
     "data\/publication-policy.edn": "sha256:fa8267b3e9f88065e20a25f6e29588509e3c3d583f4ac34f8a225e81a1c5885c",
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
-    "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
+    "deps.edn": "sha256:fe6ce251b54dbb79f0ad2a85276dac5a20d4a995165492a85b89f7224cddf4f4",
     "docs\/evidence\/adr-capture\/tei-publication-sidecars.edn": "sha256:d48efe55d703c0b308711c8c474293b45108818d73a4b872d47c7e9c4e2a82b2",
     "docs\/evidence\/adr-inputs\/tei-publication-sidecars.edn": "sha256:8cd17f42a0b596a299d93014d4a1b6cdfd1697299ede18509751891005d4b708",
     "examples\/v0\/example-persons\/000879.json": "sha256:d49931fa2e960922d15c8449b7477e130d0c5565f6485fdee9a2edd76cde374a",
@@ -19,7 +19,7 @@
     "examples\/v0\/example-work\/parser-ir.json": "sha256:63a3d9cda911859bc0f93950e196f4c455ec9a5cf4bbb6a4863e4012637f8037",
     "examples\/v0\/example-work\/source.manifest.json": "sha256:a618de2d65f84a55b5243aaa1aa60d7e7c470228dc6ac7907ffd202fb3e0cc81",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
+    "flake.nix": "sha256:61e353ace7a44b297880b1fcd2ed45bb2fce5274951e7f5fd7e5ba611013ae6d",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
     "schemas\/parser-ir-publication-preservation.schema.json": "sha256:b073df014a2b7c685059d3681dbfcbbde10ec66adfb0253ab80b6287c70c5599",
@@ -27,7 +27,7 @@
     "schemas\/tei-profile.rng": "sha256:071479ba8eb10f93a46f4b3616a1c0007bdeafd7a4c321e49cd567d648768413",
     "schemas\/tei-profile.sch": "sha256:608dcce45ba2acd490706691c4e38f885615176744f0db10a5a46aa96fa4da8a",
     "schemas\/tei-validation-result.schema.json": "sha256:a6b046e38f617e8eb412a15b6a3451ceb20e0b9a0e3aeb6c8305d27ad937eeb3",
-    "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
+    "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:fd36d4fe768fae072aa1548f7b713384351639d5dc94ce7998f592fd1d6973eb",
     "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
@@ -70,10 +70,10 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:af403ce90cd93aba94f141e237edcde5459f950240572ebf5a6297002c7ed428",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:d2ce8627c1090de809b82464256e4af5eef87f640befcd5b0a85662c1daf3794",
     "test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
     "test\/abc\/tools\/materialize_publication_test.clj": "sha256:fcf255c01de1e89ac686011786cfd5cbdacf4d2c445fa97280b80b216624ffb7",
-    "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:fee2f2c640e6e76090c131e06eae38ca7a06418aeec89161cda867c119afab68",
+    "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:681c6538a189be1af1f475c0d19c8f1d9b8d8a671db8c3c8902db1b5a92db162",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
   },
   "observations":
@@ -94,7 +94,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-publication-sidecars\\\"\"",
-    "revision": "987e4da28e1ccef0236b7d37f3348d25d9ed2b5d",
+    "revision": "39c000a3e323dd6b3e70d43d1a17803b67b1b844",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

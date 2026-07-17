@@ -20,7 +20,7 @@
     "data\/request-sets\/full-corpus-publication-basic-ja.json": "sha256:ae1d196c173a8059e4082ce923fd677d4b9cc6f8632ff33066344ca8e435984b",
     "data\/request-sets\/smoke-basic-ja.json": "sha256:69c3b088565d2cd03b1cb869168c9bbfcb0d6e5af957d0b899577a989a0f8503",
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
-    "deps.edn": "sha256:6aa13ab8c4f277d481e260992a4a7763e794fe07898a9096c8c98142ac2d6d92",
+    "deps.edn": "sha256:fe6ce251b54dbb79f0ad2a85276dac5a20d4a995165492a85b89f7224cddf4f4",
     "docs\/evidence\/adr-capture\/design-bundle-operational-temporal-person-ingest.edn": "sha256:de9bfcee642b402d104f0820bc3fb1c98de882d349bce69efc6a6893af2b1410",
     "docs\/evidence\/adr-inputs\/design-bundle-operational-temporal-person-ingest.edn": "sha256:9958a75840ddf18f944a3a1d767719eba3872861c5b5c6f7a37b4e4794a9ec09",
     "examples\/ab-validator-output\/comparison-report.json": "sha256:b39ffecaa8c727cbbfe79ab2e28b29dfe147ea856a63ec44e4a592ac9eaaab4b",
@@ -50,7 +50,7 @@
     "examples\/workflow\/passed.workflow-run.json": "sha256:c73d776b5041db6e88bd5c63d695ea363d233f633a0134e3fe313782cd2c950c",
     "fixtures\/tei-eaj-comparison\/workset-export.json": "sha256:75ef3259683bfc2ad0395e5d04c4466f7a18d5c2d1420ccbdccc325a3ca969c4",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:a4b10570c0584c35e2ff95337567c6ace94283a441627bfa2783fd4b0f8e45f4",
+    "flake.nix": "sha256:61e353ace7a44b297880b1fcd2ed45bb2fce5274951e7f5fd7e5ba611013ae6d",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/aat-parser-ir-divergence-bundle.schema.json": "sha256:93719c5f2a3cc899d3ef59a4ecd6b3de722c0980ae024e38c355b32a0264b401",
     "schemas\/aat-parser-ir-divergence.schema.json": "sha256:c8e1c08a0da295a3ecea8e2c5fb685b8624133c1cc306e84565efa8010c54bfc",
@@ -86,7 +86,7 @@
     "schemas\/tei-validation-result.schema.json": "sha256:a6b046e38f617e8eb412a15b6a3451ceb20e0b9a0e3aeb6c8305d27ad937eeb3",
     "schemas\/token-output.schema.json": "sha256:c666d17e14035598509c1510674c7ca2be9fa0bb70000f10c74df697765c81d1",
     "schemas\/workflow-run.schema.json": "sha256:48f50bf3778cbdc74b4583fbc21f61f9c67771d7cafaebfc869573f301cbc296",
-    "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
+    "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:fd36d4fe768fae072aa1548f7b713384351639d5dc94ce7998f592fd1d6973eb",
     "src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
     "src\/abc\/tools\/edn_registry.clj": "sha256:4d75f858bd14f6808d110ad9c252e643fcebfc3176eda65a3a6b7bfc9651eafb",
@@ -128,7 +128,7 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:af403ce90cd93aba94f141e237edcde5459f950240572ebf5a6297002c7ed428",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:d2ce8627c1090de809b82464256e4af5eef87f640befcd5b0a85662c1daf3794",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
   },
   "observations":
@@ -149,7 +149,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix run .#validate-design-bundle\"",
-    "revision": "987e4da28e1ccef0236b7d37f3348d25d9ed2b5d",
+    "revision": "39c000a3e323dd6b3e70d43d1a17803b67b1b844",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

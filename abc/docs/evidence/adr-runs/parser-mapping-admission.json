@@ -19,7 +19,7 @@
     "abc\/schemas\/aat-parser-ir-divergence.schema.json": "sha256:c8e1c08a0da295a3ecea8e2c5fb685b8624133c1cc306e84565efa8010c54bfc",
     "abc\/schemas\/aat-parser-ir-mapping.schema.json": "sha256:37a5bd15f60a47d4088f95a9b2d58c075393725325b5ed1d9431d7db1bdc4c8b",
     "abc\/schemas\/parser-ir.schema.json": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5",
-    "abc\/src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
+    "abc\/src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:fd36d4fe768fae072aa1548f7b713384351639d5dc94ce7998f592fd1d6973eb",
     "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "abc\/src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
@@ -62,7 +62,7 @@
     "abc\/src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "abc\/src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "abc\/src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:af403ce90cd93aba94f141e237edcde5459f950240572ebf5a6297002c7ed428",
+    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:d2ce8627c1090de809b82464256e4af5eef87f640befcd5b0a85662c1daf3794",
     "abc\/test\/abc\/tools\/parser_mapping_admission_evidence_test.clj": "sha256:006f3fb15760f4e4fdf8c1b3c7b2afc726566ac5d10b7a34e767b0f2d7840de3"
   },
   "observations":
@@ -79,7 +79,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-mapping-admission-evidence-test\/parser-mapping-admission-contract\"",
-    "revision": "987e4da28e1ccef0236b7d37f3348d25d9ed2b5d",
+    "revision": "39c000a3e323dd6b3e70d43d1a17803b67b1b844",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -18,7 +18,7 @@
     "abc\/schemas\/manifest.shacl.ttl": "sha256:1a27dea35abc426a3d94802abd76902d7cc471f71a3526f1c1da246e320df852",
     "abc\/schemas\/metadata-record.schema.json": "sha256:cb1c773f86f0ae16f613b342be80b87f8a7829417bcdcd36b5737eeab6a85129",
     "abc\/schemas\/person-record.schema.json": "sha256:35e5c3aac75d03f7bf228b05e331dea4df3e791256f14fa8b498fcd405888bcb",
-    "abc\/src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
+    "abc\/src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:fd36d4fe768fae072aa1548f7b713384351639d5dc94ce7998f592fd1d6973eb",
     "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "abc\/src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
@@ -61,7 +61,7 @@
     "abc\/src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "abc\/src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "abc\/src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:af403ce90cd93aba94f141e237edcde5459f950240572ebf5a6297002c7ed428",
+    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:d2ce8627c1090de809b82464256e4af5eef87f640befcd5b0a85662c1daf3794",
     "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
     "abc\/test\/abc\/tools\/schema_validation_evidence_test.clj": "sha256:26545378cdf7f6c390556306120c19fd6065b27bc249ab5faaa2a37301fb65fd"
   },
@@ -79,7 +79,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.schema-validation-evidence-test\/metadata-bundle-helper-contract-test\"",
-    "revision": "987e4da28e1ccef0236b7d37f3348d25d9ed2b5d",
+    "revision": "39c000a3e323dd6b3e70d43d1a17803b67b1b844",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

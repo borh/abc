@@ -42,7 +42,7 @@
     "schemas\/person-drift-event.schema.json": "sha256:6f0913c9365535c880df285bfcff5b2128eefa5a8b8c6744aa4826c988f4a4bd",
     "schemas\/person-drift-index.schema.json": "sha256:86460ff14b5efeffc4fd5fc2f3b061340744397a2aba43aa6de1efb479c88ccf",
     "src\/abc\/git.clj": "sha256:1c2c88483e6b758eb802c40bbe9f6b89aff350274a40db74eb500d406b68d0bd",
-    "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
+    "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:fd36d4fe768fae072aa1548f7b713384351639d5dc94ce7998f592fd1d6973eb",
     "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "src\/abc\/tools\/aozora_csv.clj": "sha256:2ed5ae1b94a4e9230d8954ed98b3820cb0ca2f8145025b7b1fc279fccb9e1835",
@@ -90,7 +90,7 @@
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
     "src\/abc\/tools\/validate_corpus.clj": "sha256:2923a63a97e589cf81881539f6719cb5917c86b85ad17c63ff976acdca8714e3",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:af403ce90cd93aba94f141e237edcde5459f950240572ebf5a6297002c7ed428",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:d2ce8627c1090de809b82464256e4af5eef87f640befcd5b0a85662c1daf3794",
     "test\/abc\/sim\/oracle.clj": "sha256:b25546934d3a9c1765bb12af27f37155a292c67a8bacbbd089835988dccb4728",
     "test\/abc\/sim\/render.clj": "sha256:bceb6a6b96fdbce4e52fa589b4977dfe076414c1b4b4b97206e04ec4f3ca6de0",
     "test\/abc\/tools\/temporal_evidence_input_test.clj": "sha256:8b99237f675d628229adea725155ba588a267c231375a966aa163f3999cb2b94"
@@ -109,7 +109,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.temporal-evidence-input-test\/person-drift-negative-fixtures-contract\"",
-    "revision": "987e4da28e1ccef0236b7d37f3348d25d9ed2b5d",
+    "revision": "39c000a3e323dd6b3e70d43d1a17803b67b1b844",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

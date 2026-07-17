@@ -15,7 +15,7 @@
     "abc\/data\/evidence-higher-order-calls\/parser-evidence-duplicate-errors.edn": "sha256:1079c61e344877eb5ca7cb5bdbf81feff8fa4909fa8e758e1bba9d7944a620c4",
     "abc\/docs\/evidence\/adr-capture\/adr-0009-c5-aat-conversion-compatibility.edn": "sha256:5909504a9a36dc7acade1a427961e92113f30830c514539f9ec863f3c8c140f7",
     "abc\/docs\/evidence\/adr-inputs\/adr-0009-c5-aat-conversion-compatibility.edn": "sha256:8d9ee3c9584b40c0eab5fd616ad39a89c77a6251629c64e0dfff7b375c7a538e",
-    "abc\/src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
+    "abc\/src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:fd36d4fe768fae072aa1548f7b713384351639d5dc94ce7998f592fd1d6973eb",
     "abc\/src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "abc\/src\/abc\/tools\/analysis_identity.clj": "sha256:a4e89b3fe25b0e4a236a7932c47845caf467bdc873555e35a9da121ea65d9af4",
     "abc\/src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
@@ -58,9 +58,9 @@
     "abc\/src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "abc\/src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "abc\/src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:af403ce90cd93aba94f141e237edcde5459f950240572ebf5a6297002c7ed428",
+    "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:d2ce8627c1090de809b82464256e4af5eef87f640befcd5b0a85662c1daf3794",
     "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
-    "abc\/test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:fee2f2c640e6e76090c131e06eae38ca7a06418aeec89161cda867c119afab68"
+    "abc\/test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:681c6538a189be1af1f475c0d19c8f1d9b8d8a671db8c3c8902db1b5a92db162"
   },
   "observations":
   {
@@ -76,7 +76,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.validate-design-bundle-test\/aat-parser-ir-compatibility-test\"",
-    "revision": "987e4da28e1ccef0236b7d37f3348d25d9ed2b5d",
+    "revision": "39c000a3e323dd6b3e70d43d1a17803b67b1b844",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

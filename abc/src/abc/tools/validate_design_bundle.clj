@@ -334,7 +334,9 @@
                           "publication_structure" "resource"]
         operation-members ["core_attempt" "source_recognition"
                            "predicate_hardening" "diagnostic_gap"
-                           "publication_structure" "resource"]]
+                           "publication_structure" "resource"]
+        executables (get graph "executables")
+        executable-keys #{"name" "adapter" "adapter_version" "argv_template"}]
     (cond-> []
       (not= (get site-policy "policy_hash") (projected-hash site-policy))
       (conj "parser RQ site policy hash has drifted")
@@ -347,6 +349,20 @@
 
       (not= operation-members (mapv #(get % "name") (get graph "members")))
       (conj "parser RQ production operation membership has drifted")
+
+      (or (not (vector? executables))
+          (empty? executables)
+          (not= (count executables) (count (set (map #(get % "name") executables))))
+          (some #(or (not= executable-keys (set (keys %)))
+                     (some (fn [key]
+                             (not (and (string? (get % key))
+                                       (not (string/blank? (get % key))))))
+                           ["name" "adapter" "adapter_version"])
+                     (not (and (vector? (get % "argv_template"))
+                               (seq (get % "argv_template"))
+                               (every? string? (get % "argv_template")))))
+                executables))
+      (conj "parser RQ production executable coordinates are not closed")
 
       (and (= "unconfigured" (get site-policy "replica_status"))
            (some #(contains? site-policy %)

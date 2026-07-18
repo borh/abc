@@ -4,7 +4,7 @@
   "title": "Parser RQ independently realized build record",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_id", "schema_version", "build_id", "store_uri", "initially_empty", "target_absent_before_seed", "target_absent_after_seed", "drv_path", "output_path", "output_ref", "nar_hash", "seeded_inputs", "build_log", "executables"],
+  "required": ["schema_id", "schema_version", "build_id", "store_uri", "initially_empty", "target_absent_before_seed", "target_absent_after_seed", "drv_path", "output_path", "output_ref", "nar_hash", "build_record_ref", "seeded_inputs", "build_log", "executables"],
   "properties": {
     "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-build-record.schema.json"},
     "schema_version": {"const": "1.0.0"},
@@ -17,6 +17,7 @@
     "output_path": {"type": "string", "pattern": "^/nix/store/[0-9a-z]{32}-.+"},
     "output_ref": {"$ref": "#/$defs/hash"},
     "nar_hash": {"$ref": "#/$defs/hash"},
+    "build_record_ref": {"$ref": "#/$defs/hash"},
     "seeded_inputs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^/nix/store/"}},
     "build_log": {"$ref": "#/$defs/blob"},
     "executables": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/executable"}}

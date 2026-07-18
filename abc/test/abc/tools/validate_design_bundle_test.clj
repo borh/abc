@@ -317,6 +317,7 @@
                           "output_path" "/nix/store/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-parser-rq"
                           "output_ref" hash-value
                           "nar_hash" hash-value
+                          "build_record_ref" hash-value
                           "seeded_inputs" ["/nix/store/cccccccccccccccccccccccccccccccc-dependency"]
                           "build_log" parser-rq-test-located-blob
                           "executables" [executable]}
@@ -420,7 +421,10 @@
             (is (seq (validate/parser-rq-execution-readiness-policy-errors
                       (assoc policy "policy_hash" parser-rq-test-hash) graph)))
             (is (seq (validate/parser-rq-execution-readiness-policy-errors
-                      policy (update graph "installed_members" pop))))))))))
+                      policy (update graph "installed_members" pop))))
+            (is (seq (validate/parser-rq-execution-readiness-policy-errors
+                      policy (update-in graph ["executables" 0]
+                                        dissoc "adapter_version"))))))))))
 
 (deftest parser-rq-predicate-hardening-closed-contracts
   (let [diag-work-schema

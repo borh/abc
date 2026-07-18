@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json",
+  "title": "Parser RQ evidence integrity receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "schema_version", "receipt_ref", "candidate_ref", "capture_generation_ref", "status"],
+  "properties": {
+    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json"},
+    "schema_version": {"const": "1.0.0"},
+    "receipt_ref": {"$ref": "#/$defs/hash"},
+    "candidate_ref": {"$ref": "#/$defs/hash"},
+    "capture_generation_ref": {"$ref": "#/$defs/hash"},
+    "status": {"enum": ["verified", "unavailable"]},
+    "blobs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["blob", "rehash", "observed_bytes"],
+        "properties": {
+          "blob": {"$ref": "#/$defs/blob"},
+          "rehash": {"$ref": "#/$defs/hash"},
+          "observed_bytes": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "reason": {"type": "string", "minLength": 1}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "verified"}}}, "then": {"required": ["blobs"], "not": {"required": ["reason"]}}},
+    {"if": {"properties": {"status": {"const": "unavailable"}}}, "then": {"required": ["reason"], "not": {"required": ["blobs"]}}}
+  ],
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "blob": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "bytes", "media_type", "locator"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/hash"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "media_type": {"type": "string", "minLength": 1},
+        "locator": {"$ref": "#/$defs/locator"}
+      }
+    },
+    "locator": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"}
+  }
+}

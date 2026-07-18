@@ -175,7 +175,7 @@
                       "parser_git_rev" "0123456789abcdef0123456789abcdef01234567"
                       "argv_template" ["ab-check" "--work" "{work_id}"]}]}
         authorization {"schema_id" (schema-id "parser-rq-capture-authorization")
-                       "schema_version" "2.0.0"
+                       "schema_version" "3.0.0"
                        "authorization_ref" parser-rq-test-hash
                        "authorization_ordinal" 1
                        "candidate_ref" parser-rq-test-hash
@@ -184,8 +184,7 @@
                        "not_before_utc" "2026-07-17T00:00:00Z"
                        "not_after_utc" "2026-07-18T00:00:00Z"
                        "repetitions" 3
-                       "reduction" "maximum"
-                       "host_policy_ref" parser-rq-test-hash}
+                       "reduction" "maximum"}
         capture-members (zipmap ["core_attempt" "source_recognition"
                                  "diagnostic_gap" "diagnostic_completeness"
                                  "parser_ir_conformance" "publication_structure"
@@ -209,17 +208,15 @@
                           "members" {"admission_candidate" parser-rq-test-located-blob
                                      "admission_report" parser-rq-test-located-blob
                                      "qualification_report" parser-rq-test-located-blob}}
-        receipt {"schema_id" (schema-id "parser-rq-replication-receipt")
+        receipt {"schema_id" (schema-id "parser-rq-evidence-integrity-receipt")
                  "schema_version" "1.0.0"
                  "receipt_ref" parser-rq-test-hash
                  "candidate_ref" parser-rq-test-hash
                  "capture_generation_ref" parser-rq-test-hash
-                 "primary_failure_domain" "hinoki-local"
-                 "replica_failure_domain" "off-host-backup"
-                 "status" "replicated"
+                 "status" "verified"
                  "blobs" [{"blob" parser-rq-test-located-blob
-                           "primary_rehash" parser-rq-test-hash
-                           "replica_rehash" parser-rq-test-hash}]}
+                           "rehash" parser-rq-test-hash
+                           "observed_bytes" 1}]}
         documents {"parser-rq-core-attempt-policy" core-policy
                    "parser-rq-core-attempt-work" core-work
                    "parser-rq-core-attempt-index" core-index
@@ -229,7 +226,7 @@
                    "parser-rq-capture-authorization" authorization
                    "parser-rq-capture-index" capture-index
                    "parser-rq-evaluation-index" evaluation-index
-                   "parser-rq-replication-receipt" receipt}]
+                   "parser-rq-evidence-integrity-receipt" receipt}]
     (testing "minimal campaign values satisfy all ten contracts"
       (doseq [[name document] documents
               :let [contract (files/read-json (str "schemas/" name ".schema.json"))]]
@@ -260,7 +257,8 @@
                 (update evaluation-index "members" dissoc "admission_report")))))
     (testing "duplicate blob records and malformed candidate refs fail closed"
       (is (seq (schema/validation-errors
-                (files/read-json "schemas/parser-rq-replication-receipt.schema.json")
+                (files/read-json
+                 "schemas/parser-rq-evidence-integrity-receipt.schema.json")
                 (update receipt "blobs" #(conj % (first %))))))
       (is (seq (schema/validation-errors
                 (files/read-json "schemas/parser-rq-executable-provenance.schema.json")
@@ -274,7 +272,7 @@
                   contract
                   (update provenance "executables" conj
                           (first (get provenance "executables"))))))))
-    (testing "authorization v2 requires readiness identity"
+    (testing "authorization v3 requires readiness identity"
       (is (seq (schema/validation-errors
                 (files/read-json "schemas/parser-rq-capture-authorization.schema.json")
                 (dissoc authorization "readiness_receipt_ref")))))
@@ -285,146 +283,110 @@
                        "reason" "index_incomplete")))))))
 
 (deftest parser-rq-execution-readiness-contracts-are-closed
-  (let [schema-paths
-        ["schemas/parser-rq-build-record.schema.json"
-         "schemas/parser-rq-site-policy.schema.json"
-         "schemas/parser-rq-site-descriptor.schema.json"
-         "schemas/parser-rq-site-preflight.schema.json"
-         "schemas/parser-rq-readiness-receipt.schema.json"]]
-    (testing "execution-readiness schemas are repository contracts"
-      (is (every? fs/regular-file? schema-paths)
-          "all five execution-readiness schemas must exist"))
-    (when (every? fs/regular-file? schema-paths)
-      (let [schema-id #(str "https://w3id.org/abc/schemas/" % ".schema.json")
-            hash-value parser-rq-test-hash
-            executable {"name" "ab-check"
-                        "nix_output" "/nix/store/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-parser-rq"
-                        "nar_hash" hash-value
-                        "sha256" hash-value
-                        "bytes" 1
-                        "adapter" "ab-aozora-aat"
-                        "adapter_version" "1.0.0"
-                        "parser_git_rev" "0123456789abcdef0123456789abcdef01234567"
-                        "argv_template" ["{executable}" "--work" "{work_id}"]}
-            build-record {"schema_id" (schema-id "parser-rq-build-record")
-                          "schema_version" "1.0.0"
-                          "build_id" "build-a"
-                          "store_uri" "local?root=/tmp/build-a"
-                          "initially_empty" true
-                          "target_absent_before_seed" true
-                          "target_absent_after_seed" true
-                          "drv_path" "/nix/store/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-parser-rq.drv"
-                          "output_path" "/nix/store/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-parser-rq"
-                          "output_ref" hash-value
-                          "nar_hash" hash-value
-                          "build_record_ref" hash-value
-                          "seeded_inputs" ["/nix/store/cccccccccccccccccccccccccccccccc-dependency"]
-                          "build_log" parser-rq-test-located-blob
-                          "executables" [executable]}
-            site-policy {"schema_id" (schema-id "parser-rq-site-policy")
-                         "schema_version" "1.0.0"
-                         "policy_hash" hash-value
-                         "stable_host_label" "hinoki.hyakutake-barbel.ts.net"
-                         "kernel_hostname" "hinoki"
-                         "production_graph_version" "abc/parser-rq-production-graph/v1"
-                         "primary_failure_domain" "hinoki-primary"
-                         "replica_status" "unconfigured"
-                         "remote_filesystem_allowlist" ["nfs" "nfs4" "cifs" "ceph"
-                                                        "fuse.sshfs"]}
-            site-descriptor {"schema_id" (schema-id "parser-rq-site-descriptor")
-                             "schema_version" "1.0.0"
-                             "stable_host_label" "hinoki.hyakutake-barbel.ts.net"
-                             "kernel_hostname" "hinoki"
-                             "corpus_root" "/srv/parser-rq/corpus"
-                             "primary_store_root" "/srv/parser-rq/store"
-                             "replica_store_root" "/mnt/parser-rq-replica"
-                             "campaign_lock_path" "/run/user/1000/parser-rq.lock"
-                             "scratch_root" "/srv/parser-rq/scratch"
-                             "primary_failure_domain" "hinoki-primary"
-                             "replica_failure_domain" "remote-archive"}
-            site-facts {"kernel_hostname" "hinoki"
-                        "stable_host_label" "hinoki.hyakutake-barbel.ts.net"
-                        "stable_addresses" ["100.64.0.1"]
-                        "local_addresses" ["100.64.0.1"]
-                        "primary_mount" {"root" "/srv/parser-rq/store"
-                                         "source" "/dev/mapper/main"
-                                         "filesystem_type" "ext4"
-                                         "filesystem_id" "1:2"}
-                        "replica_mount" {"root" "/mnt/parser-rq-replica"
-                                         "source" "archive.example:/parser-rq"
-                                         "filesystem_type" "nfs4"
-                                         "filesystem_id" "3:4"
-                                         "remote_authority" "archive.example"}
-                        "clock_synchronized" true
-                        "lock_available" true
-                        "replica_probe" {"create" true "fsync_file" true
-                                         "fsync_directory" true "stream_read" true
-                                         "remove" true}}
-            preflight {"schema_id" (schema-id "parser-rq-site-preflight")
-                       "schema_version" "1.0.0"
-                       "report_ref" hash-value
-                       "evidence_git_rev" "0123456789abcdef0123456789abcdef01234567"
-                       "evidence_tree_clean" true
-                       "site_descriptor_hash" hash-value
-                       "site_policy_hash" hash-value
-                       "production_graph_hash" hash-value
-                       "independent_build_capability" "passed"
-                       "site_facts" site-facts}
-            readiness {"schema_id" (schema-id "parser-rq-readiness-receipt")
-                       "schema_version" "1.0.0"
-                       "readiness_receipt_ref" hash-value
-                       "site_preflight_report_ref" hash-value
-                       "candidate_ref" hash-value
-                       "qualification_identity_ref" hash-value
-                       "provenance_core_ref" hash-value
-                       "production_graph_hash" hash-value
-                       "production_graph_version" "abc/parser-rq-production-graph/v1"
-                       "candidate_git_rev" "0123456789abcdef0123456789abcdef01234567"
-                       "candidate_tree_clean" true
-                       "evidence_base_git_rev" "0123456789abcdef0123456789abcdef01234567"
-                       "evidence_tree_clean" true
-                       "corpus_snapshot_hash" hash-value
-                       "corpus_list_hash" hash-value
-                       "site_facts" site-facts}
-            documents {"parser-rq-build-record" build-record
-                       "parser-rq-site-policy" site-policy
-                       "parser-rq-site-descriptor" site-descriptor
-                       "parser-rq-site-preflight" preflight
-                       "parser-rq-readiness-receipt" readiness}]
-        (testing "minimal values validate and every object is closed"
-          (doseq [[name document] documents
-                  :let [contract (files/read-json (str "schemas/" name ".schema.json"))]]
-            (is (nil? (schema/validation-errors contract document)) name)
-            (is (seq (schema/validation-errors contract
-                                               (assoc document "unexpected" true)))
-                name)))
-        (testing "unconfigured policy cannot claim a remote identity"
-          (let [contract (files/read-json "schemas/parser-rq-site-policy.schema.json")]
-            (is (seq (schema/validation-errors
-                      contract
-                      (assoc site-policy
-                             "replica_status" "configured"
-                             "replica_failure_domain" "remote-archive"))))))
-        (testing "runtime places cannot introduce policy-controlled mount class"
-          (is (seq (schema/validation-errors
-                    (files/read-json "schemas/parser-rq-site-descriptor.schema.json")
-                    (assoc site-descriptor "replica_mount_class" "nfs")))))
-        (testing "readiness requires the execution-time site projection"
-          (is (seq (schema/validation-errors
-                    (files/read-json "schemas/parser-rq-readiness-receipt.schema.json")
-                    (dissoc readiness "site_facts")))))
-        (testing "committed policy hashes and graph membership are derived"
-          (let [policy (files/read-json "data/parser-rq-site-policy-v1.json")
-                graph (files/read-json "data/parser-rq-production-graph-v1.json")]
-            (is (empty? (validate/parser-rq-execution-readiness-policy-errors
-                         policy graph)))
-            (is (seq (validate/parser-rq-execution-readiness-policy-errors
-                      (assoc policy "policy_hash" parser-rq-test-hash) graph)))
-            (is (seq (validate/parser-rq-execution-readiness-policy-errors
-                      policy (update graph "installed_members" pop))))
-            (is (seq (validate/parser-rq-execution-readiness-policy-errors
-                      policy (update-in graph ["executables" 0]
-                                        dissoc "adapter_version"))))))))))
+  (let [schema-paths ["schemas/parser-rq-build-record.schema.json"
+                      "schemas/parser-rq-site-descriptor.schema.json"
+                      "schemas/parser-rq-readiness-receipt.schema.json"
+                      "schemas/parser-rq-evidence-integrity-receipt.schema.json"]]
+    (testing "portable execution schemas are repository contracts"
+      (is (every? fs/regular-file? schema-paths)))
+    (testing "production graph identity and membership remain derived"
+      (let [graph (files/read-json "data/parser-rq-production-graph-v1.json")]
+        (is (empty? (validate/parser-rq-production-graph-errors graph)))
+        (is (seq (validate/parser-rq-production-graph-errors
+                  (update graph "installed_members" pop))))
+        (is (seq (validate/parser-rq-production-graph-errors
+                  (update-in graph ["executables" 0]
+                             dissoc "adapter_version"))))))))
+
+(deftest parser-rq-portable-contracts
+  (let [schema-id #(str "https://w3id.org/abc/schemas/" % ".schema.json")
+        hash-value parser-rq-test-hash
+        git-value "0123456789abcdef0123456789abcdef01234567"
+        descriptor-schema
+        (files/read-json "schemas/parser-rq-site-descriptor.schema.json")
+        readiness-schema
+        (files/read-json "schemas/parser-rq-readiness-receipt.schema.json")
+        authorization-schema
+        (files/read-json "schemas/parser-rq-capture-authorization.schema.json")
+        integrity-schema
+        (files/read-json
+         "schemas/parser-rq-evidence-integrity-receipt.schema.json")
+        portable-descriptor
+        {"schema_id" (schema-id "parser-rq-site-descriptor")
+         "schema_version" "2.0.0"
+         "corpus_root" "/runtime/corpus"
+         "evidence_store_root" "/runtime/evidence"
+         "scratch_root" "/runtime/scratch"
+         "campaign_lock_path" "/runtime/parser-rq.lock"}
+        portable-readiness
+        {"schema_id" (schema-id "parser-rq-readiness-receipt")
+         "schema_version" "2.0.0"
+         "readiness_receipt_ref" hash-value
+         "candidate_ref" hash-value
+         "qualification_identity_ref" hash-value
+         "provenance_core_ref" hash-value
+         "production_graph_hash" hash-value
+         "production_graph_version" "abc/parser-rq-production-graph/v1"
+         "candidate_git_rev" git-value
+         "candidate_tree_clean" true
+         "evidence_base_git_rev" git-value
+         "evidence_tree_clean" true
+         "corpus_snapshot_hash" hash-value
+         "corpus_list_hash" hash-value}
+        authorization
+        {"schema_id" (schema-id "parser-rq-capture-authorization")
+         "schema_version" "3.0.0"
+         "authorization_ref" hash-value
+         "authorization_ordinal" 1
+         "candidate_ref" hash-value
+         "qualification_identity_ref" hash-value
+         "readiness_receipt_ref" hash-value
+         "not_before_utc" "2026-07-18T00:00:00Z"
+         "not_after_utc" "2026-07-18T01:00:00Z"
+         "repetitions" 3
+         "reduction" "maximum"}
+        blob {"sha256" hash-value
+              "bytes" 1
+              "media_type" "application/json"
+              "locator" "aa/blob.json"}
+        integrity
+        {"schema_id" (schema-id "parser-rq-evidence-integrity-receipt")
+         "schema_version" "1.0.0"
+         "receipt_ref" hash-value
+         "candidate_ref" hash-value
+         "capture_generation_ref" hash-value
+         "status" "verified"
+         "blobs" [{"blob" blob
+                    "rehash" hash-value
+                    "observed_bytes" 1}]}]
+    (testing "portable values satisfy their closed contracts"
+      (doseq [[contract value] [[descriptor-schema portable-descriptor]
+                                [readiness-schema portable-readiness]
+                                [authorization-schema authorization]
+                                [integrity-schema integrity]]]
+        (is (nil? (schema/validation-errors contract value)))))
+    (testing "portable contracts reject removed places"
+      (is (seq (schema/validation-errors
+                descriptor-schema
+                (assoc portable-descriptor "kernel_hostname" "hinoki"))))
+      (is (seq (schema/validation-errors
+                readiness-schema
+                (assoc portable-readiness "site_facts" {}))))
+      (is (seq (schema/validation-errors
+                authorization-schema
+                (assoc authorization "host_policy_ref" hash-value)))))
+    (testing "evidence integrity is closed and status-dependent"
+      (is (seq (schema/validation-errors
+                integrity-schema
+                (update integrity "blobs" conj (first (get integrity "blobs"))))))
+      (is (seq (schema/validation-errors
+                integrity-schema
+                (assoc integrity "reason" "not allowed when verified"))))
+      (is (nil? (schema/validation-errors
+                 integrity-schema
+                 (-> integrity
+                     (assoc "status" "unavailable" "reason" "store offline")
+                     (dissoc "blobs"))))))))
 
 (deftest parser-rq-predicate-hardening-closed-contracts
   (let [diag-work-schema

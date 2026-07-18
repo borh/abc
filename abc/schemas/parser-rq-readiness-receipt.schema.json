@@ -4,12 +4,11 @@
   "title": "Parser RQ sealed candidate readiness receipt",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_id", "schema_version", "readiness_receipt_ref", "site_preflight_report_ref", "candidate_ref", "qualification_identity_ref", "provenance_core_ref", "production_graph_hash", "production_graph_version", "candidate_git_rev", "candidate_tree_clean", "evidence_base_git_rev", "evidence_tree_clean", "corpus_snapshot_hash", "corpus_list_hash", "site_facts"],
+  "required": ["schema_id", "schema_version", "readiness_receipt_ref", "candidate_ref", "qualification_identity_ref", "provenance_core_ref", "production_graph_hash", "production_graph_version", "candidate_git_rev", "candidate_tree_clean", "evidence_base_git_rev", "evidence_tree_clean", "corpus_snapshot_hash", "corpus_list_hash"],
   "properties": {
     "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-readiness-receipt.schema.json"},
-    "schema_version": {"const": "1.0.0"},
+    "schema_version": {"const": "2.0.0"},
     "readiness_receipt_ref": {"$ref": "#/$defs/hash"},
-    "site_preflight_report_ref": {"$ref": "#/$defs/hash"},
     "candidate_ref": {"$ref": "#/$defs/hash"},
     "qualification_identity_ref": {"$ref": "#/$defs/hash"},
     "provenance_core_ref": {"$ref": "#/$defs/hash"},
@@ -20,8 +19,7 @@
     "evidence_base_git_rev": {"$ref": "#/$defs/git"},
     "evidence_tree_clean": {"const": true},
     "corpus_snapshot_hash": {"$ref": "#/$defs/hash"},
-    "corpus_list_hash": {"$ref": "#/$defs/hash"},
-    "site_facts": {"$ref": "parser-rq-site-preflight.schema.json#/$defs/siteFacts"}
+    "corpus_list_hash": {"$ref": "#/$defs/hash"}
   },
   "$defs": {
     "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},

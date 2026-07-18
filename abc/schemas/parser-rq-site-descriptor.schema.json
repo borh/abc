@@ -1,22 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json",
-  "title": "Parser RQ untracked runtime site places",
+  "title": "Parser RQ untracked runtime places",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_id", "schema_version", "stable_host_label", "kernel_hostname", "corpus_root", "primary_store_root", "replica_store_root", "campaign_lock_path", "scratch_root", "primary_failure_domain", "replica_failure_domain"],
+  "required": ["schema_id", "schema_version", "corpus_root", "evidence_store_root", "scratch_root", "campaign_lock_path"],
   "properties": {
     "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json"},
-    "schema_version": {"const": "1.0.0"},
-    "stable_host_label": {"type": "string", "minLength": 1},
-    "kernel_hostname": {"type": "string", "minLength": 1},
+    "schema_version": {"const": "2.0.0"},
     "corpus_root": {"$ref": "#/$defs/path"},
-    "primary_store_root": {"$ref": "#/$defs/path"},
-    "replica_store_root": {"$ref": "#/$defs/path"},
-    "campaign_lock_path": {"$ref": "#/$defs/path"},
+    "evidence_store_root": {"$ref": "#/$defs/path"},
     "scratch_root": {"$ref": "#/$defs/path"},
-    "primary_failure_domain": {"type": "string", "minLength": 1},
-    "replica_failure_domain": {"type": "string", "minLength": 1}
+    "campaign_lock_path": {"$ref": "#/$defs/path"}
   },
   "$defs": {"path": {"type": "string", "pattern": "^/", "minLength": 2}}
 }

@@ -4,7 +4,7 @@
 
 **Goal:** Remove machine identity and backup topology from parser release qualification while retaining fail-closed readiness and single-store content authentication.
 
-**Architecture:** Keep one untracked four-path runtime descriptor, one portable readiness receipt, and one closed evidence-integrity receipt. Delete the committed site policy and two-domain replication protocol; measurement-specific capabilities remain owned by their instruments, while a separate operator runbook blocks the authoritative campaign until evidence retention has a named owner, backup procedure, and current restore test.
+**Architecture:** Keep one untracked four-path runtime descriptor, one portable readiness receipt, one closed evidence-integrity receipt, and one separate operational retention declaration. Delete the committed site policy and two-domain replication protocol; measurement-specific capabilities remain owned by their instruments, while the production orchestrator fails closed until the retention declaration names an owner, backup procedure, and current restore test.
 
 **Tech Stack:** Clojure 1.12, Python 3, JSON Schema 2020-12, EDN/JCS SHA-256 identities, pytest, Kaocha, Nix flakes, ADR evidence governance.
 
@@ -19,13 +19,13 @@
 - Runtime paths never enter candidate, qualification, readiness, authorization, capture, evaluation, admission, or promotion identity.
 - Keep no compatibility alias for `site-policy`, `replica`, `replication`, `host_policy_ref`, or `verify-replicas` in active parser-RQ code.
 - Historical reports and superseded designs remain truthful history and are not rewritten merely because they mention hinoki or replication.
-- Backup and restore are operational responsibilities. Parser-RQ code must not call, inspect, or attest a backup system.
+- Backup and restore are operational responsibilities. Parser-RQ code must not call or attest a backup system.
 - The authoritative campaign remains operationally blocked until
-  `abc/docs/reports/parser-rq-evidence-retention.md` names the owner, applicable
-  backup procedure, and current restore-test record. This is deliberately an
-  operator-owned process stop: parser-RQ cannot verify an external backup or
-  restore from a self-attested status field, so no structured readiness boolean
-  or orchestrator check may pretend to do so.
+  `abc/docs/reports/parser-rq-evidence-retention.json` names the owner,
+  applicable backup procedure, and current restore-test record. This is
+  deliberately an operator-owned stop. The production orchestrator reads the closed
+  record and refuses a blocked or incomplete declaration; that declaration is
+  not evidence that the external backup or restore itself occurred.
 - Use TDD: every semantic deletion begins with a failing assertion against the current contract.
 - Use `apply_patch` for source edits; use formatters only for mechanical formatting.
 
@@ -55,6 +55,7 @@ move `main` until Task 7 proves the entire sequence.
 **Files:**
 - Create: `abc/docs/adr/0042-portable-parser-rq-evidence-integrity.md`
 - Create: `abc/docs/reports/parser-rq-evidence-retention.md`
+- Create: `abc/docs/reports/parser-rq-evidence-retention.json`
 - Create: `abc/docs/superpowers/notes/2026-07-18-adr-evidence-component-root-followup.md`
 - Modify: `abc/docs/superpowers/specs/2026-07-18-parser-rq-execution-readiness-design.md`
 - Modify: `abc/docs/superpowers/plans/2026-07-18-parser-rq-execution-readiness.md`
@@ -97,16 +98,16 @@ candidate, provenance, graph, corpus, and clean revisions without binding those
 paths. Promotion requires exact closed membership and a streaming SHA-256 and
 byte-count re-hash from one configured evidence store.
 
-Evidence retention is owned by the repository operator through
-`docs/reports/parser-rq-evidence-retention.md`. Missing ownership, procedure, or
-restore evidence blocks the campaign before authorization but is not a parser
-qualification verdict or identity input.
+Evidence retention is owned by the repository operator through the operational
+record at `docs/reports/parser-rq-evidence-retention.json` and its adjacent
+runbook. Missing ownership, procedure, or restore evidence blocks production
+execution but is not a parser qualification verdict or identity input.
 
-This stop is process-enforced. Parser-RQ cannot verify an external restore by
-parsing an operator-authored status field; adding such a field would recreate
-the removed configured-replica assertion without adding evidence. The
-orchestrator therefore authenticates stored content, while the named operator
-owns the independent decision not to authorize an unready campaign.
+This stop is enforced by the production orchestrator through a separate closed
+operational record. The record does not prove an external restore; it makes the
+named operator's authorization explicit and fail-closed without entering any
+qualification identity. The orchestrator authenticates stored content, while
+the named operator owns the external retention procedure and restore evidence.
 
 ## Consequences
 
@@ -128,13 +129,18 @@ historical facts.
 
 - [ ] **Step 2: Write the honest retention record**
 
-Create `abc/docs/reports/parser-rq-evidence-retention.md` with no invented procedure or successful restore claim:
+Create `abc/docs/reports/parser-rq-evidence-retention.json` as the sole
+operational status value, initially blocked and with no invented procedure or
+successful restore claim:
+
+```json
+{"owner":"Repository operator","schema_version":"abc/parser-rq-evidence-retention/v1","status":"blocked"}
+```
+
+Create the adjacent `abc/docs/reports/parser-rq-evidence-retention.md` runbook:
 
 ```markdown
 # Parser-RQ Evidence Retention Readiness
-
-Status: Blocked
-Owner: Repository operator
 
 The portable parser-RQ implementation may merge, but the authoritative campaign
 must not mint its sole authorization until all three records below are supplied:
@@ -148,10 +154,10 @@ These records are operational prerequisites, not parser qualification evidence.
 They must never be copied into candidate, readiness, authorization, capture,
 evaluation, admission, or promotion identity.
 
-This file is an operator checklist, not a machine-verifiable receipt. A parser-RQ
-program reading `Status: Ready` would authenticate only the operator's label,
-not the backup or restore that the label describes. The operator must stop before
-candidate freeze while this record says `Status: Blocked`.
+The adjacent JSON record is the closed operational stop consumed by the
+production orchestrator. It does not prove that a backup or restore occurred;
+it makes the named operator's authorization explicit and fail-closed. No field
+from it enters qualification identity or evidence.
 ```
 
 - [ ] **Step 3: Record the component-root workaround as a bounded follow-up**
@@ -784,6 +790,7 @@ git commit -m "refactor(parser-rq): gate promotion on evidence integrity"
 ### Task 6: Simplify the orchestrator and make the deletion executable
 
 **Files:**
+- Create: `abc/docs/reports/parser-rq-evidence-retention.json`
 - Modify: `abc/tools/parser_rq_campaign_orchestrator.py`
 - Modify: `abc/tools/test_parser_rq_campaign_orchestrator.py`
 - Modify: `abc/bin/parser-rq-campaign-capture.sh`
@@ -793,8 +800,11 @@ git commit -m "refactor(parser-rq): gate promotion on evidence integrity"
 - Modify: `flake.nix`
 
 **Interfaces:**
-- Consumes: portable site CLI, authorization v3, and `verify-evidence` CLI.
-- Produces: one production command with no site-policy or replica argument and a permanent active-surface regression guard.
+- Consumes: portable site CLI, authorization v3, `verify-evidence` CLI, and a
+  separate closed operational retention declaration.
+- Produces: one production command with no site-policy or replica argument, a
+  fail-closed operational stop outside qualification identity, and a permanent
+  active-surface regression guard.
 
 - [ ] **Step 1: Write failing orchestrator tests**
 
@@ -815,6 +825,17 @@ def test_prepare_commands_recheck_only_runtime_descriptor(campaign, paths) -> No
     recheck = next(command for command in commands if "recheck-readiness" in command)
     assert "--site-descriptor" in recheck
     assert "--policy" not in recheck
+
+
+def test_production_fails_closed_on_blocked_retention(tmp_path: Path) -> None:
+    config = fixture(tmp_path)
+    write_json(config.retention_record, {
+        "schema_version": "abc/parser-rq-evidence-retention/v1",
+        "status": "blocked",
+        "owner": "operator",
+    })
+    with pytest.raises(PreparationFailed, match="retention is blocked"):
+        authenticate_inputs(config)
 ```
 
 Extend the cwd-independent production-wiring test to invoke the real site CLI with descriptor v2.
@@ -824,14 +845,21 @@ Extend the cwd-independent production-wiring test to invoke the real site CLI wi
 Run:
 
 ```bash
-nix develop ./abc --command pytest -q abc/tools/test_parser_rq_campaign_orchestrator.py
+nix build ./abc#checks.x86_64-linux.parser-rq-campaign-orchestrator \
+  --print-build-logs
 ```
 
 Expected: FAIL because `CampaignConfig`, authentication, CLI parsing, and prepared commands still require site policy.
 
 - [ ] **Step 3: Delete the policy from orchestration**
 
-Remove `site_policy` from `CampaignConfig` and `AuthenticatedCampaign`. Remove the candidate-tree policy read, hash check, configured-replica gate, and `--site-policy`. Keep descriptor validation as untracked runtime configuration.
+Remove `site_policy` from `CampaignConfig` and `AuthenticatedCampaign`. Remove
+the candidate-tree policy read, hash check, configured-replica gate, and
+`--site-policy`. Keep descriptor validation as untracked runtime configuration.
+Add `retention_record` as a production-only operational input. Require the
+closed v1 ready shape with a nonblank owner and procedure, a `passed` restore
+result, and a UTC restore-test instant. This record must never enter a
+qualification identity or evidence receipt.
 
 The readiness recheck command must be exactly:
 
@@ -1159,7 +1187,8 @@ nix build .#checks.x86_64-linux.monorepo-adr-governance --print-build-logs
 just validate-migration
 ```
 
-Expected: every command exits 0. Confirm the operational record remains `Status: Blocked`; passing qualification checks must not imply backup readiness.
+Expected: every command exits 0. Confirm the operational JSON record remains
+`"status":"blocked"`; passing qualification checks must not imply backup readiness.
 
 - [ ] **Step 7: Commit recaptured governance evidence, fast-forward main, and push**
 

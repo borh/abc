@@ -80,6 +80,7 @@ class CampaignConfig:
     authorization: Path
     provenance: Path
     readiness_receipt: Path
+    retention_record: Path
     site_descriptor: Path
     candidate_tree: Path
     evidence_tree: Path
@@ -230,6 +231,41 @@ def _authenticate_executable(path: Path, record: dict[str, Any]) -> None:
         raise PreparationFailed(f"candidate executable hash differs: {path.name}")
 
 
+def _authenticate_retention_record(record: dict[str, Any], *, production: bool) -> None:
+    base = {"schema_version", "status", "owner"}
+    if record.get("schema_version") != "abc/parser-rq-evidence-retention/v1":
+        raise PreparationFailed("evidence retention record schema is invalid")
+    if not isinstance(record.get("owner"), str) or not record["owner"].strip():
+        raise PreparationFailed("evidence retention owner is absent")
+    if record.get("status") == "blocked":
+        if set(record) != base:
+            raise PreparationFailed("blocked evidence retention record is not closed")
+        if production:
+            raise PreparationFailed("production evidence retention is blocked")
+        return
+    if record.get("status") != "ready" or set(record) != base | {
+        "backup_procedure",
+        "restore_test_at_utc",
+        "restore_test_status",
+    }:
+        raise PreparationFailed("ready evidence retention record is not closed")
+    if (
+        not isinstance(record.get("backup_procedure"), str)
+        or not record["backup_procedure"].strip()
+    ):
+        raise PreparationFailed("evidence backup procedure is absent")
+    if record.get("restore_test_status") != "passed":
+        raise PreparationFailed("evidence restore test has not passed")
+    try:
+        restored_at = datetime.fromisoformat(
+            str(record["restore_test_at_utc"]).replace("Z", "+00:00")
+        )
+    except (ValueError, TypeError) as error:
+        raise PreparationFailed("evidence restore test time is invalid") from error
+    if restored_at.tzinfo is None or restored_at.utcoffset() != UTC.utcoffset(restored_at):
+        raise PreparationFailed("evidence restore test time is not UTC")
+
+
 def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
     inherited = sorted(name for name in LEGACY_LANE_ENVIRONMENT if name in os.environ)
     if inherited:
@@ -242,6 +278,7 @@ def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
         ("authorization", config.authorization),
         ("provenance", config.provenance),
         ("readiness receipt", config.readiness_receipt),
+        ("retention record", config.retention_record),
     ):
         _below(evidence_tree, path, label)
     try:
@@ -269,7 +306,9 @@ def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
 
     provenance = _read_object(config.provenance, "provenance")
     receipt = _read_object(config.readiness_receipt, "readiness receipt")
+    retention = _read_object(config.retention_record, "retention record")
     site_descriptor = _read_object(config.site_descriptor, "site descriptor")
+    _authenticate_retention_record(retention, production=config.production)
     if provenance.get("status") != "reproducible":
         raise PreparationFailed("candidate provenance is not reproducible")
     if receipt.get("production_graph_hash") != graph.get("policy_hash"):
@@ -1205,6 +1244,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--authorization", type=Path, required=True)
     parser.add_argument("--provenance", type=Path, required=True)
     parser.add_argument("--readiness-receipt", type=Path, required=True)
+    parser.add_argument("--retention-record", type=Path, required=True)
     parser.add_argument("--site-descriptor", type=Path, required=True)
     parser.add_argument("--candidate-tree", type=Path, required=True)
     parser.add_argument("--evidence-tree", type=Path, required=True)

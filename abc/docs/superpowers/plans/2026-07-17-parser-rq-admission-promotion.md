@@ -580,7 +580,16 @@ read-only runtime preflight pass.
 : "${PARSER_RQ_SITE_DESCRIPTOR:?set the reviewed site-descriptor JSON path}"
 graph="$candidate_tree/abc/data/parser-rq-production-graph-v1.json"
 staging_root=$(mktemp -d /tmp/soranoha-p5-evidence.XXXXXXXX)
-grep -q '^Status: Ready$' "$candidate_tree/abc/docs/reports/parser-rq-evidence-retention.md"
+python - "$candidate_tree/abc/docs/reports/parser-rq-evidence-retention.json" <<'PY'
+import json
+import sys
+
+record = json.load(open(sys.argv[1], encoding="utf-8"))
+assert record["status"] == "ready"
+assert record["owner"].strip()
+assert record["backup_procedure"].strip()
+assert record["restore_test_status"] == "passed"
+PY
 python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" preflight-site \
   --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" --graph "$graph" \
   --evidence-tree-clean true
@@ -712,6 +721,7 @@ bash "$candidate_tree/abc/bin/parser-rq-campaign-capture.sh" \
   --authorization "$run_root/authorizations/$authorization_dir.edn" \
   --provenance "$run_root/executable-provenance.json" \
   --readiness-receipt "$run_root/readiness-receipt.json" \
+  --retention-record "$evidence_tree/abc/docs/reports/parser-rq-evidence-retention.json" \
   --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
   --candidate-tree "$candidate_tree" --evidence-tree "$evidence_tree" \
   --staging-root "$capture_staging" --production

@@ -59,13 +59,13 @@ The repository currently has no named operational owner or runbook for backing
 up parser-RQ evidence. Removing the replication gate must not silently claim
 that this responsibility is already discharged.
 
-Implementation adds one short operator-owned record and runbook at
-`docs/reports/parser-rq-evidence-retention.md`. Before the authoritative
-campaign, the repository operator must record that the configured evidence
-store is covered by the established reliable-storage and external-backup
-process, name the applicable operational procedure, and confirm a current
-restore test. Until that record exists, the authoritative campaign is
-operationally blocked even though the portable qualification code may merge.
+Implementation adds one closed operational record at
+`docs/reports/parser-rq-evidence-retention.json` and an adjacent runbook. Before
+the authoritative campaign, the repository operator must record that the
+configured evidence store is covered by the established reliable-storage and
+external-backup process, name the applicable operational procedure, and confirm
+a current restore test. Until that record is complete, the production
+orchestrator fails closed even though the portable qualification code may merge.
 
 This record is deliberately not a qualification artifact. It is not hashed into
 the candidate, readiness receipt, capture, evaluation, admission, or promotion;
@@ -73,13 +73,13 @@ the parser-RQ application does not inspect backup systems. Its purpose is to
 give retention a real owner and an explicit pre-run stop rather than pretending
 that a qualification check can prove infrastructure durability.
 
-The stop is deliberately process-enforced by the named operator, not encoded as
-another parser-RQ status document. A program could validate that a JSON field
-says `restore_test: passed`, but it could not thereby verify the external backup
-or restore. Treating that self-attestation as a fail-closed machine fact would
-recreate the removed `replica_status` fake seam under a new name. Qualification
-therefore verifies stored bytes; the operator owns the independent decision not
-to mint authorization until the runbook is complete.
+The production orchestrator enforces the operational declaration; qualification
+does not consume it. A JSON field saying that a restore test passed does not
+prove the external backup or restore, so the record makes only the narrower
+claim that a named operator authorized production under a named procedure and
+dated restore result. Qualification verifies stored bytes; operations owns the
+truth and consequences of that declaration. No field from the operational
+record enters parser-RQ identity or evidence.
 
 ## Boundary
 

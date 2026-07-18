@@ -26,16 +26,16 @@ candidate, provenance, graph, corpus, and clean revisions without binding those
 paths. Promotion requires exact closed membership and a streaming SHA-256 and
 byte-count re-hash from one configured evidence store.
 
-Evidence retention is owned by the repository operator through
-`docs/reports/parser-rq-evidence-retention.md`. Missing ownership, procedure, or
-restore evidence blocks the campaign before authorization but is not a parser
-qualification verdict or identity input.
+Evidence retention is owned by the repository operator through the operational
+record at `docs/reports/parser-rq-evidence-retention.json` and its adjacent
+runbook. Missing ownership, procedure, or restore evidence blocks production
+execution but is not a parser qualification verdict or identity input.
 
-This stop is process-enforced. Parser-RQ cannot verify an external restore by
-parsing an operator-authored status field; adding such a field would recreate
-the removed configured-replica assertion without adding evidence. The
-orchestrator therefore authenticates stored content, while the named operator
-owns the independent decision not to authorize an unready campaign.
+This stop is enforced by the production orchestrator through a separate closed
+operational record. The record does not prove an external restore; it makes the
+named operator's authorization explicit and fail-closed without entering any
+qualification identity. The orchestrator authenticates stored content, while
+the named operator owns the external retention procedure and restore evidence.
 
 ## Consequences
 

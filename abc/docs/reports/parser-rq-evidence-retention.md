@@ -1,8 +1,5 @@
 # Parser-RQ Evidence Retention Readiness
 
-Status: Blocked
-Owner: Repository operator
-
 The portable parser-RQ implementation may merge, but the authoritative campaign
 must not mint its sole authorization until all three records below are supplied:
 
@@ -15,7 +12,9 @@ These records are operational prerequisites, not parser qualification evidence.
 They must never be copied into candidate, readiness, authorization, capture,
 evaluation, admission, or promotion identity.
 
-This file is an operator checklist, not a machine-verifiable receipt. A parser-RQ
-program reading `Status: Ready` would authenticate only the operator's label,
-not the backup or restore that the label describes. The operator must stop before
-candidate freeze while this record says `Status: Blocked`.
+The adjacent `parser-rq-evidence-retention.json` is the closed operational stop
+consumed by the production orchestrator. It does not prove that a backup or
+restore occurred; it makes the named operator's authorization explicit and
+fail-closed. The orchestrator refuses production while that record is blocked.
+The JSON record is the sole source of operational status and ownership; this
+runbook deliberately does not duplicate those mutable values.

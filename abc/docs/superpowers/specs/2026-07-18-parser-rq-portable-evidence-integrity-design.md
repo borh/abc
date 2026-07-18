@@ -13,9 +13,9 @@ where the measurement ran or how the evidence store is backed up.
 The current execution-readiness implementation crosses that boundary by
 committing the hinoki hostname, DNS label, filesystem allowlist, failure-domain
 names, and prospective replica authority as release policy. It also makes a
-two-domain replication receipt a promotion prerequisite. Those checks duplicate
-the existing reliable-storage and external-backup responsibility while making
-the campaign less portable.
+two-domain replication receipt a promotion prerequisite. Those checks attempt
+to implement storage durability inside qualification while making the campaign
+less portable.
 
 This correction keeps the parts that protect measurement integrity and deletes
 the infrastructure policy.
@@ -40,6 +40,39 @@ for the authorized run. Successful sealing attests that those prerequisites were
 checked; the receipt does not carry or indirectly bind the runtime descriptor,
 machine identity, paths, or storage implementation.
 
+## Decision Record
+
+This decision reverses the site-policy and two-domain replication portions of
+the 2026-07-18 execution-readiness design. It also removes the unprovisioned
+replica as a parser-qualification blocker. That is a consequence, not the
+motivation: even if the replica existed, hostname and storage topology would
+still describe infrastructure places rather than parser evidence.
+
+Because this changes a promotion protocol, implementation records the decision
+in ADR 0042 before rotating schemas or fixtures. The ADR distinguishes content
+integrity, which promotion enforces, from evidence retention, which operations
+owns.
+
+## Open Operational Dependency: Evidence Retention
+
+The repository currently has no named operational owner or runbook for backing
+up parser-RQ evidence. Removing the replication gate must not silently claim
+that this responsibility is already discharged.
+
+Implementation adds one short operator-owned record and runbook at
+`docs/reports/parser-rq-evidence-retention.md`. Before the authoritative
+campaign, the repository operator must record that the configured evidence
+store is covered by the established reliable-storage and external-backup
+process, name the applicable operational procedure, and confirm a current
+restore test. Until that record exists, the authoritative campaign is
+operationally blocked even though the portable qualification code may merge.
+
+This record is deliberately not a qualification artifact. It is not hashed into
+the candidate, readiness receipt, capture, evaluation, admission, or promotion;
+the parser-RQ application does not inspect backup systems. Its purpose is to
+give retention a real owner and an explicit pre-run stop rather than pretending
+that a qualification check can prove infrastructure durability.
+
 ## Boundary
 
 ### Reusable qualification facts
@@ -58,6 +91,11 @@ These may affect release qualification:
 - exclusive campaign-lock acquisition;
 - required measurement capabilities, such as the resource instrument's cgroup
   contract.
+
+Measurement-specific capabilities are checked by the instrument that gives
+them meaning. In particular, the resource instrument owns its cgroup contract.
+This does not create a generic host-capability profile or a second committed
+site-policy object.
 
 ### Runtime places and attempt context
 
@@ -165,6 +203,9 @@ Bounded fixtures migrate atomically.
   `parser-rq-evidence-integrity-receipt`.
 - Replace `verify-replicas` with one-store `verify-evidence`.
 - Remove replica and site-policy arguments from the orchestrator and runbook.
+- Replace the bounded drift fixture's two-copy invariant with the closed
+  evidence-integrity-receipt invariant. This is an explicit governance
+  re-baseline, not a byte-preserving fixture edit.
 
 Names must describe the remaining responsibility. Retaining replication names
 for compatibility would preserve a fake seam and is rejected.
@@ -183,6 +224,22 @@ for compatibility would preserve a fake seam and is rejected.
 No component accepts a caller-supplied boolean for readiness, integrity,
 admission, or qualification.
 
+## Scope Fence
+
+This correction changes only runtime-site configuration, readiness bindings,
+stored-evidence authentication, and their bounded fixtures and runbook steps.
+It does not change:
+
+- executable two-build reproducibility or provenance semantics;
+- the production graph's parser operations;
+- predicate IDs, dimensions, comparators, thresholds, or predicate-set identity;
+- corpus identity or closed work membership;
+- observation capture or evaluation semantics;
+- admission-query or conflict precedence;
+- the one-authorized-capture and canonical-generation rules;
+- ADR 0039 or ADR 0040 acceptance criteria except for replacing the storage
+  integrity input named by promotion.
+
 ## Failure Semantics
 
 - Invalid runtime configuration or failed preflight: preparation failure; no
@@ -191,7 +248,10 @@ admission, or qualification.
   preparation failure; no capture attempt.
 - The same failures after capture start: honest unavailable attempt.
 - Missing or mismatched evidence bytes: integrity unavailable; no promotion.
-- Backup failure: handled by infrastructure operations, outside qualification.
+- Missing evidence-retention ownership or restore-test record: operational
+  campaign block before authorization; it is not a qualification verdict.
+- Backup failure: handled by the named infrastructure owner and procedure,
+  outside qualification.
 
 No retry, alternate store, or operator-selected generation is introduced.
 
@@ -201,8 +261,9 @@ Tests must prove:
 
 1. candidate and qualification references are unchanged when runtime paths or
    disclosed host context change;
-2. no committed parser-RQ policy or schema contains a literal hinoki identity,
-   filesystem allowlist, remote authority, or failure-domain field;
+2. no active parser-RQ code, current schema, committed runtime policy, fixture,
+   or P5 runbook contains a hinoki requirement, filesystem allowlist, remote
+   authority, or failure-domain field;
 3. authorization binds readiness and has no host-policy field;
 4. preflight rejects an unusable store, unavailable lock, unsynchronized clock,
    or failed build capability;
@@ -217,8 +278,11 @@ Tests must prove:
 9. the bounded production-wiring smoke runs from an unrelated working directory;
 10. the full migration and governance gates pass after evidence recapture.
 
-The non-goal guard searches active code, schemas, data, fixtures, and the P5
-runbook for the removed field and protocol names.
+Implementation adds a non-goal guard that searches active code, current schemas,
+data, fixtures, and the P5 runbook for the removed field and protocol names. It
+does not scan historical reports or superseded designs: a historical attempt may
+truthfully disclose that it ran on hinoki, and rewriting evidence would violate
+the same time-and-identity discipline this decision protects.
 
 ## Alternatives
 
@@ -248,7 +312,7 @@ Reopen this decision if:
 - a predicate's meaning genuinely depends on a named physical host rather than
   a measured capability;
 - qualification must itself provide a contractual durability guarantee not
-  supplied by storage operations;
+  supplied by the named storage operator and procedure;
 - the evidence store cannot provide stable content-addressed reads through
   runtime configuration;
 - removing site identity permits a measurement-affecting capability mismatch
@@ -263,3 +327,6 @@ The correction is complete when parser qualification can run on any host that
 satisfies its measurement prerequisites, all release-relevant artifacts are
 authenticated by logical content identity, and no qualification or promotion
 decision depends on hinoki, a filesystem implementation, or backup topology.
+The authoritative campaign additionally remains blocked until the separate
+evidence-retention runbook has a named owner, applicable backup procedure, and
+current restore-test record.

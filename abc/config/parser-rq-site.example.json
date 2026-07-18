@@ -1,13 +1,8 @@
 {
   "schema_id": "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json",
-  "schema_version": "1.0.0",
-  "stable_host_label": "hinoki.hyakutake-barbel.ts.net",
-  "kernel_hostname": "hinoki",
-  "corpus_root": "/path/to/pinned-corpus",
-  "primary_store_root": "/path/to/primary-store",
-  "replica_store_root": "/path/to/remote-replica",
-  "campaign_lock_path": "/path/to/campaign.lock",
-  "scratch_root": "/path/to/scratch",
-  "primary_failure_domain": "hinoki-primary",
-  "replica_failure_domain": "configured-remote-domain"
+  "schema_version": "2.0.0",
+  "corpus_root": "/runtime/parser-rq/corpus",
+  "evidence_store_root": "/runtime/parser-rq/evidence",
+  "scratch_root": "/runtime/parser-rq/scratch",
+  "campaign_lock_path": "/runtime/parser-rq/campaign.lock"
 }

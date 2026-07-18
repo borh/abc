@@ -386,6 +386,39 @@
   (with-open [output (io/output-stream path)]
     (.write output ^bytes (canonical-bytes value))))
 
+(deftest measurement-projection-does-not-require-an-evaluation
+  (let [root (fs/create-temp-dir {:prefix "parser-rq-measurement-projection"})
+        candidate-dir (fs/file root (subs (:candidate_ref candidate) 7))
+        members {:core_attempt (select-keys envelopes
+                                            [:fatal_failures :wall_time_seconds :timeouts])
+                 :source_recognition (select-keys envelopes [:source_span_coverage])
+                 :diagnostic_gap (select-keys envelopes [:silent_drops])
+                 :diagnostic_completeness (select-keys envelopes [:diagnostic_completeness])
+                 :parser_ir_conformance (select-keys envelopes [:parser_ir_schema_validation])
+                 :publication_structure (select-keys envelopes [:publication_structure])
+                 :resource (select-keys envelopes [:peak_cgroup_memory_bytes])}
+        capture (capture-for members envelopes)
+        capture-root (fs/file candidate-dir "captures"
+                              (subs (:capture_generation_ref capture) 7))
+        output (fs/file root "measurements.json")]
+    (write-edn! (fs/file candidate-dir "candidate.edn") candidate)
+    (write-edn! (fs/file candidate-dir "authorizations" "authorization.edn")
+                authorization)
+    (write-edn! (fs/file capture-root "capture-index.edn") capture)
+    (doseq [[member value] members]
+      (write-canonical-json! (fs/file capture-root
+                                      (get-in capture [:members member :locator]))
+                             value))
+    (write-canonical-json! (fs/file capture-root
+                                    (get-in capture [:members :measurements :locator]))
+                           envelopes)
+    (#'abc.tools.parser-rq-campaign/project!
+     {:runs_root (str root)
+      :candidate_ref (:candidate_ref candidate)
+      :measurements_out (str output)})
+    (is (= (hash/sha256-bytes (canonical-bytes envelopes))
+           (hash/sha256-file output)))))
+
 (deftest promotion-is-derived-from-committed-generations-and-fails-closed
   (let [root (fs/create-temp-dir {:prefix "parser-rq-promotion"})
         executable {:name "ab-check" :nix_output "/nix/store/parser"
@@ -464,7 +497,7 @@
         registry-path (fs/file root "registry.edn")
         measurements-path (fs/file root "measurements.json")
         report-path (fs/file root "report.json")
-        provenance-path (fs/file root "provenance.edn")
+        provenance-path (fs/file root "provenance.json")
         adr-0040-path (fs/file root "0040.md")
         adr-0041-path (fs/file root "0041.md")
         options {:runs_root (str root)
@@ -493,7 +526,7 @@
     (write-edn! registry-path registry)
     (write-canonical-json! measurements-path envelope-values)
     (write-canonical-json! report-path report)
-    (write-edn! provenance-path provenance)
+    (write-canonical-json! provenance-path provenance)
     (spit adr-0040-path "Status: Accepted\n")
     (spit adr-0041-path "Status: Accepted\n")
     (is (= [] (campaign/promotion-errors options)))

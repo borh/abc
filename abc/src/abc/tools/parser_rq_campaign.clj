@@ -890,7 +890,7 @@
                                  candidate capture-index registry-ref evaluation-root)
           evaluation-members (:members evaluation-generation)
           qualification-report (:qualification_report evaluation-members)
-          provenance (files/read-edn provenance_path)
+          provenance (read-provenance provenance_path)
           replication (files/read-edn (fs/file capture-root "replication-receipt.edn"))
           manifest-blobs (vec (vals (:members capture-index)))
           binding-errors
@@ -965,29 +965,29 @@
         candidate-reference (required-option options :candidate_ref)
         candidate-dir (candidate-directory runs-root candidate-reference)
         candidate (files/read-edn (fs/file candidate-dir "candidate.edn"))
-        registry (files/read-edn (required-option options :registry))
         capture-index (resolve-capture candidate-dir)
         capture-root (fs/file candidate-dir "captures"
                               (ref-directory-name (:capture_generation_ref capture-index)))
-        capture-generation (load-capture-generation candidate capture-root)
-        evaluation-index (resolve-current-evaluation candidate-dir registry)
-        evaluation-root (fs/file candidate-dir "evaluations"
-                                 (ref-directory-name
-                                  (:evaluation_generation_ref evaluation-index)))
-        evaluation-generation (load-evaluation-generation
-                               candidate capture-index (current-registry-ref registry)
-                               evaluation-root)]
+        capture-generation (load-capture-generation candidate capture-root)]
     (when-let [path (:measurements_out options)]
       (files/create-parent-dirs! path)
       (files/write-bytes! path (canonical-bytes (:measurements capture-generation))))
     (when-let [path (:report_out options)]
-      (files/create-parent-dirs! path)
-      (files/write-bytes! path
-                          (canonical-bytes
-                           (get-in evaluation-generation
-                                   [:members :qualification_report]))))
-    {:capture_generation_ref (:capture_generation_ref capture-index)
-     :evaluation_generation_ref (:evaluation_generation_ref evaluation-index)}))
+      (let [registry (files/read-edn (required-option options :registry))
+            evaluation-index (resolve-current-evaluation candidate-dir registry)
+            evaluation-root (fs/file candidate-dir "evaluations"
+                                     (ref-directory-name
+                                      (:evaluation_generation_ref evaluation-index)))
+            evaluation-generation
+            (load-evaluation-generation candidate capture-index
+                                        (current-registry-ref registry)
+                                        evaluation-root)]
+        (files/create-parent-dirs! path)
+        (files/write-bytes! path
+                            (canonical-bytes
+                             (get-in evaluation-generation
+                                     [:members :qualification_report])))))
+    {:capture_generation_ref (:capture_generation_ref capture-index)}))
 
 (defn- usage []
   (str "usage: parser-rq-campaign <candidate-ref|qualification-identity-ref|authorization-ref|capture-ref|evaluate-ref> --<kind> PATH\n"

@@ -44,6 +44,17 @@ EXPECTED_INSTALLED_MEMBERS = (
     "resource",
 )
 
+PUBLICATION_ARTIFACTS = {
+    "tei.xml": "application/tei+xml",
+    "plain.txt": "text/plain; charset=utf-8",
+    "preservation.json": "application/json",
+    "tei.manifest.json": "application/json",
+    "plaintext.manifest.json": "application/json",
+    "tei-validation-result.json": "application/json",
+}
+
+RESOURCE_COMMAND_HASH = "sha256:d242d1afa7af9533b84be49fb758075aa92c9757a590bb18d9eb3e21fe87e5bc"
+
 REPOSITORY_DRIVERS = (
     Path("abc/tools/parser_rq_campaign_site.py"),
     Path("ab-validator/reports/parser-ir/parser-rq-core-attempt-capture.py"),
@@ -105,6 +116,8 @@ class RuntimePaths:
     corpus: Path
     source_corpus: Path
     identity: Path
+    ab_check_index: Path
+    ab_check_work_ids: Path
     core_root: Path
     predicate_root: Path
     source_root: Path
@@ -120,6 +133,8 @@ class RuntimePaths:
             corpus=root / "runtime-corpus.json",
             source_corpus=root / "source-accountability-corpus.json",
             identity=root / "qualification-identity.json",
+            ab_check_index=root / "ab-check-index.json",
+            ab_check_work_ids=root / "ab-check-work-ids.json",
             core_root=root / "lanes/core",
             predicate_root=root / "lanes/predicate",
             source_root=root / "lanes/source",
@@ -315,9 +330,11 @@ def operation_argv(
             "--ab-check",
             str(campaign.executables["ab-check"]),
             "--corpus-root",
-            str(candidate_tree),
+            str(ab_root / "crates/ab-index/tests/fixtures/corpus"),
             "--corpus-index",
-            str(abc_root / "data/parser-release-qualification-corpus.edn"),
+            str(paths.ab_check_index),
+            "--work-ids",
+            str(paths.ab_check_work_ids),
             "--time-executable",
             str(Path(str(campaign.site_descriptor["primary_store_root"])) / "executables/time"),
             "--staging-root",
@@ -442,6 +459,90 @@ def _atomic_json(path: Path, value: object) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _file_blob(path: Path, media_type: str) -> dict[str, object]:
+    try:
+        with path.open("rb") as stream:
+            digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        size = path.stat().st_size
+    except OSError as error:
+        raise ProtocolError(f"publication artifact is unavailable: {path.name}") from error
+    return {"sha256": f"sha256:{digest}", "bytes": size, "media_type": media_type}
+
+
+def _publication_capture_input(
+    campaign: AuthenticatedCampaign, paths: RuntimePaths
+) -> dict[str, object]:
+    runtime = _read_object(paths.runtime, "runtime inputs")
+    corpus = runtime.get("corpus")
+    if not isinstance(corpus, dict) or not isinstance(corpus.get("entries"), list):
+        raise ProtocolError("publication corpus is malformed")
+    abc_root = campaign.config.candidate_tree / "abc"
+    policy = _read_object(
+        abc_root / "data/parser-rq-publication-policy-v1.json", "publication policy"
+    )
+    fixtures = _read_object(
+        abc_root / "data/parser-rq-publication-fixtures-v1.json", "publication census"
+    )
+    fixture_works = fixtures.get("works")
+    entries = corpus["entries"]
+    expected = {row.get("work_id") for row in entries if isinstance(row, dict)}
+    if not isinstance(fixture_works, dict) or expected != set(fixture_works):
+        raise ProtocolError("publication census does not have exact corpus membership")
+    works: list[dict[str, object]] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ProtocolError("publication corpus entry is malformed")
+        work_id = entry.get("work_id")
+        source_sha256 = entry.get("source_sha256")
+        if not isinstance(work_id, str) or not isinstance(source_sha256, str):
+            raise ProtocolError("publication corpus identity is malformed")
+        summary = _read_object(
+            paths.publication_root / "validated" / f"{work_id}.json",
+            f"publication validator summary for {work_id}",
+        )
+        join_input = summary.get("join_input")
+        checks = summary.get("structure_check_candidates")
+        counts = summary.get("counts")
+        if (
+            not isinstance(join_input, dict)
+            or not isinstance(checks, dict)
+            or not isinstance(counts, dict)
+        ):
+            raise ProtocolError(f"publication validator summary is incomplete for {work_id}")
+        artifacts = [
+            _file_blob(paths.publication_root / "materialized" / work_id / relative, media_type)
+            for relative, media_type in PUBLICATION_ARTIFACTS.items()
+        ]
+        works.append(
+            {
+                "work_id": work_id,
+                "source_sha256": source_sha256,
+                "parser_disposition": "parsed",
+                "publication": {
+                    "join_input_valid": join_input.get("status") == "valid",
+                    "structure_check_candidates": checks,
+                    "counts": counts,
+                    "artifacts": artifacts,
+                },
+            }
+        )
+    preservation = policy.get("preservation_schema")
+    validator = policy.get("validator")
+    if not isinstance(preservation, dict) or not isinstance(validator, dict):
+        raise ProtocolError("publication policy authority is malformed")
+    return {
+        "corpus": corpus,
+        "authority": {
+            "qualification_identity_ref": campaign.readiness_receipt["qualification_identity_ref"],
+            "policy_hash": policy.get("policy_hash"),
+            "preservation_schema_hash": preservation.get("hash"),
+            "validator_semantics_hash": validator.get("semantics_hash"),
+            "census_hash": fixtures.get("census_hash"),
+        },
+        "works": works,
+    }
+
+
 def _run_checked(
     runner: Runner,
     argv: tuple[str, ...],
@@ -491,6 +592,28 @@ def _materialize_runtime(paths: RuntimePaths) -> None:
     _atomic_json(paths.corpus, runtime.get("corpus"))
     _atomic_json(paths.source_corpus, runtime.get("source_accountability_corpus"))
     _atomic_json(paths.identity, candidate["qualification_identity"])
+    corpus = runtime.get("corpus")
+    entries = corpus.get("entries") if isinstance(corpus, dict) else None
+    corpus_root = corpus.get("corpus_root") if isinstance(corpus, dict) else None
+    if not isinstance(entries, list) or not isinstance(corpus_root, str):
+        raise ProtocolError("runtime corpus is malformed")
+    index_works: list[dict[str, object]] = []
+    work_ids: list[str] = []
+    prefix = f"{corpus_root.rstrip('/')}/"
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ProtocolError("runtime corpus entry is malformed")
+        work_id = entry.get("work_id")
+        source_path = entry.get("source_path")
+        if not isinstance(work_id, str) or not isinstance(source_path, str):
+            raise ProtocolError("runtime corpus identity is malformed")
+        if not source_path.startswith(prefix):
+            raise ProtocolError("runtime source is outside the pinned corpus root")
+        relative = source_path[len(prefix) :]
+        index_works.append({"id": work_id, "txt_path": relative, "features": []})
+        work_ids.append(work_id)
+    _atomic_json(paths.ab_check_index, {"works": index_works})
+    _atomic_json(paths.ab_check_work_ids, work_ids)
 
 
 def _sha256(path: Path) -> str:
@@ -825,6 +948,126 @@ def _prepare_commands(
     )
 
 
+def _prepare_publication(
+    campaign: AuthenticatedCampaign,
+    paths: RuntimePaths,
+    runner: Runner,
+    cwd: Path,
+) -> None:
+    abc_root = campaign.config.candidate_tree / "abc"
+    ab_root = campaign.config.candidate_tree / "ab-validator"
+    fixture_root = abc_root / "test/fixtures/parser-rq/publication-inputs"
+    fixtures_path = abc_root / "data/parser-rq-publication-fixtures-v1.json"
+    materialized = paths.publication_root / "materialized"
+    validated = paths.publication_root / "validated"
+    _run_checked(
+        runner,
+        _clojure(
+            campaign,
+            "-M:abc/parser-rq-publication-materialize",
+            "--parser-ir-root",
+            str(paths.predicate_root / "output/parser-ir"),
+            "--fixture-root",
+            str(fixture_root),
+            "--fixtures",
+            str(fixtures_path),
+            "--output-root",
+            str(materialized),
+        ),
+        cwd,
+    )
+    runtime = _read_object(paths.runtime, "runtime inputs")
+    corpus = runtime.get("corpus")
+    entries = corpus.get("entries") if isinstance(corpus, dict) else None
+    if not isinstance(entries, list):
+        raise ProtocolError("publication corpus is malformed")
+    parser_git_rev = (
+        runtime.get("candidate", {}).get("qualification_identity", {}).get("parser_git_rev")
+    )
+    if not isinstance(parser_git_rev, str):
+        raise ProtocolError("publication candidate revision is malformed")
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("work_id"), str):
+            raise ProtocolError("publication corpus entry is malformed")
+        work_id = entry["work_id"]
+        _run_checked(
+            runner,
+            (
+                sys.executable,
+                _driver(
+                    campaign,
+                    "ab-validator/reports/parser-ir/publication-bundle-validate.py",
+                ),
+                "--parser-ir",
+                str(paths.predicate_root / "output/parser-ir" / f"{work_id}.json"),
+                "--parser-ir-schema",
+                str(abc_root / "schemas/parser-ir.schema.json"),
+                "--preservation-schema",
+                str(abc_root / "schemas/parser-ir-publication-preservation.schema.json"),
+                "--validator-identity",
+                str(ab_root / "data/parser-rq-publication-validator-v1.json"),
+                "--publication-dir",
+                str(materialized / work_id),
+                "--abc-commit",
+                parser_git_rev,
+                "--command",
+                "parser-rq-production-graph/v1:capture-publication",
+                "--summary-json",
+                str(validated / f"{work_id}.json"),
+                "--report-md",
+                str(validated / f"{work_id}.md"),
+            ),
+            cwd,
+        )
+    _atomic_json(
+        paths.publication_root / "capture-input.json", _publication_capture_input(campaign, paths)
+    )
+
+
+def _prepare_resource(campaign: AuthenticatedCampaign, paths: RuntimePaths) -> None:
+    runtime = _read_object(paths.runtime, "runtime inputs")
+    corpus = runtime.get("corpus")
+    entries = corpus.get("entries") if isinstance(corpus, dict) else None
+    if not isinstance(entries, list):
+        raise ProtocolError("resource corpus is malformed")
+    work_ids_root = paths.resource_root / "work-ids"
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("work_id"), str):
+            raise ProtocolError("resource corpus entry is malformed")
+        work_id = entry["work_id"]
+        _atomic_json(work_ids_root / f"{work_id}.json", [work_id])
+    corpus_root = (
+        campaign.config.candidate_tree / "ab-validator/crates/ab-index/tests/fixtures/corpus"
+    )
+    argv = [
+        str(campaign.executables["ab-check"]),
+        "--index",
+        str(paths.ab_check_index),
+        "--corpus",
+        str(corpus_root),
+        "--adapter",
+        str(campaign.executables["ab-aozora"]),
+        "--output",
+        str(paths.resource_root / "parser-output/{work_id}"),
+        "--work-ids",
+        str(work_ids_root / "{work_id}.json"),
+        "--jobs",
+        "1",
+        "--per-work-timeout",
+        "60s",
+    ]
+    policy = _read_object(
+        campaign.config.candidate_tree / "abc/data/parser-rq-resource-policy-v1.json",
+        "resource policy",
+    )
+    if policy.get("production_command_hash") != RESOURCE_COMMAND_HASH:
+        raise ProtocolError("resource production command identity differs")
+    _atomic_json(
+        paths.resource_root / "command-template.json",
+        {"production_command_hash": RESOURCE_COMMAND_HASH, "argv": argv},
+    )
+
+
 def execute_graph(
     campaign: AuthenticatedCampaign,
     runner: Runner,
@@ -875,6 +1118,10 @@ def execute_graph(
                 raise ProtocolError("campaign lock was lost during capture")
             if operation == "derive-diagnostic-gap":
                 _prepare_diagnostic_input(campaign, paths)
+            if operation == "capture-publication":
+                _prepare_publication(campaign, paths, runner, cwd)
+            if operation == "capture-resource":
+                _prepare_resource(campaign, paths)
             command = operation_argv(operation, campaign, paths, lock)
             inherited = (lock.fd,) if operation == "capture-core" else ()
             _run_checked(runner, command, cwd, pass_fds=inherited)

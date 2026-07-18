@@ -84,6 +84,8 @@
   :abc/aat-compat-admission {:main-opts ["-m" "abc.tools.aat-parser-ir-compat"]}
   :abc/parser-rq-campaign {:main-opts ["-m" "abc.tools.parser-rq-campaign"]}
   :abc/parser-rq-member {:main-opts ["-m" "abc.tools.parser-rq-member"]}
+  :abc/parser-rq-publication-materialize
+  {:main-opts ["-m" "abc.tools.parser-rq-publication-materialize"]}
   :abc/diagrams {:main-opts ["-m" "abc.tools.diagram.registry"]}
   :abc/presentation-diagrams {:main-opts ["-m" "abc.tools.diagram.presentation-registry"]}
   :abc/adr-governance {:main-opts ["-m" "abc.tools.adr-governance"]}

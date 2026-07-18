@@ -18,8 +18,23 @@ def test_resource_cli_runs_closed_work_order_and_installs_index_atomically(
     policy = tmp_path / "policy.json"
     command = tmp_path / "command.json"
     output = tmp_path / "resource-index.json"
-    policy.write_text(json.dumps({"work_ids": ["w2", "w1"]}))
-    command.write_text(json.dumps(["parser", "--work-id", "{work_id}"]))
+    policy.write_text(
+        json.dumps(
+            {
+                "work_ids": ["w2", "w1"],
+                "policy_hash": "sha256:" + "a" * 64,
+                "production_command_hash": "sha256:" + "b" * 64,
+            }
+        )
+    )
+    command.write_text(
+        json.dumps(
+            {
+                "production_command_hash": "sha256:" + "b" * 64,
+                "argv": ["parser", "--work-id", "{work_id}"],
+            }
+        )
+    )
     calls: list[str] = []
 
     def fake_run(wrapper: Path, work_id: str, record: Path, argv: list[str]) -> None:
@@ -46,7 +61,9 @@ def test_resource_cli_runs_closed_work_order_and_installs_index_atomically(
         == 0
     )
     assert calls == ["w2", "w1"]
-    assert json.loads(output.read_bytes())["work_ids"] == ["w2", "w1"]
+    result = json.loads(output.read_bytes())
+    assert result["work_ids"] == ["w2", "w1"]
+    assert all(row["policy_hash"] == "sha256:" + "a" * 64 for row in result["records"])
     assert not list(tmp_path.glob(".resource-index.json.*.tmp"))
 
 

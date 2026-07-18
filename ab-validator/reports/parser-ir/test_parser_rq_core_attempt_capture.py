@@ -300,6 +300,8 @@ def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_p
                     "{corpus}",
                     "--output-dir",
                     "{report_dir}",
+                    "--work-ids",
+                    "{work_ids_file}",
                 ],
             }
         )
@@ -327,6 +329,8 @@ def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_p
                     str(tmp_path / "corpus"),
                     "--corpus-index",
                     str(tmp_path / "index.json"),
+                    "--work-ids",
+                    str(tmp_path / "work-ids.json"),
                     "--time-executable",
                     "/nix/store/time/bin/time",
                     "--staging-root",
@@ -347,6 +351,7 @@ def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_p
     assert observed["lock"] == lock
     assert observed["config"].argv_template[0] == "/nix/store/parser/bin/ab-check"
     assert observed["config"].argv_template[2] == str(tmp_path / "index.json")
+    assert observed["config"].argv_template[-1] == str(tmp_path / "work-ids.json")
     assert not list(tmp_path.glob(".core-index.json.*.tmp"))
 
 

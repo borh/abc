@@ -107,8 +107,16 @@ def main(argv: list[str] | None = None) -> int:
         raise
     try:
         policy = json.loads(args.policy.read_bytes())
-        template = json.loads(args.command_template.read_bytes())
-        if not isinstance(template, list) or not all(isinstance(value, str) for value in template):
+        command_value = json.loads(args.command_template.read_bytes())
+        if not isinstance(command_value, dict):
+            raise ValueError("resource command template is malformed")
+        template = command_value.get("argv")
+        command_hash = command_value.get("production_command_hash")
+        if (
+            not isinstance(template, list)
+            or not all(isinstance(value, str) for value in template)
+            or command_hash != policy.get("production_command_hash")
+        ):
             raise ValueError("resource command template is malformed")
         args.records_root.mkdir(parents=True, exist_ok=True)
 
@@ -120,6 +128,7 @@ def main(argv: list[str] | None = None) -> int:
             if not isinstance(value, dict):
                 raise ValueError(f"resource record is malformed for {work_id}")
             value.setdefault("work_id", work_id)
+            value["policy_hash"] = policy["policy_hash"]
             return value
 
         write_index(args.out, capture_index(policy, capture_one))

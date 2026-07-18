@@ -354,6 +354,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--ab-check", type=pathlib.Path, required=True)
     parser.add_argument("--corpus-root", type=pathlib.Path, required=True)
     parser.add_argument("--corpus-index", type=pathlib.Path, required=True)
+    parser.add_argument("--work-ids", type=pathlib.Path, required=True)
     parser.add_argument("--time-executable", required=True)
     parser.add_argument("--staging-root", type=pathlib.Path, required=True)
     parser.add_argument("--inherited-lock-fd", type=int, required=True)
@@ -402,7 +403,7 @@ def main(argv: list[str] | None = None) -> int:
             "ab-check": str(args.ab_check),
             "{index}": str(args.corpus_index),
             "{corpus}": str(args.corpus_root),
-            "{work_ids}": ",".join(expected_works),
+            "{work_ids_file}": str(args.work_ids),
         }
         resolved_template = tuple(replacements.get(token, token) for token in argv_template)
         config = CaptureConfig(

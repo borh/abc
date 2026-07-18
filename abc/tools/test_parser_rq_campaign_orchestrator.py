@@ -90,6 +90,26 @@ def fixture(tmp_path: Path) -> Any:
     ):
         write_json(candidate_tree / "abc/data" / name, {"fixture": True})
     write_json(
+        candidate_tree / "abc/data/parser-rq-publication-policy-v1.json",
+        {
+            "policy_hash": "sha256:" + "4" * 64,
+            "preservation_schema": {"hash": "sha256:" + "5" * 64},
+            "validator": {"semantics_hash": "sha256:" + "6" * 64},
+        },
+    )
+    write_json(
+        candidate_tree / "abc/data/parser-rq-publication-fixtures-v1.json",
+        {"census_hash": "sha256:" + "7" * 64, "works": {}},
+    )
+    write_json(
+        candidate_tree / "abc/data/parser-rq-resource-policy-v1.json",
+        {
+            "policy_hash": "sha256:" + "8" * 64,
+            "production_command_hash": orchestrator.RESOURCE_COMMAND_HASH,
+            "work_ids": [],
+        },
+    )
+    write_json(
         candidate_tree / "ab-validator/data/parser-rq-resource-identity-v1.json",
         {"fixture": True},
     )
@@ -258,6 +278,63 @@ def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
         orchestrator.operation_argv("unknown", campaign, paths, lock)
 
 
+def test_publication_capture_input_rehashes_the_closed_artifact_set(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
+    identity_ref = campaign.readiness_receipt["qualification_identity_ref"]
+    write_json(
+        paths.runtime,
+        {
+            "candidate": {"qualification_identity": {"parser_git_rev": "a" * 40}},
+            "corpus": {
+                "corpus_id": "fixture",
+                "corpus_snapshot_hash": "sha256:" + "1" * 64,
+                "list_hash": "sha256:" + "2" * 64,
+                "entries": [{"work_id": "w1", "source_sha256": "sha256:" + "3" * 64}],
+            },
+        },
+    )
+    write_json(
+        campaign.config.candidate_tree / "abc/data/parser-rq-publication-policy-v1.json",
+        {
+            "policy_hash": "sha256:" + "4" * 64,
+            "preservation_schema": {"hash": "sha256:" + "5" * 64},
+            "validator": {"semantics_hash": "sha256:" + "6" * 64},
+        },
+    )
+    write_json(
+        campaign.config.candidate_tree / "abc/data/parser-rq-publication-fixtures-v1.json",
+        {"census_hash": "sha256:" + "7" * 64, "works": {"w1": {}}},
+    )
+    write_json(
+        paths.publication_root / "validated/w1.json",
+        {
+            "join_input": {"status": "valid"},
+            "structure_check_candidates": {"plaintext_body_only": True},
+            "counts": {
+                "preservation_records": 1,
+                "tei_preservation_references": 1,
+                "non_null_tei_pointers": 1,
+                "non_null_source_pointers": 1,
+                "by_construct": {"source_identity": 1},
+            },
+        },
+    )
+    materialized = paths.publication_root / "materialized/w1"
+    for relative in orchestrator.PUBLICATION_ARTIFACTS:
+        destination = materialized / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(relative.encode())
+
+    capture = orchestrator._publication_capture_input(campaign, paths)
+
+    assert capture["authority"]["qualification_identity_ref"] == identity_ref
+    assert capture["works"][0]["work_id"] == "w1"
+    artifacts = capture["works"][0]["publication"]["artifacts"]
+    assert len(artifacts) == len(orchestrator.PUBLICATION_ARTIFACTS)
+    assert all(set(row) == {"sha256", "bytes", "media_type"} for row in artifacts)
+
+
 class FakeRunner:
     def __init__(self, staging: Path, *, fail_at: str | None = None) -> None:
         self.staging = staging
@@ -279,8 +356,13 @@ class FakeRunner:
                 output,
                 {
                     "schema_version": "abc/parser-rq-runtime-inputs/v1",
-                    "candidate": {"qualification_identity": {"instrument_versions": {}}},
-                    "corpus": {"entries": []},
+                    "candidate": {
+                        "qualification_identity": {
+                            "instrument_versions": {},
+                            "parser_git_rev": "a" * 40,
+                        }
+                    },
+                    "corpus": {"corpus_root": "ab-validator/corpus", "entries": []},
                     "source_accountability_corpus": [],
                 },
             )

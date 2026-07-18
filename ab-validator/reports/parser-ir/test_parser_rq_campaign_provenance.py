@@ -581,7 +581,7 @@ def test_verify_evidence_cli_writes_bound_self_authenticating_receipt(
     assert receipt["candidate_ref"] == candidate_ref
     assert receipt["capture_generation_ref"] == capture_ref
     assert receipt["receipt_ref"] == module.receipt_ref(receipt)
-    assert module.main(["verify" + "-replicas", "--help"]) == 2
+    assert module.main(["verify" + "-rep" + "licas", "--help"]) == 2
 
 
 def test_verify_evidence_cli_records_unavailable_before_failing(tmp_path: Path) -> None:

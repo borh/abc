@@ -434,6 +434,7 @@
                   pkgs.git-cliff
                   pkgs.jq
                   pkgs.libxml2
+                  pkgs.python3
                 ];
               }
               ''
@@ -445,6 +446,7 @@
                 ${copyWritableSource}
                 cp -R . ../abc
                 cd ../abc
+                cp ${../justfile} ../justfile
                 cp -R ${../ab-validator} ../ab-validator
                 chmod -R u+w ../ab-validator
                 patchShebangs bin/kaocha

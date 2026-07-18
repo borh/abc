@@ -125,6 +125,8 @@ def fixture(tmp_path: Path) -> Any:
         executable = output / "bin" / row["name"]
         executable.parent.mkdir(parents=True)
         executable.write_text("binary")
+        if row["name"] == "ab-check":
+            (executable.parent / "time").write_text("time")
         executables.append(
             {
                 **row,
@@ -146,13 +148,19 @@ def fixture(tmp_path: Path) -> Any:
         "production_graph_hash": graph["policy_hash"],
         "provenance_core_ref": provenance["provenance_core_ref"],
     }
-    site_policy = {"replica_status": "configured"}
-    primary_store = tmp_path / "primary"
-    (primary_store / "executables").mkdir(parents=True)
-    (primary_store / "executables/time").write_text("time")
+    evidence_store = tmp_path / "evidence-store"
+    evidence_store.mkdir()
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
     site_descriptor = {
+        "schema_id": "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json",
+        "schema_version": "2.0.0",
         "campaign_lock_path": str(tmp_path / "campaign.lock"),
-        "primary_store_root": str(primary_store),
+        "evidence_store_root": str(evidence_store),
+        "scratch_root": str(scratch),
+        "corpus_root": str(corpus),
     }
     evidence_tree.mkdir()
     candidate = evidence_tree / "candidate.edn"
@@ -164,9 +172,6 @@ def fixture(tmp_path: Path) -> Any:
         authorization=authorization,
         provenance=write_json(evidence_tree / "provenance.json", provenance),
         readiness_receipt=write_json(evidence_tree / "receipt.json", receipt),
-        site_policy=write_json(
-            candidate_tree / "abc/data/parser-rq-site-policy-v1.json", site_policy
-        ),
         site_descriptor=write_json(evidence_tree / "site-descriptor.json", site_descriptor),
         candidate_tree=candidate_tree,
         evidence_tree=evidence_tree,
@@ -237,7 +242,6 @@ def test_public_cli_is_closed_and_legacy_lane_environment_is_rejected(
         "authorization",
         "provenance",
         "readiness_receipt",
-        "site_policy",
         "site_descriptor",
         "candidate_tree",
         "evidence_tree",
@@ -249,6 +253,22 @@ def test_public_cli_is_closed_and_legacy_lane_environment_is_rejected(
     monkeypatch.setenv("PARSER_RQ_CORE_CAPTURE", "ignored")
     with pytest.raises(orchestrator.PreparationFailed, match="legacy lane environment"):
         orchestrator.authenticate_inputs(config)
+
+
+def test_production_parser_has_no_removed_place_or_copy_option() -> None:
+    parser = orchestrator._parser()
+    option_strings = {option for action in parser._actions for option in action.option_strings}
+    assert "--site-" + "policy" not in option_strings
+    assert not any("rep" + "lica" in option for option in option_strings)
+
+
+def test_prepare_commands_recheck_only_runtime_descriptor(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
+    commands = orchestrator._prepare_commands(campaign, paths)
+    recheck = next(command for command in commands if "recheck-readiness" in command)
+    assert "--site-descriptor" in recheck
+    assert "--policy" not in recheck
 
 
 def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
@@ -264,6 +284,7 @@ def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
     assert commands["capture-core"][0] == sys.executable
     assert "--ab-check" in commands["capture-core"]
     assert str(campaign.executables["ab-check"]) in commands["capture-core"]
+    assert str(campaign.executables["ab-check"].parent / "time") in commands["capture-core"]
     assert commands["capture-predicate-pair"][0] == sys.executable
     assert str(campaign.executables["ab-aozora"]) in commands["capture-predicate-pair"]
     assert str(campaign.executables["ab-aat-to-parser-ir"]) in commands["capture-predicate-pair"]
@@ -290,6 +311,7 @@ def test_real_candidate_and_repository_producer_clis_are_wired(tmp_path: Path) -
     campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
     candidate_root = Path(os.environ["PARSER_RQ_CANDIDATE_ROOT"])
     repository_root = Path(os.environ["PARSER_RQ_REPOSITORY_ROOT"])
+    assert (candidate_root / "bin/time").is_file()
     campaign = replace(
         campaign,
         executables={name: candidate_root / "bin" / name for name in campaign.executables},

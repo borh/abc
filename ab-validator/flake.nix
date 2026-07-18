@@ -1089,7 +1089,12 @@
             "ab-parser-rq-diagnostic-authorization"
           ];
           doCheck = false;
-          extra.preBuild = stageParserRqAbcAuthorities;
+          extra = {
+            preBuild = stageParserRqAbcAuthorities;
+            postInstall = ''
+              ln -s ${pkgs.time}/bin/time "$out/bin/time"
+            '';
+          };
         };
 
         workspaceCheck = mkRustBin {

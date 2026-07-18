@@ -4,7 +4,7 @@
 
 **Goal:** Bind the remaining release instruments, freeze one reproducible custom-parser candidate, publish its sole authorized nine-predicate capture, resolve exact registry admission, and conditionally promote ADR 0039 from committed evidence.
 
-**Architecture:** Add a closed Capture -> Derive instrument for predicates 1, 7, and 9; then deepen the existing qualification gate as the sole owner of admission membership and full-evidence conflict precedence. A pure campaign module authenticates candidate, capture, evaluation, replication, and canonical-projection values without executing parsers or deciding verdicts. Implementation and bounded fixtures finish before candidate freeze; hinoki then performs one pre-authorized capture, an independent full-corpus audit, registry evaluation, and governance transition.
+**Architecture:** Add a closed Capture -> Derive instrument for predicates 1, 7, and 9; then deepen the existing qualification gate as the sole owner of admission membership and full-evidence conflict precedence. A pure campaign module authenticates candidate, capture, evaluation, evidence integrity, and canonical-projection values without executing parsers or deciding verdicts. Implementation and bounded fixtures finish before candidate freeze; hinoki then performs one pre-authorized capture, an independent full-corpus audit, registry evaluation, and governance transition.
 
 **Tech Stack:** Clojure/Malli/Kaocha/test.check, Python/pytest, JSON Schema 2020-12, Nix flakes, `ab-check`, GNU `time(1)`, Git detached worktrees, JCS SHA-256, ADR evidence governance.
 
@@ -19,7 +19,7 @@
 - Run exactly three serial core repetitions and reduce fatal failures, wall time, and timeouts by maximum.
 - Hold the exclusive hinoki campaign lock across all volatile lanes; core and resource executions are serial.
 - Require two clean Nix rebuilds with equal output/NAR identities and executable bytes before authorization.
-- Require each manifest blob in two independently configured storage failure domains before evidence publication.
+- Require the evidence-retention record to be unblocked before candidate freeze. Qualification authenticates content in one configured store; storage durability remains an operations responsibility.
 - A full-entry conflict overrides nine-field `compatible?` membership. No caller supplies an admission boolean.
 - Do not hand-key an observation, rewrite a registry row, weaken a predicate, or promote ADR 0039 from a non-qualified report.
 - Corpus-scale execution runs only on `hinoki.hyakutake-barbel.ts.net`; bounded synthetic fixtures remain local.
@@ -33,10 +33,10 @@
 - `abc/schemas/parser-rq-core-attempt-{policy,work,index,aggregate}.schema.json` own the core attempt protocol.
 - `ab-validator/reports/parser-ir/parser-rq-core-attempt-capture.py` owns execution and raw record production only.
 - `abc/src/abc/tools/parser_rq_core_attempt.clj` authenticates core records and derives predicates 1, 7, and 9.
-- `abc/schemas/parser-rq-{candidate,executable-provenance,capture-authorization,capture-index,evaluation-index,replication-receipt}.schema.json` own campaign values.
+- `abc/schemas/parser-rq-{candidate,executable-provenance,capture-authorization,capture-index,evaluation-index,evidence-integrity-receipt}.schema.json` own campaign values.
 - `abc/src/abc/tools/parser_rq_campaign.clj` owns pure campaign composition, generation selection, canonical projections, and promotion eligibility.
 - `abc/src/abc/tools/parser_release_qualification.clj` remains the sole gate, admission, and verdict authority.
-- `ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py` verifies builds, executable identities, and replica bytes.
+- `ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py` verifies builds, executable identities, and stored evidence bytes.
 - `abc/data/parser-rq-core-attempt-policy-v1.json` binds repetition, command, timing, lock, and semantic identity.
 - `abc/test/fixtures/parser-rq/admission-promotion/` is the bounded Capture -> Derive -> Drift fixture.
 - `abc/docs/adr/0041-parser-release-instrument-bindings.md` governs the final instrument descriptions and predicate-set rotation.
@@ -56,7 +56,7 @@
 - Create: `abc/schemas/parser-rq-capture-authorization.schema.json`
 - Create: `abc/schemas/parser-rq-capture-index.schema.json`
 - Create: `abc/schemas/parser-rq-evaluation-index.schema.json`
-- Create: `abc/schemas/parser-rq-replication-receipt.schema.json`
+- Create: `abc/schemas/parser-rq-evidence-integrity-receipt.schema.json`
 - Modify: `abc/src/abc/tools/validate_design_bundle.clj`
 - Modify: `abc/test/abc/tools/validate_design_bundle_test.clj`
 
@@ -68,8 +68,7 @@
  :not_before_utc "...Z"
  :not_after_utc "...Z"
  :repetitions 3
- :reduction :maximum
- :host_policy_ref "sha256:..."}
+ :reduction :maximum}
 
 {:capture_generation_ref "sha256:..."
  :authorization_ref "sha256:..."
@@ -290,7 +289,7 @@ writes deterministic EDN/JSON; none executes a parser or edits governance.
 
 - [ ] **Step 1: Add failing candidate and authorization tests**
 
-Recompute `qualification_identity_ref`; reject missing/extra keys, a ref disagreement, ordinal other than one, wrong candidate/host policy, bad interval, execution outside the interval, and more than one authorization. Prove evidence HEAD may differ from `parser_git_rev`.
+Recompute `qualification_identity_ref`; reject missing/extra keys, a ref disagreement, ordinal other than one, wrong candidate, bad interval, execution outside the interval, and more than one authorization. Prove evidence HEAD may differ from `parser_git_rev`.
 
 - [ ] **Step 2: Add failing composition tests**
 
@@ -302,7 +301,7 @@ Enumerate directories instead of accepting a selected child path. Require exactl
 
 - [ ] **Step 4: Add failing promotion tests**
 
-Reject stale registry, failed/unavailable predicate, incoherence, any non-admitted status, missing/extra predicate, non-reproducible provenance, absent replica, sibling capture, non-Accepted ADR 0040 or 0041, and canonical drift. A positive fixture has exactly nine passes, admitted coherence, and Accepted projections.
+Reject stale registry, failed/unavailable predicate, incoherence, any non-admitted status, missing/extra predicate, non-reproducible provenance, absent or invalid evidence-integrity receipt, sibling capture, non-Accepted ADR 0040 or 0041, and canonical drift. A positive fixture has exactly nine passes, admitted coherence, and Accepted projections.
 
 - [ ] **Step 5: Confirm red and implement**
 
@@ -324,7 +323,7 @@ git add abc/src/abc/tools/parser_rq_campaign.clj \
 git commit -m "feat(parser-rq): compose immutable campaign generations"
 ```
 
-### Task 6: Verify Reproducible Executables and Replicated Blobs
+### Task 6: Verify Reproducible Executables and Stored Evidence
 
 **Files:**
 - Create: `ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py`
@@ -338,20 +337,20 @@ git commit -m "feat(parser-rq): compose immutable campaign generations"
 ```python
 def compare_builds(first: dict[str, object], second: dict[str, object]) -> dict[str, object]: ...
 def executable_record(path: Path, nix_output: dict[str, object], argv: list[str]) -> dict[str, object]: ...
-def verify_replicas(blobs: list[LogicalBlob], roots: tuple[Path, Path]) -> dict[str, object]: ...
+def verify_evidence(blobs: list[LogicalBlob], root: Path) -> dict[str, object]: ...
 ```
 
 - [ ] **Step 1: Add failing provenance tests**
 
 Reject differing derivations, output/NAR hashes, executable lengths/digests, baked Git revision, adapter coordinates, or argv. Pin streaming reads; mutation after metadata collection must fail re-hash.
 
-- [ ] **Step 2: Add failing replication tests**
+- [ ] **Step 2: Add failing evidence-integrity tests**
 
-Use two temporary roots. Reject same resolved root/device policy, missing replica, wrong bytes, unexpected media type, locator escape, and a receipt whose listed identities differ from the manifests. One offline replica is unavailable, not success.
+Use one temporary content store. Reject an offline root, missing or wrong bytes, unexpected media type, locator escape, duplicate membership, and a receipt whose listed identities differ from the manifests. Re-hash bytes by streaming rather than trusting metadata.
 
 - [ ] **Step 3: Implement and integrate**
 
-Python emits evidence values only. Clojure authenticates their closed schemas and requires `:reproducible true` and `:replicated true` in `promotion-errors`; it does not trust those booleans without recomputing the member comparisons.
+Python emits evidence values only. Clojure authenticates their closed schemas and requires reproducible provenance plus a verified integrity receipt in `promotion-errors`; it does not trust status strings without recomputing member comparisons.
 
 - [ ] **Step 4: Add Nix checks and commit**
 
@@ -365,7 +364,7 @@ git add ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py \
   ab-validator/reports/parser-ir/test_parser_rq_campaign_provenance.py \
   abc/src/abc/tools/parser_rq_campaign.clj \
   abc/test/abc/tools/parser_rq_campaign_test.clj abc/flake.nix
-git commit -m "feat(parser-rq): verify reproducible replicated evidence"
+git commit -m "feat(parser-rq): verify reproducible evidence"
 ```
 
 ### Task 7: Prove the Bounded End-to-End Transaction
@@ -385,11 +384,11 @@ git commit -m "feat(parser-rq): verify reproducible replicated evidence"
 
 - [ ] **Step 1: Build a synthetic nine-predicate fixture**
 
-Use bounded blobs and a fixture identity. Include three different core repetitions whose maxima are not all in the same repetition, all other instrument aggregates, two replica roots, an admission candidate, missing and admitted registries, immutable capture/evaluation indexes, canonical projections, and a positive report.
+Use bounded blobs and a fixture identity. Include three different core repetitions whose maxima are not all in the same repetition, all other instrument aggregates, one closed evidence store, an admission candidate, missing and admitted registries, immutable capture/evaluation indexes, canonical projections, and a positive report.
 
 - [ ] **Step 2: Expose the deferred production corpus entrypoints**
 
-Add `capture-corpus` CLIs to the two existing Rust crates; they accept an explicit corpus index, candidate identity ref, policies, primary store, and output directory. Source accountability invokes the existing fused classified-source capture and R1 fold once per indexed source. Diagnostic authorization consumes those authenticated R1 records plus the predicate-hardening producer's shared raw diagnostic blobs and invokes the existing R2 partition. Neither CLI discovers files from an output directory or reimplements library arithmetic.
+Add `capture-corpus` CLIs to the two existing Rust crates; they accept an explicit corpus index, candidate identity ref, policies, evidence store, and output directory. Source accountability invokes the existing fused classified-source capture and R1 fold once per indexed source. Diagnostic authorization consumes those authenticated R1 records plus the predicate-hardening producer's shared raw diagnostic blobs and invokes the existing R2 partition. Neither CLI discovers files from an output directory or reimplements library arithmetic.
 
 Add the Python predicate-hardening producer by extracting the bounded smoke's production path: for every explicit corpus row, invoke the candidate `ab-aozora --mode diagnostics` and `ab-aat-to-parser-ir qualify` once, store diagnostic/Parser-IR/ledger bytes by logical identity, and emit the two closed indexes. Unknown status or missing output is recorded through the implemented status algebra.
 
@@ -568,23 +567,23 @@ test -z "$(git -C "$candidate_tree" status --porcelain)"
 test -z "$(git -C "$evidence_tree" status --porcelain)"
 ```
 
-- [ ] **Step 2: Run site preflight before creating any authorization**
+- [ ] **Step 2: Confirm retention ownership and run runtime preflight**
 
-The committed site policy is intentionally `unconfigured` until hinoki has a
-reviewed remote replica. Configure and review that value before candidate
-freeze. A local second disk is not acceptable. The runtime site descriptor is
-an explicit JSON value, not environment-derived paths. Stop here unless the
-preflight passes; do not create an authorization for an unready site.
+The evidence-retention record must be unblocked before candidate freeze: it
+names the operations owner, backup procedure, and successful dated restore
+test. The runtime descriptor is explicit JSON with schema version `2.0.0` and
+contains only the lock, evidence-store, scratch, and corpus paths. It is not a
+qualification identity. Stop unless both the operational record and the
+read-only runtime preflight pass.
 
 ```bash
 : "${PARSER_RQ_SITE_DESCRIPTOR:?set the reviewed site-descriptor JSON path}"
-site_policy="$candidate_tree/abc/data/parser-rq-site-policy-v1.json"
 graph="$candidate_tree/abc/data/parser-rq-production-graph-v1.json"
 staging_root=$(mktemp -d /tmp/soranoha-p5-evidence.XXXXXXXX)
+grep -q '^Status: Ready$' "$candidate_tree/abc/docs/reports/parser-rq-evidence-retention.md"
 python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" preflight-site \
-  --policy "$site_policy" --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
-  --graph "$graph" --evidence-git-rev "$candidate_git_rev" \
-  --evidence-tree-clean true --out "$staging_root/site-preflight.json"
+  --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" --graph "$graph" \
+  --evidence-tree-clean true
 ```
 
 - [ ] **Step 3: Perform and compare two independent realizations**
@@ -646,8 +645,7 @@ not_after_utc=$(date -u -d '+150 minutes' '+%Y-%m-%dT%H:%M:%SZ')
 provenance_core_ref=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["provenance_core_ref"])' \
   "$staging_root/executable-provenance.json")
 python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" seal-readiness \
-  --policy "$site_policy" --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
-  --preflight "$staging_root/site-preflight.json" --graph "$graph" \
+  --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" --graph "$graph" \
   --candidate-ref "$candidate_ref" --qualification-identity-ref "$identity_ref" \
   --provenance-core-ref "$provenance_core_ref" --candidate-git-rev "$candidate_git_rev" \
   --evidence-base-git-rev "$candidate_git_rev" \
@@ -657,7 +655,7 @@ python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" seal-readiness \
   --out "$staging_root/readiness-receipt.json"
 nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
   authorize --candidate "$staging_root/candidate.edn" \
-  --receipt "$staging_root/readiness-receipt.json" --host-policy "$site_policy" --ordinal 1 \
+  --receipt "$staging_root/readiness-receipt.json" --ordinal 1 \
   --not-before "$not_before_utc" --not-after "$not_after_utc" \
   --out "$staging_root/authorization.edn"
 authorization_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
@@ -699,11 +697,11 @@ Continue with `candidate_git_rev`, `identity_dir`, `authorization_dir`, and `run
 test "$(git -C "$candidate_tree" rev-parse HEAD)" = "$candidate_git_rev"
 test -z "$(git -C "$candidate_tree" status --porcelain)"
 python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" recheck-readiness \
-  --policy "$site_policy" --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
+  --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
   --receipt "$run_root/readiness-receipt.json"
 ```
 
-Verify the two store roots satisfy the configured independent-failure-domain policy before execution. A different path on the same failure domain is not a replica.
+This rechecks the volatile lock and configured paths immediately before the first capture process. Storage retention remains governed by the operational record confirmed before freeze.
 
 - [ ] **Step 2: Execute all lanes once under the sole authorization**
 
@@ -714,7 +712,7 @@ bash "$candidate_tree/abc/bin/parser-rq-campaign-capture.sh" \
   --authorization "$run_root/authorizations/$authorization_dir.edn" \
   --provenance "$run_root/executable-provenance.json" \
   --readiness-receipt "$run_root/readiness-receipt.json" \
-  --site-policy "$site_policy" --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
+  --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
   --candidate-tree "$candidate_tree" --evidence-tree "$evidence_tree" \
   --staging-root "$capture_staging" --production
 ```
@@ -732,28 +730,33 @@ nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
 
 No parser command may run during these calls. Preserve any honest fail or unavailable envelope.
 
-- [ ] **Step 4: Replicate every logical blob and publish the receipt**
+- [ ] **Step 4: Authenticate every logical blob and publish the receipt**
 
 ```bash
-PARSER_RQ_PRIMARY_STORE=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["primary_store_root"])' \
+PARSER_RQ_EVIDENCE_STORE=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["evidence_store_root"])' \
   "$PARSER_RQ_SITE_DESCRIPTOR")
-PARSER_RQ_REPLICA_STORE=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["replica_store_root"])' \
-  "$PARSER_RQ_SITE_DESCRIPTOR")
+capture_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+  capture-ref --capture-index "$capture_staging/capture-index.edn")
+CAPTURE_INDEX="$capture_staging/capture-index.edn" \
+BLOBS_OUT="$capture_staging/blobs.json" \
+nix develop "$candidate_tree/abc" --command clojure -M -e \
+  '(require (quote [clojure.edn :as edn]) (quote [abc.tools.json :as json]))
+   (json/write-deterministic-json-file!
+    (System/getenv "BLOBS_OUT")
+    (vec (vals (:members (edn/read-string (slurp (System/getenv "CAPTURE_INDEX")))))))'
 nix develop "$candidate_tree/abc" --command python \
   "$candidate_tree/ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py" \
-  verify-replicas --capture-index "$capture_staging/capture-index.edn" \
-  --primary-root "$PARSER_RQ_PRIMARY_STORE" \
-  --replica-root "$PARSER_RQ_REPLICA_STORE" \
-  --out "$capture_staging/replication-receipt.edn"
+  verify-evidence --blobs "$capture_staging/blobs.json" \
+  --evidence-root "$PARSER_RQ_EVIDENCE_STORE" \
+  --candidate-ref "$candidate_ref" --capture-generation-ref "$capture_ref" \
+  --out "$capture_staging/evidence-integrity-receipt.json"
 ```
 
-This command copies only by authenticated logical identity when the replica is absent, then independently streams and hashes both copies. Failure blocks publication; changing a digest is forbidden.
+This command streams and re-hashes the closed manifest-referenced set in the configured content store. Failure writes an unavailable receipt and blocks publication; changing a digest is forbidden.
 
 - [ ] **Step 5: Publish the immutable generation and canonical measurements**
 
 ```bash
-capture_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
-  capture-ref --capture-index "$capture_staging/capture-index.edn")
 capture_dir=${capture_ref#sha256:}
 mkdir -p "$run_root/captures"
 publish_staging="$run_root/captures/.$capture_dir.tmp"
@@ -945,7 +948,7 @@ If ADR 0040 criteria do not pass, retain Proposed, publish the blocker, and stop
 
 - [ ] **Step 3: Re-run promotion verification**
 
-Require zero errors, a byte-reproducible report with `gate_status = release-qualified`, `adr_0039_status = Accepted`, coherence `ok`, admission `admitted`, exactly nine passes, and zero fail/unavailable entries. Also require Accepted ADR 0040 and 0041, one capture, one current-registry evaluation, reproducible provenance, and two authenticated replicas.
+Require zero errors, a byte-reproducible report with `gate_status = release-qualified`, `adr_0039_status = Accepted`, coherence `ok`, admission `admitted`, exactly nine passes, and zero fail/unavailable entries. Also require Accepted ADR 0040 and 0041, one capture, one current-registry evaluation, reproducible provenance, and one authenticated evidence-integrity receipt.
 
 ```bash
 nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
@@ -1004,7 +1007,7 @@ When the gate is not qualified, omit the ADR-0039 `git add`/commit, confirm it r
 - [ ] Registry append is exact, append-only, and followed by a live-read-graph closure check.
 - [ ] Capture bytes do not change between pre- and post-admission evaluations.
 - [ ] Canonical paths are mechanically resolved projections, never operator-selected paths.
-- [ ] Two-build reproducibility and two-domain replication are authenticated inputs to promotion.
+- [ ] Two-build reproducibility and one closed evidence-integrity receipt are authenticated inputs to promotion.
 - [ ] ADR 0041 is Accepted before freeze; ADR 0040 is resolved before ADR 0039.
 - [ ] No command contains a hand-filled hash, report verdict, admission boolean, or machine-local source path.
 - [ ] A failed, unavailable, interrupted, or conflicting one-shot run remains publishable without promotion.

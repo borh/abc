@@ -40,6 +40,7 @@ flowchart LR
   ADR0039["0039 Custom Parser Release Qualification"]:::proposed
   ADR0040["0040 Qualify Process-Tree Cgroup Memory"]:::proposed
   ADR0041["0041 Bind Final Parser Release Instruments"]:::accepted
+  ADR0042["0042 Separate Parser-RQ Evidence Integrity from Storage Retention"]:::proposed
   ADR0008 -->|"amends"| ADR0006
   ADR0010 -->|"amends"| ADR0001
   ADR0010 -->|"amends"| ADR0009
@@ -121,6 +122,8 @@ flowchart LR
   ADR0039 -.->|"depends on"| ADR0038
   ADR0040 -.->|"depends on"| ADR0002
   ADR0041 -.->|"depends on"| ADR0002
+  ADR0042 -.->|"depends on — release qualification evidence integrity"| ADR0039
+  ADR0042 -.->|"depends on — fixed parser release instruments"| ADR0041
   classDef accepted fill:#1b5e20,stroke:#a5d6a7,color:#fff
   classDef draft fill:#37474f,stroke:#b0bec5,color:#fff
   classDef proposed fill:#e65100,stroke:#ffcc80,color:#fff

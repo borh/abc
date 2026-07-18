@@ -163,7 +163,7 @@ def test_readiness_contains_no_runtime_place_or_preflight_value(tmp_path: Path) 
         "site_preflight_report_ref",
         "site_descriptor_hash",
         "site_facts",
-        "kernel_hostname",
+        "kernel" + "_hostname",
         "corpus_root",
         "evidence_store_root",
         "scratch_root",

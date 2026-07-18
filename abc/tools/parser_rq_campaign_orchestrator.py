@@ -80,7 +80,6 @@ class CampaignConfig:
     authorization: Path
     provenance: Path
     readiness_receipt: Path
-    site_policy: Path
     site_descriptor: Path
     candidate_tree: Path
     evidence_tree: Path
@@ -94,7 +93,6 @@ class AuthenticatedCampaign:
     graph: dict[str, Any]
     provenance: dict[str, Any]
     readiness_receipt: dict[str, Any]
-    site_policy: dict[str, Any]
     site_descriptor: dict[str, Any]
     operations: tuple[str, ...]
     executables: dict[str, Path]
@@ -246,11 +244,6 @@ def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
         ("readiness receipt", config.readiness_receipt),
     ):
         _below(evidence_tree, path, label)
-    _below(
-        candidate_tree,
-        config.site_policy,
-        "site policy",
-    )
     try:
         config.site_descriptor.resolve(strict=True)
     except OSError as error:
@@ -276,7 +269,6 @@ def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
 
     provenance = _read_object(config.provenance, "provenance")
     receipt = _read_object(config.readiness_receipt, "readiness receipt")
-    site_policy = _read_object(config.site_policy, "site policy")
     site_descriptor = _read_object(config.site_descriptor, "site descriptor")
     if provenance.get("status") != "reproducible":
         raise PreparationFailed("candidate provenance is not reproducible")
@@ -284,9 +276,6 @@ def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
         raise PreparationFailed("readiness receipt binds another production graph")
     if receipt.get("provenance_core_ref") != provenance.get("provenance_core_ref"):
         raise PreparationFailed("readiness receipt binds another provenance core")
-    if config.production and site_policy.get("replica_status") != "configured":
-        raise PreparationFailed("production evidence replica is unconfigured")
-
     graph_executables = graph.get("executables")
     provenance_executables = provenance.get("executables")
     if not isinstance(graph_executables, list) or not isinstance(provenance_executables, list):
@@ -321,7 +310,6 @@ def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
         graph=graph,
         provenance=provenance,
         readiness_receipt=receipt,
-        site_policy=site_policy,
         site_descriptor=site_descriptor,
         operations=tuple(operation for _, operation in graph_pairs),
         executables=executables,
@@ -370,7 +358,7 @@ def operation_argv(
             "--work-ids",
             str(paths.ab_check_work_ids),
             "--time-executable",
-            str(Path(str(campaign.site_descriptor["primary_store_root"])) / "executables/time"),
+            str(campaign.executables["ab-check"].parent / "time"),
             "--staging-root",
             str(paths.core_root / "records"),
             "--inherited-lock-fd",
@@ -961,8 +949,6 @@ def _prepare_commands(
             sys.executable,
             _driver(campaign, "abc/tools/parser_rq_campaign_site.py"),
             "recheck-readiness",
-            "--policy",
-            str(config.site_policy),
             "--site-descriptor",
             str(config.site_descriptor),
             "--receipt",
@@ -1219,7 +1205,6 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--authorization", type=Path, required=True)
     parser.add_argument("--provenance", type=Path, required=True)
     parser.add_argument("--readiness-receipt", type=Path, required=True)
-    parser.add_argument("--site-policy", type=Path, required=True)
     parser.add_argument("--site-descriptor", type=Path, required=True)
     parser.add_argument("--candidate-tree", type=Path, required=True)
     parser.add_argument("--evidence-tree", type=Path, required=True)

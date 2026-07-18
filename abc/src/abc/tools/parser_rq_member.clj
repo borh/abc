@@ -1,7 +1,6 @@
 (ns abc.tools.parser-rq-member
   "Project authenticated instrument artifacts into assigned campaign members."
   (:require [abc.tools.files :as files]
-            [abc.tools.jcs :as jcs]
             [abc.tools.json :as json]
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-core-attempt :as core]
@@ -11,9 +10,7 @@
             [abc.tools.parser-rq-resource :as resource]
             [abc.tools.parser-rq-source-accountability :as source]
             [clojure.string :as string]
-            [clojure.walk :as walk])
-  (:import [java.nio.file CopyOption Files StandardCopyOption]
-           [java.nio.file.attribute FileAttribute]))
+            [clojure.walk :as walk]))
 
 (defn project-core
   [{:keys [store policy candidate index blob_reader]}]
@@ -161,19 +158,7 @@
    value))
 
 (defn- write-member! [path value]
-  (files/create-parent-dirs! path)
-  (let [target (.toPath (java.io.File. (str path)))
-        directory (.getParent target)
-        temporary (Files/createTempFile directory ".parser-rq-member-" ".tmp"
-                                        (make-array FileAttribute 0))]
-    (try
-      (Files/write temporary (jcs/canonical-json-bytes (json-value value))
-                   (make-array java.nio.file.OpenOption 0))
-      (Files/move temporary target
-                  (into-array CopyOption [StandardCopyOption/ATOMIC_MOVE
-                                          StandardCopyOption/REPLACE_EXISTING]))
-      (finally
-        (Files/deleteIfExists temporary)))))
+  (json/write-deterministic-json-file! path (json-value value)))
 
 (defn -main [& args]
   (let [[command & option-args] args

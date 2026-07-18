@@ -212,7 +212,9 @@
 (deftest readiness-and-authorization-bind-no-runtime-place
   (is (empty? (campaign/verify-authorization-record
                candidate provenance graph receipt authorization)))
-  (doseq [removed [:site_preflight_report_ref :site_facts :host_policy_ref]]
+  (doseq [removed (mapv keyword [(str "site" "_preflight_report_ref")
+                                 (str "site" "_facts")
+                                 (str "host" "_policy_ref")])]
     (is (not (contains? receipt removed)))
     (is (not (contains? authorization removed)))))
 

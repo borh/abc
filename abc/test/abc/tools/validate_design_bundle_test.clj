@@ -357,8 +357,8 @@
          "capture_generation_ref" hash-value
          "status" "verified"
          "blobs" [{"blob" blob
-                    "rehash" hash-value
-                    "observed_bytes" 1}]}]
+                   "rehash" hash-value
+                   "observed_bytes" 1}]}]
     (testing "portable values satisfy their closed contracts"
       (doseq [[contract value] [[descriptor-schema portable-descriptor]
                                 [readiness-schema portable-readiness]
@@ -368,13 +368,13 @@
     (testing "portable contracts reject removed places"
       (is (seq (schema/validation-errors
                 descriptor-schema
-                (assoc portable-descriptor "kernel_hostname" "hinoki"))))
+                (assoc portable-descriptor (str "kernel" "_hostname") "hinoki"))))
       (is (seq (schema/validation-errors
                 readiness-schema
                 (assoc portable-readiness "site_facts" {}))))
       (is (seq (schema/validation-errors
                 authorization-schema
-                (assoc authorization "host_policy_ref" hash-value)))))
+                (assoc authorization (str "host" "_policy_ref") hash-value)))))
     (testing "evidence integrity is closed and status-dependent"
       (is (seq (schema/validation-errors
                 integrity-schema

@@ -92,7 +92,6 @@ def authorization(**changes):
         "not_after_utc": "2026-07-17T01:00:00Z",
         "repetitions": 3,
         "reduction": "maximum",
-        "host_policy_ref": HASH,
     }
     value.update(changes)
     return value

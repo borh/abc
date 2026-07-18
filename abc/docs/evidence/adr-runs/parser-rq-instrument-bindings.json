@@ -9,7 +9,7 @@
   {
     "bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
     "data\/parser-release-qualification-predicates.edn": "sha256:53ab22b2152af7c1bdd4b3d3ceb0d54f2fd9a47592ba149ba5ab2ed6dc28dbdb",
-    "data\/parser-rq-core-attempt-policy-v1.json": "sha256:86cf0509d6d3b01af6b2e5349f213594aee3273414ef640df0ce25621f9ef0d9",
+    "data\/parser-rq-core-attempt-policy-v1.json": "sha256:bf0051e859763e8d830c37915cc10e7e12d0c26486c81050c4cb674d5d566c1f",
     "data\/parser-rq-resource-policy-v1.json": "sha256:535f0bec4cdf30e4200e1a58aaa5680ce1dbbdb0efe09cc2ff5677a573d2064a",
     "docs\/evidence\/parser-rq-instrument-bindings\/capture\/parser-rq-instrument-bindings.edn": "sha256:279dc08c206add46afc27009301bc5634934fc80e6dea28a329a10f4d1380918",
     "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:fd36d4fe768fae072aa1548f7b713384351639d5dc94ce7998f592fd1d6973eb",
@@ -47,7 +47,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-release-qualification-test\/final-instrument-binding-rotation-preserves-predicate-semantics\" \"--focus\" \"abc.tools.parser-rq-core-attempt-test\" \"--focus\" \"abc.tools.parser-rq-campaign-test\" \"--focus\" \"abc.tools.parser-rq-admission-promotion-drift-test\"",
-    "revision": "6b3dce8c86de363a8c2a651fb1abd60a0d7ef8f4",
+    "revision": "fd38bc4e48395c8464091c03ef64ced2a5c74ff8",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

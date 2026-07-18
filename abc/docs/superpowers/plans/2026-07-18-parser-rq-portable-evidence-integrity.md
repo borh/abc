@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Remove machine identity and backup topology from parser release qualification while retaining fail-closed readiness and single-store content authentication.
+**Goal:** Remove machine identity and storage topology from parser release qualification while retaining fail-closed runtime readiness and content authentication.
 
-**Architecture:** Keep one untracked four-path runtime descriptor, one portable readiness receipt, one closed evidence-integrity receipt, and one separate operational retention declaration. Delete the committed site policy and two-domain replication protocol; measurement-specific capabilities remain owned by their instruments, while the production orchestrator fails closed until the retention declaration names an owner, backup procedure, and current restore test.
+**Architecture:** Keep one untracked four-path runtime descriptor, one portable readiness receipt, and one closed evidence-integrity receipt. Delete the committed site policy, two-domain replication protocol, and pre-capture retention declaration. Every required value is committed, pinned, or manifest-addressed below the configured evidence store.
 
 **Tech Stack:** Clojure 1.12, Python 3, JSON Schema 2020-12, EDN/JCS SHA-256 identities, pytest, Kaocha, Nix flakes, ADR evidence governance.
 
@@ -19,13 +19,8 @@
 - Runtime paths never enter candidate, qualification, readiness, authorization, capture, evaluation, admission, or promotion identity.
 - Keep no compatibility alias for `site-policy`, `replica`, `replication`, `host_policy_ref`, or `verify-replicas` in active parser-RQ code.
 - Historical reports and superseded designs remain truthful history and are not rewritten merely because they mention hinoki or replication.
-- Backup and restore are operational responsibilities. Parser-RQ code must not call or attest a backup system.
-- The authoritative campaign remains operationally blocked until
-  `abc/docs/reports/parser-rq-evidence-retention.json` names the owner,
-  applicable backup procedure, and current restore-test record. This is
-  deliberately an operator-owned stop. The production orchestrator reads the closed
-  record and refuses a blocked or incomplete declaration; that declaration is
-  not evidence that the external backup or restore itself occurred.
+- Parser-RQ must not depend on an undeclared external place or service. It
+  authenticates the closed value set but does not model storage topology.
 - Use TDD: every semantic deletion begins with a failing assertion against the current contract.
 - Use `apply_patch` for source edits; use formatters only for mechanical formatting.
 
@@ -54,15 +49,14 @@ move `main` until Task 7 proves the entire sequence.
 
 **Files:**
 - Create: `abc/docs/adr/0042-portable-parser-rq-evidence-integrity.md`
-- Create: `abc/docs/reports/parser-rq-evidence-retention.md`
-- Create: `abc/docs/reports/parser-rq-evidence-retention.json`
+- Create: `abc/docs/reports/parser-rq-evidence-containment.md`
 - Create: `abc/docs/superpowers/notes/2026-07-18-adr-evidence-component-root-followup.md`
 - Modify: `abc/docs/superpowers/specs/2026-07-18-parser-rq-execution-readiness-design.md`
 - Modify: `abc/docs/superpowers/plans/2026-07-18-parser-rq-execution-readiness.md`
 
 **Interfaces:**
 - Consumes: approved portable-evidence design and current ADR 0039/0040/0041 authority boundaries.
-- Produces: ADR 0042 in `Proposed` state, one explicit operator-owned stop, and
+- Produces: ADR 0042 in `Proposed` state, one explicit operator runbook, and
   one bounded follow-up for the pre-existing ADR-capture root-resolution defect.
 
 - [ ] **Step 1: Write ADR 0042 as a proposed protocol amendment**
@@ -70,7 +64,7 @@ move `main` until Task 7 proves the entire sequence.
 Create the ADR with this exact header and decision boundary:
 
 ```markdown
-# ADR 0042: Separate Parser-RQ Evidence Integrity from Storage Retention
+# ADR 0042: Keep Parser-RQ Evidence Portable and Self-Contained
 
 Status: Proposed
 Date: 2026-07-18
@@ -86,9 +80,9 @@ remain Proposed, and no authoritative parser-RQ capture exists.
 ## Context
 
 The execution-readiness protocol braided parser evidence authentication with a
-named host, mount topology, and two-path replication. Reliable storage and
-external backup already own retention; parser qualification must authenticate
-referenced bytes without defining backup infrastructure.
+named host, mount topology, and two-path replication. Parser qualification must
+authenticate the complete value closure needed to reconstruct its decision
+without defining storage infrastructure.
 
 ## Decision
 
@@ -98,16 +92,9 @@ candidate, provenance, graph, corpus, and clean revisions without binding those
 paths. Promotion requires exact closed membership and a streaming SHA-256 and
 byte-count re-hash from one configured evidence store.
 
-Evidence retention is owned by the repository operator through the operational
-record at `docs/reports/parser-rq-evidence-retention.json` and its adjacent
-runbook. Missing ownership, procedure, or restore evidence blocks production
-execution but is not a parser qualification verdict or identity input.
-
-This stop is enforced by the production orchestrator through a separate closed
-operational record. The record does not prove an external restore; it makes the
-named operator's authorization explicit and fail-closed without entering any
-qualification identity. The orchestrator authenticates stored content, while
-the named operator owns the external retention procedure and restore evidence.
+Every required release value is committed, pinned, or manifest-addressed below
+the configured evidence store. No result depends on an undeclared path,
+operator workstation, or third-party storage service.
 
 ## Consequences
 
@@ -127,37 +114,17 @@ historical facts.
   receipt while predicate, provenance, and admission contracts remain unchanged.
 ```
 
-- [ ] **Step 2: Write the honest retention record**
+- [ ] **Step 2: Write the evidence-containment note**
 
-Create `abc/docs/reports/parser-rq-evidence-retention.json` as the sole
-operational status value, initially blocked and with no invented procedure or
-successful restore claim:
-
-```json
-{"owner":"Repository operator","schema_version":"abc/parser-rq-evidence-retention/v1","status":"blocked"}
-```
-
-Create the adjacent `abc/docs/reports/parser-rq-evidence-retention.md` runbook:
+Create `abc/docs/reports/parser-rq-evidence-containment.md` with the closed-value
+boundary. It must keep storage coordinates outside parser-RQ identity and forbid
+dependencies on undeclared external places.
 
 ```markdown
-# Parser-RQ Evidence Retention Readiness
+# Parser-RQ Evidence Containment
 
-The portable parser-RQ implementation may merge, but the authoritative campaign
-must not mint its sole authorization until all three records below are supplied:
-
-- the reliable evidence-store service or operating procedure covering the
-  configured `evidence_store_root`;
-- the external backup procedure and accountable operator;
-- the date and result of a successful restore test applicable to that store.
-
-These records are operational prerequisites, not parser qualification evidence.
-They must never be copied into candidate, readiness, authorization, capture,
-evaluation, admission, or promotion identity.
-
-The adjacent JSON record is the closed operational stop consumed by the
-production orchestrator. It does not prove that a backup or restore occurred;
-it makes the named operator's authorization explicit and fail-closed. No field
-from it enters qualification identity or evidence.
+Every release-relevant value is committed, pinned, or manifest-addressed below
+the configured evidence store.
 ```
 
 - [ ] **Step 3: Record the component-root workaround as a bounded follow-up**
@@ -207,7 +174,7 @@ Expected: no whitespace errors; ADR parsing tests pass; ADR 0042 remains Propose
 
 ```bash
 git add abc/docs/adr/0042-portable-parser-rq-evidence-integrity.md \
-  abc/docs/reports/parser-rq-evidence-retention.md \
+  abc/docs/reports/parser-rq-evidence-containment.md \
   abc/docs/superpowers/notes/2026-07-18-adr-evidence-component-root-followup.md \
   abc/docs/superpowers/specs/2026-07-18-parser-rq-execution-readiness-design.md \
   abc/docs/superpowers/plans/2026-07-18-parser-rq-execution-readiness.md
@@ -790,7 +757,6 @@ git commit -m "refactor(parser-rq): gate promotion on evidence integrity"
 ### Task 6: Simplify the orchestrator and make the deletion executable
 
 **Files:**
-- Create: `abc/docs/reports/parser-rq-evidence-retention.json`
 - Modify: `abc/tools/parser_rq_campaign_orchestrator.py`
 - Modify: `abc/tools/test_parser_rq_campaign_orchestrator.py`
 - Modify: `abc/bin/parser-rq-campaign-capture.sh`
@@ -800,11 +766,9 @@ git commit -m "refactor(parser-rq): gate promotion on evidence integrity"
 - Modify: `flake.nix`
 
 **Interfaces:**
-- Consumes: portable site CLI, authorization v3, `verify-evidence` CLI, and a
-  separate closed operational retention declaration.
-- Produces: one production command with no site-policy or replica argument, a
-  fail-closed operational stop outside qualification identity, and a permanent
-  active-surface regression guard.
+- Consumes: portable site CLI, authorization v3, and `verify-evidence` CLI.
+- Produces: one production command with no site-policy or replica argument and
+  a permanent active-surface regression guard.
 
 - [ ] **Step 1: Write failing orchestrator tests**
 
@@ -827,15 +791,6 @@ def test_prepare_commands_recheck_only_runtime_descriptor(campaign, paths) -> No
     assert "--policy" not in recheck
 
 
-def test_production_fails_closed_on_blocked_retention(tmp_path: Path) -> None:
-    config = fixture(tmp_path)
-    write_json(config.retention_record, {
-        "schema_version": "abc/parser-rq-evidence-retention/v1",
-        "status": "blocked",
-        "owner": "operator",
-    })
-    with pytest.raises(PreparationFailed, match="retention is blocked"):
-        authenticate_inputs(config)
 ```
 
 Extend the cwd-independent production-wiring test to invoke the real site CLI with descriptor v2.
@@ -856,10 +811,6 @@ Expected: FAIL because `CampaignConfig`, authentication, CLI parsing, and prepar
 Remove `site_policy` from `CampaignConfig` and `AuthenticatedCampaign`. Remove
 the candidate-tree policy read, hash check, configured-replica gate, and
 `--site-policy`. Keep descriptor validation as untracked runtime configuration.
-Add `retention_record` as a production-only operational input. Require the
-closed v1 ready shape with a nonblank owner and procedure, a `passed` restore
-result, and a UTC restore-test instant. This record must never enter a
-qualification identity or evidence receipt.
 
 The readiness recheck command must be exactly:
 
@@ -887,7 +838,8 @@ In the P5 plan:
 - build authorization without `--host-policy`;
 - invoke `verify-evidence` with the closed blob list, one evidence root, candidate ref, and capture-generation ref;
 - install `evidence-integrity-receipt.json` in the capture generation;
-- require the evidence-retention record to be unblocked before candidate freeze;
+- require all release-relevant values to remain inside the committed or
+  manifest-addressed closure;
 - keep independent builds, provenance, fixed graph, one-shot authorization, capture, evaluation, admission, and ADR transition commands unchanged.
 
 - [ ] **Step 5: Add the permanent active-surface guard**
@@ -1104,7 +1056,7 @@ Date: 2026-07-18
 Accepted: 2026-07-18
 ```
 
-Update Implementation Status to state that portable contracts, one-store verification, promotion integration, the active-surface guard, and bounded evidence are implemented. State separately that the authoritative campaign is still blocked by the unfilled evidence-retention record.
+Update Implementation Status to state that portable contracts, one-store verification, promotion integration, the active-surface guard, and bounded evidence are implemented.
 
 Do not run the registrar yet: Proposed ADR criteria are intentionally absent
 from the registrable accepted-ADR inventory, and the changed governed tree has
@@ -1189,8 +1141,9 @@ nix build .#checks.x86_64-linux.monorepo-adr-governance --print-build-logs
 just validate-migration
 ```
 
-Expected: every command exits 0. Confirm the operational JSON record remains
-`"status":"blocked"`; passing qualification checks must not imply backup readiness.
+Expected: every command exits 0. Confirm parser-RQ has no storage-policy or
+undeclared-place dependency; passing qualification checks attest only the
+closed evidence value set.
 
 - [ ] **Step 7: Commit recaptured governance evidence, fast-forward main, and push**
 
@@ -1221,6 +1174,6 @@ contract-rotation commits were never exposed on `main` or the remote.
 - [ ] Candidate and qualification identity tests pass with different runtime descriptors.
 - [ ] Evidence integrity authenticates exact closed membership and one streamed copy; it claims no durability or backup result.
 - [ ] The P5 runbook contains no real authorization value and no executed authoritative capture.
-- [ ] The retention record remains honestly blocked until the operator supplies real procedure and restore-test facts.
+- [ ] The P5 runbook forbids release dependencies outside the committed or manifest-addressed closure.
 - [ ] Historical hinoki reports and superseded design rationale remain unchanged.
 - [ ] ADR 0039 and ADR 0040 remain Proposed; ADR 0041 remains Accepted; ADR 0042 is accepted only after registered evidence passes.

@@ -19,7 +19,7 @@
 - Run exactly three serial core repetitions and reduce fatal failures, wall time, and timeouts by maximum.
 - Hold the exclusive hinoki campaign lock across all volatile lanes; core and resource executions are serial.
 - Require two clean Nix rebuilds with equal output/NAR identities and executable bytes before authorization.
-- Require the evidence-retention record to be unblocked before candidate freeze. Qualification authenticates content in one configured store; storage durability remains an operations responsibility.
+- Require every release-relevant value to be committed, pinned, or manifest-addressed below the configured evidence store. No result may depend on an undeclared external place or service.
 - A full-entry conflict overrides nine-field `compatible?` membership. No caller supplies an admission boolean.
 - Do not hand-key an observation, rewrite a registry row, weaken a predicate, or promote ADR 0039 from a non-qualified report.
 - Corpus-scale execution runs only on `hinoki.hyakutake-barbel.ts.net`; bounded synthetic fixtures remain local.
@@ -567,29 +567,16 @@ test -z "$(git -C "$candidate_tree" status --porcelain)"
 test -z "$(git -C "$evidence_tree" status --porcelain)"
 ```
 
-- [ ] **Step 2: Confirm retention ownership and run runtime preflight**
+- [ ] **Step 2: Run runtime preflight**
 
-The evidence-retention record must be unblocked before candidate freeze: it
-names the operations owner, backup procedure, and successful dated restore
-test. The runtime descriptor is explicit JSON with schema version `2.0.0` and
+The runtime descriptor is explicit JSON with schema version `2.0.0` and
 contains only the lock, evidence-store, scratch, and corpus paths. It is not a
-qualification identity. Stop unless both the operational record and the
-read-only runtime preflight pass.
+qualification identity. Stop unless the read-only runtime preflight passes.
 
 ```bash
 : "${PARSER_RQ_SITE_DESCRIPTOR:?set the reviewed site-descriptor JSON path}"
 graph="$candidate_tree/abc/data/parser-rq-production-graph-v1.json"
 staging_root=$(mktemp -d /tmp/soranoha-p5-evidence.XXXXXXXX)
-python - "$candidate_tree/abc/docs/reports/parser-rq-evidence-retention.json" <<'PY'
-import json
-import sys
-
-record = json.load(open(sys.argv[1], encoding="utf-8"))
-assert record["status"] == "ready"
-assert record["owner"].strip()
-assert record["backup_procedure"].strip()
-assert record["restore_test_status"] == "passed"
-PY
 python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" preflight-site \
   --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" --graph "$graph" \
   --evidence-tree-clean true
@@ -710,7 +697,7 @@ python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" recheck-readiness 
   --receipt "$run_root/readiness-receipt.json"
 ```
 
-This rechecks the volatile lock and configured paths immediately before the first capture process. Storage retention remains governed by the operational record confirmed before freeze.
+This rechecks the volatile lock and configured paths immediately before the first capture process.
 
 - [ ] **Step 2: Execute all lanes once under the sole authorization**
 
@@ -721,7 +708,6 @@ bash "$candidate_tree/abc/bin/parser-rq-campaign-capture.sh" \
   --authorization "$run_root/authorizations/$authorization_dir.edn" \
   --provenance "$run_root/executable-provenance.json" \
   --readiness-receipt "$run_root/readiness-receipt.json" \
-  --retention-record "$evidence_tree/abc/docs/reports/parser-rq-evidence-retention.json" \
   --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
   --candidate-tree "$candidate_tree" --evidence-tree "$evidence_tree" \
   --staging-root "$capture_staging" --production

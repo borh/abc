@@ -28,10 +28,9 @@ Parser release qualification owns exactly three storage concerns:
 2. every referenced artifact can be read from the configured evidence store;
 3. the bytes are streamed and re-hashed before promotion.
 
-Storage reliability, backup scheduling, restore testing, media choice, mount
-topology, and failure-domain placement are infrastructure responsibilities.
-They do not enter parser qualification policy, candidate identity, predicate
-identity, admission, or promotion.
+Parser-RQ makes no claim about the durability or topology of the configured
+store. Those properties do not enter parser qualification policy, candidate
+identity, predicate identity, admission, or promotion.
 
 The qualification transaction retains a readiness receipt. The receipt binds
 the candidate, qualification identity, executable provenance, production graph,
@@ -49,37 +48,25 @@ motivation: even if the replica existed, hostname and storage topology would
 still describe infrastructure places rather than parser evidence.
 
 Because this changes a promotion protocol, implementation records the decision
-in ADR 0042 before rotating schemas or fixtures. The ADR distinguishes content
-integrity, which promotion enforces, from evidence retention, which operations
-owns.
+in ADR 0042 before rotating schemas or fixtures. The ADR keeps content identity
+and evidence containment while deleting storage-policy claims.
 
-## Open Operational Dependency: Evidence Retention
+## Evidence Containment and Reconstructibility
 
-The repository currently has no named operational owner or runbook for backing
-up parser-RQ evidence. Removing the replication gate must not silently claim
-that this responsibility is already discharged.
+Git contains the candidate description, policies, manifests, receipts,
+observations, reports, and small witnesses. Every required corpus-scale blob is
+manifest-addressed below the configured evidence store. Promotion streams and
+re-hashes that closed set.
 
-Implementation adds one closed operational record at
-`docs/reports/parser-rq-evidence-retention.json` and an adjacent runbook. Before
-the authoritative campaign, the repository operator must record that the
-configured evidence store is covered by the established reliable-storage and
-external-backup process, name the applicable operational procedure, and confirm
-a current restore test. Until that record is complete, the production
-orchestrator fails closed even though the portable qualification code may merge.
+No release result may depend on an undeclared path, an operator workstation, or
+a third-party storage service. Runtime paths remain configuration rather than
+identity. Deterministic projections regenerate from committed values and the
+closed captured generation; volatile resource observations remain authenticated
+captured facts rather than falsely reproducible executions.
 
-This record is deliberately not a qualification artifact. It is not hashed into
-the candidate, readiness receipt, capture, evaluation, admission, or promotion;
-the parser-RQ application does not inspect backup systems. Its purpose is to
-give retention a real owner and an explicit pre-run stop rather than pretending
-that a qualification check can prove infrastructure durability.
-
-The production orchestrator enforces the operational declaration; qualification
-does not consume it. A JSON field saying that a restore test passed does not
-prove the external backup or restore, so the record makes only the narrower
-claim that a named operator authorized production under a named procedure and
-dated restore result. Qualification verifies stored bytes; operations owns the
-truth and consequences of that declaration. No field from the operational
-record enters parser-RQ identity or evidence.
+Parser-RQ therefore needs neither a pre-capture retention declaration nor a
+post-capture replication protocol. Both model storage places instead of the
+values needed to reconstruct the decision.
 
 ## Boundary
 
@@ -257,10 +244,8 @@ It does not change:
   preparation failure; no capture attempt.
 - The same failures after capture start: honest unavailable attempt.
 - Missing or mismatched evidence bytes: integrity unavailable; no promotion.
-- Missing evidence-retention ownership or restore-test record: operational
-  campaign block before authorization; it is not a qualification verdict.
-- Backup failure: handled by the named infrastructure owner and procedure,
-  outside qualification.
+- A required value outside the committed or manifest-addressed closure:
+  integrity unavailable; no promotion.
 
 No retry, alternate store, or operator-selected generation is introduced.
 
@@ -336,6 +321,6 @@ The correction is complete when parser qualification can run on any host that
 satisfies its measurement prerequisites, all release-relevant artifacts are
 authenticated by logical content identity, and no qualification or promotion
 decision depends on hinoki, a filesystem implementation, or backup topology.
-The authoritative campaign additionally remains blocked until the separate
-evidence-retention runbook has a named owner, applicable backup procedure, and
-current restore-test record.
+The authoritative campaign can reconstruct every deterministic result from the
+committed and manifest-addressed closure without adding storage coordinates to
+any qualification artifact.

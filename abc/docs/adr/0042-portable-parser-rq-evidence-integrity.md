@@ -1,4 +1,4 @@
-# ADR 0042: Separate Parser-RQ Evidence Integrity from Storage Retention
+# ADR 0042: Keep Parser-RQ Evidence Portable and Self-Contained
 
 Status: Accepted
 Date: 2026-07-18
@@ -12,16 +12,14 @@ Release authority: development
 Portable contracts, one-store evidence verification, promotion integration,
 the active-surface guard, and bounded governance evidence are implemented. ADR
 0039 and ADR 0040 remain Proposed, and no authoritative parser-RQ capture
-exists. The production campaign remains operationally blocked by the closed
-evidence-retention record until its owner supplies a real backup procedure and
-UTC restore-test result.
+exists.
 
 ## Context
 
 The execution-readiness protocol braided parser evidence authentication with a
-named host, mount topology, and two-path replication. Reliable storage and
-external backup already own retention; parser qualification must authenticate
-referenced bytes without defining backup infrastructure.
+named host, mount topology, and two-path replication. Parser qualification must
+instead authenticate the complete value closure needed to reconstruct its
+decision without defining storage infrastructure.
 
 ## Decision
 
@@ -31,23 +29,19 @@ candidate, provenance, graph, corpus, and clean revisions without binding those
 paths. Promotion requires exact closed membership and a streaming SHA-256 and
 byte-count re-hash from one configured evidence store.
 
-Evidence retention is owned by the repository operator through the operational
-record at `docs/reports/parser-rq-evidence-retention.json` and its adjacent
-runbook. Missing ownership, procedure, or restore evidence blocks production
-execution but is not a parser qualification verdict or identity input.
-
-This stop is enforced by the production orchestrator through a separate closed
-operational record. The record does not prove an external restore; it makes the
-named operator's authorization explicit and fail-closed without entering any
-qualification identity. The orchestrator authenticates stored content, while
-the named operator owns the external retention procedure and restore evidence.
+Evidence containment is described by
+`docs/reports/parser-rq-evidence-containment.md`. Every release-relevant value
+is committed, pinned, or manifest-addressed below the configured evidence
+store. Promotion re-hashes that closed set. No result depends on an undeclared
+path, operator workstation, or third-party storage service.
 
 ## Consequences
 
 The unprovisioned replica ceases to be a qualification blocker as a consequence,
 not as the motivation. Predicate, provenance, corpus, admission, and canonical
 generation semantics remain unchanged. Historical hinoki observations remain
-historical facts.
+historical facts. Production has no separate retention declaration or storage
+workflow in its protocol.
 
 ## Acceptance Criteria
 

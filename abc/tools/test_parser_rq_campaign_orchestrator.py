@@ -167,20 +167,11 @@ def fixture(tmp_path: Path) -> Any:
     authorization = evidence_tree / "authorization.edn"
     candidate.write_text("{}")
     authorization.write_text("{}")
-    retention = {
-        "schema_version": "abc/parser-rq-evidence-retention/v1",
-        "status": "ready",
-        "owner": "operator",
-        "backup_procedure": "ops/runbook",
-        "restore_test_at_utc": "2026-07-18T00:00:00Z",
-        "restore_test_status": "passed",
-    }
     return orchestrator.CampaignConfig(
         candidate=candidate,
         authorization=authorization,
         provenance=write_json(evidence_tree / "provenance.json", provenance),
         readiness_receipt=write_json(evidence_tree / "receipt.json", receipt),
-        retention_record=write_json(evidence_tree / "retention.json", retention),
         site_descriptor=write_json(evidence_tree / "site-descriptor.json", site_descriptor),
         candidate_tree=candidate_tree,
         evidence_tree=evidence_tree,
@@ -251,7 +242,6 @@ def test_public_cli_is_closed_and_legacy_lane_environment_is_rejected(
         "authorization",
         "provenance",
         "readiness_receipt",
-        "retention_record",
         "site_descriptor",
         "candidate_tree",
         "evidence_tree",
@@ -270,29 +260,6 @@ def test_production_parser_has_no_removed_place_or_copy_option() -> None:
     option_strings = {option for action in parser._actions for option in action.option_strings}
     assert "--site-" + "policy" not in option_strings
     assert not any("rep" + "lica" in option for option in option_strings)
-
-
-def test_production_fails_closed_on_blocked_retention(tmp_path: Path) -> None:
-    config = fixture(tmp_path)
-    write_json(
-        config.retention_record,
-        {
-            "schema_version": "abc/parser-rq-evidence-retention/v1",
-            "status": "blocked",
-            "owner": "operator",
-        },
-    )
-    with pytest.raises(orchestrator.PreparationFailed, match="retention is blocked"):
-        orchestrator.authenticate_inputs(config)
-
-
-def test_production_rejects_non_utc_restore_test_time(tmp_path: Path) -> None:
-    config = fixture(tmp_path)
-    retention = json.loads(config.retention_record.read_text())
-    retention["restore_test_at_utc"] = "2026-07-18T09:00:00+09:00"
-    write_json(config.retention_record, retention)
-    with pytest.raises(orchestrator.PreparationFailed, match="time is not UTC"):
-        orchestrator.authenticate_inputs(config)
 
 
 def test_prepare_commands_recheck_only_runtime_descriptor(tmp_path: Path) -> None:

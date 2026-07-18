@@ -797,6 +797,23 @@
                 touch "$out/passed"
               '';
 
+          parser-rq-campaign-orchestrator =
+            pkgs.runCommand "abc-parser-rq-campaign-orchestrator-tests"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.python3Packages.pytest
+                ];
+              }
+              ''
+                cp -R ${./.} abc
+                chmod -R u+w abc
+                cd abc
+                pytest -q tools/test_parser_rq_campaign_orchestrator.py
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
           schema-contract-drift =
             pkgs.runCommand "abc-schema-contract-drift" { nativeBuildInputs = [ pkgs.python3 ]; }
               ''

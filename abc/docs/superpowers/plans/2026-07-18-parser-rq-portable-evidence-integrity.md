@@ -74,7 +74,7 @@ Create the ADR with this exact header and decision boundary:
 
 Status: Proposed
 Date: 2026-07-18
-Depends on: ADR 0039 [scope: release qualification evidence integrity], ADR 0041 [scope: fixed parser release instruments]
+Depends on: ADR 0041
 Validation scope: structural
 Release authority: development
 
@@ -1128,7 +1128,9 @@ trap:
 ```bash
 stage="$(mktemp -d -t parser-rq-governance.XXXXXXXX)"
 mkdir -p "$stage/runs"
-grep -qxF 'abc/abc' ../.git/info/exclude || echo 'abc/abc' >> ../.git/info/exclude
+git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
+grep -qxF 'abc/abc' "$git_common_dir/info/exclude" || \
+  echo 'abc/abc' >> "$git_common_dir/info/exclude"
 ln -s . abc
 trap 'rm -f abc' EXIT
 

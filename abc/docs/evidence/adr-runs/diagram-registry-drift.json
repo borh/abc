@@ -36,7 +36,7 @@
     "docs\/adr\/0033-source-bundle-identity.md": "sha256:8dc84c890b8a1a7fcf08d8ac6eb0200b2af3d0d8e27a6fa4e814bf7ab115e752",
     "docs\/adr\/0034-typed-evidence-and-lifecycle-closure.md": "sha256:b05b9df35417d08c8ef8c301942bd4b86b114db489d7932b9dfa4e242c3b019b",
     "docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md": "sha256:bd7addd48c6d8cd7400e3dc90a957a167ffc567968490d821d736820809c7352",
-    "docs\/adr\/adr-graph.mmd": "sha256:bd2b563243ba37fefaedf23e17a7fe0a1883f691920ad9b71a9f390ccc562c51",
+    "docs\/adr\/adr-graph.mmd": "sha256:eb9f6d0ce07e97261d55b7b704b596c057d1ac3184b56438c3cd8e5e53cd99df",
     "docs\/adr\/adr-relations.edn": "sha256:66034fbb913112841e61e2cfee13e75fb0baae76d63c719d8f186896eacd66b6",
     "docs\/architecture-stages.edn": "sha256:27bb043a7e9af7fb89662c21528717a8d42bdc7d3a4a7de08673ec1ae0302637",
     "docs\/architecture.md": "sha256:0967767f9bb17c0353fc6df848b865b43f4a006e7351868bba511b801a8ffcb0",
@@ -44,7 +44,7 @@
     "docs\/evidence\/adr-capture\/diagram-registry-drift.edn": "sha256:f1d7c5d49157816b8f66fae0950ee305dbe7018c654b7469a5af5e8876fa7f38",
     "docs\/evidence\/adr-inputs\/diagram-registry-drift.edn": "sha256:1d65d233e3c1447a959c984cb36267db5b39f7e95e4c34715810076412b252ab",
     "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
-    "schemas\/schema-contracts.json": "sha256:dcf1691be1941c5fd5fa8537f585c9f1739d41b4febd68278f9649946224783d",
+    "schemas\/schema-contracts.json": "sha256:0ee6fba765041928b20ba21a7eb73ebae6699787aeb175d2299b7586169fd1c4",
     "src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
     "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "src\/abc\/tools\/diagram\/adr_graph.clj": "sha256:b444bd7f0cc8bcdc9f42721f51799c9536829e2ab4895e9ae8ed6c7e15134c4b",
@@ -74,7 +74,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.diagram-registry-evidence-test\/diagram-registry-contract\"",
-    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
+    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

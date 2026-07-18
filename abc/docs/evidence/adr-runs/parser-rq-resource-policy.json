@@ -8,10 +8,10 @@
   "inputs":
   {
     "bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
-    "data\/parser-release-qualification-predicates.edn": "sha256:132bf7ede90f695f18e811c0fdaa4ddde8179af7e4ce974877291a935a829c12",
-    "data\/parser-rq-resource-policy-v1.json": "sha256:529058c688bbe8856f40a284f0a290072147349956230fc2e60dc2458e0697a1",
+    "data\/parser-release-qualification-predicates.edn": "sha256:53ab22b2152af7c1bdd4b3d3ceb0d54f2fd9a47592ba149ba5ab2ed6dc28dbdb",
+    "data\/parser-rq-resource-policy-v1.json": "sha256:535f0bec4cdf30e4200e1a58aaa5680ce1dbbdb0efe09cc2ff5677a573d2064a",
     "docs\/evidence\/parser-rq-resource\/capture\/parser-rq-resource-policy.edn": "sha256:82c7024cd927f315609243c10f5430c3629ac4bae0cb8e534022b26dce4d3cef",
-    "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:c454a9689bb53b0aedcbf053b464ab78843e459ed77d2c4f654cccb6dbc9504c",
+    "src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:fd36d4fe768fae072aa1548f7b713384351639d5dc94ce7998f592fd1d6973eb",
     "src\/abc\/tools\/cli.clj": "sha256:e62f426f2f0f741ae6195f02bb6e6cb0289f27d8785569769b0b46c031965054",
     "src\/abc\/tools\/edn_registry.clj": "sha256:4d75f858bd14f6808d110ad9c252e643fcebfc3176eda65a3a6b7bfc9651eafb",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
@@ -21,11 +21,11 @@
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
     "src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
     "src\/abc\/tools\/malli.clj": "sha256:16c04c051ac5829e36b7d0e7707c0057cef22ac2c20f778ad08f0d3b40df471e",
-    "src\/abc\/tools\/parser_release_qualification.clj": "sha256:effebdd0700705a57e0fbaa48e8b40f96f69adec2e9a90ccc223b651419c492e",
-    "src\/abc\/tools\/parser_rq_capture.clj": "sha256:a2490742eb037fa6d452f44b2ddd66004d89ace5be983ad7208b4bdb6a4b8c16",
+    "src\/abc\/tools\/parser_release_qualification.clj": "sha256:7b9c628296ade88dc558caeca1c787a3f6d5706e413738cfa7fe3c53879b3ce7",
+    "src\/abc\/tools\/parser_rq_capture.clj": "sha256:6ba1106ccc6eaa1cd69e66d57f5dcd7561ba050fdbb1cc077846c065d4f97508",
     "src\/abc\/tools\/parser_rq_resource.clj": "sha256:0abe0c76aad470ffe94fb79536e78df05354f4e5caef713277c2357cde56785a",
     "src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
-    "test\/abc\/tools\/parser_rq_resource_test.clj": "sha256:20f68393264e38bad2e0a0e6ab62caff3e68ed70ec193854bf6d7f7c54f36f1e"
+    "test\/abc\/tools\/parser_rq_resource_test.clj": "sha256:41c1ff3ba83d67f2bbf51f4b4954f1f625d724761757da61b4fa7446ad9ac32d"
   },
   "observations":
   {
@@ -41,7 +41,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-rq-resource-test\/process-tree-memory-policy-contract\"",
-    "revision": "d2b6ca03ee29d07593df9e68e6019ffe5931d71f",
+    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

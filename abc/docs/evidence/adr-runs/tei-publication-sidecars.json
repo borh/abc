@@ -19,7 +19,7 @@
     "examples\/v0\/example-work\/parser-ir.json": "sha256:63a3d9cda911859bc0f93950e196f4c455ec9a5cf4bbb6a4863e4012637f8037",
     "examples\/v0\/example-work\/source.manifest.json": "sha256:a618de2d65f84a55b5243aaa1aa60d7e7c470228dc6ac7907ffd202fb3e0cc81",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:e63d826a591e756bf05a8b3f3221b60e5b1a97c75458ba6f71bf30b1593d55d6",
+    "flake.nix": "sha256:744054ae56f87fed6ded703604bb9fbb93d0655274b6183c4a0d6e696650d3e4",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
     "schemas\/parser-ir-publication-preservation.schema.json": "sha256:b073df014a2b7c685059d3681dbfcbbde10ec66adfb0253ab80b6287c70c5599",
@@ -70,10 +70,10 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:39f0ae722e399424a18da708fd8823fa24e8c6d2d532724e5ad1844474e96ccf",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:6f8f87c68945cf9f24240baabe15051f56716e2ba252448698cae54a5e93d327",
     "test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
     "test\/abc\/tools\/materialize_publication_test.clj": "sha256:fcf255c01de1e89ac686011786cfd5cbdacf4d2c445fa97280b80b216624ffb7",
-    "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:b28ef82d63c4a891400caef9a64d8a480f52156358578d32996b2b31babae8fb",
+    "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:c6bfdade6344cfc513260a023f77f9931b7d0f1ae962954cbd52f424e4827baa",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
   },
   "observations":
@@ -94,7 +94,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-publication-sidecars\\\"\"",
-    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
+    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

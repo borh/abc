@@ -46,7 +46,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"bin\/kaocha --focus abc.tools.parser-rq-portability-test --focus abc.tools.parser-rq-campaign-test --focus abc.tools.parser-rq-admission-promotion-drift-test && nix build ..\/ab-validator#checks.x86_64-linux.parser-rq-campaign-provenance-python-tests\"",
-    "revision": "315b6d1d6ff7e412899f8c78cc06c7c99b3afea6",
+    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

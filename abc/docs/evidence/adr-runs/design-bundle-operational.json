@@ -42,7 +42,7 @@
     "examples\/workflow\/passed.workflow-run.json": "sha256:c73d776b5041db6e88bd5c63d695ea363d233f633a0134e3fe313782cd2c950c",
     "fixtures\/tei-eaj-comparison\/workset-export.json": "sha256:75ef3259683bfc2ad0395e5d04c4466f7a18d5c2d1420ccbdccc325a3ca969c4",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:e63d826a591e756bf05a8b3f3221b60e5b1a97c75458ba6f71bf30b1593d55d6",
+    "flake.nix": "sha256:744054ae56f87fed6ded703604bb9fbb93d0655274b6183c4a0d6e696650d3e4",
     "schemas\/aat-parser-ir-divergence-bundle.schema.json": "sha256:93719c5f2a3cc899d3ef59a4ecd6b3de722c0980ae024e38c355b32a0264b401",
     "schemas\/aat-parser-ir-divergence.schema.json": "sha256:c8e1c08a0da295a3ecea8e2c5fb685b8624133c1cc306e84565efa8010c54bfc",
     "schemas\/aat-parser-ir-mapping.schema.json": "sha256:37a5bd15f60a47d4088f95a9b2d58c075393725325b5ed1d9431d7db1bdc4c8b",
@@ -113,7 +113,7 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:39f0ae722e399424a18da708fd8823fa24e8c6d2d532724e5ad1844474e96ccf",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:6f8f87c68945cf9f24240baabe15051f56716e2ba252448698cae54a5e93d327",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
   },
   "observations":
@@ -134,7 +134,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix run .#validate-design-bundle\"",
-    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
+    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

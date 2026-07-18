@@ -3,7 +3,7 @@
 Status: Accepted
 Date: 2026-07-18
 Accepted: 2026-07-18
-Depends on: ADR 0039 [scope: release qualification evidence integrity], ADR 0041 [scope: fixed parser release instruments]
+Depends on: ADR 0041
 Validation scope: structural
 Release authority: development
 

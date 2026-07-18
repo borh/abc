@@ -15,7 +15,7 @@
     "fixtures\/tei\/invalid\/missing-title.xml": "sha256:d2eb602adcddf2a3e24bc586f9ca17a772029b59c4e1282a24ce0616e4cd1c6c",
     "fixtures\/tei\/invalid\/ruby-missing-reading.xml": "sha256:bb3be25f9e1f37e4a4f3c028c3d38d4d0bc5c0a647e9f1c8182e927ee5870872",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:e63d826a591e756bf05a8b3f3221b60e5b1a97c75458ba6f71bf30b1593d55d6",
+    "flake.nix": "sha256:744054ae56f87fed6ded703604bb9fbb93d0655274b6183c4a0d6e696650d3e4",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/tei-profile.sch": "sha256:608dcce45ba2acd490706691c4e38f885615176744f0db10a5a46aa96fa4da8a",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
@@ -43,7 +43,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-schematron-invalid-ids\\\"\"",
-    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
+    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

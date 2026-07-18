@@ -36,7 +36,7 @@
     "docs\/adr\/0033-source-bundle-identity.md": "sha256:8dc84c890b8a1a7fcf08d8ac6eb0200b2af3d0d8e27a6fa4e814bf7ab115e752",
     "docs\/adr\/0034-typed-evidence-and-lifecycle-closure.md": "sha256:b05b9df35417d08c8ef8c301942bd4b86b114db489d7932b9dfa4e242c3b019b",
     "docs\/adr\/0038-custom-parser-ownership-and-neutral-comparison.md": "sha256:bd7addd48c6d8cd7400e3dc90a957a167ffc567968490d821d736820809c7352",
-    "docs\/adr\/adr-graph.mmd": "sha256:bd2b563243ba37fefaedf23e17a7fe0a1883f691920ad9b71a9f390ccc562c51",
+    "docs\/adr\/adr-graph.mmd": "sha256:eb9f6d0ce07e97261d55b7b704b596c057d1ac3184b56438c3cd8e5e53cd99df",
     "docs\/adr\/adr-relations.edn": "sha256:66034fbb913112841e61e2cfee13e75fb0baae76d63c719d8f186896eacd66b6",
     "docs\/evidence\/adr-capture\/adr-graph-contract.edn": "sha256:251af9c178423b79ee1f35194628e97e0cc71cb5ebda0934930c47d1dc96c2be",
     "docs\/evidence\/adr-inputs\/adr-graph-contract.edn": "sha256:4729c48ab85162c30b9a00718dbd0f1030804ef97a2887576e99acb229f021e5",
@@ -65,7 +65,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.adr-graph-evidence-test\/adr-graph-contract\"",
-    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
+    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

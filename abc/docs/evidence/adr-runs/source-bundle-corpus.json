@@ -13,7 +13,7 @@
     "docs\/evidence\/adr-capture\/source-bundle-corpus.edn": "sha256:e0411de3ce8575677452435195ab1b3b3b5cc10d469f0909646543b31ec90e60",
     "docs\/evidence\/adr-inputs\/source-bundle-corpus.edn": "sha256:16ee3c73086a28e1adcaa015b40c9f7732f53372695339e61b14e240c267cda4",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:e63d826a591e756bf05a8b3f3221b60e5b1a97c75458ba6f71bf30b1593d55d6",
+    "flake.nix": "sha256:744054ae56f87fed6ded703604bb9fbb93d0655274b6183c4a0d6e696650d3e4",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
     "src\/abc\/tools\/hash.clj": "sha256:e49befc2ce08401bb3161af5cedcf0555eec6a639510ca31445da30b32e2cfb5",
@@ -42,7 +42,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix build --no-link .#checks.x86_64-linux.source-bundle-corpus\"",
-    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
+    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

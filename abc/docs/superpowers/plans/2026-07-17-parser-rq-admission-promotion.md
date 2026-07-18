@@ -619,6 +619,10 @@ execution_output=$(jq -er \
   '[.executables[].nix_output] | unique | if length == 1 then .[0] else error("output is not unique") end' \
   "$build_root/provenance-proof.json")
 nix copy --no-check-sigs --from "$source_store" --to daemon "$execution_output"
+execution_root="$build_root/execution-output-root"
+test ! -e "$execution_root"
+nix-store --add-root "$execution_root" -r "$execution_output" >/dev/null
+test "$(readlink -f "$execution_root")" = "$execution_output"
 installed_output=$(python "$provenance_tool" verify-installed \
   --proof "$build_root/provenance-proof.json")
 test "$installed_output" = "$execution_output"
@@ -627,8 +631,11 @@ test "$installed_output" = "$execution_output"
 The copy happens only after the two realizations compare equal. It makes that
 already-proven value executable by the campaign without adding the execution
 store to qualification identity. `verify-installed` re-reads the installed NAR
-and every executable byte through the execution store. Any realization,
-installation, or executable disagreement ends this candidate unavailable.
+and every executable byte through the execution store. The temporary Nix GC
+root is only a liveness handle: it keeps the proven value available until the
+capture is published, is not evidence or identity, and is removed after the
+capture commit is pushed. Any realization, installation, or executable
+disagreement ends this candidate unavailable.
 
 - [ ] **Step 4: Generate the candidate and bind provenance**
 
@@ -719,9 +726,14 @@ test -z "$(git -C "$candidate_tree" status --porcelain)"
 python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" recheck-readiness \
   --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
   --receipt "$run_root/readiness-receipt.json"
+test "$(readlink -f "$execution_root")" = "$execution_output"
+installed_output=$(python "$provenance_tool" verify-installed \
+  --proof "$build_root/provenance-proof.json")
+test "$installed_output" = "$execution_output"
 ```
 
-This rechecks the volatile lock and configured paths immediately before the first capture process.
+This rechecks the volatile lock, configured paths, and exact proven executable
+immediately before the first capture process.
 
 - [ ] **Step 2: Execute all lanes once under the sole authorization**
 
@@ -804,6 +816,7 @@ git add "$run_root/captures/$capture_dir" \
   abc/docs/reports/parser-release-qualification-measurements.edn
 git commit -m "evidence(parser-rq): publish authorized candidate capture"
 git push origin main
+rm -f "$execution_root"
 ```
 
 Do not create an evaluation yet: its strict admission result requires the independent full-corpus candidate produced in Task 12.

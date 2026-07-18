@@ -539,7 +539,14 @@ def _output_nar_hash(runner: Runner, store_uri: str, output_path: str) -> str:
         rows = json.loads(path_info.stdout)
         if not isinstance(rows, dict) or set(rows) != {output_path}:
             raise TypeError
-        return _nix_hash(rows[output_path]["narHash"])
+        row = rows[output_path]
+        if row is None:
+            raise ProvenanceUnavailable("realized output is absent")
+        if not isinstance(row, dict):
+            raise TypeError
+        return _nix_hash(row["narHash"])
+    except ProvenanceUnavailable:
+        raise
     except (json.JSONDecodeError, KeyError, TypeError) as error:
         raise ProvenanceUnavailable("Nix path-info output is malformed") from error
 

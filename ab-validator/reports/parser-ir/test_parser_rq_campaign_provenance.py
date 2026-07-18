@@ -306,6 +306,37 @@ def test_verify_installed_build_reauthenticates_nar_and_executable_bytes() -> No
     ]
 
 
+def test_verify_installed_build_reports_collected_output() -> None:
+    output = "/nix/store/bbbbbbbb-target"
+    expected_nar = "sha256:" + bytes(range(32)).hex()
+    proof = {
+        "status": "reproducible",
+        "builds": [
+            {"build_id": "build-a", "output_ref": expected_nar},
+            {"build_id": "build-b", "output_ref": expected_nar},
+        ],
+        "executables": [
+            {
+                "name": "ab-check",
+                "nix_output": output,
+                "nar_hash": expected_nar,
+                "sha256": module.sha256_bytes(b"candidate executable"),
+                "bytes": len(b"candidate executable"),
+            }
+        ],
+    }
+
+    try:
+        module.verify_installed_build(
+            proof,
+            FakeRunner([result(stdout=json.dumps({output: None}).encode())]),
+        )
+    except module.ProvenanceUnavailable as error:
+        assert str(error) == "realized output is absent"
+    else:
+        raise AssertionError("a collected output must fail closed")
+
+
 def test_every_cli_subcommand_has_help() -> None:
     for command in (
         "realize-build",

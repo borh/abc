@@ -44,14 +44,26 @@ It executes the portable production dataflow in dependency order:
 4. diagnostic-gap derivation from the real bounded upstream outputs; and
 5. publication capture and validation from the real bounded Parser-IR outputs.
 
-The check then passes those outputs through the same production projection and
-closed-membership boundaries used by the orchestrator. It succeeds only when
-the expected members are present and every producer/consumer boundary accepts
-the bytes emitted by its predecessor.
+The check does not reconstruct this chain. It calls the orchestrator's shared
+composition functions by reference. The implementation must extract one
+`_execute_operation` helper from `execute_graph`; both production and preflight
+call that helper. It owns operation-specific preparation, `operation_argv`,
+command execution, and `_project_operation`. A second extracted
+`_assert_member_set` helper owns the final closed member-set check for the
+caller-supplied expected set.
 
-The check is preflight evidence, not qualification evidence. It uses synthetic
-identity values, writes only into the Nix build sandbox, publishes no campaign
-generation, and never contributes predicate observations.
+The preflight calls `authenticate_inputs` with a synthetic campaign record whose
+provenance executable rows are derived from the actual `parser-rq-candidate`
+package and the committed production graph. It does not replace the returned
+executable map afterward. Synthetic values are limited to qualification,
+authorization, and readiness identities that have no measurement authority.
+
+The check succeeds only when the expected members are present and every
+producer/consumer boundary accepts the bytes emitted by its predecessor.
+
+The check is preflight evidence, not qualification evidence. It writes only
+into the Nix build sandbox, publishes no campaign generation, and never
+contributes predicate observations.
 
 Candidate freeze is prohibited unless `just validate-migration`, including this
 check, passes at the exact commit to be frozen.
@@ -73,24 +85,36 @@ Therefore the pre-freeze boundary is deliberately two-part:
 - one explicit live capability check for the resource operation.
 
 Neither result enters qualification identity. Both are prerequisites for
-authorizing a candidate.
+authorizing a candidate. Task 10 must run both checks from one detached
+candidate tree, record its Git revision before the first check, assert that the
+tree still has that revision immediately before candidate construction, and
+abort otherwise. This is an operational shell guard, not a persisted freeze
+token. A person can still bypass the runbook; that residual human authority is
+explicit and is not misrepresented as a qualification invariant.
 
 ## Canonical Taxonomy Correction
 
-`abc/data/parser-rq-ignored-regions-v1.json` is an identity-bearing policy
-value. The Rust producer already owns its byte contract and requires exact JCS
-bytes. Keep that authority in Rust; do not duplicate JCS validation in Python or
-Clojure.
+`abc/data/parser-rq-ignored-regions-v1.json` is an identity-bearing source-
+accountability policy value. The Rust producer already owns its byte contract
+and requires exact JCS bytes. Keep that authority in Rust; do not duplicate JCS
+validation in Python or Clojure.
 
 Rewrite the committed taxonomy as the exact JCS byte sequence accepted by the
 producer. Add a regression test that invokes the real source-accountability CLI
 with the production taxonomy path and bounded inputs. The existing negative
 tests for noncanonical documents remain unchanged.
 
-The representation correction changes the taxonomy's content hash and therefore
-the next candidate identity. It does not change the ignored-region rules, the
-predicate set, or any historical candidate. Regenerate only artifacts and ADR
-evidence that directly bind the taxonomy or the strengthened production check.
+Exact canonical bytes are the taxonomy value: a pretty-printed document is
+invalid input, not an alternate representation of the same admitted value. Its
+evidence identity therefore intentionally hashes the canonical bytes emitted by
+the producer.
+
+The taxonomy hash is not a field of `qualification_identity`. The next candidate
+identity changes because the correction is committed at a new `parser_git_rev`,
+as every code or policy correction does. It does not change the ignored-region
+rules, the predicate set, or any historical candidate. Regenerate only artifacts
+and ADR evidence that directly bind the taxonomy or the strengthened production
+check.
 
 ## Component Boundaries
 
@@ -109,8 +133,22 @@ arithmetic.
 ### Campaign orchestrator
 
 Remains the sole production executor. No `--dry-run`, `--preflight`, alternate
-graph, or compatibility path is added. The preflight verifies the pieces that
-the orchestrator composes without becoming a second orchestrator.
+graph, or compatibility path is added.
+
+The shared internal contract is explicit:
+
+- `authenticate_inputs` owns graph/provenance equality, executable-byte
+  authentication, and construction of `AuthenticatedCampaign.executables`;
+- `operation_argv` owns the exact producer command for each operation;
+- `_execute_operation` owns dependency preparation, invocation, and projection;
+- `_project_operation` owns the Clojure member projection and its closed output
+  keys; and
+- `_assert_member_set` owns final canonical-member closure.
+
+Production `execute_graph` remains the only owner of authorization verification,
+the real campaign lock, time-window enforcement, capture-start state, terminal
+recording, composition into a generation, and publication. The preflight reuses
+the composition helpers above but none of those release-authority concerns.
 
 ### Site preflight
 
@@ -123,6 +161,15 @@ qualification meaning.
 The bounded chain uses the same three work IDs already pinned by the production
 policies. Membership comes from those policies and the bounded corpus index,
 not from filesystem discovery.
+
+The corpus is adequate only if the real core operation emits at least one report
+below an adapter subdirectory with a path-hashed filename. The preflight asserts
+that topology before projection and separately proves that an injected flat-
+named JSON member bearing an unexpected `work_id` is rejected. Filename shape
+is not identity; authenticated work membership remains the authority. If the
+three works do not produce the required topology, the corpus is inadequate and
+candidate freeze stays blocked; the Non-Goal against expansion does not override
+this adequacy condition.
 
 For every operation, the check rejects:
 
@@ -149,9 +196,10 @@ Once a candidate is authorized, the existing one-shot semantics remain:
 failure is terminal and no retry is permitted. The failed authorizations already
 committed for the previous candidates remain immutable historical facts.
 
-If the bounded chain cannot exercise a portable operation without reproducing
-the orchestrator, that is a falsifier for this design. Stop and narrow the
-operation's public boundary rather than adding orchestration logic to the test.
+If the bounded chain cannot exercise a portable operation through the shared
+composition helpers without copying their logic, that is a falsifier for this
+design. Stop and narrow the operation's public boundary rather than adding an
+independent orchestration path to the test.
 
 ## Alternatives Considered
 
@@ -182,16 +230,26 @@ composition, not another abstraction.
 
 1. First demonstrate the current root production-wiring check passes while the
    real source-accountability CLI rejects the committed taxonomy.
-2. Add a failing integration assertion for the portable chain using the exact
-   production taxonomy and policies.
-3. Commit the taxonomy's exact JCS bytes and make the smallest wiring-test
-   changes needed to run the five-operation chain.
-4. Prove negative membership and policy mutations fail at their owning public
-   boundaries.
-5. Run the focused root production-wiring check, the affected Rust/Python tests,
+2. Add a failing integration assertion that authenticates the real candidate
+   package and runs the portable chain through the shared composition helpers,
+   exact production taxonomy, and production policies.
+3. Regression-pin all three historical seams before fixing the chain:
+   - removing the adapter executable row makes `authenticate_inputs` fail, and
+     the authenticated adapter path appears in the real core `operation_argv`;
+   - the bounded core output contains a nested, path-hashed report, while a flat
+     intruder with an unexpected `work_id` fails closed-membership validation;
+     and
+   - pretty-printed production taxonomy bytes fail the Rust CLI while exact JCS
+     bytes pass.
+4. Extract `_execute_operation` and `_assert_member_set` from `execute_graph`
+   without changing production behavior, then make the preflight call them.
+5. Commit the taxonomy's exact JCS bytes and prove negative membership and policy
+   mutations fail at their owning public boundaries.
+6. Run the focused root production-wiring check, the affected Rust/Python tests,
    `just python-quality`, and `just validate-migration`.
-6. On hinoki, run the live cgroup capability check and the repository runtime
-   preflight before freezing another candidate.
+7. On hinoki, bind one `freeze_rev` to the detached candidate tree, run the live
+   cgroup capability check and repository runtime preflight from that tree, and
+   assert the revision is unchanged immediately before candidate construction.
 
 ## Non-Goals
 
@@ -202,7 +260,8 @@ composition, not another abstraction.
   or qualification identity.
 - Adding retries or selecting among multiple captures.
 - Replacing producer-owned validation with a shared generic validator.
-- Expanding the bounded corpus or tuning it to expected predicate verdicts.
+- Expanding the bounded corpus or tuning it to expected predicate verdicts,
+  unless the existing corpus fails the explicit report-topology adequacy check.
 
 ## Acceptance Criteria
 
@@ -212,23 +271,29 @@ composition, not another abstraction.
    binaries, repository drivers, production policies, and the bounded corpus.
 3. Real output from each upstream operation is consumed by its real downstream
    boundary; help/version probes alone are insufficient.
-4. The same production projection and closed-membership code authenticates the
-   bounded outputs.
+4. `authenticate_inputs`, `operation_argv`, `_execute_operation`,
+   `_project_operation`, and `_assert_member_set` are called by both production
+   and preflight; their logic is not copied into the integration test.
 5. The resource lane remains explicitly host-controlled and is not simulated as
    part of the portable chain.
 6. `just validate-migration` includes and passes the strengthened root check.
 7. No new orchestrator mode, generic preflight framework, qualification field,
    or machine-specific identity is introduced.
 8. All three failed candidate authorizations remain unchanged.
-9. No fourth candidate is frozen until both the portable chain and live resource
-   capability checks pass at its exact commit.
+9. The Task 10 shell guard runs the portable chain and live resource capability
+   check from one detached tree, records its `freeze_rev`, and refuses candidate
+   construction if the tree revision changes. The remaining ability to bypass
+   the runbook is documented human operational authority, not a machine-enforced
+   qualification property.
+10. The new chain demonstrably catches all three historical seams before a
+    fourth candidate is frozen.
 
 ## Falsifiers
 
 Reopen this decision if:
 
-- a portable production operation cannot be exercised through its public CLI
-  without duplicating campaign orchestration;
+- a portable production operation cannot be exercised through the shared
+  composition helpers without duplicating their logic;
 - the bounded chain passes while an unchanged static producer/consumer contract
   fails in the next authoritative run;
 - running the bounded chain alters persistent or host-global state; or

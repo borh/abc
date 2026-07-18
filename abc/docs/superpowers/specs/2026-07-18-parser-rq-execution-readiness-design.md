@@ -56,7 +56,8 @@ lane, create a capture generation, or consume an authorization ordinal.
 Readiness has two deliberately different values. A site-preflight report says
 the machine can host a campaign. A final readiness receipt says one particular
 candidate, provenance value, site-preflight report, and production graph are
-ready now. Only the latter is authorization input.
+ready at sealing, subject to explicitly named volatile rechecks immediately
+before execution. Only the latter is authorization input.
 
 ## Why This Is One Slice
 
@@ -124,10 +125,47 @@ store; it never maps a logical `/nix/store/...` path to a guessed host path.
 
 The target output must be realized independently in both stores. A substituted
 copy of the target output, two queries of the daemon store, or two reads of one
-physical output do not qualify. Dependencies may come from authenticated
-substituters, but the candidate target must be built in each empty store. The
-hinoki preflight must demonstrate the exact Nix invocation that achieves this;
-if the installed Nix cannot prove it, the campaign stops before authorization.
+physical output do not qualify. Dependencies may be reused from the daemon
+store, but the candidate target must be built in each empty store.
+
+The production build helper pins this sequence for each store:
+
+```bash
+drv=$(nix eval --raw "$candidate_tree/ab-validator#packages.x86_64-linux.default.drvPath")
+out=$(nix eval --raw "$candidate_tree/ab-validator#packages.x86_64-linux.default.outPath")
+
+# The helper reads `nix derivation show "$drv"`, then copies to "$fresh_store":
+# - "$drv" itself;
+# - every direct `inputs.srcs` path; and
+# - the closure of each named output of every direct `inputs.drvs` entry.
+# It does not copy "$out" or its closure.
+nix copy --no-check-sigs --to "$fresh_store" "${seed_inputs[@]}"
+
+if nix path-info --store "$fresh_store" "$out" >/dev/null 2>&1; then
+  exit 2
+fi
+export LC_ALL=C
+nix build --store "$fresh_store" --eval-store "$fresh_store" \
+  --offline --no-link --json "$drv^out" >"$build_json" 2>"$build_log"
+nix path-info --store "$fresh_store" "$out" >/dev/null
+grep -F "building '$drv'" "$build_log" >/dev/null
+```
+
+`--offline` is load-bearing: after the dependency closure is seeded, it disables
+substituters while the absent target is realized. The helper validates the Nix
+derivation JSON rather than reproducing the commented projection in shell, and
+it creates the store only after proving its root is absent, rejects a seeded
+closure that makes the target valid, and records the initially empty store,
+absent-target check, seeded input set, build log identity, and resulting store
+path in the staging build record. `--no-check-sigs` applies only to copying
+already trusted paths from hinoki's daemon store into its private local build
+store; target realization remains offline and local.
+
+A disposable derivation exercised this exact absent-target/offline-build method
+successfully on hinoki's installed Nix 2.34.8 on 2026-07-18. That probe proves
+the store mechanism, not the candidate. The real `ab-validator` target must
+complete the same sequence twice after the final implementation revision. If it
+cannot, the campaign stops before authorization.
 
 After comparison, one proven output may be copied into the daemon store for
 execution. Its NAR identity and every bound executable byte identity are
@@ -147,6 +185,13 @@ including at least `ab-check`, `ab-aozora`, `ab-aat-to-parser-ir`,
 - adapter and version coordinates;
 - candidate Git revision; and
 - the closed argument template used by the orchestrator.
+
+The argument template is cross-checked against a separately hashed production
+graph policy consumed by the orchestrator. It does not prove executable
+behavior; executable bytes and instrument semantic identities do that. It
+prevents the build proof and runner from silently disagreeing about invocation
+shape. A template copied from the build proof without equality to the committed
+graph policy is self-certification and is rejected.
 
 Repository Python and Clojure instruments remain bound by their existing
 semantic-closure and predicate instrument identities. They are invoked from the
@@ -178,19 +223,22 @@ supply a lane command, change lane order, omit a lane, or add a lane.
 
 The orchestrator owns this serial graph:
 
-1. authenticate candidate, bound provenance, authorization record, site
-   preflight report, final readiness receipt, and executable bytes;
-2. acquire the campaign lock once and retain the same locked file description;
-3. record the real capture start and verify it is inside the authorized window;
-4. run three complete core attempts and reduce them by maximum;
-5. run the source-accountability producer;
-6. run the shared predicate-hardening producer once;
-7. derive diagnostic authorization from the authenticated shared raw values;
-8. materialize and validate publication structure;
-9. run resource capture serially, one work per transient service;
-10. derive the seven member observations and compose exactly nine envelopes;
-11. write the closed capture index; and
-12. release the lock only after capture authentication finishes or an honest
+1. authenticate candidate, bound provenance, authorization record, final
+   readiness receipt, committed site policy, and executable bytes;
+2. recheck the short hostname, stable-FQDN/local-address relation, mounted
+   replica policy, and replica create/fsync/stream-read/remove probe;
+3. acquire the campaign lock once and retain the same locked file description;
+4. require the host's synchronized-clock precondition, record the local realtime
+   capture start, and verify it is inside the authorized window;
+5. run three complete core attempts and reduce them by maximum;
+6. run the source-accountability producer;
+7. run the shared predicate-hardening producer once;
+8. derive diagnostic authorization from the authenticated shared raw values;
+9. materialize and validate publication structure;
+10. run resource capture serially, one work per transient service;
+11. derive the seven member observations and compose exactly nine envelopes;
+12. write the closed capture index; and
+13. release the lock only after capture authentication finishes or an honest
     unavailable terminal record has been staged.
 
 The existing core producer must accept an inherited lock capability or a
@@ -225,6 +273,11 @@ the sole attempt and must be preserved as unavailable. The orchestrator never
 retries, repairs an observed value, changes the authorization window, or starts
 a sibling generation.
 
+Replica or host failure before step 4 is preparation failure and does not
+consume the authorization. A failure after the recorded capture start is an
+honest unavailable terminal. The immediate recheck narrows, but cannot remove,
+the interval in which an external domain can fail during a real run.
+
 ## Authorization Verification
 
 Split record integrity from permission to execute:
@@ -239,6 +292,14 @@ Task 10 uses the structural command before commit. The orchestrator uses the
 temporal command exactly once immediately before the first volatile process,
 with its recorded capture start. A timestamp chosen merely because it lies in
 the interval cannot authorize execution.
+
+“Real” here means hinoki's kernel realtime clock while the host reports its
+configured time-synchronization service synchronized. Site preflight and the
+orchestrator both record and require that state. The campaign does not use a
+cryptographically authenticated external timestamp and does not defend against
+a privileged operator or host compromise that falsifies the clock. That local
+clock is an explicit trust assumption; the verifier prevents caller-selected
+timestamps, not malicious time administration.
 
 The authorization schema rotates to version 2.0.0 and gains one required
 `readiness_receipt_ref`. The self-reference covers that field. Existing bounded
@@ -275,6 +336,14 @@ claim that a local block device is the approved external domain. Changing the
 approved domain is reviewed pre-freeze policy work and therefore changes the
 prospective candidate revision.
 
+The initial committed policy is explicitly `replica_status: unconfigured` and
+cannot authorize capture. Before candidate freeze, a reviewed policy revision
+must select one supported remote-filesystem class, pin its remote authority and
+failure-domain identity, and set `replica_status: configured`. The runtime
+descriptor then supplies only the mount point. This separates implementable
+policy machinery from the still-missing operational replica without installing
+a placeholder that can accidentally pass.
+
 ### Host check
 
 The stable campaign label and the kernel hostname are different facts. Preflight
@@ -292,7 +361,14 @@ Different paths or devices on hinoki are not independent failure domains. The
 replica must be mounted from a separately administered storage failure domain
 that survives loss of hinoki. Preflight requires:
 
-- the exact distinct identities and mount classes accepted by committed policy;
+- `replica_status: configured` in committed policy;
+- the exact distinct identities and remote-filesystem mount class accepted by
+  committed policy;
+- a closed remote filesystem-type allowlist;
+- a mount-source authority equal to the policy value whose resolved addresses
+  are not assigned to a hinoki interface;
+- rejection of local block-device sources, loop devices, bind mounts, and local
+  filesystem types regardless of distinct device or filesystem IDs;
 - different resolved roots;
 - distinct mount sources and filesystem identities; and
 - successful create, fsync, stream-read, and removal probes in disposable
@@ -303,6 +379,11 @@ P5 remains operationally blocked until an external replica is configured. The
 replication verifier continues to authenticate every logical blob by streaming
 both copies; mount identity is an additional precondition, not a substitute for
 content verification.
+
+The committed mount class and nonlocal authority enforce independence. Mount,
+filesystem, and I/O probes establish that the approved remote domain is the
+place currently mounted and usable; those probes alone do not prove failure
+independence.
 
 ## Site Preflight and Readiness Receipt
 
@@ -317,6 +398,12 @@ that binds:
 - primary/replica failure-domain facts;
 - lock availability; and
 - the exact production graph version.
+
+Its independent-build capability check uses a tiny committed probe derivation,
+not the candidate target. It tests fresh-store creation, dependency seeding,
+absent-target proof, offline local realization, log capture, and cleanup. The
+two later candidate builds do not reuse its output, so the campaign performs
+exactly two candidate target realizations rather than three.
 
 `seal-readiness` runs only after provenance and candidate derivation. It
 reauthenticates the current site facts and emits a final canonical receipt that
@@ -336,9 +423,16 @@ Neither value contains an authorization interval or predicate observations.
 Authorization binds the final receipt hash. Any relevant site, candidate, or
 graph change after sealing requires a new receipt before authorization, not an
 edit to an existing value. The site report and final receipt are immutable
-values; only the final receipt is committed in the candidate run directory.
-Disposable build and preflight staging values are removed after the committed
-values authenticate; they are never treated as a second evidence generation.
+values. The final receipt embeds the authenticated site-fact projection needed
+at execution as well as the staging report hash; only the final receipt is
+committed in the candidate run directory. The orchestrator authenticates and
+rechecks that receipt, not the removed report.
+
+Disposable build and site-preflight staging values are removed after the final
+committed values authenticate; they are never treated as a second evidence
+generation. “Ready” therefore means ready at sealing. Host, replica, lock, and
+clock facts are volatile and are rechecked immediately before execution as
+listed in the fixed graph.
 
 ## Ordering
 
@@ -346,17 +440,21 @@ The amended campaign order is:
 
 1. implement and test this execution-readiness slice on `main`;
 2. update the P5 plan and bounded drift fixture;
-3. run the complete pre-freeze validation and push `main`;
-4. on hinoki, configure and validate an external replica;
-5. run `preflight-site` without an authorization or candidate execution;
-6. perform two independent builds and create bound provenance;
-7. derive the candidate and run `seal-readiness`;
-8. mint, commit, and push the sole authorization;
-9. execute the unchanged capture, admission, and promotion sequence.
+3. run local validation and push the implementation checkpoint with replica
+   policy still unconfigured;
+4. provision the external replica and create the untracked hinoki descriptor,
+   then review and commit the exact configured remote-domain policy;
+5. run the complete pre-freeze validation, push `main`, and record that revision
+   as the prospective candidate;
+6. run `preflight-site` without an authorization or candidate execution;
+7. perform two independent candidate builds and create bound provenance;
+8. derive the candidate and run `seal-readiness`;
+9. mint, commit, and push the sole authorization; and
+10. execute the unchanged capture, admission, and promotion sequence.
 
 Any implementation, schema, policy, corpus, predicate, or instrument change
-after step 3 creates a new prospective candidate. Any readiness failure before
-step 8 is preparation failure, not a capture attempt. Any failure after step 8
+after step 5 creates a new prospective candidate. Any readiness failure before
+step 9 is preparation failure, not a capture attempt. Any failure after step 9
 follows the existing one-shot terminal semantics.
 
 ## Migration and Rollback
@@ -406,6 +504,20 @@ revision and candidate.
 - missing site fields and ambient fallback values fail closed.
 - an untracked descriptor cannot introduce or relabel a failure domain absent
   from committed site policy.
+- authorization is rejected when its receipt belongs to a different candidate,
+  qualification identity, provenance core, site-preflight report, or graph
+  version, even when every value is independently well-formed.
+- a configured local block device is rejected before I/O probes can make it
+  appear independent.
+
+### Fixture migration tests
+
+Authorization v2 migration covers every synthetic authorization in the
+campaign unit tests, drift fixture, bounded smoke, mutation fixtures, and
+promotion fixture. Shared builders must construct the final receipt and its six
+bindings; hand-copied receipt maps are forbidden. A repository search gate
+rejects remaining authorization-v1 schema IDs and authorization maps lacking
+`readiness_receipt_ref` outside intentionally frozen historical examples.
 
 ### Hinoki gates
 
@@ -441,7 +553,9 @@ after both gates pass may Task 10 begin.
 11. Authorization v2 binds the final candidate readiness receipt.
 12. Hinoki site preflight and candidate readiness sealing are green before the
     sole authorization is minted.
-13. The existing nine predicates, corpus, admission relation, registry, and ADR
+13. The orchestrator rechecks host, remote mount, replica I/O, lock, and clock
+    state before recording the capture start.
+14. The existing nine predicates, corpus, admission relation, registry, and ADR
     promotion semantics are byte-unchanged by this slice.
 
 ## Falsifiers
@@ -473,6 +587,8 @@ boundary is wrong, not permission to weaken the check.
   backends.
 - Treating a second local disk as disaster-independent evidence storage.
 - Adding retries or operator-selected capture generations.
+- Providing cryptographically authenticated wall-clock time or defending
+  against privileged host time manipulation.
 
 ## Open Operational Dependency
 

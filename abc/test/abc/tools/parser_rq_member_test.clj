@@ -3,6 +3,7 @@
             [abc.tools.files :as files]
             [abc.tools.json :as json]
             [abc.tools.parser-rq-core-attempt :as core]
+            [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-member :as member]
             [abc.tools.parser-rq-parser-ir-conformance :as parser-ir]
             [abc.tools.parser-rq-publication :as publication]
@@ -133,6 +134,65 @@
       (is (thrown? clojure.lang.ExceptionInfo
                    (member/project-member
                     :predicate-pair {:qualification_identity_ref identity-ref}))))))
+
+(deftest predicate-pair-authenticates-and-folds-raw-indexes
+  (let [diagnostic-index {:expected_work_ids ["work"]
+                          :records [{:work_id "work" :exit_code 0
+                                     :raw_diagnostics {:sha256 "diagnostic"}}]}
+        parser-index {:expected_work_ids ["work"]
+                      :records [{:work_id "work"
+                                 :record {:sha256 "record"
+                                          :locator "record.json"}}]}
+        calls (atom [])]
+    (with-redefs [capture/read-blob
+                  (fn [_ blob]
+                    (case (:sha256 blob)
+                      "diagnostic" {:status :ok :bytes (.getBytes "diagnostic")}
+                      "record" {:status :ok
+                                :bytes (.getBytes
+                                        "{\"parser_ir\":{\"sha256\":\"nested\",\"bytes\":1,\"media_type\":\"application/json\",\"locator\":\"nested.json\"}}")}
+                      {:status :unavailable}))
+                  diagnostic/derive-work
+                  (fn [_ ref input]
+                    (swap! calls conj [:diagnostic-work ref (:work_id input)
+                                       (:attempt_disposition input)])
+                    {:record {:work_id "work"}})
+                  diagnostic/aggregate
+                  (fn [_ expected records]
+                    (swap! calls conj [:diagnostic-aggregate expected records])
+                    :diagnostic-aggregate)
+                  parser-ir/authenticate-record
+                  (fn [store _ ref row]
+                    (swap! calls conj [:parser-record ref (:work_id row)
+                                       @(:locators store)])
+                    {:work_id "work"})
+                  parser-ir/aggregate
+                  (fn [_ expected records]
+                    (swap! calls conj [:parser-aggregate expected records])
+                    :parser-aggregate)
+                  diagnostic/derive-observation
+                  (fn [_ _ aggregate]
+                    (is (= :diagnostic-aggregate aggregate))
+                    (envelope 1.0))
+                  parser-ir/derive-observation
+                  (fn [_ _ aggregate]
+                    (is (= :parser-aggregate aggregate))
+                    (envelope 1.0))]
+      (is (= {:diagnostic_completeness (envelope 1.0)
+              :parser_ir_schema_validation (envelope 1.0)}
+             (member/project-predicate-pair
+              {:qualification_identity_ref identity-ref
+               :store {:root "store"}
+               :diagnostic_policy {}
+               :parser_ir_policy {}
+               :diagnostic_index diagnostic-index
+               :parser_ir_index parser-index})))
+      (is (some #(= [:diagnostic-work identity-ref "work" "parsed"] %)
+                @calls))
+      (is (some #(and (= :parser-record (first %))
+                      (= {"record" "record.json" "nested" "nested.json"}
+                         (nth % 3)))
+                @calls)))))
 
 (deftest command-membership-is-closed
   (is (= #{:core :source-recognition :diagnostic-gap :predicate-pair

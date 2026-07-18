@@ -2,6 +2,7 @@
   "Project authenticated instrument artifacts into assigned campaign members."
   (:require [abc.tools.files :as files]
             [abc.tools.jcs :as jcs]
+            [abc.tools.json :as json]
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-core-attempt :as core]
             [abc.tools.parser-rq-diagnostic-completeness :as diagnostic]
@@ -30,15 +31,65 @@
   [{:keys [store manifest identity]}]
   {:silent_drops (source/silent-drops-envelope store manifest identity)})
 
+(defn- blob-locators [value]
+  (->> (tree-seq coll? seq value)
+       (keep (fn [node]
+               (when (and (map? node) (string? (:sha256 node))
+                          (string? (:locator node)))
+                 [(:sha256 node) (:locator node)])))
+       (into {})))
+
+(defn- authenticated-json [store blob]
+  (let [result (capture/read-blob store blob)]
+    (when (= :ok (:status result))
+      (-> (:bytes result) (String. "UTF-8") json/read-json-str
+          walk/keywordize-keys))))
+
+(defn- raw-predicate-aggregates
+  [{:keys [store qualification_identity_ref diagnostic_policy parser_ir_policy
+           diagnostic_index parser_ir_index]}]
+  (let [diagnostic-work-records
+        (mapv (fn [{:keys [work_id exit_code raw_diagnostics]}]
+                (:record
+                 (diagnostic/derive-work
+                  diagnostic_policy qualification_identity_ref
+                  {:work_id work_id
+                   :attempt_disposition (if (zero? exit_code) "parsed" "failed")
+                   :bytes (:bytes (capture/read-blob store raw_diagnostics))})))
+              (:records diagnostic_index))
+        outer-locators (blob-locators parser_ir_index)
+        record-values (keep #(authenticated-json store (:record %))
+                            (:records parser_ir_index))
+        locators (atom (merge outer-locators
+                              (apply merge {} (map blob-locators record-values))))
+        parser-store (assoc store :locators locators)
+        parser-records
+        (mapv #(parser-ir/authenticate-record parser-store parser_ir_policy
+                                              qualification_identity_ref %)
+              (:records parser_ir_index))]
+    {:diagnostic_aggregate
+     (diagnostic/aggregate diagnostic_policy
+                           (:expected_work_ids diagnostic_index)
+                           diagnostic-work-records)
+     :parser_ir_aggregate
+     (parser-ir/aggregate parser_ir_policy
+                          (:expected_work_ids parser_ir_index)
+                          parser-records)}))
+
 (defn project-predicate-pair
   [{:keys [qualification_identity_ref diagnostic_policy diagnostic_aggregate
-           parser_ir_policy parser_ir_aggregate]}]
-  {:diagnostic_completeness
-   (diagnostic/derive-observation diagnostic_policy qualification_identity_ref
-                                  diagnostic_aggregate)
-   :parser_ir_schema_validation
-   (parser-ir/derive-observation parser_ir_policy qualification_identity_ref
-                                 parser_ir_aggregate)})
+           parser_ir_policy parser_ir_aggregate diagnostic_index]
+    :as inputs}]
+  (let [{:keys [diagnostic_aggregate parser_ir_aggregate]}
+        (if diagnostic_index (raw-predicate-aggregates inputs)
+            {:diagnostic_aggregate diagnostic_aggregate
+             :parser_ir_aggregate parser_ir_aggregate})]
+    {:diagnostic_completeness
+     (diagnostic/derive-observation diagnostic_policy qualification_identity_ref
+                                    diagnostic_aggregate)
+     :parser_ir_schema_validation
+     (parser-ir/derive-observation parser_ir_policy qualification_identity_ref
+                                   parser_ir_aggregate)}))
 
 (defn project-publication
   [{:keys [store manifest index identity]}]

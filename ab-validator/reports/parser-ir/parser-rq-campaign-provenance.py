@@ -530,14 +530,27 @@ def capture_build(
     output_path = realization.get("output_path")
     if not isinstance(store_uri, str) or not isinstance(output_path, str):
         raise ProvenanceUnavailable("realization store or output is absent")
-    path_info = runner.run(["nix", "path-info", "--json", "--store", store_uri, output_path])
+    path_info = runner.run(
+        [
+            "nix",
+            "path-info",
+            "--json",
+            "--json-format",
+            "1",
+            "--store",
+            store_uri,
+            output_path,
+        ]
+    )
     if path_info.returncode != 0:
         raise ProvenanceUnavailable("realized output cannot be inspected")
     try:
         rows = json.loads(path_info.stdout)
-        row = rows[0]
+        if not isinstance(rows, dict) or set(rows) != {output_path}:
+            raise TypeError
+        row = rows[output_path]
         nar_hash = _nix_hash(row["narHash"])
-    except (json.JSONDecodeError, IndexError, KeyError, TypeError) as error:
+    except (json.JSONDecodeError, KeyError, TypeError) as error:
         raise ProvenanceUnavailable("Nix path-info output is malformed") from error
     graph_executables = graph.get("executables")
     if not isinstance(graph_executables, list) or not graph_executables:

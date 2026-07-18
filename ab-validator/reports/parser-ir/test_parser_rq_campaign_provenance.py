@@ -204,7 +204,7 @@ def test_capture_build_streams_exact_graph_executable_set(tmp_path: Path) -> Non
     nar_hash = "sha256-" + base64.b64encode(bytes(range(32))).decode()
     runner = FakeRunner(
         [
-            result(stdout=json.dumps([{"narHash": nar_hash}]).encode()),
+            result(stdout=json.dumps({realization["output_path"]: {"narHash": nar_hash}}).encode()),
             result(stdout=b"candidate executable"),
         ]
     )
@@ -212,6 +212,16 @@ def test_capture_build_streams_exact_graph_executable_set(tmp_path: Path) -> Non
     assert record["schema_version"] == "1.0.0"
     assert record["output_ref"] == "sha256:" + bytes(range(32)).hex()
     assert [row["name"] for row in record["executables"]] == ["ab-check"]
+    assert runner.calls[0][0] == [
+        "nix",
+        "path-info",
+        "--json",
+        "--json-format",
+        "1",
+        "--store",
+        realization["store_uri"],
+        realization["output_path"],
+    ]
     assert runner.calls[1][0] == [
         "nix",
         "store",
@@ -245,7 +255,7 @@ def test_capture_build_rejects_duplicate_graph_executable(tmp_path: Path) -> Non
     nar_hash = "sha256-" + base64.b64encode(bytes(range(32))).decode()
     runner = FakeRunner(
         [
-            result(stdout=json.dumps([{"narHash": nar_hash}]).encode()),
+            result(stdout=json.dumps({realization["output_path"]: {"narHash": nar_hash}}).encode()),
             result(stdout=b"candidate executable"),
         ]
     )

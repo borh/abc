@@ -10,7 +10,7 @@
     "data\/parser-ir-publication-policy-v0.json": "sha256:7f0e47cb5a8217103ccee416bb2ef839f2e41cbbdc9ed40e404925474f23be85",
     "data\/publication-policy.edn": "sha256:fa8267b3e9f88065e20a25f6e29588509e3c3d583f4ac34f8a225e81a1c5885c",
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
-    "deps.edn": "sha256:fe6ce251b54dbb79f0ad2a85276dac5a20d4a995165492a85b89f7224cddf4f4",
+    "deps.edn": "sha256:09c8675048f7fb9d423ca985189c952a9da00ded4f2d5587bd19acb8128228b8",
     "docs\/evidence\/adr-capture\/parser-publication-rendering.edn": "sha256:8348dc368c538f2c5556673d65e3c442fe4bb07a502460bbca50ae2dee54f140",
     "docs\/evidence\/adr-inputs\/parser-publication-rendering.edn": "sha256:46c9472c74205315e20f29ff0456631cfa74ea2f4c8ff48a54a14d15842fcbf8",
     "examples\/v0\/example-persons\/000879.json": "sha256:d49931fa2e960922d15c8449b7477e130d0c5565f6485fdee9a2edd76cde374a",
@@ -23,7 +23,7 @@
     "examples\/v0\/example-work\/parser-ir.json": "sha256:63a3d9cda911859bc0f93950e196f4c455ec9a5cf4bbb6a4863e4012637f8037",
     "examples\/v0\/example-work\/source.manifest.json": "sha256:a618de2d65f84a55b5243aaa1aa60d7e7c470228dc6ac7907ffd202fb3e0cc81",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:61e353ace7a44b297880b1fcd2ed45bb2fce5274951e7f5fd7e5ba611013ae6d",
+    "flake.nix": "sha256:e63d826a591e756bf05a8b3f3221b60e5b1a97c75458ba6f71bf30b1593d55d6",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
     "schemas\/metadata-record.schema.json": "sha256:cb1c773f86f0ae16f613b342be80b87f8a7829417bcdcd36b5737eeab6a85129",
@@ -75,7 +75,7 @@
         "environment_policy": "nix-local-v1",
         "exit_code": 0,
         "nix_system": "x86_64-linux",
-        "nix_version": "nix (Determinate Nix 3.21.5) 2.34.8"
+        "nix_version": "nix (Determinate Nix 3.21.7) 2.34.8"
       },
       "value": true
     }
@@ -83,7 +83,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.parser-publication-evidence\\\"\"",
-    "revision": "39c000a3e323dd6b3e70d43d1a17803b67b1b844",
+    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

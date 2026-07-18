@@ -9,11 +9,11 @@
   {
     "data\/source-bundle\/aozorabunko-0e9ea3e-summary.json": "sha256:bb5962b29c49c8178e0d564da1196bb3e07761f9267a8b769fe712ee281a593a",
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
-    "deps.edn": "sha256:fe6ce251b54dbb79f0ad2a85276dac5a20d4a995165492a85b89f7224cddf4f4",
+    "deps.edn": "sha256:09c8675048f7fb9d423ca985189c952a9da00ded4f2d5587bd19acb8128228b8",
     "docs\/evidence\/adr-capture\/source-bundle-corpus.edn": "sha256:e0411de3ce8575677452435195ab1b3b3b5cc10d469f0909646543b31ec90e60",
     "docs\/evidence\/adr-inputs\/source-bundle-corpus.edn": "sha256:16ee3c73086a28e1adcaa015b40c9f7732f53372695339e61b14e240c267cda4",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:61e353ace7a44b297880b1fcd2ed45bb2fce5274951e7f5fd7e5ba611013ae6d",
+    "flake.nix": "sha256:e63d826a591e756bf05a8b3f3221b60e5b1a97c75458ba6f71bf30b1593d55d6",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
     "src\/abc\/tools\/hash.clj": "sha256:e49befc2ce08401bb3161af5cedcf0555eec6a639510ca31445da30b32e2cfb5",
@@ -34,7 +34,7 @@
         "environment_policy": "nix-local-v1",
         "exit_code": 0,
         "nix_system": "x86_64-linux",
-        "nix_version": "nix (Determinate Nix 3.21.5) 2.34.8"
+        "nix_version": "nix (Determinate Nix 3.21.7) 2.34.8"
       },
       "value": true
     }
@@ -42,7 +42,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix build --no-link .#checks.x86_64-linux.source-bundle-corpus\"",
-    "revision": "39c000a3e323dd6b3e70d43d1a17803b67b1b844",
+    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

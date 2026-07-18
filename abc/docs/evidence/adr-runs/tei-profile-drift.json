@@ -9,7 +9,7 @@
   {
     "docs\/evidence\/adr-capture\/tei-profile-drift.edn": "sha256:c7dbac40fb1b97b3dae355834256f42d8d4709c5f3b01aeb961f3dd2c04e1339",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:61e353ace7a44b297880b1fcd2ed45bb2fce5274951e7f5fd7e5ba611013ae6d",
+    "flake.nix": "sha256:e63d826a591e756bf05a8b3f3221b60e5b1a97c75458ba6f71bf30b1593d55d6",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/tei-profile.odd": "sha256:b4b12fd7591f2ebe1f9417f8fa2bb938d025694c4202ef48c0bfe16045b120ac",
     "schemas\/tei-profile.rng": "sha256:071479ba8eb10f93a46f4b3616a1c0007bdeafd7a4c321e49cd567d648768413",
@@ -25,7 +25,7 @@
         "environment_policy": "nix-local-v1",
         "exit_code": 0,
         "nix_system": "x86_64-linux",
-        "nix_version": "nix (Determinate Nix 3.21.5) 2.34.8"
+        "nix_version": "nix (Determinate Nix 3.21.7) 2.34.8"
       },
       "value": true
     }
@@ -33,7 +33,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.tei-profile-drift\\\"\"",
-    "revision": "39c000a3e323dd6b3e70d43d1a17803b67b1b844",
+    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -8,7 +8,7 @@
   "inputs":
   {
     "deps-lock.json": "sha256:3ac5409cf04e87a2c4ce96ed38d1ee4622ab30d9f7dbcdbafa79f26718f74957",
-    "deps.edn": "sha256:fe6ce251b54dbb79f0ad2a85276dac5a20d4a995165492a85b89f7224cddf4f4",
+    "deps.edn": "sha256:09c8675048f7fb9d423ca985189c952a9da00ded4f2d5587bd19acb8128228b8",
     "docs\/evidence\/adr-capture\/tei-project-valid-fixtures.edn": "sha256:f1842ff6fd24c3c4a2b65e1fc979c1055532a9de4bf4f87461e443a039d9fb93",
     "docs\/evidence\/adr-inputs\/tei-project-valid-fixtures.edn": "sha256:8a2d1ead96a5c223a39c07b2d79d26ca962c34b63a4c041ae556e5c04d7f136e",
     "examples\/v0\/example-work\/tei.xml": "sha256:ee79db76b58f715400fe87ccd408c2724b1c85ccde8af15c059b05f98317f5c5",
@@ -16,7 +16,7 @@
     "fixtures\/tei\/valid\/source-span-local-ref.xml": "sha256:099dba138d9ec4a48e9f77adb74f176cebd7768d797f4ae2cd007c7264b64a31",
     "fixtures\/tei\/valid\/transcription-enrichment-declared.xml": "sha256:2ae6eb9168a875eb494496848a4778f7e25a5e9c9d452b3d09ee2a1c8a9b55c2",
     "flake.lock": "sha256:fcd0765d3334ed461aab083a644ca1a12d57c0a75c12eaca70391af8daf8201c",
-    "flake.nix": "sha256:61e353ace7a44b297880b1fcd2ed45bb2fce5274951e7f5fd7e5ba611013ae6d",
+    "flake.nix": "sha256:e63d826a591e756bf05a8b3f3221b60e5b1a97c75458ba6f71bf30b1593d55d6",
     "nix\/tei-profile-artifacts.nix": "sha256:5b4f1034b8fc6191903898df52b54c7307751157af08334500e8288d69eeaab2",
     "schemas\/tei-profile.odd": "sha256:b4b12fd7591f2ebe1f9417f8fa2bb938d025694c4202ef48c0bfe16045b120ac",
     "schemas\/tei-profile.rng": "sha256:071479ba8eb10f93a46f4b3616a1c0007bdeafd7a4c321e49cd567d648768413",
@@ -64,9 +64,9 @@
     "src\/abc\/tools\/source_region_contract.clj": "sha256:5d9e4917ec852ba237dad1b989d62269e1cff77f5513b4469eaf9ad73b7696e6",
     "src\/abc\/tools\/tei.clj": "sha256:99f28746391ade7573366617521848fe2eb5a2b7bc76d56925b0ac61c43f1564",
     "src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
-    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:d2ce8627c1090de809b82464256e4af5eef87f640befcd5b0a85662c1daf3794",
+    "src\/abc\/tools\/validate_design_bundle.clj": "sha256:39f0ae722e399424a18da708fd8823fa24e8c6d2d532724e5ad1844474e96ccf",
     "test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
-    "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:1604650219fc9c54c2bb0a72ad5c16b7f586bce28390b5ff5bbf38f3d97a9cd2",
+    "test\/abc\/tools\/validate_design_bundle_test.clj": "sha256:b28ef82d63c4a891400caef9a64d8a480f52156358578d32996b2b31babae8fb",
     "tests.edn": "sha256:de794121a85f6ac6a5bd3fa8cf3ce174630a4356819c1172ccdc76d093fa700e"
   },
   "observations":
@@ -87,7 +87,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-project-valid-fixtures\\\"\"",
-    "revision": "3010ddfe3455f0b245fa36423ef58504f790ce9a",
+    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -81,7 +81,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.sim.content-sim-test\/nonzero-derive-failures-are-not-release-admissible-test\"",
-    "revision": "d98f67912c112fccb77c48d83f68d63583c40d6d",
+    "revision": "b57558feef2278a9b23f3ee31a74bacdeff6b899",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

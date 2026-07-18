@@ -86,13 +86,17 @@
     :authorization_ref campaign/authorization-ref))
 
 (deftest runtime-inputs-are-a-closed-projection-of-authoritative-edn
-  (let [corpus {:entries [{:work_id "work" :source_path "source.txt"}]}]
+  (let [corpus {:entries [{:work_id "work" :source_path "source.txt"
+                           :source_sha256 sha}]}]
     (is (= {:schema_version "abc/parser-rq-runtime-inputs/v1"
             :candidate {:candidate_ref (:candidate_ref candidate)
                         :qualification_identity_ref
                         (:qualification_identity_ref candidate)
                         :qualification_identity qualification-identity}
             :corpus corpus
+            :source_accountability_corpus
+            [{:work_id "work" :source_path "source.txt"
+              :original_sha256 sha}]
             :authorization
             {:authorization_ref (:authorization_ref authorization)
              :authorization_ordinal 1

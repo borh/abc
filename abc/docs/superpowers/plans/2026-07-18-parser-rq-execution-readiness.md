@@ -570,6 +570,11 @@ candidate tree. All raw outputs then pass through `parser-rq-member` before the
 controller installs canonical members. No executable or argv is copied from
 the runtime descriptor.
 
+The source-accountability `capture-corpus` command derives and publishes each
+classified-source generation from the same closed source bytes it measures.
+There is no caller-supplied generation index; the producer writes its derived
+index into lane staging before recognition derivation.
+
 Invoke Clojure from any working directory with this exact prefix:
 
 ```python

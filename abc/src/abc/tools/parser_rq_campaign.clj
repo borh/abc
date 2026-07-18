@@ -365,6 +365,11 @@
                            [:candidate_ref :qualification_identity_ref
                             :qualification_identity])
    :corpus corpus
+   :source_accountability_corpus
+   (mapv (fn [entry]
+           (-> (select-keys entry [:work_id :source_path])
+               (assoc :original_sha256 (:source_sha256 entry))))
+         (:entries corpus))
    :authorization (select-keys authorization
                                [:authorization_ref :authorization_ordinal
                                 :candidate_ref :qualification_identity_ref

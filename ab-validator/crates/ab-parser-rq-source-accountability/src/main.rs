@@ -105,8 +105,6 @@ enum Command {
         #[arg(long)]
         store_root: PathBuf,
         #[arg(long)]
-        generation_index: PathBuf,
-        #[arg(long)]
         output_dir: PathBuf,
     },
 }
@@ -186,7 +184,7 @@ fn main() -> Result<()> {
         } => {
             let index = analyze_corpus(CorpusInput {
                 entries: read_json::<Vec<CorpusSourceEntry>>(&corpus)?,
-                source_root,
+                source_root: source_root.clone(),
                 parser_ir_root,
                 store_root,
                 index_out,
@@ -247,7 +245,6 @@ fn main() -> Result<()> {
             qualification,
             taxonomy: taxonomy_path,
             store_root,
-            generation_index,
             output_dir,
         } => {
             fs::create_dir_all(&output_dir)?;
@@ -257,7 +254,7 @@ fn main() -> Result<()> {
             let membership_path = output_dir.join("source-accountability-index.json");
             let membership = analyze_corpus(CorpusInput {
                 entries: corpus_entries.clone(),
-                source_root,
+                source_root: source_root.clone(),
                 parser_ir_root,
                 store_root: store_root.clone(),
                 index_out: membership_path.clone(),
@@ -278,9 +275,48 @@ fn main() -> Result<()> {
                 &output_dir.join("source-accountability-aggregate.json"),
                 canonical_json(&p1_aggregate)?.as_bytes(),
             )?;
+            let identity_ref =
+                ab_parser_rq_source_accountability::qualification_identity_ref(&identity)?;
+            let source_root = fs::canonicalize(&source_root)?;
+            let mut generation_records = Vec::with_capacity(corpus_entries.len());
+            for entry in &corpus_entries {
+                let relative = &entry.source_path;
+                if relative.is_absolute()
+                    || relative
+                        .components()
+                        .any(|component| matches!(component, std::path::Component::ParentDir))
+                {
+                    anyhow::bail!("source path escapes its configured root");
+                }
+                let source_path = fs::canonicalize(source_root.join(relative))?;
+                if !source_path.starts_with(&source_root) {
+                    anyhow::bail!("source path escapes its configured root");
+                }
+                let generation = ab_aozora_aat::capture_generation_from_bytes_for_identity(
+                    &fs::read(source_path)?,
+                    &identity_ref,
+                )?;
+                let published = generation.publish(&store_root)?;
+                generation_records.push(
+                    ab_parser_rq_source_accountability::RecognitionGenerationEntry {
+                        work_id: entry.corpus_entry.work_id.clone(),
+                        sha256: published.manifest.sha256,
+                        bytes: published.manifest.bytes,
+                        media_type: "application/json".to_owned(),
+                        locator: published.manifest.locator,
+                    },
+                );
+            }
+            let generation_index = RecognitionGenerationIndex {
+                records: generation_records,
+            };
+            write_atomic_summary(
+                &output_dir.join("classified-source-generation-index.json"),
+                canonical_json(&generation_index)?.as_bytes(),
+            )?;
             let recognition = analyze_recognition_corpus(RecognitionCorpusInput {
                 membership_index_bytes: fs::read(&membership_path)?,
-                generation_index: read_json::<RecognitionGenerationIndex>(&generation_index)?,
+                generation_index,
                 store_root: store_root.clone(),
                 index_out: output_dir.join("source-recognition-index.json"),
             })?;
@@ -352,12 +388,31 @@ mod tests {
             "taxonomy.json",
             "--store-root",
             "store",
-            "--generation-index",
-            "generation.json",
             "--output-dir",
             "out",
         ]);
         assert!(capture.is_ok());
+        let caller_generation = Cli::try_parse_from([
+            "tool",
+            "capture-corpus",
+            "--corpus",
+            "corpus.json",
+            "--source-root",
+            "sources",
+            "--parser-ir-root",
+            "parser-ir",
+            "--qualification",
+            "identity.json",
+            "--taxonomy",
+            "taxonomy.json",
+            "--store-root",
+            "store",
+            "--generation-index",
+            "caller.json",
+            "--output-dir",
+            "out",
+        ]);
+        assert!(caller_generation.is_err());
         let recognition = Cli::try_parse_from([
             "tool",
             "analyze-recognition-corpus",

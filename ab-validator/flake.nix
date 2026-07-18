@@ -642,7 +642,7 @@
           version = "0.6.11-a1";
 
           src = sudachiRustSource;
-          cargoLock.lockFile = sudachiRustSource + "/Cargo.lock";
+          cargoHash = "sha256-t6qNqA3fq2TNqBizPIU4Hf9nnO3Fxr/7ldaRD2hcl5A=";
 
           cargoBuildFlags = [
             "-p"

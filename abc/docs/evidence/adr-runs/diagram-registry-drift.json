@@ -44,7 +44,7 @@
     "docs\/evidence\/adr-capture\/diagram-registry-drift.edn": "sha256:f1d7c5d49157816b8f66fae0950ee305dbe7018c654b7469a5af5e8876fa7f38",
     "docs\/evidence\/adr-inputs\/diagram-registry-drift.edn": "sha256:1d65d233e3c1447a959c984cb36267db5b39f7e95e4c34715810076412b252ab",
     "schemas\/manifest.schema.json": "sha256:46be9df96df5d08497d247c6f49c88d1a56c75178ac6146e982a8807b47a7cb5",
-    "schemas\/schema-contracts.json": "sha256:0ee6fba765041928b20ba21a7eb73ebae6699787aeb175d2299b7586169fd1c4",
+    "schemas\/schema-contracts.json": "sha256:dcf1691be1941c5fd5fa8537f585c9f1739d41b4febd68278f9649946224783d",
     "src\/abc\/tools\/adr.clj": "sha256:9d48980732300a1e070aa9fe29ba18d4373cd650fe7db9de3290a8f7dcf375ff",
     "src\/abc\/tools\/adr_evidence_runtime_inputs.clj": "sha256:21baaf7ae1b36e8e04604335b71ee337c1e42047d4f0623bcc833cf22d825536",
     "src\/abc\/tools\/diagram\/adr_graph.clj": "sha256:b444bd7f0cc8bcdc9f42721f51799c9536829e2ab4895e9ae8ed6c7e15134c4b",
@@ -74,7 +74,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.diagram-registry-evidence-test\/diagram-registry-contract\"",
-    "revision": "04caddb56dc4863da42ab54ff1305ae72e1fbe7a",
+    "revision": "c2aa640e326f7672293053ae8cd9b6a9c742f01a",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

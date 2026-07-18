@@ -509,8 +509,8 @@ The graph contains closed operation identifiers, not shell strings:
 {
   "members": [
     {"name": "core_attempt", "operation": "capture-core"},
-    {"name": "source_recognition", "operation": "capture-source"},
     {"name": "predicate_hardening", "operation": "capture-predicate-pair"},
+    {"name": "source_recognition", "operation": "capture-source"},
     {"name": "diagnostic_gap", "operation": "derive-diagnostic-gap"},
     {"name": "publication_structure", "operation": "capture-publication"},
     {"name": "resource", "operation": "capture-resource"}
@@ -560,6 +560,9 @@ lock identity before capture start.
 
 Map operation identifiers in code with an exhaustive `match`; unknown values
 are protocol errors. `capture-source` resolves
+`capture-predicate-pair` runs before `capture-source` and installs its Parser-IR
+documents beneath a closed staging root because source accountability consumes
+those exact decoded-coordinate values. `capture-source` resolves
 `ab-parser-rq-source-accountability` from provenance; diagnostic authorization
 resolves `ab-parser-rq-diagnostic-authorization`; core, predicate-pair,
 publication, and resource invoke their repository scripts from the detached

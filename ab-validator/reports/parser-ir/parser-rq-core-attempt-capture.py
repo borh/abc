@@ -351,6 +351,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runtime", type=pathlib.Path, required=True)
     parser.add_argument("--policy", type=pathlib.Path, required=True)
+    parser.add_argument("--ab-check", type=pathlib.Path, required=True)
     parser.add_argument("--corpus-root", type=pathlib.Path, required=True)
     parser.add_argument("--corpus-index", type=pathlib.Path, required=True)
     parser.add_argument("--time-executable", required=True)
@@ -398,6 +399,7 @@ def main(argv: list[str] | None = None) -> int:
         if len(expected_works) != len(expected_sources):
             raise ValueError("core policy work membership is duplicated")
         replacements = {
+            "ab-check": str(args.ab_check),
             "{index}": str(args.corpus_index),
             "{corpus}": str(args.corpus_root),
             "{work_ids}": ",".join(expected_works),

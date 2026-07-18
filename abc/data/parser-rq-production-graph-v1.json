@@ -1,10 +1,10 @@
 {
   "schema_version": "abc/parser-rq-production-graph/v1",
-  "policy_hash": "sha256:6261f9ff24e1bf8dff776d5f9113d5cad95bec5742d285433a1e1c7e45f4b4c4",
+  "policy_hash": "sha256:235f2000189627b307e2b4d8a88fc7e634172b9386a0ae00b78f35e6b825bf18",
   "members": [
     {"name": "core_attempt", "operation": "capture-core"},
-    {"name": "source_recognition", "operation": "capture-source"},
     {"name": "predicate_hardening", "operation": "capture-predicate-pair"},
+    {"name": "source_recognition", "operation": "capture-source"},
     {"name": "diagnostic_gap", "operation": "derive-diagnostic-gap"},
     {"name": "publication_structure", "operation": "capture-publication"},
     {"name": "resource", "operation": "capture-resource"}

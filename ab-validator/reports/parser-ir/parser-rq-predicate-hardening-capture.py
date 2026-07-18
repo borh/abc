@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import subprocess
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -40,9 +41,23 @@ def _run(argv: list[str], *, stdin: bytes | None = None) -> subprocess.Completed
     return subprocess.run(argv, input=stdin, capture_output=True, check=False)
 
 
+def _source_below(root: Path, relative: object) -> Path:
+    if not isinstance(relative, str):
+        raise ValueError("corpus source path must be a string")
+    candidate = Path(relative)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        raise ValueError("corpus source path escapes its root")
+    resolved_root = root.resolve(strict=True)
+    resolved = (resolved_root / candidate).resolve(strict=True)
+    if not resolved.is_relative_to(resolved_root):
+        raise ValueError("corpus source path escapes its root")
+    return resolved
+
+
 def capture(
     corpus: dict[str, Any],
     *,
+    source_root: Path,
     aozora: Path,
     converter: Path,
     mapping: Path,
@@ -62,11 +77,13 @@ def capture(
         raise ValueError("duplicate corpus work ID")
     store.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
+    parser_ir_root = output / "parser-ir"
+    parser_ir_root.mkdir()
     diagnostics: list[dict[str, object]] = []
     parser_records: list[dict[str, object]] = []
     for row in rows:
         work_id = row["work_id"]
-        source = Path(row["source_path"]).read_bytes()
+        source = _source_below(source_root, row.get("source_path")).read_bytes()
         diagnostic_run = _run([str(aozora), "--mode", "diagnostics"], stdin=source)
         diagnostic_ref = publish(store, diagnostic_run.stdout)
         diagnostics.append(
@@ -112,6 +129,8 @@ def capture(
             else canonical({"status": "protocol_error", "exit_code": converter_run.returncode})
         )
         parser_records.append({"work_id": work_id, "record": publish(store, record_bytes)})
+        if parser_out.is_file():
+            shutil.copyfile(parser_out, parser_ir_root / f"{work_id}.json")
     diagnostic_index = {
         "schema_version": "abc/parser-rq-predicate-hardening-raw-diagnostics/v1",
         "qualification_identity_ref": identity_ref,
@@ -132,6 +151,7 @@ def capture(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--corpus", type=Path, required=True)
+    parser.add_argument("--source-root", type=Path, required=True)
     parser.add_argument("--ab-aozora", type=Path, required=True)
     parser.add_argument("--converter", type=Path, required=True)
     parser.add_argument("--mapping", type=Path, required=True)
@@ -143,6 +163,7 @@ def main() -> int:
     args = parser.parse_args()
     capture(
         json.loads(args.corpus.read_text()),
+        source_root=args.source_root,
         aozora=args.ab_aozora,
         converter=args.converter,
         mapping=args.mapping,

@@ -239,8 +239,9 @@ The orchestrator owns this serial graph:
 4. require the host's synchronized-clock precondition, record the local realtime
    capture start, and verify it is inside the authorized window;
 5. run three complete core attempts and reduce them by maximum;
-6. run the source-accountability producer;
-7. run the shared predicate-hardening producer once;
+6. run the shared predicate-hardening producer once and stage its Parser-IR
+   values under the closed work-ID names consumed downstream;
+7. run the source-accountability producer over those same Parser-IR values;
 8. derive diagnostic authorization from the authenticated shared raw values;
 9. materialize and validate publication structure;
 10. run resource capture serially, one work per transient service;

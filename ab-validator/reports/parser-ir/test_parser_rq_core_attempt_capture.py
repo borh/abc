@@ -321,6 +321,8 @@ def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_p
                     str(runtime),
                     "--policy",
                     str(policy),
+                    "--ab-check",
+                    "/nix/store/parser/bin/ab-check",
                     "--corpus-root",
                     str(tmp_path / "corpus"),
                     "--corpus-index",
@@ -343,6 +345,7 @@ def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_p
         )
     assert json.loads(output.read_bytes()) == {"status": "captured"}
     assert observed["lock"] == lock
+    assert observed["config"].argv_template[0] == "/nix/store/parser/bin/ab-check"
     assert observed["config"].argv_template[2] == str(tmp_path / "index.json")
     assert not list(tmp_path.glob(".core-index.json.*.tmp"))
 
@@ -353,3 +356,4 @@ def test_core_capture_cli_help_and_no_lock_path_option() -> None:
     assert "lock_path" not in {action.dest for action in capture._parser()._actions}
     assert "candidate" not in {action.dest for action in capture._parser()._actions}
     assert "authorization" not in {action.dest for action in capture._parser()._actions}
+    assert "ab_check" in {action.dest for action in capture._parser()._actions}

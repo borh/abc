@@ -359,10 +359,12 @@
 (defn runtime-inputs
   "Project the EDN authorities into the closed JSON value consumed by capture
   processes after structural authorization succeeds."
-  [candidate authorization]
+  [candidate authorization corpus]
   {:schema_version "abc/parser-rq-runtime-inputs/v1"
    :candidate (select-keys candidate
-                           [:candidate_ref :qualification_identity_ref])
+                           [:candidate_ref :qualification_identity_ref
+                            :qualification_identity])
+   :corpus corpus
    :authorization (select-keys authorization
                                [:authorization_ref :authorization_ordinal
                                 :candidate_ref :qualification_identity_ref
@@ -1068,7 +1070,8 @@
          (required-option options :out)
          (runtime-inputs
           (files/read-edn (required-option options :candidate))
-          (files/read-edn (required-option options :authorization))))
+          (files/read-edn (required-option options :authorization))
+          (qualification/load-corpus)))
         (println "ok"))
       "compose"
       (let [options (parse-options command-args)

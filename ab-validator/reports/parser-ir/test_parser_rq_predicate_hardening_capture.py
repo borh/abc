@@ -31,14 +31,19 @@ def test_capture_uses_explicit_closed_membership_and_one_invocation(tmp_path: Pa
         tmp_path / "converter",
         f"import json,sys\nopen({str(log)!r},'a').write('qualify\\n')\n"
         "args=sys.argv\nout=args[args.index('--record-out')+1]\n"
-        "open(out,'w').write(json.dumps({'status':'valid'}))\n",
+        "parser_out=args[args.index('--parser-ir-out')+1]\n"
+        "open(out,'w').write(json.dumps({'status':'valid'}))\n"
+        "open(parser_out,'w').write(json.dumps({'nodes':[]}))\n",
     )
-    source = tmp_path / "source.txt"
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    source = source_root / "source.txt"
     source.write_text("body")
-    corpus = {"entries": [{"work_id": "work-a", "source_path": str(source)}]}
+    corpus = {"entries": [{"work_id": "work-a", "source_path": "source.txt"}]}
     output = tmp_path / "out"
     diagnostic, parser = module.capture(
         corpus,
+        source_root=source_root,
         aozora=aozora,
         converter=converter,
         mapping=tmp_path / "mapping",
@@ -52,10 +57,12 @@ def test_capture_uses_explicit_closed_membership_and_one_invocation(tmp_path: Pa
     assert parser["expected_work_ids"] == ["work-a"]
     assert log.read_text().splitlines() == ["diagnostics", "aat", "qualify"]
     assert json.loads((output / "raw-diagnostics-index.json").read_text()) == diagnostic
+    assert json.loads((output / "parser-ir" / "work-a.json").read_text()) == {"nodes": []}
 
 
 def test_capture_rejects_duplicate_or_implicit_membership(tmp_path: Path) -> None:
     kwargs = dict(
+        source_root=tmp_path,
         aozora=tmp_path / "aozora",
         converter=tmp_path / "converter",
         mapping=tmp_path / "mapping",

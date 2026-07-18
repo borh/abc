@@ -332,8 +332,8 @@
         expected-members ["core_attempt" "source_recognition" "diagnostic_gap"
                           "diagnostic_completeness" "parser_ir_conformance"
                           "publication_structure" "resource"]
-        operation-members ["core_attempt" "source_recognition"
-                           "predicate_hardening" "diagnostic_gap"
+        operation-members ["core_attempt" "predicate_hardening"
+                           "source_recognition" "diagnostic_gap"
                            "publication_structure" "resource"]
         executables (get graph "executables")
         executable-keys #{"name" "adapter" "adapter_version" "argv_template"}]

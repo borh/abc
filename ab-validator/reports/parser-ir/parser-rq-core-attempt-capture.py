@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-import fcntl
+import argparse
 import hashlib
 import json
 import math
@@ -11,16 +11,16 @@ import os
 import pathlib
 import re
 import subprocess
+import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
 
 
 PLAIN_DECIMAL = re.compile(rb"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?\n?")
 ERROR_RESULTS = {"fatal_error", "adapter_timeout", "adapter_protocol_error"}
 
-RunCommand = Callable[[Sequence[str], Mapping[str, str]], int]
+RunCommand = Callable[[Sequence[str], Mapping[str, str], tuple[int, ...]], int]
 ContextReader = Callable[[], dict[str, object]]
 
 
@@ -82,8 +82,8 @@ def validate_execution_window(now: datetime, authorization: dict[str, object]) -
         raise ValueError("outside authorized capture window")
 
 
-def _run_command(argv: Sequence[str], env: Mapping[str, str]) -> int:
-    return subprocess.run(list(argv), check=False, env=dict(env)).returncode
+def _run_command(argv: Sequence[str], env: Mapping[str, str], pass_fds: tuple[int, ...]) -> int:
+    return subprocess.run(list(argv), check=False, env=dict(env), pass_fds=pass_fds).returncode
 
 
 def _memory_pressure() -> dict[str, float]:
@@ -145,7 +145,6 @@ class CaptureConfig:
     argv_template: tuple[str, ...]
     time_executable: str
     staging_root: pathlib.Path
-    lock_path: pathlib.Path
     qualification_identity_ref: str
     candidate_ref: str
     policy_hash: str
@@ -154,13 +153,28 @@ class CaptureConfig:
     context_reader: ContextReader = field(default=_attempt_context)
 
 
+@dataclass(frozen=True)
+class LockCapability:
+    fd: int
+    device: int
+    inode: int
+
+
 def _json_bytes(value: object) -> bytes:
     return (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode()
 
 
 def _write_json(path: pathlib.Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(_json_bytes(value))
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        with temporary.open("xb") as stream:
+            stream.write(_json_bytes(value))
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _blob(path: pathlib.Path, root: pathlib.Path, media_type: str) -> dict[str, object]:
@@ -188,15 +202,21 @@ def _validate_authorization(config: CaptureConfig) -> None:
     validate_execution_window(config.now(), auth)
 
 
-def _lock_retained(lock_handle: Any, lock_path: pathlib.Path, identity: tuple[int, int]) -> bool:
+def _lock_retained(lock: LockCapability) -> bool:
     try:
-        path_stat = lock_path.stat()
-        handle_stat = os.fstat(lock_handle.fileno())
+        handle_stat = os.fstat(lock.fd)
+        target = os.readlink(f"/proc/self/fd/{lock.fd}")
+        if not target.startswith("/") or target.endswith(" (deleted)"):
+            return False
+        path_stat = os.stat(target)
     except OSError:
         return False
     return (
         (path_stat.st_dev, path_stat.st_ino)
-        == identity
+        == (
+            lock.device,
+            lock.inode,
+        )
         == (
             handle_stat.st_dev,
             handle_stat.st_ino,
@@ -214,93 +234,95 @@ def _load_report(path: pathlib.Path, work_id: str) -> dict[str, object]:
     return value
 
 
-def capture_repetitions(config: CaptureConfig) -> dict[str, object]:
+def capture_repetitions(config: CaptureConfig, lock: LockCapability) -> dict[str, object]:
     """Run and record exactly three serial, locked core attempts."""
     _validate_authorization(config)
+    if not _lock_retained(lock):
+        raise ValueError("exclusive campaign lock was not retained")
     config.staging_root.mkdir(parents=True, exist_ok=True)
-    config.lock_path.parent.mkdir(parents=True, exist_ok=True)
     attempts: list[dict[str, object]] = []
     records: list[dict[str, object]] = []
-    with config.lock_path.open("a+b") as lock_handle:
+    for repetition in range(1, 4):
+        if not _lock_retained(lock):
+            raise ValueError("exclusive campaign lock was not retained")
+        validate_execution_window(config.now(), config.authorization)
+        repetition_root = config.staging_root / f"repetition-{repetition}"
+        report_dir = repetition_root / "reports"
+        report_dir.mkdir(parents=True, exist_ok=False)
+        elapsed_path = repetition_root / "elapsed.txt"
+        argv = [
+            token.replace("{report_dir}", str(report_dir)).replace("{repetition}", str(repetition))
+            for token in config.argv_template
+        ]
+        command = [
+            config.time_executable,
+            "-f",
+            "%e",
+            "-o",
+            str(elapsed_path),
+            "--",
+            *argv,
+        ]
+        before = config.context_reader()
+        was_inheritable = os.get_inheritable(lock.fd)
         try:
-            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as error:
-            raise ValueError("exclusive campaign lock is unavailable") from error
-        lock_stat = os.fstat(lock_handle.fileno())
-        lock_identity = (lock_stat.st_dev, lock_stat.st_ino)
-        for repetition in range(1, 4):
-            validate_execution_window(config.now(), config.authorization)
-            repetition_root = config.staging_root / f"repetition-{repetition}"
-            report_dir = repetition_root / "reports"
-            report_dir.mkdir(parents=True, exist_ok=False)
-            elapsed_path = repetition_root / "elapsed.txt"
-            argv = [
-                token.replace("{report_dir}", str(report_dir)).replace(
-                    "{repetition}", str(repetition)
-                )
-                for token in config.argv_template
-            ]
-            command = [
-                config.time_executable,
-                "-f",
-                "%e",
-                "-o",
-                str(elapsed_path),
-                "--",
-                *argv,
-            ]
-            before = config.context_reader()
-            exit_status = config.run_command(command, {**os.environ, "LC_ALL": "C"})
-            after = config.context_reader()
-            retained = _lock_retained(lock_handle, config.lock_path, lock_identity)
-            if not retained:
-                raise ValueError("exclusive campaign lock was not retained")
-            raw_elapsed = elapsed_path.read_bytes()
-            parse_elapsed_record(raw_elapsed)
-            attempts.append(
+            os.set_inheritable(lock.fd, True)
+            exit_status = config.run_command(command, {**os.environ, "LC_ALL": "C"}, (lock.fd,))
+        finally:
+            try:
+                os.set_inheritable(lock.fd, was_inheritable)
+            except OSError:
+                pass
+        after = config.context_reader()
+        retained = _lock_retained(lock)
+        if not retained:
+            raise ValueError("exclusive campaign lock was not retained")
+        raw_elapsed = elapsed_path.read_bytes()
+        parse_elapsed_record(raw_elapsed)
+        attempts.append(
+            {
+                "repetition": repetition,
+                "elapsed_record": _blob(elapsed_path, config.staging_root, "text/plain"),
+                "argv": argv,
+                "exit_status": exit_status,
+                "lock_retained": retained,
+                "before": before,
+                "after": after,
+            }
+        )
+        if exit_status != 0:
+            raise ValueError(f"core attempt repetition {repetition} exited {exit_status}")
+        for work_id, source_sha256 in config.expected_works.items():
+            report_path = report_dir / f"{work_id}.json"
+            report = _load_report(report_path, work_id)
+            disposition = classify_work(report)
+            report_blob = _blob(report_path, config.staging_root, "application/json")
+            record: dict[str, object] = {
+                "schema_id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-work.schema.json",
+                "schema_version": "1.0.0",
+                "work_id": work_id,
+                "source_sha256": source_sha256,
+                "qualification_identity_ref": config.qualification_identity_ref,
+                "candidate_ref": config.candidate_ref,
+                "policy_hash": config.policy_hash,
+                "repetition": repetition,
+                "status": "measured",
+                "disposition": disposition,
+                "report": report_blob,
+            }
+            if disposition == "protocol_error":
+                record["status"] = "protocol_error"
+                record["reason"] = "adapter_protocol_error"
+                record.pop("disposition")
+            record_path = repetition_root / "records" / f"{work_id}.json"
+            _write_json(record_path, record)
+            records.append(
                 {
+                    "work_id": work_id,
                     "repetition": repetition,
-                    "elapsed_record": _blob(elapsed_path, config.staging_root, "text/plain"),
-                    "argv": argv,
-                    "exit_status": exit_status,
-                    "lock_retained": retained,
-                    "before": before,
-                    "after": after,
+                    "record": _blob(record_path, config.staging_root, "application/json"),
                 }
             )
-            if exit_status != 0:
-                raise ValueError(f"core attempt repetition {repetition} exited {exit_status}")
-            for work_id, source_sha256 in config.expected_works.items():
-                report_path = report_dir / f"{work_id}.json"
-                report = _load_report(report_path, work_id)
-                disposition = classify_work(report)
-                report_blob = _blob(report_path, config.staging_root, "application/json")
-                record: dict[str, object] = {
-                    "schema_id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-work.schema.json",
-                    "schema_version": "1.0.0",
-                    "work_id": work_id,
-                    "source_sha256": source_sha256,
-                    "qualification_identity_ref": config.qualification_identity_ref,
-                    "candidate_ref": config.candidate_ref,
-                    "policy_hash": config.policy_hash,
-                    "repetition": repetition,
-                    "status": "measured",
-                    "disposition": disposition,
-                    "report": report_blob,
-                }
-                if disposition == "protocol_error":
-                    record["status"] = "protocol_error"
-                    record["reason"] = "adapter_protocol_error"
-                    record.pop("disposition")
-                record_path = repetition_root / "records" / f"{work_id}.json"
-                _write_json(record_path, record)
-                records.append(
-                    {
-                        "work_id": work_id,
-                        "repetition": repetition,
-                        "record": _blob(record_path, config.staging_root, "application/json"),
-                    }
-                )
     return {
         "schema_id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-index.schema.json",
         "schema_version": "1.0.0",
@@ -313,3 +335,87 @@ def capture_repetitions(config: CaptureConfig) -> dict[str, object]:
         "attempts": attempts,
         "records": records,
     }
+
+
+def _read_json(path: pathlib.Path) -> dict[str, object]:
+    try:
+        value = json.loads(path.read_bytes())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"{path} is not valid JSON") from error
+    if not isinstance(value, dict):
+        raise ValueError(f"{path} is not a JSON object")
+    return value
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--candidate", type=pathlib.Path, required=True)
+    parser.add_argument("--authorization", type=pathlib.Path, required=True)
+    parser.add_argument("--policy", type=pathlib.Path, required=True)
+    parser.add_argument("--corpus-root", type=pathlib.Path, required=True)
+    parser.add_argument("--corpus-index", type=pathlib.Path, required=True)
+    parser.add_argument("--time-executable", required=True)
+    parser.add_argument("--staging-root", type=pathlib.Path, required=True)
+    parser.add_argument("--inherited-lock-fd", type=int, required=True)
+    parser.add_argument("--lock-device", type=int, required=True)
+    parser.add_argument("--lock-inode", type=int, required=True)
+    parser.add_argument("--out", type=pathlib.Path, required=True)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = _parser()
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit as error:
+        if argv is not None:
+            return int(error.code)
+        raise
+    try:
+        candidate = _read_json(args.candidate)
+        authorization = _read_json(args.authorization)
+        policy = _read_json(args.policy)
+        expected_sources = policy.get("expected_sources")
+        argv_template = policy.get("argv_template")
+        if not isinstance(expected_sources, list) or not all(
+            isinstance(row, dict)
+            and isinstance(row.get("work_id"), str)
+            and isinstance(row.get("source_sha256"), str)
+            for row in expected_sources
+        ):
+            raise ValueError("core policy expected_sources are malformed")
+        if not isinstance(argv_template, list) or not all(
+            isinstance(token, str) for token in argv_template
+        ):
+            raise ValueError("core policy argv_template is malformed")
+        expected_works = {
+            str(row["work_id"]): str(row["source_sha256"]) for row in expected_sources
+        }
+        if len(expected_works) != len(expected_sources):
+            raise ValueError("core policy work membership is duplicated")
+        replacements = {
+            "{index}": str(args.corpus_index),
+            "{corpus}": str(args.corpus_root),
+            "{work_ids}": ",".join(expected_works),
+        }
+        resolved_template = tuple(replacements.get(token, token) for token in argv_template)
+        config = CaptureConfig(
+            authorization=authorization,
+            expected_works=expected_works,
+            argv_template=resolved_template,
+            time_executable=args.time_executable,
+            staging_root=args.staging_root,
+            qualification_identity_ref=str(candidate["qualification_identity_ref"]),
+            candidate_ref=str(candidate["candidate_ref"]),
+            policy_hash=str(policy["policy_hash"]),
+        )
+        lock = LockCapability(args.inherited_lock_fd, args.lock_device, args.lock_inode)
+        _write_json(args.out, capture_repetitions(config, lock))
+    except (OSError, KeyError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

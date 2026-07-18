@@ -1,7 +1,10 @@
 import importlib.util
+import fcntl
 import json
+import os
 import pathlib
 import sys
+from contextlib import contextmanager
 from datetime import UTC, datetime
 
 import pytest
@@ -18,6 +21,24 @@ def load_module():
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+@contextmanager
+def held_lock(capture, path):
+    descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    stat = os.fstat(descriptor)
+    try:
+        yield capture.LockCapability(descriptor, stat.st_dev, stat.st_ino)
+    finally:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        except OSError:
+            pass
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
 
 
 @pytest.mark.parametrize("raw, expected", [(b"0\n", 0.0), (b"12.50\n", 12.5), (b"0.001", 0.001)])
@@ -94,11 +115,20 @@ def test_capture_repetitions_is_serial_closed_and_lock_retaining(tmp_path):
     active = False
     elapsed = iter((b"1.00\n", b"1.25\n", b"1.10\n"))
 
-    def run_command(argv, env):
+    lock_path = tmp_path / "campaign.lock"
+
+    def run_command(argv, env, pass_fds):
         nonlocal active
         assert not active
         active = True
         assert env["LC_ALL"] == "C"
+        assert pass_fds == (lock.fd,)
+        contender = os.open(lock_path, os.O_RDWR)
+        try:
+            with pytest.raises(BlockingIOError):
+                fcntl.flock(contender, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        finally:
+            os.close(contender)
         timing_path = pathlib.Path(argv[argv.index("-o") + 1])
         report_dir = pathlib.Path(argv[argv.index("--output-dir") + 1])
         timing_path.write_bytes(next(elapsed))
@@ -134,7 +164,6 @@ def test_capture_repetitions_is_serial_closed_and_lock_retaining(tmp_path):
         argv_template=("ab-check", "--output-dir", "{report_dir}"),
         time_executable="/nix/store/time/bin/time",
         staging_root=tmp_path / "capture",
-        lock_path=tmp_path / "campaign.lock",
         qualification_identity_ref=HASH,
         candidate_ref=HASH,
         policy_hash=HASH,
@@ -143,7 +172,8 @@ def test_capture_repetitions_is_serial_closed_and_lock_retaining(tmp_path):
         context_reader=lambda: next(contexts),
     )
 
-    index = capture.capture_repetitions(config)
+    with held_lock(capture, lock_path) as lock:
+        index = capture.capture_repetitions(config, lock)
 
     assert len(calls) == 3
     assert [attempt["repetition"] for attempt in index["attempts"]] == [1, 2, 3]
@@ -179,14 +209,145 @@ def test_capture_repetitions_rejects_policy_drift_before_execution(tmp_path, cha
         argv_template=("ab-check", "--output-dir", "{report_dir}"),
         time_executable="time",
         staging_root=tmp_path / "capture",
-        lock_path=tmp_path / "campaign.lock",
         qualification_identity_ref=HASH,
         candidate_ref=HASH,
         policy_hash=HASH,
         now=lambda: datetime(2026, 7, 17, 0, 30, tzinfo=UTC),
-        run_command=lambda argv, env: calls.append((argv, env)) or 0,
+        run_command=lambda argv, env, pass_fds: calls.append((argv, env, pass_fds)) or 0,
         context_reader=lambda: {},
     )
-    with pytest.raises(ValueError, match=message):
-        capture.capture_repetitions(config)
+    with held_lock(capture, tmp_path / "campaign.lock") as lock:
+        with pytest.raises(ValueError, match=message):
+            capture.capture_repetitions(config, lock)
     assert calls == []
+
+
+@pytest.mark.parametrize("failure", ["replace", "close"])
+def test_capture_repetitions_rejects_replaced_or_lost_inherited_lock(tmp_path, failure):
+    capture = load_module()
+    calls = []
+    lock_path = tmp_path / "campaign.lock"
+
+    def run_command(argv, env, pass_fds):
+        repetition = len(calls) + 1
+        calls.append(repetition)
+        timing_path = pathlib.Path(argv[argv.index("-o") + 1])
+        report_dir = pathlib.Path(argv[argv.index("--output-dir") + 1])
+        timing_path.write_bytes(b"1.0\n")
+        report_dir.mkdir(parents=True, exist_ok=True)
+        (report_dir / "w1.json").write_text(
+            json.dumps(
+                {
+                    "work_id": "w1",
+                    "results": {"parse_completeness": {"pass": True}},
+                }
+            )
+        )
+        if repetition == 2 and failure == "replace":
+            replacement = tmp_path / "replacement.lock"
+            replacement.write_bytes(b"")
+            os.replace(replacement, lock_path)
+        if repetition == 2 and failure == "close":
+            os.close(pass_fds[0])
+        return 0
+
+    config = capture.CaptureConfig(
+        authorization=authorization(),
+        expected_works={"w1": HASH},
+        argv_template=("ab-check", "--output-dir", "{report_dir}"),
+        time_executable="time",
+        staging_root=tmp_path / "capture",
+        qualification_identity_ref=HASH,
+        candidate_ref=HASH,
+        policy_hash=HASH,
+        now=lambda: datetime(2026, 7, 17, 0, 30, tzinfo=UTC),
+        run_command=run_command,
+        context_reader=lambda: {},
+    )
+    with held_lock(capture, lock_path) as lock:
+        with pytest.raises(ValueError, match="exclusive campaign lock was not retained"):
+            capture.capture_repetitions(config, lock)
+    assert calls == [1, 2]
+
+
+def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_path, monkeypatch):
+    capture = load_module()
+    candidate = tmp_path / "candidate.json"
+    authorization_path = tmp_path / "authorization.json"
+    policy = tmp_path / "policy.json"
+    output = tmp_path / "core-index.json"
+    candidate.write_text(
+        json.dumps(
+            {
+                "candidate_ref": HASH,
+                "qualification_identity_ref": HASH,
+            }
+        )
+    )
+    authorization_path.write_text(json.dumps(authorization()))
+    policy.write_text(
+        json.dumps(
+            {
+                "policy_hash": HASH,
+                "expected_sources": [{"work_id": "w1", "source_sha256": HASH}],
+                "argv_template": [
+                    "ab-check",
+                    "--index",
+                    "{index}",
+                    "--corpus",
+                    "{corpus}",
+                    "--output-dir",
+                    "{report_dir}",
+                ],
+            }
+        )
+    )
+    observed = {}
+
+    def fake_capture(config, lock):
+        observed["config"] = config
+        observed["lock"] = lock
+        return {"status": "captured"}
+
+    monkeypatch.setattr(capture, "capture_repetitions", fake_capture)
+    lock_path = tmp_path / "campaign.lock"
+    with held_lock(capture, lock_path) as lock:
+        assert (
+            capture.main(
+                [
+                    "--candidate",
+                    str(candidate),
+                    "--authorization",
+                    str(authorization_path),
+                    "--policy",
+                    str(policy),
+                    "--corpus-root",
+                    str(tmp_path / "corpus"),
+                    "--corpus-index",
+                    str(tmp_path / "index.json"),
+                    "--time-executable",
+                    "/nix/store/time/bin/time",
+                    "--staging-root",
+                    str(tmp_path / "staging"),
+                    "--inherited-lock-fd",
+                    str(lock.fd),
+                    "--lock-device",
+                    str(lock.device),
+                    "--lock-inode",
+                    str(lock.inode),
+                    "--out",
+                    str(output),
+                ]
+            )
+            == 0
+        )
+    assert json.loads(output.read_bytes()) == {"status": "captured"}
+    assert observed["lock"] == lock
+    assert observed["config"].argv_template[2] == str(tmp_path / "index.json")
+    assert not list(tmp_path.glob(".core-index.json.*.tmp"))
+
+
+def test_core_capture_cli_help_and_no_lock_path_option() -> None:
+    capture = load_module()
+    assert capture.main(["--help"]) == 0
+    assert "lock_path" not in {action.dest for action in capture._parser()._actions}

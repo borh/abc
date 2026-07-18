@@ -1069,6 +1069,29 @@
           };
         };
 
+        parserRqCandidate = mkRustBin {
+          pname = "parser-rq-candidate";
+          nativeBuildInputs = [ pkgs.pkg-config ];
+          buildInputs = gaijiBuildInputs;
+          env = gaijiEnv // {
+            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+          };
+          cargoBuildFlags = [
+            "-p"
+            "ab-check"
+            "-p"
+            "ab-aozora"
+            "-p"
+            "ab-aat-to-parser-ir"
+            "-p"
+            "ab-parser-rq-source-accountability"
+            "-p"
+            "ab-parser-rq-diagnostic-authorization"
+          ];
+          doCheck = false;
+          extra.preBuild = stageParserRqAbcAuthorities;
+        };
+
         workspaceCheck = mkRustBin {
           pname = "ab-validator-check";
           nativeBuildInputs = [
@@ -1969,6 +1992,7 @@
         packages = {
           default = abValidator;
           ab-validator = abValidator;
+          parser-rq-candidate = parserRqCandidate;
           ab-aat-to-parser-ir = abAatToParserIr;
           ab-morph-run = abMorphRun;
           ab-index = abIndex;

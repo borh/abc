@@ -174,7 +174,9 @@ def resolve_realize_request(
     runner: Runner,
     package_ref: str | None = None,
 ) -> RealizeRequest:
-    package = package_ref or (f"{candidate_tree / 'ab-validator'}#packages.x86_64-linux.default")
+    package = package_ref or (
+        f"{candidate_tree / 'ab-validator'}#packages.x86_64-linux.parser-rq-candidate"
+    )
     drv_path = (
         _run_stdout(
             runner,

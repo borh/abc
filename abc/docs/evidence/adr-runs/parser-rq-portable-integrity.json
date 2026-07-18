@@ -9,7 +9,7 @@
   "inputs":
   {
     "ab-validator\/flake.lock": "sha256:6f44ae08913f1447e31f21b9b6f4c6bea815aeadc1513389562c85c75bc96546",
-    "ab-validator\/flake.nix": "sha256:c46c8318bc615f6a0d2b16c558351673428b46e9a2f98b7e7ef40b6b4be5b5b1",
+    "ab-validator\/flake.nix": "sha256:8a310f0522362aebb0fa57b35116ddaf798f5e0bdf2d14ab9ba1ee6fbb548e4e",
     "ab-validator\/reports\/parser-ir\/parser-rq-campaign-provenance.py": "sha256:abe33684ad6bbcdfc75d66f682cff518227048e0371011673c7198772c0e4dea",
     "ab-validator\/reports\/parser-ir\/test_parser_rq_campaign_provenance.py": "sha256:d04cd4bf2a7c7c3ee0c34efd48a8c1ed13ec72d6c1b4f34ae94d324086858149",
     "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
@@ -46,7 +46,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"bin\/kaocha --focus abc.tools.parser-rq-portability-test --focus abc.tools.parser-rq-campaign-test --focus abc.tools.parser-rq-admission-promotion-drift-test && nix build ..\/ab-validator#checks.x86_64-linux.parser-rq-campaign-provenance-python-tests\"",
-    "revision": "c5fa512cbd555930237d2df70813bd790dfc1c70",
+    "revision": "594365b9ed9cb626f634b487e5baa3715a7b6ded",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -272,19 +272,21 @@ def test_capture_repetitions_rejects_replaced_or_lost_inherited_lock(tmp_path, f
 
 def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_path, monkeypatch):
     capture = load_module()
-    candidate = tmp_path / "candidate.json"
-    authorization_path = tmp_path / "authorization.json"
+    runtime = tmp_path / "runtime.json"
     policy = tmp_path / "policy.json"
     output = tmp_path / "core-index.json"
-    candidate.write_text(
+    runtime.write_text(
         json.dumps(
             {
-                "candidate_ref": HASH,
-                "qualification_identity_ref": HASH,
+                "schema_version": "abc/parser-rq-runtime-inputs/v1",
+                "candidate": {
+                    "candidate_ref": HASH,
+                    "qualification_identity_ref": HASH,
+                },
+                "authorization": authorization(),
             }
         )
     )
-    authorization_path.write_text(json.dumps(authorization()))
     policy.write_text(
         json.dumps(
             {
@@ -315,10 +317,8 @@ def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_p
         assert (
             capture.main(
                 [
-                    "--candidate",
-                    str(candidate),
-                    "--authorization",
-                    str(authorization_path),
+                    "--runtime",
+                    str(runtime),
                     "--policy",
                     str(policy),
                     "--corpus-root",
@@ -351,3 +351,5 @@ def test_core_capture_cli_help_and_no_lock_path_option() -> None:
     capture = load_module()
     assert capture.main(["--help"]) == 0
     assert "lock_path" not in {action.dest for action in capture._parser()._actions}
+    assert "candidate" not in {action.dest for action in capture._parser()._actions}
+    assert "authorization" not in {action.dest for action in capture._parser()._actions}

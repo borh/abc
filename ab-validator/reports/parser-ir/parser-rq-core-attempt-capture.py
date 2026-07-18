@@ -349,8 +349,7 @@ def _read_json(path: pathlib.Path) -> dict[str, object]:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--candidate", type=pathlib.Path, required=True)
-    parser.add_argument("--authorization", type=pathlib.Path, required=True)
+    parser.add_argument("--runtime", type=pathlib.Path, required=True)
     parser.add_argument("--policy", type=pathlib.Path, required=True)
     parser.add_argument("--corpus-root", type=pathlib.Path, required=True)
     parser.add_argument("--corpus-index", type=pathlib.Path, required=True)
@@ -372,8 +371,13 @@ def main(argv: list[str] | None = None) -> int:
             return int(error.code)
         raise
     try:
-        candidate = _read_json(args.candidate)
-        authorization = _read_json(args.authorization)
+        runtime = _read_json(args.runtime)
+        if runtime.get("schema_version") != "abc/parser-rq-runtime-inputs/v1":
+            raise ValueError("runtime input schema identity is invalid")
+        candidate = runtime.get("candidate")
+        authorization = runtime.get("authorization")
+        if not isinstance(candidate, dict) or not isinstance(authorization, dict):
+            raise ValueError("runtime candidate or authorization is malformed")
         policy = _read_json(args.policy)
         expected_sources = policy.get("expected_sources")
         argv_template = policy.get("argv_template")

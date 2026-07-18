@@ -356,6 +356,19 @@
    (vec (concat (authorization-record-errors candidate authorization)
                 (temporal-authorization-errors authorization now true)))))
 
+(defn runtime-inputs
+  "Project the EDN authorities into the closed JSON value consumed by capture
+  processes after structural authorization succeeds."
+  [candidate authorization]
+  {:schema_version "abc/parser-rq-runtime-inputs/v1"
+   :candidate (select-keys candidate
+                           [:candidate_ref :qualification_identity_ref])
+   :authorization (select-keys authorization
+                               [:authorization_ref :authorization_ordinal
+                                :candidate_ref :qualification_identity_ref
+                                :not_before_utc :not_after_utc :repetitions
+                                :reduction])})
+
 (defn build-authorization [candidate receipt ordinal not-before not-after host-policy-ref]
   (let [authorization {:schema_id
                        "https://w3id.org/abc/schemas/parser-rq-capture-authorization.schema.json"
@@ -969,6 +982,7 @@
   (str "usage: parser-rq-campaign <candidate-ref|authorization-ref|capture-ref|evaluate-ref> --<kind> PATH\n"
        "       parser-rq-campaign verify-authorization-record --candidate PATH --provenance PATH --graph PATH --receipt PATH --authorization PATH\n"
        "       parser-rq-campaign verify-authorization --candidate PATH --provenance PATH --graph PATH --receipt PATH --authorization PATH --utc TIME --clock-synchronized true|false\n"
+       "       parser-rq-campaign runtime-inputs --candidate PATH --authorization PATH --out PATH\n"
        "       parser-rq-campaign compose|verify-capture --candidate PATH --capture-root DIR [--authorization PATH] [--out PATH]\n"
        "       parser-rq-campaign project --runs-root DIR --candidate-ref HASH --registry PATH [--measurements-out PATH] [--report-out PATH]\n"
        "       parser-rq-campaign verify-promotion --runs-root DIR --candidate-ref HASH --registry PATH --measurements PATH --report PATH --provenance PATH --adr-0040 PATH --adr-0041 PATH"))
@@ -1047,6 +1061,14 @@
                     (files/read-edn (required-option options :candidate))
                     (files/read-edn (required-option options :provenance)))]
         (when (seq errors) (throw (ex-info "provenance invalid" {:errors errors})))
+        (println "ok"))
+      "runtime-inputs"
+      (let [options (parse-options command-args)]
+        (write-canonical-json!
+         (required-option options :out)
+         (runtime-inputs
+          (files/read-edn (required-option options :candidate))
+          (files/read-edn (required-option options :authorization))))
         (println "ok"))
       "compose"
       (let [options (parse-options command-args)

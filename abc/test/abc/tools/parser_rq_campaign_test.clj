@@ -85,6 +85,23 @@
              :host_policy_ref sha}
     :authorization_ref campaign/authorization-ref))
 
+(deftest runtime-inputs-are-a-closed-projection-of-authoritative-edn
+  (is (= {:schema_version "abc/parser-rq-runtime-inputs/v1"
+          :candidate {:candidate_ref (:candidate_ref candidate)
+                      :qualification_identity_ref
+                      (:qualification_identity_ref candidate)}
+          :authorization
+          {:authorization_ref (:authorization_ref authorization)
+           :authorization_ordinal 1
+           :candidate_ref (:candidate_ref candidate)
+           :qualification_identity_ref
+           (:qualification_identity_ref candidate)
+           :not_before_utc "2026-07-17T00:00:00Z"
+           :not_after_utc "2026-07-17T01:00:00Z"
+           :repetitions 3
+           :reduction "maximum"}}
+         (campaign/runtime-inputs candidate authorization))))
+
 (def observed-values
   {:fatal_failures 0.0
    :source_span_coverage 1.0

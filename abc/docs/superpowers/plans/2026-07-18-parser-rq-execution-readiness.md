@@ -1,5 +1,10 @@
 # Parser Release Qualification Execution Readiness Implementation Plan
 
+> **Superseded in scope:** Host identity, filesystem topology, and two-domain
+> replication are replaced by ADR 0042 and the portable-evidence-integrity
+> design. Candidate provenance, one-shot authorization, and the fixed capture
+> graph remain active.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make the P5 parser-release campaign an executable, fail-closed production transaction without authorizing or running the authoritative capture.

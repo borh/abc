@@ -1,5 +1,10 @@
 # Parser Release Qualification Execution Readiness Design
 
+> **Superseded in scope:** Host identity, filesystem topology, and two-domain
+> replication are replaced by ADR 0042 and the portable-evidence-integrity
+> design. Candidate provenance, one-shot authorization, and the fixed capture
+> graph remain active.
+
 Date: 2026-07-18
 
 Status: Proposed amendment to the P5 admission-and-promotion campaign

@@ -47,6 +47,7 @@ expected = {
         "monorepo-tei-p5-reference",
         "monorepo-tei-version-coherence",
         "monorepo-workflow-run-lib",
+        "parser-rq-production-wiring",
         "tei-eaj-aozora-alignment-probe-generation",
     },
 }

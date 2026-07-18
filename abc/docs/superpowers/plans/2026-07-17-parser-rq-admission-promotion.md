@@ -281,7 +281,12 @@ git commit -m "fix(parser-rq): give admission conflicts gate precedence"
 (promotion-errors inputs)                          ; => closed error vector
 ```
 
-CLI subcommands: `candidate`, `candidate-ref`, `authorize`, `authorization-ref`, `verify-authorization`, `compose`, `capture-ref`, `verify-capture`, `evaluate`, `publish-evaluation`, `project`, `verify-registry-closure`, and `verify-promotion`. Each reads explicit paths and writes deterministic EDN/JSON; none executes a parser or edits governance.
+CLI subcommands: `candidate`, `candidate-ref`, `qualification-identity-ref`,
+`authorize`, `authorization-ref`, `verify-authorization-record`,
+`verify-authorization`, `runtime-inputs`, `compose`, `capture-ref`,
+`verify-capture`, `evaluate`, `publish-evaluation`, `project`,
+`verify-registry-closure`, and `verify-promotion`. Each reads explicit paths and
+writes deterministic EDN/JSON; none executes a parser or edits governance.
 
 - [ ] **Step 1: Add failing candidate and authorization tests**
 
@@ -544,7 +549,8 @@ Record this resulting SHA as `candidate_git_rev`. No code, schema, policy, corpu
 
 **Files:**
 - Create: `abc/docs/reports/parser-rq/runs/$identity_dir/candidate.edn`, where the command below derives `identity_dir`.
-- Create: `abc/docs/reports/parser-rq/runs/$identity_dir/executable-provenance.edn`.
+- Create: `abc/docs/reports/parser-rq/runs/$identity_dir/executable-provenance.json`.
+- Create: `abc/docs/reports/parser-rq/runs/$identity_dir/readiness-receipt.json`.
 - Create: `abc/docs/reports/parser-rq/runs/$identity_dir/authorizations/$authorization_dir.edn`, where the command below derives `authorization_dir`.
 
 - [ ] **Step 1: Prepare a detached clean worktree on hinoki**
@@ -553,75 +559,123 @@ On hinoki, set `repo_root` to its configured Soranoha checkout and derive the ca
 
 ```bash
 repo_root=$(git rev-parse --show-toplevel)
+evidence_tree="$repo_root"
 git -C "$repo_root" fetch origin main
 candidate_git_rev=$(git -C "$repo_root" rev-parse origin/main)
 candidate_tree=$(mktemp -d /tmp/soranoha-p5-candidate.XXXXXXXX)
 git -C "$repo_root" worktree add --detach "$candidate_tree" "$candidate_git_rev"
 test -z "$(git -C "$candidate_tree" status --porcelain)"
+test -z "$(git -C "$evidence_tree" status --porcelain)"
 ```
 
-- [ ] **Step 2: Perform two independent clean builds**
+- [ ] **Step 2: Run site preflight before creating any authorization**
 
-Use separate Nix stores or the provenance tool's independently realized build mode, not two reads of one existing output. Store JSON results outside the candidate tree:
+The committed site policy is intentionally `unconfigured` until hinoki has a
+reviewed remote replica. Configure and review that value before candidate
+freeze. A local second disk is not acceptable. The runtime site descriptor is
+an explicit JSON value, not environment-derived paths. Stop here unless the
+preflight passes; do not create an authorization for an unready site.
+
+```bash
+: "${PARSER_RQ_SITE_DESCRIPTOR:?set the reviewed site-descriptor JSON path}"
+site_policy="$candidate_tree/abc/data/parser-rq-site-policy-v1.json"
+graph="$candidate_tree/abc/data/parser-rq-production-graph-v1.json"
+staging_root=$(mktemp -d /tmp/soranoha-p5-evidence.XXXXXXXX)
+python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" preflight-site \
+  --policy "$site_policy" --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
+  --graph "$graph" --evidence-git-rev "$candidate_git_rev" \
+  --evidence-tree-clean true --out "$staging_root/site-preflight.json"
+```
+
+- [ ] **Step 3: Perform and compare two independent realizations**
+
+The provenance command seeds only the target's dependencies into each fresh
+store, asserts the target is absent, and builds the concrete derivation
+offline. It is the authority for independent realization; raw `nix build
+--json` output is not executable provenance.
 
 ```bash
 build_root=$(mktemp -d /tmp/soranoha-p5-builds.XXXXXXXX)
-nix build --store "$build_root/store-a" --no-link --json \
-  "$candidate_tree/ab-validator#packages.x86_64-linux.default" \
-  > "$build_root/build-a.json"
-nix build --store "$build_root/store-b" --no-link --json \
-  "$candidate_tree/ab-validator#packages.x86_64-linux.default" \
-  > "$build_root/build-b.json"
-nix develop "$candidate_tree/abc" --command python \
-  "$candidate_tree/ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py" \
-  compare-builds --first "$build_root/build-a.json" --second "$build_root/build-b.json" \
-  --out "$build_root/executable-provenance.edn"
+provenance_tool="$candidate_tree/ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py"
+for build_id in build-a build-b; do
+  python "$provenance_tool" realize-build --candidate-tree "$candidate_tree" \
+    --build-id "$build_id" --store-root "$build_root/store-$build_id" \
+    --build-log "$build_root/$build_id.log" --out "$build_root/$build_id.realization.json"
+  python "$provenance_tool" capture-build \
+    --realization "$build_root/$build_id.realization.json" --graph "$graph" \
+    --parser-git-rev "$candidate_git_rev" --out "$build_root/$build_id.json"
+done
+python "$provenance_tool" compare-builds --first "$build_root/build-a.json" \
+  --second "$build_root/build-b.json" --out "$build_root/provenance-proof.json"
 ```
 
-The command exits nonzero for any NAR/output/executable disagreement. If the environment cannot force independent realization, stop; do not call two queries independent builds.
+Any realization or executable disagreement ends this candidate unavailable.
 
-- [ ] **Step 3: Generate the candidate descriptor**
+- [ ] **Step 4: Generate the candidate and bind provenance**
 
 From the detached tree, load the live corpus, predicate set, admission coordinates, instrument policies, and verified executable record:
 
 ```bash
-evidence_tree=$(git -C "$repo_root" rev-parse --show-toplevel)
-staging_root=$(mktemp -d /tmp/soranoha-p5-evidence.XXXXXXXX)
 nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
   candidate --repo "$candidate_tree" --parser-git-rev "$candidate_git_rev" \
-  --provenance "$build_root/executable-provenance.edn" \
+  --provenance "$build_root/provenance-proof.json" \
   --out "$staging_root/candidate.edn"
-identity_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+candidate_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
   candidate-ref --candidate "$staging_root/candidate.edn")
-identity_dir=${identity_ref#sha256:}
+identity_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+  qualification-identity-ref --candidate "$staging_root/candidate.edn")
+python "$provenance_tool" bind-provenance --proof "$build_root/provenance-proof.json" \
+  --candidate-ref "$candidate_ref" --qualification-identity-ref "$identity_ref" \
+  --out "$staging_root/executable-provenance.json"
+identity_dir=${candidate_ref#sha256:}
 run_root="$evidence_tree/abc/docs/reports/parser-rq/runs/$identity_dir"
 mkdir -p "$run_root/authorizations"
 ```
 
-- [ ] **Step 4: Fix and commit the sole execution window**
+The run directory is keyed by the authenticated candidate value. The distinct
+qualification identity authenticates every observation envelope and may be
+shared only by candidates whose complete qualification tuple is identical.
+
+- [ ] **Step 5: Seal readiness, then fix the sole execution window**
 
 Choose the operational window before capture, write its concrete UTC timestamps into the authorization, and require ordinal one. The following derives a two-hour window beginning 30 minutes after generation:
 
 ```bash
 not_before_utc=$(date -u -d '+30 minutes' '+%Y-%m-%dT%H:%M:%SZ')
 not_after_utc=$(date -u -d '+150 minutes' '+%Y-%m-%dT%H:%M:%SZ')
+provenance_core_ref=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["provenance_core_ref"])' \
+  "$staging_root/executable-provenance.json")
+python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" seal-readiness \
+  --policy "$site_policy" --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
+  --preflight "$staging_root/site-preflight.json" --graph "$graph" \
+  --candidate-ref "$candidate_ref" --qualification-identity-ref "$identity_ref" \
+  --provenance-core-ref "$provenance_core_ref" --candidate-git-rev "$candidate_git_rev" \
+  --evidence-base-git-rev "$candidate_git_rev" \
+  --corpus-snapshot-hash sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e \
+  --corpus-list-hash sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd \
+  --candidate-tree-clean true --evidence-tree-clean true \
+  --out "$staging_root/readiness-receipt.json"
 nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
-  authorize --candidate "$staging_root/candidate.edn" --ordinal 1 \
+  authorize --candidate "$staging_root/candidate.edn" \
+  --receipt "$staging_root/readiness-receipt.json" --host-policy "$site_policy" --ordinal 1 \
   --not-before "$not_before_utc" --not-after "$not_after_utc" \
   --out "$staging_root/authorization.edn"
 authorization_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
   authorization-ref --authorization "$staging_root/authorization.edn")
 authorization_dir=${authorization_ref#sha256:}
 cp "$staging_root/candidate.edn" "$run_root/candidate.edn"
-cp "$build_root/executable-provenance.edn" "$run_root/executable-provenance.edn"
+cp "$staging_root/executable-provenance.json" "$run_root/executable-provenance.json"
+cp "$staging_root/readiness-receipt.json" "$run_root/readiness-receipt.json"
 cp "$staging_root/authorization.edn" "$run_root/authorizations/$authorization_dir.edn"
 ```
 
-- [ ] **Step 5: Verify, commit, and push before the window opens**
+- [ ] **Step 6: Structurally verify, commit, and push before the window opens**
 
 ```bash
 nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
-  verify-authorization --candidate "$run_root/candidate.edn" \
+  verify-authorization-record --candidate "$run_root/candidate.edn" \
+  --provenance "$run_root/executable-provenance.json" --graph "$graph" \
+  --receipt "$run_root/readiness-receipt.json" \
   --authorization "$run_root/authorizations/$authorization_dir.edn"
 git add "$run_root"
 git commit -m "evidence(parser-rq): authorize candidate capture"
@@ -636,18 +690,17 @@ If the push is not visible on hinoki before `not_before_utc`, or any volatile la
 - Create: immutable capture content beneath `abc/docs/reports/parser-rq/runs/$identity_dir/captures/$capture_dir/`.
 - Modify: `abc/docs/reports/parser-release-qualification-measurements.edn` as a generated canonical projection.
 
-- [ ] **Step 1: Require explicit hinoki runtime configuration**
+- [ ] **Step 1: Re-authenticate the sealed explicit site configuration**
 
 Continue with `candidate_git_rev`, `identity_dir`, `authorization_dir`, and `run_root` from Task 10. Require site configuration without embedding it in source:
 
 ```bash
-: "${PARSER_RQ_QUALIFICATION_CORPUS:?set the pinned qualification corpus root}"
-: "${PARSER_RQ_PRIMARY_STORE:?set the primary content-store root}"
-: "${PARSER_RQ_REPLICA_STORE:?set the independent replica root}"
-: "${PARSER_RQ_CAMPAIGN_LOCK:?set the exclusive lock path}"
-test "$(hostname -f)" = hinoki.hyakutake-barbel.ts.net
+: "${PARSER_RQ_SITE_DESCRIPTOR:?set the reviewed site-descriptor JSON path}"
 test "$(git -C "$candidate_tree" rev-parse HEAD)" = "$candidate_git_rev"
 test -z "$(git -C "$candidate_tree" status --porcelain)"
+python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" recheck-readiness \
+  --policy "$site_policy" --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
+  --receipt "$run_root/readiness-receipt.json"
 ```
 
 Verify the two store roots satisfy the configured independent-failure-domain policy before execution. A different path on the same failure domain is not a replica.
@@ -659,22 +712,18 @@ capture_staging=$(mktemp -d /tmp/soranoha-p5-capture.XXXXXXXX)
 bash "$candidate_tree/abc/bin/parser-rq-campaign-capture.sh" \
   --candidate "$run_root/candidate.edn" \
   --authorization "$run_root/authorizations/$authorization_dir.edn" \
-  --provenance "$run_root/executable-provenance.edn" \
-  --corpus-root "$PARSER_RQ_QUALIFICATION_CORPUS" \
-  --primary-store "$PARSER_RQ_PRIMARY_STORE" \
-  --lock "$PARSER_RQ_CAMPAIGN_LOCK" \
-  --staging-root "$capture_staging"
+  --provenance "$run_root/executable-provenance.json" \
+  --readiness-receipt "$run_root/readiness-receipt.json" \
+  --site-policy "$site_policy" --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" \
+  --candidate-tree "$candidate_tree" --evidence-tree "$evidence_tree" \
+  --staging-root "$capture_staging" --production
 ```
 
 The orchestrator verifies time and authorization before its first volatile process, retains the lock, runs three complete core repetitions, executes the remaining lanes serially, and writes one closed capture index. It records interruption or lock loss as unavailable and exits without starting a second attempt.
 
-- [ ] **Step 3: Derive, compose, and authenticate without re-execution**
+- [ ] **Step 3: Authenticate the controller-produced generation without re-execution**
 
 ```bash
-nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
-  compose --candidate "$run_root/candidate.edn" \
-  --capture-root "$capture_staging" \
-  --out "$capture_staging/measurements.edn"
 nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
   verify-capture --candidate "$run_root/candidate.edn" \
   --authorization "$run_root/authorizations/$authorization_dir.edn" \
@@ -686,6 +735,10 @@ No parser command may run during these calls. Preserve any honest fail or unavai
 - [ ] **Step 4: Replicate every logical blob and publish the receipt**
 
 ```bash
+PARSER_RQ_PRIMARY_STORE=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["primary_store_root"])' \
+  "$PARSER_RQ_SITE_DESCRIPTOR")
+PARSER_RQ_REPLICA_STORE=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["replica_store_root"])' \
+  "$PARSER_RQ_SITE_DESCRIPTOR")
 nix develop "$candidate_tree/abc" --command python \
   "$candidate_tree/ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py" \
   verify-replicas --capture-index "$capture_staging/capture-index.edn" \
@@ -702,11 +755,15 @@ This command copies only by authenticated logical identity when the replica is a
 capture_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
   capture-ref --capture-index "$capture_staging/capture-index.edn")
 capture_dir=${capture_ref#sha256:}
-mkdir -p "$run_root/captures/$capture_dir"
-cp -a "$capture_staging/." "$run_root/captures/$capture_dir/"
+mkdir -p "$run_root/captures"
+publish_staging="$run_root/captures/.$capture_dir.tmp"
+test ! -e "$publish_staging" && test ! -e "$run_root/captures/$capture_dir"
+mkdir "$publish_staging"
+cp -a "$capture_staging/." "$publish_staging/"
+mv "$publish_staging" "$run_root/captures/$capture_dir"
 nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
   project --runs-root abc/docs/reports/parser-rq/runs \
-  --candidate-ref "$identity_ref" --measurements-out \
+  --candidate-ref "$candidate_ref" --measurements-out \
   abc/docs/reports/parser-release-qualification-measurements.edn
 nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
   verify-capture --candidate "$run_root/candidate.edn" \
@@ -714,7 +771,8 @@ nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
   --capture-root "$run_root/captures/$capture_dir"
 ```
 
-The implementation must replace `mkdir`/`cp` with its atomic publish mode if the target filesystem supports it. Once committed, the directory is immutable.
+The copy is staged under the destination filesystem and the final rename is
+atomic. Once published and committed, the generation directory is immutable.
 
 - [ ] **Step 6: Commit and push the capture before admission**
 
@@ -744,11 +802,11 @@ Require the configured full admission AAT corpus and invoke the candidate-built 
 audit_staging=$(mktemp -d /tmp/soranoha-p5-audit.XXXXXXXX)
 aat_to_ir_bin=$(nix develop "$candidate_tree/abc" --command python \
   "$candidate_tree/ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py" \
-  resolve-executable --provenance "$run_root/executable-provenance.edn" \
+  resolve-executable --provenance "$run_root/executable-provenance.json" \
   --name ab-aat-to-parser-ir)
 "$aat_to_ir_bin" audit-corpus \
   --aat-dir "$PARSER_RQ_ADMISSION_AAT_DIR" \
-  --mapping "$candidate_tree/ab-validator/data/aat-to-parser-ir-mapping-v1.json" \
+  --mapping "$candidate_tree/ab-validator/data/aat-to-parser-ir-mapping-v2.json" \
   --summary-json "$audit_staging/summary.json" \
   --report-md "$audit_staging/report.md" \
   --compat-edn-out "$audit_staging/admission-candidate.edn" \
@@ -830,7 +888,7 @@ nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
   publish-evaluation --candidate-root "$run_root" --evaluation-root "$post_eval"
 nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
   project --runs-root abc/docs/reports/parser-rq/runs \
-  --candidate-ref "$identity_ref" --registry abc/data/aat-parser-ir-compatibility.edn \
+  --candidate-ref "$candidate_ref" --registry abc/data/aat-parser-ir-compatibility.edn \
   --report-out abc/docs/reports/parser-release-qualification-report.json
 ```
 
@@ -859,9 +917,13 @@ git push origin main
 ```bash
 nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
   verify-promotion --runs-root abc/docs/reports/parser-rq/runs \
-  --candidate-ref "$identity_ref" \
+  --candidate-ref "$candidate_ref" \
   --registry abc/data/aat-parser-ir-compatibility.edn \
-  --report abc/docs/reports/parser-release-qualification-report.json
+  --measurements abc/docs/reports/parser-release-qualification-measurements.edn \
+  --report abc/docs/reports/parser-release-qualification-report.json \
+  --provenance "$run_root/executable-provenance.json" \
+  --adr-0040 abc/docs/adr/0040-process-tree-memory-qualification.md \
+  --adr-0041 abc/docs/adr/0041-parser-release-instrument-bindings.md
 ```
 
 Record its exact errors. At this point ADR 0040 being Proposed is an expected promotion dependency error. Separately verify ADR-0040-C3 from the fresh authenticated memory envelope; other predicate failures do not block accepting the measurement mechanism, but they continue to block ADR 0039.
@@ -888,9 +950,13 @@ Require zero errors, a byte-reproducible report with `gate_status = release-qual
 ```bash
 nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
   verify-promotion --runs-root abc/docs/reports/parser-rq/runs \
-  --candidate-ref "$identity_ref" \
+  --candidate-ref "$candidate_ref" \
   --registry abc/data/aat-parser-ir-compatibility.edn \
-  --report abc/docs/reports/parser-release-qualification-report.json
+  --measurements abc/docs/reports/parser-release-qualification-measurements.edn \
+  --report abc/docs/reports/parser-release-qualification-report.json \
+  --provenance "$run_root/executable-provenance.json" \
+  --adr-0040 abc/docs/adr/0040-process-tree-memory-qualification.md \
+  --adr-0041 abc/docs/adr/0041-parser-release-instrument-bindings.md
 ```
 
 - [ ] **Step 4: Conditionally promote ADR 0039**

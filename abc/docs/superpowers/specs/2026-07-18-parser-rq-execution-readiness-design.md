@@ -145,7 +145,7 @@ if nix path-info --store "$fresh_store" "$out" >/dev/null 2>&1; then
   exit 2
 fi
 export LC_ALL=C
-nix build --store "$fresh_store" --eval-store "$fresh_store" \
+nix build --store "$fresh_store" \
   --offline --no-link --json "$drv^out" >"$build_json" 2>"$build_log"
 nix path-info --store "$fresh_store" "$out" >/dev/null
 grep -F "building '$drv'" "$build_log" >/dev/null
@@ -160,6 +160,13 @@ absent-target check, seeded input set, build log identity, and resulting store
 path in the staging build record. `--no-check-sigs` applies only to copying
 already trusted paths from hinoki's daemon store into its private local build
 store; target realization remains offline and local.
+
+The helper receives a concrete derivation output (`$drv^out`), so it does not
+pass an evaluation-store option: there is no flake expression left to evaluate.
+All direct source inputs and named direct-input output closures must already be
+realized in hinoki's daemon store so they can be seeded. A missing dependency,
+including an unavailable fixed-output or network-fetched input, is a preflight
+failure; the fresh store may not fetch it during the offline target build.
 
 A disposable derivation exercised this exact absent-target/offline-build method
 successfully on hinoki's installed Nix 2.34.8 on 2026-07-18. That probe proves
@@ -226,7 +233,8 @@ The orchestrator owns this serial graph:
 1. authenticate candidate, bound provenance, authorization record, final
    readiness receipt, committed site policy, and executable bytes;
 2. recheck the short hostname, stable-FQDN/local-address relation, mounted
-   replica policy, and replica create/fsync/stream-read/remove probe;
+   replica policy, and the full replica
+   create/fsync-file/fsync-directory/stream-read/remove/fsync-directory probe;
 3. acquire the campaign lock once and retain the same locked file description;
 4. require the host's synchronized-clock precondition, record the local realtime
    capture start, and verify it is inside the authorized window;
@@ -263,6 +271,22 @@ The orchestrator alone installs these seven canonical campaign members:
 Each member contains only its already assigned identity-bearing observation
 envelopes. The Clojure composer remains the authority for closed member
 membership and the exact nine-key union.
+
+### Member projection boundary
+
+The measurement producers emit their existing authenticated raw indexes,
+aggregates, and sidecars. A narrow Clojure command adapter invokes the existing
+pure instrument analyzers to project those raw values into their assigned
+identity-bearing envelopes. It owns no capture execution, lane membership,
+authorization, lifecycle, or promotion decision. It may write only the member
+key assigned by the production graph.
+
+This adapter is not a third installation authority. It writes projected values
+under lane staging; the orchestrator alone installs them at the seven canonical
+member locations, and the existing composer remains the authoritative check of
+closed seven-member membership and the exact nine-envelope union. Keeping the
+adapter separate prevents the Python controller from reimplementing Clojure
+predicate projection while preserving one lifecycle owner.
 
 ### Failure semantics
 
@@ -491,6 +515,12 @@ revision and candidate.
 - Every terminal status maps to the existing observation algebra.
 - Composition produces exactly the seven members and nine envelopes.
 - No analyzer or composition command starts a candidate executable.
+- A bounded integration smoke uses the real default-package Rust executables,
+  real repository Python capture scripts, the real Clojure projection adapter,
+  and the real orchestrator subprocess runner from an unrelated working
+  directory. Only site facts, authorization time, stores, and the bounded corpus
+  are synthetic. It proves the reviewed argv and output-path contracts without
+  running the authoritative corpus.
 
 ### Authorization and site tests
 

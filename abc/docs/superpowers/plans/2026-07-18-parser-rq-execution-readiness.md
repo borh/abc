@@ -174,12 +174,12 @@ Tests must use a fake command runner and temporary store roots. Assert the exact
 
 ```python
 assert build_call == [
-    "nix", "build", "--store", store_uri, "--eval-store", store_uri,
+    "nix", "build", "--store", store_uri,
     "--offline", "--no-link", "--json", f"{drv_path}^out",
 ]
 ```
 
-Assert the sequence rejects a pre-existing store root, target present after seeding, missing direct input output, build logs lacking `building '<drv>'`, raw `nix build --json` passed directly to `compare-builds`, duplicate executable names, graph-template disagreement, and two records naming the same store URI or build ID. Test `--help` for every subcommand and verify failed output is never installed at `--out`.
+Assert the sequence rejects a pre-existing store root, target present after seeding, missing direct input output, an unavailable fixed-output/network input, build logs lacking `building '<drv>'`, raw `nix build --json` passed directly to `compare-builds`, duplicate executable names, graph-template disagreement, and two records naming the same store URI or build ID. Test `--help` for every subcommand and verify failed output is never installed at `--out`.
 
 - [ ] **Step 2: Confirm red**
 
@@ -200,6 +200,12 @@ if runner.path_info(store_uri, out_path):
 ```
 
 After `nix copy --no-check-sigs --to STORE ...`, repeat the absence check. Run the offline command with `LC_ALL=C`, authenticate target presence afterward, and require the build log to contain the target derivation build line. Record the initially-empty check, absent-target checks, sorted seed paths, store URI, build ID, build-log logical identity, target output, and NAR identity.
+
+The concrete `drv^out` build has no evaluation phase, so do not pass
+`--eval-store`. Require all direct source inputs and named direct-input output
+closures to exist in the daemon store before seeding. A missing fixed-output or
+network-fetched input is a preflight stop, never permission for the offline
+fresh store to fetch it.
 
 - [ ] **Step 4: Implement build capture, comparison, binding, and executable resolution**
 
@@ -241,7 +247,7 @@ def authenticate_site(policy: dict[str, object], descriptor: dict[str, object],
                       facts: SiteFacts, probe: Probe) -> dict[str, object]: ...
 def preflight_site(...) -> dict[str, object]: ...
 def seal_readiness(...) -> dict[str, object]: ...
-def recheck_receipt(...) -> None: ...
+def recheck_readiness(...) -> None: ...
 ```
 
 CLI subcommands: `preflight-site`, `seal-readiness`, and `recheck-readiness`.
@@ -259,6 +265,10 @@ assert probe.calls == []
 - [ ] **Step 2: Add failing probe-lifecycle tests**
 
 Assert disposable probe order is `create -> fsync-file -> fsync-dir -> stream-read -> remove -> fsync-dir`; content read must equal content written. Assert lock probing uses a nonblocking exclusive lock and releases it. Assert synchronized-clock false fails. Assert neither report nor receipt contains authorization intervals or observation values.
+
+Call `recheck_readiness` after a successful seal, replace the replica mount or
+make its stream-read disagree, and assert it reruns the same full lifecycle and
+fails before returning. A re-stat-only implementation must fail this test.
 
 - [ ] **Step 3: Confirm red**
 
@@ -402,14 +412,66 @@ git add ab-validator/reports/parser-ir/parser-rq-core-attempt-capture.py \
 git commit -m "refactor(parser-rq): inherit the campaign lock"
 ```
 
-### Task 6: Implement the Fixed Production Orchestrator
+### Task 6: Expose Existing Pure Analyzers Through One Member Projector
+
+**Files:**
+- Create: `abc/src/abc/tools/parser_rq_member.clj`
+- Create: `abc/test/abc/tools/parser_rq_member_test.clj`
+- Modify: `abc/deps.edn`
+
+**Interfaces:**
+
+```clojure
+(project-source-recognition inputs) ; => {:source_span_coverage envelope}
+(project-diagnostic-gap inputs)     ; => {:silent_drops envelope}
+(project-predicate-pair inputs)     ; => {:diagnostic_completeness envelope
+                                      ;     :parser_ir_schema_validation envelope}
+(project-publication inputs)        ; => {:publication_structure envelope}
+(project-resource inputs)           ; => {:peak_cgroup_memory_bytes envelope}
+```
+
+CLI alias: `:abc/parser-rq-member`. Closed subcommands: `source-recognition`,
+`diagnostic-gap`, `predicate-pair`, `publication`, and `resource`. Each reads
+explicit authenticated artifacts and writes one closed member value atomically.
+It owns no execution, lane membership, authorization, lifecycle, installation,
+composition, or promotion authority.
+
+- [ ] **Step 1: Add failing adapter tests**
+
+Prove each adapter delegates to the existing pure analyzer, preserves numeric
+and sentinel observation values, checks the candidate identity, and refuses an
+output key outside its assigned contract. The predicate-pair command must emit
+exactly two envelopes; every other command emits exactly one.
+
+- [ ] **Step 2: Confirm red**
+
+```bash
+nix develop ./abc --command abc/bin/kaocha --focus abc.tools.parser-rq-member-test
+```
+
+- [ ] **Step 3: Implement only explicit I/O adaptation**
+
+Reuse `abc.tools.parser-rq-source-accountability`,
+`parser-rq-diagnostic-completeness`, `parser-rq-parser-ir-conformance`,
+`parser-rq-publication`, and `parser-rq-resource`. Do not duplicate their
+validation or formulas. Write beneath a caller-supplied staging path; the
+orchestrator in Task 7 performs canonical installation.
+
+- [ ] **Step 4: Verify and commit**
+
+```bash
+nix develop ./abc --command abc/bin/kaocha --focus abc.tools.parser-rq-member-test
+nix build ./abc#checks.x86_64-linux.clj-kondo
+git add abc/src/abc/tools/parser_rq_member.clj \
+  abc/test/abc/tools/parser_rq_member_test.clj abc/deps.edn
+git commit -m "feat(parser-rq): expose member projections"
+```
+
+### Task 7: Implement the Fixed Production Orchestrator
 
 **Files:**
 - Create: `abc/tools/parser_rq_campaign_orchestrator.py`
 - Create: `abc/tools/test_parser_rq_campaign_orchestrator.py`
-- Create: `abc/src/abc/tools/parser_rq_member.clj`
-- Create: `abc/test/abc/tools/parser_rq_member_test.clj`
-- Modify: `abc/deps.edn`
 - Modify: `ab-validator/reports/parser-ir/parser-rq-resource-capture.py`
 - Create: `ab-validator/reports/parser-ir/test_parser_rq_resource_capture_cli.py`
 - Modify: `abc/bin/parser-rq-campaign-capture.sh`
@@ -418,20 +480,25 @@ git commit -m "refactor(parser-rq): inherit the campaign lock"
 **Interfaces:**
 
 ```python
-class LaneName(StrEnum):
-    CORE = "core_attempt"
-    SOURCE = "source_recognition"
-    PREDICATE = "predicate_hardening"
-    DIAGNOSTIC = "diagnostic_gap"
-    PUBLICATION = "publication_structure"
-    RESOURCE = "resource"
-
 def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign: ...
 def execute_graph(campaign: AuthenticatedCampaign, runner: Runner) -> Terminal: ...
 def main(argv: list[str] | None = None) -> int: ...
 ```
 
-The apparent six producer calls install seven canonical members because the shared predicate-hardening producer yields both diagnostic completeness and Parser-IR conformance. Composition remains a Clojure command after all seven members exist.
+The authoritative operation mapping is:
+
+| Graph operation | Candidate executable(s) from provenance | Repository driver from detached tree | Projected/installed member(s) |
+|---|---|---|---|
+| `capture-core` | `ab-check` | `parser-rq-core-attempt-capture.py` | `core_attempt` |
+| `capture-source` | `ab-parser-rq-source-accountability capture-corpus` | none | `source_recognition` |
+| `capture-predicate-pair` | `ab-aozora`, `ab-aat-to-parser-ir` | `parser-rq-predicate-hardening-capture.py` | `diagnostic_completeness`, `parser_ir_conformance` |
+| `derive-diagnostic-gap` | `ab-parser-rq-diagnostic-authorization capture-corpus` | none | `diagnostic_gap` |
+| `capture-publication` | `ab-aozora`, `ab-aat-to-parser-ir` | `clojure -M:abc/materialize-publication`, `publication-bundle-validate.py`, `publication-rq-capture.py` | `publication_structure` |
+| `capture-resource` | `ab-check` and the policy-named parser executable | `parser-rq-resource-capture.py`, `parser-rq-resource-wrapper.py` | `resource` |
+
+The graph holds operation IDs and installed-member contracts, never caller
+commands. The two-output predicate operation is the only cardinality greater
+than one.
 
 The graph contains closed operation identifiers, not shell strings:
 
@@ -453,12 +520,6 @@ The graph contains closed operation identifiers, not shell strings:
 }
 ```
 
-`parser-rq-member` is a thin explicit-I/O adapter over the existing pure
-Clojure analyzers. Its closed subcommands are `source-recognition`,
-`diagnostic-gap`, `predicate-pair`, `publication`, and `resource`; each writes
-one or two identity-bearing envelope values and has no execution, membership,
-authorization, or promotion authority.
-
 - [ ] **Step 1: Add failing closed-graph tests**
 
 Load the committed graph policy and assert exact order. The public CLI accepts only `--candidate`, `--authorization`, `--provenance`, `--readiness-receipt`, `--site-policy`, `--site-descriptor`, `--candidate-tree`, `--evidence-tree`, `--staging-root`, and `--production`. Assert every `PARSER_RQ_*_CAPTURE` environment variable is ignored and then rejected if present, and that no `--lane-command` option exists.
@@ -475,11 +536,8 @@ Each candidate executable path must come from authenticated provenance. Reposito
 
 Assert the controller acquires one descriptor, passes that same capability to core, keeps it through composition/authentication, and releases it last. Reject omitted, extra, repeated, or reordered lanes and exactly-seven-member violations. Assert pure analyzer/composer calls never execute a candidate binary.
 
-Add `parser_rq_member_test.clj` cases proving every adapter delegates to the
-existing analyzer with authenticated artifacts, preserves sentinel values,
-and refuses an output key other than its assigned member key. Add a resource
-CLI test proving `parser-rq-resource-capture.py` runs work IDs serially and
-writes its index atomically.
+Add a resource CLI test proving `parser-rq-resource-capture.py` runs work IDs
+serially and writes its index atomically.
 
 - [ ] **Step 5: Confirm red**
 
@@ -491,6 +549,12 @@ nix develop ./abc --command pytest -q abc/tools/test_parser_rq_campaign_orchestr
 
 Production mode must compare the graph file's hash to both provenance and readiness receipt before resolving any command. Construct argv from the reviewed templates plus authenticated runtime values; never invoke a shell. Immediately before capture start call `recheck-readiness`, acquire and validate the lock, obtain one UTC realtime value, then call Clojure temporal authorization verification with that same value. Store that exact timestamp in the capture index.
 
+`recheck-readiness` must rerun the complete replica lifecycle:
+create, fsync file, fsync directory, stream-read and compare, remove, and fsync
+directory again. A mount-only recheck is insufficient. It also rechecks host
+identity, remote authority, mount class/source/fsid, clock synchronization, and
+lock identity before capture start.
+
 Map operation identifiers in code with an exhaustive `match`; unknown values
 are protocol errors. `capture-source` resolves
 `ab-parser-rq-source-accountability` from provenance; diagnostic authorization
@@ -499,6 +563,20 @@ publication, and resource invoke their repository scripts from the detached
 candidate tree. All raw outputs then pass through `parser-rq-member` before the
 controller installs canonical members. No executable or argv is copied from
 the runtime descriptor.
+
+Invoke Clojure from any working directory with this exact prefix:
+
+```python
+clojure_prefix = [
+    "nix", "develop", "--no-write-lock-file", str(candidate_tree / "abc"),
+    "--command", "clojure",
+]
+```
+
+Temporal verification appends `-M:abc/parser-rq-campaign
+verify-authorization ...`; projection appends `-M:abc/parser-rq-member
+SUBCOMMAND ...`. Unit tests assert these full argv values. Task 8 drives these
+real subprocesses from an unrelated empty cwd.
 
 - [ ] **Step 7: Replace the shell with a thin launcher**
 
@@ -517,26 +595,26 @@ nix build ./abc#checks.x86_64-linux.parser-rq-campaign-orchestrator
 just python-quality
 git add abc/tools/parser_rq_campaign_orchestrator.py \
   abc/tools/test_parser_rq_campaign_orchestrator.py \
-  abc/src/abc/tools/parser_rq_member.clj \
-  abc/test/abc/tools/parser_rq_member_test.clj abc/deps.edn \
   ab-validator/reports/parser-ir/parser-rq-resource-capture.py \
   ab-validator/reports/parser-ir/test_parser_rq_resource_capture_cli.py \
   abc/bin/parser-rq-campaign-capture.sh abc/flake.nix
 git commit -m "feat(parser-rq): own the fixed campaign graph"
 ```
 
-### Task 7: Migrate the Bounded Campaign and Prove Drift
+### Task 8: Prove Real Wiring and Migrate Deterministic Drift
 
 **Files:**
 - Create: `abc/test/fixtures/parser-rq/execution-readiness/`
 - Modify: `abc/test/abc/tools/parser_rq_admission_promotion_drift_test.clj`
 - Modify: `abc/test/abc/tools/parser_rq_campaign_test.clj`
 - Modify: `abc/bin/parser-rq-admission-promotion-smoke.sh`
+- Create: `abc/bin/parser-rq-execution-readiness-smoke.sh`
 - Modify: `abc/flake.nix`
 
 **Interfaces:**
 - One fixture generator owns candidate, unbound proof, bound provenance, site facts, final receipt, authorization v2, seven lane members, capture index, and expected summary.
 - Drift means byte-identical regeneration of deterministic fixture values; live mount/build probes are separate integration smokes.
+- The integration smoke invokes the real orchestrator runner, real default-package Rust executables, real repository capture scripts, and real Clojure projector over the bounded corpus. Only site facts, authorization time, stores, and corpus size are synthetic.
 
 - [ ] **Step 1: Add the failing fixture regeneration test**
 
@@ -558,25 +636,42 @@ Mutate one field at a time: graph hash, candidate ref, qualification identity, p
 
 Intentional historical documentation is outside this active-code guard.
 
-- [ ] **Step 4: Regenerate the bounded fixture through production interfaces**
+- [ ] **Step 4: Regenerate deterministic drift with injected boundaries**
 
 Use fake executables, injected site facts, and temporary stores; do not contact hinoki or run the qualification corpus. Commit only canonical small values and the summary.
 
-- [ ] **Step 5: Verify and commit**
+- [ ] **Step 5: Add the real-executable bounded orchestrator smoke**
+
+`parser-rq-execution-readiness-smoke.sh` receives the built default package
+path from its Nix check and starts in an unrelated empty directory. Its Python
+harness imports the orchestrator, supplies a sealed bounded site adapter and
+clock, but uses the production `SubprocessRunner`, production operation-to-argv
+resolver, and production member installer. It must execute the two
+provenance-resolved Rust CLIs, the repository capture drivers, the real Clojure
+member projector through the pinned `nix develop` prefix, composition, and
+capture authentication. Assert the expected seven canonical members and nine
+envelopes, and assert every producer invocation count is one except the core's
+fixed three repetitions. Do not replace any producer or subprocess with a fake
+runner in this smoke. Separately invoke `parser-rq-campaign-capture.sh --help`
+from that empty cwd to prove the thin production launcher resolves itself.
+
+- [ ] **Step 6: Verify and commit**
 
 ```bash
 nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.parser-rq-admission-promotion-drift-test \
   --focus abc.tools.parser-rq-campaign-test
 nix build ./abc#checks.x86_64-linux.parser-rq-admission-promotion-smoke
+nix build ./abc#checks.x86_64-linux.parser-rq-execution-readiness-smoke
 git add abc/test/fixtures/parser-rq/execution-readiness \
   abc/test/abc/tools/parser_rq_admission_promotion_drift_test.clj \
   abc/test/abc/tools/parser_rq_campaign_test.clj \
-  abc/bin/parser-rq-admission-promotion-smoke.sh abc/flake.nix
-git commit -m "test(parser-rq): drift execution readiness transaction"
+  abc/bin/parser-rq-admission-promotion-smoke.sh \
+  abc/bin/parser-rq-execution-readiness-smoke.sh abc/flake.nix
+git commit -m "test(parser-rq): prove production graph wiring"
 ```
 
-### Task 8: Rewrite P5 Operational Steps Around Preflight and Sealing
+### Task 9: Rewrite P5 Operational Steps Around Preflight and Sealing
 
 **Files:**
 - Modify: `abc/docs/superpowers/plans/2026-07-17-parser-rq-admission-promotion.md`
@@ -606,6 +701,12 @@ Task 11 passes one `--site-descriptor`, explicit candidate/evidence trees, and s
 
 State exactly when fresh stores, build records, and site-preflight report are deleted, and that the final receipt embeds the authenticated site-fact projection. State that implementation completion is not campaign completion while replica policy is unconfigured.
 
+Add an explicit status ledger to the existing P5 plan: implemented foundation
+tasks remain historically unchecked checklist instructions, while Tasks 10+
+are marked “not started.” Do not mechanically check steps without matching
+commits/evidence, and do not leave the document implying that unchecked
+foundation code is absent.
+
 - [ ] **Step 6: Run documentation consistency checks and commit**
 
 ```bash
@@ -620,10 +721,10 @@ git commit -m "docs(parser-rq): make P5 transaction executable"
 
 Expected: every operational command named by P5 exists; no bare future-window temporal check or caller-selected lane remains.
 
-### Task 9: Run the Whole-Range Integrity Review
+### Task 10: Run the Whole-Range Integrity Review
 
 **Files:**
-- Modify only if the review finds a defect: files introduced or changed by Tasks 1-8.
+- Modify only if the review finds a defect: files introduced or changed by Tasks 1-9.
 
 **Interfaces:**
 - This task adds no feature. It proves the plan's boundaries compose and fixes discovered defects in their owning task files.
@@ -665,10 +766,12 @@ nix develop ./abc --command pytest -q \
   ab-validator/reports/parser-ir/test_parser_rq_campaign_provenance.py \
   ab-validator/reports/parser-ir/test_parser_rq_core_attempt_capture.py \
   abc/tools/test_parser_rq_campaign_site.py \
-  abc/tools/test_parser_rq_campaign_orchestrator.py
+  abc/tools/test_parser_rq_campaign_orchestrator.py \
+  ab-validator/reports/parser-ir/test_parser_rq_resource_capture_cli.py
 nix develop ./abc --command abc/bin/kaocha \
   --focus abc.tools.validate-design-bundle-test \
   --focus abc.tools.parser-rq-campaign-test \
+  --focus abc.tools.parser-rq-member-test \
   --focus abc.tools.parser-rq-admission-promotion-drift-test
 ```
 
@@ -682,6 +785,9 @@ scripts/comment-hygiene-check.sh
 just validate-migration
 ```
 
+`scripts/python-quality.sh` discovers all tracked `*.py` with `git ls-files`;
+assert both new tool paths appear in that list before accepting this gate.
+
 - [ ] **Step 5: Commit only genuine corrections**
 
 If review changes code, rerun the owning focused test plus Step 4, then commit:
@@ -694,7 +800,7 @@ git commit -m "fix(parser-rq): close execution readiness review gaps"
 
 If no defect is found, make no empty commit.
 
-### Task 10: Push the Implementation Checkpoint Without Starting P5
+### Task 11: Push the Implementation Checkpoint Without Starting P5
 
 **Files:**
 - No source changes expected.
@@ -742,13 +848,16 @@ Do not describe the parser release campaign itself as complete.
 
 - [ ] Every acceptance criterion in the execution-readiness design maps to a task and an executable test.
 - [ ] The real Nix target is absent before each offline build; dependency substitution cannot substitute the target.
+- [ ] Concrete derivation builds omit the inert evaluation-store flag and fail if a required seeded dependency is absent.
 - [ ] Remote-domain independence comes from reviewed policy plus authority checks, not merely distinct paths/devices or successful I/O.
-- [ ] Readiness receipt semantics say “ready at seal”; host, replica, lock, and clock are rechecked before capture start.
+- [ ] Readiness receipt semantics say “ready at seal”; host, full replica I/O lifecycle, lock, and clock are rechecked before capture start.
 - [ ] The disposable site report is not a runtime input; its authenticated projection and hash are in the final receipt.
 - [ ] The local synchronized clock is an explicit trust assumption.
 - [ ] Authorization v2 receipt mismatch tests cover candidate, identity, provenance, report, and graph independently.
 - [ ] Production graph membership has one source of truth and no caller-selected commands.
+- [ ] The member projector is only a Clojure I/O adapter; the orchestrator installs and the composer remains membership authority.
 - [ ] Core receives the controller's lock capability and never reacquires the path.
 - [ ] The bounded fixture regenerates byte-identically without contacting hinoki.
+- [ ] A separate bounded smoke executes the production argv resolver and every real producer through the orchestrator.
 - [ ] Predicate, corpus, registry, and ADR non-goal guard paths all exist before their diffs run.
 - [ ] Implementation can be green while site policy remains safely unconfigured; no authorization or capture is created.

@@ -1,0 +1,17 @@
+{:schema-version "abc-adr-evidence-capture-v1"
+ :tool "bash"
+ :argv ["bash" "--noprofile" "--norc" "-c"
+        "bin/kaocha --focus abc.tools.parser-rq-portability-test --focus abc.tools.parser-rq-campaign-test --focus abc.tools.parser-rq-admission-promotion-drift-test && nix build ../ab-validator#checks.x86_64-linux.parser-rq-campaign-provenance-python-tests"]
+ :input-profile
+ {:kind "component-clojure-test-v1"
+  :component-root "abc"
+  :roots ["abc.tools.parser-rq-portability-test"
+          "abc.tools.parser-rq-campaign-test"
+          "abc.tools.parser-rq-admission-promotion-drift-test"]
+  :explicit ["abc/bin/kaocha"
+             "abc/docs/evidence/parser-rq-portable-integrity/capture/parser-rq-portable-integrity.edn"
+             "ab-validator/flake.lock"
+             "ab-validator/flake.nix"
+             "ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py"
+             "ab-validator/reports/parser-ir/test_parser_rq_campaign_provenance.py"]}
+ :observation-key "parser-rq-portable-integrity-pass"}

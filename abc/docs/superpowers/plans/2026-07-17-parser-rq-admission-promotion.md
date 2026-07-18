@@ -143,6 +143,14 @@ file lock supplied by runtime configuration, enumerate competing parser-related
 user units before and after each repetition, and record load and memory
 pressure. Never derive a predicate verdict in Python.
 
+Treat the policy's expected work IDs as the sole membership authority. Match
+the adapter's nested, path-hashed report files by their authenticated `work_id`
+values, and reject missing, extra, duplicate, non-JSON, or symlinked output;
+do not duplicate `ab-check`'s filename algorithm in the capture driver. The
+real production-wiring check must run the candidate-built `ab-check` and
+`ab-aozora` on the bounded corpus and pass those actual outputs through this
+closed matcher before a candidate may be frozen.
+
 - [ ] **Step 4: Add the Nix check and verify**
 
 Add `parser-rq-core-attempt-python-tests` to `abc/flake.nix` and include the module in `just python-quality`'s tracked Python set if that set is explicit.

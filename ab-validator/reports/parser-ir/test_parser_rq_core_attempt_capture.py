@@ -70,6 +70,27 @@ def test_parse_elapsed_record_rejects_ambiguous_timing_bytes(raw):
         capture.parse_elapsed_record(raw)
 
 
+def test_closed_reports_matches_nested_outputs_to_expected_work_ids(tmp_path):
+    capture = load_module()
+    report_root = tmp_path / "reports"
+    adapter_root = report_root / "ab-aozora"
+    adapter_root.mkdir(parents=True)
+    for work_id in ("w1", "w2"):
+        (adapter_root / f"{work_id}-pathhash.json").write_text(
+            json.dumps({"work_id": work_id, "results": {}})
+        )
+
+    reports = capture._closed_reports(report_root, {"w1", "w2"})
+
+    assert set(reports) == {"w1", "w2"}
+    assert reports["w1"][0] == adapter_root / "w1-pathhash.json"
+    (adapter_root / "extra-pathhash.json").write_text(
+        json.dumps({"work_id": "extra", "results": {}})
+    )
+    with pytest.raises(ValueError, match="unexpected report identity"):
+        capture._closed_reports(report_root, {"w1", "w2"})
+
+
 @pytest.mark.parametrize(
     "report, expected",
     [
@@ -131,9 +152,10 @@ def test_capture_repetitions_is_serial_closed_and_lock_retaining(tmp_path):
         timing_path = pathlib.Path(argv[argv.index("-o") + 1])
         report_dir = pathlib.Path(argv[argv.index("--output-dir") + 1])
         timing_path.write_bytes(next(elapsed))
+        report_dir = report_dir / "ab-aozora"
         report_dir.mkdir(parents=True, exist_ok=True)
         for work_id in ("w1", "w2"):
-            (report_dir / f"{work_id}.json").write_text(
+            (report_dir / f"{work_id}-pathhash.json").write_text(
                 json.dumps(
                     {
                         "adapter": "ab-aozora-aat",

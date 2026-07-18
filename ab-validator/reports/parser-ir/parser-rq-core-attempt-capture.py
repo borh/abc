@@ -224,14 +224,31 @@ def _lock_retained(lock: LockCapability) -> bool:
     )
 
 
-def _load_report(path: pathlib.Path, work_id: str) -> dict[str, object]:
-    try:
-        value = json.loads(path.read_bytes())
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ValueError(f"missing or invalid report for {work_id}") from error
-    if not isinstance(value, dict) or value.get("work_id") != work_id:
-        raise ValueError(f"report identity mismatch for {work_id}")
-    return value
+def _closed_reports(
+    root: pathlib.Path, expected_work_ids: set[str]
+) -> dict[str, tuple[pathlib.Path, dict[str, object]]]:
+    reports: dict[str, tuple[pathlib.Path, dict[str, object]]] = {}
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            raise ValueError("report output contains a symbolic link")
+        if path.is_dir():
+            continue
+        if not path.is_file() or path.suffix != ".json":
+            raise ValueError("report output contains an unexpected member")
+        try:
+            report = json.loads(path.read_bytes())
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ValueError("report output contains invalid JSON") from error
+        work_id = report.get("work_id") if isinstance(report, dict) else None
+        if not isinstance(work_id, str) or work_id not in expected_work_ids:
+            raise ValueError("report output contains an unexpected report identity")
+        if work_id in reports:
+            raise ValueError(f"report output duplicates {work_id}")
+        reports[work_id] = (path, report)
+    missing = expected_work_ids - set(reports)
+    if missing:
+        raise ValueError("report output is missing: " + ", ".join(sorted(missing)))
+    return reports
 
 
 def capture_repetitions(config: CaptureConfig, lock: LockCapability) -> dict[str, object]:
@@ -293,9 +310,9 @@ def capture_repetitions(config: CaptureConfig, lock: LockCapability) -> dict[str
         )
         if exit_status != 0:
             raise ValueError(f"core attempt repetition {repetition} exited {exit_status}")
+        reports_by_work = _closed_reports(report_dir, set(config.expected_works))
         for work_id, source_sha256 in config.expected_works.items():
-            report_path = report_dir / f"{work_id}.json"
-            report = _load_report(report_path, work_id)
+            report_path, report = reports_by_work[work_id]
             disposition = classify_work(report)
             report_blob = _blob(report_path, config.staging_root, "application/json")
             record: dict[str, object] = {

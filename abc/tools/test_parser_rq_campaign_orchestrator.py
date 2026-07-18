@@ -5,6 +5,7 @@ import hashlib
 import json
 import sys
 import os
+import subprocess
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -327,6 +328,58 @@ def test_real_candidate_and_repository_producer_clis_are_wired(tmp_path: Path) -
     )
 
     orchestrator._verify_wiring(campaign, orchestrator.SubprocessRunner(), tmp_path)
+
+    work_ids = ("000001_1", "000002_2", "000003_3")
+    index = write_json(
+        tmp_path / "index.json",
+        {
+            "works": [
+                {
+                    "features": [],
+                    "id": work_id,
+                    "txt_path": txt_path,
+                }
+                for work_id, txt_path in zip(
+                    work_ids,
+                    (
+                        "cards/000001/files/1_ruby/test.txt",
+                        "cards/000002/files/2_gaiji/test.txt",
+                        "cards/000003/files/3_both/test.txt",
+                    ),
+                    strict=True,
+                )
+            ]
+        },
+    )
+    selected = write_json(tmp_path / "work-ids.json", list(work_ids))
+    reports = tmp_path / "reports"
+    subprocess.run(
+        [
+            str(candidate_root / "bin/ab-check"),
+            "--index",
+            str(index),
+            "--corpus",
+            str(repository_root / "ab-validator/crates/ab-index/tests/fixtures/corpus"),
+            "--adapter",
+            str(candidate_root / "bin/ab-aozora"),
+            "--output",
+            str(reports),
+            "--work-ids",
+            str(selected),
+            "--jobs",
+            "1",
+            "--per-work-timeout",
+            "60s",
+        ],
+        check=True,
+    )
+    core_path = repository_root / "ab-validator/reports/parser-ir/parser-rq-core-attempt-capture.py"
+    core_spec = importlib.util.spec_from_file_location("parser_rq_core_attempt_capture", core_path)
+    assert core_spec and core_spec.loader
+    core_capture = importlib.util.module_from_spec(core_spec)
+    sys.modules[core_spec.name] = core_capture
+    core_spec.loader.exec_module(core_capture)
+    assert set(core_capture._closed_reports(reports, set(work_ids))) == set(work_ids)
 
 
 def test_wiring_commands_exercise_the_production_rust_subcommands(tmp_path: Path) -> None:

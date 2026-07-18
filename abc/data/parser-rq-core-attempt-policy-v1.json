@@ -2,7 +2,7 @@
   "schema_id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-policy.schema.json",
   "schema_version": "1.0.0",
   "instrument_id": "parser-rq-core-attempt-v1",
-  "policy_hash": "sha256:22e3f7149d39fa46ebe15c7b572db774686ca8701ccb6e24e8d5a4227fc4433f",
+  "policy_hash": "sha256:ee9efa7b00dc22042d7b48aeba86f80170128d3c476761d324816164937d5f92",
   "expected_work_ids": ["000001_1", "000002_2", "000003_3"],
   "expected_sources": [
     {
@@ -67,6 +67,6 @@
     "index": "sha256:49fb3d66f2a6d26fbc412e13a18d29e8e9c0abf4c0eb7d841c07324395c62a2b",
     "aggregate": "sha256:256026e62eccd4d01ad9811c7e2d8a592e244cc74f68100d6b4c9ddc8c9fb57a"
   },
-  "capture_semantics_hash": "sha256:63b517ad97a00a4747d184002de93ed7dc2239b8b5972c6df31b70158901a2a0",
+  "capture_semantics_hash": "sha256:8cd8c208df4b79c46425f93e8b5d0f7ae417c9fec47e050365ab1fcbea989536",
   "analyzer_semantics_hash": "sha256:3e4fb4e779d8d0c7decedabbfbc4cb917798e51cc122cace7a4f7173aefc1282"
 }

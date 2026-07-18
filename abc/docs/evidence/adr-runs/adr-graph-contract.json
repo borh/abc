@@ -65,7 +65,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.adr-graph-evidence-test\/adr-graph-contract\"",
-    "revision": "04caddb56dc4863da42ab54ff1305ae72e1fbe7a",
+    "revision": "c5fa512cbd555930237d2df70813bd790dfc1c70",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

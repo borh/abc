@@ -49,7 +49,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.foundation-evidence-test\/generated-import-manifest-schema-conformance-test\"",
-    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
+    "revision": "c5fa512cbd555930237d2df70813bd790dfc1c70",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

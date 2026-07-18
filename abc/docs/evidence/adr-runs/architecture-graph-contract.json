@@ -68,7 +68,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.diagram.architecture-graph-evidence-test\/architecture-graph-contract\"",
-    "revision": "c2aa640e326f7672293053ae8cd9b6a9c742f01a",
+    "revision": "c5fa512cbd555930237d2df70813bd790dfc1c70",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

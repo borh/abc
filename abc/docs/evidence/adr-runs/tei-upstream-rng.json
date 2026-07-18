@@ -40,7 +40,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-upstream-rng\\\"\"",
-    "revision": "d3ed4275df3f42022d3bf13e8998f660795bf5ee",
+    "revision": "c5fa512cbd555930237d2df70813bd790dfc1c70",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

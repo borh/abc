@@ -256,6 +256,12 @@ def resolve_realize_request(
             direct_output = _store_path(
                 direct_output_path, description="requested direct output path"
             )
+            if runner.run(["nix", "path-info", direct_output]).returncode != 0:
+                realized = runner.run(["nix", "build", "--no-link", f"{input_drv}^{output_name}"])
+                if realized.returncode != 0:
+                    raise ProvenanceUnavailable("direct build input cannot be realized")
+                if runner.run(["nix", "path-info", direct_output]).returncode != 0:
+                    raise ProvenanceUnavailable("realized direct build input is absent")
             closure_bytes = _run_stdout(
                 runner,
                 [

@@ -1,15 +1,20 @@
 # ADR 0042: Separate Parser-RQ Evidence Integrity from Storage Retention
 
-Status: Proposed
+Status: Accepted
 Date: 2026-07-18
+Accepted: 2026-07-18
 Depends on: ADR 0039 [scope: release qualification evidence integrity], ADR 0041 [scope: fixed parser release instruments]
 Validation scope: structural
 Release authority: development
 
 ## Implementation Status
 
-The target contract is approved but not yet implemented. ADR 0039 and ADR 0040
-remain Proposed, and no authoritative parser-RQ capture exists.
+Portable contracts, one-store evidence verification, promotion integration,
+the active-surface guard, and bounded governance evidence are implemented. ADR
+0039 and ADR 0040 remain Proposed, and no authoritative parser-RQ capture
+exists. The production campaign remains operationally blocked by the closed
+evidence-retention record until its owner supplies a real backup procedure and
+UTC restore-test result.
 
 ## Context
 
@@ -48,8 +53,17 @@ historical facts.
 
 - **ADR-0042-C1 — structural-invariant:** Active parser-RQ contracts contain no
   machine identity, filesystem topology, site policy, or replication protocol.
+  Evidence: `test/abc/tools/parser_rq_portability_test.clj`.
 - **ADR-0042-C2 — fixture-behavior:** One-store evidence verification rejects
   missing, escaping, truncated, extra, or hash-mismatched closed members.
+  Evidence: `test/abc/tools/parser_rq_campaign_test.clj`.
 - **ADR-0042-C3 — structural-invariant:** Authorization binds portable readiness,
   and promotion requires the self-authenticating closed evidence-integrity
   receipt while predicate, provenance, and admission contracts remain unchanged.
+  Evidence: `test/abc/tools/parser_rq_campaign_test.clj`.
+
+## Evidence
+
+The registered bounded evidence run at
+`docs/evidence/adr-runs/parser-rq-portable-integrity.json` executes the active
+surface, promotion, and one-store verifier checks together.

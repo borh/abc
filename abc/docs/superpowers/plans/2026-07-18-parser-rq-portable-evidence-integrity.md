@@ -1087,17 +1087,13 @@ jq -e '.observations["parser-rq-portable-integrity-pass"].value == true' \
 
 Expected: capture exits 0 and jq prints `true`.
 
-- [ ] **Step 4: Install, register, and accept ADR 0042**
+- [ ] **Step 4: Install the focused run and accept ADR 0042**
 
-Install the generated file, then run the registrar:
+Install the generated file:
 
 ```bash
 cp "$stage/capture/parser-rq-portable-integrity.json" \
   docs/evidence/adr-runs/parser-rq-portable-integrity.json
-nix develop . --command clojure -M:abc/adr-evidence-register \
-  --entries docs/evidence/adr-entries/parser-rq-portable-integrity.edn \
-  --registry docs/adr/adr-evidence.edn \
-  --workspace-root ..
 ```
 
 Change ADR 0042 to:
@@ -1110,13 +1106,17 @@ Accepted: 2026-07-18
 
 Update Implementation Status to state that portable contracts, one-store verification, promotion integration, the active-surface guard, and bounded evidence are implemented. State separately that the authoritative campaign is still blocked by the unfilled evidence-retention record.
 
+Do not run the registrar yet: Proposed ADR criteria are intentionally absent
+from the registrable accepted-ADR inventory, and the changed governed tree has
+made existing bundles stale. Commit the accepted ADR and focused run so the
+complete recapture in Step 5 reads one clean revision.
+
 - [ ] **Step 5: Recapture governance evidence after the accepted ADR changes the governed tree**
 
 Commit the ADR 0042 run, registry, and status first, then use the repository's complete descriptor set from a clean tree:
 
 ```bash
 git add docs/adr/0042-portable-parser-rq-evidence-integrity.md \
-  docs/adr/adr-evidence.edn \
   docs/evidence/adr-runs/parser-rq-portable-integrity.json
 git commit -m "docs(adr): accept portable parser rq evidence integrity"
 ```

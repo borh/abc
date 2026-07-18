@@ -10,8 +10,8 @@
   {
     "ab-validator\/flake.lock": "sha256:6f44ae08913f1447e31f21b9b6f4c6bea815aeadc1513389562c85c75bc96546",
     "ab-validator\/flake.nix": "sha256:8a310f0522362aebb0fa57b35116ddaf798f5e0bdf2d14ab9ba1ee6fbb548e4e",
-    "ab-validator\/reports\/parser-ir\/parser-rq-campaign-provenance.py": "sha256:163b0a2828083c03963ef55c40ac708d593bdc64ee233fb0622925b698e932f9",
-    "ab-validator\/reports\/parser-ir\/test_parser_rq_campaign_provenance.py": "sha256:fb2f35302109983ceedbef120c7a3d0e927eed3bc307f77d7b1d9043ce84c905",
+    "ab-validator\/reports\/parser-ir\/parser-rq-campaign-provenance.py": "sha256:12c9b7eef18e7db33991f9cf3b00f461e6a337180bf9ce0dcf42411b86cf1807",
+    "ab-validator\/reports\/parser-ir\/test_parser_rq_campaign_provenance.py": "sha256:a25d128ed971375dcaa1ac6f07db6ce0049853223a947a2429f590de1c5dc327",
     "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
     "abc\/docs\/evidence\/parser-rq-portable-integrity\/capture\/parser-rq-portable-integrity.edn": "sha256:118accb4904cb364b13ab654a90ca8f0243bfa2d23ba75e0bf3b4d059bc13cf4",
     "abc\/src\/abc\/tools\/aat_parser_ir_compat.clj": "sha256:fd36d4fe768fae072aa1548f7b713384351639d5dc94ce7998f592fd1d6973eb",
@@ -46,7 +46,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"bin\/kaocha --focus abc.tools.parser-rq-portability-test --focus abc.tools.parser-rq-campaign-test --focus abc.tools.parser-rq-admission-promotion-drift-test && nix build ..\/ab-validator#checks.x86_64-linux.parser-rq-campaign-provenance-python-tests\"",
-    "revision": "22c07256920f5853896d899e58523cffe9eb607d",
+    "revision": "d59ee5bed04094dec2e25faee945940bca58ce9d",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -2,6 +2,7 @@
   (:require [abc.tools.parser-rq-diagnostic-completeness :as diagnostic]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
+            [abc.tools.parser-rq-core-attempt :as core]
             [abc.tools.parser-rq-member :as member]
             [abc.tools.parser-rq-parser-ir-conformance :as parser-ir]
             [abc.tools.parser-rq-publication :as publication]
@@ -16,7 +17,26 @@
   {:value value :identity_ref identity-ref})
 
 (deftest member-projections-delegate-to-existing-pure-analyzers
-  (with-redefs [source/derive-source-recognition-envelope
+  (with-redefs [core/authenticate-index
+                (fn [policy candidate index blob-reader]
+                  (is (= [:core-policy :core-candidate :core-index]
+                         [policy candidate index]))
+                  (let [result (blob-reader {:locator "core.json"})]
+                    (is (= :ok (:status result)))
+                    (is (= [99 111 114 101] (vec (:bytes result)))))
+                  :authenticated-core)
+                core/derive-aggregate
+                (fn [authenticated]
+                  (is (= :authenticated-core authenticated))
+                  :core-aggregate)
+                core/observation-envelopes
+                (fn [candidate aggregate]
+                  (is (= [:core-candidate :core-aggregate]
+                         [candidate aggregate]))
+                  {:fatal_failures (envelope 0.0)
+                   :wall_time_seconds (envelope 12.5)
+                   :timeouts (envelope 0.0)})
+                source/derive-source-recognition-envelope
                 (fn [store manifest aggregate identity]
                   (is (= [:store :manifest :aggregate :identity]
                          [store manifest aggregate identity]))
@@ -50,6 +70,18 @@
                          [policy identity index records]))
                   {:value 1024 :identity_ref identity-ref})
                 resource/observation-envelope identity]
+    (is (= {:fatal_failures (envelope 0.0)
+            :wall_time_seconds (envelope 12.5)
+            :timeouts (envelope 0.0)}
+           (member/project-core
+            {:qualification_identity_ref identity-ref
+             :store {:root :core-store}
+             :policy :core-policy :candidate :core-candidate
+             :index :core-index
+             :blob_reader (fn [store blob]
+                            (is (= {:root :core-store} store))
+                            (is (= {:locator "core.json"} blob))
+                            {:status :ok :bytes (.getBytes "core" "UTF-8")})})))
     (is (= {:source_span_coverage (envelope 1.0)}
            (member/project-source-recognition
             {:qualification_identity_ref identity-ref
@@ -103,7 +135,7 @@
                     :predicate-pair {:qualification_identity_ref identity-ref}))))))
 
 (deftest command-membership-is-closed
-  (is (= #{:source-recognition :diagnostic-gap :predicate-pair
+  (is (= #{:core :source-recognition :diagnostic-gap :predicate-pair
            :publication :resource}
          (set (keys member/projectors))))
   (is (thrown? clojure.lang.ExceptionInfo

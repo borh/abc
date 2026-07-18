@@ -202,6 +202,13 @@
   [{:keys [root]} blob-ref locator]
   (dissoc (authenticated-read {:root root} blob-ref locator) :bytes))
 
+(defn read-blob
+  "Read one locator-bearing logical blob through the shared authenticated store
+  boundary. The returned bytes are present only when identity verification
+  succeeds."
+  [store blob-ref]
+  (authenticated-read store blob-ref (:locator blob-ref)))
+
 (defn verify-manifest
   "Verify every logical blob in a closed capture manifest against the runtime
   store. One invalid, absent, or mismatched blob makes the whole capture

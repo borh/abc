@@ -281,6 +281,13 @@ identity-bearing envelopes. It owns no capture execution, lane membership,
 authorization, lifecycle, or promotion decision. It may write only the member
 key assigned by the production graph.
 
+The adapter has six closed operations. Its `core` operation authenticates the
+core index and referenced blobs through the shared capture reader, reduces the
+three repetitions through `parser-rq-core-attempt`, and projects the three
+envelopes installed together as `core_attempt`. The other five operations own
+the remaining six installed members. This closes the raw-core-to-member path
+without moving core formulas or blob authentication into the Python controller.
+
 This adapter is not a third installation authority. It writes projected values
 under lane staging; the orchestrator alone installs them at the seven canonical
 member locations, and the existing composer remains the authoritative check of

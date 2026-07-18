@@ -3,6 +3,7 @@
   (:require [abc.tools.files :as files]
             [abc.tools.jcs :as jcs]
             [abc.tools.parser-rq-capture :as capture]
+            [abc.tools.parser-rq-core-attempt :as core]
             [abc.tools.parser-rq-diagnostic-completeness :as diagnostic]
             [abc.tools.parser-rq-parser-ir-conformance :as parser-ir]
             [abc.tools.parser-rq-publication :as publication]
@@ -12,6 +13,13 @@
             [clojure.walk :as walk])
   (:import [java.nio.file CopyOption Files StandardCopyOption]
            [java.nio.file.attribute FileAttribute]))
+
+(defn project-core
+  [{:keys [store policy candidate index blob_reader]}]
+  (->> (core/authenticate-index policy candidate index
+                                (partial (or blob_reader capture/read-blob) store))
+       core/derive-aggregate
+       (core/observation-envelopes candidate)))
 
 (defn project-source-recognition
   [{:keys [store manifest aggregate identity]}]
@@ -44,14 +52,16 @@
        resource/observation-envelope)})
 
 (def projectors
-  {:source-recognition #'project-source-recognition
+  {:core #'project-core
+   :source-recognition #'project-source-recognition
    :diagnostic-gap #'project-diagnostic-gap
    :predicate-pair #'project-predicate-pair
    :publication #'project-publication
    :resource #'project-resource})
 
 (def ^:private output-keys
-  {:source-recognition #{:source_span_coverage}
+  {:core #{:fatal_failures :wall_time_seconds :timeouts}
+   :source-recognition #{:source_span_coverage}
    :diagnostic-gap #{:silent_drops}
    :predicate-pair #{:diagnostic_completeness :parser_ir_schema_validation}
    :publication #{:publication_structure}

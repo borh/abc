@@ -422,6 +422,9 @@ git commit -m "refactor(parser-rq): inherit the campaign lock"
 **Interfaces:**
 
 ```clojure
+(project-core inputs)               ; => {:fatal_failures envelope
+                                      ;     :wall_time_seconds envelope
+                                      ;     :timeouts envelope}
 (project-source-recognition inputs) ; => {:source_span_coverage envelope}
 (project-diagnostic-gap inputs)     ; => {:silent_drops envelope}
 (project-predicate-pair inputs)     ; => {:diagnostic_completeness envelope
@@ -430,7 +433,7 @@ git commit -m "refactor(parser-rq): inherit the campaign lock"
 (project-resource inputs)           ; => {:peak_cgroup_memory_bytes envelope}
 ```
 
-CLI alias: `:abc/parser-rq-member`. Closed subcommands: `source-recognition`,
+CLI alias: `:abc/parser-rq-member`. Closed subcommands: `core`, `source-recognition`,
 `diagnostic-gap`, `predicate-pair`, `publication`, and `resource`. Each reads
 explicit authenticated artifacts and writes one closed member value atomically.
 It owns no execution, lane membership, authorization, lifecycle, installation,
@@ -451,7 +454,7 @@ nix develop ./abc --command abc/bin/kaocha --focus abc.tools.parser-rq-member-te
 
 - [ ] **Step 3: Implement only explicit I/O adaptation**
 
-Reuse `abc.tools.parser-rq-source-accountability`,
+Reuse `abc.tools.parser-rq-core-attempt`, `abc.tools.parser-rq-source-accountability`,
 `parser-rq-diagnostic-completeness`, `parser-rq-parser-ir-conformance`,
 `parser-rq-publication`, and `parser-rq-resource`. Do not duplicate their
 validation or formulas. Write beneath a caller-supplied staging path; the

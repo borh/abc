@@ -762,6 +762,10 @@
   (files/create-parent-dirs! path)
   (files/write-bytes! path (canonical-bytes value)))
 
+(defn- read-provenance [path]
+  (-> (files/read-json path)
+      walk/keywordize-keys))
+
 (declare write-edn!)
 
 (defn evaluate-generation!
@@ -1021,7 +1025,8 @@
       (let [options (parse-options command-args)
             value (build-candidate (required-option options :repo)
                                    (required-option options :parser_git_rev)
-                                   (files/read-edn (required-option options :provenance)))]
+                                   (read-provenance
+                                    (required-option options :provenance)))]
         (write-edn! (required-option options :out) value)
         (println (:candidate_ref value)))
       "authorize"
@@ -1071,7 +1076,7 @@
       (let [options (parse-options command-args)
             errors (verify-provenance-errors
                     (files/read-edn (required-option options :candidate))
-                    (files/read-edn (required-option options :provenance)))]
+                    (read-provenance (required-option options :provenance)))]
         (when (seq errors) (throw (ex-info "provenance invalid" {:errors errors})))
         (println "ok"))
       "runtime-inputs"

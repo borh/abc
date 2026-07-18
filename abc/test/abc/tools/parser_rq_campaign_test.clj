@@ -93,6 +93,23 @@
            (with-out-str
              (campaign/-main "qualification-identity-ref" "--candidate" (str path)))))))
 
+(deftest candidate-cli-decodes-json-provenance-before-derivation
+  (let [root (fs/create-temp-dir {:prefix "parser-rq-candidate-json"})
+        provenance-path (fs/file root "provenance.json")
+        output-path (fs/file root "candidate.edn")
+        received (atom nil)]
+    (spit (str provenance-path) "{\"status\":\"reproducible\"}")
+    (with-redefs [campaign/build-candidate
+                  (fn [repo revision value]
+                    (reset! received [repo revision value])
+                    candidate)]
+      (campaign/-main "candidate" "--repo" (str root)
+                      "--parser-git-rev" (apply str (repeat 40 "a"))
+                      "--provenance" (str provenance-path)
+                      "--out" (str output-path)))
+    (is (= {:status "reproducible"} (nth @received 2)))
+    (is (= candidate (edn/read-string (slurp (str output-path)))))))
+
 (deftest runtime-inputs-are-a-closed-projection-of-authoritative-edn
   (let [corpus {:entries [{:work_id "work" :source_path "source.txt"
                            :source_sha256 sha}]}]

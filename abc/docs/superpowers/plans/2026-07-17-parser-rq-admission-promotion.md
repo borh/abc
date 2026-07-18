@@ -505,8 +505,8 @@ git push origin main
 - [ ] **Step 1: Run all focused tests from clean inputs**
 
 ```bash
-nix build ./abc#checks.x86_64-linux.parser-rq-core-attempt-python-tests
-nix build ./abc#checks.x86_64-linux.parser-rq-campaign-provenance-python-tests
+nix build ./ab-validator#checks.x86_64-linux.parser-rq-core-attempt-python-tests
+nix build ./ab-validator#checks.x86_64-linux.parser-rq-campaign-provenance-python-tests
 nix build ./abc#checks.x86_64-linux.parser-rq-admission-promotion-smoke
 nix build ./abc#checks.x86_64-linux.clj-kondo
 nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
@@ -524,7 +524,11 @@ just validate-migration
 Confirm no active code contains `/db/`, untracked `references/`, a caller-supplied admission result, a hand-keyed observation, or an authoritative retry path. Confirm every capture producer is named in `instrument_versions` and the live predicate hash is generated from the committed value.
 
 ```bash
-rg -n '/db/|references/' abc/src ab-validator/crates ab-validator/reports/parser-ir
+rg -n '/db/|references/' \
+  abc/src/abc/tools/parser_rq*.clj \
+  abc/src/abc/tools/parser_release_qualification.clj \
+  ab-validator/crates/ab-parser-rq-* \
+  ab-validator/reports/parser-ir/parser-rq-*.py
 rg -n 'admitted_tuple_matches|admission[_-]boolean|retry' \
   abc/src/abc/tools/parser_rq_campaign.clj \
   abc/src/abc/tools/parser_release_qualification.clj \

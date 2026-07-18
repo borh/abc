@@ -140,8 +140,9 @@ inside the configured evidence and scratch roots. It verifies only:
 - independent-build capability passed;
 - the production graph and committed candidate inputs authenticate.
 
-Preflight neither resolves a stable hostname nor inspects mount topology.
-Its diagnostic report is disposable and is not an authorization input.
+Preflight neither resolves a stable hostname nor inspects mount topology. It is
+a check-only command: diagnostics go to stdout/stderr, and it writes no report
+or authorization input.
 
 Sealing readiness rechecks the volatile prerequisites and emits one immutable
 receipt without copying the runtime facts into it. Authorization binds that
@@ -194,9 +195,9 @@ Bounded fixtures migrate atomically.
 - Delete the site-policy schema and committed value. Reduce the existing
   site-descriptor schema in place to the four runtime paths. There is no
   committed descriptor instance.
-- Keep preflight output disposable. Remove `site_preflight_report_ref` and
-  `site_facts` from the readiness schema so runtime places are not bound through
-  an indirect hash.
+- Delete the site-preflight report schema. Remove `site_preflight_report_ref`
+  and `site_facts` from the readiness schema so runtime places are not bound
+  through an indirect hash.
 - Remove `host_policy_ref` from authorization. The existing
   `readiness_receipt_ref` is the sole readiness binding.
 - Replace `parser-rq-replication-receipt` with

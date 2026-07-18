@@ -51,14 +51,14 @@
 (def authorization-keys
   #{:schema_id :schema_version :authorization_ref :authorization_ordinal
     :candidate_ref :qualification_identity_ref :readiness_receipt_ref
-    :not_before_utc :not_after_utc :repetitions :reduction :host_policy_ref})
+    :not_before_utc :not_after_utc :repetitions :reduction})
 
 (def readiness-receipt-keys
-  #{:schema_id :schema_version :readiness_receipt_ref :site_preflight_report_ref
+  #{:schema_id :schema_version :readiness_receipt_ref
     :candidate_ref :qualification_identity_ref :provenance_core_ref
     :production_graph_hash :production_graph_version :candidate_git_rev
     :candidate_tree_clean :evidence_base_git_rev :evidence_tree_clean
-    :corpus_snapshot_hash :corpus_list_hash :site_facts})
+    :corpus_snapshot_hash :corpus_list_hash})
 
 (defn- canonical-value [value]
   (walk/postwalk (fn [x]
@@ -227,7 +227,7 @@
 
       (or (not= "https://w3id.org/abc/schemas/parser-rq-readiness-receipt.schema.json"
                 (:schema_id receipt))
-          (not= "1.0.0" (:schema_version receipt)))
+          (not= "2.0.0" (:schema_version receipt)))
       (conj "readiness receipt schema identity is invalid")
 
       (not= (:readiness_receipt_ref receipt) (readiness-receipt-ref receipt))
@@ -272,10 +272,7 @@
       (conj "readiness receipt corpus list does not match")
 
       (not (and (:candidate_tree_clean receipt) (:evidence_tree_clean receipt)))
-      (conj "readiness receipt does not bind clean candidate and evidence trees")
-
-      (not (sha256? (:site_preflight_report_ref receipt)))
-      (conj "readiness receipt site-preflight report reference is invalid"))))
+      (conj "readiness receipt does not bind clean candidate and evidence trees"))))
 
 (defn- authorization-record-errors
   [candidate authorization]
@@ -298,7 +295,7 @@
 
       (or (not= "https://w3id.org/abc/schemas/parser-rq-capture-authorization.schema.json"
                 (:schema_id authorization))
-          (not= "2.0.0" (:schema_version authorization)))
+          (not= "3.0.0" (:schema_version authorization)))
       (conj "authorization schema identity is invalid")
 
       (not= (:authorization_ref authorization) (authorization-ref authorization))
@@ -376,10 +373,10 @@
                                 :not_before_utc :not_after_utc :repetitions
                                 :reduction])})
 
-(defn build-authorization [candidate receipt ordinal not-before not-after host-policy-ref]
+(defn build-authorization [candidate receipt ordinal not-before not-after]
   (let [authorization {:schema_id
                        "https://w3id.org/abc/schemas/parser-rq-capture-authorization.schema.json"
-                       :schema_version "2.0.0"
+                       :schema_version "3.0.0"
                        :authorization_ordinal ordinal
                        :candidate_ref (:candidate_ref candidate)
                        :qualification_identity_ref (:qualification_identity_ref candidate)
@@ -387,8 +384,7 @@
                        :not_before_utc not-before
                        :not_after_utc not-after
                        :repetitions 3
-                       :reduction "maximum"
-                       :host_policy_ref host-policy-ref}]
+                       :reduction "maximum"}]
     (assoc authorization :authorization_ref (authorization-ref authorization))))
 
 (defn compose-measurements
@@ -650,37 +646,57 @@
                (:qualification_identity_ref provenance)))
     (conj "executable provenance qualification identity does not match")))
 
-(defn replication-errors
-  "Recompute receipt membership and both re-hash equalities.
-
-  The receipt's `:status` is disclosure; promotion depends on these member
-  comparisons, including equality with the closed manifest blob set."
-  [{:keys [status blobs]} manifest-blobs]
+(defn evidence-integrity-errors
+  "Authenticate one closed set of manifest-referenced evidence bytes."
+  [{:keys [status blobs] :as receipt} manifest-blobs]
   (let [receipt-blobs (mapv :blob blobs)
         identity #(select-keys % [:sha256 :bytes :media_type :locator])]
     (cond-> []
-      (not (named= :replicated status))
-      (conj "replication status is not replicated")
+      (not= #{:schema_id :schema_version :receipt_ref :candidate_ref
+              :capture_generation_ref :status :blobs}
+            (set (keys receipt)))
+      (conj "evidence integrity receipt violates its closed key contract")
+
+      (not (named= :verified status))
+      (conj "evidence integrity status is not verified")
 
       (or (empty? receipt-blobs)
           (not= (set (map identity manifest-blobs))
                 (set (map identity receipt-blobs)))
           (not= (count manifest-blobs) (count receipt-blobs)))
-      (conj "replication receipt membership differs from capture manifests")
+      (conj "evidence integrity membership differs from capture manifests")
 
-      (some (fn [{:keys [blob primary_rehash replica_rehash]}]
-              (or (not= (:sha256 blob) primary_rehash)
-                  (not= (:sha256 blob) replica_rehash)
+      (some (fn [{:keys [blob rehash observed_bytes] :as row}]
+              (or (not= #{:blob :rehash :observed_bytes} (set (keys row)))
+                  (not= (:sha256 blob) rehash)
+                  (not= (:bytes blob) observed_bytes)
                   (not (sha256? (:sha256 blob)))
                   (not (nat-int? (:bytes blob)))
                   (not (and (string? (:media_type blob))
                             (not (string/blank? (:media_type blob)))))))
             blobs)
-      (conj "replication receipt does not authenticate both stored copies"))))
+      (conj "evidence integrity receipt does not authenticate stored bytes"))))
+
+(defn evidence-integrity-receipt-errors
+  [receipt candidate-reference capture-reference manifest-blobs]
+  (cond-> (vec (evidence-integrity-errors receipt manifest-blobs))
+    (or (not= "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json"
+              (:schema_id receipt))
+        (not= "1.0.0" (:schema_version receipt)))
+    (conj "evidence integrity receipt schema identity is invalid")
+
+    (not= (:receipt_ref receipt) (receipt-ref receipt))
+    (conj "evidence integrity receipt self-reference is invalid")
+
+    (not= candidate-reference (:candidate_ref receipt))
+    (conj "evidence integrity receipt is not bound to the candidate")
+
+    (not= capture-reference (:capture_generation_ref receipt))
+    (conj "evidence integrity receipt is not bound to the capture")))
 
 (defn- promotion-value-errors
   [{:keys [candidate authorization capture evaluation current_registry_ref
-           qualification_report provenance replication adr_0040_status
+           qualification_report provenance evidence_integrity adr_0040_status
            adr_0041_status capture_count canonical_equal manifest_blobs]}]
   (let [verdicts (:predicate_verdicts qualification_report)
         ids (mapv :predicate_id verdicts)]
@@ -716,8 +732,12 @@
       (seq (provenance-errors provenance))
       (into (provenance-errors provenance))
 
-      (seq (replication-errors replication manifest_blobs))
-      (into (replication-errors replication manifest_blobs))
+      (seq (evidence-integrity-receipt-errors
+            evidence_integrity (:candidate_ref candidate)
+            (:capture_generation_ref capture) manifest_blobs))
+      (into (evidence-integrity-receipt-errors
+             evidence_integrity (:candidate_ref candidate)
+             (:capture_generation_ref capture) manifest_blobs))
 
       (not= "Accepted" adr_0040_status)
       (conj "ADR 0040 is not Accepted")
@@ -891,7 +911,8 @@
           evaluation-members (:members evaluation-generation)
           qualification-report (:qualification_report evaluation-members)
           provenance (read-provenance provenance_path)
-          replication (files/read-edn (fs/file capture-root "replication-receipt.edn"))
+          evidence-integrity
+          (read-json-value (fs/file capture-root "evidence-integrity-receipt.json"))
           manifest-blobs (vec (vals (:members capture-index)))
           binding-errors
           (cond-> []
@@ -903,18 +924,8 @@
 
             (not= (:executable_provenance_ref candidate)
                   (executable-provenance-ref provenance))
-            (conj "executable provenance does not authenticate the candidate")
+            (conj "executable provenance does not authenticate the candidate"))
 
-            (not= candidate_ref (:candidate_ref replication))
-            (conj "replication receipt is not bound to the candidate")
-
-            (not= (:capture_generation_ref capture-index)
-                  (:capture_generation_ref replication))
-            (conj "replication receipt is not bound to the capture")
-
-            (not= (:receipt_ref replication)
-                  (content-ref replication :receipt_ref))
-            (conj "replication receipt self-reference is invalid"))
           derived {:candidate candidate
                    :authorization authorization
                    :capture capture-index
@@ -922,7 +933,7 @@
                    :current_registry_ref registry-ref
                    :qualification_report qualification-report
                    :provenance provenance
-                   :replication replication
+                   :evidence_integrity evidence-integrity
                    :manifest_blobs manifest-blobs
                    :adr_0040_status (adr-status adr_0040_path)
                    :adr_0041_status (adr-status adr_0041_path)
@@ -1034,14 +1045,10 @@
             candidate (files/read-edn (required-option options :candidate))
             receipt (-> (files/read-json (required-option options :receipt))
                         walk/keywordize-keys)
-            policy (files/read-json
-                    (or (:host_policy options)
-                        (files/path "data" "parser-rq-resource-policy-v1.json")))
             value (build-authorization candidate receipt
                                        (parse-long (required-option options :ordinal))
                                        (required-option options :not_before)
-                                       (required-option options :not_after)
-                                       (get policy "policy_hash"))]
+                                       (required-option options :not_after))]
         (write-edn! (required-option options :out) value)
         (println (:authorization_ref value)))
       "verify-authorization-record"

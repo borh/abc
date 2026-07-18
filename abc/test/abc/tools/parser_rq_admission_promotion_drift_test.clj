@@ -8,7 +8,7 @@
    :core_attempt_maxima {:fatal_failures 2.0 :wall_time_seconds 12.5 :timeouts 1.0}
    :evaluation_registry_transition [:unadmitted :admitted]
    :predicate_count 9
-   :replica_count 2
+   :evidence_integrity_receipt_count 1
    :selection "sole-authorized-capture-and-unique-current-registry-evaluation"})
 
 (deftest bounded-transaction-summary-is-byte-stable
@@ -23,6 +23,7 @@
 (deftest mutations-break-the-bounded-transaction
   (doseq [mutated [(assoc fixture :capture_count 2)
                    (assoc fixture :predicate_count 8)
-                   (assoc fixture :replica_count 1)
+                   (assoc fixture :evidence_integrity_receipt_count 0)
+                   (assoc fixture :evidence_integrity_receipt_count 2)
                    (assoc fixture :evaluation_registry_transition [:admitted])]]
     (is (not= fixture mutated))))

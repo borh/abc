@@ -609,12 +609,14 @@
                 nativeBuildInputs = [
                   pkgs.bash
                   pkgs.clojure
+                  pkgs.python3
                 ];
               }
               ''
                 ${copyWritableSource}
                 patchShebangs bin/kaocha bin/parser-rq-admission-promotion-smoke.sh
                 ${cljSandboxEnv}
+                export PARSER_RQ_PROVENANCE_SCRIPT=${../ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py}
                 bash bin/parser-rq-admission-promotion-smoke.sh
                 touch "$out"
               '';

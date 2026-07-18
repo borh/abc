@@ -1,11 +1,13 @@
 (ns abc.tools.parser-rq-campaign-test
-  (:require [abc.tools.hash :as hash]
+  (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.jcs :as jcs]
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-campaign :as campaign]
             [babashka.fs :as fs]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
+            [clojure.java.shell :as shell]
             [clojure.test :refer [deftest is testing]]
             [clojure.walk :as walk]))
 
@@ -55,8 +57,7 @@
 (def receipt
   (with-ref
     {:schema_id "https://w3id.org/abc/schemas/parser-rq-readiness-receipt.schema.json"
-     :schema_version "1.0.0"
-     :site_preflight_report_ref sha
+     :schema_version "2.0.0"
      :candidate_ref (:candidate_ref candidate)
      :qualification_identity_ref (:qualification_identity_ref candidate)
      :provenance_core_ref (:provenance_core_ref provenance)
@@ -67,13 +68,12 @@
      :evidence_base_git_rev (apply str (repeat 40 "b"))
      :evidence_tree_clean true
      :corpus_snapshot_hash (:corpus_snapshot_hash qualification-identity)
-     :corpus_list_hash (:corpus_list_hash qualification-identity)
-     :site_facts {:clock_synchronized true}}
+     :corpus_list_hash (:corpus_list_hash qualification-identity)}
     :readiness_receipt_ref campaign/readiness-receipt-ref))
 
 (def authorization
   (with-ref {:schema_id "https://w3id.org/abc/schemas/parser-rq-capture-authorization.schema.json"
-             :schema_version "2.0.0"
+             :schema_version "3.0.0"
              :authorization_ordinal 1
              :candidate_ref (:candidate_ref candidate)
              :qualification_identity_ref (:qualification_identity_ref candidate)
@@ -81,8 +81,7 @@
              :not_before_utc "2026-07-17T00:00:00Z"
              :not_after_utc "2026-07-17T01:00:00Z"
              :repetitions 3
-             :reduction "maximum"
-             :host_policy_ref sha}
+             :reduction "maximum"}
     :authorization_ref campaign/authorization-ref))
 
 (deftest qualification-identity-ref-cli-authenticates-the-candidate-value
@@ -210,10 +209,77 @@
     (is (seq (campaign/verify-authorization candidate provenance graph receipt bad
                                             "2026-07-17T00:30:00Z" true)))))
 
+(deftest readiness-and-authorization-bind-no-runtime-place
+  (is (empty? (campaign/verify-authorization-record
+               candidate provenance graph receipt authorization)))
+  (doseq [removed [:site_preflight_report_ref :site_facts :host_policy_ref]]
+    (is (not (contains? receipt removed)))
+    (is (not (contains? authorization removed)))))
+
+(deftest evidence-integrity-authenticates-closed-manifest-membership
+  (let [blob {:sha256 sha :bytes 10 :media_type "application/json"
+              :locator "aa/blob"}
+        verified {:schema_id
+                  "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json"
+                  :schema_version "1.0.0"
+                  :receipt_ref sha
+                  :candidate_ref (:candidate_ref candidate)
+                  :capture_generation_ref sha-b
+                  :status :verified
+                  :blobs [{:blob blob :rehash sha :observed_bytes 10}]}]
+    (is (= [] (campaign/evidence-integrity-errors verified [blob])))
+    (is (seq (campaign/evidence-integrity-errors
+              verified [(assoc blob :bytes 11)])))
+    (is (seq (campaign/evidence-integrity-errors
+              (assoc-in verified [:blobs 0 :rehash] sha-b) [blob])))))
+
+(defn- workspace-root []
+  (loop [path (fs/absolutize ".")]
+    (if (and (fs/exists? (fs/file path "justfile"))
+             (fs/directory? (fs/file path "abc"))
+             (fs/directory? (fs/file path "ab-validator")))
+      path
+      (if-let [parent (fs/parent path)]
+        (recur parent)
+        (throw (ex-info "workspace root is not reachable" {:start (str (fs/absolutize "."))}))))))
+
+(defn- provenance-script []
+  (if-let [configured (System/getenv "PARSER_RQ_PROVENANCE_SCRIPT")]
+    (fs/path configured)
+    (fs/file (workspace-root) "ab-validator" "reports" "parser-ir"
+             "parser-rq-campaign-provenance.py")))
+
+(deftest python-evidence-receipt-authenticates-in-clojure
+  (let [root (fs/create-temp-dir {:prefix "parser-rq-evidence-integrity"})
+        payload (.getBytes "immutable evidence" java.nio.charset.StandardCharsets/UTF_8)
+        digest (hash/format-sha256 (hash/sha256-bytes payload))
+        blob {:sha256 digest :bytes (alength payload)
+              :media_type "application/json" :locator "blob"}
+        blobs-path (fs/file root "blobs.json")
+        receipt-path (fs/file root "receipt.json")
+        script (provenance-script)]
+    (spit (str (fs/file root "blob")) "immutable evidence")
+    (write-canonical-json! blobs-path [blob])
+    (let [{:keys [exit err]}
+          (shell/sh "python3" (str script) "verify-evidence"
+                    "--blobs" (str blobs-path)
+                    "--evidence-root" (str root)
+                    "--candidate-ref" (:candidate_ref candidate)
+                    "--capture-generation-ref" sha-b
+                    "--out" (str receipt-path))
+          receipt-value (walk/keywordize-keys (files/read-json receipt-path))]
+      (is (= 0 exit) err)
+      (is (= [] (campaign/evidence-integrity-receipt-errors
+                 receipt-value (:candidate_ref candidate) sha-b [blob])))
+      (is (some #(re-find #"self-reference" %)
+                (campaign/evidence-integrity-receipt-errors
+                 (assoc receipt-value :receipt_ref sha)
+                 (:candidate_ref candidate) sha-b [blob]))))))
+
 (deftest authorization-structure-is-separate-from-clock-permission
   (let [future (campaign/build-authorization
                 candidate receipt 1 "2026-07-18T01:00:00Z"
-                "2026-07-18T02:00:00Z" sha)]
+                "2026-07-18T02:00:00Z")]
     (is (empty? (campaign/verify-authorization-record
                  candidate provenance graph receipt future)))
     (is (some #(re-find #"outside" %)
@@ -229,7 +295,6 @@
   (doseq [changed [(assoc receipt :candidate_ref sha-b)
                    (assoc receipt :qualification_identity_ref sha-b)
                    (assoc receipt :provenance_core_ref sha-b)
-                   (assoc receipt :site_preflight_report_ref sha-b)
                    (assoc receipt :production_graph_version "changed")]
           :let [resealed (assoc changed :readiness_receipt_ref
                                 (campaign/readiness-receipt-ref changed))]]
@@ -320,7 +385,7 @@
                                 (campaign/provenance-core-ref provenance))
         authorization-value (campaign/build-authorization
                              value receipt-value 1 "2026-07-17T00:00:00Z"
-                             "2026-07-17T01:00:00Z" sha)]
+                             "2026-07-17T01:00:00Z")]
     (is (= (:candidate_ref value) (campaign/candidate-ref value)))
     (is (= (:executable_provenance_ref value)
            (campaign/executable-provenance-ref provenance)))
@@ -480,20 +545,19 @@
           :evaluation_generation_ref campaign/evaluation-generation-ref)
         evaluation-root (fs/file candidate-dir "evaluations"
                                  (subs (:evaluation_generation_ref evaluation-index) 7))
-        replication-base
-        {:schema_id "https://w3id.org/abc/schemas/parser-rq-replication-receipt.schema.json"
+        evidence-integrity-base
+        {:schema_id
+         "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json"
          :schema_version "1.0.0"
          :candidate_ref (:candidate_ref candidate-value)
          :capture_generation_ref (:capture_generation_ref capture-index)
-         :primary_failure_domain "primary"
-         :replica_failure_domain "replica"
-         :status :replicated
+         :status :verified
          :blobs (mapv (fn [blob]
-                        {:blob blob :primary_rehash (:sha256 blob)
-                         :replica_rehash (:sha256 blob)})
+                        {:blob blob :rehash (:sha256 blob)
+                         :observed_bytes (:bytes blob)})
                       (vals (:members capture-index)))}
-        replication (with-ref replication-base :receipt_ref
-                      #(campaign/receipt-ref %))
+        evidence-integrity (with-ref evidence-integrity-base :receipt_ref
+                             #(campaign/receipt-ref %))
         registry-path (fs/file root "registry.edn")
         measurements-path (fs/file root "measurements.json")
         report-path (fs/file root "report.json")
@@ -518,7 +582,8 @@
     (write-canonical-json! (fs/file capture-root
                                     (get-in capture-index [:members :measurements :locator]))
                            envelope-values)
-    (write-edn! (fs/file capture-root "replication-receipt.edn") replication)
+    (write-canonical-json! (fs/file capture-root "evidence-integrity-receipt.json")
+                           evidence-integrity)
     (write-edn! (fs/file evaluation-root "evaluation-index.edn") evaluation-index)
     (doseq [[member value] evaluation-members]
       (write-canonical-json! (fs/file evaluation-root

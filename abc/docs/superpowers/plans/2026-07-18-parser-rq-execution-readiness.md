@@ -496,7 +496,7 @@ The authoritative operation mapping is:
 | `capture-source` | `ab-parser-rq-source-accountability capture-corpus` | none | `source_recognition` |
 | `capture-predicate-pair` | `ab-aozora`, `ab-aat-to-parser-ir` | `parser-rq-predicate-hardening-capture.py` | `diagnostic_completeness`, `parser_ir_conformance` |
 | `derive-diagnostic-gap` | `ab-parser-rq-diagnostic-authorization capture-corpus` | none | `diagnostic_gap` |
-| `capture-publication` | `ab-aozora`, `ab-aat-to-parser-ir` | `clojure -M:abc/materialize-publication`, `publication-bundle-validate.py`, `publication-rq-capture.py` | `publication_structure` |
+| `capture-publication` | `ab-aozora`, `ab-aat-to-parser-ir` | qualification-only `clojure -M:abc/parser-rq-publication-materialize`, `publication-bundle-validate.py`, `publication-rq-capture.py` | `publication_structure` |
 | `capture-resource` | `ab-check` and the policy-named parser executable | `parser-rq-resource-capture.py`, `parser-rq-resource-wrapper.py` | `resource` |
 
 The graph holds operation IDs and installed-member contracts, never caller

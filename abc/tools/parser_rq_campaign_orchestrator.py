@@ -159,6 +159,33 @@ class SubprocessRunner:
         return subprocess.run(argv, cwd=cwd, pass_fds=pass_fds, check=False).returncode
 
 
+def _wiring_commands(campaign: AuthenticatedCampaign) -> tuple[tuple[str, ...], ...]:
+    executable_commands = (
+        (str(campaign.executables["ab-check"]), "--help"),
+        (str(campaign.executables["ab-aozora"]), "--version"),
+        (str(campaign.executables["ab-aat-to-parser-ir"]), "--help"),
+        (
+            str(campaign.executables["ab-parser-rq-source-accountability"]),
+            "capture-corpus",
+            "--help",
+        ),
+        (
+            str(campaign.executables["ab-parser-rq-diagnostic-authorization"]),
+            "capture-corpus",
+            "--help",
+        ),
+    )
+    driver_commands = tuple(
+        (sys.executable, str(path), "--help") for path in sorted(campaign.drivers.values())
+    )
+    return executable_commands + driver_commands
+
+
+def _verify_wiring(campaign: AuthenticatedCampaign, runner: Runner, cwd: Path) -> None:
+    for command in _wiring_commands(campaign):
+        _run_checked(runner, command, cwd)
+
+
 def _canonical_bytes(value: object) -> bytes:
     encoded = json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
     return encoded.replace("/", "\\/").encode()
@@ -217,10 +244,17 @@ def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
         ("authorization", config.authorization),
         ("provenance", config.provenance),
         ("readiness receipt", config.readiness_receipt),
-        ("site policy", config.site_policy),
-        ("site descriptor", config.site_descriptor),
     ):
         _below(evidence_tree, path, label)
+    _below(
+        candidate_tree,
+        config.site_policy,
+        "site policy",
+    )
+    try:
+        config.site_descriptor.resolve(strict=True)
+    except OSError as error:
+        raise PreparationFailed("site descriptor is unavailable") from error
 
     graph_path = _below(
         candidate_tree,
@@ -1083,6 +1117,7 @@ def execute_graph(
     try:
         for command in _prepare_commands(campaign, paths):
             _run_checked(runner, command, cwd)
+        _verify_wiring(campaign, runner, cwd)
         _materialize_runtime(paths)
         lock = _acquire_lock(Path(str(campaign.site_descriptor["campaign_lock_path"])))
         captured_at = now().astimezone(UTC).isoformat().replace("+00:00", "Z")

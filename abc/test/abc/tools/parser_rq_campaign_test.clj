@@ -85,6 +85,14 @@
              :host_policy_ref sha}
     :authorization_ref campaign/authorization-ref))
 
+(deftest qualification-identity-ref-cli-authenticates-the-candidate-value
+  (let [root (fs/create-temp-dir {:prefix "parser-rq-candidate-ref"})
+        path (fs/file root "candidate.edn")]
+    (spit (str path) (pr-str (assoc candidate :qualification_identity_ref sha-b)))
+    (is (= (str (:qualification_identity_ref candidate) "\n")
+           (with-out-str
+             (campaign/-main "qualification-identity-ref" "--candidate" (str path)))))))
+
 (deftest runtime-inputs-are-a-closed-projection-of-authoritative-edn
   (let [corpus {:entries [{:work_id "work" :source_path "source.txt"
                            :source_sha256 sha}]}]

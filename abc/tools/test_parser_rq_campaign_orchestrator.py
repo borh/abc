@@ -4,6 +4,8 @@ import importlib.util
 import hashlib
 import json
 import sys
+import os
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -162,7 +164,9 @@ def fixture(tmp_path: Path) -> Any:
         authorization=authorization,
         provenance=write_json(evidence_tree / "provenance.json", provenance),
         readiness_receipt=write_json(evidence_tree / "receipt.json", receipt),
-        site_policy=write_json(evidence_tree / "site-policy.json", site_policy),
+        site_policy=write_json(
+            candidate_tree / "abc/data/parser-rq-site-policy-v1.json", site_policy
+        ),
         site_descriptor=write_json(evidence_tree / "site-descriptor.json", site_descriptor),
         candidate_tree=candidate_tree,
         evidence_tree=evidence_tree,
@@ -276,6 +280,43 @@ def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
     assert commands["capture-resource"][0] == sys.executable
     with pytest.raises(orchestrator.ProtocolError):
         orchestrator.operation_argv("unknown", campaign, paths, lock)
+
+
+@pytest.mark.skipif(
+    "PARSER_RQ_CANDIDATE_ROOT" not in os.environ,
+    reason="real candidate bundle is supplied by the monorepo wiring check",
+)
+def test_real_candidate_and_repository_producer_clis_are_wired(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    candidate_root = Path(os.environ["PARSER_RQ_CANDIDATE_ROOT"])
+    repository_root = Path(os.environ["PARSER_RQ_REPOSITORY_ROOT"])
+    campaign = replace(
+        campaign,
+        executables={name: candidate_root / "bin" / name for name in campaign.executables},
+        drivers={
+            relative.as_posix(): repository_root / relative
+            for relative in orchestrator.REPOSITORY_DRIVERS
+        },
+    )
+
+    orchestrator._verify_wiring(campaign, orchestrator.SubprocessRunner(), tmp_path)
+
+
+def test_wiring_commands_exercise_the_production_rust_subcommands(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+
+    commands = orchestrator._wiring_commands(campaign)
+
+    assert (
+        str(campaign.executables["ab-parser-rq-source-accountability"]),
+        "capture-corpus",
+        "--help",
+    ) in commands
+    assert (
+        str(campaign.executables["ab-parser-rq-diagnostic-authorization"]),
+        "capture-corpus",
+        "--help",
+    ) in commands
 
 
 def test_publication_capture_input_rehashes_the_closed_artifact_set(tmp_path: Path) -> None:
@@ -465,9 +506,7 @@ def test_execute_graph_distinguishes_preparation_from_consumed_unavailability(
     assert result.status == "preparation_failed"
     assert not (campaign.config.staging_root / "capture-start.json").exists()
 
-    poststart = FakeRunner(
-        campaign.config.staging_root, fail_at="ab-parser-rq-source-accountability"
-    )
+    poststart = FakeRunner(campaign.config.staging_root, fail_at="capture-corpus --corpus")
     result = orchestrator.execute_graph(
         campaign,
         poststart,
@@ -477,9 +516,7 @@ def test_execute_graph_distinguishes_preparation_from_consumed_unavailability(
     assert (campaign.config.staging_root / "capture-start.json").is_file()
     terminal = json.loads((campaign.config.staging_root / "unavailable-terminal.json").read_bytes())
     assert terminal["status"] == "unavailable"
-    assert (
-        sum("ab-parser-rq-source-accountability" in " ".join(call) for call in poststart.calls) == 1
-    )
+    assert sum("capture-corpus --corpus" in " ".join(call) for call in poststart.calls) == 1
 
 
 def test_execute_graph_keeps_one_lock_through_closed_composition(tmp_path: Path) -> None:

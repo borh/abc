@@ -986,7 +986,7 @@
      :evaluation_generation_ref (:evaluation_generation_ref evaluation-index)}))
 
 (defn- usage []
-  (str "usage: parser-rq-campaign <candidate-ref|authorization-ref|capture-ref|evaluate-ref> --<kind> PATH\n"
+  (str "usage: parser-rq-campaign <candidate-ref|qualification-identity-ref|authorization-ref|capture-ref|evaluate-ref> --<kind> PATH\n"
        "       parser-rq-campaign verify-authorization-record --candidate PATH --provenance PATH --graph PATH --receipt PATH --authorization PATH\n"
        "       parser-rq-campaign verify-authorization --candidate PATH --provenance PATH --graph PATH --receipt PATH --authorization PATH --utc TIME --clock-synchronized true|false\n"
        "       parser-rq-campaign runtime-inputs --candidate PATH --authorization PATH --out PATH\n"
@@ -1000,6 +1000,11 @@
       "candidate-ref"
       (let [options (parse-options command-args)]
         (println (candidate-ref (files/read-edn (required-option options :candidate)))))
+      "qualification-identity-ref"
+      (let [options (parse-options command-args)]
+        (println (qualification/qualification-identity-ref
+                  (:qualification_identity
+                   (files/read-edn (required-option options :candidate))))))
       "authorization-ref"
       (let [options (parse-options command-args)]
         (println (authorization-ref

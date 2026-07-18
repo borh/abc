@@ -196,6 +196,10 @@
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
           abcApps = optionalOutputAttrs abc "apps" system;
           abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
+          parserRqWiringPython = pkgs.python3.withPackages (pythonPackages: [
+            pythonPackages.jsonschema
+            pythonPackages.pytest
+          ]);
           mkMonorepoCheck =
             name: nativeBuildInputs: script:
             pkgs.runCommand name
@@ -371,6 +375,18 @@
                 export RUFF_CACHE_DIR="$TMPDIR/ruff-cache"
                 export MYPY_CACHE_DIR="$TMPDIR/mypy-cache"
                 bash scripts/python-quality.sh
+              '';
+          parser-rq-production-wiring =
+            mkMonorepoCheck "soranoha-parser-rq-production-wiring"
+              [
+                abValidatorPackages."parser-rq-candidate"
+                parserRqWiringPython
+              ]
+              ''
+                export PARSER_RQ_CANDIDATE_ROOT="${abValidatorPackages."parser-rq-candidate"}"
+                export PARSER_RQ_REPOSITORY_ROOT="$src"
+                pytest -q abc/tools/test_parser_rq_campaign_orchestrator.py \
+                  -k real_candidate_and_repository_producer_clis_are_wired
               '';
           monorepo-nix-format =
             mkMonorepoCheck "soranoha-monorepo-nix-format"

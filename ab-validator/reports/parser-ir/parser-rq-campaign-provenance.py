@@ -242,8 +242,19 @@ def resolve_realize_request(
             output = outputs.get(output_name)
             if not isinstance(output, dict):
                 raise ProvenanceUnavailable("requested direct output is absent")
+            direct_output_path = output.get("path")
+            if direct_output_path is None:
+                direct_output_path = (
+                    _run_stdout(
+                        runner,
+                        ["nix-store", "-q", "--binding", output_name, input_drv],
+                        "requested direct output path cannot be resolved",
+                    )
+                    .decode()
+                    .strip()
+                )
             direct_output = _store_path(
-                output.get("path"), description="requested direct output path"
+                direct_output_path, description="requested direct output path"
             )
             closure_bytes = _run_stdout(
                 runner,

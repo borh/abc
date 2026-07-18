@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json",
+  "title": "Parser RQ untracked runtime site places",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "schema_version", "stable_host_label", "kernel_hostname", "corpus_root", "primary_store_root", "replica_store_root", "campaign_lock_path", "scratch_root", "primary_failure_domain", "replica_failure_domain"],
+  "properties": {
+    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json"},
+    "schema_version": {"const": "1.0.0"},
+    "stable_host_label": {"type": "string", "minLength": 1},
+    "kernel_hostname": {"type": "string", "minLength": 1},
+    "corpus_root": {"$ref": "#/$defs/path"},
+    "primary_store_root": {"$ref": "#/$defs/path"},
+    "replica_store_root": {"$ref": "#/$defs/path"},
+    "campaign_lock_path": {"$ref": "#/$defs/path"},
+    "scratch_root": {"$ref": "#/$defs/path"},
+    "primary_failure_domain": {"type": "string", "minLength": 1},
+    "replica_failure_domain": {"type": "string", "minLength": 1}
+  },
+  "$defs": {"path": {"type": "string", "pattern": "^/", "minLength": 2}}
+}

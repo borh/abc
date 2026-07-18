@@ -322,6 +322,38 @@
     (throw (ex-info (string/join "\n" errors)
                     {:errors errors}))))
 
+(defn parser-rq-execution-readiness-policy-errors
+  "Authenticate the two committed execution-readiness policy values."
+  [site-policy graph]
+  (let [projected-hash #(-> %
+                            (dissoc "policy_hash")
+                            hash/sha256-json-jcs
+                            hash/format-sha256)
+        expected-members ["core_attempt" "source_recognition" "diagnostic_gap"
+                          "diagnostic_completeness" "parser_ir_conformance"
+                          "publication_structure" "resource"]
+        operation-members ["core_attempt" "source_recognition"
+                           "predicate_hardening" "diagnostic_gap"
+                           "publication_structure" "resource"]]
+    (cond-> []
+      (not= (get site-policy "policy_hash") (projected-hash site-policy))
+      (conj "parser RQ site policy hash has drifted")
+
+      (not= (get graph "policy_hash") (projected-hash graph))
+      (conj "parser RQ production graph hash has drifted")
+
+      (not= expected-members (get graph "installed_members"))
+      (conj "parser RQ production graph installed membership has drifted")
+
+      (not= operation-members (mapv #(get % "name") (get graph "members")))
+      (conj "parser RQ production operation membership has drifted")
+
+      (and (= "unconfigured" (get site-policy "replica_status"))
+           (some #(contains? site-policy %)
+                 ["replica_failure_domain" "replica_mount_class"
+                  "replica_authority"]))
+      (conj "unconfigured parser RQ site policy claims replica identity"))))
+
 (defn validate-maintenance-evidence!
   ([record as-of]
    (validate-maintenance-evidence! "." record as-of))
@@ -883,6 +915,7 @@
    "schemas/pack-policy.schema.json"
    "schemas/parser-rq-ignored-regions.schema.json"
    "schemas/parser-rq-capture-generation.schema.json"
+   "schemas/parser-rq-build-record.schema.json"
    "schemas/parser-rq-candidate.schema.json"
    "schemas/parser-rq-capture-authorization.schema.json"
    "schemas/parser-rq-capture-index.schema.json"
@@ -893,6 +926,10 @@
    "schemas/parser-rq-evaluation-index.schema.json"
    "schemas/parser-rq-executable-provenance.schema.json"
    "schemas/parser-rq-replication-receipt.schema.json"
+   "schemas/parser-rq-readiness-receipt.schema.json"
+   "schemas/parser-rq-site-descriptor.schema.json"
+   "schemas/parser-rq-site-policy.schema.json"
+   "schemas/parser-rq-site-preflight.schema.json"
    "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
    "schemas/parser-rq-classified-source-ledger.schema.json"
    "schemas/parser-rq-classified-source-policy.schema.json"
@@ -942,8 +979,10 @@
    "data/parser-rq-ab-aozora-classified-source-v1.json"
    "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
    "data/parser-rq-core-attempt-policy-v1.json"
+   "data/parser-rq-production-graph-v1.json"
    "data/parser-rq-publication-fixtures-v1.json"
    "data/parser-rq-publication-policy-v1.json"
+   "data/parser-rq-site-policy-v1.json"
    "data/request-sets/demo-basic-ja.json"
    "data/request-sets/full-corpus-analysis-basic-ja.json"
    "data/request-sets/full-corpus-basic-ja.json"
@@ -1017,6 +1056,7 @@
         snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
         pack-policy-schema (files/read-json "schemas/pack-policy.schema.json")
         parser-rq-capture-generation-schema (files/read-json "schemas/parser-rq-capture-generation.schema.json")
+        parser-rq-build-record-schema (files/read-json "schemas/parser-rq-build-record.schema.json")
         parser-rq-candidate-schema (files/read-json "schemas/parser-rq-candidate.schema.json")
         parser-rq-capture-authorization-schema (files/read-json "schemas/parser-rq-capture-authorization.schema.json")
         parser-rq-capture-index-schema (files/read-json "schemas/parser-rq-capture-index.schema.json")
@@ -1027,6 +1067,10 @@
         parser-rq-evaluation-index-schema (files/read-json "schemas/parser-rq-evaluation-index.schema.json")
         parser-rq-executable-provenance-schema (files/read-json "schemas/parser-rq-executable-provenance.schema.json")
         parser-rq-replication-receipt-schema (files/read-json "schemas/parser-rq-replication-receipt.schema.json")
+        parser-rq-readiness-receipt-schema (files/read-json "schemas/parser-rq-readiness-receipt.schema.json")
+        parser-rq-site-descriptor-schema (files/read-json "schemas/parser-rq-site-descriptor.schema.json")
+        parser-rq-site-policy-schema (files/read-json "schemas/parser-rq-site-policy.schema.json")
+        parser-rq-site-preflight-schema (files/read-json "schemas/parser-rq-site-preflight.schema.json")
         parser-rq-raw-diagnostics-schema (files/read-json "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")
         parser-rq-classified-source-ledger-schema (files/read-json "schemas/parser-rq-classified-source-ledger.schema.json")
         parser-rq-classified-source-policy-schema (files/read-json "schemas/parser-rq-classified-source-policy.schema.json")
@@ -1082,6 +1126,7 @@
                            ["schemas/snapshot-index.schema.json" snapshot-index-schema]
                            ["schemas/pack-policy.schema.json" pack-policy-schema]
                            ["schemas/parser-rq-capture-generation.schema.json" parser-rq-capture-generation-schema]
+                           ["schemas/parser-rq-build-record.schema.json" parser-rq-build-record-schema]
                            ["schemas/parser-rq-candidate.schema.json" parser-rq-candidate-schema]
                            ["schemas/parser-rq-capture-authorization.schema.json" parser-rq-capture-authorization-schema]
                            ["schemas/parser-rq-capture-index.schema.json" parser-rq-capture-index-schema]
@@ -1092,6 +1137,10 @@
                            ["schemas/parser-rq-evaluation-index.schema.json" parser-rq-evaluation-index-schema]
                            ["schemas/parser-rq-executable-provenance.schema.json" parser-rq-executable-provenance-schema]
                            ["schemas/parser-rq-replication-receipt.schema.json" parser-rq-replication-receipt-schema]
+                           ["schemas/parser-rq-readiness-receipt.schema.json" parser-rq-readiness-receipt-schema]
+                           ["schemas/parser-rq-site-descriptor.schema.json" parser-rq-site-descriptor-schema]
+                           ["schemas/parser-rq-site-policy.schema.json" parser-rq-site-policy-schema]
+                           ["schemas/parser-rq-site-preflight.schema.json" parser-rq-site-preflight-schema]
                            ["schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json" parser-rq-raw-diagnostics-schema]
                            ["schemas/parser-rq-classified-source-ledger.schema.json" parser-rq-classified-source-ledger-schema]
                            ["schemas/parser-rq-classified-source-policy.schema.json" parser-rq-classified-source-policy-schema]
@@ -1127,6 +1176,13 @@
                            ["schemas/person-drift-event.schema.json" person-drift-event-schema]
                            ["schemas/person-drift-index.schema.json" person-drift-index-schema]]]
       (schema-valid! schema path))
+    (let [site-policy-path "data/parser-rq-site-policy-v1.json"
+          graph-path "data/parser-rq-production-graph-v1.json"
+          site-policy (files/read-json site-policy-path)
+          graph (files/read-json graph-path)]
+      (validate-json! parser-rq-site-policy-schema site-policy-path)
+      (check-errors! (parser-rq-execution-readiness-policy-errors
+                      site-policy graph)))
     (let [policy (files/read-json "data/parser-rq-ab-aozora-classified-source-v1.json")
           generation-path "test/fixtures/parser-rq/classified-source/generation.json"
           generation (files/read-json generation-path)]

@@ -10,16 +10,43 @@
 
 ## Global Constraints
 
-- Work directly on `main`; preserve unrelated user changes and commit each task separately.
+- Execute Tasks 1–7 on an isolated `parser-rq/portable-evidence-integrity`
+  worktree branch created from the current local `main`. Preserve unrelated user
+  changes, keep each task focused-green, and do not advance or push `main` until
+  the complete sequence passes the final gates. Then fast-forward `main` once.
 - Do not mint a real capture authorization, start a volatile lane, create an authoritative capture generation, append a compatibility row, or change ADR 0039/0040 status.
 - Candidate identity, qualification identity, predicate identity, executable provenance, corpus membership, observation semantics, admission, and canonical-generation selection remain unchanged.
 - Runtime paths never enter candidate, qualification, readiness, authorization, capture, evaluation, admission, or promotion identity.
 - Keep no compatibility alias for `site-policy`, `replica`, `replication`, `host_policy_ref`, or `verify-replicas` in active parser-RQ code.
 - Historical reports and superseded designs remain truthful history and are not rewritten merely because they mention hinoki or replication.
 - Backup and restore are operational responsibilities. Parser-RQ code must not call, inspect, or attest a backup system.
-- The authoritative campaign remains operationally blocked until `abc/docs/reports/parser-rq-evidence-retention.md` names the owner, applicable backup procedure, and current restore-test record.
+- The authoritative campaign remains operationally blocked until
+  `abc/docs/reports/parser-rq-evidence-retention.md` names the owner, applicable
+  backup procedure, and current restore-test record. This is deliberately an
+  operator-owned process stop: parser-RQ cannot verify an external backup or
+  restore from a self-attested status field, so no structured readiness boolean
+  or orchestrator check may pretend to do so.
 - Use TDD: every semantic deletion begins with a failing assertion against the current contract.
 - Use `apply_patch` for source edits; use formatters only for mechanical formatting.
+
+## Execution bootstrap
+
+Before Task 1, use `superpowers:using-git-worktrees` and create the isolated
+execution branch from the current local `main` (which contains this approved
+plan):
+
+```bash
+main_worktree="$(pwd)"
+execution_worktree="$(dirname "$main_worktree")/soranoha-parser-rq-portable"
+git worktree add -b parser-rq/portable-evidence-integrity \
+  "$execution_worktree" main
+cd "$execution_worktree"
+```
+
+Tasks 2–6 rotate one multi-language contract and therefore are not promised to
+pass the complete monorepo gate individually. Each must pass its named focused
+checks. The branch is the atomic integration unit: do not push it and do not
+move `main` until Task 7 proves the entire sequence.
 
 ---
 
@@ -28,12 +55,14 @@
 **Files:**
 - Create: `abc/docs/adr/0042-portable-parser-rq-evidence-integrity.md`
 - Create: `abc/docs/reports/parser-rq-evidence-retention.md`
+- Create: `abc/docs/superpowers/notes/2026-07-18-adr-evidence-component-root-followup.md`
 - Modify: `abc/docs/superpowers/specs/2026-07-18-parser-rq-execution-readiness-design.md`
 - Modify: `abc/docs/superpowers/plans/2026-07-18-parser-rq-execution-readiness.md`
 
 **Interfaces:**
 - Consumes: approved portable-evidence design and current ADR 0039/0040/0041 authority boundaries.
-- Produces: ADR 0042 in `Proposed` state and one explicit operational stop that later tasks may cite but no program reads.
+- Produces: ADR 0042 in `Proposed` state, one explicit operator-owned stop, and
+  one bounded follow-up for the pre-existing ADR-capture root-resolution defect.
 
 - [ ] **Step 1: Write ADR 0042 as a proposed protocol amendment**
 
@@ -72,6 +101,12 @@ Evidence retention is owned by the repository operator through
 `docs/reports/parser-rq-evidence-retention.md`. Missing ownership, procedure, or
 restore evidence blocks the campaign before authorization but is not a parser
 qualification verdict or identity input.
+
+This stop is process-enforced. Parser-RQ cannot verify an external restore by
+parsing an operator-authored status field; adding such a field would recreate
+the removed configured-replica assertion without adding evidence. The
+orchestrator therefore authenticates stored content, while the named operator
+owns the independent decision not to authorize an unready campaign.
 
 ## Consequences
 
@@ -112,9 +147,33 @@ must not mint its sole authorization until all three records below are supplied:
 These records are operational prerequisites, not parser qualification evidence.
 They must never be copied into candidate, readiness, authorization, capture,
 evaluation, admission, or promotion identity.
+
+This file is an operator checklist, not a machine-verifiable receipt. A parser-RQ
+program reading `Status: Ready` would authenticate only the operator's label,
+not the backup or restore that the label describes. The operator must stop before
+candidate freeze while this record says `Status: Blocked`.
 ```
 
-- [ ] **Step 3: Mark the former site/replica design as superseded in scope**
+- [ ] **Step 3: Record the component-root workaround as a bounded follow-up**
+
+Create `abc/docs/superpowers/notes/2026-07-18-adr-evidence-component-root-followup.md`:
+
+```markdown
+# ADR evidence component-root resolution follow-up
+
+The current all-descriptor recapture requires an excluded local `abc/abc -> .`
+symlink because component-root profiles resolve one path relative to the
+component and another relative to the workspace. The link is a temporary,
+pre-existing workaround and is not part of parser-RQ evidence identity.
+
+A later focused change must characterize the existing input-key projection,
+make the capture tool resolve component-root and workspace-root without a
+self-referential symlink, migrate affected descriptors atomically, and delete
+the workaround from runbooks. This portability slice does not combine that
+capture-tool correction with the storage-contract rotation.
+```
+
+- [ ] **Step 4: Mark the former site/replica design as superseded in scope**
 
 Add a short notice immediately below each older document's title:
 
@@ -127,7 +186,7 @@ Add a short notice immediately below each older document's title:
 
 Do not rewrite the historical rationale or commands in those documents.
 
-- [ ] **Step 4: Run documentation and governance syntax checks**
+- [ ] **Step 5: Run documentation and governance syntax checks**
 
 Run:
 
@@ -138,11 +197,12 @@ nix develop ./abc --command abc/bin/kaocha --focus abc.tools.adr-test
 
 Expected: no whitespace errors; ADR parsing tests pass; ADR 0042 remains Proposed and therefore needs no registered evidence yet.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add abc/docs/adr/0042-portable-parser-rq-evidence-integrity.md \
   abc/docs/reports/parser-rq-evidence-retention.md \
+  abc/docs/superpowers/notes/2026-07-18-adr-evidence-component-root-followup.md \
   abc/docs/superpowers/specs/2026-07-18-parser-rq-execution-readiness-design.md \
   abc/docs/superpowers/plans/2026-07-18-parser-rq-execution-readiness.md
 git commit -m "docs(parser-rq): assign evidence retention ownership"
@@ -580,6 +640,7 @@ git commit -m "refactor(parser-rq): verify evidence in one content store"
 - Produces:
   - `build-authorization [candidate receipt ordinal not-before not-after]`
   - `evidence-integrity-errors [receipt manifest-blobs] -> vector<string>`
+  - `evidence-integrity-receipt-errors [receipt candidate-ref capture-ref manifest-blobs] -> vector<string>` authenticates schema/version, JCS self-reference, campaign bindings, and closed members in the same helper used by promotion.
   - promotion reads `evidence-integrity-receipt.json` through `read-json-value` from the capture generation.
 
 - [ ] **Step 1: Write failing portable identity tests**
@@ -607,6 +668,16 @@ Change the shared readiness and authorization fixtures to the new closed keys an
 ```
 
 Change the drift summary from `:replica_count 2` to `:evidence_integrity_receipt_count 1`; mutate it to `0` and `2` in the adversarial test.
+
+Add a cross-language test that creates one real blob and closed blob-list JSON
+under a temporary evidence root, invokes the real Python
+`parser-rq-campaign-provenance.py verify-evidence` CLI, reads the emitted JSON
+with the same Clojure JSON reader used by promotion, and passes that value to
+`evidence-integrity-receipt-errors`. Assert the error vector is empty. Then
+mutate `:receipt_ref` and assert the helper reports an invalid self-reference.
+Resolve the workspace root by walking parents for the root `justfile`, `abc/`,
+and `ab-validator/`, so the test works when Kaocha starts at either the
+monorepo or component root.
 
 - [ ] **Step 2: Run focused tests and verify red**
 
@@ -677,7 +748,10 @@ Rename `replication-errors` to `evidence-integrity-errors` and use:
 In `promotion-errors`, read `evidence-integrity-receipt.json` with
 `read-json-value`, authenticate its schema identity/version, `receipt_ref`,
 `candidate_ref`, and `capture_generation_ref`, and pass it to the renamed
-function. Delete every replication binding and error string.
+function. Put those receipt-level checks in
+`evidence-integrity-receipt-errors` and call that same helper from both the
+cross-language test and promotion; do not create a second test-only verifier.
+Delete every replication binding and error string.
 
 - [ ] **Step 5: Run focused, Clojure, and drift checks**
 
@@ -692,6 +766,8 @@ nix build ./abc#checks.x86_64-linux.parser-rq-admission-promotion-smoke
 ```
 
 Expected: all pass; promotion still rejects stale registry, sibling capture, canonical drift, provenance drift, and non-qualified reports.
+The focused campaign test must include the real Python-writes/Clojure-verifies
+receipt path; adjacent monolingual suites are not sufficient.
 
 - [ ] **Step 6: Commit**
 
@@ -788,23 +864,45 @@ In the P5 plan:
 
 - [ ] **Step 5: Add the permanent active-surface guard**
 
-Create a focused Clojure test whose reviewed file set is explicit:
+Create a focused Clojure test that fails closed over active parser-RQ source
+trees. Resolve the repository root by walking parents until the directory
+contains the root `justfile`, `abc/`, and `ab-validator/`. Recursively scan
+regular text files under these reviewed active roots:
+
+```clojure
+["abc/src"
+ "abc/tools"
+ "abc/bin"
+ "abc/schemas"
+ "abc/data"
+ "abc/config"
+ "abc/test"
+ "ab-validator/reports/parser-ir"]
+```
+
+Also scan the individual active files `flake.nix`, `abc/flake.nix`,
+`ab-validator/flake.nix`, and
+`abc/docs/superpowers/plans/2026-07-17-parser-rq-admission-promotion.md`.
+Select known text extensions plus extensionless scripts; reject unreadable
+selected files rather than skipping them. Exclude exactly this guard's own file
+because it constructs the forbidden strings. Historical reports, ADRs, and
+superseded designs are outside the active roots and remain truthful history.
+
+The test shape is:
 
 ```clojure
 (ns abc.tools.parser-rq-portability-test
-  (:require [clojure.string :as string]
+  (:require [babashka.fs :as fs]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is]]))
 
-(def active-paths
-  ["src/abc/tools/parser_rq_campaign.clj"
-   "tools/parser_rq_campaign_site.py"
-   "tools/parser_rq_campaign_orchestrator.py"
-   "bin/parser-rq-campaign-capture.sh"
-   "schemas/parser-rq-site-descriptor.schema.json"
-   "schemas/parser-rq-readiness-receipt.schema.json"
-   "schemas/parser-rq-capture-authorization.schema.json"
-   "schemas/parser-rq-evidence-integrity-receipt.schema.json"
-   "docs/superpowers/plans/2026-07-17-parser-rq-admission-promotion.md"])
+(def active-roots
+  ["abc/src" "abc/tools" "abc/bin" "abc/schemas" "abc/data"
+   "abc/config" "abc/test" "ab-validator/reports/parser-ir"])
+
+(def active-files
+  ["flake.nix" "abc/flake.nix" "ab-validator/flake.nix"
+   "abc/docs/superpowers/plans/2026-07-17-parser-rq-admission-promotion.md"])
 
 (def forbidden
   [(str "host" "_policy_ref")
@@ -820,13 +918,29 @@ Create a focused Clojure test whose reviewed file set is explicit:
    (str "mount" "_class")])
 
 (deftest active-parser-rq-surface-has-no-site-or-backup-policy
-  (doseq [path active-paths
+  (doseq [path (scanned-active-files (repo-root))
           token forbidden]
     (is (not (string/includes? (slurp path) token))
         (str path " contains removed token " token))))
 ```
 
-Do not include historical reports, prior designs, ADR 0042, or this test file in the scanned set.
+Implement `repo-root` and `scanned-active-files` as small deterministic helpers,
+sort the returned canonical paths, and add assertions that the set contains at
+least these formerly dense surfaces:
+
+```clojure
+#{"ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py"
+  "ab-validator/reports/parser-ir/test_parser_rq_campaign_provenance.py"
+  "abc/tools/test_parser_rq_campaign_site.py"
+  "abc/tools/test_parser_rq_campaign_orchestrator.py"
+  "abc/config/parser-rq-site.example.json"
+  "abc/flake.nix"
+  "ab-validator/flake.nix"}
+```
+
+This is a denylist sweep over what exists, not an allowlist of nine remembered
+files. Do not scan historical reports, prior designs, ADR 0042, or the guard
+file itself.
 
 - [ ] **Step 6: Register and run integration checks**
 
@@ -848,7 +962,9 @@ just nix-format-check
 scripts/comment-hygiene-check.sh
 ```
 
-Expected: all pass from an unrelated working directory; no active site or replica token remains.
+Expected: all pass; the production-wiring check retains its unrelated-working-
+directory assertion, the portability guard works from monorepo or `abc/` root,
+and no active site or replica token remains.
 
 - [ ] **Step 7: Commit**
 
@@ -1045,17 +1161,25 @@ just validate-migration
 
 Expected: every command exits 0. Confirm the operational record remains `Status: Blocked`; passing qualification checks must not imply backup readiness.
 
-- [ ] **Step 7: Commit recaptured governance evidence and push**
+- [ ] **Step 7: Commit recaptured governance evidence, fast-forward main, and push**
 
 ```bash
 git add abc/docs/adr/adr-evidence.edn abc/docs/evidence/adr-runs
 git commit -m "fix(abc): recapture portable parser rq governance evidence"
 git status --short
-git push origin main
-test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+test -z "$(git status --short)"
+
+execution_head="$(git rev-parse HEAD)"
+git -C "$main_worktree" merge --ff-only parser-rq/portable-evidence-integrity
+test "$(git -C "$main_worktree" rev-parse HEAD)" = "$execution_head"
+git -C "$main_worktree" push origin main
+test "$(git -C "$main_worktree" rev-parse HEAD)" = \
+  "$(git -C "$main_worktree" rev-parse origin/main)"
 ```
 
-Expected: status is clean and local HEAD equals `origin/main`.
+Expected: the execution worktree is clean, `main` fast-forwards once across the
+fully verified sequence, and local `main` equals `origin/main`. Intermediate
+contract-rotation commits were never exposed on `main` or the remote.
 
 ---
 

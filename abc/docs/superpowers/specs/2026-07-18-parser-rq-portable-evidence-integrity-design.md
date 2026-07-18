@@ -73,6 +73,14 @@ the parser-RQ application does not inspect backup systems. Its purpose is to
 give retention a real owner and an explicit pre-run stop rather than pretending
 that a qualification check can prove infrastructure durability.
 
+The stop is deliberately process-enforced by the named operator, not encoded as
+another parser-RQ status document. A program could validate that a JSON field
+says `restore_test: passed`, but it could not thereby verify the external backup
+or restore. Treating that self-attestation as a fail-closed machine fact would
+recreate the removed `replica_status` fake seam under a new name. Qualification
+therefore verifies stored bytes; the operator owns the independent decision not
+to mint authorization until the runbook is complete.
+
 ## Boundary
 
 ### Reusable qualification facts

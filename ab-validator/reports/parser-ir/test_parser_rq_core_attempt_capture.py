@@ -187,8 +187,34 @@ def test_capture_repetitions_is_serial_closed_and_lock_retaining(tmp_path):
         ("w2", 3),
     }
     assert all(
-        argv[:6] == ["/nix/store/time/bin/time", "-f", "%e", "-o", argv[4], "--"] for argv in calls
+        argv[:7] == ["/nix/store/time/bin/time", "-q", "-f", "%e", "-o", argv[5], "--"]
+        for argv in calls
     )
+
+
+def test_capture_repetitions_reports_command_failure_without_timing_mask(tmp_path):
+    capture = load_module()
+
+    def run_command(argv, _env, _pass_fds):
+        pathlib.Path(argv[argv.index("-o") + 1]).write_bytes(b"0.00\n")
+        return 1
+
+    config = capture.CaptureConfig(
+        authorization=authorization(),
+        expected_works={"w1": HASH},
+        argv_template=("ab-check",),
+        time_executable="time",
+        staging_root=tmp_path / "capture",
+        qualification_identity_ref=HASH,
+        candidate_ref=HASH,
+        policy_hash=HASH,
+        now=lambda: datetime(2026, 7, 17, 0, 30, tzinfo=UTC),
+        run_command=run_command,
+        context_reader=lambda: {},
+    )
+    with held_lock(capture, tmp_path / "campaign.lock") as lock:
+        with pytest.raises(ValueError, match="core attempt repetition 1 exited 1"):
+            capture.capture_repetitions(config, lock)
 
 
 @pytest.mark.parametrize(
@@ -297,6 +323,8 @@ def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_p
                     "{index}",
                     "--corpus",
                     "{corpus}",
+                    "--adapter",
+                    "ab-aozora",
                     "--output-dir",
                     "{report_dir}",
                     "--work-ids",
@@ -324,6 +352,8 @@ def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_p
                     str(policy),
                     "--ab-check",
                     "/nix/store/parser/bin/ab-check",
+                    "--adapter",
+                    "/nix/store/parser/bin/ab-aozora",
                     "--corpus-root",
                     str(tmp_path / "corpus"),
                     "--corpus-index",
@@ -350,6 +380,7 @@ def test_production_cli_requires_inherited_lock_and_emits_index_atomically(tmp_p
     assert observed["lock"] == lock
     assert observed["config"].argv_template[0] == "/nix/store/parser/bin/ab-check"
     assert observed["config"].argv_template[2] == str(tmp_path / "index.json")
+    assert observed["config"].argv_template[6] == "/nix/store/parser/bin/ab-aozora"
     assert observed["config"].argv_template[-1] == str(tmp_path / "work-ids.json")
     assert not list(tmp_path.glob(".core-index.json.*.tmp"))
 
@@ -361,3 +392,4 @@ def test_core_capture_cli_help_and_no_lock_path_option() -> None:
     assert "candidate" not in {action.dest for action in capture._parser()._actions}
     assert "authorization" not in {action.dest for action in capture._parser()._actions}
     assert "ab_check" in {action.dest for action in capture._parser()._actions}
+    assert "adapter" in {action.dest for action in capture._parser()._actions}

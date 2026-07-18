@@ -287,6 +287,8 @@ def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
     assert commands["capture-core"][0] == sys.executable
     assert "--ab-check" in commands["capture-core"]
     assert str(campaign.executables["ab-check"]) in commands["capture-core"]
+    assert "--adapter" in commands["capture-core"]
+    assert str(campaign.executables["ab-aozora"]) in commands["capture-core"]
     assert str(campaign.executables["ab-check"].parent / "time") in commands["capture-core"]
     assert commands["capture-predicate-pair"][0] == sys.executable
     assert str(campaign.executables["ab-aozora"]) in commands["capture-predicate-pair"]

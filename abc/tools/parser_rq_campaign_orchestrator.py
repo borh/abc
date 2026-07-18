@@ -354,6 +354,8 @@ def operation_argv(
             str(abc_root / "data/parser-rq-core-attempt-policy-v1.json"),
             "--ab-check",
             str(campaign.executables["ab-check"]),
+            "--adapter",
+            str(campaign.executables["ab-aozora"]),
             "--corpus-root",
             str(ab_root / "crates/ab-index/tests/fixtures/corpus"),
             "--corpus-index",

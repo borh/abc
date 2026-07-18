@@ -256,6 +256,7 @@ def capture_repetitions(config: CaptureConfig, lock: LockCapability) -> dict[str
         ]
         command = [
             config.time_executable,
+            "-q",
             "-f",
             "%e",
             "-o",
@@ -352,6 +353,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--runtime", type=pathlib.Path, required=True)
     parser.add_argument("--policy", type=pathlib.Path, required=True)
     parser.add_argument("--ab-check", type=pathlib.Path, required=True)
+    parser.add_argument("--adapter", type=pathlib.Path, required=True)
     parser.add_argument("--corpus-root", type=pathlib.Path, required=True)
     parser.add_argument("--corpus-index", type=pathlib.Path, required=True)
     parser.add_argument("--work-ids", type=pathlib.Path, required=True)
@@ -401,6 +403,7 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("core policy work membership is duplicated")
         replacements = {
             "ab-check": str(args.ab_check),
+            "ab-aozora": str(args.adapter),
             "{index}": str(args.corpus_index),
             "{corpus}": str(args.corpus_root),
             "{work_ids_file}": str(args.work_ids),

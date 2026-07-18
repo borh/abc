@@ -133,7 +133,15 @@ Expected: FAIL because the capture module is absent.
 
 - [ ] **Step 3: Implement execution-only capture**
 
-Invoke the provided argv without a shell. Wrap each `ab-check` command with the Nix-resolved GNU time executable using `-f %e`; pass `-o` the repetition record's staging path. Acquire a nonblocking file lock supplied by runtime configuration, enumerate competing parser-related user units before and after each repetition, and record load and memory pressure. Never derive a predicate verdict in Python.
+Invoke the provided argv without a shell. Resolve both `ab-check` and its
+`ab-aozora` adapter to their authenticated candidate-built paths; never ask
+`ab-check` to discover the adapter through `PATH`. Wrap each command with the
+Nix-resolved GNU time executable using `-q -f %e`; pass `-o` the repetition
+record's staging path so a nonzero command reports its real failure without a
+GNU-time diagnostic contaminating the elapsed record. Acquire a nonblocking
+file lock supplied by runtime configuration, enumerate competing parser-related
+user units before and after each repetition, and record load and memory
+pressure. Never derive a predicate verdict in Python.
 
 - [ ] **Step 4: Add the Nix check and verify**
 
@@ -411,7 +419,9 @@ Mutate every identity/ref, remove each capture member, add a sibling capture, ch
 
 Add a thin production orchestrator that accepts all runtime paths explicitly, verifies authorization before starting, and implements this fixed serial map:
 
-1. `parser-rq-core-attempt-capture.py` produces the three core repetitions;
+1. `parser-rq-core-attempt-capture.py` produces the three core repetitions,
+   receiving authenticated absolute paths for both `ab-check` and
+   `ab-aozora`;
 2. `ab-parser-rq-source-accountability capture-corpus` produces source capture, ledger, recognition, and R1 records;
 3. `parser-rq-predicate-hardening-capture.py` captures one raw diagnostic stream per work and produces predicate-4/5 records;
 4. `ab-parser-rq-diagnostic-authorization capture-corpus` consumes step 2 plus those same authenticated diagnostic blobs and produces R2 records;

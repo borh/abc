@@ -4,13 +4,16 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
+import subprocess
 import sys
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Protocol
 
 
 LEGACY_LANE_ENVIRONMENT = (
@@ -124,6 +127,21 @@ class RuntimePaths:
             publication_root=root / "lanes/publication",
             resource_root=root / "lanes/resource",
         )
+
+
+@dataclass(frozen=True)
+class Terminal:
+    status: str
+    reason: str | None = None
+
+
+class Runner(Protocol):
+    def run(self, argv: tuple[str, ...], *, cwd: Path, pass_fds: tuple[int, ...] = ()) -> int: ...
+
+
+class SubprocessRunner:
+    def run(self, argv: tuple[str, ...], *, cwd: Path, pass_fds: tuple[int, ...] = ()) -> int:
+        return subprocess.run(argv, cwd=cwd, pass_fds=pass_fds, check=False).returncode
 
 
 def _canonical_bytes(value: object) -> bytes:
@@ -365,7 +383,7 @@ def operation_argv(
             str(campaign.executables["ab-parser-rq-diagnostic-authorization"]),
             "capture-corpus",
             "--index",
-            str(paths.source_root / "output/source-recognition-index.json"),
+            str(paths.diagnostic_root / "input-index.json"),
             "--policy",
             str(abc_root / "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"),
             "--out",
@@ -411,6 +429,508 @@ def operation_argv(
     raise ProtocolError(f"unknown production operation: {operation}")
 
 
+def _atomic_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        with temporary.open("xb") as stream:
+            stream.write(_canonical_bytes(value))
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _run_checked(
+    runner: Runner,
+    argv: tuple[str, ...],
+    cwd: Path,
+    *,
+    pass_fds: tuple[int, ...] = (),
+) -> None:
+    if runner.run(argv, cwd=cwd, pass_fds=pass_fds) != 0:
+        raise ProtocolError(f"command failed: {argv[0]}")
+
+
+def _acquire_lock(path: Path) -> LockCapability:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        stat = os.fstat(descriptor)
+        return LockCapability(descriptor, stat.st_dev, stat.st_ino)
+    except Exception:
+        os.close(descriptor)
+        raise
+
+
+def _lock_retained(lock: LockCapability) -> bool:
+    try:
+        descriptor = os.fstat(lock.fd)
+        target = Path(os.readlink(f"/proc/self/fd/{lock.fd}"))
+        current = target.stat()
+    except OSError:
+        return False
+    return (
+        (descriptor.st_dev, descriptor.st_ino)
+        == (current.st_dev, current.st_ino)
+        == (lock.device, lock.inode)
+    )
+
+
+def _materialize_runtime(paths: RuntimePaths) -> None:
+    runtime = _read_object(paths.runtime, "runtime inputs")
+    if runtime.get("schema_version") != "abc/parser-rq-runtime-inputs/v1":
+        raise ProtocolError("runtime input schema identity differs")
+    candidate = runtime.get("candidate")
+    if not isinstance(candidate, dict) or not isinstance(
+        candidate.get("qualification_identity"), dict
+    ):
+        raise ProtocolError("runtime qualification identity is absent")
+    _atomic_json(paths.corpus, runtime.get("corpus"))
+    _atomic_json(paths.source_corpus, runtime.get("source_accountability_corpus"))
+    _atomic_json(paths.identity, candidate["qualification_identity"])
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while chunk := stream.read(1024 * 1024):
+            digest.update(chunk)
+    return "sha256:" + digest.hexdigest()
+
+
+def _prepare_diagnostic_input(campaign: AuthenticatedCampaign, paths: RuntimePaths) -> None:
+    store = paths.source_root / "store"
+    generation_index = _read_object(
+        paths.source_root / "output/classified-source-generation-index.json",
+        "classified-source generation index",
+    )
+    recognition_index = _read_object(
+        paths.source_root / "output/source-recognition-index.json",
+        "source-recognition index",
+    )
+    generation_by_work: dict[str, dict[str, Any]] = {}
+    for row in generation_index.get("records", []):
+        if not isinstance(row, dict):
+            raise ProtocolError("classified-source generation row is malformed")
+        manifest = _read_object(store / str(row.get("locator")), "classified-source generation")
+        if manifest.get("generation_ref") != row.get("sha256"):
+            raise ProtocolError("classified-source generation identity differs")
+        generation_by_work[str(row.get("work_id"))] = manifest
+    records: list[dict[str, object]] = []
+    for row in recognition_index.get("records", []):
+        if not isinstance(row, dict):
+            raise ProtocolError("source-recognition row is malformed")
+        work_id = str(row.get("work_id"))
+        generation = generation_by_work.get(work_id)
+        if generation is None:
+            raise ProtocolError("source-recognition generation is absent")
+        members = generation.get("members")
+        if not isinstance(members, dict):
+            raise ProtocolError("classified-source generation members are malformed")
+        decoded = members.get("decoded_source")
+        diagnostics = members.get("raw_diagnostics")
+        if not isinstance(decoded, dict) or not isinstance(diagnostics, dict):
+            raise ProtocolError("classified-source diagnostic inputs are absent")
+        records.append(
+            {
+                "work_id": work_id,
+                "capture_generation_ref": generation["generation_ref"],
+                "decoded_source": str(store / str(decoded["artifact_ref"])),
+                "decoded_source_hash": decoded["value_hash"],
+                "raw_diagnostics": str(store / str(diagnostics["artifact_ref"])),
+                "raw_diagnostics_hash": diagnostics["value_hash"],
+                "source_recognition": str(store / str(row["locator"])),
+                "source_recognition_hash": row["sha256"],
+                "source_recognition_locator": row["locator"],
+            }
+        )
+    policy = campaign.config.candidate_tree / "abc/data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
+    _atomic_json(
+        paths.diagnostic_root / "input-index.json",
+        {
+            "qualification_identity_ref": recognition_index["qualification_identity_ref"],
+            "corpus_generation_ref": recognition_index["corpus_generation_ref"],
+            "policy_hash": _sha256(policy),
+            "records": records,
+        },
+    )
+
+
+def _blob_member(root: Path, path: Path) -> dict[str, object]:
+    relative = path.relative_to(root).as_posix()
+    media_type = "application/json" if path.suffix == ".json" else "text/plain"
+    return {
+        "locator": relative,
+        "ref": {
+            "sha256": _sha256(path),
+            "bytes": path.stat().st_size,
+            "media_type": media_type,
+        },
+    }
+
+
+def _install_bytes(root: Path, locator: str, payload: bytes) -> None:
+    path = root / locator
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and path.read_bytes() != payload:
+        raise ProtocolError(f"store locator collision: {locator}")
+    path.write_bytes(payload)
+
+
+def _source_projection_values(
+    campaign: AuthenticatedCampaign, paths: RuntimePaths, *, diagnostic: bool
+) -> tuple[dict[str, object], dict[str, Any]]:
+    store = paths.source_root / "store"
+    output = paths.source_root / "output"
+    aggregate_path = output / "source-recognition-aggregate.json"
+    index_path = output / "source-recognition-index.json"
+    for locator, source in (
+        ("recognition-aggregate.json", aggregate_path),
+        ("recognition-index.json", index_path),
+        ("identity.json", paths.identity),
+    ):
+        _install_bytes(store, locator, source.read_bytes())
+    if diagnostic:
+        corpus = _read_object(paths.diagnostic_root / "diagnostic-gap.json", "diagnostic gap")
+        aggregate = corpus.get("aggregate")
+        works = corpus.get("works")
+        if not isinstance(aggregate, dict) or not isinstance(works, list):
+            raise ProtocolError("diagnostic-gap corpus output is malformed")
+        _install_bytes(store, "diagnostic-gap-aggregate.json", _canonical_bytes(aggregate))
+        for work in works:
+            if not isinstance(work, dict) or not isinstance(work.get("work_id"), str):
+                raise ProtocolError("diagnostic-gap work output is malformed")
+            _install_bytes(
+                store,
+                f"diagnostic-gap-results/{work['work_id']}.json",
+                _canonical_bytes(work),
+            )
+        policy = (
+            campaign.config.candidate_tree / "abc/data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
+        )
+        _install_bytes(store, "diagnostic-gap-policy.json", policy.read_bytes())
+    blobs = [
+        _blob_member(store, path)
+        for path in sorted(store.rglob("*"))
+        if path.is_file() and not path.is_symlink()
+    ]
+    aggregate = _read_object(aggregate_path, "source-recognition aggregate")
+    eligible = aggregate.get("eligible_bytes")
+    if not isinstance(eligible, int) or eligible < 0:
+        raise ProtocolError("source-recognition denominator is malformed")
+    manifest: dict[str, object] = {
+        "blobs": blobs,
+        "denominator": {"value": eligible, "unit": "decoded_utf8_bytes"},
+    }
+    return manifest, aggregate
+
+
+def _projection_input(
+    operation: str, campaign: AuthenticatedCampaign, paths: RuntimePaths
+) -> tuple[str, dict[str, object], dict[str, tuple[str, ...]]]:
+    runtime = _read_object(paths.runtime, "runtime inputs")
+    candidate = runtime.get("candidate")
+    if not isinstance(candidate, dict):
+        raise ProtocolError("runtime candidate is malformed")
+    identity_ref = campaign.readiness_receipt["qualification_identity_ref"]
+    abc_root = campaign.config.candidate_tree / "abc"
+    if operation == "capture-core":
+        return (
+            "core",
+            {
+                "qualification_identity_ref": identity_ref,
+                "store": {"root": str(paths.core_root / "records")},
+                "policy": _read_object(
+                    abc_root / "data/parser-rq-core-attempt-policy-v1.json", "core policy"
+                ),
+                "candidate": candidate,
+                "index": _read_object(paths.core_root / "core-index.json", "core index"),
+            },
+            {"core_attempt": ("fatal_failures", "wall_time_seconds", "timeouts")},
+        )
+    if operation == "capture-predicate-pair":
+        output = paths.predicate_root / "output"
+        return (
+            "predicate-pair",
+            {
+                "qualification_identity_ref": identity_ref,
+                "store": {"root": str(paths.predicate_root / "store")},
+                "diagnostic_policy": _read_object(
+                    abc_root / "data/parser-rq-diagnostic-completeness-policy-v1.json",
+                    "diagnostic policy",
+                ),
+                "parser_ir_policy": _read_object(
+                    abc_root / "data/parser-rq-parser-ir-conformance-policy-v1.json",
+                    "Parser-IR policy",
+                ),
+                "diagnostic_index": _read_object(
+                    output / "raw-diagnostics-index.json", "raw diagnostic index"
+                ),
+                "parser_ir_index": _read_object(output / "parser-ir-index.json", "Parser-IR index"),
+            },
+            {
+                "diagnostic_completeness": ("diagnostic_completeness",),
+                "parser_ir_conformance": ("parser_ir_schema_validation",),
+            },
+        )
+    if operation in {"capture-source", "derive-diagnostic-gap"}:
+        manifest, aggregate = _source_projection_values(
+            campaign, paths, diagnostic=operation == "derive-diagnostic-gap"
+        )
+        if operation == "capture-source":
+            return (
+                "source-recognition",
+                {
+                    "qualification_identity_ref": identity_ref,
+                    "store": {"root": str(paths.source_root / "store")},
+                    "manifest": manifest,
+                    "aggregate": aggregate,
+                    "identity": candidate["qualification_identity"],
+                },
+                {"source_recognition": ("source_span_coverage",)},
+            )
+        return (
+            "diagnostic-gap",
+            {
+                "qualification_identity_ref": identity_ref,
+                "store": {"root": str(paths.source_root / "store")},
+                "manifest": manifest,
+                "identity": candidate["qualification_identity"],
+            },
+            {"diagnostic_gap": ("silent_drops",)},
+        )
+    if operation == "capture-publication":
+        return (
+            "publication",
+            {
+                "qualification_identity_ref": identity_ref,
+                "store": {"root": str(paths.publication_root / "store")},
+                "manifest": _read_object(
+                    paths.publication_root / "manifest.json", "publication manifest"
+                ),
+                "index": _read_object(paths.publication_root / "index.json", "publication index"),
+                "identity": candidate["qualification_identity"],
+            },
+            {"publication_structure": ("publication_structure",)},
+        )
+    if operation == "capture-resource":
+        index = _read_object(paths.resource_root / "index.json", "resource index")
+        records = index.get("records")
+        if not isinstance(records, list):
+            raise ProtocolError("resource records are malformed")
+        return (
+            "resource",
+            {
+                "qualification_identity_ref": identity_ref,
+                "policy": _read_object(
+                    abc_root / "data/parser-rq-resource-policy-v1.json", "resource policy"
+                ),
+                "identity": _read_object(
+                    campaign.config.candidate_tree
+                    / "ab-validator/data/parser-rq-resource-identity-v1.json",
+                    "resource identity",
+                ),
+                "index": index,
+                "records": records,
+            },
+            {"resource": ("peak_cgroup_memory_bytes",)},
+        )
+    raise ProtocolError(f"unknown projection operation: {operation}")
+
+
+def _project_operation(
+    operation: str,
+    campaign: AuthenticatedCampaign,
+    paths: RuntimePaths,
+    runner: Runner,
+    cwd: Path,
+) -> None:
+    command, inputs, members = _projection_input(operation, campaign, paths)
+    projection_root = paths.root / "projections" / operation
+    input_path = projection_root / "inputs.json"
+    output_path = projection_root / "projected.json"
+    _atomic_json(input_path, inputs)
+    _run_checked(
+        runner,
+        _clojure(
+            campaign,
+            "-M:abc/parser-rq-member",
+            command,
+            "--inputs",
+            str(input_path),
+            "--out",
+            str(output_path),
+        ),
+        cwd,
+    )
+    projected = _read_object(output_path, "member projection")
+    expected_keys = {key for keys in members.values() for key in keys}
+    if set(projected) != expected_keys:
+        raise ProtocolError("member projection output membership differs")
+    for member, keys in members.items():
+        _atomic_json(paths.root / f"{member}.json", {key: projected[key] for key in keys})
+
+
+def _clojure(
+    campaign: AuthenticatedCampaign, alias: str, command: str, *args: str
+) -> tuple[str, ...]:
+    return campaign.clojure_prefix + (alias, command, *args)
+
+
+def _prepare_commands(
+    campaign: AuthenticatedCampaign, paths: RuntimePaths
+) -> tuple[tuple[str, ...], ...]:
+    config = campaign.config
+    return (
+        _clojure(
+            campaign,
+            "-M:abc/parser-rq-campaign",
+            "verify-authorization-record",
+            "--candidate",
+            str(config.candidate),
+            "--provenance",
+            str(config.provenance),
+            "--graph",
+            str(config.candidate_tree / "abc/data/parser-rq-production-graph-v1.json"),
+            "--receipt",
+            str(config.readiness_receipt),
+            "--authorization",
+            str(config.authorization),
+        ),
+        (
+            sys.executable,
+            _driver(campaign, "abc/tools/parser_rq_campaign_site.py"),
+            "recheck-readiness",
+            "--policy",
+            str(config.site_policy),
+            "--site-descriptor",
+            str(config.site_descriptor),
+            "--receipt",
+            str(config.readiness_receipt),
+        ),
+        _clojure(
+            campaign,
+            "-M:abc/parser-rq-campaign",
+            "runtime-inputs",
+            "--candidate",
+            str(config.candidate),
+            "--authorization",
+            str(config.authorization),
+            "--out",
+            str(paths.runtime),
+        ),
+    )
+
+
+def execute_graph(
+    campaign: AuthenticatedCampaign,
+    runner: Runner,
+    *,
+    now: Callable[[], datetime] = lambda: datetime.now(UTC),
+) -> Terminal:
+    config = campaign.config
+    paths = RuntimePaths.below(config.staging_root)
+    cwd = paths.root / "detached-cwd"
+    cwd.mkdir(parents=True, exist_ok=True)
+    capture_started = False
+    lock: LockCapability | None = None
+    try:
+        for command in _prepare_commands(campaign, paths):
+            _run_checked(runner, command, cwd)
+        _materialize_runtime(paths)
+        lock = _acquire_lock(Path(str(campaign.site_descriptor["campaign_lock_path"])))
+        captured_at = now().astimezone(UTC).isoformat().replace("+00:00", "Z")
+        temporal = _clojure(
+            campaign,
+            "-M:abc/parser-rq-campaign",
+            "verify-authorization",
+            "--candidate",
+            str(config.candidate),
+            "--provenance",
+            str(config.provenance),
+            "--graph",
+            str(config.candidate_tree / "abc/data/parser-rq-production-graph-v1.json"),
+            "--receipt",
+            str(config.readiness_receipt),
+            "--authorization",
+            str(config.authorization),
+            "--utc",
+            captured_at,
+            "--clock-synchronized",
+            "true",
+        )
+        _run_checked(runner, temporal, cwd)
+        if not _lock_retained(lock):
+            raise ProtocolError("campaign lock was lost before capture start")
+        _atomic_json(
+            paths.root / "capture-start.json",
+            {"status": "started", "capture_started_at_utc": captured_at},
+        )
+        capture_started = True
+        for operation in campaign.operations:
+            if not _lock_retained(lock):
+                raise ProtocolError("campaign lock was lost during capture")
+            if operation == "derive-diagnostic-gap":
+                _prepare_diagnostic_input(campaign, paths)
+            command = operation_argv(operation, campaign, paths, lock)
+            inherited = (lock.fd,) if operation == "capture-core" else ()
+            _run_checked(runner, command, cwd, pass_fds=inherited)
+            _project_operation(operation, campaign, paths, runner, cwd)
+        expected = {f"{name}.json" for name in EXPECTED_INSTALLED_MEMBERS}
+        actual = {path.name for path in paths.root.glob("*.json") if path.name in expected}
+        if actual != expected:
+            raise ProtocolError("canonical member set is incomplete")
+        _run_checked(
+            runner,
+            _clojure(
+                campaign,
+                "-M:abc/parser-rq-campaign",
+                "compose",
+                "--candidate",
+                str(config.candidate),
+                "--authorization",
+                str(config.authorization),
+                "--capture-root",
+                str(paths.root),
+                "--capture-started-at",
+                captured_at,
+                "--out",
+                str(paths.root / "measurements.edn"),
+            ),
+            cwd,
+        )
+        _run_checked(
+            runner,
+            _clojure(
+                campaign,
+                "-M:abc/parser-rq-campaign",
+                "verify-capture",
+                "--candidate",
+                str(config.candidate),
+                "--authorization",
+                str(config.authorization),
+                "--capture-root",
+                str(paths.root),
+            ),
+            cwd,
+        )
+        return Terminal("captured")
+    except (OSError, KeyError, ValueError) as error:
+        if not capture_started:
+            return Terminal("preparation_failed", str(error))
+        _atomic_json(
+            paths.root / "unavailable-terminal.json",
+            {"status": "unavailable", "reason": str(error)},
+        )
+        return Terminal("unavailable", str(error))
+    finally:
+        if lock is not None:
+            os.close(lock.fd)
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate", type=Path, required=True)
@@ -430,7 +950,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = _parser()
     try:
         args = parser.parse_args(argv)
-        authenticate_inputs(CampaignConfig(**vars(args)))
+        campaign = authenticate_inputs(CampaignConfig(**vars(args)))
+        terminal = execute_graph(campaign, SubprocessRunner())
+        if terminal.status != "captured":
+            print(terminal.reason or terminal.status, file=sys.stderr)
+            return 2
     except (OSError, PreparationFailed) as error:
         print(str(error), file=sys.stderr)
         return 2

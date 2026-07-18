@@ -146,7 +146,7 @@ pub enum DiagnosticGapWorkStatus {
     Unavailable,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct SourceRecognitionEvidence {
     pub relation: String,
     pub artifact_ref: RecognitionBlobRef,
@@ -156,7 +156,7 @@ pub struct SourceRecognitionEvidence {
     pub work_id: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct DiagnosticAuthorizationEvidence {
     pub decoded_source_hash: String,
     pub raw_diagnostics_hash: String,

@@ -2,7 +2,8 @@ use std::{fs, path::PathBuf};
 
 use ab_parser_rq_diagnostic_authorization::{
     BoundaryInput, DiagnosticGapAggregateInput, DiagnosticGapExpectedWork, DiagnosticGapWorkInput,
-    DiagnosticGapWorkResult, aggregate_gap_partitions, authorize_boundary, derive_gap_partition,
+    DiagnosticGapWorkResult, DiagnosticGapWorkStatus, aggregate_gap_partitions,
+    authorize_boundary, derive_gap_partition,
 };
 use ab_parser_rq_source_accountability::{
     RecognitionBlobRef, RecognitionWorkRecord, canonical_json,
@@ -72,23 +73,35 @@ fn intervals(values: &Option<Vec<ab_parser_rq_diagnostic_authorization::Interval
 }
 
 fn work_json(result: &DiagnosticGapWorkResult) -> Value {
-    json!({
-        "status": format!("{:?}", result.status).to_lowercase(),
-        "work_id": result.work_id,
-        "capture_generation_ref": result.capture_generation_ref,
-        "qualification_identity_ref": result.qualification_identity_ref,
-        "policy_hash": result.policy_hash,
-        "authorized_intervals": intervals(&result.authorized_intervals),
-        "silent_intervals": intervals(&result.silent_intervals),
-        "authorized_bytes": result.authorized_bytes,
-        "silent_bytes": result.silent_bytes,
-        "silent_drop_count": result.silent_drop_count,
-        "diagnostic_count": result.diagnostic_count,
-        "authorizing_diagnostic_count": result.authorizing_diagnostic_count,
-        "observe_only_diagnostic_count": result.observe_only_diagnostic_count,
-        "vacuous": result.vacuous,
-        "errors": result.errors,
-    })
+    match result.status {
+        DiagnosticGapWorkStatus::Ok => json!({
+            "schema_version":"abc/parser-rq-diagnostic-gap-result/v1",
+            "status":"ok",
+            "work_id":result.work_id,
+            "capture_generation_ref":result.capture_generation_ref,
+            "qualification_identity_ref":result.qualification_identity_ref,
+            "policy_hash":result.policy_hash,
+            "source_recognition_evidence":result.source_recognition_evidence,
+            "diagnostic_authorization_evidence":result.diagnostic_authorization_evidence,
+            "authorized_intervals":intervals(&result.authorized_intervals),
+            "silent_intervals":intervals(&result.silent_intervals),
+            "authorized_bytes":result.authorized_bytes,
+            "silent_bytes":result.silent_bytes,
+            "silent_drop_count":result.silent_drop_count,
+            "diagnostic_count":result.diagnostic_count,
+            "authorizing_diagnostic_count":result.authorizing_diagnostic_count,
+            "observe_only_diagnostic_count":result.observe_only_diagnostic_count,
+            "vacuous":result.vacuous,
+        }),
+        DiagnosticGapWorkStatus::Unavailable => json!({
+            "schema_version":"abc/parser-rq-diagnostic-gap-result/v1",
+            "status":"unavailable",
+            "work_id":result.work_id,
+            "capture_generation_ref":result.capture_generation_ref,
+            "policy_hash":result.policy_hash,
+            "unavailable_reasons":["diagnostic-gap-unavailable"],
+        }),
+    }
 }
 
 fn main() -> Result<()> {
@@ -156,9 +169,21 @@ fn main() -> Result<()> {
                 "corpus_generation_ref":index.corpus_generation_ref,
                 "works":works.iter().map(work_json).collect::<Vec<_>>(),
                 "aggregate":{
+                    "schema_version":aggregate.schema_version,
                     "status":format!("{:?}", aggregate.status).to_lowercase(),
+                    "qualification_identity_ref":aggregate.qualification_identity_ref,
+                    "corpus_generation_ref":aggregate.corpus_generation_ref,
+                    "policy_hash":aggregate.policy_hash,
+                    "policy_artifact_hash":aggregate.policy_artifact_hash,
+                    "expected_work_ids":aggregate.expected_work_ids,
+                    "observed_work_ids":aggregate.observed_work_ids,
+                    "authorized_bytes":aggregate.authorized_bytes,
+                    "silent_bytes":aggregate.silent_bytes,
                     "silent_drop_count":aggregate.silent_drop_count,
                     "diagnostic_count":aggregate.diagnostic_count,
+                    "authorizing_diagnostic_count":aggregate.authorizing_diagnostic_count,
+                    "observe_only_diagnostic_count":aggregate.observe_only_diagnostic_count,
+                    "authorized_interval_count":aggregate.authorized_interval_count,
                     "vacuous":aggregate.vacuous,
                     "errors":aggregate.errors,
                 }

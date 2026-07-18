@@ -4,6 +4,7 @@ import importlib.util
 import hashlib
 import json
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -77,6 +78,21 @@ def fixture(tmp_path: Path) -> Any:
     }
     graph["policy_hash"] = orchestrator.content_ref(graph, excluding="policy_hash")
     write_json(candidate_tree / "abc/data/parser-rq-production-graph-v1.json", graph)
+    write_json(
+        candidate_tree / "abc/data/parser-rq-ab-aozora-diagnostic-gap-v1.json",
+        {"fixture": True},
+    )
+    for name in (
+        "parser-rq-core-attempt-policy-v1.json",
+        "parser-rq-diagnostic-completeness-policy-v1.json",
+        "parser-rq-parser-ir-conformance-policy-v1.json",
+        "parser-rq-resource-policy-v1.json",
+    ):
+        write_json(candidate_tree / "abc/data" / name, {"fixture": True})
+    write_json(
+        candidate_tree / "ab-validator/data/parser-rq-resource-identity-v1.json",
+        {"fixture": True},
+    )
     for relative in orchestrator.REPOSITORY_DRIVERS:
         path = candidate_tree / relative
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -240,3 +256,163 @@ def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
     assert commands["capture-resource"][0] == sys.executable
     with pytest.raises(orchestrator.ProtocolError):
         orchestrator.operation_argv("unknown", campaign, paths, lock)
+
+
+class FakeRunner:
+    def __init__(self, staging: Path, *, fail_at: str | None = None) -> None:
+        self.staging = staging
+        self.fail_at = fail_at
+        self.calls: list[tuple[str, ...]] = []
+        self.pass_fds: list[tuple[int, ...]] = []
+        self.cwds: list[Path] = []
+
+    def run(self, argv: tuple[str, ...], *, cwd: Path, pass_fds: tuple[int, ...] = ()) -> int:
+        self.calls.append(argv)
+        self.pass_fds.append(pass_fds)
+        self.cwds.append(cwd)
+        joined = " ".join(argv)
+        if self.fail_at and self.fail_at in joined:
+            return 2
+        if "runtime-inputs" in argv:
+            output = Path(argv[argv.index("--out") + 1])
+            write_json(
+                output,
+                {
+                    "schema_version": "abc/parser-rq-runtime-inputs/v1",
+                    "candidate": {"qualification_identity": {"instrument_versions": {}}},
+                    "corpus": {"entries": []},
+                    "source_accountability_corpus": [],
+                },
+            )
+        if "parser-rq-core-attempt-capture.py" in joined:
+            write_json(self.staging / "lanes/core/core-index.json", {"fixture": True})
+        if "parser-rq-predicate-hardening-capture.py" in joined:
+            predicate_output = self.staging / "lanes/predicate/output"
+            write_json(
+                predicate_output / "raw-diagnostics-index.json",
+                {"expected_work_ids": [], "records": []},
+            )
+            write_json(
+                predicate_output / "parser-ir-index.json",
+                {"expected_work_ids": [], "records": []},
+            )
+        member_by_operation = {
+            "parser-rq-core-attempt-capture.py": ("core_attempt",),
+            "parser-rq-predicate-hardening-capture.py": (
+                "diagnostic_completeness",
+                "parser_ir_conformance",
+            ),
+            "capture-corpus --corpus": ("source_recognition",),
+            "capture-corpus --index": ("diagnostic_gap",),
+            "publication-rq-capture.py": ("publication_structure",),
+            "parser-rq-resource-capture.py": ("resource",),
+        }
+        for marker, members in member_by_operation.items():
+            if marker in joined:
+                for member in members:
+                    write_json(self.staging / f"{member}.json", {"fixture": True})
+        if "capture-corpus --corpus" in joined:
+            source_output = self.staging / "lanes/source/output"
+            (self.staging / "lanes/source/store").mkdir(parents=True, exist_ok=True)
+            write_json(
+                source_output / "classified-source-generation-index.json",
+                {"records": []},
+            )
+            write_json(
+                source_output / "source-recognition-index.json",
+                {
+                    "qualification_identity_ref": "sha256:" + "e" * 64,
+                    "corpus_generation_ref": "sha256:" + "f" * 64,
+                    "records": [],
+                },
+            )
+            write_json(
+                source_output / "source-recognition-aggregate.json",
+                {"eligible_bytes": 0},
+            )
+        if "capture-corpus --index" in joined:
+            write_json(
+                self.staging / "lanes/diagnostic/diagnostic-gap.json",
+                {"aggregate": {"eligible": True}, "works": []},
+            )
+        if "publication-rq-capture.py" in joined:
+            write_json(self.staging / "lanes/publication/manifest.json", {"blobs": []})
+            write_json(self.staging / "lanes/publication/index.json", {"records": []})
+        if "parser-rq-resource-capture.py" in joined:
+            write_json(
+                self.staging / "lanes/resource/index.json",
+                {"records": []},
+            )
+        if "-M:abc/parser-rq-member" in argv:
+            command = argv[argv.index("-M:abc/parser-rq-member") + 1]
+            keys = {
+                "core": ("fatal_failures", "wall_time_seconds", "timeouts"),
+                "predicate-pair": (
+                    "diagnostic_completeness",
+                    "parser_ir_schema_validation",
+                ),
+                "source-recognition": ("source_span_coverage",),
+                "diagnostic-gap": ("silent_drops",),
+                "publication": ("publication_structure",),
+                "resource": ("peak_cgroup_memory_bytes",),
+            }[command]
+            output = Path(argv[argv.index("--out") + 1])
+            write_json(
+                output,
+                {
+                    key: {
+                        "value": 0.0,
+                        "identity_ref": "sha256:" + "e" * 64,
+                    }
+                    for key in keys
+                },
+            )
+        return 0
+
+
+def test_execute_graph_distinguishes_preparation_from_consumed_unavailability(
+    tmp_path: Path,
+) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    prestart = FakeRunner(campaign.config.staging_root, fail_at="recheck-readiness")
+    result = orchestrator.execute_graph(
+        campaign,
+        prestart,
+        now=lambda: datetime(2026, 7, 18, tzinfo=UTC),
+    )
+    assert result.status == "preparation_failed"
+    assert not (campaign.config.staging_root / "capture-start.json").exists()
+
+    poststart = FakeRunner(
+        campaign.config.staging_root, fail_at="ab-parser-rq-source-accountability"
+    )
+    result = orchestrator.execute_graph(
+        campaign,
+        poststart,
+        now=lambda: datetime(2026, 7, 18, tzinfo=UTC),
+    )
+    assert result.status == "unavailable"
+    assert (campaign.config.staging_root / "capture-start.json").is_file()
+    terminal = json.loads((campaign.config.staging_root / "unavailable-terminal.json").read_bytes())
+    assert terminal["status"] == "unavailable"
+    assert (
+        sum("ab-parser-rq-source-accountability" in " ".join(call) for call in poststart.calls) == 1
+    )
+
+
+def test_execute_graph_keeps_one_lock_through_closed_composition(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    runner = FakeRunner(campaign.config.staging_root)
+    result = orchestrator.execute_graph(
+        campaign,
+        runner,
+        now=lambda: datetime(2026, 7, 18, tzinfo=UTC),
+    )
+    assert result.status == "captured", result.reason
+    inherited = [fds for fds in runner.pass_fds if fds]
+    assert len(inherited) == 1
+    assert len(inherited[0]) == 1
+    with pytest.raises(OSError):
+        __import__("os").fstat(inherited[0][0])
+    assert len(set(runner.cwds)) == 1
+    assert runner.cwds[0].name == "detached-cwd"

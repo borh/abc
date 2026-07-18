@@ -198,7 +198,10 @@ def test_authentication_closes_graph_provenance_and_detached_paths(tmp_path: Pat
         "--no-write-lock-file",
         str(campaign.config.candidate_tree / "abc"),
         "--command",
-        "clojure",
+        "bash",
+        "-c",
+        'cd "$0" && exec clojure "$@"',
+        str(campaign.config.candidate_tree / "abc"),
     )
     assert all(
         path.is_relative_to(campaign.config.candidate_tree) for path in campaign.drivers.values()

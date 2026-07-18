@@ -569,6 +569,12 @@ candidate_tree=$(mktemp -d /tmp/soranoha-p5-candidate.XXXXXXXX)
 git -C "$repo_root" worktree add --detach "$candidate_tree" "$candidate_git_rev"
 test -z "$(git -C "$candidate_tree" status --porcelain)"
 test -z "$(git -C "$evidence_tree" status --porcelain)"
+candidate_clojure() {
+  (cd "$candidate_tree/abc" && nix develop . --command clojure "$@")
+}
+evidence_clojure() {
+  (cd "$evidence_tree/abc" && nix develop . --command clojure "$@")
+}
 ```
 
 - [ ] **Step 2: Run runtime preflight**
@@ -615,13 +621,13 @@ Any realization or executable disagreement ends this candidate unavailable.
 From the detached tree, load the live corpus, predicate set, admission coordinates, instrument policies, and verified executable record:
 
 ```bash
-nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+candidate_clojure -M:abc/parser-rq-campaign \
   candidate --repo "$candidate_tree" --parser-git-rev "$candidate_git_rev" \
   --provenance "$build_root/provenance-proof.json" \
   --out "$staging_root/candidate.edn"
-candidate_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+candidate_ref=$(candidate_clojure -M:abc/parser-rq-campaign \
   candidate-ref --candidate "$staging_root/candidate.edn")
-identity_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+identity_ref=$(candidate_clojure -M:abc/parser-rq-campaign \
   qualification-identity-ref --candidate "$staging_root/candidate.edn")
 python "$provenance_tool" bind-provenance --proof "$build_root/provenance-proof.json" \
   --candidate-ref "$candidate_ref" --qualification-identity-ref "$identity_ref" \
@@ -653,12 +659,12 @@ python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" seal-readiness \
   --corpus-list-hash sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd \
   --candidate-tree-clean true --evidence-tree-clean true \
   --out "$staging_root/readiness-receipt.json"
-nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+candidate_clojure -M:abc/parser-rq-campaign \
   authorize --candidate "$staging_root/candidate.edn" \
   --receipt "$staging_root/readiness-receipt.json" --ordinal 1 \
   --not-before "$not_before_utc" --not-after "$not_after_utc" \
   --out "$staging_root/authorization.edn"
-authorization_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+authorization_ref=$(candidate_clojure -M:abc/parser-rq-campaign \
   authorization-ref --authorization "$staging_root/authorization.edn")
 authorization_dir=${authorization_ref#sha256:}
 cp "$staging_root/candidate.edn" "$run_root/candidate.edn"
@@ -670,7 +676,7 @@ cp "$staging_root/authorization.edn" "$run_root/authorizations/$authorization_di
 - [ ] **Step 6: Structurally verify, commit, and push before the window opens**
 
 ```bash
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   verify-authorization-record --candidate "$run_root/candidate.edn" \
   --provenance "$run_root/executable-provenance.json" --graph "$graph" \
   --receipt "$run_root/readiness-receipt.json" \
@@ -690,7 +696,7 @@ If the push is not visible on hinoki before `not_before_utc`, or any volatile la
 
 - [ ] **Step 1: Re-authenticate the sealed explicit site configuration**
 
-Continue with `candidate_git_rev`, `identity_dir`, `authorization_dir`, and `run_root` from Task 10. Require site configuration without embedding it in source:
+Continue with the Task 10 variables and Clojure helper functions. Require site configuration without embedding it in source:
 
 ```bash
 : "${PARSER_RQ_SITE_DESCRIPTOR:?set the reviewed site-descriptor JSON path}"
@@ -722,7 +728,7 @@ The orchestrator verifies time and authorization before its first volatile proce
 - [ ] **Step 3: Authenticate the controller-produced generation without re-execution**
 
 ```bash
-nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+candidate_clojure -M:abc/parser-rq-campaign \
   verify-capture --candidate "$run_root/candidate.edn" \
   --authorization "$run_root/authorizations/$authorization_dir.edn" \
   --capture-root "$capture_staging"
@@ -735,11 +741,11 @@ No parser command may run during these calls. Preserve any honest fail or unavai
 ```bash
 PARSER_RQ_EVIDENCE_STORE=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["evidence_store_root"])' \
   "$PARSER_RQ_SITE_DESCRIPTOR")
-capture_ref=$(nix develop "$candidate_tree/abc" --command clojure -M:abc/parser-rq-campaign \
+capture_ref=$(candidate_clojure -M:abc/parser-rq-campaign \
   capture-ref --capture-index "$capture_staging/capture-index.edn")
 CAPTURE_INDEX="$capture_staging/capture-index.edn" \
 BLOBS_OUT="$capture_staging/blobs.json" \
-nix develop "$candidate_tree/abc" --command clojure -M -e \
+candidate_clojure -M -e \
   '(require (quote [clojure.edn :as edn]) (quote [abc.tools.json :as json]))
    (json/write-deterministic-json-file!
     (System/getenv "BLOBS_OUT")
@@ -764,11 +770,11 @@ test ! -e "$publish_staging" && test ! -e "$run_root/captures/$capture_dir"
 mkdir "$publish_staging"
 cp -a "$capture_staging/." "$publish_staging/"
 mv "$publish_staging" "$run_root/captures/$capture_dir"
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   project --runs-root abc/docs/reports/parser-rq/runs \
   --candidate-ref "$candidate_ref" --measurements-out \
   abc/docs/reports/parser-release-qualification-measurements.edn
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   verify-capture --candidate "$run_root/candidate.edn" \
   --authorization "$run_root/authorizations/$authorization_dir.edn" \
   --capture-root "$run_root/captures/$capture_dir"
@@ -822,13 +828,13 @@ Authenticate the executable, mapping/version/hash, evidence scope, and candidate
 
 ```bash
 pre_eval=$(mktemp -d /tmp/soranoha-p5-pre-evaluation.XXXXXXXX)
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   evaluate --candidate "$run_root/candidate.edn" \
   --capture-root "$run_root/captures/$capture_dir" \
   --registry abc/data/aat-parser-ir-compatibility.edn \
   --admission-candidate "$audit_staging/admission-candidate.edn" \
   --out "$pre_eval"
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   publish-evaluation --candidate-root "$run_root" --evaluation-root "$pre_eval"
 git add "$run_root/evaluations"
 git commit -m "evidence(parser-rq): publish pre-admission evaluation"
@@ -843,7 +849,7 @@ Read the machine status from `admission-report.edn`. If it is `missing`, create 
 
 ```bash
 registry_staging=$(mktemp /tmp/aat-parser-ir-compatibility.XXXXXXXX.edn)
-nix develop ./abc --command clojure -M:abc/aat-compat-admission -- \
+evidence_clojure -M:abc/aat-compat-admission -- \
   --registry abc/data/aat-parser-ir-compatibility.edn \
   --candidates "$audit_staging/admission-candidate.edn" \
   --append-out "$registry_staging"
@@ -858,14 +864,14 @@ After an append, generate an inventory before governance recapture and assert it
 
 ```bash
 inventory=$(mktemp /tmp/adr-evidence-inventory.XXXXXXXX.edn)
-nix develop ./abc --command clojure -M:abc/adr-evidence-inventory -- \
+evidence_clojure -M:abc/adr-evidence-inventory -- \
   --output "$inventory"
 ```
 
 Add a campaign command `verify-registry-closure` that compares the inventory's actual read graph to the committed expected set and fails on omission or a new reader. Then execute each descriptor through `abc.tools.adr-evidence-capture`, register its regenerated output, and run:
 
 ```bash
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   verify-registry-closure --inventory "$inventory"
 just validate-migration
 ```
@@ -874,7 +880,7 @@ just validate-migration
 
 ```bash
 post_eval=$(mktemp -d /tmp/soranoha-p5-post-evaluation.XXXXXXXX)
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   evaluate --candidate "$run_root/candidate.edn" \
   --capture-root "$run_root/captures/$capture_dir" \
   --registry abc/data/aat-parser-ir-compatibility.edn \
@@ -887,9 +893,9 @@ cmp "$run_root/captures/$capture_dir/measurements.edn" \
 Require strict status `admitted` after an append. Publish only the new post-admission evaluation by its generated `evaluation_generation_ref`, then project the unique evaluation matching the current registry hash:
 
 ```bash
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   publish-evaluation --candidate-root "$run_root" --evaluation-root "$post_eval"
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   project --runs-root abc/docs/reports/parser-rq/runs \
   --candidate-ref "$candidate_ref" --registry abc/data/aat-parser-ir-compatibility.edn \
   --report-out abc/docs/reports/parser-release-qualification-report.json
@@ -918,7 +924,7 @@ git push origin main
 - [ ] **Step 1: Run the promotion verifier before editing governance**
 
 ```bash
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   verify-promotion --runs-root abc/docs/reports/parser-rq/runs \
   --candidate-ref "$candidate_ref" \
   --registry abc/data/aat-parser-ir-compatibility.edn \
@@ -951,7 +957,7 @@ If ADR 0040 criteria do not pass, retain Proposed, publish the blocker, and stop
 Require zero errors, a byte-reproducible report with `gate_status = release-qualified`, `adr_0039_status = Accepted`, coherence `ok`, admission `admitted`, exactly nine passes, and zero fail/unavailable entries. Also require Accepted ADR 0040 and 0041, one capture, one current-registry evaluation, reproducible provenance, and one authenticated evidence-integrity receipt.
 
 ```bash
-nix develop ./abc --command clojure -M:abc/parser-rq-campaign \
+evidence_clojure -M:abc/parser-rq-campaign \
   verify-promotion --runs-root abc/docs/reports/parser-rq/runs \
   --candidate-ref "$candidate_ref" \
   --registry abc/data/aat-parser-ir-compatibility.edn \

@@ -320,7 +320,10 @@ def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
             "--no-write-lock-file",
             str(candidate_tree / "abc"),
             "--command",
-            "clojure",
+            "bash",
+            "-c",
+            'cd "$0" && exec clojure "$@"',
+            str(candidate_tree / "abc"),
         ),
     )
 

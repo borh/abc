@@ -104,11 +104,18 @@ def fixture(tmp_path: Path) -> Any:
     }
     receipt = {
         "readiness_receipt_ref": "sha256:" + "d" * 64,
+        "qualification_identity_ref": "sha256:" + "e" * 64,
         "production_graph_hash": graph["policy_hash"],
         "provenance_core_ref": provenance["provenance_core_ref"],
     }
     site_policy = {"replica_status": "configured"}
-    site_descriptor = {"campaign_lock_path": str(tmp_path / "campaign.lock")}
+    primary_store = tmp_path / "primary"
+    (primary_store / "executables").mkdir(parents=True)
+    (primary_store / "executables/time").write_text("time")
+    site_descriptor = {
+        "campaign_lock_path": str(tmp_path / "campaign.lock"),
+        "primary_store_root": str(primary_store),
+    }
     evidence_tree.mkdir()
     candidate = evidence_tree / "candidate.edn"
     authorization = evidence_tree / "authorization.edn"
@@ -202,3 +209,34 @@ def test_public_cli_is_closed_and_legacy_lane_environment_is_rejected(
     monkeypatch.setenv("PARSER_RQ_CORE_CAPTURE", "ignored")
     with pytest.raises(orchestrator.PreparationFailed, match="legacy lane environment"):
         orchestrator.authenticate_inputs(config)
+
+
+def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
+    tmp_path: Path,
+) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
+    lock = orchestrator.LockCapability(fd=9, device=10, inode=11)
+    commands = {
+        operation: orchestrator.operation_argv(operation, campaign, paths, lock)
+        for operation in campaign.operations
+    }
+    assert commands["capture-core"][0] == sys.executable
+    assert "--ab-check" in commands["capture-core"]
+    assert str(campaign.executables["ab-check"]) in commands["capture-core"]
+    assert commands["capture-predicate-pair"][0] == sys.executable
+    assert str(campaign.executables["ab-aozora"]) in commands["capture-predicate-pair"]
+    assert str(campaign.executables["ab-aat-to-parser-ir"]) in commands["capture-predicate-pair"]
+    assert commands["capture-source"][:2] == (
+        str(campaign.executables["ab-parser-rq-source-accountability"]),
+        "capture-corpus",
+    )
+    assert "--generation-index" not in commands["capture-source"]
+    assert commands["derive-diagnostic-gap"][:2] == (
+        str(campaign.executables["ab-parser-rq-diagnostic-authorization"]),
+        "capture-corpus",
+    )
+    assert commands["capture-publication"][0] == sys.executable
+    assert commands["capture-resource"][0] == sys.executable
+    with pytest.raises(orchestrator.ProtocolError):
+        orchestrator.operation_argv("unknown", campaign, paths, lock)

@@ -56,6 +56,10 @@ class PreparationFailed(ValueError):
     """The campaign cannot consume its one authorized capture attempt."""
 
 
+class ProtocolError(ValueError):
+    """The fixed production graph or a producer violated its closed protocol."""
+
+
 @dataclass(frozen=True)
 class CampaignConfig:
     candidate: Path
@@ -82,6 +86,44 @@ class AuthenticatedCampaign:
     executables: dict[str, Path]
     drivers: dict[str, Path]
     clojure_prefix: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class LockCapability:
+    fd: int
+    device: int
+    inode: int
+
+
+@dataclass(frozen=True)
+class RuntimePaths:
+    root: Path
+    runtime: Path
+    corpus: Path
+    source_corpus: Path
+    identity: Path
+    core_root: Path
+    predicate_root: Path
+    source_root: Path
+    diagnostic_root: Path
+    publication_root: Path
+    resource_root: Path
+
+    @classmethod
+    def below(cls, root: Path) -> RuntimePaths:
+        return cls(
+            root=root,
+            runtime=root / "runtime-inputs.json",
+            corpus=root / "runtime-corpus.json",
+            source_corpus=root / "source-accountability-corpus.json",
+            identity=root / "qualification-identity.json",
+            core_root=root / "lanes/core",
+            predicate_root=root / "lanes/predicate",
+            source_root=root / "lanes/source",
+            diagnostic_root=root / "lanes/diagnostic",
+            publication_root=root / "lanes/publication",
+            resource_root=root / "lanes/resource",
+        )
 
 
 def _canonical_bytes(value: object) -> bytes:
@@ -226,6 +268,147 @@ def authenticate_inputs(config: CampaignConfig) -> AuthenticatedCampaign:
             "clojure",
         ),
     )
+
+
+def _driver(campaign: AuthenticatedCampaign, relative: str) -> str:
+    return str(campaign.drivers[relative])
+
+
+def operation_argv(
+    operation: str,
+    campaign: AuthenticatedCampaign,
+    paths: RuntimePaths,
+    lock: LockCapability,
+) -> tuple[str, ...]:
+    candidate_tree = campaign.config.candidate_tree.resolve()
+    abc_root = candidate_tree / "abc"
+    ab_root = candidate_tree / "ab-validator"
+    if operation == "capture-core":
+        return (
+            sys.executable,
+            _driver(
+                campaign,
+                "ab-validator/reports/parser-ir/parser-rq-core-attempt-capture.py",
+            ),
+            "--runtime",
+            str(paths.runtime),
+            "--policy",
+            str(abc_root / "data/parser-rq-core-attempt-policy-v1.json"),
+            "--ab-check",
+            str(campaign.executables["ab-check"]),
+            "--corpus-root",
+            str(candidate_tree),
+            "--corpus-index",
+            str(abc_root / "data/parser-release-qualification-corpus.edn"),
+            "--time-executable",
+            str(Path(str(campaign.site_descriptor["primary_store_root"])) / "executables/time"),
+            "--staging-root",
+            str(paths.core_root / "records"),
+            "--inherited-lock-fd",
+            str(lock.fd),
+            "--lock-device",
+            str(lock.device),
+            "--lock-inode",
+            str(lock.inode),
+            "--out",
+            str(paths.core_root / "core-index.json"),
+        )
+    if operation == "capture-predicate-pair":
+        return (
+            sys.executable,
+            _driver(
+                campaign,
+                "ab-validator/reports/parser-ir/parser-rq-predicate-hardening-capture.py",
+            ),
+            "--corpus",
+            str(paths.corpus),
+            "--source-root",
+            str(candidate_tree),
+            "--ab-aozora",
+            str(campaign.executables["ab-aozora"]),
+            "--converter",
+            str(campaign.executables["ab-aat-to-parser-ir"]),
+            "--mapping",
+            str(ab_root / "data/aat-to-parser-ir-mapping-v2.json"),
+            "--abc-root",
+            str(abc_root),
+            "--identity-ref",
+            str(campaign.readiness_receipt["qualification_identity_ref"]),
+            "--parser-policy",
+            str(abc_root / "data/parser-rq-parser-ir-conformance-policy-v1.json"),
+            "--store",
+            str(paths.predicate_root / "store"),
+            "--output",
+            str(paths.predicate_root / "output"),
+        )
+    if operation == "capture-source":
+        return (
+            str(campaign.executables["ab-parser-rq-source-accountability"]),
+            "capture-corpus",
+            "--corpus",
+            str(paths.source_corpus),
+            "--source-root",
+            str(candidate_tree),
+            "--parser-ir-root",
+            str(paths.predicate_root / "output/parser-ir"),
+            "--qualification",
+            str(paths.identity),
+            "--taxonomy",
+            str(abc_root / "data/parser-rq-ignored-regions-v1.json"),
+            "--store-root",
+            str(paths.source_root / "store"),
+            "--output-dir",
+            str(paths.source_root / "output"),
+        )
+    if operation == "derive-diagnostic-gap":
+        return (
+            str(campaign.executables["ab-parser-rq-diagnostic-authorization"]),
+            "capture-corpus",
+            "--index",
+            str(paths.source_root / "output/source-recognition-index.json"),
+            "--policy",
+            str(abc_root / "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"),
+            "--out",
+            str(paths.diagnostic_root / "diagnostic-gap.json"),
+        )
+    if operation == "capture-publication":
+        return (
+            sys.executable,
+            _driver(
+                campaign,
+                "ab-validator/reports/parser-ir/publication-rq-capture.py",
+            ),
+            "--input",
+            str(paths.publication_root / "capture-input.json"),
+            "--store",
+            str(paths.publication_root / "store"),
+            "--manifest-out",
+            str(paths.publication_root / "manifest.json"),
+            "--index-out",
+            str(paths.publication_root / "index.json"),
+        )
+    if operation == "capture-resource":
+        return (
+            sys.executable,
+            _driver(
+                campaign,
+                "ab-validator/reports/parser-ir/parser-rq-resource-capture.py",
+            ),
+            "--policy",
+            str(abc_root / "data/parser-rq-resource-policy-v1.json"),
+            "--wrapper",
+            _driver(
+                campaign,
+                "ab-validator/reports/parser-ir/parser-rq-resource-wrapper.py",
+            ),
+            "--command-template",
+            str(paths.resource_root / "command-template.json"),
+            "--records-root",
+            str(paths.resource_root / "records"),
+            "--out",
+            str(paths.resource_root / "index.json"),
+        )
+    raise ProtocolError(f"unknown production operation: {operation}")
 
 
 def _parser() -> argparse.ArgumentParser:

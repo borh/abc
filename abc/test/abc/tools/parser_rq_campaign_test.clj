@@ -39,12 +39,45 @@
              :executable_provenance_ref sha}
     :candidate_ref campaign/candidate-ref))
 
+(def provenance
+  (with-ref
+    {:schema_id "https://w3id.org/abc/schemas/parser-rq-executable-provenance.schema.json"
+     :schema_version "2.0.0"
+     :candidate_ref (:candidate_ref candidate)
+     :qualification_identity_ref (:qualification_identity_ref candidate)
+     :status :reproducible}
+    :provenance_core_ref campaign/provenance-core-ref))
+
+(def graph
+  (with-ref {:schema_version "abc/parser-rq-production-graph/v1"}
+    :policy_hash campaign/production-graph-ref))
+
+(def receipt
+  (with-ref
+    {:schema_id "https://w3id.org/abc/schemas/parser-rq-readiness-receipt.schema.json"
+     :schema_version "1.0.0"
+     :site_preflight_report_ref sha
+     :candidate_ref (:candidate_ref candidate)
+     :qualification_identity_ref (:qualification_identity_ref candidate)
+     :provenance_core_ref (:provenance_core_ref provenance)
+     :production_graph_hash (:policy_hash graph)
+     :production_graph_version (:schema_version graph)
+     :candidate_git_rev (:parser_git_rev qualification-identity)
+     :candidate_tree_clean true
+     :evidence_base_git_rev (apply str (repeat 40 "b"))
+     :evidence_tree_clean true
+     :corpus_snapshot_hash (:corpus_snapshot_hash qualification-identity)
+     :corpus_list_hash (:corpus_list_hash qualification-identity)
+     :site_facts {:clock_synchronized true}}
+    :readiness_receipt_ref campaign/readiness-receipt-ref))
+
 (def authorization
   (with-ref {:schema_id "https://w3id.org/abc/schemas/parser-rq-capture-authorization.schema.json"
-             :schema_version "1.0.0"
+             :schema_version "2.0.0"
              :authorization_ordinal 1
              :candidate_ref (:candidate_ref candidate)
              :qualification_identity_ref (:qualification_identity_ref candidate)
+             :readiness_receipt_ref (:readiness_receipt_ref receipt)
              :not_before_utc "2026-07-17T00:00:00Z"
              :not_after_utc "2026-07-17T01:00:00Z"
              :repetitions 3
@@ -110,19 +143,83 @@
 
 (deftest content-references-ignore-only-their-self-field
   (doseq [[value field ref-fn] [[candidate :candidate_ref campaign/candidate-ref]
+                                [receipt :readiness_receipt_ref
+                                 campaign/readiness-receipt-ref]
                                 [authorization :authorization_ref campaign/authorization-ref]]]
     (is (= (get value field) (ref-fn value)))
     (is (not= (get value field) (ref-fn (assoc value :schema_version "changed"))))))
 
 (deftest authorization-is-one-shot-candidate-bound-and-time-bounded
-  (is (= [] (campaign/verify-authorization candidate authorization
-                                           "2026-07-17T00:30:00Z")))
+  (is (= [] (campaign/verify-authorization candidate provenance graph receipt authorization
+                                           "2026-07-17T00:30:00Z" true)))
+  (is (= [] (campaign/verify-authorization-record
+             candidate provenance graph receipt authorization)))
   (doseq [bad [(assoc authorization :authorization_ordinal 2)
                (assoc authorization :candidate_ref sha-b)
                (assoc authorization :not_after_utc "2026-07-16T23:59:59Z")
                (assoc authorization :extra true)]]
-    (is (seq (campaign/verify-authorization candidate bad
-                                            "2026-07-17T00:30:00Z")))))
+    (is (seq (campaign/verify-authorization candidate provenance graph receipt bad
+                                            "2026-07-17T00:30:00Z" true)))))
+
+(deftest authorization-structure-is-separate-from-clock-permission
+  (let [future (campaign/build-authorization
+                candidate receipt 1 "2026-07-18T01:00:00Z"
+                "2026-07-18T02:00:00Z" sha)]
+    (is (empty? (campaign/verify-authorization-record
+                 candidate provenance graph receipt future)))
+    (is (some #(re-find #"outside" %)
+              (campaign/verify-authorization
+               candidate provenance graph receipt future
+               "2026-07-18T00:00:00Z" true)))
+    (is (some #(re-find #"clock is not synchronized" %)
+              (campaign/verify-authorization
+               candidate provenance graph receipt future
+               "2026-07-18T01:30:00Z" false)))))
+
+(deftest authorization-rejects-resealed-readiness-drift
+  (doseq [changed [(assoc receipt :candidate_ref sha-b)
+                   (assoc receipt :qualification_identity_ref sha-b)
+                   (assoc receipt :provenance_core_ref sha-b)
+                   (assoc receipt :site_preflight_report_ref sha-b)
+                   (assoc receipt :production_graph_version "changed")]
+          :let [resealed (assoc changed :readiness_receipt_ref
+                                (campaign/readiness-receipt-ref changed))]]
+    (is (seq (campaign/verify-authorization-record
+              candidate provenance graph resealed authorization))))
+  (is (seq (campaign/verify-authorization-record
+            candidate provenance graph receipt
+            (assoc authorization :readiness_receipt_ref sha-b)))))
+
+(deftest authorization-cli-requires-explicit-clock-and-supports-structural-check
+  (let [root (fs/create-temp-dir {:prefix "parser-rq-authorization-cli"})
+        candidate-path (fs/file root "candidate.edn")
+        provenance-path (fs/file root "provenance.json")
+        graph-path (fs/file root "graph.json")
+        receipt-path (fs/file root "receipt.json")
+        authorization-path (fs/file root "authorization.edn")]
+    (write-edn! candidate-path candidate)
+    (write-canonical-json! provenance-path provenance)
+    (write-canonical-json! graph-path graph)
+    (write-canonical-json! receipt-path receipt)
+    (write-edn! authorization-path authorization)
+    (is (= "ok\n"
+           (with-out-str
+             (campaign/-main
+              "verify-authorization-record"
+              "--candidate" (str candidate-path)
+              "--provenance" (str provenance-path)
+              "--graph" (str graph-path)
+              "--receipt" (str receipt-path)
+              "--authorization" (str authorization-path)))))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (campaign/-main
+                  "verify-authorization"
+                  "--candidate" (str candidate-path)
+                  "--provenance" (str provenance-path)
+                  "--graph" (str graph-path)
+                  "--receipt" (str receipt-path)
+                  "--authorization" (str authorization-path)
+                  "--clock-synchronized" "true")))))
 
 (deftest candidate-is-derived-from-live-contracts-and-reproducible-provenance
   (let [root (fs/create-temp-dir {:prefix "parser-rq-candidate"})
@@ -150,8 +247,30 @@
             :target_parser_ir_schema_id "parser-ir"
             :target_parser_ir_schema_hash sha})
         value (campaign/build-candidate root revision provenance)
+        receipt-value (-> receipt
+                          (assoc :candidate_ref (:candidate_ref value)
+                                 :qualification_identity_ref
+                                 (:qualification_identity_ref value)
+                                 :provenance_core_ref
+                                 (campaign/provenance-core-ref provenance)
+                                 :candidate_git_rev revision
+                                 :corpus_snapshot_hash
+                                 (get-in value [:qualification_identity
+                                                :corpus_snapshot_hash])
+                                 :corpus_list_hash
+                                 (get-in value [:qualification_identity
+                                                :corpus_list_hash]))
+                          (dissoc :readiness_receipt_ref)
+                          (with-ref :readiness_receipt_ref
+                            campaign/readiness-receipt-ref))
+        provenance-value (assoc provenance
+                                :candidate_ref (:candidate_ref value)
+                                :qualification_identity_ref
+                                (:qualification_identity_ref value)
+                                :provenance_core_ref
+                                (campaign/provenance-core-ref provenance))
         authorization-value (campaign/build-authorization
-                             value 1 "2026-07-17T00:00:00Z"
+                             value receipt-value 1 "2026-07-17T00:00:00Z"
                              "2026-07-17T01:00:00Z" sha)]
     (is (= (:candidate_ref value) (campaign/candidate-ref value)))
     (is (= (:executable_provenance_ref value)
@@ -159,7 +278,8 @@
     (is (= "sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203"
            (get-in value [:qualification_identity :predicate_set_hash])))
     (is (= [] (campaign/verify-authorization
-               value authorization-value "2026-07-17T00:30:00Z")))))
+               value provenance-value graph receipt-value authorization-value
+               "2026-07-17T00:30:00Z" true)))))
 
 (deftest composition-installs-exactly-nine-authenticated-envelopes
   (let [members {:core_attempt (select-keys envelopes

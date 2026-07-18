@@ -50,8 +50,15 @@
 
 (def authorization-keys
   #{:schema_id :schema_version :authorization_ref :authorization_ordinal
-    :candidate_ref :qualification_identity_ref :not_before_utc :not_after_utc
-    :repetitions :reduction :host_policy_ref})
+    :candidate_ref :qualification_identity_ref :readiness_receipt_ref
+    :not_before_utc :not_after_utc :repetitions :reduction :host_policy_ref})
+
+(def readiness-receipt-keys
+  #{:schema_id :schema_version :readiness_receipt_ref :site_preflight_report_ref
+    :candidate_ref :qualification_identity_ref :provenance_core_ref
+    :production_graph_hash :production_graph_version :candidate_git_rev
+    :candidate_tree_clean :evidence_base_git_rev :evidence_tree_clean
+    :corpus_snapshot_hash :corpus_list_hash :site_facts})
 
 (defn- canonical-value [value]
   (walk/postwalk (fn [x]
@@ -82,6 +89,20 @@
 
 (defn authorization-ref [authorization]
   (content-ref authorization :authorization_ref))
+
+(defn readiness-receipt-ref [receipt]
+  (content-ref receipt :readiness_receipt_ref))
+
+(defn production-graph-ref [graph]
+  (content-ref graph :policy_hash))
+
+(defn provenance-core-ref [provenance]
+  (-> provenance
+      (dissoc :schema_id :schema_version :candidate_ref
+              :qualification_identity_ref :provenance_core_ref)
+      canonical-value
+      hash/sha256-json-jcs
+      hash/format-sha256))
 
 (defn capture-generation-ref [capture-index]
   (content-ref capture-index :capture_generation_ref))
@@ -197,13 +218,71 @@
     (Instant/parse value)
     (catch Exception _ nil)))
 
-(defn verify-authorization
-  [candidate authorization now]
+(defn verify-readiness-receipt
+  [candidate provenance graph receipt]
+  (let [identity (:qualification_identity candidate)]
+    (cond-> []
+      (not= readiness-receipt-keys (set (keys receipt)))
+      (conj "readiness receipt violates its closed key contract")
+
+      (or (not= "https://w3id.org/abc/schemas/parser-rq-readiness-receipt.schema.json"
+                (:schema_id receipt))
+          (not= "1.0.0" (:schema_version receipt)))
+      (conj "readiness receipt schema identity is invalid")
+
+      (not= (:readiness_receipt_ref receipt) (readiness-receipt-ref receipt))
+      (conj "readiness_receipt_ref does not authenticate the readiness receipt")
+
+      (not= (:candidate_ref candidate) (:candidate_ref receipt))
+      (conj "readiness receipt candidate_ref does not match the candidate")
+
+      (not= (:qualification_identity_ref candidate)
+            (:qualification_identity_ref receipt))
+      (conj "readiness receipt qualification identity does not match the candidate")
+
+      (not= (:candidate_ref candidate) (:candidate_ref provenance))
+      (conj "bound provenance candidate_ref does not match the candidate")
+
+      (not= (:qualification_identity_ref candidate)
+            (:qualification_identity_ref provenance))
+      (conj "bound provenance qualification identity does not match the candidate")
+
+      (not= (:provenance_core_ref provenance) (:provenance_core_ref receipt))
+      (conj "readiness receipt provenance core does not match")
+
+      (not= (:provenance_core_ref provenance) (provenance-core-ref provenance))
+      (conj "bound provenance core does not authenticate its evidence")
+
+      (not= (:policy_hash graph) (:production_graph_hash receipt))
+      (conj "readiness receipt production graph hash does not match")
+
+      (not= (:policy_hash graph) (production-graph-ref graph))
+      (conj "production graph policy hash does not authenticate the graph")
+
+      (not= (:schema_version graph) (:production_graph_version receipt))
+      (conj "readiness receipt production graph version does not match")
+
+      (not= (:parser_git_rev identity) (:candidate_git_rev receipt))
+      (conj "readiness receipt candidate revision does not match")
+
+      (not= (:corpus_snapshot_hash identity) (:corpus_snapshot_hash receipt))
+      (conj "readiness receipt corpus snapshot does not match")
+
+      (not= (:corpus_list_hash identity) (:corpus_list_hash receipt))
+      (conj "readiness receipt corpus list does not match")
+
+      (not (and (:candidate_tree_clean receipt) (:evidence_tree_clean receipt)))
+      (conj "readiness receipt does not bind clean candidate and evidence trees")
+
+      (not (sha256? (:site_preflight_report_ref receipt)))
+      (conj "readiness receipt site-preflight report reference is invalid"))))
+
+(defn- authorization-record-errors
+  [candidate authorization]
   (let [candidate-identity-ref
         (qualification/qualification-identity-ref (:qualification_identity candidate))
         not-before (parse-instant (:not_before_utc authorization))
-        not-after (parse-instant (:not_after_utc authorization))
-        execution-time (parse-instant now)]
+        not-after (parse-instant (:not_after_utc authorization))]
     (cond-> []
       (not= candidate-keys (set (keys candidate)))
       (conj "candidate violates its closed key contract")
@@ -216,6 +295,11 @@
 
       (not= authorization-keys (set (keys authorization)))
       (conj "authorization violates its closed key contract")
+
+      (or (not= "https://w3id.org/abc/schemas/parser-rq-capture-authorization.schema.json"
+                (:schema_id authorization))
+          (not= "2.0.0" (:schema_version authorization)))
+      (conj "authorization schema identity is invalid")
 
       (not= (:authorization_ref authorization) (authorization-ref authorization))
       (conj "authorization_ref does not authenticate the authorization")
@@ -230,11 +314,9 @@
             (:qualification_identity_ref authorization))
       (conj "authorization qualification identity does not match the candidate")
 
-      (or (nil? not-before) (nil? not-after) (nil? execution-time)
-          (.isAfter ^Instant not-before ^Instant not-after)
-          (.isBefore ^Instant execution-time ^Instant not-before)
-          (.isAfter ^Instant execution-time ^Instant not-after))
-      (conj "execution time is outside the inclusive authorization interval")
+      (or (nil? not-before) (nil? not-after)
+          (.isAfter ^Instant not-before ^Instant not-after))
+      (conj "authorization interval is invalid")
 
       (not= 3 (:repetitions authorization))
       (conj "authorization must require three repetitions")
@@ -242,13 +324,46 @@
       (not= "maximum" (:reduction authorization))
       (conj "authorization must require maximum reduction"))))
 
-(defn build-authorization [candidate ordinal not-before not-after host-policy-ref]
+(defn verify-authorization-record
+  [candidate provenance graph receipt authorization]
+  (vec
+   (concat
+    (authorization-record-errors candidate authorization)
+    (verify-readiness-receipt candidate provenance graph receipt)
+    (when (not= (:readiness_receipt_ref receipt)
+                (:readiness_receipt_ref authorization))
+      ["authorization readiness receipt does not match the sealed receipt"]))))
+
+(defn- temporal-authorization-errors [authorization now clock-synchronized?]
+  (let [not-before (parse-instant (:not_before_utc authorization))
+        not-after (parse-instant (:not_after_utc authorization))
+        execution-time (parse-instant now)]
+    (cond-> []
+      (not= true clock-synchronized?)
+      (conj "authorization clock is not synchronized")
+
+      (or (nil? not-before) (nil? not-after) (nil? execution-time)
+          (.isAfter ^Instant not-before ^Instant not-after)
+          (.isBefore ^Instant execution-time ^Instant not-before)
+          (.isAfter ^Instant execution-time ^Instant not-after))
+      (conj "execution time is outside the inclusive authorization interval"))))
+
+(defn verify-authorization
+  ([candidate provenance graph receipt authorization now clock-synchronized?]
+   (vec (concat (verify-authorization-record candidate provenance graph receipt authorization)
+                (temporal-authorization-errors authorization now clock-synchronized?))))
+  ([candidate authorization now]
+   (vec (concat (authorization-record-errors candidate authorization)
+                (temporal-authorization-errors authorization now true)))))
+
+(defn build-authorization [candidate receipt ordinal not-before not-after host-policy-ref]
   (let [authorization {:schema_id
                        "https://w3id.org/abc/schemas/parser-rq-capture-authorization.schema.json"
-                       :schema_version "1.0.0"
+                       :schema_version "2.0.0"
                        :authorization_ordinal ordinal
                        :candidate_ref (:candidate_ref candidate)
                        :qualification_identity_ref (:qualification_identity_ref candidate)
+                       :readiness_receipt_ref (:readiness_receipt_ref receipt)
                        :not_before_utc not-before
                        :not_after_utc not-after
                        :repetitions 3
@@ -852,7 +967,8 @@
 
 (defn- usage []
   (str "usage: parser-rq-campaign <candidate-ref|authorization-ref|capture-ref|evaluate-ref> --<kind> PATH\n"
-       "       parser-rq-campaign verify-authorization --candidate PATH --authorization PATH [--utc TIME]\n"
+       "       parser-rq-campaign verify-authorization-record --candidate PATH --provenance PATH --graph PATH --receipt PATH --authorization PATH\n"
+       "       parser-rq-campaign verify-authorization --candidate PATH --provenance PATH --graph PATH --receipt PATH --authorization PATH --utc TIME --clock-synchronized true|false\n"
        "       parser-rq-campaign compose|verify-capture --candidate PATH --capture-root DIR [--authorization PATH] [--out PATH]\n"
        "       parser-rq-campaign project --runs-root DIR --candidate-ref HASH --registry PATH [--measurements-out PATH] [--report-out PATH]\n"
        "       parser-rq-campaign verify-promotion --runs-root DIR --candidate-ref HASH --registry PATH --measurements PATH --report PATH --provenance PATH --adr-0040 PATH --adr-0041 PATH"))
@@ -885,22 +1001,44 @@
       "authorize"
       (let [options (parse-options command-args)
             candidate (files/read-edn (required-option options :candidate))
+            receipt (-> (files/read-json (required-option options :receipt))
+                        walk/keywordize-keys)
             policy (files/read-json
                     (or (:host_policy options)
                         (files/path "data" "parser-rq-resource-policy-v1.json")))
-            value (build-authorization candidate
+            value (build-authorization candidate receipt
                                        (parse-long (required-option options :ordinal))
                                        (required-option options :not_before)
                                        (required-option options :not_after)
                                        (get policy "policy_hash"))]
         (write-edn! (required-option options :out) value)
         (println (:authorization_ref value)))
+      "verify-authorization-record"
+      (let [options (parse-options command-args)
+            errors (verify-authorization-record
+                    (files/read-edn (required-option options :candidate))
+                    (-> (files/read-json (required-option options :provenance))
+                        walk/keywordize-keys)
+                    (-> (files/read-json (required-option options :graph))
+                        walk/keywordize-keys)
+                    (-> (files/read-json (required-option options :receipt))
+                        walk/keywordize-keys)
+                    (files/read-edn (required-option options :authorization)))]
+        (when (seq errors) (throw (ex-info "authorization record invalid" {:errors errors})))
+        (println "ok"))
       "verify-authorization"
       (let [options (parse-options command-args)
             errors (verify-authorization
                     (files/read-edn (required-option options :candidate))
+                    (-> (files/read-json (required-option options :provenance))
+                        walk/keywordize-keys)
+                    (-> (files/read-json (required-option options :graph))
+                        walk/keywordize-keys)
+                    (-> (files/read-json (required-option options :receipt))
+                        walk/keywordize-keys)
                     (files/read-edn (required-option options :authorization))
-                    (or (:utc options) (str (Instant/now))))]
+                    (required-option options :utc)
+                    (= "true" (required-option options :clock_synchronized)))]
         (when (seq errors) (throw (ex-info "authorization invalid" {:errors errors})))
         (println "ok"))
       "verify-provenance"

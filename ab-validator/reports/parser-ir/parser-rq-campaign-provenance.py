@@ -520,16 +520,7 @@ def _nix_hash(value: str) -> str:
     raise ProvenanceUnavailable("NAR hash is not SHA-256")
 
 
-def capture_build(
-    realization: dict[str, object],
-    graph: dict[str, object],
-    parser_git_rev: str,
-    runner: Runner,
-) -> dict[str, object]:
-    store_uri = realization.get("store_uri")
-    output_path = realization.get("output_path")
-    if not isinstance(store_uri, str) or not isinstance(output_path, str):
-        raise ProvenanceUnavailable("realization store or output is absent")
+def _output_nar_hash(runner: Runner, store_uri: str, output_path: str) -> str:
     path_info = runner.run(
         [
             "nix",
@@ -548,10 +539,22 @@ def capture_build(
         rows = json.loads(path_info.stdout)
         if not isinstance(rows, dict) or set(rows) != {output_path}:
             raise TypeError
-        row = rows[output_path]
-        nar_hash = _nix_hash(row["narHash"])
+        return _nix_hash(rows[output_path]["narHash"])
     except (json.JSONDecodeError, KeyError, TypeError) as error:
         raise ProvenanceUnavailable("Nix path-info output is malformed") from error
+
+
+def capture_build(
+    realization: dict[str, object],
+    graph: dict[str, object],
+    parser_git_rev: str,
+    runner: Runner,
+) -> dict[str, object]:
+    store_uri = realization.get("store_uri")
+    output_path = realization.get("output_path")
+    if not isinstance(store_uri, str) or not isinstance(output_path, str):
+        raise ProvenanceUnavailable("realization store or output is absent")
+    nar_hash = _output_nar_hash(runner, store_uri, output_path)
     graph_executables = graph.get("executables")
     if not isinstance(graph_executables, list) or not graph_executables:
         raise ProvenanceUnavailable("production graph executable set is empty")
@@ -635,6 +638,57 @@ def capture_build(
     return record
 
 
+def verify_installed_build(proof: dict[str, object], runner: Runner) -> str:
+    builds = proof.get("builds")
+    executables = proof.get("executables")
+    if proof.get("status") != "reproducible":
+        raise ProvenanceUnavailable("build proof is not reproducible")
+    if not isinstance(builds, list) or len(builds) != 2:
+        raise ProvenanceUnavailable("build proof membership is malformed")
+    if not isinstance(executables, list) or not executables:
+        raise ProvenanceUnavailable("build proof executable set is empty")
+    output_refs = {row.get("output_ref") for row in builds if isinstance(row, dict)}
+    output_paths = {row.get("nix_output") for row in executables if isinstance(row, dict)}
+    nar_hashes = {row.get("nar_hash") for row in executables if isinstance(row, dict)}
+    if len(output_refs) != 1 or len(output_paths) != 1 or nar_hashes != output_refs:
+        raise ProvenanceUnavailable("installed output identity is not closed")
+    output_path = next(iter(output_paths))
+    expected_nar = next(iter(output_refs))
+    if not isinstance(output_path, str) or not isinstance(expected_nar, str):
+        raise ProvenanceUnavailable("installed output identity is malformed")
+    if _output_nar_hash(runner, "daemon", output_path) != expected_nar:
+        raise ProvenanceUnavailable("installed output NAR differs from build proof")
+    for row in executables:
+        if not isinstance(row, dict):
+            raise ProvenanceUnavailable("installed executable record is malformed")
+        name = row.get("name")
+        expected_hash = row.get("sha256")
+        expected_bytes = row.get("bytes")
+        if (
+            not isinstance(name, str)
+            or not name
+            or "/" in name
+            or not isinstance(expected_hash, str)
+            or not isinstance(expected_bytes, int)
+        ):
+            raise ProvenanceUnavailable("installed executable identity is malformed")
+        streamed = runner.run(
+            [
+                "nix",
+                "store",
+                "cat",
+                "--store",
+                "daemon",
+                f"{output_path}/bin/{name}",
+            ]
+        )
+        if streamed.returncode != 0:
+            raise ProvenanceUnavailable(f"installed executable is unavailable: {name}")
+        if sha256_bytes(streamed.stdout) != expected_hash or len(streamed.stdout) != expected_bytes:
+            raise ProvenanceUnavailable(f"installed executable differs from build proof: {name}")
+    return output_path
+
+
 def _read_json(path: Path) -> object:
     return json.loads(path.read_bytes())
 
@@ -657,6 +711,8 @@ def _parser() -> argparse.ArgumentParser:
     compare.add_argument("--first", type=Path, required=True)
     compare.add_argument("--second", type=Path, required=True)
     compare.add_argument("--out", type=Path, required=True)
+    installed = commands.add_parser("verify-installed")
+    installed.add_argument("--proof", type=Path, required=True)
     bind = commands.add_parser("bind-provenance")
     bind.add_argument("--proof", type=Path, required=True)
     bind.add_argument("--candidate-ref", required=True)
@@ -707,6 +763,11 @@ def main(argv: list[str] | None = None) -> int:
             if value.get("status") != "reproducible":
                 raise ProvenanceUnavailable(str(value.get("reason")))
             _atomic_json(args.out, value)
+        elif args.command == "verify-installed":
+            proof = _read_json(args.proof)
+            if not isinstance(proof, dict):
+                raise ProvenanceUnavailable("proof is not an object")
+            print(verify_installed_build(proof, runner))
         elif args.command == "bind-provenance":
             proof = _read_json(args.proof)
             if not isinstance(proof, dict):

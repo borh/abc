@@ -592,7 +592,7 @@ python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" preflight-site \
   --evidence-tree-clean true
 ```
 
-- [ ] **Step 3: Perform and compare two independent realizations**
+- [ ] **Step 3: Perform, compare, and install two independent realizations**
 
 The provenance command seeds only the target's dependencies into each fresh
 store, asserts the target is absent, and builds the concrete derivation
@@ -612,9 +612,23 @@ for build_id in build-a build-b; do
 done
 python "$provenance_tool" compare-builds --first "$build_root/build-a.json" \
   --second "$build_root/build-b.json" --out "$build_root/provenance-proof.json"
+source_store=$(jq -er \
+  '.builds | map(select(.build_id == "build-a")) | if length == 1 then .[0].store_uri else error("build-a is not unique") end' \
+  "$build_root/provenance-proof.json")
+execution_output=$(jq -er \
+  '[.executables[].nix_output] | unique | if length == 1 then .[0] else error("output is not unique") end' \
+  "$build_root/provenance-proof.json")
+nix copy --no-check-sigs --from "$source_store" --to daemon "$execution_output"
+installed_output=$(python "$provenance_tool" verify-installed \
+  --proof "$build_root/provenance-proof.json")
+test "$installed_output" = "$execution_output"
 ```
 
-Any realization or executable disagreement ends this candidate unavailable.
+The copy happens only after the two realizations compare equal. It makes that
+already-proven value executable by the campaign without adding the execution
+store to qualification identity. `verify-installed` re-reads the installed NAR
+and every executable byte through the execution store. Any realization,
+installation, or executable disagreement ends this candidate unavailable.
 
 - [ ] **Step 4: Generate the candidate and bind provenance**
 

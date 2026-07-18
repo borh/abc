@@ -267,11 +267,51 @@ def test_capture_build_rejects_duplicate_graph_executable(tmp_path: Path) -> Non
         raise AssertionError("duplicate graph executable must fail closed")
 
 
+def test_verify_installed_build_reauthenticates_nar_and_executable_bytes() -> None:
+    output = "/nix/store/bbbbbbbb-target"
+    payload = b"candidate executable"
+    nar_hash = "sha256-" + base64.b64encode(bytes(range(32))).decode()
+    expected_nar = "sha256:" + bytes(range(32)).hex()
+    proof = {
+        "status": "reproducible",
+        "builds": [
+            {"build_id": "build-a", "output_ref": expected_nar},
+            {"build_id": "build-b", "output_ref": expected_nar},
+        ],
+        "executables": [
+            {
+                "name": "ab-check",
+                "nix_output": output,
+                "nar_hash": expected_nar,
+                "sha256": module.sha256_bytes(payload),
+                "bytes": len(payload),
+            }
+        ],
+    }
+    runner = FakeRunner(
+        [
+            result(stdout=json.dumps({output: {"narHash": nar_hash}}).encode()),
+            result(stdout=payload),
+        ]
+    )
+    assert module.verify_installed_build(proof, runner) == output
+    assert runner.calls[0][0][6:8] == ["daemon", output]
+    assert runner.calls[1][0] == [
+        "nix",
+        "store",
+        "cat",
+        "--store",
+        "daemon",
+        f"{output}/bin/ab-check",
+    ]
+
+
 def test_every_cli_subcommand_has_help() -> None:
     for command in (
         "realize-build",
         "capture-build",
         "compare-builds",
+        "verify-installed",
         "bind-provenance",
         "resolve-executable",
         "verify-evidence",

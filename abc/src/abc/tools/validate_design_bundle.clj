@@ -322,14 +322,16 @@
     (throw (ex-info (string/join "\n" errors)
                     {:errors errors}))))
 
+(defn- projected-policy-hash [policy]
+  (-> policy
+      (dissoc "policy_hash")
+      hash/sha256-json-jcs
+      hash/format-sha256))
+
 (defn parser-rq-execution-readiness-policy-errors
   "Authenticate the two committed execution-readiness policy values."
   [site-policy graph]
-  (let [projected-hash #(-> %
-                            (dissoc "policy_hash")
-                            hash/sha256-json-jcs
-                            hash/format-sha256)
-        expected-members ["core_attempt" "source_recognition" "diagnostic_gap"
+  (let [expected-members ["core_attempt" "source_recognition" "diagnostic_gap"
                           "diagnostic_completeness" "parser_ir_conformance"
                           "publication_structure" "resource"]
         operation-members ["core_attempt" "predicate_hardening"
@@ -338,10 +340,10 @@
         executables (get graph "executables")
         executable-keys #{"name" "adapter" "adapter_version" "argv_template"}]
     (cond-> []
-      (not= (get site-policy "policy_hash") (projected-hash site-policy))
+      (not= (get site-policy "policy_hash") (projected-policy-hash site-policy))
       (conj "parser RQ site policy hash has drifted")
 
-      (not= (get graph "policy_hash") (projected-hash graph))
+      (not= (get graph "policy_hash") (projected-policy-hash graph))
       (conj "parser RQ production graph hash has drifted")
 
       (not= expected-members (get graph "installed_members"))

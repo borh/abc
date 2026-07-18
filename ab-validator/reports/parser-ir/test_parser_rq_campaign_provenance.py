@@ -582,3 +582,42 @@ def test_verify_evidence_cli_writes_bound_self_authenticating_receipt(
     assert receipt["capture_generation_ref"] == capture_ref
     assert receipt["receipt_ref"] == module.receipt_ref(receipt)
     assert module.main(["verify" + "-replicas", "--help"]) == 2
+
+
+def test_verify_evidence_cli_records_unavailable_before_failing(tmp_path: Path) -> None:
+    blobs = tmp_path / "blobs.json"
+    blobs.write_text(
+        json.dumps(
+            [
+                {
+                    "sha256": "sha256:" + "a" * 64,
+                    "bytes": 1,
+                    "media_type": "application/json",
+                    "locator": "missing",
+                }
+            ]
+        )
+    )
+    output = tmp_path / "receipt.json"
+    assert (
+        module.main(
+            [
+                "verify-evidence",
+                "--blobs",
+                str(blobs),
+                "--evidence-root",
+                str(tmp_path),
+                "--candidate-ref",
+                "sha256:" + "b" * 64,
+                "--capture-generation-ref",
+                "sha256:" + "c" * 64,
+                "--out",
+                str(output),
+            ]
+        )
+        == 2
+    )
+    receipt = json.loads(output.read_bytes())
+    assert receipt["status"] == "unavailable"
+    assert receipt["reason"] == "blob locator is absent or unsafe"
+    assert receipt["receipt_ref"] == module.receipt_ref(receipt)

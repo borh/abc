@@ -703,8 +703,6 @@ def main(argv: list[str] | None = None) -> int:
                 raise ProvenanceUnavailable("blob list is not an array")
             blobs = [LogicalBlob(**row) for row in raw]
             value = verify_evidence(blobs, args.evidence_root)
-            if value.get("status") != "verified":
-                raise ProvenanceUnavailable(str(value.get("reason")))
             receipt: dict[str, object] = {
                 "schema_id": "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json",
                 "schema_version": "1.0.0",
@@ -714,6 +712,8 @@ def main(argv: list[str] | None = None) -> int:
             }
             receipt["receipt_ref"] = receipt_ref(receipt)
             _atomic_json(args.out, receipt)
+            if value.get("status") != "verified":
+                raise ProvenanceUnavailable(str(value.get("reason")))
         else:
             raise ProvenanceUnavailable("unknown provenance command")
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:

@@ -7,7 +7,7 @@
       "id": "https://w3id.org/abc/schemas/adr-evidence-run.schema.json",
       "title": "ABC ADR Executable Evidence Run",
       "version": "0.1.0",
-      "hash": "sha256:1ef44b6e174653b14f4f12ad3a1dbf3723b33f71f189a3b4a02dd777453e6dab"
+      "hash": "sha256:218e7c8990d2ae2a3ea6a7f62e082c97a7d85ab2037225bd0bbaee2a94c618e0"
     },
     {
       "path": "schemas/adr-external-evidence.schema.json",

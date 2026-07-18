@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure executable reproducibility and evidence-store replication.
+"""Measure executable reproducibility and authenticate stored evidence.
 
 This module emits evidence values. Release authority remains in the Clojure
 campaign verifier, which authenticates the closed records before promotion.
@@ -459,42 +459,35 @@ def _safe_path(root: Path, locator: str) -> Path | None:
     return resolved_candidate
 
 
-def verify_replicas(blobs: list[LogicalBlob], roots: tuple[Path, Path]) -> dict[str, object]:
-    primary, replica = roots
+def receipt_ref(receipt: dict[str, object]) -> str:
+    return _content_ref({key: value for key, value in receipt.items() if key != "receipt_ref"})
+
+
+def verify_evidence(blobs: list[LogicalBlob], root: Path) -> dict[str, object]:
     try:
-        primary_resolved = primary.resolve(strict=True)
-        replica_resolved = replica.resolve(strict=True)
-        if primary_resolved == replica_resolved:
-            return {"status": "unavailable", "reason": "replica aliases primary root"}
+        resolved_root = root.resolve(strict=True)
     except OSError:
-        return {"status": "unavailable", "reason": "a replica root is offline"}
-    if not blobs or len({blob.sha256 for blob in blobs}) != len(blobs):
+        return {"status": "unavailable", "reason": "evidence store is offline"}
+    if not blobs or len(set(blobs)) != len(blobs):
         return {"status": "unavailable", "reason": "blob membership is empty or duplicated"}
     records: list[dict[str, object]] = []
-    for blob in sorted(blobs, key=lambda value: value.sha256):
+    for blob in sorted(blobs, key=lambda value: (value.sha256, value.locator)):
         if not blob.media_type or blob.bytes < 0:
             return {"status": "unavailable", "reason": "blob metadata is invalid"}
-        primary_path = _safe_path(primary_resolved, blob.locator)
-        replica_path = _safe_path(replica_resolved, blob.locator)
-        if primary_path is None or replica_path is None:
+        path = _safe_path(resolved_root, blob.locator)
+        if path is None:
             return {"status": "unavailable", "reason": "blob locator is absent or unsafe"}
-        primary_hash, primary_bytes = _stream_identity(primary_path)
-        replica_hash, replica_bytes = _stream_identity(replica_path)
-        if (
-            primary_hash != blob.sha256
-            or replica_hash != blob.sha256
-            or primary_bytes != blob.bytes
-            or replica_bytes != blob.bytes
-        ):
-            return {"status": "unavailable", "reason": "replica bytes do not authenticate"}
+        observed_hash, observed_bytes = _stream_identity(path)
+        if observed_hash != blob.sha256 or observed_bytes != blob.bytes:
+            return {"status": "unavailable", "reason": "evidence bytes do not authenticate"}
         records.append(
             {
                 "blob": blob._asdict(),
-                "primary_rehash": primary_hash,
-                "replica_rehash": replica_hash,
+                "rehash": observed_hash,
+                "observed_bytes": observed_bytes,
             }
         )
-    return {"status": "replicated", "blobs": records}
+    return {"status": "verified", "blobs": records}
 
 
 def _nix_hash(value: str) -> str:
@@ -642,11 +635,12 @@ def _parser() -> argparse.ArgumentParser:
     resolve = commands.add_parser("resolve-executable")
     resolve.add_argument("--provenance", type=Path, required=True)
     resolve.add_argument("--name", required=True)
-    replicas = commands.add_parser("verify-replicas")
-    replicas.add_argument("--blobs", type=Path, required=True)
-    replicas.add_argument("--primary-root", type=Path, required=True)
-    replicas.add_argument("--replica-root", type=Path, required=True)
-    replicas.add_argument("--out", type=Path, required=True)
+    evidence = commands.add_parser("verify-evidence")
+    evidence.add_argument("--blobs", type=Path, required=True)
+    evidence.add_argument("--evidence-root", type=Path, required=True)
+    evidence.add_argument("--candidate-ref", required=True)
+    evidence.add_argument("--capture-generation-ref", required=True)
+    evidence.add_argument("--out", type=Path, required=True)
     return parser
 
 
@@ -703,15 +697,23 @@ def main(argv: list[str] | None = None) -> int:
             if len(matches) != 1:
                 raise ProvenanceUnavailable("executable does not resolve uniquely")
             print(f"{matches[0]['nix_output']}/bin/{args.name}")
-        elif args.command == "verify-replicas":
+        elif args.command == "verify-evidence":
             raw = _read_json(args.blobs)
             if not isinstance(raw, list):
                 raise ProvenanceUnavailable("blob list is not an array")
             blobs = [LogicalBlob(**row) for row in raw]
-            value = verify_replicas(blobs, (args.primary_root, args.replica_root))
-            if value.get("status") != "replicated":
+            value = verify_evidence(blobs, args.evidence_root)
+            if value.get("status") != "verified":
                 raise ProvenanceUnavailable(str(value.get("reason")))
-            _atomic_json(args.out, value)
+            receipt: dict[str, object] = {
+                "schema_id": "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json",
+                "schema_version": "1.0.0",
+                "candidate_ref": args.candidate_ref,
+                "capture_generation_ref": args.capture_generation_ref,
+                **value,
+            }
+            receipt["receipt_ref"] = receipt_ref(receipt)
+            _atomic_json(args.out, receipt)
         else:
             raise ProvenanceUnavailable("unknown provenance command")
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:

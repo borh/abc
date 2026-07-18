@@ -264,7 +264,7 @@ def test_every_cli_subcommand_has_help() -> None:
         "compare-builds",
         "bind-provenance",
         "resolve-executable",
-        "verify-replicas",
+        "verify-evidence",
     ):
         assert module.main([command, "--help"]) == 0
 
@@ -512,32 +512,73 @@ def test_compare_builds_requires_distinct_closed_build_realizations() -> None:
     assert module.compare_builds(first, same_store)["status"] == "unavailable"
 
 
-def test_replication_rehashes_both_failure_domains(tmp_path: Path) -> None:
-    primary = tmp_path / "primary"
-    replica = tmp_path / "replica"
-    primary.mkdir()
-    replica.mkdir()
+def test_verify_evidence_authenticates_one_closed_store(tmp_path: Path) -> None:
     payload = b"immutable evidence"
     digest = module.sha256_bytes(payload)
     blob = module.LogicalBlob(digest, len(payload), "application/json", "aa/blob")
-    for root in (primary, replica):
-        (root / "aa").mkdir()
-        (root / "aa/blob").write_bytes(payload)
-    result = module.verify_replicas([blob], (primary, replica))
-    assert result["status"] == "replicated"
-    (replica / "aa/blob").write_bytes(b"wrong")
-    assert module.verify_replicas([blob], (primary, replica))["status"] == "unavailable"
+    (tmp_path / "aa").mkdir()
+    (tmp_path / "aa/blob").write_bytes(payload)
+    value = module.verify_evidence([blob], tmp_path)
+    assert value == {
+        "status": "verified",
+        "blobs": [{"blob": blob._asdict(), "rehash": digest, "observed_bytes": len(payload)}],
+    }
 
 
-def test_replication_rejects_alias_missing_escape_and_media_type(tmp_path: Path) -> None:
-    primary = tmp_path / "primary"
-    replica = tmp_path / "replica"
-    primary.mkdir()
-    replica.mkdir()
-    good = module.LogicalBlob("sha256:" + "a" * 64, 0, "application/json", "blob")
-    assert module.verify_replicas([good], (primary, primary))["status"] == "unavailable"
-    assert module.verify_replicas([good], (primary, replica))["status"] == "unavailable"
-    escaped = module.LogicalBlob(good.sha256, 0, "application/json", "../blob")
-    assert module.verify_replicas([escaped], (primary, replica))["status"] == "unavailable"
-    invalid_media = module.LogicalBlob(good.sha256, 0, "", "blob")
-    assert module.verify_replicas([invalid_media], (primary, replica))["status"] == "unavailable"
+def test_verify_evidence_fails_closed(tmp_path: Path) -> None:
+    payload = b"immutable evidence"
+    digest = module.sha256_bytes(payload)
+    cases = [
+        module.LogicalBlob(digest, len(payload), "application/json", "missing"),
+        module.LogicalBlob(digest, len(payload), "application/json", "../escape"),
+        module.LogicalBlob(digest, len(payload), "", "blob"),
+    ]
+    for blob in cases:
+        assert module.verify_evidence([blob], tmp_path)["status"] == "unavailable"
+
+    (tmp_path / "blob").write_bytes(b"wrong")
+    blob = module.LogicalBlob(digest, len(payload), "application/json", "blob")
+    assert module.verify_evidence([blob], tmp_path)["status"] == "unavailable"
+    assert module.verify_evidence([blob, blob], tmp_path)["status"] == "unavailable"
+
+
+def test_verify_evidence_cli_writes_bound_self_authenticating_receipt(
+    tmp_path: Path,
+) -> None:
+    payload = b"immutable evidence"
+    digest = module.sha256_bytes(payload)
+    blob = {
+        "sha256": digest,
+        "bytes": len(payload),
+        "media_type": "application/json",
+        "locator": "blob",
+    }
+    (tmp_path / "blob").write_bytes(payload)
+    blobs = tmp_path / "blobs.json"
+    blobs.write_text(json.dumps([blob]))
+    output = tmp_path / "receipt.json"
+    candidate_ref = "sha256:" + "a" * 64
+    capture_ref = "sha256:" + "b" * 64
+    assert (
+        module.main(
+            [
+                "verify-evidence",
+                "--blobs",
+                str(blobs),
+                "--evidence-root",
+                str(tmp_path),
+                "--candidate-ref",
+                candidate_ref,
+                "--capture-generation-ref",
+                capture_ref,
+                "--out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    receipt = json.loads(output.read_text())
+    assert receipt["candidate_ref"] == candidate_ref
+    assert receipt["capture_generation_ref"] == capture_ref
+    assert receipt["receipt_ref"] == module.receipt_ref(receipt)
+    assert module.main(["verify" + "-replicas", "--help"]) == 2

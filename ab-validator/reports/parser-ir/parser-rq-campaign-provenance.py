@@ -79,9 +79,8 @@ def sha256_bytes(payload: bytes) -> str:
 
 
 def _canonical_bytes(value: object) -> bytes:
-    return (
-        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
-    ).encode()
+    encoded = json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+    return encoded.replace("/", "\\/").encode()
 
 
 def _atomic_json(path: Path, value: object) -> None:
@@ -173,12 +172,13 @@ def resolve_realize_request(
     store_root: Path,
     build_log: Path,
     runner: Runner,
+    package_ref: str | None = None,
 ) -> RealizeRequest:
-    flake = str(candidate_tree / "ab-validator")
+    package = package_ref or (f"{candidate_tree / 'ab-validator'}#packages.x86_64-linux.default")
     drv_path = (
         _run_stdout(
             runner,
-            ["nix", "eval", "--raw", f"{flake}#packages.x86_64-linux.default.drvPath"],
+            ["nix", "eval", "--raw", f"{package}.drvPath"],
             "candidate derivation cannot be evaluated",
         )
         .decode()
@@ -187,7 +187,7 @@ def resolve_realize_request(
     output_path = (
         _run_stdout(
             runner,
-            ["nix", "eval", "--raw", f"{flake}#packages.x86_64-linux.default.outPath"],
+            ["nix", "eval", "--raw", f"{package}.outPath"],
             "candidate output cannot be evaluated",
         )
         .decode()
@@ -245,14 +245,22 @@ def resolve_realize_request(
             )
             closure_bytes = _run_stdout(
                 runner,
-                ["nix", "path-info", "--recursive", "--json", direct_output],
+                [
+                    "nix",
+                    "path-info",
+                    "--recursive",
+                    "--json",
+                    "--json-format",
+                    "1",
+                    direct_output,
+                ],
                 "direct output closure cannot be inspected",
             )
             try:
                 closure_rows = json.loads(closure_bytes)
-                closure = [
-                    _store_path(row["path"], description="closure path") for row in closure_rows
-                ]
+                if not isinstance(closure_rows, dict):
+                    raise TypeError
+                closure = [_store_path(path, description="closure path") for path in closure_rows]
             except (json.JSONDecodeError, KeyError, TypeError) as error:
                 raise ProvenanceUnavailable("direct output closure is malformed") from error
             output_closures[output_name] = closure

@@ -61,6 +61,19 @@
         pkgs.nixfmt
       );
 
+      packages = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          parser-rq-build-capability-probe = pkgs.runCommand "parser-rq-build-capability-probe" { } ''
+            mkdir -p "$out"
+            echo parser-rq-build-capability > "$out/result"
+          '';
+        }
+      );
+
       apps = forAllSystems (
         system:
         let
@@ -763,6 +776,23 @@
                 ${cljSandboxEnv}
                 clojure -M:test:kaocha -m kaocha.runner \
                   --focus abc.tools.aozora-history-audit-test/aozora-history-audit-cli-drift-update-exit-matrix-test
+                mkdir -p "$out"
+                touch "$out/passed"
+              '';
+
+          parser-rq-campaign-site =
+            pkgs.runCommand "abc-parser-rq-campaign-site-tests"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.python3Packages.pytest
+                ];
+              }
+              ''
+                cp -R ${./.} abc
+                chmod -R u+w abc
+                cd abc
+                pytest -q tools/test_parser_rq_campaign_site.py
                 mkdir -p "$out"
                 touch "$out/passed"
               '';

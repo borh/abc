@@ -310,7 +310,7 @@ def test_realize_cli_derives_target_and_seed_set_from_candidate_tree(
             result(stdout=json.dumps(target_json).encode()),
             result(stdout=json.dumps([{"path": source}]).encode()),
             result(stdout=json.dumps(input_json).encode()),
-            result(stdout=json.dumps([{"path": dependency}]).encode()),
+            result(stdout=json.dumps({dependency: {"narHash": "sha256-unused"}}).encode()),
             result(1),
             result(),
             result(1),
@@ -342,6 +342,15 @@ def test_realize_cli_derives_target_and_seed_set_from_candidate_tree(
     assert value["drv_path"] == drv
     assert value["output_path"] == output
     assert value["seeded_inputs"] == [source, dependency]
+    assert runner.calls[5][0] == [
+        "nix",
+        "path-info",
+        "--recursive",
+        "--json",
+        "--json-format",
+        "1",
+        dependency,
+    ]
     assert all("--drv" not in call[0] for call in runner.calls)
 
 

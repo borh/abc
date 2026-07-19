@@ -1,0 +1,56 @@
+{
+  "expected_work_ids": [
+    "000001_1",
+    "000002_2",
+    "000003_3"
+  ],
+  "qualification_identity_ref": "sha256:6f365a44b975465943da88d0e3fe4f123672e00913285a3e998ab465bc79edca",
+  "records": [
+    {
+      "parser_ir": {
+        "bytes": 2402,
+        "locator": "sha256/8b/8b7def27faa020f274f05fb82474d5f6b10b0ec18662c684df05643c75196157.json",
+        "media_type": "application/json",
+        "sha256": "sha256:8b7def27faa020f274f05fb82474d5f6b10b0ec18662c684df05643c75196157"
+      },
+      "record": {
+        "bytes": 547,
+        "locator": "sha256/82/822286d21690a50171a0ca2aa62351819763370f481e3f4d6529c55e85d171ac.json",
+        "media_type": "application/json",
+        "sha256": "sha256:822286d21690a50171a0ca2aa62351819763370f481e3f4d6529c55e85d171ac"
+      },
+      "work_id": "000001_1"
+    },
+    {
+      "parser_ir": {
+        "bytes": 2671,
+        "locator": "sha256/0a/0a2d372c3ef8782fc21b0740d6d0bcf494ae4b8f379b092a7ee6f1c4107dbeaf.json",
+        "media_type": "application/json",
+        "sha256": "sha256:0a2d372c3ef8782fc21b0740d6d0bcf494ae4b8f379b092a7ee6f1c4107dbeaf"
+      },
+      "record": {
+        "bytes": 547,
+        "locator": "sha256/9a/9ae9a5e9d7de55b82d098fd6ae86bce5f1659c00588c5890e5d21a7710f30bd7.json",
+        "media_type": "application/json",
+        "sha256": "sha256:9ae9a5e9d7de55b82d098fd6ae86bce5f1659c00588c5890e5d21a7710f30bd7"
+      },
+      "work_id": "000002_2"
+    },
+    {
+      "parser_ir": {
+        "bytes": 2993,
+        "locator": "sha256/2e/2ea4eb0c5c9fa4f8d41dd21bd05c012974a5cbf3e83d60e67edf71d40feebf55.json",
+        "media_type": "application/json",
+        "sha256": "sha256:2ea4eb0c5c9fa4f8d41dd21bd05c012974a5cbf3e83d60e67edf71d40feebf55"
+      },
+      "record": {
+        "bytes": 547,
+        "locator": "sha256/24/24ac301e530ee70f49f989295c7d36dddd0500a4243de9f64a7d0219234b892d.json",
+        "media_type": "application/json",
+        "sha256": "sha256:24ac301e530ee70f49f989295c7d36dddd0500a4243de9f64a7d0219234b892d"
+      },
+      "work_id": "000003_3"
+    }
+  ],
+  "schema_version": "abc/parser-rq-predicate-hardening-parser-ir/v1"
+}

@@ -1,0 +1,39 @@
+{
+  "adapter": "ab-aozora",
+  "adapter_version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)",
+  "work_id": "000001_1",
+  "results": {
+    "block_balance": {
+      "pass": true,
+      "confidence": "heuristic"
+    },
+    "gaiji_resolution": {
+      "pass": true,
+      "confidence": "heuristic"
+    },
+    "heading_level_consistency": {
+      "pass": true,
+      "confidence": "heuristic"
+    },
+    "no_dropped_lines": {
+      "pass": true,
+      "confidence": "heuristic"
+    },
+    "parse_completeness": {
+      "pass": true,
+      "confidence": "strict"
+    },
+    "ruby_completeness": {
+      "pass": true,
+      "confidence": "heuristic"
+    },
+    "schema_valid": {
+      "pass": true,
+      "confidence": "strict"
+    },
+    "visible_text_body_order": {
+      "pass": true,
+      "confidence": "heuristic"
+    }
+  }
+}

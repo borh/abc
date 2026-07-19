@@ -1,0 +1,59 @@
+{
+  "artifact_id": "sha256:e39ba21de2e71ce11181d3fe18c425ed4a0bda32b03c5026500b3ba13004ecba",
+  "artifact_kind": "tei",
+  "content":
+  {
+    "byte_length": 1590,
+    "content_hash": "sha256:7ea8798897481c4443ce48a6b34563939592885b480bd0742c99f8ac550a741a",
+    "media_type": "application\/tei+xml",
+    "path_hint": "tei.xml"
+  },
+  "invalidated_at": null,
+  "license": null,
+  "manifest_identity_object":
+  {
+    "aat_parser_ir_mapping_hash": null,
+    "analysis_recipe_hash": null,
+    "annotation_policy_hash": null,
+    "corpus_snapshot_hash": "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e",
+    "manifest_schema_hash": "sha256:8813e7142aa81afebb7de89f2c760afd0068cd72c1357ce0a255ea88f7650bc3",
+    "metadata_record_hash": "sha256:e4caa9bf99b6602ce393a346ab2fcc59e349bff7295434d1dbad6a1a177ef60f",
+    "output_format_spec_hash": "sha256:b4b12fd7591f2ebe1f9417f8fa2bb938d025694c4202ef48c0bfe16045b120ac",
+    "parser_build_hash": null,
+    "parser_config_hash": null,
+    "parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
+    "tei_profile_hash": "sha256:b4b12fd7591f2ebe1f9417f8fa2bb938d025694c4202ef48c0bfe16045b120ac",
+    "tokenizer_build_hash": null,
+    "tokenizer_dictionary_hash": null,
+    "tokenizer_profile_hash": null,
+    "work_content_hash": "sha256:5b301747e172bc6450ea7de1a50f534c3ed1ead43dccd2008e32219f43e46f71"
+  },
+  "manifest_schema_id": "https:\/\/w3id.org\/abc\/schemas\/manifest.schema.json",
+  "notes": "Generated from parser-IR by ABC TEI publication renderer.",
+  "provenance":
+  {
+    "activity_id": "https:\/\/w3id.org\/abc\/activity\/materialize-parser-ir-tei",
+    "agent": "abc.tools.materialize-publication",
+    "generated_at": "2026-07-17T00:00:00Z",
+    "plan_hash": null,
+    "used": ["sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec","sha256:5b301747e172bc6450ea7de1a50f534c3ed1ead43dccd2008e32219f43e46f71","sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e","sha256:b4b12fd7591f2ebe1f9417f8fa2bb938d025694c4202ef48c0bfe16045b120ac","sha256:e4caa9bf99b6602ce393a346ab2fcc59e349bff7295434d1dbad6a1a177ef60f"],
+    "was_derived_from": ["sha256:5b301747e172bc6450ea7de1a50f534c3ed1ead43dccd2008e32219f43e46f71","sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e"]
+  },
+  "replacement_reason": null,
+  "sidecars": [
+    {
+      "hash": "sha256:1ec768e951029bd276924a003a16832ea087781b9e208e4c7bb3812a1a9c909f",
+      "media_type": "application\/json",
+      "path_hint": "tei-validation-result.json",
+      "role": "validation-result"
+    },
+    {
+      "hash": "sha256:625e47fdcaea7229ce7e77300dd0cbf52061b7b25ac8434548f5062ed753df76",
+      "media_type": "application\/json",
+      "path_hint": "preservation.json",
+      "role": "preservation"
+    }],
+  "signatures": [],
+  "superseded_by": null,
+  "validation_status": "passed"
+}

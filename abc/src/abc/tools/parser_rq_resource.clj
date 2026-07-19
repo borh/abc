@@ -42,4 +42,6 @@
          :witnesses (mapv #(select-keys % [:work_id :status :peak_cgroup_memory_bytes]) records)}))))
 
 (defn observation-envelope [analysis]
-  (select-keys analysis [:value :identity_ref]))
+  (if (= :unavailable (:status analysis))
+    (select-keys analysis [:status :reason])
+    (select-keys analysis [:value :identity_ref])))

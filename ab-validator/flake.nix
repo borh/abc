@@ -1461,10 +1461,14 @@
             {
               nativeBuildInputs = [
                 pkgs.python3
+                pkgs.python3Packages.pytest
                 pkgs.coreutils
               ];
             }
             ''
+              python -m pytest -q \
+                ${source}/reports/parser-ir/tests/test_parser_rq_resource_capture.py \
+                ${source}/reports/parser-ir/tests/test_parser_rq_resource_wrapper.py
               bash ${source}/tests/parser-rq-resource-capture-smoke.sh ${source}
               touch "$out"
             '';

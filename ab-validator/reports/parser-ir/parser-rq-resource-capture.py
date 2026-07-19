@@ -72,15 +72,16 @@ def write_index(path: pathlib.Path, value: dict[str, Any]) -> None:
 def run_wrapper(
     wrapper: pathlib.Path, work_id: str, record: pathlib.Path, command: list[str]
 ) -> None:
+    wrapper_argv = [
+        sys.executable,
+        str(wrapper),
+        "--output",
+        str(record),
+        "--",
+        *command,
+    ]
     completed = subprocess.run(
-        [
-            sys.executable,
-            str(wrapper),
-            "--output",
-            str(record),
-            "--",
-            *command,
-        ],
+        build_systemd_run(work_id, wrapper_argv),
         check=False,
     )
     if completed.returncode != 0:

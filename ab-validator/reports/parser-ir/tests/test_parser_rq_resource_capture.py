@@ -1,6 +1,7 @@
 import importlib.util
 import pathlib
 import sys
+from types import SimpleNamespace
 
 
 MODULE = pathlib.Path(__file__).parents[1] / "parser-rq-resource-capture.py"
@@ -43,3 +44,34 @@ def test_capture_index_is_serial_and_closed():
     result = capture.capture_index({"work_ids": ["a", "b"]}, runner)
     assert calls == ["a", "b"]
     assert [record["work_id"] for record in result["records"]] == ["a", "b"]
+
+
+def test_run_wrapper_executes_inside_the_pinned_transient_service(monkeypatch, tmp_path):
+    capture = load_module()
+    calls = []
+    monkeypatch.setattr(capture.uuid, "uuid4", lambda: SimpleNamespace(hex="fixed"))
+    monkeypatch.setattr(
+        capture.subprocess,
+        "run",
+        lambda argv, **kwargs: calls.append((argv, kwargs)) or SimpleNamespace(returncode=0),
+    )
+    wrapper = tmp_path / "wrapper.py"
+    record = tmp_path / "record.json"
+
+    capture.run_wrapper(wrapper, "work", record, ["parser", "--one"])
+
+    expected_wrapper = [
+        sys.executable,
+        str(wrapper),
+        "--output",
+        str(record),
+        "--",
+        "parser",
+        "--one",
+    ]
+    assert calls == [
+        (
+            capture.build_systemd_run("work", expected_wrapper),
+            {"check": False},
+        )
+    ]

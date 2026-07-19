@@ -139,6 +139,20 @@
               :source-recognition
               {:qualification_identity_ref identity-ref
                :store {} :manifest {} :aggregate {} :identity {}})))))
+  (testing "resource unavailability remains an identity-bound observation"
+    (is (= {:peak_cgroup_memory_bytes
+            {:value :unavailable
+             :identity_ref identity-ref
+             :details {:reason "one or more resource works are unavailable"}}}
+           (member/project-member
+            :resource
+            {:qualification_identity_ref identity-ref
+             :policy {:policy_hash identity-ref :work_ids ["work"]}
+             :identity {:identity_ref identity-ref}
+             :index {:work_ids ["work"]}
+             :records [{:work_id "work" :policy_hash identity-ref
+                        :status "unavailable"
+                        :reason "lingering_descendant"}]}))))
   (testing "predicate-pair owns exactly two outputs"
     (with-redefs [member/project-predicate-pair
                   (fn [_] {:diagnostic_completeness (envelope 1.0)})]

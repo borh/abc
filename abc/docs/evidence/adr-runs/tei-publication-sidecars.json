@@ -34,7 +34,7 @@
     "src\/abc\/tools\/edn_registry.clj": "sha256:4d75f858bd14f6808d110ad9c252e643fcebfc3176eda65a3a6b7bfc9651eafb",
     "src\/abc\/tools\/evidence_io.clj": "sha256:8d93b8ce1bf5983601c50cdaee92c6f3bfe5efff97afe3dc353ded047b11ea46",
     "src\/abc\/tools\/files.clj": "sha256:40f1dd9eca5d539b39b1ec0be4e422f6701060ebada793c8f99dcb8d4b161ce3",
-    "src\/abc\/tools\/hash.clj": "sha256:e49befc2ce08401bb3161af5cedcf0555eec6a639510ca31445da30b32e2cfb5",
+    "src\/abc\/tools\/hash.clj": "sha256:9b8921cf24bc4a6c27cc3102fef6d454d9b774d0bdcc5f604d73b87bd2de9232",
     "src\/abc\/tools\/iiif.clj": "sha256:dedf8ca77c9818c79e1d55c5b3e2a0143345d5b63225b16ce36040625ce0eaf0",
     "src\/abc\/tools\/jcs.clj": "sha256:4a35835c6b905a54e9b72f78d4e9f4f8d8a19567c6b4b18500d04770d8493fc4",
     "src\/abc\/tools\/json.clj": "sha256:9a67548ddfd43970ef2c337ae885edc25f5ddc900f910586e6b82fe9b5c257c9",
@@ -94,7 +94,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-publication-sidecars\\\"\"",
-    "revision": "c5fa512cbd555930237d2df70813bd790dfc1c70",
+    "revision": "9e68735204412363b425ad4f249493fd72eafd23",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

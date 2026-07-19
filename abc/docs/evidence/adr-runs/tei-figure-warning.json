@@ -41,7 +41,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"system=$(nix eval --impure --raw --expr builtins.currentSystem); exec nix build --no-link \\\".#checks.${system}.adr-evidence-tei-figure-warning\\\"\"",
-    "revision": "c5fa512cbd555930237d2df70813bd790dfc1c70",
+    "revision": "9e68735204412363b425ad4f249493fd72eafd23",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

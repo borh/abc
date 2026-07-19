@@ -32,7 +32,7 @@
 - `_assert_member_set(paths, expected_members)` owns exact final JSON-member closure.
 - `execute_graph` remains the sole owner of authorization, the production lock, time, capture state, terminal recording, composition, and publication.
 
-- [ ] **Step 1: Add a recording runner and failing helper tests**
+- [x] **Step 1: Add a recording runner and failing helper tests**
 
 Add a test runner that records `argv`, `cwd`, and `pass_fds` while creating the bounded output expected by the selected operation. Add tests named:
 
@@ -43,7 +43,7 @@ def test_assert_member_set_rejects_missing_and_extra_members(...) -> None: ...
 
 The first test must prove that `capture-core` receives `(lock.fd,)`, while a non-core operation receives `()`. The second must prove exact equality, not subset membership.
 
-- [ ] **Step 2: Run the focused tests and confirm RED**
+- [x] **Step 2: Run the focused tests and confirm RED**
 
 ```bash
 nix build ./abc#checks.x86_64-linux.parser-rq-campaign-orchestrator -L
@@ -51,7 +51,7 @@ nix build ./abc#checks.x86_64-linux.parser-rq-campaign-orchestrator -L
 
 Expected failure: the two helpers cannot be imported or called because the logic still lives inline in `execute_graph`.
 
-- [ ] **Step 3: Extract the minimum helpers**
+- [x] **Step 3: Extract the minimum helpers**
 
 Move the existing per-operation body into this shape without changing its ordering or errors:
 
@@ -96,14 +96,14 @@ def _assert_member_set(paths: RuntimePaths, expected_members: Collection[str]) -
 
 Call both helpers from `execute_graph`. Do not move or copy authentication, locking, authorization, terminal-state, composition, or publication code.
 
-- [ ] **Step 4: Prove the refactor is behavior-preserving**
+- [x] **Step 4: Prove the refactor is behavior-preserving**
 
 ```bash
 nix build ./abc#checks.x86_64-linux.parser-rq-campaign-orchestrator -L
 just python-quality
 ```
 
-- [ ] **Step 5: Commit the extraction**
+- [x] **Step 5: Commit the extraction**
 
 ```bash
 git add abc/tools/parser_rq_campaign_orchestrator.py \
@@ -125,13 +125,13 @@ git commit -m 'refactor(parser-rq): share operation composition seam'
 - Provenance executable rows are derived by streaming the actual package files and matching the committed production graph.
 - `authenticate_inputs` constructs the authoritative executable and driver maps.
 
-- [ ] **Step 1: Make the existing real-candidate test demand real authentication**
+- [x] **Step 1: Make the existing real-candidate test demand real authentication**
 
 Keep the existing test name selected by the root Nix check, but remove its
 post-authentication replacement of `executables` and `drivers`. Change its
 fixture construction to request authentication of the actual candidate package.
 
-- [ ] **Step 2: Run the root check and confirm RED at authentication**
+- [x] **Step 2: Run the root check and confirm RED at authentication**
 
 ```bash
 nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
@@ -141,7 +141,7 @@ Expected RED: the old synthetic provenance rows do not authenticate the real
 candidate executable paths and bytes. No projection or Clojure failure is
 expected in this task.
 
-- [ ] **Step 3: Derive authentic provenance rows in the test fixture**
+- [x] **Step 3: Derive authentic provenance rows in the test fixture**
 
 Add `real_authenticated_campaign(tmp_path, repository_root, candidate_root)`. It must:
 
@@ -153,7 +153,7 @@ Add `real_authenticated_campaign(tmp_path, repository_root, candidate_root)`. It
 
 Do not use `dataclasses.replace` to substitute `executables` or `drivers`.
 
-- [ ] **Step 4: Regression-pin the adapter seam**
+- [x] **Step 4: Regression-pin the adapter seam**
 
 Add:
 
@@ -169,7 +169,7 @@ Change the root check selection from the single legacy test name to
 the candidate-bearing Nix check. This is only test selection; the Clojure
 runtime closure remains deferred until Task 3 exercises projection.
 
-- [ ] **Step 5: Verify and commit**
+- [x] **Step 5: Verify and commit**
 
 ```bash
 nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
@@ -196,7 +196,7 @@ git commit -m 'test(parser-rq): authenticate production candidate wiring'
   `derive-diagnostic-gap`, and `capture-publication` in production graph order.
 - It expects exactly six portable members because predicate hardening projects both `diagnostic_completeness` and `parser_ir_conformance`.
 
-- [ ] **Step 1: Add the bounded runtime fixture**
+- [x] **Step 1: Add the bounded runtime fixture**
 
 Create test helpers that write a full runtime JSON value for the three work IDs
 named by the pinned release corpus and the generated production policies.
@@ -213,7 +213,7 @@ predicate-hardening semantic-closure manifests and policies with
 `000003_3`. Commit those production values; the test must consume them without
 rewriting a copied policy tree.
 
-- [ ] **Step 2: Add the real bounded-chain test**
+- [x] **Step 2: Add the real bounded-chain test**
 
 Add `test_bounded_production_chain_uses_shared_composition(...)` with this structure:
 
@@ -252,7 +252,7 @@ _assert_member_set(
 
 Use the module's existing runner abstraction rather than passing a callable if its concrete signature differs. The load-bearing property is that production and preflight call the same `_execute_operation`, not the spelling of the runner value.
 
-- [ ] **Step 3: Pin the historical report-topology failure**
+- [x] **Step 3: Pin the historical report-topology failure**
 
 After the shared core operation returns, assert that its retained raw output includes at least one report below an adapter subdirectory and that its basename is path-hashed. In the core matcher test, inject `flat-intruder.json` containing an unexpected `work_id` and assert the owning matcher rejects it. Do not make filename shape an identity source.
 
@@ -260,7 +260,7 @@ Update the root check's pytest selection so it runs both the real authentication
 regressions and `test_bounded_production_chain_uses_shared_composition`; do not
 leave the new chain outside the Nix gate.
 
-- [ ] **Step 4: Demonstrate that real projection needs a declared Clojure runtime**
+- [x] **Step 4: Demonstrate that real projection needs a declared Clojure runtime**
 
 ```bash
 nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
@@ -270,7 +270,7 @@ Expected RED: the bounded chain reaches `_project_operation`, but the root
 check does not yet contain the Clojure runtime and dependency closure needed by
 the authenticated campaign's projection commands.
 
-- [ ] **Step 5: Supply the existing hermetic runtime, not a new wrapper**
+- [x] **Step 5: Supply the existing hermetic runtime, not a new wrapper**
 
 Update `parser-rq-production-wiring` to include `cljPkgs.clojure`, `bash`,
 `coreutils`, the existing Clojure dependency cache/environment, and the
@@ -291,7 +291,7 @@ Do not replace `executables` or `drivers`. Do not depend on the operation
 process working directory or ambient `PATH` beyond the Nix check's declared
 inputs.
 
-- [ ] **Step 6: Demonstrate the production taxonomy failure**
+- [x] **Step 6: Demonstrate the production taxonomy failure**
 
 Run:
 
@@ -307,7 +307,7 @@ taxonomy is not canonical JSON
 
 This is the regression for the third failed candidate; do not bypass it in Python or Clojure.
 
-- [ ] **Step 7: Produce candidate canonical bytes, with Rust as the authority**
+- [x] **Step 7: Produce candidate canonical bytes, with Rust as the authority**
 
 ```bash
 tmp="$(mktemp)"
@@ -322,7 +322,7 @@ authority: if it rejects these bytes, obtain the exact canonical bytes through
 the Rust producer rather than weakening or duplicating its validation. Do not
 change the rules.
 
-- [ ] **Step 8: Prove all three historical seams and the full portable chain**
+- [x] **Step 8: Prove all three historical seams and the full portable chain**
 
 ```bash
 nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
@@ -336,7 +336,7 @@ just python-quality
 
 Confirm the Rust test actually runs one test; do not use `--exact` with a partial name.
 
-- [ ] **Step 9: Commit the bounded chain**
+- [x] **Step 9: Commit the bounded chain**
 
 ```bash
 git add abc/tools/test_parser_rq_campaign_orchestrator.py \
@@ -361,7 +361,7 @@ git commit -m 'test(parser-rq): compose bounded production preflight'
 - Task 10 owns the operational pre-freeze sequence.
 - `freeze_rev` is a shell-local guard only; it is not evidence, a receipt, or an identity field.
 
-- [ ] **Step 1: Strengthen Task 10's pre-freeze commands**
+- [x] **Step 1: Strengthen Task 10's pre-freeze commands**
 
 Replace separate, unbound instructions with one block run from the detached candidate tree:
 
@@ -383,11 +383,11 @@ test -z "$(git -C "$candidate_tree" status --short)"
 
 Immediately before candidate construction, repeat both revision and cleanliness assertions. State explicitly that changing either check or the tree requires rerunning the whole block.
 
-- [ ] **Step 2: Name the residual authority honestly**
+- [x] **Step 2: Name the residual authority honestly**
 
 Add one sentence: the runbook mechanically guards an honest invocation, but a person can bypass it; no persisted token or qualification invariant is claimed. Do not add such a protocol.
 
-- [ ] **Step 3: Confirm the edit did not widen campaign authority**
+- [x] **Step 3: Confirm the edit did not widen campaign authority**
 
 ```bash
 rg -n 'freeze_rev|parser-rq-production-wiring|resource-cgroup-smoke|preflight-site' \
@@ -398,7 +398,7 @@ rg -n 'freeze token|freeze_token|preflight mode|--preflight|--dry-run' \
 
 The first command must show one coherent sequence. The second must show no new mechanism; prose that explicitly rejects such a mechanism is acceptable.
 
-- [ ] **Step 4: Commit the runbook correction**
+- [x] **Step 4: Commit the runbook correction**
 
 ```bash
 git add abc/docs/superpowers/plans/2026-07-17-parser-rq-admission-promotion.md

@@ -612,6 +612,8 @@ candidate_tree=$(mktemp -d /tmp/soranoha-p5-candidate.XXXXXXXX)
 git -C "$repo_root" worktree add --detach "$candidate_tree" "$candidate_git_rev"
 test -z "$(git -C "$candidate_tree" status --porcelain)"
 test -z "$(git -C "$evidence_tree" status --porcelain)"
+freeze_rev=$(git -C "$candidate_tree" rev-parse HEAD)
+test "$freeze_rev" = "$candidate_git_rev"
 candidate_clojure() {
   (cd "$candidate_tree/abc" && nix develop . --command clojure "$@")
 }
@@ -620,20 +622,31 @@ evidence_clojure() {
 }
 ```
 
-- [ ] **Step 2: Run runtime preflight**
+- [ ] **Step 2: Run every pre-freeze prerequisite at that revision**
 
 The runtime descriptor is explicit JSON with schema version `2.0.0` and
 contains only the lock, evidence-store, scratch, and corpus paths. It is not a
-qualification identity. Stop unless the read-only runtime preflight passes.
+qualification identity. Run the portable production chain, the live cgroup
+capability smoke, and the read-only runtime preflight from the same detached
+tree. Stop on any failure.
 
 ```bash
+nix build "$candidate_tree#checks.x86_64-linux.parser-rq-production-wiring" -L
+nix run "$candidate_tree/ab-validator#parser-rq-resource-cgroup-smoke"
 : "${PARSER_RQ_SITE_DESCRIPTOR:?set the reviewed site-descriptor JSON path}"
 graph="$candidate_tree/abc/data/parser-rq-production-graph-v1.json"
 staging_root=$(mktemp -d /tmp/soranoha-p5-evidence.XXXXXXXX)
 python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" preflight-site \
   --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" --graph "$graph" \
   --evidence-tree-clean true
+test "$(git -C "$candidate_tree" rev-parse HEAD)" = "$freeze_rev"
+test -z "$(git -C "$candidate_tree" status --porcelain)"
 ```
+
+Changing either check or any candidate-tree byte requires rerunning this whole
+block. The runbook mechanically guards an honest invocation; a person can
+bypass the runbook, and no persisted freeze token or qualification invariant is
+claimed.
 
 - [ ] **Step 3: Perform, compare, and install two independent realizations**
 
@@ -685,6 +698,8 @@ disagreement ends this candidate unavailable.
 From the detached tree, load the live corpus, predicate set, admission coordinates, instrument policies, and verified executable record:
 
 ```bash
+test "$(git -C "$candidate_tree" rev-parse HEAD)" = "$freeze_rev"
+test -z "$(git -C "$candidate_tree" status --porcelain)"
 candidate_clojure -M:abc/parser-rq-campaign \
   candidate --repo "$candidate_tree" --parser-git-rev "$candidate_git_rev" \
   --provenance "$build_root/provenance-proof.json" \

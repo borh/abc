@@ -9,7 +9,7 @@
   "inputs":
   {
     "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
-    "abc\/data\/aat-parser-ir-compatibility.edn": "sha256:16b4e5ad5e266d4b3a6e2802d83a6f37533374e0e10d5605509c4bbc715de4c8",
+    "abc\/data\/aat-parser-ir-compatibility.edn": "sha256:3ee5587a28c22b2c41da92da4a6d04e11efcd14e4098315f9b796384855aeeaf",
     "abc\/data\/parser-evidence-citations.edn": "sha256:7f8e9923bc1801606a260f4ba4528067ae88022ad0d415e14bcbf01a1385f0f1",
     "abc\/docs\/evidence\/adr-capture\/parser-mapping-admission.edn": "sha256:9cbfbaa3c0f8fc632247d21c67103baada630304db46e05a9b5ff928568a3bd3",
     "abc\/docs\/evidence\/adr-inputs\/parser-mapping-admission.edn": "sha256:b56301b0fa06e6d11d71d9852fb7f0a8349d509f2d9d3be3fffff1cf65a20332",
@@ -79,7 +79,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-mapping-admission-evidence-test\/parser-mapping-admission-contract\"",
-    "revision": "9e68735204412363b425ad4f249493fd72eafd23",
+    "revision": "12f240795651ea9f8bdf516ff45f06bef1dd74ed",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

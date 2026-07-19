@@ -17,7 +17,7 @@
     "ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-c5-perf.summary.json": "sha256:fae9c17ec80ba3f877b69c3adbe63a44e3e08a2cb9e746e53f20f8f99bf1e13a",
     "ab-validator\/docs\/superpowers\/reports\/2026-07-12-phase5-checkpoint.txt": "sha256:db0a31d72d861aa77930b7e3c467be1e525602baa14360b72851b2f181916000",
     "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
-    "abc\/data\/aat-parser-ir-compatibility.edn": "sha256:16b4e5ad5e266d4b3a6e2802d83a6f37533374e0e10d5605509c4bbc715de4c8",
+    "abc\/data\/aat-parser-ir-compatibility.edn": "sha256:3ee5587a28c22b2c41da92da4a6d04e11efcd14e4098315f9b796384855aeeaf",
     "abc\/docs\/evidence\/adr-capture\/parser-phase5-frozen-tuple.edn": "sha256:c2b800d7e5f2ea6ca5ba5a41d98f1cfb20886357e9a6a967ae3638d96aded437",
     "abc\/docs\/evidence\/adr-inputs\/parser-phase5-frozen-tuple.edn": "sha256:9999df4790f4c9e39bc7ca3e25b936807425113e5814e8edf1a533246db11709",
     "abc\/schemas\/parser-ir.schema.json": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5",
@@ -45,7 +45,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-phase5-frozen-tuple-test\/phase5-frozen-tuple-contract\"",
-    "revision": "9e68735204412363b425ad4f249493fd72eafd23",
+    "revision": "12f240795651ea9f8bdf516ff45f06bef1dd74ed",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

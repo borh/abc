@@ -8,7 +8,7 @@
   "inputs":
   {
     "contexts\/abc-v0.jsonld": "sha256:0652e7487c88f3a31adf5f8bb3b54517f80d79432235cce6e258c3958697a34e",
-    "data\/aat-parser-ir-compatibility.edn": "sha256:16b4e5ad5e266d4b3a6e2802d83a6f37533374e0e10d5605509c4bbc715de4c8",
+    "data\/aat-parser-ir-compatibility.edn": "sha256:3ee5587a28c22b2c41da92da4a6d04e11efcd14e4098315f9b796384855aeeaf",
     "data\/analysis-recipes\/literary-basic-ja-v1.json": "sha256:0523ef962c323cad2dfb52161db64277c66b0cd74324b08c18586573ef147d0f",
     "data\/analysis-recipes\/token-basic-ja-v1.json": "sha256:3d2655f9216c8f721ae9451168a0a34354062505f482de55b5f2c3aa8f755ff3",
     "data\/pack-policies\/no-pack-v1.json": "sha256:801916cdf7fff1670bb3fd048765bb777afdf1c580f7c14aa761037cc5218866",
@@ -149,7 +149,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix run .#validate-design-bundle\"",
-    "revision": "9e68735204412363b425ad4f249493fd72eafd23",
+    "revision": "12f240795651ea9f8bdf516ff45f06bef1dd74ed",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

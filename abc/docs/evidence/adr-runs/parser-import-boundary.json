@@ -9,7 +9,7 @@
   "inputs":
   {
     "abc\/bin\/kaocha": "sha256:1b16c6c62fc7bebe016194f77f8db944ec33aae46df032af7427731f83156faf",
-    "abc\/data\/aat-parser-ir-compatibility.edn": "sha256:16b4e5ad5e266d4b3a6e2802d83a6f37533374e0e10d5605509c4bbc715de4c8",
+    "abc\/data\/aat-parser-ir-compatibility.edn": "sha256:3ee5587a28c22b2c41da92da4a6d04e11efcd14e4098315f9b796384855aeeaf",
     "abc\/docs\/evidence\/adr-capture\/parser-import-boundary.edn": "sha256:5475e60bbf6382c9226a1b9f90b7b8284729965ce7eec3acdc58e202b2ad43a3",
     "abc\/docs\/evidence\/adr-inputs\/parser-import-boundary.edn": "sha256:2b856a22d425b02cee4159488121ec95f092dd3f4d6f6d1b2756018bf2d302ac",
     "abc\/examples\/ab-validator-output\/README.md": "sha256:08095fd2ce769c2e2c64325b1663cd647e54f7330ffd67365cba045b6865f3fb",
@@ -88,7 +88,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-import-boundary-evidence-test\/parser-import-boundary-contract\"",
-    "revision": "9e68735204412363b425ad4f249493fd72eafd23",
+    "revision": "12f240795651ea9f8bdf516ff45f06bef1dd74ed",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

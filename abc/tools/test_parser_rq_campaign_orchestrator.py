@@ -6,7 +6,6 @@ import json
 import sys
 import os
 import subprocess
-from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -309,23 +308,68 @@ def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
         orchestrator.operation_argv("unknown", campaign, paths, lock)
 
 
+def real_campaign_config(tmp_path: Path, repository_root: Path, candidate_root: Path) -> Any:
+    base = fixture(tmp_path)
+    graph = json.loads(
+        (repository_root / "abc/data/parser-rq-production-graph-v1.json").read_bytes()
+    )
+    executable_rows = []
+    for reviewed in graph["executables"]:
+        executable = candidate_root / "bin" / reviewed["name"]
+        payload = executable.read_bytes()
+        executable_rows.append(
+            {
+                **reviewed,
+                "nix_output": str(candidate_root),
+                "nar_hash": "sha256:" + "a" * 64,
+                "sha256": "sha256:" + hashlib.sha256(payload).hexdigest(),
+                "bytes": len(payload),
+                "parser_git_rev": "a" * 40,
+            }
+        )
+    provenance = {
+        "status": "reproducible",
+        "provenance_core_ref": "sha256:" + "c" * 64,
+        "executables": executable_rows,
+    }
+    write_json(base.provenance, provenance)
+    write_json(
+        base.readiness_receipt,
+        {
+            "readiness_receipt_ref": "sha256:" + "d" * 64,
+            "qualification_identity_ref": "sha256:" + "e" * 64,
+            "production_graph_hash": graph["policy_hash"],
+            "provenance_core_ref": provenance["provenance_core_ref"],
+        },
+    )
+    return orchestrator.CampaignConfig(
+        candidate=base.candidate,
+        authorization=base.authorization,
+        provenance=base.provenance,
+        readiness_receipt=base.readiness_receipt,
+        site_descriptor=base.site_descriptor,
+        candidate_tree=repository_root,
+        evidence_tree=base.evidence_tree,
+        staging_root=base.staging_root,
+        production=True,
+    )
+
+
+def real_authenticated_campaign(tmp_path: Path, repository_root: Path, candidate_root: Path) -> Any:
+    return orchestrator.authenticate_inputs(
+        real_campaign_config(tmp_path, repository_root, candidate_root)
+    )
+
+
 @pytest.mark.skipif(
     "PARSER_RQ_CANDIDATE_ROOT" not in os.environ,
     reason="real candidate bundle is supplied by the monorepo wiring check",
 )
 def test_real_candidate_and_repository_producer_clis_are_wired(tmp_path: Path) -> None:
-    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
     candidate_root = Path(os.environ["PARSER_RQ_CANDIDATE_ROOT"])
     repository_root = Path(os.environ["PARSER_RQ_REPOSITORY_ROOT"])
     assert (candidate_root / "bin/time").is_file()
-    campaign = replace(
-        campaign,
-        executables={name: candidate_root / "bin" / name for name in campaign.executables},
-        drivers={
-            relative.as_posix(): repository_root / relative
-            for relative in orchestrator.REPOSITORY_DRIVERS
-        },
-    )
+    campaign = real_authenticated_campaign(tmp_path, repository_root, candidate_root)
 
     orchestrator._verify_wiring(campaign, orchestrator.SubprocessRunner(), tmp_path)
 
@@ -380,6 +424,41 @@ def test_real_candidate_and_repository_producer_clis_are_wired(tmp_path: Path) -
     sys.modules[core_spec.name] = core_capture
     core_spec.loader.exec_module(core_capture)
     assert set(core_capture._closed_reports(reports, set(work_ids))) == set(work_ids)
+
+
+@pytest.mark.skipif(
+    "PARSER_RQ_CANDIDATE_ROOT" not in os.environ,
+    reason="real candidate bundle is supplied by the monorepo wiring check",
+)
+def test_real_candidate_authentication_requires_adapter_row(tmp_path: Path) -> None:
+    candidate_root = Path(os.environ["PARSER_RQ_CANDIDATE_ROOT"])
+    repository_root = Path(os.environ["PARSER_RQ_REPOSITORY_ROOT"])
+    config = real_campaign_config(tmp_path, repository_root, candidate_root)
+    provenance = json.loads(config.provenance.read_bytes())
+    provenance["executables"] = [
+        row for row in provenance["executables"] if row["name"] != "ab-aozora"
+    ]
+    write_json(config.provenance, provenance)
+
+    with pytest.raises(orchestrator.PreparationFailed, match="membership differs"):
+        orchestrator.authenticate_inputs(config)
+
+
+@pytest.mark.skipif(
+    "PARSER_RQ_CANDIDATE_ROOT" not in os.environ,
+    reason="real candidate bundle is supplied by the monorepo wiring check",
+)
+def test_real_candidate_core_argv_uses_authenticated_adapter(tmp_path: Path) -> None:
+    candidate_root = Path(os.environ["PARSER_RQ_CANDIDATE_ROOT"])
+    repository_root = Path(os.environ["PARSER_RQ_REPOSITORY_ROOT"])
+    campaign = real_authenticated_campaign(tmp_path, repository_root, candidate_root)
+    paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
+    lock = orchestrator.LockCapability(fd=9, device=10, inode=11)
+
+    argv = orchestrator.operation_argv("capture-core", campaign, paths, lock)
+
+    adapter_index = argv.index("--adapter") + 1
+    assert Path(argv[adapter_index]) == campaign.executables["ab-aozora"]
 
 
 def test_wiring_commands_exercise_the_production_rust_subcommands(tmp_path: Path) -> None:

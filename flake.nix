@@ -386,7 +386,7 @@
                 export PARSER_RQ_CANDIDATE_ROOT="${abValidatorPackages."parser-rq-candidate"}"
                 export PARSER_RQ_REPOSITORY_ROOT="$src"
                 pytest -q abc/tools/test_parser_rq_campaign_orchestrator.py \
-                  -k real_candidate_and_repository_producer_clis_are_wired
+                  -k real_candidate
               '';
           monorepo-nix-format =
             mkMonorepoCheck "soranoha-monorepo-nix-format"

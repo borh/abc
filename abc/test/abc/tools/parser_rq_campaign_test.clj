@@ -393,6 +393,10 @@
            (campaign/executable-provenance-ref provenance)))
     (is (= "sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203"
            (get-in value [:qualification_identity :predicate_set_hash])))
+    (is (= (hash/sha256-json-abc-legacy-v0
+            (files/read-json
+             (fs/file root "ab-validator/data/aat-to-parser-ir-mapping-v2.json")))
+           (get-in value [:qualification_identity :mapping_hash])))
     (is (= [] (campaign/verify-authorization
                value provenance-value graph receipt-value authorization-value
                "2026-07-17T00:30:00Z" true)))))

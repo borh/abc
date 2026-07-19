@@ -28,10 +28,7 @@
                                [(if (string? key) (keyword key) key) value]))
                      policy)
         status-map (:status_mapping policy)]
-    (assoc policy :status_mapping
-           {:allowed_statuses (or (:allowed_statuses status-map)
-                                  (get status-map "allowed_statuses"))
-            :values (or (:values status-map) (get status-map "values"))})))
+    (assoc policy :status_mapping (capture/normalize-status-map status-map))))
 
 (defn projected-hash
   [value field]

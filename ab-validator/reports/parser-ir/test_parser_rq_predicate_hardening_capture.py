@@ -58,6 +58,9 @@ def test_capture_uses_explicit_closed_membership_and_one_invocation(tmp_path: Pa
     assert log.read_text().splitlines() == ["diagnostics", "aat", "qualify"]
     assert json.loads((output / "raw-diagnostics-index.json").read_text()) == diagnostic
     assert json.loads((output / "parser-ir" / "work-a.json").read_text()) == {"nodes": []}
+    parser_ref = parser["records"][0]["parser_ir"]
+    assert parser_ref["sha256"].startswith("sha256:")
+    assert json.loads((tmp_path / "store" / parser_ref["locator"]).read_text()) == {"nodes": []}
 
 
 def test_capture_rejects_duplicate_or_implicit_membership(tmp_path: Path) -> None:

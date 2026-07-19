@@ -128,7 +128,15 @@ def capture(
             if record_out.is_file()
             else canonical({"status": "protocol_error", "exit_code": converter_run.returncode})
         )
-        parser_records.append({"work_id": work_id, "record": publish(store, record_bytes)})
+        parser_entry: dict[str, object] = {
+            "work_id": work_id,
+            "record": publish(store, record_bytes),
+        }
+        if parser_out.is_file():
+            parser_entry["parser_ir"] = publish(store, parser_out.read_bytes())
+        if ledger_out.is_file():
+            parser_entry["validation_ledger"] = publish(store, ledger_out.read_bytes())
+        parser_records.append(parser_entry)
         if parser_out.is_file():
             shutil.copyfile(parser_out, parser_ir_root / f"{work_id}.json")
     diagnostic_index = {

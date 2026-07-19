@@ -87,8 +87,7 @@
    :actual actual})
 
 (defn- legacy-canonical-json [value]
-  ((deref (ns-resolve 'abc.tools.parser-phase5-frozen-tuple
-                      'abc-legacy-json-c14n-v0)) value))
+  (hash/abc-legacy-json-c14n-v0 value))
 
 (defn- assert-problem! [relative mutate problem]
   (let [root (temp-root)]

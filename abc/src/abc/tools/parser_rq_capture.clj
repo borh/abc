@@ -106,6 +106,20 @@
   (cond-> {:value value :identity_ref identity-ref}
     (some? details) (assoc :details details)))
 
+(defn normalize-status-map
+  "Normalize a JSON-derived status map after either shallow or recursive
+  keywordization. Wire statuses remain strings because policies name JSON
+  values, not Clojure implementation keys."
+  [status-map]
+  (let [allowed (or (:allowed_statuses status-map)
+                    (get status-map "allowed_statuses"))
+        values (or (:values status-map) (get status-map "values"))]
+    {:allowed_statuses allowed
+     :values (into {}
+                   (map (fn [[status value]]
+                          [(if (keyword? status) (name status) status) value]))
+                   values)}))
+
 (defn- valid-status-map?
   [{:keys [allowed_statuses values] :as status-map}]
   (and (= #{:allowed_statuses :values} (set (keys status-map)))

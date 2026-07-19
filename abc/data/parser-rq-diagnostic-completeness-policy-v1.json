@@ -7,7 +7,7 @@
     "000003_3"
   ],
   "expected_work_set_hash": "sha256:3b847030730777136a941e2819356736fb8be01c683eed349a533e05d1aa72bb",
-  "policy_hash": "sha256:a5968337aaab9f325ae6fd3f8e2e8eb6e0aa4b21368a93ce8692b033741ed5cb",
+  "policy_hash": "sha256:5ff90b1026c5ed92bfd96c2d55f1beccbc7c1c2e3c57a256f811941b8d724729",
   "policy_id": "abc/parser-rq-diagnostic-completeness/v1",
   "raw_diagnostic_schema_hash": "sha256:e467a46ac8196b0193d658012375fda69f55a780e8edb9d1976e36fcf8417592",
   "raw_diagnostic_schema_id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
@@ -24,5 +24,5 @@
     }
   },
   "vacuity_semantics": "valid_empty_passes_with_disclosure",
-  "validator_semantics_hash": "sha256:0575b9a082ab3bcaae81796437a6ef39300e8924821e5128375dbb1388287f87"
+  "validator_semantics_hash": "sha256:9ed92fd500db19ad587d6e7479e8057f3654a03a06eaf74aca5cdcaa4f388dfc"
 }

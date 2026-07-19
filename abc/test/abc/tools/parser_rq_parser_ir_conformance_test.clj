@@ -6,7 +6,8 @@
             [abc.tools.parser-rq-parser-ir-conformance :as conformance]
             [abc.tools.schema :as schema]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :refer [deftest is testing]]
+            [clojure.walk :as walk]))
 
 (def identity-ref (str "sha256:" (apply str (repeat 64 "a"))))
 (def committed-policy
@@ -196,6 +197,25 @@
     (is (= :fail (:verdict (qualification/evaluate-predicate
                             predicate
                             {:parser_ir_schema_validation none-observation}))))))
+
+(deftest recursively-keywordized-policy-preserves-status-projection
+  (let [one-work-policy (assoc policy :expected_work_ids ["valid"])
+        one-work-policy (assoc one-work-policy :expected_work_set_hash
+                               (hash/format-sha256
+                                (hash/sha256-json-jcs ["valid"])))
+        one-work-policy (assoc one-work-policy :policy_hash
+                               (#'conformance/projected-hash
+                                one-work-policy :policy_hash))
+        keywordized (walk/keywordize-keys one-work-policy)
+        store (fixture-store)
+        record (conformance/authenticate-record
+                store keywordized identity-ref
+                (entry! store keywordized "valid" "schema_valid"))
+        aggregate (conformance/aggregate keywordized ["valid"] [record])
+        observation (conformance/derive-observation keywordized identity-ref aggregate)]
+    (is (= :ok (:status record)) (pr-str record))
+    (is (= "measured" (:status aggregate)))
+    (is (= 1.0 (:value observation)))))
 
 (deftest omission-and-authority-mismatch-are-unavailable
   (let [store (fixture-store)

@@ -11,7 +11,9 @@
 ## Global Constraints
 
 - Follow `abc/docs/superpowers/specs/2026-07-17-parser-rq-admission-promotion-design.md` exactly.
-- Work on `main`; make reviewable commits. Push the instrument-binding ADR before candidate freeze and push the capture authorization before its window opens.
+- Work on `main`; make reviewable commits. Push the instrument-binding ADR
+  before candidate freeze and push the capture authorization before capture
+  starts.
 - The candidate is the last implementation commit, not later evidence or governance HEAD.
 - Finish all code, schema, policy, corpus, predicate, and instrument changes before freeze. Any such change afterward requires a new candidate.
 - Accept the instrument-binding ADR before freeze. ADR 0040 stays Proposed until the fresh capture satisfies its evidence criterion.
@@ -722,11 +724,14 @@ shared only by candidates whose complete qualification tuple is identical.
 
 - [ ] **Step 5: Seal readiness, then fix the sole execution window**
 
-Choose the operational window before capture, write its concrete UTC timestamps into the authorization, and require ordinal one. The following derives a two-hour window beginning 30 minutes after generation:
+Choose the operational window before capture, write its concrete UTC timestamps
+into the authorization, and require ordinal one. The authorization is effective
+immediately; authority comes from committing and pushing it before capture, not
+from waiting for an arbitrary clock delay.
 
 ```bash
-not_before_utc=$(date -u -d '+30 minutes' '+%Y-%m-%dT%H:%M:%SZ')
-not_after_utc=$(date -u -d '+150 minutes' '+%Y-%m-%dT%H:%M:%SZ')
+not_before_utc=$(date -u -d '-1 minute' '+%Y-%m-%dT%H:%M:%SZ')
+not_after_utc=$(date -u -d '+120 minutes' '+%Y-%m-%dT%H:%M:%SZ')
 provenance_core_ref=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["provenance_core_ref"])' \
   "$staging_root/executable-provenance.json")
 python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" seal-readiness \
@@ -752,7 +757,7 @@ cp "$staging_root/readiness-receipt.json" "$run_root/readiness-receipt.json"
 cp "$staging_root/authorization.edn" "$run_root/authorizations/$authorization_dir.edn"
 ```
 
-- [ ] **Step 6: Structurally verify, commit, and push before the window opens**
+- [ ] **Step 6: Structurally verify, commit, and push before capture starts**
 
 ```bash
 evidence_clojure -M:abc/parser-rq-campaign \
@@ -763,9 +768,12 @@ evidence_clojure -M:abc/parser-rq-campaign \
 git add "$run_root"
 git commit -m "evidence(parser-rq): authorize candidate capture"
 git push origin main
+test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 ```
 
-If the push is not visible on hinoki before `not_before_utc`, or any volatile lane starts early, the authorization is invalid and this candidate ends unavailable. Select a new implementation candidate; do not rewrite the interval.
+If the pushed authorization is not the visible `origin/main` value before any
+volatile lane starts, the candidate ends unavailable. Do not rewrite the
+authorization after execution begins.
 
 ### Task 11: Execute and Publish the Sole Authorized Capture
 
@@ -837,12 +845,15 @@ candidate_clojure -M -e \
 nix develop "$candidate_tree/abc" --command python \
   "$candidate_tree/ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py" \
   verify-evidence --blobs "$capture_staging/blobs.json" \
-  --evidence-root "$PARSER_RQ_EVIDENCE_STORE" \
+  --evidence-root "$capture_staging" \
   --candidate-ref "$candidate_ref" --capture-generation-ref "$capture_ref" \
   --out "$capture_staging/evidence-integrity-receipt.json"
 ```
 
-This command streams and re-hashes the closed manifest-referenced set in the configured content store. Failure writes an unavailable receipt and blocks publication; changing a digest is forbidden.
+This command streams and re-hashes the exact closed generation that will be
+published. The receipt proves content and membership, independent of the place
+where staging happens to live. Failure blocks publication; changing a digest
+is forbidden.
 
 - [ ] **Step 5: Publish the immutable generation and canonical measurements**
 
@@ -889,15 +900,27 @@ Do not create an evaluation yet: its strict admission result requires the indepe
 
 - [ ] **Step 1: Run the independent full-corpus audit**
 
-Require the configured full admission AAT corpus and invoke the candidate-built executable recorded in provenance:
+Materialize a fresh full AAT corpus with the exact candidate adapter recorded in
+provenance, then audit it with the candidate converter. Never reuse an AAT dump
+from an earlier parser revision: its adapter metadata is part of the admission
+row.
 
 ```bash
-: "${PARSER_RQ_ADMISSION_AAT_DIR:?set the full ADR-0023 admission AAT root}"
+: "${PARSER_RQ_ADMISSION_RUN_ROOT:?set a controlled root for the candidate AAT run}"
 audit_staging=$(mktemp -d /tmp/soranoha-p5-audit.XXXXXXXX)
+ab_aozora_bin=$(nix develop "$candidate_tree/abc" --command python \
+  "$candidate_tree/ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py" \
+  resolve-executable --provenance "$run_root/executable-provenance.json" \
+  --name ab-aozora)
 aat_to_ir_bin=$(nix develop "$candidate_tree/abc" --command python \
   "$candidate_tree/ab-validator/reports/parser-ir/parser-rq-campaign-provenance.py" \
   resolve-executable --provenance "$run_root/executable-provenance.json" \
   --name ab-aat-to-parser-ir)
+admission_run="$PARSER_RQ_ADMISSION_RUN_ROOT/${candidate_ref#sha256:}"
+"$candidate_tree/ab-validator/reports/aat-fidelity/run-aat-full.sh" \
+  --adapter ab-aozora --adapter-bin "$ab_aozora_bin" --jobs 32 \
+  --report-id "parser-rq-${candidate_ref#sha256:}" --out-dir "$admission_run"
+PARSER_RQ_ADMISSION_AAT_DIR="$admission_run/aat/ab-aozora"
 "$aat_to_ir_bin" audit-corpus \
   --aat-dir "$PARSER_RQ_ADMISSION_AAT_DIR" \
   --mapping "$candidate_tree/ab-validator/data/aat-to-parser-ir-mapping-v2.json" \
@@ -912,7 +935,8 @@ Authenticate the executable, mapping/version/hash, evidence scope, and candidate
 - [ ] **Step 2: Publish the pre-admission evaluation**
 
 ```bash
-pre_eval=$(mktemp -d /tmp/soranoha-p5-pre-evaluation.XXXXXXXX)
+pre_eval_parent=$(mktemp -d /tmp/soranoha-p5-pre-evaluation.XXXXXXXX)
+pre_eval="$pre_eval_parent/evaluation"
 evidence_clojure -M:abc/parser-rq-campaign \
   evaluate --candidate "$run_root/candidate.edn" \
   --capture-root "$run_root/captures/$capture_dir" \
@@ -930,7 +954,8 @@ Publish and push this immutable evaluation before any registry mutation, whether
 
 - [ ] **Step 3: Append only an exact missing candidate**
 
-Read the machine status from `admission-report.edn`. If it is `missing`, create a new registry value without editing the input in place:
+Read the machine status from `admission_report.json`. If it is `missing`, create
+a new registry value without editing the input in place:
 
 ```bash
 registry_staging=$(mktemp /tmp/aat-parser-ir-compatibility.XXXXXXXX.edn)

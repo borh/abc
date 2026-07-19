@@ -139,7 +139,7 @@
                   :aat_adapter_version (:adapter_version parser)
                   :mapping_id (get mapping "mapping_id")
                   :mapping_version (get mapping "mapping_version")
-                  :mapping_hash (hash/format-sha256 (hash/sha256-file mapping-path))
+                  :mapping_hash (hash/sha256-json-abc-legacy-v0 mapping)
                   :mapping_schema_hash (get mapping "mapping_schema_hash")
                   :parser_ir_schema_id (get mapping "target_parser_ir_schema_id")
                   :parser_ir_schema_hash (get mapping "target_parser_ir_schema_hash")

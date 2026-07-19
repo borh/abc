@@ -5,6 +5,7 @@
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-diagnostic-completeness :as diagnostic]
             [abc.tools.schema :as schema]
+            [clojure.walk :as walk]
             [clojure.test :refer [deftest is testing]]))
 
 (def hash-a (str "sha256:" (apply str (repeat 64 "a"))))
@@ -72,6 +73,15 @@
             :works_with_diagnostics 0
             :vacuous true}
            (:details observation)))))
+
+(deftest recursively-keywordized-policy-preserves-status-projection
+  (let [keywordized (walk/keywordize-keys fixture-policy)
+        raw (utf8-bytes "{\"schemaVersion\":3,\"data\":[]}")
+        record (:record (diagnostic/derive-work keywordized hash-a (input raw)))
+        aggregate (diagnostic/aggregate keywordized ["valid"] [record])
+        observation (diagnostic/derive-observation keywordized hash-a aggregate)]
+    (is (= "measured" (:status aggregate)))
+    (is (= 1.0 (:value observation)))))
 
 (deftest valid-diagnostic-envelope-counts-complete-entries
   (let [raw (utf8-bytes

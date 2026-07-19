@@ -2,7 +2,6 @@
   (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [babashka.fs :as fs]
-            [charred.api :as json]
             [clojure.string :as string]
             [clojure.walk :as walk]))
 
@@ -57,16 +56,6 @@
        (keyword? item) (name item)
        :else item))
    value))
-
-(defn- abc-legacy-json-c14n-v0 [value]
-  ;; Compatibility port of ab-validator's abc_legacy_json_c14n_v0: deep key
-  ;; sorting, compact UTF-8 JSON, and historical slash escaping.
-  (let [sorted (walk/postwalk #(if (map? %) (into (sorted-map) %) %) value)]
-    (-> (json/write-json-str sorted :escape-slash false :escape-unicode false)
-        (string/replace "/" "\\/"))))
-
-(defn- abc-legacy-json-c14n-v0-hash [mapping]
-  (str "sha256:" (hash/sha256-string (abc-legacy-json-c14n-v0 mapping))))
 
 (defn- mismatch [relative key-path expected-value actual]
   {:problem :phase5-coordinate-mismatch
@@ -154,7 +143,7 @@
                             (:mapping-byte-sha256 expected) (hash/sha256-file mapping-file))
         (compare-coordinate mapping-relative [:mapping-hash]
                             (:mapping-hash expected)
-                            (abc-legacy-json-c14n-v0-hash mapping))
+                            (hash/sha256-json-abc-legacy-v0 mapping))
         (when (= (:parser-ir-schema-hash expected) schema-hash)
           (mismatch schema-relative [:parser-ir-schema-hash]
                     :not-historical schema-hash))

@@ -9,7 +9,7 @@
             [clojure.test :refer [deftest is testing]]))
 
 (def identity-ref (str "sha256:" (apply str (repeat 64 "a"))))
-(def policy
+(def committed-policy
   (let [raw (files/read-json
              "data/parser-rq-parser-ir-conformance-policy-v1.json")
         top-level (into {} (map (fn [[key value]] [(keyword key) value])) raw)
@@ -17,6 +17,15 @@
     (assoc top-level :status_mapping
            {:allowed_statuses (get status-map "allowed_statuses")
             :values (get status-map "values")})))
+
+(def policy
+  (let [work-ids ["valid" "invalid" "no-output"]
+        value (assoc committed-policy
+                     :expected_work_ids work-ids
+                     :expected_work_set_hash
+                     (hash/format-sha256 (hash/sha256-json-jcs work-ids)))]
+    (assoc value :policy_hash
+           (#'conformance/projected-hash value :policy_hash))))
 
 (defn- fixture-store
   []
@@ -73,9 +82,9 @@
               "data/parser-rq-parser-ir-conformance-policy-v1.json"))))
   (let [store (fixture-store)
         entry (entry! store "valid" "schema_valid")]
-    (doseq [mutated [(assoc policy :parser_ir_schema_hash identity-ref)
-                     (update policy :expected_work_ids conj "extra")
-                     (assoc-in policy [:status_mapping :values "measured"] 0.5)]]
+    (doseq [mutated [(assoc committed-policy :parser_ir_schema_hash identity-ref)
+                     (update committed-policy :expected_work_ids conj "extra")
+                     (assoc-in committed-policy [:status_mapping :values "measured"] 0.5)]]
       (is (= :unavailable
              (:status (conformance/authenticate-record
                        store mutated identity-ref entry)))))))

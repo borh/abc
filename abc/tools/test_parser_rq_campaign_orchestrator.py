@@ -573,6 +573,57 @@ class FakeRunner:
         return 0
 
 
+def test_execute_operation_passes_lock_fd_only_to_core(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
+    runner = FakeRunner(campaign.config.staging_root)
+    lock = orchestrator.LockCapability(fd=9, device=10, inode=11)
+    cwd = paths.root / "detached-cwd"
+    cwd.mkdir(parents=True)
+    write_json(
+        paths.runtime,
+        {
+            "candidate": {
+                "qualification_identity": {
+                    "instrument_versions": {},
+                    "parser_git_rev": "a" * 40,
+                }
+            },
+            "corpus": {"entries": []},
+        },
+    )
+
+    orchestrator._execute_operation("capture-core", campaign, paths, lock, runner, cwd)
+    orchestrator._execute_operation("capture-predicate-pair", campaign, paths, lock, runner, cwd)
+
+    core_call = next(
+        index
+        for index, argv in enumerate(runner.calls)
+        if "parser-rq-core-attempt-capture.py" in " ".join(argv)
+    )
+    predicate_call = next(
+        index
+        for index, argv in enumerate(runner.calls)
+        if "parser-rq-predicate-hardening-capture.py" in " ".join(argv)
+    )
+    assert runner.pass_fds[core_call] == (lock.fd,)
+    assert runner.pass_fds[predicate_call] == ()
+    assert set(runner.cwds) == {cwd}
+
+
+def test_assert_member_set_rejects_missing_and_extra_members(tmp_path: Path) -> None:
+    paths = orchestrator.RuntimePaths.below(tmp_path / "staging")
+    write_json(paths.root / "core_attempt.json", {})
+
+    with pytest.raises(orchestrator.ProtocolError, match="canonical member mismatch"):
+        orchestrator._assert_member_set(paths, ("core_attempt", "source_recognition"))
+
+    write_json(paths.root / "source_recognition.json", {})
+    write_json(paths.root / "resource.json", {})
+    with pytest.raises(orchestrator.ProtocolError, match="canonical member mismatch"):
+        orchestrator._assert_member_set(paths, ("core_attempt", "source_recognition"))
+
+
 def test_execute_graph_distinguishes_preparation_from_consumed_unavailability(
     tmp_path: Path,
 ) -> None:

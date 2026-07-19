@@ -13,7 +13,7 @@ import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Collection, Protocol
 
 
 LEGACY_LANE_ENVIRONMENT = (
@@ -1093,6 +1093,36 @@ def _prepare_resource(campaign: AuthenticatedCampaign, paths: RuntimePaths) -> N
     )
 
 
+def _execute_operation(
+    operation: str,
+    campaign: AuthenticatedCampaign,
+    paths: RuntimePaths,
+    lock: LockCapability,
+    runner: Runner,
+    cwd: Path,
+) -> None:
+    if operation == "derive-diagnostic-gap":
+        _prepare_diagnostic_input(campaign, paths)
+    if operation == "capture-publication":
+        _prepare_publication(campaign, paths, runner, cwd)
+    if operation == "capture-resource":
+        _prepare_resource(campaign, paths)
+    command = operation_argv(operation, campaign, paths, lock)
+    inherited = (lock.fd,) if operation == "capture-core" else ()
+    _run_checked(runner, command, cwd, pass_fds=inherited)
+    _project_operation(operation, campaign, paths, runner, cwd)
+
+
+def _assert_member_set(paths: RuntimePaths, expected_members: Collection[str]) -> None:
+    expected = {f"{name}.json" for name in expected_members}
+    installed = {f"{name}.json" for name in EXPECTED_INSTALLED_MEMBERS}
+    actual = {path.name for path in paths.root.glob("*.json") if path.name in installed}
+    if actual != expected:
+        raise ProtocolError(
+            f"canonical member mismatch: expected={sorted(expected)} actual={sorted(actual)}"
+        )
+
+
 def execute_graph(
     campaign: AuthenticatedCampaign,
     runner: Runner,
@@ -1142,20 +1172,8 @@ def execute_graph(
         for operation in campaign.operations:
             if not _lock_retained(lock):
                 raise ProtocolError("campaign lock was lost during capture")
-            if operation == "derive-diagnostic-gap":
-                _prepare_diagnostic_input(campaign, paths)
-            if operation == "capture-publication":
-                _prepare_publication(campaign, paths, runner, cwd)
-            if operation == "capture-resource":
-                _prepare_resource(campaign, paths)
-            command = operation_argv(operation, campaign, paths, lock)
-            inherited = (lock.fd,) if operation == "capture-core" else ()
-            _run_checked(runner, command, cwd, pass_fds=inherited)
-            _project_operation(operation, campaign, paths, runner, cwd)
-        expected = {f"{name}.json" for name in EXPECTED_INSTALLED_MEMBERS}
-        actual = {path.name for path in paths.root.glob("*.json") if path.name in expected}
-        if actual != expected:
-            raise ProtocolError("canonical member set is incomplete")
+            _execute_operation(operation, campaign, paths, lock, runner, cwd)
+        _assert_member_set(paths, EXPECTED_INSTALLED_MEMBERS)
         _run_checked(
             runner,
             _clojure(

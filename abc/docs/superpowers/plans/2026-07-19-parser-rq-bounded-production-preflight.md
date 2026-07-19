@@ -46,9 +46,7 @@ The first test must prove that `capture-core` receives `(lock.fd,)`, while a non
 - [ ] **Step 2: Run the focused tests and confirm RED**
 
 ```bash
-nix develop ./abc --command pytest -q \
-  abc/tools/test_parser_rq_campaign_orchestrator.py \
-  -k 'execute_operation or assert_member_set'
+nix build ./abc#checks.x86_64-linux.parser-rq-campaign-orchestrator -L
 ```
 
 Expected failure: the two helpers cannot be imported or called because the logic still lives inline in `execute_graph`.
@@ -88,7 +86,7 @@ def _assert_member_set(paths: RuntimePaths, expected_members: Collection[str]) -
     actual = {
         path.name
         for path in paths.root.glob("*.json")
-        if path.is_file() and path.name in installed
+        if path.name in installed
     }
     if actual != expected:
         raise ProtocolError(
@@ -101,7 +99,6 @@ Call both helpers from `execute_graph`. Do not move or copy authentication, lock
 - [ ] **Step 4: Prove the refactor is behavior-preserving**
 
 ```bash
-nix develop ./abc --command pytest -q abc/tools/test_parser_rq_campaign_orchestrator.py
 nix build ./abc#checks.x86_64-linux.parser-rq-campaign-orchestrator -L
 just python-quality
 ```
@@ -128,7 +125,23 @@ git commit -m 'refactor(parser-rq): share operation composition seam'
 - Provenance executable rows are derived by streaming the actual package files and matching the committed production graph.
 - `authenticate_inputs` constructs the authoritative executable and driver maps.
 
-- [ ] **Step 1: Replace the fake-authentication helper with a real-package helper**
+- [ ] **Step 1: Make the existing real-candidate test demand real authentication**
+
+Keep the existing test name selected by the root Nix check, but remove its
+post-authentication replacement of `executables` and `drivers`. Change its
+fixture construction to request authentication of the actual candidate package.
+
+- [ ] **Step 2: Run the root check and confirm RED at authentication**
+
+```bash
+nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
+```
+
+Expected RED: the old synthetic provenance rows do not authenticate the real
+candidate executable paths and bytes. No projection or Clojure failure is
+expected in this task.
+
+- [ ] **Step 3: Derive authentic provenance rows in the test fixture**
 
 Add `real_authenticated_campaign(tmp_path, repository_root, candidate_root)`. It must:
 
@@ -136,11 +149,11 @@ Add `real_authenticated_campaign(tmp_path, repository_root, candidate_root)`. It
 2. derive every executable row named by the graph from `candidate_root`, including byte count and SHA-256;
 3. write a synthetic provenance core and receipt whose identities agree with the graph and candidate fixture;
 4. call `authenticate_inputs` with `candidate_tree=repository_root`; and
-5. return the result after replacing only `clojure_prefix` with the hermetic direct launcher supplied by the Nix check.
+5. return the authenticated result unchanged.
 
 Do not use `dataclasses.replace` to substitute `executables` or `drivers`.
 
-- [ ] **Step 2: Regression-pin the adapter seam**
+- [ ] **Step 4: Regression-pin the adapter seam**
 
 Add:
 
@@ -151,37 +164,19 @@ def test_real_core_argv_uses_authenticated_adapter(...) -> None: ...
 
 The first removes the adapter provenance row and expects `authenticate_inputs` to fail closed. The second asserts the `--adapter` value in `operation_argv("capture-core", ...)` equals the authenticated adapter executable path.
 
-- [ ] **Step 3: Demonstrate the root check is not yet hermetic**
-
-```bash
-nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
-```
-
-Expected RED: the strengthened test lacks the Clojure runtime/dependency closure required by the real projection path.
-
-- [ ] **Step 4: Supply the existing hermetic runtimes, not a new wrapper**
-
-Update `parser-rq-production-wiring` to include the existing candidate package, `cljPkgs.clojure`, `bash`, `coreutils`, the existing Clojure dependency cache/environment, and the existing Python test environment. Use this launcher from the immutable repository source:
-
-```python
-(
-    "bash",
-    "-c",
-    'cd "$0" && exec clojure "$@"',
-    str(repository_root / "abc"),
-)
-```
-
-Do not depend on the process working directory or ambient `PATH` beyond the Nix check's declared inputs.
+Change the root check selection from the single legacy test name to
+`-k real_candidate` so all real-package authentication regressions run inside
+the candidate-bearing Nix check. This is only test selection; the Clojure
+runtime closure remains deferred until Task 3 exercises projection.
 
 - [ ] **Step 5: Verify and commit**
 
 ```bash
-nixfmt flake.nix
 nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
 just python-quality
+nixfmt flake.nix
 just nix-format-check
-git add flake.nix abc/tools/test_parser_rq_campaign_orchestrator.py
+git add abc/tools/test_parser_rq_campaign_orchestrator.py flake.nix
 git commit -m 'test(parser-rq): authenticate production candidate wiring'
 ```
 
@@ -197,7 +192,8 @@ git commit -m 'test(parser-rq): authenticate production candidate wiring'
 
 **Interfaces:**
 - The preflight calls `authenticate_inputs`, `_materialize_runtime`, `_execute_operation`, and `_assert_member_set` by reference.
-- It executes `capture-core`, `capture-predicate-hardening`, `capture-source-accountability`, `derive-diagnostic-gap`, and `capture-publication` in production graph order.
+- It executes `capture-core`, `capture-predicate-pair`, `capture-source`,
+  `derive-diagnostic-gap`, and `capture-publication` in production graph order.
 - It expects exactly six portable members because predicate hardening projects both `diagnostic_completeness` and `parser_ir_conformance`.
 
 - [ ] **Step 1: Add the bounded runtime fixture**
@@ -217,13 +213,15 @@ campaign = real_authenticated_campaign(
 paths = RuntimePaths.below(campaign.config.staging_root)
 write_bounded_runtime(paths.runtime, ...)
 _materialize_runtime(paths)
+cwd = paths.root / "detached-cwd"
+cwd.mkdir(parents=True, exist_ok=True)
 lock = _acquire_lock(tmp_path / "campaign.lock")
 try:
     for operation in campaign.operations:
         if operation == "capture-resource":
             break
         _execute_operation(
-            operation, campaign, paths, lock, SubprocessRunner(), repository_root
+            operation, campaign, paths, lock, SubprocessRunner(), cwd
         )
 finally:
     os.close(lock.fd)
@@ -251,7 +249,38 @@ Update the root check's pytest selection so it runs both the real authentication
 regressions and `test_bounded_production_chain_uses_shared_composition`; do not
 leave the new chain outside the Nix gate.
 
-- [ ] **Step 4: Demonstrate the production taxonomy failure**
+- [ ] **Step 4: Demonstrate that real projection needs a declared Clojure runtime**
+
+```bash
+nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
+```
+
+Expected RED: the bounded chain reaches `_project_operation`, but the root
+check does not yet contain the Clojure runtime and dependency closure needed by
+the authenticated campaign's projection commands.
+
+- [ ] **Step 5: Supply the existing hermetic runtime, not a new wrapper**
+
+Update `parser-rq-production-wiring` to include `cljPkgs.clojure`, `bash`,
+`coreutils`, the existing Clojure dependency cache/environment, and the
+existing Python test environment. In the bounded test, replace only the
+authenticated campaign's `clojure_prefix` with this launcher from the immutable
+repository source:
+
+```python
+(
+    "bash",
+    "-c",
+    'cd "$0" && exec clojure "$@"',
+    str(repository_root / "abc"),
+)
+```
+
+Do not replace `executables` or `drivers`. Do not depend on the operation
+process working directory or ambient `PATH` beyond the Nix check's declared
+inputs.
+
+- [ ] **Step 6: Demonstrate the production taxonomy failure**
 
 Run:
 
@@ -267,7 +296,7 @@ taxonomy is not canonical JSON
 
 This is the regression for the third failed candidate; do not bypass it in Python or Clojure.
 
-- [ ] **Step 5: Canonicalize the committed value mechanically**
+- [ ] **Step 7: Produce candidate canonical bytes, with Rust as the authority**
 
 ```bash
 tmp="$(mktemp)"
@@ -275,9 +304,14 @@ jq -j -cS . abc/data/parser-rq-ignored-regions-v1.json > "$tmp"
 mv "$tmp" abc/data/parser-rq-ignored-regions-v1.json
 ```
 
-The result must contain the exact JCS bytes and no trailing newline. Do not change the rules.
+For the current string-and-empty-array document, this produces the candidate
+compact, sorted, newline-free bytes. `jq` is not a general RFC 8785
+canonicalizer. The real source-accountability CLI in the next step is the sole
+authority: if it rejects these bytes, obtain the exact canonical bytes through
+the Rust producer rather than weakening or duplicating its validation. Do not
+change the rules.
 
-- [ ] **Step 6: Prove all three historical seams and the full portable chain**
+- [ ] **Step 8: Prove all three historical seams and the full portable chain**
 
 ```bash
 nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
@@ -291,7 +325,7 @@ just python-quality
 
 Confirm the Rust test actually runs one test; do not use `--exact` with a partial name.
 
-- [ ] **Step 7: Commit the bounded chain**
+- [ ] **Step 9: Commit the bounded chain**
 
 ```bash
 git add abc/tools/test_parser_rq_campaign_orchestrator.py \
@@ -303,7 +337,7 @@ git commit -m 'test(parser-rq): compose bounded production preflight'
 
 ---
 
-### Task 4: Bind both pre-freeze checks to one detached revision
+### Task 4: Bind every pre-freeze prerequisite to one detached revision
 
 **Files:**
 - Modify: `abc/docs/superpowers/plans/2026-07-17-parser-rq-admission-promotion.md`
@@ -322,8 +356,11 @@ test -z "$(git -C "$candidate_tree" status --short)"
 
 nix build "$candidate_tree#checks.x86_64-linux.parser-rq-production-wiring" -L
 nix run "$candidate_tree/ab-validator#parser-rq-resource-cgroup-smoke"
-
-# Run the existing repository runtime/site preflight from the same tree here.
+: "${PARSER_RQ_SITE_DESCRIPTOR:?set the reviewed site-descriptor JSON path}"
+graph="$candidate_tree/abc/data/parser-rq-production-graph-v1.json"
+python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" preflight-site \
+  --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" --graph "$graph" \
+  --evidence-tree-clean true
 
 test "$(git -C "$candidate_tree" rev-parse HEAD)" = "$freeze_rev"
 test -z "$(git -C "$candidate_tree" status --short)"
@@ -338,7 +375,7 @@ Add one sentence: the runbook mechanically guards an honest invocation, but a pe
 - [ ] **Step 3: Confirm the edit did not widen campaign authority**
 
 ```bash
-rg -n 'freeze_rev|parser-rq-production-wiring|resource-cgroup-smoke' \
+rg -n 'freeze_rev|parser-rq-production-wiring|resource-cgroup-smoke|preflight-site' \
   abc/docs/superpowers/plans/2026-07-17-parser-rq-admission-promotion.md
 rg -n 'freeze token|freeze_token|preflight mode|--preflight|--dry-run' \
   abc/docs/superpowers/plans/2026-07-17-parser-rq-admission-promotion.md
@@ -431,6 +468,11 @@ On `hinoki.hyakutake-barbel.ts.net`, create or update the detached candidate tre
 ```bash
 nix build "$candidate_tree#checks.x86_64-linux.parser-rq-production-wiring" -L
 nix run "$candidate_tree/ab-validator#parser-rq-resource-cgroup-smoke"
+: "${PARSER_RQ_SITE_DESCRIPTOR:?set the reviewed site-descriptor JSON path}"
+graph="$candidate_tree/abc/data/parser-rq-production-graph-v1.json"
+python "$candidate_tree/abc/tools/parser_rq_campaign_site.py" preflight-site \
+  --site-descriptor "$PARSER_RQ_SITE_DESCRIPTOR" --graph "$graph" \
+  --evidence-tree-clean true
 test "$(git -C "$candidate_tree" rev-parse HEAD)" = "$freeze_rev"
 test -z "$(git -C "$candidate_tree" status --short)"
 ```
@@ -440,6 +482,7 @@ Stop after these prerequisites. Candidate construction and authorization resume 
 ## Self-Review Checklist
 
 - [ ] Production and preflight call the same `_execute_operation` and `_assert_member_set` implementations.
+- [ ] Both call `_execute_operation` with `paths.root / "detached-cwd"` as the operation working directory.
 - [ ] The real candidate package is authenticated, and the returned executable/driver maps are not replaced.
 - [ ] Missing adapter provenance fails before execution, and core argv contains the authenticated adapter.
 - [ ] The bounded chain produces nested path-hashed reports and rejects an unexpected flat intruder by work identity.
@@ -447,5 +490,5 @@ Stop after these prerequisites. Candidate construction and authorization resume 
 - [ ] Six portable members are closed exactly; resource measurement remains a separate live cgroup check.
 - [ ] No qualification, admission, predicate, authorization, one-shot, or ADR-promotion semantics changed.
 - [ ] No machine, filesystem, storage, or backup fact entered candidate or qualification identity.
-- [ ] Both pre-freeze prerequisites are guarded against one detached revision, with human bypass acknowledged.
+- [ ] Portable composition, live cgroup capability, and runtime/site preflight are guarded against one detached revision, with human bypass acknowledged.
 - [ ] All focused checks and `just validate-migration` pass after the final rebase.

@@ -84,9 +84,7 @@ def test_closed_reports_matches_nested_outputs_to_expected_work_ids(tmp_path):
 
     assert set(reports) == {"w1", "w2"}
     assert reports["w1"][0] == adapter_root / "w1-pathhash.json"
-    (adapter_root / "extra-pathhash.json").write_text(
-        json.dumps({"work_id": "extra", "results": {}})
-    )
+    (report_root / "flat-intruder.json").write_text(json.dumps({"work_id": "extra", "results": {}}))
     with pytest.raises(ValueError, match="unexpected report identity"):
         capture._closed_reports(report_root, {"w1", "w2"})
 

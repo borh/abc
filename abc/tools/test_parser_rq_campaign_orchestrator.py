@@ -3,9 +3,12 @@ from __future__ import annotations
 import importlib.util
 import hashlib
 import json
-import sys
 import os
+import re
+import shutil
 import subprocess
+import sys
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -361,6 +364,105 @@ def real_authenticated_campaign(tmp_path: Path, repository_root: Path, candidate
     )
 
 
+def bounded_candidate_tree(tmp_path: Path, repository_root: Path) -> Path:
+    candidate_tree = tmp_path / "bounded-candidate-tree"
+    shutil.copytree(repository_root / "abc", candidate_tree / "abc")
+    for relative in (
+        Path("data"),
+        Path("reports"),
+        Path("crates/ab-index/tests/fixtures/corpus"),
+    ):
+        shutil.copytree(
+            repository_root / "ab-validator" / relative,
+            candidate_tree / "ab-validator" / relative,
+        )
+    return candidate_tree
+
+
+def bounded_identity() -> dict[str, object]:
+    return {
+        "aat_version": 2,
+        "aat_adapter": "ab-aozora",
+        "aat_adapter_version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)",
+        "parser_git_rev": "a" * 40,
+        "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
+        "mapping_version": "0.5.0",
+        "mapping_hash": "sha256:73e1df7af281848c7249003a6df7945cad3bcf7e29f35fff7c9da2bb3c695413",
+        "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
+        "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+        "parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
+        "corpus_snapshot_hash": "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e",
+        "corpus_list_hash": "sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd",
+        "predicate_set_hash": "sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203",
+        "instrument_versions": {
+            "diagnostic_completeness": "ab-aozora --mode diagnostics envelope entries {code,severity,source,span}",
+            "fatal_failures": "parser-rq-core-attempt-v1",
+            "parser_ir_schema_validation": "ab-aat-to-parser-ir convert with validate_output_parser_ir",
+            "peak_cgroup_memory_bytes": "parser-rq-resource-v1",
+            "publication_structure": "reports/parser-ir/publication-bundle-validate.py against parser-ir-publication-preservation.schema.json",
+            "silent_drops": "parser-rq-diagnostic-authorization-v1",
+            "source_span_coverage": "parser-rq-source-recognition-v1",
+            "timeouts": "parser-rq-core-attempt-v1",
+            "wall_time_seconds": "parser-rq-core-attempt-v1",
+        },
+    }
+
+
+def bounded_authenticated_campaign(
+    tmp_path: Path, candidate_tree: Path, candidate_root: Path
+) -> Any:
+    config = real_campaign_config(tmp_path, candidate_tree, candidate_root)
+    receipt = json.loads(config.readiness_receipt.read_bytes())
+    receipt["qualification_identity_ref"] = orchestrator.content_ref(bounded_identity())
+    write_json(config.readiness_receipt, receipt)
+    return orchestrator.authenticate_inputs(config)
+
+
+def write_bounded_runtime(path: Path, repository_root: Path) -> None:
+    corpus_root = "ab-validator/crates/ab-index/tests/fixtures/corpus"
+    sources = (
+        ("000001_1", "cards/000001/files/1_ruby/test.txt"),
+        ("000002_2", "cards/000002/files/2_gaiji/test.txt"),
+        ("000003_3", "cards/000003/files/3_both/test.txt"),
+    )
+    entries = []
+    source_entries = []
+    for work_id, relative in sources:
+        source_path = f"{corpus_root}/{relative}"
+        digest = (
+            "sha256:" + hashlib.sha256((repository_root / source_path).read_bytes()).hexdigest()
+        )
+        entries.append({"work_id": work_id, "source_path": source_path, "source_sha256": digest})
+        source_entries.append(
+            {"work_id": work_id, "source_path": source_path, "original_sha256": digest}
+        )
+    identity = bounded_identity()
+    identity_ref = orchestrator.content_ref(identity)
+    write_json(
+        path,
+        {
+            "schema_version": "abc/parser-rq-runtime-inputs/v1",
+            "candidate": {
+                "candidate_ref": "sha256:" + "b" * 64,
+                "qualification_identity_ref": identity_ref,
+                "qualification_identity": identity,
+            },
+            "corpus": {"corpus_root": corpus_root, "entries": entries},
+            "source_accountability_corpus": source_entries,
+            "authorization": {
+                "authorization_ref": "sha256:" + "f" * 64,
+                "authorization_ordinal": 1,
+                "candidate_ref": "sha256:" + "b" * 64,
+                "qualification_identity_ref": identity_ref,
+                "not_before_utc": "2026-01-01T00:00:00Z",
+                "not_after_utc": "2027-01-01T00:00:00Z",
+                "repetitions": 3,
+                "reduction": "maximum",
+            },
+        },
+    )
+
+
 @pytest.mark.skipif(
     "PARSER_RQ_CANDIDATE_ROOT" not in os.environ,
     reason="real candidate bundle is supplied by the monorepo wiring check",
@@ -459,6 +561,64 @@ def test_real_candidate_core_argv_uses_authenticated_adapter(tmp_path: Path) -> 
 
     adapter_index = argv.index("--adapter") + 1
     assert Path(argv[adapter_index]) == campaign.executables["ab-aozora"]
+
+
+@pytest.mark.skipif(
+    "PARSER_RQ_CANDIDATE_ROOT" not in os.environ,
+    reason="real candidate bundle is supplied by the monorepo wiring check",
+)
+def test_bounded_production_chain_uses_shared_composition(tmp_path: Path) -> None:
+    candidate_root = Path(os.environ["PARSER_RQ_CANDIDATE_ROOT"])
+    repository_root = Path(os.environ["PARSER_RQ_REPOSITORY_ROOT"])
+    candidate_tree = bounded_candidate_tree(tmp_path, repository_root)
+    campaign = bounded_authenticated_campaign(tmp_path, candidate_tree, candidate_root)
+    campaign = replace(
+        campaign,
+        clojure_prefix=(
+            "bash",
+            "-c",
+            'cd "$0" && exec clojure "$@"',
+            str(candidate_tree / "abc"),
+        ),
+    )
+    paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
+    write_bounded_runtime(paths.runtime, candidate_tree)
+    orchestrator._materialize_runtime(paths)
+    cwd = paths.root / "detached-cwd"
+    cwd.mkdir(parents=True)
+    lock = orchestrator._acquire_lock(tmp_path / "bounded-campaign.lock")
+    try:
+        for operation in campaign.operations:
+            if operation == "capture-resource":
+                break
+            orchestrator._execute_operation(
+                operation,
+                campaign,
+                paths,
+                lock,
+                orchestrator.SubprocessRunner(),
+                cwd,
+            )
+            if operation == "capture-core":
+                report_root = paths.core_root / "records/repetition-1/reports"
+                reports = list(report_root.rglob("*.json"))
+                assert reports
+                assert any(path.parent != report_root for path in reports)
+                assert all(re.fullmatch(r".+-[0-9a-f]{12}\.json", path.name) for path in reports)
+    finally:
+        os.close(lock.fd)
+
+    orchestrator._assert_member_set(
+        paths,
+        {
+            "core_attempt",
+            "diagnostic_completeness",
+            "parser_ir_conformance",
+            "source_recognition",
+            "diagnostic_gap",
+            "publication_structure",
+        },
+    )
 
 
 def test_wiring_commands_exercise_the_production_rust_subcommands(tmp_path: Path) -> None:

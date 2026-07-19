@@ -198,9 +198,20 @@ git commit -m 'test(parser-rq): authenticate production candidate wiring'
 
 - [ ] **Step 1: Add the bounded runtime fixture**
 
-Create test helpers that write a full runtime JSON value for the three work IDs already named by the committed policies. Source paths must resolve below the immutable repository root, source hashes must be streamed from those files, the authorization window must contain the test's explicit current time, and all synthetic identity references must be internally coherent.
+Create test helpers that write a full runtime JSON value for the three work IDs
+named by the pinned release corpus and the generated production policies.
+Source paths must resolve below the immutable repository root, source hashes
+must be streamed from those files, the authorization window must contain the
+test's explicit current time, and all synthetic identity references must be
+internally coherent.
 
-The helper may synthesize qualification, authorization, readiness, and attempt identities. It must not synthesize executable provenance, policy membership, source membership, or producer output.
+The helper may synthesize qualification, authorization, readiness, and attempt
+identities. It must not synthesize executable provenance, policy membership,
+source membership, or producer output. Before the test, regenerate both
+predicate-hardening semantic-closure manifests and policies with
+`predicate-hardening-identity.py`, using exactly `000001_1`, `000002_2`, and
+`000003_3`. Commit those production values; the test must consume them without
+rewriting a copied policy tree.
 
 - [ ] **Step 2: Add the real bounded-chain test**
 
@@ -330,6 +341,10 @@ Confirm the Rust test actually runs one test; do not use `--exact` with a partia
 ```bash
 git add abc/tools/test_parser_rq_campaign_orchestrator.py \
   abc/data/parser-rq-ignored-regions-v1.json \
+  abc/data/parser-rq-diagnostic-completeness-policy-v1.json \
+  abc/data/parser-rq-parser-ir-conformance-policy-v1.json \
+  ab-validator/data/parser-rq-diagnostic-completeness-validator-v1.json \
+  ab-validator/data/parser-rq-parser-ir-conformance-validator-v1.json \
   ab-validator/reports/parser-ir/test_parser_rq_core_attempt_capture.py \
   flake.nix
 git commit -m 'test(parser-rq): compose bounded production preflight'

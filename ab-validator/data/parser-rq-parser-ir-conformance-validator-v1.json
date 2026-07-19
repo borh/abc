@@ -6,7 +6,7 @@
     },
     {
       "path": "ab-validator/Cargo.lock",
-      "sha256": "sha256:697352c01e5a9be205f22e049bc9c92610ad83ed3c51ad780cc3c6f65f975b3e"
+      "sha256": "sha256:a4be3637d6531e4de5493aa0e03742753af917997adfa7a9a58f9384d6fb55bc"
     }
   ],
   "instrument": "parser-ir-conformance",
@@ -51,5 +51,5 @@
     }
   ],
   "validator_id": "ab-validator/parser-ir-schema-conformance/v1",
-  "validator_semantics_hash": "sha256:96c923e3ad131088cf585c524a564ce98a475db68d195e2f795bbc52279fc484"
+  "validator_semantics_hash": "sha256:28ffc4e46e0b47bd8ad9acbe24f421dfe822a2c3fea3ec4ba350b5de796bfb11"
 }

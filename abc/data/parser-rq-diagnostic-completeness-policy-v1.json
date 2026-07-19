@@ -2,12 +2,12 @@
   "algorithm_version": "diagnostic-envelope-completeness-v1",
   "diagnostic_wire_version": 3,
   "expected_work_ids": [
-    "valid",
-    "invalid",
-    "no-output"
+    "000001_1",
+    "000002_2",
+    "000003_3"
   ],
-  "expected_work_set_hash": "sha256:bd650addfb1fa4ce5c44eb75eaa8135dcda2eae17e757023628bb87a0d626be9",
-  "policy_hash": "sha256:5d4d07b34f246d482cb70ba85d25d92057596a74809abeb655c982cab859875a",
+  "expected_work_set_hash": "sha256:3b847030730777136a941e2819356736fb8be01c683eed349a533e05d1aa72bb",
+  "policy_hash": "sha256:a5968337aaab9f325ae6fd3f8e2e8eb6e0aa4b21368a93ce8692b033741ed5cb",
   "policy_id": "abc/parser-rq-diagnostic-completeness/v1",
   "raw_diagnostic_schema_hash": "sha256:e467a46ac8196b0193d658012375fda69f55a780e8edb9d1976e36fcf8417592",
   "raw_diagnostic_schema_id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
@@ -24,5 +24,5 @@
     }
   },
   "vacuity_semantics": "valid_empty_passes_with_disclosure",
-  "validator_semantics_hash": "sha256:d141d7a5d109d55b5d17f3f4a780a35c787503e73053c6f374a92279a209db15"
+  "validator_semantics_hash": "sha256:0575b9a082ab3bcaae81796437a6ef39300e8924821e5128375dbb1388287f87"
 }

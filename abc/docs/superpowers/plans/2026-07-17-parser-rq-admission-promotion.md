@@ -520,7 +520,32 @@ git push origin main
 **Files:**
 - Modify only files required by failures found before freeze.
 
-- [ ] **Step 1: Run all focused tests from clean inputs**
+- [ ] **Step 1: Regenerate closed production policies from the pinned corpus**
+
+Before any pre-freeze test, regenerate both predicate-hardening semantic-closure
+manifests and their production policies. The work IDs are the exact members of
+`parser-release-qualification-corpus.edn`; synthetic unit-fixture IDs are not
+production membership.
+
+```bash
+identity_tool=ab-validator/reports/parser-ir/predicate-hardening-identity.py
+for instrument in diagnostic-completeness parser-ir-conformance; do
+  python "$identity_tool" --repo-root . --instrument "$instrument" \
+    --out "ab-validator/data/parser-rq-$instrument-validator-v1.json" \
+    --policy-out "abc/data/parser-rq-$instrument-policy-v1.json" \
+    --work-id 000001_1 --work-id 000002_2 --work-id 000003_3
+done
+git diff --exit-code -- \
+  ab-validator/data/parser-rq-diagnostic-completeness-validator-v1.json \
+  ab-validator/data/parser-rq-parser-ir-conformance-validator-v1.json \
+  abc/data/parser-rq-diagnostic-completeness-policy-v1.json \
+  abc/data/parser-rq-parser-ir-conformance-policy-v1.json
+```
+
+Any diff is a candidate input change: review and commit it, then restart the
+pre-freeze boundary. Do not patch hashes or work membership by hand.
+
+- [ ] **Step 2: Run all focused tests from clean inputs**
 
 ```bash
 nix build ./ab-validator#checks.x86_64-linux.parser-rq-core-attempt-python-tests
@@ -537,7 +562,7 @@ scripts/comment-hygiene-check.sh
 just validate-migration
 ```
 
-- [ ] **Step 2: Review the complete implementation diff**
+- [ ] **Step 3: Review the complete implementation diff**
 
 Confirm no active code contains `/db/`, untracked `references/`, a caller-supplied admission result, a hand-keyed observation, or an authoritative retry path. Confirm every capture producer is named in `instrument_versions` and the live predicate hash is generated from the committed value.
 
@@ -554,7 +579,7 @@ rg -n 'admitted_tuple_matches|admission[_-]boolean|retry' \
 git diff --check
 ```
 
-- [ ] **Step 3: Fix before freeze, then commit and push**
+- [ ] **Step 4: Fix before freeze, then commit and push**
 
 Any implementation correction belongs here and repeats the full verification. When clean:
 

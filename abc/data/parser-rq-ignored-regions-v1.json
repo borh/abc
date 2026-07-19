@@ -1,7 +1,1 @@
-{
-  "$schema": "https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json",
-  "schema_version": "abc/parser-rq-ignored-regions/v1",
-  "taxonomy_version": "parser-rq-ignored-regions-v1",
-  "coordinate_system": "decoded_utf8",
-  "rules": []
-}
+{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}

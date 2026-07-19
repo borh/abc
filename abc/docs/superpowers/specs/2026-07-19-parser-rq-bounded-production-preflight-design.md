@@ -32,7 +32,8 @@ production-chain preflight. The check uses:
 
 - the actual `parser-rq-candidate` package;
 - the actual repository drivers;
-- the committed production graph and production policy files; and
+- the committed production graph and production policy files, whose closed
+  work membership is generated from the pinned release corpus; and
 - the existing three-work bounded Aozora corpus.
 
 It executes the portable production dataflow in dependency order:
@@ -158,9 +159,13 @@ qualification meaning.
 
 ## Closed Inputs and Outputs
 
-The bounded chain uses the same three work IDs already pinned by the production
-policies. Membership comes from those policies and the bounded corpus index,
-not from filesystem discovery.
+The bounded chain uses the same three work IDs pinned by the release corpus.
+The predicate-hardening policy generator projects those exact IDs into the two
+production policies; it also regenerates their semantic-closure manifests.
+The preflight consumes the committed projections without rewriting them.
+Membership comes from those policies and the bounded corpus index, not from
+filesystem discovery. Synthetic `valid` / `invalid` / `no-output` work IDs
+belong only in unit fixtures and are invalid production policy membership.
 
 The corpus is adequate only if the real core operation emits at least one report
 below an adapter subdirectory with a path-hashed filename. The preflight asserts
@@ -241,13 +246,16 @@ composition, not another abstraction.
      and
    - pretty-printed production taxonomy bytes fail the Rust CLI while exact JCS
      bytes pass.
-4. Extract `_execute_operation` and `_assert_member_set` from `execute_graph`
+4. Generate predicate-hardening manifests and policies from the exact pinned
+   release-corpus work IDs; reject synthetic unit-fixture membership in the
+   production policy path.
+5. Extract `_execute_operation` and `_assert_member_set` from `execute_graph`
    without changing production behavior, then make the preflight call them.
-5. Commit the taxonomy's exact JCS bytes and prove negative membership and policy
+6. Commit the taxonomy's exact JCS bytes and prove negative membership and policy
    mutations fail at their owning public boundaries.
-6. Run the focused root production-wiring check, the affected Rust/Python tests,
+7. Run the focused root production-wiring check, the affected Rust/Python tests,
    `just python-quality`, and `just validate-migration`.
-7. On hinoki, bind one `freeze_rev` to the detached candidate tree, run the live
+8. On hinoki, bind one `freeze_rev` to the detached candidate tree, run the live
    cgroup capability check and repository runtime preflight from that tree, and
    assert the revision is unchanged immediately before candidate construction.
 
@@ -287,6 +295,8 @@ composition, not another abstraction.
    qualification property.
 10. The new chain demonstrably catches all three historical seams before a
     fourth candidate is frozen.
+11. Production predicate-hardening policies contain exactly the pinned corpus
+    work IDs and their semantic-closure manifests match the candidate tree.
 
 ## Falsifiers
 

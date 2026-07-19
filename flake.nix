@@ -381,12 +381,21 @@
               [
                 abValidatorPackages."parser-rq-candidate"
                 parserRqWiringPython
+                cljPkgs.clojure
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.systemd
               ]
               ''
+                export HOME="${cljDepsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export GITLIBS="$HOME/.gitlibs"
                 export PARSER_RQ_CANDIDATE_ROOT="${abValidatorPackages."parser-rq-candidate"}"
                 export PARSER_RQ_REPOSITORY_ROOT="$src"
                 pytest -q abc/tools/test_parser_rq_campaign_orchestrator.py \
-                  -k real_candidate
+                  -k 'real_candidate or bounded_production_chain'
               '';
           monorepo-nix-format =
             mkMonorepoCheck "soranoha-monorepo-nix-format"

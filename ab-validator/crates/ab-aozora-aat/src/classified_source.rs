@@ -663,6 +663,29 @@ pub fn capture_generation_from_bytes_for_identity(
     bytes: &[u8],
     identity_ref: &str,
 ) -> Result<CaptureGeneration> {
+    capture_generation_from_bytes_with_identity(bytes, identity_ref, None)
+}
+
+/// Capture all member bytes under explicit qualification and work identities.
+///
+/// # Errors
+///
+/// Returns an error for an empty work identity, malformed qualification
+/// identity, or any capture failure.
+pub fn capture_generation_from_bytes_for_identity_and_work(
+    bytes: &[u8],
+    identity_ref: &str,
+    work_id: &str,
+) -> Result<CaptureGeneration> {
+    ensure!(!work_id.is_empty(), "work identity must not be empty");
+    capture_generation_from_bytes_with_identity(bytes, identity_ref, Some(work_id))
+}
+
+fn capture_generation_from_bytes_with_identity(
+    bytes: &[u8],
+    identity_ref: &str,
+    work_id: Option<&str>,
+) -> Result<CaptureGeneration> {
     ensure!(
         identity_ref.strip_prefix("sha256:").is_some_and(|digest| {
             digest.len() == 64
@@ -689,7 +712,7 @@ pub fn capture_generation_from_bytes_for_identity(
     let mut manifest = json!({
         "schema_version": GENERATION_VERSION,
         "qualification_identity_ref": identity_ref,
-        "work_id": decoded.source_hash,
+        "work_id": work_id.unwrap_or(&decoded.source_hash),
         "members": {
             "decoded_source": member_json(&decoded_identity),
             "parser_output": member_json(&parser_identity),
@@ -745,16 +768,11 @@ fn verify_ledger_contract(generation: &CaptureGeneration, manifest: &Value) -> R
             }),
         "decoded ledger identity mismatch"
     );
+    let original_source_hash = ledger["original_source"]["value_hash"]
+        .as_str()
+        .context("original source hash is absent")?;
     ensure!(
-        ledger["original_source"]["value_hash"] == manifest["work_id"],
-        "original source and manifest work identity mismatch"
-    );
-    ensure!(
-        ledger["original_source"]["artifact_ref"]
-            == format!(
-                "source/{}",
-                manifest["work_id"].as_str().unwrap_or_default()
-            ),
+        ledger["original_source"]["artifact_ref"] == format!("source/{original_source_hash}"),
         "original source artifact relation mismatch"
     );
     let parser = member_identity("json", &generation.parser_output);
@@ -859,6 +877,20 @@ mod tests {
             .iter()
             .filter(|entry| entry["construct_id"] == "recovered_verbatim")
             .collect()
+    }
+
+    #[test]
+    fn explicit_capture_work_identity_is_preserved() {
+        let generation = capture_generation_from_bytes_for_identity_and_work(
+            "本文\n".as_bytes(),
+            &qualification_identity_ref(),
+            "000001_1",
+        )
+        .unwrap();
+        let manifest: Value = serde_json::from_slice(&generation.manifest).unwrap();
+
+        assert_eq!(manifest["work_id"], "000001_1");
+        verify_capture_generation(&generation).unwrap();
     }
 
     #[test]

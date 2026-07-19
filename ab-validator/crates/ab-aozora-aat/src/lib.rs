@@ -14,7 +14,8 @@ mod classified_source;
 
 pub use classified_source::{
     CaptureGeneration, PublishedCaptureGeneration, capture_generation_from_bytes,
-    capture_generation_from_bytes_for_identity, classified_source_ledger_from_bytes,
+    capture_generation_from_bytes_for_identity,
+    capture_generation_from_bytes_for_identity_and_work, classified_source_ledger_from_bytes,
     verify_capture_generation,
 };
 use sha2::{Digest, Sha256};

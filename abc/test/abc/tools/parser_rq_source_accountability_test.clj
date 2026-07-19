@@ -30,7 +30,7 @@
 
 (def recognition-identity
   (assoc-in qualification-identity
-            [:instrument_versions :source_recognition]
+            [:instrument_versions :source_span_coverage]
             "parser-rq-source-recognition-v1"))
 
 (def recognition-identity-ref

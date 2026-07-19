@@ -254,14 +254,14 @@ fn self_consistent_contract_mutations_are_rejected() {
     );
 
     let mut changed = original.clone();
-    let mut manifest = json(&changed.manifest);
-    manifest["work_id"] = Value::String(format!("sha256:{}", "2".repeat(64)));
-    reseal_manifest(&mut changed, manifest);
+    let mut ledger = json(&changed.classified_source_ledger);
+    ledger["original_source"]["artifact_ref"] = Value::String("source/forged".into());
+    reseal_ledger(&mut changed, &ledger);
     assert!(
         verify_capture_generation(&changed)
             .unwrap_err()
             .to_string()
-            .contains("original source")
+            .contains("original source artifact relation")
     );
 
     let mut changed = original;

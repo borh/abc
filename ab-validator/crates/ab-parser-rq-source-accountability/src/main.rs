@@ -292,10 +292,12 @@ fn main() -> Result<()> {
                 if !source_path.starts_with(&source_root) {
                     anyhow::bail!("source path escapes its configured root");
                 }
-                let generation = ab_aozora_aat::capture_generation_from_bytes_for_identity(
-                    &fs::read(source_path)?,
-                    &identity_ref,
-                )?;
+                let generation =
+                    ab_aozora_aat::capture_generation_from_bytes_for_identity_and_work(
+                        &fs::read(source_path)?,
+                        &identity_ref,
+                        &entry.corpus_entry.work_id,
+                    )?;
                 let published = generation.publish(&store_root)?;
                 generation_records.push(
                     ab_parser_rq_source_accountability::RecognitionGenerationEntry {

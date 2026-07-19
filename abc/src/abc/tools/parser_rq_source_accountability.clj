@@ -517,7 +517,7 @@
   [identity]
   (and (valid-identity? identity)
        (= source-recognition-instrument-version
-          (get-in identity [:instrument_versions :source_recognition]))))
+          (get-in identity [:instrument_versions :source_span_coverage]))))
 
 (defn- corpus-generation-ref
   [index]
@@ -759,7 +759,7 @@
                                         (authenticated-json-value store))
         authenticated-declares-recognition?
         (= source-recognition-instrument-version
-           (get-in authenticated-identity [:instrument_versions :source_recognition]))]
+           (get-in authenticated-identity [:instrument_versions :source_span_coverage]))]
     (cond
       (not= :ok (:status verified)) verified
       (not (valid-identity? authenticated-identity))

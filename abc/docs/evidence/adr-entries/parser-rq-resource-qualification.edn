@@ -1,0 +1,23 @@
+{:schema-version :abc-adr-evidence-registration-v1
+ :entries
+ [{:claim-id "ADR-0040-C1"
+   :claim-kind :structural-invariant
+   :evidence-kind :structural-test
+   :artifact-path "docs/evidence/adr-runs/parser-rq-resource-policy.json"
+   :observation-id :parser-rq-resource-policy
+   :observation-key "parser-rq-resource-policy-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0040-C2"
+   :claim-kind :operational-behavior
+   :evidence-kind :operational-observation
+   :artifact-path "docs/evidence/adr-runs/parser-rq-resource-acceptance.json"
+   :observation-id :parser-rq-resource-acceptance
+   :observation-key "parser-rq-resource-acceptance-pass"
+   :expected {:operator := :value true}}
+  {:claim-id "ADR-0040-C3"
+   :claim-kind :structural-invariant
+   :evidence-kind :structural-test
+   :artifact-path "docs/evidence/adr-runs/parser-rq-resource-acceptance.json"
+   :observation-id :parser-rq-resource-acceptance
+   :observation-key "parser-rq-resource-acceptance-pass"
+   :expected {:operator := :value true}}]}

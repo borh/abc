@@ -1,0 +1,48 @@
+{:schema-version "abc-adr-evidence-capture-v1"
+ :tool "python3"
+ :argv
+ ["python3" "-c"
+  "import json
+from pathlib import Path
+
+root = Path('.')
+run = root / 'docs/reports/parser-rq/runs/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab'
+capture = run / 'captures/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f'
+smoke = json.loads((root / 'docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json').read_text())
+identity = json.loads((capture / 'qualification-identity.json').read_text())
+measurements = json.loads((capture / 'measurements.json').read_text())
+resource = json.loads((capture / 'resource.json').read_text())
+report = json.loads((root / 'docs/reports/parser-release-qualification-report.json').read_text())
+
+assert smoke['schema_version'] == 'parser-rq-resource-live-smoke-v1'
+assert smoke['instrument_id'] == 'parser-rq-resource-v1'
+assert smoke['systemd_properties']['MemoryAccounting'] == 'yes'
+assert smoke['systemd_properties']['MemorySwapMax'] == 0
+assert {(case['status'], case['right_censored']) for case in smoke['cases']} == {('measured', False), ('ceiling_clipped', True)}
+assert all(case['peak_swap_bytes'] == 0 for case in smoke['cases'])
+
+assert len(measurements) == 9
+identity_refs = {envelope['identity_ref'] for envelope in measurements.values()}
+assert identity_refs == {report['coherence']['identity_ref']}
+assert report['coherence']['status'] == 'ok'
+assert report['coherence']['errors'] == []
+assert identity['predicate_set_hash'] == report['identity']['predicate_set_hash']
+assert identity['instrument_versions']['peak_cgroup_memory_bytes'] == 'parser-rq-resource-v1'
+assert measurements['peak_cgroup_memory_bytes'] == resource['peak_cgroup_memory_bytes']
+memory = next(row for row in report['predicate_verdicts'] if row['predicate_id'] == 'memory')
+assert memory['instrument'] == 'parser-rq-resource-v1'
+assert memory['expected'] == {'comparator': '<=', 'value': 2147483648}
+assert memory['observed'] == resource['peak_cgroup_memory_bytes']['value']
+assert report['verdict_tally'] == {'pass': 9}
+print('parser-rq resource acceptance evidence passes')"]
+ :input-profile
+ {:kind "repo-files-v1"
+  :roots []
+  :explicit
+  ["docs/evidence/parser-rq-resource-acceptance/capture/parser-rq-resource-acceptance.edn"
+   "docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json"
+   "docs/reports/parser-release-qualification-report.json"
+   "docs/reports/parser-rq/runs/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab/captures/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f/qualification-identity.json"
+   "docs/reports/parser-rq/runs/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab/captures/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f/measurements.json"
+   "docs/reports/parser-rq/runs/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab/captures/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f/resource.json"]}
+ :observation-key "parser-rq-resource-acceptance-pass"}

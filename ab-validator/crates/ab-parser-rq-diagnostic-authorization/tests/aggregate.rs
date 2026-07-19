@@ -17,7 +17,7 @@ fn digest(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
 
-fn record(_work_id: &str, generation: &str, gaps: &[(u64, u64)]) -> RecognitionWorkRecord {
+fn record(work_id: &str, generation: &str, gaps: &[(u64, u64)]) -> RecognitionWorkRecord {
     let gap_bytes = gaps.iter().map(|(start, end)| end - start).sum::<u64>();
     let eligible = gaps.iter().map(|(_, end)| *end).max().unwrap_or(0);
     let mut source = vec![b'a'; eligible as usize];
@@ -30,7 +30,7 @@ fn record(_work_id: &str, generation: &str, gaps: &[(u64, u64)]) -> RecognitionW
         capture_generation_ref: Some(generation.into()),
         policy_hash: Some(hash('5')),
         instrument_version: "parser-rq-source-recognition-v1".into(),
-        work_id: Some(hash_bytes(&source)),
+        work_id: Some(work_id.to_owned()),
         coordinate_system: "decoded_utf8".into(),
         ledger: Some(RecognitionBlobRef {
             sha256: hash('6'),
@@ -70,10 +70,6 @@ fn record(_work_id: &str, generation: &str, gaps: &[(u64, u64)]) -> RecognitionW
     }
 }
 
-fn hash_bytes(bytes: &[u8]) -> String {
-    digest(bytes)
-}
-
 fn source(record: &RecognitionWorkRecord) -> Vec<u8> {
     let mut value = vec![b'a'; record.eligible_bytes.unwrap() as usize];
     if value.len() >= 3 {
@@ -108,7 +104,7 @@ fn authorization(
         policy_bytes: POLICY,
         policy_bytes_hash: &digest(POLICY),
         decoded_source: source,
-        decoded_source_hash: record.work_id.as_deref().unwrap(),
+        decoded_source_hash: &digest(source),
         work_id: record.work_id.as_deref().unwrap(),
         capture_generation_ref: record.capture_generation_ref.as_deref().unwrap(),
         qualification_identity_ref: record.qualification_identity_ref.as_deref().unwrap(),

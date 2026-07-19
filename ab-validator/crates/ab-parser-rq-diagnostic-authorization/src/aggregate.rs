@@ -82,7 +82,6 @@ pub fn derive_gap_partition(input: DiagnosticGapWorkInput<'_>) -> DiagnosticGapW
         || origin.qualification_identity_ref != qualification
         || origin.policy_hash != policy_hash
         || origin.source_recognition_hash != input.source_recognition_value_hash
-        || origin.decoded_source_hash != work_id
         || origin.raw_diagnostics_hash.is_empty()
     {
         return DiagnosticGapWorkResult::unavailable("diagnostic-authorization-origin-mismatch");
@@ -291,7 +290,6 @@ pub fn aggregate_gap_partitions(input: DiagnosticGapAggregateInput<'_>) -> Diagn
                                 .source_recognition_evidence
                                 .as_ref()
                                 .map_or("", |value| value.value_hash.as_str())
-                        || evidence.decoded_source_hash != work.work_id.as_deref().unwrap_or("")
                         || evidence.raw_diagnostics_hash.is_empty()
                         || Some(&evidence.policy_artifact_hash) != policy_artifact_hash.as_ref()
                 })

@@ -182,7 +182,7 @@ pub fn validate_work_context<'a>(
     source_recognition_hash: &str,
     source_recognition: &'a ab_parser_rq_source_accountability::RecognitionWorkRecord,
 ) -> Result<WorkContext<'a>, &'static str> {
-    if sha256(decoded_source) != decoded_source_hash || work_id != decoded_source_hash {
+    if sha256(decoded_source) != decoded_source_hash {
         return Err("decoded-source-authentication-failed");
     }
     if sha256(source_recognition_bytes) != source_recognition_hash

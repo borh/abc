@@ -1,7 +1,7 @@
 {
   "identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "instrument_versions": {
-    "publication": "parser-rq-publication-v1"
+    "publication_structure": "reports/parser-ir/publication-bundle-validate.py against parser-ir-publication-preservation.schema.json"
   },
   "entries": [
     {

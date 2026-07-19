@@ -24,12 +24,12 @@ generate() {
   local plain="$ab_root/crates/ab-aozora-aat/tests/data/plain-ascii.txt"
   local diagnostic="$ab_root/crates/ab-aozora-aat/tests/data/broken-ruby-utf8.txt"
 
-  for spec in "valid:$plain" "no-output:$diagnostic" "invalid:$plain"; do
+  for spec in "000001_1:$plain" "000002_2:$plain" "000003_3:$diagnostic"; do
     local work_id="${spec%%:*}"
     local source="${spec#*:}"
     "$AB_AOZORA_BIN" --mode diagnostics <"$source" >"$stage/$work_id.diagnostics.json"
     "$AB_AOZORA_BIN" --mode aat <"$source" >"$stage/$work_id.aat.json"
-    if [[ "$work_id" == "no-output" ]]; then
+    if [[ "$work_id" == "000003_3" ]]; then
       printf 'null\n' >"$stage/$work_id.aat.json"
     fi
     "$AB_AAT_TO_PARSER_IR_BIN" qualify \
@@ -45,8 +45,8 @@ generate() {
   done
 
   python -c 'import json,sys; assert json.load(open(sys.argv[1]))["status"] == "no_output"' \
-    "$stage/no-output.record.json"
-  test ! -e "$stage/no-output.parser-ir.json"
+    "$stage/000003_3.record.json"
+  test ! -e "$stage/000003_3.parser-ir.json"
 
   python - "$ab_root" "$abc_root" "$stage" "$output" <<'PY'
 import hashlib
@@ -58,7 +58,7 @@ import sys
 
 ab_root, abc_root, stage, output = map(pathlib.Path, sys.argv[1:])
 identity_ref = "sha256:" + "a" * 64
-work_ids = ["valid", "invalid", "no-output"]
+work_ids = ["000001_1", "000002_2", "000003_3"]
 diag_policy = json.loads((abc_root / "data/parser-rq-diagnostic-completeness-policy-v1.json").read_text())
 ir_policy = json.loads((abc_root / "data/parser-rq-parser-ir-conformance-policy-v1.json").read_text())
 
@@ -133,12 +133,12 @@ for work_id in work_ids:
     diag_entries.append({"work_id": work_id, "record": diag_record_member["ref"]})
 
     record = json.loads((stage / f"{work_id}.record.json").read_text())
-    if work_id == "no-output":
+    if work_id == "000003_3":
         assert record["status"] == "no_output"
         assert not (stage / f"{work_id}.parser-ir.json").exists()
         assert not (stage / f"{work_id}.ledger.json").exists()
         no_outputs += 1
-    elif work_id == "invalid":
+    elif work_id == "000002_2":
         parser_value = fixture_parser_value(stage / f"{work_id}.parser-ir.json")
         parser_value.pop("schema_id")
         parser_member = publish(parser_value)

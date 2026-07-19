@@ -401,6 +401,7 @@ def bounded_identity() -> dict[str, object]:
             "peak_cgroup_memory_bytes": "parser-rq-resource-v1",
             "publication_structure": "reports/parser-ir/publication-bundle-validate.py against parser-ir-publication-preservation.schema.json",
             "silent_drops": "parser-rq-diagnostic-authorization-v1",
+            "source_accountability": "parser-rq-source-accountability-v1",
             "source_span_coverage": "parser-rq-source-recognition-v1",
             "timeouts": "parser-rq-core-attempt-v1",
             "wall_time_seconds": "parser-rq-core-attempt-v1",
@@ -447,7 +448,13 @@ def write_bounded_runtime(path: Path, repository_root: Path) -> None:
                 "qualification_identity_ref": identity_ref,
                 "qualification_identity": identity,
             },
-            "corpus": {"corpus_root": corpus_root, "entries": entries},
+            "corpus": {
+                "corpus_id": "abc/parser-release-qualification-corpus/v1",
+                "corpus_root": corpus_root,
+                "corpus_snapshot_hash": identity["corpus_snapshot_hash"],
+                "list_hash": "sha256:" + "3" * 64,
+                "entries": entries,
+            },
             "source_accountability_corpus": source_entries,
             "authorization": {
                 "authorization_ref": "sha256:" + "f" * 64,
@@ -605,6 +612,18 @@ def test_bounded_production_chain_uses_shared_composition(tmp_path: Path) -> Non
                 assert reports
                 assert any(path.parent != report_root for path in reports)
                 assert all(re.fullmatch(r".+-[0-9a-f]{12}\.json", path.name) for path in reports)
+            if operation == "capture-publication":
+                publication_index = json.loads((paths.publication_root / "index.json").read_bytes())
+                assert publication_index["corpus_id"] == (
+                    "abc/parser-release-qualification-corpus/v1"
+                )
+                source_manifest = json.loads(
+                    (paths.predicate_root / "output/parser-ir/source.manifest.json").read_bytes()
+                )
+                assert (
+                    source_manifest["manifest_identity_object"]["corpus_snapshot_hash"]
+                    == (bounded_identity()["corpus_snapshot_hash"])
+                )
     finally:
         os.close(lock.fd)
 

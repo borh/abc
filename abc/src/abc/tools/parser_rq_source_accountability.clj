@@ -348,8 +348,7 @@
     (and (nil? (schema/validation-errors @diagnostic-gap-result-schema result))
          (nil? (schema/validation-errors @diagnostic-gap-policy-schema policy))
          (= "ok" (:status result))
-         (= (:work_id expected) (:work_id result) (:work_id recognition)
-            (:decoded_source_hash authorization))
+         (= (:work_id expected) (:work_id result) (:work_id recognition))
          (= qualification-ref (:qualification_identity_ref result)
             (:qualification_identity_ref recognition))
          (= (:capture_generation_ref expected) (:capture_generation_ref result)
@@ -426,7 +425,7 @@
   ([identity]
    {:value :instrument-missing
     :identity_ref (qualification/qualification-identity-ref identity)})
-  ([identity _diagnostic-gap-aggregate _recognition-index _recognition-aggregate]
+  ([_identity _diagnostic-gap-aggregate _recognition-index _recognition-aggregate]
    (unavailable "R2 requires authenticated capture artifacts, not caller-supplied maps"))
   ([store manifest identity]
    (let [expected (qualification/qualification-identity-ref identity)
@@ -555,7 +554,7 @@
       generation)))
 
 (defn- valid-generation-member?
-  [store p0-manifest generation member-name extension]
+  [p0-manifest generation member-name extension]
   (let [{:keys [artifact_ref value_hash]} (get-in generation [:members member-name])
         expected-locator (content-locator value_hash extension)
         p0-member (selected-member p0-manifest artifact_ref)]
@@ -564,7 +563,7 @@
          (= value_hash (get-in p0-member [:ref :sha256])))))
 
 (defn- valid-ledger-chain?
-  [store p0-manifest record index-entry index]
+  [store p0-manifest record index-entry index membership-record]
   (let [generation (authenticated-generation store p0-manifest
                                              (:capture_generation_ref record))
         ledger-member (get-in generation [:members :classified_source_ledger])
@@ -584,8 +583,10 @@
          (nil? (schema/validation-errors @classified-source-ledger-schema ledger))
          (= (:qualification_identity_ref index)
             (:qualification_identity_ref ledger))
-         (= (:work_id index-entry) (get-in ledger [:original_source :value_hash]))
-         (= (str "source/" (:work_id index-entry))
+         (= (:work_id index-entry) (:work_id membership-record))
+         (= (get-in membership-record [:original_source :sha256])
+            (get-in ledger [:original_source :value_hash]))
+         (= (str "source/" (get-in ledger [:original_source :value_hash]))
             (get-in ledger [:original_source :artifact_ref]))
          (= "decoded_utf8" (:coordinate_system ledger))
          (= (:policy_hash index) (:policy_hash ledger)
@@ -595,10 +596,10 @@
          (= (select-keys (get-in generation [:members :decoded_source])
                          [:artifact_ref :value_hash])
             (select-keys (:decoded_source ledger) [:artifact_ref :value_hash]))
-         (valid-generation-member? store p0-manifest generation :decoded_source "txt")
-         (valid-generation-member? store p0-manifest generation :parser_output "json")
-         (valid-generation-member? store p0-manifest generation :raw_diagnostics "json")
-         (valid-generation-member? store p0-manifest generation
+         (valid-generation-member? p0-manifest generation :decoded_source "txt")
+         (valid-generation-member? p0-manifest generation :parser_output "json")
+         (valid-generation-member? p0-manifest generation :raw_diagnostics "json")
+         (valid-generation-member? p0-manifest generation
                                    :classified_source_ledger "json")
          (every? (fn [entry]
                    (if-let [target (:target_identity entry)]
@@ -655,12 +656,12 @@
               (conj {:start cursor :end eligible})))))
 
 (defn- valid-recognition-work?
-  [store p0-manifest record index-entry index]
+  [store p0-manifest record index-entry index membership-record]
   (let [{:keys [eligible_bytes recognized_bytes accounted_bytes
                 semantic_gap_bytes unaccounted_bytes recognized accounted
                 semantic_gaps unaccounted]} record]
     (and (nil? (schema/validation-errors @recognition-work-schema record))
-         (valid-ledger-chain? store p0-manifest record index-entry index)
+         (valid-ledger-chain? store p0-manifest record index-entry index membership-record)
          (= "ok" (:status record))
          (= source-recognition-instrument-version (:instrument_version record))
          (= (:qualification_identity_ref index)
@@ -707,7 +708,10 @@
                            p0-manifest
                            (content-locator (:membership_ref index) "json"))
         membership (some->> membership-member (authenticated-json-value store))
-        membership-work-ids (mapv :work_id (:records membership))]
+        membership-work-ids (mapv :work_id (:records membership))
+        membership-records (when membership
+                             (mapv #(manifest-record store p0-manifest %)
+                                   (:records membership)))]
     (and (nil? (schema/validation-errors @recognition-index-schema index))
          (nil? (schema/validation-errors @recognition-aggregate-schema aggregate))
          (nil? (schema/validation-errors @source-accountability-index-schema membership))
@@ -725,8 +729,9 @@
          (= (:corpus_generation_ref index) (corpus-generation-ref index))
          (= (:expected_work_ids index) (mapv :work_id entries) record-ids)
          (= (:expected_work_count index) (:record_count index) (count records))
-         (every? true? (map #(valid-recognition-work? store p0-manifest %1 %2 index)
-                            records entries))
+         (not-any? nil? membership-records)
+         (every? true? (map #(valid-recognition-work? store p0-manifest %1 %2 index %3)
+                            records entries membership-records))
          (every? #(= (get index %) (get aggregate %)) identity-keys)
          (= {:expected (count records) :observed (count records) :complete true}
             completeness)

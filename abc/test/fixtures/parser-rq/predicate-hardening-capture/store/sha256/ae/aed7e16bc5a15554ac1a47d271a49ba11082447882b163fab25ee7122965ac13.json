@@ -1,0 +1,17 @@
+{
+  "attempt_disposition": "parsed",
+  "complete_diagnostics": 1,
+  "emitted_diagnostics": 1,
+  "policy_hash": "sha256:a5968337aaab9f325ae6fd3f8e2e8eb6e0aa4b21368a93ce8692b033741ed5cb",
+  "qualification_identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "raw_diagnostics": {
+    "bytes": 148,
+    "media_type": "application/json",
+    "sha256": "sha256:5c4f7a5006626862f6aa82d540658f8ce838cfe83f5d0335868e9314afb5dbb3"
+  },
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-work.schema.json",
+  "schema_version": "1.0.0",
+  "status": "complete",
+  "vacuous": false,
+  "work_id": "000003_3"
+}

@@ -62,7 +62,7 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
     let mut generation_records = Vec::new();
     let mut membership_records = Vec::new();
     let mut capture_blobs = Vec::new();
-    for (name, source) in cases {
+    for (_, source) in cases {
         let generation =
             capture_generation_from_bytes_for_identity(source.as_bytes(), &identity_ref).unwrap();
         let manifest: Value = serde_json::from_slice(&generation.manifest).unwrap();
@@ -94,12 +94,20 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
             media_type: "application/json".into(),
             locator: published.manifest.locator,
         });
+        let membership_record = canonical_json(&json!({
+            "work_id": manifest["work_id"],
+            "original_source": {"sha256": manifest["work_id"]}
+        }))
+        .unwrap()
+        .into_bytes();
+        let membership_blob = publish_test_blob(&store, "json", &membership_record);
+        capture_blobs.push(membership_blob.clone());
         membership_records.push(json!({
             "work_id": manifest["work_id"],
-            "sha256": hash(name.as_bytes()),
-            "bytes": name.len(),
-            "media_type": "application/json",
-            "locator": format!("membership/{name}.json")
+            "sha256": membership_blob["ref"]["sha256"],
+            "bytes": membership_blob["ref"]["bytes"],
+            "media_type": membership_blob["ref"]["media_type"],
+            "locator": membership_blob["locator"]
         }));
     }
     let membership = json!({

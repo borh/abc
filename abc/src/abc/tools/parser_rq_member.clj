@@ -130,7 +130,13 @@
                              (:identity_ref %))
                       envelopes))
         (throw (ex-info "parser RQ member projection violates its assigned contract"
-                        {:operation operation :errors (vec errors)})))
+                        {:operation operation
+                         :expected-keys expected
+                         :actual-keys (set (keys member))
+                         :expected-identity-ref (:qualification_identity_ref inputs)
+                         :envelopes (mapv #(select-keys % [:value :identity_ref :status :reason])
+                                          envelopes)
+                         :errors (vec errors)})))
       member)))
 
 (defn- parse-options [args]
@@ -161,11 +167,16 @@
   (json/write-deterministic-json-file! path (json-value value)))
 
 (defn -main [& args]
-  (let [[command & option-args] args
-        operation (keyword command)
-        options (parse-options option-args)
-        inputs (-> (files/read-json (required-option options :inputs))
-                   walk/keywordize-keys)
-        member (project-member operation inputs)]
-    (write-member! (required-option options :out) member)
-    (println "ok")))
+  (try
+    (let [[command & option-args] args
+          operation (keyword command)
+          options (parse-options option-args)
+          inputs (-> (files/read-json (required-option options :inputs))
+                     walk/keywordize-keys)
+          member (project-member operation inputs)]
+      (write-member! (required-option options :out) member)
+      (println "ok"))
+    (catch clojure.lang.ExceptionInfo error
+      (binding [*out* *err*]
+        (prn (ex-data error)))
+      (throw error))))

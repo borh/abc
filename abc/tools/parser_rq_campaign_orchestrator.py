@@ -665,9 +665,12 @@ def _prepare_diagnostic_input(campaign: AuthenticatedCampaign, paths: RuntimePat
     for row in generation_index.get("records", []):
         if not isinstance(row, dict):
             raise ProtocolError("classified-source generation row is malformed")
-        manifest = _read_object(store / str(row.get("locator")), "classified-source generation")
-        if manifest.get("generation_ref") != row.get("sha256"):
-            raise ProtocolError("classified-source generation identity differs")
+        manifest_path = store / str(row.get("locator"))
+        if _sha256(manifest_path) != row.get("sha256"):
+            raise ProtocolError("classified-source generation blob identity differs")
+        manifest = _read_object(manifest_path, "classified-source generation")
+        if manifest.get("work_id") != row.get("work_id"):
+            raise ProtocolError("classified-source generation work identity differs")
         generation_by_work[str(row.get("work_id"))] = manifest
     records: list[dict[str, object]] = []
     for row in recognition_index.get("records", []):
@@ -677,6 +680,8 @@ def _prepare_diagnostic_input(campaign: AuthenticatedCampaign, paths: RuntimePat
         generation = generation_by_work.get(work_id)
         if generation is None:
             raise ProtocolError("source-recognition generation is absent")
+        if generation.get("generation_ref") != row.get("capture_generation_ref"):
+            raise ProtocolError("source-recognition generation identity differs")
         members = generation.get("members")
         if not isinstance(members, dict):
             raise ProtocolError("classified-source generation members are malformed")
@@ -703,7 +708,7 @@ def _prepare_diagnostic_input(campaign: AuthenticatedCampaign, paths: RuntimePat
         {
             "qualification_identity_ref": recognition_index["qualification_identity_ref"],
             "corpus_generation_ref": recognition_index["corpus_generation_ref"],
-            "policy_hash": _sha256(policy),
+            "policy_artifact_hash": _sha256(policy),
             "records": records,
         },
     )
@@ -853,6 +858,16 @@ def _projection_input(
             {"diagnostic_gap": ("silent_drops",)},
         )
     if operation == "capture-publication":
+        runtime = _read_object(paths.runtime, "runtime inputs")
+        corpus = runtime.get("corpus")
+        entries = corpus.get("entries") if isinstance(corpus, dict) else None
+        if not isinstance(entries, list):
+            raise ProtocolError("publication corpus is malformed")
+        publication_identity = {
+            **candidate["qualification_identity"],
+            "identity_ref": identity_ref,
+            "entries": entries,
+        }
         return (
             "publication",
             {
@@ -862,7 +877,7 @@ def _projection_input(
                     paths.publication_root / "manifest.json", "publication manifest"
                 ),
                 "index": _read_object(paths.publication_root / "index.json", "publication index"),
-                "identity": candidate["qualification_identity"],
+                "identity": publication_identity,
             },
             {"publication_structure": ("publication_structure",)},
         )
@@ -985,6 +1000,15 @@ def _prepare_publication(
     fixtures_path = abc_root / "data/parser-rq-publication-fixtures-v1.json"
     materialized = paths.publication_root / "materialized"
     validated = paths.publication_root / "validated"
+    runtime = _read_object(paths.runtime, "runtime inputs")
+    qualification_identity = runtime.get("candidate", {}).get("qualification_identity", {})
+    corpus_snapshot_hash = qualification_identity.get("corpus_snapshot_hash")
+    if not isinstance(corpus_snapshot_hash, str):
+        raise ProtocolError("publication corpus snapshot identity is malformed")
+    _atomic_json(
+        paths.predicate_root / "output/parser-ir/source.manifest.json",
+        {"manifest_identity_object": {"corpus_snapshot_hash": corpus_snapshot_hash}},
+    )
     _run_checked(
         runner,
         _clojure(
@@ -1001,7 +1025,6 @@ def _prepare_publication(
         ),
         cwd,
     )
-    runtime = _read_object(paths.runtime, "runtime inputs")
     corpus = runtime.get("corpus")
     entries = corpus.get("entries") if isinstance(corpus, dict) else None
     if not isinstance(entries, list):

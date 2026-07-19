@@ -12,9 +12,8 @@ fn hash(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
 
-fn record(source: &[u8]) -> RecognitionWorkRecord {
+fn record_for_work(source: &[u8], work_id: &str) -> RecognitionWorkRecord {
     let source_len = source.len();
-    let work_id = hash(source);
     serde_json::from_value(serde_json::json!({
       "schema_version":"abc/parser-rq-source-recognition-work/v1",
       "qualification_identity_ref":format!("sha256:{}", "4".repeat(64)),
@@ -26,6 +25,10 @@ fn record(source: &[u8]) -> RecognitionWorkRecord {
       "semantic_gap_bytes":source_len,"unaccounted_bytes":0,"recognized":[],"accounted":[{"start":0,"end":source_len}],
       "semantic_gaps":[{"start":0,"end":source_len}],"unaccounted":[]
     })).unwrap()
+}
+
+fn record(source: &[u8]) -> RecognitionWorkRecord {
+    record_for_work(source, &hash(source))
 }
 
 fn run(
@@ -42,22 +45,37 @@ fn run_with_record(
     r1: RecognitionWorkRecord,
 ) -> ab_parser_rq_diagnostic_authorization::AuthorizationAnalysis {
     let work_id = hash(&source);
+    run_for_work(raw, source, &work_id, r1)
+}
+
+fn run_for_work(
+    raw: Vec<u8>,
+    source: Vec<u8>,
+    work_id: &str,
+    r1: RecognitionWorkRecord,
+) -> ab_parser_rq_diagnostic_authorization::AuthorizationAnalysis {
+    let source_hash = hash(&source);
+    let raw_hash = hash(&raw);
+    let policy_hash = hash(POLICY);
+    let capture_generation_ref = format!("sha256:{}", "1".repeat(64));
+    let qualification_identity_ref = format!("sha256:{}", "4".repeat(64));
     let r1_bytes = ab_parser_rq_source_accountability::canonical_json(&r1)
         .unwrap()
         .into_bytes();
+    let r1_hash = hash(&r1_bytes);
     authorize_boundary(BoundaryInput {
         raw_diagnostics: &raw,
-        raw_diagnostics_hash: &hash(&raw),
+        raw_diagnostics_hash: &raw_hash,
         raw_diagnostics_bytes: raw.len() as u64,
         policy_bytes: POLICY,
-        policy_bytes_hash: &hash(POLICY),
+        policy_bytes_hash: &policy_hash,
         decoded_source: &source,
-        decoded_source_hash: &work_id,
-        work_id: &work_id,
-        capture_generation_ref: &format!("sha256:{}", "1".repeat(64)),
-        qualification_identity_ref: &format!("sha256:{}", "4".repeat(64)),
+        decoded_source_hash: &source_hash,
+        work_id,
+        capture_generation_ref: &capture_generation_ref,
+        qualification_identity_ref: &qualification_identity_ref,
         source_recognition_bytes: &r1_bytes,
-        source_recognition_hash: &hash(&r1_bytes),
+        source_recognition_hash: &r1_hash,
         source_recognition: &r1,
     })
 }
@@ -136,6 +154,24 @@ fn empty_authenticated_capture_is_available_and_vacuous() {
 }
 
 #[test]
+fn decoded_source_identity_is_independent_of_work_identity() {
+    let source = b"abc".to_vec();
+    let record = record_for_work(&source, "000001_1");
+    let result = run_for_work(
+        br#"{"schemaVersion":3,"data":[]}"#.to_vec(),
+        source,
+        "000001_1",
+        record,
+    );
+    assert_eq!(
+        result.status,
+        AuthorizationStatus::Ok,
+        "{:?}",
+        result.errors
+    );
+}
+
+#[test]
 fn malformed_unknown_internal_mismatch_duplicate_and_bad_endpoints_fail_closed() {
     let cases = [
       br#"{}"#.to_vec(),
@@ -181,6 +217,8 @@ fn boundary_constructors_fail_before_pure_authorization() {
     let raw = br#"{"schemaVersion":3,"data":[]}"#;
     assert!(validate_diagnostic_capture(raw, "sha256:bad", raw.len() as u64).is_err());
     assert!(validate_gap_policy(POLICY, "sha256:bad").is_err());
+    let policy = validate_gap_policy(POLICY, &hash(POLICY)).unwrap();
+    assert_ne!(policy.policy_hash(), hash(POLICY));
     let source = b"abc";
     let r1 = record(source);
     let r1_bytes = ab_parser_rq_source_accountability::canonical_json(&r1)

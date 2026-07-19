@@ -3,6 +3,7 @@
             [abc.tools.hash :as hash]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.person-record :as person-record]
+            [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-publication :as publication]
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.schema :as schema]
@@ -80,10 +81,11 @@
                   (files/read-json (str root "/index.json"))
                   (files/read-json (str root "/identity.json")))]
     (is (= 1.0000M (:value envelope)))
+    (is (empty? (capture/envelope-errors envelope)))
     (is (= "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
            (:identity_ref envelope)))
     (is (= {:expected 3 :parsed 3 :eligible 3 :passed 3 :failed 0 :timed_out 0}
-           (:counts envelope)))))
+           (get-in envelope [:details :counts])))))
 
 (deftest publication-observation-installs-an-envelope-not-a-scalar
   (let [envelope {:value 1.0M

@@ -1,0 +1,37 @@
+{
+  "expected_work_ids": [
+    "000001_1",
+    "000002_2",
+    "000003_3"
+  ],
+  "policy_hash": "sha256:a5968337aaab9f325ae6fd3f8e2e8eb6e0aa4b21368a93ce8692b033741ed5cb",
+  "qualification_identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "records": [
+    {
+      "record": {
+        "bytes": 660,
+        "media_type": "application/json",
+        "sha256": "sha256:78b2360e7fb21622d9895d93c2699e78f8c7a0949789f83a9024677c0c8561c0"
+      },
+      "work_id": "000001_1"
+    },
+    {
+      "record": {
+        "bytes": 660,
+        "media_type": "application/json",
+        "sha256": "sha256:83918de66c87a8276353b2e9a065c4daf4a625a67f6b81f51e81bcb0cfea19c9"
+      },
+      "work_id": "000002_2"
+    },
+    {
+      "record": {
+        "bytes": 662,
+        "media_type": "application/json",
+        "sha256": "sha256:aed7e16bc5a15554ac1a47d271a49ba11082447882b163fab25ee7122965ac13"
+      },
+      "work_id": "000003_3"
+    }
+  ],
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-index.schema.json",
+  "schema_version": "1.0.0"
+}

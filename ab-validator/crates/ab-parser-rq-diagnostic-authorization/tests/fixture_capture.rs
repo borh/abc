@@ -149,10 +149,21 @@ fn generate(root: &Path) -> BTreeMap<String, String> {
             media_type: "application/json".into(),
             locator: published.manifest.locator,
         });
-        membership.push(
-            json!({"work_id":work_id,"sha256":hash(name.as_bytes()),"bytes":name.len(),
-            "media_type":"application/json","locator":format!("membership/{name}.json")}),
-        );
+        let membership_record = canonical_json(&json!({
+            "work_id": work_id,
+            "original_source": {"sha256": work_id}
+        }))
+        .unwrap()
+        .into_bytes();
+        let membership_blob = publish(&store, "json", "application/json", &membership_record);
+        membership.push(json!({
+            "work_id":work_id,
+            "sha256":membership_blob["ref"]["sha256"],
+            "bytes":membership_blob["ref"]["bytes"],
+            "media_type":membership_blob["ref"]["media_type"],
+            "locator":membership_blob["locator"]
+        }));
+        blobs.push(membership_blob);
         captured.insert(
             work_id.clone(),
             (generation.decoded_source, generation.raw_diagnostics),

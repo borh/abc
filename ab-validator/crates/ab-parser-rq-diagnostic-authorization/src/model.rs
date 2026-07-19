@@ -58,6 +58,13 @@ pub struct ValidatedGapPolicy {
     pub(crate) artifact_bytes: u64,
 }
 
+impl ValidatedGapPolicy {
+    #[must_use]
+    pub fn policy_hash(&self) -> &str {
+        &self.policy_hash
+    }
+}
+
 /// An exact-byte-authenticated source-accountability context.
 ///
 /// Values cannot be assembled by callers; use

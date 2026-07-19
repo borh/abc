@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf};
 use ab_parser_rq_diagnostic_authorization::{
     BoundaryInput, DiagnosticGapAggregateInput, DiagnosticGapExpectedWork, DiagnosticGapWorkInput,
     DiagnosticGapWorkResult, DiagnosticGapWorkStatus, aggregate_gap_partitions, authorize_boundary,
-    derive_gap_partition,
+    derive_gap_partition, validate_gap_policy,
 };
 use ab_parser_rq_source_accountability::{
     RecognitionBlobRef, RecognitionWorkRecord, canonical_json,
@@ -39,7 +39,7 @@ enum Command {
 struct CorpusIndex {
     qualification_identity_ref: String,
     corpus_generation_ref: String,
-    policy_hash: String,
+    policy_artifact_hash: String,
     records: Vec<WorkIndex>,
 }
 
@@ -110,9 +110,11 @@ fn main() -> Result<()> {
             let index: CorpusIndex = serde_json::from_slice(&fs::read(index)?)?;
             let policy_bytes = fs::read(policy)?;
             anyhow::ensure!(
-                hash(&policy_bytes) == index.policy_hash,
+                hash(&policy_bytes) == index.policy_artifact_hash,
                 "policy hash mismatch"
             );
+            let validated_policy = validate_gap_policy(&policy_bytes, &index.policy_artifact_hash)
+                .map_err(anyhow::Error::msg)?;
             let mut expected = Vec::new();
             let mut works = Vec::new();
             for entry in &index.records {
@@ -126,7 +128,7 @@ fn main() -> Result<()> {
                     raw_diagnostics_hash: &entry.raw_diagnostics_hash,
                     raw_diagnostics_bytes: raw.len() as u64,
                     policy_bytes: &policy_bytes,
-                    policy_bytes_hash: &index.policy_hash,
+                    policy_bytes_hash: &index.policy_artifact_hash,
                     decoded_source: &decoded,
                     decoded_source_hash: &entry.decoded_source_hash,
                     work_id: &entry.work_id,
@@ -160,7 +162,7 @@ fn main() -> Result<()> {
                 expected_works: &expected,
                 qualification_identity_ref: &index.qualification_identity_ref,
                 corpus_generation_ref: &index.corpus_generation_ref,
-                policy_hash: &index.policy_hash,
+                policy_hash: validated_policy.policy_hash(),
                 works: &works,
             });
             let value = json!({
@@ -185,7 +187,6 @@ fn main() -> Result<()> {
                     "observe_only_diagnostic_count":aggregate.observe_only_diagnostic_count,
                     "authorized_interval_count":aggregate.authorized_interval_count,
                     "vacuous":aggregate.vacuous,
-                    "errors":aggregate.errors,
                 }
             });
             fs::write(out, canonical_json(&value)?)?;

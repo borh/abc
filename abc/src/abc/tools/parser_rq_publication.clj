@@ -5,11 +5,11 @@
             [abc.tools.json :as json]
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.schema :as schema]
-            [clojure.set :as set]
             [clojure.walk :as walk])
   (:import [java.math RoundingMode]))
 
-(def publication-instrument-version "parser-rq-publication-v1")
+(def publication-instrument-version
+  "reports/parser-ir/publication-bundle-validate.py against parser-ir-publication-preservation.schema.json")
 
 (defn- unavailable [reason]
   {:status :unavailable :reason reason})
@@ -80,7 +80,7 @@
             (unavailable "qualification identity mismatch")
 
             (not= publication-instrument-version
-                  (get-in identity [:instrument_versions :publication]))
+                  (get-in identity [:instrument_versions :publication_structure]))
             (unavailable "qualification identity has the wrong publication instrument")
 
             (not= (:policy_hash index-value) (get policy "policy_hash"))
@@ -162,22 +162,23 @@
                     :else
                     {:value (.divide (bigdec passed) (bigdec eligible) 4 RoundingMode/DOWN)
                      :identity_ref identity-ref
-                     :counts {:expected (count records)
-                              :parsed (count parsed)
-                              :eligible eligible
-                              :passed passed
-                              :failed (count failed)
-                              :timed_out (count timed-out)}
-                     :denominator_shrink_witnesses
-                     (mapv #(select-keys % [:work_id :parser_disposition])
-                           (concat failed timed-out))
-                     :failed_work_witnesses
-                     (mapv (fn [{:keys [work_id checks]}]
-                             {:work_id work_id
-                              :failed_checks (->> checks
-                                                  (keep (fn [[check ok?]]
-                                                          (when-not ok? (name check))))
-                                                  sort vec)})
-                           (remove :passed projected))}))))))
+                     :details
+                     {:counts {:expected (count records)
+                               :parsed (count parsed)
+                               :eligible eligible
+                               :passed passed
+                               :failed (count failed)
+                               :timed_out (count timed-out)}
+                      :denominator_shrink_witnesses
+                      (mapv #(select-keys % [:work_id :parser_disposition])
+                            (concat failed timed-out))
+                      :failed_work_witnesses
+                      (mapv (fn [{:keys [work_id checks]}]
+                              {:work_id work_id
+                               :failed_checks (->> checks
+                                                   (keep (fn [[check ok?]]
+                                                           (when-not ok? (name check))))
+                                                   sort vec)})
+                            (remove :passed projected))}}))))))
         (catch Exception error
           (unavailable (.getMessage error)))))))

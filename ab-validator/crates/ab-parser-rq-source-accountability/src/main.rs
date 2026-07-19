@@ -7,7 +7,7 @@ use ab_parser_rq_source_accountability::{
     aggregate, aggregate_recognition, analyze_corpus, analyze_recognition_corpus, analyze_work,
     canonical_json,
 };
-use ab_rq_artifact_store::write_atomic_summary;
+use ab_rq_artifact_store::{publish_blob, write_atomic_summary};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
@@ -261,6 +261,8 @@ fn main() -> Result<()> {
                 qualification_identity: identity.clone(),
                 taxonomy: taxonomy.clone(),
             })?;
+            let membership_bytes = canonical_json(&membership)?.into_bytes();
+            publish_blob(&store_root, "json", &membership_bytes)?;
             let p1_aggregate = aggregate(
                 &corpus_entries
                     .iter()

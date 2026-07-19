@@ -1,0 +1,89 @@
+{
+  "schema_version": "publication-bundle-validation-evidence-v2",
+  "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+  "validator": "ab-validator publication-bundle-validate",
+  "command": "parser-rq-production-graph/v1:capture-publication",
+  "abc_commit": "1ebefb458d25f52bd7bac86c66198ee16db8f6b9",
+  "validated_bundle": {
+    "parser_ir": {
+      "path": "/tmp/soranoha-p5-capture.GZqihAZI/lanes/predicate/output/parser-ir/000003_3.json",
+      "hash": "sha256:2ea4eb0c5c9fa4f8d41dd21bd05c012974a5cbf3e83d60e67edf71d40feebf55"
+    },
+    "tei": {
+      "path": "/tmp/soranoha-p5-capture.GZqihAZI/lanes/publication/materialized/000003_3/tei.xml",
+      "hash": "sha256:5f65472dc12b6b899d90bcf43a5152025f7662b4105d1af56333aa58fa32ab78"
+    },
+    "plaintext": {
+      "path": "/tmp/soranoha-p5-capture.GZqihAZI/lanes/publication/materialized/000003_3/plain.txt",
+      "hash": "sha256:83349c8062e3360aba41f9328b0b04fe98e4d7f1698654f9de0a9a13a2ddaf23"
+    },
+    "preservation": {
+      "path": "/tmp/soranoha-p5-capture.GZqihAZI/lanes/publication/materialized/000003_3/preservation.json",
+      "hash": "sha256:c5ad25015c58fb4bad943bfe4e10674cca6dfd74ea2cef22603f9efa02d9cfcf"
+    },
+    "tei_manifest": {
+      "path": "/tmp/soranoha-p5-capture.GZqihAZI/lanes/publication/materialized/000003_3/tei.manifest.json",
+      "hash": "sha256:d83a56a706a087ca2fb85ee0e4d3576f73f6cb731882f8a4e07d3687a33d116f"
+    },
+    "plaintext_manifest": {
+      "path": "/tmp/soranoha-p5-capture.GZqihAZI/lanes/publication/materialized/000003_3/plaintext.manifest.json",
+      "hash": "sha256:a19bf90cbc1053aad5107baeb0612fdffaeb8a5f7ff4318c793aa164e50a8ec6"
+    }
+  },
+  "validator_identity": {
+    "validator_id": "ab-validator/publication-bundle-validate/v2",
+    "validator_semantics_hash": "sha256:80a573b202be7054706dab0f1b1651e621d1c09524a84326395bb732981d8283"
+  },
+  "parser_ir_schema_hash": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5",
+  "preservation_schema_hash": "sha256:b073df014a2b7c685059d3681dbfcbbde10ec66adfb0253ab80b6287c70c5599",
+  "structure_check_candidates": {
+    "tei_profile_valid": true,
+    "preservation_schema_valid": true,
+    "tei_manifest_valid": true,
+    "plaintext_manifest_valid": true,
+    "tei_manifest_references_preservation": true,
+    "tei_manifest_references_validation_result": true,
+    "tei_abc_projection_resolves_to_sidecar": true,
+    "preservation_tei_pointers_resolve": true,
+    "preservation_source_pointers_resolve": true,
+    "plaintext_body_only": true
+  },
+  "supporting_preconditions": {
+    "parser_ir_schema_valid": true,
+    "source_region_coverage_valid": false,
+    "source_region_sidecar_role_available": false
+  },
+  "join_input": {
+    "status": "valid",
+    "errors": []
+  },
+  "counts": {
+    "preservation_records": 16,
+    "tei_preservation_references": 0,
+    "non_null_tei_pointers": 0,
+    "non_null_source_pointers": 3,
+    "by_construct": {
+      "gaiji_resolution": 1,
+      "mapping_identity": 3,
+      "paragraph.node_range": 1,
+      "paragraph.source_pointer": 1,
+      "sentence_segmentation": 1,
+      "source_identity": 4,
+      "span_coordinates": 5
+    }
+  },
+  "schema_errors": {
+    "parser_ir": [],
+    "preservation": []
+  },
+  "failures": [
+    {
+      "check": "source_region_coverage_valid",
+      "message": "Source-region coverage is not a passing source-authority gate."
+    },
+    {
+      "check": "source_region_sidecar_role_available",
+      "message": "Source-region coverage evidence is not available as a valid bundle input."
+    }
+  ]
+}

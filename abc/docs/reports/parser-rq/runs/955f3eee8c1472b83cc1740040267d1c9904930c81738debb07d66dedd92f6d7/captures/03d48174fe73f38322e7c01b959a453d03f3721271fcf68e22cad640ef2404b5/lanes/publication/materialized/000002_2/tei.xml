@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<a:TEI xmlns:a="http://www.tei-c.org/ns/1.0"
+       xmlns:abc="https://w3id.org/abc/ns/tei"
+       abc:vocab-version="0">
+   <a:teiHeader>
+      <a:fileDesc>
+         <a:titleStmt>
+            <a:title type="main" xml:lang="ja">Parser RQ Fixture 000002_2</a:title>
+            <a:author>
+               <a:persName xml:lang="ja">
+                  <a:surname>Parser RQ</a:surname>
+                  <a:forename>Fixture</a:forename>
+                  <a:idno type="aozora-person-id">abc-000000000001</a:idno>
+               </a:persName>
+            </a:author>
+         </a:titleStmt>
+         <a:publicationStmt>
+            <a:publisher>ABC</a:publisher>
+            <a:idno type="aozora-work-id">000002</a:idno>
+            <a:date when="2026-07-17">2026-07-17</a:date>
+         </a:publicationStmt>
+         <a:sourceDesc>
+            <a:bibl>
+               <a:title>Parser RQ Fixture 000002_2</a:title>
+               <a:idno type="aozora-card-url">https://example.invalid/cards/000002</a:idno>
+            </a:bibl>
+         </a:sourceDesc>
+      </a:fileDesc>
+      <a:encodingDesc>
+         <a:charDecl>
+            <a:char xml:id="U-546D">
+               <a:mapping type="unicode">呭</a:mapping>
+               <a:localProp name="rawMarker" value="口＋世"/>
+            </a:char>
+         </a:charDecl>
+      </a:encodingDesc>
+      <a:profileDesc>
+         <a:langUsage>
+            <a:language ident="ja">日本語</a:language>
+         </a:langUsage>
+      </a:profileDesc>
+   </a:teiHeader>
+   <a:text>
+      <a:body>
+         <a:p>
+            <a:s xml:id="s000000">長さは<a:g ref="#U-546D"/>で示す。</a:s>
+         </a:p>
+      </a:body>
+   </a:text>
+</a:TEI>

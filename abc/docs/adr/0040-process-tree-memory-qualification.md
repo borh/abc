@@ -1,7 +1,8 @@
 # ADR 0040: Qualify Process-Tree Cgroup Memory
 
-Status: Proposed
-Date: 2026-07-17
+Status: Accepted
+Date: 2026-07-20
+Accepted: 2026-07-20
 Depends on: ADR 0002
 Validation scope: structural
 Release authority: development
@@ -9,8 +10,10 @@ Release authority: development
 ## Implementation Status
 
 The bounded instrument, pure analyzer, identity policy, and Hinoki smoke
-witness are implemented. The authoritative P5 corpus recapture remains future
-work, and ADR 0039 remains Proposed.
+witness are implemented. P5 recaptured all nine observations under the rotated
+predicate identity and authenticated the process-tree memory observation.
+ADR 0039 remains Proposed because its promotion verifier found an independent
+executable-provenance identity mismatch.
 
 ## Context
 
@@ -31,12 +34,12 @@ qualification identity. P5 must recapture all nine observation envelopes under
 that identity. No old envelope may be relabeled or rebased. Registry admission
 is unchanged, and ADR 0039 remains Proposed until the complete gate passes.
 
-The existing
-`docs/reports/parser-release-qualification-measurements.edn` and the
-ADR-0039-cited `docs/reports/parser-release-qualification-report.json` are
-**superseded-pending-P5**. They remain historical evidence for the former
-predicate set, are intentionally incoherent with the live predicate set after
-this decision, and are forbidden as current gate evidence.
+The current
+`docs/reports/parser-release-qualification-measurements.edn` and
+`docs/reports/parser-release-qualification-report.json` are generated
+projections of the immutable P5 capture and evaluation. Earlier observations
+remain historical under their former predicate identity and cannot be
+relabeled.
 
 ## Consequences
 
@@ -63,3 +66,6 @@ predicate, committed resource policy, process-tree cgroup-memory key, unchanged
 2 GiB threshold, zero-swap service property, and content-addressed wrapper
 semantic identity. The Hinoki integration witness is recorded at
 `docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json`.
+The registered acceptance observation at
+`docs/evidence/adr-runs/parser-rq-resource-acceptance.json` authenticates that
+witness and the fresh nine-envelope P5 capture.

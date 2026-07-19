@@ -1,0 +1,35 @@
+{
+  "input_profile":
+  {
+    "explicit": ["docs\/evidence\/parser-rq-resource-acceptance\/capture\/parser-rq-resource-acceptance.edn","docs\/superpowers\/reports\/2026-07-17-parser-rq-resource-hinoki-smoke.json","docs\/reports\/parser-release-qualification-report.json","docs\/reports\/parser-rq\/runs\/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab\/captures\/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f\/qualification-identity.json","docs\/reports\/parser-rq\/runs\/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab\/captures\/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f\/measurements.json","docs\/reports\/parser-rq\/runs\/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab\/captures\/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f\/resource.json"],
+    "kind": "repo-files-v1",
+    "roots": []
+  },
+  "inputs":
+  {
+    "docs\/evidence\/parser-rq-resource-acceptance\/capture\/parser-rq-resource-acceptance.edn": "sha256:8ea4206aaf70f19a5688ea109fb416cedec8401ee9b1cf9ddb0ed430c7696eee",
+    "docs\/reports\/parser-release-qualification-report.json": "sha256:096a9e539933543ff1c155e61f8d087df7c8fad9c54314c91ecb2ea697e043c3",
+    "docs\/reports\/parser-rq\/runs\/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab\/captures\/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f\/measurements.json": "sha256:c50530dfb6d8fc5521da0afe43fe6e5842392d01216342f0d963b1ebec5df8d9",
+    "docs\/reports\/parser-rq\/runs\/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab\/captures\/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f\/qualification-identity.json": "sha256:6f365a44b975465943da88d0e3fe4f123672e00913285a3e998ab465bc79edca",
+    "docs\/reports\/parser-rq\/runs\/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab\/captures\/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f\/resource.json": "sha256:430de7599c1bcae92280e2a2a2fbd268e849444179f2435f0e93754988308f1c",
+    "docs\/superpowers\/reports\/2026-07-17-parser-rq-resource-hinoki-smoke.json": "sha256:798f341f0d5f514a41df30b63d1517e716be33338517f6b0c8bbdee457fcfb49"
+  },
+  "observations":
+  {
+    "parser-rq-resource-acceptance-pass":
+    {
+      "details":
+      {
+        "exit_code": 0
+      },
+      "value": true
+    }
+  },
+  "producer":
+  {
+    "command": "\"python3\" \"-c\" \"import json\\nfrom pathlib import Path\\n\\nroot = Path('.')\\nrun = root \/ 'docs\/reports\/parser-rq\/runs\/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab'\\ncapture = run \/ 'captures\/a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f'\\nsmoke = json.loads((root \/ 'docs\/superpowers\/reports\/2026-07-17-parser-rq-resource-hinoki-smoke.json').read_text())\\nidentity = json.loads((capture \/ 'qualification-identity.json').read_text())\\nmeasurements = json.loads((capture \/ 'measurements.json').read_text())\\nresource = json.loads((capture \/ 'resource.json').read_text())\\nreport = json.loads((root \/ 'docs\/reports\/parser-release-qualification-report.json').read_text())\\n\\nassert smoke['schema_version'] == 'parser-rq-resource-live-smoke-v1'\\nassert smoke['instrument_id'] == 'parser-rq-resource-v1'\\nassert smoke['systemd_properties']['MemoryAccounting'] == 'yes'\\nassert smoke['systemd_properties']['MemorySwapMax'] == 0\\nassert {(case['status'], case['right_censored']) for case in smoke['cases']} == {('measured', False), ('ceiling_clipped', True)}\\nassert all(case['peak_swap_bytes'] == 0 for case in smoke['cases'])\\n\\nassert len(measurements) == 9\\nidentity_refs = {envelope['identity_ref'] for envelope in measurements.values()}\\nassert identity_refs == {report['coherence']['identity_ref']}\\nassert report['coherence']['status'] == 'ok'\\nassert report['coherence']['errors'] == []\\nassert identity['predicate_set_hash'] == report['identity']['predicate_set_hash']\\nassert identity['instrument_versions']['peak_cgroup_memory_bytes'] == 'parser-rq-resource-v1'\\nassert measurements['peak_cgroup_memory_bytes'] == resource['peak_cgroup_memory_bytes']\\nmemory = next(row for row in report['predicate_verdicts'] if row['predicate_id'] == 'memory')\\nassert memory['instrument'] == 'parser-rq-resource-v1'\\nassert memory['expected'] == {'comparator': '<=', 'value': 2147483648}\\nassert memory['observed'] == resource['peak_cgroup_memory_bytes']['value']\\nassert report['verdict_tally'] == {'pass': 9}\\nprint('parser-rq resource acceptance evidence passes')\"",
+    "revision": "12e925a0c2f717b0cc56ca59dd31631203a64178",
+    "tool": "python3"
+  },
+  "schema_version": "abc-adr-evidence-run-v1"
+}

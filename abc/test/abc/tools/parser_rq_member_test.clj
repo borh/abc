@@ -65,10 +65,10 @@
                          [store manifest index identity]))
                   (envelope 1M))
                 resource/analyze
-                (fn [policy identity index records]
-                  (is (= [:resource-policy :resource-identity
+                (fn [policy ref index records]
+                  (is (= [:resource-policy identity-ref
                           :resource-index [:resource-record]]
-                         [policy identity index records]))
+                         [policy ref index records]))
                   {:value 1024 :identity_ref identity-ref})
                 resource/observation-envelope identity]
     (is (= {:fatal_failures (envelope 0.0)
@@ -108,7 +108,7 @@
     (is (= {:peak_cgroup_memory_bytes (envelope 1024)}
            (member/project-resource
             {:qualification_identity_ref identity-ref
-             :policy :resource-policy :identity :resource-identity
+             :policy :resource-policy
              :index :resource-index :records [:resource-record]})))))
 
 (deftest project-member-enforces-operation-output-and-identity-closure
@@ -148,11 +148,25 @@
             :resource
             {:qualification_identity_ref identity-ref
              :policy {:policy_hash identity-ref :work_ids ["work"]}
-             :identity {:identity_ref identity-ref}
              :index {:work_ids ["work"]}
              :records [{:work_id "work" :policy_hash identity-ref
                         :status "unavailable"
                         :reason "lingering_descendant"}]}))))
+  (testing "a measured resource result uses the explicit qualification identity"
+    (is (= {:peak_cgroup_memory_bytes
+            {:value 1024
+             :identity_ref identity-ref}}
+           (member/project-member
+            :resource
+            {:qualification_identity_ref identity-ref
+             :policy {:policy_hash identity-ref
+                      :work_ids ["work"]
+                      :threshold_bytes 2048}
+             :index {:work_ids ["work"]}
+             :records [{:work_id "work"
+                        :policy_hash identity-ref
+                        :status "measured"
+                        :peak_cgroup_memory_bytes 1024}]}))))
   (testing "predicate-pair owns exactly two outputs"
     (with-redefs [member/project-predicate-pair
                   (fn [_] {:diagnostic_completeness (envelope 1.0)})]

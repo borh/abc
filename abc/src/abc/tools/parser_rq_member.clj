@@ -94,9 +94,9 @@
    (publication/derive-publication-envelope store manifest index identity)})
 
 (defn project-resource
-  [{:keys [policy identity index records]}]
+  [{:keys [qualification_identity_ref policy index records]}]
   {:peak_cgroup_memory_bytes
-   (-> (resource/analyze policy identity index records)
+   (-> (resource/analyze policy qualification_identity_ref index records)
        resource/observation-envelope)})
 
 (def projectors

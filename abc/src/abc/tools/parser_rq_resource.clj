@@ -10,9 +10,8 @@
 
 (defn analyze
   "Authenticate a closed record set and derive the exact maximum in bytes."
-  [policy identity index records]
+  [policy qualification-identity-ref index records]
   (let [policy (keywordize policy)
-        identity (keywordize identity)
         index (keywordize index)
         records (mapv keywordize records)
         expected (:work_ids policy)
@@ -33,8 +32,7 @@
             threshold (:threshold_bytes policy)]
         {:status :measured
          :value peak
-         :identity_ref (or (:identity_ref identity)
-                           (:qualification_identity_ref identity))
+         :identity_ref qualification-identity-ref
          :verdict (if (<= peak threshold) :pass :fail)
          :counts {:expected (count expected)
                   :measured (count records)

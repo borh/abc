@@ -893,11 +893,6 @@ def _projection_input(
                 "policy": _read_object(
                     abc_root / "data/parser-rq-resource-policy-v1.json", "resource policy"
                 ),
-                "identity": _read_object(
-                    campaign.config.candidate_tree
-                    / "ab-validator/data/parser-rq-resource-identity-v1.json",
-                    "resource identity",
-                ),
                 "index": index,
                 "records": records,
             },

@@ -713,6 +713,33 @@ def test_publication_capture_input_rehashes_the_closed_artifact_set(tmp_path: Pa
     assert all(set(row) == {"sha256", "bytes", "media_type"} for row in artifacts)
 
 
+def test_resource_projection_binds_the_qualification_identity(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
+    write_json(
+        paths.runtime,
+        {
+            "candidate": {
+                "qualification_identity": {
+                    "instrument_versions": {},
+                    "parser_git_rev": "a" * 40,
+                }
+            }
+        },
+    )
+    write_json(paths.resource_root / "index.json", {"records": []})
+
+    command, inputs, members = orchestrator._projection_input("capture-resource", campaign, paths)
+
+    assert command == "resource"
+    assert (
+        inputs["qualification_identity_ref"]
+        == (campaign.readiness_receipt["qualification_identity_ref"])
+    )
+    assert "identity" not in inputs
+    assert members == {"resource": ("peak_cgroup_memory_bytes",)}
+
+
 class FakeRunner:
     def __init__(self, staging: Path, *, fail_at: str | None = None) -> None:
         self.staging = staging
@@ -738,6 +765,7 @@ class FakeRunner:
                         "qualification_identity": {
                             "instrument_versions": {},
                             "parser_git_rev": "a" * 40,
+                            "corpus_snapshot_hash": "sha256:" + "1" * 64,
                         }
                     },
                     "corpus": {"corpus_root": "ab-validator/corpus", "entries": []},

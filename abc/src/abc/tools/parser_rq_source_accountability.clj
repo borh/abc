@@ -157,8 +157,6 @@
                        (re-matches hash/hash-pattern (get identity %)))
                  hash-keys)
          (map? instruments)
-         (= source-accountability-instrument-version
-            (:source_accountability instruments))
          (every? (fn [[instrument version]]
                    (and (or (keyword? instrument)
                             (and (string? instrument)
@@ -166,6 +164,12 @@
                         (string? version)
                         (not (string/blank? version))))
                  instruments))))
+
+(defn- source-accountability-identity-valid?
+  [identity]
+  (and (valid-identity? identity)
+       (= source-accountability-instrument-version
+          (get-in identity [:instrument_versions :source_accountability]))))
 
 (defn- valid-aggregate?
   [aggregate identity-ref]
@@ -212,7 +216,7 @@
       (not= :ok (:status verified))
       verified
 
-      (not (valid-identity? identity))
+      (not (source-accountability-identity-valid? identity))
       (unavailable "qualification identity violates the closed P0 contract")
 
       (not= identity authenticated-identity)

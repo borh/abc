@@ -36,6 +36,11 @@
 (def recognition-identity-ref
   (qualification/qualification-identity-ref recognition-identity))
 
+(deftest production-recognition-identity-needs-only-the-predicate-instrument
+  (let [production-identity
+        (update recognition-identity :instrument_versions dissoc :source_accountability)]
+    (is (#'rq-source/recognition-identity-valid? production-identity))))
+
 (def production-recognition-fixture-root
   (io/file "test/fixtures/parser-rq/source-recognition-capture"))
 

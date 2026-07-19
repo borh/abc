@@ -128,6 +128,17 @@
                     :source-recognition
                     {:qualification_identity_ref identity-ref
                      :store {} :manifest {} :aggregate {} :identity {}})))))
+  (testing "an authenticated unavailable result remains an identity-bound observation"
+    (with-redefs [source/derive-source-recognition-envelope
+                  (fn [& _] {:status :unavailable :reason "identity mismatch"})]
+      (is (= {:source_span_coverage
+              {:value :unavailable
+               :identity_ref identity-ref
+               :details {:reason "identity mismatch"}}}
+             (member/project-member
+              :source-recognition
+              {:qualification_identity_ref identity-ref
+               :store {} :manifest {} :aggregate {} :identity {}})))))
   (testing "predicate-pair owns exactly two outputs"
     (with-redefs [member/project-predicate-pair
                   (fn [_] {:diagnostic_completeness (envelope 1.0)})]

@@ -401,7 +401,6 @@ def bounded_identity() -> dict[str, object]:
             "peak_cgroup_memory_bytes": "parser-rq-resource-v1",
             "publication_structure": "reports/parser-ir/publication-bundle-validate.py against parser-ir-publication-preservation.schema.json",
             "silent_drops": "parser-rq-diagnostic-authorization-v1",
-            "source_accountability": "parser-rq-source-accountability-v1",
             "source_span_coverage": "parser-rq-source-recognition-v1",
             "timeouts": "parser-rq-core-attempt-v1",
             "wall_time_seconds": "parser-rq-core-attempt-v1",

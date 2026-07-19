@@ -115,13 +115,22 @@
    :publication #{:publication_structure}
    :resource #{:peak_cgroup_memory_bytes}})
 
+(defn- identity-bound-result
+  [identity-ref result]
+  (if (= :unavailable (:status result))
+    (capture/observation-envelope identity-ref :unavailable
+                                  {:reason (:reason result)})
+    result))
+
 (defn project-member
   [operation inputs]
   (let [projector (get projectors operation)
         expected (get output-keys operation)]
     (when-not projector
       (throw (ex-info "unknown parser RQ member projection" {:operation operation})))
-    (let [member (projector inputs)
+    (let [member (update-vals (projector inputs)
+                              (partial identity-bound-result
+                                       (:qualification_identity_ref inputs)))
           envelopes (vals member)
           errors (mapcat capture/envelope-errors envelopes)]
       (when (or (not= expected (set (keys member)))

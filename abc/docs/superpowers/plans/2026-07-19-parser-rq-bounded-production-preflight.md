@@ -412,7 +412,7 @@ git commit -m 'docs(parser-rq): bind pre-freeze checks to one revision'
 **Files:**
 - Verify only; modify no protocol or qualification artifact unless a named check proves direct drift.
 
-- [ ] **Step 1: Review the entire range before claiming completion**
+- [x] **Step 1: Review the entire range before claiming completion**
 
 ```bash
 git diff --check HEAD~4..HEAD
@@ -428,7 +428,7 @@ git diff HEAD~4..HEAD -- \
 
 Check specifically that `execute_graph` calls the extracted helper, the test does not replace authenticated executable/driver maps, and no production entry point gained a preflight branch.
 
-- [ ] **Step 2: Run formatting, lint, and comment checks**
+- [x] **Step 2: Run formatting, lint, and comment checks**
 
 ```bash
 just python-quality
@@ -438,7 +438,7 @@ nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests -L
 scripts/comment-hygiene-check.sh
 ```
 
-- [ ] **Step 3: Run the focused production-boundary checks**
+- [x] **Step 3: Run the focused production-boundary checks**
 
 ```bash
 nix build .#checks.x86_64-linux.parser-rq-production-wiring -L
@@ -448,7 +448,7 @@ nix build ./ab-validator#checks.x86_64-linux.parser-rq-predicate-hardening-captu
 nix build ./ab-validator#checks.x86_64-linux.parser-rq-publication-pytest -L
 ```
 
-- [ ] **Step 4: Run the full migration/governance gate**
+- [x] **Step 4: Run the full migration/governance gate**
 
 ```bash
 just validate-migration
@@ -456,7 +456,7 @@ just validate-migration
 
 If this reports a descriptor whose content directly binds the taxonomy or root check, recapture only that named descriptor using its existing command. Do not regenerate unrelated evidence speculatively.
 
-- [ ] **Step 5: Confirm historical and worktree integrity**
+- [x] **Step 5: Confirm historical and worktree integrity**
 
 ```bash
 test "$(find abc/docs/reports/parser-rq/runs -type f -path '*/authorizations/*' | wc -l)" -ge 3

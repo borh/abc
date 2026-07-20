@@ -12,8 +12,10 @@ Release authority: development
 The bounded instrument, pure analyzer, identity policy, and Hinoki smoke
 witness are implemented. P5 recaptured all nine observations under the rotated
 predicate identity and authenticated the process-tree memory observation.
-ADR 0039 remains Proposed because its promotion verifier found an independent
-executable-provenance identity mismatch.
+The first immutable evaluation exposed an executable-provenance projection
+mismatch. A later governed projection correction authenticated the unchanged
+capture, regenerated the evaluation, and promoted ADR 0039 to Accepted; the
+original rejection remains historical evidence.
 
 ## Context
 

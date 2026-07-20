@@ -11,8 +11,9 @@ Release authority: development
 
 The five final instrument bindings, generated predicate-set identity, bounded
 core-attempt analyzer, and admission/promotion transaction evidence are
-implemented and registered. The authoritative corpus capture is not part of
-this decision; ADR 0040 and ADR 0039 remain Proposed.
+implemented and registered. The authoritative corpus capture was not part of
+this decision. The later P5 campaign completed that capture, accepted ADR 0040,
+and promoted ADR 0039 to Accepted.
 
 ## Context
 

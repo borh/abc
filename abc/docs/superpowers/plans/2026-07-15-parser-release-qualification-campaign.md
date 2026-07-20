@@ -113,7 +113,7 @@ reviewable systems and must land first.
 | P4A3 | `2026-07-16-parser-rq-diagnostic-gap-partition.md` | Versioned diagnostic authorization and R2 partition over ledger gaps | P4A2 |
 | P4B | `…-parser-rq-predicate-hardening.md` | R5 (predicates 4 & 5) instrument code | P0, P1 |
 | P5 | `…-parser-rq-admission-promotion.md` | Pin the final implementation commit; capture R1–R5; R6 admit; R7 recapture + gate + conditional ADR 0039 | P0–P4 (barrier) |
-| PS | `../specs/2026-07-20-parser-study-completion-design.md` | Track S: S2, S1, S3, S4; publication closure; later third-party retirement | P0 contracts only; never gates Track R |
+| PS | `../specs/2026-07-20-parser-study-completion-design.md` | Track S: S2, S1, S3, S4; publication closure; later production-parser migration and third-party retirement | P0 contracts only; never gates Track R |
 
 ```
 P0 ──┬── P1 ──┬── P4A1 ── P4A2 ── P4A3 ─┐
@@ -196,19 +196,23 @@ minimal implementation, independently testable tasks. Their entry contracts:
   authority for predicates 1/7/9, and sequences ADR 0040 resolution before ADR
   0039 promotion. The execution plan is
   `2026-07-17-parser-rq-admission-promotion.md`.
-- **PS Study axes** — S2 diagnostics (nearly ready: fixture + conformance scorer
-  exist), S1 fidelity authority and scoring, S3 span accuracy (may end `non_comparable` for
-  span-less adapter lanes), S4 KM latency + frozen bootstrap (needs a
-  controlled per-repetition re-run; long pole), followed by a closed research
-  publication and a separate third-party retirement change. See
+- **PS Study axes** — S2 diagnostics has fixture and scorer foundations, but its
+  capture, FP/FN producer, evidence index, and result-schema integration are new;
+  S1 fidelity authority and scoring; S3 span accuracy (spanless adapter lanes are
+  `non_comparable`, while reference-dependent metrics may remain quantified
+  `unavailable`); and S4 KM latency + frozen bootstrap (needs a controlled
+  per-repetition re-run; long pole). These are followed by a closed research
+  publication, a separately planned production migration to `ab-aozora`, and a
+  separate third-party retirement change. See
   `../specs/2026-07-20-parser-study-completion-design.md`. Same Rigor Bar; never
   gates Track R.
 
 ## Self-review
 
 - Track R is complete and ADR 0039 is Accepted. The remaining PS work is
-  explicitly research-only and ends in publication plus retirement of active
-  third-party parser dependencies.
+  explicitly research-only and ends in publication, a separately governed
+  production-parser migration, and retirement of active third-party parser
+  dependencies.
 - Prior Blocker 1 fixed: admission is a *projection* (`admission-query` → nine
   match-keys) checked with `compatible?`, distinct from full-identity coherence;
   named functions, not implicit `match-keys` reuse.

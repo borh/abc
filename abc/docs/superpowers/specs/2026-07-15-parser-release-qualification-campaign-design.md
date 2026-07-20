@@ -750,8 +750,11 @@ Within Track R:
   coherent tuple.
 
 Track S is independent of Track R end-to-end. Within Track S, S4 depends on the
-host-comparability capture; S2 is nearly ready; S1 and S3 need reference
-artifacts (S3 may terminate `non_comparable` for adapter lanes).
+host-comparability capture. S2 has fixture and scorer foundations but still
+needs its capture, FP/FN producer, evidence index, and result-schema integration.
+S1 and S3 need independent reference artifacts and may close reference-dependent
+metrics as quantified `unavailable`; spanless adapter lanes are
+`non_comparable` for span metrics.
 
 Cross-cutting: pin the release-candidate tuple after instrument code is complete
 but **before any authoritative measurement**. It is the shared capture input to

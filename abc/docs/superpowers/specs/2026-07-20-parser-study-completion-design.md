@@ -40,6 +40,23 @@ The desired end state is therefore two values, separated in time:
 1. a closed research publication whose claims can be regenerated and audited;
 2. a smaller active system in which the custom parser is the only parser.
 
+## Expected Scientific Outcome
+
+Closure is expected to improve the study asymmetrically rather than make every
+axis numeric:
+
+- S2 diagnostics and S4 performance should add substantive measurements;
+- S1 full-corpus visible-text and structural agreement will remain quantified
+  `unavailable` unless the adequacy audit finds a complete independent reference;
+- S3 bounds validity and covered source bytes are measurable for span-emitting
+  lanes, while exact/overlap accuracy will remain quantified `unavailable` where
+  no independent semantic-interval inventory exists; and
+- spanless lanes remain `non_comparable` for span metrics.
+
+That is scientific completion: every registered question has authenticated
+evidence or a quantified terminal limitation. It is not a promise that the two
+flagship reference-dependent axes will become measured.
+
 ## Evidence and Constraints
 
 The following decisions and observations are already settled and are not
@@ -51,6 +68,8 @@ reopened here:
 - ADR 0038 assigns development ownership to the custom parser while structurally
   separating comparison evidence from admission and release authority.
 - ADR 0039 records successful release qualification of the custom parser.
+- Accepted ADRs 0040 and 0041 record the final resource predicate and instrument
+  bindings consumed by that qualification.
 - The current report generator emits explicit missing rows rather than zeros.
 - The current robustness rows cover corpus parse completion only; the frozen
   malformed-input fixture arm is still unmeasured and requires third-party
@@ -78,8 +97,11 @@ validates that index and derives the machine result and narrative report. A
 single verification command re-hashes the referenced evidence and regenerates
 the publication byte-identically from any caller-supplied research-bundle root.
 
-After the publication closure verifies, a separate retirement change removes
-third-party parser packages, adapters, runners, and active checks. It preserves:
+After publication closure verifies, production publication must first migrate
+from `aozora2html` to the qualified `ab-aozora` parser under a separate focused
+design, test, and rollout. Only after that cutover verifies may a separate
+retirement change remove third-party parser packages, adapters, runners, and
+active checks. It preserves:
 
 - the preregistration;
 - the compact evidence index and axis summaries;
@@ -108,6 +130,8 @@ frozen preregistration + markup + captured parser outputs
               machine result + narrative report
                            │
               verify from an arbitrary copied root
+                           │
+             migrate production to the custom parser
                            │
                   retire active alternatives
 ```
@@ -183,9 +207,18 @@ axis. Every record carries:
 - candidate, measurement mode, parser revision, and adapter revision;
 - corpus or fixture identity;
 - instrument/policy identity;
-- closed raw-input references;
+- a closed set of required input roles derived from the frozen axis policy;
+- the authenticated raw-input reference satisfying each present role;
 - metric observations; and
 - one terminal disposition per required metric.
+
+Required input roles are typed as `source_markup`, `independent_reference`, or
+`third_party_capture`, and name the applicable candidate and measurement mode.
+Each role carries either one content reference or an explicit absence. Raw
+references alone are insufficient because a capture that was never attempted
+has no reference to inspect. The bounded capture debt is therefore a pure
+projection: every absent required input whose role is `third_party_capture`.
+Neither a hand-authored disposition nor explanatory prose may clear that debt.
 
 Metric dispositions are:
 
@@ -213,7 +246,9 @@ score.
 ## Publication Completeness Census
 
 Before adding an axis measurement, derive a closed matrix of every frozen
-candidate/mode and all nine preregistered axes. Each metric is classified as:
+candidate/mode and all nine preregistered axes. Each metric state is derived from
+the frozen policy's required input roles and the authenticated evidence index,
+then presented as:
 
 - already backed by authenticated evidence;
 - derivable from existing authenticated values;
@@ -228,8 +263,14 @@ fixture must run before retirement. Construct coverage, maintenance, packaging,
 and license rows must consume their existing evidence or retain an exact named
 limitation; no row becomes measured merely because the new axes are resolved.
 
-Every item classified as requiring third-party execution joins the bounded
-capture set. Retirement is forbidden while that set is non-empty.
+Construct coverage must consume the independently derived source-markup
+inventory established by S1. Official notation-vector parse completion and the
+custom parser's claim ledger are not independent construct-coverage authority.
+If the inventory does not close the preregistered construct denominator, the row
+remains quantified `unavailable`.
+
+Every absent required `third_party_capture` input joins the bounded capture set.
+Retirement is forbidden while that mechanically derived set is non-empty.
 
 ## S2 — Diagnostic Scoring
 
@@ -254,8 +295,9 @@ construct occurrences, and source coordinates. XHTML is downstream rendered
 output and may never override or redefine those facts.
 
 The custom parser cannot be its own reference. S1 therefore begins with an
-adequacy audit over the exact 17,886-work membership. For each fidelity metric,
-the audit records which independent evidence exists:
+adequacy audit over the closed membership derived by the frozen extractor from
+the pinned source snapshot. For each fidelity metric, the audit records which
+independent evidence exists:
 
 - independently derived markup inventories for ruby, gaiji, notes, and
   structural constructs, never the custom parser's claim ledger;
@@ -268,6 +310,11 @@ The current XHTML run proves why this boundary matters: its observation count is
 eligible rendered-body proxies. The adequacy audit must reconcile membership,
 not infer missing work IDs from counts alone. XHTML cannot define the full-corpus
 denominator or serve as a blanket structure oracle.
+
+Corpus identity is the pinned source snapshot, the versioned membership
+extractor, and the resulting closed membership hash. The current cardinality
+17,886 is a derived observation, not an independently preregistered identity
+field.
 
 If independent evidence closes a metric's full denominator, the scorer emits
 exact byte/occurrence agreement with mismatch witnesses. Otherwise that metric
@@ -337,6 +384,11 @@ The publication contains all nine preregistered axes in their registered order.
 Completeness means every row is grounded in the index with its real disposition,
 not that every row is forced to `measured`.
 
+Existing version-1 robustness observations are re-projected into version 2
+without remeasurement. An equivalence check must pin the candidate, mode,
+revisions, corpus identity, numerator, denominator, disposition, and provenance
+across both representations before the v2 row may enter the publication index.
+
 Generation rejects missing members, duplicate lane/axis identities, extra
 members, identity drift, and any axis row not derived from the index. The report
 continues to publish per-axis results only. It names missing and non-comparable
@@ -355,16 +407,24 @@ may contain hashes and derived results without redistributing restricted bytes.
 
 ## Retirement Boundary
 
-Retirement is a separate change after publication closure, not the final step of
-the measurement command. Before retirement, every capture that requires a
-third-party executable must have completed or produced an authenticated
-build/run failure. A remaining `unavailable` result may not mean "we forgot to
-run the parser." It may describe an independent-reference gap such as S1,
-because preserving parser output cannot create missing authority.
+Retirement is a separate change after publication closure and after a separately
+designed production-parser cutover, not the final step of the measurement
+command. Today the publication builder and committed publication profiles select
+`aozora2html`, and the root `soranoha` application supplies its package and
+adapter. The custom parser is therefore not yet the only production parser.
+Retirement cannot begin until those production paths use `ab-aozora` and their
+publication checks pass.
+
+Before retirement, the mechanically derived third-party capture-debt set must be
+empty: every required `third_party_capture` input has either authenticated output
+or an authenticated build/run failure. A remaining `unavailable` result may not
+mean "we forgot to run the parser." It may describe an independent-reference gap
+such as S1, because preserving parser output cannot create missing authority.
 
 The retirement change:
 
-- removes third-party parser flake inputs/packages from active outputs;
+- removes third-party parser sources and packages from active outputs regardless
+  of whether they enter through a flake input, `fetchurl`, a gem, or a JAR;
 - removes their adapters, runners, and active tests;
 - removes application/configuration choices that select them;
 - retains shared libraries only when the custom parser still owns and uses them;
@@ -372,6 +432,12 @@ The retirement change:
   citations truthful;
 - records the final study commit in the publication manifest; and
 - adds a guard that active parser inventories contain only the custom parser.
+
+That guard inspects the built runtime closure of every production application
+and package. It fails if a retired parser executable, gem, JAR, adapter, runner,
+or selectable profile remains reachable. Source-text and flake-input scans may
+supplement this check but cannot replace it. Historical report-validation tests
+remain active; only tests that build or execute retired parsers are removed.
 
 Historical documents may still name retired parsers. Active code may not import,
 build, invoke, or advertise them. No compatibility shim returns fake results;
@@ -409,18 +475,23 @@ Tests must prove:
    preserves censoring, and is deterministic under seed 20260714;
 7. performance strata are pooled only when the frozen predicate holds;
 8. the report is a pure projection of the closed evidence index;
-9. a copied research bundle verifies and regenerates byte-identically from an
-   arbitrary root; and
-10. after retirement, active build and runtime graphs contain no third-party
-   parser packages or selectors, while the historical publication still
-   validates.
+9. version-1 robustness observations re-project into version 2 without changing
+   candidate, mode, revisions, corpus, counts, disposition, or provenance;
+10. a copied research bundle verifies and regenerates byte-identically from an
+    arbitrary root;
+11. third-party capture debt is derived from absent required input roles and
+    cannot be cleared by changing a census label or reason string;
+12. production publication uses `ab-aozora` successfully before retirement; and
+13. after retirement, built production closures contain no third-party parser
+    executables, gems, JARs, adapters, runners, or selectors, while the
+    historical publication still validates.
 
 ## Scope Fence
 
 This design does not:
 
-- alter ADR 0038, ADR 0039, the qualification predicate set, admission, or the
-  production parser choice;
+- alter ADR 0038, ADR 0039, the qualification predicate set, or admission;
+- implement the production parser migration inside the study-measurement plan;
 - rerun or reinterpret Track R evidence;
 - change the frozen candidate set, revisions, corpora, fixture labels,
   denominators, bootstrap, or missing-data rules;
@@ -447,18 +518,21 @@ Reopen the design if:
 
 ## Dev Handoff
 
-The first implementation slice is the completeness census plus S2. It
-establishes the axis-evidence schema, closed index, diagnostic capture, scorer
-projection, report-schema v2 shape, and one end-to-end report row without
-touching S1, S3, or S4 semantics. The census also enumerates the bounded capture
-debt, including the malformed-input robustness fixture.
+The first implementation slice is the completeness census plus S2. The existing
+fixture and conformance scorer are foundations, not a nearly completed axis: the
+false-positive/false-negative producer, capture, closed evidence index,
+axis-evidence contract, and result-schema v2 integration are new. This slice
+establishes those pieces and one end-to-end report row without touching S1, S3,
+or S4 semantics. The census also derives the bounded capture debt, including the
+malformed-input robustness fixture.
 
-S1, S3, and S4 then land as separately testable resolvers. Publication closure
-and third-party retirement are separate final plans and commits. Retirement may
-begin only after all third-party-dependent captures are terminal, every
-remaining unavailable metric names a non-execution blocker, the report
-regenerates byte-identically, and the research bundle verifies from a copied
-root.
+S1, S3, and S4 then land as separately testable resolvers. Publication closure,
+production migration to `ab-aozora`, and third-party retirement are three
+separate final plans and commits, in that order. Retirement may begin only after
+the derived capture-debt set is empty, every remaining unavailable metric names
+a non-execution blocker, the report regenerates byte-identically, the research
+bundle verifies from a copied root, and production no longer depends on a
+third-party parser.
 
 ## Decision Log
 
@@ -467,5 +541,6 @@ root.
 | One closed study with four axis resolvers | Proposed | Shared mechanics become axis-specific or candidates drift |
 | Report schema v2 uses typed metric arrays | Proposed | A lossless representation exists without schema rotation |
 | Runtime location is not study identity | Proposed | A scientific claim is shown to depend on storage place |
-| Publish before retiring third-party execution | Proposed | Frozen lanes cannot be executed or evidence cannot be contained |
+| Derive capture debt from closed required-input roles | Proposed | Required execution can be proved complete without declared inputs |
+| Publish, migrate production, then retire | Proposed | Production already has no third-party parser dependency |
 | Preserve research values, delete active alternatives | Proposed | A production requirement for a third-party parser emerges |

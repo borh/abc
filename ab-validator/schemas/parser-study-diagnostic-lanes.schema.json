@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-study-diagnostic-lanes.schema.json",
+  "title": "Soranoha parser study diagnostic lanes",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "schema_version", "lanes"],
+  "properties": {
+    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-study-diagnostic-lanes-v1"},
+    "schema_version": {"const": 1},
+    "lanes": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/lane"}
+    }
+  },
+  "$defs": {
+    "lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate", "measurement_mode", "parser_revision", "adapter_revision", "program", "argv", "projector"],
+      "properties": {
+        "candidate": {"enum": ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3", "ab-aozora"]},
+        "measurement_mode": {"enum": ["native", "adapter_normalized"]},
+        "parser_revision": {"type": "string", "minLength": 1},
+        "adapter_revision": {"type": ["string", "null"]},
+        "program": {"enum": ["aozora", "aozora-adapter", "aozora2", "aozora2-adapter", "aozora-rs-native", "aozora-rs-adapter", "aozora2html-adapter", "aozora-epub3-adapter", "ab-aozora"]},
+        "argv": {"type": "array", "items": {"type": "string"}},
+        "projector": {"enum": ["none", "inspect_v2", "schema3"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"measurement_mode": {"const": "native"}}, "required": ["measurement_mode"]},
+          "then": {"properties": {"adapter_revision": {"type": "null"}}},
+          "else": {"properties": {"adapter_revision": {"type": "string", "minLength": 1}}}
+        },
+        {
+          "if": {"properties": {"candidate": {"const": "ab-aozora"}}, "required": ["candidate"]},
+          "then": {"properties": {"measurement_mode": {"const": "native"}, "projector": {"const": "schema3"}}}
+        }
+      ]
+    }
+  }
+}

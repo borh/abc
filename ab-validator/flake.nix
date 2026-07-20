@@ -1367,6 +1367,31 @@
         reportsPytestCheck =
           pkgs.runCommand "reports-pytest-check"
             {
+              nativeBuildInputs = [
+                pkgs.git
+                pythonWithAatSchemaDeps
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+              rm data/abc-schemas/schemas
+              cp -R "${abcSource}/schemas" data/abc-schemas/schemas
+              python -m pytest \
+                reports/aat-fidelity/tests \
+                reports/lib/tests \
+                reports/parser-conformance/tests \
+                reports/parser-study/tests \
+                reports/source-regions/tests \
+                -q
+              touch "$out"
+            '';
+
+        parserStudyDiagnosticCapturePythonTests =
+          pkgs.runCommand "parser-study-diagnostic-capture-python-tests"
+            {
               nativeBuildInputs = [ pythonWithAatSchemaDeps ];
             }
             ''
@@ -1374,14 +1399,17 @@
               cp -R "${source}" "$work_dir/source"
               chmod -R +w "$work_dir/source"
               cd "$work_dir/source"
-              python -m pytest \
-                reports/aat-fidelity/tests \
-                reports/lib/tests \
-                reports/parser-conformance/tests \
-                reports/source-regions/tests \
-                -q
+              python -m pytest reports/parser-study/tests/test_diagnostic_capture.py -q
               touch "$out"
             '';
+
+        parserStudyDiagnosticCaptureApp = pkgs.writeShellApplication {
+          name = "parser-study-diagnostic-capture";
+          runtimeInputs = [ pythonWithAatSchemaDeps ];
+          text = ''
+            exec python "${source}/reports/parser-study/diagnostic_capture.py" "$@"
+          '';
+        };
 
         parserRqPublicationPytestCheck =
           pkgs.runCommand "parser-rq-publication-pytest-check"
@@ -2095,6 +2123,14 @@
             meta.description = "Run the host-controlled cgroup-v2 resource smoke";
           };
 
+        apps.parser-study-diagnostic-capture =
+          flake-utils.lib.mkApp {
+            drv = parserStudyDiagnosticCaptureApp;
+          }
+          // {
+            meta.description = "Capture and verify the bounded parser-study diagnostic lanes";
+          };
+
         apps.vibrato-tokenize =
           flake-utils.lib.mkApp {
             drv = vibratoTokenizeApp;
@@ -2154,6 +2190,7 @@
           aat-fidelity-duckdb-smoke = aatFidelityDuckdbSmokeCheck;
           aat-oracle-audit-smoke = aatOracleAuditSmokeCheck;
           reports-pytest = reportsPytestCheck;
+          parser-study-diagnostic-capture-python-tests = parserStudyDiagnosticCapturePythonTests;
           parser-rq-publication-pytest = parserRqPublicationPytestCheck;
           parser-rq-core-attempt-python-tests = parserRqCoreAttemptPythonTests;
           parser-rq-campaign-provenance-python-tests = parserRqCampaignProvenancePythonTests;

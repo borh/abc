@@ -43,6 +43,23 @@ assert diagnostics["required_inputs"] == [
     {"role": "third_party_capture", "artifact": "diagnostic_fixture_capture"},
 ]
 
+diagnostic_lanes = json.load(
+    open(repo / "data/parser-study-diagnostic-lanes-v1.json", encoding="utf-8")
+)
+diagnostic_lanes_schema = json.load(
+    open(repo / "schemas/parser-study-diagnostic-lanes.schema.json", encoding="utf-8")
+)
+Draft202012Validator.check_schema(diagnostic_lanes_schema)
+Draft202012Validator(diagnostic_lanes_schema).validate(diagnostic_lanes)
+assert len(diagnostic_lanes["lanes"]) == 11
+assert [
+    (lane["candidate"], lane["measurement_mode"]) for lane in diagnostic_lanes["lanes"]
+] == [
+    (candidate, mode)
+    for candidate in ("aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3")
+    for mode in ("native", "adapter_normalized")
+] + [("ab-aozora", "native")]
+
 for name in (
     "parser-study-axis-evidence.schema.json",
     "parser-study-evidence-index.schema.json",

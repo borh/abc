@@ -47,7 +47,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.parser-release-qualification-test\/final-instrument-binding-rotation-preserves-predicate-semantics\" \"--focus\" \"abc.tools.parser-rq-core-attempt-test\" \"--focus\" \"abc.tools.parser-rq-campaign-test\" \"--focus\" \"abc.tools.parser-rq-admission-promotion-drift-test\"",
-    "revision": "9e68735204412363b425ad4f249493fd72eafd23",
+    "revision": "b2a6773452506ee82b633aa379288fa115996a30",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

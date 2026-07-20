@@ -38,7 +38,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.source-bundle-test\/declared-and-streamed-limits-are-enforced-test\"",
-    "revision": "9e68735204412363b425ad4f249493fd72eafd23",
+    "revision": "b2a6773452506ee82b633aa379288fa115996a30",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

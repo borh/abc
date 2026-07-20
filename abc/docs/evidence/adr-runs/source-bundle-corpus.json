@@ -42,7 +42,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"nix build --no-link .#checks.x86_64-linux.source-bundle-corpus\"",
-    "revision": "9e68735204412363b425ad4f249493fd72eafd23",
+    "revision": "b2a6773452506ee82b633aa379288fa115996a30",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

@@ -665,8 +665,8 @@
                               (map :path)
                               vec)]
     (is (= #{} (kinds problems)))
-    (is (= 30 (count accepted)))
-    (is (= 148 (count accepted-criteria)))
+    (is (= 32 (count accepted)))
+    (is (= 156 (count accepted-criteria)))
     (is (zero? missing-claim-count))
     (is (zero? missing-evidence-count))
     (is (= (+ missing-scope-count missing-authority-count

@@ -25,11 +25,11 @@
     "abc\/src\/abc\/tools\/logging.clj": "sha256:d4f0de64cb52fe99cab2761a1ca5b1fd427e2c201d180a153bd5cf76a47bade7",
     "abc\/src\/abc\/tools\/malli.clj": "sha256:16c04c051ac5829e36b7d0e7707c0057cef22ac2c20f778ad08f0d3b40df471e",
     "abc\/src\/abc\/tools\/parser_release_qualification.clj": "sha256:7b9c628296ade88dc558caeca1c787a3f6d5706e413738cfa7fe3c53879b3ce7",
-    "abc\/src\/abc\/tools\/parser_rq_campaign.clj": "sha256:660d31c2c8b9815a9119bb310e7ec41d2230a226e0c63e991699ff7700124321",
+    "abc\/src\/abc\/tools\/parser_rq_campaign.clj": "sha256:ced90aaab1ab8ece2013f0367b5816d1238641a22693e05132bcaaa3dd0eff5f",
     "abc\/src\/abc\/tools\/parser_rq_capture.clj": "sha256:297dc28a2d03a178159cb14503189f280f763a55d2ad763c8d1539c7e120e644",
     "abc\/src\/abc\/tools\/path_containment.clj": "sha256:7fc7708e79acd8131d2f229146bf488fc17ec8da484e2a6a6a6717c9b2ebd8a3",
     "abc\/test\/abc\/tools\/parser_rq_admission_promotion_drift_test.clj": "sha256:b7d01bcaf20aacc4e01012424ea9ff7ace3b2e921eb0c5a5917ec3504233f8dd",
-    "abc\/test\/abc\/tools\/parser_rq_campaign_test.clj": "sha256:f61ac0840a0b1fccdabf4c7909f2980d14d7d251ab2800060e7bddb359339bcd",
+    "abc\/test\/abc\/tools\/parser_rq_campaign_test.clj": "sha256:49cfe10bc8ef94133d6bea9c131e497509434be913030b4f1bcc9ab490bc755d",
     "abc\/test\/abc\/tools\/parser_rq_portability_test.clj": "sha256:2aa08032a2ad1eadabcbcab292b5da7f5f7a16df38bab87418c0221c0256be09"
   },
   "observations":
@@ -46,7 +46,7 @@
   "producer":
   {
     "command": "\"bash\" \"--noprofile\" \"--norc\" \"-c\" \"bin\/kaocha --focus abc.tools.parser-rq-portability-test --focus abc.tools.parser-rq-campaign-test --focus abc.tools.parser-rq-admission-promotion-drift-test && nix build ..\/ab-validator#checks.x86_64-linux.parser-rq-campaign-provenance-python-tests\"",
-    "revision": "b2a6773452506ee82b633aa379288fa115996a30",
+    "revision": "07f86be1899cffe1fea52c1716b1b60fa350e953",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

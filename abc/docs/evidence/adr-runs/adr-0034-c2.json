@@ -45,7 +45,7 @@
   "producer":
   {
     "command": "\"bash\" \"-lc\" \"cd abc && bin\/kaocha --focus abc.tools.adr-0034-evidence-test\/adr-0034-c2-contract\"",
-    "revision": "b2a6773452506ee82b633aa379288fa115996a30",
+    "revision": "07f86be1899cffe1fea52c1716b1b60fa350e953",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

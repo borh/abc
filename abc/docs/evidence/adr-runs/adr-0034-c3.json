@@ -47,7 +47,7 @@
   "producer":
   {
     "command": "\"bash\" \"-lc\" \"cd abc && clojure -M:abc\/adr-evidence-bootstrap -- --repo-root . --workspace-root .. --verify docs\/evidence\/adr-bootstrap\/pre-promotion.json\"",
-    "revision": "b2a6773452506ee82b633aa379288fa115996a30",
+    "revision": "07f86be1899cffe1fea52c1716b1b60fa350e953",
     "tool": "bash"
   },
   "schema_version": "abc-adr-evidence-run-v1"

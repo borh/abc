@@ -1,5 +1,7 @@
 //! Validated machine-readable rows for the neutral parser comparison.
 
+pub mod census;
+pub mod evidence;
 pub mod generate;
 
 use std::collections::BTreeSet;

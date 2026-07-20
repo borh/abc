@@ -8,7 +8,9 @@ description = "Machine-readable neutral parser-study result contract"
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
 jsonschema.workspace = true
+tempfile.workspace = true

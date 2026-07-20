@@ -9,26 +9,26 @@
 > superpowers:executing-plans; do not execute this roadmap directly.
 
 **Goal:** Produce a real verdict for every ADR 0039 release predicate from a
-committed instrument on one pinned build, so the gate renders an honest
-qualification result. Success is *honest verdicts*, not a green gate: an honest
-`fail`, or a `:conflict`/`:missing` admission that leaves ADR 0039 `Proposed`, is
-a correct outcome. The only failure is a fabricated/imputed number or a weakened
-predicate.
+committed instrument on one pinned build, then finish the independent neutral
+study. **Track R completed on 2026-07-20:** the candidate was admitted, all nine
+predicates passed, and ADR 0039 is Accepted. Track S remains research work and
+cannot alter that result.
 
 **Design:** `docs/superpowers/specs/2026-07-15-parser-release-qualification-campaign-design.md`
 (read it first). Two tracks: **Track R** (release qualification → ADR 0039) is the
 spine; **Track S** (neutral-study axes → the study, never gates ADR 0039) is a
-separable appendix. The gate moves to **Capture → Derive → Drift** (decision B):
-corpus-scale evidence is captured once on hinoki into a three-tier store
-(committed manifests + external content-addressed blobs + a rebinding verifier),
-and each predicate observation is a deterministic projection of the committed
-manifests, drift-tested — no hand-authored numbers.
+separable appendix. The gate uses **Capture → Derive → Drift** (decision B):
+committed manifests name captured content by logical identity, runtime
+configuration resolves the bytes, and each predicate observation is a
+drift-tested deterministic projection — no hand-authored numbers and no
+machine-local place in measurement identity.
 
 **Tech Stack:** Clojure (`abc.tools.parser-release-qualification`,
 `abc.tools.aat-parser-ir-compat`, Malli), Rust (`ab-aat-to-parser-ir audit-corpus`,
 `ab-check`), Python (capture/derivation harnesses, ruff), Nix checks, EDN/JSON
-manifests. Heavy captures/audits run on `hinoki.hyakutake-barbel.ts.net`;
-governance recapture follows `.superpowers/sdd/task-6-report.md`.
+manifests. Heavy captures/audits run where their declared capabilities are
+available; the current host is attempt context, not evidence identity.
+Governance recapture follows `.superpowers/sdd/task-6-report.md`.
 
 ## Global Constraints
 
@@ -42,14 +42,16 @@ governance recapture follows `.superpowers/sdd/task-6-report.md`.
   *coherence* is over the full `qualification_identity`; *admission* is over its
   nine-field match-key **projection**. Never conflate them.
 - **No corpus-scale artifacts in the repo.** Commit manifests + logical blob
-  identities (`sha256:<digest>` + length + media type) only; blobs live in the
-  external store, resolved by runtime config, streamed and re-hashed by the
-  verifier (Cross-Cutting Contract 2).
+  identities (`sha256:<digest>` + length + media type) only; runtime config
+  resolves the bytes and the verifier streams and re-hashes them (Cross-Cutting
+  Contract 2). Location and copy topology are not qualification facts.
 - **Immutable history.** Admission appends a *new* registry generation; never
   rewrite the existing `004deaf`/0.4.0 row or any committed manifest.
 - **Governance stays green.** Any ADR-evidence-closure touch (gate report,
-  citations, registry) is recaptured on hinoki; `just validate-migration` exits 0.
-- **Heavy work on hinoki.**
+  citations, registry) is recaptured through the real capture tool;
+  `just validate-migration` exits 0.
+- **Heavy work uses a capable runtime.** No hostname or filesystem layout enters
+  a candidate, qualification, or study identity.
 
 ## Cross-Cutting Contracts (own here; every focused plan depends on these)
 
@@ -81,19 +83,19 @@ function (all in `abc.tools.parser-release-qualification`, reusing
 - `admission-query` names its exact fields; it does **not** implicitly reuse
   `match-keys` without documenting the projection.
 
-### Contract 2 — Three-tier evidence and store lifecycle (fixes prior Suggestion 5)
+### Contract 2 — Closed evidence and runtime resolution (fixes prior Suggestion 5)
 
 - **Committed (in repo):** capture manifests carrying, per blob, a **logical
   identity** `{:sha256 "<digest>" :bytes <n> :media_type "…"}` — never a path;
   plus inventories, denominators (in explicit units), and small witnesses.
-- **External store (not in repo):** the corpus-scale blobs, addressed by their
-  `:sha256`. `artifact_root` is a **configured store locator resolved at runtime**,
-  distinct from the committed content identity — do not call it a content address.
-- **Rebinding verifier (hinoki):** resolves logical identities through explicit
+- **Runtime evidence root (not in identity):** the corpus-scale blobs, addressed
+  by their `:sha256`. `artifact_root` is a configured locator resolved at runtime,
+  distinct from the committed content identity.
+- **Rebinding verifier:** resolves logical identities through explicit
   runtime config, **streams and re-hashes** each blob (never trusts store
   metadata), and confirms `:bytes`. A blob **absent or hash-mismatched yields
-  `:unavailable`/error, never a derived observation.** Durability is a stated
-  retention guarantee of the store, not of the repo.
+  `:unavailable`/error, never a derived observation.** Copying the same closed
+  bytes to another root does not change the evidence.
 
 ## Dependency graph and the plan split (fixes prior Blocker 3)
 
@@ -111,7 +113,7 @@ reviewable systems and must land first.
 | P4A3 | `2026-07-16-parser-rq-diagnostic-gap-partition.md` | Versioned diagnostic authorization and R2 partition over ledger gaps | P4A2 |
 | P4B | `…-parser-rq-predicate-hardening.md` | R5 (predicates 4 & 5) instrument code | P0, P1 |
 | P5 | `…-parser-rq-admission-promotion.md` | Pin the final implementation commit; capture R1–R5; R6 admit; R7 recapture + gate + conditional ADR 0039 | P0–P4 (barrier) |
-| PS | `…-parser-rq-study-axes.md` (or its own spec) | Track S: S2, S1, S3, S4 | P0 contracts only; never gates Track R |
+| PS | `../specs/2026-07-20-parser-study-completion-design.md` | Track S: S2, S1, S3, S4; publication closure; later third-party retirement | P0 contracts only; never gates Track R |
 
 ```
 P0 ──┬── P1 ──┬── P4A1 ── P4A2 ── P4A3 ─┐
@@ -160,9 +162,8 @@ minimal implementation, independently testable tasks. Their entry contracts:
 - **P3 Resource — implemented and drift-checked (2026-07-17).** The selected
   authority is cgroup-v2 `memory.peak` for the complete per-work
   process tree inside a transient systemd user service, with swap prohibited,
-  a capability-based hinoki host identity, and separately disclosed attempt
-  context. ADR 0040 governs the predicate-set rotation; P5 still owns the
-  authoritative corpus recapture.
+  a capability contract and separately disclosed attempt context. ADR 0040
+  governs the predicate-set rotation.
 - **P4A1 Source claims** — characterizes and decomplects the live tiled
   classified-span stream, freezes the closed ABC role/disposition policy, and
   projects authenticated ledgers in the existing fused normalize/fold traversal.
@@ -176,43 +177,38 @@ minimal implementation, independently testable tasks. Their entry contracts:
   **Implementation status (2026-07-16): P4A1-P4A3 are implemented and
   drift-checked.** The committed production fixtures cover semantic recognition,
   opaque accountability, recovery gaps, diagnostic authorization, silent-gap
-  partitioning, and fail-closed identity mutations. P5 authoritative corpus
-  capture, registry admission, and ADR 0039 promotion have not started.
+  partitioning, and fail-closed identity mutations.
 - **P4B Predicate hardening** — predicate 4 discloses vacuity (envelope-completeness,
   settled); predicate 5 re-measured against the **pinned candidate** schema.
   **Implementation status (2026-07-17): implemented and drift-checked** with a
   bounded three-work Capture→Derive fixture that covers valid, authenticated-invalid,
   and no-output outcomes. P4B does not change the predicate set, authoritative
-  measurements, compatibility registry, or ADR 0039; P5 remains the authority for
-  final candidate capture, admission, and conditional promotion.
-- **P5 Admission + promotion** — pin the final implementation commit before any
-  authoritative capture (the binary bakes `self.rev`); require reproducible
-  executable bytes; pre-authorize one non-retryable volatile capture; and capture
-  R1–R5 for that identity. Then R6 runs
-  `ab-aat-to-parser-ir audit-corpus --compat-edn-out` and resolves strict admission:
-  an already byte-equal row is admitted, a missing row is appended exactly, and a
-  nine-field match with different evidence is a blocking conflict. R7 (barrier)
-  generates the bundle from committed manifests, verifies two storage failure
-  domains, drift-tests canonical projections, and conditionally promotes ADR 0039
-  (honest fail leaves it Proposed). The focused design is
+  measurements, compatibility registry, or ADR 0039.
+- **P5 Admission + promotion — complete (2026-07-20).** The immutable candidate
+  was reproducibly built, captured, admitted as an exact tuple, and evaluated
+  through the live gate. The provenance projection was corrected without
+  rewriting the frozen capture; the immutable evaluation was regenerated, all
+  nine predicates passed, and ADR 0039 was promoted to Accepted. The focused
+  design is
   `../specs/2026-07-17-parser-rq-admission-promotion-design.md`: it treats the
   immutable implementation commit as the candidate even though later evidence
   and governance commits advance repository HEAD, adds Capture -> Derive
-  authority for predicates 1/7/9, and sequences ADR 0040 resolution before any
-  conditional ADR 0039 promotion. The execution plan is
+  authority for predicates 1/7/9, and sequences ADR 0040 resolution before ADR
+  0039 promotion. The execution plan is
   `2026-07-17-parser-rq-admission-promotion.md`.
 - **PS Study axes** — S2 diagnostics (nearly ready: fixture + conformance scorer
-  exist), S1 fidelity oracle, S3 span accuracy (may end `non_comparable` for
+  exist), S1 fidelity authority and scoring, S3 span accuracy (may end `non_comparable` for
   span-less adapter lanes), S4 KM latency + frozen bootstrap (needs a
-  host-controlled per-repetition re-run; long pole). Same Rigor Bar; never gates
-  Track R.
+  controlled per-repetition re-run; long pole), followed by a closed research
+  publication and a separate third-party retirement change. See
+  `../specs/2026-07-20-parser-study-completion-design.md`. Same Rigor Bar; never
+  gates Track R.
 
 ## Self-review
 
-- The roadmap no longer overclaims: it is a program that decomposes into ten
-  independently testable focused plans, matching the reviewer's split and the
-  writing-plans rule. P0–P5 are written against settled predecessor contracts;
-  PS remains a later, non-gating study plan.
+- Track R is complete and ADR 0039 is Accepted. The remaining PS work is
+  explicitly research-only and ends in publication plus retirement of active
+  third-party parser dependencies.
 - Prior Blocker 1 fixed: admission is a *projection* (`admission-query` → nine
   match-keys) checked with `compatible?`, distinct from full-identity coherence;
   named functions, not implicit `match-keys` reuse.
@@ -221,7 +217,7 @@ minimal implementation, independently testable tasks. Their entry contracts:
 - Prior Suggestion 4 fixed: predicate 4 settled as envelope-completeness; recall is
   a separate future ADR that does not perturb this graph.
 - Prior Suggestion 5 fixed: Contract 2 specifies logical blob identity, runtime
-  resolution, absent/mismatch → `:unavailable`, streaming re-hash, retention;
-  `artifact_root` is a store locator, not a content address.
-- Integrity, immutability, evidence-class separation, hinoki, and governance
-  recapture are carried as Global Constraints and restated in each focused plan.
+  resolution, absent/mismatch → `:unavailable`, and streaming re-hash;
+  `artifact_root` is a runtime locator, not a content address or identity.
+- Integrity, immutability, evidence-class separation, runtime portability, and
+  governance recapture are carried as Global Constraints.

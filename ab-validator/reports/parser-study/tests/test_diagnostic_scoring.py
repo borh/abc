@@ -9,6 +9,7 @@ from diagnostics_scoring import (  # noqa: E402
     DiagnosticCaseScore,
     ExpectedDiagnostic,
     aggregate_cases,
+    project_inspect_v2_envelope,
     score_case,
 )
 
@@ -50,3 +51,10 @@ def test_aggregate_cases_adds_each_field_without_changing_order_semantics():
     totals = aggregate_cases([exact, missing])
     assert totals.presence == 1
     assert totals.false_negative == 1
+
+
+def test_inspect_v2_projects_the_real_kind_field_as_the_stable_code():
+    payload = b"""{"schemaVersion":2,"data":[{"kind":"unmatched_close","severity":"error","source":"source","span":{"start":18,"end":21}}]}"""
+    assert project_inspect_v2_envelope(payload) == [
+        ActualDiagnostic("unmatched_close", "error", 18, 21)
+    ]

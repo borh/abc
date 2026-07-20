@@ -42,29 +42,29 @@ def _load_envelope(payload: bytes, schema_version: int, label: str) -> list[dict
     return value["data"]
 
 
-def _project(entries: list[dict]) -> list[ActualDiagnostic]:
+def _project(entries: list[dict], code_key: str) -> list[ActualDiagnostic]:
     projected = []
     for entry in entries:
         try:
             projected.append(
                 ActualDiagnostic(
-                    code=entry["code"],
+                    code=entry[code_key],
                     severity=entry["severity"],
                     span_start=entry["span"]["start"],
                     span_end=entry["span"]["end"],
                 )
             )
         except (KeyError, TypeError) as error:
-            raise ValueError(f"entry missing code/severity/span: {entry!r}") from error
+            raise ValueError(f"entry missing {code_key}/severity/span: {entry!r}") from error
     return projected
 
 
 def project_schema3_envelope(payload: bytes) -> list[ActualDiagnostic]:
-    return _project(_load_envelope(payload, 3, "diagnostics"))
+    return _project(_load_envelope(payload, 3, "diagnostics"), "code")
 
 
 def project_inspect_v2_envelope(payload: bytes) -> list[ActualDiagnostic]:
-    return _project(_load_envelope(payload, 2, "inspect"))
+    return _project(_load_envelope(payload, 2, "inspect"), "kind")
 
 
 def _overlaps(expected: ExpectedDiagnostic, actual: ActualDiagnostic) -> bool:

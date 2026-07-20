@@ -1,27 +1,23 @@
 # ADR 0039: Custom Parser Release Qualification
 
-Status: Proposed
-Date: 2026-07-15
+Status: Accepted
+Date: 2026-07-20
+Accepted: 2026-07-20
 Validation scope: smoke-corpus
-Release authority: development
-Depends on: ADR 0002, ADR 0023, ADR 0030, ADR 0038
+Release authority: publication
+Depends on: ADR 0002, ADR 0023, ADR 0030, ADR 0038, ADR 0040, ADR 0041
 
 ## Implementation Status
 
-Proposed. The release-qualification gate machinery is committed and executable:
-a pinned qualification corpus (`data/parser-release-qualification-corpus.edn`),
-a predeclared predicate set with exact thresholds fixed before any run
-(`data/parser-release-qualification-predicates.edn`), and a
-measurement-agnostic evaluator (`abc.tools.parser-release-qualification`) that
-emits, per predicate, exact observed and expected values and a derived verdict.
-
-This ADR STAYS Proposed until every release predicate verdict is `pass` from
-captured current evidence. The captured run
-(`docs/reports/parser-release-qualification-report.json`) does not pass: several
-predicates have no committed release instrument and are reported `unavailable`
-(never `pass`), and the running parser build is not the admitted tuple (below).
-Per the promotion rule these outcomes keep the gate at `not-qualified` and this
-ADR at Proposed.
+Accepted. Candidate
+`sha256:15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab`
+has one authorized immutable capture under qualification identity
+`sha256:6f365a44b975465943da88d0e3fe4f123672e00913285a3e998ab465bc79edca`.
+Its nine predicate verdicts pass, coherence is `ok`, and the exact tuple is
+admitted by a fresh 17,886-work conversion audit with zero failed files. The
+promotion verifier authenticates the reproducible executable provenance,
+capture membership and bytes, current-registry evaluation, canonical
+projections, and Accepted ADR 0040/0041 dependencies.
 
 ## Context
 
@@ -50,19 +46,11 @@ comparison/neutral citation is structurally incapable of qualifying a release.
 
 ### Admission resolution for the release candidate (ADR 0023)
 
-`adapter_version` bakes the source revision into the exact-match registry
-coordinate (`AB_AOZORA_GIT_REV = self.rev`, baked by `build.rs`). The admitted
-row pins `git 004deaf…`. The release candidate at the current branch HEAD is a
-different source revision (the `ab-aozora` crate changed after `004deaf`, e.g.
-the C5 identity-bump and clippy/fmt commits), so its baked git coordinate is not
-`004deaf`. The release candidate is therefore NOT the admitted tuple, and the
-old admission does not silently qualify current HEAD. Admitting the HEAD build
-requires a new exact ADR-0023 registry row backed by a fresh full-corpus
-conversion audit (`ab-aat-to-parser-ir audit-corpus` over the aozora-full
-corpus), which is a separate measurement campaign from this smoke-scale
-qualification corpus and is not performed here. Until that row exists, admission
-for the HEAD build is `unavailable`, which independently keeps this gate
-`not-qualified`.
+The candidate's exact nine-field admission query is present in
+`data/aat-parser-ir-compatibility.edn`. The immutable admission report records a
+fresh full-corpus conversion audit of 17,886 works: 17,886 succeeded and zero
+failed. Full-entry conflict checking and nine-field membership both resolve to
+`admitted`; no historical registry row was rewritten.
 
 ## Decision
 
@@ -77,13 +65,13 @@ for a must-pass predicate.
 
 ## Consequences
 
-The gate is reproducible and honest about its own limits: it reports exact
-observed values where a committed instrument exists and `unavailable` (with the
-named blocker) where one does not, instead of fabricating a number. Weakening a
-failing or unavailable predicate to force a pass is prohibited; changing a
-predicate requires a separately evidenced ADR. Because the current captured run
-is `not-qualified`, the custom parser continues under development release
-authority without publication authority (the ADR 0038 safe fallback).
+The custom parser is qualified for publication for the exact committed
+candidate, qualification identity, predicate set, corpus, and admitted tuple.
+This authority does not float with branch HEAD: any executable, parser revision,
+schema, mapping, corpus, predicate, or instrument change creates a different
+candidate or qualification identity and requires new evidence. The immutable
+P5 capture remains the authority for this decision; comparison and neutral
+third-party-parser evidence remain non-release evidence.
 
 ## Acceptance Criteria
 
@@ -93,14 +81,16 @@ authority without publication authority (the ADR 0038 safe fallback).
 - **ADR-0039-C4 — structural-invariant:** Comparison and neutral citations are structurally rejected as release evidence through the `abc.tools.parser-evidence` release class boundary. Evidence: `test/abc/tools/parser_release_qualification_test.clj`.
 - **ADR-0039-C5 — operational-behavior:** The gate is release-qualified only when every predicate verdict is `pass` for an admitted build; otherwise it stays `not-qualified` and this ADR stays Proposed. Evidence: `test/abc/tools/parser_release_qualification_test.clj`.
 
-## Future Verification
+## Evidence
 
-Promotion to Accepted requires a full-corpus admission row for the HEAD build
-under ADR 0023 and a captured qualification run whose every predicate verdict is
-`pass`. Committed release instruments for the currently `unavailable`
-predicates (source-span coverage, silent drops, publication structure, and
-per-work memory) are required before those predicates can move off
-`unavailable`.
+The canonical gate projection is
+`docs/reports/parser-release-qualification-report.json`. The immutable campaign
+root is
+`docs/reports/parser-rq/runs/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab/`.
+The registered bounded contract run is
+`docs/evidence/adr-runs/parser-rq-instrument-bindings.json`; it covers predicate
+identity, exact evaluation, release-evidence classification, authorization,
+capture/evaluation resolution, and promotion failure semantics.
 
 ## Rollback
 

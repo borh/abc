@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-study-axis-evidence.schema.json",
+  "title": "Soranoha parser study axis evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "schema_version", "study_id", "candidate", "axis", "measurement_mode", "parser_revision", "adapter_revision", "corpus_hash", "required_inputs", "metrics", "case_witnesses"],
+  "allOf": [
+    {
+      "if": {"properties": {"measurement_mode": {"const": "native"}}, "required": ["measurement_mode"]},
+      "then": {"properties": {"adapter_revision": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"measurement_mode": {"const": "adapter_normalized"}}, "required": ["measurement_mode"]},
+      "then": {"properties": {"adapter_revision": {"type": "string", "minLength": 1}}}
+    },
+    {
+      "if": {"properties": {"candidate": {"enum": ["aozora-parser.js", "ab-aozora"]}}, "required": ["candidate"]},
+      "then": {"properties": {"measurement_mode": {"const": "native"}}}
+    }
+  ],
+  "properties": {
+    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-study-axis-evidence-v1"},
+    "schema_version": {"const": 1},
+    "study_id": {"const": "aozora-parser-neutral-comparison-2026-07"},
+    "candidate": {"$ref": "#/$defs/candidate"},
+    "axis": {"$ref": "#/$defs/axis"},
+    "measurement_mode": {"$ref": "#/$defs/measurement_mode"},
+    "parser_revision": {"type": "string", "minLength": 1},
+    "adapter_revision": {"type": ["string", "null"]},
+    "corpus_hash": {"$ref": "#/$defs/sha256"},
+    "required_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/required_input"},
+      "allOf": [
+        {"contains": {"properties": {"role": {"const": "source_markup"}, "artifact": {"const": "corpus_source_snapshot"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "source_markup"}, "artifact": {"const": "robustness_fixture"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "source_markup"}, "artifact": {"const": "diagnostic_fixture"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "source_markup"}, "artifact": {"const": "performance_workset"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "independent_reference"}, "artifact": {"const": "construct_inventory"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "independent_reference"}, "artifact": {"const": "fidelity_reference"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "independent_reference"}, "artifact": {"const": "semantic_span_inventory"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "independent_reference"}, "artifact": {"const": "repository_metadata"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "independent_reference"}, "artifact": {"const": "package_build_metadata"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "independent_reference"}, "artifact": {"const": "license_inventory"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "third_party_capture"}, "artifact": {"const": "corpus_parse_capture"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "third_party_capture"}, "artifact": {"const": "malformed_fixture_capture"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "third_party_capture"}, "artifact": {"const": "diagnostic_fixture_capture"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "third_party_capture"}, "artifact": {"const": "performance_capture"}}, "required": ["role", "artifact"]}, "minContains": 0, "maxContains": 1}
+      ]
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/metric"},
+      "allOf": [
+        {"contains": {"properties": {"metric": {"const": "type_coverage"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "occurrence_coverage"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "work_prevalence"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "visible_text_byte_agreement"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "structure_agreement"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "ruby_exact"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "gaiji_exact"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "note_exact"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "corpus_parse_completion"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "malformed_fixture_outcomes"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "diagnostic_presence"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "stable_code"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "severity"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "relevant_span"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "false_positive"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "false_negative"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "exact_spans"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "overlapping_spans"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "covered_source_bytes"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "invalid_spans"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "wall_time"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "peak_rss"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "throughput"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "timeouts"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "median"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "p95"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "bootstrap_interval"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "last_release_or_commit"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "bus_factor"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "issue_release_cadence"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "reproducible_build"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "locked_dependencies"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "runtime_requirements"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "artifact_size"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "project_license"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "bundled_dependency_licenses"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "redistribution_constraints"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1},
+        {"contains": {"properties": {"metric": {"const": "unknown_or_conflict"}}, "required": ["metric"]}, "minContains": 0, "maxContains": 1}
+      ]
+    },
+    "case_witnesses": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/case_witness"}
+    }
+  },
+  "$defs": {
+    "candidate": {"enum": ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3", "aozora-parser.js", "ab-aozora"]},
+    "axis": {"enum": ["construct_coverage", "fidelity", "robustness", "diagnostics", "spans", "performance", "maintenance", "packaging", "license"]},
+    "measurement_mode": {"enum": ["native", "adapter_normalized"]},
+    "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "safe_locator": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"
+    },
+    "content_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "bytes", "media_type"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "media_type": {"type": "string", "minLength": 1}
+      }
+    },
+    "required_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "artifact", "state"],
+      "properties": {
+        "role": {"enum": ["source_markup", "independent_reference", "third_party_capture"]},
+        "artifact": {"type": "string", "minLength": 1},
+        "state": {"enum": ["present", "absent"]},
+        "content_ref": {"$ref": "#/$defs/content_ref"},
+        "locator": {"$ref": "#/$defs/safe_locator"},
+        "reason": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {"properties": {"role": {"const": "source_markup"}, "artifact": {"enum": ["corpus_source_snapshot", "robustness_fixture", "diagnostic_fixture", "performance_workset"]}}},
+            {"properties": {"role": {"const": "independent_reference"}, "artifact": {"enum": ["construct_inventory", "fidelity_reference", "semantic_span_inventory", "repository_metadata", "package_build_metadata", "license_inventory"]}}},
+            {"properties": {"role": {"const": "third_party_capture"}, "artifact": {"enum": ["corpus_parse_capture", "malformed_fixture_capture", "diagnostic_fixture_capture", "performance_capture"]}}}
+          ]
+        },
+        {
+          "if": {"properties": {"state": {"const": "present"}}, "required": ["state"]},
+          "then": {"required": ["content_ref", "locator"], "not": {"required": ["reason"]}},
+          "else": {"required": ["reason"], "not": {"anyOf": [{"required": ["content_ref"]}, {"required": ["locator"]}]}}
+        }
+      ]
+    },
+    "metric_value": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": {"kind": {"const": "count"}, "value": {"type": "integer", "minimum": 0}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "numerator", "denominator"], "properties": {"kind": {"const": "ratio"}, "numerator": {"type": "integer", "minimum": 0}, "denominator": {"type": "integer", "minimum": 0}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": {"kind": {"const": "bytes"}, "value": {"type": "integer", "minimum": 0}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": {"kind": {"const": "seconds"}, "value": {"type": "number", "minimum": 0}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": {"kind": {"const": "boolean"}, "value": {"type": "boolean"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": {"kind": {"const": "text"}, "value": {"type": "string"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "lower", "upper", "unit"], "properties": {"kind": {"const": "interval"}, "lower": {"type": "number"}, "upper": {"type": ["number", "null"]}, "unit": {"type": "string", "minLength": 1}}}
+      ]
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "disposition"],
+      "properties": {
+        "metric": {"type": "string", "minLength": 1},
+        "disposition": {"enum": ["measured", "non_comparable", "unavailable", "failed"]},
+        "value": {"$ref": "#/$defs/metric_value"},
+        "reason": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"disposition": {"const": "measured"}}, "required": ["disposition"]},
+          "then": {"required": ["value"], "not": {"required": ["reason"]}},
+          "else": {"required": ["reason"], "not": {"required": ["value"]}}
+        }
+      ]
+    },
+    "case_witness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "process_status", "returncode", "projection_status", "diagnostic_count", "relevant_diagnostic_count", "false_positive_count"],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "process_status": {"enum": ["exited", "timed_out", "spawn_failed"]},
+        "returncode": {"type": ["integer", "null"]},
+        "projection_status": {"enum": ["usable", "not_configured", "invalid"]},
+        "diagnostic_count": {"type": ["integer", "null"], "minimum": 0},
+        "relevant_diagnostic_count": {"type": ["integer", "null"], "minimum": 0},
+        "false_positive_count": {"type": ["integer", "null"], "minimum": 0}
+      }
+    }
+  }
+}

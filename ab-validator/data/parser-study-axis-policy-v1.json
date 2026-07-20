@@ -1,0 +1,78 @@
+{
+  "schema_id": "https://w3id.org/abc/schemas/parser-study-axis-policy-v1",
+  "schema_version": 1,
+  "policy_id": "aozora-parser-neutral-comparison-axis-policy-v1",
+  "axes": [
+    {
+      "id": "construct_coverage",
+      "metrics": ["type_coverage", "occurrence_coverage", "work_prevalence"],
+      "required_inputs": [
+        {"role": "source_markup", "artifact": "corpus_source_snapshot"},
+        {"role": "independent_reference", "artifact": "construct_inventory"}
+      ]
+    },
+    {
+      "id": "fidelity",
+      "metrics": ["visible_text_byte_agreement", "structure_agreement", "ruby_exact", "gaiji_exact", "note_exact"],
+      "required_inputs": [
+        {"role": "source_markup", "artifact": "corpus_source_snapshot"},
+        {"role": "independent_reference", "artifact": "fidelity_reference"}
+      ]
+    },
+    {
+      "id": "robustness",
+      "metrics": ["corpus_parse_completion", "malformed_fixture_outcomes"],
+      "required_inputs": [
+        {"role": "source_markup", "artifact": "corpus_source_snapshot"},
+        {"role": "third_party_capture", "artifact": "corpus_parse_capture"},
+        {"role": "source_markup", "artifact": "robustness_fixture"},
+        {"role": "third_party_capture", "artifact": "malformed_fixture_capture"}
+      ]
+    },
+    {
+      "id": "diagnostics",
+      "metrics": ["diagnostic_presence", "stable_code", "severity", "relevant_span", "false_positive", "false_negative"],
+      "required_inputs": [
+        {"role": "source_markup", "artifact": "diagnostic_fixture"},
+        {"role": "third_party_capture", "artifact": "diagnostic_fixture_capture"}
+      ]
+    },
+    {
+      "id": "spans",
+      "metrics": ["exact_spans", "overlapping_spans", "covered_source_bytes", "invalid_spans"],
+      "required_inputs": [
+        {"role": "source_markup", "artifact": "corpus_source_snapshot"},
+        {"role": "independent_reference", "artifact": "semantic_span_inventory"}
+      ]
+    },
+    {
+      "id": "performance",
+      "metrics": ["wall_time", "peak_rss", "throughput", "timeouts", "median", "p95", "bootstrap_interval"],
+      "required_inputs": [
+        {"role": "source_markup", "artifact": "performance_workset"},
+        {"role": "third_party_capture", "artifact": "performance_capture"}
+      ]
+    },
+    {
+      "id": "maintenance",
+      "metrics": ["last_release_or_commit", "bus_factor", "issue_release_cadence"],
+      "required_inputs": [
+        {"role": "independent_reference", "artifact": "repository_metadata"}
+      ]
+    },
+    {
+      "id": "packaging",
+      "metrics": ["reproducible_build", "locked_dependencies", "runtime_requirements", "artifact_size"],
+      "required_inputs": [
+        {"role": "independent_reference", "artifact": "package_build_metadata"}
+      ]
+    },
+    {
+      "id": "license",
+      "metrics": ["project_license", "bundled_dependency_licenses", "redistribution_constraints", "unknown_or_conflict"],
+      "required_inputs": [
+        {"role": "independent_reference", "artifact": "license_inventory"}
+      ]
+    }
+  ]
+}

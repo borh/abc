@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-study-evidence-index.schema.json",
+  "title": "Soranoha parser study evidence index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "schema_version", "study_id", "records"],
+  "properties": {
+    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-study-evidence-index-v1"},
+    "schema_version": {"const": 1},
+    "study_id": {"const": "aozora-parser-neutral-comparison-2026-07"},
+    "records": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidate", "axis", "measurement_mode", "record_ref", "locator"],
+        "properties": {
+          "candidate": {"enum": ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3", "aozora-parser.js", "ab-aozora"]},
+          "axis": {"enum": ["construct_coverage", "fidelity", "robustness", "diagnostics", "spans", "performance", "maintenance", "packaging", "license"]},
+          "measurement_mode": {"enum": ["native", "adapter_normalized"]},
+          "record_ref": {"$ref": "#/$defs/content_ref"},
+          "locator": {"$ref": "#/$defs/safe_locator"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "safe_locator": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"},
+    "content_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "bytes", "media_type"],
+      "properties": {
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "media_type": {"const": "application/json"}
+      }
+    }
+  }
+}

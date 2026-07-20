@@ -11,6 +11,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from diagnostics_scoring import project_schema3_envelope
+
 
 @dataclass
 class Adapter:
@@ -160,24 +162,17 @@ def run_diagnostics(adapter: Adapter, source: str) -> tuple[list | None, str | N
     if proc.returncode != 0:
         return None, proc.stderr.strip() or f"exit {proc.returncode}"
     try:
-        value = json.loads(proc.stdout)
-    except json.JSONDecodeError as error:
-        return None, f"invalid JSON: {error}"
-    if value.get("schemaVersion") != 3 or not isinstance(value.get("data"), list):
-        return None, "unsupported diagnostics envelope"
-    projected = []
-    for entry in value["data"]:
-        try:
-            projected.append(
-                {
-                    "code": entry["code"],
-                    "severity": entry["severity"],
-                    "span": {"start": entry["span"]["start"], "end": entry["span"]["end"]},
-                }
-            )
-        except (KeyError, TypeError):
-            return None, f"entry missing code/severity/span: {entry!r}"
-    return projected, None
+        projected = project_schema3_envelope(proc.stdout.encode("utf-8"))
+    except ValueError as error:
+        return None, str(error)
+    return [
+        {
+            "code": entry.code,
+            "severity": entry.severity,
+            "span": {"start": entry.span_start, "end": entry.span_end},
+        }
+        for entry in projected
+    ], None
 
 
 def project_aat(blocks: list[dict[str, Any]]) -> tuple[list[str], set[str]]:

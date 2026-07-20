@@ -64,6 +64,12 @@ def test_mismatching_span_fails_at_must(tmp_path):
     assert row.status == "fail"
 
 
+def test_near_overlap_remains_an_exact_list_failure(tmp_path):
+    overlap = dict(FULL, span={"start": 2, "end": 4})
+    row = scorer.evaluate(fake_diag_adapter(tmp_path, [overlap]), vector(WANT))
+    assert row.status == "fail"
+
+
 def test_missing_code_key_fails(tmp_path):
     entry = {k: v for k, v in FULL.items() if k != "code"}
     row = scorer.evaluate(fake_diag_adapter(tmp_path, [entry]), vector(WANT))

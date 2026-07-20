@@ -60,6 +60,16 @@
     :candidate_tree_clean :evidence_base_git_rev :evidence_tree_clean
     :corpus_snapshot_hash :corpus_list_hash})
 
+(def executable-provenance-schema-id
+  "https://w3id.org/abc/schemas/parser-rq-executable-provenance.schema.json")
+
+(def executable-provenance-envelope-keys
+  #{:schema_id :schema_version :candidate_ref :qualification_identity_ref})
+
+(def bound-executable-provenance-keys
+  #{:schema_id :schema_version :candidate_ref :qualification_identity_ref
+    :provenance_core_ref :status :builds :executables})
+
 (defn- canonical-value [value]
   (walk/postwalk (fn [x]
                    (cond
@@ -113,9 +123,12 @@
 (defn receipt-ref [receipt]
   (content-ref receipt :receipt_ref))
 
+(defn candidate-provenance-value [provenance]
+  (apply dissoc provenance executable-provenance-envelope-keys))
+
 (defn executable-provenance-ref [provenance]
   (-> provenance
-      (dissoc :candidate_ref :qualification_identity_ref)
+      candidate-provenance-value
       canonical-value
       hash/sha256-json-jcs
       hash/format-sha256))
@@ -633,17 +646,24 @@
 
 (defn verify-provenance-errors [candidate provenance]
   (cond-> (vec (provenance-errors provenance))
+    (or (not= bound-executable-provenance-keys (set (keys provenance)))
+        (not= executable-provenance-schema-id (:schema_id provenance))
+        (not= "2.0.0" (:schema_version provenance)))
+    (conj "bound provenance envelope is invalid")
+
+    (not= (:provenance_core_ref provenance)
+          (provenance-core-ref provenance))
+    (conj "bound provenance core does not authenticate its evidence")
+
     (not= (:executable_provenance_ref candidate)
           (executable-provenance-ref provenance))
     (conj "executable provenance does not authenticate the candidate")
 
-    (and (contains? provenance :candidate_ref)
-         (not= (:candidate_ref candidate) (:candidate_ref provenance)))
+    (not= (:candidate_ref candidate) (:candidate_ref provenance))
     (conj "executable provenance candidate_ref does not match")
 
-    (and (contains? provenance :qualification_identity_ref)
-         (not= (:qualification_identity_ref candidate)
-               (:qualification_identity_ref provenance)))
+    (not= (:qualification_identity_ref candidate)
+          (:qualification_identity_ref provenance))
     (conj "executable provenance qualification identity does not match")))
 
 (defn evidence-integrity-errors

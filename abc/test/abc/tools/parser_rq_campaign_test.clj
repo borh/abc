@@ -33,22 +33,46 @@
 (defn with-ref [value field ref-fn]
   (assoc value field (ref-fn value)))
 
+(def provenance-proof
+  (with-ref
+    {:status :reproducible
+     :builds [{:build_id "build-a"
+               :store_uri "local?root=/tmp/build-a"
+               :output_ref sha
+               :build_record_ref sha}
+              {:build_id "build-b"
+               :store_uri "local?root=/tmp/build-b"
+               :output_ref sha
+               :build_record_ref sha-b}]
+     :executables
+     [{:name "ab-aozora"
+       :nix_output "/nix/store/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-parser-rq"
+       :nar_hash sha
+       :sha256 sha
+       :bytes 1
+       :adapter "ab-aozora"
+       :adapter_version "candidate"
+       :parser_git_rev (:parser_git_rev qualification-identity)
+       :argv_template ["{executable}" "{source}"]}]}
+    :provenance_core_ref campaign/provenance-core-ref))
+
 (def candidate
   (with-ref {:schema_id "https://w3id.org/abc/schemas/parser-rq-candidate.schema.json"
              :schema_version "1.0.0"
-             :qualification_identity_ref (qualification/qualification-identity-ref qualification-identity)
+             :qualification_identity_ref
+             (qualification/qualification-identity-ref qualification-identity)
              :qualification_identity qualification-identity
-             :executable_provenance_ref sha}
+             :executable_provenance_ref
+             (campaign/executable-provenance-ref provenance-proof)}
     :candidate_ref campaign/candidate-ref))
 
 (def provenance
-  (with-ref
-    {:schema_id "https://w3id.org/abc/schemas/parser-rq-executable-provenance.schema.json"
-     :schema_version "2.0.0"
-     :candidate_ref (:candidate_ref candidate)
-     :qualification_identity_ref (:qualification_identity_ref candidate)
-     :status :reproducible}
-    :provenance_core_ref campaign/provenance-core-ref))
+  (assoc provenance-proof
+         :schema_id
+         "https://w3id.org/abc/schemas/parser-rq-executable-provenance.schema.json"
+         :schema_version "2.0.0"
+         :candidate_ref (:candidate_ref candidate)
+         :qualification_identity_ref (:qualification_identity_ref candidate)))
 
 (def graph
   (with-ref {:schema_version "abc/parser-rq-production-graph/v1"}
@@ -189,6 +213,22 @@
 
 (declare write-edn! write-canonical-json!)
 
+(defn- workspace-root []
+  (loop [path (fs/absolutize ".")]
+    (if (and (fs/exists? (fs/file path "justfile"))
+             (fs/directory? (fs/file path "abc"))
+             (fs/directory? (fs/file path "ab-validator")))
+      path
+      (if-let [parent (fs/parent path)]
+        (recur parent)
+        (throw (ex-info "workspace root is not reachable" {:start (str (fs/absolutize "."))}))))))
+
+(defn- provenance-script []
+  (if-let [configured (System/getenv "PARSER_RQ_PROVENANCE_SCRIPT")]
+    (fs/path configured)
+    (fs/file (workspace-root) "ab-validator" "reports" "parser-ir"
+             "parser-rq-campaign-provenance.py")))
+
 (deftest content-references-ignore-only-their-self-field
   (doseq [[value field ref-fn] [[candidate :candidate_ref campaign/candidate-ref]
                                 [receipt :readiness_receipt_ref
@@ -196,6 +236,45 @@
                                 [authorization :authorization_ref campaign/authorization-ref]]]
     (is (= (get value field) (ref-fn value)))
     (is (not= (get value field) (ref-fn (assoc value :schema_version "changed"))))))
+
+(deftest candidate-provenance-projection-unifies-proof-and-bound-record
+  (is (= provenance-proof
+         (campaign/candidate-provenance-value provenance-proof)))
+  (is (= (:executable_provenance_ref candidate)
+         (campaign/executable-provenance-ref provenance)))
+  (is (not= (:executable_provenance_ref candidate)
+            (campaign/executable-provenance-ref
+             (assoc-in provenance [:executables 0 :bytes] 2)))))
+
+(deftest bound-provenance-envelope-and-core-are-authenticated
+  (is (= [] (campaign/verify-provenance-errors candidate provenance)))
+  (doseq [changed [(assoc provenance :schema_version "changed")
+                   (assoc provenance :schema_id "https://example.invalid/provenance")
+                   (assoc provenance :extra true)]]
+    (is (some #(re-find #"bound provenance envelope" %)
+              (campaign/verify-provenance-errors candidate changed))))
+  (is (some #(re-find #"provenance core" %)
+            (campaign/verify-provenance-errors
+             candidate (assoc-in provenance [:executables 0 :bytes] 2)))))
+
+(deftest python-bound-provenance-authenticates-as-the-unbound-proof
+  (let [root (fs/create-temp-dir {:prefix "parser-rq-bound-provenance"})
+        proof-path (fs/file root "proof.json")
+        bound-path (fs/file root "bound.json")
+        script (provenance-script)]
+    (write-canonical-json! proof-path provenance-proof)
+    (let [{:keys [exit err]}
+          (shell/sh "python3" (str script) "bind-provenance"
+                    "--proof" (str proof-path)
+                    "--candidate-ref" (:candidate_ref candidate)
+                    "--qualification-identity-ref"
+                    (:qualification_identity_ref candidate)
+                    "--out" (str bound-path))
+          bound (walk/keywordize-keys (files/read-json bound-path))]
+      (is (= 0 exit) err)
+      (is (= (:executable_provenance_ref candidate)
+             (campaign/executable-provenance-ref bound)))
+      (is (= [] (campaign/verify-provenance-errors candidate bound))))))
 
 (deftest authorization-is-one-shot-candidate-bound-and-time-bounded
   (is (= [] (campaign/verify-authorization candidate provenance graph receipt authorization
@@ -234,22 +313,6 @@
               verified [(assoc blob :bytes 11)])))
     (is (seq (campaign/evidence-integrity-errors
               (assoc-in verified [:blobs 0 :rehash] sha-b) [blob])))))
-
-(defn- workspace-root []
-  (loop [path (fs/absolutize ".")]
-    (if (and (fs/exists? (fs/file path "justfile"))
-             (fs/directory? (fs/file path "abc"))
-             (fs/directory? (fs/file path "ab-validator")))
-      path
-      (if-let [parent (fs/parent path)]
-        (recur parent)
-        (throw (ex-info "workspace root is not reachable" {:start (str (fs/absolutize "."))}))))))
-
-(defn- provenance-script []
-  (if-let [configured (System/getenv "PARSER_RQ_PROVENANCE_SCRIPT")]
-    (fs/path configured)
-    (fs/file (workspace-root) "ab-validator" "reports" "parser-ir"
-             "parser-rq-campaign-provenance.py")))
 
 (deftest python-evidence-receipt-authenticates-in-clojure
   (let [root (fs/create-temp-dir {:prefix "parser-rq-evidence-integrity"})

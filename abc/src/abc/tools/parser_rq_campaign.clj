@@ -133,7 +133,7 @@
       hash/sha256-json-jcs
       hash/format-sha256))
 
-(declare provenance-errors)
+(declare provenance-errors verify-provenance-errors)
 
 (defn build-candidate [repo parser-git-rev provenance]
   (let [abc-root (fs/file repo "abc")
@@ -339,6 +339,7 @@
   (vec
    (concat
     (authorization-record-errors candidate authorization)
+    (verify-provenance-errors candidate provenance)
     (verify-readiness-receipt candidate provenance graph receipt)
     (when (not= (:readiness_receipt_ref receipt)
                 (:readiness_receipt_ref authorization))
@@ -716,7 +717,7 @@
 
 (defn- promotion-value-errors
   [{:keys [candidate authorization capture evaluation current_registry_ref
-           qualification_report provenance evidence_integrity adr_0040_status
+           qualification_report evidence_integrity adr_0040_status
            adr_0041_status capture_count canonical_equal manifest_blobs]}]
   (let [verdicts (:predicate_verdicts qualification_report)
         ids (mapv :predicate_id verdicts)]
@@ -748,9 +749,6 @@
           (not= (count predicate-ids) (count ids))
           (some #(not (named= :pass (:verdict %))) verdicts))
       (conj "qualification report does not contain exactly nine passing predicates")
-
-      (seq (provenance-errors provenance))
-      (into (provenance-errors provenance))
 
       (seq (evidence-integrity-receipt-errors
             evidence_integrity (:candidate_ref candidate)
@@ -935,16 +933,12 @@
           (read-json-value (fs/file capture-root "evidence-integrity-receipt.json"))
           manifest-blobs (vec (vals (:members capture-index)))
           binding-errors
-          (cond-> []
+          (cond-> (vec (verify-provenance-errors candidate provenance))
             (not= candidate_ref (:candidate_ref candidate))
             (conj "candidate path does not match its authenticated candidate_ref")
 
             (not= candidate_ref (candidate-ref candidate))
-            (conj "candidate_ref does not authenticate the committed candidate")
-
-            (not= (:executable_provenance_ref candidate)
-                  (executable-provenance-ref provenance))
-            (conj "executable provenance does not authenticate the candidate"))
+            (conj "candidate_ref does not authenticate the committed candidate"))
 
           derived {:candidate candidate
                    :authorization authorization
@@ -952,7 +946,6 @@
                    :evaluation evaluation-index
                    :current_registry_ref registry-ref
                    :qualification_report qualification-report
-                   :provenance provenance
                    :evidence_integrity evidence-integrity
                    :manifest_blobs manifest-blobs
                    :adr_0040_status (adr-status adr_0040_path)

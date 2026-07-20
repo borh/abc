@@ -288,6 +288,13 @@
     (is (seq (campaign/verify-authorization candidate provenance graph receipt bad
                                             "2026-07-17T00:30:00Z" true)))))
 
+(deftest authorization-rejects-candidate-provenance-reference-mismatch
+  (let [errors (campaign/verify-authorization-record
+                (assoc candidate :executable_provenance_ref sha-b)
+                provenance graph receipt authorization)]
+    (is (some #{"executable provenance does not authenticate the candidate"}
+              errors))))
+
 (deftest readiness-and-authorization-bind-no-runtime-place
   (is (empty? (campaign/verify-authorization-record
                candidate provenance graph receipt authorization)))
@@ -407,10 +414,12 @@
                     :nar_hash sha :sha256 sha :bytes 1 :adapter "ab-aozora"
                     :adapter_version "v1" :parser_git_rev revision
                     :argv_template ["{executable}"]}
-        provenance {:status :reproducible
-                    :builds [{:build_id "build-a" :output_ref sha}
-                             {:build_id "build-b" :output_ref sha}]
-                    :executables [executable]}
+        provenance (with-ref
+                     {:status :reproducible
+                      :builds [{:build_id "build-a" :output_ref sha}
+                               {:build_id "build-b" :output_ref sha}]
+                      :executables [executable]}
+                     :provenance_core_ref campaign/provenance-core-ref)
         _ (write-edn! (fs/file root "abc/data/parser-release-qualification-corpus.edn")
                       (edn/read-string
                        (slurp "data/parser-release-qualification-corpus.edn")))
@@ -443,11 +452,12 @@
                           (with-ref :readiness_receipt_ref
                             campaign/readiness-receipt-ref))
         provenance-value (assoc provenance
+                                :schema_id campaign/executable-provenance-schema-id
+                                :schema_version "2.0.0"
                                 :candidate_ref (:candidate_ref value)
                                 :qualification_identity_ref
                                 (:qualification_identity_ref value)
-                                :provenance_core_ref
-                                (campaign/provenance-core-ref provenance))
+                                :provenance_core_ref (:provenance_core_ref provenance))
         authorization-value (campaign/build-authorization
                              value receipt-value 1 "2026-07-17T00:00:00Z"
                              "2026-07-17T01:00:00Z")]
@@ -559,14 +569,22 @@
                     :nar_hash sha :sha256 sha :bytes 1 :adapter "ab-aozora"
                     :adapter_version "v1" :parser_git_rev (apply str (repeat 40 "a"))
                     :argv_template ["{executable}"]}
-        provenance {:status :reproducible
-                    :builds [{:build_id "build-a" :output_ref sha}
-                             {:build_id "build-b" :output_ref sha}]
-                    :executables [executable]}
-        provenance-ref (hash/format-sha256
-                        (hash/sha256-json-jcs (json-value provenance)))
-        candidate-value (with-ref (assoc candidate :executable_provenance_ref provenance-ref)
+        provenance-proof (with-ref
+                           {:status :reproducible
+                            :builds [{:build_id "build-a" :output_ref sha}
+                                     {:build_id "build-b" :output_ref sha}]
+                            :executables [executable]}
+                           :provenance_core_ref campaign/provenance-core-ref)
+        candidate-value (with-ref (assoc candidate :executable_provenance_ref
+                                         (campaign/executable-provenance-ref
+                                          provenance-proof))
                           :candidate_ref campaign/candidate-ref)
+        provenance (assoc provenance-proof
+                          :schema_id campaign/executable-provenance-schema-id
+                          :schema_version "2.0.0"
+                          :candidate_ref (:candidate_ref candidate-value)
+                          :qualification_identity_ref
+                          (:qualification_identity_ref candidate-value))
         authorization-value
         (with-ref (assoc authorization
                          :candidate_ref (:candidate_ref candidate-value)
@@ -664,6 +682,11 @@
     (spit adr-0040-path "Status: Accepted\n")
     (spit adr-0041-path "Status: Accepted\n")
     (is (= [] (campaign/promotion-errors options)))
+    (write-canonical-json! provenance-path
+                           (assoc provenance :schema_version "changed"))
+    (is (some #{"bound provenance envelope is invalid"}
+              (campaign/promotion-errors options)))
+    (write-canonical-json! provenance-path provenance)
     (write-canonical-json! report-path (assoc report :gate_status :not-qualified))
     (is (some #(re-find #"canonical projections" %)
               (campaign/promotion-errors options)))

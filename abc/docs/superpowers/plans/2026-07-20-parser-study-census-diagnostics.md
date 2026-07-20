@@ -5,15 +5,20 @@
 > superpowers:executing-plans to implement this plan task-by-task. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Produce the closed all-axis completeness census and finish the S2
-diagnostics axis from authenticated four-case captures, then publish the first
-version-2 study result without changing the frozen study.
+**Goal:** Produce the closed all-axis completeness census and finish the bounded
+S2 diagnostics axis from authenticated four-case captures, then publish the
+first version-2 study result without changing the frozen study. The available
+structured comparison is specifically `ab-aozora` against its upstream
+`aozora` lineage; the remaining executable third-party lanes disclose
+non-comparability rather than implying a five-parser diagnostic comparison.
 
 **Architecture:** The existing `ab-parser-study-report` crate remains the single
 pure owner of the 108-row matrix, evidence-index authentication, census, and
-report projection. The existing Python conformance scorer is deepened into one
-reusable pure diagnostic scorer; a separate bounded capture tool only executes
-the frozen lanes and records raw stdout/stderr. Captures live under a
+report projection. The existing Python conformance projector is deepened into
+one reusable envelope-projection module; S2 adds its own pure aggregate scorer
+beside that projector without changing conformance scoring semantics. A
+separate bounded capture tool only executes the frozen lanes and records raw
+stdout/stderr. Captures live under a
 caller-chosen bundle root, while committed axis records and indexes contain only
 logical content identity and relative locators.
 
@@ -55,9 +60,10 @@ capture command.
   Structured fields are scored only when a documented channel emits code,
   severity, and UTF-8 span. Parser wording and regexes are never semantic
   authority.
-- Run full-corpus or historical-parser realization on Hinoki when the local
-  machine cannot realize the pinned Nix outputs. The four-case scoring and all
-  pure checks remain locally reproducible.
+- Run full-corpus or historical-parser realization on a runtime with the
+  declared build capabilities when the local machine cannot realize the pinned
+  Nix outputs. The runtime's name is not evidence identity. The four-case
+  scoring and all pure checks remain locally reproducible.
 - All tracked Python must pass `just python-quality`; Rust must pass the
   `cargo-check`, `cargo-clippy`, `cargo-fmt`, and relevant test Nix checks.
 - Comments in active source must pass `scripts/comment-hygiene-check.sh` and may
@@ -90,7 +96,8 @@ capture command.
 - `ab-validator/crates/ab-parser-study-report/src/generate.rs` — pure projection
   of legacy manifests plus authenticated axis evidence into v2 reports.
 - `ab-validator/reports/parser-conformance/diagnostics_scoring.py` — single pure
-  diagnostic projection/scoring authority shared by conformance and S2.
+  envelope-projection authority shared by conformance and S2, plus the S2-only
+  case/aggregate scoring functions.
 - `ab-validator/reports/parser-conformance/run-aozora-notation-spec.py` — imports
   the shared scorer without changing existing conformance outcomes.
 - `ab-validator/reports/parser-study/diagnostic_capture.py` — bounded executor;
@@ -410,7 +417,7 @@ git commit -m "feat(parser-study): derive closed completeness census"
 
 ---
 
-### Task 3: Extract and deepen the shared diagnostic scorer
+### Task 3: Extract the shared diagnostic projector and add the S2 scorer
 
 **Files:**
 
@@ -446,13 +453,20 @@ fixture's expected span. For one fixture case:
   expected span.
 
 This objective matching rule does not invent a cross-parser code vocabulary.
+The conformance runner reuses only the envelope projectors and retains its
+existing exact-list comparison. It must not call `score_case` or
+`aggregate_cases`; S2's overlap relevance rule therefore cannot change any
+conformance outcome.
 
 - [ ] **Step 1: Characterize the current conformance behavior before extraction.**
 
 Add a test that feeds schema-v3 bytes with one exact diagnostic through the
 current `run_diagnostics` path and pins the returned `code`, `severity`, and
 span. Add a second assertion that malformed envelopes still return
-`unsupported diagnostics envelope`.
+`unsupported diagnostics envelope`. Pin the current exact-list comparison with
+a near-overlap fixture that S2's `score_case` would consider relevant but the
+conformance runner must still reject as unequal; this is the regression guard
+that keeps S2 relevance semantics out of conformance.
 
 - [ ] **Step 2: Add failing S2 scorer tests.**
 
@@ -562,6 +576,18 @@ structured diagnostic projector. Every other lane declares `projector: none`;
 its raw bytes are still captured, but its diagnostic fields become
 `non_comparable` unless a later governed policy version identifies a documented
 structured channel.
+
+The derivation must nevertheless probe `projector:none` stdout with both known
+envelope parsers. If either accepts it, the lane is `unavailable` because the
+closed lane policy is stale, rather than silently suppressing structured
+evidence.
+
+The `aozora2html/native` and `aozora-epub3/native` rows invoke their adapters in
+`--mode html` only to preserve raw native output for this diagnostic-specific
+capture. S2 never credits those adapter processes with diagnostic capability.
+No S1/S3 or other measured-axis plan may reuse these native mappings without a
+separate test proving that `--mode html` is a byte-transparent passthrough of
+the upstream parser output.
 
 - [ ] **Step 1: Write failing capture tests.**
 
@@ -679,7 +705,21 @@ diagnostic_axis.py verify
 
 - [ ] **Step 1: Write failing derivation tests.**
 
-Cover four distinct states:
+Pin this diagnostics-specific precedence:
+
+1. missing, unauthenticated, or hash-mismatched capture -> `unavailable`;
+2. `projector:none` with no known structured envelope -> `non_comparable`,
+   regardless of exit code or timeout status;
+3. `projector:none` whose stdout parses as `schema3` or `inspect_v2` ->
+   `unavailable` because the lane policy is stale;
+4. a declared structured projector with a usable envelope -> `measured`,
+   regardless of exit code; and
+5. a declared structured projector with any case lacking a usable envelope ->
+   `failed`, whether caused by crash, timeout, malformed output, or absence.
+
+Process status remains a captured witness and may feed the robustness axis
+later, but never decides a diagnostics disposition by itself. Cover these
+states explicitly:
 
 ```python
 def test_structured_lane_emits_six_measured_metrics_with_denominator_four():
@@ -688,10 +728,18 @@ def test_structured_lane_emits_six_measured_metrics_with_denominator_four():
     assert ratio(record, "diagnostic_presence") == (4, 4)
     assert ratio(record, "false_negative") == (0, 4)
 
-def test_projector_none_is_noncomparable_not_zero():
-    record = derive_lane(raw_capture(projector="none"))
+def assert_noncomparable(record):
     assert all(m["disposition"] == "non_comparable" for m in record["metrics"])
     assert all(m["value"] is None for m in record["metrics"])
+
+
+def test_projector_none_nonzero_exit_is_noncomparable_not_failed():
+    assert_noncomparable(derive_lane(raw_capture(projector="none", returncode=2)))
+
+
+def test_projector_none_timeout_is_noncomparable_not_failed():
+    assert_noncomparable(derive_lane(raw_capture(projector="none", timed_out=True)))
+
 
 def test_missing_or_hash_mismatched_capture_is_unavailable():
     for capture in (missing_capture(), tampered_capture()):
@@ -699,10 +747,22 @@ def test_missing_or_hash_mismatched_capture_is_unavailable():
         assert all(metric["disposition"] == "unavailable" for metric in record["metrics"])
         assert all(metric["value"] is None for metric in record["metrics"])
 
-def test_authenticated_nonzero_exit_is_failed_not_unavailable():
-    record = derive_lane(raw_capture(status="failure", returncode=2))
+
+def test_structured_nonzero_exit_with_usable_envelope_is_measured():
+    record = derive_lane(schema3_capture(exact_for_all_four_cases(), returncode=2))
+    assert all(metric["disposition"] == "measured" for metric in record["metrics"])
+
+
+def test_structured_lane_without_usable_envelope_is_failed():
+    record = derive_lane(schema3_capture(malformed_case=2, returncode=2))
     assert all(metric["disposition"] == "failed" for metric in record["metrics"])
     assert all(metric["value"] is None for metric in record["metrics"])
+
+
+def test_known_envelope_on_projector_none_rejects_stale_policy():
+    record = derive_lane(raw_capture(projector="none", stdout=schema3_bytes()))
+    assert all(metric["disposition"] == "unavailable" for metric in record["metrics"])
+    assert all("stale lane policy" in metric["reason"] for metric in record["metrics"])
 ```
 
 Add an index test that rejects an 11th-lane omission, an extra record, a changed
@@ -718,11 +778,15 @@ Expected: missing module.
 
 - [ ] **Step 3: Implement pure derivation.**
 
-Call only the projectors and `score_case`/`aggregate_cases` from
-`diagnostics_scoring.py`. Convert the six totals to ratios over four cases;
-for false positives use `Ratio(total_extra_diagnostics, 4)` and for false
-negatives use `Ratio(missed_cases, 4)`. Preserve per-case witnesses in the axis
-record. Compute record refs from canonical compact JSON
+Authenticate the complete capture first, then apply the precedence fixed in
+Step 1. For declared structured lanes, call only their selected projector and
+`score_case`/`aggregate_cases` from `diagnostics_scoring.py`; parse before
+consulting the recorded return code. For `projector:none`, probe both known
+projectors only as a stale-policy guard and never opportunistically score the
+lane. Convert the six totals to ratios over four cases; for false positives use
+`Ratio(total_extra_diagnostics, 4)` and for false negatives use
+`Ratio(missed_cases, 4)`. Preserve per-case process status and diagnostic
+witnesses in the axis record. Compute record refs from canonical compact JSON
 `json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))`
 plus a trailing newline, and write atomically.
 
@@ -938,7 +1002,12 @@ constructing each row and apply the fixed summary reducer.
 The CLI reads the committed evidence index relative to an explicit
 `--evidence-root` (defaulting to the study evidence directory). The narrative
 renders the metric-level matrix, names non-comparable and unavailable metrics,
-retains native/adapted separation, and still prohibits an overall winner.
+retains native/adapted separation, and still prohibits an overall winner. It
+states that structured S2 comparison is limited to the custom fork and its
+upstream origin; it does not describe S2 as five-parser diagnostic coverage.
+Maintenance, packaging, license, and other later-axis absences are labeled
+`pending evidence` in prose while retaining their honest machine disposition;
+the interim report must not imply those absences are terminal conclusions.
 
 - [ ] **Step 7: Regenerate and run drift/equivalence tests.**
 
@@ -989,8 +1058,12 @@ as `checks.x86_64-linux.parser-study-diagnostics`.
 - [ ] **Step 2: Update documentation and status precisely.**
 
 Record S2 as complete only if all executable lanes are terminal and the
-diagnostic capture-debt set is empty. State remaining Track S work as S1, S3,
-S4, publication closure, production migration, and retirement. Do not call the
+diagnostic capture-debt set is empty. State plainly that only the custom fork
+and its upstream origin expose comparable structured diagnostic channels; the
+other executable third-party lanes are evidence-backed `non_comparable`, and
+`aozora-parser.js` retains its authenticated build failure. State remaining
+Track S work as S1, S3, S4, publication closure, production migration, and
+retirement. Describe not-yet-run axes as pending evidence and do not call the
 whole study complete.
 
 - [ ] **Step 3: Run focused quality and integrity checks.**
@@ -1055,10 +1128,14 @@ and all non-S2 census limitations still explicit.
 - [ ] The policy, evidence index, and result schemas are closed and versioned;
   v1 remains historical.
 - [ ] Capture writes raw bytes before projection and verification re-hashes them.
-- [ ] The scorer has one owner shared with conformance; no second semantic
-  implementation exists in the report crate.
-- [ ] `projector:none` yields `non_comparable`; absent/tampered capture yields
-  `unavailable`; authenticated execution failure yields `failed`.
+- [ ] Envelope projection has one owner shared with conformance; S2 scoring
+  stays out of the conformance path and no second implementation exists in the
+  report crate.
+- [ ] Diagnostics precedence is pinned end to end: capture authentication
+  failure yields `unavailable`; `projector:none` yields `non_comparable` unless
+  a known envelope exposes stale policy; a usable structured envelope is scored
+  despite non-zero exit; and only a structured lane without a usable envelope
+  yields `failed`.
 - [ ] All six diagnostic metrics disclose the four-case denominator and retain
   FP/FN witnesses.
 - [ ] Capture debt depends on required-input role/state, never prose.

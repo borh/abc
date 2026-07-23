@@ -87,10 +87,13 @@ The canonical gate projection is
 `docs/reports/parser-release-qualification-report.json`. The immutable campaign
 root is
 `docs/reports/parser-rq/runs/15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab/`.
-The registered bounded contract run is
-`docs/evidence/adr-runs/parser-rq-instrument-bindings.json`; it covers predicate
-identity, exact evaluation, release-evidence classification, authorization,
-capture/evaluation resolution, and promotion failure semantics.
+The bounded contract runs in the standing Kaocha suite
+(`test/abc/tools/parser_release_qualification_test.clj`,
+`test/abc/tools/parser_rq_core_attempt_test.clj`,
+`test/abc/tools/parser_rq_campaign_test.clj`,
+`test/abc/tools/parser_rq_admission_promotion_drift_test.clj`); it covers
+predicate identity, exact evaluation, release-evidence classification,
+authorization, capture/evaluation resolution, and promotion failure semantics.
 
 ## Rollback
 

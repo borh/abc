@@ -43,6 +43,48 @@
            (:peak_cgroup_memory_bytes
             (qualification/install-resource-observation {} envelope))))))
 
+(def ^:private campaign-capture-root
+  (str "docs/reports/parser-rq/runs/"
+       "15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab"
+       "/captures/"
+       "a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f"))
+
+(deftest hinoki-resource-witness-binds-the-campaign-capture
+  (let [smoke (files/read-json
+               "docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json")
+        identity (files/read-json
+                  (str campaign-capture-root "/qualification-identity.json"))
+        measurements (files/read-json
+                      (str campaign-capture-root "/measurements.json"))
+        resource (files/read-json (str campaign-capture-root "/resource.json"))
+        report (files/read-json "docs/reports/parser-release-qualification-report.json")
+        memory-verdict (first (filter #(= "memory" (get % "predicate_id"))
+                                      (get report "predicate_verdicts")))]
+    (is (= "parser-rq-resource-live-smoke-v1" (get smoke "schema_version")))
+    (is (= "parser-rq-resource-v1" (get smoke "instrument_id")))
+    (is (= "yes" (get-in smoke ["systemd_properties" "MemoryAccounting"])))
+    (is (= 0 (get-in smoke ["systemd_properties" "MemorySwapMax"])))
+    (is (= #{["measured" false] ["ceiling_clipped" true]}
+           (set (map (juxt #(get % "status") #(get % "right_censored"))
+                     (get smoke "cases")))))
+    (is (every? #(zero? (get % "peak_swap_bytes")) (get smoke "cases")))
+    (is (= 9 (count measurements)))
+    (is (= #{(get-in report ["coherence" "identity_ref"])}
+           (set (map #(get % "identity_ref") (vals measurements)))))
+    (is (= "ok" (get-in report ["coherence" "status"])))
+    (is (= [] (get-in report ["coherence" "errors"])))
+    (is (= (get-in report ["identity" "predicate_set_hash"])
+           (get identity "predicate_set_hash")))
+    (is (= "parser-rq-resource-v1"
+           (get-in identity ["instrument_versions" "peak_cgroup_memory_bytes"])))
+    (is (= (get resource "peak_cgroup_memory_bytes")
+           (get measurements "peak_cgroup_memory_bytes")))
+    (is (= "parser-rq-resource-v1" (get memory-verdict "instrument")))
+    (is (= {"comparator" "<=" "value" 2147483648} (get memory-verdict "expected")))
+    (is (= (get-in resource ["peak_cgroup_memory_bytes" "value"])
+           (get memory-verdict "observed")))
+    (is (= {"pass" 9} (get report "verdict_tally")))))
+
 (deftest process-tree-memory-policy-contract
   (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
         policy (files/read-json "data/parser-rq-resource-policy-v1.json")

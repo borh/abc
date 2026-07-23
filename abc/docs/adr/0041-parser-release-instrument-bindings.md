@@ -70,6 +70,9 @@ predicate verdicts, registry admission, or ADR 0039 promotion.
 
 ## Evidence
 
-The registered bounded evidence run at
-`docs/evidence/adr-runs/parser-rq-instrument-bindings.json` executes the live
-predicate rotation, core-attempt, campaign, and transaction-drift tests.
+The live predicate rotation, core-attempt, campaign, and transaction-drift
+tests run in the standing Kaocha suite
+(`test/abc/tools/parser_release_qualification_test.clj`,
+`test/abc/tools/parser_rq_core_attempt_test.clj`,
+`test/abc/tools/parser_rq_campaign_test.clj`,
+`test/abc/tools/parser_rq_admission_promotion_drift_test.clj`).

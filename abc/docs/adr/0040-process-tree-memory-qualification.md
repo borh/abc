@@ -62,12 +62,14 @@ authoritative corpus capture, alter compatibility admission, or promote ADR
 
 ## Evidence
 
-The focused structural observation in
-`docs/evidence/adr-runs/parser-rq-resource-policy.json` binds the live
+The focused structural observation
+`process-tree-memory-policy-contract` in
+`test/abc/tools/parser_rq_resource_test.clj` binds the live
 predicate, committed resource policy, process-tree cgroup-memory key, unchanged
 2 GiB threshold, zero-swap service property, and content-addressed wrapper
 semantic identity. The Hinoki integration witness is recorded at
 `docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json`.
-The registered acceptance observation at
-`docs/evidence/adr-runs/parser-rq-resource-acceptance.json` authenticates that
-witness and the fresh nine-envelope P5 capture.
+The acceptance observation
+`hinoki-resource-witness-binds-the-campaign-capture` in the same test file
+authenticates that witness against the committed nine-envelope P5 capture and
+the qualification report.

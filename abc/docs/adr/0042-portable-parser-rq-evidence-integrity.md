@@ -58,6 +58,8 @@ workflow in its protocol.
 
 ## Evidence
 
-The registered bounded evidence run at
-`docs/evidence/adr-runs/parser-rq-portable-integrity.json` executes the active
-surface, promotion, and one-store verifier checks together.
+The active surface, promotion, and one-store verifier checks run together in
+the standing Kaocha suite (`test/abc/tools/parser_rq_portability_test.clj`,
+`test/abc/tools/parser_rq_campaign_test.clj`,
+`test/abc/tools/parser_rq_admission_promotion_drift_test.clj`) and in the
+`ab-validator` flake check `parser-rq-campaign-provenance-python-tests`.

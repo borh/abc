@@ -106,6 +106,42 @@
 (defn production-graph-ref [graph]
   (content-ref graph :policy_hash))
 
+(defn production-graph-errors
+  "Authenticate the committed production graph value."
+  [graph]
+  (let [graph (walk/keywordize-keys graph)
+        expected-members ["core_attempt" "source_recognition" "diagnostic_gap"
+                          "diagnostic_completeness" "parser_ir_conformance"
+                          "publication_structure" "resource"]
+        operation-members ["core_attempt" "predicate_hardening"
+                           "source_recognition" "diagnostic_gap"
+                           "publication_structure" "resource"]
+        executables (:executables graph)
+        executable-keys #{:name :adapter :adapter_version :argv_template}]
+    (cond-> []
+      (not= (:policy_hash graph) (production-graph-ref graph))
+      (conj "parser RQ production graph hash has drifted")
+
+      (not= expected-members (:installed_members graph))
+      (conj "parser RQ production graph installed membership has drifted")
+
+      (not= operation-members (mapv :name (:members graph)))
+      (conj "parser RQ production operation membership has drifted")
+
+      (or (not (vector? executables))
+          (empty? executables)
+          (not= (count executables) (count (set (map :name executables))))
+          (some #(or (not= executable-keys (set (keys %)))
+                     (some (fn [key]
+                             (not (and (string? (get % key))
+                                       (not (string/blank? (get % key))))))
+                           [:name :adapter :adapter_version])
+                     (not (and (vector? (:argv_template %))
+                               (seq (:argv_template %))
+                               (every? string? (:argv_template %)))))
+                executables))
+      (conj "parser RQ production executable coordinates are not closed"))))
+
 (defn provenance-core-ref [provenance]
   (-> provenance
       (dissoc :schema_id :schema_version :candidate_ref

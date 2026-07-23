@@ -11,6 +11,8 @@
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-sentence-policy :as sentence-policy]
+            [abc.tools.parser-rq-campaign :as campaign]
+            [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-classified-source :as classified-source]
             [abc.tools.parser-rq-diagnostic-gap :as diagnostic-gap]
             [abc.tools.parser-rq-source-recognition :as source-recognition]
@@ -287,10 +289,10 @@
       (is (every? fs/regular-file? schema-paths)))
     (testing "production graph identity and membership remain derived"
       (let [graph (files/read-json "data/parser-rq-production-graph-v1.json")]
-        (is (empty? (validate/parser-rq-production-graph-errors graph)))
-        (is (seq (validate/parser-rq-production-graph-errors
+        (is (empty? (campaign/production-graph-errors graph)))
+        (is (seq (campaign/production-graph-errors
                   (update graph "installed_members" pop))))
-        (is (seq (validate/parser-rq-production-graph-errors
+        (is (seq (campaign/production-graph-errors
                   (update-in graph ["executables" 0]
                              dissoc "adapter_version"))))))))
 
@@ -963,7 +965,7 @@
                  policy
                  (files/read-json
                   (str root "/characterization-policy-map.json")))))
-    (is (empty? (validate/parser-rq-capture-generation-errors generation)))
+    (is (empty? (capture/generation-errors generation)))
     (testing "production capture fixture satisfies the ABC protocols"
       (let [capture-root "test/fixtures/parser-rq/classified-source-capture"
             capture-ledger (files/read-json (str capture-root "/ledger.json"))
@@ -973,7 +975,7 @@
         (is (nil? (schema/validation-errors generation-schema capture-generation)))
         (is (empty? (classified-source/ledger-errors
                      policy capture-ledger decoded)))
-        (is (empty? (validate/parser-rq-capture-generation-errors
+        (is (empty? (capture/generation-errors
                      capture-generation)))))
     (testing "unknown fields and duplicate policy rows are rejected"
       (is (seq (schema/validation-errors policy-schema (assoc policy "unknown" true))))
@@ -1019,7 +1021,7 @@
         (is (= (get member "value_hash")
                (hash/format-sha256
                 (hash/sha256-file (str root "/" (get member "artifact_ref")))))))
-      (is (seq (validate/parser-rq-capture-generation-errors
+      (is (seq (capture/generation-errors
                 (assoc-in generation ["members" "raw_diagnostics" "value_hash"]
                           (str "sha256:" (apply str (repeat 64 "f"))))))))
     (testing "lossless normalization is closed, target-bound, and reversible"

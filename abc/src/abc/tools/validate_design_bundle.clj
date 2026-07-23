@@ -6,9 +6,7 @@
    [abc.tools.aat-parser-ir-compat :as compat]
    [abc.tools.analysis-identity :as analysis-identity]
    [abc.tools.files :as files]
-   [abc.tools.hash :as hash]
    [abc.tools.iiif :as iiif]
-   [abc.tools.jcs :as jcs]
    [abc.tools.linked-art :as linked-art]
    [abc.tools.malli :as am]
    [abc.tools.manifest-index :as manifest-index]
@@ -25,6 +23,8 @@
    [abc.tools.parser-evidence :as parser-evidence]
    [abc.tools.parser-maintenance-evidence :as parser-maintenance]
    [abc.tools.parser-ir-sentence-policy :as sentence-policy]
+   [abc.tools.parser-rq-campaign :as campaign]
+   [abc.tools.parser-rq-capture :as capture]
    [abc.tools.parser-rq-classified-source :as classified-source]
    [abc.tools.parser-rq-diagnostic-gap :as diagnostic-gap]
    [abc.tools.parser-rq-source-recognition :as source-recognition]
@@ -382,47 +382,6 @@
     (throw (ex-info (string/join "\n" errors)
                     {:errors errors}))))
 
-(defn- projected-policy-hash [policy]
-  (-> policy
-      (dissoc "policy_hash")
-      hash/sha256-json-jcs
-      hash/format-sha256))
-
-(defn parser-rq-production-graph-errors
-  "Authenticate the committed production graph value."
-  [graph]
-  (let [expected-members ["core_attempt" "source_recognition" "diagnostic_gap"
-                          "diagnostic_completeness" "parser_ir_conformance"
-                          "publication_structure" "resource"]
-        operation-members ["core_attempt" "predicate_hardening"
-                           "source_recognition" "diagnostic_gap"
-                           "publication_structure" "resource"]
-        executables (get graph "executables")
-        executable-keys #{"name" "adapter" "adapter_version" "argv_template"}]
-    (cond-> []
-      (not= (get graph "policy_hash") (projected-policy-hash graph))
-      (conj "parser RQ production graph hash has drifted")
-
-      (not= expected-members (get graph "installed_members"))
-      (conj "parser RQ production graph installed membership has drifted")
-
-      (not= operation-members (mapv #(get % "name") (get graph "members")))
-      (conj "parser RQ production operation membership has drifted")
-
-      (or (not (vector? executables))
-          (empty? executables)
-          (not= (count executables) (count (set (map #(get % "name") executables))))
-          (some #(or (not= executable-keys (set (keys %)))
-                     (some (fn [key]
-                             (not (and (string? (get % key))
-                                       (not (string/blank? (get % key))))))
-                           ["name" "adapter" "adapter_version"])
-                     (not (and (vector? (get % "argv_template"))
-                               (seq (get % "argv_template"))
-                               (every? string? (get % "argv_template")))))
-                executables))
-      (conj "parser RQ production executable coordinates are not closed"))))
-
 (defn validate-maintenance-evidence!
   ([record as-of]
    (validate-maintenance-evidence! "." record as-of))
@@ -430,17 +389,6 @@
    (check-errors! (concat (parser-maintenance/problems record as-of)
                           (parser-maintenance/benchmark-artifact-problems
                            repo-root record)))))
-
-(defn parser-rq-capture-generation-errors [generation]
-  (let [expected (get generation "generation_ref")
-        identity (dissoc generation "generation_ref")
-        computed (hash/format-sha256
-                  (hash/sha256-bytes
-                   (jcs/rfc8785-string-domain-json-bytes identity)))]
-    (vec
-     (when (not= expected computed)
-       [(str "capture generation_ref does not match canonical identity: "
-             expected " != " computed)]))))
 
 (def ^:private design-schema-inputs
   ["schemas/aat-parser-ir-divergence-bundle.schema.json"
@@ -711,7 +659,7 @@
       (schema-valid! schema path))
     (let [graph-path "data/parser-rq-production-graph-v1.json"
           graph (files/read-json graph-path)]
-      (check-errors! (parser-rq-production-graph-errors graph)))
+      (check-errors! (campaign/production-graph-errors graph)))
     (let [policy (files/read-json "data/parser-rq-ab-aozora-classified-source-v1.json")
           generation-path "test/fixtures/parser-rq/classified-source/generation.json"
           generation (files/read-json generation-path)]
@@ -721,7 +669,7 @@
       (validate-json! parser-rq-classified-source-ledger-schema
                       "test/fixtures/parser-rq/classified-source/ledger.json")
       (validate-json! parser-rq-capture-generation-schema generation-path)
-      (check-errors! (parser-rq-capture-generation-errors generation)))
+      (check-errors! (capture/generation-errors generation)))
     (let [root "test/fixtures/parser-rq/diagnostic-gap"
           policy-path "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
           policy (files/read-json policy-path)

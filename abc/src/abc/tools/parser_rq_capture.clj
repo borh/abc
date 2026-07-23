@@ -2,6 +2,7 @@
   "Contracts for committed parser-qualification capture metadata and rebinding
   logical blob identities to an explicitly configured external store."
   (:require [abc.tools.hash :as hash]
+            [abc.tools.jcs :as jcs]
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string]
@@ -99,6 +100,20 @@
   "Canonical content identity for a complete capture-generation value."
   [generation-value]
   (hash/format-sha256 (hash/sha256-json-jcs generation-value)))
+
+(defn generation-errors
+  "Authenticate a string-keyed capture-generation JSON value against its
+  embedded generation_ref in the string-domain canonical form."
+  [generation]
+  (let [expected (get generation "generation_ref")
+        identity (dissoc generation "generation_ref")
+        computed (hash/format-sha256
+                  (hash/sha256-bytes
+                   (jcs/rfc8785-string-domain-json-bytes identity)))]
+    (vec
+     (when (not= expected computed)
+       [(str "capture generation_ref does not match canonical identity: "
+             expected " != " computed)]))))
 
 (defn observation-envelope
   "Construct an identity-bound observation with optional typed disclosure."

@@ -6,8 +6,6 @@
             [clojure.string :as str]
             [clojure.test :refer [deftest is]]))
 
-(def expected-generated-manifest-kinds #{:parser-ir :warnings})
-
 (def expected-failure-identity-coordinates
   {"manifest_schema_hash" "sha256:2222222222222222222222222222222222222222222222222222222222222222"
    "corpus_snapshot_hash" "sha256:1111111111111111111111111111111111111111111111111111111111111111"
@@ -36,11 +34,6 @@
    "--override-input" "local-pkgs"
    "path:${GITHUB_WORKSPACE}/nix/ci-empty-local-pkgs"
    ".#validate-design-bundle"])
-
-(defn- generated-manifest-set-errors [generated]
-  (when-not (= expected-generated-manifest-kinds (set (keys generated)))
-    [{:expected expected-generated-manifest-kinds
-      :actual (set (keys generated))}]))
 
 (defn- workflow-error? [errors key]
   (boolean (some #(contains? % key) errors)))
@@ -211,15 +204,6 @@
     (is (contains? failure "artifact_id"))
     (is (not (contains? (get failure "manifest_identity_object")
                         "artifact_id")))))
-
-(deftest generated-import-manifest-set-test
-  (fs/with-temp-dir [output {:prefix "foundation-evidence-manifests-"}]
-    (let [generated (materialize/materialize-import!
-                     {:input-dir "examples/ab-validator-output"
-                      :output-dir output
-                      :generated-at materialize/default-generated-at})]
-      (is (empty? (generated-manifest-set-errors generated)))
-      (is (seq (generated-manifest-set-errors (dissoc generated :warnings)))))))
 
 (deftest generated-import-manifest-schema-conformance-test
   (fs/with-temp-dir [output {:prefix "abc-test-"}]

@@ -510,17 +510,18 @@
 
 (deftest ruby-direction-uses-profile-valid-rend-test
   (testing "ruby direction is preserved without TEI-invalid place attributes"
-    (let [result (parser-ir-tei/render
-                  {"nodes" [{"type" "ruby"
-                             "span" {"start" 0 "end" 3}
-                             "ruby" {"base" "下人"
-                                     "reading" "げにん"
-                                     "direction" "right"}}]})
-          ruby-node (some #(when (= :ruby (first %)) %)
-                          (hiccup-nodes (:body result)))]
-      (is (= [:ruby {:type "furigana" :rend "right"} [:rb "下人"] [:rt "げにん"]]
-             ruby-node))
-      (is (not (contains? (second ruby-node) :place))))))
+    (doseq [direction ["right" "left"]]
+      (let [result (parser-ir-tei/render
+                    {"nodes" [{"type" "ruby"
+                               "span" {"start" 0 "end" 3}
+                               "ruby" {"base" "下人"
+                                       "reading" "げにん"
+                                       "direction" direction}}]})
+            ruby-node (some #(when (= :ruby (first %)) %)
+                            (hiccup-nodes (:body result)))]
+        (is (= [:ruby {:type "furigana" :rend direction} [:rb "下人"] [:rt "げにん"]]
+               ruby-node))
+        (is (not (contains? (second ruby-node) :place)))))))
 
 (deftest aozora-ruby-defaults-to-furigana-test
   (let [ruby-node (some #(when (= :ruby (first %)) %)

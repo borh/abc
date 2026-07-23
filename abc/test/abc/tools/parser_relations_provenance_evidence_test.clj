@@ -65,8 +65,5 @@
               (str/includes? text "license = \"MIT OR Apache-2.0\""))))
     true))
 
-(deftest parser-family-reciprocal-amendments-test
-  (parser-relations-provenance-operation))
-
 (deftest fork-provenance-records-detach-test
   (parser-relations-provenance-operation))

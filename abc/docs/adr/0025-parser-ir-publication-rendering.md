@@ -89,11 +89,11 @@ can evolve independently from the TEI body renderer logic.
 
 ## Acceptance Criteria
 
-- **ADR-0025-C1 — fixture-behavior:** The committed parser-IR fixture renders a TEI body that passes the pinned Relax NG and project Schematron gates. See `test/abc/tools/parser_publication_evidence_test.clj`.
-- **ADR-0025-C2 — fixture-behavior:** Plaintext retains visible body text and ruby base text while excluding ruby readings, source apparatus, provenance, layout metadata, and source-note back matter. See `test/abc/tools/parser_publication_evidence_test.clj`.
-- **ADR-0025-C3 — fixture-behavior:** Publication materialization writes plaintext, TEI, both manifests, the preservation sidecar, and a passing `tei-validation-result.json`. See `test/abc/tools/parser_publication_evidence_test.clj`.
-- **ADR-0025-C4 — structural-invariant:** Renderer node coverage is derived from the parser-IR schema and rejects both missing and unexpected node policies. See `test/abc/tools/parser_publication_evidence_test.clj`.
-- **ADR-0025-C5 — fixture-behavior:** Generated Aozora ruby defaults to TEI `type="furigana"`. See `test/abc/tools/parser_publication_evidence_test.clj`.
+- **ADR-0025-C1 — fixture-behavior:** The committed parser-IR fixture renders a TEI body that passes the pinned Relax NG and project Schematron gates. See `test/abc/tools/materialize_publication_test.clj`.
+- **ADR-0025-C2 — fixture-behavior:** Plaintext retains visible body text and ruby base text while excluding ruby readings, source apparatus, provenance, layout metadata, and source-note back matter. See `test/abc/tools/parser_ir_plaintext_test.clj`.
+- **ADR-0025-C3 — fixture-behavior:** Publication materialization writes plaintext, TEI, both manifests, the preservation sidecar, and a passing `tei-validation-result.json`. See `test/abc/tools/materialize_publication_test.clj`.
+- **ADR-0025-C4 — structural-invariant:** Renderer node coverage is derived from the parser-IR schema and rejects both missing and unexpected node policies. See `test/abc/tools/parser_ir_publication_policy_test.clj`.
+- **ADR-0025-C5 — fixture-behavior:** Generated Aozora ruby defaults to TEI `type="furigana"`. See `test/abc/tools/parser_ir_tei_test.clj`.
 - **ADR-0025-C6 — operational-behavior:** The supported design-bundle application exits zero over the committed publication outputs and TEI gates. Evidence boundary: `test/abc/tools/validate_design_bundle_test.clj`.
 
 ## Historical Evidence

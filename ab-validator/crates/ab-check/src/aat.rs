@@ -225,7 +225,14 @@ fn collect_inline_kind<'a>(
             collect_inline_kind(inline, &inline_path, kind, nodes);
         }
     }
-    for key in ["children", "upper", "lower", "base_content", "caption"] {
+    for key in [
+        "children",
+        "upper",
+        "lower",
+        "base_content",
+        "reading_content",
+        "caption",
+    ] {
         if let Some(children) = node.get(key).and_then(Value::as_array) {
             for (idx, child) in children.iter().enumerate() {
                 collect_inline_kind(child, &format!("{path}.{key}[{idx}]"), kind, nodes);

@@ -1803,32 +1803,103 @@ fn ruby_node(
     let source = source_slice(&decoded.span_text, &node.span);
     if let Some(caps) = RUBY_RE.captures(source) {
         let base = caps.name("base").unwrap();
+        let reading = caps.name("reading").unwrap();
         let mut ruby = json!({
             "kind": "ruby",
             "base": base.as_str(),
-            "reading": caps.name("reading").unwrap().as_str(),
+            "reading": reading.as_str(),
             "direction": "right",
             "span": span_json(&node.span, &decoded.span_ctx)
         });
-        let marker_start = node.span.start + base.start();
-        if let Some(gaiji) = gaiji_by_start.get(&marker_start) {
-            // Only when the captured base is exactly the marker: a mixed
-            // base (marker plus trailing text) keeps the verbatim form.
-            if gaiji.span.end == marker_start + base.as_str().len() {
-                let fields = ruby.as_object_mut().unwrap();
-                if let Some(resolved) = &gaiji.resolved {
-                    fields.insert("base".to_owned(), json!(resolved));
-                }
-                fields.insert(
-                    "base_content".to_owned(),
-                    json!([gaiji_json(decoded, &gaiji.span, gaiji)]),
-                );
+        let fields = ruby.as_object_mut().unwrap();
+        if let Some(segments) = gaiji_segments(
+            decoded,
+            node.span.start + base.start(),
+            base.as_str(),
+            gaiji_by_start,
+        ) {
+            // A fully resolved base projects the glyphs; any unresolved
+            // marker keeps the verbatim form (no glyph to project).
+            if let Some(resolved) = segments.resolved_text {
+                fields.insert("base".to_owned(), json!(resolved));
             }
+            fields.insert("base_content".to_owned(), json!(segments.content));
+        }
+        if let Some(segments) = gaiji_segments(
+            decoded,
+            node.span.start + reading.start(),
+            reading.as_str(),
+            gaiji_by_start,
+        ) {
+            // The reading string stays verbatim (ruby_completeness matches
+            // source reading text exactly); the typed nodes ride alongside.
+            fields.insert("reading_content".to_owned(), json!(segments.content));
         }
         ruby
     } else {
         raw_node(decoded, node, "ruby")
     }
+}
+
+struct GaijiSegments {
+    /// One inline node per segment: a gaiji node per marker, a text node
+    /// per plain run between markers.
+    content: Vec<Value>,
+    /// The segment text with every marker replaced by its resolved glyph;
+    /// `None` when any marker is unresolved.
+    resolved_text: Option<String>,
+}
+
+/// Split `text` (starting at source offset `start`) into gaiji markers and
+/// plain runs using the gaiji scan. Returns `None` when no scanned gaiji
+/// marker lies inside the range or a marker crosses its end.
+fn gaiji_segments(
+    decoded: &DecodedSource,
+    start: usize,
+    text: &str,
+    gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
+) -> Option<GaijiSegments> {
+    let end = start + text.len();
+    let mut content = Vec::new();
+    let mut resolved_text = Some(String::new());
+    let mut gaiji_count = 0_usize;
+    let mut cursor = start;
+    while cursor < end {
+        if let Some(gaiji) = gaiji_by_start.get(&cursor) {
+            if gaiji.span.end <= cursor || gaiji.span.end > end {
+                return None;
+            }
+            content.push(gaiji_json(decoded, &gaiji.span, gaiji));
+            match (&mut resolved_text, &gaiji.resolved) {
+                (Some(out), Some(glyph)) => out.push_str(glyph),
+                _ => resolved_text = None,
+            }
+            gaiji_count += 1;
+            cursor = gaiji.span.end;
+            continue;
+        }
+        let next_start = gaiji_by_start
+            .range(cursor..end)
+            .next()
+            .map_or(end, |(offset, _)| *offset);
+        let segment = &text[cursor - start..next_start - start];
+        content.push(json!({
+            "kind": "text",
+            "value": segment,
+            "span": span_json(
+                &Span { start: cursor, end: next_start },
+                &decoded.span_ctx
+            )
+        }));
+        if let Some(out) = &mut resolved_text {
+            out.push_str(segment);
+        }
+        cursor = next_start;
+    }
+    (gaiji_count > 0).then_some(GaijiSegments {
+        content,
+        resolved_text,
+    })
 }
 
 fn gaiji_node(
@@ -2479,6 +2550,42 @@ mod tests {
         assert_eq!(gaiji["resolved"], "枘");
         assert_eq!(gaiji["jis_code"], "第3水準1-85-54");
         assert!(gaiji["unresolved_reason"].is_null());
+    }
+
+    /// A ruby base made of several consecutive gaiji markers (`※［＃…］
+    /// ※［＃…］《reading》`) resolves the whole chain: the base becomes
+    /// the concatenated glyphs and `base_content` carries one gaiji node
+    /// per marker.
+    #[test]
+    fn multi_gaiji_ruby_base_resolves_marker_chain() {
+        let src = "※［＃「骨＋亢」、第4水準2-93-7］※［＃「骨＋葬」、第4水準2-93-15］《こうそう》\n";
+        let aat = aat_value_for(src);
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["base"], "骯髒");
+        assert_eq!(ruby["reading"], "こうそう");
+        let base_content = ruby["base_content"].as_array().unwrap();
+        assert_eq!(base_content.len(), 2);
+        assert_eq!(base_content[0]["resolved"], "骯");
+        assert_eq!(base_content[1]["resolved"], "髒");
+    }
+
+    /// A gaiji marker inside a ruby READING (`《※［＃…］エル》`) keeps the
+    /// verbatim `reading` string (`ruby_completeness` matches source reading
+    /// text exactly) but gains `reading_content` with the typed gaiji node
+    /// so the reference stays countable.
+    #[test]
+    fn gaiji_in_ruby_reading_gains_reading_content() {
+        let src = "淡絹《※［＃濁点付き片仮名ヱ、1-7-84］エル》\n";
+        let aat = aat_value_for(src);
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["base"], "淡絹");
+        assert_eq!(ruby["reading"], "※［＃濁点付き片仮名ヱ、1-7-84］エル");
+        let reading_content = ruby["reading_content"].as_array().unwrap();
+        assert_eq!(reading_content.len(), 2);
+        assert_eq!(reading_content[0]["kind"], "gaiji");
+        assert_eq!(reading_content[0]["resolved"], "ヹ");
+        assert_eq!(reading_content[1]["kind"], "text");
+        assert_eq!(reading_content[1]["value"], "エル");
     }
 
     /// An unresolvable gaiji base (description-only mencode) keeps the

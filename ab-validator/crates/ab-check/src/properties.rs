@@ -464,4 +464,31 @@ mod tests {
 
         assert!(GaijiResolution.check(txt, &aat).is_ok());
     }
+
+    #[test]
+    fn gaiji_resolution_counts_gaiji_inside_ruby_reading_content() {
+        let txt = "淡絹《※［＃濁点付き片仮名ヱ、1-7-84］エル》をふりおとし";
+        let aat = serde_json::json!({
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "ruby",
+                    "base": "淡絹",
+                    "reading": "※［＃濁点付き片仮名ヱ、1-7-84］エル",
+                    "reading_content": [
+                        {
+                            "kind": "gaiji",
+                            "description": "濁点付き片仮名ヱ",
+                            "resolved": "ヹ",
+                            "jis_code": "1-7-84",
+                            "unresolved_reason": null
+                        },
+                        {"kind": "text", "value": "エル"}
+                    ]
+                }]
+            }]
+        });
+
+        assert!(GaijiResolution.check(txt, &aat).is_ok());
+    }
 }

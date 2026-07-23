@@ -65,7 +65,18 @@ monorepo-adr-governance:
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
 	{{nix_eval}} build ".#checks.$system.monorepo-adr-governance" --print-build-logs
 
-validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance
+# Standing evidence gate (ADR 0043): actually RUN the executable evidence the
+# ADR corpus cites — the full Kaocha suite check, the TEI profile drift check,
+# and the design-bundle validator. The ~3.3 GiB source-bundle corpus check is
+# deliberately excluded from the standing gate for cost; run it explicitly via
+# `just source-bundle-corpus-check` (CI/release).
+evidence-gate:
+	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
+	{{nix_eval}} build "./abc#checks.$system.clj-nix-focused-tests" \
+		"./abc#checks.$system.tei-profile-drift" --print-build-logs
+	@nix run ./abc#validate-design-bundle
+
+validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance evidence-gate
 
 # Unseeded simulation soak (15x counts); failures print the seed to replay.
 sim-soak:

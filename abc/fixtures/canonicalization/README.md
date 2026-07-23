@@ -18,7 +18,7 @@ cases, or arrays.
 Expected SHA-256 digest:
 
 ```text
-9d49ff018a43ac2b24323276424cc325e3a5d0a22716144c8800f9fec0911f0a
+3d1a9d081bcee4ca7c2ab821219ae6a21f785f9c2b89482e6db7a71412a17b94
 ```
 
 Command used:

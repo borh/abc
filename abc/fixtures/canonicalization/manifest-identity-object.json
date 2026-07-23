@@ -9,6 +9,8 @@
   "aat_parser_ir_mapping_hash": null,
   "parser_ir_schema_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
   "tei_profile_hash": null,
+  "tokenizer_profile_hash": null,
+  "annotation_policy_hash": null,
   "tokenizer_build_hash": null,
   "tokenizer_dictionary_hash": null,
   "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777"

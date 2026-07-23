@@ -1235,6 +1235,14 @@
     (is (false? @reached?))
     (is (= #{:publication-output :xml :tei :tei-schematron} @gates))))
 
+(deftest canonicalization-fixture-covers-current-identity-inventory-test
+  (validate/validate-canonicalization!)
+  (let [fixture (files/read-json
+                 "fixtures/canonicalization/manifest-identity-object.canonical.json")
+        required (get-in (files/read-json "schemas/manifest.schema.json")
+                         ["$defs" "identityObject" "required"])]
+    (is (= (set required) (set (keys fixture))))))
+
 (deftest design-bundle-temporary-import-materialization-test
   (fs/with-temp-dir [root {:prefix "abc-test-"}]
     (let [generated (materialize/materialize-import!

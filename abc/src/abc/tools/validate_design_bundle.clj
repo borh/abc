@@ -1420,7 +1420,7 @@
                         malli-registry))
 
 (def ^:private canonicalization-defaults
-  {:expected "667a3bfa5ab9a5e52a88e2e7de15506936a13c5d6c33825b8983861787bbcdea"
+  {:expected "3d1a9d081bcee4ca7c2ab821219ae6a21f785f9c2b89482e6db7a71412a17b94"
    :identity-json "fixtures/canonicalization/manifest-identity-object.canonical.json"
    :array-a "fixtures/canonicalization/array-ordering-negative-a.json"
    :array-b "fixtures/canonicalization/array-ordering-negative-b.json"})

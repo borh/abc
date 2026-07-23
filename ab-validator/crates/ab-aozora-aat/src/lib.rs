@@ -1927,23 +1927,35 @@ fn gaiji_json(decoded: &DecodedSource, span: &Span, gaiji: &AozoraGaiji) -> Valu
 
 fn style_node(decoded: &DecodedSource, node: &AozoraNode, style_type: &str) -> Value {
     let source = source_slice(&decoded.span_text, &node.span);
-    let text = marker_target(source).unwrap_or(source);
     json!({
         "kind": "style",
         "style_type": style_type,
-        "content": [{"kind": "text", "value": text}],
+        "content": annotation_content(source),
         "span": span_json(&node.span, &decoded.span_ctx)
     })
 }
 
 fn tcy_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
     let source = source_slice(&decoded.span_text, &node.span);
-    let text = marker_target(source).unwrap_or(source);
     json!({
         "kind": "tcy",
-        "content": [{"kind": "text", "value": text}],
+        "content": annotation_content(source),
         "span": span_json(&node.span, &decoded.span_ctx)
     })
+}
+
+/// Content for a style/tcy annotation node. When the node span covers the
+/// target text plus its marker, the quoted target is the node's one copy
+/// of that text. A span that starts at the marker itself (the tree
+/// anchors there when the target contains a ruby/gaiji and was already
+/// emitted as its own nodes) must stay empty — re-quoting the target
+/// would double it in every projection.
+fn annotation_content(source: &str) -> Vec<Value> {
+    if source.starts_with("［＃") || source.starts_with("[#") {
+        return Vec::new();
+    }
+    let text = marker_target(source).unwrap_or(source);
+    vec![json!({"kind": "text", "value": text})]
 }
 
 fn emphasis_style_type(decoded: &DecodedSource, node: &AozoraNode) -> &'static str {
@@ -2550,6 +2562,32 @@ mod tests {
         assert_eq!(gaiji["resolved"], "枘");
         assert_eq!(gaiji["jis_code"], "第3水準1-85-54");
         assert!(gaiji["unresolved_reason"].is_null());
+    }
+
+    /// A retrospective style annotation whose target contains a ruby
+    /// (`扨、私事《…》、［＃「扨、私事、」は太字］`) anchors the style
+    /// node on the marker alone — the target text was already emitted as
+    /// text/ruby nodes before it. The style node must NOT re-quote the
+    /// target as content: that doubled the passage in every projection.
+    #[test]
+    fn marker_only_style_span_does_not_duplicate_target() {
+        let src = "まえ扨、私事《わたくしこと》、［＃「扨、私事、」は太字］あと\n";
+        let aat = aat_value_for(src);
+        let style = find_first_node(&aat, "style");
+        assert_eq!(style["style_type"], "bold");
+        assert_eq!(style["content"].as_array().unwrap().len(), 0);
+    }
+
+    /// The span-covering form (`文字［＃「文字」に傍点］` where the node
+    /// span includes the target) keeps the target as content — there it
+    /// is the only copy.
+    #[test]
+    fn target_covering_style_span_keeps_content() {
+        let src = "まえ文字［＃「文字」に傍点］あと\n";
+        let aat = aat_value_for(src);
+        let style = find_first_node(&aat, "style");
+        assert_eq!(style["style_type"], "bouten");
+        assert_eq!(style["content"][0]["value"], "文字");
     }
 
     /// A ruby base made of several consecutive gaiji markers (`※［＃…］

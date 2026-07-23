@@ -89,9 +89,9 @@ What rotates:
 
 ## Acceptance Criteria
 
-- **ADR-0018-C1 — fixture-behavior:** In the named metadata RDF cases, the generator emits `dcndl:titleTranscription` inside the title blank node, emits neither `abc:reading` nor `abc:copyrightExpired`, and true, false, and nil legacy copyright flags emit no external rights assertion. See `test/abc/tools/schema_validation_evidence_test.clj`.
-- **ADR-0018-C2 — fixture-behavior:** `MetadataRecordWorkShape` permits zero or one `dcterms:rights`; when present it must be an IRI in the closed Public Domain Mark/InC set. See `test/abc/tools/schema_validation_evidence_test.clj`.
-- **ADR-0018-C3 — fixture-behavior:** The metadata-bundle helper validates the committed metadata JSON and person inputs, SHACL graph, and byte-identical `metadata-record.ttl` fixture. See `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0018-C1 — fixture-behavior:** In the named metadata RDF cases, the generator emits `dcndl:titleTranscription` inside the title blank node, emits neither `abc:reading` nor `abc:copyrightExpired`, and true, false, and nil legacy copyright flags emit no external rights assertion. See `test/abc/tools/metadata_record_test.clj`.
+- **ADR-0018-C2 — fixture-behavior:** `MetadataRecordWorkShape` permits zero or one `dcterms:rights`; when present it must be an IRI in the closed Public Domain Mark/InC set. See `test/abc/tools/metadata_record_test.clj`.
+- **ADR-0018-C3 — fixture-behavior:** The metadata-bundle helper validates the committed metadata JSON and person inputs, SHACL graph, and byte-identical `metadata-record.ttl` fixture. See `test/abc/tools/validate_design_bundle_test.clj`.
 
 ADR 0035 containment supersedes the original Boolean-to-external-rights
 derivation: legacy Boolean values now emit no external rights assertion.

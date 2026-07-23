@@ -17,6 +17,20 @@
    "parser_ir_schema_hash" "sha256:6666666666666666666666666666666666666666666666666666666666666666"
    "output_format_spec_hash" "sha256:3333333333333333333333333333333333333333333333333333333333333333"})
 
+(def ^:private turtle-prefix-paths
+  ["examples/v0/example-work/failure-manifest.example.ttl"
+   "examples/v0/example-work/lod/manifest.prov.ttl"
+   "examples/v0/example-work/manifest.ttl"
+   "examples/v0/example-work/metadata-record.ttl"
+   "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/graph.ttl"
+   "fixtures/v0/invalid/drift/rdf-participant-prov-mismatch/graph.ttl"
+   "fixtures/v0/invalid/drift/shacl-missing-date/graph.ttl"
+   "fixtures/v0/invalid/drift/split-cardinality-one-successor/graph.ttl"
+   "fixtures/v0/invalid/drift/typing-missing-activity/graph.ttl"
+   "fixtures/v0/invalid/drift/typing-missing-subclass/graph.ttl"
+   "resources/abc/tools/manifest_to_rdf/example_manifest.ttl"
+   "schemas/manifest.shacl.ttl"])
+
 (def expected-design-bundle-command
   ["nix" "run"
    "--override-input" "local-pkgs"
@@ -148,6 +162,15 @@
            (not= expected-design-bundle-command (get-in command [:step :command])))
       (conj {:expected-command expected-design-bundle-command
              :actual-command (get-in command [:step :command])}))))
+
+(deftest broken-manifest-is-rejected-test
+  (let [schema (files/read-json "schemas/manifest.schema.json")]
+    (is (seq (schema/validation-errors schema {})))))
+
+(deftest bounded-turtle-prefix-inventory-test
+  (doseq [path turtle-prefix-paths]
+    (is (str/includes? (files/read-text path)
+                       "@prefix abc: <https://w3id.org/abc/> ."))))
 
 (deftest committed-manifest-schema-conformance-test
   (let [manifest-schema (files/read-json "schemas/manifest.schema.json")]

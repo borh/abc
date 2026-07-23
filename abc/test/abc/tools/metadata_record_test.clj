@@ -3,9 +3,10 @@
             [abc.tools.json :as json]
             [abc.tools.schema :as schema]
             [abc.tools.metadata-record :as mr]
+            [abc.tools.shacl :as shacl]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
-  (:import [org.apache.jena.graph NodeFactory]))
+  (:import [org.apache.jena.graph NodeFactory Triple]))
 
 (def example-record
   (delay (files/read-json "examples/v0/example-work/metadata-record.json")))
@@ -135,6 +136,71 @@
                   {:shapes-graph shapes
                    :data-graph data
                    :label "source-only-rights"}))))))
+
+(deftest metadata-title-and-legacy-predicate-containment-test
+  (let [graph (mr/record+persons->graph @example-record @example-persons-by-id)
+        title-triples (iterator-seq
+                       (.find graph nil
+                              (NodeFactory/createURI
+                               "http://ndl.go.jp/dcndl/terms/titleTranscription")
+                              nil))]
+    (is (= 1 (count title-triples)))
+    (is (= "らしょうもん"
+           (some-> title-triples first .getObject .getLiteralLexicalForm)))
+    (is (empty? (iterator-seq
+                 (.find graph nil
+                        (NodeFactory/createURI "https://w3id.org/abc/reading")
+                        nil))))
+    (is (empty? (iterator-seq
+                 (.find graph nil
+                        (NodeFactory/createURI
+                         "https://w3id.org/abc/copyrightExpired")
+                        nil))))))
+
+(defn- validate-rights-nodes! [rights-nodes]
+  (let [graph (mr/record+persons->graph @example-record @example-persons-by-id)
+        rdf-type (NodeFactory/createURI
+                  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+        document-type (NodeFactory/createURI
+                       "http://purl.org/ontology/bibo/Document")
+        subject (some-> (.find graph nil rdf-type document-type)
+                        iterator-seq first .getSubject)
+        rights-predicate (NodeFactory/createURI
+                          "http://purl.org/dc/terms/rights")]
+    (doseq [rights rights-nodes]
+      (.add graph (Triple/create subject rights-predicate rights)))
+    (shacl/validate! {:shapes-graph (shacl/load-shapes-graph)
+                      :data-graph graph
+                      :label "metadata-rights"})))
+
+(defn- validate-rights-values! [rights-values]
+  (validate-rights-nodes! (map #(NodeFactory/createURI %) rights-values)))
+
+(deftest optional-rights-shacl-contract-test
+  (is (= :ok (validate-rights-values! [])))
+  (is (= :ok (validate-rights-values!
+              ["https://creativecommons.org/publicdomain/mark/1.0/"])))
+  (is (= :ok (validate-rights-values!
+              ["http://rightsstatements.org/vocab/InC/1.0/"])))
+  (is (instance? clojure.lang.ExceptionInfo
+                 (try
+                   (validate-rights-nodes!
+                    [(NodeFactory/createLiteral
+                      "https://creativecommons.org/publicdomain/mark/1.0/")])
+                   nil
+                   (catch clojure.lang.ExceptionInfo exception exception))))
+  (let [invalid (try
+                  (validate-rights-values! ["https://example.invalid/rights"])
+                  nil
+                  (catch clojure.lang.ExceptionInfo exception exception))
+        duplicate (try
+                    (validate-rights-values!
+                     ["https://creativecommons.org/publicdomain/mark/1.0/"
+                      "http://rightsstatements.org/vocab/InC/1.0/"])
+                    nil
+                    (catch clojure.lang.ExceptionInfo exception exception))]
+    (is (instance? clojure.lang.ExceptionInfo invalid))
+    (is (instance? clojure.lang.ExceptionInfo duplicate))))
 
 (deftest record+persons->ttl-matches-fixture-test
   (testing "compose-graph + ttl matches the committed metadata-record.ttl"

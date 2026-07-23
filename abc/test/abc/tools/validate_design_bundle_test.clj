@@ -16,6 +16,7 @@
             [abc.tools.schematron :as schematron]
             [abc.tools.validate-design-bundle :as validate]
             [babashka.fs :as fs]
+            [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
 
 (def ^:private parser-rq-test-hash
@@ -1234,6 +1235,29 @@
       (run!))
     (is (false? @reached?))
     (is (= #{:publication-output :xml :tei :tei-schematron} @gates))))
+
+(defn- write-canonicalization-fixtures! [identity-json array-a array-b]
+  (files/write-text! identity-json "{}\n")
+  (files/write-text! array-a "[]\n")
+  (files/write-text! array-b "[1]\n"))
+
+(deftest canonicalization-hash-mismatch-is-rejected-test
+  (fs/with-temp-dir [dir {:prefix "abc-test-"}]
+    (let [identity-json (io/file (str dir) "identity.json")
+          array-a (io/file (str dir) "array-a.json")
+          array-b (io/file (str dir) "array-b.json")]
+      (write-canonicalization-fixtures! identity-json array-a array-b)
+      (let [error (try
+                    (validate/validate-canonicalization!
+                     {:expected (apply str (repeat 64 "0"))
+                      :identity-json (str identity-json)
+                      :array-a (str array-a)
+                      :array-b (str array-b)})
+                    nil
+                    (catch clojure.lang.ExceptionInfo exception exception))]
+        (is (instance? clojure.lang.ExceptionInfo error))
+        (is (re-find #"canonical identity fixture hash mismatch"
+                     (ex-message error)))))))
 
 (deftest canonicalization-fixture-covers-current-identity-inventory-test
   (validate/validate-canonicalization!)

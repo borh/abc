@@ -63,7 +63,21 @@
           recomputed (str "sha256:" hex)
           committed (get (files/read-json result-path) "context_hash")]
       (is (= recomputed committed)
-          "validation-result context_hash must match a recomputed hash"))))
+          "validation-result context_hash must match a recomputed hash")
+      (is (= (la/context-hash context-path) committed)
+          "la/context-hash on the real context must match the committed hash"))))
+
+(deftest context-declares-canonical-abc-namespace-test
+  (is (= "https://w3id.org/abc/"
+         (get-in (files/read-json context-path) ["@context" "abc"]))))
+
+(deftest expanded-artifact-id-uses-canonical-predicate-test
+  (let [expanded (files/read-json expanded-path)
+        manifest-id (get (files/read-json manifest-path) "artifact_id")]
+    (is (= manifest-id
+           (get-in expanded
+                   ["expanded" 0 "https://w3id.org/abc/artifactId"
+                    0 "@value"])))))
 
 (deftest identity-invariant-test
   (testing "manifest artifact_id round-trips through expansion unchanged"

@@ -147,13 +147,13 @@ remain a smoke gate, not a full corpus build:
 ## Acceptance Criteria
 
 - **ADR-0006-C1 — operational-behavior:** The supported `nix run .#validate-design-bundle` application exits zero on the committed design bundle. See `test/abc/tools/validate_design_bundle_test.clj`.
-- **ADR-0006-C2 — structural-invariant:** `bin/validate-design-bundle.sh` delegates to the supported Clojure validation entry point without duplicating validation logic. See `test/abc/tools/schema_validation_evidence_test.clj`.
-- **ADR-0006-C3 — fixture-behavior:** Manifest schema validation rejects an empty manifest fixture. See `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0006-C2 — structural-invariant:** `bin/validate-design-bundle.sh` delegates to the supported Clojure validation entry point without duplicating validation logic. See `test/abc/tools/foundation_evidence_test.clj`.
+- **ADR-0006-C3 — fixture-behavior:** Manifest schema validation rejects an empty manifest fixture. See `test/abc/tools/foundation_evidence_test.clj`.
 - **ADR-0006-C4 — fixture-behavior:** A project-Relax-NG-valid fixture that violates Schematron is rejected with its declared error rule ID. See `test/abc/tools/validate_design_bundle_test.clj`.
 - **ADR-0006-C5 — fixture-behavior:** The figure accessibility fixture reports `abc-figure-accessibility` as a warning without a Schematron error. See `test/abc/tools/schematron_test.clj`.
-- **ADR-0006-C6 — fixture-behavior:** Canonical identity validation rejects a mismatched expected hash. See `test/abc/tools/schema_validation_evidence_test.clj`.
-- **ADR-0006-C7 — fixture-behavior:** Linked Art validation regenerates and byte-compares the three committed LOD fixtures. See `test/abc/tools/schema_validation_evidence_test.clj`.
-- **ADR-0006-C8 — fixture-behavior:** The committed IIIF applicability record validates; `derived_manifest` is required only for `applicable` status and is null otherwise. See `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0006-C6 — fixture-behavior:** Canonical identity validation rejects a mismatched expected hash. See `test/abc/tools/validate_design_bundle_test.clj`.
+- **ADR-0006-C7 — fixture-behavior:** Linked Art validation regenerates and byte-compares the three committed LOD fixtures. See `test/abc/tools/linked_art_test.clj`.
+- **ADR-0006-C8 — fixture-behavior:** The committed IIIF applicability record validates; `derived_manifest` is required only for `applicable` status and is null otherwise. See `test/abc/tools/iiif_test.clj`.
 - **ADR-0006-C9 — structural-invariant:** CI invokes the supported `.#validate-design-bundle` Nix application used for local validation. See `test/abc/tools/foundation_evidence_test.clj`.
 
 ## Future Verification

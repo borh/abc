@@ -11,6 +11,7 @@
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-sentence-policy :as sentence-policy]
+            [abc.tools.parser-rq-source-recognition :as source-recognition]
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [abc.tools.schematron :as schematron]
@@ -690,11 +691,11 @@
                                 [aggregate-schema aggregate]
                                 [aggregate-schema unavailable-aggregate]]]
         (is (nil? (schema/validation-errors contract value))))
-      (is (empty? (validate/parser-rq-source-recognition-work-errors work)))
-      (is (empty? (validate/parser-rq-source-recognition-index-errors index)))
-      (is (empty? (validate/parser-rq-source-recognition-aggregate-errors
+      (is (empty? (source-recognition/work-errors work)))
+      (is (empty? (source-recognition/index-errors index)))
+      (is (empty? (source-recognition/aggregate-errors
                    aggregate)))
-      (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+      (is (empty? (source-recognition/coherence-errors
                    index aggregate [work]))))
     (testing "unknown fields and unavailable trusted totals are rejected"
       (is (seq (schema/validation-errors work-schema (assoc work "unknown" true))))
@@ -724,7 +725,7 @@
       (doseq [value [9007199254740992 1.5 Double/MIN_VALUE]]
         (let [candidate (assoc index "expected_work_count" value)]
           (is (seq (schema/validation-errors index-schema candidate)))
-          (is (seq (validate/parser-rq-source-recognition-index-errors
+          (is (seq (source-recognition/index-errors
                     candidate))))))
     (testing "projections are ordered subsets with exact byte conservation"
       (doseq [invalid [(assoc work "recognized_bytes" 11)
@@ -735,22 +736,22 @@
                        (assoc work "recognized" [{"start" 0 "end" 11}])
                        (assoc work "recognized" [{"start" 0 "end" 10}])
                        (assoc work "semantic_gaps" [{"start" 5 "end" 6}])]]
-        (is (seq (validate/parser-rq-source-recognition-work-errors invalid)))))
+        (is (seq (source-recognition/work-errors invalid)))))
     (testing "membership and identity bindings are exact"
-      (is (seq (validate/parser-rq-source-recognition-index-errors
+      (is (seq (source-recognition/index-errors
                 (assoc index "records" []))))
-      (is (seq (validate/parser-rq-source-recognition-index-errors
+      (is (seq (source-recognition/index-errors
                 (assoc index "expected_work_ids" ["another-work"]))))
-      (is (seq (validate/parser-rq-source-recognition-index-errors
+      (is (seq (source-recognition/index-errors
                 (assoc index
                        "expected_work_ids" ["fixture-work" "fixture-work"]
                        "expected_work_count" 2))))
-      (is (seq (validate/parser-rq-source-recognition-coherence-errors
+      (is (seq (source-recognition/coherence-errors
                 index aggregate [])))
-      (is (seq (validate/parser-rq-source-recognition-coherence-errors
+      (is (seq (source-recognition/coherence-errors
                 index aggregate [(assoc work "capture_generation_ref"
                                         (str "sha256:" (apply str (repeat 64 "f"))))])))
-      (is (seq (validate/parser-rq-source-recognition-coherence-errors
+      (is (seq (source-recognition/coherence-errors
                 index
                 (assoc aggregate "corpus_generation_algorithm" "legacy-jcs")
                 [work]))))
@@ -767,9 +768,9 @@
                                "work_completeness"
                                {"expected" 1 "observed" 0 "complete" false})]
         (is (nil? (schema/validation-errors index-schema unavailable-index)))
-        (is (empty? (validate/parser-rq-source-recognition-index-errors
+        (is (empty? (source-recognition/index-errors
                      unavailable-index)))
-        (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+        (is (empty? (source-recognition/coherence-errors
                      unavailable-index unavailable [])))))
     (testing "corpus identity authenticates distinct per-work capture mappings"
       (let [other-capture (str "sha256:" (apply str (repeat 64 "7")))
@@ -803,9 +804,9 @@
                                         {"work_id" "other-work" "start" 4 "end" 6}]))]
         (is (not= (get work "capture_generation_ref")
                   (get other-work "capture_generation_ref")))
-        (is (empty? (validate/parser-rq-source-recognition-index-errors
+        (is (empty? (source-recognition/index-errors
                      multi-index)))
-        (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+        (is (empty? (source-recognition/coherence-errors
                      multi-index multi-aggregate [work other-work])))
         (doseq [bad-index [(with-corpus-generation-ref
                              (update multi-index "records" pop))
@@ -813,20 +814,20 @@
                              (assoc multi-index "records"
                                     [(first (get multi-index "records"))
                                      (first (get multi-index "records"))]))]]
-          (is (seq (validate/parser-rq-source-recognition-index-errors
+          (is (seq (source-recognition/index-errors
                     bad-index))))
         (let [swapped-index
               (with-corpus-generation-ref
                 (assoc-in multi-index ["records" 0 "capture_generation_ref"]
                           other-capture))]
-          (is (empty? (validate/parser-rq-source-recognition-index-errors
+          (is (empty? (source-recognition/index-errors
                        swapped-index)))
-          (is (seq (validate/parser-rq-source-recognition-coherence-errors
+          (is (seq (source-recognition/coherence-errors
                     swapped-index
                     (assoc multi-aggregate "corpus_generation_ref"
                            (get swapped-index "corpus_generation_ref"))
                     [work other-work]))))
-        (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+        (is (empty? (source-recognition/coherence-errors
                      multi-index multi-aggregate [other-work work])))))
     (testing "available aggregates require an available complete exact fold"
       (doseq [[candidate-index candidate-aggregate candidate-records]
@@ -841,7 +842,7 @@
                [index aggregate [work work]]
                [index aggregate []]
                [index aggregate [(assoc work "work_id" "extra-work")]]]]
-        (is (seq (validate/parser-rq-source-recognition-coherence-errors
+        (is (seq (source-recognition/coherence-errors
                   candidate-index candidate-aggregate candidate-records))))
       (let [empty-index (with-corpus-generation-ref
                           (assoc index
@@ -861,23 +862,23 @@
                                    "unaccounted_bytes" 0
                                    "semantic_gaps" []
                                    "unaccounted" [])]
-        (is (empty? (validate/parser-rq-source-recognition-index-errors
+        (is (empty? (source-recognition/index-errors
                      empty-index)))
-        (is (empty? (validate/parser-rq-source-recognition-coherence-errors
+        (is (empty? (source-recognition/coherence-errors
                      empty-index empty-aggregate [])))))
     (testing "aggregate totals and work witnesses are coherent"
-      (is (seq (validate/parser-rq-source-recognition-aggregate-errors
+      (is (seq (source-recognition/aggregate-errors
                 (assoc aggregate "recognized_bytes" 11))))
-      (is (seq (validate/parser-rq-source-recognition-aggregate-errors
+      (is (seq (source-recognition/aggregate-errors
                 (assoc aggregate "semantic_gaps"
                        [{"work_id" "fixture-work" "start" 4 "end" 11}]))))
-      (is (seq (validate/parser-rq-source-recognition-aggregate-errors
+      (is (seq (source-recognition/aggregate-errors
                 (assoc aggregate
                        "semantic_gap_bytes" 3
                        "semantic_gaps"
                        [{"work_id" "fixture-work" "start" 4 "end" 6}
                         {"work_id" "fixture-work" "start" 5 "end" 6}]))))
-      (is (seq (validate/parser-rq-source-recognition-coherence-errors
+      (is (seq (source-recognition/coherence-errors
                 index (assoc aggregate "recognized_bytes" 7) [work]))))))
 
 (deftest parser-rq-classified-source

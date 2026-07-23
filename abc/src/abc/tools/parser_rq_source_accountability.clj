@@ -6,6 +6,7 @@
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-decoded-utf8 :as decoded-utf8]
+            [abc.tools.parser-rq-source-recognition :as source-recognition]
             [abc.tools.schema :as schema]
             [clojure.string :as string]
             [clojure.walk :as walk]))
@@ -490,14 +491,6 @@
        (= source-recognition-instrument-version
           (get-in identity [:instrument_versions :source_span_coverage]))))
 
-(defn- corpus-generation-ref
-  [index]
-  (try
-    (hash/format-sha256
-     (hash/sha256-json-rfc8785-safe-integer-v1
-      (walk/stringify-keys (dissoc index :corpus_generation_ref))))
-    (catch Exception _ nil)))
-
 (defn- projected-ref
   [value excluded-key]
   (try
@@ -651,7 +644,8 @@
          (= (count membership-work-ids) (count (set membership-work-ids)))
          (= (:expected_work_ids index) membership-work-ids)
          (= "ok" (:status index) (:status aggregate))
-         (= (:corpus_generation_ref index) (corpus-generation-ref index))
+         (= (:corpus_generation_ref index)
+            (source-recognition/corpus-generation-ref index))
          (= (:expected_work_ids index) (mapv :work_id entries) record-ids)
          (= (:expected_work_count index) (:record_count index) (count records))
          (not-any? nil? membership-records)

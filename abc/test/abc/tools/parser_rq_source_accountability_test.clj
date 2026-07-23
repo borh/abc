@@ -4,6 +4,7 @@
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-source-accountability :as rq-source]
+            [abc.tools.parser-rq-source-recognition :as source-recognition]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is]]
@@ -191,7 +192,7 @@
                       index-value)
         index-value (if index (index index-value) index-value)
         index-value (assoc index-value :corpus_generation_ref
-                           (#'rq-source/corpus-generation-ref index-value))
+                           (source-recognition/corpus-generation-ref index-value))
         index-value (if corpus-ref
                       (update index-value :corpus_generation_ref corpus-ref)
                       index-value)
@@ -645,12 +646,6 @@
       (finally
         (doseq [file (reverse (file-seq root))] (.delete file))))))
 
-(defn- corpus-generation-ref
-  [index]
-  (hash/format-sha256
-   (hash/sha256-json-rfc8785-safe-integer-v1
-    (walk/stringify-keys (dissoc index :corpus_generation_ref)))))
-
 (defn- recognition-values
   [recognized accounted eligible]
   (let [work {:schema_version "abc/parser-rq-source-recognition-work/v1"
@@ -727,7 +722,7 @@
                      {:locator (:locator work-blob)})
         index-with-entry (assoc base-index :records [entry])
         index (assoc index-with-entry :corpus_generation_ref
-                     (corpus-generation-ref index-with-entry))
+                     (source-recognition/corpus-generation-ref index-with-entry))
         aggregate (assoc aggregate-base :corpus_generation_ref
                          (:corpus_generation_ref index))
         aggregate-blob (write-blob! root "recognition-aggregate.json" aggregate)
@@ -766,7 +761,7 @@
                      {:locator (:locator work-blob)})
         index-with-entry (assoc index :records [entry])
         new-index (assoc index-with-entry :corpus_generation_ref
-                         (corpus-generation-ref index-with-entry))
+                         (source-recognition/corpus-generation-ref index-with-entry))
         new-aggregate (-> aggregate
                           (assoc :corpus_generation_ref
                                  (:corpus_generation_ref new-index))

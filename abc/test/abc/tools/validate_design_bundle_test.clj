@@ -3377,6 +3377,15 @@
       (is (= :invalid-candidates (:status report)))
       (is (has-error? #"missing :evidence_scope" (:candidate-errors report))))))
 
+(deftest compatibility-queries-cover-the-full-match-key-set-test
+  ;; The query builders project different sources into compat's match-key
+  ;; space; adding a match key must fail here rather than silently narrowing
+  ;; every compatibility comparison.
+  (is (= (set compat/match-keys)
+         (set (keys (validate/derived-from-compatibility-query {} {})))))
+  (is (= (set compat/match-keys)
+         (set (keys (validate/divergence-bundle-compatibility-query {} {} {}))))))
+
 (deftest compatibility-errors-test
   (testing "does not check compatibility when no AAT mapping metadata is present"
     (is (empty? (validate/compatibility-errors

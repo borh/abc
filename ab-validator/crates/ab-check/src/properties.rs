@@ -78,14 +78,19 @@ impl Property for VisibleTextBodyOrder {
     }
 
     fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation> {
-        let source = normalize_visible(&source_projection::comparison_lossy_body(body_text(txt)));
         // The projection re-emits Aozora marker syntax verbatim (raw nodes,
         // and markers split across adjacent nodes such as a text `※` before a
         // raw `［＃…］` description). The source side strips that syntax via
         // comparison_lossy_body, so the projection must pass through the same
-        // scrubber for the two sides to be comparable.
-        let projection = normalize_visible(&source_projection::comparison_lossy_body(
-            &comparison_visible_text_projection(aat),
+        // scrubber for the two sides to be comparable. Accent notation is
+        // asymmetric the other way (the sanitize stage composes `〔…〕`
+        // notation inside the AAT text), so both sides also go through
+        // fold_accent_notation.
+        let source = normalize_visible(&source_projection::fold_accent_notation(
+            &source_projection::comparison_lossy_body(body_text(txt)),
+        ));
+        let projection = normalize_visible(&source_projection::fold_accent_notation(
+            &source_projection::comparison_lossy_body(&comparison_visible_text_projection(aat)),
         ));
         if projection.is_empty() || is_subsequence(&projection, &source) {
             Ok(())
@@ -149,17 +154,18 @@ pub fn body_text(text: &str) -> &str {
         offset += line.len();
     }
     let body = &text[body_start..];
-    let body_end = body
-        .char_indices()
-        .find_map(|(offset, _)| {
-            let rest = &body[offset..];
-            if rest.starts_with("底本：") || rest.starts_with("底本:") {
-                Some(offset)
-            } else {
-                None
-            }
-        })
-        .unwrap_or(body.len());
+    // The terminal-provenance trailer is a line that STARTS with 底本：.
+    // A mid-line occurrence (most commonly 翻訳の底本： in translated
+    // works) is body text and must not truncate the comparison source.
+    let mut body_end = body.len();
+    let mut line_offset = 0;
+    for line in body.split_inclusive('\n') {
+        if line.starts_with("底本：") || line.starts_with("底本:") {
+            body_end = line_offset;
+            break;
+        }
+        line_offset += line.len();
+    }
     &body[..body_end]
 }
 
@@ -276,6 +282,37 @@ fn is_subsequence(needle: &str, haystack: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `翻訳の底本：` mid-body (translated works list their translation
+    /// source inline) must not truncate the body: only a line that STARTS
+    /// with `底本：`/`底本:` is the terminal-provenance trailer.
+    #[test]
+    fn body_text_cuts_only_at_line_start_teihon() {
+        let text = "題名\n--------------------\n--------------------\n\
+                    本文です。\n翻訳の底本：Foo, Bar (1891)\nまだ本文。\n底本：「全集」出版社\n";
+        let body = body_text(text);
+        assert!(body.contains("翻訳の底本：Foo"));
+        assert!(body.contains("まだ本文。"));
+        assert!(!body.contains("「全集」"));
+    }
+
+    /// The parser's sanitize stage composes Aozora accent notation
+    /// (`〔Franc,ois〕` → `〔François〕`) inside the AAT text, so the two
+    /// comparison sides must be folded to a common form.
+    #[test]
+    fn visible_text_body_order_accepts_composed_accent_notation() {
+        let txt = "題名\n--------------------\n--------------------\n\
+                   彼は〔Franc,ois〕と署名した。\n底本：X\n";
+        let aat = serde_json::json!({
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "彼は〔François〕と署名した。"}
+                ]
+            }]
+        });
+        assert!(VisibleTextBodyOrder.check(txt, &aat).is_ok());
+    }
 
     #[test]
     fn source_visible_text_excludes_unresolved_gaiji_descriptions() {

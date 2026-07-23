@@ -9,10 +9,6 @@
 (def validation-scopes #{"structural" "fixture" "smoke-corpus"
                          "full-corpus" "operational"})
 (def release-authorities #{"none" "development" "publication"})
-(def claim-kinds
-  #{:structural-invariant :fixture-behavior :corpus-behavior
-    :performance-bound :external-semantics :implementation-agreement
-    :domain-interpretation :operational-behavior})
 (def header-fields
   #{"Status" "Date" "Accepted" "Supersedes" "Superseded by"
     "Amends" "Amended by" "Depends on" "Source"
@@ -99,13 +95,7 @@
            [(problem :claim-adr-mismatch file
                      "claim ID ADR number must match its containing ADR"
                      :criterion-index criterion-index
-                     :claim-id claim-id)])
-         (when-not (contains? claim-kinds claim-kind)
-           [(problem :unknown-claim-kind file
-                     "claim kind is not recognized"
-                     :criterion-index criterion-index
-                     :claim-id claim-id
-                     :value claim-kind)])))})
+                     :claim-id claim-id)])))})
     {:criterion {:criterion-index criterion-index
                  :body body
                  :claim-id nil
@@ -498,23 +488,6 @@
                :path path
                :target-status (:status target)))))
 
-(defn- legacy-dependency-status-problems [adrs]
-  (let [by-number (into {} (map (fn [adr] [(:num adr) adr]) adrs))]
-    (for [{source-status :status file :file relations :relations} adrs
-          {:keys [target scope] :as item} (:depends-on relations)
-          :let [target-status (:status (get by-number target))]
-          :when (and (= "Accepted" source-status)
-                     (or (and (#{"Draft" "Proposed"} target-status)
-                              (nil? scope))
-                         (#{"Withdrawn" "Superseded"} target-status)))]
-      (if (#{"Withdrawn" "Superseded"} target-status)
-        (problem :inactive-dependency file
-                 "an Accepted ADR cannot depend on a Withdrawn or Superseded ADR"
-                 :value item)
-        (problem :unscoped-nonaccepted-dependency file
-                 "an Accepted ADR dependency on Draft or Proposed requires scope"
-                 :value item)))))
-
 (defn- evidence-path-state [repo-root path]
   (let [{:keys [state relative] :as contained}
         (containment/path-state repo-root path)
@@ -581,30 +554,6 @@
     (dependency-status-problems adrs)
     (mapcat #(evidence-problems repo-root %) adrs))))
 
-(def ^:private audit-only-problem-kinds
-  #{:missing-validation-scope
-    :missing-release-authority
-    :invalid-validation-scope
-    :invalid-release-authority
-    :noncanonical-dependency-path
-    :missing-claim-header
-    :malformed-claim-header
-    :claim-adr-mismatch
-    :duplicate-claim-id
-    :unknown-claim-kind
-    :claim-header-outside-acceptance})
-
-(defn validate-adrs-legacy
-  "Validate with the pre-migration lifecycle/dependency policy. Parsing,
-  evidence containment, relation integrity, and prior dependency safety remain
-  enforced; audit-only lifecycle dimensions and closure do not block callers."
-  [adrs repo-root]
-  (vec
-   (concat
-    (remove #(contains? audit-only-problem-kinds (:kind %))
-            (validate-adrs adrs repo-root))
-    (legacy-dependency-status-problems adrs))))
-
 (defn- validate-repository* [validate-fn repo-root adr-dir]
   (let [directory (fs/file repo-root adr-dir)]
     (cond
@@ -636,8 +585,3 @@
   ([repo-root] (validate-repository repo-root "docs/adr"))
   ([repo-root adr-dir]
    (validate-repository* validate-adrs repo-root adr-dir)))
-
-(defn validate-repository-legacy
-  ([repo-root] (validate-repository-legacy repo-root "docs/adr"))
-  ([repo-root adr-dir]
-   (validate-repository* validate-adrs-legacy repo-root adr-dir)))

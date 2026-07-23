@@ -214,23 +214,8 @@
               '';
         in
         {
-          monorepo-adr-governance =
-            cljPkgs.runCommand "soranoha-monorepo-adr-governance"
-              {
-                nativeBuildInputs = [ cljPkgs.clojure ];
-                src = self;
-              }
-              ''
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export GITLIBS="$HOME/.gitlibs"
-                cd "$src/abc"
-                clojure -M:abc/adr-governance --repo-root "$src/abc" --mode enforce
-                mkdir -p "$out"
-                echo "monorepo ADR governance is strictly valid" > "$out/result.txt"
-              '';
+          # One canonical strict-governance derivation: the abc component check.
+          monorepo-adr-governance = abc.checks.${system}.adr-governance;
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =
             mkMonorepoCheck "soranoha-monorepo-tei-version-coherence"

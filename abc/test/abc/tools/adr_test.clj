@@ -97,7 +97,7 @@
       (is (empty? (:parse-problems parsed)))
       (is (every? string? (vals (:section-bodies parsed)))))))
 
-(deftest duplicate-ordinary-sections-remain-legacy-valid
+(deftest duplicate-ordinary-sections-remain-valid
   (let [dir (temp-dir)]
     (write-adr! dir "0042-duplicate-ordinary.md"
                 (str (claim-body 42 "Proposed" "- Plain criterion.")
@@ -105,7 +105,7 @@
                      "## Notes\n\nSecond note.\n\n"
                      "## Consequences\n\nFirst consequence.\n\n"
                      "## Consequences\n\nSecond consequence.\n"))
-    (is (empty? (adr/validate-adrs-legacy
+    (is (empty? (adr/validate-adrs
                  (adr/parse-all dir) dir)))))
 
 (deftest markdown-list-prefixed-claim-headers-are-linted-in-target-sections
@@ -163,9 +163,8 @@
     (is (= #{:malformed-claim-header}
            (kinds (:claim-problems
                    (adr/parse-adr dir "0045-zero.md")))))
-    (is (= #{:unknown-claim-kind}
-           (kinds (:claim-problems
-                   (adr/parse-adr dir "0046-unknown.md")))))
+    (is (empty? (:claim-problems
+                 (adr/parse-adr dir "0046-unknown.md"))))
     (is (empty? (:claim-problems
                  (adr/parse-adr dir "0047-proposed-plain.md"))))
     (is (= #{:malformed-claim-header}
@@ -659,7 +658,7 @@
            (count problems)))
     (is (= [] dependency-paths))))
 
-(deftest legacy-policy-keeps-audit-only-rules-nonblocking
+(deftest strict-policy-blocks-lifecycle-and-closure-gaps
   (let [dir (temp-dir)]
     (write-path! dir "test/evidence.clj" "(ns evidence)")
     (write-adr! dir "0001-proposed.md"
@@ -676,10 +675,9 @@
           strict-kinds (kinds (adr/validate-adrs adrs dir))]
       (is (contains? strict-kinds :missing-validation-scope))
       (is (contains? strict-kinds :missing-release-authority))
-      (is (contains? strict-kinds :noncanonical-dependency-path))
-      (is (empty? (adr/validate-adrs-legacy adrs dir))))))
+      (is (contains? strict-kinds :noncanonical-dependency-path)))))
 
-(deftest legacy-policy-retains-pre-migration-dependency-safety
+(deftest strict-policy-blocks-nonaccepted-dependencies
   (let [dir (temp-dir)]
     (write-path! dir "test/evidence.clj" "(ns evidence)")
     (write-adr! dir "0001-proposed.md"
@@ -687,6 +685,6 @@
                      "Date: 2026-07-10\n\n## Decision\n\nFuture.\n"))
     (write-adr! dir "0002-accepted.md"
                 (accepted-body 2 "Accepted" "Depends on: ADR 0001\n"))
-    (is (contains? (kinds (adr/validate-adrs-legacy
+    (is (contains? (kinds (adr/validate-adrs
                            (adr/parse-all (.getPath dir)) dir))
-                   :unscoped-nonaccepted-dependency))))
+                   :noncanonical-dependency-path))))

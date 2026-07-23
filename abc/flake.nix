@@ -822,10 +822,10 @@
               ''
                 ${copyWritableSource}
                 ${cljSandboxEnv}
-                clojure -M:abc/adr-governance --mode audit
+                clojure -M:abc/adr-governance
 
                 mkdir -p "$out"
-                echo "ADR lifecycle, dependency, claim, artifact, freshness, and evidence audit completed." > "$out/result.txt"
+                echo "ADR corpus is strictly valid." > "$out/result.txt"
               '';
           swi-prolog-smoke =
             pkgs.runCommand "abc-swi-prolog-smoke" { nativeBuildInputs = [ pkgs.swi-prolog ]; }

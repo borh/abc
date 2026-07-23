@@ -32,14 +32,15 @@ use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json
 /// `aozora_json::diagnostic_entries` call serves both diagnostic families.
 pub type AozoraSanitizeDiagnostic = Diagnostic;
 
-/// v1-parity fallback for ruby nodes with no resolvable `ruby_entries`
-/// entry (gaiji-base ruby, `※［＃…］《reading》`, whose base is
+/// Fallback for ruby nodes with no resolvable `ruby_entries` entry
+/// (gaiji-base ruby, `※［＃…］《reading》`, whose base is
 /// `Content::Segments` and so has no plain-text range to resolve — see
-/// `ruby_node`'s fallback branch). This is the original v1 regex, restored
-/// verbatim so a gaiji-base ruby's typed emission stays byte-identical to
-/// the pre-`ruby_entries` adapter output (delta-audit ruby class
-/// requires baseline typed ruby to be byte-identical in the candidate;
-/// silently downgrading these to `raw` would break that).
+/// `ruby_node`'s fallback branch). The captured base is then enriched from
+/// the gaiji scan: a base that is exactly one gaiji marker emits the
+/// resolved glyph as `base` plus a structured `base_content` gaiji node,
+/// instead of v1's verbatim marker text (which leaked `※［＃…］` into
+/// every downstream text projection and hid the gaiji from
+/// `gaiji_resolution` accounting).
 static RUBY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
 
@@ -1445,7 +1446,7 @@ fn inline_content(
             push_source_gap(&mut content, decoded, cursor, node.span.start);
         }
         match node.kind.as_str() {
-            "ruby" => content.push(ruby_node(decoded, node, ruby_by_span)),
+            "ruby" => content.push(ruby_node(decoded, node, ruby_by_span, gaiji_by_start)),
             "gaiji" => content.push(gaiji_node(decoded, node, gaiji_by_start)),
             "bouten" => content.push(style_node(decoded, node, "bouten")),
             "emphasis" => content.push(style_node(
@@ -1783,6 +1784,7 @@ fn ruby_node(
     decoded: &DecodedSource,
     node: &AozoraNode,
     ruby_by_span: &BTreeMap<(usize, usize), AozoraRubyEntry>,
+    gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
 ) -> Value {
     if let Some(entry) = ruby_by_span.get(&(node.span.start, node.span.end)) {
         return json!({
@@ -1796,17 +1798,34 @@ fn ruby_node(
     // No resolvable structured entry (e.g. gaiji-base ruby, whose base is
     // `Content::Segments` and so has no plain-text range for
     // `ruby_entries` to resolve — see the `RUBY_RE` doc comment). Fall
-    // back to the original v1 regex reparse so this stays byte-identical
-    // to v1's typed emission rather than silently downgrading to `raw`.
+    // back to the v1 regex reparse rather than silently downgrading to
+    // `raw`, then enrich a gaiji-marker base from the gaiji scan.
     let source = source_slice(&decoded.span_text, &node.span);
     if let Some(caps) = RUBY_RE.captures(source) {
-        json!({
+        let base = caps.name("base").unwrap();
+        let mut ruby = json!({
             "kind": "ruby",
-            "base": caps.name("base").unwrap().as_str(),
+            "base": base.as_str(),
             "reading": caps.name("reading").unwrap().as_str(),
             "direction": "right",
             "span": span_json(&node.span, &decoded.span_ctx)
-        })
+        });
+        let marker_start = node.span.start + base.start();
+        if let Some(gaiji) = gaiji_by_start.get(&marker_start) {
+            // Only when the captured base is exactly the marker: a mixed
+            // base (marker plus trailing text) keeps the verbatim form.
+            if gaiji.span.end == marker_start + base.as_str().len() {
+                let fields = ruby.as_object_mut().unwrap();
+                if let Some(resolved) = &gaiji.resolved {
+                    fields.insert("base".to_owned(), json!(resolved));
+                }
+                fields.insert(
+                    "base_content".to_owned(),
+                    json!([gaiji_json(decoded, &gaiji.span, gaiji)]),
+                );
+            }
+        }
+        ruby
     } else {
         raw_node(decoded, node, "ruby")
     }
@@ -1820,6 +1839,10 @@ fn gaiji_node(
     let Some(gaiji) = gaiji_by_start.get(&node.span.start) else {
         return raw_node(decoded, node, "gaiji");
     };
+    gaiji_json(decoded, &node.span, gaiji)
+}
+
+fn gaiji_json(decoded: &DecodedSource, span: &Span, gaiji: &AozoraGaiji) -> Value {
     json!({
         "kind": "gaiji",
         "description": gaiji.description,
@@ -1827,7 +1850,7 @@ fn gaiji_node(
         "jis_code": gaiji.mencode,
         "unresolved_reason": if gaiji.resolved.is_some() { None::<String> } else { Some("unresolved".to_owned()) },
         "x-codepoint": gaiji.codepoint,
-        "span": span_json(&node.span, &decoded.span_ctx)
+        "span": span_json(span, &decoded.span_ctx)
     })
 }
 
@@ -2433,20 +2456,47 @@ mod tests {
     /// (`ab-aozora-pipeline`'s `try_ruby_over_gaiji_base`), which becomes a
     /// `Content::Segments` base — `content_range_as_plain` returns `None`
     /// for it, so `ruby_entries` has no entry for this node's span and
-    /// `ruby_node` falls through to the `RUBY_RE` regex path. This asserts
-    /// that fallback keeps v1's typed emission (byte-identical `base`,
-    /// `direction: "right"`) rather than silently downgrading to a `raw`
-    /// node — see the `RUBY_RE` doc comment and fix-wave concern
-    /// 1 (delta-audit ruby class requires byte-identical typed ruby).
+    /// `ruby_node` falls through to the `RUBY_RE` regex path. That fallback
+    /// enriches the base from the gaiji scan: the typed ruby carries the
+    /// resolved glyph as its `base` (what plaintext / parser-IR project)
+    /// and a structured `base_content` gaiji node (what ab-check's
+    /// `gaiji_resolution` counts) instead of the verbatim `※［＃…］`
+    /// marker text v1 emitted.
     #[test]
-    fn gaiji_base_ruby_keeps_v1_typed_emission() {
+    fn gaiji_base_ruby_resolves_base_and_emits_gaiji_base_content() {
         let src = "※［＃「木＋吶のつくり」、第3水準1-85-54］《かい》\n";
         let aat = aat_value_for(src);
         let ruby = find_first_node(&aat, "ruby");
         assert_eq!(ruby["kind"], "ruby");
         assert_eq!(ruby["direction"], "right");
-        assert_eq!(ruby["base"], "※［＃「木＋吶のつくり」、第3水準1-85-54］");
+        assert_eq!(ruby["base"], "枘");
         assert_eq!(ruby["reading"], "かい");
+        let base_content = ruby["base_content"].as_array().unwrap();
+        assert_eq!(base_content.len(), 1);
+        let gaiji = &base_content[0];
+        assert_eq!(gaiji["kind"], "gaiji");
+        assert_eq!(gaiji["description"], "木＋吶のつくり");
+        assert_eq!(gaiji["resolved"], "枘");
+        assert_eq!(gaiji["jis_code"], "第3水準1-85-54");
+        assert!(gaiji["unresolved_reason"].is_null());
+    }
+
+    /// An unresolvable gaiji base (description-only mencode) keeps the
+    /// verbatim marker as `base` — there is no glyph to project — but the
+    /// `base_content` gaiji node must still be present with
+    /// `unresolved_reason` set so the reference stays typed and countable.
+    #[test]
+    fn unresolvable_gaiji_base_ruby_keeps_verbatim_base_with_unresolved_gaiji() {
+        let src = "※［＃「参らせ候」のくずし字、13-9］《そろ》\n";
+        let aat = aat_value_for(src);
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["base"], "※［＃「参らせ候」のくずし字、13-9］");
+        assert_eq!(ruby["reading"], "そろ");
+        let gaiji = &ruby["base_content"].as_array().unwrap()[0];
+        assert_eq!(gaiji["kind"], "gaiji");
+        assert_eq!(gaiji["description"], "「参らせ候」のくずし字");
+        assert!(gaiji["resolved"].is_null());
+        assert_eq!(gaiji["unresolved_reason"], "unresolved");
     }
 
     #[test]

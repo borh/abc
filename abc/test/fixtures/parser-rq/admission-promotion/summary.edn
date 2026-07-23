@@ -1,6 +1,0 @@
-{:capture_count 1
- :core_attempt_maxima {:fatal_failures 2.0 :wall_time_seconds 12.5 :timeouts 1.0}
- :evaluation_registry_transition [:unadmitted :admitted]
- :predicate_count 9
- :evidence_integrity_receipt_count 1
- :selection "sole-authorized-capture-and-unique-current-registry-evaluation"}

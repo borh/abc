@@ -11,7 +11,9 @@
     (is (= mmd (wf/run->mermaid run)))
     (is (str/starts-with? mmd "%% GENERATED"))
     (is (str/includes? mmd "source-snapshot"))
-    (is (str/includes? mmd "classDef passed"))))
+    (is (str/includes? mmd "classDef passed"))
+    (is (every? #(= "passed" (:class %))
+                (:nodes (wf/run->graph run))))))
 
 (def valid-two-step-run
   {"schema_id" "https://w3id.org/abc/schemas/workflow-run.schema.json"

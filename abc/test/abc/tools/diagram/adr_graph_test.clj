@@ -41,6 +41,12 @@
     (is (some #(str/includes? % "0099") (adr/lint-adrs adrs [{:from 1 :to 99 :type :extends}])))
     (is (some #(str/includes? % "unknown relation") (adr/lint-adrs adrs [{:from 1 :to 1 :type :bogus}])))))
 
+(deftest sidecar-rejects-malformed-endpoints
+  (let [adrs [{:num 1 :title "A" :status "Accepted" :relations {}}
+              {:num 2 :title "B" :status "Accepted" :relations {}}]]
+    (is (some #(str/includes? % "malformed")
+              (adr/lint-adrs adrs [{:from "bad" :to 2 :type :extends}])))))
+
 (deftest sidecar-note-must-be-a-string
   (let [adrs [{:num 1 :title "A" :status "Accepted" :relations {}}]
         relations [{:from 1 :to 1 :type :extends :note 42}]]

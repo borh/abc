@@ -3,10 +3,11 @@
             [abc.tools.diagram.core :as core]
             [abc.tools.diagram.registry :as registry]))
 
-(deftest registry-is-not-empty
-  ;; Guard the drift gate against a vacuous pass: an emptied registry would make
-  ;; committed-diagrams-are-current iterate zero times and go green checking nothing.
-  (is (seq registry/committed-diagrams)))
+(deftest registry-ids-are-the-closed-committed-set
+  ;; Guard the drift gate against a vacuous pass: dropping a registry entry
+  ;; would silently remove its drift check while every other test stays green.
+  (is (= #{:adr-decision-map :architecture}
+         (set (map :id registry/committed-diagrams)))))
 
 (deftest committed-diagrams-are-current
   (doseq [d registry/committed-diagrams]

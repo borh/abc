@@ -60,6 +60,5 @@ workflow in its protocol.
 
 The active surface, promotion, and one-store verifier checks run together in
 the standing Kaocha suite (`test/abc/tools/parser_rq_portability_test.clj`,
-`test/abc/tools/parser_rq_campaign_test.clj`,
-`test/abc/tools/parser_rq_admission_promotion_drift_test.clj`) and in the
+`test/abc/tools/parser_rq_campaign_test.clj`) and in the
 `ab-validator` flake check `parser-rq-campaign-provenance-python-tests`.

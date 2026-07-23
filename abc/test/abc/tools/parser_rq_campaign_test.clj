@@ -304,6 +304,11 @@
     (is (not (contains? receipt removed)))
     (is (not (contains? authorization removed)))))
 
+(deftest predicate-roster-is-the-closed-nine
+  ;; promotion-errors and the campaign fixtures both derive from this literal,
+  ;; so shrinking the roster would otherwise pass every generated-report test.
+  (is (= 9 (count campaign/predicate-ids))))
+
 (deftest evidence-integrity-authenticates-closed-manifest-membership
   (let [blob {:sha256 sha :bytes 10 :media_type "application/json"
               :locator "aa/blob"}

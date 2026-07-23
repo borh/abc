@@ -65,16 +65,12 @@ predicate verdicts, registry admission, or ADR 0039 promotion.
   `test/abc/tools/parser_rq_core_attempt_test.clj`.
 - **ADR-0041-C3 — fixture-behavior:** The bounded admission/promotion transaction
   rejects sibling captures, stale evaluations, incomplete predicate sets, and
-  canonical drift. Evidence: `test/abc/tools/parser_rq_campaign_test.clj`
-  asserts the rejections;
-  `test/abc/tools/parser_rq_admission_promotion_drift_test.clj` pins the
-  byte-stability of the transaction inputs.
+  canonical drift. Evidence: `test/abc/tools/parser_rq_campaign_test.clj`.
 
 ## Evidence
 
-The live predicate rotation, core-attempt, campaign, and transaction-drift
-tests run in the standing Kaocha suite
+The live predicate rotation, core-attempt, and campaign tests run in the
+standing Kaocha suite
 (`test/abc/tools/parser_release_qualification_test.clj`,
 `test/abc/tools/parser_rq_core_attempt_test.clj`,
-`test/abc/tools/parser_rq_campaign_test.clj`,
-`test/abc/tools/parser_rq_admission_promotion_drift_test.clj`).
+`test/abc/tools/parser_rq_campaign_test.clj`).

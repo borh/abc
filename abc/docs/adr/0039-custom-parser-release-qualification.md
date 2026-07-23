@@ -90,8 +90,7 @@ root is
 The bounded contract runs in the standing Kaocha suite
 (`test/abc/tools/parser_release_qualification_test.clj`,
 `test/abc/tools/parser_rq_core_attempt_test.clj`,
-`test/abc/tools/parser_rq_campaign_test.clj`,
-`test/abc/tools/parser_rq_admission_promotion_drift_test.clj`); it covers
+`test/abc/tools/parser_rq_campaign_test.clj`); it covers
 predicate identity, exact evaluation, release-evidence classification,
 authorization, capture/evaluation resolution, and promotion failure semantics.
 

@@ -316,6 +316,25 @@ mod tests {
     }
 
     #[test]
+    fn visible_text_body_order_excludes_source_note_block() {
+        let txt = "本文のことば。\n底本：「全集」出版社\n";
+        let aat = serde_json::json!({
+            "blocks": [
+                {
+                    "kind": "paragraph",
+                    "content": [{"kind": "text", "value": "本文のことば。"}]
+                },
+                {
+                    "kind": "source_note",
+                    "content": [{"kind": "text", "value": "底本：「全集」出版社"}]
+                }
+            ]
+        });
+
+        assert!(VisibleTextBodyOrder.check(txt, &aat).is_ok());
+    }
+
+    #[test]
     fn gaiji_resolution_ignores_gaiji_examples_inside_command_notes() {
         let txt = "豌豆《ゑんどう》［＃「豌豆」は底本では「※［＃「足＋宛」、第3水準1-92-36］豆」］";
         let aat = serde_json::json!({

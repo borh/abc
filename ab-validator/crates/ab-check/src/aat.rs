@@ -60,6 +60,12 @@ pub fn node_line(node: &Value) -> Option<usize> {
 }
 
 fn collect_comparison_block(node: &Value, out: &mut String) {
+    // The source side of the body-order comparison (properties::body_text)
+    // ends at the 底本 trailer, so the structured source_note block that
+    // carries that trailer must not project into the comparison either.
+    if node.get("kind").and_then(Value::as_str) == Some("source_note") {
+        return;
+    }
     if let Some(content) = node.get("content").and_then(Value::as_array) {
         for inline in content {
             collect_comparison_inline(inline, out);

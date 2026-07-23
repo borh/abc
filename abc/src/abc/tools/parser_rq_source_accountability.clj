@@ -5,6 +5,7 @@
             [abc.tools.json :as json]
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-capture :as capture]
+            [abc.tools.parser-rq-decoded-utf8 :as decoded-utf8]
             [abc.tools.schema :as schema]
             [clojure.string :as string]
             [clojure.walk :as walk]))
@@ -278,26 +279,6 @@
             (get counts "observe_only" 0))
          (zero? (get counts "reject_internal" 0)))))
 
-(defn- normalized-intervals
-  [intervals]
-  (reduce (fn [result interval]
-            (if-let [previous (peek result)]
-              (if (<= (:start interval) (:end previous))
-                (conj (pop result) (assoc previous :end (max (:end previous) (:end interval))))
-                (conj result interval))
-              [interval]))
-          [] (sort-by (juxt :start :end) intervals)))
-
-(defn- subtract-interval
-  [source cuts]
-  (loop [cursor (:start source), remaining cuts, result []]
-    (if-let [cut (first remaining)]
-      (let [result (if (< cursor (:start cut))
-                     (conj result {:start cursor :end (:start cut)}) result)]
-        (recur (max cursor (:end cut)) (next remaining) result))
-      (cond-> result (< cursor (:end source))
-              (conj {:start cursor :end (:end source)})))))
-
 (declare valid-recognition-fold? manifest-record)
 (declare authenticated-generation)
 
@@ -318,20 +299,12 @@
         source-bytes (authenticated-blob-bytes store source-member)
         decoded-source (strict-utf8 source-bytes)
         decoded-slice (fn [{:keys [start end]}]
-                        (when (and source-bytes (int? start) (int? end)
-                                   (<= 0 start) (< start end) (<= end (alength source-bytes)))
-                          (try
-                            (let [decoder (doto (.newDecoder java.nio.charset.StandardCharsets/UTF_8)
-                                            (.onMalformedInput java.nio.charset.CodingErrorAction/REPORT)
-                                            (.onUnmappableCharacter java.nio.charset.CodingErrorAction/REPORT))]
-                              (str (.decode decoder
-                                            (java.nio.ByteBuffer/wrap source-bytes start (- end start)))))
-                            (catch Exception _ nil))))
+                        (decoded-utf8/decoded-slice source-bytes start end))
         rules (into {} (map (juxt :code clojure.core/identity) (:rules policy)))
         policy-codes (mapv :code (:rules policy))
         diagnostics (:data raw)
         dispositions (mapv #(get-in rules [(:code %) :disposition]) diagnostics)
-        authorized (normalized-intervals
+        authorized (decoded-utf8/normalized-intervals
                     (mapv :span (keep-indexed
                                  (fn [index diagnostic]
                                    (when (= "authorize_exact_span" (nth dispositions index))
@@ -343,12 +316,11 @@
                                    authorized)
         silent (when authorized-in-gap?
                  (vec (mapcat (fn [gap]
-                                (subtract-interval gap
-                                                   (filter #(and (< (:start %) (:end gap))
-                                                                 (< (:start gap) (:end %)))
-                                                           authorized))) gaps)))
-        interval-bytes (fn [intervals]
-                         (reduce + 0 (map #(- (:end %) (:start %)) intervals)))]
+                                (decoded-utf8/subtract-interval
+                                 gap
+                                 (filter #(and (< (:start %) (:end gap))
+                                               (< (:start gap) (:end %)))
+                                         authorized))) gaps)))]
     (and (nil? (schema/validation-errors @diagnostic-gap-result-schema result))
          (nil? (schema/validation-errors @diagnostic-gap-policy-schema policy))
          (= "ok" (:status result))
@@ -404,19 +376,15 @@
          (every? (fn [diagnostic]
                    (if (= "source-contains-pua" (:code diagnostic))
                      (let [codepoint (:codepoint diagnostic)
-                           slice (decoded-slice (:span diagnostic))
-                           scalar (when (and (string? codepoint) (= 1 (.codePointCount codepoint 0 (.length codepoint))))
-                                    (.codePointAt codepoint 0))]
-                       (and (= slice codepoint) scalar
-                            (or (<= 0xE000 scalar 0xF8FF)
-                                (<= 0xF0000 scalar 0xFFFFD)
-                                (<= 0x100000 scalar 0x10FFFD))))
+                           slice (decoded-slice (:span diagnostic))]
+                       (and (= slice codepoint)
+                            (decoded-utf8/unicode-private-use? codepoint)))
                      (nil? (:codepoint diagnostic))))
                  diagnostics)
          (= authorized (:authorized_intervals result))
          (= silent (:silent_intervals result))
-         (= (:authorized_bytes result) (interval-bytes authorized))
-         (= (:silent_bytes result) (interval-bytes silent))
+         (= (:authorized_bytes result) (decoded-utf8/interval-bytes authorized))
+         (= (:silent_bytes result) (decoded-utf8/interval-bytes silent))
          (= (:silent_drop_count result) (count silent))
          (= (:diagnostic_count result)
             (+ (:authorizing_diagnostic_count result)
@@ -612,53 +580,6 @@
                      true))
                  (:entries ledger)))))
 
-(defn- interval-bytes
-  [intervals]
-  (reduce + 0 (map #(- (:end %) (:start %)) intervals)))
-
-(defn- valid-intervals?
-  [intervals eligible]
-  (and (vector? intervals)
-       (every? (fn [{:keys [start end]}]
-                 (and (int? start) (int? end)
-                      (<= 0 start) (< start end) (<= end eligible)))
-               intervals)
-       ;; Producers emit maximal, canonical intervals.  Adjacent intervals are
-       ;; therefore as invalid as overlapping intervals at this trust boundary.
-       (every? (fn [[left right]] (< (:end left) (:start right)))
-               (partition 2 1 intervals))))
-
-(defn- interval-subset?
-  "True when every byte in canonical `subset` occurs in canonical `superset`."
-  [subset superset]
-  (loop [remaining-subset subset
-         remaining-superset superset]
-    (if-let [{sub-start :start sub-end :end} (first remaining-subset)]
-      (if-let [{super-start :start super-end :end} (first remaining-superset)]
-        (cond
-          (<= super-end sub-start)
-          (recur remaining-subset (next remaining-superset))
-
-          (and (<= super-start sub-start) (<= sub-end super-end))
-          (recur (next remaining-subset) remaining-superset)
-
-          :else false)
-        false)
-      true)))
-
-(defn- interval-complement
-  [intervals eligible]
-  (loop [cursor 0
-         remaining intervals
-         complement []]
-    (if-let [{:keys [start end]} (first remaining)]
-      (recur end
-             (next remaining)
-             (cond-> complement (< cursor start)
-                     (conj {:start cursor :end start})))
-      (cond-> complement (< cursor eligible)
-              (conj {:start cursor :end eligible})))))
-
 (defn- valid-recognition-work?
   [store p0-manifest record index-entry index membership-record]
   (let [{:keys [eligible_bytes recognized_bytes accounted_bytes
@@ -674,15 +595,15 @@
          (= (:work_id index-entry) (:work_id record))
          (= (:capture_generation_ref index-entry)
             (:capture_generation_ref record))
-         (every? #(valid-intervals? % eligible_bytes)
+         (every? #(decoded-utf8/canonical-intervals? % eligible_bytes)
                  [recognized accounted semantic_gaps unaccounted])
-         (= recognized_bytes (interval-bytes recognized))
-         (= accounted_bytes (interval-bytes accounted))
-         (= semantic_gap_bytes (interval-bytes semantic_gaps))
-         (= unaccounted_bytes (interval-bytes unaccounted))
-         (interval-subset? recognized accounted)
-         (= semantic_gaps (interval-complement recognized eligible_bytes))
-         (= unaccounted (interval-complement accounted eligible_bytes))
+         (= recognized_bytes (decoded-utf8/interval-bytes recognized))
+         (= accounted_bytes (decoded-utf8/interval-bytes accounted))
+         (= semantic_gap_bytes (decoded-utf8/interval-bytes semantic_gaps))
+         (= unaccounted_bytes (decoded-utf8/interval-bytes unaccounted))
+         (decoded-utf8/interval-subset? recognized accounted)
+         (= semantic_gaps (decoded-utf8/interval-complement recognized eligible_bytes))
+         (= unaccounted (decoded-utf8/interval-complement accounted eligible_bytes))
          (= eligible_bytes (+ recognized_bytes semantic_gap_bytes))
          (= eligible_bytes (+ accounted_bytes unaccounted_bytes)))))
 

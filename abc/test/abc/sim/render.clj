@@ -7,7 +7,7 @@
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
-            [abc.tools.malli :as am]
+            [abc.tools.schema :as schema]
             [charred.api :as charred]
             [clojure.java.io :as io])
   (:import [java.io ByteArrayOutputStream]
@@ -122,7 +122,7 @@
 
 (defn- person-record-json [pid p]
   {"person_record_schema_id" ingest/person-schema-id
-   "person_record_schema_hash" (am/cached-schema-hash ingest/person-schema-path)
+   "person_record_schema_hash" (schema/cached-schema-hash ingest/person-schema-path)
    "person_id" pid
    "family_name" (:family_name p) "given_name" (:given_name p)
    "family_name_reading" (:family_name_reading p)

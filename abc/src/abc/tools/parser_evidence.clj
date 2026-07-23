@@ -5,23 +5,55 @@
             [abc.tools.malli :as am]
             [abc.tools.path-containment :as path-containment]
             [clojure.string :as string]
-            [malli.core :as m]))
+            [malli.core :as m]
+            [malli.registry :as mr]))
 
 (def index-path
   (files/path "data" "parser-evidence-citations.edn"))
 
-(def required-entry-keys
-  [:evidence_id
-   :evidence_class
-   :producer_component
-   :logical_path
-   :sha256
-   :status
-   :summary])
+(def schemas
+  "Domain-owned Malli schemas for the parser evidence index."
+  {::parser-evidence-entry
+   [:and
+    [:map
+     [:evidence_id ::am/nonblank-string]
+     [:evidence_class [:enum {:error/message "must be conversion-compatibility, parser-selection, comparator-oracle, or neutral-comparison"}
+                       :conversion-compatibility :parser-selection :comparator-oracle :neutral-comparison]]
+     [:producer_component ::am/nonblank-string]
+     [:logical_path ::am/workspace-logical-path]
+     [:current_external_path {:optional true} ::am/nullable-nonblank-string]
+     [:sha256 ::am/sha256-hash]
+     ;; Neutral-comparison evidence binds to its frozen study contract by hash so
+     ;; a report can be cited as measurement while remaining structurally distinct
+     ;; from the admission/release evidence classes.
+     [:study_contract {:optional true} ::am/sha256-hash]
+     [:status [:enum {:error/message "must be citable, provisional, or superseded"}
+               :citable :provisional :superseded]]
+     [:summary ::am/nonblank-string]]
+    ;; MIN-1: couple :study_contract to :evidence_class so the study-contract
+    ;; binding cannot drift across evidence classes. Admission-class evidence
+    ;; (:conversion-compatibility, the only class ADR 0023 admits) records an
+    ;; exact registry tuple, not a research study, so it MUST NOT carry a study
+    ;; contract; a :neutral-comparison report is a preregistered study
+    ;; measurement, so it MUST bind to its frozen study contract by hash.
+    [:fn {:error/message ":conversion-compatibility evidence must not carry a :study_contract"}
+     (fn [entry]
+       (or (not= :conversion-compatibility (:evidence_class entry))
+           (not (contains? entry :study_contract))))]
+    [:fn {:error/message ":neutral-comparison evidence must carry a :study_contract"}
+     (fn [entry]
+       (or (not= :neutral-comparison (:evidence_class entry))
+           (contains? entry :study_contract)))]]})
+
+(def malli-registry
+  "This domain's explicit Malli registry: core schemas + shared scalars
+  + the schemas owned here. Never installed globally."
+  (mr/composite-registry (m/default-schemas) am/scalar-schemas schemas))
 
 (defn- parser-evidence-malli-errors
   [idx entry]
-  (if-let [explanation (am/explain-contract ::am/parser-evidence-entry entry)]
+  (if-let [explanation (m/explain ::parser-evidence-entry entry
+                                  {:registry malli-registry})]
     (mapv #(str "Parser evidence index entry " idx " " %)
           (am/explanation-messages explanation))
     []))
@@ -30,14 +62,7 @@
   [idx entry]
   (if-not (map? entry)
     [(str "Parser evidence index entry " idx " must be a map")]
-    (vec
-     (concat
-      (registry/missing-entry-key-errors
-       "Parser evidence index entry"
-       idx
-       required-entry-keys
-       entry)
-      (parser-evidence-malli-errors idx entry)))))
+    (parser-evidence-malli-errors idx entry)))
 
 ;; --- Evidence-class admission/release boundary --------------------------------
 ;;
@@ -183,26 +208,18 @@
     (validate-index! index)
     index))
 
-(defn citable-hashes
-  ([]
-   (citable-hashes (load-index)))
-  ([index]
-   (->> (:entries index)
-        (filter #(= :citable (:status %)))
-        (map :sha256)
-        sort
-        distinct
-        vec)))
+(defn- citable-hashes-of
+  "Citable sha256 hashes of an already-validated index value."
+  [index]
+  (->> (:entries index)
+       (filter #(= :citable (:status %)))
+       (map :sha256)
+       sort
+       distinct
+       vec))
 
-;; Instrumented contract (bites once abc.tools.malli/install! runs): the
-;; 1-arity is only ever called with a validated index, so this documents the
-;; invariant and gives mi/instrument! a real function schema to wrap. Schemas
-;; are inlined (core schemas only) rather than registry ::refs so the m/=>
-;; resolves at load time — registry refs are not populated until install!.
-(m/=> citable-hashes
-      [:function
-       [:=> [:cat] [:vector :string]]
-       [:=> [:cat [:map [:entries [:vector [:map
-                                            [:sha256 :string]
-                                            [:status :keyword]]]]]]
-        [:vector :string]]])
+(defn citable-hashes
+  "Load and validate the committed evidence index, then return its
+  citable sha256 hashes."
+  []
+  (citable-hashes-of (load-index)))

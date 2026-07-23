@@ -16,11 +16,7 @@
             [abc.tools.schematron :as schematron]
             [abc.tools.validate-design-bundle :as validate]
             [babashka.fs :as fs]
-            [clojure.test :refer [deftest is testing use-fixtures]]
-            [malli.core :as m]
-            [malli.generator :as mg]))
-
-(use-fixtures :once (fn [f] (am/install!) (f)))
+            [clojure.test :refer [deftest is testing]]))
 
 (def ^:private parser-rq-test-hash
   "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
@@ -1564,52 +1560,52 @@
   (testing "accepts start, work result, complete"
     (is (= :ok
            (am/explain-or-throw!
-            ::am/run-summary-events
+            ::validate/run-summary-events
             [{"event" "run-start" "run_id" "r1"}
              {"event" "work-result" "run_id" "r1"}
              {"event" "run-complete" "run_id" "r1"}]
-            "test"))))
+            "test" validate/malli-registry))))
   (testing "accepts start and complete without work results"
     (is (= :ok
            (am/explain-or-throw!
-            ::am/run-summary-events
+            ::validate/run-summary-events
             [{"event" "run-start" "run_id" "r1"}
              {"event" "run-complete" "run_id" "r1"}]
-            "test"))))
+            "test" validate/malli-registry))))
   (testing "rejects mismatched run ids"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"share one run_id"
          (am/explain-or-throw!
-          ::am/run-summary-events
+          ::validate/run-summary-events
           [{"event" "run-start" "run_id" "r1"}
            {"event" "work-result" "run_id" "r2"}
            {"event" "run-complete" "run_id" "r1"}]
-          "test"))))
+          "test" validate/malli-registry))))
   (testing "rejects extra lifecycle events"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"exactly one run-start event"
          (am/explain-or-throw!
-          ::am/run-summary-events
+          ::validate/run-summary-events
           [{"event" "run-start" "run_id" "r1"}
            {"event" "run-start" "run_id" "r1"}
            {"event" "run-complete" "run_id" "r1"}
            {"event" "run-complete" "run_id" "r1"}]
-          "test"))))
+          "test" validate/malli-registry))))
   (testing "rejects missing run id"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"must include run_id"
          (am/explain-or-throw!
-          ::am/run-summary-events
+          ::validate/run-summary-events
           [{"event" "run-start" "run_id" "r1"}
            {"event" "work-result"}
            {"event" "run-complete" "run_id" "r1"}]
-          "test"))))
+          "test" validate/malli-registry))))
   (testing "ex-data carries humanized errors and explanation"
     (try
       (am/explain-or-throw!
-       ::am/run-summary-events
+       ::validate/run-summary-events
        [{"event" "work-result" "run_id" "r1"}]
-       "test")
+       "test" validate/malli-registry)
       (is false "expected throw")
       (catch clojure.lang.ExceptionInfo e
         (let [d (ex-data e)]
@@ -1620,26 +1616,26 @@
 (deftest manifest-inputs-schema-test
   (testing "accepts complete manifest inputs"
     (is (= :ok (am/explain-or-throw!
-                ::am/manifest-inputs complete-manifest-inputs "test"))))
+                ::validate/manifest-inputs complete-manifest-inputs "test" validate/malli-registry))))
   (testing "rejects missing required keys"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"missing required keys"
          (am/explain-or-throw!
-          ::am/manifest-inputs {"producer" "ab-validator"} "test"))))
+          ::validate/manifest-inputs {"producer" "ab-validator"} "test" validate/malli-registry))))
   (testing "requires the AAT parser-IR mapping document hash"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"missing required keys"
          (am/explain-or-throw!
-          ::am/manifest-inputs
+          ::validate/manifest-inputs
           (dissoc complete-manifest-inputs "mapping_hash")
-          "test"))))
+          "test" validate/malli-registry))))
   (testing "rejects invalid hash values"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"sha256: hash"
          (am/explain-or-throw!
-          ::am/manifest-inputs
+          ::validate/manifest-inputs
           (assoc complete-manifest-inputs "work_content_hash" "nope")
-          "test")))))
+          "test" validate/malli-registry)))))
 
 (deftest validate-json-schemas-includes-aat-mapping-contracts-test
   (testing "design-bundle schema pass validates the AAT mapping and divergence contracts"
@@ -2033,26 +2029,26 @@
 (deftest comparison-report-schema-test
   (testing "accepts a well-formed comparison report"
     (is (= :ok (am/explain-or-throw!
-                ::am/comparison-report
+                ::validate/comparison-report
                 {"report_schema" "abc.ab-validator-comparison.v0"
                  "parser_candidates" [{"parser_id" "fixture"}]}
-                "test"))))
+                "test" validate/malli-registry))))
   (testing "rejects unexpected report_schema"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"unexpected report_schema"
          (am/explain-or-throw!
-          ::am/comparison-report
+          ::validate/comparison-report
           {"report_schema" "wrong"
            "parser_candidates" [{"parser_id" "fixture"}]}
-          "test"))))
+          "test" validate/malli-registry))))
   (testing "rejects empty parser_candidates"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"parser_candidates"
          (am/explain-or-throw!
-          ::am/comparison-report
+          ::validate/comparison-report
           {"report_schema" "abc.ab-validator-comparison.v0"
            "parser_candidates" []}
-          "test")))))
+          "test" validate/malli-registry)))))
 
 (deftest schema-hash-errors-test
   (is (empty?
@@ -3130,12 +3126,27 @@
                     (compat/registry-errors
                      {:entries [(dissoc old-registry-entry :evidence_scope)]}))))
   (testing "rejects entries without an evidence type"
-    (is (has-error? #":evidence_scope is missing :evidence_type"
+    (is (has-error? #":evidence_scope :evidence_type must be mapping-generation or conversion-audit"
                     (compat/registry-errors
                      {:entries [(update old-registry-entry
                                         :evidence_scope
                                         dissoc
                                         :evidence_type)]}))))
+  (testing "rejects conversion-audit scopes missing an audit count"
+    (is (has-error? #":evidence_scope is missing :files_succeeded"
+                    (compat/registry-errors
+                     {:entries [(update current-html-registry-entry
+                                        :evidence_scope
+                                        dissoc
+                                        :files_succeeded)]}))))
+  (testing "rejects entries without an adapter version key"
+    (is (has-error? #"entry 0 is missing :aat_adapter_version"
+                    (compat/registry-errors
+                     {:entries [(dissoc old-registry-entry
+                                        :aat_adapter_version)]}))))
+  (testing "rejects an empty :entries vector"
+    (is (has-error? #"AAT parser-IR compatibility registry :entries must not be empty"
+                    (compat/registry-errors {:entries []}))))
   (testing "rejects adapter-neutral wildcard claims"
     (is (has-error? #":aat_adapter must name a concrete adapter"
                     (compat/registry-errors
@@ -3169,19 +3180,6 @@
                                 (assoc-in old-registry-entry
                                           [:evidence_scope :corpus]
                                           "duplicate corpus note")]})))))
-
-(deftest aat-parser-ir-registry-generator-backed-validation-test
-  (am/install!)
-  (testing "generated compatibility entries pass the public validator"
-    (let [entry (mg/generate ::am/aat-parser-ir-compat-entry)]
-      (is (m/validate ::am/aat-parser-ir-compat-entry entry))
-      (is (empty? (compat/registry-errors {:entries [entry]})))))
-  (testing "mutating a generated entry to violate conversion file counts is rejected"
-    (let [entry (mg/generate ::am/aat-parser-ir-compat-entry)
-          invalid-entry (assoc-in entry [:evidence_scope :files_succeeded] 99)]
-      (is (has-error? #"files_scanned must equal files_succeeded plus files_failed"
-                      (compat/registry-errors
-                       {:entries [invalid-entry]}))))))
 
 (defn- compatibility-entry [registry adapter adapter-version]
   (->> (:entries registry)

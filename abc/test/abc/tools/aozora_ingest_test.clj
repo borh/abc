@@ -2,7 +2,7 @@
   (:require [abc.tools.aozora-csv :as ac]
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
-            [abc.tools.malli :as am]
+            [abc.tools.schema :as schema]
             [abc.tools.manifest :as manifest]
             [abc.tools.person-record :as pr]
             [abc.sim.render :as sim-render]
@@ -143,8 +143,8 @@
         (delete-recursive persons-dir)))))
 
 (defn- run-with-person-schema-hash! [person-schema-hash]
-  (let [live-cached-schema-hash am/cached-schema-hash]
-    (with-redefs [am/cached-schema-hash
+  (let [live-cached-schema-hash schema/cached-schema-hash]
+    (with-redefs [schema/cached-schema-hash
                   (fn [path]
                     (if (= path ingest/person-schema-path)
                       person-schema-hash

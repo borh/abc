@@ -1,13 +1,11 @@
 (ns abc.tools.metadata-record-test
   (:require [abc.tools.files :as files]
             [abc.tools.json :as json]
-            [abc.tools.malli :as am]
+            [abc.tools.schema :as schema]
             [abc.tools.metadata-record :as mr]
             [clojure.string :as string]
-            [clojure.test :refer [deftest is testing use-fixtures]])
+            [clojure.test :refer [deftest is testing]])
   (:import [org.apache.jena.graph NodeFactory]))
-
-(use-fixtures :once (fn [f] (am/install!) (f)))
 
 (def example-record
   (delay (files/read-json "examples/v0/example-work/metadata-record.json")))
@@ -40,7 +38,7 @@
 
 (deftest schema-read-is-cached-test
   (testing "no disk read for schema after the cache is primed"
-    (am/cached-schema "schemas/metadata-record.schema.json")
+    (schema/cached-schema "schemas/metadata-record.schema.json")
     (let [counter (atom 0)
           original abc.tools.json/read-json-file]
       (with-redefs [abc.tools.json/read-json-file

@@ -1,17 +1,14 @@
 (ns abc.tools.person-drift-test
   (:require [arachne.aristotle :as aa]
             [abc.tools.files :as files]
-            [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
             [abc.tools.person-drift :as drift]
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.test :refer [deftest is use-fixtures]])
+            [clojure.test :refer [deftest is]])
   (:import [org.apache.jena.graph NodeFactory Triple]))
-
-(use-fixtures :once (fn [f] (am/install!) (f)))
 
 (deftest json-directory-listing-contract-test
   (let [dir (.toFile (java.nio.file.Files/createTempDirectory

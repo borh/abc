@@ -10,7 +10,6 @@
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.logging :as logging]
-            [abc.tools.malli :as am]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.person-record :as person-record]
             [abc.tools.schema :as schema]
@@ -91,7 +90,7 @@
   [body corrections provenance-base]
   (let [base (merge (zipmap person-body-keys (map #(get body %) person-body-keys))
                     {"person_record_schema_id" person-schema-id
-                     "person_record_schema_hash" (am/cached-schema-hash person-schema-path)
+                     "person_record_schema_hash" (schema/cached-schema-hash person-schema-path)
                      "external_links" (or (get body "external_links") [])})]
     (cond-> base
       provenance-base
@@ -149,12 +148,12 @@
     new-hash))
 
 (defn- self-consistency-check! [record]
-  (let [errors (schema/validation-errors (am/cached-schema schema-path) record)]
+  (let [errors (schema/validation-errors (schema/cached-schema schema-path) record)]
     (when (seq errors)
       (throw (ex-info "generated metadata-record fails schema validation"
                       {:errors errors}))))
   (let [embedded (get record "metadata_record_schema_hash")
-        live (am/cached-schema-hash schema-path)]
+        live (schema/cached-schema-hash schema-path)]
     (when-not (= embedded live)
       (throw (ex-info "self-consistency: embedded schema hash differs from live"
                       {:embedded embedded :live live}))))
@@ -198,7 +197,7 @@
                                         (get person-records pid))
                   "relation_to_work" (get c "relation_to_work")}))
           metadata-rec {"metadata_record_schema_id" schema-id
-                        "metadata_record_schema_hash" (am/cached-schema-hash schema-path)
+                        "metadata_record_schema_hash" (schema/cached-schema-hash schema-path)
                         "work" work
                         "contributors" (vec (sort-by #(get % "person_id")
                                                      contributor-entries))}]

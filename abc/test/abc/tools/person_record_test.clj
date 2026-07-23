@@ -1,13 +1,11 @@
 (ns abc.tools.person-record-test
   (:require [abc.tools.files :as files]
             [abc.tools.json :as json]
-            [abc.tools.malli :as am]
+            [abc.tools.schema :as schema]
             [abc.tools.manifest :as manifest]
             [abc.tools.person-record :as pr]
             [clojure.string :as string]
-            [clojure.test :refer [deftest is testing use-fixtures]]))
-
-(use-fixtures :once (fn [f] (am/install!) (f)))
+            [clojure.test :refer [deftest is testing]]))
 
 (def ^:private schema-path "schemas/person-record.schema.json")
 (def ^:private schema-id "https://w3id.org/abc/schemas/person-record.schema.json")
@@ -79,7 +77,7 @@
 
 (deftest schema-read-is-cached-test
   (testing "no disk read for schema after the cache is primed"
-    (am/cached-schema "schemas/person-record.schema.json")
+    (schema/cached-schema "schemas/person-record.schema.json")
     (let [record (example-person)
           counter (atom 0)
           original abc.tools.json/read-json-file]

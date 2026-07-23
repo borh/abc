@@ -1,11 +1,5 @@
 (ns abc.tools.edn-registry)
 
-(defn missing-entry-key-errors
-  [entry-label idx required-keys entry]
-  (->> required-keys
-       (remove #(contains? entry %))
-       (mapv #(str entry-label " " idx " is missing " %))))
-
 (defn call-entry-error [entry-error-fn idx entry]
   (entry-error-fn idx entry))
 

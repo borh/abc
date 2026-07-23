@@ -3,7 +3,9 @@
             [abc.tools.edn-registry :as registry]
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [malli.core :as m]
+            [malli.registry :as mr]))
 
 (def registry-path
   (files/path "data" "aat-parser-ir-compatibility.edn"))
@@ -19,49 +21,90 @@
    :parser_ir_schema_id
    :parser_ir_schema_hash])
 
-(def required-entry-keys
-  (conj match-keys :evidence_scope :compatibility))
+(def schemas
+  "Domain-owned Malli schemas for the AAT parser-IR compatibility
+  registry."
+  {::aat-parser-ir-evidence-scope
+   ;; A missing or unknown :evidence_type fails the :multi dispatch; the
+   ;; error's :in ends with :evidence_type, so the rendered message reads
+   ;; ":evidence_scope :evidence_type must be mapping-generation or
+   ;; conversion-audit" for both the missing and the invalid case.
+   [:multi {:dispatch :evidence_type
+            :error/message "must be mapping-generation or conversion-audit"}
+    [:mapping-generation
+     [:map
+      [:adapter ::am/concrete-adapter]
+      [:adapter_version {:optional true} ::am/nullable-nonblank-string]
+      [:corpus ::am/nonblank-string]
+      [:evidence_type [:= {:error/message "must be mapping-generation or conversion-audit"}
+                       :mapping-generation]]
+      [:files_scanned ::am/positive-int]
+      [:files_with_unsupported ::am/nonnegative-int]
+      [:generated_rules ::am/positive-int]]]
+    [:conversion-audit
+     [:map
+      [:adapter ::am/concrete-adapter]
+      [:adapter_version {:optional true} ::am/nullable-nonblank-string]
+      [:corpus ::am/nonblank-string]
+      [:evidence_type [:= {:error/message "must be mapping-generation or conversion-audit"}
+                       :conversion-audit]]
+      [:files_scanned ::am/positive-int]
+      [:files_succeeded ::am/nonnegative-int]
+      [:files_failed ::am/nonnegative-int]
+      [:parser_ir_nodes ::am/nonnegative-int]
+      [:divergence_records ::am/nonnegative-int]
+      [:divergence_occurrences ::am/nonnegative-int]
+      [:rules_total ::am/nonnegative-int]
+      [:rules_emitted ::am/nonnegative-int]
+      [:rules_missing ::am/nonnegative-int]
+      [:unsupported_occurrences ::am/nonnegative-int]]]]
 
-(def required-evidence-scope-common-keys
-  [:adapter
-   :corpus
-   :evidence_type
-   :files_scanned])
+   ::aat-parser-ir-compat-entry
+   [:and
+    [:map
+     [:aat_version ::am/positive-int]
+     [:aat_adapter ::am/concrete-adapter]
+     ;; Presence is required (it is a compatibility match key); the value
+     ;; itself may be null. Absence was previously rejected by the manual
+     ;; required-entry-keys check that this schema now replaces.
+     [:aat_adapter_version ::am/nullable-nonblank-string]
+     [:mapping_id ::am/nonblank-string]
+     [:mapping_version ::am/semver]
+     [:mapping_hash ::am/sha256-hash]
+     [:mapping_schema_hash ::am/sha256-hash]
+     [:parser_ir_schema_id ::am/nonblank-string]
+     [:parser_ir_schema_hash ::am/sha256-hash]
+     [:compatibility [:enum {:error/message "must be lossy or lossless"}
+                      "lossy" "lossless"]]
+     [:evidence_scope ::aat-parser-ir-evidence-scope]]
+    [:fn {:error/message ":evidence_scope :adapter must equal :aat_adapter"}
+     (fn [entry] (= (:aat_adapter entry)
+                    (get-in entry [:evidence_scope :adapter])))]
+    [:fn {:error/message ":evidence_scope :adapter_version must equal :aat_adapter_version"}
+     (fn [entry] (= (:aat_adapter_version entry)
+                    (get-in entry [:evidence_scope :adapter_version])))]
+    [:fn {:error/message "files_scanned must equal files_succeeded plus files_failed"}
+     (fn [entry]
+       (let [scope (:evidence_scope entry)]
+         (or (not= :conversion-audit (:evidence_type scope))
+             (= (:files_scanned scope)
+                (+ (:files_succeeded scope) (:files_failed scope))))))]
+    [:fn {:error/message "rules_total must equal rules_emitted plus rules_missing"}
+     (fn [entry]
+       (let [scope (:evidence_scope entry)]
+         (or (not= :conversion-audit (:evidence_type scope))
+             (= (:rules_total scope)
+                (+ (:rules_emitted scope) (:rules_missing scope))))))]]})
 
-(def required-mapping-generation-evidence-keys
-  [:files_with_unsupported
-   :generated_rules])
-
-(def required-conversion-audit-evidence-keys
-  [:files_succeeded
-   :files_failed
-   :parser_ir_nodes
-   :divergence_records
-   :divergence_occurrences
-   :rules_total
-   :rules_emitted
-   :rules_missing
-   :unsupported_occurrences])
-
-(defn- missing-evidence-scope-key-errors
-  [idx entry]
-  (let [scope (:evidence_scope entry)]
-    (if-not (map? scope)
-      [(str "AAT parser-IR compatibility registry entry " idx
-            " :evidence_scope must be a map")]
-      (let [evidence-type (:evidence_type scope)
-            mode-required-keys (case evidence-type
-                                 :mapping-generation required-mapping-generation-evidence-keys
-                                 :conversion-audit required-conversion-audit-evidence-keys
-                                 [])]
-        (->> (concat required-evidence-scope-common-keys mode-required-keys)
-             (remove #(contains? scope %))
-             (mapv #(str "AAT parser-IR compatibility registry entry " idx
-                         " :evidence_scope is missing " %)))))))
+(def malli-registry
+  "This domain's explicit Malli registry: core schemas + shared scalars
+  + the schemas owned here. Never installed globally."
+  (mr/composite-registry (m/default-schemas) am/scalar-schemas schemas))
 
 (defn- compatibility-malli-errors
   [idx entry]
-  (if-let [explanation (am/explain-contract ::am/aat-parser-ir-compat-entry entry)]
+  (if-let [explanation (m/explain ::aat-parser-ir-compat-entry entry
+                                  {:registry malli-registry})]
     (mapv #(str "AAT parser-IR compatibility registry entry " idx " " %)
           (am/explanation-messages explanation))
     []))
@@ -71,16 +114,7 @@
   (if-not (map? entry)
     [(str "AAT parser-IR compatibility registry entry " idx
           " must be a map")]
-    (vec
-     (concat
-      (registry/missing-entry-key-errors
-       "AAT parser-IR compatibility registry entry"
-       idx
-       required-entry-keys
-       entry)
-      (when (contains? entry :evidence_scope)
-        (missing-evidence-scope-key-errors idx entry))
-      (compatibility-malli-errors idx entry)))))
+    (compatibility-malli-errors idx entry)))
 
 (defn- duplicate-key-errors
   [entries]

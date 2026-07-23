@@ -298,3 +298,21 @@
            (diagnosis-count-sum valid)))
     (is (not= (get bad-count "diagnosis_event_count")
               (diagnosis-count-sum bad-count)))))
+
+(deftest cached-schema-returns-identical-value
+  (let [first-read (schema/cached-schema "schemas/manifest.schema.json")
+        second-read (schema/cached-schema "schemas/manifest.schema.json")]
+    (is (identical? first-read second-read))
+    (is (= (schema/read-schema "schemas/manifest.schema.json") first-read))))
+
+(deftest cached-schema-hash-matches-schema-hash-test
+  (is (= (schema/schema-hash "schemas/manifest.schema.json")
+         (schema/cached-schema-hash "schemas/manifest.schema.json"))))
+
+(deftest humanize-validation-errors-returns-readable-strings
+  (let [person-schema (schema/cached-schema "schemas/person-record.schema.json")
+        errs (schema/validation-errors person-schema {"person_id" "not-six-digits"})
+        humanized (schema/humanize-validation-errors errs)]
+    (is (sequential? humanized))
+    (is (every? string? humanized))
+    (is (some #(re-find #"person_id" %) humanized))))

@@ -6,7 +6,6 @@
   Person as FOAF + RDA Group 2 triples plus an EDTF-typed echo of
   the canonical date string per ADR 0015."
   (:require [abc.tools.hash :as hash]
-            [abc.tools.malli :as am]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.rdf-prefixes :as rdf-prefixes]
             [abc.tools.schema :as schema]
@@ -46,7 +45,7 @@
   :field/:value for calendar-validity failures."
   [record]
   (let [[errors humanized] (schema/validation-errors-humanized
-                            (am/cached-schema schema-path) record)]
+                            (schema/cached-schema schema-path) record)]
     (when (seq errors)
       (throw (ex-info "person-record validation failed"
                       {:errors errors

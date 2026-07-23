@@ -4,7 +4,6 @@
             [abc.tools.iiif :as iiif]
             [abc.tools.jcs :as jcs]
             [abc.tools.linked-art :as linked-art]
-            [abc.tools.malli :as am]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.schema :as schema]
@@ -13,10 +12,8 @@
             [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [clojure.test :refer [deftest is use-fixtures]])
+            [clojure.test :refer [deftest is]])
   (:import [org.apache.jena.graph NodeFactory Triple]))
-
-(use-fixtures :once (fn [f] (am/install!) (f)))
 
 (def ^:private context-path "contexts/abc-v0.jsonld")
 (def ^:private manifest-path "examples/v0/example-work/manifest.json")

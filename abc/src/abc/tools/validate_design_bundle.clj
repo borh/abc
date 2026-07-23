@@ -37,7 +37,65 @@
    [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.string :as string]
+   [malli.core :as m]
+   [malli.registry :as mr]
    [taoensso.telemere :as tel]))
+
+(def schemas
+  "Domain-owned cross-event invariants for the design-bundle artifacts
+  that JSON Schema cannot express."
+  {::manifest-inputs
+   [:and
+    [:map-of :string :any]
+    [:fn {:error/message "manifest inputs missing required keys"}
+     (fn [m]
+       (every? #(contains? m %)
+               ["producer" "producer_version" "work_id"
+                "corpus_snapshot_hash" "work_content_hash"
+                "parser_build_hash" "parser_config_hash"
+                "mapping_hash"
+                "parser_ir_schema_hash" "diagnostic_schema_hash"
+                "warning_sidecar_hash" "run_summary_hash"
+                "comparison_report_hash"]))]
+    [:fn {:error/message "every *_hash key must be a sha256: hash"}
+     (fn [m]
+       (every? (fn [[k v]]
+                 (or (not (string/ends-with? (str k) "_hash"))
+                     (and (string? v)
+                          (re-matches #"^sha256:[0-9a-f]{64}$" v))))
+               m))]]
+
+   ::run-summary-event
+   [:map-of :string :any]
+
+   ::run-summary-events
+   [:and
+    [:vector ::run-summary-event]
+    [:fn {:error/message "run summary must contain exactly one run-start event"}
+     (fn [es] (= 1 (count (filter #(= "run-start" (get % "event")) es))))]
+    [:fn {:error/message "run summary must contain exactly one run-complete event"}
+     (fn [es] (= 1 (count (filter #(= "run-complete" (get % "event")) es))))]
+    [:fn {:error/message "run summary must start with run-start"}
+     (fn [es] (= "run-start" (get (first es) "event")))]
+    [:fn {:error/message "run summary must end with run-complete"}
+     (fn [es] (= "run-complete" (get (last es) "event")))]
+    [:fn {:error/message "every run summary event must include run_id"}
+     (fn [es] (every? #(contains? % "run_id") es))]
+    [:fn {:error/message "all run summary events must share one run_id"}
+     (fn [es] (<= (count (set (keep #(get % "run_id") es))) 1))]]
+
+   ::comparison-report
+   [:and
+    [:map-of :string :any]
+    [:fn {:error/message "comparison report has unexpected report_schema"}
+     (fn [r] (= "abc.ab-validator-comparison.v0" (get r "report_schema")))]
+    [:fn {:error/message "comparison report must list parser_candidates"}
+     (fn [r] (seq (get r "parser_candidates")))]]})
+
+(def malli-registry
+  "This domain's explicit Malli registry: core schemas + shared scalars
+  + the schemas owned here. Never installed globally."
+  (mr/composite-registry (m/default-schemas) am/scalar-schemas schemas))
 
 (def legacy-parser-ir-schema-hashes
   #{"sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
@@ -1339,8 +1397,9 @@
         divergence-file (files/path "examples" "ab-validator-output" "divergence.json")
         divergence-bundle (when (fs/exists? divergence-file)
                             (files/read-json divergence-file))]
-    (am/explain-or-throw! ::am/manifest-inputs manifest-inputs
-                          "ab-validator manifest inputs")
+    (am/explain-or-throw! ::manifest-inputs manifest-inputs
+                          "ab-validator manifest inputs"
+                          malli-registry)
     (check-errors! (schema-hash-errors manifest-inputs))
     (check-errors! (parser-ir-schema-hash-errors parser-ir))
     (check-errors! (parser-ir-paragraph-coherence-errors parser-ir))
@@ -1351,12 +1410,14 @@
                                          parser-ir
                                          manifest-inputs
                                          divergence-bundle)))
-  (am/explain-or-throw! ::am/run-summary-events
+  (am/explain-or-throw! ::run-summary-events
                         (files/read-json-lines (files/path "examples" "ab-validator-output" "run-summary.jsonl"))
-                        "ab-validator run summary")
-  (am/explain-or-throw! ::am/comparison-report
+                        "ab-validator run summary"
+                        malli-registry)
+  (am/explain-or-throw! ::comparison-report
                         (files/read-json (files/path "examples" "ab-validator-output" "comparison-report.json"))
-                        "ab-validator comparison report"))
+                        "ab-validator comparison report"
+                        malli-registry))
 
 (def ^:private canonicalization-defaults
   {:expected "667a3bfa5ab9a5e52a88e2e7de15506936a13c5d6c33825b8983861787bbcdea"
@@ -2069,7 +2130,6 @@
 
 (defn -main [& _args]
   (logging/install-cli-handler!)
-  (am/install!)
   (try
     (validate-design-bundle!)
     (catch Throwable t

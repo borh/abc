@@ -1,16 +1,12 @@
 (ns abc.tools.parser-import-boundary-evidence-test
   (:require [abc.tools.files :as files]
-            [abc.tools.malli :as am]
             [abc.tools.schema :as schema]
             [abc.tools.validate-design-bundle :as validate]
             [babashka.fs :as fs]
             [babashka.process :as process]
             [charred.api :as json]
-            [clojure.test :refer [deftest is use-fixtures]]
-            [malli.core :as m]
-            [malli.registry :as mr]))
-
-(use-fixtures :once (fn [f] (am/install!) (f)))
+            [clojure.test :refer [deftest is]]
+            [malli.core :as m]))
 
 (def ^:private fixture-root "examples/ab-validator-output")
 
@@ -18,10 +14,9 @@
   (files/path fixture-root name))
 
 (defn- run-summary-event-set-errors [events]
-  (m/explain ::am/run-summary-events
+  (m/explain ::validate/run-summary-events
              events
-             {:registry (mr/composite-registry (m/default-schemas)
-                                               (am/install!))}))
+             {:registry validate/malli-registry}))
 
 (deftest imported-boundary-validates-parser-ir-diagnostics-and-run-summary-test
   (let [parser-ir-schema (files/read-json "schemas/parser-ir.schema.json")

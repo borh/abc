@@ -2,7 +2,6 @@
   (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
-            [abc.tools.malli :as am]
             [babashka.fs :as fs]
             [charred.api :as json]
             [clojure.string :as str])
@@ -14,6 +13,25 @@
 (defn schema-hash [file]
   (hash/format-sha256
    (hash/sha256-json-jcs (read-schema file))))
+
+(let [cache (atom {})]
+  (defn cached-schema
+    "Read and parse the JSON Schema at `path` exactly once per JVM.
+    Identity-stable: callers can compare with `identical?`."
+    [path]
+    (or (get @cache path)
+        (let [v (read-schema path)]
+          (swap! cache assoc path v)
+          v)))
+
+  (defn cached-schema-hash
+    "Compute and cache the schema-bytes hash for `path`. Delegates to
+    `schema-hash` so the on-disk hash contract is preserved exactly."
+    [path]
+    (or (get @cache [::hash path])
+        (let [v (schema-hash path)]
+          (swap! cache assoc [::hash path] v)
+          v))))
 
 (def checked-in-schema-paths
   {:manifest "schemas/manifest.schema.json"
@@ -71,11 +89,37 @@
 
 (defn- ^:private error->map
   "Convert a single com.networknt.schema.Error into the Clojure map
-  shape expected by abc.tools.malli/humanize-validation-errors."
+  shape expected by `humanize-validation-errors`."
   [^com.networknt.schema.Error e]
   {:document-path (instance-location->path-segments (str (.getInstanceLocation e)))
    :schema-path   (str (.getSchemaLocation e))
    :message       (.getMessage e)})
+
+(defn- m3-leaf-errors
+  "Walk an m3 error tree. m3 nests errors via `:errors`; leaves carry
+  `:document-path`, `:schema-path`, and `:message`. Yields a flat seq
+  of leaf maps (descending into `:errors` when present, ignoring
+  intermediate composite-schema messages)."
+  [node]
+  (cond
+    (sequential? node) (mapcat m3-leaf-errors node)
+    (and (map? node) (seq (:errors node))) (mapcat m3-leaf-errors (:errors node))
+    (map? node) [(select-keys node [:document-path :schema-path :message])]
+    :else nil))
+
+(defn humanize-validation-errors
+  "Format an m3 error vector into a flat sequence of readable strings.
+  Returns an empty vector when `errors` is nil or empty."
+  [errors]
+  (->> (m3-leaf-errors errors)
+       (mapv (fn [{:keys [document-path message]}]
+               (let [path (when (seq document-path)
+                            (str/join "/" (map str document-path)))]
+                 (cond
+                   (and path message) (str path ": " message)
+                   message message
+                   path path
+                   :else (pr-str document-path)))))))
 
 (defn validation-errors [schema value]
   (let [schema-json (json/write-json-str schema)
@@ -91,7 +135,7 @@
   [schema value]
   (let [errors (validation-errors schema value)]
     (if (seq errors)
-      [errors (am/humanize-validation-errors errors)]
+      [errors (humanize-validation-errors errors)]
       [nil nil])))
 
 (defn validate-json! [schema path]

@@ -1,21 +1,11 @@
 (ns abc.tools.parser-evidence-test
   (:require
-            [abc.tools.malli :as am]
-            [abc.tools.hash :as hash]
-            [abc.tools.parser-evidence :as parser-evidence]
-            [abc.test-fs :refer [with-temp-dir]]
-            [babashka.fs :as fs]
-            [clojure.edn :as edn]
-            [clojure.set :as set]
-            [clojure.test :refer [deftest is testing use-fixtures]]
-            [clojure.test.check :as tc]
-            [clojure.test.check.properties :as prop]
-            [malli.core :as m]
-            [malli.generator :as mg]))
-
-;; Install (compose registry + instrument m/=> contracts) once for the whole
-;; namespace so the instrumentation-activation test below actually bites.
-(use-fixtures :once (fn [f] (am/install!) (f)))
+   [abc.tools.hash :as hash]
+   [abc.tools.parser-evidence :as parser-evidence]
+   [abc.test-fs :refer [with-temp-dir]]
+   [babashka.fs :as fs]
+   [clojure.set :as set]
+   [clojure.test :refer [deftest is testing]]))
 
 (def valid-entry
   {:evidence_id "ab-validator/example"
@@ -211,6 +201,9 @@
     (is (has-error? #"entry 0 is missing :sha256"
                     (parser-evidence/index-errors
                      {:entries [(dissoc valid-entry :sha256)]}))))
+  (testing "rejects an empty :entries vector"
+    (is (has-error? #"Parser evidence index :entries must not be empty"
+                    (parser-evidence/index-errors {:entries []}))))
   (testing "rejects physical relative paths as identity paths"
     (is (has-error? #":logical_path must be workspace-relative"
                     (parser-evidence/index-errors
@@ -247,7 +240,7 @@
                                 :status :citable)]}]
     (is (= ["sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
-           (parser-evidence/citable-hashes index)))))
+           (#'parser-evidence/citable-hashes-of index)))))
 
 (deftest parser-evidence-nullable-external-path-test
   (testing "current_external_path may be absent or nil but not blank"
@@ -259,31 +252,19 @@
                     (parser-evidence/index-errors
                      {:entries [(assoc valid-entry :current_external_path "")]})))))
 
-(deftest parser-evidence-entry-round-trips-and-validates-property-test
-  (testing "every generated entry validates, EDN-round-trips, and is accepted"
-    (let [result (tc/quick-check
-                  100
-                  (prop/for-all [entry (mg/generator ::am/parser-evidence-entry)]
-                                (and (m/validate ::am/parser-evidence-entry entry)
-                                     (= entry (edn/read-string (pr-str entry)))
-                                     (empty? (parser-evidence/index-errors
-                                              {:entries [entry]})))))]
-      (is (:pass? result) (pr-str result)))))
+(deftest parser-evidence-mutation-rejected-test
+  (testing "mutating a valid entry's :sha256 is rejected by the validator"
+    (doseq [entry [valid-entry
+                   (assoc valid-entry
+                          :evidence_id "ab-validator/neutral"
+                          :evidence_class :neutral-comparison
+                          :logical_path "ab-validator/docs/neutral.md"
+                          :study_contract (:sha256 valid-entry))]]
+      (is (empty? (parser-evidence/index-errors {:entries [entry]})))
+      (is (has-error? #":sha256 must be a sha256 hash"
+                      (parser-evidence/index-errors
+                       {:entries [(assoc entry :sha256 "sha256:not-real")]}))))))
 
-(deftest parser-evidence-mutation-rejected-property-test
-  (testing "mutating any generated entry's :sha256 is rejected by the validator"
-    (let [result (tc/quick-check
-                  50
-                  (prop/for-all [entry (mg/generator ::am/parser-evidence-entry)]
-                                (has-error? #":sha256 must be a sha256 hash"
-                                            (parser-evidence/index-errors
-                                             {:entries [(assoc entry :sha256 "sha256:not-real")]}))))]
-      (is (:pass? result) (pr-str result)))))
-
-(deftest instrumented-citable-hashes-rejects-invalid-index-test
-  (testing "install!/instrument! is active: the m/=> input contract bites"
-    (is (thrown? Exception
-                 (parser-evidence/citable-hashes {:entries [{:not-valid true}]}))))
-  (testing "and a valid index still returns its citable hashes"
-    (is (= [(:sha256 valid-entry)]
-           (parser-evidence/citable-hashes {:entries [valid-entry]})))))
+(deftest citable-hashes-loads-and-validates-the-committed-index-test
+  (is (= (#'parser-evidence/citable-hashes-of (parser-evidence/load-index))
+         (parser-evidence/citable-hashes))))

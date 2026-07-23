@@ -4,7 +4,6 @@
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
-            [abc.tools.malli :as malli]
             [abc.tools.manifest :as manifest]
             [abc.tools.person-drift :as person-drift]
             [abc.tools.person-record :as person-record]
@@ -15,13 +14,11 @@
             [babashka.fs :as fs]
             [clojure.set :as set]
             [clojure.string :as str]
-            [clojure.test :refer [deftest is use-fixtures]]
+            [clojure.test :refer [deftest is]]
             [arachne.aristotle :as aa])
   (:import [org.apache.jena.datatypes BaseDatatype]
            [org.apache.jena.datatypes.xsd XSDDatatype]
            [org.apache.jena.graph Graph Node NodeFactory Triple]))
-
-(use-fixtures :once (fn [test-fn] (malli/install!) (test-fn)))
 
 (def ^:private event-path
   "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json")
@@ -258,7 +255,7 @@
             "manifest" (files/read-json (fs/file manifest-path))}}))
 
 (defn- run-ingest-with-person-schema-hash [root suffix person-schema-hash]
-  (with-redefs [malli/cached-schema-hash
+  (with-redefs [schema/cached-schema-hash
                 (fn [path]
                   (if (= path ingest/person-schema-path)
                     person-schema-hash

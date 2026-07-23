@@ -431,6 +431,21 @@
     (let [problems (adr/validate-adrs (adr/parse-all (.getPath dir)) dir)]
       (is (contains? (kinds problems) :missing-evidence-path)))))
 
+(deftest accepted-criterion-requires-its-own-evidence-path
+  (let [dir (temp-dir)]
+    (write-path! dir "test/evidence.clj" "(ns evidence)")
+    (write-adr! dir "0001-partial.md"
+                (str "# ADR 0001: Partial\n\nStatus: Accepted\nDate: 2026-07-10\n"
+                     "Accepted: 2026-07-10\n\n## Decision\n\nX.\n\n"
+                     "## Implementation Status\n\nDone.\n\n"
+                     "## Acceptance Criteria\n\n"
+                     "- **ADR-0001-C1 — fixture-behavior:** Cited:"
+                     " `test/evidence.clj`.\n"
+                     "- **ADR-0001-C2 — fixture-behavior:** Uncited prose.\n"))
+    (let [problems (adr/validate-adrs (adr/parse-all (.getPath dir)) dir)
+          missing (filter #(= :missing-criterion-evidence (:kind %)) problems)]
+      (is (= ["ADR-0001-C2"] (mapv :claim-id missing))))))
+
 (deftest accepted-evidence-requires-a-path-and-directory-companion
   (let [dir (temp-dir)]
     (write-path! dir "fixtures/corpus/input.txt" "input")

@@ -512,7 +512,7 @@
                :missing-evidence-path "evidence path does not exist")
              :value item)))
 
-(defn- evidence-problems [repo-root {:keys [file status evidence]}]
+(defn- evidence-problems [repo-root {:keys [file status evidence criteria]}]
   (let [by-criterion (group-by #(:criterion-index %) evidence)
         states (into {} (map (fn [{:keys [path]}]
                                [path (evidence-path-state repo-root path)])
@@ -521,6 +521,13 @@
      (when (and (= "Accepted" status) (empty? evidence))
        [(problem :missing-evidence file
                  "Accepted status requires an evidence path in Acceptance Criteria")])
+     (when (= "Accepted" status)
+       (for [{:keys [criterion-index claim-id]} criteria
+             :when (not (contains? by-criterion criterion-index))]
+         (problem :missing-criterion-evidence file
+                  "Accepted criterion requires an evidence path"
+                  :criterion-index criterion-index
+                  :claim-id claim-id)))
      (keep (fn [{:keys [path] :as item}]
              (evidence-path-problem file item (get states path)))
            evidence)

@@ -158,10 +158,11 @@ closed header grammar and validates the complete ADR corpus. It replaces the
 shell allowlist ratchet: there are no permanent legacy evidence exceptions.
 
 Every Accepted ADR requires `## Decision`, `## Implementation Status`, and
-`## Acceptance Criteria`. Its Acceptance Criteria must attach at least one
+`## Acceptance Criteria`. Every Accepted criterion must attach at least one
 existing evidence path (`test/...`, `nix/...`, a verified `fixtures/...`
-reference, or a reviewed `docs/evidence/external/...` document) to the
-criterion it proves. Draft and Proposed ADRs
+reference, or a reviewed `docs/evidence/external/...` document) to the claim
+it proves — governance rejects an Accepted criterion that cites nothing
+(`:missing-criterion-evidence`). Draft and Proposed ADRs
 may record criteria without executable evidence because those criteria are
 promotion conditions; they become mandatory executable evidence before the ADR
 is promoted to Accepted.

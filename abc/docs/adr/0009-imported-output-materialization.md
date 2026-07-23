@@ -85,20 +85,27 @@ not the ArtifactID canonicalization algorithm.
   both validate against `schemas/manifest.schema.json`, as asserted by
   `test/abc/tools/foundation_evidence_test.clj`.
 - **ADR-0009-C2 — fixture-behavior:** Generated content hashes equal the exact
-  imported parser-IR and warnings bytes.
+  imported parser-IR and warnings bytes, as asserted by
+  `test/abc/tools/materialize_import_test.clj`.
 - **ADR-0009-C3 — fixture-behavior:** Materialization selects
   `divergence.json` as the canonical `mapping-divergence` sidecar and falls
-  back to legacy `divergence.jsonl` only when the canonical file is absent.
+  back to legacy `divergence.jsonl` only when the canonical file is absent,
+  as asserted by `test/abc/tools/materialize_import_test.clj`.
 - **ADR-0009-C4 — fixture-behavior:** Each generated parser-IR and warnings
-  `artifact_id` is distinct from its own `content.content_hash`.
+  `artifact_id` is distinct from its own `content.content_hash`, as asserted
+  by `test/abc/tools/materialize_import_test.clj`.
 - **ADR-0009-C5 — structural-invariant:** Pinned AAT mapping plus adapter
   registry agreement governs AAT parser-IR conversion compatibility, while
-  diagnostic schema identity requires exact-current equality.
+  diagnostic schema identity requires exact-current equality. Evidence:
+  `test/abc/tools/validate_design_bundle_test.clj` and
+  `test/abc/tools/materialize_import_test.clj`.
 - **ADR-0009-C6 — fixture-behavior:** Design-bundle fixture orchestration
   materializes into a temporary directory and validates both generated
-  manifests.
+  manifests. Evidence: `test/abc/tools/validate_design_bundle_test.clj` and
+  `test/abc/tools/foundation_evidence_test.clj`.
 - **ADR-0009-C7 — structural-invariant:** The Bash entry point contains
-  delegation only; Clojure owns materialization logic.
+  delegation only; Clojure owns materialization logic, as asserted by
+  `test/abc/tools/foundation_evidence_test.clj`.
 
 ## Rollback
 

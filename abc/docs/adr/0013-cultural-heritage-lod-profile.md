@@ -94,8 +94,8 @@ that value.
 ## Acceptance Criteria
 
 - **ADR-0013-C1 — fixture-behavior:** The Linked Art harness regenerates the candidate, normalized expansion, and context-validation result byte-identically to the three committed fixtures. See `test/abc/tools/schema_validation_evidence_test.clj`.
-- **ADR-0013-C2 — fixture-behavior:** The regenerated validation result records `status: "ok"` and the JCS-recomputed context hash.
-- **ADR-0013-C3 — fixture-behavior:** Focused Linked Art tests demonstrate two-run determinism, committed byte parity, context hashing, artifact-ID preservation, and refusal to fetch an unapproved external JSON-LD context.
+- **ADR-0013-C2 — fixture-behavior:** The regenerated validation result records `status: "ok"` and the JCS-recomputed context hash. See `test/abc/tools/schema_validation_evidence_test.clj` and `test/abc/tools/linked_art_test.clj`.
+- **ADR-0013-C3 — fixture-behavior:** Focused Linked Art tests demonstrate two-run determinism, committed byte parity, context hashing, artifact-ID preservation, and refusal to fetch an unapproved external JSON-LD context. See `test/abc/tools/linked_art_test.clj`.
 
 ## References
 

@@ -68,12 +68,16 @@ run-summary checks, and external command reporting.
   delegates to the Clojure tool without duplicating validation logic, as
   asserted by `test/abc/tools/foundation_evidence_test.clj`.
 - **ADR-0008-C2 — operational-behavior:** The supported
-  `nix run .#validate-design-bundle` app exits zero.
+  `nix run .#validate-design-bundle` app exits zero, as asserted by
+  `test/abc/tools/foundation_evidence_test.clj` and
+  `test/abc/tools/validate_design_bundle_test.clj`.
 - **ADR-0008-C3 — structural-invariant:** The validation workflow checks out
   the repository before invoking the exact repository-root Nix design-bundle
-  command in the same job.
+  command in the same job, as asserted by
+  `test/abc/tools/foundation_evidence_test.clj`.
 - **ADR-0008-C4 — structural-invariant:** The named pure validation-helper read
-  set exactly equals `abc.tools.validate-design-bundle/evidence-input-paths`.
+  set exactly equals `abc.tools.validate-design-bundle/evidence-input-paths`,
+  as asserted by `test/abc/tools/parser_maintenance_evidence_test.clj`.
 
 ## Rollback
 

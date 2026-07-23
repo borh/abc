@@ -81,7 +81,7 @@ The first Schematron rules are deliberately narrow:
 
 ## Acceptance Criteria
 
-- **ADR-0012-C1 — operational-behavior:** The `tei-profile-drift` Nix check regenerates Relax NG and Schematron from `schemas/tei-profile.odd` and byte-compares both committed artifacts. See `test/abc/tools/tei_test.clj`.
+- **ADR-0012-C1 — operational-behavior:** The `tei-profile-drift` Nix check regenerates Relax NG and Schematron from `schemas/tei-profile.odd` and byte-compares both committed artifacts. See `nix/tei-profile-artifacts.nix`.
 - **ADR-0012-C2 — fixture-behavior:** Valid TEI fixtures pass project Relax NG and Schematron validation. See `test/abc/tools/validate_design_bundle_test.clj`.
 - **ADR-0012-C3 — fixture-behavior:** The committed example TEI passes the pinned upstream TEI P5 Relax NG validation. See `test/abc/tools/tei_test.clj`.
 - **ADR-0012-C4 — fixture-behavior:** Invalid title, gaiji, and ruby fixtures fail with their expected Schematron rule IDs. See `test/abc/tools/schematron_test.clj`.

@@ -42,14 +42,17 @@ and semantic invariants before rendering.
 
 - **ADR-0031-C1 — structural-invariant:** The ADR parser and lifecycle,
   relation, dependency, claim-header, and section policies reject their
-  enumerated invalid fixtures.
+  enumerated invalid fixtures. Evidence boundary:
+  `test/abc/tools/adr_test.clj`.
 - **ADR-0031-C2 — structural-invariant:** ADR graph construction consumes the
-  shared parsed value model and preserves scoped relation labels.
+  shared parsed value model and preserves scoped relation labels. Evidence
+  boundary: `test/abc/tools/diagram/adr_graph_test.clj`.
 - **ADR-0031-C3 — structural-invariant:** Manifest identity coordinates and
   declared owner references are structurally total for the current contract.
+  Evidence boundary: `test/abc/tools/diagram/architecture_graph_test.clj`.
 - **ADR-0031-C4 — fixture-behavior:** Schema-invalid and semantically invalid
   workflow fixtures are rejected before rendering. Evidence boundary:
-  `test/abc/tools/adr_test.clj`.
+  `test/abc/tools/diagram/workflow_graph_test.clj`.
 
 ## Future Verification
 

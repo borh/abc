@@ -146,31 +146,40 @@ whole-work identity, because the adapter receives only the primary text bytes.
   canonical all-member manifest fixture, as asserted by
   `test/abc/tools/source_bundle_test.clj`.
 - **ADR-0033-C2 — fixture-behavior:** The Clojure producer reproduces the
-  checked-in canonical identity bytes and `bundle_hash` byte-for-byte.
+  checked-in canonical identity bytes and `bundle_hash` byte-for-byte, as
+  asserted by `test/abc/tools/source_bundle_test.clj` against
+  `fixtures/source-bundle/abc-source-bundle-v1-known-answer.json`.
 - **ADR-0033-C3 — fixture-behavior:** Metadata-only repacks preserve
-  `bundle_hash`, while image changes rotate it.
+  `bundle_hash`, while image changes rotate it, as asserted by
+  `test/abc/tools/source_bundle_test.clj`.
 - **ADR-0033-C4 — fixture-behavior:** Parser-IR records
   `work_content_hash = bundle_hash` and the independently verified
-  `primary_text_hash` in their distinct roles.
+  `primary_text_hash` in their distinct roles, as asserted by
+  `test/abc/tools/materialize_source_snapshot_test.clj` and
+  `test/abc/sim/content_sim_test.clj`.
 - **ADR-0033-C5 — fixture-behavior:** Source snapshot validation checks archive,
   canonical bundle, primary member, and parser-input hashes by their own
-  constructions without cross-role equality.
+  constructions without cross-role equality, as asserted by
+  `test/abc/tools/materialize_source_snapshot_test.clj`.
 - **ADR-0033-C6 — fixture-behavior:** P16.3 passes without an
-  `expected-failure*` gate.
+  `expected-failure*` gate, as asserted by `test/abc/sim/content_sim_test.clj`.
 - **ADR-0033-C7 — structural-invariant:** D7 is `:fixed` with dated
-  `2026-07-12` structural evidence.
+  `2026-07-12` structural evidence, as asserted by
+  `test/abc/sim/divergences_test.clj`.
 - **ADR-0033-C8 — fixture-behavior:** A complete legacy-shaped workset fixture
-  remains readable without reinterpretation.
+  remains readable without reinterpretation, as asserted by
+  `test/abc/tools/materialize_source_snapshot_test.clj`.
 - **ADR-0033-C9 — corpus-behavior:** The pinned source-bundle corpus report for
   Aozora commit `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` reproduces its
-  measured maxima.
+  measured maxima, as asserted by `test/abc/tools/source_bundle_test.clj`.
 - **ADR-0033-C10 — fixture-behavior:** Member-count, per-member-byte, and total
   uncompressed-byte limits are enforced at both declared-size and streamed-byte
-  boundaries.
+  boundaries, as asserted by `test/abc/tools/source_bundle_test.clj`.
 - **ADR-0033-C11 — fixture-behavior:** Strict admission failure aborts
   atomically; best-effort admission records counted failures with
   `release_admissible=false`, continues only the partial workflow, and exits
-  the build with status 1.
+  the build with status 1, as asserted by
+  `test/abc/sim/content_sim_test.clj`.
 
 ## Historical Evidence
 

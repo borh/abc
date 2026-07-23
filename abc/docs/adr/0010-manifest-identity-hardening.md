@@ -79,16 +79,21 @@ algorithm.
   manifest schema JSON value, as asserted by
   `test/abc/tools/materialize_import_test.clj`.
 - **ADR-0010-C2 — fixture-behavior:** Materialized parser-IR and warnings
-  manifests have distinct `artifact_id` values.
+  manifests have distinct `artifact_id` values, as asserted by
+  `test/abc/tools/materialize_import_test.clj`.
 - **ADR-0010-C3 — fixture-behavior:** V0 identity JSON preserves the asserted
   null, escaping, and canonical member behavior used by generated manifest
-  identity fields.
+  identity fields, as asserted by
+  `test/abc/tools/materialize_import_test.clj`.
 - **ADR-0010-C4 — structural-invariant:** Parser-IR schema mismatch without a
   registered compatibility rule and diagnostic schema exact-current mismatch
-  are independently rejected.
+  are independently rejected. Evidence:
+  `test/abc/tools/validate_design_bundle_test.clj` and
+  `test/abc/tools/materialize_import_test.clj`.
 - **ADR-0010-C5 — operational-behavior:** The supported
   `nix run .#validate-design-bundle` app exits zero while validating
-  materialized manifests.
+  materialized manifests, as asserted by
+  `test/abc/tools/foundation_evidence_test.clj`.
 
 ## Rollback
 

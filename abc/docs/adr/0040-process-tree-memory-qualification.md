@@ -55,10 +55,14 @@ authoritative corpus capture, alter compatibility admission, or promote ADR
 - **ADR-0040-C2 — operational-behavior:** A Hinoki transient-service smoke run
   records both a measured small workload and a right-censored ceiling-clipped
   workload. Evidence boundary:
-  `docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json`.
+  `docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json`;
+  the `hinoki-resource-witness-binds-the-campaign-capture` observation in
+  `test/abc/tools/parser_rq_resource_test.clj` authenticates that witness.
 - **ADR-0040-C3 — structural-invariant:** The predicate-set rotation does not
   relabel old observations; P5 must recapture all nine envelopes before ADR
-  0039 can be promoted.
+  0039 can be promoted. Evidence boundary:
+  `test/abc/tools/parser_release_qualification_test.clj` and
+  `test/abc/tools/parser_rq_campaign_test.clj`.
 
 ## Evidence
 

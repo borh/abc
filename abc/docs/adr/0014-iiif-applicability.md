@@ -69,9 +69,9 @@ derived and must not feed `manifest_identity_object`.
 ## Acceptance Criteria
 
 - **ADR-0014-C1 — structural-invariant:** `schemas/iiif-applicability.schema.json` declares JSON Schema 2020-12 and validates against that meta-schema. See `test/abc/tools/schema_validation_evidence_test.clj`.
-- **ADR-0014-C2 — fixture-behavior:** The text-only `000127` applicability fixture validates with status `not_applicable`, a text-only reason, and `derived_manifest: null`.
-- **ADR-0014-C3 — fixture-behavior:** IIIF applicability validation rejects a missing work ID and both invalid status/derived-manifest combinations.
-- **ADR-0014-C4 — fixture-behavior:** IIIF applicability validation accepts an `applicable` record with a manifest path and a `rights_blocker` record with no derived manifest.
+- **ADR-0014-C2 — fixture-behavior:** The text-only `000127` applicability fixture validates with status `not_applicable`, a text-only reason, and `derived_manifest: null`. See `test/abc/tools/schema_validation_evidence_test.clj` and `test/abc/tools/iiif_test.clj`.
+- **ADR-0014-C3 — fixture-behavior:** IIIF applicability validation rejects a missing work ID and both invalid status/derived-manifest combinations. See `test/abc/tools/iiif_test.clj` and `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0014-C4 — fixture-behavior:** IIIF applicability validation accepts an `applicable` record with a manifest path and a `rights_blocker` record with no derived manifest. See `test/abc/tools/iiif_test.clj`.
 
 ## References
 

@@ -61,9 +61,11 @@ Byte-for-byte comparison between two generated outputs is stricter than structur
   `schemas/manifest.schema.json`, with fixture orchestration asserted by
   `test/abc/tools/validate_design_bundle_test.clj`.
 - **ADR-0011-C2 — fixture-behavior:** Deterministic JSON writing produces
-  identical ordered bytes from differently ordered map inputs.
+  identical ordered bytes from differently ordered map inputs, as asserted by
+  `test/abc/tools/materialize_import_test.clj`.
 - **ADR-0011-C3 — fixture-behavior:** Two materialization runs with identical
-  inputs produce byte-identical manifest files.
+  inputs produce byte-identical manifest files, as asserted by
+  `test/abc/tools/materialize_import_test.clj`.
 
 ## Rollback
 

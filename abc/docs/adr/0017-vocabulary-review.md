@@ -141,10 +141,10 @@ v0 contract surface for `abc:` predicates.
 ## Acceptance Criteria
 
 - **ADR-0017-C1 — structural-invariant:** `contexts/abc-v0.jsonld` declares `abc` as `https://w3id.org/abc/`. See `test/abc/tools/schema_validation_evidence_test.clj`.
-- **ADR-0017-C2 — fixture-behavior:** Linked Art expansion preserves the manifest artifact ID at `https://w3id.org/abc/artifactId`.
-- **ADR-0017-C3 — fixture-behavior:** The three current LOD fixtures regenerate byte-identically and their committed context hash equals the JCS-recomputed context hash.
-- **ADR-0017-C4 — structural-invariant:** The bounded committed Turtle inventory uses `@prefix abc: <https://w3id.org/abc/>`.
-- **ADR-0017-C5 — fixture-behavior:** Success-manifest, failure-manifest, and metadata-record Turtle generators remain byte-identical to their named committed fixtures.
+- **ADR-0017-C2 — fixture-behavior:** Linked Art expansion preserves the manifest artifact ID at `https://w3id.org/abc/artifactId`. See `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0017-C3 — fixture-behavior:** The three current LOD fixtures regenerate byte-identically and their committed context hash equals the JCS-recomputed context hash. See `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0017-C4 — structural-invariant:** The bounded committed Turtle inventory uses `@prefix abc: <https://w3id.org/abc/>`. See `test/abc/tools/schema_validation_evidence_test.clj`.
+- **ADR-0017-C5 — fixture-behavior:** Success-manifest, failure-manifest, and metadata-record Turtle generators remain byte-identical to their named committed fixtures. See `test/abc/tools/schema_validation_evidence_test.clj` and `test/abc/tools/metadata_record_test.clj`.
 
 ## Historical Evidence
 

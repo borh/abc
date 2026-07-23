@@ -136,16 +136,23 @@ sha256-rfc8785-jcs-bundled-json-schema-v0
   `schemas/manifest.schema.json`, as asserted by
   `test/abc/tools/foundation_evidence_test.clj`.
 - **ADR-0001-C2 — fixture-behavior:** Inline canonical values pin null
-  dimensions and semantic array order.
+  dimensions and semantic array order. Evidence:
+  `fixtures/canonicalization/manifest-identity-object.canonical.json` and
+  `test/abc/tools/validate_design_bundle_test.clj`.
 - **ADR-0001-C3 — structural-invariant:** The manifest schema rejects
-  `artifact_id` nested inside `manifest_identity_object`.
+  `artifact_id` nested inside `manifest_identity_object`. Evidence:
+  `test/abc/tools/code_as_spec_test.clj` and
+  `fixtures/v0/invalid/manifest-nested-artifact-id/manifest.json`.
 - **ADR-0001-C4 — fixture-behavior:** The committed failure manifest carries
   the exact asserted input and attempted-output identity coordinates,
   validation status, null content, error sidecar, and top-level-only
-  `artifact_id`.
+  `artifact_id`, as asserted by
+  `test/abc/tools/foundation_evidence_test.clj`.
 - **ADR-0001-C5 — structural-invariant:** Two successful entries with the same
   `artifact_id` and different `content.content_hash` values produce a
-  reproducibility conflict.
+  reproducibility conflict. Evidence:
+  `test/abc/tools/code_as_spec_test.clj` and
+  `test/abc/tools/manifest_index_test.clj`.
 
 ## Future Verification
 

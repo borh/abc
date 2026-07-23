@@ -61,15 +61,15 @@
    "schema_hash" (manifest/schema-hash drift/event-schema-path)
    "drift_event_type" "merge"
    "date" "2026-04-30"
-   "participants" [{"snapshot_id" "pre-000001"
+   "participants" [{"snapshot_id" "post-000003"
+                    "person_id" "000003"
+                    "person_record_hash" (example-hash "13")}
+                   {"snapshot_id" "pre-000001"
                     "person_id" "000001"
                     "person_record_hash" (example-hash "11")}
                    {"snapshot_id" "pre-000002"
                     "person_id" "000002"
-                    "person_record_hash" (example-hash "12")}
-                   {"snapshot_id" "post-000003"
-                    "person_id" "000003"
-                    "person_record_hash" (example-hash "13")}]
+                    "person_record_hash" (example-hash "12")}]
    "evidence" ["https://example.org/abc/drift-evidence/fictional-merge-2026"]
    "prov" {"used" ["pre-000001" "pre-000002"]
            "was_generated_by" ["post-000003"]
@@ -165,6 +165,15 @@
                                           ["prov" "was_generated_by"]
                                           ["post-000003" "post-000004"])))
 
+(deftest event-schema-rejects-participant-missing-required-field-test
+  (let [event-schema (files/read-json drift/event-schema-path)]
+    (doseq [field ["snapshot_id" "person_id" "person_record_hash"]]
+      (is (seq (schema/validation-errors
+                event-schema
+                (update (base-split) "participants"
+                        #(mapv (fn [participant] (dissoc participant field)) %))))
+          (str "expected schema to reject participants missing " field)))))
+
 (deftest index-schema-accepts-valid-index-test
   (let [event-id (get (base-split) "drift_event_id")]
     (is (nil? (schema/validation-errors
@@ -197,6 +206,9 @@
 
 (deftest validate-event-json-coherence-accepts-base-split-test
   (is (= [] (drift/event-json-coherence-failures (base-split)))))
+
+(deftest validate-event-json-coherence-accepts-base-merge-test
+  (is (= [] (drift/event-json-coherence-failures (base-merge)))))
 
 (deftest validate-event-json-coherence-rejects-unsorted-participants-test
   (let [event (base-split)
@@ -323,10 +335,18 @@
       (is (graph-contains? g child rdfs-sub-class-of parent)))))
 
 (deftest snapshot-iri-uses-event-embedded-hash-test
-  (is (= "https://w3id.org/abc/persons/000879#snapshot-000000000000"
-         (drift/snapshot-iri {"snapshot_id" "pre-000879"
-                              "person_id" "000879"
-                              "person_record_hash" (example-hash "03")}))))
+  (let [participant {"snapshot_id" "pre-000879"
+                     "person_id" "000879"
+                     "person_record_hash" (example-hash "03")}
+        mutated (assoc participant "person_record_hash"
+                       (str "sha256:f"
+                            (subs (get participant "person_record_hash")
+                                  (inc (count "sha256:")))))]
+    (is (= "https://w3id.org/abc/persons/000879#snapshot-000000000000"
+           (drift/snapshot-iri participant)))
+    (is (not= (drift/snapshot-iri participant)
+              (drift/snapshot-iri mutated))
+        "flipping the first hash nibble changes the snapshot IRI")))
 
 (deftest event->graph-materializes-types-and-derived-prov-test
   (let [event (base-split)

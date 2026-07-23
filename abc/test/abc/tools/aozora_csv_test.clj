@@ -140,7 +140,9 @@
     (let [[norm corrs] (ac/parse-date "1869- 02-22")]
       (is (= "1869-02-22" norm))
       (is (= [{"raw" "1869- 02-22" "corrected" "1869-02-22" "rule" "strip-whitespace"}]
-             corrs)))))
+             corrs))))
+  (testing "parse-date trims outer whitespace before normalization"
+    (is (= "1892-01-02" (first (ac/parse-date " 1892-1-2 "))))))
 
 (deftest parse-date-multi-rule-test
   (testing "parse-date emits one correction per rule when several apply"
@@ -284,6 +286,10 @@
       (is (= [] corrs)))
     (let [[norm corrs] (ac/parse-date "2020-13-01")]
       (is (= "2020-13-01" norm))
+      (is (= [] corrs)))
+    (let [[norm corrs] (ac/parse-date "1892-13")]
+      (is (= "1892-13" norm)
+          "out-of-range year-month is left uncorrected as a passthrough literal")
       (is (= [] corrs)))))
 
 (deftest build-record-fragment-divergent-work-fields-test

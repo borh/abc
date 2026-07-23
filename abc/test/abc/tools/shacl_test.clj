@@ -172,6 +172,8 @@
   (NodeFactory/createURI "https://w3id.org/abc/PersonRecordShape"))
 (def ^:private rdag2-date-of-birth
   (NodeFactory/createURI "http://RDVocab.info/ElementsGr2/dateOfBirth"))
+(def ^:private rdag2-date-of-death
+  (NodeFactory/createURI "http://RDVocab.info/ElementsGr2/dateOfDeath"))
 (def ^:private abc-edtf-date-of-birth
   (NodeFactory/createURI "https://w3id.org/abc/edtfDateOfBirth"))
 (def ^:private abc-edtf-date-of-death
@@ -260,16 +262,29 @@
 (deftest person-record-temporal-shape-contract-test
   (let [g (shacl/load-shapes-graph)
         dob-property (exact-property-shape g rdag2-date-of-birth)
-        edtf-property (exact-property-shape g abc-edtf-date-of-birth)]
+        dod-property (exact-property-shape g rdag2-date-of-death)
+        edtf-property (exact-property-shape g abc-edtf-date-of-birth)
+        edtf-death-property (exact-property-shape g abc-edtf-date-of-death)
+        max-count-one #{(NodeFactory/createLiteral "1" XSDDatatype/XSDinteger)}]
     (is (= #{xsd-date xsd-g-year-month xsd-g-year}
            (datatype-alternatives g dob-property)))
-    (is (= #{(NodeFactory/createLiteral "1" XSDDatatype/XSDinteger)}
+    (is (= max-count-one
+           (set (objects g dob-property sh-max-count))))
+    (is (= #{xsd-date xsd-g-year-month xsd-g-year}
+           (datatype-alternatives g dod-property)))
+    (is (= max-count-one
+           (set (objects g dod-property sh-max-count))))
+    (is (= max-count-one
            (set (objects g edtf-property sh-max-count))))
     (is (= #{abc-edtf}
            (set (objects g edtf-property sh-datatype))))
     (is (= temporal-pattern
            (.getLiteralLexicalForm
             (unique-object g edtf-property sh-pattern))))
+    (is (= max-count-one
+           (set (objects g edtf-death-property sh-max-count))))
+    (is (= #{abc-edtf}
+           (set (objects g edtf-death-property sh-datatype))))
     (is (pos? (count (iterator-seq (.find g)))))))
 
 (deftest validate-abc-local-person-record-conforms-test

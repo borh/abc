@@ -49,15 +49,18 @@
                                     "date_of_birth" "-0426-01-15"))))))
 
 (deftest nullable-date-l0-lexical-contract-test
-  (doseq [value [nil "1892-03-01" "1904-01" "1941"
-                 "-0426-01-15" "-0426-01" "-0426"]]
-    (is (= :ok (pr/validate! (assoc (example-person) "date_of_birth" value)))
-        (str "expected accepted temporal lexical value " (pr-str value))))
-  (doseq [value ["1892?" "1984/1999" "{1984, 1986}"
-                 "1892-00" "1892-13" "1892-01-00" "1892-01-32"]]
-    (is (thrown? clojure.lang.ExceptionInfo
-                 (pr/validate! (assoc (example-person) "date_of_birth" value)))
-        (str "expected rejected temporal lexical value " (pr-str value)))))
+  (doseq [field ["date_of_birth" "date_of_death"]]
+    (doseq [value [nil "1892-03-01" "1904-01" "1941"
+                   "-0426-01-15" "-0426-01" "-0426"]]
+      (is (= :ok (pr/validate! (assoc (example-person) field value)))
+          (str "expected accepted temporal lexical value " (pr-str value)
+               " for " field)))
+    (doseq [value ["1892?" "1984/1999" "{1984, 1986}"
+                   "1892-00" "1892-13" "1892-01-00" "1892-01-32"]]
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (pr/validate! (assoc (example-person) field value)))
+          (str "expected rejected temporal lexical value " (pr-str value)
+               " for " field)))))
 
 (deftest validate-rejects-extra-key-test
   (testing "validate! rejects an unknown property"
@@ -172,6 +175,11 @@
        (filter #(= predicate-uri (.getURI (.getPredicate %))))
        (mapv #(.getObject %))))
 
+(defn- literal-values [graph predicate-uri]
+  (mapv (fn [node]
+          [(.getLiteralLexicalForm node) (.getLiteralDatatypeURI node)])
+        (objects-of graph predicate-uri)))
+
 (deftest example-person-fixture-rdf-temporal-dispatch-test
   (let [record (files/read-json fixture-path)
         graph (pr/record->graph record)
@@ -181,7 +189,13 @@
     (is (= "http://www.w3.org/2001/XMLSchema#date"
            (.getLiteralDatatypeURI dob)))
     (is (= "1892-03-01" (.getLiteralLexicalForm edtf)))
-    (is (= "https://w3id.org/abc/EDTF" (.getLiteralDatatypeURI edtf)))))
+    (is (= "https://w3id.org/abc/EDTF" (.getLiteralDatatypeURI edtf)))
+    (is (= "1927-07-24" (get record "date_of_death"))
+        "committed 000879 fixture pins the exact death date")
+    (is (= [["1927-07-24" "http://www.w3.org/2001/XMLSchema#date"]]
+           (literal-values graph "http://RDVocab.info/ElementsGr2/dateOfDeath")))
+    (is (= [["1927-07-24" "https://w3id.org/abc/EDTF"]]
+           (literal-values graph "https://w3id.org/abc/edtfDateOfDeath")))))
 
 (deftest record->graph-precise-date-test
   (testing "YYYY-MM-DD dates emit xsd:date with parallel EDTF echo"
@@ -213,7 +227,7 @@
           "null date_of_death omits the predicate"))))
 
 (deftest record->graph-year-month-test
-  (testing "YYYY-MM dates emit xsd:gYearMonth"
+  (testing "YYYY-MM dates emit xsd:gYearMonth with parallel EDTF echo"
     (let [person (assoc (example-person)
                         "date_of_birth" "1904-01"
                         "date_of_death" nil)
@@ -221,7 +235,24 @@
           [dob] (objects-of g "http://RDVocab.info/ElementsGr2/dateOfBirth")]
       (is (= "1904-01" (.getLiteralLexicalForm dob)))
       (is (= "http://www.w3.org/2001/XMLSchema#gYearMonth"
-             (.getLiteralDatatypeURI dob))))))
+             (.getLiteralDatatypeURI dob)))
+      (is (= [["1904-01" "https://w3id.org/abc/EDTF"]]
+             (literal-values g "https://w3id.org/abc/edtfDateOfBirth"))))))
+
+(deftest record->graph-death-temporal-dispatch-test
+  (testing "date_of_death dispatches to the precision-matched XSD datatype with parallel EDTF echo"
+    (doseq [[value datatype]
+            [["1892-03-01" "http://www.w3.org/2001/XMLSchema#date"]
+             ["1904-01" "http://www.w3.org/2001/XMLSchema#gYearMonth"]
+             ["1941" "http://www.w3.org/2001/XMLSchema#gYear"]]]
+      (let [person (assoc (example-person) "date_of_death" value)
+            g (pr/record->graph person)]
+        (is (= [[value datatype]]
+               (literal-values g "http://RDVocab.info/ElementsGr2/dateOfDeath"))
+            (str value " emits exactly one RDA Group 2 dateOfDeath literal"))
+        (is (= [[value "https://w3id.org/abc/EDTF"]]
+               (literal-values g "https://w3id.org/abc/edtfDateOfDeath"))
+            (str value " emits exactly one abc:EDTF echo"))))))
 
 (deftest record->graph-bce-test
   (testing "Negative-year dates emit xsd:gYear and survive EDTF echo"
@@ -252,6 +283,17 @@
           "decade marker omits the RDA Group 2 predicate — no XSD precision type")
       (is (empty? (objects-of g "http://RDVocab.info/ElementsGr2/dateOfDeath"))
           "null date_of_death omits its predicates"))))
+
+(deftest record->graph-death-decade-marker-test
+  (testing "EDTF Level 1 decade/century markers on date_of_death emit only the abc:EDTF echo"
+    (doseq [value ["192X" "-019X" "-06XX"]]
+      (let [person (assoc (example-person) "date_of_death" value)
+            g (pr/record->graph person)]
+        (is (empty? (objects-of g "http://RDVocab.info/ElementsGr2/dateOfDeath"))
+            (str value " omits the RDA Group 2 predicate — no XSD precision type"))
+        (is (= [[value "https://w3id.org/abc/EDTF"]]
+               (literal-values g "https://w3id.org/abc/edtfDateOfDeath"))
+            (str value " carries the value on the EDTF echo only"))))))
 
 (deftest record->graph-bce-century-marker-test
   (testing "EDTF Level 1 BCE century markers emit only the abc:EDTF echo"

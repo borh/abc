@@ -2614,11 +2614,11 @@
 
 (deftest parser-ir-paragraph-coherence-errors-test
   (testing "accepts coherent paragraph ranges"
-    (is (empty? (validate/parser-ir-paragraph-coherence-errors
+    (is (empty? (sentence-policy/paragraph-coherence-errors
                  level3-parser-ir-fixture))))
   (testing "rejects duplicate paragraph ids"
     (is (= ["parser IR paragraphs[] contains duplicate id p000000"]
-           (validate/parser-ir-paragraph-coherence-errors
+           (sentence-policy/paragraph-coherence-errors
             (assoc level3-parser-ir-fixture
                    "paragraphs"
                    [(first (get level3-parser-ir-fixture "paragraphs"))
@@ -2626,30 +2626,30 @@
                            "id" "p000000")])))))
   (testing "rejects ranges outside nodes[]"
     (is (= ["parser IR paragraph p000000 node_range 0..3 is outside nodes[] length 2"]
-           (validate/parser-ir-paragraph-coherence-errors
+           (sentence-policy/paragraph-coherence-errors
             (assoc-in level3-parser-ir-fixture
                       ["paragraphs" 0 "node_range"]
                       {"start" 0 "end" 3})))))
   (testing "rejects overlapping or non-monotonic ranges"
     (is (= ["parser IR paragraph p000001 node_range starts before previous paragraph end 1"]
-           (validate/parser-ir-paragraph-coherence-errors
+           (sentence-policy/paragraph-coherence-errors
             (assoc-in level3-parser-ir-fixture
                       ["paragraphs" 1 "node_range"]
                       {"start" 0 "end" 2})))))
   (testing "direct source-note paragraphs must contain a source-note node"
     (is (= ["parser IR paragraph p000001 has role source-note but no source-note node in node_range"]
-           (validate/parser-ir-paragraph-coherence-errors
+           (sentence-policy/paragraph-coherence-errors
             (-> level3-parser-ir-fixture
                 (assoc-in ["nodes" 1 "type"] "text")
                 (assoc-in ["paragraphs" 1 "classification"] "direct")))))))
 
 (deftest parser-ir-sentence-coherence-errors-test
   (testing "accepts coherent sentence rows"
-    (is (empty? (validate/parser-ir-sentence-coherence-errors
+    (is (empty? (sentence-policy/sentence-coherence-errors
                  sentence-parser-ir-fixture))))
   (testing "rejects a sentence referencing a missing body paragraph"
     (is (= ["parser IR sentence s999999 references non-body paragraph p999999"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (update sentence-parser-ir-fixture
                     "sentences"
                     conj
@@ -2661,7 +2661,7 @@
                      "orthographic_annotation_indices" []})))))
   (testing "rejects a sentence node range outside its paragraph"
     (is (= ["parser IR sentence s000001 node_range starts at 0 but expected 1"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 1 "node_range"]
                       {"start" 0 "end" 2})))))
@@ -2669,37 +2669,37 @@
     (is (= ["parser IR sentence s000001 span 30..54 is outside paragraph p000000 span 0..48"
             "parser IR sentence s000001 span starts at 30 but expected 24"
             "parser IR body paragraph p000000 sentence spans end at 54 but paragraph span ends at 48"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 1 "span"]
                       {"start" 30 "end" 54 "coordinate_system" "decoded_utf8"})))))
   (testing "rejects orthographic tag without annotation index"
     (is (= ["parser IR sentence s000000 has orthographic-katakana tag without annotation indices"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 0 "orthographic_annotation_indices"]
                       [])))))
   (testing "rejects annotation index outside annotation array"
     (is (= ["parser IR sentence s000000 has orthographic annotation index outside annotations[]"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 0 "orthographic_annotation_indices"]
                       [1])))))
   (testing "rejects annotation index without orthographic tag"
     (is (= ["parser IR sentence s000000 has orthographic annotation indices without orthographic-katakana tag"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 0 "tags"]
                       [])))))
   (testing "rejects orthographic annotation outside sentence span"
     (is (= ["parser IR sentence s000001 orthographic annotation index 0 range 0..24 does not overlap sentence span 24..48"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (-> sentence-parser-ir-fixture
                 (assoc-in ["sentences" 1 "tags"] ["orthographic-katakana"])
                 (assoc-in ["sentences" 1 "orthographic_annotation_indices"] [0]))))))
   (testing "rejects non-empty body paragraph with no sentence rows"
     (is (= ["parser IR body paragraph p000001 has no sentence rows"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (update sentence-parser-ir-fixture
                     "sentences"
                     #(vec (remove (fn [sentence]
@@ -2707,7 +2707,7 @@
                                   %)))))))
   (testing "accepts zero-span body paragraph with no sentence rows"
     (is (empty?
-         (validate/parser-ir-sentence-coherence-errors
+         (sentence-policy/sentence-coherence-errors
           (-> sentence-parser-ir-fixture
               (update "nodes"
                       conj
@@ -2728,19 +2728,19 @@
                        "classification" "direct"}))))))
   (testing "rejects byte-span gaps"
     (is (= ["parser IR sentence s000001 span starts at 30 but expected 24"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 1 "span"]
                       {"start" 30 "end" 48 "coordinate_system" "decoded_utf8"})))))
   (testing "rejects node-range gaps"
     (is (= ["parser IR sentence s000001 node_range starts at 2 but expected 1"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 1 "node_range"]
                       {"start" 2 "end" 2})))))
   (testing "accepts coherent fragment I→F chain"
     (is (empty?
-         (validate/parser-ir-sentence-coherence-errors
+         (sentence-policy/sentence-coherence-errors
           (-> sentence-parser-ir-fixture
               (assoc-in ["sentences" 0 "part"] "I")
               (assoc-in ["sentences" 0 "fragment_group"] "fg000000")
@@ -2751,21 +2751,21 @@
   (testing "rejects part without fragment_group"
     (is (= ["parser IR sentence s000000 has part but no fragment_group"
             "parser IR sentence s000000 part=I but no next_id"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture ["sentences" 0 "part"] "I")))))
   (testing "rejects fragment_group without part"
     (is (= ["parser IR sentence s000000 has fragment_group but no part"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture ["sentences" 0 "fragment_group"] "fg000000")))))
   (testing "rejects part=I without next_id"
     (is (= ["parser IR sentence s000000 part=I but no next_id"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (-> sentence-parser-ir-fixture
                 (assoc-in ["sentences" 0 "part"] "I")
                 (assoc-in ["sentences" 0 "fragment_group"] "fg000000"))))))
   (testing "rejects part=F without prev_id"
     (is (= ["parser IR sentence s000001 part=F but no prev_id"]
-           (validate/parser-ir-sentence-coherence-errors
+           (sentence-policy/sentence-coherence-errors
             (-> sentence-parser-ir-fixture
                 (assoc-in ["sentences" 1 "part"] "F")
                 (assoc-in ["sentences" 1 "fragment_group"] "fg000000")))))))

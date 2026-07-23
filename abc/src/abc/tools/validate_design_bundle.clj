@@ -170,71 +170,6 @@
        [(str "ab-validator parser IR schema_hash " actual-parser-ir
              " does not match ABC parser IR schema hash " expected-parser-ir)]))))
 
-(defn- duplicate-paragraph-id-errors [paragraphs]
-  (->> paragraphs
-       (map #(get % "id"))
-       frequencies
-       (keep (fn [[paragraph-id count]]
-               (when (> count 1)
-                 (str "parser IR paragraphs[] contains duplicate id " paragraph-id))))
-       sort))
-
-(defn- node-range-label [start end]
-  (str start ".." end))
-
-(defn- source-note-node-in-range? [nodes start end]
-  (boolean
-   (some #(= "source-note" (get % "type"))
-         (subvec nodes start end))))
-
-(defn parser-ir-paragraph-coherence-errors [parser-ir]
-  (let [nodes (vec (get parser-ir "nodes" []))
-        paragraphs (vec (get parser-ir "paragraphs" []))]
-    (vec
-     (concat
-      (duplicate-paragraph-id-errors paragraphs)
-      (loop [remaining paragraphs
-             previous-end 0
-             errors []]
-        (if-let [paragraph (first remaining)]
-          (let [paragraph-id (get paragraph "id")
-                node-range (get paragraph "node_range")
-                start (get node-range "start")
-                end (get node-range "end")
-                outside? (not (and (integer? start)
-                                   (integer? end)
-                                   (<= 0 start end (count nodes))))
-                non-monotonic? (and (integer? start)
-                                    (< start previous-end))
-                source-note-missing? (and (not outside?)
-                                          (= "source-note" (get paragraph "role"))
-                                          (= "direct" (get paragraph "classification"))
-                                          (not (source-note-node-in-range?
-                                                nodes start end)))
-                errors (cond-> errors
-                         outside?
-                         (conj (str "parser IR paragraph " paragraph-id
-                                    " node_range " (node-range-label start end)
-                                    " is outside nodes[] length " (count nodes)))
-
-                         (and (not outside?) non-monotonic?)
-                         (conj (str "parser IR paragraph " paragraph-id
-                                    " node_range starts before previous paragraph end "
-                                    previous-end))
-
-                         source-note-missing?
-                         (conj (str "parser IR paragraph " paragraph-id
-                                    " has role source-note but no source-note node in node_range")))]
-            (recur (rest remaining)
-                   (if (and (integer? end) (not outside?))
-                     end
-                     previous-end)
-                   errors))
-          errors))))))
-
-(defn parser-ir-sentence-coherence-errors [parser-ir]
-  (sentence-policy/sentence-coherence-errors parser-ir))
-
 (defn derived-from-compatibility-query [parser-ir manifest-inputs]
   (let [derived-from (get parser-ir "derived_from")]
     {:aat_version (get derived-from "aat_version")
@@ -830,8 +765,8 @@
                           malli-registry)
     (check-errors! (schema-hash-errors manifest-inputs))
     (check-errors! (parser-ir-schema-hash-errors parser-ir))
-    (check-errors! (parser-ir-paragraph-coherence-errors parser-ir))
-    (check-errors! (parser-ir-sentence-coherence-errors parser-ir))
+    (check-errors! (sentence-policy/paragraph-coherence-errors parser-ir))
+    (check-errors! (sentence-policy/sentence-coherence-errors parser-ir))
     (check-errors! (source-region-coverage-errors source-region-coverage
                                                   source-region-policy))
     (check-errors! (compatibility-errors (compat/load-registry)

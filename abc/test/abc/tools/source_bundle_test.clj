@@ -5,6 +5,7 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-bundle :as source-bundle]
             [babashka.fs :as fs]
+            [clojure.string :as str]
             [clojure.test :refer [deftest is testing]])
   (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio ByteBuffer ByteOrder]
@@ -677,3 +678,16 @@
                zip {:max-members 10
                     :max-member-bytes 4
                     :max-total-bytes 100})))))))
+
+(deftest committed-corpus-summary-pins-measured-maxima-test
+  (let [summary (files/read-json
+                 "data/source-bundle/aozorabunko-0e9ea3e-summary.json")
+        flake (slurp "flake.nix")]
+    (is (= "0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
+           (get summary "aozorabunko_commit")))
+    (is (= 12631833 (get summary "max_member_bytes")))
+    (is (= 27874310 (get summary "max_total_bytes")))
+    (is (= 778 (get summary "max_member_count")))
+    (is (str/includes? flake "source-bundle-corpus"))
+    (is (str/includes?
+         flake "cmp data/source-bundle/aozorabunko-0e9ea3e-summary.json"))))

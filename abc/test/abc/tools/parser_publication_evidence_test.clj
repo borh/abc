@@ -60,7 +60,17 @@
                          (hiccup-nodes (:body rendered)))]
           (is (= "furigana" (:type (second ruby))))
           (is (= "right" (:rend (second ruby))))
-          (is (not (contains? (second ruby) :place)))))
+          (is (not (contains? (second ruby) :place))))
+        (let [rendered (parser-ir-tei/render
+                        {"nodes" [{"type" "ruby"
+                                   "span" {"start" 0 "end" 3
+                                           "coordinate_system" "decoded_utf8"}
+                                   "ruby" {"base" "猫" "reading" "ねこ"
+                                           "scope" "inferred"
+                                           "direction" "left"}}]})
+              ruby (some #(when (= :ruby (first %)) %)
+                         (hiccup-nodes (:body rendered)))]
+          (is (= "left" (:rend (second ruby))))))
 
       (testing "plaintext contains visible body text only"
         (let [text (plaintext/render-string

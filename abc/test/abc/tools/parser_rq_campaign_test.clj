@@ -319,7 +319,14 @@
     (is (seq (campaign/evidence-integrity-errors
               verified [(assoc blob :bytes 11)])))
     (is (seq (campaign/evidence-integrity-errors
-              (assoc-in verified [:blobs 0 :rehash] sha-b) [blob])))))
+              (assoc-in verified [:blobs 0 :rehash] sha-b) [blob])))
+    (is (seq (campaign/evidence-integrity-errors
+              verified [blob (assoc blob :locator "bb/extra")])))
+    (is (seq (campaign/evidence-integrity-errors
+              (update verified :blobs conj
+                      {:blob (assoc blob :locator "bb/extra")
+                       :rehash sha :observed_bytes 10})
+              [blob])))))
 
 (deftest python-evidence-receipt-authenticates-in-clojure
   (let [root (fs/create-temp-dir {:prefix "parser-rq-evidence-integrity"})
@@ -692,6 +699,15 @@
               (campaign/promotion-errors options)))
     (write-edn! (fs/file candidate-dir "authorizations" "authorization.edn")
                 authorization-value)
+    (write-canonical-json! (fs/file capture-root "evidence-integrity-receipt.json")
+                           (assoc evidence-integrity :status :unverified))
+    (is (some #{"evidence integrity status is not verified"}
+              (campaign/promotion-errors options)))
+    (fs/delete (fs/file capture-root "evidence-integrity-receipt.json"))
+    (is (seq (campaign/promotion-errors options)))
+    (write-canonical-json! (fs/file capture-root "evidence-integrity-receipt.json")
+                           evidence-integrity)
+    (is (= [] (campaign/promotion-errors options)))
     (write-edn! (fs/file candidate-dir "captures" "sibling" "capture-index.edn")
                 capture-index)
     (is (some #(re-find #"capture resolution requires exactly one" %)

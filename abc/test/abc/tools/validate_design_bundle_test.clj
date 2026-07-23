@@ -1215,10 +1215,15 @@
   (let [git-cliff-var (ns-resolve 'abc.tools.validate-design-bundle
                                   'validate-git-cliff!)
         reached? (atom false)
-        run! #(with-redefs [validate/validate-publication-output! (fn [_])
-                            validate/validate-xml! (fn [])
-                            validate/validate-tei! (fn [& _])
-                            validate/validate-tei-schematron! (fn [_])]
+        gates (atom #{})
+        run! #(with-redefs [validate/validate-publication-output!
+                            (fn [_] (swap! gates conj :publication-output))
+                            validate/validate-xml!
+                            (fn [] (swap! gates conj :xml))
+                            validate/validate-tei!
+                            (fn [& _] (swap! gates conj :tei))
+                            validate/validate-tei-schematron!
+                            (fn [_] (swap! gates conj :tei-schematron))]
                 (validate/validate-design-bundle!))]
     (if git-cliff-var
       (with-redefs-fn {git-cliff-var
@@ -1227,7 +1232,8 @@
                          (throw (ex-info "repository-history sentinel reached" {})))}
         run!)
       (run!))
-    (is (false? @reached?))))
+    (is (false? @reached?))
+    (is (= #{:publication-output :xml :tei :tei-schematron} @gates))))
 
 (deftest design-bundle-temporary-import-materialization-test
   (fs/with-temp-dir [root {:prefix "abc-test-"}]

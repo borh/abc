@@ -180,6 +180,21 @@
     (is (not= (get with-id "drift_event_id")
               (drift/drift-event-id changed-date)))))
 
+(deftest drift-event-id-is-sensitive-to-canonical-order-test
+  (let [with-id (base-split)
+        expected (get with-id "drift_event_id")]
+    (is (not= expected
+              (drift/drift-event-id
+               (update with-id "participants" #(vec (reverse %))))))
+    (is (not= expected
+              (drift/drift-event-id
+               (update-in with-id ["prov" "was_generated_by"]
+                          #(vec (reverse %))))))
+    (is (not= (get (base-merge) "drift_event_id")
+              (drift/drift-event-id
+               (update-in (base-merge) ["prov" "used"]
+                          #(vec (reverse %))))))))
+
 (deftest validate-event-json-coherence-accepts-base-split-test
   (is (= [] (drift/event-json-coherence-failures (base-split)))))
 

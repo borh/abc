@@ -49,12 +49,14 @@
             38 {:amends #{2 30 32} :amended-by #{43}}}
            relations))
     (doseq [text [handoff adr32]]
-      (is (str/includes? text revision)))
+      (is (str/includes? text revision))
+      (is (str/includes? text "P4suta/aozora")))
     (is (str/includes? handoff "github.com/P4suta/aozora"))
-    (doseq [text sources
-            :when (str/includes? text "Forked from")]
-      (is (str/includes? text repository))
-      (is (str/includes? text licence)))
+    (doseq [[path text] (map vector source-paths sources)]
+      (is (str/includes? text "Forked from") path)
+      (is (str/includes? text repository) path)
+      (is (str/includes? text revision) path)
+      (is (str/includes? text licence) path))
     (doseq [text notices]
       (is (or (str/includes? text licence)
               (str/includes? text "Apache-2.0 OR MIT"))))

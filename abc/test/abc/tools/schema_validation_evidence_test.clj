@@ -70,7 +70,7 @@
   (files/read-text "schemas/manifest.shacl.ttl")
   (shacl/load-shapes-graph))
 
-(defn- validate-rights-values! [rights-values]
+(defn- validate-rights-nodes! [rights-nodes]
   (let [{:keys [record persons]} (example-metadata)
         graph (metadata-record/record+persons->graph record persons)
         rdf-type (NodeFactory/createURI
@@ -81,12 +81,14 @@
                         iterator-seq first .getSubject)
         rights-predicate (NodeFactory/createURI
                           "http://purl.org/dc/terms/rights")]
-    (doseq [rights rights-values]
-      (.add graph (Triple/create subject rights-predicate
-                                 (NodeFactory/createURI rights))))
+    (doseq [rights rights-nodes]
+      (.add graph (Triple/create subject rights-predicate rights)))
     (shacl/validate! {:shapes-graph (shapes-graph)
                       :data-graph graph
                       :label "metadata-rights"})))
+
+(defn- validate-rights-values! [rights-values]
+  (validate-rights-nodes! (map #(NodeFactory/createURI %) rights-values)))
 
 (defn write-canonicalization-fixtures! [identity-json array-a array-b]
   (files/write-text! identity-json "{}\n")
@@ -282,6 +284,15 @@
   (is (= :ok (validate-rights-values! [])))
   (is (= :ok (validate-rights-values!
               ["https://creativecommons.org/publicdomain/mark/1.0/"])))
+  (is (= :ok (validate-rights-values!
+              ["http://rightsstatements.org/vocab/InC/1.0/"])))
+  (is (instance? clojure.lang.ExceptionInfo
+                 (try
+                   (validate-rights-nodes!
+                    [(NodeFactory/createLiteral
+                      "https://creativecommons.org/publicdomain/mark/1.0/")])
+                   nil
+                   (catch clojure.lang.ExceptionInfo exception exception))))
   (let [invalid (try
                   (validate-rights-values! ["https://example.invalid/rights"])
                   nil

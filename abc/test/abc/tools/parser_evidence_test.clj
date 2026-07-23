@@ -5,7 +5,13 @@
    [abc.test-fs :refer [with-temp-dir]]
    [babashka.fs :as fs]
    [clojure.set :as set]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]))
+
+(deftest adr-0038-grants-development-release-authority-test
+  (let [text (slurp
+              "docs/adr/0038-custom-parser-ownership-and-neutral-comparison.md")]
+    (is (str/includes? text "Release authority: development"))))
 
 (def valid-entry
   {:evidence_id "ab-validator/example"

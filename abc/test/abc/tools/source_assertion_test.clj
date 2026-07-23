@@ -42,33 +42,8 @@
                      (filter #(.isFile ^java.io.File %))
                      (filter #(re-find #"\.cljc?$" (.getName ^java.io.File %))))]
     (doseq [source sources :let [text (slurp source)]]
-      ;; The evidence analyzer names legacy process capabilities as quoted
-      ;; denylist data. Its executable subprocess boundary is babashka.process;
-      ;; the dedicated test below proves the exception is data-only.
-      (when-not (contains? #{"src/abc/tools/adr_evidence_runtime_inputs.clj"
-                             "src/abc/tools/adr_evidence_bootstrap.clj"}
-                           (str source))
-        (is (not (string/includes? text "clojure.java.shell")) (str source))
-        (is (not (string/includes? text "ProcessBuilder")) (str source)))
+      (is (not (string/includes? text "clojure.java.shell")) (str source))
+      (is (not (string/includes? text "ProcessBuilder")) (str source))
       (is (not (re-find #"(?s)Runtime/getRuntime[^)]*\)\s*\.exec|\(\s*\.exec\s+\(\s*Runtime/getRuntime\b|\(\s*\.\.\s+Runtime\s+getRuntime\s+\(\s*exec\b"
                         text))
           (str source)))))
-
-(deftest evidence-analyzer-legacy-process-names-are-policy-data-test
-  (let [source (io/file "src/abc/tools/adr_evidence_runtime_inputs.clj")
-        text (slurp source)]
-    (require 'abc.tools.adr-evidence-runtime-inputs)
-    (let [forbidden-vars (var-get
-                          (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
-                                      'forbidden-vars))
-          forbidden-simple (var-get
-                            (ns-resolve 'abc.tools.adr-evidence-runtime-inputs
-                                        'forbidden-simple))]
-      (is (contains? forbidden-vars 'clojure.java.shell/sh))
-      (is (contains? forbidden-vars 'babashka.process/process))
-      (is (contains? forbidden-simple 'ProcessBuilder)))
-    (is (string/includes? text "[babashka.process :as process]"))
-    (is (not (re-find #"\[\s*clojure\.java\.shell\b|\(\s*clojure\.java\.shell/sh\b"
-                      text)))
-    (is (not (re-find #"(?s)\(:import.*?\bProcessBuilder\b|\(\s*(?:new\s+)?ProcessBuilder(?:\.|\s)"
-                      text)))))

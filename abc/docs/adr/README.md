@@ -99,22 +99,15 @@ claim header:
 
 The claim ID is `ADR-NNNN-CN`, where the four-digit ADR number matches the
 containing record and `N` begins at 1. Claim IDs are unique across the complete
-repository. The closed claim-kind vocabulary is:
-
-- `structural-invariant`
-- `fixture-behavior`
-- `corpus-behavior`
-- `performance-bound`
-- `external-semantics`
-- `implementation-agreement`
-- `domain-interpretation`
-- `operational-behavior`
+repository. The kind token is lowercase kebab-case prose (for example
+`structural-invariant` or `fixture-behavior`); per ADR 0043 it is descriptive
+only — no closed vocabulary is machine-enforced.
 
 Proposed ADRs may omit claim headers while the proposal is being shaped. If a
 Proposed criterion starts with `**ADR-`, however, the complete header must
-already use the exact grammar above. Registry coverage is mandatory only for
-Accepted ADRs, but promotion requires compatible passing evidence for every
-criterion.
+already use the exact grammar above. Promotion to Accepted requires an
+existing executable evidence citation for the ADR (ADR 0043); whether a cited
+test entails its criterion is a review judgment.
 
 ## Manifest identity invariants
 
@@ -166,8 +159,9 @@ shell allowlist ratchet: there are no permanent legacy evidence exceptions.
 
 Every Accepted ADR requires `## Decision`, `## Implementation Status`, and
 `## Acceptance Criteria`. Its Acceptance Criteria must attach at least one
-existing executable evidence path (`test/...`, `nix/...`, or a verified
-`fixtures/...` reference) to the criterion it proves. Draft and Proposed ADRs
+existing evidence path (`test/...`, `nix/...`, a verified `fixtures/...`
+reference, or a reviewed `docs/evidence/external/...` document) to the
+criterion it proves. Draft and Proposed ADRs
 may record criteria without executable evidence because those criteria are
 promotion conditions; they become mandatory executable evidence before the ADR
 is promoted to Accepted.

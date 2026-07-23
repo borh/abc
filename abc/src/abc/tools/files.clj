@@ -1,6 +1,5 @@
 (ns abc.tools.files
   (:require [abc.tools.hash :as hash]
-            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.json :as abc-json]
             [babashka.fs :as fs]
             [clojure.edn :as edn]
@@ -22,33 +21,30 @@
   (abc-json/read-json-file file))
 
 (defn read-json-lines [file]
-  (->> (string/split-lines (slurp (evidence-io/record-read! (fs/file file))))
+  (->> (string/split-lines (slurp (fs/file file)))
        (remove string/blank?)
        (mapv abc-json/read-json-str)))
 
 (defn read-edn [file]
-  (edn/read-string (slurp (evidence-io/record-read! (fs/file file)))))
+  (edn/read-string (slurp (fs/file file))))
 
 (defn read-text [file]
-  (slurp (evidence-io/record-read! (fs/file file))))
+  (slurp (fs/file file)))
 
 (defn read-bytes [file]
-  (fs/read-all-bytes (evidence-io/record-read! file)))
+  (fs/read-all-bytes file))
 
 (defn input-stream [file]
-  (io/input-stream (evidence-io/record-read! file)))
+  (io/input-stream file))
 
 (defn reader [file]
-  (io/reader (evidence-io/record-read! file)))
+  (io/reader file))
 
 (defn list-files [directory]
-  (let [files (->> (fs/list-dir directory)
-                   (filter fs/regular-file?)
-                   (sort-by str)
-                   (mapv fs/file)
-                   vec)]
-    (doseq [file files] (evidence-io/record-read! file))
-    files))
+  (->> (fs/list-dir directory)
+       (filter fs/regular-file?)
+       (sort-by str)
+       (mapv fs/file)))
 
 (defn list-files-if-directory [directory]
   (if (fs/directory? directory)
@@ -56,10 +52,7 @@
     []))
 
 (defn glob [root pattern]
-  (let [matches (vec (fs/glob root pattern))]
-    (doseq [file matches]
-      (evidence-io/record-read! file))
-    matches))
+  (vec (fs/glob root pattern)))
 
 (defn create-dirs! [path]
   (fs/create-dirs path))
@@ -78,32 +71,32 @@
   (java.nio.file.Files/deleteIfExists (.toPath (fs/file path))))
 
 (defn canonicalize [path]
-  (fs/canonicalize (evidence-io/record-read! path)))
+  (fs/canonicalize path))
 
 (defn exists? [path]
-  (fs/exists? (evidence-io/record-read! path)))
+  (fs/exists? path))
 
 (defn directory? [path]
-  (fs/directory? (evidence-io/record-read! path)))
+  (fs/directory? path))
 
 (defn file? [path]
-  (fs/regular-file? (evidence-io/record-read! path)))
+  (fs/regular-file? path))
 
 (defn executable? [path]
-  (fs/executable? (evidence-io/record-read! path)))
+  (fs/executable? path))
 
 (defn with-zip-file [archive f]
-  (with-open [zip (ZipFile. (io/file (evidence-io/record-read! archive)))]
+  (with-open [zip (ZipFile. (io/file archive))]
     (f zip)))
 
 (defn load-jena-model [file]
-  (RDFDataMgr/loadModel (str (evidence-io/record-read! file))))
+  (RDFDataMgr/loadModel (str file)))
 
 (defn parse-xml-document [file]
   (let [factory (DocumentBuilderFactory/newInstance)]
     (.setNamespaceAware factory true)
     (.parse (.newDocumentBuilder factory)
-            (io/file (evidence-io/record-read! file)))))
+            (io/file file))))
 
 (defn relative-path [base file]
   (string/replace (str (fs/relativize (fs/path base) (fs/path file))) "\\" "/"))
@@ -138,7 +131,7 @@
   ;; Guard: (fs/parent bare-filename) is nil and (fs/create-dirs nil) throws NPE.
   (when-let [parent (fs/parent target)]
     (fs/create-dirs parent))
-  (fs/copy (evidence-io/record-read! source) target {:replace-existing true})
+  (fs/copy source target {:replace-existing true})
   (fs/file target))
 
 (defn bytes->hex [bytes]

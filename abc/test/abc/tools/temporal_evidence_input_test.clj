@@ -1,9 +1,7 @@
 (ns abc.tools.temporal-evidence-input-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
-            [abc.tools.aozora-csv :as aozora-csv]
+  (:require [abc.tools.aozora-csv :as aozora-csv]
             [abc.tools.aozora-history-audit :as history-audit]
             [abc.tools.aozora-ingest :as ingest]
-            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
             [abc.tools.malli :as malli]
@@ -91,20 +89,6 @@
         "schema_hash" (manifest/schema-hash person-drift/index-schema-path)
         "person_id" (get participant "person_id")
         "drift_event_ids" [event-id]}))))
-
-(defn- descriptor-path [stem]
-  (str "docs/evidence/adr-capture/" stem ".edn"))
-
-(defn- descriptor [stem]
-  {:path (descriptor-path stem)
-   :value (files/read-edn (descriptor-path stem))})
-
-(defn- trace-options [stem]
-  {:identity-root "."
-   :cwd-root "."
-   :repo-root "."
-   :workspace-root ".."
-   :descriptor (descriptor stem)})
 
 (defn- literal-values [graph predicate]
   (->> (iterator-seq (.find graph))
@@ -344,435 +328,415 @@
                "had_role" "abc:DriftEditor"}}})))
 
 (deftest temporal-date-normalization-contract
-  (runtime-inputs/with-validated-read-trace!
-    (trace-options "temporal-date-normalization")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [_]
-          (let [expected-cases
-                {:pad-month ["1888-6-12" "1888-06-12" ["pad-month"]]
-                 :pad-day ["1888-06-1" "1888-06-01" ["pad-day"]]
-                 :pad-year ["723-08-15" "0723-08-15" ["pad-year"]]
-                 :strip-whitespace ["1869- 02-22" "1869-02-22" ["strip-whitespace"]]
-                 :collapse-multi-dash ["1850-08--18" "1850-08-18" ["collapse-multi-dash"]]
-                 :normalize-separator ["1839.1.1" "1839-01-01"
-                                       ["normalize-date-separator" "pad-month" "pad-day"]]
-                 :bce-astronomical ["前347" "-0346" ["bce-astronomical"]]}
-                correction-clauses
-                (into {}
-                      (map (fn [[clause [raw corrected rules]]]
-                             (let [[actual corrections] (aozora-csv/parse-date raw)]
-                               [clause
-                                (and (= corrected actual)
-                                     (= rules (mapv #(get % "rule") corrections))
-                                     (every? #(= raw (get % "raw")) corrections)
-                                     (every? #(= corrected (get % "corrected")) corrections))]))
-                           expected-cases))
-                unknown-clauses
-                (into {}
-                      (map (fn [raw]
-                             (let [[actual corrections] (aozora-csv/parse-date raw)]
-                               [(keyword (str "unknown-" raw))
-                                (= [nil [{"raw" raw "corrected" nil
-                                          "rule" "unknown-marker"}]]
-                                   [actual corrections])]))
-                           ["不詳" "未詳"]))
-                passthrough-clauses
-                {:calendar-impossible-uncorrected
-                 (= ["2020-02-31" []] (aozora-csv/parse-date "2020-02-31"))
-                 :range-invalid-uncorrected
-                 (= ["1892-13" []] (aozora-csv/parse-date "1892-13"))
-                 :decade-verbatim-no-correction
-                 (every? #(= [% []] (aozora-csv/parse-date %)) ["192X" "-019X"])
-                 :century-seven-source-phrase
-                 (= ["-06XX" [{"raw" "紀元前7世紀末" "corrected" "-06XX"
-                               "rule" "century-prose"}]]
-                    (aozora-csv/parse-date "紀元前7世紀末"))
-                 :century-six-source-phrase
-                 (= ["-05XX" [{"raw" "紀元前6世紀初" "corrected" "-05XX"
-                               "rule" "century-prose"}]]
-                    (aozora-csv/parse-date "紀元前6世紀初"))}]
-            (assert-material-clauses! :temporal-date-normalization
-                                      (merge correction-clauses unknown-clauses passthrough-clauses))))))))
+  (let [expected-cases
+        {:pad-month ["1888-6-12" "1888-06-12" ["pad-month"]]
+         :pad-day ["1888-06-1" "1888-06-01" ["pad-day"]]
+         :pad-year ["723-08-15" "0723-08-15" ["pad-year"]]
+         :strip-whitespace ["1869- 02-22" "1869-02-22" ["strip-whitespace"]]
+         :collapse-multi-dash ["1850-08--18" "1850-08-18" ["collapse-multi-dash"]]
+         :normalize-separator ["1839.1.1" "1839-01-01"
+                               ["normalize-date-separator" "pad-month" "pad-day"]]
+         :bce-astronomical ["前347" "-0346" ["bce-astronomical"]]}
+        correction-clauses
+        (into {}
+              (map (fn [[clause [raw corrected rules]]]
+                     (let [[actual corrections] (aozora-csv/parse-date raw)]
+                       [clause
+                        (and (= corrected actual)
+                             (= rules (mapv #(get % "rule") corrections))
+                             (every? #(= raw (get % "raw")) corrections)
+                             (every? #(= corrected (get % "corrected")) corrections))]))
+                   expected-cases))
+        unknown-clauses
+        (into {}
+              (map (fn [raw]
+                     (let [[actual corrections] (aozora-csv/parse-date raw)]
+                       [(keyword (str "unknown-" raw))
+                        (= [nil [{"raw" raw "corrected" nil
+                                  "rule" "unknown-marker"}]]
+                           [actual corrections])]))
+                   ["不詳" "未詳"]))
+        passthrough-clauses
+        {:calendar-impossible-uncorrected
+         (= ["2020-02-31" []] (aozora-csv/parse-date "2020-02-31"))
+         :range-invalid-uncorrected
+         (= ["1892-13" []] (aozora-csv/parse-date "1892-13"))
+         :decade-verbatim-no-correction
+         (every? #(= [% []] (aozora-csv/parse-date %)) ["192X" "-019X"])
+         :century-seven-source-phrase
+         (= ["-06XX" [{"raw" "紀元前7世紀末" "corrected" "-06XX"
+                       "rule" "century-prose"}]]
+            (aozora-csv/parse-date "紀元前7世紀末"))
+         :century-six-source-phrase
+         (= ["-05XX" [{"raw" "紀元前6世紀初" "corrected" "-05XX"
+                       "rule" "century-prose"}]]
+            (aozora-csv/parse-date "紀元前6世紀初"))}]
+    (assert-material-clauses! :temporal-date-normalization
+                              (merge correction-clauses unknown-clauses passthrough-clauses))))
 
 (deftest temporal-person-record-contract
-  (runtime-inputs/with-validated-read-trace!
-    (trace-options "temporal-person-record-contract")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [_]
-          (let [schema-value (files/read-json "schemas/person-record.schema.json")
-                record (files/read-json "examples/v0/example-persons/000879.json")
-                adr-0015-accepted
-                [nil "1892-03-01" "1904-01" "1941"
-                 "-0426-01-15" "-0426-01" "-0426"]
-                adr-0016-accepted ["192X" "-019X" "-06XX"]
-                accepted (into adr-0015-accepted adr-0016-accepted)
-                rejected ["1892?" "1984/1999" "{1984, 1986}"
-                          "1892-00" "1892-13" "1892-01-00" "1892-01-32"]
-                field-cases [["date_of_birth" "dateOfBirth" "edtfDateOfBirth"]
-                             ["date_of_death" "dateOfDeath" "edtfDateOfDeath"]]
-                xsd-cases [["1892-03-01" "http://www.w3.org/2001/XMLSchema#date"]
-                           ["1904-01" "http://www.w3.org/2001/XMLSchema#gYearMonth"]
-                           ["1941" "http://www.w3.org/2001/XMLSchema#gYear"]]
-                schema-clauses
-                (into {}
-                      (for [[field _ _] field-cases]
-                        [(keyword (str field "-schema-table"))
-                         (and (every? #(empty? (schema/validation-errors
-                                                schema-value (assoc record field %)))
-                                      accepted)
-                              (every? #(seq (schema/validation-errors
-                                             schema-value (assoc record field %)))
-                                      rejected))]))
-                rdf-clauses
-                (into {}
-                      (for [[field rda-local edtf-local] field-cases]
-                        [(keyword (str field "-xsd-and-edtf-dispatch"))
-                         (every?
-                          (fn [[value datatype]]
-                            (let [graph (person-record/record->graph
-                                         (assoc record field value))]
-                              (and (= [[value datatype]]
-                                      (literal-values graph
-                                                      (str "http://RDVocab.info/ElementsGr2/"
-                                                           rda-local)))
-                                   (= [[value "https://w3id.org/abc/EDTF"]]
-                                      (literal-values graph
-                                                      (str "https://w3id.org/abc/"
-                                                           edtf-local))))))
-                          xsd-cases)]))
-                level-one-clauses
-                (into {}
-                      (for [[field rda-local edtf-local] field-cases]
-                        [(keyword (str field "-level-one-edtf-only"))
-                         (every?
-                          (fn [value]
-                            (let [graph (person-record/record->graph
-                                         (assoc record field value))]
-                              (and (empty? (literal-values
-                                            graph (str "http://RDVocab.info/ElementsGr2/"
-                                                       rda-local)))
-                                   (= [[value "https://w3id.org/abc/EDTF"]]
-                                      (literal-values graph
-                                                      (str "https://w3id.org/abc/"
-                                                           edtf-local))))))
-                          ["192X" "-019X" "-06XX"])]))
-                fixture-graph (person-record/record->graph record)
-                fixture-clauses
-                {:fixture-valid (empty? (schema/validation-errors schema-value record))
-                 :fixture-live-schema-hash
-                 (= (manifest/schema-hash "schemas/person-record.schema.json")
-                    (get record "person_record_schema_hash"))
-                 :fixture-exact-birth (= "1892-03-01" (get record "date_of_birth"))
-                 :fixture-exact-death (= "1927-07-24" (get record "date_of_death"))
-                 :fixture-complete-temporal-rdf
-                 (and (= [["1892-03-01" "http://www.w3.org/2001/XMLSchema#date"]]
-                         (literal-values fixture-graph
-                                         "http://RDVocab.info/ElementsGr2/dateOfBirth"))
-                      (= [["1927-07-24" "http://www.w3.org/2001/XMLSchema#date"]]
-                         (literal-values fixture-graph
-                                         "http://RDVocab.info/ElementsGr2/dateOfDeath"))
-                      (= [["1892-03-01" "https://w3id.org/abc/EDTF"]]
-                         (literal-values fixture-graph
-                                         "https://w3id.org/abc/edtfDateOfBirth"))
-                      (= [["1927-07-24" "https://w3id.org/abc/EDTF"]]
-                         (literal-values fixture-graph
-                                         "https://w3id.org/abc/edtfDateOfDeath")))}]
-            (assert-material-clauses! :temporal-person-record-contract
-                                      (merge schema-clauses rdf-clauses level-one-clauses fixture-clauses))))))))
+  (let [schema-value (files/read-json "schemas/person-record.schema.json")
+        record (files/read-json "examples/v0/example-persons/000879.json")
+        adr-0015-accepted
+        [nil "1892-03-01" "1904-01" "1941"
+         "-0426-01-15" "-0426-01" "-0426"]
+        adr-0016-accepted ["192X" "-019X" "-06XX"]
+        accepted (into adr-0015-accepted adr-0016-accepted)
+        rejected ["1892?" "1984/1999" "{1984, 1986}"
+                  "1892-00" "1892-13" "1892-01-00" "1892-01-32"]
+        field-cases [["date_of_birth" "dateOfBirth" "edtfDateOfBirth"]
+                     ["date_of_death" "dateOfDeath" "edtfDateOfDeath"]]
+        xsd-cases [["1892-03-01" "http://www.w3.org/2001/XMLSchema#date"]
+                   ["1904-01" "http://www.w3.org/2001/XMLSchema#gYearMonth"]
+                   ["1941" "http://www.w3.org/2001/XMLSchema#gYear"]]
+        schema-clauses
+        (into {}
+              (for [[field _ _] field-cases]
+                [(keyword (str field "-schema-table"))
+                 (and (every? #(empty? (schema/validation-errors
+                                        schema-value (assoc record field %)))
+                              accepted)
+                      (every? #(seq (schema/validation-errors
+                                     schema-value (assoc record field %)))
+                              rejected))]))
+        rdf-clauses
+        (into {}
+              (for [[field rda-local edtf-local] field-cases]
+                [(keyword (str field "-xsd-and-edtf-dispatch"))
+                 (every?
+                  (fn [[value datatype]]
+                    (let [graph (person-record/record->graph
+                                 (assoc record field value))]
+                      (and (= [[value datatype]]
+                              (literal-values graph
+                                              (str "http://RDVocab.info/ElementsGr2/"
+                                                   rda-local)))
+                           (= [[value "https://w3id.org/abc/EDTF"]]
+                              (literal-values graph
+                                              (str "https://w3id.org/abc/"
+                                                   edtf-local))))))
+                  xsd-cases)]))
+        level-one-clauses
+        (into {}
+              (for [[field rda-local edtf-local] field-cases]
+                [(keyword (str field "-level-one-edtf-only"))
+                 (every?
+                  (fn [value]
+                    (let [graph (person-record/record->graph
+                                 (assoc record field value))]
+                      (and (empty? (literal-values
+                                    graph (str "http://RDVocab.info/ElementsGr2/"
+                                               rda-local)))
+                           (= [[value "https://w3id.org/abc/EDTF"]]
+                              (literal-values graph
+                                              (str "https://w3id.org/abc/"
+                                                   edtf-local))))))
+                  ["192X" "-019X" "-06XX"])]))
+        fixture-graph (person-record/record->graph record)
+        fixture-clauses
+        {:fixture-valid (empty? (schema/validation-errors schema-value record))
+         :fixture-live-schema-hash
+         (= (manifest/schema-hash "schemas/person-record.schema.json")
+            (get record "person_record_schema_hash"))
+         :fixture-exact-birth (= "1892-03-01" (get record "date_of_birth"))
+         :fixture-exact-death (= "1927-07-24" (get record "date_of_death"))
+         :fixture-complete-temporal-rdf
+         (and (= [["1892-03-01" "http://www.w3.org/2001/XMLSchema#date"]]
+                 (literal-values fixture-graph
+                                 "http://RDVocab.info/ElementsGr2/dateOfBirth"))
+              (= [["1927-07-24" "http://www.w3.org/2001/XMLSchema#date"]]
+                 (literal-values fixture-graph
+                                 "http://RDVocab.info/ElementsGr2/dateOfDeath"))
+              (= [["1892-03-01" "https://w3id.org/abc/EDTF"]]
+                 (literal-values fixture-graph
+                                 "https://w3id.org/abc/edtfDateOfBirth"))
+              (= [["1927-07-24" "https://w3id.org/abc/EDTF"]]
+                 (literal-values fixture-graph
+                                 "https://w3id.org/abc/edtfDateOfDeath")))}]
+    (assert-material-clauses! :temporal-person-record-contract
+                              (merge schema-clauses rdf-clauses level-one-clauses fixture-clauses))))
 
 (deftest temporal-person-shacl-contract
-  (runtime-inputs/with-validated-read-trace!
-    (trace-options "temporal-person-shacl-contract")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [_]
-          (let [shapes (shacl/load-shapes-graph)
-                sh-or (NodeFactory/createURI "http://www.w3.org/ns/shacl#or")
-                sh-datatype (NodeFactory/createURI "http://www.w3.org/ns/shacl#datatype")
-                sh-max-count (NodeFactory/createURI "http://www.w3.org/ns/shacl#maxCount")
-                sh-pattern (NodeFactory/createURI "http://www.w3.org/ns/shacl#pattern")
-                abc-edtf (NodeFactory/createURI "https://w3id.org/abc/EDTF")
-                expected-xsd #{(NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#date")
-                               (NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#gYearMonth")
-                               (NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#gYear")}
-                expected-max #{(NodeFactory/createLiteral "1" XSDDatatype/XSDinteger)}
-                expected-pattern
-                "^(-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?|-?\\d{3}X|-?\\d{2}XX)$"
-                paths [["dateOfBirth" "edtfDateOfBirth"]
-                       ["dateOfDeath" "edtfDateOfDeath"]]
-                rda-clauses
-                (into {}
-                      (for [[local _] paths
-                            :let [property (property-shape
-                                            shapes
-                                            (NodeFactory/createURI
-                                             (str "http://RDVocab.info/ElementsGr2/" local)))
-                                  alternatives
-                                  (->> (rdf-list-values
-                                        shapes (unique-graph-object shapes property sh-or))
-                                       (map #(unique-graph-object shapes % sh-datatype))
-                                       set)]]
-                        [(keyword (str "rda-" local "-cardinality-and-datatypes"))
-                         (and (= expected-max (set (graph-objects shapes property sh-max-count)))
-                              (= expected-xsd alternatives))]))
-                edtf-clauses
-                (into {}
-                      (for [[_ edtf-local] paths
-                            :let [property (property-shape
-                                            shapes
-                                            (NodeFactory/createURI
-                                             (str "https://w3id.org/abc/" edtf-local)))]]
-                        [(keyword (str edtf-local "-cardinality-datatype-pattern"))
-                         (and (= expected-max (set (graph-objects shapes property sh-max-count)))
-                              (= #{abc-edtf} (set (graph-objects shapes property sh-datatype)))
-                              (= expected-pattern
-                                 (.getLiteralLexicalForm
-                                  (unique-graph-object shapes property sh-pattern))))]))
-                datatype (BaseDatatype. "https://w3id.org/abc/EDTF")
-                person {:rdf/about "<http://www.aozora.gr.jp/index_pages/person001234.html>"
-                        :rdf/type [:foaf/Person]
-                        :dcterms/identifier (NodeFactory/createLiteral "1234" XSDDatatype/XSDint)
-                        :foaf/familyName "Test" :foaf/givenName "Person"
-                        :foaf/name "Test Person"
-                        :abc/edtfDateOfBirth (NodeFactory/createLiteral "1892?" datatype)}
-                data (-> (aa/graph :simple) (aa/add person))
-                diagnostic-path-uri "https://w3id.org/abc/edtfDateOfBirth"
-                expected-diagnostic-path (str "<" diagnostic-path-uri ">")
-                expected-diagnostic-source
-                (str (property-shape shapes
-                                     (NodeFactory/createURI diagnostic-path-uri)))
-                diagnostics
-                (try
-                  (shacl/validate! {:shapes-graph shapes :data-graph data
-                                    :label "bad-edtf-dob"})
-                  []
-                  (catch clojure.lang.ExceptionInfo exception
-                    (:errors (ex-data exception))))
-                diagnostic-clause
-                {:malformed-edtf-rejected-with-path-and-shape
-                 (boolean
-                  (and (seq diagnostics)
-                       (some (fn [violation]
-                               (and (= expected-diagnostic-path (:path violation))
-                                    (= expected-diagnostic-source (:source violation))
-                                    (re-find #"(?i)pattern"
-                                             (str (:message violation)))))
-                             diagnostics)))}]
-            (assert-material-clauses! :temporal-person-shacl-contract
-                                      (merge rda-clauses edtf-clauses diagnostic-clause))))))))
+  (let [shapes (shacl/load-shapes-graph)
+        sh-or (NodeFactory/createURI "http://www.w3.org/ns/shacl#or")
+        sh-datatype (NodeFactory/createURI "http://www.w3.org/ns/shacl#datatype")
+        sh-max-count (NodeFactory/createURI "http://www.w3.org/ns/shacl#maxCount")
+        sh-pattern (NodeFactory/createURI "http://www.w3.org/ns/shacl#pattern")
+        abc-edtf (NodeFactory/createURI "https://w3id.org/abc/EDTF")
+        expected-xsd #{(NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#date")
+                       (NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#gYearMonth")
+                       (NodeFactory/createURI "http://www.w3.org/2001/XMLSchema#gYear")}
+        expected-max #{(NodeFactory/createLiteral "1" XSDDatatype/XSDinteger)}
+        expected-pattern
+        "^(-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?|-?\\d{3}X|-?\\d{2}XX)$"
+        paths [["dateOfBirth" "edtfDateOfBirth"]
+               ["dateOfDeath" "edtfDateOfDeath"]]
+        rda-clauses
+        (into {}
+              (for [[local _] paths
+                    :let [property (property-shape
+                                    shapes
+                                    (NodeFactory/createURI
+                                     (str "http://RDVocab.info/ElementsGr2/" local)))
+                          alternatives
+                          (->> (rdf-list-values
+                                shapes (unique-graph-object shapes property sh-or))
+                               (map #(unique-graph-object shapes % sh-datatype))
+                               set)]]
+                [(keyword (str "rda-" local "-cardinality-and-datatypes"))
+                 (and (= expected-max (set (graph-objects shapes property sh-max-count)))
+                      (= expected-xsd alternatives))]))
+        edtf-clauses
+        (into {}
+              (for [[_ edtf-local] paths
+                    :let [property (property-shape
+                                    shapes
+                                    (NodeFactory/createURI
+                                     (str "https://w3id.org/abc/" edtf-local)))]]
+                [(keyword (str edtf-local "-cardinality-datatype-pattern"))
+                 (and (= expected-max (set (graph-objects shapes property sh-max-count)))
+                      (= #{abc-edtf} (set (graph-objects shapes property sh-datatype)))
+                      (= expected-pattern
+                         (.getLiteralLexicalForm
+                          (unique-graph-object shapes property sh-pattern))))]))
+        datatype (BaseDatatype. "https://w3id.org/abc/EDTF")
+        person {:rdf/about "<http://www.aozora.gr.jp/index_pages/person001234.html>"
+                :rdf/type [:foaf/Person]
+                :dcterms/identifier (NodeFactory/createLiteral "1234" XSDDatatype/XSDint)
+                :foaf/familyName "Test" :foaf/givenName "Person"
+                :foaf/name "Test Person"
+                :abc/edtfDateOfBirth (NodeFactory/createLiteral "1892?" datatype)}
+        data (-> (aa/graph :simple) (aa/add person))
+        diagnostic-path-uri "https://w3id.org/abc/edtfDateOfBirth"
+        expected-diagnostic-path (str "<" diagnostic-path-uri ">")
+        expected-diagnostic-source
+        (str (property-shape shapes
+                             (NodeFactory/createURI diagnostic-path-uri)))
+        diagnostics
+        (try
+          (shacl/validate! {:shapes-graph shapes :data-graph data
+                            :label "bad-edtf-dob"})
+          []
+          (catch clojure.lang.ExceptionInfo exception
+            (:errors (ex-data exception))))
+        diagnostic-clause
+        {:malformed-edtf-rejected-with-path-and-shape
+         (boolean
+          (and (seq diagnostics)
+               (some (fn [violation]
+                       (and (= expected-diagnostic-path (:path violation))
+                            (= expected-diagnostic-source (:source violation))
+                            (re-find #"(?i)pattern"
+                                     (str (:message violation)))))
+                     diagnostics)))}]
+    (assert-material-clauses! :temporal-person-shacl-contract
+                              (merge rda-clauses edtf-clauses diagnostic-clause))))
 
 (deftest person-drift-contract
-  (runtime-inputs/with-validated-read-trace!
-    (trace-options "person-drift-contract")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [_]
-          (let [event-schema (files/read-json person-drift/event-schema-path)
-                index-schema (files/read-json person-drift/index-schema-path)
-                event (files/read-json event-path)
-                indexes (mapv files/read-json index-paths)
-                graph (person-drift/event->graph event)
-                triples (graph-triple-uris graph)
-                event-iri (person-drift/event-iri (get event "drift_event_id"))
-                first-participant (first (get event "participants"))
-                first-snapshot (person-drift/snapshot-iri first-participant)
-                expected-first-snapshot
-                (str "https://w3id.org/abc/persons/"
-                     (get first-participant "person_id")
-                     "#snapshot-"
-                     (subs (get first-participant "person_record_hash")
-                           (count "sha256:") (+ (count "sha256:") 12)))
-                mutated-participant
-                (assoc first-participant "person_record_hash"
-                       (str "sha256:f"
-                            (subs (get first-participant "person_record_hash")
-                                  (inc (count "sha256:")))))
-                expected-mutated-snapshot
-                (str "https://w3id.org/abc/persons/"
-                     (get first-participant "person_id") "#snapshot-f"
-                     (subs (get first-participant "person_record_hash")
-                           (inc (count "sha256:"))
-                           (+ (count "sha256:") 12)))
-                participants-by-id
-                (into {} (map (fn [participant]
-                                [(get participant "snapshot_id") participant])
-                              (get event "participants")))
-                used-snapshots
-                (mapv #(person-drift/snapshot-iri (get participants-by-id %))
-                      (get-in event ["prov" "used"]))
-                generated-snapshots
-                (mapv #(person-drift/snapshot-iri (get participants-by-id %))
-                      (get-in event ["prov" "was_generated_by"]))
-                agent-iri (get-in event ["prov" "qualified_association" "agent"])
-                split (base-event)
-                merge-event (base-merge-event)
-                cardinality-mutations
-                [(assoc-in split ["prov" "used"] [])
-                 (assoc-in split ["prov" "used"] ["pre-000879" "pre-other"])
-                 (assoc-in split ["prov" "was_generated_by"]
-                           ["post-abc-000000000001"])
-                 (assoc-in merge-event ["prov" "used"] ["pre-abc-000000000001"])
-                 (assoc-in merge-event ["prov" "was_generated_by"] [])
-                 (assoc-in merge-event ["prov" "was_generated_by"]
-                           ["post-000879" "post-other"])]
-                coherence-mutations
-                {:duplicate-snapshot
-                 [(update split "participants" conj (first (get split "participants")))
-                  :duplicate-snapshot-id]
-                 :interleaved
-                 [(assoc-in split ["prov" "used"]
-                            ["pre-000879" "post-abc-000000000001"])
-                  :participant-in-both-used-and-generated]
-                 :prefix-usage
-                 [(-> split
-                      (assoc-in ["prov" "used"] ["post-abc-000000000001"])
-                      (assoc-in ["prov" "was_generated_by"]
-                                ["post-abc-000000000002" "pre-000879"]))
-                  :snapshot-prefix-usage-mismatch]
-                 :participants-order
-                 [(update split "participants" #(vec (reverse %)))
-                  :participants-not-sorted]
-                 :edge-order
-                 [(update-in split ["prov" "was_generated_by"] #(vec (reverse %)))
-                  :generated-not-sorted]
-                 :used-edge-order
-                 [(update-in merge-event ["prov" "used"] #(vec (reverse %)))
-                  :used-not-sorted]
-                 :unknown-snapshot
-                 [(assoc-in split ["prov" "used"] ["pre-missing"])
-                  :unknown-snapshot-reference]
-                 :uncovered-participant
-                 [(update split "participants" conj
-                          {"snapshot_id" "post-abc-000000000003"
-                           "person_id" "abc-000000000003"
-                           "person_record_hash" (files/example-hash "04")})
-                  :participant-not-covered]
-                 :invalid-role
-                 [(assoc-in split ["prov" "qualified_association" "had_role"]
-                            "abc:DriftReviewer")
-                  :invalid-had-role]
-                 :unknown-role-prefix
-                 [(assoc-in split ["prov" "qualified_association" "had_role"]
-                            "unknown:DriftEditor")
-                  :unresolved-curie-prefix]
-                 :invalid-agent
-                 [(assoc-in split ["prov" "qualified_association" "agent"] "not an iri")
-                  :invalid-agent-iri]}
-                shapes (shacl/load-shapes-graph)
-                rdf-type (NodeFactory/createURI
-                          "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-                node-shape (NodeFactory/createURI "http://www.w3.org/ns/shacl#NodeShape")
-                subclass (NodeFactory/createURI
-                          "http://www.w3.org/2000/01/rdf-schema#subClassOf")
-                resource-clauses
-                (into {}
-                      (concat
-                       (for [name ["PersonDriftEventShape" "PersonDriftSplitEventShape"
-                                   "PersonDriftMergeEventShape"]]
-                         [(keyword (str "shape-" name))
-                          (.contains shapes
-                                     (Triple/create
-                                      (NodeFactory/createURI (str "https://w3id.org/abc/" name))
-                                      rdf-type node-shape))])
-                       (for [[label child parent]
-                             [[:subclass-drift-event-activity
-                               "https://w3id.org/abc/DriftEvent"
-                               "http://www.w3.org/ns/prov#Activity"]
-                              [:subclass-split-event-drift-event
-                               "https://w3id.org/abc/DriftSplitEvent"
-                               "https://w3id.org/abc/DriftEvent"]
-                              [:subclass-merge-event-drift-event
-                               "https://w3id.org/abc/DriftMergeEvent"
-                               "https://w3id.org/abc/DriftEvent"]]]
-                         [label
-                          (.contains shapes
-                                     (Triple/create (NodeFactory/createURI child)
-                                                    subclass
-                                                    (NodeFactory/createURI parent)))])))
-                graph-clauses
-                {:event-rdf-type
-                 (contains? triples [event-iri
-                                     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                     "https://w3id.org/abc/DriftEvent"])
-                 :event-prov-activity
-                 (contains? triples [event-iri
-                                     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                     "http://www.w3.org/ns/prov#Activity"])
-                 :split-rdf-type
-                 (contains? triples [event-iri
-                                     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-                                     "https://w3id.org/abc/DriftSplitEvent"])
-                 :prov-used
-                 (every? #(contains? triples
-                                     [event-iri "http://www.w3.org/ns/prov#used" %])
-                         used-snapshots)
-                 :prov-invalidated
-                 (every? #(contains? triples
-                                     [% "http://www.w3.org/ns/prov#wasInvalidatedBy"
-                                      event-iri])
-                         used-snapshots)
-                 :prov-associated
-                 (contains? triples [event-iri
-                                     "http://www.w3.org/ns/prov#wasAssociatedWith"
-                                     agent-iri])
-                 :prov-derived
-                 (and
-                  (every? #(contains? triples
-                                      [% "http://www.w3.org/ns/prov#wasGeneratedBy"
-                                       event-iri])
-                          generated-snapshots)
-                  (every? (fn [[generated used]]
-                            (contains? triples
-                                       [generated
-                                        "http://www.w3.org/ns/prov#wasDerivedFrom"
-                                        used]))
-                          (for [generated generated-snapshots
-                                used used-snapshots]
-                            [generated used])))}
-                contract-clauses
-                {:event-schema-meta-valid (nil? (schema/schema-valid! event-schema "event"))
-                 :index-schema-meta-valid (nil? (schema/schema-valid! index-schema "index"))
-                 :event-schema-accepts-split (empty? (schema/validation-errors event-schema split))
-                 :index-schema-accepts-sidecars
-                 (every? #(empty? (schema/validation-errors index-schema %)) indexes)
-                 :participant-required-fields
-                 (every? (fn [field]
-                           (seq (schema/validation-errors
-                                 event-schema
-                                 (update event "participants"
-                                         #(mapv (fn [participant] (dissoc participant field)) %)))))
-                         ["snapshot_id" "person_id" "person_record_hash"])
-                 :split-merge-cardinality-bounds
-                 (every? #(seq (schema/validation-errors event-schema %))
-                         cardinality-mutations)
-                 :coherence-rejection-codes
-                 (every? (fn [[mutated expected]]
-                           (contains? (coherence-codes mutated) expected))
-                         (vals coherence-mutations))
-                 :snapshot-iri-embedded-hash
-                 (and (= expected-first-snapshot first-snapshot)
-                      (= (dissoc first-participant "person_record_hash")
-                         (dissoc mutated-participant "person_record_hash"))
-                      (= expected-mutated-snapshot
-                         (person-drift/snapshot-iri mutated-participant))
-                      (not= first-snapshot expected-mutated-snapshot))
-                 :committed-exact-layout
-                 (and (= 1 (count (files/list-files
-                                   "examples/v0/example-persons/_events")))
-                      (= 3 (count (files/list-files
-                                   "examples/v0/example-persons/_indexes"))))
-                 :committed-validation-counts
-                 (= {:status :ok :events 1 :indexes 3}
-                    (person-drift/validate-drift-events!
-                     {:persons-dir "examples/v0/example-persons"}))
-                 :committed-shacl-ok
-                 (= :ok (person-drift/validate-event-shacl! graph "committed split"))
-                 :committed-typing-ok
-                 (empty? (person-drift/typing-coherence-failures event graph))}]
-            (assert-material-clauses! :person-drift-contract
-                                      (merge contract-clauses resource-clauses graph-clauses))))))))
+  (let [event-schema (files/read-json person-drift/event-schema-path)
+        index-schema (files/read-json person-drift/index-schema-path)
+        event (files/read-json event-path)
+        indexes (mapv files/read-json index-paths)
+        graph (person-drift/event->graph event)
+        triples (graph-triple-uris graph)
+        event-iri (person-drift/event-iri (get event "drift_event_id"))
+        first-participant (first (get event "participants"))
+        first-snapshot (person-drift/snapshot-iri first-participant)
+        expected-first-snapshot
+        (str "https://w3id.org/abc/persons/"
+             (get first-participant "person_id")
+             "#snapshot-"
+             (subs (get first-participant "person_record_hash")
+                   (count "sha256:") (+ (count "sha256:") 12)))
+        mutated-participant
+        (assoc first-participant "person_record_hash"
+               (str "sha256:f"
+                    (subs (get first-participant "person_record_hash")
+                          (inc (count "sha256:")))))
+        expected-mutated-snapshot
+        (str "https://w3id.org/abc/persons/"
+             (get first-participant "person_id") "#snapshot-f"
+             (subs (get first-participant "person_record_hash")
+                   (inc (count "sha256:"))
+                   (+ (count "sha256:") 12)))
+        participants-by-id
+        (into {} (map (fn [participant]
+                        [(get participant "snapshot_id") participant])
+                      (get event "participants")))
+        used-snapshots
+        (mapv #(person-drift/snapshot-iri (get participants-by-id %))
+              (get-in event ["prov" "used"]))
+        generated-snapshots
+        (mapv #(person-drift/snapshot-iri (get participants-by-id %))
+              (get-in event ["prov" "was_generated_by"]))
+        agent-iri (get-in event ["prov" "qualified_association" "agent"])
+        split (base-event)
+        merge-event (base-merge-event)
+        cardinality-mutations
+        [(assoc-in split ["prov" "used"] [])
+         (assoc-in split ["prov" "used"] ["pre-000879" "pre-other"])
+         (assoc-in split ["prov" "was_generated_by"]
+                   ["post-abc-000000000001"])
+         (assoc-in merge-event ["prov" "used"] ["pre-abc-000000000001"])
+         (assoc-in merge-event ["prov" "was_generated_by"] [])
+         (assoc-in merge-event ["prov" "was_generated_by"]
+                   ["post-000879" "post-other"])]
+        coherence-mutations
+        {:duplicate-snapshot
+         [(update split "participants" conj (first (get split "participants")))
+          :duplicate-snapshot-id]
+         :interleaved
+         [(assoc-in split ["prov" "used"]
+                    ["pre-000879" "post-abc-000000000001"])
+          :participant-in-both-used-and-generated]
+         :prefix-usage
+         [(-> split
+              (assoc-in ["prov" "used"] ["post-abc-000000000001"])
+              (assoc-in ["prov" "was_generated_by"]
+                        ["post-abc-000000000002" "pre-000879"]))
+          :snapshot-prefix-usage-mismatch]
+         :participants-order
+         [(update split "participants" #(vec (reverse %)))
+          :participants-not-sorted]
+         :edge-order
+         [(update-in split ["prov" "was_generated_by"] #(vec (reverse %)))
+          :generated-not-sorted]
+         :used-edge-order
+         [(update-in merge-event ["prov" "used"] #(vec (reverse %)))
+          :used-not-sorted]
+         :unknown-snapshot
+         [(assoc-in split ["prov" "used"] ["pre-missing"])
+          :unknown-snapshot-reference]
+         :uncovered-participant
+         [(update split "participants" conj
+                  {"snapshot_id" "post-abc-000000000003"
+                   "person_id" "abc-000000000003"
+                   "person_record_hash" (files/example-hash "04")})
+          :participant-not-covered]
+         :invalid-role
+         [(assoc-in split ["prov" "qualified_association" "had_role"]
+                    "abc:DriftReviewer")
+          :invalid-had-role]
+         :unknown-role-prefix
+         [(assoc-in split ["prov" "qualified_association" "had_role"]
+                    "unknown:DriftEditor")
+          :unresolved-curie-prefix]
+         :invalid-agent
+         [(assoc-in split ["prov" "qualified_association" "agent"] "not an iri")
+          :invalid-agent-iri]}
+        shapes (shacl/load-shapes-graph)
+        rdf-type (NodeFactory/createURI
+                  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+        node-shape (NodeFactory/createURI "http://www.w3.org/ns/shacl#NodeShape")
+        subclass (NodeFactory/createURI
+                  "http://www.w3.org/2000/01/rdf-schema#subClassOf")
+        resource-clauses
+        (into {}
+              (concat
+               (for [name ["PersonDriftEventShape" "PersonDriftSplitEventShape"
+                           "PersonDriftMergeEventShape"]]
+                 [(keyword (str "shape-" name))
+                  (.contains shapes
+                             (Triple/create
+                              (NodeFactory/createURI (str "https://w3id.org/abc/" name))
+                              rdf-type node-shape))])
+               (for [[label child parent]
+                     [[:subclass-drift-event-activity
+                       "https://w3id.org/abc/DriftEvent"
+                       "http://www.w3.org/ns/prov#Activity"]
+                      [:subclass-split-event-drift-event
+                       "https://w3id.org/abc/DriftSplitEvent"
+                       "https://w3id.org/abc/DriftEvent"]
+                      [:subclass-merge-event-drift-event
+                       "https://w3id.org/abc/DriftMergeEvent"
+                       "https://w3id.org/abc/DriftEvent"]]]
+                 [label
+                  (.contains shapes
+                             (Triple/create (NodeFactory/createURI child)
+                                            subclass
+                                            (NodeFactory/createURI parent)))])))
+        graph-clauses
+        {:event-rdf-type
+         (contains? triples [event-iri
+                             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                             "https://w3id.org/abc/DriftEvent"])
+         :event-prov-activity
+         (contains? triples [event-iri
+                             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                             "http://www.w3.org/ns/prov#Activity"])
+         :split-rdf-type
+         (contains? triples [event-iri
+                             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                             "https://w3id.org/abc/DriftSplitEvent"])
+         :prov-used
+         (every? #(contains? triples
+                             [event-iri "http://www.w3.org/ns/prov#used" %])
+                 used-snapshots)
+         :prov-invalidated
+         (every? #(contains? triples
+                             [% "http://www.w3.org/ns/prov#wasInvalidatedBy"
+                              event-iri])
+                 used-snapshots)
+         :prov-associated
+         (contains? triples [event-iri
+                             "http://www.w3.org/ns/prov#wasAssociatedWith"
+                             agent-iri])
+         :prov-derived
+         (and
+          (every? #(contains? triples
+                              [% "http://www.w3.org/ns/prov#wasGeneratedBy"
+                               event-iri])
+                  generated-snapshots)
+          (every? (fn [[generated used]]
+                    (contains? triples
+                               [generated
+                                "http://www.w3.org/ns/prov#wasDerivedFrom"
+                                used]))
+                  (for [generated generated-snapshots
+                        used used-snapshots]
+                    [generated used])))}
+        contract-clauses
+        {:event-schema-meta-valid (nil? (schema/schema-valid! event-schema "event"))
+         :index-schema-meta-valid (nil? (schema/schema-valid! index-schema "index"))
+         :event-schema-accepts-split (empty? (schema/validation-errors event-schema split))
+         :index-schema-accepts-sidecars
+         (every? #(empty? (schema/validation-errors index-schema %)) indexes)
+         :participant-required-fields
+         (every? (fn [field]
+                   (seq (schema/validation-errors
+                         event-schema
+                         (update event "participants"
+                                 #(mapv (fn [participant] (dissoc participant field)) %)))))
+                 ["snapshot_id" "person_id" "person_record_hash"])
+         :split-merge-cardinality-bounds
+         (every? #(seq (schema/validation-errors event-schema %))
+                 cardinality-mutations)
+         :coherence-rejection-codes
+         (every? (fn [[mutated expected]]
+                   (contains? (coherence-codes mutated) expected))
+                 (vals coherence-mutations))
+         :snapshot-iri-embedded-hash
+         (and (= expected-first-snapshot first-snapshot)
+              (= (dissoc first-participant "person_record_hash")
+                 (dissoc mutated-participant "person_record_hash"))
+              (= expected-mutated-snapshot
+                 (person-drift/snapshot-iri mutated-participant))
+              (not= first-snapshot expected-mutated-snapshot))
+         :committed-exact-layout
+         (and (= 1 (count (files/list-files
+                           "examples/v0/example-persons/_events")))
+              (= 3 (count (files/list-files
+                           "examples/v0/example-persons/_indexes"))))
+         :committed-validation-counts
+         (= {:status :ok :events 1 :indexes 3}
+            (person-drift/validate-drift-events!
+             {:persons-dir "examples/v0/example-persons"}))
+         :committed-shacl-ok
+         (= :ok (person-drift/validate-event-shacl! graph "committed split"))
+         :committed-typing-ok
+         (empty? (person-drift/typing-coherence-failures event graph))}]
+    (assert-material-clauses! :person-drift-contract
+                              (merge contract-clauses resource-clauses graph-clauses))))
 
 (def ^:private negative-fixtures
   {"fixtures/v0/invalid/drift/broken-index-target" #{:index-target-missing}
@@ -811,206 +775,169 @@
    #{:rdf-participant-prov-mismatch}})
 
 (deftest person-drift-negative-fixtures-contract
-  (runtime-inputs/with-validated-read-trace!
-    (trace-options "person-drift-negative-fixtures")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (files/read-json person-drift/event-schema-path)
-          (files/read-json person-drift/index-schema-path)
-          (shacl/load-shapes-graph)
-          (doseq [path (->> (keys negative-fixtures)
-                            (filter map?)
-                            (map (fn [fixture] (:graph fixture)))
-                            distinct)]
-            (files/read-bytes path))
-          (let [ephemeral-event (fs/path root "event.json")
-                fixtures (reduce-kv
-                          (fn [result fixture expected]
-                            (assoc result
-                                   (if (and (map? fixture)
-                                            (= event-path (:event fixture)))
-                                     (assoc fixture :event (str ephemeral-event))
-                                     fixture)
-                                   expected))
-                          {}
-                          negative-fixtures)]
-            (json/write-deterministic-json-file! (fs/file ephemeral-event) (base-event))
-            (assert-material-clauses!
-             :person-drift-negative-fixtures
-             {:exact-invalid-fixture-code-sets
-              (nil? (validate/validate-drift-fixtures! fixtures))})))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (files/read-json person-drift/event-schema-path)
+    (files/read-json person-drift/index-schema-path)
+    (shacl/load-shapes-graph)
+    (doseq [path (->> (keys negative-fixtures)
+                      (filter map?)
+                      (map (fn [fixture] (:graph fixture)))
+                      distinct)]
+      (files/read-bytes path))
+    (let [ephemeral-event (fs/path root "event.json")
+          fixtures (reduce-kv
+                    (fn [result fixture expected]
+                      (assoc result
+                             (if (and (map? fixture)
+                                      (= event-path (:event fixture)))
+                               (assoc fixture :event (str ephemeral-event))
+                               fixture)
+                             expected))
+                    {}
+                    negative-fixtures)]
+      (json/write-deterministic-json-file! (fs/file ephemeral-event) (base-event))
+      (assert-material-clauses!
+       :person-drift-negative-fixtures
+       {:exact-invalid-fixture-code-sets
+        (nil? (validate/validate-drift-fixtures! fixtures))}))))
 
 (deftest aozora-ingest-drift-invariants-contract
-  (runtime-inputs/with-validated-read-trace!
-    (trace-options "aozora-ingest-drift-invariants")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (files/read-json "schemas/person-record.schema.json")
-          (files/read-json "schemas/metadata-record.schema.json")
-          (files/read-json "schemas/manifest.schema.json")
-          (let [without (run-ingest root false)
-                with (run-ingest root true)
-                baseline (run-ingest-with-person-schema-hash
-                          root "schema-live"
-                          (manifest/schema-hash "schemas/person-record.schema.json"))
-                rotated (run-ingest-with-person-schema-hash
-                         root "schema-rotated"
-                         "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-                expected-paths
-                #{["person" "person_record_schema_hash"]
-                  ["metadata" "contributors" 0 "person_record_hash"]
-                  ["manifest" "manifest_identity_object" "metadata_record_hash"]
-                  ["manifest" "artifact_id"]}
-                clauses
-                {:sidecars-person-bytes (= (:person without) (:person with))
-                 :sidecars-metadata-bytes (= (:metadata without) (:metadata with))
-                 :sidecars-manifest-bytes (= (:manifest without) (:manifest with))
-                 :sidecars-manifest-identity (= (:identity without) (:identity with))
-                 :schema-rotation-exact-four-paths
-                 (= expected-paths (changed-json-paths baseline rotated))
-                 :schema-rotation-person-semantics-unchanged
-                 (= (dissoc (get baseline "person") "person_record_schema_hash")
-                    (dissoc (get rotated "person") "person_record_schema_hash"))
-                 :schema-rotation-metadata-semantics-unchanged
-                 (= (get baseline "metadata")
-                    (assoc-in (get rotated "metadata")
-                              ["contributors" 0 "person_record_hash"]
-                              (get-in baseline
-                                      ["metadata" "contributors" 0
-                                       "person_record_hash"])))}]
-            (assert-material-clauses! :aozora-ingest-drift-invariants clauses)))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (files/read-json "schemas/person-record.schema.json")
+    (files/read-json "schemas/metadata-record.schema.json")
+    (files/read-json "schemas/manifest.schema.json")
+    (let [without (run-ingest root false)
+          with (run-ingest root true)
+          baseline (run-ingest-with-person-schema-hash
+                    root "schema-live"
+                    (manifest/schema-hash "schemas/person-record.schema.json"))
+          rotated (run-ingest-with-person-schema-hash
+                   root "schema-rotated"
+                   "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+          expected-paths
+          #{["person" "person_record_schema_hash"]
+            ["metadata" "contributors" 0 "person_record_hash"]
+            ["manifest" "manifest_identity_object" "metadata_record_hash"]
+            ["manifest" "artifact_id"]}
+          clauses
+          {:sidecars-person-bytes (= (:person without) (:person with))
+           :sidecars-metadata-bytes (= (:metadata without) (:metadata with))
+           :sidecars-manifest-bytes (= (:manifest without) (:manifest with))
+           :sidecars-manifest-identity (= (:identity without) (:identity with))
+           :schema-rotation-exact-four-paths
+           (= expected-paths (changed-json-paths baseline rotated))
+           :schema-rotation-person-semantics-unchanged
+           (= (dissoc (get baseline "person") "person_record_schema_hash")
+              (dissoc (get rotated "person") "person_record_schema_hash"))
+           :schema-rotation-metadata-semantics-unchanged
+           (= (get baseline "metadata")
+              (assoc-in (get rotated "metadata")
+                        ["contributors" 0 "person_record_hash"]
+                        (get-in baseline
+                                ["metadata" "contributors" 0
+                                 "person_record_hash"])))}]
+      (assert-material-clauses! :aozora-ingest-drift-invariants clauses))))
 
 (deftest aozora-history-audit-contract
-  (runtime-inputs/with-validated-read-trace!
-    (trace-options "aozora-history-audit")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (doseq [path ["schemas/person-record.schema.json"
-                        "schemas/metadata-record.schema.json"
-                        person-drift/event-schema-path person-drift/index-schema-path]]
-            (files/read-json path))
-          (shacl/load-shapes-graph)
-          (let [previous (fs/path root "previous")
-                current (fs/path root "current")
-                drift-root (fs/path root "drift")
-                before (write-person! previous "芥川")
-                after (write-person! current "芥川改")
-                event (indexed-audit-event before)]
-            (write-sidecars! drift-root event)
-            (let [updates (history-audit/drift-participant-updates
-                           {:previous-dir (str previous)
-                            :current-dir (str current)
-                            :drift-persons-dir (str drift-root)})
-                  empty-drift (fs/path root "empty-drift")
-                  invalid-drift (fs/path root "invalid-drift")
-                  invalid-index (fs/path invalid-drift "_indexes/000879.json")
-                  _ (json/write-deterministic-json-file!
-                     (fs/file invalid-index)
-                     {"schema_id" person-drift/index-schema-id
-                      "schema_hash" (manifest/schema-hash person-drift/index-schema-path)
-                      "person_id" "000879"
-                      "drift_event_ids"
-                      ["sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]})
-                  repo-root (fs/path root "audit-repo")
-                  work-root (fs/path root "audit-work")
-                  integrated-drift (fs/path root "integrated-drift")
-                  git (sim-render/init-repo! repo-root)]
-              (try
-                (let [previous-ref (.getName
-                                    (commit-csv-zip!
-                                     git repo-root
-                                     [(history-row "000879" "芥川")]
-                                     "previous corpus"))
-                      current-ref (.getName
-                                   (commit-csv-zip!
-                                    git repo-root
-                                    [(history-row "abc-000000000001" "芥川一")
-                                     (history-row "abc-000000000002" "芥川二")]
-                                    "current corpus"))
-                      integrated-event (base-event)
-                      _ (write-sidecars! integrated-drift integrated-event)
-                      report (history-audit/audit!
-                              {:aozora-repo (str repo-root)
-                               :previous-ref previous-ref
-                               :current-ref current-ref
-                               :drift-persons-dir (str integrated-drift)
-                               :work-dir (str work-root)})
-                      empty-report
-                      (history-audit/audit!
-                       {:aozora-repo (str repo-root)
-                        :previous-ref previous-ref
-                        :current-ref previous-ref
-                        :drift-persons-dir (str empty-drift)
-                        :work-dir (str (fs/path root "empty-audit-work"))})
-                      invalid-aborts?
-                      (try
-                        (history-audit/audit!
-                         {:aozora-repo (str repo-root)
-                          :previous-ref previous-ref
-                          :current-ref current-ref
-                          :drift-persons-dir (str invalid-drift)
-                          :work-dir (str (fs/path root "invalid-audit-work"))})
-                        false
-                        (catch clojure.lang.ExceptionInfo exception
-                          (boolean (re-find #"drift sidecars failed validation"
-                                            (.getMessage exception)))))
-                      report-updates (:drift_participant_updates report)
-                      clauses
-                      {:bounded-update-exact
-                       (= [{"person_id" "000879"
-                            "change_type" "hash_changed"
-                            "previous_hash" (person-record/record-hash before)
-                            "current_hash" (person-record/record-hash after)
-                            "drift_event_ids" [(get event "drift_event_id")]}]
-                          updates)
-                       :empty-sidecars-empty-report
-                       (and (= "ok" (:status empty-report))
-                            (= [] (:drift_participant_updates empty-report))
-                            (zero? (get-in empty-report [:validation :current :failed]))
-                            (zero? (get-in empty-report
-                                           [:drift "summary" "split_candidates"]))
-                            (zero? (get-in empty-report
-                                           [:drift "summary" "merge_candidates"])))
-                       :invalid-sidecars-abort invalid-aborts?
-                       :integrated-two-ref-status (= "ok" (:status report))
-                       :integrated-two-ref-updates
-                       (= #{"000879" "abc-000000000001" "abc-000000000002"}
-                          (set (map #(get % "person_id") report-updates)))
-                       :integrated-matched-event-ids
-                       (every? #(= [(get integrated-event "drift_event_id")]
-                                   (get % "drift_event_ids"))
-                               report-updates)}]
-                  (assert-material-clauses! :aozora-history-audit clauses))
-                (finally
-                  (.close git))))))))))
-
-(deftest focused-runtime-input-closure-is-exact-test
-  (doseq [stem ["temporal-date-normalization" "temporal-person-record-contract"
-                "temporal-person-shacl-contract" "person-drift-contract"
-                "person-drift-negative-fixtures" "aozora-ingest-drift-invariants"
-                "aozora-history-audit"]
-          :let [value (files/read-edn (descriptor-path stem))
-                manifest (files/read-edn (:runtime-input-manifest value))
-                explicit (set (get-in value [:input-profile :explicit]))
-                structural #{"bin/kaocha" (descriptor-path stem) (:runtime-input-manifest value)}]]
-    (is (= (set (:paths manifest)) (set/difference explicit structural))))
-  (let [value (files/read-edn (descriptor-path "person-drift-contract"))
-        paths (:paths (files/read-edn (:runtime-input-manifest value)))]
-    (is (thrown? clojure.lang.ExceptionInfo
-                 (runtime-inputs/assert-runtime-input-closure!
-                  {:repo-root "." :workspace-root ".."
-                   :descriptor {:path (descriptor-path "person-drift-contract")
-                                :value value}
-                   :repository-paths (vec (rest paths))})))
-    (is (thrown? clojure.lang.ExceptionInfo
-                 (runtime-inputs/assert-runtime-input-closure!
-                  {:repo-root "." :workspace-root ".."
-                   :descriptor {:path (descriptor-path "person-drift-contract")
-                                :value value}
-                   :repository-paths (vec (sort (conj paths "docs/adr/README.md")))})))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (doseq [path ["schemas/person-record.schema.json"
+                  "schemas/metadata-record.schema.json"
+                  person-drift/event-schema-path person-drift/index-schema-path]]
+      (files/read-json path))
+    (shacl/load-shapes-graph)
+    (let [previous (fs/path root "previous")
+          current (fs/path root "current")
+          drift-root (fs/path root "drift")
+          before (write-person! previous "芥川")
+          after (write-person! current "芥川改")
+          event (indexed-audit-event before)]
+      (write-sidecars! drift-root event)
+      (let [updates (history-audit/drift-participant-updates
+                     {:previous-dir (str previous)
+                      :current-dir (str current)
+                      :drift-persons-dir (str drift-root)})
+            empty-drift (fs/path root "empty-drift")
+            invalid-drift (fs/path root "invalid-drift")
+            invalid-index (fs/path invalid-drift "_indexes/000879.json")
+            _ (json/write-deterministic-json-file!
+               (fs/file invalid-index)
+               {"schema_id" person-drift/index-schema-id
+                "schema_hash" (manifest/schema-hash person-drift/index-schema-path)
+                "person_id" "000879"
+                "drift_event_ids"
+                ["sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]})
+            repo-root (fs/path root "audit-repo")
+            work-root (fs/path root "audit-work")
+            integrated-drift (fs/path root "integrated-drift")
+            git (sim-render/init-repo! repo-root)]
+        (try
+          (let [previous-ref (.getName
+                              (commit-csv-zip!
+                               git repo-root
+                               [(history-row "000879" "芥川")]
+                               "previous corpus"))
+                current-ref (.getName
+                             (commit-csv-zip!
+                              git repo-root
+                              [(history-row "abc-000000000001" "芥川一")
+                               (history-row "abc-000000000002" "芥川二")]
+                              "current corpus"))
+                integrated-event (base-event)
+                _ (write-sidecars! integrated-drift integrated-event)
+                report (history-audit/audit!
+                        {:aozora-repo (str repo-root)
+                         :previous-ref previous-ref
+                         :current-ref current-ref
+                         :drift-persons-dir (str integrated-drift)
+                         :work-dir (str work-root)})
+                empty-report
+                (history-audit/audit!
+                 {:aozora-repo (str repo-root)
+                  :previous-ref previous-ref
+                  :current-ref previous-ref
+                  :drift-persons-dir (str empty-drift)
+                  :work-dir (str (fs/path root "empty-audit-work"))})
+                invalid-aborts?
+                (try
+                  (history-audit/audit!
+                   {:aozora-repo (str repo-root)
+                    :previous-ref previous-ref
+                    :current-ref current-ref
+                    :drift-persons-dir (str invalid-drift)
+                    :work-dir (str (fs/path root "invalid-audit-work"))})
+                  false
+                  (catch clojure.lang.ExceptionInfo exception
+                    (boolean (re-find #"drift sidecars failed validation"
+                                      (.getMessage exception)))))
+                report-updates (:drift_participant_updates report)
+                clauses
+                {:bounded-update-exact
+                 (= [{"person_id" "000879"
+                      "change_type" "hash_changed"
+                      "previous_hash" (person-record/record-hash before)
+                      "current_hash" (person-record/record-hash after)
+                      "drift_event_ids" [(get event "drift_event_id")]}]
+                    updates)
+                 :empty-sidecars-empty-report
+                 (and (= "ok" (:status empty-report))
+                      (= [] (:drift_participant_updates empty-report))
+                      (zero? (get-in empty-report [:validation :current :failed]))
+                      (zero? (get-in empty-report
+                                     [:drift "summary" "split_candidates"]))
+                      (zero? (get-in empty-report
+                                     [:drift "summary" "merge_candidates"])))
+                 :invalid-sidecars-abort invalid-aborts?
+                 :integrated-two-ref-status (= "ok" (:status report))
+                 :integrated-two-ref-updates
+                 (= #{"000879" "abc-000000000001" "abc-000000000002"}
+                    (set (map #(get % "person_id") report-updates)))
+                 :integrated-matched-event-ids
+                 (every? #(= [(get integrated-event "drift_event_id")]
+                             (get % "drift_event_ids"))
+                         report-updates)}]
+            (assert-material-clauses! :aozora-history-audit clauses))
+          (finally
+            (.close git)))))))
 
 (deftest material-boundaries-recompute-from-mutated-domain-values-test
   (let [schema-value (files/read-json "schemas/person-record.schema.json")

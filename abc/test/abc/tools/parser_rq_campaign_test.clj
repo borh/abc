@@ -8,7 +8,7 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
-            [clojure.test :refer [deftest is testing]]
+            [clojure.test :refer [deftest is]]
             [clojure.walk :as walk]))
 
 (def sha (hash/format-sha256 (apply str (repeat 64 "a"))))
@@ -515,11 +515,6 @@
     (is (= evaluation (campaign/resolve-current-evaluation-values sha [evaluation])))
     (is (thrown? clojure.lang.ExceptionInfo
                  (campaign/resolve-current-evaluation-values sha [])))))
-
-(deftest registry-reader-closure-is-exact
-  (is (= []
-         (campaign/registry-closure-errors
-          "docs/reports/adr-claim-migration-inventory.json"))))
 
 (defn write-edn! [path value]
   (io/make-parents (io/file path))

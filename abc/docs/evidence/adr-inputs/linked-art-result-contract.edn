@@ -1,5 +1,0 @@
-{:schema-version :abc-adr-runtime-inputs-v1,
- :paths
- ["abc/contexts/abc-v0.jsonld"
-  "abc/examples/v0/example-work/manifest.json"
-  "abc/examples/v0/example-work/metadata-record.json"]}

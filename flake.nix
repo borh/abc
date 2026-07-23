@@ -217,11 +217,7 @@
           monorepo-adr-governance =
             cljPkgs.runCommand "soranoha-monorepo-adr-governance"
               {
-                nativeBuildInputs = [
-                  cljPkgs.clojure
-                  cljPkgs.git
-                  cljPkgs.jq
-                ];
+                nativeBuildInputs = [ cljPkgs.clojure ];
                 src = self;
               }
               ''
@@ -230,36 +226,10 @@
                 export CLJ_CONFIG="$HOME/.clojure"
                 export CLJ_CACHE="$TMPDIR/cp-cache"
                 export GITLIBS="$HOME/.gitlibs"
-                cp -R "$src" "$TMPDIR/workspace"
-                chmod -R u+w "$TMPDIR/workspace"
-                git -C "$TMPDIR/workspace" init --quiet
-                git -C "$TMPDIR/workspace" add --all
-                git -C "$TMPDIR/workspace" \
-                  -c user.name=adr-governance \
-                  -c user.email=adr-governance.invalid \
-                  commit --quiet --message="materialize root self snapshot"
+                cd "$src/abc"
+                clojure -M:abc/adr-governance --repo-root "$src/abc" --mode enforce
                 mkdir -p "$out"
-                cd "$TMPDIR/workspace/abc"
-                clojure -M:abc/adr-governance \
-                  --repo-root "$TMPDIR/workspace/abc" \
-                  --workspace-root "$TMPDIR/workspace" \
-                  --mode enforce \
-                  --report "$out/report.json"
-                # Migration audit debt is pinned by stable finding identity,
-                # including claim/artifact/input coordinates. Diagnostic wording
-                # and changing hash values are not migration identities.
-                ${cljPkgs.jq}/bin/jq -S \
-                  -f "$src/abc/nix/adr-problem-identities.jq" \
-                  "$src/abc/docs/reports/adr-evidence-migration.json" \
-                  > expected-problem-identities.json
-                ${cljPkgs.jq}/bin/jq -S \
-                  -f "$src/abc/nix/adr-problem-identities.jq" \
-                  "$out/report.json" \
-                  > actual-problem-identities.json
-                if ! cmp expected-problem-identities.json actual-problem-identities.json; then
-                  echo "monorepo ADR governance audit debt differs from the pinned migration phase" >&2
-                  exit 1
-                fi
+                echo "monorepo ADR governance is strictly valid" > "$out/result.txt"
               '';
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =

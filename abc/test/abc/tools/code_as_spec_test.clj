@@ -5,9 +5,7 @@
 
   Layer D: test.check property test bound to the REAL
   manifest-index/reproducibility-conflicts oracle (replaces R1)."
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
-            [abc.tools.evidence-test-support :as evidence-support]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.schema :as schema]
             [abc.tools.manifest-index :as manifest-index]
             [clojure.test :refer [deftest is testing]]
@@ -39,9 +37,7 @@
              (pr-str errors)))))
 
 (deftest r2-manifest-schema-rejects-nested-artifact-id-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0001-c3-nested-artifact-id-rejection")
-    (fn [] (r2-manifest-schema-rejects-nested-artifact-id-assertions))))
+  (r2-manifest-schema-rejects-nested-artifact-id-assertions))
 
 ;; Layer D — R1 reproducibility conflict, bound to the REAL oracle
 ;; (manifest-index/reproducibility-conflicts). Replaces vacuous

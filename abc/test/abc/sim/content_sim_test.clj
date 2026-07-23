@@ -14,9 +14,6 @@
             [abc.sim.model :as model]
             [abc.sim.oracle :as oracle]
             [abc.sim.render :as render]
-            [abc.tools.adr-evidence-runtime-inputs :as runtime]
-            [abc.tools.evidence-io :as evidence-io]
-            [abc.tools.evidence-test-support :as evidence-support]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.jcs :as jcs]
@@ -236,65 +233,53 @@
                                 "publications-report.json"))))))))
 
 (deftest strict-admission-failure-aborts-atomically-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0033-c11-strict-atomic-abort")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [aozora (fs/file root "aozora")
-                output (fs/file root "strict-output")
-                config-root (fs/file root "config")
-                state (synthetic-state)]
-            (render/write-aozora-root! aozora state)
-            (overwrite-zip! aozora state "000101" (unsafe-path-zip-bytes))
-            (let [failure (try
-                            (run-build! {:aozora-root aozora :out-root output
-                                         :config-path (write-config! config-root false)
-                                         :snapshot-date "2026-07-12"})
-                            nil
-                            (catch Throwable throwable throwable))]
-              (is (some? failure))
-              (is (some #(= :unsafe-member-path (:reason (ex-data %)))
-                        (ex-chain failure)))
-              (is (not (files/exists? output))))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [aozora (fs/file root "aozora")
+          output (fs/file root "strict-output")
+          config-root (fs/file root "config")
+          state (synthetic-state)]
+      (render/write-aozora-root! aozora state)
+      (overwrite-zip! aozora state "000101" (unsafe-path-zip-bytes))
+      (let [failure (try
+                      (run-build! {:aozora-root aozora :out-root output
+                                   :config-path (write-config! config-root false)
+                                   :snapshot-date "2026-07-12"})
+                      nil
+                      (catch Throwable throwable throwable))]
+        (is (some? failure))
+        (is (some #(= :unsafe-member-path (:reason (ex-data %)))
+                  (ex-chain failure)))
+        (is (not (files/exists? output)))))))
 
 (deftest best-effort-admission-failures-are-counted-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0033-c11-best-effort-counted-failure")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [aozora (fs/file root "aozora")
-                output (fs/file root "best-output")
-                config-root (fs/file root "config")
-                state (synthetic-state)]
-            (render/write-aozora-root! aozora state)
-            (overwrite-zip! aozora state "000101" (unsafe-path-zip-bytes))
-            (let [reports (run-build! {:aozora-root aozora :out-root output
-                                       :config-path (write-config! config-root true)
-                                       :snapshot-date "2026-07-12"})]
-              (is (= 1 (get-in reports [:selection "derive_failed_count"])))
-              (is (= 1 (count (get-in reports [:selection "derive_failures"])))))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [aozora (fs/file root "aozora")
+          output (fs/file root "best-output")
+          config-root (fs/file root "config")
+          state (synthetic-state)]
+      (render/write-aozora-root! aozora state)
+      (overwrite-zip! aozora state "000101" (unsafe-path-zip-bytes))
+      (let [reports (run-build! {:aozora-root aozora :out-root output
+                                 :config-path (write-config! config-root true)
+                                 :snapshot-date "2026-07-12"})]
+        (is (= 1 (get-in reports [:selection "derive_failed_count"])))
+        (is (= 1 (count (get-in reports [:selection "derive_failures"]))))))))
 
 (deftest nonzero-derive-failures-are-not-release-admissible-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0033-c11-non-release-admissible")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [aozora (fs/file root "aozora")
-                output (fs/file root "best-output")
-                config-root (fs/file root "config")
-                state (synthetic-state)]
-            (render/write-aozora-root! aozora state)
-            (overwrite-zip! aozora state "000101" (unsafe-path-zip-bytes))
-            (let [reports (run-build! {:aozora-root aozora :out-root output
-                                       :config-path (write-config! config-root true)
-                                       :snapshot-date "2026-07-12"})
-                  workflow (abc-json/read-json-file (fs/file output "workflow-run.json"))]
-              (is (= 1 (:exit reports)))
-              (is (false? (get-in reports [:selection "release_admissible"])))
-              (is (= "partial" (get workflow "status"))))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [aozora (fs/file root "aozora")
+          output (fs/file root "best-output")
+          config-root (fs/file root "config")
+          state (synthetic-state)]
+      (render/write-aozora-root! aozora state)
+      (overwrite-zip! aozora state "000101" (unsafe-path-zip-bytes))
+      (let [reports (run-build! {:aozora-root aozora :out-root output
+                                 :config-path (write-config! config-root true)
+                                 :snapshot-date "2026-07-12"})
+            workflow (abc-json/read-json-file (fs/file output "workflow-run.json"))]
+        (is (= 1 (:exit reports)))
+        (is (false? (get-in reports [:selection "release_admissible"])))
+        (is (= "partial" (get workflow "status")))))))
 
 (deftest p16-best-effort-promotes-all-rejected-evidence-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}
@@ -532,30 +517,26 @@
                           (get text-edited "primary_text_hash")))))))))))
 
 (deftest repack-and-image-identity-evolution-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0033-c3-repack-image-evolution")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [aozora (fs/file root "aozora")
-                output (fs/file root "output")
-                config-root (fs/file root "config")
-                config (write-config! config-root false)
-                initial (assoc-in (synthetic-state) [:contents "000101" :images]
-                                  (sorted-map "images/表紙.png" "image-v1"))
-                changed (assoc-in initial [:contents "000101" :images "images/表紙.png"]
-                                  "image-v2")]
-            (render/write-aozora-root! aozora initial)
-            (run-build! {:aozora-root aozora :out-root output :config-path config
-                         :snapshot-date "2026-07-01"})
-            (let [before (official-source output slug-a)]
-              (render/write-aozora-root! aozora changed)
-              (run-build! {:aozora-root aozora :out-root output :config-path config
-                           :snapshot-date "2026-07-02" :replace? true})
-              (let [after (official-source output slug-a)]
-                (is (not= (get before "bundle_hash") (get after "bundle_hash")))
-                (is (= (get before "primary_text_hash")
-                       (get after "primary_text_hash")))))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [aozora (fs/file root "aozora")
+          output (fs/file root "output")
+          config-root (fs/file root "config")
+          config (write-config! config-root false)
+          initial (assoc-in (synthetic-state) [:contents "000101" :images]
+                            (sorted-map "images/表紙.png" "image-v1"))
+          changed (assoc-in initial [:contents "000101" :images "images/表紙.png"]
+                            "image-v2")]
+      (render/write-aozora-root! aozora initial)
+      (run-build! {:aozora-root aozora :out-root output :config-path config
+                   :snapshot-date "2026-07-01"})
+      (let [before (official-source output slug-a)]
+        (render/write-aozora-root! aozora changed)
+        (run-build! {:aozora-root aozora :out-root output :config-path config
+                     :snapshot-date "2026-07-02" :replace? true})
+        (let [after (official-source output slug-a)]
+          (is (not= (get before "bundle_hash") (get after "bundle_hash")))
+          (is (= (get before "primary_text_hash")
+                 (get after "primary_text_hash"))))))))
 
 ;; --- P16.1 build ---------------------------------------------------------
 
@@ -672,41 +653,37 @@
                            (get snapshot-input "primary_text_hash"))}))
 
 (deftest p16-3-pin-chain-sim-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0033-c6-p16-3-ungated")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [aozora (fs/file root "aozora")
-                output (fs/file root "output")
-                config-root (fs/file root "config")
-                state (synthetic-state)
-                expected (oracle/expected-selection (render/model->rows state)
-                                                    (render/content-sources state))]
-            (render/write-aozora-root! aozora state)
-            (run-build! {:aozora-root aozora :out-root output
-                         :config-path (write-config! config-root false)
-                         :snapshot-date "2026-07-12"})
-            (let [workset-file (fs/file config-root "workset.edn")
-                  snapshot-file (fs/file config-root "snapshot.json")]
-              (workset/write-workset!
-               {:input-root (str (fs/file output "materialized-root"))
-                :output-path (str workset-file)
-                :snapshot-scope "sim" :snapshot-date "2026-07-12"})
-              (snapshot/materialize-source-snapshot!
-               {:workset-path (str workset-file) :output-path (str snapshot-file)})
-              (let [inputs (reduce (fn [result item]
-                                     (assoc result (get item "slug") item))
-                                   {}
-                                   (get-in (abc-json/read-json-file snapshot-file)
-                                           ["snapshot_identity_object" "snapshot_inputs"]))
-                    checks (for [selected (:selected expected)
-                                 [_ holds?] (pin-chain-work-checks
-                                             aozora output
-                                             (get inputs (:slug selected)) selected)]
-                             holds?)]
-                (is (= (count (:selected expected)) (count inputs)))
-                (is (every? true? checks))))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [aozora (fs/file root "aozora")
+          output (fs/file root "output")
+          config-root (fs/file root "config")
+          state (synthetic-state)
+          expected (oracle/expected-selection (render/model->rows state)
+                                              (render/content-sources state))]
+      (render/write-aozora-root! aozora state)
+      (run-build! {:aozora-root aozora :out-root output
+                   :config-path (write-config! config-root false)
+                   :snapshot-date "2026-07-12"})
+      (let [workset-file (fs/file config-root "workset.edn")
+            snapshot-file (fs/file config-root "snapshot.json")]
+        (workset/write-workset!
+         {:input-root (str (fs/file output "materialized-root"))
+          :output-path (str workset-file)
+          :snapshot-scope "sim" :snapshot-date "2026-07-12"})
+        (snapshot/materialize-source-snapshot!
+         {:workset-path (str workset-file) :output-path (str snapshot-file)})
+        (let [inputs (reduce (fn [result item]
+                               (assoc result (get item "slug") item))
+                             {}
+                             (get-in (abc-json/read-json-file snapshot-file)
+                                     ["snapshot_identity_object" "snapshot_inputs"]))
+              checks (for [selected (:selected expected)
+                           [_ holds?] (pin-chain-work-checks
+                                       aozora output
+                                       (get inputs (:slug selected)) selected)]
+                       holds?)]
+          (is (= (count (:selected expected)) (count inputs)))
+          (is (every? true? checks)))))))
 
 ;; --- P16.2 evolution (the core) -------------------------------------------
 

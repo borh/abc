@@ -1,8 +1,7 @@
 (ns abc.tools.adr-policy-evidence-test
   (:require [abc.tools.adr :as adr]
-            [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
-            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.files :as files]
+            [babashka.fs :as fs]
             [clojure.test :refer [deftest is]]))
 
 (def accepted-files
@@ -19,7 +18,6 @@
    "0025-parser-ir-publication-rendering.md" "0029-diagrams-as-gated-derived-views.md"
    "0030-aozora-parser-selection.md" "0031-adr-governance-validation.md"
    "0032-parser-fork-hard-detach.md" "0033-source-bundle-identity.md"
-   "0034-typed-evidence-and-lifecycle-closure.md"
    "0038-custom-parser-ownership-and-neutral-comparison.md"])
 
 (def malformed-accepted
@@ -30,24 +28,14 @@
        "## Acceptance Criteria\n\n- criterion without a typed claim header\n"))
 
 (deftest adr-policy-fixtures-contract
-  (runtime-inputs/with-validated-read-trace!
-    {:identity-root "." :cwd-root "." :repo-root "." :workspace-root ".."
-     :descriptor {:path "docs/evidence/adr-capture/adr-policy-fixtures.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/adr-policy-fixtures.edn")}}
-    (fn []
-      (let [adrs (mapv #(adr/parse-adr "docs/adr" %) accepted-files)
-            relations (:relations (files/read-edn "docs/adr/adr-relations.edn"))
-            compatibility (files/read-edn "docs/adr/claim-evidence-compatibility.edn")
-            governance (files/read-edn "docs/adr/governance-as-of.edn")]
-        (is (every? #(= "Accepted" (:status %)) adrs))
-        (is (every? #(empty? (:parse-problems %)) adrs))
-        (is (every? #(empty? (:claim-problems %)) adrs))
-        (is (seq relations))
-        (is (every? set? (vals compatibility)))
-        (is (string? (:as-of governance)))
-        (evidence-io/with-owned-ephemeral-root
-          (fn [root]
-            (files/write-text! (str root "/0042-malformed.md") malformed-accepted)
-            (let [fixture (adr/parse-adr root "0042-malformed.md")]
-              (is (= #{:missing-claim-header}
-                     (set (map :kind (:claim-problems fixture))))))))))))
+  (let [adrs (mapv #(adr/parse-adr "docs/adr" %) accepted-files)
+        relations (:relations (files/read-edn "docs/adr/adr-relations.edn"))]
+    (is (every? #(= "Accepted" (:status %)) adrs))
+    (is (every? #(empty? (:parse-problems %)) adrs))
+    (is (every? #(empty? (:claim-problems %)) adrs))
+    (is (seq relations))
+    (fs/with-temp-dir [root {:prefix "abc-test-"}]
+      (files/write-text! (str root "/0042-malformed.md") malformed-accepted)
+      (let [fixture (adr/parse-adr root "0042-malformed.md")]
+        (is (= #{:missing-claim-header}
+               (set (map :kind (:claim-problems fixture)))))))))

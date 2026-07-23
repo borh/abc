@@ -1,6 +1,5 @@
 (ns abc.tools.parser-ir-schema-evidence-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.materialize-publication :as materialize]
             [abc.tools.parser-ir-plaintext :as plaintext]
@@ -15,21 +14,6 @@
 (def ^:private parser-ir-schema-path "schemas/parser-ir.schema.json")
 (def ^:private fixture-dir "fixtures/parser-ir")
 (def ^:private generated-at "2026-07-03T00:00:00Z")
-
-(deftest parser-ir-schema-regression-contract
-  (runtime-inputs/with-validated-read-trace!
-    {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
-     :descriptor {:path "abc/docs/evidence/adr-capture/parser-ir-schema-regression.edn"
-                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-ir-schema-regression.edn")
-                                 :runtime-input-manifest #(str "abc/" %))}}
-    (fn []
-      (doseq [path ["examples/ab-validator-output/manifest-inputs.json" "examples/v0/example-work/manifest.json"
-                    "examples/v0/example-work/metadata-record.json" "examples/v0/example-work/parser-ir.json"
-                    "examples/v0/example-work/source.manifest.json" "fixtures/parser-ir/span-current.json"
-                    "fixtures/parser-ir/span-invalid-coordinate.json" "fixtures/parser-ir/span-legacy-line-column.json"
-                    "fixtures/parser-ir/span-legacy-start-end.json" "schemas/manifest.schema.json" "schemas/parser-ir.schema.json"]]
-        (files/read-text path))
-      (is true))))
 
 (defn- temp-dir [prefix]
   (.toFile (Files/createTempDirectory prefix (make-array FileAttribute 0))))

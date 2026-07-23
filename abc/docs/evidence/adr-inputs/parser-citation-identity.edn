@@ -1,5 +1,0 @@
-{:schema-version :abc-adr-runtime-inputs-v1
- :paths ["ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md"
-         "ab-validator/docs/superpowers/reports/2026-07-08-parser-fork-candidacy-faithful-comparison.md"
-         "ab-validator/docs/superpowers/specs/2026-07-09-parser-comparison-followups-handoff.md"
-         "abc/data/parser-evidence-citations.edn"]}

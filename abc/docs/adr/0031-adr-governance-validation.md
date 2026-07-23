@@ -7,6 +7,7 @@ Validation scope: structural
 Release authority: none
 Supersedes: none
 Amends: ADR 0029 [scope: ADR header and decision-graph source validation]
+Amended by: ADR 0043 [scope: typed evidence registry]
 Depends on: ADR 0029 [scope: generated decision graph contract]
 Source: `docs/superpowers/specs/2026-07-10-adr-governance-hardening-design.md`
 
@@ -52,9 +53,10 @@ and semantic invariants before rendering.
 
 ## Future Verification
 
-Complete typed claim/evidence coverage is not self-certified by this ADR.
-ADR 0034 owns the complete-corpus coverage observation, its immutable
-pre-promotion snapshot, and the final enforcement transition.
+Complete typed claim/evidence coverage was owned by ADR 0034 until ADR 0043
+superseded the typed-evidence protocol. Under ADR 0043, Accepted criteria cite
+ordinary executable evidence paths and the standing gates execute them; no
+per-claim coverage registry exists.
 
 ## Consequences
 

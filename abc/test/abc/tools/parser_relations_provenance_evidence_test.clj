@@ -1,6 +1,5 @@
 (ns abc.tools.parser-relations-provenance-evidence-test
   (:require [abc.tools.adr :as adr]
-            [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
             [abc.tools.files :as files]
             [clojure.string :as str]
             [clojure.test :refer [deftest is]]))
@@ -47,7 +46,7 @@
     (is (= {2 {:amends #{} :amended-by #{30 38}}
             30 {:amends #{2} :amended-by #{32 38}}
             32 {:amends #{30} :amended-by #{38}}
-            38 {:amends #{2 30 32} :amended-by #{}}}
+            38 {:amends #{2 30 32} :amended-by #{43}}}
            relations))
     (doseq [text [handoff adr32]]
       (is (str/includes? text revision)))
@@ -63,14 +62,6 @@
       (is (or (str/includes? text "license.workspace = true")
               (str/includes? text "license = \"MIT OR Apache-2.0\""))))
     true))
-
-(deftest parser-relations-provenance-contract
-  (runtime-inputs/with-validated-read-trace!
-    {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
-     :descriptor {:path "abc/docs/evidence/adr-capture/parser-relations-provenance.edn"
-                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-relations-provenance.edn")
-                                 :runtime-input-manifest #(str "abc/" %))}}
-    parser-relations-provenance-operation))
 
 (deftest parser-family-reciprocal-amendments-test
   (parser-relations-provenance-operation))

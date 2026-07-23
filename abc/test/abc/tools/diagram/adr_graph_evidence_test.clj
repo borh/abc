@@ -1,6 +1,5 @@
 (ns abc.tools.diagram.adr-graph-evidence-test
   (:require [abc.tools.adr :as adr]
-            [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
             [abc.tools.diagram.adr-graph :as graph]
             [abc.tools.files :as files]
             [clojure.test :refer [deftest is]]))
@@ -32,23 +31,17 @@
    "0031-adr-governance-validation.md"
    "0032-parser-fork-hard-detach.md"
    "0033-source-bundle-identity.md"
-   "0034-typed-evidence-and-lifecycle-closure.md"
    "0038-custom-parser-ownership-and-neutral-comparison.md"])
 
 (deftest adr-graph-contract
-  (runtime-inputs/with-validated-read-trace!
-    {:identity-root "." :cwd-root "." :repo-root "." :workspace-root ".."
-     :descriptor {:path "docs/evidence/adr-capture/adr-graph-contract.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/adr-graph-contract.edn")}}
-    (fn []
-      (let [adrs (mapv #(adr/parse-adr "docs/adr" %) accepted-files)
-            relations (graph/load-relations)
-            value (graph/graph-from adrs relations)]
-        (is (every? #(= "Accepted" (:status %)) adrs))
-        (is (empty? (graph/lint-adrs adrs relations)))
-        (is (some #(re-find #" — " (:label % "")) (:edges value)))
-        (is (seq (files/read-text "docs/adr/adr-graph.mmd")))
-        (is (seq (graph/lint-adrs adrs [{:from 1 :to 9999 :type :extends}])))
-        (is (seq (graph/lint-adrs adrs [{:from 1 :to 2 :type :amends}])))
-        (is (seq (graph/lint-adrs adrs [{:from "bad" :to 2 :type :extends}])))
-        (is (seq (graph/lint-adrs adrs [{:from 1 :to 2 :type :unknown}])))))))
+  (let [adrs (mapv #(adr/parse-adr "docs/adr" %) accepted-files)
+        relations (graph/load-relations)
+        value (graph/graph-from adrs relations)]
+    (is (every? #(= "Accepted" (:status %)) adrs))
+    (is (empty? (graph/lint-adrs adrs relations)))
+    (is (some #(re-find #" — " (:label % "")) (:edges value)))
+    (is (seq (files/read-text "docs/adr/adr-graph.mmd")))
+    (is (seq (graph/lint-adrs adrs [{:from 1 :to 9999 :type :extends}])))
+    (is (seq (graph/lint-adrs adrs [{:from 1 :to 2 :type :amends}])))
+    (is (seq (graph/lint-adrs adrs [{:from "bad" :to 2 :type :extends}])))
+    (is (seq (graph/lint-adrs adrs [{:from 1 :to 2 :type :unknown}])))))

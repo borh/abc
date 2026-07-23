@@ -33,7 +33,7 @@ flowchart LR
   ADR0031["0031 Uniform ADR Governance Validation"]:::accepted
   ADR0032["0032 Parser Fork Hard Detach"]:::accepted
   ADR0033["0033 Source Bundle Identity"]:::accepted
-  ADR0034["0034 Typed Evidence and Lifecycle Closure"]:::accepted
+  ADR0034["0034 Typed Evidence and Lifecycle Closure"]:::superseded
   ADR0035["0035 Rights Assessment and External Statements"]:::proposed
   ADR0037["0037 Terminal Provenance / Colophon Split"]:::proposed
   ADR0038["0038 Custom Parser Ownership and Neutral Comparison"]:::accepted
@@ -41,6 +41,7 @@ flowchart LR
   ADR0040["0040 Qualify Process-Tree Cgroup Memory"]:::accepted
   ADR0041["0041 Bind Final Parser Release Instruments"]:::accepted
   ADR0042["0042 Keep Parser-RQ Evidence Portable and Self-Contained"]:::accepted
+  ADR0043["0043 Subtractive Evidence Simplification"]:::accepted
   ADR0008 -->|"amends"| ADR0006
   ADR0010 -->|"amends"| ADR0001
   ADR0010 -->|"amends"| ADR0009
@@ -107,7 +108,7 @@ flowchart LR
   ADR0033 -.->|"depends on"| ADR0025
   ADR0034 -.->|"depends on"| ADR0031
   ADR0035 -->|"amends — Boolean-to-external-rights RDF mapping"| ADR0018
-  ADR0035 -.->|"depends on"| ADR0034
+  ADR0035 -.->|"depends on"| ADR0043
   ADR0038 -->|"amends"| ADR0002
   ADR0038 -.->|"depends on"| ADR0002
   ADR0038 -.->|"depends on"| ADR0023
@@ -125,6 +126,10 @@ flowchart LR
   ADR0040 -.->|"depends on"| ADR0002
   ADR0041 -.->|"depends on"| ADR0002
   ADR0042 -.->|"depends on"| ADR0041
+  ADR0043 -->|"amends — typed evidence registry"| ADR0031
+  ADR0043 -.->|"depends on"| ADR0031
+  ADR0043 ==>|"supersedes"| ADR0034
+  ADR0043 -->|"amends — ownership assessment freshness"| ADR0038
   classDef accepted fill:#1b5e20,stroke:#a5d6a7,color:#fff
   classDef draft fill:#37474f,stroke:#b0bec5,color:#fff
   classDef proposed fill:#e65100,stroke:#ffcc80,color:#fff

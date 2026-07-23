@@ -6,7 +6,6 @@
   ."
   (:refer-clojure :exclude [run!])
   (:require [abc.tools.aozora-csv :as ac]
-            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
@@ -32,7 +31,7 @@
   ZIP source validation)."
   ^ZipFile [^String zip-path]
   (try
-    (ZipFile. (io/file (evidence-io/record-read! zip-path)))
+    (ZipFile. (io/file zip-path))
     (catch java.util.zip.ZipException e
       (throw (ex-info (str zip-path " is not a readable ZIP archive")
                       {:zip-path zip-path}

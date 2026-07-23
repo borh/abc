@@ -5,7 +5,7 @@ Date: 2026-07-12
 Validation scope: structural
 Release authority: none
 Amends: ADR 0018 [scope: Boolean-to-external-rights RDF mapping]
-Depends on: ADR 0034
+Depends on: ADR 0043
 Source: `docs/superpowers/specs/2026-07-11-rights-assessment-remediation-design.md`
 
 ## Implementation Status

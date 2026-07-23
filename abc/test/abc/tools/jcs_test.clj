@@ -1,7 +1,5 @@
 (ns abc.tools.jcs-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
-            [abc.tools.evidence-test-support :as evidence-support]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.jcs :as jcs]
             [clojure.test :refer [deftest is testing]]))
@@ -17,28 +15,22 @@
       (ex-data e))))
 
 (defn- canonical-json-assertions []
-  (do
-    (is (= "{\"a\":{\"b\":2,\"c\":3},\"z\":1}"
-           (jcs/canonical-json-string {"z" 1
-                                       "a" {"c" 3
-                                            "b" 2}}))))
-  (do
-    (is (= (jcs/canonical-json-string {"b" "2" "a" "1"})
-           (jcs/canonical-json-string {"a" "1" "b" "2"}))))
-  (do
-    (is (= "{\"a\":null,\"b\":\"quote\\\"slash\\\\\"}"
-           (jcs/canonical-json-string {"b" "quote\"slash\\"
-                                       "a" nil}))))
-  (do
-    (is (= "[\"a\",\"b\"]"
-           (jcs/canonical-json-string ["a" "b"])))
-    (is (not= (jcs/canonical-json-string ["a" "b"])
-              (jcs/canonical-json-string ["b" "a"])))))
+  (is (= "{\"a\":{\"b\":2,\"c\":3},\"z\":1}"
+         (jcs/canonical-json-string {"z" 1
+                                     "a" {"c" 3
+                                          "b" 2}})))
+  (is (= (jcs/canonical-json-string {"b" "2" "a" "1"})
+         (jcs/canonical-json-string {"a" "1" "b" "2"})))
+  (is (= "{\"a\":null,\"b\":\"quote\\\"slash\\\\\"}"
+         (jcs/canonical-json-string {"b" "quote\"slash\\"
+                                     "a" nil})))
+  (is (= "[\"a\",\"b\"]"
+         (jcs/canonical-json-string ["a" "b"])))
+  (is (not= (jcs/canonical-json-string ["a" "b"])
+            (jcs/canonical-json-string ["b" "a"]))))
 
 (deftest canonical-json-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0001-c2-canonical-null-array-order")
-    (fn [] (canonical-json-assertions))))
+  (canonical-json-assertions))
 
 (deftest rfc8785-string-domain-canonical-json-test
   (testing "optional escapes stay literal; required JSON escapes remain"

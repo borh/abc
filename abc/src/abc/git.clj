@@ -1,6 +1,5 @@
 (ns abc.git
-  (:require [abc.tools.evidence-io :as evidence-io]
-            [clj-jgit.porcelain :as git :refer
+  (:require [clj-jgit.porcelain :as git :refer
              [load-repo git-blame]]
             [clojure.java.io :as io]
             [clojure.spec.alpha :as s])
@@ -15,7 +14,7 @@
            [org.eclipse.jgit.util.io DisabledOutputStream]))
 
 (defn load-git-repo [path]
-  (load-repo (evidence-io/record-read! path)))
+  (load-repo path))
 
 (defn add-file! [^Git repo path]
   (-> repo .add (.addFilepattern path) .call))

@@ -5,7 +5,6 @@
    [abc.tools.logging :as logging]
    [abc.tools.aat-parser-ir-compat :as compat]
    [abc.tools.analysis-identity :as analysis-identity]
-   [abc.tools.evidence-io :as evidence-io]
    [abc.tools.files :as files]
    [abc.tools.hash :as hash]
    [abc.tools.iiif :as iiif]
@@ -909,8 +908,6 @@
   ["schemas/aat-parser-ir-divergence-bundle.schema.json"
    "schemas/aat-parser-ir-divergence.schema.json"
    "schemas/aat-parser-ir-mapping.schema.json"
-   "schemas/adr-claim-migration-baseline.schema.json"
-   "schemas/adr-evidence-run.schema.json"
    "schemas/adr-external-evidence.schema.json"
    "schemas/analysis-recipe.schema.json"
    "schemas/analysis-result.schema.json"
@@ -1042,8 +1039,6 @@
 
 (defn validate-json-schemas! [extra-manifest-paths]
   (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
-        adr-claim-migration-baseline-schema (files/read-json "schemas/adr-claim-migration-baseline.schema.json")
-        adr-evidence-run-schema (files/read-json "schemas/adr-evidence-run.schema.json")
         adr-external-evidence-schema (files/read-json "schemas/adr-external-evidence.schema.json")
         parser-ir-schema (files/read-json "schemas/parser-ir.schema.json")
         diagnostic-schema (files/read-json "schemas/diagnostic.schema.json")
@@ -1110,8 +1105,6 @@
         person-drift-event-schema (files/read-json "schemas/person-drift-event.schema.json")
         person-drift-index-schema (files/read-json "schemas/person-drift-index.schema.json")]
     (doseq [[path schema] [["schemas/manifest.schema.json" manifest-schema]
-                           ["schemas/adr-claim-migration-baseline.schema.json" adr-claim-migration-baseline-schema]
-                           ["schemas/adr-evidence-run.schema.json" adr-evidence-run-schema]
                            ["schemas/adr-external-evidence.schema.json" adr-external-evidence-schema]
                            ["schemas/parser-ir.schema.json" parser-ir-schema]
                            ["schemas/diagnostic.schema.json" diagnostic-schema]
@@ -1641,7 +1634,7 @@
                        :unknown (sort unknown)})))))
 
 (defn- load-turtle-graph [path]
-  (aa/read (aa/graph :simple) (io/file (evidence-io/record-read! path))))
+  (aa/read (aa/graph :simple) (io/file path)))
 
 (defn- validate-drift-ttl-fixture-result [{:keys [event graph]}]
   (let [event-value (files/read-json event)

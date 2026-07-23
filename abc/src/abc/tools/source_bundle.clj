@@ -1,10 +1,8 @@
 (ns abc.tools.source-bundle
-  (:require [abc.tools.evidence-io :as evidence-io]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.jcs :as jcs]
             [abc.tools.json :as json]
-            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [com.ibm.icu.lang UCharacter]
@@ -303,7 +301,6 @@
     (fail! :unreadable-zip archive-path {:cause cause})))
 
 (defn- open-zip-archive [archive-path stable-file]
-  (evidence-io/record-read! stable-file)
   (try
     (-> (ZipFile/builder)
         (.setFile (io/file stable-file))
@@ -374,14 +371,10 @@
        :primary-text-bytes
        (:primary-bytes (first (filter :primary-bytes reads)))})))
 
-(defn- stage-archive! [zip-file temp-root]
-  (evidence-io/record-read! zip-file)
+(defn- stage-archive! [zip-file]
   (let [attributes (make-array java.nio.file.attribute.FileAttribute 0)
-        staged (if temp-root
-                 (Files/createTempFile (.toPath (fs/file temp-root))
-                                       "abc-source-bundle-staged-" ".zip" attributes)
-                 (Files/createTempFile
-                  "abc-source-bundle-staged-" ".zip" attributes))]
+        staged (Files/createTempFile
+                "abc-source-bundle-staged-" ".zip" attributes)]
     (try
       (Files/copy (.toPath (io/file zip-file)) staged
                   (into-array java.nio.file.CopyOption
@@ -393,19 +386,13 @@
         (Files/deleteIfExists staged)
         (throw t)))))
 
-(defn- scan-staged-zip [zip-file limits temp-root]
-  (let [staged (stage-archive! zip-file temp-root)]
-    (try
-      (scan-open-zip zip-file staged (merge default-limits limits))
-      (finally (files/delete-file! staged)))))
-
 (defn scan-zip
   ([zip-file] (scan-zip zip-file default-limits))
   ([zip-file limits]
-   (if evidence-io/*read-trace*
-     (evidence-io/with-owned-ephemeral-root
-       #(scan-staged-zip zip-file limits %))
-     (scan-staged-zip zip-file limits nil))))
+   (let [staged (stage-archive! zip-file)]
+     (try
+       (scan-open-zip zip-file staged (merge default-limits limits))
+       (finally (files/delete-file! staged))))))
 
 (defn- validate-admission-collisions! [archive-path members]
   (let [{:keys [nfc-collisions unicode-case-collisions]}

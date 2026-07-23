@@ -1,4 +1,0 @@
-{:schema-version :abc-adr-runtime-inputs-v1,
- :paths
- ["abc/examples/v0/example-persons/000879.json"
-  "abc/examples/v0/example-work/metadata-record.json"]}

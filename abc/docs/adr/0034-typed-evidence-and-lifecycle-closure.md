@@ -1,11 +1,11 @@
 # ADR 0034: Typed Evidence and Lifecycle Closure
 
-Status: Accepted
+Status: Superseded
 Date: 2026-07-12
-Accepted: 2026-07-12
 Validation scope: full-corpus
 Release authority: none
 Supersedes: none
+Superseded by: ADR 0043
 Depends on: ADR 0031
 Source: `docs/superpowers/specs/2026-07-11-adr-evidence-and-lifecycle-remediation-design.md`
 
@@ -42,9 +42,10 @@ not become runtime dependencies.
 
 ## Acceptance Criteria
 
-- **ADR-0034-C1 — structural-invariant:**
-  `test/abc/tools/adr_evidence_test.clj` demonstrates the closed compatibility
-  matrix, derived predicates, input binding, and deterministic expiry behavior.
+- **ADR-0034-C1 — structural-invariant:** The retired typed-evidence test
+  suite (`abc.tools.adr-evidence-test`, removed by ADR 0043) demonstrated the
+  closed compatibility matrix, derived predicates, input binding, and
+  deterministic expiry behavior.
 - **ADR-0034-C2 — structural-invariant:** `test/abc/tools/adr_test.clj` and
   `test/abc/tools/adr_governance_test.clj` demonstrate lifecycle validation,
   cycle-safe stable dependency witnesses, audit containment, and enforcement

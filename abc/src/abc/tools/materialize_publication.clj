@@ -1,6 +1,5 @@
 (ns abc.tools.materialize-publication
-  (:require [abc.tools.evidence-io :as evidence-io]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.logging :as logging]
             [abc.tools.manifest :as manifest]
@@ -61,7 +60,6 @@
 (defonce ^:private static-file-hash-cache (atom {}))
 
 (defn- static-file-hash [path]
-  (evidence-io/record-read! path)
   (let [path (fs/canonicalize path)
         cache-key [(str path) (fs/last-modified-time path)]]
     (or (get @static-file-hash-cache cache-key)

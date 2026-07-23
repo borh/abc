@@ -1,8 +1,5 @@
 (ns abc.tools.materialize-source-snapshot-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
-            [abc.tools.evidence-io :as evidence-io]
-            [abc.tools.evidence-test-support :as evidence-support]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
@@ -155,68 +152,56 @@
         (fixture/delete-tree! root)))))
 
 (deftest parser-ir-source-identity-roles-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0033-c4-parser-identity-roles")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [work (fixture/workset-entry!
-                      root {:slug "one" :title "一" :work-id "000001"
-                            :person-id "000101" :work-hash (fixture/example-hash "a1")})
-                output (fs/file root "snapshot.json")]
-            (materialize/materialize-source-snapshot!
-             {:workset-path (str (workset! root [work]))
-              :output-path (str output) :generated-at generated-at})
-            (let [input (get-in (files/read-json output)
-                                ["snapshot_identity_object" "snapshot_inputs" 0])
-                  official (files/read-json (:official_source_path work))]
-              (is (= (get official "archive_hash") (get input "archive_hash")))
-              (is (= (get official "bundle_hash") (get input "work_content_hash")))
-              (is (= (get official "primary_text_hash") (get input "primary_text_hash")))
-              (is (= (get official "primary_text_member")
-                     (get input "primary_text_member"))))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [work (fixture/workset-entry!
+                root {:slug "one" :title "一" :work-id "000001"
+                      :person-id "000101" :work-hash (fixture/example-hash "a1")})
+          output (fs/file root "snapshot.json")]
+      (materialize/materialize-source-snapshot!
+       {:workset-path (str (workset! root [work]))
+        :output-path (str output) :generated-at generated-at})
+      (let [input (get-in (files/read-json output)
+                          ["snapshot_identity_object" "snapshot_inputs" 0])
+            official (files/read-json (:official_source_path work))]
+        (is (= (get official "archive_hash") (get input "archive_hash")))
+        (is (= (get official "bundle_hash") (get input "work_content_hash")))
+        (is (= (get official "primary_text_hash") (get input "primary_text_hash")))
+        (is (= (get official "primary_text_member")
+               (get input "primary_text_member")))))))
 
 (deftest complete-legacy-workset-remains-readable-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0033-c8-complete-legacy-readability")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [work (fixture/legacy-workset-entry!
-                      root {:slug "one" :title "一" :work-id "000001"
-                            :person-id "000101" :work-hash (fixture/example-hash "a1")})
-                output (fs/file root "snapshot.json")]
-            (is (= output
-                   (:snapshot
-                    (materialize/materialize-source-snapshot!
-                     {:workset-path (str (workset! root [work]))
-                      :output-path (str output) :generated-at generated-at}))))
-            (is (= (fixture/example-hash "a1")
-                   (get-in (files/read-json output)
-                           ["snapshot_identity_object" "snapshot_inputs" 0
-                            "work_content_hash"])))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [work (fixture/legacy-workset-entry!
+                root {:slug "one" :title "一" :work-id "000001"
+                      :person-id "000101" :work-hash (fixture/example-hash "a1")})
+          output (fs/file root "snapshot.json")]
+      (is (= output
+             (:snapshot
+              (materialize/materialize-source-snapshot!
+               {:workset-path (str (workset! root [work]))
+                :output-path (str output) :generated-at generated-at}))))
+      (is (= (fixture/example-hash "a1")
+             (get-in (files/read-json output)
+                     ["snapshot_identity_object" "snapshot_inputs" 0
+                      "work_content_hash"]))))))
 
 (deftest source-snapshot-role-specific-validation-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0033-c5-role-specific-snapshot-validation")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [work (fixture/workset-entry!
-                      root {:slug "one" :title "一" :work-id "000001"
-                            :person-id "000101" :work-hash (fixture/example-hash "a1")})
-                other (fixture/example-hash "ff")]
-            (abc-json/write-deterministic-json-file!
-             (:parser_ir_path work)
-             (assoc-in (files/read-json (:parser_ir_path work))
-                       ["source" "work_content_hash"] other))
-            (let [error (try
-                          (materialize/materialize-source-snapshot!
-                           {:workset-path (str (workset! root [work]))
-                            :output-path (str (fs/file root "snapshot.json"))})
-                          nil
-                          (catch clojure.lang.ExceptionInfo exception exception))]
-              (is (= :parser-bundle (:identity-role (ex-data error)))))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [work (fixture/workset-entry!
+                root {:slug "one" :title "一" :work-id "000001"
+                      :person-id "000101" :work-hash (fixture/example-hash "a1")})
+          other (fixture/example-hash "ff")]
+      (abc-json/write-deterministic-json-file!
+       (:parser_ir_path work)
+       (assoc-in (files/read-json (:parser_ir_path work))
+                 ["source" "work_content_hash"] other))
+      (let [error (try
+                    (materialize/materialize-source-snapshot!
+                     {:workset-path (str (workset! root [work]))
+                      :output-path (str (fs/file root "snapshot.json"))})
+                    nil
+                    (catch clojure.lang.ExceptionInfo exception exception))]
+        (is (= :parser-bundle (:identity-role (ex-data error))))))))
 
 (deftest persisted-source-bundle-byte-hash-detects-later-corruption-test
   (let [root (fixture/temp-dir "abc-source-snapshot-file-hash")]

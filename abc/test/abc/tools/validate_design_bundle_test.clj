@@ -1,10 +1,7 @@
 (ns abc.tools.validate-design-bundle-test
   (:require [abc.tools.aat-parser-ir-compat :as compat]
-            [abc.tools.adr-evidence-runtime-inputs :as runtime]
-            [abc.tools.evidence-test-support :as evidence-support]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
-            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.json :as abc-json]
             [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
@@ -19,7 +16,6 @@
             [abc.tools.schematron :as schematron]
             [abc.tools.validate-design-bundle :as validate]
             [babashka.fs :as fs]
-            [clojure.string :as string]
             [clojure.test :refer [deftest is testing use-fixtures]]
             [malli.core :as m]
             [malli.generator :as mg]))
@@ -1237,31 +1233,14 @@
       (run!))
     (is (false? @reached?))))
 
-(defn- evidence-input-catalog-equals-the-pure-schema-validation-read-set-assertions []
-  (let [traced (evidence-io/with-read-trace
-                 {:identity-root "." :cwd-root "."}
-                 #(validate/validate-json-schemas! []))]
-    (is (= (validate/evidence-input-paths)
-           (:repository-paths traced)))))
-
-(deftest evidence-input-catalog-equals-the-pure-schema-validation-read-set-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0008-c4-validation-read-catalog")
-    (fn []
-      (evidence-input-catalog-equals-the-pure-schema-validation-read-set-assertions))))
-
 (deftest design-bundle-temporary-import-materialization-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0009-c6-temporary-materialization")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [generated (materialize/materialize-import!
-                           {:input-dir "examples/ab-validator-output"
-                            :output-dir root
-                            :generated-at materialize/default-generated-at})]
-            (is (files/file? (:parser-ir generated)))
-            (is (files/file? (:warnings generated)))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [generated (materialize/materialize-import!
+                     {:input-dir "examples/ab-validator-output"
+                      :output-dir root
+                      :generated-at materialize/default-generated-at})]
+      (is (files/file? (:parser-ir generated)))
+      (is (files/file? (:warnings generated))))))
 
 (deftest publication-view-temp-directory-cleanup-test
   (fs/with-temp-dir [root {}]
@@ -1756,39 +1735,8 @@
         (is (some #{"schemas/source-assertion.schema.json"}
                   @checked-paths))))))
 
-(deftest validate-json-schemas-includes-adr-claim-migration-baseline-contract-test
-  (let [checked-paths (atom [])]
-    (with-redefs [validate/schema-valid! (fn [_schema path]
-                                           (swap! checked-paths conj path))
-                  validate/validate-json! (fn [& _args])
-                  validate/validate-json-lines! (fn [& _args])
-                  validate/validation-errors (fn [_schema value]
-                                               (when-not (contains? value "rule_id")
-                                                 [:expected-error]))
-                  compat/load-registry (fn [] {:entries []})
-                  compat/validate-registry! (fn [_registry])
-                  parser-evidence/load-index (fn [] {:entries []})
-                  parser-evidence/validate-index! (fn [_index])]
-      (validate/validate-json-schemas! [])
-      (is (some #{"schemas/adr-claim-migration-baseline.schema.json"}
-                @checked-paths)))))
-
 (deftest validate-json-schemas-includes-adr-evidence-contracts-test
-  (let [run-file (java.io.File/createTempFile "abc-adr-evidence-run" ".json")
-        external-file (java.io.File/createTempFile "abc-adr-external-evidence" ".json")
-        run-value {"schema_version" "abc-adr-evidence-run-v1"
-                   "producer" {"tool" "bin/kaocha"
-                               "command" "bin/kaocha --focus abc.tools.adr-evidence-test"
-                               "revision" "0000000000000000000000000000000000000000"}
-                   "input_profile" {"kind" "clojure-test-v1"
-                                    "roots" ["abc.tools.adr-evidence-test"]
-                                    "explicit" []}
-                   "inputs" {"test/abc/tools/adr_evidence_test.clj"
-                             "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
-                   "observations" {"contract" {"value" true
-                                               "details" {"tests" 4
-                                                          "failures" 0
-                                                          "errors" 0}}}}
+  (let [external-file (java.io.File/createTempFile "abc-adr-external-evidence" ".json")
         external-value {"schema_version" "abc-adr-external-evidence-v1"
                         "source_url" "https://example.invalid/authority"
                         "retrieved_at" "2026-07-12"
@@ -1802,7 +1750,6 @@
                                                            "details" {}}}}
         checked-schemas (atom {})]
     (try
-      (abc-json/write-deterministic-json-file! run-file run-value)
       (abc-json/write-deterministic-json-file! external-file external-value)
       (with-redefs [validate/schema-valid! (fn [schema path]
                                              (swap! checked-schemas assoc path schema)
@@ -1819,24 +1766,11 @@
                     parser-evidence/load-index (fn [] {:entries []})
                     parser-evidence/validate-index! (fn [_index] :ok)]
         (validate/validate-json-schemas! []))
-      (let [run-schema (get @checked-schemas "schemas/adr-evidence-run.schema.json")
-            external-schema (get @checked-schemas "schemas/adr-external-evidence.schema.json")]
-        (is (map? run-schema))
+      (let [external-schema (get @checked-schemas "schemas/adr-external-evidence.schema.json")]
         (is (map? external-schema))
-        (when (and run-schema external-schema)
-          (is (nil? (schema/validation-errors run-schema
-                                              (files/read-json run-file))))
+        (when external-schema
           (is (nil? (schema/validation-errors external-schema
                                               (files/read-json external-file))))
-          (doseq [invalid [(assoc run-value "schema_version" "unknown")
-                           (assoc run-value "unexpected" true)
-                           (assoc-in run-value ["observations" "contract" "value"] 0.5)
-                           (assoc-in run-value ["observations" "contract" "value"] 9007199254740992)
-                           (assoc-in run-value ["observations" "contract" "details" "nested"]
-                                     [0.5])
-                           (assoc-in run-value ["observations" "contract" "details" "nested"]
-                                     [-9007199254740992])]]
-            (is (seq (schema/validation-errors run-schema invalid))))
           (doseq [invalid [(assoc external-value "schema_version" "unknown")
                            (assoc external-value "unexpected" true)
                            (assoc external-value "retrieved_at" "2026/07/12")
@@ -1848,7 +1782,6 @@
                                      [9007199254740992])]]
             (is (seq (schema/validation-errors external-schema invalid))))))
       (finally
-        (.delete run-file)
         (.delete external-file)))))
 
 (deftest validate-json-schemas-includes-tei-eaj-comparison-fixture-test
@@ -2152,9 +2085,7 @@
           {"schema_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000004"}))))
 
 (deftest parser-ir-schema-hash-errors-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0010-c4-parser-schema-mismatch")
-    (fn [] (parser-ir-schema-hash-errors-assertions))))
+  (parser-ir-schema-hash-errors-assertions))
 
 (deftest parser-ir-schema-accepts-derived-from-test
   (testing "AAT-derived parser IR may record mapping provenance"
@@ -3341,9 +3272,7 @@
             (str "registry must reject mismatched " k))))))
 
 (deftest aat-parser-ir-compatibility-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0009-c5-aat-conversion-compatibility")
-    (fn [] (aat-parser-ir-compatibility-assertions))))
+  (aat-parser-ir-compatibility-assertions))
 
 (deftest aat-parser-ir-compatibility-admission-report-test
   (testing "reports when producer candidates are already admitted exactly"
@@ -3526,61 +3455,6 @@
     (is (some #(and (= "validation-result" (get % "role"))
                     (= "tei-validation-result.json" (get % "path_hint")))
               (get manifest "sidecars")))))
-
-(defn- check-expression [flake check-name]
-  (re-find
-   (re-pattern
-    (str "(?s)\\n          " (java.util.regex.Pattern/quote check-name)
-         " =.*?(?=\\n          [a-zA-Z0-9_-]+ =|\\n        };)"))
-   flake))
-
-(defn- tei-evidence-check-contract-errors [expression expected-focuses]
-  (cond-> []
-    (not (string/includes? expression "pkgs.clojure"))
-    (conj :missing-clojure)
-    (not (string/includes? expression
-                           "export TEI_SCHEMA_PATH=\"${tei.teiAllSchema}\""))
-    (conj :missing-tei-schema-path)
-    (not-every? #(string/includes? expression %) expected-focuses)
-    (conj :missing-focus)))
-
-(deftest tei-evidence-nix-checks-are-hermetic-test
-  (let [flake (slurp "flake.nix")
-        contracts
-        {"adr-evidence-tei-project-cross-schema-invalid"
-         ["abc.tools.validate-design-bundle-test/project-rng-valid-schematron-invalid-fixture-test"]
-         "adr-evidence-tei-project-valid-fixtures"
-         ["abc.tools.validate-design-bundle-test/valid-project-tei-fixtures-pass-rng-and-schematron-test"]
-         "adr-evidence-tei-schematron-invalid-ids"
-         ["abc.tools.schematron-test/missing-title-fails-title-rule-test"
-          "abc.tools.schematron-test/gaiji-missing-reference-fails-gaiji-rule-test"
-          "abc.tools.schematron-test/ruby-missing-reading-fails-ruby-rule-test"]
-         "adr-evidence-tei-figure-warning"
-         ["abc.tools.schematron-test/figure-missing-description-reports-warning-test"]
-         "adr-evidence-tei-enrichment-warning"
-         ["abc.tools.schematron-test/transcription-enrichment-undeclared-reports-warning-test"]
-         "adr-evidence-tei-upstream-rng"
-         ["abc.tools.tei-test/validate-example-fixture-test"]
-         "adr-evidence-tei-publication-sidecars"
-         ["abc.tools.materialize-publication-test/tei-generated-manifest-references-validation-result-test"
-          "abc.tools.validate-design-bundle-test/tei-committed-manifest-references-validation-result-test"]}]
-    (doseq [[check-name focuses] contracts]
-      (let [expression (check-expression flake check-name)]
-        (is (string? expression) check-name)
-        (is (= [] (tei-evidence-check-contract-errors expression focuses))
-            check-name)))
-    (let [sample (check-expression
-                  flake "adr-evidence-tei-project-cross-schema-invalid")]
-      (is (= [:missing-clojure]
-             (tei-evidence-check-contract-errors
-              (string/replace sample "pkgs.clojure" "")
-              (get contracts "adr-evidence-tei-project-cross-schema-invalid"))))
-      (is (= [:missing-tei-schema-path]
-             (tei-evidence-check-contract-errors
-              (string/replace sample
-                              "export TEI_SCHEMA_PATH=\"${tei.teiAllSchema}\""
-                              "")
-              (get contracts "adr-evidence-tei-project-cross-schema-invalid")))))))
 
 (deftest validate-tei-loud-fail-when-env-unset-test
   (testing "validate-tei! throws ex-info naming the schema-path problem when called with nil"

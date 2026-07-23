@@ -82,11 +82,11 @@ The first Schematron rules are deliberately narrow:
 ## Acceptance Criteria
 
 - **ADR-0012-C1 — operational-behavior:** The `tei-profile-drift` Nix check regenerates Relax NG and Schematron from `schemas/tei-profile.odd` and byte-compares both committed artifacts. See `test/abc/tools/tei_test.clj`.
-- **ADR-0012-C2 — fixture-behavior:** Valid TEI fixtures pass project Relax NG and Schematron validation.
-- **ADR-0012-C3 — fixture-behavior:** The committed example TEI passes the pinned upstream TEI P5 Relax NG validation.
-- **ADR-0012-C4 — fixture-behavior:** Invalid title, gaiji, and ruby fixtures fail with their expected Schematron rule IDs.
-- **ADR-0012-C5 — fixture-behavior:** Warning fixtures produce their expected warning findings without Schematron errors.
-- **ADR-0012-C6 — fixture-behavior:** Generated and committed TEI manifests reference a `tei-validation-result.json` validation-result sidecar.
+- **ADR-0012-C2 — fixture-behavior:** Valid TEI fixtures pass project Relax NG and Schematron validation. See `test/abc/tools/validate_design_bundle_test.clj`.
+- **ADR-0012-C3 — fixture-behavior:** The committed example TEI passes the pinned upstream TEI P5 Relax NG validation. See `test/abc/tools/tei_test.clj`.
+- **ADR-0012-C4 — fixture-behavior:** Invalid title, gaiji, and ruby fixtures fail with their expected Schematron rule IDs. See `test/abc/tools/schematron_test.clj`.
+- **ADR-0012-C5 — fixture-behavior:** Warning fixtures produce their expected warning findings without Schematron errors. See `test/abc/tools/schematron_test.clj`.
+- **ADR-0012-C6 — fixture-behavior:** Generated and committed TEI manifests reference a `tei-validation-result.json` validation-result sidecar. See `test/abc/tools/materialize_publication_test.clj` and `test/abc/tools/validate_design_bundle_test.clj`.
 
 ## Toolchain (pinned 2026-04-29)
 

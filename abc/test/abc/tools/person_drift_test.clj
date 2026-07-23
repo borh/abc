@@ -1,6 +1,5 @@
 (ns abc.tools.person-drift-test
   (:require [arachne.aristotle :as aa]
-            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
@@ -310,13 +309,6 @@
                             [drift-split-event drift-event]
                             [drift-merge-event drift-event]]]
       (is (graph-contains? g child rdfs-sub-class-of parent)))))
-
-(deftest load-shapes-graph-records-schema-read-test
-  (let [traced (evidence-io/with-read-trace
-                 {:identity-root "." :cwd-root "."}
-                 shacl/load-shapes-graph)]
-    (is (= [shacl/default-shapes-path]
-           (:repository-paths traced)))))
 
 (deftest snapshot-iri-uses-event-embedded-hash-test
   (is (= "https://w3id.org/abc/persons/000879#snapshot-000000000000"

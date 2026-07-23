@@ -1,8 +1,0 @@
-{:structural-invariant #{:structural-test}
- :fixture-behavior #{:fixture-conformance}
- :corpus-behavior #{:corpus-measurement}
- :performance-bound #{:benchmark}
- :external-semantics #{:external-authority}
- :implementation-agreement #{:cross-implementation}
- :domain-interpretation #{:expert-assessment :external-authority}
- :operational-behavior #{:operational-observation}}

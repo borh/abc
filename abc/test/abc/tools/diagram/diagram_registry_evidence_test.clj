@@ -1,6 +1,5 @@
 (ns abc.tools.diagram.diagram-registry-evidence-test
   (:require [abc.tools.adr :as adr]
-            [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
             [abc.tools.diagram.adr-graph :as adr-graph]
             [abc.tools.diagram.architecture-graph :as architecture-graph]
             [abc.tools.diagram.registry :as registry]
@@ -22,32 +21,26 @@
    "0025-parser-ir-publication-rendering.md" "0029-diagrams-as-gated-derived-views.md"
    "0030-aozora-parser-selection.md" "0031-adr-governance-validation.md"
    "0032-parser-fork-hard-detach.md" "0033-source-bundle-identity.md"
-   "0034-typed-evidence-and-lifecycle-closure.md"
    "0038-custom-parser-ownership-and-neutral-comparison.md"])
 
 (deftest diagram-registry-contract
-  (runtime-inputs/with-validated-read-trace!
-    {:identity-root "." :cwd-root "." :repo-root "." :workspace-root ".."
-     :descriptor {:path "docs/evidence/adr-capture/diagram-registry-drift.edn"
-                  :value (files/read-edn "docs/evidence/adr-capture/diagram-registry-drift.edn")}}
-    (fn []
-      (let [adrs (mapv #(adr/parse-adr "docs/adr" %) accepted-files)
-            relations (:relations (files/read-edn "docs/adr/adr-relations.edn"))
-            stages (files/read-edn "docs/architecture-stages.edn")
-            contracts (json/read-json-file "schemas/schema-contracts.json")
-            manifest-schema (json/read-json-file "schemas/manifest.schema.json")
-            architecture-markdown (files/read-text "docs/architecture.md")
-            declared-owners (set (mapcat :adr (:stages stages)))
-            known-adrs (into (set (map :num adrs)) declared-owners)]
-        (is (= #{:adr-decision-map :architecture}
-               (set (map :id registry/committed-diagrams))))
-        (is (every? #(= "Accepted" (:status %)) adrs))
-        (is (empty? (adr-graph/lint-adrs adrs relations)))
-        (is (seq (adr-graph/graph-from adrs relations)))
-        (is (empty? (architecture-graph/validate
-                     stages
-                     (set (map #(get % "path") (get contracts "schemas")))
-                     known-adrs manifest-schema architecture-markdown)))
-        (is (seq (architecture-graph/graph-from (:stages stages))))
-        (is (seq (files/read-text "docs/adr/adr-graph.mmd")))
-        (is (seq (files/read-text "docs/architecture.mmd")))))))
+  (let [adrs (mapv #(adr/parse-adr "docs/adr" %) accepted-files)
+        relations (:relations (files/read-edn "docs/adr/adr-relations.edn"))
+        stages (files/read-edn "docs/architecture-stages.edn")
+        contracts (json/read-json-file "schemas/schema-contracts.json")
+        manifest-schema (json/read-json-file "schemas/manifest.schema.json")
+        architecture-markdown (files/read-text "docs/architecture.md")
+        declared-owners (set (mapcat :adr (:stages stages)))
+        known-adrs (into (set (map :num adrs)) declared-owners)]
+    (is (= #{:adr-decision-map :architecture}
+           (set (map :id registry/committed-diagrams))))
+    (is (every? #(= "Accepted" (:status %)) adrs))
+    (is (empty? (adr-graph/lint-adrs adrs relations)))
+    (is (seq (adr-graph/graph-from adrs relations)))
+    (is (empty? (architecture-graph/validate
+                 stages
+                 (set (map #(get % "path") (get contracts "schemas")))
+                 known-adrs manifest-schema architecture-markdown)))
+    (is (seq (architecture-graph/graph-from (:stages stages))))
+    (is (seq (files/read-text "docs/adr/adr-graph.mmd")))
+    (is (seq (files/read-text "docs/architecture.mmd")))))

@@ -1,4 +1,0 @@
-{:schema-version :abc-adr-runtime-inputs-v1,
- :paths
- ["abc/examples/v0/example-work/iiif/applicability.json"
-  "abc/schemas/iiif-applicability.schema.json"]}

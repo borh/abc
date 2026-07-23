@@ -863,39 +863,6 @@
     (fs/copy-tree evaluation-root target)
     reference))
 
-(def expected-registry-reader-set
-  #{"docs/evidence/adr-inputs/adr-0009-c5-aat-conversion-compatibility.edn"
-    "docs/evidence/adr-inputs/parser-import-boundary.edn"
-    "docs/evidence/adr-inputs/parser-mapping-admission.edn"
-    "docs/evidence/adr-inputs/parser-phase5-frozen-tuple.edn"
-    "docs/evidence/adr-capture/adr-0009-c5-aat-conversion-compatibility.edn"
-    "docs/evidence/adr-capture/design-bundle-operational-parser-ir-publication.edn"
-    "docs/evidence/adr-capture/design-bundle-operational-schema-rdf-tei.edn"
-    "docs/evidence/adr-capture/design-bundle-operational-temporal-person-ingest.edn"
-    "docs/evidence/adr-capture/design-bundle-operational.edn"
-    "docs/evidence/adr-capture/parser-import-boundary.edn"
-    "docs/evidence/adr-capture/parser-mapping-admission.edn"
-    "docs/evidence/adr-capture/parser-phase5-frozen-tuple.edn"})
-
-(defn registry-closure-errors [inventory-path]
-  (let [inventory (files/read-json inventory-path)
-        evidence-root (fs/path "docs/evidence")
-        readers (->> (files/sorted-path-seq evidence-root)
-                     (filter #(and (fs/regular-file? %)
-                                   (string/ends-with? (str %) ".edn")))
-                     (filter #(string/includes? (files/read-text %)
-                                                "aat-parser-ir-compatibility.edn"))
-                     (map #(files/relative-path "." %))
-                     set)]
-    (cond-> []
-      (not= "abc-adr-claim-migration-inventory-v1" (get inventory "schema_version"))
-      (conj "ADR inventory schema version is invalid")
-
-      (not= expected-registry-reader-set readers)
-      (conj (str "registry reader closure differs: expected "
-                 (pr-str (sort expected-registry-reader-set))
-                 " actual " (pr-str (sort readers)))))))
-
 (defn promotion-errors
   "Resolve and authenticate a promotion solely from committed campaign paths.
 
@@ -1145,11 +1112,6 @@
       (let [options (parse-options command-args)]
         (println (publish-evaluation! (required-option options :candidate_root)
                                       (required-option options :evaluation_root))))
-      "verify-registry-closure"
-      (let [options (parse-options command-args)
-            errors (registry-closure-errors (required-option options :inventory))]
-        (when (seq errors) (throw (ex-info "registry closure invalid" {:errors errors})))
-        (println "ok"))
       "verify-promotion"
       (let [options (parse-options command-args)
             errors (promotion-errors

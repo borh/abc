@@ -3,8 +3,7 @@
 
   Validation uses ph-schematron's ISO Schematron-to-XSLT engine and returns the
   ABC finding shape consumed by publication and design-bundle validation."
-  (:require [abc.tools.evidence-io :as evidence-io]
-            [babashka.fs :as fs]
+  (:require [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [javax.xml.parsers DocumentBuilderFactory]
@@ -55,7 +54,6 @@
 (defonce ^:private resource-cache (atom {}))
 
 (defn- schematron-resource [schema-path]
-  (evidence-io/record-read! schema-path)
   (let [path (fs/path schema-path)
         cache-key [(str (fs/canonicalize path)) (fs/last-modified-time path)]]
     (or (get @resource-cache cache-key)

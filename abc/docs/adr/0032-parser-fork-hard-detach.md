@@ -93,7 +93,7 @@ timeouts). The porting lane stays open and cheap relative to merging.
 ## Acceptance Criteria
 
 - **ADR-0032-C1 — structural-invariant:** ADRs 0030, 0032, and 0038 carry reciprocal amendment links.
-- **ADR-0032-C2 — structural-invariant:** The fork-provenance handoff, lifted-crate provenance headers, upstream NOTICE, and ADR record the same detach repository, revision, and licence boundary. Evidence boundary: `test/abc/tools/adr_evidence_capture_test.clj`.
+- **ADR-0032-C2 — structural-invariant:** The fork-provenance handoff, lifted-crate provenance headers, upstream NOTICE, and ADR record the same detach repository, revision, and licence boundary. Evidence boundary: `test/abc/tools/parser_relations_provenance_evidence_test.clj`.
 
 ## Future Verification
 

@@ -1,8 +1,5 @@
 (ns abc.tools.schema-validation-evidence-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
-            [abc.tools.evidence-io :as evidence-io]
-            [abc.tools.evidence-test-support :as evidence-support]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.iiif :as iiif]
             [abc.tools.jcs :as jcs]
@@ -13,6 +10,7 @@
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [abc.tools.validate-design-bundle :as validate]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.test :refer [deftest is use-fixtures]])
@@ -99,285 +97,216 @@
   (files/write-text! array-b "[1]\n"))
 
 (deftest broken-manifest-is-rejected-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "schema-empty-manifest")
-    (fn []
-      (let [schema (files/read-json "schemas/manifest.schema.json")]
-        (is (seq (validate/validation-errors schema {})))))))
+  (let [schema (files/read-json "schemas/manifest.schema.json")]
+    (is (seq (validate/validation-errors schema {})))))
 
 (deftest canonicalization-hash-mismatch-is-rejected-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "schema-canonicalization-mismatch")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [dir]
-          (let [identity-json (io/file (str dir) "identity.json")
-                array-a (io/file (str dir) "array-a.json")
-                array-b (io/file (str dir) "array-b.json")]
-            (write-canonicalization-fixtures! identity-json array-a array-b)
-            (let [error (try
-                          (validate/validate-canonicalization!
-                           {:expected (apply str (repeat 64 "0"))
-                            :identity-json (str identity-json)
-                            :array-a (str array-a)
-                            :array-b (str array-b)})
-                          nil
-                          (catch clojure.lang.ExceptionInfo exception exception))]
-              (is (instance? clojure.lang.ExceptionInfo error))
-              (is (re-find #"canonical identity fixture hash mismatch"
-                           (ex-message error))))))))))
+  (fs/with-temp-dir [dir {:prefix "abc-test-"}]
+    (let [identity-json (io/file (str dir) "identity.json")
+          array-a (io/file (str dir) "array-a.json")
+          array-b (io/file (str dir) "array-b.json")]
+      (write-canonicalization-fixtures! identity-json array-a array-b)
+      (let [error (try
+                    (validate/validate-canonicalization!
+                     {:expected (apply str (repeat 64 "0"))
+                      :identity-json (str identity-json)
+                      :array-a (str array-a)
+                      :array-b (str array-b)})
+                    nil
+                    (catch clojure.lang.ExceptionInfo exception exception))]
+        (is (instance? clojure.lang.ExceptionInfo error))
+        (is (re-find #"canonical identity fixture hash mismatch"
+                     (ex-message error)))))))
 
 (deftest supported-entrypoint-delegates-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "schema-entrypoint-delegation")
-    (fn []
-      (is (str/includes? (files/read-text "bin/validate-design-bundle.sh")
-                         "exec clojure -M:abc/validate-design-bundle")))))
+  (is (str/includes? (files/read-text "bin/validate-design-bundle.sh")
+                     "exec clojure -M:abc/validate-design-bundle")))
 
 (deftest supported-ci-wiring-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "schema-ci-wiring")
-    (fn []
-      (is (str/includes? (files/read-text ".github/workflows/validation.yml")
-                         ".#validate-design-bundle")))))
+  (is (str/includes? (files/read-text ".github/workflows/validation.yml")
+                     ".#validate-design-bundle")))
 
 (deftest linked-art-parity-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "linked-art-parity")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [dir]
-          (assert-linked-art-parity! (write-linked-art! dir)))))))
+  (fs/with-temp-dir [dir {:prefix "abc-test-"}]
+    (assert-linked-art-parity! (write-linked-art! dir))))
 
 (deftest linked-art-result-status-and-context-hash-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "linked-art-result-contract")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [dir]
-          (let [outputs (write-linked-art! dir)
-                result (files/read-json (:result-path outputs))
-                recomputed (str "sha256:"
-                                (hash/sha256-bytes
-                                 (jcs/canonical-json-bytes
-                                  (files/read-json context-path))))]
-            (is (= "ok" (get result "status")))
-            (is (= recomputed (get result "context_hash")))))))))
+  (fs/with-temp-dir [dir {:prefix "abc-test-"}]
+    (let [outputs (write-linked-art! dir)
+          result (files/read-json (:result-path outputs))
+          recomputed (str "sha256:"
+                          (hash/sha256-bytes
+                           (jcs/canonical-json-bytes
+                            (files/read-json context-path))))]
+      (is (= "ok" (get result "status")))
+      (is (= recomputed (get result "context_hash"))))))
 
 (deftest linked-art-determinism-parity-hash-identity-fetch-contract-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "linked-art-full-behavior")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [dir-a]
-          (evidence-io/with-owned-ephemeral-root
-            (fn [dir-b]
-              (let [a (write-linked-art! dir-a)
-                    b (write-linked-art! dir-b)
-                    result (files/read-json (:result-path a))
-                    manifest-id (get (files/read-json manifest-path) "artifact_id")]
-                (doseq [key [:candidate-path :expanded-path :result-path]]
-                  (is (= (seq (files/read-bytes (get a key)))
-                         (seq (files/read-bytes (get b key))))))
-                (assert-linked-art-parity! a)
-                (is (= (linked-art/context-hash context-path)
-                       (get result "context_hash")))
-                (is (= {"manifest_artifact_id" manifest-id
-                        "expanded_artifact_id" manifest-id
-                        "preserved_after_expansion" true}
-                       (get result "identity_invariant")))
-                (let [error (try
-                              (linked-art/expand-document
-                               (.getBytes
-                                "{\"@context\":\"https://example.invalid/other.jsonld\"}"
-                                "UTF-8")
-                               (files/read-bytes context-path)
-                               "https://w3id.org/abc/test")
-                              nil
-                              (catch Exception exception exception))]
-                  (is (instance? Exception error)))))))))))
+  (fs/with-temp-dir [dir-a {:prefix "abc-test-"}]
+    (fs/with-temp-dir [dir-b {:prefix "abc-test-"}]
+      (let [a (write-linked-art! dir-a)
+            b (write-linked-art! dir-b)
+            result (files/read-json (:result-path a))
+            manifest-id (get (files/read-json manifest-path) "artifact_id")]
+        (doseq [key [:candidate-path :expanded-path :result-path]]
+          (is (= (seq (files/read-bytes (get a key)))
+                 (seq (files/read-bytes (get b key))))))
+        (assert-linked-art-parity! a)
+        (is (= (linked-art/context-hash context-path)
+               (get result "context_hash")))
+        (is (= {"manifest_artifact_id" manifest-id
+                "expanded_artifact_id" manifest-id
+                "preserved_after_expansion" true}
+               (get result "identity_invariant")))
+        (let [error (try
+                      (linked-art/expand-document
+                       (.getBytes
+                        "{\"@context\":\"https://example.invalid/other.jsonld\"}"
+                        "UTF-8")
+                       (files/read-bytes context-path)
+                       "https://w3id.org/abc/test")
+                      nil
+                      (catch Exception exception exception))]
+          (is (instance? Exception error)))))))
 
 (deftest context-declares-canonical-abc-namespace-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "linked-art-context")
-    (fn []
-      (is (= "https://w3id.org/abc/"
-             (get-in (files/read-json context-path) ["@context" "abc"]))))))
+  (is (= "https://w3id.org/abc/"
+         (get-in (files/read-json context-path) ["@context" "abc"]))))
 
 (deftest expanded-artifact-id-uses-canonical-predicate-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "linked-art-artifact-predicate")
-    (fn []
-      (let [expanded (files/read-json expanded-path)
-            manifest-id (get (files/read-json manifest-path) "artifact_id")]
-        (is (= manifest-id
-               (get-in expanded
-                       ["expanded" 0 "https://w3id.org/abc/artifactId"
-                        0 "@value"])))))))
+  (let [expanded (files/read-json expanded-path)
+        manifest-id (get (files/read-json manifest-path) "artifact_id")]
+    (is (= manifest-id
+           (get-in expanded
+                   ["expanded" 0 "https://w3id.org/abc/artifactId"
+                    0 "@value"])))))
 
 (deftest current-linked-art-parity-and-context-hash-contract-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "linked-art-current-parity-hash")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [dir]
-          (let [outputs (write-linked-art! dir)
-                result (files/read-json linked-art-result-path)]
-            (assert-linked-art-parity! outputs)
-            (is (= (linked-art/context-hash context-path)
-                   (get result "context_hash")))))))))
+  (fs/with-temp-dir [dir {:prefix "abc-test-"}]
+    (let [outputs (write-linked-art! dir)
+          result (files/read-json linked-art-result-path)]
+      (assert-linked-art-parity! outputs)
+      (is (= (linked-art/context-hash context-path)
+             (get result "context_hash"))))))
 
 (deftest applicability-schema-is-valid-draft-2020-12-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "iiif-schema-contract")
-    (fn []
-      (let [path "schemas/iiif-applicability.schema.json"
-            value (files/read-json path)]
-        (is (= "https://json-schema.org/draft/2020-12/schema"
-               (get value "$schema")))
-        (is (nil? (schema/schema-valid! value path)))))))
+  (let [path "schemas/iiif-applicability.schema.json"
+        value (files/read-json path)]
+    (is (= "https://json-schema.org/draft/2020-12/schema"
+           (get value "$schema")))
+    (is (nil? (schema/schema-valid! value path)))))
 
 (deftest iiif-committed-applicability-contract-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "iiif-committed-applicability")
-    (fn []
-      (let [path "examples/v0/example-work/iiif/applicability.json"
-            value (files/read-json path)]
-        (is (nil? (iiif/validate-applicability! path)))
-        (is (contains? value "derived_manifest"))
-        (is (= (= "applicable" (get value "status"))
-               (string? (get value "derived_manifest"))))))))
+  (let [path "examples/v0/example-work/iiif/applicability.json"
+        value (files/read-json path)]
+    (is (nil? (iiif/validate-applicability! path)))
+    (is (contains? value "derived_manifest"))
+    (is (= (= "applicable" (get value "status"))
+           (string? (get value "derived_manifest"))))))
 
 (deftest iiif-text-only-values-contract-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "iiif-text-only-values")
-    (fn []
-      (let [value (files/read-json
-                   "examples/v0/example-work/iiif/applicability.json")]
-        (is (contains? value "derived_manifest"))
-        (is (= ["000127" "not_applicable" nil]
-               [(get value "work_id")
-                (get value "status")
-                (get value "derived_manifest")]))
-        (is (re-find #"text-only" (get value "reason")))))))
+  (let [value (files/read-json
+               "examples/v0/example-work/iiif/applicability.json")]
+    (is (contains? value "derived_manifest"))
+    (is (= ["000127" "not_applicable" nil]
+           [(get value "work_id")
+            (get value "status")
+            (get value "derived_manifest")]))
+    (is (re-find #"text-only" (get value "reason")))))
 
 (deftest iiif-invalid-combinations-contract-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "iiif-invalid-combinations")
-    (fn []
-      (doseq [path ["fixtures/iiif/invalid/missing-work-id.json"
-                    "fixtures/iiif/invalid/applicable-without-manifest.json"
-                    "fixtures/iiif/invalid/not-applicable-with-manifest.json"]]
-        (let [error (try
-                      (iiif/validate-applicability! path)
-                      nil
-                      (catch clojure.lang.ExceptionInfo exception exception))]
-          (is (instance? clojure.lang.ExceptionInfo error))
-          (is (re-find #"JSON Schema validation failed" (ex-message error))))))))
+  (doseq [path ["fixtures/iiif/invalid/missing-work-id.json"
+                "fixtures/iiif/invalid/applicable-without-manifest.json"
+                "fixtures/iiif/invalid/not-applicable-with-manifest.json"]]
+    (let [error (try
+                  (iiif/validate-applicability! path)
+                  nil
+                  (catch clojure.lang.ExceptionInfo exception exception))]
+      (is (instance? clojure.lang.ExceptionInfo error))
+      (is (re-find #"JSON Schema validation failed" (ex-message error))))))
 
 (deftest iiif-valid-combinations-contract-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "iiif-valid-combinations")
-    (fn []
-      (is (nil? (iiif/validate-applicability!
-                 "fixtures/iiif/applicable.json")))
-      (is (nil? (iiif/validate-applicability!
-                 "fixtures/iiif/rights_blocker.json"))))))
+  (is (nil? (iiif/validate-applicability!
+             "fixtures/iiif/applicable.json")))
+  (is (nil? (iiif/validate-applicability!
+             "fixtures/iiif/rights_blocker.json"))))
 
 (deftest bounded-turtle-prefix-inventory-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "turtle-prefix-inventory")
-    (fn []
-      (doseq [path turtle-prefix-paths]
-        (is (str/includes? (files/read-text path)
-                           "@prefix abc: <https://w3id.org/abc/> ."))))))
+  (doseq [path turtle-prefix-paths]
+    (is (str/includes? (files/read-text path)
+                       "@prefix abc: <https://w3id.org/abc/> ."))))
 
 (deftest manifest-rdf-parity-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "manifest-rdf-parity")
-    (fn []
-      (doseq [[manifest ttl]
-              [["examples/v0/example-work/manifest.json"
-                "examples/v0/example-work/manifest.ttl"]
-               ["examples/v0/example-work/failure-manifest.example.json"
-                "examples/v0/example-work/failure-manifest.example.ttl"]]]
-        (is (= (files/read-text ttl)
-               (manifest-to-rdf/manifest->ttl (files/read-json manifest))))))))
+  (doseq [[manifest ttl]
+          [["examples/v0/example-work/manifest.json"
+            "examples/v0/example-work/manifest.ttl"]
+           ["examples/v0/example-work/failure-manifest.example.json"
+            "examples/v0/example-work/failure-manifest.example.ttl"]]]
+    (is (= (files/read-text ttl)
+           (manifest-to-rdf/manifest->ttl (files/read-json manifest))))))
 
 (deftest metadata-rdf-parity-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "metadata-rdf-parity")
-    (fn []
-      (let [{:keys [record persons]} (example-metadata)]
-        (is (= (files/read-text
-                "examples/v0/example-work/metadata-record.ttl")
-               (metadata-record/record+persons->ttl record persons)))))))
+  (let [{:keys [record persons]} (example-metadata)]
+    (is (= (files/read-text
+            "examples/v0/example-work/metadata-record.ttl")
+           (metadata-record/record+persons->ttl record persons)))))
 
 (deftest metadata-title-and-legacy-predicate-containment-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "metadata-rdf-containment")
-    (fn []
-      (let [{:keys [record persons]} (example-metadata)
-            graph (metadata-record/record+persons->graph record persons)
-            title-triples (iterator-seq
-                           (.find graph nil
-                                  (NodeFactory/createURI
-                                   "http://ndl.go.jp/dcndl/terms/titleTranscription")
-                                  nil))]
-        (is (= 1 (count title-triples)))
-        (is (= "らしょうもん"
-               (some-> title-triples first .getObject .getLiteralLexicalForm)))
-        (is (empty? (iterator-seq
-                     (.find graph nil
-                            (NodeFactory/createURI "https://w3id.org/abc/reading")
-                            nil))))
-        (is (empty? (iterator-seq
-                     (.find graph nil
-                            (NodeFactory/createURI
-                             "https://w3id.org/abc/copyrightExpired")
-                            nil))))
-        (doseq [flag [true false nil]]
-          (let [case-graph (metadata-record/record->graph
-                            (assoc-in record ["work" "copyright_expired"] flag))
-                rights (iterator-seq
-                        (.find case-graph nil
-                               (NodeFactory/createURI
-                                "http://purl.org/dc/terms/rights")
-                               nil))]
-            (is (empty? rights))))))))
+  (let [{:keys [record persons]} (example-metadata)
+        graph (metadata-record/record+persons->graph record persons)
+        title-triples (iterator-seq
+                       (.find graph nil
+                              (NodeFactory/createURI
+                               "http://ndl.go.jp/dcndl/terms/titleTranscription")
+                              nil))]
+    (is (= 1 (count title-triples)))
+    (is (= "らしょうもん"
+           (some-> title-triples first .getObject .getLiteralLexicalForm)))
+    (is (empty? (iterator-seq
+                 (.find graph nil
+                        (NodeFactory/createURI "https://w3id.org/abc/reading")
+                        nil))))
+    (is (empty? (iterator-seq
+                 (.find graph nil
+                        (NodeFactory/createURI
+                         "https://w3id.org/abc/copyrightExpired")
+                        nil))))
+    (doseq [flag [true false nil]]
+      (let [case-graph (metadata-record/record->graph
+                        (assoc-in record ["work" "copyright_expired"] flag))
+            rights (iterator-seq
+                    (.find case-graph nil
+                           (NodeFactory/createURI
+                            "http://purl.org/dc/terms/rights")
+                           nil))]
+        (is (empty? rights))))))
 
 (deftest optional-rights-shacl-contract-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "metadata-rights-shacl")
-    (fn []
-      (is (= :ok (validate-rights-values! [])))
-      (is (= :ok (validate-rights-values!
-                  ["https://creativecommons.org/publicdomain/mark/1.0/"])))
-      (let [invalid (try
-                      (validate-rights-values! ["https://example.invalid/rights"])
-                      nil
-                      (catch clojure.lang.ExceptionInfo exception exception))
-            duplicate (try
-                        (validate-rights-values!
-                         ["https://creativecommons.org/publicdomain/mark/1.0/"
-                          "http://rightsstatements.org/vocab/InC/1.0/"])
-                        nil
-                        (catch clojure.lang.ExceptionInfo exception exception))]
-        (is (instance? clojure.lang.ExceptionInfo invalid))
-        (is (instance? clojure.lang.ExceptionInfo duplicate))))))
+  (is (= :ok (validate-rights-values! [])))
+  (is (= :ok (validate-rights-values!
+              ["https://creativecommons.org/publicdomain/mark/1.0/"])))
+  (let [invalid (try
+                  (validate-rights-values! ["https://example.invalid/rights"])
+                  nil
+                  (catch clojure.lang.ExceptionInfo exception exception))
+        duplicate (try
+                    (validate-rights-values!
+                     ["https://creativecommons.org/publicdomain/mark/1.0/"
+                      "http://rightsstatements.org/vocab/InC/1.0/"])
+                    nil
+                    (catch clojure.lang.ExceptionInfo exception exception))]
+    (is (instance? clojure.lang.ExceptionInfo invalid))
+    (is (instance? clojure.lang.ExceptionInfo duplicate))))
 
 (deftest metadata-bundle-helper-contract-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "metadata-bundle-helper")
-    (fn []
-      (let [args {:record-path metadata-record-path
-                  :manifest-path manifest-path
-                  :persons-dir "examples/v0/example-persons"
-                  :record-schema-path "schemas/metadata-record.schema.json"
-                  :person-schema-path "schemas/person-record.schema.json"
-                  :ttl-path "examples/v0/example-work/metadata-record.ttl"
-                  :shapes-graph (shapes-graph)}]
-        (files/read-json "schemas/metadata-record.schema.json")
-        (files/read-json "schemas/person-record.schema.json")
-        (files/read-text "examples/v0/example-work/metadata-record.ttl")
-        (is (nil? (validate/validate-metadata-bundle! args)))))))
+  (let [args {:record-path metadata-record-path
+              :manifest-path manifest-path
+              :persons-dir "examples/v0/example-persons"
+              :record-schema-path "schemas/metadata-record.schema.json"
+              :person-schema-path "schemas/person-record.schema.json"
+              :ttl-path "examples/v0/example-work/metadata-record.ttl"
+              :shapes-graph (shapes-graph)}]
+    (files/read-json "schemas/metadata-record.schema.json")
+    (files/read-json "schemas/person-record.schema.json")
+    (files/read-text "examples/v0/example-work/metadata-record.ttl")
+    (is (nil? (validate/validate-metadata-bundle! args)))))

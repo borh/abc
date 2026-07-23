@@ -1,6 +1,5 @@
 (ns abc.tools.hash
   (:require [abc.tools.jcs :as jcs]
-            [abc.tools.evidence-io :as evidence-io]
             [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.string :as string]
@@ -21,7 +20,7 @@
   (sha256-bytes (.getBytes s "UTF-8")))
 
 (defn sha256-file [file]
-  (with-open [in (io/input-stream (io/file (evidence-io/record-read! file)))]
+  (with-open [in (io/input-stream (io/file file))]
     (let [digest (MessageDigest/getInstance "SHA-256")
           buffer (byte-array 8192)]
       (loop []
@@ -69,4 +68,4 @@
   (format-sha256 (sha256-string (abc-legacy-json-c14n-v0 value))))
 
 (defn byte-length [file]
-  (.length (io/file (evidence-io/record-read! file))))
+  (.length (io/file file)))

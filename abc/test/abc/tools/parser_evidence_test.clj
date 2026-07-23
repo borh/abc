@@ -1,6 +1,5 @@
 (ns abc.tools.parser-evidence-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
-            [abc.tools.files :as files]
+  (:require
             [abc.tools.malli :as am]
             [abc.tools.hash :as hash]
             [abc.tools.parser-evidence :as parser-evidence]
@@ -17,20 +16,6 @@
 ;; Install (compose registry + instrument m/=> contracts) once for the whole
 ;; namespace so the instrumentation-activation test below actually bites.
 (use-fixtures :once (fn [f] (am/install!) (f)))
-
-(deftest historical-parser-citations-contract
-  (runtime-inputs/with-validated-read-trace!
-    {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
-     :descriptor {:path "abc/docs/evidence/adr-capture/parser-citation-identity.edn"
-                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-citation-identity.edn")
-                                 :runtime-input-manifest #(str "abc/" %))}}
-    (fn []
-      (doseq [path ["data/parser-evidence-citations.edn"
-                    "../ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md"
-                    "../ab-validator/docs/superpowers/reports/2026-07-08-parser-fork-candidacy-faithful-comparison.md"
-                    "../ab-validator/docs/superpowers/specs/2026-07-09-parser-comparison-followups-handoff.md"]]
-        (files/read-text path))
-      (is true))))
 
 (def valid-entry
   {:evidence_id "ab-validator/example"

@@ -1,4 +1,0 @@
-{:schema-version :abc-adr-runtime-inputs-v1,
- :paths
- ["abc/schemas/metadata-record.schema.json"
-  "abc/schemas/source-bundle.schema.json"]}

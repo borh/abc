@@ -1,1 +1,0 @@
-{:schema-version :abc-adr-operational-closure-v1, :owned-namespace-prefixes [abc], :entrypoint-namespaces [abc.tools.tei-test], :paths ["src/abc/tools/evidence_io.clj" "src/abc/tools/path_containment.clj" "src/abc/tools/tei.clj" "test/abc/test_fs.clj" "test/abc/tools/tei_test.clj"]}

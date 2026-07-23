@@ -33,9 +33,6 @@
     abc.tools.soranoha-build-publication
     {:operations #{Files/move}
      :rationale "Publication installation requires an atomic NIO move"}
-    abc.tools.evidence-output
-    {:operations #{Files/exists Files/createLink Files/deleteIfExists}
-     :rationale "Exclusive evidence publication requires no-follow existence, hard-link linearization, and failure cleanup"}
     abc.tools.parser-rq-capture
     {:operations #{Files/isSymbolicLink Files/isRegularFile Files/readAllBytes}
      :rationale "Immutable blob authentication requires no-follow path checks and a single byte read"}})
@@ -256,8 +253,6 @@
            #{Files/createTempFile Files/copy Files/deleteIfExists}
            abc.tools.diagram.presentation-svg #{Files/readAllBytes}
            abc.tools.soranoha-build-publication #{Files/move}
-           abc.tools.evidence-output
-           #{Files/exists Files/createLink Files/deleteIfExists}
            abc.tools.files #{Files/deleteIfExists}
            abc.tools.parser-rq-capture
            #{Files/isRegularFile Files/isSymbolicLink Files/readAllBytes}}

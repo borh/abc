@@ -1,9 +1,0 @@
-{:schema-version :abc-adr-runtime-inputs-v1,
- :paths
- ["abc/examples/ab-validator-output/divergence.json"
-  "abc/examples/ab-validator-output/manifest-inputs.json"
-  "abc/examples/ab-validator-output/parser-ir.json"
-  "abc/examples/ab-validator-output/run-summary.jsonl"
-  "abc/examples/ab-validator-output/source-region-coverage.json"
-  "abc/examples/ab-validator-output/warnings.jsonl"
-  "abc/schemas/manifest.schema.json"]}

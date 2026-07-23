@@ -1,10 +1,8 @@
 (ns abc.tools.manifest-index-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
-            [abc.tools.analysis-identity :as analysis-identity]
-            [abc.tools.evidence-test-support :as evidence-support]
+  (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
             [abc.tools.manifest-index :as manifest-index]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :refer [deftest is]]))
 
 (defn manifest
   [artifact-id content-hash validation-status]
@@ -198,8 +196,22 @@
                                        "passed")}))))
 
 (defn- reproducibility-conflicts-assertions []
-  (do
-    (is (empty?
+  (is (empty?
+       (manifest-index/reproducibility-conflicts
+        [(manifest-index/manifest->index-entry
+          "a.manifest.json"
+          (manifest "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+                    "passed"))
+         (manifest-index/manifest->index-entry
+          "b.manifest.json"
+          (manifest "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+                    "warning"))])))
+  (is (= [{"artifact_id" "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+           "content_hashes" ["sha256:1111111111111111111111111111111111111111111111111111111111111111"
+                             "sha256:2222222222222222222222222222222222222222222222222222222222222222"]
+           "manifest_paths" ["a.manifest.json" "b.manifest.json"]}]
          (manifest-index/reproducibility-conflicts
           [(manifest-index/manifest->index-entry
             "a.manifest.json"
@@ -209,29 +221,11 @@
            (manifest-index/manifest->index-entry
             "b.manifest.json"
             (manifest "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                      "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+                      "sha256:2222222222222222222222222222222222222222222222222222222222222222"
                       "warning"))]))))
-  (do
-    (is (= [{"artifact_id" "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-             "content_hashes" ["sha256:1111111111111111111111111111111111111111111111111111111111111111"
-                               "sha256:2222222222222222222222222222222222222222222222222222222222222222"]
-             "manifest_paths" ["a.manifest.json" "b.manifest.json"]}]
-           (manifest-index/reproducibility-conflicts
-            [(manifest-index/manifest->index-entry
-              "a.manifest.json"
-              (manifest "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                        "sha256:1111111111111111111111111111111111111111111111111111111111111111"
-                        "passed"))
-             (manifest-index/manifest->index-entry
-              "b.manifest.json"
-              (manifest "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                        "sha256:2222222222222222222222222222222222222222222222222222222222222222"
-                        "warning"))])))))
 
 (deftest reproducibility-conflicts-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0001-c5-reproducibility-conflict")
-    (fn [] (reproducibility-conflicts-assertions))))
+  (reproducibility-conflicts-assertions))
 
 (deftest parser-ir-producer-lookup-test
   (let [producer-id (files/example-hash "31")

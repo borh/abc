@@ -1,6 +1,5 @@
 (ns abc.tools.parser-phase5-frozen-tuple-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.parser-phase5-frozen-tuple :as frozen]
             [babashka.fs :as fs]
@@ -34,18 +33,6 @@
 (def checkpoint-path (nth evidence-files 7))
 (def registry-path (nth evidence-files 8))
 (def schema-path (nth evidence-files 9))
-
-(deftest phase5-frozen-tuple-contract
-  (runtime-inputs/with-validated-read-trace!
-    {:identity-root ".." :cwd-root "." :repo-root "." :workspace-root ".."
-     :descriptor {:path "abc/docs/evidence/adr-capture/parser-phase5-frozen-tuple.edn"
-                  :value (update (files/read-edn "docs/evidence/adr-capture/parser-phase5-frozen-tuple.edn")
-                                 :runtime-input-manifest #(str "abc/" %))}}
-    (fn []
-      (doseq [path evidence-files]
-        (files/read-text (fs/file ".." path)))
-      (is (= 10 (count evidence-files)))
-      (is true))))
 
 (def full-key-paths
   [[:aat_version] [:aat_adapter] [:aat_adapter_version]

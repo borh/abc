@@ -1,8 +1,5 @@
 (ns abc.tools.materialize-import-test
-  (:require [abc.tools.adr-evidence-runtime-inputs :as runtime]
-            [abc.tools.evidence-io :as evidence-io]
-            [abc.tools.evidence-test-support :as evidence-support]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-import :as materialize]
             [abc.tools.validate-design-bundle :as validate]
@@ -40,13 +37,10 @@
     :generated-at materialize/default-generated-at}))
 
 (deftest v0-identity-json-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0010-c3-v0-identity-json")
-    (fn []
-      (is (= "{\"a\":null,\"b\":\"x\",\"c\":\"quote\\\"slash\\\\\"}"
-             (manifest/jcs-json {"b" "x"
-                                 "a" nil
-                                 "c" "quote\"slash\\"}))))))
+  (is (= "{\"a\":null,\"b\":\"x\",\"c\":\"quote\\\"slash\\\\\"}"
+         (manifest/jcs-json {"b" "x"
+                             "a" nil
+                             "c" "quote\"slash\\"}))))
 
 (deftest schema-hash-test
   (is (= "sha256:8813e7142aa81afebb7de89f2c760afd0068cd72c1357ce0a255ea88f7650bc3"
@@ -55,16 +49,13 @@
             (manifest/schema-hash "schemas/manifest.schema.json"))))
 
 (deftest diagnostic-schema-hash-requires-the-exact-current-contract-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "diagnostic-schema-exact-current")
-    (fn []
-      (let [mismatch "sha256:9999999999999999999999999999999999999999999999999999999999999999"
-            errors (validate/schema-hash-errors
-                    (temp-manifest-inputs {"diagnostic_schema_hash" mismatch}))]
-        (is (= 1 (count errors)))
-        (is (re-find (re-pattern (str "diagnostic_schema_hash " mismatch
-                                      " does not match ABC diagnostic schema hash"))
-                     (first errors)))))))
+  (let [mismatch "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+        errors (validate/schema-hash-errors
+                (temp-manifest-inputs {"diagnostic_schema_hash" mismatch}))]
+    (is (= 1 (count errors)))
+    (is (re-find (re-pattern (str "diagnostic_schema_hash " mismatch
+                                  " does not match ABC diagnostic schema hash"))
+                 (first errors)))))
 
 (deftest artifact-id-test
   (let [identity-object {"b" "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
@@ -74,22 +65,18 @@
     (is (not= (get identity-object "b") artifact-id))))
 
 (deftest deterministic-json-writer-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0011-c2-deterministic-json-writer")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [dir]
-          (let [file-a (fs/file dir "a.json")
-                file-b (fs/file dir "b.json")
-                value-a {"z" [{"b" "2" "a" "1"}]
-                         "a" {"d" "4" "c" "3"}}
-                value-b {"a" {"c" "3" "d" "4"}
-                         "z" [{"a" "1" "b" "2"}]}]
-            (manifest/write-json-file! file-a value-a)
-            (manifest/write-json-file! file-b value-b)
-            (is (= (files/read-text file-a) (files/read-text file-b)))
-            (is (= "{\n  \"a\":\n  {\n    \"c\": \"3\",\n    \"d\": \"4\"\n  },\n  \"z\": [\n    {\n      \"a\": \"1\",\n      \"b\": \"2\"\n    }]\n}\n"
-                   (files/read-text file-a)))))))))
+  (fs/with-temp-dir [dir {:prefix "abc-test-"}]
+    (let [file-a (fs/file dir "a.json")
+          file-b (fs/file dir "b.json")
+          value-a {"z" [{"b" "2" "a" "1"}]
+                   "a" {"d" "4" "c" "3"}}
+          value-b {"a" {"c" "3" "d" "4"}
+                   "z" [{"a" "1" "b" "2"}]}]
+      (manifest/write-json-file! file-a value-a)
+      (manifest/write-json-file! file-b value-b)
+      (is (= (files/read-text file-a) (files/read-text file-b)))
+      (is (= "{\n  \"a\":\n  {\n    \"c\": \"3\",\n    \"d\": \"4\"\n  },\n  \"z\": [\n    {\n      \"a\": \"1\",\n      \"b\": \"2\"\n    }]\n}\n"
+             (files/read-text file-a))))))
 
 (deftest materialize-import-test
   (let [out-dir (java.nio.file.Files/createTempDirectory "abc-materialize-import" (make-array java.nio.file.attribute.FileAttribute 0))
@@ -247,97 +234,70 @@
         (doseq [f (reverse (file-seq out-file-2))] (.delete f))))))
 
 (deftest materialized-content-hashes-match-imported-files-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0009-c2-materialized-content-hashes")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [output]
-          (let [generated (materialize-fixture! output)
-                parser (files/read-json (:parser-ir generated))
-                warnings (files/read-json (:warnings generated))]
-            (is (= (str "sha256:" (files/sha256-file
-                                   "examples/ab-validator-output/parser-ir.json"))
-                   (get-in parser ["content" "content_hash"])))
-            (is (= (str "sha256:" (files/sha256-file
-                                   "examples/ab-validator-output/warnings.jsonl"))
-                   (get-in warnings ["content" "content_hash"])))))))))
+  (fs/with-temp-dir [output {:prefix "abc-test-"}]
+    (let [generated (materialize-fixture! output)
+          parser (files/read-json (:parser-ir generated))
+          warnings (files/read-json (:warnings generated))]
+      (is (= (str "sha256:" (files/sha256-file
+                             "examples/ab-validator-output/parser-ir.json"))
+             (get-in parser ["content" "content_hash"])))
+      (is (= (str "sha256:" (files/sha256-file
+                             "examples/ab-validator-output/warnings.jsonl"))
+             (get-in warnings ["content" "content_hash"]))))))
 
 (deftest generated-artifact-ids-differ-from-content-hashes-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options
-     "adr-0009-c4-generated-artifact-ids-vs-content-hashes")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [output]
-          (doseq [manifest-path (vals (materialize-fixture! output))
-                  :let [value (files/read-json manifest-path)]]
-            (is (not= (get value "artifact_id")
-                      (get-in value ["content" "content_hash"])))))))))
+  (fs/with-temp-dir [output {:prefix "abc-test-"}]
+    (doseq [manifest-path (vals (materialize-fixture! output))
+            :let [value (files/read-json manifest-path)]]
+      (is (not= (get value "artifact_id")
+                (get-in value ["content" "content_hash"]))))))
 
 (deftest materialized-manifest-schema-hash-matches-bundled-jcs-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options
-     "adr-0010-c1-materialized-bundled-schema-jcs-hash")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [output]
-          (let [expected (manifest/schema-hash "schemas/manifest.schema.json")]
-            (doseq [manifest-path (vals (materialize-fixture! output))]
-              (is (= expected
-                     (get-in (files/read-json manifest-path)
-                             ["manifest_identity_object" "manifest_schema_hash"]))))))))))
+  (fs/with-temp-dir [output {:prefix "abc-test-"}]
+    (let [expected (manifest/schema-hash "schemas/manifest.schema.json")]
+      (doseq [manifest-path (vals (materialize-fixture! output))]
+        (is (= expected
+               (get-in (files/read-json manifest-path)
+                       ["manifest_identity_object" "manifest_schema_hash"])))))))
 
 (deftest materialized-parser-and-warning-artifact-ids-are-distinct-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0010-c2-materialized-artifact-ids-distinct")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [output]
-          (let [generated (materialize-fixture! output)]
-            (is (not= (get (files/read-json (:parser-ir generated)) "artifact_id")
-                      (get (files/read-json (:warnings generated)) "artifact_id")))))))))
+  (fs/with-temp-dir [output {:prefix "abc-test-"}]
+    (let [generated (materialize-fixture! output)]
+      (is (not= (get (files/read-json (:parser-ir generated)) "artifact_id")
+                (get (files/read-json (:warnings generated)) "artifact_id"))))))
 
 (deftest mapping-divergence-sidecar-selection-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0009-c3-mapping-divergence-sidecar")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [input]
-          (doseq [name ["parser-ir.json" "warnings.jsonl"
-                        "divergence.json" "divergence.jsonl"]]
-            (manifest/write-json-file! (fs/file input name) {}))
-          (let [parser-manifest (materialize/parser-ir-manifest
-                                 input (temp-manifest-inputs {})
-                                 materialize/default-generated-at)
-                canonical (->> (get parser-manifest "sidecars")
-                               (filter (fn [item]
-                                         (= "mapping-divergence" (get item "role"))))
-                               first)]
-            (is (= "divergence.json" (get canonical "path_hint"))))))
-      (evidence-io/with-owned-ephemeral-root
-        (fn [input]
-          (doseq [name ["parser-ir.json" "warnings.jsonl" "divergence.jsonl"]]
-            (manifest/write-json-file! (fs/file input name) {}))
-          (let [parser-manifest (materialize/parser-ir-manifest
-                                 input (temp-manifest-inputs {})
-                                 materialize/default-generated-at)
-                legacy (->> (get parser-manifest "sidecars")
-                            (filter (fn [item]
-                                      (= "mapping-divergence" (get item "role"))))
-                            first)]
-            (is (= "divergence.jsonl" (get legacy "path_hint")))))))))
+  (fs/with-temp-dir [input {:prefix "abc-test-"}]
+    (doseq [name ["parser-ir.json" "warnings.jsonl"
+                  "divergence.json" "divergence.jsonl"]]
+      (manifest/write-json-file! (fs/file input name) {}))
+    (let [parser-manifest (materialize/parser-ir-manifest
+                           input (temp-manifest-inputs {})
+                           materialize/default-generated-at)
+          canonical (->> (get parser-manifest "sidecars")
+                         (filter (fn [item]
+                                   (= "mapping-divergence" (get item "role"))))
+                         first)]
+      (is (= "divergence.json" (get canonical "path_hint")))))
+  (fs/with-temp-dir [input {:prefix "abc-test-"}]
+    (doseq [name ["parser-ir.json" "warnings.jsonl" "divergence.jsonl"]]
+      (manifest/write-json-file! (fs/file input name) {}))
+    (let [parser-manifest (materialize/parser-ir-manifest
+                           input (temp-manifest-inputs {})
+                           materialize/default-generated-at)
+          legacy (->> (get parser-manifest "sidecars")
+                      (filter (fn [item]
+                                (= "mapping-divergence" (get item "role"))))
+                      first)]
+      (is (= "divergence.jsonl" (get legacy "path_hint"))))))
 
 (deftest materialized-output-is-deterministic-test
-  (runtime/with-validated-read-trace!
-    (evidence-support/focused-trace-options "adr-0011-c3-two-run-byte-identity")
-    (fn []
-      (evidence-io/with-owned-ephemeral-root
-        (fn [root]
-          (let [output-a (fs/file root "a")
-                output-b (fs/file root "b")]
-            (materialize-fixture! output-a)
-            (materialize-fixture! output-b)
-            (is (= (files/read-text (fs/file output-a "parser-ir.manifest.json"))
-                   (files/read-text (fs/file output-b "parser-ir.manifest.json"))))
-            (is (= (files/read-text (fs/file output-a "warnings.manifest.json"))
-                   (files/read-text (fs/file output-b "warnings.manifest.json"))))))))))
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [output-a (fs/file root "a")
+          output-b (fs/file root "b")]
+      (materialize-fixture! output-a)
+      (materialize-fixture! output-b)
+      (is (= (files/read-text (fs/file output-a "parser-ir.manifest.json"))
+             (files/read-text (fs/file output-b "parser-ir.manifest.json"))))
+      (is (= (files/read-text (fs/file output-a "warnings.manifest.json"))
+             (files/read-text (fs/file output-b "warnings.manifest.json")))))))

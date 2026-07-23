@@ -23,8 +23,7 @@
    "Amends" :amends
    "Amended by" :amended-by
    "Depends on" :depends-on})
-(def evidence-prefixes ["test/" "fixtures/" "nix/"])
-(def ^:private evidence-roots #{"test" "fixtures" "nix"})
+(def evidence-prefixes ["test/" "fixtures/" "nix/" "docs/evidence/external/"])
 
 (defn- adr-markdown-filename? [filename]
   (boolean (re-matches #"\d{4}-.+\.md" filename)))
@@ -519,9 +518,10 @@
 (defn- evidence-path-state [repo-root path]
   (let [{:keys [state relative] :as contained}
         (containment/path-state repo-root path)
-        allowed-root-name (some-> relative (str/split #"[/\\]" 2) first)]
+        normalized (some-> relative (str/replace "\\" "/"))]
     (case state
-      :ok (if (contains? evidence-roots allowed-root-name)
+      :ok (if (and normalized
+                   (some #(str/starts-with? normalized %) evidence-prefixes))
             {:path (:path contained)}
             {:problem :evidence-path-traversal})
       :missing {:problem :missing-evidence-path}

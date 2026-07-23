@@ -6,6 +6,7 @@
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-decoded-utf8 :as decoded-utf8]
+            [abc.tools.parser-rq-diagnostic-gap :as diagnostic-gap]
             [abc.tools.parser-rq-source-recognition :as source-recognition]
             [abc.tools.schema :as schema]
             [clojure.string :as string]
@@ -61,14 +62,7 @@
   "sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5")
 
 (def ^:private diagnostic-gap-live-codes
-  ["source-contains-pua" "unclosed-bracket" "unmatched-close"
-   "accent-decomposition-applied" "unresolved-gaiji" "mismatched-container-close"
-   "empty-ruby-reading" "nested-ruby" "unrecognised-container-directive"
-   "tcy-target-not-found" "bouten-target-ambiguous" "forward-referent-not-stylable"
-   "break-in-single-line-container" "bracketed-kaeriten-no-pair"
-   "kaeriten-outside-kanbun" "mismatched-bouten-container" "non-canonical-directive"
-   "residual-annotation-marker" "unregistered-sentinel" "registry-out-of-order"
-   "registry-position-mismatch"])
+  diagnostic-gap/live-codes)
 
 (defn- unavailable
   [reason]

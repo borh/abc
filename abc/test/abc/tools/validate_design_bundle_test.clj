@@ -11,6 +11,7 @@
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-sentence-policy :as sentence-policy]
+            [abc.tools.parser-rq-diagnostic-gap :as diagnostic-gap]
             [abc.tools.parser-rq-source-recognition :as source-recognition]
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
@@ -596,20 +597,20 @@
                    (filter #(= "authorize_exact_span"
                                (get % "disposition"))
                            (get policy "rules")))))
-      (is (empty? (validate/parser-rq-diagnostic-gap-policy-errors policy))))
+      (is (empty? (diagnostic-gap/policy-errors policy))))
     (testing "unknown fields, codes, and selector ambiguity fail closed"
       (is (seq (schema/validation-errors raw-schema (assoc capture "unknown" true))))
       (is (seq (schema/validation-errors
                 raw-schema
                 (assoc-in capture ["data" 0 "code"] "future-code"))))
-      (is (seq (validate/parser-rq-raw-diagnostics-errors
+      (is (seq (diagnostic-gap/raw-diagnostics-errors
                 policy
                 (update capture "data" conj
                         (first (get capture "data")))
                 "本文\uE001終わり")))
-      (is (seq (validate/parser-rq-diagnostic-gap-policy-errors
+      (is (seq (diagnostic-gap/policy-errors
                 (update policy "rules" conj (first (get policy "rules"))))))
-      (is (seq (validate/parser-rq-diagnostic-gap-policy-errors
+      (is (seq (diagnostic-gap/policy-errors
                 (assoc-in policy ["rules" 20] (first (get policy "rules")))))))
     (testing "code, kind, severity, source, PUA, and interval rules are enforced"
       (doseq [invalid [(assoc-in capture ["data" 0 "kind"]
@@ -622,7 +623,7 @@
                                   dissoc "start")
                        (assoc-in capture ["data" 0 "span"]
                                  {"start" 1 "end" 2})]]
-        (is (seq (validate/parser-rq-raw-diagnostics-errors policy invalid "本文\uE001終わり")))))
+        (is (seq (diagnostic-gap/raw-diagnostics-errors policy invalid "本文\uE001終わり")))))
     (testing "unavailable results cannot claim intervals or totals"
       (is (seq (schema/validation-errors
                 result-schema
@@ -648,7 +649,7 @@
                        (get available "source_recognition_evidence"))))))
     (testing "R1 evidence identity is replay-resistant and coherent"
       (is (empty?
-           (validate/parser-rq-diagnostic-gap-result-coherence-errors
+           (diagnostic-gap/result-coherence-errors
             coherent-available recognition artifact-ref)))
       (doseq [mutated [(assoc-in coherent-available
                                  ["source_recognition_evidence" "value_hash"]
@@ -661,7 +662,7 @@
                                  ["source_recognition_evidence" "work_id"]
                                  "replayed-work")]]
         (is (seq
-             (validate/parser-rq-diagnostic-gap-result-coherence-errors
+             (diagnostic-gap/result-coherence-errors
               mutated recognition artifact-ref)))))))
 
 (defn- with-corpus-generation-ref [index]

@@ -188,7 +188,8 @@ fn collect_inline<'a>(node: &'a Value, path: &str, fragments: &mut Vec<VisibleFr
         }),
         // raw nodes are layout/markup markers, excluded from the visible
         // projection (see ab_plaintext::visible_text_projection); the
-        // source-order comparison walker keeps them on purpose.
+        // source-order comparison walker keeps them verbatim and the
+        // body-order property scrubs marker syntax from the whole projection.
         "raw" => {}
         "warigaki" => {
             for key in ["upper", "lower"] {

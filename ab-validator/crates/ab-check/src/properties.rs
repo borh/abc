@@ -79,7 +79,14 @@ impl Property for VisibleTextBodyOrder {
 
     fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation> {
         let source = normalize_visible(&source_projection::comparison_lossy_body(body_text(txt)));
-        let projection = normalize_visible(&comparison_visible_text_projection(aat));
+        // The projection re-emits Aozora marker syntax verbatim (raw nodes,
+        // and markers split across adjacent nodes such as a text `※` before a
+        // raw `［＃…］` description). The source side strips that syntax via
+        // comparison_lossy_body, so the projection must pass through the same
+        // scrubber for the two sides to be comparable.
+        let projection = normalize_visible(&source_projection::comparison_lossy_body(
+            &comparison_visible_text_projection(aat),
+        ));
         if projection.is_empty() || is_subsequence(&projection, &source) {
             Ok(())
         } else {
@@ -313,6 +320,56 @@ mod tests {
         });
 
         assert!(VisibleTextBodyOrder.check(txt, &aat).is_ok());
+    }
+
+    #[test]
+    fn visible_text_body_order_excludes_raw_marker_syntax() {
+        let txt = "一行目。\n［＃５字下げ］見出し［＃「見出し」は中見出し］\n二行目。\n";
+        let aat = serde_json::json!({
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "一行目。"},
+                    {
+                        "kind": "raw",
+                        "source": "［＃５字下げ］",
+                        "x-source-marker-kind": "indent",
+                        "x-provenance": "parser-derived"
+                    },
+                    {"kind": "text", "value": "見出し"},
+                    {
+                        "kind": "raw",
+                        "source": "［＃「見出し」は中見出し］",
+                        "x-source-marker-kind": "directive",
+                        "x-provenance": "parser-derived"
+                    },
+                    {"kind": "text", "value": "二行目。"}
+                ]
+            }]
+        });
+
+        assert!(VisibleTextBodyOrder.check(txt, &aat).is_ok());
+    }
+
+    #[test]
+    fn visible_text_body_order_still_checks_raw_gap_text_order() {
+        let txt = "甲乙丙。\n";
+        let aat = serde_json::json!({
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {
+                        "kind": "raw",
+                        "source": "丙",
+                        "x-source-marker-kind": "unparsed-source-gap",
+                        "x-provenance": "source-derived"
+                    },
+                    {"kind": "text", "value": "甲"}
+                ]
+            }]
+        });
+
+        assert!(VisibleTextBodyOrder.check(txt, &aat).is_err());
     }
 
     #[test]

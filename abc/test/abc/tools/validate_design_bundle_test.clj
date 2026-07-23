@@ -11,6 +11,7 @@
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-sentence-policy :as sentence-policy]
+            [abc.tools.parser-rq-classified-source :as classified-source]
             [abc.tools.parser-rq-diagnostic-gap :as diagnostic-gap]
             [abc.tools.parser-rq-source-recognition :as source-recognition]
             [abc.tools.schema :as schema]
@@ -958,7 +959,7 @@
                      "bare_cr_normalization" "bare_cr"
                      "accent_normalization" "accent_decomposition"}
                     (get rule "construct_id"))]))))
-    (is (empty? (validate/parser-rq-classified-source-characterization-errors
+    (is (empty? (classified-source/characterization-errors
                  policy
                  (files/read-json
                   (str root "/characterization-policy-map.json")))))
@@ -970,7 +971,7 @@
             decoded (slurp (str capture-root "/decoded.txt"))]
         (is (nil? (schema/validation-errors ledger-schema capture-ledger)))
         (is (nil? (schema/validation-errors generation-schema capture-generation)))
-        (is (empty? (validate/parser-rq-classified-source-ledger-errors
+        (is (empty? (classified-source/ledger-errors
                      policy capture-ledger decoded)))
         (is (empty? (validate/parser-rq-capture-generation-errors
                      capture-generation)))))
@@ -979,9 +980,9 @@
       (is (seq (schema/validation-errors ledger-schema (assoc ledger "unknown" true))))
       (is (seq (schema/validation-errors generation-schema
                                          (assoc generation "unknown" true))))
-      (is (seq (validate/parser-rq-classified-source-policy-errors
+      (is (seq (classified-source/policy-errors
                 (update policy "rules" conj (first (get policy "rules"))))))
-      (is (seq (validate/parser-rq-classified-source-policy-errors
+      (is (seq (classified-source/policy-errors
                 (update policy "accent_mappings" conj
                         (assoc (first (get policy "accent_mappings"))
                                "normalized" "x"))))))
@@ -1034,10 +1035,10 @@
                      (assoc-in normalization ["entries" 0 "target_identity"
                                               "relation"] "preserves")]]
         (is (nil? (schema/validation-errors ledger-schema normalization)))
-        (is (empty? (validate/parser-rq-classified-source-ledger-errors
+        (is (empty? (classified-source/ledger-errors
                      policy normalization "\r\n")))
         (doseq [ledger invalid]
-          (is (seq (validate/parser-rq-classified-source-ledger-errors
+          (is (seq (classified-source/ledger-errors
                     policy ledger "\r\n"))))
         (is (seq (schema/validation-errors
                   ledger-schema
@@ -1068,13 +1069,13 @@
                                        "source_bytes_hash"]
                                       "sha256:36d9432b7d410d455ac3655e4a7e83d430ffe89e6dfcd5a2805795e7f8bd9236"))]
         (is (nil? (schema/validation-errors ledger-schema accent)))
-        (is (empty? (validate/parser-rq-classified-source-ledger-errors
+        (is (empty? (classified-source/ledger-errors
                      policy accent "〔cafe'〕")))
-        (is (seq (validate/parser-rq-classified-source-ledger-errors
+        (is (seq (classified-source/ledger-errors
                   policy arbitrary "〔cafe'〕")))
-        (is (seq (validate/parser-rq-classified-source-ledger-errors
+        (is (seq (classified-source/ledger-errors
                   policy wrong-source "〔cafe`〕")))
-        (is (seq (validate/parser-rq-classified-source-ledger-errors
+        (is (seq (classified-source/ledger-errors
                   policy unsupported "〔q^〕")))))
     (testing "structural witnesses are role-specific and span-bound"
       (let [structural (files/read-json (str root "/structural-ledger.json"))
@@ -1090,7 +1091,7 @@
                                          (get % "disposition"))
                                      (get policy "rules"))]
         (is (nil? (schema/validation-errors ledger-schema structural)))
-        (is (empty? (validate/parser-rq-classified-source-ledger-errors
+        (is (empty? (classified-source/ledger-errors
                      policy structural "\n")))
         (doseq [rule structural-rules
                 :let [source-form (get forms (get rule "witness_kind"))
@@ -1105,9 +1106,9 @@
                                         "start" 0 "end" end
                                         "source_form" source-form}))
                       ledger-for-rule (assoc structural "entries" [entry])]]
-          (is (empty? (validate/parser-rq-classified-source-ledger-errors
+          (is (empty? (classified-source/ledger-errors
                        policy ledger-for-rule source-form)))
-          (is (seq (validate/parser-rq-classified-source-ledger-errors
+          (is (seq (classified-source/ledger-errors
                     policy
                     (assoc-in ledger-for-rule ["entries" 0 "source_role"]
                               "publication_metadata")
@@ -1118,7 +1119,7 @@
                                                "end"] 2)
                          (assoc-in structural ["entries" 0 "construct_witness"
                                                "source_form"] "x")]]
-          (is (seq (validate/parser-rq-classified-source-ledger-errors
+          (is (seq (classified-source/ledger-errors
                     policy invalid "\n"))))
         (let [opaque-entry {"start" 0 "end" 3
                             "construct_id" "recovered_verbatim"
@@ -1130,14 +1131,14 @@
                             {"construct_id" "recovered_verbatim"
                              "start" 0 "end" 3 "source_form" "※"}}
               opaque (assoc structural "entries" [opaque-entry])]
-          (is (empty? (validate/parser-rq-classified-source-ledger-errors
+          (is (empty? (classified-source/ledger-errors
                        policy opaque "※")))
-          (is (seq (validate/parser-rq-classified-source-ledger-errors
+          (is (seq (classified-source/ledger-errors
                     policy
                     (assoc-in opaque ["entries" 0 "evidence_class"]
                               "accepted_text")
                     "※")))
-          (is (seq (validate/parser-rq-classified-source-ledger-errors
+          (is (seq (classified-source/ledger-errors
                     policy
                     (-> opaque
                         (assoc-in ["entries" 0 "end"] 1)

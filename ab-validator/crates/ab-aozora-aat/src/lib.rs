@@ -193,6 +193,27 @@ fn line_ranges(text: &str) -> Vec<Range<usize>> {
     out
 }
 
+/// Terminator-inclusive per-line ranges over a source-gap slice, with
+/// terminator-only lines (blank lines) coalesced into the preceding range so
+/// a blank run stays with the paragraph it ends rather than forming a
+/// whitespace-only paragraph of its own. A gap that begins with a terminator
+/// keeps that terminator as its own leading range: it ends the line the
+/// PREVIOUS inline node (e.g. a line-final ruby) sits on, and the paragraph
+/// accumulator attaches it there.
+fn paragraph_segments(source: &str) -> Vec<Range<usize>> {
+    let mut out: Vec<Range<usize>> = Vec::new();
+    for range in line_ranges(source) {
+        let blank = source[range.clone()]
+            .chars()
+            .all(|ch| ch == '\n' || ch == '\r');
+        match out.last_mut() {
+            Some(previous) if blank => previous.end = range.end,
+            _ => out.push(range),
+        }
+    }
+    out
+}
+
 #[derive(Debug, Deserialize, Clone, Copy)]
 struct Span {
     start: usize,
@@ -963,7 +984,11 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
             index += 1;
             continue;
         }
+        let ends_line = ends_source_line(&node);
         paragraph.push(node);
+        if ends_line {
+            push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+        }
         index += 1;
     }
 
@@ -972,6 +997,26 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
         blocks.push(json!({"kind": "paragraph", "content": []}));
     }
     blocks
+}
+
+/// True when this inline node carries the end of a source line: a gap-derived
+/// text or unparsed-source-gap raw node whose value ends with a line
+/// terminator (gap segmentation is terminator-inclusive, see
+/// `paragraph_segments`). The paragraph accumulator flushes after such a
+/// node, so each body paragraph holds exactly one source line plus any blank
+/// run that follows it.
+fn ends_source_line(node: &Value) -> bool {
+    let value = match node.get("kind").and_then(Value::as_str) {
+        Some("text") => node.get("value").and_then(Value::as_str),
+        Some("raw")
+            if node.get("x-source-marker-kind").and_then(Value::as_str)
+                == Some("unparsed-source-gap") =>
+        {
+            node.get("source").and_then(Value::as_str)
+        }
+        _ => None,
+    };
+    value.is_some_and(|value| value.ends_with(['\n', '\r']))
 }
 
 #[allow(
@@ -1692,21 +1737,31 @@ fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usi
     if source.is_empty() || source == "｜" {
         return;
     }
-    let span = Span { start, end };
-    if contains_aozora_markup(source) {
-        content.push(json!({
-            "kind": "raw",
-            "source": source,
-            "x-provenance": "source-derived",
-            "x-source-marker-kind": "unparsed-source-gap",
-            "span": span_json(&span, &decoded.span_ctx)
-        }));
-    } else {
-        content.push(json!({
-            "kind": "text",
-            "value": source,
-            "span": span_json(&span, &decoded.span_ctx)
-        }));
+    // Emit the gap one source line at a time (terminator-inclusive) so the
+    // block builder can end a paragraph at each line end. Splitting here is
+    // load-bearing for spans: this is the last point where the body-relative
+    // offsets are available to re-map each line's byte/line coordinates.
+    for segment in paragraph_segments(source) {
+        let segment_source = &source[segment.clone()];
+        let span = Span {
+            start: start + segment.start,
+            end: start + segment.end,
+        };
+        if contains_aozora_markup(segment_source) {
+            content.push(json!({
+                "kind": "raw",
+                "source": segment_source,
+                "x-provenance": "source-derived",
+                "x-source-marker-kind": "unparsed-source-gap",
+                "span": span_json(&span, &decoded.span_ctx)
+            }));
+        } else {
+            content.push(json!({
+                "kind": "text",
+                "value": segment_source,
+                "span": span_json(&span, &decoded.span_ctx)
+            }));
+        }
     }
 }
 
@@ -2228,14 +2283,21 @@ mod tests {
             .unwrap_or_else(|| panic!("no span at decoded byte_start 4: {spans:?}"));
         assert_eq!(page_break["byte_end"], 25);
         assert_eq!(page_break["line_start"], 2);
-        // The trailing gap "\nい\n" ← decoded "\rい\r" = bytes 25..30:
-        // starts on line 2 (the \r closing the directive line), ends on
-        // line 3 (line_of(29), the い line).
+        // The trailing gap "\nい\n" ← decoded "\rい\r" = bytes 25..30 is
+        // emitted per line: the \r closing the directive line (25..26,
+        // line 2) and the い line with its terminator (26..30, line 3).
         assert!(
             spans
                 .iter()
-                .any(|s| s["line_start"] == 2 && s["line_end"] == 3),
-            "no span reaching real line 3: {spans:?}"
+                .any(|s| s["byte_start"] == 25 && s["byte_end"] == 26 && s["line_start"] == 2),
+            "no line-2 terminator span: {spans:?}"
+        );
+        assert!(
+            spans.iter().any(|s| s["byte_start"] == 26
+                && s["byte_end"] == 30
+                && s["line_start"] == 3
+                && s["line_end"] == 3),
+            "no span for the real line-3 い line: {spans:?}"
         );
     }
 
@@ -2273,6 +2335,48 @@ mod tests {
     /// resulting AAT `Value`.
     fn aat_value_for(src: &str) -> Value {
         serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn body_lines_become_separate_paragraphs() {
+        let document = aat_value_for("一行目。\n\n　二行目。\n");
+        let blocks = document["blocks"].as_array().unwrap();
+        assert_eq!(blocks.len(), 2, "{blocks:?}");
+        for block in blocks {
+            assert_eq!(block["kind"], "paragraph");
+        }
+        let first = blocks[0]["content"].as_array().unwrap();
+        assert_eq!(first.len(), 1);
+        // Terminator-inclusive line; the following blank line coalesces into
+        // the paragraph it ends, so no whitespace-only paragraph appears.
+        assert_eq!(first[0]["value"], "一行目。\n\n");
+        assert_eq!(first[0]["span"]["byte_start"], 0);
+        assert_eq!(first[0]["span"]["byte_end"], 14);
+        assert_eq!(first[0]["span"]["line_start"], 1);
+        let second = blocks[1]["content"].as_array().unwrap();
+        assert_eq!(second.len(), 1);
+        assert_eq!(second[0]["value"], "　二行目。\n");
+        assert_eq!(second[0]["span"]["byte_start"], 14);
+        assert_eq!(second[0]["span"]["byte_end"], 30);
+        assert_eq!(second[0]["span"]["line_start"], 3);
+    }
+
+    #[test]
+    fn ruby_led_line_starts_its_own_paragraph() {
+        let document = aat_value_for("本文《ほんぶん》続き。\n吾輩《わがはい》は走る。\n");
+        let blocks = document["blocks"].as_array().unwrap();
+        assert_eq!(blocks.len(), 2, "{blocks:?}");
+        let first_kinds: Vec<&str> = blocks[0]["content"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|node| node["kind"].as_str().unwrap())
+            .collect();
+        // ruby + rest-of-line text (with its terminator)
+        assert_eq!(first_kinds, ["ruby", "text"]);
+        let second = blocks[1]["content"].as_array().unwrap();
+        assert_eq!(second[0]["kind"], "ruby");
+        assert_eq!(second[0]["base"], "吾輩");
     }
 
     /// Depth-first search over `blocks`/`content`/`children` for the first

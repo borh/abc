@@ -4586,10 +4586,11 @@ fn adapter_conversion_spans_address_full_source_across_body_and_terminal_provena
         .expect("a body node must span across the sanitizer collision");
     let start = post_collision["span"]["start"].as_u64().unwrap() as usize;
     let end = post_collision["span"]["end"].as_u64().unwrap() as usize;
-    assert_eq!(
-        &decoded.text[start..end],
-        "作品名\r\n著者名\r\n\r\n本\u{e001}文です"
-    );
+    // Per-line paragraph segmentation makes the collision-crossing node the
+    // 本…文です line itself (offsets are projected-stream byte offsets, so the
+    // sanitizer's \r\n→\n width loss surfaces as the preceding terminator
+    // bytes at the slice head — previously hidden inside one whole-body node).
+    assert_eq!(&decoded.text[start..end], "\n\r\n本\u{e001}文です");
     assert_eq!(
         &decoded.text[post_collision_start..post_collision_end],
         "文です"

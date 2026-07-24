@@ -29,14 +29,18 @@ authenticated source + admitted parser/mapping/policies
 
 `soranoha build-publication` is the sole release assembler and installer.
 `materialize-publication!` is the sole renderer of the canonical per-work
-publication artifact set. `release-admissible?` is a pure verifier over the
-closed index and explicit authoritative policy values.
+publication artifact set. Release admissibility is decided by
+`verify-release-root!`, which recomputes the closed index and loads the
+authority values. `release-admissible?` is a pure helper over those computed
+values. The fail-closed guarantee belongs to the sole release-facing call
+graph: only a result returned by `verify-release-root!` may control
+installation and release-facing success.
 
 This is intentionally more precise than saying that only one command may write
 TEI or plaintext. Qualification and fixture tools need to render candidate
 artifacts. They do not make releases. Candidate bytes belong to a release only
 when `build-publication` closes over their identities in the authenticated
-index and `release-admissible?` returns no problems.
+index and its fresh `verify-release-root!` result contains no problems.
 
 The simplification is therefore:
 
@@ -58,12 +62,21 @@ The design uses distinct words for distinct things:
 - **Release index** — the immutable, hash-authenticated closure of selected
   inputs, artifact references, policies, and failures. The direct publication
   protocol is the planned `snapshot-index.json` version 0.2.0 successor.
+  “Release index” names its role; the concrete
+  `build-snapshot-index`/`write-snapshot-index!` names continue to name the
+  file contract they construct. Verification must distinguish those retained
+  value functions from the deleted Soranoha dispatcher commands rather than
+  renaming production code to satisfy an absence grep.
 - **Installation** — atomically makes a completed or diagnostic run root
   visible at an output place.
-- **Release admissibility** — the result of a pure, fail-closed predicate over
-  a candidate root's closed index and explicit current decision, registry, and
-  publication-policy values. It returns `{admissible?, problems}` and writes no
-  receipt. Installation does not imply admissibility.
+- **Release admissibility** — the verdict of recomputing a candidate root's
+  closed index against explicit current decision, registry, and
+  publication-policy values. The impure verifier (`verify-release-root!`)
+  computes the closure and authority hashes; the pure predicate
+  (`release-admissible?`) projects `{admissible?, problems}` from that computed
+  closure and writes no receipt. The pure helper is not itself an authorization
+  boundary; the build may report release success only from the verifier's
+  result. Installation does not imply admissibility.
 - **Operational trace** — plans, timestamps, concurrency decisions, cache
   events, temporary paths, and step records. These explain a run but do not
   identify a release.
@@ -130,8 +143,8 @@ apparatus, schemas, and gates a reliable deletion seam.
 - calls to the per-work renderer;
 - construction and validation of the release index;
 - installation of the run root;
-- evaluation of the shared release-admissibility predicate before a successful
-  release-facing result is reported.
+- the fail-closed release verifier (`verify-release-root!`), which recomputes
+  the closure before a successful release-facing result is reported.
 
 No other command may combine those responsibilities into an alternative
 source-to-release workflow.
@@ -258,9 +271,10 @@ Version 0.2.0 therefore:
 
 - replaces request-set identity with a hash-authenticated source-selection
   identity built from the actual selected source bundles;
-- includes `candidate_ref`, `qualification_identity_ref`,
-  `parser_build_hash`, `parser_config_hash`, `mapping_hash`, and the relevant
-  parser-IR/schema coordinates;
+- includes `candidate_ref`, `qualification_identity_ref`, and
+  `parser_config_hash`; the hash authenticates one
+  `parser_runtime_identity_object` containing the parser build, converter,
+  mapping, and parser-IR/schema coordinates;
 - retains the artifact-set, failure-policy, layout-policy, and schema hashes
   that are actual publication inputs;
 - omits tokenizer and analysis recipe hashes unless the published artifact set
@@ -373,8 +387,7 @@ Authority comes through `docs/adr/decisions.edn`, not a new
 
 1. load exactly one decision corpus form and reject loader or shape problems;
 2. resolve `custom-parser-release-qualification` by slug;
-3. require `:status :accepted`, `:release-authority :publication`, and the
-   validation scope required by publication policy;
+3. require `:status :accepted` and `:release-authority :publication`;
 4. verify the index's `candidate_ref` and `qualification_identity_ref` against
    the immutable parser-RQ candidate, capture/evaluation generation,
    compatibility registry, qualification report, and promotion evidence;
@@ -389,23 +402,50 @@ duplicate a weaker status lookup in publication code. The existing helper must
 be extended because it currently resolves only the ADR 0040/0041 dependency
 slugs.
 
-The resulting hashes must reach the per-work manifests and the release index.
-The current `nil` parser-build, parser-config, and mapping fields are a release
-blocker, not optional provenance.
+`:validation-scope` describes the evidence exercised by a decision; it is not
+an ordered release-authorization lattice. The current Accepted decision grants
+`:release-authority :publication` to one exact tuple and separately records its
+smoke qualification plus the fresh 17,886-work conversion audit. Publication
+code must not hardcode `#{:smoke-corpus :full-corpus}` or infer “stronger”
+scopes. If publication policy later requires a different qualification scope,
+the project first accepts a superseding qualification decision; the old slug
+then fails closed until the publication authority binding is deliberately
+updated.
+
+The resulting hashes must reach every parser-derived per-work manifest in a
+candidate release. The general manifest schema deliberately remains nullable.
+A non-release renderer adapter that accepts parser IR as its primary input may
+make no claim about the upstream parser build; for that local rendering
+contract, those coordinates are not applicable and `null` remains honest.
+Release admissibility is a stronger contextual predicate: a candidate release
+must supply concrete parser coordinates and match them to its authenticated
+runtime identity. No manifest-schema change or parallel “release manifest”
+schema is needed.
 
 ### Closed references
 
-`release-admissible?` must validate:
+A release decision is fail-closed only if the closure is recomputed, not
+asserted. The impure release verifier (`verify-release-root!`) must, over the
+completed candidate root before promotion, establish:
 
 - the release index schema and recomputed identity;
 - every required relative reference;
 - every referenced manifest hash;
 - every artifact content hash exposed by its manifest;
 - agreement among source, parser/mapping, work, and corpus identities;
+- `parser_config_hash == SHA-256(JCS(parser_runtime_identity_object))`;
+- agreement between that single runtime object, the authenticated parser
+  authority, and the flat coordinates required by each parser-derived per-work
+  manifest;
 - absence of unexpected identity-bearing files outside the closed set.
 
-An unreadable or malformed authority value is an error, never an accepted
-status.
+It then hands those computed results to the pure `release-admissible?`
+helper. A pure helper can always be called with fabricated values, so it does
+not confer release authority. The closed call-graph invariant is instead that
+only `build-publication` installs a release and it uses only the verifier's
+fresh result to do so. A precomputed problem vector is never an input to that
+verifier. An unreadable or malformed authority value is an error, never an
+accepted status.
 
 ## Cache semantics
 
@@ -421,13 +461,21 @@ reuse keyed by a complete 0.2.0 identity object. Such a cache remains an
 implementation detail: the release index authenticates results and never
 trusts a cache-hit claim.
 
+The governed per-work ArtifactID deliberately includes
+`corpus_snapshot_hash`. For direct publication, that field is the
+`source_selection_hash`, so changing the corpus selection rotates each
+manifest even when one work's bytes are unchanged. This preserves the Accepted
+“exact corpus input” identity contract. It forecloses exact manifest reuse
+across corpus selections, but not a future content-byte cache: reusable bytes
+may be retained while a current manifest is regenerated for the new release.
+
 ## Failure, installation, and admissibility semantics
 
 Singular authority makes the state transitions explicit:
 
 ```text
 candidate run root
-    | release-admissible?(root, decisions, registry, policies)
+    | verify-release-root!(root, decisions, registry, policies)
     +-- no problems --> atomic installation --> release-facing success
     |
     +-- strict failure --> no replacement of prior root
@@ -510,7 +558,7 @@ Deletion still requires a closed consumer and decision-claim audit.
 | Snapshot validate/explain/report | Rebase on the release index and retain only live projections | These should inspect values, not reproduce them. |
 | Staging/packaging | Keep as a downstream derived producer where live | It creates deployment values that cite, but do not redefine, the release. |
 | `validate-workflow` in the Soranoha dispatcher | Retire the command; keep `workflow/validate-run` with its domain tests | It has no live operator or automation consumer outside its own CLI test and archived handoffs. |
-| `validate-design-bundle` publication fixture | Keep as small integration characterization | It exercises a retained boundary without owning release authority. |
+| `validate-design-bundle` | Keep unchanged during this cutover; audit its publication-specific portion separately | Its test file supplies 42 Accepted-claim evidence entries across several domains, so shrinking it requires its own claim-by-claim governance migration. |
 
 The live adapter findings correct the earlier proposed “one artifact-producing
 command” rule. Exclusive writing is not the invariant; exclusive release
@@ -625,7 +673,7 @@ direct-build selection and render results:
 - reuse pure source/index value functions only where they express true facts;
 - do not call `publication-rehearsal!`;
 - close over the actual per-work manifests;
-- validate all references and hashes through `release-admissible?`;
+- validate all references and hashes through `verify-release-root!`;
 - keep `publications-report.json` derived;
 - keep run plans/traces operational.
 
@@ -661,13 +709,16 @@ the obsolete compositions first, then deepen the surviving boundaries.
 
 ### Lane 5: reconsider workflow and integration apparatus
 
-With one release composition:
+This is a separate follow-up after the release cutover, not a completion
+condition for it. With one release composition:
 
 - keep the serial workflow runner only if multiple live workflows need its
   dependency, failure, and trace semantics;
 - otherwise inline the short build sequence and emit the retained operational
   trace directly;
-- shrink `validate-design-bundle` to one cross-boundary publication smoke;
+- audit the publication-specific portion of `validate-design-bundle`
+  claim-by-claim and shrink it only after every Accepted claim has an honest
+  surviving evidence owner;
 - leave domain validation with its domain owner.
 
 Do not replace either subsystem with the retired target-graph workflow engine
@@ -699,7 +750,7 @@ incidental orchestration.
 - dirty relevant source makes the admissibility predicate fail;
 - failed Git inspection makes the admissibility predicate fail;
 - explicit fixture trust mode remains buildable but never admissible;
-- malformed decision corpus, wrong decision slug/status/authority/scope, or
+- malformed decision corpus, wrong decision slug/status/authority, or
   parser-RQ promotion failure makes the predicate fail;
 - parser candidate/qualification mismatch makes the predicate fail;
 - mapping or parser identity mismatch makes the predicate fail;
@@ -718,7 +769,8 @@ incidental orchestration.
 ### Architecture
 
 - only `build-publication` can assemble and install a release root;
-- every caller uses the same pure `release-admissible?` verifier;
+- every release-facing installation decision runs through the same fail-closed
+  `verify-release-root!`; pure predicate helpers confer no release authority;
 - all canonical per-work artifact sets pass through
   `materialize-publication!`;
 - qualification and fixture adapters cannot emit a release-admissible index;
@@ -803,16 +855,17 @@ The refactor is complete when:
 8. The direct build contains no manifest/content reuse path.
 9. Operational configuration, concurrency, timestamps, cache events, workflow
    ids, and machine paths do not affect release identity.
-10. `release-admissible?` is a pure fail-closed predicate with no receipt, and
-    a partial diagnostic installation cannot pass it merely by occupying the
-    output path.
+10. `release-admissible?` is a pure helper with no receipt, and the sole
+    release-facing installation decision uses the fresh result of
+    `verify-release-root!`, which recomputes the closure over the completed
+    candidate root; a partial diagnostic installation cannot pass merely by
+    occupying the output path.
 11. Validation and explanation consume the release index; staging/packaging
     produce derived values that cite it.
 12. The old rehearsal/reproduce release composition, its public commands, and
     its apparatus-only tests and schemas are absent.
 13. `soranoha.clj` no longer implements an end-to-end publication workflow.
-14. The integration gate retains only cross-boundary smoke behavior.
-15. No generic orchestration engine, release registry, or parallel identity
+14. No generic orchestration engine, release registry, or parallel identity
     model has been introduced.
 
 ## Expected leverage

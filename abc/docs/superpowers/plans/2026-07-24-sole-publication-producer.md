@@ -3,9 +3,10 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make `soranoha build-publication` the sole assembler and installer of
-an authenticated publication root, make release admissibility a recomputable
-fail-closed predicate, emit one truthful snapshot-index 0.2.0 value from the
-direct build, and delete the request-set rehearsal/reproduction composition.
+an authenticated publication root, make its release decision recompute
+admissibility fail-closed, emit one truthful snapshot-index 0.2.0 value from
+the direct build, and delete the request-set rehearsal/reproduction
+composition.
 
 **Architecture:** The retained system has four deep boundaries.
 `abc.tools.parser-release-authority` authenticates the exact accepted parser
@@ -14,9 +15,11 @@ candidate from the strict decision corpus and parser-RQ promotion values.
 per-work publication renderer. `abc.tools.snapshot-index` constructs and
 validates the one corpus identity from actual selected sources, parser
 coordinates, failures, and manifest references.
-`abc.tools.publication-release/evaluate` is a pure predicate over a loaded
-release closure and explicit authority values. The build façade owns source
-trust, assembly, installation, and the release-facing exit status. Projection
+`abc.tools.publication-release` owns the fail-closed `verify-release-root!`,
+which recomputes the closure, loads authority values, and derives their hashes,
+plus pure problem/predicate helpers over those computed values. The build
+façade owns source trust, assembly, installation, and the release-facing exit
+status. Projection
 commands consume the index; none render or reconstruct it.
 
 **Tech Stack:** Clojure 1.12, `clojure.test` and Kaocha, JSON Schema 2020-12,
@@ -45,14 +48,14 @@ before implementation. Paths below are relative to the monorepo root.
   tools. Those callers render candidates; they do not assemble a release.
 - Admission is not a receipt. No `admission.json`, admitted marker, mutable
   registry row, or occupancy-based inference may be introduced.
-- `publication-release/evaluate` returns
-  `{:admissible? boolean :problems vector-of-problem-maps
-  :authority-hashes {:decisions sha256 :registry sha256 :rights-policy
-  sha256}}` and
-  performs no writes. It projects
-  `publication-release/release-problems` and
-  `publication-release/release-admissible?`; it is not a second policy
-  implementation. Installation alone never implies admissibility.
+- `publication-release/verify-release-root!` is the sole release-facing
+  decision boundary: it recomputes the closure, loads and hashes the authority
+  values, and calls the pure `release-problems`. `release-admissible?` is a
+  pure helper over already-loaded computed values and performs no reads or
+  writes; calling it does not confer release authority. Only the verifier's
+  fresh result may control installation and release-facing success. Authority
+  hashes are members of the loaded authority envelopes, never separate caller
+  assertions. Installation alone never implies admissibility.
 - The direct index is exactly version `0.2.0`. Do not emit 0.1.1 beside it, do
   not synthesize `request_set_id`, and do not carry tokenizer/analysis
   identities that do not determine publication artifacts.
@@ -60,10 +63,10 @@ before implementation. Paths below are relative to the monorepo root.
   cache, temporary, or installed-root paths remain operational values outside
   identity.
 - `candidate_ref` and `qualification_identity_ref` may be null only for an
-  explicitly diagnostic parser profile. `parser_build_hash`,
-  `parser_config_hash`, `aat_parser_ir_mapping_hash`, and
-  `parser_ir_schema_hash` are always concrete hashes. The admissibility
-  predicate rejects either nullable authority coordinate.
+  explicitly diagnostic parser profile. `parser_config_hash` is always
+  concrete and authenticates the complete runtime object. The admissibility
+  predicate rejects either nullable authority reference and rejects missing
+  runtime coordinates.
 - Official source mode fails before rendering when Git state cannot be proved
   clean. Fixture mode is an explicit config value, is recorded, may build a
   diagnostic root, and can never be release-admissible.
@@ -73,8 +76,10 @@ before implementation. Paths below are relative to the monorepo root.
 - Strict failure never replaces the prior root. Best-effort failure may install
   one inspectable diagnostic root, returns exit 1, and remains inadmissible.
 - The current rights state in `abc/data/publication-policy.edn` remains
-  fail-closed. This campaign moves the check into the shared predicate; it does
-  not change which rights state authorizes publication.
+  fail-closed. This campaign moves the check into the shared release evaluation
+  (`release-problems`, with release-facing use through
+  `verify-release-root!`); it does not change which rights state authorizes
+  publication.
 - Preserve the live single-work and batch renderer adapters. Retire only their
   misleading release authority and duplicate orchestration where the task
   names it.
@@ -114,10 +119,7 @@ The identity object has these exact keys:
  "source_selection_hash" sha256
  "candidate_ref" (or sha256 nil)
  "qualification_identity_ref" (or sha256 nil)
- "parser_build_hash" sha256
  "parser_config_hash" sha256
- "aat_parser_ir_mapping_hash" sha256
- "parser_ir_schema_hash" sha256
  "artifact_set_hash" sha256
  "failure_set_hash" sha256
  "failure_policy_hash" sha256
@@ -203,25 +205,65 @@ executable hashes, mapping hash, and parser-IR schema hash. It contains no Nix
 store path. The parser runtime identity object is explanatory index data; its
 hash is the authoritative `parser_config_hash`.
 
-### Release evaluation input
+The index stores parser coordinates once, in
+`parser_runtime_identity_object`. `snapshot_index_identity_object` contains
+only its `parser_config_hash`. The verifier recomputes that hash, compares the
+runtime-object fields with the authenticated qualification, and compares each
+parser-derived per-work manifest's required flat coordinates with the same
+runtime object. Do not add flat coordinate copies to the index merely to make
+comparison convenient.
 
-`abc.tools.publication-release/evaluate` consumes one explicit value:
+### Release evaluation
+
+Release admissibility has two layers. The pure layer is easy to characterize;
+the impure layer is the only result the release-facing build may trust.
+
+`abc.tools.publication-release/release-problems` is the PURE inner helper. It
+consumes already-loaded values and never reads files:
 
 ```clojure
 {:index snapshot-index
- :closure-problems vector-of-problem-maps
- :parser-authority parser-authority
- :rights-policy rights-policy
- :authority-hashes
- {:decisions sha256 :registry sha256 :rights-policy sha256}}
+ :closure-problems vector-of-problem-maps  ; from snapshot-index/closure-problems
+ :parser-authority parser-authority        ; authenticated semantic value
+ :rights-policy rights-policy}             ; parsed semantic value
 ```
 
+`abc.tools.publication-release/verify-release-root!` is the IMPURE orchestrator
+whose fresh result is the only value allowed to control release installation
+or success:
+
+```clojure
+(verify-release-root!
+ {:root root
+  :parser-authority-sources
+  {:runs-root p :registry-path p :measurements-path p
+   :qualification-report-path p :provenance-path p :decisions-path p}
+  :rights-policy-path p})
+; => {:admissible? boolean
+;     :problems vector-of-problem-maps
+;     :authority-hashes
+;     {:decisions-file sha256 :registry-file sha256
+;      :rights-policy-file sha256}}
+```
+
+It runs `snapshot-index/closure-problems` itself, loads the parser authority and
+rights policy as value-plus-hash envelopes, and calls `release-problems`.
+`verify-release-root!` accepts paths, never caller-supplied closure problems,
+parsed authority values, hashes, or verdicts. It packages the problem vector,
+boolean, and hashes itself. Each authority loader reads bytes once and derives
+both the parsed value and content hash from that same byte array; the returned
+hash therefore cannot disagree with the value evaluated.
+
+`release-admissible?` is exactly
+`(empty? (release-problems loaded-values))`. It remains public for focused
+tests and projections, but it is not an authorization boundary. There is no
+separate `evaluate` function: a second packaging view would add a name without
+adding a responsibility.
+
 Problem maps have exactly `:code`, `:message`, and optional `:path`,
-`:expected`, and `:actual`. Tests assert codes, not prose.
-Authority hashes are SHA-256 hashes of the exact decision-corpus,
-compatibility-registry, and rights-policy file bytes used for the evaluation.
-Source trust and runtime parser identity are read from the immutable index
-value; they are not supplied a second time in parallel parameters.
+`:expected`, and `:actual`. Tests assert codes, not prose. Source trust and
+runtime parser identity are read from the immutable index value; they are not
+supplied a second time in parallel parameters.
 
 ---
 
@@ -249,8 +291,10 @@ only these dispositions: `release authority`, `shared domain capability`,
 The report must explicitly retain the single/batch renderer adapters,
 parser-RQ publication materializer, `workflow/run-workflow!`, source/request-set
 domain values, and staging. It must explicitly retire
-`snapshot-index`, `reproduce`, `publication-rehearsal`, `validate-workflow`,
-their dispatcher wiring, and only their apparatus tests.
+the Soranoha `snapshot-index` producer command, `reproduce`,
+`publication-rehearsal`, `validate-workflow`, their dispatcher wiring, and
+only their apparatus tests. It must explicitly retain
+`abc.tools.snapshot-index` as the value/schema owner.
 
 - [ ] **Step 2: Add failing characterization assertions**
 
@@ -297,21 +341,25 @@ git commit -m "test(publication): characterize producer cutover"
 **Interfaces:**
 
 ```clojure
-(decisions/load-shape-valid-corpus! path) ; => corpus, otherwise ex-info :errors
+(decisions/load-shape-valid-corpus! path)
+; => {:corpus corpus :content-hash sha256}, otherwise ex-info :errors
 (decisions/decision-by-slug! corpus slug) ; => one record, otherwise ex-info
 ```
 
 - [ ] **Step 1: Write failing decision-boundary tests**
 
-Cover exactly one valid form, two EDN forms, invalid corpus shape, duplicate
-slugs, and a missing slug. Assert stable `:errors` vectors. Keep corpus semantic
-governance outside this loader; this boundary promises strict load plus shape.
+Cover one valid single-form corpus, an empty file, malformed EDN, a trailing
+second top-level EDN form, invalid corpus shape, duplicate slugs, and a missing
+slug. Assert stable `:errors` vectors. Keep corpus semantic governance outside
+this loader; this boundary promises strict load plus shape.
 
 - [ ] **Step 2: Implement the two functions**
 
-Compose the existing `load-corpus` and `shape-problems`; do not add a second
-Malli schema or EDN reader. `decision-by-slug!` searches the already
-shape-valid corpus and fails when absent.
+Refactor the existing `load-corpus` implementation to read the file bytes
+once, decode them as strict UTF-8 for EDN parsing, and derive `:content-hash` from
+those same bytes. Compose it with `shape-problems`; do not add a second Malli
+schema or EDN reader. `decision-by-slug!` searches the already shape-valid
+`:corpus` value and fails when absent.
 
 - [ ] **Step 3: Rebase promotion status loading**
 
@@ -359,6 +407,7 @@ git commit -m "refactor(decisions): share strict corpus resolution"
 ;     :qualification-report report
 ;     :evaluation evaluation-index
 ;     :registry-ref sha256
+;     :registry-file-hash sha256
 ;     :provenance executable-provenance}
 
 (parser-release-authority/authenticate opts)
@@ -367,7 +416,8 @@ git commit -m "refactor(decisions): share strict corpus resolution"
 ;     :qualification-identity map
 ;     :executable-provenance map
 ;     :decision record
-;     :authority-hashes {:decisions sha256 :registry sha256}}
+;     :authority-hashes {:decisions-file sha256 :registry-file sha256}
+;     :registry-ref sha256}
 ; throws ex-info {:problems vector-of-problem-maps} on any failure
 ```
 
@@ -375,7 +425,10 @@ git commit -m "refactor(decisions): share strict corpus resolution"
 
 Move the existing `promotion-errors` derivation into
 `promotion-verification`. Return authenticated values only when their existing
-checks can be evaluated; return problems on malformed input.
+checks can be evaluated; return problems on malformed input. Load the registry
+as one strict-UTF-8 byte-backed envelope so the returned `:registry-file-hash` and
+the parsed registry value come from the same read; retain `:registry-ref` as
+the separate JCS hash of that parsed value.
 `promotion-errors` becomes exactly:
 
 ```clojure
@@ -408,8 +461,10 @@ mapping hash
 and the `ab-aozora` executable hash from bound provenance.
 
 Add negative tests for malformed decisions, missing decision, non-accepted
-status, wrong `:release-authority`, wrong `:validation-scope`, wrong candidate
-ref, stale registry, and promotion verification problems.
+status, wrong `:release-authority`, wrong candidate ref, stale registry, and
+promotion verification problems. Assert the decision and registry file hashes
+come from the same bytes parsed by their loaders, while `:registry-ref`
+continues to mean the governed canonical registry-value hash.
 
 - [ ] **Step 3: Implement the authority namespace**
 
@@ -418,9 +473,15 @@ Use `decisions/load-shape-valid-corpus!` to resolve
 
 ```clojure
 {:status :accepted
- :release-authority :publication
- :validation-scope :smoke-corpus}
+ :release-authority :publication}
 ```
+
+Do not interpret `:validation-scope` as an ordered runtime policy.
+`:release-authority` is the authorization field. The current decision's
+smoke-corpus qualification and full 17,886-work conversion audit are governed
+facts of that exact Accepted record. A future scope change uses a superseding
+decision and deliberately updates this binding; it does not silently pass
+because code contains a hardcoded set of “stronger” scope keywords.
 
 Call `campaign/promotion-verification` with explicit paths for the runs root,
 registry, measurements, qualification report, executable provenance, and
@@ -577,15 +638,27 @@ Assert all four hashes appear in both plaintext and TEI
 arrays. Assert changing any one hash rotates the artifact id while leaving
 rendered plaintext/TEI bytes unchanged.
 
-Keep the argument optional for the live non-release single/batch adapters;
-their manifests may retain null parser coordinates until those callers can
-supply authenticated values.
+Keep the argument optional for the live non-release single/batch,
+qualification, and fixture adapters. They accept parser IR as their primary
+input and make no upstream parser-build claim, so the governed general manifest
+schema permits their parser coordinates to remain `null`. Add a release-table
+case in Task 9 proving the stronger contextual rule: any candidate release
+containing such a manifest is inadmissible. Do not change
+`schemas/manifest.schema.json` or add a parallel release-manifest schema.
+
+This intentionally invalidates Task 1's build-vs-`materialize-publication!`
+byte-equivalence characterization: the build now injects non-null parser identity
+that a bare renderer call lacks. Update that Task 1 assertion here to compare the
+build against a `materialize-publication!` call given the same
+`:parser-identity`.
 
 - [ ] **Step 2: Implement and pass the value through the build**
 
 Change `manifest-inputs`, `plaintext-manifest`, `tei-manifest`, and
-`materialize-publication!` to consume the explicit value. Do not read
-environment variables or parser authority inside the renderer.
+`materialize-publication!` to consume the optional explicit value. Do not read
+environment variables or parser authority inside the renderer. The direct
+build passes the runtime identity computed once in Task 4; existing non-release
+callers remain unchanged.
 
 Run:
 
@@ -595,8 +668,9 @@ bin/kaocha --focus abc.tools.materialize-publication-test
 bin/kaocha --focus abc.tools.soranoha-test
 ```
 
-Expected: renderer tests prove identity propagation and the build's manifests
-contain four non-null parser coordinates.
+Expected: existing non-release adapters still render schema-valid manifests
+with nullable parser coordinates, while the direct build's manifests contain
+four concrete coordinates from its authenticated runtime value.
 
 - [ ] **Step 3: Commit**
 
@@ -800,9 +874,16 @@ git commit -m "refactor(publication)!: retire rehearsal release producer"
 (snapshot-index/failure-set-hash failures)              ; => sha256
 (snapshot-index/artifact-set-hash references)           ; => sha256
 (snapshot-index/build-snapshot-index args)               ; => v0.2.0 map
+(snapshot-index/write-snapshot-index! index output-path)  ; => path
 (snapshot-index/validate-snapshot-index! index)           ; => true or throws
 (snapshot-index/closure-problems root index) ; => vector-of-problem-maps
 ```
+
+The retained builders keep the `abc.tools.snapshot-index` namespace and their
+existing names because they construct and validate `snapshot-index.json`.
+Task 7 / Task 14 absence checks target the deleted Soranoha dispatcher symbols
+by file and definition shape; production names are not changed to accommodate
+a grep.
 
 - [ ] **Step 1: Replace 0.1.1 tests with 0.2.0 value tests**
 
@@ -820,6 +901,11 @@ Use the exact contract under “Target Value Contracts.” Remove
 `snapshot-plans-dir`, `snapshot-label?`, `read-snapshot-plan`,
 `build-snapshot-index-from-plan`, request-set fields, tokenizer/analysis
 arrays, and the hardcoded snapshot-label fallback from this namespace.
+Snapshot-index 0.1.1 instances had no version member: `"version": "0.1.1"` is
+an annotation on the JSON Schema document. Version 0.2.0 adds required
+instance member `"schema_version": "0.2.0"` and updates the schema document's
+`"version"` annotation to `"0.2.0"`. Do not rename one as though it were the
+other, and do not emit an instance `"version"` member.
 
 - [ ] **Step 3: Implement closed-reference verification**
 
@@ -856,8 +942,10 @@ problem.
 
 - [ ] **Step 5: Rebase read/validate/explain/report fields**
 
-`read-valid-snapshot-index` remains the single file-loading boundary.
-Validation/explanation/layout reports use `source_selection_hash`,
+`read-valid-snapshot-index` moves from `soranoha.clj` into
+`abc.tools.snapshot-index` and remains the single file-loading boundary; the
+dispatcher keeps only a delegation so Task 12 can thin it without stranding
+domain logic. Validation/explanation/layout reports use `source_selection_hash`,
 candidate/qualification refs, parser/mapping hashes, failure-set hash, and
 snapshot identity. Remove request-set id/label, old snapshot label, tokenizer,
 analysis, and manifest-index projections.
@@ -948,14 +1036,23 @@ git commit -m "feat(snapshot-index)!: cut projections to publication identity v2
 **Interfaces:**
 
 ```clojure
+(publication-policy/load-rights-authority! path)
+; => {:policy value :content-hash sha256}
 (publication-policy/release-problem rights-policy) ; => nil or problem
-(publication-release/release-problems input) ; => vector-of-problem-maps
-(publication-release/release-admissible? input)    ; => boolean
-(publication-release/evaluate input)
+(publication-release/release-problems loaded-closure) ; PURE => vector-of-problem-maps
+(publication-release/release-admissible? loaded-closure) ; PURE => boolean
+(publication-release/verify-release-root!
+ {:root root
+  :parser-authority-sources
+  {:runs-root p :registry-path p :measurements-path p
+   :qualification-report-path p :provenance-path p :decisions-path p}
+  :rights-policy-path p})
+; IMPURE: computes closure, loads + hashes authority, then projects problems
 ; => {:admissible? boolean
 ;     :problems vector-of-problem-maps
 ;     :authority-hashes
-;     {:decisions sha256 :registry sha256 :rights-policy sha256}}
+;     {:decisions-file sha256 :registry-file sha256
+;      :rights-policy-file sha256}}
 ```
 
 - [ ] **Step 1: Write the complete predicate table**
@@ -967,35 +1064,54 @@ Start with a valid in-memory index/closure and vary one fact per test:
 - missing/wrong decision authority;
 - absent or mismatched candidate/qualification;
 - parser build/config/mapping/schema mismatch;
+- parser runtime-object hash mismatch;
+- per-work parser coordinate mismatch against the runtime object;
+- nullable parser coordinates in a release's plaintext or TEI manifest;
 - nonempty failure set;
-- rights policy blocked/malformed;
-- authority hash absent or malformed.
+- rights policy blocked.
 
-Also prove the function is deterministic and writes no files.
+Prove the pure functions are deterministic and write no files. Add one
+`verify-release-root!` test proving it recomputes the closure even when handed a
+root whose `publications-report.json` claims admissibility — an asserted closure
+never substitutes for a computed one. Add verifier-level cases for unreadable
+or malformed decision, registry, and rights-policy files; their loaders fail
+before an authority hash can be reported.
 
 - [ ] **Step 2: Make rights policy a value**
 
-Keep `rights-publication-state` for loading. Add a pure problem function that
-preserves the existing allowed state semantics. Remove renderer-facing tests
-that treat `assert-release-allowed!` as per-work release authority.
+Add `load-rights-authority!`, which reads bytes once, decodes them as strict UTF-8,
+and derives both the EDN value and exact file hash from that byte array. Keep
+`rights-publication-state` as a compatibility projection until its callers are
+removed. Add a pure problem function that preserves the existing allowed state
+semantics. Remove renderer-facing tests that treat `assert-release-allowed!`
+as per-work release authority.
 
-- [ ] **Step 3: Implement one problem projection and two views**
+- [ ] **Step 3: Implement the pure projection and the fail-closed orchestrator**
 
-Concatenate precomputed closure problems with pure source, parser, failure, and
-rights comparisons. Sort/deduplicate by
-`[:code :path :expected :actual]` in `release-problems`.
-`release-admissible?` is exactly `(empty? (release-problems input))`.
-`evaluate` calls `release-problems` once and packages that vector, the boolean,
-and the supplied authority hashes. Never infer admissibility from an output
-path or write a marker.
+In `release-problems`, concatenate the already-loaded closure problems with
+pure source, parser, failure, and rights comparisons, then sort/deduplicate by
+`[:code :path :expected :actual]`. `release-admissible?` is exactly
+`(empty? (release-problems loaded-values))`.
+
+Implement `verify-release-root!` as the impure release boundary: it reads the
+index from the completed candidate root, runs
+`snapshot-index/closure-problems`, authenticates the candidate named by that
+index through `parser-release-authority/authenticate`, loads the rights-policy
+envelope, calls `release-problems` once, and packages the vector, boolean, and
+loader-derived hashes. It accepts no precomputed problems, authority values,
+hashes, or verdict. Do not add `evaluate`; it would be a second packaging name
+for the same result. Pure helpers remain callable for tests, so fail-closedness
+is enforced by the build call graph, not claimed as function unreachability.
+Never infer admissibility from an output path or write a marker.
 
 - [ ] **Step 4: Make retained validation recompute current admissibility**
 
-Wire `validate-snapshot-root` and `explain-snapshot` to load the current
-decision corpus, compatibility registry, and rights policy, authenticate the
-candidate named by the index, compute closure problems, and call the shared
-predicate. They print current admissibility plus authority hashes. They do not
-trust or rewrite the build-time result in `publications-report.json`.
+Wire `validate-snapshot-root` and `explain-snapshot` to call
+`verify-release-root!` on the installed root with the current decision-corpus,
+compatibility-registry, and rights-policy paths. It authenticates the candidate
+named by the index, computes closure problems, and derives authority hashes.
+They print current admissibility plus those hashes. They do not trust or rewrite
+the build-time result in `publications-report.json`.
 
 Run:
 
@@ -1062,6 +1178,14 @@ corpus snapshot hash used by source and publication manifests. Parser output
 is not part of source selection; it enters through the parser-IR artifact
 reference and parser coordinates.
 
+This whole-corpus coupling is intentional under the Accepted manifest identity
+contract: `corpus_snapshot_hash` names the exact corpus input, while
+`work_content_hash` and `metadata_record_hash` name the work-local inputs.
+Changing another selected work therefore rotates this work's manifest but not
+necessarily its content bytes. A future content cache may reuse those bytes
+and regenerate the manifest; exact manifest reuse across selections is not
+permitted.
+
 - [ ] **Step 3: Collect all four manifest references**
 
 For each successful work, write valid source and parser-IR manifests and
@@ -1071,26 +1195,33 @@ and `code` fields. Include the path-free parser runtime identity object and
 prove its hash equals `parser_config_hash`. Construct and write
 `snapshot-index.json` only after all works finish.
 
-- [ ] **Step 4: Evaluate before release-facing success**
+- [ ] **Step 4: Verify the completed candidate before promotion**
 
-Load the rights policy, decision/registry authority hashes, closure problems,
-and parser authority. The predicate reads source trust and runtime parser
-identity from the index itself. Call `publication-release/evaluate`. Put the
-derived result in `publications/publications-report.json`; do not put the
-result inside index identity.
+After every identity-bearing file is complete but before
+`promote-output-root!`, call `publication-release/verify-release-root!` on the
+temporary candidate root with parser-authority source paths and the rights
+policy path. It reads the candidate named by the index, recomputes the closure,
+and derives authority hashes from the same bytes its loaders parsed. Do not
+precompute closure problems, authority values, hashes, or a verdict in the
+build and pass them in. Put the returned result in
+`publications/publications-report.json`; that derived report is excluded from
+the closed-file scan and from index identity.
 
 State transitions:
 
 - strict exception: delete temporary root, leave prior target untouched;
-- best-effort partial or fixture/rights diagnostic: atomically install the
-  diagnostic root only when configured, print `release_admissible: false`, exit
-  1;
-- no problems: atomically install, print `release_admissible: true`, exit 0.
+- strict verifier problems: delete the candidate root and leave the prior
+  target untouched;
+- best-effort partial or fixture/policy diagnostic: atomically install the
+  diagnostic root only when configured, print `release_admissible: false`,
+  and exit 1;
+- no verifier problems: atomically install, print
+  `release_admissible: true`, and exit 0.
 
 - [ ] **Step 5: Replace old report booleans and assertions**
 
 Delete `source-selection-report.json`'s locally derived
-`release_admissible`. Tests read the shared evaluation from
+`release_admissible`. Tests read the verifier result from
 `publications-report.json` and independently recompute it from the installed
 root.
 
@@ -1118,7 +1249,12 @@ diagnostic installation, and nonzero exit. Add an Accepted
 
 - `build-publication` as sole release assembler/installer;
 - snapshot-index 0.2.0 as the sole live publication identity;
-- recomputable admissibility with no receipt;
+- recomputable admissibility with no receipt, decided only through the
+  fail-closed `verify-release-root!`;
+- dependency on the exact Accepted
+  `custom-parser-release-qualification` decision and its
+  `:release-authority :publication`, without reinterpreting
+  `:validation-scope` as a runtime scope hierarchy;
 - exact parser/source/manifest closure.
 
 Use the final focused test files as evidence. Run:
@@ -1167,11 +1303,16 @@ It:
 2. creates `index_pages/list_person_all_extended_utf8.zip`;
 3. creates one `cards/000879/files/000001_ruby_fixture.zip`;
 4. initializes Git, sets local author identity, adds/commits the fixture;
-5. writes config 0.2.0 with `official-git`, `ab-aozora`, and the P5 candidate;
+5. writes best-effort config 0.2.0 with `official-git`, `ab-aozora`, and the
+   P5 candidate;
 6. runs `build-publication`;
-7. accepts exit 1 only because the committed rights policy is blocked;
+7. accepts exit 0 or 1, then proves the exit agrees with the verifier result
+   (`0` iff admissible, `1` iff diagnostic);
 8. asserts parser-IR, TEI, four manifest kinds, and snapshot-index 0.2.0 exist;
-9. asserts the only admissibility problem is the rights policy.
+9. independently asserts there are no source, parser, mapping, schema,
+   manifest, or closure problems. The current policy may contribute the sole
+   rights problem; if governance later enables it, the same check expects no
+   problem and exit 0.
 
 The script must not set adapter/mapping environment variables and must not
 invoke Clojure directly.
@@ -1197,8 +1338,10 @@ system="$(nix eval --impure --raw --expr builtins.currentSystem)"
 nix build ".#checks.${system}.publication-build-real-wiring" --print-build-logs
 ```
 
-Expected: the check executes real `ab-aozora` and mapping wiring, produces a
-diagnostic root, and fails release only on rights.
+Expected: the check executes real `ab-aozora` and mapping wiring, proves a
+closed candidate root, and confirms release exit agrees with the current
+governed rights result. Its success does not depend on that policy remaining
+blocked.
 
 - [ ] **Step 4: Commit**
 
@@ -1223,9 +1366,10 @@ git commit -m "test(publication): pin real flake adapter wiring"
 
 - [ ] **Step 1: Retire `materialize-release-publication!`**
 
-Move the only rights decision to `publication-release/evaluate`. Route the
-single-work CLI through `materialize-publication!` and label it a non-release
-renderer in help. Preserve live CLI inputs and outputs.
+The only rights decision already lives in
+`publication-release/verify-release-root!` after Task 10. Route the single-work
+CLI through `materialize-publication!` and label it a non-release renderer in
+help. Preserve its live inputs and output bytes.
 
 - [ ] **Step 2: Thin the Soranoha dispatcher**
 
@@ -1277,6 +1421,13 @@ git add abc/src/abc/tools/materialize_publication.clj \
 git commit -m "refactor(publication): deepen surviving module boundaries"
 ```
 
+Shrinking `validate-design-bundle` is a separate Lane 5 follow-up. Its test
+file is cited by 42 Accepted-claim evidence entries across multiple domains;
+deleting assertions here would mix a governance/evidence migration into the
+release cutover. Begin that follow-up from the Task 1 claim table and move or
+supersede each claim honestly before reducing the publication-specific portion
+of the gate.
+
 ---
 
 ### Task 13: Close the Measured Disposition
@@ -1323,11 +1474,14 @@ git commit -m "docs(publication): close sole producer disposition"
 Run:
 
 ```sh
-rg -n 'build-snapshot-index|snapshot-index!|materialize-snapshot-root!|reproduce!|publication-rehearsal!|validate-workflow' \
-  abc/src abc/test abc/deps.edn abc/flake.nix abc/bin
-rg -n 'write-snapshot-index|snapshot-index.json' abc/src
+rg -n '^\(defn-? (build-snapshot-index|snapshot-index!|materialize-snapshot-root!|reproduce!|publication-rehearsal!)' \
+  abc/src/abc/tools/soranoha.clj
+rg -n '\"(snapshot-index|reproduce|publication-rehearsal|validate-workflow)\"|:abc/(snapshot-index|reproduce|publication-rehearsal|validate-workflow)' \
+  abc/src abc/deps.edn abc/flake.nix abc/bin
+rg -n 'write-snapshot-index!|snapshot-index.json' abc/src
 rg -n 'materialize-publication!' abc/src ab-validator
-rg -n 'release-admissible|release_admissible|publication-release/evaluate' abc/src abc/test
+rg -n 'release-admissible|release_admissible|publication-release/verify-release-root' \
+  abc/src abc/test
 rg -n 'request_set_id|request_set_label|tokenizer_profile_hashes|analysis_recipe_hashes' \
   abc/src/abc/tools/snapshot_index.clj abc/schemas/snapshot-index.schema.json \
   abc/examples/v0/snapshot/snapshot-index.json
@@ -1335,10 +1489,15 @@ rg -n 'request_set_id|request_set_label|tokenizer_profile_hashes|analysis_recipe
 
 Expected:
 
-- the first and fourth old-field searches return no active matches;
-- only `soranoha_build_publication.clj` writes the index;
+- the first, second, and last old-field searches return no active matches;
+- the retained value constructor `snapshot-index/build-snapshot-index` is not
+  confused with the deleted Soranoha dispatcher function of the same old name;
+- the release-index writer `write-snapshot-index!` is defined in
+  `snapshot_index.clj` and called only by `soranoha_build_publication.clj`;
 - all canonical per-work rendering reaches `materialize-publication!`;
-- one shared predicate owns admissibility and no marker/receipt exists.
+- `verify-release-root!` is called by the sole installer and by read-only
+  validation/explanation projections; pure helpers never control installation,
+  and no marker/receipt exists.
 
 - [ ] **Step 2: Run language and hygiene gates**
 

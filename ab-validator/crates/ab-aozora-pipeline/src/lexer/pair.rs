@@ -209,7 +209,7 @@ where
     I: Iterator<Item = Token>,
 {
     tokens: I,
-    stack: SmallVec<[(PairKind, Span); 8]>,
+    stack: SmallVec<[(PairKind, Span, bool); 8]>,
     diagnostics: Vec<Diagnostic>,
     /// Resolved (open, close) pairs collected as the stack matches.
     /// Mirrors the `PairOutputIn::links` side-table for streaming
@@ -267,7 +267,7 @@ where
 
     fn classify_trigger(&mut self, kind: TriggerKind, span: Span) -> PairEvent {
         if let Some(pair_kind) = open_kind_of(kind) {
-            self.stack.push((pair_kind, span));
+            self.stack.push((pair_kind, span, false));
             return PairEvent::PairOpen {
                 kind: pair_kind,
                 span,
@@ -275,7 +275,7 @@ where
         }
 
         if let Some(pair_kind) = close_kind_of(kind) {
-            if let Some(&(top, open_span)) = self.stack.last()
+            if let Some(&(top, open_span, _)) = self.stack.last()
                 && top == pair_kind
             {
                 self.stack.pop();
@@ -298,14 +298,14 @@ where
                 && let Some(bracket_pos) = self
                     .stack
                     .iter()
-                    .rposition(|&(k, _)| k == PairKind::Bracket)
+                    .rposition(|&(k, _, _)| k == PairKind::Bracket)
             {
                 // Everything above `bracket_pos` is non-bracket by construction
                 // (it is the top-most bracket). Pop those top-first so the
                 // innermost dangling open surfaces first, matching the EOF-drain
                 // order (`next`), then close the bracket itself.
                 while self.stack.len() > bracket_pos + 1 {
-                    let (k, open_span) = self.stack.pop().expect("len > bracket_pos + 1");
+                    let (k, open_span, _) = self.stack.pop().expect("len > bracket_pos + 1");
                     self.diagnostics
                         .push(Diagnostic::unclosed_bracket(open_span, k));
                     self.pending.push(PairEvent::Unclosed {
@@ -313,7 +313,7 @@ where
                         span: open_span,
                     });
                 }
-                let (_, open_span) = self.stack.pop().expect("bracket at bracket_pos");
+                let (_, open_span, _) = self.stack.pop().expect("bracket at bracket_pos");
                 self.links
                     .push(PairLink::new(PairKind::Bracket, open_span, span));
                 self.pending.push(PairEvent::PairClose {
@@ -333,7 +333,18 @@ where
             };
         }
 
-        // Trigger is neither open nor close (Bar / Hash / RefMark).
+        // Trigger is neither open nor close (Bar / Hash / RefMark). A
+        // `＃` landing immediately after a bracket open marks that open as
+        // a DIRECTIVE bracket (`［＃`): unlike a plain gloss `［`, it may
+        // legitimately span lines (multi-line 入力者註 editorial notes),
+        // so the newline expiry leaves it alone.
+        if kind == TriggerKind::Hash
+            && let Some(top) = self.stack.last_mut()
+            && top.0 == PairKind::Bracket
+            && top.1.end == span.start
+        {
+            top.2 = true;
+        }
         PairEvent::Solo { kind, span }
     }
 }
@@ -358,7 +369,7 @@ where
             // Drain residual stack entries as Unclosed events. We pop
             // from the BACK so innermost (last-pushed) opens surface
             // first — same diagnostic order the legacy `pair()` used.
-            if let Some((kind, span)) = self.stack.pop() {
+            if let Some((kind, span, _)) = self.stack.pop() {
                 self.diagnostics
                     .push(Diagnostic::unclosed_bracket(span, kind));
                 return Some(PairEvent::Unclosed { kind, span });
@@ -378,9 +389,13 @@ where
                 // and everything nested above it, innermost-first —
                 // mirroring the EOF drain — then surface the newline.
                 // Opens BELOW the bracket (a multi-paragraph 「) survive.
-                if let Some(lowest) = self.stack.iter().position(|&(k, _)| k == PairKind::Bracket) {
+                if let Some(lowest) = self
+                    .stack
+                    .iter()
+                    .position(|&(k, _, directive)| k == PairKind::Bracket && !directive)
+                {
                     while self.stack.len() > lowest {
-                        let (k, open_span) = self.stack.pop().expect("len > lowest");
+                        let (k, open_span, _) = self.stack.pop().expect("len > lowest");
                         self.diagnostics
                             .push(Diagnostic::unclosed_bracket(open_span, k));
                         self.pending.push(PairEvent::Unclosed {
@@ -487,6 +502,26 @@ mod tests {
             .position(|e| matches!(e, PairEvent::Newline { .. }))
             .expect("newline event");
         assert!(unclosed_pos < newline_pos);
+    }
+
+    #[test]
+    fn newline_keeps_multi_line_directive_bracket_open() {
+        // A `［＃…` directive legitimately spans lines in rare editorial
+        // notes (北條民雄全集's ［＃入力者註：…9 lines…］). Only PLAIN `［`
+        // opens — which can never become directives — expire at the
+        // newline.
+        let (events, diagnostics) = run("［＃入力者註：以下を修正した。\n「甲」→「乙」］\n本文\n");
+        assert!(
+            pair_kinds(&events)
+                .iter()
+                .any(|&(what, kind)| what == "close" && kind == PairKind::Bracket)
+        );
+        assert!(
+            !pair_kinds(&events)
+                .iter()
+                .any(|&(what, _)| what == "unclosed")
+        );
+        assert!(diagnostics.is_empty());
     }
 
     #[test]

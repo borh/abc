@@ -684,33 +684,50 @@
     (write-canonical-json! measurements-path envelope-values)
     (write-canonical-json! report-path report)
     (write-canonical-json! provenance-path provenance)
-    (write-edn! decisions-path
-                {:decisions
-                 [{:slug "process-tree-memory-qualification" :status :accepted}
-                  {:slug "parser-release-instrument-bindings" :status :accepted}]})
-    (is (= [] (campaign/promotion-errors options)))
-    (write-edn! decisions-path
-                {:decisions
-                 [{:slug "process-tree-memory-qualification" :status :proposed}
-                  {:slug "parser-release-instrument-bindings" :status :accepted}]})
-    (is (some #{"decision process-tree-memory-qualification (ADR 0040) is not accepted"}
-              (campaign/promotion-errors options))
-        "a dependency decision that is not :accepted blocks promotion")
-    (write-edn! decisions-path
-                {:decisions [{:slug "parser-release-instrument-bindings"
-                              :status :accepted}]})
-    (is (some #{"decision process-tree-memory-qualification (ADR 0040) is not accepted"}
-              (campaign/promotion-errors options))
-        "a missing dependency decision blocks promotion")
-    (spit decisions-path "{:decisions []} {:extra true}")
-    (is (some #(re-find #"exactly one EDN form" %)
-              (campaign/promotion-errors options))
-        "a malformed decisions corpus is reported, never treated as accepted")
-    (write-edn! decisions-path
-                {:decisions
-                 [{:slug "process-tree-memory-qualification" :status :accepted}
-                  {:slug "parser-release-instrument-bindings" :status :accepted}]})
-    (is (= [] (campaign/promotion-errors options)))
+    (let [decision (fn [slug status]
+                     (cond-> {:slug slug
+                              :title slug
+                              :status status
+                              :date "2026-07-20"
+                              :topics [:parser]
+                              :relations []
+                              :claims []}
+                       (= :accepted status)
+                       (assoc :accepted "2026-07-20"
+                              :validation-scope :smoke-corpus
+                              :release-authority :publication)))
+          accepted-corpus
+          {:decisions
+           [(decision "process-tree-memory-qualification" :accepted)
+            (decision "parser-release-instrument-bindings" :accepted)]}]
+      (write-edn! decisions-path accepted-corpus)
+      (is (= [] (campaign/promotion-errors options)))
+      (write-edn! decisions-path
+                  {:decisions
+                   [(decision "process-tree-memory-qualification" :proposed)
+                    (decision "parser-release-instrument-bindings" :accepted)]})
+      (is (some #{"decision process-tree-memory-qualification (ADR 0040) is not accepted"}
+                (campaign/promotion-errors options))
+          "a dependency decision that is not :accepted blocks promotion")
+      (write-edn! decisions-path
+                  {:decisions
+                   [(decision "parser-release-instrument-bindings" :accepted)]})
+      (is (some #{"decision process-tree-memory-qualification (ADR 0040) is not accepted"}
+                (campaign/promotion-errors options))
+          "a missing dependency decision blocks promotion")
+      (spit decisions-path "{:decisions []} {:extra true}")
+      (is (some #(re-find #"exactly one EDN form" %)
+                (campaign/promotion-errors options))
+          "a malformed decisions corpus is reported, never treated as accepted")
+      (write-edn! decisions-path
+                  {:decisions
+                   [{:slug "process-tree-memory-qualification" :status :accepted}
+                    {:slug "parser-release-instrument-bindings" :status :accepted}]})
+      (is (some #(re-find #"invalid-shape|missing required key|:title" %)
+                (campaign/promotion-errors options))
+          "a shape-invalid corpus never authorizes promotion, even with accepted statuses")
+      (write-edn! decisions-path accepted-corpus)
+      (is (= [] (campaign/promotion-errors options))))
     (write-canonical-json! provenance-path
                            (assoc provenance :schema_version "changed"))
     (is (some #{"bound provenance envelope is invalid"}

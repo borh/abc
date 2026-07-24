@@ -760,12 +760,17 @@
 
 (defn- load-decision-statuses
   "Resolve the promotion-dependency decision statuses from the authoritative
-  decisions.edn corpus. Throws with :errors on an unreadable corpus so
-  promotion-errors reports it like any other resolution failure."
+  decisions.edn corpus. Fails closed: an unreadable or shape-invalid corpus
+  throws with :errors so promotion-errors reports it like any other
+  resolution failure, and statuses are only trusted from a corpus that
+  passes the decision schema (unique slugs, well-formed records)."
   [decisions-path]
-  (let [{:keys [corpus problems]} (decisions/load-corpus decisions-path)]
+  (let [{:keys [corpus problems]} (decisions/load-corpus decisions-path)
+        problems (concat problems
+                         (when corpus
+                           (decisions/shape-problems corpus decisions-path)))]
     (when (seq problems)
-      (throw (ex-info "decisions corpus unreadable"
+      (throw (ex-info "decisions corpus invalid"
                       {:errors (mapv :message problems)})))
     (into {}
           (for [[label slug] promotion-dependency-slugs]

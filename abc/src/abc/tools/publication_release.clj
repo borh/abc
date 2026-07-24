@@ -172,18 +172,18 @@
         id (identity-object index)]
     {"parser_build_hash" (get runtime "parser_build_hash")
      "parser_config_hash" (get id "parser_config_hash")
-     "mapping_hash" (get runtime "aat_parser_ir_mapping_hash")
+     "aat_parser_ir_mapping_hash" (get runtime "aat_parser_ir_mapping_hash")
      "parser_ir_schema_hash" (get runtime "parser_ir_schema_hash")}))
 
 (defn manifest-coordinate-problems
   "PURE. Given the index-derived `expected` coordinates and a seq of already
   loaded parser-derived manifests ({:work-slug :kind :identity-object}), reject
   any null coordinate on the discriminating triple (parser_build_hash /
-  parser_config_hash / mapping_hash — NOT parser_ir_schema_hash, which is
-  non-null even for a non-release adapter) and any coordinate that disagrees
-  with the runtime object."
+  parser_config_hash / aat_parser_ir_mapping_hash — NOT parser_ir_schema_hash,
+  which is non-null even for a non-release adapter) and any coordinate that
+  disagrees with the runtime object."
   [expected manifests]
-  (let [triple ["parser_build_hash" "parser_config_hash" "mapping_hash"]
+  (let [triple ["parser_build_hash" "parser_config_hash" "aat_parser_ir_mapping_hash"]
         all (conj triple "parser_ir_schema_hash")]
     (vec
      (mapcat

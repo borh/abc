@@ -187,7 +187,7 @@
   {"parser_build_hash" (h "f1")
    "parser_config_hash" (get-in (snapshot-index/build-snapshot-index (six/build-args))
                                 ["snapshot_index_identity_object" "parser_config_hash"])
-   "mapping_hash" (h "f3")
+   "aat_parser_ir_mapping_hash" (h "f3")
    "parser_ir_schema_hash" (h "f4")})
 
 (deftest manifest-coordinate-mismatch-is-detected-and-inadmissible-test
@@ -214,12 +214,12 @@
         null-manifest {:work-slug "0005_1234_rashomon" :kind "tei"
                        :identity-object {"parser_build_hash" nil
                                          "parser_config_hash" nil
-                                         "mapping_hash" nil
+                                         "aat_parser_ir_mapping_hash" nil
                                          "parser_ir_schema_hash" (h "f4")}}
         problems (release/manifest-coordinate-problems expected [null-manifest])]
     (is (= 3 (count problems)) "each of the three triple coordinates is rejected")
     (is (every? #(= "release-manifest-parser-coordinate-null" (:code %)) problems))
-    (is (= #{"parser_build_hash" "parser_config_hash" "mapping_hash"}
+    (is (= #{"parser_build_hash" "parser_config_hash" "aat_parser_ir_mapping_hash"}
            (set (map :actual problems)))
         "parser_ir_schema_hash nullity has no discriminating power and is not flagged")
     (is (false? (release/release-admissible?
@@ -230,6 +230,21 @@
         ok-manifest {:work-slug "0005_1234_rashomon" :kind "plaintext"
                      :identity-object good-manifest-coordinates}]
     (is (empty? (release/manifest-coordinate-problems expected [ok-manifest])))))
+
+(deftest real-manifest-identity-object-keys-produce-no-problems-test
+  ;; abc.tools.manifest/identity-object writes exactly these four keys on a
+  ;; real per-work manifest. This test pins the manifest's real key names
+  ;; (in particular "aat_parser_ir_mapping_hash", NOT "mapping_hash") against
+  ;; expected-manifest-coordinates / manifest-coordinate-problems, so a future
+  ;; key-name drift between manifest.clj and publication_release.clj is caught
+  ;; here instead of silently null-flagging every real release.
+  (let [expected (release/expected-manifest-coordinates (valid-index))
+        real-manifest {:work-slug "0005_1234_rashomon" :kind "plaintext"
+                       :identity-object {"parser_build_hash" (h "f1")
+                                         "parser_config_hash" (get expected "parser_config_hash")
+                                         "aat_parser_ir_mapping_hash" (h "f3")
+                                         "parser_ir_schema_hash" (h "f4")}}]
+    (is (empty? (release/manifest-coordinate-problems expected [real-manifest])))))
 
 ;; ── Row: nonempty failure set ───────────────────────────────────────────────
 

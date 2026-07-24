@@ -1,70 +1,129 @@
 {
   "artifact_references": [
     {
-      "artifact_id": "sha256:0101010101010101010101010101010101010101010101010101010101010101",
+      "artifact_id": "sha256:0000000000000000000000000000000000000000000000000000000000000051",
       "artifact_kind": "source",
-      "content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000053",
       "locator":
       {
         "kind": "loose",
-        "path": "manifests\/source.manifest.json"
+        "path": "materialized-root\/works\/005_1234_rashomon\/source.manifest.json"
       },
-      "manifest_content_hash": "sha256:05a4bcb9b699d27e4a68c42971da25d52b383c94e3c134b85aad3cd28a2fed43",
+      "manifest_content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000052",
       "sidecar_role": null,
-      "validation_status": "passed"
+      "validation_status": "passed",
+      "work_slug": "005_1234_rashomon"
     },
     {
-      "artifact_id": "sha256:ed9b00739a19aae6ae4aa9a33d84d44067c7e10c03b32a0d7353379c783c8dbc",
-      "artifact_kind": "tei",
-      "content_hash": "sha256:0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
+      "artifact_id": "sha256:0000000000000000000000000000000000000000000000000000000000000061",
+      "artifact_kind": "parser-ir",
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000063",
       "locator":
       {
         "kind": "loose",
-        "path": "manifests\/tei.manifest.json"
+        "path": "materialized-root\/works\/005_1234_rashomon\/parser-ir.manifest.json"
       },
-      "manifest_content_hash": "sha256:aa41f59801d546115dd6d925ebd57e325e2676da0d6703efcce02e37c0843f84",
+      "manifest_content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000062",
       "sidecar_role": null,
-      "validation_status": "warning"
+      "validation_status": "passed",
+      "work_slug": "005_1234_rashomon"
+    },
+    {
+      "artifact_id": "sha256:0000000000000000000000000000000000000000000000000000000000000071",
+      "artifact_kind": "plaintext",
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000073",
+      "locator":
+      {
+        "kind": "loose",
+        "path": "publications\/005_1234_rashomon\/plaintext.manifest.json"
+      },
+      "manifest_content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000072",
+      "sidecar_role": null,
+      "validation_status": "passed",
+      "work_slug": "005_1234_rashomon"
+    },
+    {
+      "artifact_id": "sha256:0000000000000000000000000000000000000000000000000000000000000081",
+      "artifact_kind": "tei",
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000083",
+      "locator":
+      {
+        "kind": "loose",
+        "path": "publications\/005_1234_rashomon\/tei.manifest.json"
+      },
+      "manifest_content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000082",
+      "sidecar_role": null,
+      "validation_status": "warning",
+      "work_slug": "005_1234_rashomon"
     }],
   "failure_policy":
   {
-    "allow_nonzero_failures": true,
-    "max_failure_rate": null,
+    "allow_nonzero_failures": false,
+    "max_failure_rate": 0,
     "per_diagnostic_tolerances":
     {}
   },
+  "failures": [],
   "generated_at": "2026-07-07T00:00:00Z",
   "layout_policy":
   {
     "archive_format": "tar.zst",
     "batch_target_work_count": 250,
-    "batched_artifact_kinds": ["analysis","tokenized"],
-    "loose_artifact_kinds": ["tei","plaintext"]
+    "batched_artifact_kinds": [],
+    "loose_artifact_kinds": ["source","parser-ir","tei","plaintext"]
   },
-  "request_set_label": "smoke-basic-ja",
-  "schema_hash": "sha256:9be8e22d8d7f7b246c3bb3bf43e7ded7b099a179e95e47fe6d073f062bd0ef2e",
+  "parser_runtime_identity_object":
+  {
+    "aat_parser_ir_mapping_hash": "sha256:00000000000000000000000000000000000000000000000000000000000000f3",
+    "adapter_argv_template": ["{executable}","--mode","{mode}"],
+    "adapter_id": "ab-aozora",
+    "converter_argv_template": ["{executable}","convert"],
+    "converter_build_hash": "sha256:00000000000000000000000000000000000000000000000000000000000000f2",
+    "parser_build_hash": "sha256:00000000000000000000000000000000000000000000000000000000000000f1",
+    "parser_ir_schema_hash": "sha256:00000000000000000000000000000000000000000000000000000000000000f4"
+  },
+  "schema_hash": "sha256:66b27d900490c91ab0c7456c2b2e7145bd924f43650329356ed14d750c5da332",
   "schema_id": "https:\/\/w3id.org\/abc\/schemas\/snapshot-index.schema.json",
-  "snapshot_identity_hash": "sha256:56c278301e62d7f5d192f89b2f7624746b2837bd94ce3e2fd5184d81f3382ace",
+  "schema_version": "0.2.0",
+  "snapshot_date": "2026-07-07",
+  "snapshot_identity_hash": "sha256:825f1cb9eb04f8889591a9e07a871c023c17547d8fc626f6dd9474d6c001c2cb",
   "snapshot_index_identity_object":
   {
-    "analysis_recipe_hashes": ["sha256:1e2bb82410039a7f8d465e82f29f15472f451ae6d99eeca35292819ec2f24c1e"],
-    "artifact_set_hash": "sha256:32be5d18d806b427a9fca4436b472e46dcf14d3dd9927c182653838df8929f26",
-    "failure_policy_hash": "sha256:ca48558aa7fa54464f120e8f7c6c8c2ace4464f1441d03cb2e188b82adcc8629",
-    "layout_policy_hash": "sha256:3722bc2643277b169d456c2de9d82e274c39540f3d4918ad2c42e827175c20d9",
-    "manifest_index_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
-    "parser_evidence_hashes": [],
-    "request_set_id": "sha256:307144cf18911c2d2ac198c8b05f602ee4511111019b88b08b6134549b601ca9",
-    "schema_hashes": ["sha256:075e48811964f439ceb82643bb485138add8764cb17546f554422849a2918f9c","sha256:3097d32f05a04daddab540548fb30846fa8b6a4cb1400e3af1ba7606e195f0b1","sha256:52d420dd985849cfb7cbd2bfb0f28bb04100c901e105506f972204157a1b0fa6","sha256:9be8e22d8d7f7b246c3bb3bf43e7ded7b099a179e95e47fe6d073f062bd0ef2e"],
-    "snapshot_index_schema_hash": "sha256:9be8e22d8d7f7b246c3bb3bf43e7ded7b099a179e95e47fe6d073f062bd0ef2e",
-    "source_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-    "tokenizer_profile_hashes": []
+    "artifact_set_hash": "sha256:4ed65bc9cec04e7e06162b422622e64d17104eaa04b4b2f74f978932a97b4c06",
+    "candidate_ref": "sha256:00000000000000000000000000000000000000000000000000000000000000ca",
+    "failure_policy_hash": "sha256:c22b1ce1b095d7057be6e3d433118917d1810dd0ac56c8089a752a3cbda2a32a",
+    "failure_set_hash": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "layout_policy_hash": "sha256:3c89d5c458e70e7699676f1a6fa7e85fa34d5afdf35e320f5a419807861e6541",
+    "parser_config_hash": "sha256:e86a928119d970660ad9c8fd83a7947e595ad3d9f65caef3c0ab44840c8ac7f1",
+    "qualification_identity_ref": "sha256:00000000000000000000000000000000000000000000000000000000000000cb",
+    "schema_hashes": ["sha256:66b27d900490c91ab0c7456c2b2e7145bd924f43650329356ed14d750c5da332"],
+    "snapshot_index_schema_hash": "sha256:66b27d900490c91ab0c7456c2b2e7145bd924f43650329356ed14d750c5da332",
+    "source_selection_hash": "sha256:b4c531443e67034b5e9924787774ca43b89cf87bf82335076602f3ba5e57c0f4"
   },
-  "snapshot_label": "soranoha-snapshot-2026-07-07-01",
+  "source_selection_identity_object":
+  {
+    "aozora_git_commit": "0123456789abcdef0123456789abcdef01234567",
+    "catalog_csv_hash": "sha256:00000000000000000000000000000000000000000000000000000000000000c1",
+    "snapshot_date": "2026-07-07",
+    "sources": [
+      {
+        "archive_hash": "sha256:00000000000000000000000000000000000000000000000000000000000000a1",
+        "bundle_hash": "sha256:00000000000000000000000000000000000000000000000000000000000000b1",
+        "metadata_record_hash": "sha256:00000000000000000000000000000000000000000000000000000000000000e5",
+        "person_id": "1234",
+        "primary_text_hash": "sha256:00000000000000000000000000000000000000000000000000000000000000d1",
+        "primary_text_member": "1234_ruby.txt",
+        "slug": "005_1234_rashomon",
+        "text_zip_relpath": "cards\/000005\/files\/1234_ruby.zip",
+        "work_id": "0005"
+      }],
+    "trust_mode": "official-git"
+  },
   "summary":
   {
     "failure_count": 0,
     "failure_rate": 0.0,
-    "success_count": 2,
-    "total_artifacts": 2
+    "success_count": 4,
+    "total_artifacts": 4
   }
 }

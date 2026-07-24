@@ -59,7 +59,7 @@
    "schemas/parser-ir-publication-preservation.schema.json" "0.3.0"
    "schemas/request-set.schema.json" "0.1.4"
    "schemas/source-region-coverage.schema.json" "0.2.1"
-   "schemas/snapshot-index.schema.json" "0.1.1"
+   "schemas/snapshot-index.schema.json" "0.2.0"
    "schemas/tei-eaj-comparison.schema.json" "0.1.0"
    "schemas/pack-policy.schema.json" "0.1.0"
    "schemas/tokenizer-profile.schema.json" "0.1.0"

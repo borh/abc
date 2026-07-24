@@ -2,19 +2,22 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/snapshot-index.schema.json",
   "title": "ABC Snapshot Index",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema_id",
+    "schema_version",
     "schema_hash",
-    "snapshot_label",
+    "snapshot_date",
+    "generated_at",
     "snapshot_identity_hash",
     "snapshot_index_identity_object",
-    "request_set_label",
-    "generated_at",
+    "source_selection_identity_object",
+    "parser_runtime_identity_object",
     "failure_policy",
     "layout_policy",
+    "failures",
     "artifact_references",
     "summary"
   ],
@@ -22,19 +25,26 @@
     "schema_id": {
       "const": "https://w3id.org/abc/schemas/snapshot-index.schema.json"
     },
+    "schema_version": { "const": "0.2.0" },
     "schema_hash": { "$ref": "#/$defs/hash" },
-    "snapshot_label": {
-      "type": "string",
-      "pattern": "^soranoha-snapshot-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}$"
-    },
+    "snapshot_date": { "$ref": "#/$defs/date" },
+    "generated_at": { "type": "string", "minLength": 1 },
     "snapshot_identity_hash": { "$ref": "#/$defs/hash" },
     "snapshot_index_identity_object": {
       "$ref": "#/$defs/snapshotIndexIdentityObject"
     },
-    "request_set_label": { "type": "string", "minLength": 1 },
-    "generated_at": { "type": "string", "minLength": 1 },
+    "source_selection_identity_object": {
+      "$ref": "#/$defs/sourceSelectionIdentityObject"
+    },
+    "parser_runtime_identity_object": {
+      "$ref": "#/$defs/parserRuntimeIdentityObject"
+    },
     "failure_policy": { "$ref": "#/$defs/failurePolicy" },
     "layout_policy": { "$ref": "#/$defs/layoutPolicy" },
+    "failures": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/failureRecord" }
+    },
     "artifact_references": {
       "type": "array",
       "items": { "$ref": "#/$defs/artifactReference" }
@@ -46,39 +56,144 @@
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
+    "nullableHash": {
+      "anyOf": [
+        { "$ref": "#/$defs/hash" },
+        { "type": "null" }
+      ]
+    },
     "hashArray": {
       "type": "array",
       "items": { "$ref": "#/$defs/hash" },
       "uniqueItems": true
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "gitCommit": {
+      "anyOf": [
+        { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        { "type": "null" }
+      ]
     },
     "snapshotIndexIdentityObject": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "snapshot_index_schema_hash",
-        "request_set_id",
-        "source_snapshot_hash",
-        "manifest_index_hash",
+        "source_selection_hash",
+        "candidate_ref",
+        "qualification_identity_ref",
+        "parser_config_hash",
         "artifact_set_hash",
+        "failure_set_hash",
         "failure_policy_hash",
         "layout_policy_hash",
-        "schema_hashes",
-        "parser_evidence_hashes",
-        "tokenizer_profile_hashes",
-        "analysis_recipe_hashes"
+        "schema_hashes"
       ],
       "properties": {
         "snapshot_index_schema_hash": { "$ref": "#/$defs/hash" },
-        "request_set_id": { "$ref": "#/$defs/hash" },
-        "source_snapshot_hash": { "$ref": "#/$defs/hash" },
-        "manifest_index_hash": { "$ref": "#/$defs/hash" },
+        "source_selection_hash": { "$ref": "#/$defs/hash" },
+        "candidate_ref": { "$ref": "#/$defs/nullableHash" },
+        "qualification_identity_ref": { "$ref": "#/$defs/nullableHash" },
+        "parser_config_hash": { "$ref": "#/$defs/hash" },
         "artifact_set_hash": { "$ref": "#/$defs/hash" },
+        "failure_set_hash": { "$ref": "#/$defs/hash" },
         "failure_policy_hash": { "$ref": "#/$defs/hash" },
         "layout_policy_hash": { "$ref": "#/$defs/hash" },
-        "schema_hashes": { "$ref": "#/$defs/hashArray" },
-        "parser_evidence_hashes": { "$ref": "#/$defs/hashArray" },
-        "tokenizer_profile_hashes": { "$ref": "#/$defs/hashArray" },
-        "analysis_recipe_hashes": { "$ref": "#/$defs/hashArray" }
+        "schema_hashes": { "$ref": "#/$defs/hashArray" }
+      }
+    },
+    "sourceSelectionIdentityObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trust_mode",
+        "aozora_git_commit",
+        "catalog_csv_hash",
+        "snapshot_date",
+        "sources"
+      ],
+      "properties": {
+        "trust_mode": { "enum": ["official-git", "fixture"] },
+        "aozora_git_commit": { "$ref": "#/$defs/gitCommit" },
+        "catalog_csv_hash": { "$ref": "#/$defs/hash" },
+        "snapshot_date": { "$ref": "#/$defs/date" },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceRow" }
+        }
+      }
+    },
+    "sourceRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "work_id",
+        "person_id",
+        "slug",
+        "text_zip_relpath",
+        "archive_hash",
+        "bundle_hash",
+        "primary_text_member",
+        "primary_text_hash",
+        "metadata_record_hash"
+      ],
+      "properties": {
+        "work_id": { "type": "string", "minLength": 1 },
+        "person_id": { "type": "string", "minLength": 1 },
+        "slug": { "type": "string", "minLength": 1 },
+        "text_zip_relpath": { "$ref": "#/$defs/relativePath" },
+        "archive_hash": { "$ref": "#/$defs/hash" },
+        "bundle_hash": { "$ref": "#/$defs/hash" },
+        "primary_text_member": { "type": "string", "minLength": 1 },
+        "primary_text_hash": { "$ref": "#/$defs/hash" },
+        "metadata_record_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "parserRuntimeIdentityObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter_id",
+        "adapter_argv_template",
+        "converter_argv_template",
+        "parser_build_hash",
+        "converter_build_hash",
+        "aat_parser_ir_mapping_hash",
+        "parser_ir_schema_hash"
+      ],
+      "properties": {
+        "adapter_id": { "type": "string", "minLength": 1 },
+        "adapter_argv_template": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "converter_argv_template": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "parser_build_hash": { "$ref": "#/$defs/hash" },
+        "converter_build_hash": { "$ref": "#/$defs/hash" },
+        "aat_parser_ir_mapping_hash": { "$ref": "#/$defs/hash" },
+        "parser_ir_schema_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "failureRecord": {
+      "type": "object",
+      "required": ["stage", "work_slug", "code"],
+      "properties": {
+        "stage": { "type": "string", "minLength": 1 },
+        "work_slug": {
+          "anyOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string" },
+        "path": { "type": "string" }
       }
     },
     "failurePolicy": {
@@ -118,7 +233,7 @@
       "properties": {
         "loose_artifact_kinds": {
           "type": "array",
-          "items": { "enum": ["tei", "plaintext", "annotation"] },
+          "items": { "enum": ["source", "parser-ir", "tei", "plaintext", "annotation"] },
           "uniqueItems": true
         },
         "batched_artifact_kinds": {
@@ -141,6 +256,7 @@
       "required": [
         "artifact_id",
         "artifact_kind",
+        "work_slug",
         "sidecar_role",
         "validation_status",
         "manifest_content_hash",
@@ -153,16 +269,11 @@
           "enum": [
             "source",
             "parser-ir",
-            "warnings",
             "plaintext",
-            "tei",
-            "rdf-view",
-            "tokenized",
-            "analysis",
-            "annotation",
-            "failure"
+            "tei"
           ]
         },
+        "work_slug": { "type": "string", "minLength": 1 },
         "sidecar_role": {
           "anyOf": [
             { "type": "string", "minLength": 1 },
@@ -208,6 +319,11 @@
           "then": { "required": ["archive_path", "member_path"] }
         }
       ]
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
     },
     "summary": {
       "type": "object",

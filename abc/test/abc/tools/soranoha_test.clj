@@ -174,8 +174,7 @@
 ;; The producer commands (snapshot-index/reproduce/materialize-snapshot-root!)
 ;; were retired with the competing publication composition. The read-only
 ;; explain/validate projections stay and are characterized here against the
-;; checked-in 0.1.1 example index (a read-only value, not a materialized root)
-;; until Task 8 versions the index and its projections to 0.2.0.
+;; checked-in 0.2.0 example index (a read-only value, not a materialized root).
 (def ^:private example-snapshot-index-path
   "examples/v0/snapshot/snapshot-index.json")
 
@@ -184,8 +183,11 @@
         out (with-out-str
               (is (zero? (soranoha/run! ["explain-snapshot"
                                          example-snapshot-index-path]))))]
-    (is (string/includes? out (get snapshot "snapshot_label")))
+    (is (string/includes? out (get snapshot "snapshot_date")))
     (is (string/includes? out (get snapshot "snapshot_identity_hash")))
+    (is (string/includes?
+         out (get-in snapshot ["snapshot_index_identity_object"
+                               "source_selection_hash"])))
     (is (string/includes? out "failure_rate:"))))
 
 (deftest validate-command-validates-checked-in-example-index-test
@@ -194,7 +196,7 @@
               (is (zero? (soranoha/run! ["validate"
                                          example-snapshot-index-path]))))]
     (is (string/includes? out "snapshot_valid: true"))
-    (is (string/includes? out (get snapshot "snapshot_label")))
+    (is (string/includes? out (get snapshot "snapshot_date")))
     (is (string/includes? out (get snapshot "snapshot_identity_hash")))))
 
 (deftest source-snapshot-command-generates-workset-and-snapshot-test

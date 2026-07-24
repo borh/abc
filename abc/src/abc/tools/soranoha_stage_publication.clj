@@ -7,9 +7,13 @@
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
-(defn- staged-work-slug [locator-path]
-  (or (second (re-find #"^artifacts/works/([^/]+)/" locator-path))
-      "single"))
+(defn- reference-work-slug
+  "Read the work identity from the reference's `work_slug`; staging never parses
+  a slug out of a locator string."
+  [reference]
+  (or (get reference "work_slug")
+      (throw (ex-info "artifact reference is missing work_slug"
+                      {:artifact_id (get reference "artifact_id")}))))
 
 (defn- manifest-file [snapshot-root reference]
   (case (get-in reference ["locator" "kind"])
@@ -41,24 +45,26 @@
 (defn- staged-content-name [manifest-value]
   (get-in manifest-value ["content" "path_hint"]))
 
+(defn- sidecar-source-file [manifest-file sidecar]
+  (fs/file (fs/parent manifest-file) (get sidecar "path_hint")))
+
 (defn- staged-loose-reference
+  "Place the unchanged manifest, its content, and every sidecar together under
+  artifacts/<kind>/by-work/<work_slug>/ so the manifest's relative path_hint
+  values remain true, then rewrite only the locator. Manifests are copied byte
+  for byte and never regenerated."
   [{:keys [staged-root slug reference manifest-file manifest-value]}]
   (let [artifact-kind (get reference "artifact_kind")
         content-name (staged-content-name manifest-value)
-        manifest-target (io/file staged-root
-                                 "manifests"
-                                 "by-work"
-                                 slug
-                                 (staged-manifest-name artifact-kind))
-        content-target (io/file staged-root
-                                "artifacts"
-                                artifact-kind
-                                "by-work"
-                                slug
-                                content-name)]
+        work-dir (io/file staged-root "artifacts" artifact-kind "by-work" slug)
+        manifest-target (io/file work-dir (staged-manifest-name artifact-kind))
+        content-target (io/file work-dir content-name)]
     (files/copy-file! manifest-file manifest-target)
     (files/copy-file! (manifest-content-file manifest-file manifest-value)
                       content-target)
+    (doseq [sidecar (get manifest-value "sidecars" [])]
+      (files/copy-file! (sidecar-source-file manifest-file sidecar)
+                        (io/file work-dir (get sidecar "path_hint"))))
     (assoc reference
            "locator" {"kind" "loose"
                       "path" (string/replace
@@ -94,17 +100,20 @@
                                   "member_path" (batch-member-path
                                                  slug
                                                  artifact-kind)})
-     :entries [{:member-path (batch-member-path slug artifact-kind)
-                :source-file manifest-file}
-               {:member-path (str slug "/" (staged-content-name
-                                            manifest-value))
-                :source-file content-file}]}))
+     :entries (into [{:member-path (batch-member-path slug artifact-kind)
+                      :source-file manifest-file}
+                     {:member-path (str slug "/" (staged-content-name
+                                                  manifest-value))
+                      :source-file content-file}]
+                    (map (fn [sidecar]
+                           {:member-path (str slug "/" (get sidecar "path_hint"))
+                            :source-file (sidecar-source-file manifest-file sidecar)})
+                         (get manifest-value "sidecars" [])))}))
 
 (defn- stage-reference
   [{:keys [snapshot-root layout-policy batched] :as opts}
    reference]
-  (let [locator-path (get-in reference ["locator" "path"])
-        slug (staged-work-slug locator-path)
+  (let [slug (reference-work-slug reference)
         manifest-file (manifest-file snapshot-root reference)
         manifest-value (files/read-json manifest-file)
         artifact-kind (get reference "artifact_kind")

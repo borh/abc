@@ -100,14 +100,17 @@
                           (get snapshot "artifact_references" [])))))
 
 (defn build-report [root snapshot validation]
-  (let [artifacts (referenced-artifacts root snapshot)]
+  (let [artifacts (referenced-artifacts root snapshot)
+        identity-object (get snapshot "snapshot_index_identity_object")]
     {"schema_id" "https://w3id.org/abc/soranoha-layout-report-v0.json"
-     "report_version" "0.1.0"
+     "report_version" "0.2.0"
      "generated_at" (get snapshot "generated_at")
-     "request_set_label" (get snapshot "request_set_label")
-     "request_set_id" (get-in snapshot ["snapshot_index_identity_object"
-                                        "request_set_id"])
-     "snapshot_label" (get snapshot "snapshot_label")
+     "snapshot_date" (get snapshot "snapshot_date")
+     "source_selection_hash" (get identity-object "source_selection_hash")
+     "candidate_ref" (get identity-object "candidate_ref")
+     "qualification_identity_ref" (get identity-object "qualification_identity_ref")
+     "parser_config_hash" (get identity-object "parser_config_hash")
+     "failure_set_hash" (get identity-object "failure_set_hash")
      "snapshot_identity_hash" (get snapshot "snapshot_identity_hash")
      "snapshot_summary" (get snapshot "summary")
      "layout_policy" (get snapshot "layout_policy")

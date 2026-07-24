@@ -90,8 +90,8 @@
       "path": "data/abc-schemas/schemas/snapshot-index.schema.json",
       "id": "https://w3id.org/abc/schemas/snapshot-index.schema.json",
       "title": "ABC Snapshot Index",
-      "version": "0.1.1",
-      "hash": "sha256:faad2da4dec3a041a53c71e0c8e16bebbfa39a1329c88c81d03a7b4065c07246"
+      "version": "0.2.0",
+      "hash": "sha256:66b27d900490c91ab0c7456c2b2e7145bd924f43650329356ed14d750c5da332"
     },
     {
       "path": "data/abc-schemas/schemas/tei-eaj-comparison.schema.json",

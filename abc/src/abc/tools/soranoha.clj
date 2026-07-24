@@ -4,7 +4,6 @@
             [abc.tools.annotation-join-stats :as annotation-join-stats]
             [abc.tools.annotation-join-stats-run :as annotation-join-stats-run]
             [abc.tools.files :as files]
-            [abc.tools.hash :as hash]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-source-snapshot :as materialize-source-snapshot]
             [abc.tools.publication-policy :as publication-policy]
@@ -15,12 +14,9 @@
             [abc.tools.soranoha-build-publication :as build-publication]
             [abc.tools.soranoha-layout-report :as layout-report]
             [abc.tools.soranoha-stage-publication :as stage-publication]
-            [abc.tools.tar :as tar]
             [babashka.fs :as fs]
             [babashka.cli :as cli]
-            [charred.api :as json]
-            [clojure.java.io :as io])
-  (:import [java.nio.charset StandardCharsets]))
+            [clojure.java.io :as io]))
 
 (defn request-set-labels []
   (request-set-resolver/request-set-labels))
@@ -83,21 +79,13 @@
     0))
 
 (defn- print-snapshot-summary!
-  "Print the standard snapshot label / identity-hash / request-set-label
-  triple to stdout (shared by the snapshot-emitting commands)."
+  "Print the standard snapshot date / identity-hash / source-selection-hash
+  triple to stdout (shared by the snapshot-consuming commands)."
   [snapshot]
-  (println "snapshot_label:" (get snapshot "snapshot_label"))
-  (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
-  (println "request_set_label:" (get snapshot "request_set_label")))
-
-(defn snapshot-index-path [path]
-  (let [file (io/file path)]
-    (if (fs/directory? file)
-      (let [snapshot-index-file (io/file file "snapshot-index.json")]
-        (if (fs/regular-file? snapshot-index-file)
-          snapshot-index-file
-          (io/file file "index.json")))
-      file)))
+  (let [identity-object (get snapshot "snapshot_index_identity_object")]
+    (println "snapshot_date:" (get snapshot "snapshot_date"))
+    (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
+    (println "source_selection_hash:" (get identity-object "source_selection_hash"))))
 
 (defn- snapshot-root-path [path]
   (let [file (io/file path)]
@@ -106,152 +94,46 @@
       (or (fs/parent file)
           (io/file ".")))))
 
-(defn read-valid-snapshot-index [path]
-  (let [snapshot-path (snapshot-index-path path)
-        snapshot (files/read-json snapshot-path)
-        snapshot-schema (files/read-json "schemas/snapshot-index.schema.json")]
-    (when-let [errors (schema/validation-errors snapshot-schema snapshot)]
-      (throw (ex-info "Snapshot index schema validation failed"
-                      {:path (str snapshot-path)
-                       :errors errors})))
-    (snapshot-index/validate-snapshot-index! snapshot)
-    snapshot))
-
-(defn- compare-reference-field! [label reference expected actual]
-  (when-not (= expected actual)
-    (throw (ex-info (str "Referenced snapshot manifest " label
-                         " mismatch")
-                    {:locator (get reference "locator")
-                     :field label
-                     :expected expected
-                     :actual actual}))))
-
-(defn- validate-manifest-reference-fields! [reference manifest-value]
-  (doseq [[field expected actual]
-          [["artifact_id" (get reference "artifact_id")
-            (get manifest-value "artifact_id")]
-           ["artifact_kind" (get reference "artifact_kind")
-            (get manifest-value "artifact_kind")]
-           ["validation_status" (get reference "validation_status")
-            (get manifest-value "validation_status")]
-           ["content_hash" (get reference "content_hash")
-            (get-in manifest-value ["content" "content_hash"])]]]
-    (compare-reference-field! field reference expected actual)))
-
-(defn- validate-loose-reference! [root reference]
-  (let [relative-path (get-in reference ["locator" "path"])
-        manifest-file (io/file root relative-path)]
-    (when-not (fs/regular-file? manifest-file)
-      (throw (ex-info "Referenced snapshot manifest does not exist"
-                      {:locator (get reference "locator")
-                       :path (str manifest-file)})))
-    (compare-reference-field! "manifest_content_hash"
-                              reference
-                              (get reference "manifest_content_hash")
-                              (manifest/file-hash manifest-file))
-    (let [manifest-value (files/read-json manifest-file)]
-      (validate-manifest-reference-fields! reference manifest-value))))
-
-(defn- validate-archive-member-reference! [root reference]
-  (let [archive-path (get-in reference ["locator" "archive_path"])
-        member-path (get-in reference ["locator" "member_path"])
-        archive-file (io/file root archive-path)]
-    (when-not (fs/regular-file? archive-file)
-      (throw (ex-info "Referenced snapshot archive does not exist"
-                      {:locator (get reference "locator")
-                       :path (str archive-file)})))
-    (let [manifest-bytes (or (tar/member-bytes archive-file member-path)
-                             (throw
-                              (ex-info
-                               "Referenced snapshot archive does not contain member"
-                               {:path (str archive-file)
-                                :member_path member-path})))]
-      (compare-reference-field! "manifest_content_hash"
-                                reference
-                                (get reference "manifest_content_hash")
-                                (str "sha256:" (hash/sha256-bytes
-                                                manifest-bytes)))
-      (validate-manifest-reference-fields!
-       reference
-       (json/read-json (String. manifest-bytes StandardCharsets/UTF_8))))))
+(defn read-valid-snapshot-index
+  "Delegates to the single file-loading boundary owned by
+  abc.tools.snapshot-index. The dispatcher keeps only this delegation so the
+  domain reader can thin without stranding logic here."
+  [path]
+  (snapshot-index/read-valid-snapshot-index path))
 
 (defn- validate-snapshot-root-references! [root snapshot]
-  (doseq [reference (get snapshot "artifact_references" [])
-          :let [locator-kind (get-in reference ["locator" "kind"])]]
-    (case locator-kind
-      "loose" (validate-loose-reference! root reference)
-      "archive-member" (validate-archive-member-reference! root reference)
-      nil (throw (ex-info "Snapshot artifact reference has no locator kind"
-                          {:reference reference}))
-      true))
-  true)
+  (snapshot-index/assert-closed-root! root snapshot))
 
-(defn- validate-run-summary! [root snapshot]
-  (let [run-summary-file (io/file root "run-summary.json")]
-    (when (fs/regular-file? run-summary-file)
-      (let [summary (files/read-json run-summary-file)]
-        (doseq [[field expected actual]
-                [["request_set_label" (get snapshot "request_set_label")
-                  (get summary "request_set_label")]
-                 ["snapshot_label" (get snapshot "snapshot_label")
-                  (get summary "snapshot_label")]
-                 ["snapshot_identity_hash" (get snapshot "snapshot_identity_hash")
-                  (get summary "snapshot_identity_hash")]
-                 ["snapshot_summary" (get snapshot "summary")
-                  (get summary "snapshot_summary")]
-                 ["parser_evidence_hashes"
-                  (get-in snapshot ["snapshot_index_identity_object"
-                                    "parser_evidence_hashes"])
-                  (get summary "parser_evidence_hashes")]]]
-          (when-not (= expected actual)
-            (throw (ex-info (str "Run summary " field " mismatch")
-                            {:path (str run-summary-file)
-                             :field field
-                             :expected expected
-                             :actual actual})))))))
-  true)
-
-(defn- read-required-run-summary [root]
-  (let [run-summary-file (io/file root "run-summary.json")]
-    (when-not (fs/regular-file? run-summary-file)
-      (throw (ex-info "Snapshot root has no run-summary.json"
-                      {:path (str run-summary-file)})))
-    (files/read-json run-summary-file)))
-
-(defn- publication-report [snapshot run-summary validation]
+(defn- publication-report [snapshot validation]
   (let [identity-object (get snapshot "snapshot_index_identity_object")]
     {"schema_id" "https://w3id.org/abc/soranoha-publication-report-v0.json"
-     "report_version" "0.1.0"
+     "report_version" "0.2.0"
      "generated_at" (get snapshot "generated_at")
-     "request_set_label" (get snapshot "request_set_label")
-     "request_set_id" (get identity-object "request_set_id")
-     "snapshot_label" (get snapshot "snapshot_label")
+     "snapshot_date" (get snapshot "snapshot_date")
      "snapshot_identity_hash" (get snapshot "snapshot_identity_hash")
-     "source_snapshot_hash" (get identity-object "source_snapshot_hash")
+     "source_selection_hash" (get identity-object "source_selection_hash")
+     "candidate_ref" (get identity-object "candidate_ref")
+     "qualification_identity_ref" (get identity-object "qualification_identity_ref")
+     "parser_config_hash" (get identity-object "parser_config_hash")
+     "artifact_set_hash" (get identity-object "artifact_set_hash")
+     "failure_set_hash" (get identity-object "failure_set_hash")
+     "layout_policy_hash" (get identity-object "layout_policy_hash")
+     "failure_policy_hash" (get identity-object "failure_policy_hash")
+     "schema_hashes" (get identity-object "schema_hashes")
      "snapshot_summary" (get snapshot "summary")
      "artifact_kind_counts" (layout-report/artifact-kind-counts snapshot)
      "manifest_reference_count" (count (get snapshot "artifact_references" []))
-     "artifact_manifest_count" (get run-summary "artifact_manifest_count")
-     "materialization_count" (get run-summary "materialization_count")
-     "parser_evidence_hashes" (get identity-object "parser_evidence_hashes")
-     "schema_hashes" (get identity-object "schema_hashes")
-     "layout_policy_hash" (get identity-object "layout_policy_hash")
-     "failure_policy_hash" (get identity-object "failure_policy_hash")
-     "manifest_index_hash" (get identity-object "manifest_index_hash")
-     "runtime_environment" (get run-summary "runtime_environment")
+     "failure_count" (count (get snapshot "failures" []))
      "validation" validation
-     "notes" "Citable reproduction evidence report. This file is not part of snapshot identity; cite snapshot_identity_hash, request_set_id, and artifact hashes from snapshot-index.json."}))
+     "notes" "Citable reproduction evidence report. This file is not part of snapshot identity; cite snapshot_identity_hash, source_selection_hash, parser_config_hash, and artifact hashes from snapshot-index.json."}))
 
 (defn- write-publication-report-file! [root snapshot output-path]
   (validate-snapshot-root-references! root snapshot)
-  (validate-run-summary! root snapshot)
-  (let [run-summary (read-required-run-summary root)
-        validation {"snapshot_root_valid" true
+  (let [validation {"snapshot_root_valid" true
                     "checked_manifest_references" (count (get snapshot
                                                               "artifact_references"
-                                                              []))
-                    "run_summary_valid" true}
-        report (publication-report snapshot run-summary validation)
+                                                              []))}
+        report (publication-report snapshot validation)
         output-file (io/file output-path)]
     (manifest/write-json-file! output-file report)
     {:file output-file
@@ -269,7 +151,7 @@
       (println "publication_report:" (str file))
       (println "snapshot_identity_hash:" (get snapshot
                                               "snapshot_identity_hash"))
-      (println "request_set_label:" (get snapshot "request_set_label"))
+      (println "snapshot_date:" (get snapshot "snapshot_date"))
       0)))
 
 (defn- write-layout-report-file! [root snapshot output-path]
@@ -296,7 +178,7 @@
       (println "layout_report:" (str file))
       (println "snapshot_identity_hash:" (get snapshot
                                               "snapshot_identity_hash"))
-      (println "request_set_label:" (get snapshot "request_set_label"))
+      (println "snapshot_date:" (get snapshot "snapshot_date"))
       0)))
 
 (defn stage-publication! [snapshot-root output-root]
@@ -308,7 +190,6 @@
       (throw (ex-info "stage-publication requires a snapshot root directory"
                       {:path (str root)})))
     (validate-snapshot-root-references! root snapshot)
-    (validate-run-summary! root snapshot)
     (let [{:keys [index-file snapshot archive-count]}
           (stage-publication/stage-publication! {:snapshot-root root
                                                  :staged-root output-root
@@ -316,16 +197,17 @@
       (println "staged_index:" (str index-file))
       (println "snapshot_identity_hash:" (get snapshot
                                               "snapshot_identity_hash"))
-      (println "request_set_label:" (get snapshot "request_set_label"))
+      (println "snapshot_date:" (get snapshot "snapshot_date"))
       (println "archive_count:" archive-count)
       0)))
 
 (defn explain-snapshot! [path]
   (let [snapshot (read-valid-snapshot-index path)
-        summary (get snapshot "summary")]
+        summary (get snapshot "summary")
+        identity-object (get snapshot "snapshot_index_identity_object")]
     (print-snapshot-summary! snapshot)
-    (println "request_set_id:" (get-in snapshot ["snapshot_index_identity_object"
-                                                 "request_set_id"]))
+    (println "parser_config_hash:" (get identity-object "parser_config_hash"))
+    (println "failure_set_hash:" (get identity-object "failure_set_hash"))
     (println "total_artifacts:" (get summary "total_artifacts"))
     (println "success_count:" (get summary "success_count"))
     (println "failure_count:" (get summary "failure_count"))
@@ -336,10 +218,9 @@
   (let [snapshot (read-valid-snapshot-index snapshot-root)]
     (when (fs/directory? snapshot-root)
       (validate-snapshot-root-references! (snapshot-root-path snapshot-root)
-                                          snapshot)
-      (validate-run-summary! (snapshot-root-path snapshot-root) snapshot))
+                                          snapshot))
     (println "snapshot_valid: true")
-    (println "snapshot_label:" (get snapshot "snapshot_label"))
+    (println "snapshot_date:" (get snapshot "snapshot_date"))
     (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
     0))
 

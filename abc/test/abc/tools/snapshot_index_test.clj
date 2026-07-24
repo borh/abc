@@ -1,202 +1,348 @@
 (ns abc.tools.snapshot-index-test
-  (:require [abc.tools.files :as files]
+  (:require [abc.test-fs :refer [with-temp-dir]]
+            [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
-            [abc.tools.request-set-resolver :as request-set-resolver]
             [abc.tools.schema :as schema]
             [abc.tools.snapshot-index :as snapshot-index]
+            [babashka.fs :as fs]
+            [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
 
-(def artifact-a
-  {"artifact_id" (files/example-hash "21")
-   "artifact_kind" "plaintext"
-   "sidecar_role" nil
-   "validation_status" "passed"
-   "manifest_content_hash" (files/example-hash "22")
-   "content_hash" (files/example-hash "23")
-   "locator" {"kind" "loose"
-              "path" "artifacts/plaintext/0001.txt"}})
+(defn h [suffix] (files/example-hash suffix))
 
-(def artifact-b
-  {"artifact_id" (files/example-hash "31")
-   "artifact_kind" "analysis"
-   "sidecar_role" "analysis-result"
-   "validation_status" "passed"
-   "manifest_content_hash" (files/example-hash "32")
-   "content_hash" (files/example-hash "33")
-   "locator" {"kind" "archive-member"
-              "archive_path" "artifacts/analysis/0000.tar.zst"
-              "member_path" "0001/analysis-result.json"}})
+(def slug "0005_1234_rashomon")
 
-(defn identity-args []
-  {:snapshot-index-schema-hash (files/example-hash "01")
-   :request-set-id (files/example-hash "02")
-   :source-snapshot-hash (files/example-hash "03")
-   :manifest-index-hash (files/example-hash "04")
-   :artifact-references [artifact-b artifact-a artifact-a]
-   :failure-policy {"allow_nonzero_failures" true
-                    "max_failure_rate" nil
-                    "per_diagnostic_tolerances" {}}
-   :layout-policy {"loose_artifact_kinds" ["tei" "plaintext"]
-                   "batched_artifact_kinds" ["analysis" "tokenized"]
-                   "batch_target_work_count" 250
-                   "archive_format" "tar.zst"}
-   :schema-hashes [(files/example-hash "09") (files/example-hash "08")]
-   :parser-evidence-hashes [(files/example-hash "07")]
-   :tokenizer-profile-hashes []
-   :analysis-recipe-hashes [(files/example-hash "06")]})
+(defn artifact-ref
+  [{:keys [kind sidecar-role status aid mch ch path]
+    :or {sidecar-role nil status "passed"}}]
+  {"artifact_id" aid
+   "artifact_kind" kind
+   "work_slug" slug
+   "sidecar_role" sidecar-role
+   "validation_status" status
+   "manifest_content_hash" mch
+   "content_hash" ch
+   "locator" {"kind" "loose" "path" path}})
 
-(defn- temp-json-file [prefix value]
-  (let [file (java.io.File/createTempFile prefix ".json")]
-    (manifest/write-json-file! file value)
-    file))
+(def source-selection
+  {"trust_mode" "official-git"
+   "aozora_git_commit" "0123456789abcdef0123456789abcdef01234567"
+   "catalog_csv_hash" (h "c1")
+   "snapshot_date" "2026-07-07"
+   "sources"
+   [{"work_id" "0005" "person_id" "1234" "slug" slug
+     "text_zip_relpath" "cards/000005/files/1234_ruby.zip"
+     "archive_hash" (h "a1") "bundle_hash" (h "b1")
+     "primary_text_member" "1234_ruby.txt"
+     "primary_text_hash" (h "d1") "metadata_record_hash" (h "e5")}]})
 
-(defn- manifest-fixture
-  [{:keys [artifact-id artifact-kind validation-status content-hash]}]
-  (cond-> {"artifact_id" artifact-id
-           "artifact_kind" artifact-kind
-           "validation_status" validation-status
-           "sidecars" []
-           "provenance" {"used" []
-                         "was_derived_from" []}}
-    content-hash
-    (assoc "content" {"content_hash" content-hash
-                      "media_type" "application/json"
-                      "byte_length" 2
-                      "path_hint" "artifact.json"})))
+(def parser-runtime-identity
+  {"adapter_id" "ab-aozora"
+   "adapter_argv_template" ["{executable}" "--mode" "{mode}"]
+   "converter_argv_template" ["{executable}" "convert"]
+   "parser_build_hash" (h "f1")
+   "converter_build_hash" (h "f2")
+   "aat_parser_ir_mapping_hash" (h "f3")
+   "parser_ir_schema_hash" (h "f4")})
 
-(deftest snapshot-label-requires-date-and-sequence-test
-  (is (snapshot-index/snapshot-label? "soranoha-snapshot-2026-07-07-01"))
-  (is (not (snapshot-index/snapshot-label? "soranoha-snapshot-2026-07-07")))
-  (is (not (snapshot-index/snapshot-label? "latest"))))
+(def failure-policy
+  {"allow_nonzero_failures" false
+   "max_failure_rate" 0
+   "per_diagnostic_tolerances" {}})
 
-(deftest snapshot-index-identity-canonicalizes-arrays-and-artifacts-test
-  (let [identity (snapshot-index/snapshot-index-identity-object (identity-args))]
-    (is (= [(files/example-hash "08") (files/example-hash "09")]
-           (get identity "schema_hashes")))
-    (is (= [] (get identity "tokenizer_profile_hashes")))
-    (is (= (snapshot-index/artifact-set-hash [artifact-a artifact-b])
-           (get identity "artifact_set_hash")))
-    (is (= (snapshot-index/policy-hash (get (identity-args) :failure-policy))
-           (get identity "failure_policy_hash")))
-    (is (= (manifest/artifact-id identity)
-           (snapshot-index/snapshot-identity-hash
-            {"snapshot_label" "soranoha-snapshot-2026-07-07-01"
-             "generated_at" "2026-07-07T00:00:00Z"
-             "snapshot_index_identity_object" identity})))))
+(def layout-policy
+  {"loose_artifact_kinds" ["source" "parser-ir" "tei" "plaintext"]
+   "batched_artifact_kinds" []
+   "batch_target_work_count" 250
+   "archive_format" "tar.zst"})
 
-(deftest snapshot-index-identity-rejects-null-array-fields-test
-  (let [identity (assoc (snapshot-index/snapshot-index-identity-object (identity-args))
-                        "tokenizer_profile_hashes" nil)]
-    (is (thrown-with-msg?
-         clojure.lang.ExceptionInfo
-         #"array fields"
-         (snapshot-index/validate-snapshot-index-identity-object! identity)))))
+(def base-references
+  [(artifact-ref {:kind "source" :aid (h "51") :mch (h "52") :ch (h "53")
+                  :path "materialized-root/works/0005_1234_rashomon/source.manifest.json"})
+   (artifact-ref {:kind "parser-ir" :aid (h "61") :mch (h "62") :ch (h "63")
+                  :path "materialized-root/works/0005_1234_rashomon/parser-ir.manifest.json"})
+   (artifact-ref {:kind "plaintext" :aid (h "71") :mch (h "72") :ch (h "73")
+                  :path "publications/0005_1234_rashomon/plaintext.manifest.json"})
+   (artifact-ref {:kind "tei" :aid (h "81") :mch (h "82") :ch (h "83") :status "warning"
+                  :path "publications/0005_1234_rashomon/tei.manifest.json"})])
 
-(deftest artifact-reference-from-manifest-path-test
-  (let [manifest-value (manifest-fixture
-                        {:artifact-id (files/example-hash "41")
-                         :artifact-kind "failure"
-                         :validation-status "failed"})
-        manifest-file (temp-json-file "abc-snapshot-manifest" manifest-value)
-        locator {"kind" "loose"
-                 "path" "manifests/failure.json"}]
-    (try
-      (is (= {"artifact_id" (files/example-hash "41")
-              "artifact_kind" "failure"
-              "sidecar_role" nil
-              "validation_status" "failed"
-              "manifest_content_hash" (manifest/file-hash manifest-file)
-              "content_hash" nil
-              "locator" locator}
-             (snapshot-index/artifact-reference-from-manifest-path manifest-file
-                                                                   locator)))
-      (finally
-        (.delete manifest-file)))))
+(defn build-args [& {:as overrides}]
+  (merge
+   {:snapshot-date "2026-07-07"
+    :generated-at "2026-07-07T00:00:00Z"
+    :source-selection source-selection
+    :parser-runtime-identity parser-runtime-identity
+    :candidate-ref (h "ca")
+    :qualification-identity-ref (h "cb")
+    :failure-policy failure-policy
+    :layout-policy layout-policy
+    :schema-hashes [(manifest/schema-hash "schemas/snapshot-index.schema.json")]
+    :failures []
+    :artifact-references base-references}
+   overrides))
 
-(deftest build-snapshot-index-from-request-set-and-manifests-test
-  (let [request-set (request-set-resolver/resolve-request-set "smoke-basic-ja")
-        passed-manifest (temp-json-file
-                         "abc-snapshot-passed-manifest"
-                         (manifest-fixture
-                          {:artifact-id (files/example-hash "81")
-                           :artifact-kind "plaintext"
-                           :validation-status "passed"
-                           :content-hash (files/example-hash "82")}))
-        warning-manifest (temp-json-file
-                          "abc-snapshot-warning-manifest"
-                          (manifest-fixture
-                           {:artifact-id (files/example-hash "71")
-                            :artifact-kind "tei"
-                            :validation-status "warning"
-                            :content-hash (files/example-hash "72")}))
-        failed-manifest (temp-json-file
-                         "abc-snapshot-failed-manifest"
-                         (manifest-fixture
-                          {:artifact-id (files/example-hash "91")
-                           :artifact-kind "failure"
-                           :validation-status "failed"}))
-        failure-policy {"allow_nonzero_failures" true
-                        "max_failure_rate" nil
-                        "per_diagnostic_tolerances" {}}
-        layout-policy {"loose_artifact_kinds" ["tei" "plaintext"]
-                       "batched_artifact_kinds" ["analysis" "tokenized"]
-                       "batch_target_work_count" 250
-                       "archive_format" "tar.zst"}]
-    (try
-      (let [snapshot (snapshot-index/build-snapshot-index
-                      {:snapshot-label "soranoha-snapshot-2026-07-07-01"
-                       :request-set-label "smoke-basic-ja"
-                       :request-set request-set
-                       :generated-at "2026-07-07T00:00:00Z"
-                       :manifest-index-hash (files/example-hash "44")
-                       :failure-policy failure-policy
-                       :layout-policy layout-policy
-                       :schema-hashes [(files/example-hash "09")
-                                       (manifest/schema-hash
-                                        "schemas/snapshot-index.schema.json")]
-                       :parser-evidence-hashes []
-                       :manifest-references [{:manifest-path warning-manifest
-                                              :locator {"kind" "loose"
-                                                        "path" "artifacts/tei/0001.xml"}}
-                                             {:manifest-path passed-manifest
-                                              :locator {"kind" "loose"
-                                                        "path" "artifacts/plaintext/0001.txt"}}
-                                             {:manifest-path failed-manifest
-                                              :locator {"kind" "loose"
-                                                        "path" "failures/0001.json"}}]})]
-        (is (nil? (schema/validation-errors
-                   (files/read-json "schemas/snapshot-index.schema.json")
-                   snapshot)))
-        (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
-        (is (= (manifest/schema-hash "schemas/snapshot-index.schema.json")
-               (get snapshot "schema_hash")))
-        (is (= (get request-set "request_set_id")
-               (get-in snapshot ["snapshot_index_identity_object"
-                                 "request_set_id"])))
-        (is (= (get-in request-set ["request_set_identity_object"
-                                    "corpus_snapshot_hash"])
-               (get-in snapshot ["snapshot_index_identity_object"
-                                 "source_snapshot_hash"])))
-        (is (= (get-in request-set ["request_set_identity_object"
-                                    "analysis_recipe_hashes"])
-               (get-in snapshot ["snapshot_index_identity_object"
-                                 "analysis_recipe_hashes"])))
-        (is (= {"total_artifacts" 3
-                "success_count" 2
-                "failure_count" 1
-                "failure_rate" (/ 1.0 3.0)}
-               (get snapshot "summary")))
-        (is (= [(files/example-hash "71")
-                (files/example-hash "81")
-                (files/example-hash "91")]
-               (mapv #(get % "artifact_id")
-                     (get snapshot "artifact_references"))))
-        (is (nil? (get-in snapshot ["artifact_references" 2 "content_hash"]))))
-      (finally
-        (doseq [file [passed-manifest warning-manifest failed-manifest]]
-          (.delete file))))))
+;; ── Value construction ──────────────────────────────────────────────────────
 
-(deftest checked-in-snapshot-index-fixture-validates-identity-test
-  (let [fixture (files/read-json "examples/v0/snapshot/snapshot-index.json")]
-    (testing "the public fixture is internally hash-consistent"
-      (is (true? (snapshot-index/validate-snapshot-index! fixture))))))
+(deftest build-produces-closed-v0_2_0-value-test
+  (let [index (snapshot-index/build-snapshot-index (build-args))
+        schema-json (files/read-json "schemas/snapshot-index.schema.json")]
+    (is (= "0.2.0" (get index "schema_version")))
+    (is (nil? (schema/validation-errors schema-json index)))
+    (is (true? (snapshot-index/validate-snapshot-index! index)))
+    (is (= "0.2.0" (get schema-json "version"))
+        "the schema document version annotation is 0.2.0")))
+
+(deftest sources-sort-canonically-test
+  (let [shuffled (update source-selection "sources"
+                         (fn [sources]
+                           (conj sources
+                                 {"work_id" "0001" "person_id" "0002" "slug" "a"
+                                  "text_zip_relpath" "cards/000001/files/a.zip"
+                                  "archive_hash" (h "a2") "bundle_hash" (h "b2")
+                                  "primary_text_member" "a.txt"
+                                  "primary_text_hash" (h "d2")
+                                  "metadata_record_hash" (h "e6")})))
+        index (snapshot-index/build-snapshot-index
+               (build-args :source-selection shuffled))]
+    (is (= ["0001" "0005"]
+           (mapv #(get % "work_id")
+                 (get-in index ["source_selection_identity_object" "sources"])))
+        "sources are sorted by [work_id person_id text_zip_relpath]")
+    (is (= (snapshot-index/source-selection-hash shuffled)
+           (snapshot-index/source-selection-hash (update shuffled "sources" reverse)))
+        "source_selection_hash is order-independent")))
+
+(deftest failure-set-hash-is-stable-and-projects-only-identity-test
+  (let [f1 {"stage" "derive" "work_slug" "w1" "code" "invalid-zip"
+            "message" "host path /tmp/a" "path" "/tmp/a"}
+        f2 {"stage" "render" "work_slug" nil "code" "tei-failed"
+            "message" "different message"}]
+    (is (= (snapshot-index/failure-set-hash [f1 f2])
+           (snapshot-index/failure-set-hash [f2 f1]))
+        "failure_set_hash is order-independent")
+    (is (= (snapshot-index/failure-set-hash [f1])
+           (snapshot-index/failure-set-hash
+            [(assoc f1 "message" "totally other" "path" "/var/x")]))
+        "diagnostic message and host path do not enter failure_set_hash")))
+
+(deftest artifact-identity-excludes-locator-test
+  (let [moved (mapv #(assoc-in % ["locator" "path"]
+                               (str "staged/" (get-in % ["locator" "path"])))
+                    base-references)
+        index (snapshot-index/build-snapshot-index (build-args))
+        moved-index (snapshot-index/build-snapshot-index
+                     (build-args :artifact-references moved))]
+    (is (= (snapshot-index/artifact-set-hash base-references)
+           (snapshot-index/artifact-set-hash moved))
+        "changing a locator does not change artifact_set_hash")
+    (is (= (get index "snapshot_identity_hash")
+           (get moved-index "snapshot_identity_hash"))
+        "changing a locator does not change snapshot_identity_hash")))
+
+(deftest artifact-identity-includes-work-slug-test
+  (let [rekeyed (mapv #(assoc % "work_slug" "other_work") base-references)]
+    (is (not= (snapshot-index/artifact-set-hash base-references)
+              (snapshot-index/artifact-set-hash rekeyed))
+        "work_slug participates in artifact identity")))
+
+(deftest nullable-candidate-coordinates-test
+  (let [index (snapshot-index/build-snapshot-index
+               (build-args :candidate-ref nil :qualification-identity-ref nil))]
+    (is (nil? (get-in index ["snapshot_index_identity_object" "candidate_ref"])))
+    (is (nil? (get-in index ["snapshot_index_identity_object"
+                             "qualification_identity_ref"])))
+    (is (true? (snapshot-index/validate-snapshot-index! index)))))
+
+(deftest runtime-parser-hashes-are-non-null-test
+  (let [index (snapshot-index/build-snapshot-index (build-args))
+        runtime (get index "parser_runtime_identity_object")]
+    (doseq [field ["parser_build_hash" "converter_build_hash"
+                   "aat_parser_ir_mapping_hash" "parser_ir_schema_hash"]]
+      (is (re-matches #"^sha256:[0-9a-f]{64}$" (get runtime field))
+          (str field " is a non-null sha256")))
+    (is (= (get-in index ["snapshot_index_identity_object" "parser_config_hash"])
+           (snapshot-index/parser-config-hash runtime))
+        "parser_config_hash is the JCS hash of the whole runtime identity object")))
+
+(deftest identity-rotates-on-every-identity-field-test
+  (let [base (get (snapshot-index/build-snapshot-index (build-args))
+                  "snapshot_identity_hash")
+        rotations
+        {:source-selection (assoc-in source-selection ["sources" 0 "bundle_hash"] (h "99"))
+         :parser-runtime-identity (assoc parser-runtime-identity "parser_build_hash" (h "98"))
+         :candidate-ref (h "97")
+         :qualification-identity-ref (h "96")
+         :failure-policy (assoc failure-policy "allow_nonzero_failures" true)
+         :layout-policy (assoc layout-policy "batch_target_work_count" 7)
+         :schema-hashes [(h "95")]
+         :failures [{"stage" "derive" "work_slug" "w" "code" "x"}]
+         :artifact-references (conj base-references
+                                    (artifact-ref {:kind "plaintext" :aid (h "41")
+                                                   :mch (h "42") :ch (h "43")
+                                                   :path "publications/other/plaintext.manifest.json"}))}]
+    (doseq [[k v] rotations]
+      (is (not= base
+                (get (snapshot-index/build-snapshot-index (build-args k v))
+                     "snapshot_identity_hash"))
+          (str "rotating " k " rotates snapshot_identity_hash")))))
+
+;; ── Closed schema rejects retired keys ──────────────────────────────────────
+
+(deftest closed-schema-rejects-retired-keys-test
+  (let [schema-json (files/read-json "schemas/snapshot-index.schema.json")
+        index (snapshot-index/build-snapshot-index (build-args))]
+    (testing "top-level retired keys are rejected"
+      (doseq [k ["snapshot_label" "request_set_label" "manifest_index"]]
+        (is (some? (schema/validation-errors schema-json (assoc index k "x")))
+            (str "top-level " k " is rejected"))))
+    (testing "identity-object retired keys are rejected"
+      (doseq [k ["request_set_id" "source_snapshot_hash" "manifest_index_hash"
+                 "tokenizer_profile_hashes" "analysis_recipe_hashes"
+                 "parser_evidence_hashes"]]
+        (is (some? (schema/validation-errors
+                    schema-json
+                    (assoc-in index ["snapshot_index_identity_object" k]
+                              (h "aa"))))
+            (str "identity key " k " is rejected"))))
+    (testing "artifact references require work_slug"
+      (is (some? (schema/validation-errors
+                  schema-json
+                  (update-in index ["artifact_references" 0] dissoc "work_slug")))))))
+
+;; ── Checked-in example ──────────────────────────────────────────────────────
+
+(deftest checked-in-example-validates-test
+  (let [fixture (files/read-json "examples/v0/snapshot/snapshot-index.json")
+        schema-json (files/read-json "schemas/snapshot-index.schema.json")]
+    (is (nil? (schema/validation-errors schema-json fixture)))
+    (is (true? (snapshot-index/validate-snapshot-index! fixture)))))
+
+;; ── Completed-root fixture + closed-reference verification ───────────────────
+
+(defn- write-manifest-and-content!
+  "Write a content file plus its artifact manifest into work-dir, returning the
+  built artifact reference with hashes coherent with the written bytes."
+  [root work-dir {:keys [kind status content-name content-bytes sidecars slug-value]}]
+  (let [content-file (io/file work-dir content-name)
+        _ (io/make-parents content-file)
+        _ (files/write-text! content-file content-bytes)
+        sidecar-entries
+        (mapv (fn [{:keys [role path-hint bytes]}]
+                (let [sc-file (io/file work-dir path-hint)]
+                  (files/write-text! sc-file bytes)
+                  {"role" role
+                   "hash" (str "sha256:" (files/sha256-file sc-file))
+                   "media_type" "application/json"
+                   "path_hint" path-hint}))
+              sidecars)
+        identity-object (manifest/identity-object
+                         {"corpus_snapshot_hash" (h "c1")
+                          "work_content_hash" (h "b1")}
+                         {:manifest-schema-hash (manifest/schema-hash
+                                                 "schemas/manifest.schema.json")
+                          :output-format-spec-hash (h "0f")})
+        manifest-value (manifest/artifact-manifest
+                        {:artifact-kind kind
+                         :validation-status status
+                         :identity-object identity-object
+                         :content (manifest/content content-file
+                                                    "text/plain; charset=UTF-8"
+                                                    content-name
+                                                    files/sha256-file)
+                         :sidecars sidecar-entries
+                         :generated-at "2026-07-07T00:00:00Z"
+                         :activity-id "https://w3id.org/abc/activity/test"
+                         :agent "abc.tools.snapshot-index-test"
+                         :plan-hash nil
+                         :used []
+                         :was-derived-from []
+                         :notes nil})
+        manifest-name (str kind ".manifest.json")
+        manifest-file (io/file work-dir manifest-name)]
+    (manifest/write-json-file! manifest-file manifest-value)
+    {:manifest-file manifest-file
+     :reference {"artifact_id" (get manifest-value "artifact_id")
+                 "artifact_kind" kind
+                 "work_slug" (or slug-value slug)
+                 "sidecar_role" nil
+                 "validation_status" status
+                 "manifest_content_hash" (manifest/file-hash manifest-file)
+                 "content_hash" (get-in manifest-value ["content" "content_hash"])
+                 "locator" {"kind" "loose"
+                            "path" (str (fs/relativize
+                                         (fs/canonicalize root)
+                                         (fs/canonicalize manifest-file)))}}}))
+
+(defn build-completed-root!
+  "Build a v0.2.0 completed publication root with source/parser-ir/plaintext/tei
+  manifests, content, and a TEI sidecar under a single referenced per-work
+  directory, plus a coherent snapshot-index.json. Returns {:root :index}."
+  [root]
+  (let [root (io/file root)
+        work-dir (io/file root "publications" slug)
+        _ (io/make-parents (io/file work-dir "x"))
+        entries
+        (mapv #(write-manifest-and-content! root work-dir %)
+              [{:kind "source" :status "passed" :content-name "source-bundle.json"
+                :content-bytes "{\"source\":true}" :sidecars []}
+               {:kind "parser-ir" :status "passed" :content-name "parser-ir.json"
+                :content-bytes "{\"ir\":true}" :sidecars []}
+               {:kind "plaintext" :status "passed" :content-name "plain.txt"
+                :content-bytes "本文" :sidecars []}
+               {:kind "tei" :status "warning" :content-name "tei.xml"
+                :content-bytes "<TEI/>"
+                :sidecars [{:role "validation-result"
+                            :path-hint "tei-validation-result.json"
+                            :bytes "{\"status\":\"warning\"}"}]}])
+        references (mapv :reference entries)
+        index (snapshot-index/build-snapshot-index
+               (build-args :artifact-references references))]
+    (snapshot-index/write-snapshot-index!
+     index (str (io/file root "snapshot-index.json")))
+    {:root root :index index :work-dir work-dir}))
+
+(deftest closure-problems-passes-for-completed-root-test
+  (with-temp-dir [dir]
+    (let [{:keys [root index]} (build-completed-root! (io/file dir "root"))]
+      (is (true? (snapshot-index/validate-snapshot-index! index)))
+      (is (empty? (snapshot-index/closure-problems root index))
+          "a coherent completed root closes with no problems"))))
+
+(deftest closure-problems-detects-tampered-content-test
+  (with-temp-dir [dir]
+    (let [{:keys [root index work-dir]} (build-completed-root! (io/file dir "root"))]
+      (files/write-text! (io/file work-dir "plain.txt") "tampered")
+      (is (some #(= "closure-content-hash-mismatch" (:code %))
+                (snapshot-index/closure-problems root index))))))
+
+(deftest closure-problems-detects-tampered-manifest-test
+  (with-temp-dir [dir]
+    (let [{:keys [root index work-dir]} (build-completed-root! (io/file dir "root"))
+          manifest-file (io/file work-dir "source.manifest.json")
+          tampered (assoc (files/read-json manifest-file) "notes" "tampered")]
+      (manifest/write-json-file! manifest-file tampered)
+      (is (some #(= "closure-manifest-content-hash-mismatch" (:code %))
+                (snapshot-index/closure-problems root index))))))
+
+(deftest closure-problems-detects-unreferenced-file-test
+  (with-temp-dir [dir]
+    (let [{:keys [root index work-dir]} (build-completed-root! (io/file dir "root"))]
+      (files/write-text! (io/file work-dir "stray.txt") "stray")
+      (is (some #(= "closure-unreferenced-file" (:code %))
+                (snapshot-index/closure-problems root index))))))
+
+(deftest closure-problems-detects-missing-manifest-test
+  (with-temp-dir [dir]
+    (let [{:keys [root index work-dir]} (build-completed-root! (io/file dir "root"))]
+      (io/delete-file (io/file work-dir "tei.manifest.json"))
+      (is (some #(= "closure-manifest-missing" (:code %))
+                (snapshot-index/closure-problems root index))))))
+
+(deftest closure-problems-allows-publications-report-test
+  (with-temp-dir [dir]
+    (let [{:keys [root index]} (build-completed-root! (io/file dir "root"))]
+      ;; The derived report lives at the collection root, outside any referenced
+      ;; per-work directory, so it is not scanned regardless.
+      (files/write-text! (io/file root "publications" "publications-report.json")
+                         "{\"report\":true}")
+      (is (empty? (snapshot-index/closure-problems root index))))))

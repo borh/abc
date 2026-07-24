@@ -135,3 +135,121 @@
                   (assoc :claims [{:id :c1 :statement "promotion condition"}]))]
     (is (empty? (shape-of draft))
         "draft claims may omit kind and evidence")))
+
+;; --- semantic checks --------------------------------------------------------
+
+(defn- rec [slug & {:as kvs}]
+  (merge {:slug slug :title slug :status :draft :date "2026-07-24"
+          :source "docs/superpowers/specs/example.md"
+          :topics [] :relations [] :claims []}
+         kvs))
+
+(defn- accepted-rec [slug & {:as kvs}]
+  (merge (rec slug
+              :status :accepted :accepted "2026-07-24"
+              :validation-scope :structural :release-authority :none
+              :claims [{:id :c1 :kind :structural-invariant
+                        :statement "s"
+                        :evidence ["test/abc/tools/decisions_test.clj"]}])
+         kvs))
+
+(defn- lifecycle [type to & [scope]]
+  (cond-> {:class :lifecycle :type type :to to}
+    scope (assoc :scope scope)))
+
+(defn- sem [decisions]
+  (d/semantic-problems {:decisions decisions} "." "decisions.edn"))
+
+(deftest dangling-and-duplicate-relations
+  (is (= [:missing-relation-target]
+         (map :kind (sem [(rec "a" :relations [(lifecycle :depends-on "ghost")])]))))
+  (is (= [:duplicate-relation]
+         (map :kind (sem [(rec "a" :relations [(lifecycle :depends-on "b")
+                                               (lifecycle :depends-on "b")])
+                          (rec "b")])))))
+
+(deftest lifecycle-self-edges-and-cycles-are-rejected
+  (is (some #(= :self-relation (:kind %))
+            (sem [(rec "a" :relations [(lifecycle :depends-on "a")])])))
+  (is (some #(= :relation-cycle (:kind %))
+            (sem [(rec "a" :relations [(lifecycle :depends-on "b")])
+                  (rec "b" :relations [(lifecycle :depends-on "a")])])))
+  (is (some #(= :relation-cycle (:kind %))
+            (sem [(rec "a" :status :superseded
+                       :relations [(lifecycle :supersedes "b")])
+                  (rec "b" :status :superseded
+                       :relations [(lifecycle :supersedes "a")])])))
+  (is (some #(= :relation-cycle (:kind %))
+            (sem [(rec "a" :relations [(lifecycle :amends "b" "x")])
+                  (rec "b" :relations [(lifecycle :amends "a" "y")])])))
+  (is (not-any? #(= :relation-cycle (:kind %))
+                (sem [(rec "a" :relations [(lifecycle :depends-on "b")
+                                           (lifecycle :amends "b" "x")])
+                      (rec "b" :relations [(lifecycle :depends-on "c")])
+                      (rec "c")]))
+      "diamond-free chains are not cycles"))
+
+(deftest supersession-status-rules
+  (is (some #(= :unscoped-supersession-target-not-superseded (:kind %))
+            (sem [(rec "a" :relations [(lifecycle :supersedes "b")])
+                  (rec "b")]))
+      "unscoped supersession of a non-superseded record")
+  (is (some #(= :superseded-without-successor (:kind %))
+            (sem [(rec "b" :status :superseded
+                       :validation-scope :structural)]))
+      "superseded record with no incoming unscoped supersession")
+  (is (empty? (sem [(rec "a" :relations [(lifecycle :supersedes "b" "one scope")])
+                    (accepted-rec "b")]))
+      "scoped supersession leaves the target's Accepted status alone"))
+
+(deftest accepted-lifecycle-rules
+  (is (some #(= :accepted-before-date (:kind %))
+            (sem [(accepted-rec "a" :date "2026-07-25" :accepted "2026-07-24")])))
+  (is (some #(= :noncanonical-dependency-path (:kind %))
+            (sem [(accepted-rec "a" :relations [(lifecycle :depends-on "b")])
+                  (rec "b")]))
+      "accepted record depending on a draft")
+  (is (some #(= :noncanonical-dependency-path (:kind %))
+            (sem [(accepted-rec "a" :relations [(lifecycle :depends-on "b")])
+                  (accepted-rec "b" :relations [(lifecycle :depends-on "c")])
+                  (rec "c")]))
+      "transitive closure is checked")
+  (is (some #(= :missing-claims (:kind %))
+            (sem [(accepted-rec "a" :claims [])]))
+      "accepted records need at least one claim"))
+
+(deftest evidence-path-rules
+  (is (some #(= :missing-evidence-path (:kind %))
+            (sem [(accepted-rec "a" :claims [{:id :c1 :kind :k :statement "s"
+                                              :evidence ["test/no/such/file.clj"]}])])))
+  (is (some #(= :evidence-path-traversal (:kind %))
+            (sem [(accepted-rec "a" :claims [{:id :c1 :kind :k :statement "s"
+                                              :evidence ["test/../deps.edn"]}])])))
+  (is (some #(= :evidence-outside-roots (:kind %))
+            (sem [(accepted-rec "a" :claims [{:id :c1 :kind :k :statement "s"
+                                              :evidence ["src/abc/tools/decisions.clj"]}])]))
+      "existing path outside the evidence roots is rejected")
+  (is (some #(= :unverified-evidence-directory (:kind %))
+            (sem [(accepted-rec "a" :claims [{:id :c1 :kind :k :statement "s"
+                                              :evidence ["test/abc/tools"]}])]))
+      "directory evidence requires a test/ or nix/ file in the same claim")
+  (is (not-any? #(= :unverified-evidence-directory (:kind %))
+                (sem [(accepted-rec "a" :claims
+                                    [{:id :c1 :kind :k :statement "s"
+                                      :evidence ["test/abc/tools"
+                                                 "test/abc/tools/decisions_test.clj"]}])]))
+      "a companion test file verifies the directory"))
+
+(deftest narrative-file-rules
+  (let [root (str (fs/create-temp-dir))]
+    (fs/create-dirs (fs/path root "docs/adr"))
+    (spit (str (fs/path root "docs/adr/a.md")) "# A\n")
+    (spit (str (fs/path root "docs/adr/orphan.md")) "# Orphan\n")
+    (spit (str (fs/path root "docs/adr/README.md")) "# readme\n")
+    (spit (str (fs/path root "docs/adr/INDEX.md")) "# generated\n")
+    (let [problems (d/narrative-problems
+                    {:decisions [(rec "a") (rec "b")]} root "docs/adr")]
+      (is (= #{:missing-narrative :orphan-narrative}
+             (set (map :kind problems))))
+      (is (= 2 (count problems))
+          "README.md and INDEX.md are not orphans"))))

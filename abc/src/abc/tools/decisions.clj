@@ -2,9 +2,12 @@
   "Authoritative decision-records corpus: strict loader, Malli shape
    schema, and corpus semantic checks over docs/adr/decisions.edn.
    Replaces the retired abc.tools.adr Markdown grammar."
-  (:require [abc.tools.malli :as am]
+  (:require [abc.tools.files :as files]
+            [abc.tools.malli :as am]
+            [abc.tools.path-containment :as containment]
             [babashka.fs :as fs]
             [clojure.edn :as edn]
+            [clojure.string :as str]
             [malli.core :as m]
             [malli.error :as me]
             [malli.registry :as mr])
@@ -142,3 +145,214 @@
     [(problem :invalid-shape file
               (pr-str (me/humanize explanation)))]
     []))
+
+;; --- semantic checks ---------------------------------------------------------
+;; These run only on a shape-valid corpus and may assume well-formed records.
+
+(defn- by-slug [corpus]
+  (into {} (map (juxt :slug identity)) (:decisions corpus)))
+
+(defn- lifecycle-edges [record type & {:keys [unscoped-only]}]
+  (for [r (:relations record)
+        :when (and (= :lifecycle (:class r)) (= type (:type r))
+                   (or (not unscoped-only) (nil? (:scope r))))]
+    r))
+
+(defn- relation-problems [corpus file]
+  (let [known (set (map :slug (:decisions corpus)))]
+    (vec
+     (concat
+      (for [rec (:decisions corpus)
+            [edge freq] (frequencies (map #(dissoc % :note) (:relations rec)))
+            :when (< 1 freq)]
+        (problem :duplicate-relation file
+                 "relation must not appear more than once"
+                 :slug (:slug rec) :value edge))
+      (for [rec (:decisions corpus)
+            r (:relations rec)
+            :when (not (contains? known (:to r)))]
+        (problem :missing-relation-target file
+                 "relation target does not exist"
+                 :slug (:slug rec) :value r))
+      (for [rec (:decisions corpus)
+            r (:relations rec)
+            :when (and (= :lifecycle (:class r)) (= (:slug rec) (:to r)))]
+        (problem :self-relation file
+                 "lifecycle relation must not point at its own record"
+                 :slug (:slug rec) :value r))))))
+
+(defn- cycle-problems [corpus file]
+  ;; Three-color DFS per lifecycle graph; unscoped edges only for
+  ;; :supersedes (a scoped supersession replaces one slice, not the record).
+  (let [index (by-slug corpus)
+        graphs {:depends-on
+                (fn [r] (map :to (lifecycle-edges r :depends-on)))
+                :supersedes
+                (fn [r] (map :to (lifecycle-edges r :supersedes
+                                                  :unscoped-only true)))
+                :amends
+                (fn [r] (map :to (lifecycle-edges r :amends)))}]
+    (vec
+     (for [[type neighbors] graphs
+           :let [cyclic?
+                 (fn cyclic? [slug state]
+                   (case (get @state slug)
+                     :done false
+                     :active true
+                     (do (swap! state assoc slug :active)
+                         (let [hit (some #(cyclic? % state)
+                                         (when-let [r (get index slug)]
+                                           (neighbors r)))]
+                           (swap! state assoc slug :done)
+                           (boolean hit)))))]
+           rec (filterv #(cyclic? (:slug %) (atom {})) (:decisions corpus))]
+       (problem :relation-cycle file
+                (str (name type) " relations must be acyclic")
+                :slug (:slug rec) :relation type)))))
+
+(defn- supersession-problems [corpus file]
+  (let [index (by-slug corpus)
+        unscoped-targets (set (for [rec (:decisions corpus)
+                                    r (lifecycle-edges rec :supersedes
+                                                       :unscoped-only true)]
+                                (:to r)))]
+    (vec
+     (concat
+      (for [rec (:decisions corpus)
+            r (lifecycle-edges rec :supersedes :unscoped-only true)
+            :let [target (get index (:to r))]
+            :when (and target (not= :superseded (:status target)))]
+        (problem :unscoped-supersession-target-not-superseded file
+                 "an unscoped supersession target must be :superseded"
+                 :slug (:slug rec) :value r))
+      (for [{:keys [slug status]} (:decisions corpus)
+            :when (and (= :superseded status)
+                       (not (contains? unscoped-targets slug)))]
+        (problem :superseded-without-successor file
+                 "a :superseded record requires an incoming unscoped supersession"
+                 :slug slug))))))
+
+(defn- lifecycle-date-problems [corpus file]
+  (for [{:keys [slug status date accepted]} (:decisions corpus)
+        :when (and (= :accepted status) date accepted
+                   (.isBefore (java.time.LocalDate/parse accepted)
+                              (java.time.LocalDate/parse date)))]
+    (problem :accepted-before-date file
+             "accepted date must not be before :date" :slug slug)))
+
+(defn- dependency-problems [corpus file]
+  (let [index (by-slug corpus)
+        closure (fn [slug]
+                  (loop [queue (vec (map :to (lifecycle-edges
+                                              (get index slug) :depends-on)))
+                         seen #{}]
+                    (if-let [s (first queue)]
+                      (if (contains? seen s)
+                        (recur (subvec queue 1) seen)
+                        (recur (into (subvec queue 1)
+                                     (when-let [r (get index s)]
+                                       (map :to (lifecycle-edges r :depends-on))))
+                               (conj seen s)))
+                      seen)))]
+    (for [{:keys [slug status]} (:decisions corpus)
+          :when (= :accepted status)
+          dep (sort (closure slug))
+          :let [target (get index dep)]
+          :when (and target (not= :accepted (:status target)))]
+      (problem :noncanonical-dependency-path file
+               "Accepted dependency closure contains a non-Accepted record"
+               :slug slug :target dep :target-status (:status target)))))
+
+(defn- evidence-problems [corpus repo-root file]
+  (vec
+   (concat
+    (for [{:keys [slug status claims]} (:decisions corpus)
+          :when (and (= :accepted status) (empty? claims))]
+      (problem :missing-claims file
+               "Accepted records require at least one claim" :slug slug))
+    (for [{:keys [slug claims]} (:decisions corpus)
+          {:keys [id evidence]} claims
+          path evidence
+          :let [{:keys [state] :as contained}
+                (containment/path-state repo-root path)
+                normalized (some-> (:relative contained)
+                                   (str/replace "\\" "/"))
+                kind (case state
+                       :ok (when-not (some #(str/starts-with? normalized %)
+                                           evidence-prefixes)
+                             :evidence-outside-roots)
+                       :missing :missing-evidence-path
+                       :real-path-escape :evidence-real-path-escape
+                       :malformed-path :malformed-evidence-path
+                       :evidence-path-traversal)]
+          :when kind]
+      (problem kind file
+               (case kind
+                 :evidence-outside-roots
+                 "evidence path is outside the evidence roots"
+                 :missing-evidence-path "evidence path does not exist"
+                 :evidence-real-path-escape
+                 "evidence real path escapes the repository"
+                 :malformed-evidence-path "evidence path is malformed"
+                 "evidence path contains lexical traversal")
+               :slug slug :claim id :value path))
+    (for [{:keys [slug claims]} (:decisions corpus)
+          {:keys [id evidence]} claims
+          path evidence
+          :let [contained (containment/path-state repo-root path)]
+          :when (and (= :ok (:state contained))
+                     (files/directory? (:path contained)))
+          :when (not-any?
+                 (fn [companion]
+                   (and (or (str/starts-with? companion "test/")
+                            (str/starts-with? companion "nix/"))
+                        (let [c (containment/path-state repo-root companion)]
+                          (and (= :ok (:state c)) (files/file? (:path c))))))
+                 evidence)]
+      (problem :unverified-evidence-directory file
+               "a directory evidence path requires an existing test/ or nix/ file in the same claim"
+               :slug slug :claim id :value path)))))
+
+(defn semantic-problems [corpus repo-root file]
+  (vec (concat (relation-problems corpus file)
+               (cycle-problems corpus file)
+               (supersession-problems corpus file)
+               (lifecycle-date-problems corpus file)
+               (dependency-problems corpus file)
+               (evidence-problems corpus repo-root file))))
+
+(defn narrative-problems [corpus repo-root adr-dir]
+  (let [dir (fs/path repo-root adr-dir)
+        expected (set (map #(str (:slug %) ".md") (:decisions corpus)))
+        generated #{"README.md" "INDEX.md"}
+        actual (set (for [f (fs/list-dir dir)
+                          :let [n (fs/file-name f)]
+                          :when (and (fs/regular-file? f)
+                                     (str/ends-with? n ".md"))]
+                      n))]
+    (vec
+     (concat
+      (for [n (sort expected) :when (not (contains? actual n))]
+        (problem :missing-narrative (str adr-dir "/" n)
+                 "decision record has no narrative file"))
+      (for [n (sort actual)
+            :when (and (not (contains? expected n))
+                       (not (contains? generated n)))]
+        (problem :orphan-narrative (str adr-dir "/" n)
+                 "narrative file has no decision record"))))))
+
+(defn validate-repository
+  "Strictly validate the decisions corpus under repo-root. Shape problems
+   short-circuit semantic validation; an unreadable corpus reports only
+   :invalid-edn."
+  ([repo-root] (validate-repository repo-root "docs/adr"))
+  ([repo-root adr-dir]
+   (let [path (str (fs/path repo-root adr-dir "decisions.edn"))
+         {:keys [corpus problems]} (load-corpus path)]
+     (if problems
+       problems
+       (let [shape (shape-problems corpus corpus-file)]
+         (if (seq shape)
+           shape
+           (vec (concat (semantic-problems corpus repo-root corpus-file)
+                        (narrative-problems corpus repo-root adr-dir)))))))))

@@ -191,7 +191,7 @@ the EDTF string and therefore must not change `person-record-hash`.
 
 ## References
 
-- ADR 0015: docs/adr/0015-temporal-modeling.md
+- ADR 0015: docs/adr/temporal-modeling.md
 - EDTF specification (LoC):
   https://www.loc.gov/standards/datetime/
 - ISO 8601-2 / EDTF Level 1 capital-`X` digit placeholder.

@@ -245,7 +245,7 @@
    :legacy-number 7,
    :accepted "2026-07-03",
    :source
-   "`docs/high-level-architecture-note.md` v0.5, `docs/adr/0002-parser-evaluation.md`, and `../ab-validator`",
+   "`docs/high-level-architecture-note.md` v0.5, `docs/adr/parser-evaluation.md`, and `../ab-validator`",
    :title "External Parser Validation Boundary",
    :topics [:parser :boundary],
    :status :accepted,
@@ -283,7 +283,7 @@
      ["test/abc/tools/parser_maintenance_evidence_test.clj"]}],
    :legacy-number 8,
    :accepted "2026-04-28",
-   :source "`docs/adr/0006-v0-design-bundle-validation.md`",
+   :source "`docs/adr/v0-design-bundle-validation.md`",
    :title "ABC Tools Runtime",
    :topics [:runtime :tooling],
    :status :accepted,
@@ -335,7 +335,7 @@
    :legacy-number 9,
    :accepted "2026-07-03",
    :source
-   "`docs/adr/0007-external-parser-validation-boundary.md` and `docs/adr/0008-abc-tools-runtime.md`",
+   "`docs/adr/external-parser-validation-boundary.md` and `docs/adr/abc-tools-runtime.md`",
    :title "Imported Parser Output Materialization",
    :topics [:materialization],
    :status :accepted,
@@ -379,7 +379,7 @@
    :legacy-number 10,
    :accepted "2026-07-03",
    :source
-   "`docs/adr/0001-manifest-identity.md` and `docs/adr/0009-imported-output-materialization.md`",
+   "`docs/adr/manifest-identity.md` and `docs/adr/imported-output-materialization.md`",
    :title "Manifest Identity Hardening",
    :topics [:identity],
    :status :accepted,
@@ -1161,7 +1161,7 @@
      "A run-provenance fixture maps a run id to request-set id, pack ids, produced\nartifact ids, and failed/skipped artifact ids."}],
    :legacy-number 27,
    :source
-   "`docs/adr/0026-analysis-artifact-identity.md`, `docs/superpowers/specs/2026-07-07-soranoha-snapshot-publication-design.md`",
+   "`docs/adr/analysis-artifact-identity.md`, `docs/superpowers/specs/2026-07-07-soranoha-snapshot-publication-design.md`",
    :title "Analysis Packs and Tokenizer Profiles",
    :topics [:analysis :tokenizer],
    :status :proposed}

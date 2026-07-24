@@ -434,19 +434,24 @@
                 echo "ADR + architecture diagrams current; header/sidecar/stage lints clean." > "$out/result.txt"
               '';
 
-          # Retained-capability smoke: presentation figures stay renderable
-          # on demand with a store-resolved Noto Sans CJK JP. This is not a
-          # drift gate — it never compares bytes against the frozen SVGs.
+          # Retained-capability smoke: the full style path stays exercised —
+          # figure-theme/presentation -> graphviz/dot -> Graphviz -> SVG with
+          # a store-resolved Noto Sans CJK JP and the black default canvas.
+          # This is not a drift gate — it never compares bytes against the
+          # frozen SVGs; the frozen-file loop only proves they stay readable.
           figure-render-smoke =
             pkgs.runCommand "abc-figure-render-smoke"
               {
                 nativeBuildInputs = [
+                  pkgs.clojure
                   pkgs.graphviz
                   pkgs.fontconfig
                 ];
                 FONTCONFIG_FILE = figureFontConfig;
               }
               ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
                 export XDG_CACHE_HOME="$TMPDIR/font-cache"
                 mkdir -p "$XDG_CACHE_HOME"
                 resolved="$(fc-match -f '%{file}' 'Noto Sans CJK JP')"
@@ -457,13 +462,55 @@
                     exit 1
                     ;;
                 esac
+                clojure -M -e '
+                  (require (quote [abc.tools.diagram.figure-theme :as theme])
+                           (quote [abc.tools.diagram.graphviz :as graphviz]))
+                  (spit "probe.dot"
+                        (graphviz/dot
+                         {:id :style-probe
+                          :direction "LR"
+                          :theme theme/presentation
+                          :groups []
+                          :nodes [{:id :gate :label "検証" :role :validation}
+                                  {:id :pub :label "Publication" :role :output}]
+                          :edges [{:from :gate :to :pub :role :identity}]
+                          :primary-order []}))'
+                dot -Tsvg probe.dot -o probe.svg
+                test -s probe.svg
+                grep -Fq 'fill="#000000"' probe.svg
+                grep -Fq 'font-family="Noto Sans CJK JP"' probe.svg
                 mkdir -p "$out"
-                for figure in ${./docs/figures}/*.dot; do
+                cp probe.svg "$out/"
+                for figure in docs/figures/*.dot; do
                   svg="$out/$(basename "$figure" .dot).svg"
                   dot -Tsvg "$figure" -o "$svg"
                   test -s "$svg"
                 done
-                echo "Presentation figures render with store-resolved fonts." > "$out/result.txt"
+                echo "Theme->emitter->Graphviz path renders with the black canvas and store-resolved fonts." > "$out/result.txt"
+              '';
+
+          # Historical-audit pin (ADRs 0039-0042): verify the exact committed
+          # P5 promotion — closed membership, hashes, and decision binding
+          # against the authoritative decisions.edn — without re-running any
+          # measurement.
+          parser-rq-p5-promotion-audit =
+            pkgs.runCommand "abc-parser-rq-p5-promotion-audit"
+              { nativeBuildInputs = [ pkgs.clojure ]; }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                candidate_ref=sha256:15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab
+                run_root="docs/reports/parser-rq/runs/''${candidate_ref#sha256:}"
+                clojure -M:abc/parser-rq-campaign verify-promotion \
+                  --runs-root docs/reports/parser-rq/runs \
+                  --candidate-ref "$candidate_ref" \
+                  --registry data/aat-parser-ir-compatibility.edn \
+                  --measurements docs/reports/parser-release-qualification-measurements.edn \
+                  --report docs/reports/parser-release-qualification-report.json \
+                  --provenance "$run_root/executable-provenance.json" \
+                  --decisions docs/adr/decisions.edn
+                mkdir -p "$out"
+                echo "Committed P5 promotion audit verified against decisions.edn." > "$out/result.txt"
               '';
 
           clj-kondo =

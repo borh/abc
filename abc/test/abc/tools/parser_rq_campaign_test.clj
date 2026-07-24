@@ -656,16 +656,14 @@
         measurements-path (fs/file root "measurements.json")
         report-path (fs/file root "report.json")
         provenance-path (fs/file root "provenance.json")
-        adr-0040-path (fs/file root "0040.md")
-        adr-0041-path (fs/file root "0041.md")
+        decisions-path (fs/file root "decisions.edn")
         options {:runs_root (str root)
                  :candidate_ref (:candidate_ref candidate-value)
                  :registry_path (str registry-path)
                  :measurements_path (str measurements-path)
                  :report_path (str report-path)
                  :provenance_path (str provenance-path)
-                 :adr_0040_path (str adr-0040-path)
-                 :adr_0041_path (str adr-0041-path)}]
+                 :decisions_path (str decisions-path)}]
     (write-edn! (fs/file candidate-dir "candidate.edn") candidate-value)
     (write-edn! (fs/file candidate-dir "authorizations" "authorization.edn")
                 authorization-value)
@@ -686,8 +684,32 @@
     (write-canonical-json! measurements-path envelope-values)
     (write-canonical-json! report-path report)
     (write-canonical-json! provenance-path provenance)
-    (spit adr-0040-path "Status: Accepted\n")
-    (spit adr-0041-path "Status: Accepted\n")
+    (write-edn! decisions-path
+                {:decisions
+                 [{:slug "process-tree-memory-qualification" :status :accepted}
+                  {:slug "parser-release-instrument-bindings" :status :accepted}]})
+    (is (= [] (campaign/promotion-errors options)))
+    (write-edn! decisions-path
+                {:decisions
+                 [{:slug "process-tree-memory-qualification" :status :proposed}
+                  {:slug "parser-release-instrument-bindings" :status :accepted}]})
+    (is (some #{"decision process-tree-memory-qualification (ADR 0040) is not accepted"}
+              (campaign/promotion-errors options))
+        "a dependency decision that is not :accepted blocks promotion")
+    (write-edn! decisions-path
+                {:decisions [{:slug "parser-release-instrument-bindings"
+                              :status :accepted}]})
+    (is (some #{"decision process-tree-memory-qualification (ADR 0040) is not accepted"}
+              (campaign/promotion-errors options))
+        "a missing dependency decision blocks promotion")
+    (spit decisions-path "{:decisions []} {:extra true}")
+    (is (some #(re-find #"exactly one EDN form" %)
+              (campaign/promotion-errors options))
+        "a malformed decisions corpus is reported, never treated as accepted")
+    (write-edn! decisions-path
+                {:decisions
+                 [{:slug "process-tree-memory-qualification" :status :accepted}
+                  {:slug "parser-release-instrument-bindings" :status :accepted}]})
     (is (= [] (campaign/promotion-errors options)))
     (write-canonical-json! provenance-path
                            (assoc provenance :schema_version "changed"))

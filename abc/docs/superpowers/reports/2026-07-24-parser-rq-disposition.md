@@ -18,9 +18,9 @@ historical audit path, so it stays until proven).
 
 | Capability | Promise | Current provider | Status |
 |---|---|---|---|
-| Historical audit | One command verifies accepted P5 closed membership, hashes, decision binding — no re-measurement; minutes | `parser-rq-campaign verify-promotion` / `verify-capture` | met |
+| Historical audit | One command verifies accepted P5 closed membership, hashes, decision binding — no re-measurement; minutes | `parser-rq-campaign verify-promotion` against `docs/adr/decisions.edn` (Recipe 1 in `docs/parser-rq-runbook.md`), CI-pinned as the `parser-rq-p5-promotion-audit` check | met — after repair. Post-review audit found verify-promotion still parsed the retired Markdown `Status:` grammar, so the exact committed audit failed on main while synthetic-fixture tests stayed green; fixed by resolving the dependency decisions by slug from decisions.edn (`--decisions` replaces `--adr-0040`/`--adr-0041`). `verify-capture` is not a provider here — it checks capture integrity, not decision binding. |
 | Bounded requalification smoke | candidate → capture → projection → evaluation → promotion on a small fixture in CI | abc checks `parser-rq-campaign-site`, `parser-rq-campaign-orchestrator`, `parser-rq-core-attempt`, `parser-rq-admission-promotion-smoke`; root `parser-rq-production-wiring` | met |
-| Full requalification | Operator starts a new qualification from a clean Linux/cgroup-v2 host within one working day, from a documented runbook | `bin/parser-rq-campaign-capture.sh`, `bin/parser-rq-admission-promotion-smoke.sh`, `config/parser-rq-site.example.json`, campaign CLI usage text | **gap: no single runbook doc** — entry points exist but the end-to-end operator sequence lives in plans/specs history. Write one short runbook; this is a documentation gap, not machinery. |
+| Full requalification | Operator starts a new qualification from a clean Linux/cgroup-v2 host within one working day, from a documented runbook | `docs/parser-rq-runbook.md` (Recipe 2), `bin/parser-rq-campaign-capture.sh`, `config/parser-rq-site.example.json` | met — runbook written; exercise it before designing further evidence infrastructure |
 | Scope expansion | Candidate/corpus/predicate/instrument identities rotate without reconstructing the protocol from git history | campaign identity operations + ADR 0040 c3 / 0041 c1 rotation rules | met |
 
 ## Claim dispositions
@@ -100,13 +100,14 @@ resource witness, the P5 compat tuple
 
 ## Gaps to close (small, no new machinery)
 
-1. Write the **requalification runbook** (one doc: clean-host prerequisites,
-   site config, capture → verify → evaluate → promote command sequence,
-   expected durations). Closes the only unmet promise in the contract.
-2. When the frozen-verdict closed-manifest protocol is designed (as an ADR
-   0043 supersession), migrate the Hinoki witness and P5 tuple to it and
-   retire `parser_phase5_frozen_tuple.clj` — the first concrete consumer of
-   that design.
+1. ~~Write the requalification runbook~~ — done: `docs/parser-rq-runbook.md`
+   (historical audit + clean-host requalification). Exercise it before
+   designing more evidence infrastructure.
+2. The frozen-verdict closed-manifest protocol (an ADR 0043 supersession) is
+   **deferred** until it demonstrably serves both the P5 tuple and the
+   Hinoki witness and deletes more apparatus than it introduces — building
+   a protocol merely to retire one verifier would repeat the original
+   pattern.
 
 ## Trigger for revisiting mass retirement
 

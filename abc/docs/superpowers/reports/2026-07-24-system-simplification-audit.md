@@ -222,3 +222,23 @@ dispositions.
 4. **F1 — deferred**; produce the claim-by-claim disposition table under the
    adopted capability contract.
 5. F4–F5 as follow-up refactors when next touching those files.
+
+## Appendix — execution record (post-rev-3)
+
+The sequence above is historical analysis; actual execution on 2026-07-24:
+
+| Commit | What |
+|---|---|
+| `24cad723` | F2: presentation figure pipeline retired (−1,842 net) |
+| `263bd18e` | This report tracked at rev 3 |
+| `43bea3a0` | Figure style kit (figure-theme, emitter `:canvas`/`:font-family`, `figure-render-smoke`) |
+| `8e3f0aab` | Pre-F3 fix: stale `adr-evidence-run` entry removed from contract generator + mirror (broken since ADR 0043's `b042c7cd`) |
+| `a7ab6cc4` | F3: target-graph engine vertical slice deleted; workflow-run 0.2.0 → 0.3.0 |
+| `93c14e79` | F1 disposition table under the warm-capability contract (no retirement) |
+| (this branch) | Historical-audit repair: verify-promotion reads decisions.edn (regression from the decisions.edn cutover — its tests fabricated legacy `Status:` files); exact committed P5 audit CI-pinned as `parser-rq-p5-promotion-audit`; runbook `docs/parser-rq-runbook.md`; figure-render-smoke extended to the theme→emitter→Graphviz path |
+
+Standing dispositions: F1 warm capability retained (revisit after the next
+full-Aozora qualification or an explicit no-further-qualification decision);
+the ADR 0043 supersession for frozen verdicts is deferred until a closed
+manifest serves both the P5 tuple and Hinoki witness and deletes more than
+it adds; F4/F5 remain opportunistic, characterization-led refactors.

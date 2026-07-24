@@ -3,6 +3,7 @@
   release-qualification campaign. Execution and governance edits stay outside
   this namespace."
   (:require [abc.tools.aat-parser-ir-compat :as compat]
+            [abc.tools.decisions :as decisions]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.jcs :as jcs]
@@ -751,10 +752,30 @@
     (not= capture-reference (:capture_generation_ref receipt))
     (conj "evidence integrity receipt is not bound to the capture")))
 
+(def promotion-dependency-slugs
+  "Decision slugs verify-promotion requires to be :accepted, keyed by the
+  frozen legacy numbers the error messages cite."
+  {"ADR 0040" "process-tree-memory-qualification"
+   "ADR 0041" "parser-release-instrument-bindings"})
+
+(defn- load-decision-statuses
+  "Resolve the promotion-dependency decision statuses from the authoritative
+  decisions.edn corpus. Throws with :errors on an unreadable corpus so
+  promotion-errors reports it like any other resolution failure."
+  [decisions-path]
+  (let [{:keys [corpus problems]} (decisions/load-corpus decisions-path)]
+    (when (seq problems)
+      (throw (ex-info "decisions corpus unreadable"
+                      {:errors (mapv :message problems)})))
+    (into {}
+          (for [[label slug] promotion-dependency-slugs]
+            [label (some #(when (= slug (:slug %)) (:status %))
+                         (:decisions corpus))]))))
+
 (defn- promotion-value-errors
   [{:keys [candidate authorization capture evaluation current_registry_ref
-           qualification_report evidence_integrity adr_0040_status
-           adr_0041_status capture_count canonical_equal manifest_blobs]}]
+           qualification_report evidence_integrity decision_statuses
+           capture_count canonical_equal manifest_blobs]}]
   (let [verdicts (:predicate_verdicts qualification_report)
         ids (mapv :predicate_id verdicts)]
     (cond-> []
@@ -793,11 +814,13 @@
              evidence_integrity (:candidate_ref candidate)
              (:capture_generation_ref capture) manifest_blobs))
 
-      (not= "Accepted" adr_0040_status)
-      (conj "ADR 0040 is not Accepted")
+      (not= :accepted (get decision_statuses "ADR 0040"))
+      (conj (str "decision " (promotion-dependency-slugs "ADR 0040")
+                 " (ADR 0040) is not accepted"))
 
-      (not= "Accepted" adr_0041_status)
-      (conj "ADR 0041 is not Accepted")
+      (not= :accepted (get decision_statuses "ADR 0041"))
+      (conj (str "decision " (promotion-dependency-slugs "ADR 0041")
+                 " (ADR 0041) is not accepted"))
 
       (not= 1 capture_count)
       (conj "candidate has zero or sibling capture generations")
@@ -810,11 +833,6 @@
 
 (defn- read-json-value [path]
   (walk/keywordize-keys (files/read-json path)))
-
-(defn- adr-status [path]
-  (some->> (string/split-lines (files/read-text path))
-           (keep #(second (re-matches #"Status:\s*(\S+)" %)))
-           first))
 
 (defn- current-registry-ref [registry]
   (-> registry canonical-value hash/sha256-json-jcs hash/format-sha256))
@@ -906,7 +924,7 @@
   statuses, or canonical-equality claims. Those facts are derived here from
   the immutable generation directories and referenced bytes."
   [{:keys [runs_root candidate_ref registry_path measurements_path report_path
-           provenance_path adr_0040_path adr_0041_path]}]
+           provenance_path decisions_path]}]
   (try
     (let [candidate-dir (fs/file runs_root (ref-directory-name candidate_ref))
           candidate (files/read-edn (fs/file candidate-dir "candidate.edn"))
@@ -951,8 +969,7 @@
                    :qualification_report qualification-report
                    :evidence_integrity evidence-integrity
                    :manifest_blobs manifest-blobs
-                   :adr_0040_status (adr-status adr_0040_path)
-                   :adr_0041_status (adr-status adr_0041_path)
+                   :decision_statuses (load-decision-statuses decisions_path)
                    :capture_count (count capture-indexes)
                    :canonical_equal
                    (and (canonical-file-equal? measurements_path
@@ -1023,7 +1040,7 @@
        "       parser-rq-campaign runtime-inputs --candidate PATH --authorization PATH --out PATH\n"
        "       parser-rq-campaign compose|verify-capture --candidate PATH --capture-root DIR [--authorization PATH] [--out PATH]\n"
        "       parser-rq-campaign project --runs-root DIR --candidate-ref HASH --registry PATH [--measurements-out PATH] [--report-out PATH]\n"
-       "       parser-rq-campaign verify-promotion --runs-root DIR --candidate-ref HASH --registry PATH --measurements PATH --report PATH --provenance PATH --adr-0040 PATH --adr-0041 PATH"))
+       "       parser-rq-campaign verify-promotion --runs-root DIR --candidate-ref HASH --registry PATH --measurements PATH --report PATH --provenance PATH --decisions PATH"))
 
 (defn -main [& args]
   (let [[command & command-args] args]
@@ -1157,8 +1174,7 @@
                      :measurements_path (required-option options :measurements)
                      :report_path (required-option options :report)
                      :provenance_path (required-option options :provenance)
-                     :adr_0040_path (required-option options :adr_0040)
-                     :adr_0041_path (required-option options :adr_0041)})]
+                     :decisions_path (required-option options :decisions)})]
         (when (seq errors) (throw (ex-info "promotion invalid" {:errors errors})))
         (println "ok"))
       (throw (ex-info (usage) {:args args})))))

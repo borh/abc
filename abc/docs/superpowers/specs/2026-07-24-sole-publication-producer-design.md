@@ -1,122 +1,155 @@
 # Sole Publication Producer
 
-**Date:** 2026-07-24 · **Status:** Approved design
+**Date:** 2026-07-24 · **Status:** Provisional design — architecture selected;
+implementation blocked on the trust and cache repairs below
 
-## Goal
+## Decision
 
-Make Soranoha's publication architecture have one production authority:
+Soranoha will have one authority that can assemble, install, and admit a
+publication release:
 
 ```text
-official Aozora checkout + build policy
-                    |
-                    v
-         soranoha build-publication
-              release lifecycle
-                    |
-                    v
-            materialize-publication!
-             per-work artifact writer
-                    |
-                    v
-              publication root
-       artifacts · manifests · reports
-       provenance · failures · run trace
+authenticated source + admitted parser/mapping/policies
+                             |
+                             v
+                  soranoha build-publication
+               sole release assembler/admitter
+                    |                  \
+                    | invokes           \ assembles
+                    v                    v
+         materialize-publication!    immutable release index
+           one per-work renderer     refs · failures · identities
+                /         \                    |
+       qualification     fixtures       +-----+------+
+         evidence       characterization |     |      |
+                                     validate explain stage/package
 ```
 
-`soranoha build-publication` is the sole supported command that turns an
-official source checkout into release-facing publication artifacts.
-`abc.tools.materialize-publication/materialize-publication!` is the sole
-implementation boundary that writes the per-work publication artifact set.
+`soranoha build-publication` is the sole release assembler and release
+admission boundary. `materialize-publication!` is the sole renderer of the
+canonical per-work publication artifact set.
 
-The word “sole” applies at two levels:
+This is intentionally more precise than saying that only one command may write
+TEI or plaintext. Qualification and fixture tools need to render candidate
+artifacts. They do not make releases. Candidate bytes become part of a release
+only when `build-publication` closes over their identities in the authenticated
+release index and the release passes admission.
 
-1. **One release workflow.** No second CLI, Nix app, rehearsal, batch command,
-   or snapshot reproduction path independently claims production authority.
-2. **One per-work writer.** Production, fixture validation, and parser
-   qualification may call the same lower-level function, but none may
-   reimplement its plaintext, TEI, preservation, validation-result, or manifest
-   writes.
+The simplification is therefore:
 
-This is a subtractive refactor. It should remove alternative authority,
-duplicate lifecycle code, and historical workflow surfaces. It must not replace
-them with a generic pipeline framework, command registry, release database, or
-new identity layer.
+1. one release authority;
+2. one per-work renderer;
+3. one authenticated release value;
+4. no second source-to-release composition.
 
-## Why this is the next high-leverage boundary
+It is not “one process may ever produce an artifact.”
 
-The current architecture has two coherent but competing publication systems.
+## Vocabulary
+
+The design uses distinct words for distinct things:
+
+- **Renderer** — derives one work's candidate publication artifacts and
+  manifests. It has no corpus or release authority.
+- **Release assembler** — selects authenticated inputs, invokes the renderer,
+  collects results, and constructs the closed release value.
+- **Release index** — the immutable, hash-authenticated closure of selected
+  inputs, artifact references, policies, and failures. During this migration
+  the existing `snapshot-index.json` contract is the release-index protocol.
+- **Installation** — atomically makes a completed or diagnostic run root
+  visible at an output place.
+- **Admission** — declares a closed, successful index to be a release.
+  Installing a partial diagnostic root is not release admission.
+- **Operational trace** — plans, timestamps, concurrency decisions, cache
+  events, temporary paths, and step records. These explain a run but do not
+  identify a release.
+
+These distinctions prevent three common conflations: bytes with releases,
+places with values, and a successful filesystem move with release admission.
+
+## Why this boundary has the highest leverage
+
+The repository currently contains two end-to-end publication compositions.
 
 The snapshot/rehearsal path in `abc.tools.soranoha` owns request-set resolution,
 source snapshots, snapshot-index identity, per-work reproduction, reports,
 staging, validation, and a rehearsal workflow. The direct
 `abc.tools.soranoha-build-publication` path owns official-source discovery,
-adapter execution, source materialization, per-work publication, caching,
-failure handling, run records, and atomic promotion.
+adapter execution, source materialization, per-work rendering, caching,
+failure handling, run records, and atomic installation.
 
-That duplication was not an oversight. The original
+That duplication was not accidental. The original
 `2026-07-08-soranoha-build-publication-design.md` required the direct build to
-delegate to `publication-rehearsal!`. Commit `587bd182` deliberately removed
-the delegation because the rehearsal path was fixture/request-set-bound and
-produced stub parser IR rather than real body text. The direct path became the
-real full-corpus implementation.
+delegate to `publication-rehearsal!`. Commit `587bd182` removed the delegation
+because the rehearsal was fixture/request-set-bound and produced stub parser IR
+rather than real body text. The direct path became the real full-corpus
+implementation.
 
-The mistake would be to restore the old delegation. The useful production
-behavior is in `build-publication`; the architectural repair is to make that
-authority explicit and retire the superseded path.
+Restoring the old delegation would preserve the wrong abstraction. The repair
+is to move the useful authenticated value construction behind the real build
+and retire the superseded composition.
 
-The split currently makes basic questions need two answers:
+At present, basic questions require answers from both systems:
 
-- What command produces a publication?
-- Which top-level identity and report describe it?
-- Where are failure and atomicity semantics enforced?
-- Which output tree is release-facing?
-- Which workflow trace is authoritative?
+- Which command makes a release?
+- Which identity describes the corpus and its artifacts?
+- Which parser and mapping were admitted?
+- Where do strict and partial failure semantics live?
+- Which output root is supported?
+- Which trace is explanatory rather than authoritative?
 - Where should a new publication capability be added?
 
-Making `build-publication` the sole producer gives each question one owner. It
-also creates the deletion seam needed to reduce `soranoha.clj`,
-`materialize_publication.clj`, the CLI surface, workflow apparatus, tests, and
-schemas without a rewrite.
+After the refactor each question has one owner. That gives subsequent
+decomposition of `soranoha.clj`, `materialize_publication.clj`, workflow
+apparatus, schemas, and gates a reliable deletion seam.
 
-## Architectural decision
+## Architectural boundaries
 
-### Production authority
+### `build-publication`: sole release assembler and admitter
 
 `soranoha build-publication` owns:
 
-- official-source checkout validation and source selection;
-- source-bundle and parser input derivation;
-- release-policy and rights-policy admission;
-- build configuration and operational provenance;
-- failure policy;
-- concurrency and cache reuse;
-- the call to the per-work artifact writer;
-- corpus-level results and failure accounting;
-- temporary-root handling and atomic promotion;
-- the supported production output-root contract.
+- validation of the official source checkout;
+- construction and authentication of release inputs;
+- exact parser-candidate, qualification, mapping, and policy admission;
+- source selection and source/parser derivation;
+- failure policy and release-admissibility accounting;
+- concurrency and cache policy;
+- calls to the per-work renderer;
+- construction and validation of the release index;
+- installation of the run root;
+- admission of a completed index as a release.
 
 No other command may combine those responsibilities into an alternative
-publication workflow.
+source-to-release workflow.
 
-This is authority ownership, not a requirement that one namespace implement
-everything. The command is a narrow façade over cohesive capabilities:
+This authority does not require one large namespace. The façade should be a
+deep operation over explicit values:
 
 ```text
 build-publication
-  ├── source selection and source/parser derivation
-  ├── per-work materialize-publication!
-  ├── corpus result assembly
-  └── output-root promotion
+  ├── authenticate release inputs
+  ├── select and derive candidate works
+  ├── render each work through materialize-publication!
+  ├── assemble and validate the release index
+  └── install the run root; admit only a closed success
 ```
 
-Each capability may live with its domain and be tested independently. What it
-may not do is expose another source-to-release composition. The façade should
-be deep—one production operation hiding lifecycle detail—while its internals
-remain ordinary functions over explicit values.
+The internal capabilities remain ordinary functions with domain ownership.
+They may be reused independently. What must not reappear is another public
+composition that selects source, renders a corpus, invents a top-level
+identity, and calls it a release.
 
-### Per-work publication boundary
+Release assembly does not transfer parser ownership to ABC. `ab-validator`
+continues to own parser/adaptor measurement, AAT evidence, parser-IR conversion
+evidence, and parser corpus reports. ABC consumes and authenticates those
+values while retaining publication-schema, TEI, manifest, and registry
+admission ownership. Parser outputs remain supporting evidence; source-authority
+measurements remain authoritative for Aozora markup coverage.
 
-`materialize-publication!` owns exactly one work's publication values:
+### `materialize-publication!`: sole per-work renderer
+
+`materialize-publication!` owns exactly one work's canonical publication
+artifact set:
 
 - visible-body plaintext;
 - TEI;
@@ -125,59 +158,258 @@ remain ordinary functions over explicit values.
 - plaintext manifest;
 - TEI manifest.
 
-Its input is an explicit record of parser IR, source manifest, metadata/person
-records, output directory, and generation time. Its output is a record of the
-written artifact paths. Renderers and validators remain behind this boundary;
-callers do not reproduce their sequencing or file layout.
+Its input is an explicit value containing parser IR, source manifest,
+metadata/person records, generation time, the identity inputs required by that
+invocation, and an output directory. Its result describes the candidate
+artifacts and manifests it wrote. The release caller is responsible for
+authenticating those identity inputs. Renderers and validators stay behind this
+boundary; callers do not reimplement their sequencing, layout, or manifest
+construction.
 
-The function is an internal library capability, not a second release entry
-point. These calls remain legitimate:
+The following callers are legitimate:
 
-- `build-publication`, as the sole production caller;
-- `validate-design-bundle` and focused tests, as fixture characterization;
-- parser-RQ publication materialization, as a qualification instrument whose
-  outputs are evidence rather than a release.
+- `build-publication`, which may include the result in a release;
+- parser qualification, which produces evidence;
+- fixture and integration checks, which characterize the renderer;
+- focused development tools that render candidate artifacts.
 
-Calling the function does not confer release authority. Release admission,
-corpus accounting, atomic promotion, and the top-level output contract belong
-only to `build-publication`.
+Only the first caller has release authority. The distinction is conferred by
+authenticated inclusion and admission, not by preventing other code from
+calling the renderer.
 
-### Read-side capabilities
+### Retained adapters are not release front doors
 
-Validation, explanation, reporting, and staging are projections over a
-completed production root. They do not mint a competing publication identity
-or independently materialize the canonical per-work artifact set.
+The current single-work materializer CLI and batch CLI have live
+`ab-validator` and smoke-script consumers. They must not be deleted merely
+because they can write artifacts.
 
-A read-side capability stays public only when it has a live operator or
-consumer:
+Their target role is an explicitly non-release renderer adapter:
 
-- validation checks values already present in a completed root;
-- explanation prints identity and provenance already present;
-- a report derives a view from the completed root;
-- staging copies or packages already-authenticated artifacts without
-  regenerating their contents or identities.
+- it accepts already-selected inputs;
+- it produces candidate artifacts or qualification evidence;
+- it cannot authenticate an official source checkout;
+- it cannot construct or admit the corpus release index;
+- it cannot install a supported release root.
 
-If staging is a required part of release, `build-publication` invokes it and
-records its result. A standalone staging command may remain only as a
-repeatable projection from the same completed root; its output is a deployment
-view, not a second publication.
+The batch adapter stays until its live consumers migrate. Its hand-built
+workflow/run record may be simplified independently, but retirement is a
+consumer migration, not the first architectural cut.
 
-### Introspection is data, not another subsystem
+### Projections consume the release value
 
-The production root must answer operational questions from a small, closed set
-of values on disk. The current likely set is:
+Validation, explanation, and reporting are pure or read-only projections from
+the release index and referenced artifacts.
+
+Staging and packaging are downstream derived producers: they copy, arrange,
+archive, or emit deployment views. They are not read-only because they create
+new values, but they must not regenerate canonical publication contents or mint
+a competing publication identity. Their outputs cite the source release index.
+
+The dependency direction is one-way:
+
+```text
+release index -> validate / explain / report / stage
+```
+
+No projection is allowed to call back into rendering in order to “verify” or
+reconstruct the release.
+
+## Authoritative release value
+
+### Decision: use the existing snapshot-index protocol
+
+The authoritative corpus value will be `snapshot-index.json`, constructed
+directly from the actual results of `build-publication`.
+
+This choice avoids adding a parallel `release-index` schema. The current
+snapshot index already supplies the essential semantics:
+
+- a schema-pinned identity object;
+- source and request-set identity;
+- an authenticated artifact-set hash;
+- sorted artifact references with manifest and content hashes;
+- failure and layout policy hashes;
+- parser, schema, tokenizer, and analysis evidence hashes;
+- a recomputable `snapshot_identity_hash`.
+
+The direct build must construct those values from the source selection and
+artifacts it actually used. It must not invoke the rehearsal, read a hand-built
+snapshot plan, or synthesize fields merely to satisfy the schema.
+
+The existing protocol is retained during the behavior-preserving migration.
+If a required field cannot truthfully describe a direct production build, that
+is a schema-version decision: remove or replace the field in a minimal
+successor and supersede the old contract. Do not put an arbitrary value into
+the field, and do not create a second corpus identity beside it.
+
+`publications-report.json` remains a derived operational/corpus report. It is
+not authoritative: it currently has no matching schema, no authenticated
+artifact closure, and no identity equivalent to the snapshot index.
+
+### Closed identity chain
+
+The release index must authenticate this chain:
+
+```text
+clean official source identity
+        +
+exact admitted parser candidate / qualification tuple
+        +
+exact mapping document and release policies
+        |
+        v
+selected source bundles and parser IR
+        |
+        v
+per-work publication manifests
+        |
+        v
+sorted artifact references + artifact-set hash
+        |
+        v
+snapshot-index identity
+```
+
+The index and every identity-bearing manifest use relative locators. An output
+directory, temporary root, cache directory, or absolute checkout path is a
+place and must never enter artifact identity.
+
+### Values excluded from release identity
+
+The following remain operational facts unless a governed contract explicitly
+states otherwise:
+
+- concurrency and scheduling;
+- cache hit/miss decisions;
+- workflow/run identifiers;
+- start and finish timestamps;
+- temporary paths and absolute machine paths;
+- command spelling;
+- diagnostic logs.
+
+They may be retained for introspection. Changing them must not change release
+identity.
+
+## Trust-boundary preconditions
+
+The current direct build is not yet a trustworthy release boundary. These are
+correctness repairs, not incidental cleanup, and must land separately from
+structural deletion.
+
+### Clean source identity
+
+The build must fail closed when it cannot prove the relevant official source
+state:
+
+- reject dirty relevant source paths by default;
+- treat failed Git inspection as unknown, never as clean;
+- identify the selected source contents, not only the checkout commit and
+  catalog;
+- provide an explicit, recorded non-release override only if an operator needs
+  diagnostic builds from dirty source.
+
+The current behavior records dirty state without rejecting it and can interpret
+unavailable status output as clean. That cannot authorize a release.
+
+### Exact parser and mapping admission
+
+A profile name or environment-selected binary is insufficient release
+identity. The build must bind to:
+
+- the exact parser candidate;
+- the exact accepted qualification and admitted tuple;
+- parser build and configuration hashes;
+- the exact mapping document hash;
+- the relevant parser-IR/schema and release-policy hashes.
+
+This follows the Accepted parser qualification and owned AAT-to-parser-IR
+mapping decisions. Authority must not float with `HEAD`, `PATH`, or an
+environment variable.
+
+The resulting hashes must reach the per-work manifests and the release index.
+The current `nil` parser-build, parser-config, and mapping fields are a release
+blocker, not optional provenance.
+
+### Closed references
+
+Before admission, the build must validate:
+
+- the release index schema and recomputed identity;
+- every required relative reference;
+- every referenced manifest hash;
+- every artifact content hash exposed by its manifest;
+- agreement among source, parser/mapping, work, and corpus identities;
+- absence of unexpected identity-bearing files outside the closed set.
+
+An unreadable or malformed authority value is an error, never an accepted
+status.
+
+## Cache semantics
+
+The render cache and release manifests are different values and must be treated
+separately.
+
+Reusable content bytes may be keyed by all inputs that determine those bytes.
+A release manifest may be reused only when its complete identity-bearing input
+object is identical. In particular, a matching `work_content_hash` plus the
+existence of `tei.manifest.json` is insufficient.
+
+For each artifact the implementation must choose one of two honest paths:
+
+1. **Exact reuse:** content and manifest are reused only when the complete
+   render and release identity matches.
+2. **Content reuse:** deterministic content bytes are reused, while manifests
+   and references are regenerated from the current release inputs.
+
+A cache hit must not copy an old corpus snapshot, metadata identity, parser or
+mapping identity, profile hash, timestamp policy, or locator into a new
+release.
+
+Cache keys are implementation details. The release index authenticates the
+result and does not trust a cache-hit claim.
+
+## Failure, installation, and admission semantics
+
+Singular authority makes the state transitions explicit:
+
+```text
+candidate run root
+    | validate closure
+    +-- closed success --> atomic installation --> release admission
+    |
+    +-- strict failure --> no replacement of prior root
+    |
+    +-- best-effort partial --> optional diagnostic installation
+                                + nonzero exit
+                                + no release admission
+```
+
+The existing best-effort contract may keep an inspectable partial root. That
+root must be visibly non-admissible and must not be mistaken for a release just
+because it occupies the configured output path. If it contains a candidate
+snapshot index, the index must encode its failures and fail release admission.
+
+A strict failure does not replace the last admitted root. Malformed identities,
+broken references, or inadmissible source/parser state fail before admission.
+
+The implementation must characterize the current strict, partial, and atomic
+replacement behavior before changing it. This spec separates the concepts; it
+does not silently redefine an Accepted failure contract.
+
+## Introspection surface
+
+The installed root should answer operational questions from a small closed set
+of values. The candidate set is:
 
 ```text
 <output-root>/
-  build-config.json
-  build-plan.json
-  source-selection-report.json
-  workflow-plan.json
-  workflow-run.json
-  materialized-root/
-    works/<work-slug>/...
+  snapshot-index.json             # authoritative release value
+  build-config.json               # operational input record
+  source-selection-report.json    # selection explanation
+  workflow-plan.json              # optional operational trace
+  workflow-run.json               # optional operational trace
   publications/
-    publications-report.json
+    publications-report.json      # derived summary
     <work-slug>/
       plain.txt
       plaintext.manifest.json
@@ -188,338 +420,321 @@ of values on disk. The current likely set is:
       source_work_content_hash.txt
 ```
 
-This list is a disposition input, not permission to preserve every file.
-Implementation chooses the smallest sufficient authoritative set and labels
-each retained value as one of:
+This is a disposition input, not a promise to keep every file. Each retained
+value is labeled:
 
-- identity-bearing;
-- release/admission-bearing;
+- identity/release-bearing;
 - operational provenance;
 - derived report;
 - diagnostic trace.
 
-Paths stored in retained values are relative to the production root where
-possible. A user should be able to determine what was selected, what was
-published, what failed, which inputs and policies applied, and which artifacts
-carry the authoritative hashes without replaying the workflow.
+Relative paths must remain valid after temporary-root installation. The current
+absolute `materialized_root` recorded from the temporary build place is a
+place/value defect and must not become part of the supported contract.
 
-Do not add a `release-index` schema merely to make the target diagram tidy.
-First determine whether one existing value—most likely
-`publications-report.json`—can become the closed corpus summary. A new value is
-justified only if a live contract cannot be expressed by deleting or
-strengthening an existing one.
+A user should be able to determine what was selected, what was admitted, what
+failed, and which hashes bind the source, parser, mapping, policies, manifests,
+and artifacts without replaying a workflow.
 
 ## Current surface disposition
 
-The following is the design disposition. Deletion still requires the closed
-consumer/claim audit below.
+Deletion still requires a closed consumer and decision-claim audit.
 
 | Current surface | Target disposition | Reason |
 | --- | --- | --- |
-| `soranoha build-publication` | Keep: sole production front door | It is the real full-corpus path and owns atomic promotion and failure policy. |
-| `materialize-publication!` | Keep and deepen: sole per-work writer | It already centralizes the publication artifact set. |
-| `materialize-release-publication!` | Retire as a release boundary | The release gate belongs at the sole corpus workflow, not a second per-work entry point. |
-| `materialize-publication` Nix app/CLI | Retire or explicitly demote to development-only after consumer audit | As a supported app it is a second artifact-producing front door. |
-| `materialize-publications-batch` app/CLI and manual workflow record | Retire after consumer audit | `build-publication` already owns bounded parallel corpus materialization; historical report command strings are frozen facts, not live consumers. |
-| `publication-rehearsal!`, command, report, and workflow | Retire | It is the superseded end-to-end production composition. |
-| `reproduce!` and `materialize-snapshot-root!` publication loop | Retire or split | Their artifact-writing role competes with the sole producer; pure request-set/analysis behavior may survive under its actual owner. |
-| `source-snapshot`, request-set, and snapshot-index functions | Disposition by live capability | Keep pure identity/data transformations only where current analysis or audit consumers need them; do not preserve them to support the retired rehearsal. |
-| snapshot `validate`, `explain`, reports, and staging | Rebase on the production root or retire | They are allowed only as read-side projections with an identified consumer. |
-| `validate-workflow` in the Soranoha dispatcher | Move to its domain or retire | Generic run-record validation is not publication command dispatch. |
-| parser-RQ publication materializer | Keep as non-release qualification capability | The warm qualification campaign needs the same renderer boundary without becoming a release path. |
-| `validate-design-bundle` publication fixture | Keep as integration characterization | It exercises the writer over committed fixtures; it does not own production. |
+| `soranoha build-publication` | Keep and deepen: sole release assembler/admitter | It is the real full-corpus path and owns failure policy and installation. |
+| `materialize-publication!` | Keep and deepen: sole per-work renderer | It centralizes the canonical publication artifact set. |
+| `materialize-release-publication!` | Retire as a release-named boundary; move any required rights check to `build-publication` | Per-work rendering cannot independently confer release authority. |
+| Single-work materializer CLI/Nix app | Keep as a non-release renderer adapter while live consumers exist | `ab-validator` and publication smokes actively use it. |
+| Batch materializer CLI/Nix app | Keep pending explicit consumer migration | It is live qualification/report support; simplify duplicate run-record code separately. |
+| Parser-RQ publication materializer | Keep as a qualification instrument | It produces evidence through the shared renderer, not releases. |
+| `publication-rehearsal!`, command, report, and workflow | Retire after direct build emits the release index | It is the superseded end-to-end composition. |
+| `reproduce!` publication loop | Split and retire its competing composition | Retain only independently owned request-set/analysis/annotation capabilities. |
+| Source-snapshot and request-set functions | Keep as pure domain values where the direct index or live analysis needs them | Their value semantics are useful; rehearsal orchestration is not. |
+| Snapshot-index functions/schema | Keep as the release-index protocol, then simplify only by versioned contract change | It already provides the authenticated closure missing from the direct build. |
+| Snapshot validate/explain/report | Rebase on the release index and retain only live projections | These should inspect values, not reproduce them. |
+| Staging/packaging | Keep as a downstream derived producer where live | It creates deployment values that cite, but do not redefine, the release. |
+| `validate-workflow` in the Soranoha dispatcher | Move to its domain or retire | Generic run-record validation is not publication dispatch. |
+| `validate-design-bundle` publication fixture | Keep as small integration characterization | It exercises a retained boundary without owning release authority. |
 
-The target dispositions deliberately do not classify every request-set,
-snapshot, analysis, annotation, layout, and staging function as dead. Their
-production-composition role is dead; their independent data-model role must be
-proved or disproved by consumers and decision claims.
-
-## The hardest design problem: identity disposition
-
-The two paths do not merely sequence the same functions differently. They
-publish different top-level identity stories.
-
-The rehearsal path treats `request_set_id`, `source_snapshot_hash`, and
-`snapshot_identity_hash` as the citable publication identity. The direct path
-records a build-config hash, Aozora Git provenance, a corpus snapshot hash,
-per-work source/content identity, per-work manifests, and a corpus publication
-report, but does not currently produce the rehearsal's snapshot root.
-
-The implementation must not silently crown both identity systems or combine
-all their fields into a larger identity object. Before changing either path,
-produce a field-by-field identity disposition:
-
-| Field or value | Construction owner | Current consumers | Decision claim | Target role |
-| --- | --- | --- | --- | --- |
-| Aozora Git commit/dirty state | direct build | to audit | to audit | operational or source authority |
-| `corpus_snapshot_hash` | source materialization | to audit | source-bundle claims | identity-bearing |
-| `work_content_hash` | source bundle | manifests/cache | Accepted source-bundle claims | identity-bearing |
-| parser and mapping hashes | source/parser boundary | manifests/RQ | Accepted parser decisions | identity-bearing |
-| publication manifest identities | per-work writer | validators/release | Accepted manifest/rendering decisions | identity-bearing |
-| `request_set_id` | request-set resolver | analysis/snapshot path | currently Proposed analysis decisions plus code consumers | keep only for a live selection/analysis capability |
-| `source_snapshot_hash` | source-snapshot path | request-set/snapshot path | Accepted source-bundle validation may use the underlying capability | distinguish source-bundle authority from rehearsal composition |
-| `snapshot_identity_hash` | snapshot-index path | rehearsal reports/staging | to audit | migrate only if a live release contract requires it |
-| config hash and concurrency | direct build | build plan | operational | non-identity provenance |
-| workflow run id/timestamps | workflow runner | diagnostics | none identified | non-authoritative trace |
-
-“To audit” means enumerate repository consumers, Accepted decision claims, Nix
-checks, active operator documentation, and known external integrations. Draft
-or Proposed decisions are design input, not an obligation to keep unused
-machinery warm.
-
-The preferred outcome is not predetermined field survival. It is one explicit
-identity chain from source authority through per-work manifests to the
-corpus-level production summary, with operational values kept outside that
-chain.
+The live adapter findings correct the earlier proposed “one artifact-producing
+command” rule. Exclusive writing is not the invariant; exclusive release
+assembly and admission is.
 
 ## Closed disposition audit
 
-The first implementation artifact is a disposition table, not a code change.
-It must be complete over:
+Before each deletion, complete a table over:
 
 1. Soranoha commands and Clojure entry points.
 2. Root and `abc` flake apps, `deps.edn` aliases, launchers, and checks.
-3. Output files and their schemas.
-4. Accepted decision claims and their cited evidence.
+3. Output files, schema contracts, fixtures, and mirrors.
+4. Accepted decision claims and cited evidence.
 5. Active documentation and runbooks.
-6. In-monorepo consumers, including parser-RQ, analysis, annotation, and
-   staging.
+6. In-monorepo consumers, including `ab-validator`, parser-RQ, analysis,
+   annotation, and staging.
 7. Known out-of-repository/public consumers.
-8. Tests, separated into domain characterization and tests of the apparatus
-   being retired.
+8. Tests, separated into domain characterization and apparatus self-tests.
 
 Every row receives one disposition:
 
-- **production authority** — must be owned by `build-publication`;
-- **shared domain capability** — a lower-level function used by production and
-  non-release instruments;
-- **read-side projection** — consumes completed production values;
-- **fixture characterization** — tests a retained boundary;
-- **qualification instrument** — produces evidence, not releases;
-- **frozen historical reference** — remains readable but is not executable
-  support;
-- **retire** — no owned capability;
-- **unknown** — blocks deletion until resolved.
+- release authority;
+- shared domain capability;
+- non-release renderer adapter;
+- projection or downstream derived producer;
+- fixture characterization;
+- qualification instrument;
+- frozen historical reference;
+- retire;
+- unknown.
 
-No compatibility command or dual output format is added to handle an unknown.
-Resolve it, explicitly retain it, or stop that cut.
-
-## Failure semantics and guardrails
-
-Singular authority makes failure behavior easier to state, not optional:
-
-- malformed or inadmissible source/parser identity fails before release
-  promotion;
-- a strict materialization failure leaves the temporary run inspectable and
-  does not replace the prior completed root;
-- best-effort mode records every known failed work, marks the corpus result
-  non-admissible/partial, may promote that inspectable partial root under the
-  existing Accepted source-bundle contract, and exits nonzero;
-- cache reuse preserves the current `work_content_hash` match requirement; the
-  disposition audit decides which additional retained manifest/reference checks
-  are required before copied artifacts are trusted;
-- a malformed corpus summary, broken relative reference, or missing required
-  manifest fails closed;
-- read-side validation and explanation do not mutate the completed production
-  root.
-
-The refactor must characterize the current distinction between strict failure
-and best-effort partial promotion before moving code. It must not “simplify”
-the distinction into an exception/log convention. The other bullets are target
-guardrails to verify or close, not a claim that every check is already enforced
-at the direct-build boundary.
+An unknown blocks deletion. It does not justify a permanent compatibility
+wrapper.
 
 ## Migration sequence
 
-### Cut 0: characterize the sole producer
+The lanes below separate semantic correctness, behavior-preserving structure,
+and intentional breaking deletion. They should not be combined into one
+“simplification” commit.
+
+### Lane 0: characterize and close the tables
 
 Pin a small official-Aozora-shaped fixture through `build-publication` and
 record:
 
-- its complete output tree;
-- which files are authoritative and which are diagnostic;
-- byte hashes for deterministic values;
-- exit behavior for success, strict failure, and best-effort partial failure;
+- the output tree and relative references;
+- identity-bearing versus operational values;
+- deterministic hashes after normalizing operational fields;
+- success, strict-failure, and best-effort-partial behavior;
 - atomic replacement behavior;
-- per-work artifact equivalence with a direct call to
-  `materialize-publication!`.
+- per-work equivalence with `materialize-publication!`;
+- cache behavior when source, snapshot date, metadata, profiles, parser, and
+  mapping change.
 
-This is characterization, not a permanent golden copy of volatile timestamps
-or temporary paths. Normalize or exclude operational fields rather than making
-them identity-bearing.
+Complete the surface and identity disposition tables in the same review slice.
 
-Complete the closed disposition and identity tables in the same review slice.
+### Lane 1: repair the release trust boundary
 
-### Cut 1: deepen the retained boundaries
+Land separately reviewed correctness changes:
 
-Make the direct build's ownership visible without adding layers:
+1. fail closed on dirty or unprovable official source identity;
+2. bind the exact admitted parser candidate/qualification tuple;
+3. bind and propagate parser build/configuration and mapping hashes;
+4. repair cache reuse so old manifests cannot cross release identities;
+5. remove stale absolute temporary-root paths from retained values.
 
-- keep policy admission, temp-root lifecycle, cache reuse, corpus failure
-  accounting, and promotion in `build-publication`;
-- keep all six per-work publication writes in `materialize-publication!`;
-- make required inputs explicit at the call boundary;
-- keep qualification and fixtures on the same writer;
-- choose one corpus summary and validate its references to per-work manifests;
-- keep run traces operational and outside artifact identity.
+These may intentionally tighten behavior. They require focused tests and
+decision amendments where governed contracts change.
 
-Any release capability found only in the rehearsal path is either:
+### Lane 2: make the direct build emit the release value
 
-1. moved behind `build-publication` because a current contract requires it; or
-2. retired because only the rehearsal itself consumes it.
+Construct `snapshot-index.json` from the actual direct-build selection and
+render results:
 
-It is never preserved by retaining the whole rehearsal.
+- use the pure request-set/source/index value functions where they express true
+  facts;
+- do not call `publication-rehearsal!`;
+- close over the actual per-work manifests;
+- validate all references and hashes before admission;
+- keep `publications-report.json` derived;
+- keep run plans/traces operational.
 
-### Cut 2: retire the secondary producer surfaces
+If the existing snapshot-index schema cannot represent the direct build
+truthfully, make one minimal versioned schema change and migrate projections.
+Do not run two authoritative corpus identities in parallel.
 
-Atomically remove each confirmed-dead vertical slice:
+### Lane 3: rebase consumers, then retire the secondary composition
 
-- command-table entry;
-- Clojure public orchestration function;
-- Nix app and `deps.edn` alias;
-- workflow/report emitter;
-- schema and fixtures owned only by that surface;
+Rebase validation, explanation, reports, and staging on the direct-build
+release index. Then remove the confirmed-dead rehearsal/reproduction vertical
+slice atomically:
+
+- command-table entries;
+- public orchestration functions;
+- Nix apps and `deps.edn` aliases;
+- workflow/report emitters;
+- apparatus-only schemas and fixtures;
 - apparatus-only tests;
-- active documentation that advertises the command.
+- active documentation advertising the retired workflow.
 
-Historical reports keep their recorded command strings. Frozen evidence is not
-rewritten to pretend the old command never existed.
+Historical reports retain their recorded command strings.
 
-The standalone batch materializer is a good first cut if the audit confirms no
-live external consumer: its concurrency behavior already exists in
-`build-publication`, and its hand-built workflow record is duplicate lifecycle
-machinery.
+### Lane 4: collapse the surviving modules
 
-The rehearsal/reproduce cut follows only after the identity table decides the
-fate of request-set and snapshot values.
+After deletion exposes the real seams:
 
-### Cut 3: collapse `soranoha.clj`
+- make `soranoha.clj` thin dispatch plus delegation;
+- move retained request-set/analysis operations to their domain owners;
+- keep completed-root projections together;
+- remove duplicate run-record construction from
+  `materialize_publication.clj`;
+- consolidate repeated time/hash/schema helpers only where they share
+  semantics.
 
-Deletion should expose the real remaining modules:
+Do not begin by splitting large files into several shallow namespaces. Delete
+the obsolete compositions first, then deepen the surviving boundaries.
 
-- thin CLI dispatch;
-- request-set/analysis data operations, if retained;
-- completed-root inspection/projection, if retained;
-- production delegation to `soranoha-build-publication`.
+### Lane 5: reconsider workflow and integration apparatus
 
-Do not begin by splitting the 1,296-line file into several equally shallow
-namespaces. Remove retired workflows first, then move only cohesive surviving
-capabilities to their owners. The dispatcher should contain command
-descriptions and delegation, not publication materialization or report
-construction.
+With one release composition:
 
-### Cut 4: re-evaluate the serial workflow runner
+- keep the serial workflow runner only if multiple live workflows need its
+  dependency, failure, and trace semantics;
+- otherwise inline the short build sequence and emit the retained operational
+  trace directly;
+- shrink `validate-design-bundle` to one cross-boundary publication smoke;
+- leave domain validation with its domain owner.
 
-The workflow runner is an implementation detail, not a promised architecture.
-After secondary workflows are gone:
+Do not replace either subsystem with the retired target-graph workflow engine
+or a new generic orchestrator.
 
-- keep it if at least two live workflows require the same step dependency,
-  failure, and trace semantics;
-- otherwise inline the sole build's short stage sequence and emit the retained
-  run value directly.
+### Lane 6: migrate or retain the batch adapter
 
-Do not keep a workflow abstraction solely to serialize three functions, and do
-not replace it with the retired target-graph engine.
+Only after enumerating and migrating its active `ab-validator`, report, smoke,
+and external consumers may the batch adapter be removed. If its capability
+still earns its keep, retain a narrow qualification-oriented adapter without
+release or workflow authority.
 
-### Cut 5: shrink the integration gate
+## Verification strategy
 
-Once production ownership is singular, `validate-design-bundle` can stop
-compensating for ambiguous integration boundaries:
+The migration needs tests at the semantic boundaries, not snapshots of
+incidental orchestration.
 
-- domain fixtures are materialized and checked by their domain owners;
-- the bundle gate keeps one small cross-boundary publication smoke;
-- Accepted claims are amended only where their stated evidence boundary must
-  change;
-- schema/path registries owned only by duplicated fixture orchestration are
-  removed.
+### Characterization
 
-This follows the producer refactor. Doing it first would move complexity around
-while both production models still exist.
+- current strict, partial, and atomic installation behavior;
+- current per-work artifact bytes and manifests;
+- current active single/batch renderer consumers;
+- release-index validation and projection behavior.
+
+### Trust and identity
+
+- dirty relevant source blocks admission;
+- failed Git inspection blocks admission;
+- parser candidate/qualification mismatch blocks admission;
+- mapping or parser identity mismatch blocks admission;
+- required identity hashes are non-null and propagate to manifests/index;
+- absolute or temporary paths do not affect identity;
+- tampered manifests, contents, references, policies, or index fail closed.
+
+### Cache
+
+- identical complete inputs permit exact reuse;
+- changing corpus snapshot, metadata, parser, mapping, profile, or policy
+  cannot reuse an old manifest;
+- content-byte reuse regenerates current manifests;
+- the final index validates independently of cache events.
+
+### Architecture
+
+- only `build-publication` can admit a release;
+- all canonical per-work artifact sets pass through
+  `materialize-publication!`;
+- qualification and fixture adapters cannot emit an admitted release index;
+- projections never call rendering;
+- staging cites the source release identity and cannot replace it;
+- retired commands and compositions are absent after their breaking lane.
 
 ## Change discipline
 
-- Preserve current release behavior before improving output contracts.
-- Separate behavior-preserving moves from intentional command/schema breaks.
+- Preserve behavior before structural cleanup; isolate intentional tightening.
+- Separate correctness repairs, moves, and breaking retirements.
 - Make each retired surface an atomic vertical slice.
-- Do not add compatibility wrappers for commands explicitly retired as
-  non-authoritative.
+- Do not add compatibility wrappers for deliberately retired release paths.
 - Do not treat historical reports or plans as live consumers.
 - Do not delete pure identity or validation functions merely because their
-current orchestration caller is deleted; prove their remaining reachability.
-- Do not keep an orchestration function merely because its tests call it;
-  distinguish boundary characterization from apparatus self-tests.
-- Add a decision record only when the disposition changes a governed
-  capability or claim. Do not mint an ADR just to bless a namespace layout.
+  orchestration caller is deleted; prove their remaining ownership.
+- Do not keep orchestration merely because its own tests call it.
+- Add or amend a decision only when a governed capability, identity, or claim
+  changes.
 - Measure commands, aliases, schemas, source/test LOC, namespace dependencies,
   and gate time before and after each cut.
 
-## Failure modes of the refactor
+## Non-goals
 
-The design has failed if it produces any of these outcomes:
+- no publication rewrite;
+- no generic command registry, pipeline framework, target graph, or release
+  database;
+- no new corpus identity while the snapshot-index contract can state the truth;
+- no deletion of live qualification or fixture rendering capability;
+- no byte-for-byte drift gate over operational timestamps or paths;
+- no opportunistic F4/F5 refactor mixed into trust-boundary repairs.
 
-- **A renamed dual system:** old commands remain supported but documentation
-  merely calls them diagnostic.
-- **A larger monolith:** publication authority is singular, but source
-  derivation, artifact rendering, reporting, and promotion become inseparable
-  private code in one file.
-- **Identity accumulation:** direct-build and snapshot fields are combined into
-  one larger identity object without a consumer/claim disposition.
-- **A fake shared kernel:** both full workflows remain and call a new
-  abstraction that centralizes syntax while their authority and lifecycle
-  semantics still differ.
-- **A new introspection subsystem:** a query engine, registry, or database is
-  introduced to explain values already present in the output root.
-- **Compatibility permanence:** aliases or wrappers keep retired production
-  paths reachable indefinitely.
-- **Capability loss by reachability alone:** request-set, annotation, analysis,
-  qualification, or staging behavior with an actual owner is deleted because
-  its present caller happened to be the rehearsal.
-- **Apparatus preservation by tests alone:** workflow/report code stays because
-  tests characterize that code rather than a retained domain contract.
-- **Premature gate refactoring:** `validate-design-bundle` is reorganized before
-  publication authority and identity have one owner.
+## Failure modes of this refactor
+
+The design has failed if it yields:
+
+- **A renamed dual system:** an old source-to-release workflow remains supported
+  but is called diagnostic.
+- **Exclusive-writer theater:** useful qualification adapters are deleted while
+  more than one corpus release authority survives.
+- **A larger monolith:** source authentication, rendering, indexing, and
+  installation become inseparable code in one namespace.
+- **Identity accumulation:** direct-build and snapshot fields are combined
+  without a consumer and claim disposition.
+- **A lying index:** required fields contain placeholders or unrelated values
+  merely to reuse a schema.
+- **A fake shared kernel:** both end-to-end workflows remain behind a new layer.
+- **Cache laundering:** old manifests enter a new release because content bytes
+  happened to match.
+- **Place identity:** temporary or absolute paths become part of release
+  identity or survive installation as broken references.
+- **Partial-as-release:** a diagnostic root is called admitted because it was
+  installed.
+- **A new introspection subsystem:** a query engine or database explains values
+  that should be explicit on disk.
+- **Capability loss by reachability alone:** request-set, analysis, annotation,
+  qualification, or staging behavior with an owner is deleted with rehearsal.
+- **Premature gate refactoring:** integration apparatus is rearranged before
+  release authority and identity have one owner.
 
 ## Acceptance criteria
 
 The refactor is complete when:
 
-1. Exactly one supported command turns an official source checkout into a
-   release-facing publication root: `soranoha build-publication`.
-2. Exactly one function writes the canonical per-work publication artifact
-   set: `materialize-publication!`.
-3. No other CLI/Nix app performs release admission, corpus publication
-   materialization, or atomic promotion.
-4. Qualification and fixture callers are explicitly non-release and reuse the
-   same per-work writer.
-5. One documented identity chain connects source authority, parser/mapping
-   identity, per-work manifests, and the corpus-level summary.
-6. Operational configuration, concurrency, workflow ids, timestamps, and
-   cache decisions are not accidentally included in content identity.
-7. A completed root is inspectable from its retained values without replaying
-   the workflow.
-8. The old rehearsal/reproduce production composition, its public commands,
-   and its apparatus-only tests and schemas are absent.
-9. `soranoha.clj` no longer implements a publication workflow.
-10. The standalone batch materializer and duplicate workflow-record
-    implementation are absent unless the disposition audit names a current
-    external owner.
-11. The integration gate retains only cross-boundary smoke behavior; domain
-    validation lives with the owning domain.
-12. The change introduces no generic orchestration engine, release registry,
-    or parallel identity model.
+1. `soranoha build-publication` is the only supported operation that
+   authenticates release inputs, closes a corpus index, and admits a release.
+2. `materialize-publication!` is the only function that writes the canonical
+   per-work publication artifact set.
+3. Qualification, fixture, and development adapters are explicitly
+   non-release and reuse that renderer.
+4. Active single/batch adapter consumers are preserved or deliberately
+   migrated before their entry points change.
+5. `snapshot-index.json` is constructed from actual direct-build results and is
+   the sole authoritative corpus release value.
+6. One documented identity chain binds clean source, exact admitted parser and
+   mapping, policies, per-work manifests, and the artifact set.
+7. Parser build/configuration and mapping hashes are present rather than null
+   wherever the governed manifest contracts require them.
+8. Cache reuse cannot carry a manifest across different identity-bearing
+   inputs.
+9. Operational configuration, concurrency, timestamps, cache events, workflow
+   ids, and machine paths do not affect release identity.
+10. A partial diagnostic installation is visibly non-admissible and cannot
+    replace the meaning of an admitted release.
+11. Validation and explanation consume the release index; staging/packaging
+    produce derived values that cite it.
+12. The old rehearsal/reproduce release composition, its public commands, and
+    its apparatus-only tests and schemas are absent.
+13. `soranoha.clj` no longer implements an end-to-end publication workflow.
+14. The integration gate retains only cross-boundary smoke behavior.
+15. No generic orchestration engine, release registry, or parallel identity
+    model has been introduced.
 
 ## Expected leverage
 
-The immediate deletion is useful, but the larger gain is architectural:
+The immediate deletion is useful, but the architectural gain is larger:
 
-- publication changes acquire one obvious entry point;
-- identity changes have one chain to inspect;
-- release-policy changes have one enforcement boundary;
-- corpus failures and atomicity have one owner;
-- per-work rendering remains independently testable;
-- parser qualification reuses production behavior without becoming production;
-- the command dispatcher and integration gate can shrink after their
+- publication changes have one release boundary;
+- identity changes have one value chain;
+- policy and parser admission have one enforcement point;
+- failure, installation, and admission stop being conflated;
+- per-work rendering remains independently useful and testable;
+- parser qualification shares production rendering without becoming
+  production;
+- projections explain stored values instead of replaying derivations;
+- the dispatcher, workflow runner, and integration gate can shrink after their
   compensating responsibilities disappear.
 
-That is the intended refactorability: fewer places encode each decision, and
-the remaining places are values and deep boundaries rather than alternative
-workflows.
+That is the intended refactorability: each decision has one owner, durable
+facts are values, operational places remain places, and independently useful
+capabilities compose without acquiring release authority.

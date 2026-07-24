@@ -293,13 +293,7 @@
                                   (get identity-object "mapping_hash"))
               (coordinate-problem "parser_ir_schema_hash"
                                   (:parser_ir_schema_hash qualification)
-                                  (get identity-object "parser_ir_schema_hash"))
-              (coordinate-problem "parser_argv_template"
-                                  (:argv_template parser-exe)
-                                  (get identity-object "parser_argv_template"))
-              (coordinate-problem "converter_argv_template"
-                                  (:argv_template converter-exe)
-                                  (get identity-object "converter_argv_template"))])))
+                                  (get identity-object "parser_ir_schema_hash"))])))
     (catch clojure.lang.ExceptionInfo error
       (mapv (fn [problem] (assoc problem :kind :parser-authority-problem))
             (or (:problems (ex-data error))

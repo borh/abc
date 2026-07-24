@@ -207,6 +207,74 @@
         (is (some? error))
         (is (= "source-git-unavailable" (:code (ex-data error))))))))
 
+;; --- parser identity authentication: by binary + mapping + schema --------
+;; The exact committed P5 qualification coordinates (see
+;; parser_release_authority_test); the runtime identity object is compared
+;; against them by BINARY (build hashes) + mapping + parser-IR schema. The
+;; invocation argv (parser `--mode`, converter `convert` vs the provenance's
+;; self-identify `qualify`) is bound into parser_config_hash as OUTPUT identity
+;; but is deliberately NOT part of the authentication comparison.
+
+(def ^:private p5-parser-build-hash
+  "sha256:482728cad5bc663c0742ca9e8c6d6fa7031c1a84117d024921cd48628e2eb034")
+(def ^:private p5-converter-build-hash
+  "sha256:a2656fc9404be9a8eb08e5ba16667db814c8a22ad45bdf684d78973befaf5936")
+(def ^:private p5-mapping-hash
+  "sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142")
+(def ^:private p5-parser-ir-schema-hash
+  "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec")
+
+(defn- correct-ab-aozora-identity-object []
+  {"adapter_id" "ab-aozora"
+   ;; argv templates are recorded (they bind parser_config_hash) but the
+   ;; converter here runs `convert`, not the provenance's `qualify`.
+   "parser_argv_template" ["{executable}" "--mode" "{mode}"]
+   "converter_argv_template" ["{executable}" "convert"]
+   "parser_executable_hash" p5-parser-build-hash
+   "converter_executable_hash" p5-converter-build-hash
+   "mapping_hash" p5-mapping-hash
+   "parser_ir_schema_hash" p5-parser-ir-schema-hash})
+
+(deftest correct-ab-aozora-build-records-no-coordinate-problem-test
+  (testing "matching binary+mapping+schema authenticate with no problem even though the converter argv is `convert`, not the provenance `qualify`"
+    (let [problems (#'build-publication/authentication-problems
+                    (correct-ab-aozora-identity-object)
+                    p5-candidate-ref)]
+      (is (= [] problems)))))
+
+(deftest divergent-build-hash-or-mapping-records-coordinate-problem-test
+  (let [mismatched (fn [k v]
+                     (#'build-publication/authentication-problems
+                      (assoc (correct-ab-aozora-identity-object) k v)
+                      p5-candidate-ref))
+        wrong-hash "sha256:0000000000000000000000000000000000000000000000000000000000000000"]
+    (testing "a divergent parser build hash is a coordinate mismatch"
+      (let [problems (mismatched "parser_executable_hash" wrong-hash)]
+        (is (some #(and (= :parser-runtime-coordinate-mismatch (:kind %))
+                        (= "parser_executable_hash" (:coordinate %)))
+                  problems))))
+    (testing "a divergent converter build hash is a coordinate mismatch"
+      (let [problems (mismatched "converter_executable_hash" wrong-hash)]
+        (is (some #(and (= :parser-runtime-coordinate-mismatch (:kind %))
+                        (= "converter_executable_hash" (:coordinate %)))
+                  problems))))
+    (testing "a divergent mapping hash is a coordinate mismatch"
+      (let [problems (mismatched "mapping_hash" wrong-hash)]
+        (is (some #(and (= :parser-runtime-coordinate-mismatch (:kind %))
+                        (= "mapping_hash" (:coordinate %)))
+                  problems))))
+    (testing "a divergent parser-IR schema hash is a coordinate mismatch"
+      (let [problems (mismatched "parser_ir_schema_hash" wrong-hash)]
+        (is (some #(and (= :parser-runtime-coordinate-mismatch (:kind %))
+                        (= "parser_ir_schema_hash" (:coordinate %)))
+                  problems))))))
+
+(deftest aozora2html-without-candidate-records-absent-candidate-problem-test
+  (let [problems (#'build-publication/parser-runtime-problems
+                  "aozora2html" {"adapter_id" "aozora2html"} nil)]
+    (is (= 1 (count problems)))
+    (is (= :absent-parser-candidate (:kind (first problems))))))
+
 (deftest source-provenance-fixture-records-null-commit-and-never-calls-git-test
   (fs/with-temp-dir [root {:prefix "bp-source-fixture"}]
     ;; No .git at all: fixture mode must not consult Git.

@@ -87,7 +87,6 @@
   :abc/parser-rq-publication-materialize
   {:main-opts ["-m" "abc.tools.parser-rq-publication-materialize"]}
   :abc/diagrams {:main-opts ["-m" "abc.tools.diagram.registry"]}
-  :abc/presentation-diagrams {:main-opts ["-m" "abc.tools.diagram.presentation-registry"]}
   :abc/adr-governance {:main-opts ["-m" "abc.tools.adr-governance"]}
   :abc/workflow-graph {:main-opts ["-m" "abc.tools.diagram.workflow-graph"]}
   :update {:deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}

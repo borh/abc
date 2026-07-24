@@ -125,18 +125,17 @@ The drift-checked pipeline topology is the generated
 `architecture-stages.edn` and cross-checked against registered schemas and
 ADRs. The diagram is a documentation view, not a competing source of truth.
 
-For academic presentations, two source-validated SVG projections provide a
-larger-type, audience-facing view of the same contracts:
+Two audience-facing SVG figures from the JADH 2026 presentation remain
+committed as frozen deliverables:
 
 - [Soranoha Reproducibility Architecture](figures/soranoha-reproducibility-architecture.svg)
 - [Soranoha Publication Pipeline](figures/soranoha-publication-pipeline.svg)
 
-They are generated presentation views, not additional architecture sources.
-Regenerate them from the monorepo root with
-`nix run ./abc#presentation-diagrams`; verify drift with
-`nix run ./abc#presentation-diagrams -- --check`. The pipeline figure keeps the
-stable Parser-IR publication contract prominent and marks the current AAT path
-as implementation detail so parser consolidation can simplify it honestly.
+They are frozen presentation views, not architecture sources; their
+reproducible rendering pipeline (font embedding, SVG sanitization, drift
+gate) has been retired. Future presentation-quality figures build a graph
+value, emit DOT with `abc.tools.diagram.graphviz/dot`, and render on demand
+with `dot -Tsvg`.
 
 Each layer records the identity inputs that can invalidate it. A text-only
 change invalidates that work's downstream artifacts. A parser, mapping, TEI

@@ -21,15 +21,9 @@
     {:operations #{Files/createTempFile Files/setPosixFilePermissions
                    Files/move Files/deleteIfExists}
      :rationale "Atomic JSON replacement requires NIO temporary-file permissions and move semantics"}
-    abc.tools.diagram.presentation-registry
-    {:operations #{Files/createTempFile Files/move Files/deleteIfExists}
-     :rationale "Atomic presentation registry replacement requires NIO move semantics"}
     abc.tools.source-bundle
     {:operations #{Files/createTempFile Files/copy Files/deleteIfExists}
      :rationale "Archive staging requires NIO stream copy and exception-reporting cleanup"}
-    abc.tools.diagram.presentation-svg
-    {:operations #{Files/readAllBytes}
-     :rationale "Binary SVG asset loading is an intentional NIO byte operation"}
     abc.tools.soranoha-build-publication
     {:operations #{Files/move}
      :rationale "Publication installation requires an atomic NIO move"}
@@ -247,11 +241,8 @@
   (is (= '{abc.tools.json
            #{Files/createTempFile Files/setPosixFilePermissions
              Files/move Files/deleteIfExists}
-           abc.tools.diagram.presentation-registry
-           #{Files/createTempFile Files/move Files/deleteIfExists}
            abc.tools.source-bundle
            #{Files/createTempFile Files/copy Files/deleteIfExists}
-           abc.tools.diagram.presentation-svg #{Files/readAllBytes}
            abc.tools.soranoha-build-publication #{Files/move}
            abc.tools.files #{Files/deleteIfExists}
            abc.tools.parser-rq-capture

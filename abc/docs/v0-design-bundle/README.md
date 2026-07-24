@@ -15,20 +15,20 @@ should be read through `docs/design-survey.md`.
 
 | Artifact | Path | Purpose | Acceptance Check |
 | --- | --- | --- | --- |
-| Manifest identity ADR | `docs/adr/0001-manifest-identity.md` | Freeze v0 ArtifactID semantics | Explains schema hash, JCS, null dimensions, failure manifests |
-| Parser evaluation ADR | `docs/adr/0002-parser-evaluation.md` | Define parser gates before choosing Rust/Clojure/wrapper path | Must-pass and benchmark criteria are explicit |
-| Nix materialization ADR | `docs/adr/0003-nix-materialization.md` | Keep Nix scoped to bounded builds | Uses external incremental index bias |
-| Supply-chain security ADR | `docs/adr/0004-supply-chain-release-security.md` | Bound release trust without blocking local v0 | Identifies signature and attestation options |
-| Operational runtime ADR | `docs/adr/0005-operational-runtime.md` | Keep v0 file/CLI oriented | Defers distributed services and defines retention |
-| Design validation ADR | `docs/adr/0006-v0-design-bundle-validation.md` | Define the local/CI smoke validation command | Keeps validation repository-local and parser-free |
-| ab-validator boundary ADR | `docs/adr/0007-external-parser-validation-boundary.md` | Keep parser comparison in `../ab-validator` | Defines imported output bundle contract |
-| ABC tools runtime ADR | `docs/adr/0008-abc-tools-runtime.md` | Move pipeline tooling into Clojure commands exposed by Nix | Keeps Bash as compatibility wrappers only |
-| Imported materialization ADR | `docs/adr/0009-imported-output-materialization.md` | Turn imported parser output into ABC manifests | Generates parser IR and warning manifests from fixture input |
-| Manifest identity hardening ADR | `docs/adr/0010-manifest-identity-hardening.md` | Tie generated identity to bundled schema value | Computes manifest schema hash with the ADR 0001 JCS rule |
-| Generated output policy ADR | `docs/adr/0011-generated-fixture-policy.md` | Define how generated materialized-import manifests are handled | Regenerates in temp space and compares two generated runs byte-for-byte |
-| TEI ODD + Schematron ADR | `docs/adr/0012-tei-odd-schematron-validation.md` | Make ODD-derived Relax NG and Schematron both first-class TEI gates | Requires valid, invalid, and warning TEI fixtures with expected rule IDs |
-| Cultural-heritage LOD ADR | `docs/adr/0013-cultural-heritage-lod-profile.md` | Keep Linked Art as a derived publication view | Prevents Linked Art from becoming a competing identity system |
-| IIIF applicability ADR | `docs/adr/0014-iiif-applicability.md` | Define when IIIF is required, optional, or out of scope | Keeps text-only v0 valid without IIIF |
+| Manifest identity ADR | `docs/adr/manifest-identity.md` | Freeze v0 ArtifactID semantics | Explains schema hash, JCS, null dimensions, failure manifests |
+| Parser evaluation ADR | `docs/adr/parser-evaluation.md` | Define parser gates before choosing Rust/Clojure/wrapper path | Must-pass and benchmark criteria are explicit |
+| Nix materialization ADR | `docs/adr/nix-materialization.md` | Keep Nix scoped to bounded builds | Uses external incremental index bias |
+| Supply-chain security ADR | `docs/adr/supply-chain-release-security.md` | Bound release trust without blocking local v0 | Identifies signature and attestation options |
+| Operational runtime ADR | `docs/adr/operational-runtime.md` | Keep v0 file/CLI oriented | Defers distributed services and defines retention |
+| Design validation ADR | `docs/adr/v0-design-bundle-validation.md` | Define the local/CI smoke validation command | Keeps validation repository-local and parser-free |
+| ab-validator boundary ADR | `docs/adr/external-parser-validation-boundary.md` | Keep parser comparison in `../ab-validator` | Defines imported output bundle contract |
+| ABC tools runtime ADR | `docs/adr/abc-tools-runtime.md` | Move pipeline tooling into Clojure commands exposed by Nix | Keeps Bash as compatibility wrappers only |
+| Imported materialization ADR | `docs/adr/imported-output-materialization.md` | Turn imported parser output into ABC manifests | Generates parser IR and warning manifests from fixture input |
+| Manifest identity hardening ADR | `docs/adr/manifest-identity-hardening.md` | Tie generated identity to bundled schema value | Computes manifest schema hash with the ADR 0001 JCS rule |
+| Generated output policy ADR | `docs/adr/generated-fixture-policy.md` | Define how generated materialized-import manifests are handled | Regenerates in temp space and compares two generated runs byte-for-byte |
+| TEI ODD + Schematron ADR | `docs/adr/tei-odd-schematron-validation.md` | Make ODD-derived Relax NG and Schematron both first-class TEI gates | Requires valid, invalid, and warning TEI fixtures with expected rule IDs |
+| Cultural-heritage LOD ADR | `docs/adr/cultural-heritage-lod-profile.md` | Keep Linked Art as a derived publication view | Prevents Linked Art from becoming a competing identity system |
+| IIIF applicability ADR | `docs/adr/iiif-applicability.md` | Define when IIIF is required, optional, or out of scope | Keeps text-only v0 valid without IIIF |
 | Manifest schema | `schemas/manifest.schema.json` | Canonical JSON contract for success and failure manifests | Draft 2020-12 schema validates example manifests |
 | Parser IR schema | `schemas/parser-ir.schema.json` | Language-neutral parser boundary | Covers spans, ruby, gaiji, notes, warnings, errors |
 | Diagnostic schema | `schemas/diagnostic.schema.json` | Standalone warning/error sidecar contract | Validates diagnostic JSON Lines fixtures |

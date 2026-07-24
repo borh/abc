@@ -1,6 +1,7 @@
 ;; SOURCE OF TRUTH for docs/architecture.mmd (see ADR 0029). Edit here, then run
 ;; `clojure -M:abc/diagrams`. Every :schema must appear in schema-contracts.json;
-;; every :adr must be an existing ADR; every :inputs id must be a stage :id.
+;; every :adr must be an existing decision slug in docs/adr/decisions.edn;
+;; every :inputs id must be a stage :id.
 ;;
 ;; Stages whose natural on-disk schema is not (yet) registered in
 ;; schema-contracts.json carry :schema nil: metadata-record, tei-validation-result
@@ -9,42 +10,63 @@
 {:manifest-identity-contract
  {:schema "schemas/manifest.schema.json"
   :coordinates
-  {"manifest_schema_hash" [1 10]
-   "corpus_snapshot_hash" [1]
-   "work_content_hash" [1]
-   "metadata_record_hash" [1]
-   "parser_build_hash" [1]
-   "parser_config_hash" [1]
-   "aat_parser_ir_mapping_hash" [23]
-   "parser_ir_schema_hash" [1]
-   "tei_profile_hash" [1]
-   "tokenizer_build_hash" [1]
-   "tokenizer_dictionary_hash" [1]
-   "tokenizer_profile_hash" [27]
-   "analysis_recipe_hash" [1]
-   "annotation_policy_hash" [28]
-   "output_format_spec_hash" [1]}}
+  {"manifest_schema_hash" ["manifest-identity" "manifest-identity-hardening"]
+   "corpus_snapshot_hash" ["manifest-identity"]
+   "work_content_hash" ["manifest-identity"]
+   "metadata_record_hash" ["manifest-identity"]
+   "parser_build_hash" ["manifest-identity"]
+   "parser_config_hash" ["manifest-identity"]
+   "aat_parser_ir_mapping_hash" ["owned-aat-parser-ir-mapping"]
+   "parser_ir_schema_hash" ["manifest-identity"]
+   "tei_profile_hash" ["manifest-identity"]
+   "tokenizer_build_hash" ["manifest-identity"]
+   "tokenizer_dictionary_hash" ["manifest-identity"]
+   "tokenizer_profile_hash" ["analysis-packs-and-tokenizer-profiles"]
+   "analysis_recipe_hash" ["manifest-identity"]
+   "annotation_policy_hash" ["ruby-annotation-view"]
+   "output_format_spec_hash" ["manifest-identity"]}}
  :stages
  [{:id :aozora-snapshot :label "Aozora source snapshot"
-   :schema "schemas/snapshot-index.schema.json" :adr [1 3] :inputs []}
+   :schema "schemas/snapshot-index.schema.json"
+   :adr ["manifest-identity" "nix-materialization"] :inputs []}
   {:id :aat :label "AAT evidence (ab-validator)"
-   :schema "schemas/aat-parser-ir-mapping.schema.json" :external true :adr [7 23] :inputs [:aozora-snapshot]}
+   :schema "schemas/aat-parser-ir-mapping.schema.json" :external true
+   :adr ["external-parser-validation-boundary" "owned-aat-parser-ir-mapping"]
+   :inputs [:aozora-snapshot]}
   {:id :parser-ir :label "Parser-IR"
-   :schema "schemas/parser-ir.schema.json" :adr [23 24 25] :inputs [:aat]}
+   :schema "schemas/parser-ir.schema.json"
+   :adr ["owned-aat-parser-ir-mapping" "parser-ir-span-and-ruby-direction"
+         "parser-ir-publication-rendering"]
+   :inputs [:aat]}
   {:id :metadata :label "Metadata + person records"
-   :schema nil :adr [1 15 16 20] :inputs [:aozora-snapshot]}
+   :schema nil
+   :adr ["manifest-identity" "temporal-modeling" "edtf-level1-decade-century"
+         "person-identity-drift-data-model"]
+   :inputs [:aozora-snapshot]}
   {:id :manifest :label "Artifact manifest (identity)"
-   :schema "schemas/manifest.schema.json" :adr [1 10 23 27 28]
+   :schema "schemas/manifest.schema.json"
+   :adr ["manifest-identity" "manifest-identity-hardening"
+         "owned-aat-parser-ir-mapping" "analysis-packs-and-tokenizer-profiles"
+         "ruby-annotation-view"]
    :inputs [:parser-ir :metadata]}
   {:id :tei :label "TEI publication view"
-   :schema nil :adr [12 25] :inputs [:parser-ir :manifest]}
+   :schema nil
+   :adr ["tei-odd-schematron-validation" "parser-ir-publication-rendering"]
+   :inputs [:parser-ir :manifest]}
   {:id :rdf :label "RDF / PROV-O / Linked Art"
-   :schema nil :adr [13 17 18] :inputs [:manifest]}
+   :schema nil
+   :adr ["cultural-heritage-lod-profile" "vocabulary-review"
+         "predicate-rename-batch-1"]
+   :inputs [:manifest]}
   {:id :iiif :label "IIIF applicability"
-   :schema nil :adr [14] :inputs [:manifest]}
+   :schema nil :adr ["iiif-applicability"] :inputs [:manifest]}
   {:id :tokenized :label "Tokenized slice"
-   :schema "schemas/token-output.schema.json" :adr [27] :inputs [:parser-ir :manifest]}
+   :schema "schemas/token-output.schema.json"
+   :adr ["analysis-packs-and-tokenizer-profiles"] :inputs [:parser-ir :manifest]}
   {:id :analysis :label "Analysis pack"
-   :schema "schemas/analysis-result.schema.json" :adr [26 27] :inputs [:tokenized]}
+   :schema "schemas/analysis-result.schema.json"
+   :adr ["analysis-artifact-identity" "analysis-packs-and-tokenizer-profiles"]
+   :inputs [:tokenized]}
   {:id :annotation :label "Ruby / annotation view"
-   :schema "schemas/annotation-output.schema.json" :adr [28] :inputs [:tokenized :parser-ir]}]}
+   :schema "schemas/annotation-output.schema.json"
+   :adr ["ruby-annotation-view"] :inputs [:tokenized :parser-ir]}]}

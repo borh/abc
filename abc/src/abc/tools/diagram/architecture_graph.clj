@@ -1,7 +1,7 @@
 (ns abc.tools.diagram.architecture-graph
   "Pure builder: architecture-stages.edn -> dataflow graph value, cross-
-   checked against schema-contracts.json and the ADR files. See ADR 0029."
-  (:require [abc.tools.adr :as adr]
+   checked against schema-contracts.json and decisions.edn. See ADR 0029."
+  (:require [abc.tools.decisions :as decisions]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
             [clojure.set :as set]
@@ -10,7 +10,6 @@
 (def stages-path "docs/architecture-stages.edn")
 (def contracts-path "schemas/schema-contracts.json")
 (def manifest-schema-path "schemas/manifest.schema.json")
-(def adr-dir "docs/adr")
 (def out-path "docs/architecture.mmd")
 
 (defn load-stages [] (files/read-edn stages-path))
@@ -30,13 +29,16 @@
   (->> (get (json/read-json-file contracts-path) "schemas")
        (map #(get % "path")) set))
 
-(defn adr-nums []
-  (set (map :num (adr/parse-all adr-dir))))
+(defn adr-slugs []
+  (let [{:keys [corpus problems]} (decisions/load-corpus decisions/corpus-file)]
+    (when problems
+      (throw (ex-info "unreadable decisions corpus" {:problems problems})))
+    (set (map :slug (:decisions corpus)))))
 
 (defn- valid-owner-list? [owners]
-  (and (sequential? owners) (seq owners) (every? integer? owners)))
+  (and (sequential? owners) (seq owners) (every? string? owners)))
 
-(defn identity-contract-problems [doc adr-nums manifest-schema architecture-markdown]
+(defn identity-contract-problems [doc adr-slugs manifest-schema architecture-markdown]
   (let [required (manifest-identity-required manifest-schema)
         contract (:manifest-identity-contract doc)
         coordinates (get-in doc [:manifest-identity-contract :coordinates])
@@ -68,37 +70,37 @@
        (concat
         (for [[coordinate values] coordinates
               :when (not (valid-owner-list? values))]
-          (format "%s owners must be a non-empty sequential collection of ADR integers"
+          (format "%s owners must be a non-empty sequential collection of decision slugs"
                   coordinate))
         (for [[coordinate values] coordinates
               :when (valid-owner-list? values)
               owner values
-              :when (not (contains? adr-nums owner))]
-          (format "%s references non-existent ADR %04d" coordinate owner)))))))
+              :when (not (contains? adr-slugs owner))]
+          (format "%s references non-existent decision %s" coordinate owner)))))))
 
-(defn validate [doc schema-paths adr-nums manifest-schema architecture-markdown]
+(defn validate [doc schema-paths adr-slugs manifest-schema architecture-markdown]
   (let [stages (:stages doc)
         ids (set (map :id stages))]
     (vec
      (concat
       (for [s stages :when (and (:schema s) (not (contains? schema-paths (:schema s))))]
         (format "stage %s references unknown schema %s" (:id s) (:schema s)))
-      (for [s stages n (:adr s) :when (not (contains? adr-nums n))]
-        (format "stage %s references non-existent ADR %04d" (:id s) n))
+      (for [s stages n (:adr s) :when (not (contains? adr-slugs n))]
+        (format "stage %s references non-existent decision %s" (:id s) n))
       (for [s stages i (:inputs s) :when (not (contains? ids i))]
         (format "stage %s has unknown input %s" (:id s) i))
-      (identity-contract-problems doc adr-nums manifest-schema architecture-markdown)))))
+      (identity-contract-problems doc adr-slugs manifest-schema architecture-markdown)))))
 
 (defn lint* []
   (validate (load-stages)
             (schema-paths)
-            (adr-nums)
+            (adr-slugs)
             (json/read-json-file manifest-schema-path)
             (files/read-text "docs/architecture.md")))
 
 (defn- stage-label [s]
   (str (:label s) (when (:external s) " ⟨external⟩")
-       "<br/>" (str/join ", " (map #(format "ADR %04d" %) (sort (:adr s))))))
+       "<br/>" (str/join ", " (sort (:adr s)))))
 
 (defn graph-from [stages]
   {:direction "TD"

@@ -1,5 +1,6 @@
 (ns abc.tools.parser-evidence-test
   (:require
+   [abc.tools.decisions :as decisions]
    [abc.tools.hash :as hash]
    [abc.tools.parser-evidence :as parser-evidence]
    [abc.test-fs :refer [with-temp-dir]]
@@ -9,9 +10,12 @@
    [clojure.test :refer [deftest is testing]]))
 
 (deftest adr-0038-grants-development-release-authority-test
-  (let [text (slurp
-              "docs/adr/0038-custom-parser-ownership-and-neutral-comparison.md")]
-    (is (str/includes? text "Release authority: development"))))
+  (let [{:keys [corpus]} (decisions/load-corpus decisions/corpus-file)
+        record (->> (:decisions corpus)
+                    (filter #(= "custom-parser-ownership-and-neutral-comparison"
+                                (:slug %)))
+                    first)]
+    (is (= :development (:release-authority record)))))
 
 (def valid-entry
   {:evidence_id "ab-validator/example"

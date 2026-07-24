@@ -1,5 +1,5 @@
 (ns abc.tools.parser-relations-provenance-evidence-test
-  (:require [abc.tools.adr :as adr]
+  (:require [abc.tools.decisions :as decisions]
             [abc.tools.files :as files]
             [clojure.string :as str]
             [clojure.test :refer [deftest is]]))
@@ -11,26 +11,31 @@
   ["corpus" "encoding" "facade" "pipeline" "proptest" "render" "scan"
    "spec" "syntax" "veb"])
 
-(defn- adr-fields [number]
-  (:fields (adr/parse-adr "docs/adr" (format "%04d-%s.md" number
-                                             ({2 "parser-evaluation"
-                                               30 "aozora-parser-selection"
-                                               32 "parser-fork-hard-detach"
-                                               38 "custom-parser-ownership-and-neutral-comparison"}
-                                              number)))))
+(def ^:private parser-evaluation "parser-evaluation")
+(def ^:private parser-selection "aozora-parser-selection")
+(def ^:private fork-detach "parser-fork-hard-detach")
+(def ^:private ownership "custom-parser-ownership-and-neutral-comparison")
+(def ^:private evidence-simplification "subtractive-evidence-simplification")
 
-(defn- relation-set [value]
-  (if (or (nil? value) (= "none" value)) #{}
-      (set (map #(Integer/parseInt (second (re-find #"ADR (\d+)" %)))
-                (str/split value #", ")))))
+(defn- amends-graph []
+  (let [{:keys [corpus problems]} (decisions/load-corpus decisions/corpus-file)]
+    (is (nil? problems))
+    (into {}
+          (for [{:keys [slug relations]} (:decisions corpus)
+                :let [targets (set (for [r relations
+                                         :when (and (= :lifecycle (:class r))
+                                                    (= :amends (:type r)))]
+                                     (:to r)))]
+                :when (seq targets)]
+            [slug targets]))))
+
+(defn- amended-by [graph slug]
+  (set (for [[from targets] graph :when (contains? targets slug)] from)))
 
 (defn parser-relations-provenance-operation []
-  (let [relations (into {} (for [number [2 30 32 38]
-                                 :let [fields (adr-fields number)]]
-                             [number {:amends (relation-set (get fields "Amends"))
-                                      :amended-by (relation-set (get fields "Amended by"))}]))
+  (let [graph (amends-graph)
         handoff (files/read-text "../ab-validator/docs/handoffs/2026-07-10-parser-fork-provenance.md")
-        adr32 (files/read-text "docs/adr/0032-parser-fork-hard-detach.md")
+        adr32 (files/read-text "docs/adr/parser-fork-hard-detach.md")
         source-paths (concat
                       (for [stem crate-stems]
                         (str "../ab-validator/crates/ab-aozora-" stem "/src/lib.rs"))
@@ -43,11 +48,15 @@
         sources (mapv files/read-text source-paths)
         notices (mapv files/read-text notice-paths)
         cargos (mapv files/read-text cargo-paths)]
-    (is (= {2 {:amends #{} :amended-by #{30 38}}
-            30 {:amends #{2} :amended-by #{32 38}}
-            32 {:amends #{30} :amended-by #{38}}
-            38 {:amends #{2 30 32} :amended-by #{43}}}
-           relations))
+    ;; acting :amends edges, with derived amended-by inverses
+    (is (= #{parser-evaluation} (get graph parser-selection)))
+    (is (= #{parser-selection} (get graph fork-detach)))
+    (is (= #{parser-evaluation parser-selection fork-detach}
+           (get graph ownership)))
+    (is (= #{parser-selection ownership} (amended-by graph parser-evaluation)))
+    (is (= #{fork-detach ownership} (amended-by graph parser-selection)))
+    (is (= #{ownership} (amended-by graph fork-detach)))
+    (is (contains? (amended-by graph ownership) evidence-simplification))
     (doseq [text [handoff adr32]]
       (is (str/includes? text revision))
       (is (str/includes? text "P4suta/aozora")))

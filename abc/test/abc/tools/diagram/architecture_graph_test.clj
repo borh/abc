@@ -7,7 +7,7 @@
 (defn- validate-doc [doc]
   (arch/validate doc
                  (arch/schema-paths)
-                 (arch/adr-nums)
+                 (arch/adr-slugs)
                  (json/read-json-file "schemas/manifest.schema.json")
                  (slurp "docs/architecture.md")))
 
@@ -26,7 +26,9 @@
                   (json/read-json-file "schemas/manifest.schema.json"))]
     (is (= required
            (set (keys (get-in doc [:manifest-identity-contract :coordinates])))))
-    (is (= #{1 10 23 27 28}
+    (is (= #{"manifest-identity" "manifest-identity-hardening"
+             "owned-aat-parser-ir-mapping" "analysis-packs-and-tokenizer-profiles"
+             "ruby-annotation-view"}
            (set (mapcat val
                         (get-in doc [:manifest-identity-contract :coordinates])))))))
 
@@ -40,21 +42,23 @@
   (let [doc (assoc-in (arch/load-stages)
                       [:manifest-identity-contract :coordinates
                        "manifest_schema_hash"] [])]
-    (is (some #(str/includes? % "manifest_schema_hash owners must be a non-empty sequential collection of ADR integers")
+    (is (some #(str/includes? % "manifest_schema_hash owners must be a non-empty sequential collection of decision slugs")
               (validate-doc doc)))))
 
-(deftest identity-coordinate-owners-must-be-sequential-integers
+(deftest identity-coordinate-owners-must-be-sequential-slugs
   (let [doc (assoc-in (arch/load-stages)
                       [:manifest-identity-contract :coordinates
-                       "manifest_schema_hash"] #{1 10})]
-    (is (some #(str/includes? % "manifest_schema_hash owners must be a non-empty sequential collection of ADR integers")
+                       "manifest_schema_hash"]
+                      #{"manifest-identity" "manifest-identity-hardening"})]
+    (is (some #(str/includes? % "manifest_schema_hash owners must be a non-empty sequential collection of decision slugs")
               (validate-doc doc)))))
 
-(deftest identity-coordinate-owners-must-reference-existing-adrs
+(deftest identity-coordinate-owners-must-reference-existing-decisions
   (let [doc (assoc-in (arch/load-stages)
                       [:manifest-identity-contract :coordinates
-                       "manifest_schema_hash"] [1 999])]
-    (is (some #(str/includes? % "manifest_schema_hash references non-existent ADR 0999")
+                       "manifest_schema_hash"]
+                      ["manifest-identity" "no-such-decision"])]
+    (is (some #(str/includes? % "manifest_schema_hash references non-existent decision no-such-decision")
               (validate-doc doc)))))
 
 (deftest identity-contract-must-name-the-live-manifest-schema

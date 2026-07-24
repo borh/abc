@@ -1,0 +1,1776 @@
+{:decisions
+ [{:date "2026-04-26",
+   :slug "manifest-identity",
+   :release-authority :publication,
+   :relations [],
+   :claims
+   [{:id :c1,
+     :statement
+     "Committed success/failure manifests and\nfreshly generated parser-IR/warnings manifests validate against\n`schemas/manifest.schema.json`, as asserted by\n`test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}
+    {:id :c2,
+     :statement
+     "Inline canonical values pin null\ndimensions and semantic array order. Evidence:\n`fixtures/canonicalization/manifest-identity-object.canonical.json` and\n`test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["fixtures/canonicalization/manifest-identity-object.canonical.json"
+      "test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c3,
+     :statement
+     "The manifest schema rejects\n`artifact_id` nested inside `manifest_identity_object`. Evidence:\n`test/abc/tools/code_as_spec_test.clj` and\n`fixtures/v0/invalid/manifest-nested-artifact-id/manifest.json`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/code_as_spec_test.clj"
+      "fixtures/v0/invalid/manifest-nested-artifact-id/manifest.json"]}
+    {:id :c4,
+     :statement
+     "The committed failure manifest carries\nthe exact asserted input and attempted-output identity coordinates,\nvalidation status, null content, error sidecar, and top-level-only\n`artifact_id`, as asserted by\n`test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}
+    {:id :c5,
+     :statement
+     "Two successful entries with the same\n`artifact_id` and different `content.content_hash` values produce a\nreproducibility conflict. Evidence:\n`test/abc/tools/code_as_spec_test.clj` and\n`test/abc/tools/manifest_index_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/code_as_spec_test.clj"
+      "test/abc/tools/manifest_index_test.clj"]}],
+   :legacy-number 1,
+   :accepted "2026-04-28",
+   :source "`docs/high-level-architecture-note.md` v0.5",
+   :title "Manifest Identity",
+   :topics [:identity],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-26",
+   :slug "parser-evaluation",
+   :release-authority :development,
+   :relations [],
+   :claims
+   [{:id :c1,
+     :statement
+     "The parser evidence index binds the three explicitly named July 2026 historical reports to their workspace-relative paths and current byte hashes, and does not identify them as the preregistered neutral comparison. Evidence boundary: `test/abc/tools/parser_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_evidence_test.clj"]}
+    {:id :c2,
+     :statement
+     "Parser citation classes do not admit or release a parser; exact adapter, mapping, parser-IR schema, and evidence-scope equality through ADR 0023 is required for admission. Evidence boundary: `test/abc/tools/parser_evidence_test.clj` and `test/abc/tools/aat_parser_ir_compat_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_evidence_test.clj"
+      "test/abc/tools/aat_parser_ir_compat_test.clj"]}
+    {:id :c3,
+     :statement
+     "The committed imported producer fixture carries parser IR, warning diagnostics, run-summary aggregation, mapping provenance, and schema identities accepted by the ABC file boundary. Evidence boundary: `test/abc/tools/parser_import_boundary_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/parser_import_boundary_evidence_test.clj"]}
+    {:id :c4,
+     :statement
+     "Changing the parser/adapter/mapping tuple changes parser derivation identity without changing the source relations `work_content_hash = bundle_hash` and independently checked `primary_text_hash`. Evidence boundary: `test/abc/tools/parser_identity_relations_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_identity_relations_evidence_test.clj"]}],
+   :legacy-number 2,
+   :accepted "2026-07-10",
+   :source "`docs/high-level-architecture-note.md` v0.5",
+   :title "Parser Evaluation Criteria",
+   :topics [:parser],
+   :status :accepted,
+   :validation-scope :smoke-corpus}
+  {:date "2026-04-26",
+   :slug "nix-materialization",
+   :relations [],
+   :claims
+   [{:id :c1,
+     :statement
+     "v0 example bundle can be built without evaluating the full corpus."}
+    {:id :c2,
+     :statement
+     "Nix evaluation for the smoke corpus completes in under 30 seconds and uses\nunder 2 GB peak memory on the recorded CI runner class, CPU, RAM, OS, Nix\nversion, cache state, and corpus fixture hash, or the ADR must be revised\nbefore implementation proceeds."}
+    {:id :c3,
+     :statement
+     "The corpus input policy names development and release modes separately."}
+    {:id :c4,
+     :statement
+     "Publication inputs record hashes and archive IDs where available."}
+    {:id :c5,
+     :statement
+     "A first cost-envelope report records corpus input size, manifest index size,\nparser IR size per work, TEI size per work, tokenized output size per work,\nparse time, render time, validation time, Nix evaluation time, and peak\nmemory for the example and smoke corpus."}],
+   :legacy-number 3,
+   :source "`docs/high-level-architecture-note.md` v0.5",
+   :title "Nix Materialization Policy",
+   :topics [:nix :materialization],
+   :status :draft}
+  {:date "2026-04-26",
+   :slug "supply-chain-release-security",
+   :relations [],
+   :claims
+   [{:id :c1,
+     :statement
+     "Release manifest schema has a non-identity `signatures` field."}
+    {:id :c2,
+     :statement
+     "Release process records source snapshot, schema hashes, parser build hashes,\ntokenizer dictionary hashes, and archive identifiers where available."}
+    {:id :c3,
+     :statement
+     "Release manifests record license metadata with SPDX identifiers where\navailable."}
+    {:id :c4,
+     :statement
+     "Signature format, key distribution, key rotation, and revocation policy are\ndocumented before the first public release."}
+    {:id :c5,
+     :statement
+     "Consumers have a documented verification path for release manifests."}
+    {:id :c6,
+     :statement
+     "No public release is allowed until `docs/release-verification.md` can verify\nmanifest schema hash, artifact content hash, signature or Sigstore bundle,\nprovenance attestation subject hashes, source/archive IDs, and license\nmetadata presence."}],
+   :legacy-number 4,
+   :source "`docs/high-level-architecture-note.md` v0.5",
+   :title "Supply-Chain Release Security",
+   :topics [:security :release],
+   :status :draft}
+  {:date "2026-04-26",
+   :slug "operational-runtime",
+   :relations [],
+   :claims
+   [{:id :c1,
+     :statement
+     "The example bundle can be produced without a database service."}
+    {:id :c2,
+     :statement
+     "CI smoke corpus target runtime is under five minutes on baseline hardware."}
+    {:id :c3,
+     :statement
+     "Failure manifests survive even when failed outputs do not exist."}
+    {:id :c4,
+     :statement
+     "Failure manifests are written under the same manifest output root as\nsuccessful artifacts and are indexed by `artifact_id`, `work_content_hash`,\nand failure diagnostic code where available."}
+    {:id :c5,
+     :statement
+     "Full-corpus storage design evaluates loose files against batched storage."}
+    {:id :c6,
+     :statement
+     "The operational design explicitly documents that rename-based atomic\npublishing is single-host only."}],
+   :legacy-number 5,
+   :source "`docs/high-level-architecture-note.md` v0.5",
+   :title "Operational Runtime, API, and Retention",
+   :topics [:runtime],
+   :status :draft}
+  {:date "2026-04-26",
+   :slug "v0-design-bundle-validation",
+   :release-authority :development,
+   :relations [],
+   :claims
+   [{:id :c1,
+     :statement
+     "The supported `nix run .#validate-design-bundle` application exits zero on the committed design bundle. See `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :operational-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c2,
+     :statement
+     "`bin/validate-design-bundle.sh` delegates to the supported Clojure validation entry point without duplicating validation logic. See `test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}
+    {:id :c3,
+     :statement
+     "Manifest schema validation rejects an empty manifest fixture. See `test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}
+    {:id :c4,
+     :statement
+     "A project-Relax-NG-valid fixture that violates Schematron is rejected with its declared error rule ID. See `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c5,
+     :statement
+     "The figure accessibility fixture reports `abc-figure-accessibility` as a warning without a Schematron error. See `test/abc/tools/schematron_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/schematron_test.clj"]}
+    {:id :c6,
+     :statement
+     "Canonical identity validation rejects a mismatched expected hash. See `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c7,
+     :statement
+     "Linked Art validation regenerates and byte-compares the three committed LOD fixtures. See `test/abc/tools/linked_art_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/linked_art_test.clj"]}
+    {:id :c8,
+     :statement
+     "The committed IIIF applicability record validates; `derived_manifest` is required only for `applicable` status and is null otherwise. See `test/abc/tools/iiif_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/iiif_test.clj"]}
+    {:id :c9,
+     :statement
+     "CI invokes the supported `.#validate-design-bundle` Nix application used for local validation. See `test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}],
+   :legacy-number 6,
+   :accepted "2026-04-28",
+   :source
+   "`docs/high-level-architecture-note.md` v0.5 and `docs/v0-design-bundle/README.md`",
+   :title "v0 Design Bundle Validation CLI",
+   :topics [:validation],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-26",
+   :slug "external-parser-validation-boundary",
+   :release-authority :development,
+   :relations [],
+   :claims
+   [{:id :c1,
+     :statement
+     "The committed imported parser IR, warning JSON Lines, and run-summary event set conform to their ABC schemas and cross-file boundary checks. Evidence boundary: `test/abc/tools/parser_import_boundary_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/parser_import_boundary_evidence_test.clj"]}
+    {:id :c2,
+     :statement
+     "ABC validation consumes the imported file bundle and does not execute parser candidates; parser execution remains in the `ab-validator` component. Evidence boundary: `test/abc/tools/parser_import_boundary_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_import_boundary_evidence_test.clj"]}
+    {:id :c3,
+     :statement
+     "ABC rejects a malformed diagnostic row and a run-summary set missing its required completion event. Evidence boundary: `test/abc/tools/parser_import_boundary_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/parser_import_boundary_evidence_test.clj"]}
+    {:id :c4,
+     :statement
+     "The supported `nix run ./abc#validate-design-bundle` application exits zero over the committed imported boundary. Evidence boundary: `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :operational-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}],
+   :legacy-number 7,
+   :accepted "2026-07-03",
+   :source
+   "`docs/high-level-architecture-note.md` v0.5, `docs/adr/0002-parser-evaluation.md`, and `../ab-validator`",
+   :title "External Parser Validation Boundary",
+   :topics [:parser :boundary],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-26",
+   :slug "abc-tools-runtime",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "v0-design-bundle-validation"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "`bin/validate-design-bundle.sh`\ndelegates to the Clojure tool without duplicating validation logic, as\nasserted by `test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}
+    {:id :c2,
+     :statement
+     "The supported\n`nix run .#validate-design-bundle` app exits zero, as asserted by\n`test/abc/tools/foundation_evidence_test.clj` and\n`test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :operational-behavior,
+     :evidence
+     ["test/abc/tools/foundation_evidence_test.clj"
+      "test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c3,
+     :statement
+     "The validation workflow checks out\nthe repository before invoking the exact repository-root Nix design-bundle\ncommand in the same job, as asserted by\n`test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}
+    {:id :c4,
+     :statement
+     "The named pure validation-helper read\nset exactly equals `abc.tools.validate-design-bundle/evidence-input-paths`,\nas asserted by `test/abc/tools/parser_maintenance_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_maintenance_evidence_test.clj"]}],
+   :legacy-number 8,
+   :accepted "2026-04-28",
+   :source "`docs/adr/0006-v0-design-bundle-validation.md`",
+   :title "ABC Tools Runtime",
+   :topics [:runtime :tooling],
+   :status :accepted,
+   :validation-scope :operational}
+  {:date "2026-04-26",
+   :slug "imported-output-materialization",
+   :release-authority :development,
+   :relations [],
+   :claims
+   [{:id :c1,
+     :statement
+     "Fresh parser-IR and warnings manifests\nboth validate against `schemas/manifest.schema.json`, as asserted by\n`test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}
+    {:id :c2,
+     :statement
+     "Generated content hashes equal the exact\nimported parser-IR and warnings bytes, as asserted by\n`test/abc/tools/materialize_import_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_import_test.clj"]}
+    {:id :c3,
+     :statement
+     "Materialization selects\n`divergence.json` as the canonical `mapping-divergence` sidecar and falls\nback to legacy `divergence.jsonl` only when the canonical file is absent,\nas asserted by `test/abc/tools/materialize_import_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_import_test.clj"]}
+    {:id :c4,
+     :statement
+     "Each generated parser-IR and warnings\n`artifact_id` is distinct from its own `content.content_hash`, as asserted\nby `test/abc/tools/materialize_import_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_import_test.clj"]}
+    {:id :c5,
+     :statement
+     "Pinned AAT mapping plus adapter\nregistry agreement governs AAT parser-IR conversion compatibility, while\ndiagnostic schema identity requires exact-current equality. Evidence:\n`test/abc/tools/validate_design_bundle_test.clj` and\n`test/abc/tools/materialize_import_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/validate_design_bundle_test.clj"
+      "test/abc/tools/materialize_import_test.clj"]}
+    {:id :c6,
+     :statement
+     "Design-bundle fixture orchestration\nmaterializes into a temporary directory and validates both generated\nmanifests. Evidence: `test/abc/tools/validate_design_bundle_test.clj` and\n`test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/validate_design_bundle_test.clj"
+      "test/abc/tools/foundation_evidence_test.clj"]}
+    {:id :c7,
+     :statement
+     "The Bash entry point contains\ndelegation only; Clojure owns materialization logic, as asserted by\n`test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}],
+   :legacy-number 9,
+   :accepted "2026-07-03",
+   :source
+   "`docs/adr/0007-external-parser-validation-boundary.md` and `docs/adr/0008-abc-tools-runtime.md`",
+   :title "Imported Parser Output Materialization",
+   :topics [:materialization],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-26",
+   :slug "manifest-identity-hardening",
+   :release-authority :publication,
+   :relations
+   [{:class :lifecycle, :type :amends, :to "manifest-identity"}
+    {:class :lifecycle,
+     :type :amends,
+     :to "imported-output-materialization"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "Both materialized manifests contain\n`manifest_schema_hash` equal to the SHA-256/JCS hash of the parsed bundled\nmanifest schema JSON value, as asserted by\n`test/abc/tools/materialize_import_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_import_test.clj"]}
+    {:id :c2,
+     :statement
+     "Materialized parser-IR and warnings\nmanifests have distinct `artifact_id` values, as asserted by\n`test/abc/tools/materialize_import_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_import_test.clj"]}
+    {:id :c3,
+     :statement
+     "V0 identity JSON preserves the asserted\nnull, escaping, and canonical member behavior used by generated manifest\nidentity fields, as asserted by\n`test/abc/tools/materialize_import_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_import_test.clj"]}
+    {:id :c4,
+     :statement
+     "Parser-IR schema mismatch without a\nregistered compatibility rule and diagnostic schema exact-current mismatch\nare independently rejected. Evidence:\n`test/abc/tools/validate_design_bundle_test.clj` and\n`test/abc/tools/materialize_import_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/validate_design_bundle_test.clj"
+      "test/abc/tools/materialize_import_test.clj"]}
+    {:id :c5,
+     :statement
+     "The supported\n`nix run .#validate-design-bundle` app exits zero while validating\nmaterialized manifests, as asserted by\n`test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :operational-behavior,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}],
+   :legacy-number 10,
+   :accepted "2026-07-03",
+   :source
+   "`docs/adr/0001-manifest-identity.md` and `docs/adr/0009-imported-output-materialization.md`",
+   :title "Manifest Identity Hardening",
+   :topics [:identity],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-26",
+   :slug "generated-fixture-policy",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle, :type :depends-on, :to "manifest-identity"}
+    {:class :lifecycle, :type :depends-on, :to "abc-tools-runtime"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "imported-output-materialization"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "manifest-identity-hardening"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The supported\n`nix run .#validate-design-bundle` app materializes parser-IR and warnings\nmanifests into a temporary directory and validates both against\n`schemas/manifest.schema.json`, with fixture orchestration asserted by\n`test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :operational-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c2,
+     :statement
+     "Deterministic JSON writing produces\nidentical ordered bytes from differently ordered map inputs, as asserted by\n`test/abc/tools/materialize_import_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_import_test.clj"]}
+    {:id :c3,
+     :statement
+     "Two materialization runs with identical\ninputs produce byte-identical manifest files, as asserted by\n`test/abc/tools/materialize_import_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_import_test.clj"]}],
+   :legacy-number 11,
+   :accepted "2026-04-28",
+   :title "Generated Output Policy",
+   :topics [:fixtures],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-28",
+   :slug "tei-odd-schematron-validation",
+   :release-authority :publication,
+   :relations
+   [{:class :lifecycle,
+     :type :supersedes,
+     :to "v0-design-bundle-validation",
+     :scope "TEI stub language"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The `tei-profile-drift` Nix check regenerates Relax NG and Schematron from `schemas/tei-profile.odd` and byte-compares both committed artifacts. See `nix/tei-profile-artifacts.nix`.",
+     :kind :operational-behavior,
+     :evidence ["nix/tei-profile-artifacts.nix"]}
+    {:id :c2,
+     :statement
+     "Valid TEI fixtures pass project Relax NG and Schematron validation. See `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c3,
+     :statement
+     "The committed example TEI passes the pinned upstream TEI P5 Relax NG validation. See `test/abc/tools/tei_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/tei_test.clj"]}
+    {:id :c4,
+     :statement
+     "Invalid title, gaiji, and ruby fixtures fail with their expected Schematron rule IDs. See `test/abc/tools/schematron_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/schematron_test.clj"]}
+    {:id :c5,
+     :statement
+     "Warning fixtures produce their expected warning findings without Schematron errors. See `test/abc/tools/schematron_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/schematron_test.clj"]}
+    {:id :c6,
+     :statement
+     "Generated and committed TEI manifests reference a `tei-validation-result.json` validation-result sidecar. See `test/abc/tools/materialize_publication_test.clj` and `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/materialize_publication_test.clj"
+      "test/abc/tools/validate_design_bundle_test.clj"]}],
+   :legacy-number 12,
+   :accepted "2026-04-29",
+   :title "TEI ODD, Relax NG, and Schematron Validation",
+   :topics [:tei :validation],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-28",
+   :slug "cultural-heritage-lod-profile",
+   :release-authority :publication,
+   :relations
+   [{:class :annotation,
+     :type :restates-hard-rule,
+     :to "manifest-identity"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The Linked Art harness regenerates the candidate, normalized expansion, and context-validation result byte-identically to the three committed fixtures. See `test/abc/tools/linked_art_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/linked_art_test.clj"]}
+    {:id :c2,
+     :statement
+     "The regenerated validation result records `status: \"ok\"` and the JCS-recomputed context hash. See `test/abc/tools/linked_art_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/linked_art_test.clj"]}
+    {:id :c3,
+     :statement
+     "Focused Linked Art tests demonstrate two-run determinism, committed byte parity, context hashing, artifact-ID preservation, and refusal to fetch an unapproved external JSON-LD context. See `test/abc/tools/linked_art_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/linked_art_test.clj"]}],
+   :legacy-number 13,
+   :accepted "2026-04-29",
+   :title "Cultural-Heritage LOD Publication Profile",
+   :topics [:lod :publication],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-28",
+   :slug "iiif-applicability",
+   :release-authority :publication,
+   :relations
+   [{:class :annotation,
+     :type :restates-hard-rule,
+     :to "manifest-identity"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "`schemas/iiif-applicability.schema.json` declares JSON Schema 2020-12 and validates against that meta-schema. See `test/abc/tools/iiif_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/iiif_test.clj"]}
+    {:id :c2,
+     :statement
+     "The text-only `000127` applicability fixture validates with status `not_applicable`, a text-only reason, and `derived_manifest: null`. See `test/abc/tools/iiif_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/iiif_test.clj"]}
+    {:id :c3,
+     :statement
+     "IIIF applicability validation rejects a missing work ID and both invalid status/derived-manifest combinations. See `test/abc/tools/iiif_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/iiif_test.clj"]}
+    {:id :c4,
+     :statement
+     "IIIF applicability validation accepts an `applicable` record with a manifest path and a `rights_blocker` record with no derived manifest. See `test/abc/tools/iiif_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/iiif_test.clj"]}],
+   :legacy-number 14,
+   :accepted "2026-04-29",
+   :title "IIIF Applicability for ABC v0",
+   :topics [:iiif :publication],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-29",
+   :slug "temporal-modeling",
+   :release-authority :publication,
+   :relations
+   [{:class :annotation,
+     :type :restates-hard-rule,
+     :to "manifest-identity"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "`schemas/person-record.schema.json` admits null and the tested signed/unsigned full-date, year-month, and year lexical values, and rejects the tested out-of-scope and range-invalid lexicals; `test/abc/tools/person_record_test.clj` binds this contract.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/person_record_test.clj"]}
+    {:id :c2,
+     :statement
+     "`abc.tools.aozora-csv/parse-date` performs the named pad-month, pad-day, pad-year, strip-whitespace, collapse-multi-dash, and normalize-date-separator cases, maps `前347` to `-0346`, maps `不詳`/`未詳` to `nil` with `unknown-marker` corrections, and leaves the tested calendar-impossible values uncorrected; `test/abc/tools/aozora_csv_test.clj` covers exactly those cases. This legacy null mapping does not claim to preserve temporal knowledge state.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_csv_test.clj"]}
+    {:id :c3,
+     :statement
+     "`abc.tools.person-record/record->graph` emits the tested `xsd:date`, `xsd:gYearMonth`, and `xsd:gYear` RDA literals with parallel `abc:EDTF` echoes, including the committed `examples/v0/example-persons/000879.json` fixture; `test/abc/tools/person_record_test.clj` covers the values and datatypes.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_record_test.clj"]}
+    {:id :c4,
+     :statement
+     "`schemas/manifest.shacl.ttl` gives the RDA birth/death properties maximum cardinality one with the three tested XSD datatype alternatives and constrains the EDTF echoes to maximum cardinality one, datatype `abc:EDTF`, and the live ADR-0016-widened lexical pattern; `test/abc/tools/shacl_test.clj` asserts that structure.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/shacl_test.clj"]}
+    {:id :c5,
+     :statement
+     "`PersonRecordShape` rejects the tested malformed `abc:edtfDateOfBirth` literal and reports the EDTF path/shape context; `test/abc/tools/shacl_test.clj` covers the fixture.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/shacl_test.clj"]}
+    {:id :c6,
+     :statement
+     "the committed 000879 person fixture retains full ISO birth/death values, validates, carries the live person schema hash, and emits the expected birth-date RDF view; `test/abc/tools/person_record_test.clj` covers the current fixture without making a historical rotation claim.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_record_test.clj"]}],
+   :legacy-number 15,
+   :accepted "2026-07-03",
+   :title "Temporal Modeling for Bibliographic Dates",
+   :topics [:temporal],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-29",
+   :slug "edtf-level1-decade-century",
+   :release-authority :publication,
+   :relations
+   [{:class :annotation,
+     :type :restates-hard-rule,
+     :to "manifest-identity"}
+    {:class :annotation,
+     :type :schema-hash-cascade,
+     :to "temporal-modeling"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "the live person-record schema accepts the tested Level 1 decade and BCE-century lexical values for birth and death; `test/abc/tools/person_record_test.clj` covers the accepted table.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/person_record_test.clj"]}
+    {:id :c2,
+     :statement
+     "`parse-date` admits the tested decade markers, including `-019X`, verbatim without an audit correction; `test/abc/tools/aozora_csv_test.clj` covers those cases.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_csv_test.clj"]}
+    {:id :c3,
+     :statement
+     "`parse-date` maps the tested Japanese BCE-century prose, including `紀元前7世紀末` to `-06XX` and `紀元前6世紀初` to `-05XX`, and records the source phrase under `century-prose`; `test/abc/tools/aozora_csv_test.clj` covers those cases.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_csv_test.clj"]}
+    {:id :c4,
+     :statement
+     "`record->graph` emits the tested decade and BCE-century values only as `abc:EDTF` echoes and omits the RDA precision predicate; `test/abc/tools/person_record_test.clj` covers birth and death examples.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_record_test.clj"]}],
+   :legacy-number 16,
+   :accepted "2026-04-29",
+   :title "EDTF Level 1 — Decade Markers and BCE Century Prose",
+   :topics [:temporal],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-29",
+   :slug "vocabulary-review",
+   :release-authority :publication,
+   :relations
+   [{:class :annotation,
+     :type :restates-hard-rule,
+     :to "manifest-identity"}
+    {:class :annotation,
+     :type :schema-hash-cascade,
+     :to "edtf-level1-decade-century"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "`contexts/abc-v0.jsonld` declares `abc` as `https://w3id.org/abc/`. See `test/abc/tools/linked_art_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/linked_art_test.clj"]}
+    {:id :c2,
+     :statement
+     "Linked Art expansion preserves the manifest artifact ID at `https://w3id.org/abc/artifactId`. See `test/abc/tools/linked_art_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/linked_art_test.clj"]}
+    {:id :c3,
+     :statement
+     "The three current LOD fixtures regenerate byte-identically and their committed context hash equals the JCS-recomputed context hash. See `test/abc/tools/linked_art_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/linked_art_test.clj"]}
+    {:id :c4,
+     :statement
+     "The bounded committed Turtle inventory uses `@prefix abc: <https://w3id.org/abc/>`. See `test/abc/tools/foundation_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/foundation_evidence_test.clj"]}
+    {:id :c5,
+     :statement
+     "Success-manifest, failure-manifest, and metadata-record Turtle generators remain byte-identical to their named committed fixtures. See `test/abc/tools/manifest_to_rdf_test.clj` and `test/abc/tools/metadata_record_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/manifest_to_rdf_test.clj"
+      "test/abc/tools/metadata_record_test.clj"]}],
+   :legacy-number 17,
+   :accepted "2026-04-29",
+   :title "Vocabulary Review and `abc:` Namespace Consistency",
+   :topics [:lod :vocabulary],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-29",
+   :slug "predicate-rename-batch-1",
+   :release-authority :none,
+   :relations
+   [{:class :lifecycle, :type :amends, :to "vocabulary-review"}
+    {:class :annotation,
+     :type :restates-hard-rule,
+     :to "manifest-identity"}
+    {:class :annotation,
+     :type :schema-hash-cascade,
+     :to "vocabulary-review"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "In the named metadata RDF cases, the generator emits `dcndl:titleTranscription` inside the title blank node, emits neither `abc:reading` nor `abc:copyrightExpired`, and true, false, and nil legacy copyright flags emit no external rights assertion. See `test/abc/tools/metadata_record_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/metadata_record_test.clj"]}
+    {:id :c2,
+     :statement
+     "`MetadataRecordWorkShape` permits zero or one `dcterms:rights`; when present it must be an IRI in the closed Public Domain Mark/InC set. See `test/abc/tools/metadata_record_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/metadata_record_test.clj"]}
+    {:id :c3,
+     :statement
+     "The metadata-bundle helper validates the committed metadata JSON and person inputs, SHACL graph, and byte-identical `metadata-record.ttl` fixture. See `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}],
+   :legacy-number 18,
+   :accepted "2026-04-29",
+   :title
+   "Predicate Rename Batch 1 — `abc:reading` and `abc:copyrightExpired`",
+   :topics [:lod :vocabulary],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:slug "reserved",
+   :legacy-number 19,
+   :title "Reserved / Withdrawn",
+   :status :withdrawn,
+   :date "2026-04-29",
+   :topics [:governance],
+   :relations [],
+   :claims []}
+  {:date "2026-04-29",
+   :slug "person-identity-drift-data-model",
+   :release-authority :publication,
+   :relations
+   [{:class :annotation,
+     :type :restates-hard-rule,
+     :to "manifest-identity"}
+    {:class :annotation,
+     :type :schema-hash-cascade,
+     :to "predicate-rename-batch-1"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "drift participant snapshots carry `snapshot_id`, `person_id`, and `person_record_hash`, and the tested snapshot IRI is derived from the event-embedded hash; `test/abc/tools/person_drift_test.clj` covers the schema and derivation.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c2,
+     :statement
+     "drift validation rejects duplicate snapshot IDs, predecessor/successor interleaving, wrong `pre-`/`post-` usage, and noncanonical participant/edge ordering; canonical order is part of the hashed event value; `test/abc/tools/person_drift_test.clj` covers those invariants.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c3,
+     :statement
+     "on the bounded example ingest slice, adding only the committed drift event/index sidecars leaves person bytes, metadata bytes, manifest bytes, and `manifest_identity_object` unchanged; `test/abc/tools/aozora_ingest_test.clj` performs the isolated before/after comparison.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_ingest_test.clj"]}
+    {:id :c4,
+     :statement
+     "on the bounded example ingest slice, a synthetic rotation of only `person_record_schema_hash` changes exactly the person schema-hash field, contributor person hash, manifest metadata hash, and artifact ID while leaving semantic person/metadata fields unchanged; `test/abc/tools/aozora_ingest_test.clj` asserts the exact changed set.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_ingest_test.clj"]}],
+   :legacy-number 20,
+   :accepted "2026-04-30",
+   :title "Person Identity Drift Data Model",
+   :topics [:person-drift],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-29",
+   :slug "person-identity-drift-harness",
+   :release-authority :publication,
+   :relations
+   [{:class :annotation,
+     :type :restates-hard-rule,
+     :to "manifest-identity"}
+    {:class :annotation,
+     :type :harness-for,
+     :to "person-identity-drift-data-model",
+     :note "harness contract for the 0020 data model"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "the event schema is meta-schema-valid and accepts the tested split wrapper; `test/abc/tools/person_drift_test.clj` covers it.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c2,
+     :statement
+     "the event schema requires the three participant fields and enforces the tested split/merge predecessor/successor cardinality bounds; `test/abc/tools/person_drift_test.clj` covers every boundary violation.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c3,
+     :statement
+     "JSON coherence resolves used/generated snapshot IDs, requires complete disjoint coverage, and enforces participant and edge ordering; `test/abc/tools/person_drift_test.clj` covers the corresponding failure codes.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c4,
+     :statement
+     "JSON coherence rejects the tested disallowed role, unresolved CURIE prefix, and invalid agent IRI; `test/abc/tools/person_drift_test.clj` covers those cases.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c5,
+     :statement
+     "the drift index schema is meta-schema-valid and accepts the tested index sidecar; `test/abc/tools/person_drift_test.clj` covers it.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c6,
+     :statement
+     "`manifest.shacl.ttl` contains the three named drift shapes and the three named subclass axioms; `test/abc/tools/person_drift_test.clj` asserts all six resources.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c7,
+     :statement
+     "`event->graph` materializes the tested RDF types and derives `prov:wasInvalidatedBy`, `prov:wasAssociatedWith`, and `prov:wasDerivedFrom`; `test/abc/tools/person_drift_test.clj` asserts the triples.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c8,
+     :statement
+     "the tested snapshot IRI is derived from the event participant's embedded `person_record_hash`; `test/abc/tools/person_drift_test.clj` covers the value without claiming an instrumented no-disk-read observation.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c9,
+     :statement
+     "the focused drift tests and negative fixtures catch the tested typing, JSON coherence, RDF participant/PROV mismatch, and three event/index referential-integrity failure families; `test/abc/tools/person_drift_test.clj` and `test/abc/tools/validate_design_bundle_test.clj` cover the exact codes.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/person_drift_test.clj"
+      "test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c10,
+     :statement
+     "the committed example has exactly one event JSON and three participant index JSON files and validates as one event/three indexes; `test/abc/tools/person_drift_test.clj` covers the committed directory.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/person_drift_test.clj"]}
+    {:id :c11,
+     :statement
+     "the committed invalid drift fixtures produce the exact failure-code sets asserted by `validate-drift-fixtures-smoke-test`; `test/abc/tools/validate_design_bundle_test.clj` binds every fixture.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c12,
+     :statement
+     "on the bounded example ingest slice, adding only drift event/index sidecars leaves manifest bytes and `manifest_identity_object` unchanged; `test/abc/tools/aozora_ingest_test.clj` performs the isolated comparison.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_ingest_test.clj"]}],
+   :legacy-number 21,
+   :accepted "2026-04-30",
+   :title "Person Identity Drift Harness Contract",
+   :topics [:person-drift],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-04-30",
+   :slug "upstream-ingest-drift-awareness",
+   :release-authority :development,
+   :relations
+   [{:class :annotation,
+     :type :extends,
+     :to "person-identity-drift-data-model",
+     :note "upstream ingest drift awareness extends person drift"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "the synthetic two-ref audit report includes `drift_participant_updates` and the matched event IDs when an indexed participant changes; `test/abc/tools/aozora_history_audit_test.clj` covers the integrated report.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_history_audit_test.clj"]}
+    {:id :c2,
+     :statement
+     "invalid drift sidecars abort the tested audit path before a report value is returned; `test/abc/tools/aozora_history_audit_test.clj` covers the exception.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_history_audit_test.clj"]}
+    {:id :c3,
+     :statement
+     "a complete synthetic audit report contains an empty `drift_participant_updates` list when no drift artifacts are present; `test/abc/tools/aozora_history_audit_test.clj` covers the report value.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_history_audit_test.clj"]}
+    {:id :c4,
+     :statement
+     "a generated hash change for the tested indexed participant appears in `drift_participant_updates`; `test/abc/tools/aozora_history_audit_test.clj` covers the bounded case.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_history_audit_test.clj"]}
+    {:id :c5,
+     :statement
+     "with validation and candidate failures held false, `--fail-on-drift-participant-updates` makes the real audit process exit nonzero for a non-empty update list and does not make it fail for an empty list; other validation/candidate gates remain independent; `test/abc/tools/aozora_history_audit_test.clj` launches the subprocess and covers the exit matrix.",
+     :kind :operational-behavior,
+     :evidence ["test/abc/tools/aozora_history_audit_test.clj"]}
+    {:id :c6,
+     :statement
+     "on the bounded synthetic CSV slice, adding drift sidecars does not change the generated person record, metadata record, or refreshed manifest; `test/abc/tools/aozora_ingest_test.clj` covers raw-ingest independence without claiming broader undefined “source-faithfulness.”",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/aozora_ingest_test.clj"]}],
+   :legacy-number 22,
+   :accepted "2026-04-30",
+   :title "Upstream Ingest Drift Awareness",
+   :topics [:person-drift :ingest],
+   :status :accepted,
+   :validation-scope :operational}
+  {:date "2026-07-03",
+   :slug "owned-aat-parser-ir-mapping",
+   :release-authority :publication,
+   :relations
+   [{:class :lifecycle, :type :amends, :to "manifest-identity"}
+    {:class :lifecycle, :type :depends-on, :to "manifest-identity"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "v0-design-bundle-validation"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "external-parser-validation-boundary"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "imported-output-materialization"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-ir-span-and-ruby-direction"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The AAT mapping, divergence, and divergence-bundle schemas are valid Draft 2020-12 schemas under the real meta-schema validator. Evidence: `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c2,
+     :statement
+     "The committed compatibility registry requires the complete adapter/version/mapping/parser-IR match key, matching evidence scope, and no wildcard adapter entries. Evidence: `test/abc/tools/aat_parser_ir_compat_test.clj` and `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/aat_parser_ir_compat_test.clj"
+      "test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c3,
+     :statement
+     "The admission boundary reports admitted, missing, and conflict states and treats changed evidence under an existing match key as conflict. Evidence: `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c4,
+     :statement
+     "Import materialization copies `mapping_hash` into `manifest_identity_object.aat_parser_ir_mapping_hash`. Evidence: `test/abc/tools/materialize_import_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_import_test.clj"]}
+    {:id :c5,
+     :statement
+     "The supported design-bundle application exits zero over the committed mapping schemas, registry, and imported fixture. Evidence boundary: `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :operational-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}],
+   :legacy-number 23,
+   :accepted "2026-07-03",
+   :source
+   "`docs/handoffs/owned-mapping-design.md`, `docs/handoffs/full-corpus-probe.md`",
+   :title "Owned AAT to Parser-IR Mapping and Compatibility Registry",
+   :topics [:parser :identity],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-07-02",
+   :slug "parser-ir-span-and-ruby-direction",
+   :release-authority :publication,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "parser-evaluation",
+     :scope "source_span_coverage gate"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The current parser-IR schema accepts `decoded_utf8` spans and ruby direction values `left`, `right`, and null, and rejects an unknown coordinate system. See `test/abc/tools/parser_ir_schema_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/parser_ir_schema_evidence_test.clj"]}
+    {:id :c2,
+     :statement
+     "The parser-IR span definition continues to accept the legacy `{start,end}` and `{start,end,line,column}` object shapes. See `test/abc/tools/parser_ir_schema_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/parser_ir_schema_evidence_test.clj"]}
+    {:id :c3,
+     :statement
+     "Current publication fixtures carry and consume `decoded_utf8` spans. See `test/abc/tools/parser_ir_schema_evidence_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/parser_ir_schema_evidence_test.clj"]}
+    {:id :c4,
+     :statement
+     "TEI rendering preserves ruby direction using a profile-valid `rend` value. See `test/abc/tools/parser_ir_tei_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/parser_ir_tei_test.clj"]}
+    {:id :c5,
+     :statement
+     "Parser-IR schema JCS hash changes propagate to the parser-IR schema coordinate copied into materialized manifests. See `test/abc/tools/parser_ir_schema_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_ir_schema_evidence_test.clj"]}
+    {:id :c6,
+     :statement
+     "The supported design-bundle application exits zero over the current parser-IR schema and fixture. Evidence boundary: `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :operational-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}],
+   :legacy-number 24,
+   :accepted "2026-07-03",
+   :source
+   "`docs/handoffs/review-reflection.md` §1.3/§1.5, `docs/handoffs/full-corpus-probe.md`",
+   :title
+   "Parser-IR Additive Additions — Span Coordinate Semantics and `ruby.direction`",
+   :topics [:parser :publication],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-07-03",
+   :slug "parser-ir-publication-rendering",
+   :release-authority :publication,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "external-parser-validation-boundary"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "tei-odd-schematron-validation"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "owned-aat-parser-ir-mapping"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-ir-span-and-ruby-direction"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The committed parser-IR fixture renders a TEI body that passes the pinned Relax NG and project Schematron gates. See `test/abc/tools/materialize_publication_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_publication_test.clj"]}
+    {:id :c2,
+     :statement
+     "Plaintext retains visible body text and ruby base text while excluding ruby readings, source apparatus, provenance, layout metadata, and source-note back matter. See `test/abc/tools/parser_ir_plaintext_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/parser_ir_plaintext_test.clj"]}
+    {:id :c3,
+     :statement
+     "Publication materialization writes plaintext, TEI, both manifests, the preservation sidecar, and a passing `tei-validation-result.json`. See `test/abc/tools/materialize_publication_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_publication_test.clj"]}
+    {:id :c4,
+     :statement
+     "Renderer node coverage is derived from the parser-IR schema and rejects both missing and unexpected node policies. See `test/abc/tools/parser_ir_publication_policy_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_ir_publication_policy_test.clj"]}
+    {:id :c5,
+     :statement
+     "Generated Aozora ruby defaults to TEI `type=\"furigana\"`. See `test/abc/tools/parser_ir_tei_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/parser_ir_tei_test.clj"]}
+    {:id :c6,
+     :statement
+     "The supported design-bundle application exits zero over the committed publication outputs and TEI gates. Evidence boundary: `test/abc/tools/validate_design_bundle_test.clj`.",
+     :kind :operational-behavior,
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}],
+   :legacy-number 25,
+   :accepted "2026-07-03",
+   :title "Parser-IR Publication Rendering",
+   :topics [:parser :publication],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-07-07",
+   :slug "analysis-artifact-identity",
+   :relations
+   [{:class :lifecycle, :type :depends-on, :to "manifest-identity"}
+    {:class :lifecycle, :type :depends-on, :to "nix-materialization"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "manifest-identity-hardening"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "owned-aat-parser-ir-mapping"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-ir-publication-rendering"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "`analysis-recipe.schema.json` and `analysis-result.schema.json` exist and are\nhashable with the ADR 0001 schema-hash discipline."}
+    {:id :c2,
+     :statement
+     "A token-independent `literary-basic-ja-v1` recipe fixture exists as a\ncanonical JSON value."}
+    {:id :c3,
+     :statement
+     "`manifest.schema.json` accepts `artifact_kind = \"analysis\"` manifests with\ntokenizer fields null and an `analysis_recipe_hash` present."}
+    {:id :c4,
+     :statement
+     "The manifest sidecar role enum accepts `analysis-result` and does not add\npack-only roles in this slice."}
+    {:id :c5,
+     :statement
+     "A fixture or prototype materializes one per-work `analysis` manifest from an\nexisting parser-IR plaintext body input."}
+    {:id :c6,
+     :statement
+     "The analysis manifest copies parser and mapping identity fields exactly from\nthe producer parser-IR manifest."}
+    {:id :c7,
+     :statement
+     "Release validation fails when a copied producer identity field differs from\nthe producer manifest."}
+    {:id :c8,
+     :statement
+     "Release validation fails when two successful analysis manifests share the\nsame `artifact_id` and differ in `content.content_hash`."}
+    {:id :c9,
+     :statement
+     "The first implementation is covered by `test/abc/tools/analysis_identity_test.clj`,\n`test/abc/tools/materialize_analysis_test.clj`, and\n`test/abc/tools/manifest_index_test.clj`, including the copied producer-field\nand duplicate-`artifact_id` failure cases above.",
+     :evidence
+     ["test/abc/tools/analysis_identity_test.clj"
+      "test/abc/tools/materialize_analysis_test.clj"
+      "test/abc/tools/manifest_index_test.clj"]}
+    {:id :c10,
+     :statement
+     "A request-set fixture demonstrates non-circular hashing, canonical array\nsorting, JSON null preservation, semantic-id-to-hash resolution metadata, and\nduplicate subject coalescing before hashing."}
+    {:id :c11,
+     :statement
+     "The manifest index can resolve the producer parser-IR artifact needed by the\nfirst analysis slice."}
+    {:id :c12,
+     :statement
+     "If Nix is wired for the prototype, the derivation passes only per-hash recipe\npaths and producer artifact paths to the builder; it does not read a registry\ndirectory or pass the full corpus snapshot path as a direct analysis input."}],
+   :legacy-number 26,
+   :source
+   "`docs/superpowers/specs/2026-07-07-analysis-artifact-identity-design.md`",
+   :title "Analysis Artifact Identity",
+   :topics [:analysis :identity],
+   :status :proposed}
+  {:date "2026-07-07",
+   :slug "analysis-packs-and-tokenizer-profiles",
+   :relations
+   [{:class :lifecycle, :type :amends, :to "manifest-identity"}
+    {:class :lifecycle, :type :depends-on, :to "manifest-identity"}
+    {:class :lifecycle, :type :depends-on, :to "nix-materialization"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "supply-chain-release-security"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "manifest-identity-hardening"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-ir-publication-rendering"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "analysis-artifact-identity"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "A `tokenizer-profile` schema exists and can be hashed with the ADR 0001 JCS\nschema-hash discipline."}
+    {:id :c2,
+     :statement
+     "A manifest schema revision adds `tokenizer_profile_hash` to\n`manifest_identity_object`; `schemas/manifest.schema.json` v0.4.2 covers this."}
+    {:id :c3,
+     :statement
+     "Manifest sidecar roles include `token-stream`;\n`schemas/manifest.schema.json` v0.4.3 covers this."}
+    {:id :c4,
+     :statement
+     "Release validation rejects any successful `tokenized` manifest with missing\nor null `tokenizer_profile_hash`; `test/abc/tools/manifest_index_test.clj`\ncovers this guardrail.",
+     :evidence ["test/abc/tools/manifest_index_test.clj"]}
+    {:id :c5,
+     :statement
+     "Snapshot request-set fixtures remain token-independent until canonical\ntokenizer profiles exist; `test/abc/tools/request_set_fixture_test.clj`\nrequires empty `tokenizer_profile_hashes` arrays in those fixtures.",
+     :evidence ["test/abc/tools/request_set_fixture_test.clj"]}
+    {:id :c6,
+     :statement
+     "An accepted token output schema exists before any canonical tokenized slice\nis accepted; `schemas/token-output.schema.json` v0.1.0 covers this, and its\nhash is used as the tokenized slice `output_format_spec_hash`."}
+    {:id :c7,
+     :statement
+     "A tokenized fixture demonstrates `parser-ir-plaintext-body-v1` input,\ntokenizer profile hash, token output schema hash, and token index/input span\ncoordinates; `abc.tools.materialize-tokenized` produces the fixture shape,\n`test/abc/tools/materialize_tokenized_test.clj` covers the copied-identity\ncontract, and `abc.tools.validate-design-bundle` materializes the fixture\nduring acceptance validation.",
+     :evidence ["test/abc/tools/materialize_tokenized_test.clj"]}
+    {:id :c8,
+     :statement
+     "Release validation fails when copied parser/mapping identity fields in a\ntokenized manifest differ from the producer manifest;\n`test/abc/tools/manifest_index_test.clj` covers this guardrail.",
+     :evidence ["test/abc/tools/manifest_index_test.clj"]}
+    {:id :c9,
+     :statement
+     "Release validation fails when tokenized manifest build/dictionary fields do\nnot match the tokenizer profile content;\n`test/abc/tools/manifest_index_test.clj` covers this guardrail.",
+     :evidence ["test/abc/tools/manifest_index_test.clj"]}
+    {:id :c10,
+     :statement
+     "A tokenizer-backed analysis fixture consumes a tokenized producer manifest\nvia `token-stream-v1`; `test/abc/tools/materialize_analysis_test.clj`\ncovers copied tokenizer identity and manifest-index validation, and\n`abc.tools.validate-design-bundle` materializes the fixture during\nacceptance validation.",
+     :evidence ["test/abc/tools/materialize_analysis_test.clj"]}
+    {:id :c11,
+     :statement
+     "Request-set resolver tests cover semantic profile label resolution to\ncontent hash and registry-entry hash."}
+    {:id :c12,
+     :statement
+     "Request-set planning estimates realized coordinate count and records whether\nthe chosen realization strategy is per-work, batch, or single-CAS."}
+    {:id :c13,
+     :statement
+     "Batch derivation tests show per-work failure manifests are emitted while the\nbatch derivation succeeds when the batch-level contract is satisfied."}
+    {:id :c14,
+     :statement
+     "A pack policy schema exists, including a canonical `none` policy and at\nleast one pack-producing policy; `schemas/pack-policy.schema.json`,\n`data/pack-policies/no-pack-v1.json`,\n`data/pack-policies/parquet-basic-v1.json`,\n`test/abc/tools/schema_test.clj`, and\n`test/abc/tools/request_set_resolver_test.clj` cover this.",
+     :evidence
+     ["test/abc/tools/schema_test.clj"
+      "test/abc/tools/request_set_resolver_test.clj"]}
+    {:id :c15,
+     :statement
+     "A pack output-format spec defines Parquet columns and types; its hash is\nrecorded as `pack_output_format_spec_hash`."}
+    {:id :c16,
+     :statement
+     "A pack fixture records `pack_id`, `request_set_id`, `artifact_set_hash`, and\nartifact references sorted by the rule in this ADR."}
+    {:id :c17,
+     :statement
+     "Pack validation detects same `artifact_id` with different content hashes and\npermits same `content_hash` under different artifact ids."}
+    {:id :c18,
+     :statement
+     "Nix wiring passes per-hash recipe/profile paths and producer artifact paths;\nit does not pass registry directories or the full corpus snapshot path to\nper-work tokenization or analysis derivations."}
+    {:id :c19,
+     :statement
+     "A run-provenance fixture maps a run id to request-set id, pack ids, produced\nartifact ids, and failed/skipped artifact ids."}],
+   :legacy-number 27,
+   :source
+   "`docs/adr/0026-analysis-artifact-identity.md`, `docs/superpowers/specs/2026-07-07-soranoha-snapshot-publication-design.md`",
+   :title "Analysis Packs and Tokenizer Profiles",
+   :topics [:analysis :tokenizer],
+   :status :proposed}
+  {:date "2026-07-09",
+   :slug "ruby-annotation-view",
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "owned-aat-parser-ir-mapping"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-ir-span-and-ruby-direction"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-ir-publication-rendering"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "analysis-artifact-identity"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "analysis-packs-and-tokenizer-profiles"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "**Done.** An annotation output schema exists and is hashable under the\nADR 0001 JCS discipline: `schemas/annotation-output.schema.json`,\n`abc.tools.analysis-identity/annotation-policy-hash`, verified by\n`test/abc/tools/annotation_identity_test.clj`.",
+     :evidence ["test/abc/tools/annotation_identity_test.clj"]}
+    {:id :c2,
+     :statement
+     "**Done.** A fixture materializes one per-work annotation view from the\ncommitted parser-IR example; spans verified against the committed\nplaintext fixture byte-for-byte (unicode-scalar offsets):\n`test/abc/tools/parser_ir_annotations_test.clj`,\n`test/abc/tools/materialize_annotations_test.clj`, and the design-bundle\nfixture wiring in `abc.tools.validate-design-bundle` against\n`examples/v0/example-work/body-annotations.json`.",
+     :evidence
+     ["test/abc/tools/parser_ir_annotations_test.clj"
+      "test/abc/tools/materialize_annotations_test.clj"]}
+    {:id :c3,
+     :statement
+     "**Done.** Copied parser/mapping identity fields validate against the\nproducer parser-IR manifest, reusing the ADR 0026 copied-field release\nvalidation: `abc.tools.manifest-index/annotation-copied-field-errors` and\n`annotation-release-guardrail-errors`, exercised in\n`test/abc/tools/manifest_index_test.clj`.",
+     :evidence ["test/abc/tools/manifest_index_test.clj"]}
+    {:id :c4,
+     :statement
+     "**Done.** A joined token/reading fixture demonstrates span-intersection\njoin against a token stream, including at least one stem-prefix and one\nconflict classification (probe data provides real cases):\n`abc.tools.annotation-join/join`, `test/abc/tools/annotation_join_test.clj`.",
+     :evidence ["test/abc/tools/annotation_join_test.clj"]}
+    {:id :c5,
+     :statement
+     "**Not yet built.** A tokenizer-backed analysis recipe fixture that states a\nsupplantation policy and consumes the join. The join primitive exists\n(above), and the recipe/request-set input-view coverage machine-check is\nin place (`abc.tools.analysis-identity/assert-input-view-coverage!`,\n`test/abc/tools/analysis_identity_test.clj`,\n`test/abc/tools/request_set_fixture_test.clj`) so such a recipe cannot be\nreferenced by a request set that fails to feed it; no recipe schema or\nfixture consumes the join yet. Deferred to a later task.",
+     :evidence
+     ["test/abc/tools/analysis_identity_test.clj"
+      "test/abc/tools/request_set_fixture_test.clj"]}
+    {:id :c6,
+     :statement
+     "**Done (2026-07-10).** Annotation artifacts materialize per request set\nthrough the batch loop with release guardrails, and join-statistics\ntooling is fixture-tested: `test/abc/tools/soranoha_annotation_test.clj`,\n`test/abc/tools/annotation_join_stats_test.clj`.",
+     :evidence
+     ["test/abc/tools/soranoha_annotation_test.clj"
+      "test/abc/tools/annotation_join_stats_test.clj"]}
+    {:id :c7,
+     :statement
+     "**Unchanged, inherited.** Renderer coverage remains schema-derived and\nfails closed on new parser-IR node types, matching the ADR 0025\ndiscipline: `render-with-annotations` shares the same `node-renderers` /\n`covered-node-types` tables as `render`, validated by the pre-existing\n`test/abc/tools/parser_ir_plaintext_test.clj`.",
+     :evidence ["test/abc/tools/parser_ir_plaintext_test.clj"]}
+    {:id :c8,
+     :statement
+     "**Done.** The annotation output schema demonstrates the family shape with\nat least one non-ruby `annotation_kind` fixture: the schema and the first\npolicy (`data/annotation-policies/ruby-gaiji-v1.json`) carry two\n`annotation_kind` values, `ruby` and `gaiji` (D3), exercised together in\n`test/abc/tools/parser_ir_annotations_test.clj` and\n`test/abc/tools/materialize_annotations_test.clj`. Both kinds still derive\nfrom the same source-projection policy; a fully independent ML/LLM\n`annotation_kind` (e.g. `ner`) remains future work under D8/D9.",
+     :evidence
+     ["test/abc/tools/parser_ir_annotations_test.clj"
+      "test/abc/tools/materialize_annotations_test.clj"]}
+    {:id :c9,
+     :statement
+     "**Done.** D6 (request-set participation): `allowed-input-view-kinds` and\n`request-set.schema.json`'s `inputView` `oneOf` both admit\n`parser-ir-body-annotations-v1`, and `data/request-sets/demo-annotation-ja.json`\nis a resolved fixture carrying the `{input_view_kind, policy_hash}` shape\nalongside a plaintext view: `test/abc/tools/request_set_fixture_test.clj`\n(`input-view-kinds-schema-and-allow-list-agree-test`,\n`annotation-input-view-resolves-in-demo-annotation-ja-test`). Materializing\nannotation artifacts per request set is not built in this slice — only the\nidentity/schema layer accepts the view.",
+     :evidence ["test/abc/tools/request_set_fixture_test.clj"]}],
+   :legacy-number 28,
+   :source
+   "`docs/handoffs/ruby-annotation-probe-2026-07-09.md`, `docs/superpowers/specs/2026-07-09-ruby-annotation-view-design.md`",
+   :title "Ruby Annotation View for the Token and Analysis Chain",
+   :topics [:publication :annotation],
+   :status :proposed}
+  {:date "2026-07-10",
+   :slug "diagrams-as-gated-derived-views",
+   :release-authority :none,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "v0-design-bundle-validation"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "ADR graph construction consumes\nshared parsed ADR values, preserves relation scopes, and rejects unknown,\ndangling, malformed, or header-owned sidecar edges. Evidence boundary:\n`test/abc/tools/diagram/adr_graph_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/diagram/adr_graph_test.clj"]}
+    {:id :c2,
+     :statement
+     "Every declared architecture-stage\nschema and ADR coordinate resolves in the current repository contract.\nEvidence boundary: `test/abc/tools/diagram/architecture_graph_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/diagram/architecture_graph_test.clj"]}
+    {:id :c3,
+     :statement
+     "The committed passed workflow fixture\nrenders deterministically with producer-to-consumer edges. Evidence\nboundary: `test/abc/tools/diagram/workflow_graph_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/diagram/workflow_graph_test.clj"]}
+    {:id :c4,
+     :statement
+     "Every registered committed diagram\nis byte-equal to a fresh render of its registry entry. Evidence boundary:\n`test/abc/tools/diagram/registry_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/diagram/registry_test.clj"]}
+    {:id :c5,
+     :statement
+     "Diagram `run!` returns `:ok? false`\nfor lint problems without terminating the host process. Evidence boundary:\n`test/abc/tools/diagram/core_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/diagram/core_test.clj"]}],
+   :legacy-number 29,
+   :accepted "2026-07-12",
+   :source
+   "`docs/superpowers/plans/2026-07-10-adr-and-system-diagrams.md`",
+   :title "Diagrams as Gated Derived Views",
+   :topics [:diagrams :governance],
+   :status :accepted,
+   :validation-scope :fixture}
+  {:date "2026-07-10",
+   :slug "aozora-parser-selection",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle, :type :amends, :to "parser-evaluation"}
+    {:class :lifecycle, :type :depends-on, :to "parser-evaluation"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "external-parser-validation-boundary"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "owned-aat-parser-ir-mapping"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The three historical study citations have exact workspace-relative paths and byte hashes in the parser evidence index. Evidence boundary: `test/abc/tools/parser_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_evidence_test.clj"]}
+    {:id :c2,
+     :statement
+     "ADRs 0002, 0030, 0032, and 0038 carry the reciprocal amendment links declared by the corrective decision chain. Evidence boundary: `test/abc/tools/parser_relations_provenance_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_relations_provenance_evidence_test.clj"]}
+    {:id :c3,
+     :statement
+     "Historical parser-selection citations cannot satisfy the exact-registry admission boundary; absent or conflicting tuples remain rejected. Evidence boundary: `test/abc/tools/parser_mapping_admission_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_mapping_admission_evidence_test.clj"]}],
+   :legacy-number 30,
+   :accepted "2026-07-10",
+   :source
+   "`ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`",
+   :title "Aozora Parser Selection and Fork Base",
+   :topics [:parser],
+   :status :accepted,
+   :validation-scope :full-corpus}
+  {:date "2026-07-10",
+   :slug "adr-governance-validation",
+   :release-authority :none,
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "diagrams-as-gated-derived-views",
+     :scope "ADR header and decision-graph source validation"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "diagrams-as-gated-derived-views",
+     :scope "generated decision graph contract"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The ADR parser and lifecycle,\nrelation, dependency, claim-header, and section policies reject their\nenumerated invalid fixtures. Evidence boundary:\n`test/abc/tools/adr_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/adr_test.clj"]}
+    {:id :c2,
+     :statement
+     "ADR graph construction consumes the\nshared parsed value model and preserves scoped relation labels. Evidence\nboundary: `test/abc/tools/diagram/adr_graph_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/diagram/adr_graph_test.clj"]}
+    {:id :c3,
+     :statement
+     "Manifest identity coordinates and\ndeclared owner references are structurally total for the current contract.\nEvidence boundary: `test/abc/tools/diagram/architecture_graph_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/diagram/architecture_graph_test.clj"]}
+    {:id :c4,
+     :statement
+     "Schema-invalid and semantically invalid\nworkflow fixtures are rejected before rendering. Evidence boundary:\n`test/abc/tools/diagram/workflow_graph_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/diagram/workflow_graph_test.clj"]}],
+   :legacy-number 31,
+   :accepted "2026-07-10",
+   :source
+   "`docs/superpowers/specs/2026-07-10-adr-governance-hardening-design.md`",
+   :title "Uniform ADR Governance Validation",
+   :topics [:governance],
+   :status :accepted,
+   :validation-scope :structural}
+  {:date "2026-07-10",
+   :slug "parser-fork-hard-detach",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle, :type :amends, :to "aozora-parser-selection"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "aozora-parser-selection"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "ADRs 0030, 0032, and 0038 carry reciprocal amendment links. Evidence boundary: `test/abc/tools/parser_relations_provenance_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_relations_provenance_evidence_test.clj"]}
+    {:id :c2,
+     :statement
+     "The fork-provenance handoff, lifted-crate provenance headers, upstream NOTICE, and ADR record the same detach repository, revision, and licence boundary. Evidence boundary: `test/abc/tools/parser_relations_provenance_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_relations_provenance_evidence_test.clj"]}],
+   :legacy-number 32,
+   :accepted "2026-07-10",
+   :source
+   "`ab-validator/docs/superpowers/specs/2026-07-10-consolidated-parser-design.md`",
+   :title "Parser Fork Hard Detach",
+   :topics [:parser],
+   :status :accepted,
+   :validation-scope :full-corpus}
+  {:date "2026-07-12",
+   :slug "source-bundle-identity",
+   :release-authority :publication,
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "manifest-identity",
+     :scope "work_content_hash equality relation"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "manifest-identity-hardening"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "owned-aat-parser-ir-mapping"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-ir-publication-rendering"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The source-bundle schema validates the\ncanonical all-member manifest fixture, as asserted by\n`test/abc/tools/source_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/source_bundle_test.clj"]}
+    {:id :c2,
+     :statement
+     "The Clojure producer reproduces the\nchecked-in canonical identity bytes and `bundle_hash` byte-for-byte, as\nasserted by `test/abc/tools/source_bundle_test.clj` against\n`fixtures/source-bundle/abc-source-bundle-v1-known-answer.json`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/source_bundle_test.clj"
+      "fixtures/source-bundle/abc-source-bundle-v1-known-answer.json"]}
+    {:id :c3,
+     :statement
+     "Metadata-only repacks preserve\n`bundle_hash`, while image changes rotate it, as asserted by\n`test/abc/tools/source_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/source_bundle_test.clj"]}
+    {:id :c4,
+     :statement
+     "Parser-IR records\n`work_content_hash = bundle_hash` and the independently verified\n`primary_text_hash` in their distinct roles, as asserted by\n`test/abc/tools/materialize_source_snapshot_test.clj` and\n`test/abc/sim/content_sim_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/materialize_source_snapshot_test.clj"
+      "test/abc/sim/content_sim_test.clj"]}
+    {:id :c5,
+     :statement
+     "Source snapshot validation checks archive,\ncanonical bundle, primary member, and parser-input hashes by their own\nconstructions without cross-role equality, as asserted by\n`test/abc/tools/materialize_source_snapshot_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_source_snapshot_test.clj"]}
+    {:id :c6,
+     :statement
+     "P16.3 passes without an\n`expected-failure*` gate, as asserted by `test/abc/sim/content_sim_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/sim/content_sim_test.clj"]}
+    {:id :c7,
+     :statement
+     "D7 is `:fixed` with dated\n`2026-07-12` structural evidence, as asserted by\n`test/abc/sim/divergences_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/sim/divergences_test.clj"]}
+    {:id :c8,
+     :statement
+     "A complete legacy-shaped workset fixture\nremains readable without reinterpretation, as asserted by\n`test/abc/tools/materialize_source_snapshot_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/materialize_source_snapshot_test.clj"]}
+    {:id :c9,
+     :statement
+     "The pinned source-bundle corpus report for\nAozora commit `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` reproduces its\nmeasured maxima, as asserted by `test/abc/tools/source_bundle_test.clj`.",
+     :kind :corpus-behavior,
+     :evidence ["test/abc/tools/source_bundle_test.clj"]}
+    {:id :c10,
+     :statement
+     "Member-count, per-member-byte, and total\nuncompressed-byte limits are enforced at both declared-size and streamed-byte\nboundaries, as asserted by `test/abc/tools/source_bundle_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/source_bundle_test.clj"]}
+    {:id :c11,
+     :statement
+     "Strict admission failure aborts\natomically; best-effort admission records counted failures with\n`release_admissible=false`, continues only the partial workflow, and exits\nthe build with status 1, as asserted by\n`test/abc/sim/content_sim_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/sim/content_sim_test.clj"]}],
+   :legacy-number 33,
+   :accepted "2026-07-12",
+   :source
+   "`docs/superpowers/specs/2026-07-12-source-bundle-identity-design.md`",
+   :title "Source Bundle Identity",
+   :topics [:identity :source-bundle],
+   :status :accepted,
+   :validation-scope :full-corpus}
+  {:date "2026-07-12",
+   :slug "typed-evidence-and-lifecycle-closure",
+   :release-authority :none,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "adr-governance-validation"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The retired typed-evidence test\nsuite (`abc.tools.adr-evidence-test`, removed by ADR 0043) demonstrated the\nclosed compatibility matrix, derived predicates, input binding, and\ndeterministic expiry behavior.",
+     :kind :structural-invariant}
+    {:id :c2,
+     :statement
+     "`test/abc/tools/adr_test.clj` and\n`test/abc/tools/adr_governance_test.clj` demonstrate lifecycle validation,\ncycle-safe stable dependency witnesses, audit containment, and enforcement\nexit behavior.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/adr_test.clj"
+      "test/abc/tools/adr_governance_test.clj"]}
+    {:id :c3,
+     :statement
+     "The immutable pre-promotion snapshot of\nevery Accepted ADR except ADR 0034 records the exact corpus and criterion\ncounts, committed governance epoch, `ok = true`, and zero strict problems;\nfinal promotion additionally requires live strict conformance including\nthis ADR.",
+     :kind :corpus-behavior}],
+   :legacy-number 34,
+   :source
+   "`docs/superpowers/specs/2026-07-11-adr-evidence-and-lifecycle-remediation-design.md`",
+   :title "Typed Evidence and Lifecycle Closure",
+   :topics [:governance :evidence],
+   :status :superseded,
+   :validation-scope :full-corpus}
+  {:date "2026-07-12",
+   :slug "rights-assessment-and-external-statements",
+   :release-authority :none,
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "predicate-rename-batch-1",
+     :scope "Boolean-to-external-rights RDF mapping"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "subtractive-evidence-simplification"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "metadata RDF tests demonstrate that\ntrue, false, nil, absent, and malformed legacy values emit no external rights\nstatement.",
+     :kind :structural-invariant}
+    {:id :c2,
+     :statement
+     "SHACL accepts a work without an external\nrights IRI while retaining the existing cardinality and IRI checks when one\nis present.",
+     :kind :fixture-behavior}
+    {:id :c3,
+     :statement
+     "materialize, full-build, and staging\nrelease boundaries fail before writing artifacts while containment is active.",
+     :kind :operational-behavior}
+    {:id :c4,
+     :statement
+     "As a promotion condition, authoritative\nevidence defines the Aozora source fields and every enabled external mapping.",
+     :kind :external-semantics}
+    {:id :c5,
+     :statement
+     "As a promotion condition, migration is total or\nexplicitly quarantines every record and publication accepts only valid\nassessments.",
+     :kind :corpus-behavior}],
+   :legacy-number 35,
+   :source
+   "`docs/superpowers/specs/2026-07-11-rights-assessment-remediation-design.md`",
+   :title "Rights Assessment and External Statements",
+   :topics [:rights],
+   :status :proposed,
+   :validation-scope :structural}
+  {:slug "terminal-provenance-colophon-split",
+   :legacy-number 37,
+   :title "Terminal Provenance / Colophon Split",
+   :status :proposed,
+   :date "2026-07-13",
+   :topics [:publication :provenance],
+   :relations [],
+   :claims []}
+  {:date "2026-07-12",
+   :slug "custom-parser-ownership-and-neutral-comparison",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle, :type :amends, :to "parser-evaluation"}
+    {:class :lifecycle, :type :amends, :to "aozora-parser-selection"}
+    {:class :lifecycle, :type :amends, :to "parser-fork-hard-detach"}
+    {:class :lifecycle, :type :depends-on, :to "parser-evaluation"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "owned-aat-parser-ir-mapping"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-ir-publication-rendering"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "aozora-parser-selection"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-fork-hard-detach"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "Given the enumerated owned parser/publication contract, current maintainer commitment, and bounded five-parser/build-fresh survey, the project-owner assessment supports Soranoha ownership of the custom-parser contract for development only; it grants neither tuple admission nor publication authority. Evidence boundary: `docs/evidence/external/custom-parser-ownership-assessment.md`.",
+     :kind :domain-interpretation,
+     :evidence
+     ["docs/evidence/external/custom-parser-ownership-assessment.md"]}
+    {:id :c2,
+     :statement
+     "Comparison and citation records cannot bypass ADR 0023 exact-tuple admission, and this ADR has development rather than publication release authority. Evidence boundary: `test/abc/tools/parser_evidence_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_evidence_test.clj"]}
+    {:id :c3,
+     :statement
+     "The historical Phase-5 evidence remains bound to its complete frozen C5 tuple and is distinct from the live parser-IR schema and current source-role relations. Evidence boundary: `test/abc/tools/parser_phase5_frozen_tuple_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_phase5_frozen_tuple_test.clj"]}],
+   :legacy-number 38,
+   :accepted "2026-07-12",
+   :title "Custom Parser Ownership and Neutral Comparison",
+   :topics [:parser :governance],
+   :status :accepted,
+   :validation-scope :structural}
+  {:date "2026-07-20",
+   :slug "custom-parser-release-qualification",
+   :release-authority :publication,
+   :relations
+   [{:class :lifecycle, :type :depends-on, :to "parser-evaluation"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "owned-aat-parser-ir-mapping"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "aozora-parser-selection"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "custom-parser-ownership-and-neutral-comparison"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "process-tree-memory-qualification"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-release-instrument-bindings"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The qualification corpus is pinned and hash-addressed; its recomputed `corpus_snapshot_hash` and `list_hash` equal the committed values, and tampering with a member identity is rejected. Evidence: `test/abc/tools/parser_release_qualification_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_release_qualification_test.clj"]}
+    {:id :c2,
+     :statement
+     "The predicate set predeclares the fatal, span, silent-drop, diagnostic, IR, publication-structure, wall-time, memory, and timeout dimensions with exact thresholds fixed before measurement. Evidence: `test/abc/tools/parser_release_qualification_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_release_qualification_test.clj"]}
+    {:id :c3,
+     :statement
+     "Predicate evaluation is exact and integrity-preserving: a `0.969` observation fails a `1.0` predicate, and a predicate with no instrument is `unavailable`, never `pass`. Evidence: `test/abc/tools/parser_release_qualification_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/parser_release_qualification_test.clj"]}
+    {:id :c4,
+     :statement
+     "Comparison and neutral citations are structurally rejected as release evidence through the `abc.tools.parser-evidence` release class boundary. Evidence: `test/abc/tools/parser_release_qualification_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_release_qualification_test.clj"]}
+    {:id :c5,
+     :statement
+     "The gate is release-qualified only when every predicate verdict is `pass` for an admitted build; otherwise it stays `not-qualified` and this ADR stays Proposed. Evidence: `test/abc/tools/parser_release_qualification_test.clj`.",
+     :kind :operational-behavior,
+     :evidence
+     ["test/abc/tools/parser_release_qualification_test.clj"]}],
+   :legacy-number 39,
+   :accepted "2026-07-20",
+   :title "Custom Parser Release Qualification",
+   :topics [:parser :release],
+   :status :accepted,
+   :validation-scope :smoke-corpus}
+  {:date "2026-07-20",
+   :slug "process-tree-memory-qualification",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle, :type :depends-on, :to "parser-evaluation"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "Predicate 8 measures process-tree cgroup memory with the unchanged 2 GiB threshold, zero swap, and a content-addressed wrapper identity. Evidence boundary: `test/abc/tools/parser_rq_resource_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_rq_resource_test.clj"]}
+    {:id :c2,
+     :statement
+     "A Hinoki transient-service smoke run\nrecords both a measured small workload and a right-censored ceiling-clipped\nworkload. Evidence boundary:\n`docs/superpowers/reports/2026-07-17-parser-rq-resource-hinoki-smoke.json`;\nthe `hinoki-resource-witness-binds-the-campaign-capture` observation in\n`test/abc/tools/parser_rq_resource_test.clj` authenticates that witness.",
+     :kind :operational-behavior,
+     :evidence ["test/abc/tools/parser_rq_resource_test.clj"]}
+    {:id :c3,
+     :statement
+     "The predicate-set rotation does not\nrelabel old observations; P5 must recapture all nine envelopes before ADR\n0039 can be promoted. Evidence boundary:\n`test/abc/tools/parser_release_qualification_test.clj` and\n`test/abc/tools/parser_rq_campaign_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_release_qualification_test.clj"
+      "test/abc/tools/parser_rq_campaign_test.clj"]}],
+   :legacy-number 40,
+   :accepted "2026-07-20",
+   :title "Qualify Process-Tree Cgroup Memory",
+   :topics [:parser :release],
+   :status :accepted,
+   :validation-scope :structural}
+  {:date "2026-07-17",
+   :slug "parser-release-instrument-bindings",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle, :type :depends-on, :to "parser-evaluation"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "The five final instrument bindings\nchange the predicate-set hash while leaving every predicate semantic field\nbyte-for-value unchanged. Evidence:\n`test/abc/tools/parser_release_qualification_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/parser_release_qualification_test.clj"]}
+    {:id :c2,
+     :statement
+     "The core-attempt analyzer authenticates\na closed three-repetition index and derives the maximum independently for\nfatal failures, wall time, and timeouts. Evidence:\n`test/abc/tools/parser_rq_core_attempt_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_rq_core_attempt_test.clj"]}
+    {:id :c3,
+     :statement
+     "The bounded admission/promotion transaction\nrejects sibling captures, stale evaluations, incomplete predicate sets, and\ncanonical drift. Evidence: `test/abc/tools/parser_rq_campaign_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/parser_rq_campaign_test.clj"]}],
+   :legacy-number 41,
+   :accepted "2026-07-17",
+   :title "Bind Final Parser Release Instruments",
+   :topics [:parser :release],
+   :status :accepted,
+   :validation-scope :structural}
+  {:date "2026-07-18",
+   :slug "portable-parser-rq-evidence-integrity",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "parser-release-instrument-bindings"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "Active parser-RQ contracts contain no\nmachine identity, filesystem topology, site policy, or replication protocol.\nEvidence: `test/abc/tools/parser_rq_portability_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_rq_portability_test.clj"]}
+    {:id :c2,
+     :statement
+     "One-store evidence verification rejects\nmissing, escaping, truncated, extra, or hash-mismatched closed members.\nEvidence: `test/abc/tools/parser_rq_campaign_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/parser_rq_campaign_test.clj"]}
+    {:id :c3,
+     :statement
+     "Authorization binds portable readiness,\nand promotion requires the self-authenticating closed evidence-integrity\nreceipt while predicate, provenance, and admission contracts remain unchanged.\nEvidence: `test/abc/tools/parser_rq_campaign_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_rq_campaign_test.clj"]}],
+   :legacy-number 42,
+   :accepted "2026-07-18",
+   :title "Keep Parser-RQ Evidence Portable and Self-Contained",
+   :topics [:parser :evidence],
+   :status :accepted,
+   :validation-scope :structural}
+  {:date "2026-07-23",
+   :slug "subtractive-evidence-simplification",
+   :release-authority :none,
+   :relations
+   [{:class :lifecycle,
+     :type :supersedes,
+     :to "typed-evidence-and-lifecycle-closure"}
+    {:class :lifecycle,
+     :type :amends,
+     :to "adr-governance-validation",
+     :scope "typed evidence registry"}
+    {:class :lifecycle,
+     :type :amends,
+     :to "custom-parser-ownership-and-neutral-comparison",
+     :scope "ownership assessment freshness"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "adr-governance-validation"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "Accepted criteria citing missing\npaths under the test, fixtures, nix, or docs/evidence/external roots are\nrejected by ADR validation. Evidence boundary: `test/abc/tools/adr_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/adr_test.clj"]}
+    {:id :c2,
+     :statement
+     "Repository governance validates the\nADR corpus strictly and reports a nonzero exit for any problem. Evidence\nboundary: `test/abc/tools/adr_governance_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/adr_governance_test.clj"]}
+    {:id :c3,
+     :statement
+     "No typed-evidence registry,\ncompatibility matrix, governance epoch, or capture apparatus remains in the\nrepository. Evidence boundary: `test/abc/tools/adr_governance_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/adr_governance_test.clj"]}],
+   :legacy-number 43,
+   :accepted "2026-07-23",
+   :source
+   "`docs/superpowers/specs/2026-07-23-adr-evidence-apparatus-decomplection-design.md`",
+   :title "Subtractive Evidence Simplification",
+   :topics [:governance :evidence],
+   :status :accepted,
+   :validation-scope :structural}]}

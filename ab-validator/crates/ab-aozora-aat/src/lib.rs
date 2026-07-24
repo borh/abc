@@ -2578,6 +2578,22 @@ mod tests {
         assert_eq!(gaiji["unresolved_reason"], "unresolved");
     }
 
+    /// A stray plain `［` left open on one line (a gloss bracket in a
+    /// German-textbook work, a doubled `［［＃…］`) must not bury the rest
+    /// of the document: the pair stage expires it at the newline, its
+    /// line replays as plain text, and every later line's markers emit
+    /// normally.
+    #[test]
+    fn stray_open_bracket_does_not_swallow_later_lines() {
+        let src = "彼の所有［当然\n二二※［＃「口＋世」、U+546D］が四\n";
+        let aat = aat_value_for(src);
+        let gaiji = find_first_node(&aat, "gaiji");
+        assert_eq!(gaiji["description"], "口＋世");
+        assert_eq!(gaiji["resolved"], "呭");
+        // The stray line survives verbatim as text.
+        assert!(aat.to_string().contains("彼の所有［当然"));
+    }
+
     #[test]
     fn keigakomi_container_classifies_as_block() {
         let src = "前文\n［＃ここから罫囲み］\n中身\n［＃ここで罫囲み終わり］\n後文\n";

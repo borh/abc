@@ -369,7 +369,30 @@ where
 
         match self.tokens.next() {
             Some(Token::Text { range }) => Some(PairEvent::Text { range }),
-            Some(Token::Newline { pos }) => Some(PairEvent::Newline { pos }),
+            Some(Token::Newline { pos }) => {
+                // Aozora annotations are single-line: a `［` still open at
+                // the newline can never close as a directive, and leaving
+                // it on the stack makes the classifier buffer the rest of
+                // the document (one stray gloss bracket would bury every
+                // later line's markers). Expire the lowest open bracket
+                // and everything nested above it, innermost-first —
+                // mirroring the EOF drain — then surface the newline.
+                // Opens BELOW the bracket (a multi-paragraph 「) survive.
+                if let Some(lowest) = self.stack.iter().position(|&(k, _)| k == PairKind::Bracket) {
+                    while self.stack.len() > lowest {
+                        let (k, open_span) = self.stack.pop().expect("len > lowest");
+                        self.diagnostics
+                            .push(Diagnostic::unclosed_bracket(open_span, k));
+                        self.pending.push(PairEvent::Unclosed {
+                            kind: k,
+                            span: open_span,
+                        });
+                    }
+                    self.pending.push(PairEvent::Newline { pos });
+                    return Some(self.pending.remove(0));
+                }
+                Some(PairEvent::Newline { pos })
+            }
             Some(Token::Trigger { kind, span }) => Some(self.classify_trigger(kind, span)),
             None => {
                 // Upstream exhausted. Switch into EOF-drain mode and
@@ -432,6 +455,50 @@ mod tests {
                 _ => None,
             })
             .collect()
+    }
+
+    #[test]
+    fn newline_expires_open_bracket_so_later_lines_pair_fresh() {
+        // Aozora annotations are single-line: a stray gloss `［` left open
+        // on one line (e.g. `彼の所有［当然` in a German-textbook work) must
+        // not bury every later line's directives in one endless body.
+        let (events, diagnostics) = run("彼の［当然\n※［＃「口＋世」、U+546D］猫\n");
+        assert_eq!(
+            pair_kinds(&events),
+            vec![
+                ("open", PairKind::Bracket),
+                ("unclosed", PairKind::Bracket),
+                ("open", PairKind::Bracket),
+                ("open", PairKind::Quote),
+                ("close", PairKind::Quote),
+                ("close", PairKind::Bracket),
+            ]
+        );
+        // The expiry is observable: exactly one unclosed-bracket
+        // diagnostic, anchored on the stray open, before the newline.
+        assert_eq!(diagnostics.len(), 1);
+        // The second line's directive resolved as a real pair.
+        let unclosed_pos = events
+            .iter()
+            .position(|e| matches!(e, PairEvent::Unclosed { .. }))
+            .expect("unclosed event");
+        let newline_pos = events
+            .iter()
+            .position(|e| matches!(e, PairEvent::Newline { .. }))
+            .expect("newline event");
+        assert!(unclosed_pos < newline_pos);
+    }
+
+    #[test]
+    fn newline_keeps_multi_line_quote_open() {
+        // Prose 「 legitimately spans paragraphs; only bracket opens (and
+        // anything nested above them) expire at the newline.
+        let (events, diagnostics) = run("「話しはじめた\nそして続く」\n");
+        assert_eq!(
+            pair_kinds(&events),
+            vec![("open", PairKind::Quote), ("close", PairKind::Quote)]
+        );
+        assert!(diagnostics.is_empty());
     }
 
     #[test]

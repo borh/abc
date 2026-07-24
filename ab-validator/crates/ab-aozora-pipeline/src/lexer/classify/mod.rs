@@ -331,6 +331,19 @@ struct PendingPlain {
     provenance: PlainProvenance,
 }
 
+/// Outcome of feeding one event into the active body-buffer frame.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FrameStep {
+    /// The frame is still accumulating body events.
+    Open,
+    /// The OUTERMOST pair just closed — run recognition on the body.
+    Closed,
+    /// The pair stage force-expired the frame's own open (newline expiry
+    /// of a line-spanning `［`, or the EOF drain) — replay the body as
+    /// plain and return to top-level classification.
+    Abandoned,
+}
+
 /// One deferred gaiji: its ready-to-yield standalone span (used when no
 /// ruby follows) and the payload that rebuilds the glyph as a
 /// `Segment::Gaiji` inside a ruby base when one does.
@@ -790,7 +803,7 @@ where
     /// OUTERMOST pair (i.e. `inner_stack` became empty), signalling
     /// that the caller should run recognition on the now-complete
     /// buffer.
-    fn append_to_frame(&mut self, event: PairEvent) -> bool {
+    fn append_to_frame(&mut self, event: PairEvent) -> FrameStep {
         #[cfg(feature = "classify-instrument")]
         let _classify_guard = SubsystemGuard::new(Subsystem::FrameAppend);
         let frame = self
@@ -838,18 +851,21 @@ where
                 // forward recognisers see an unresolved pair and decline —
                 // the body round-trips as raw bytes.
                 //
-                // Guard `pos > 0`: the frame's OUTERMOST open lives at
-                // inner-stack position 0 and may only be closed by a real
-                // `PairClose`. A hard-scope unwind never targets it (it pops
-                // opens stacked *above* the bracket), so a matching
-                // position-0 entry can only be that outermost open surfacing
-                // via the EOF drain — popping it would spuriously empty the
-                // inner stack and run recognition on a never-closed body. Not
-                // popping keeps the frame open for the replay-to-plain path,
-                // byte-identical to before.
-                if let Some(pos) = frame.inner_stack.iter().rposition(|&(k, _)| k == *kind)
-                    && pos > 0
-                {
+                // Position semantics: the frame's OUTERMOST open lives at
+                // inner-stack position 0 and never closes via a hard-scope
+                // unwind (that pops opens stacked *above* the bracket). A
+                // position-0 match means the pair stage force-expired the
+                // frame's own open — the EOF drain, or the newline expiry
+                // of a line-spanning `［` — so the frame is ABANDONED: its
+                // buffered body replays to plain (the caller's abandon
+                // path), and later events classify at top level again
+                // instead of buffering forever.
+                if let Some(pos) = frame.inner_stack.iter().rposition(|&(k, _)| k == *kind) {
+                    if pos == 0 {
+                        frame.body.push(event);
+                        frame.links.push(u32::MAX);
+                        return FrameStep::Abandoned;
+                    }
                     frame.inner_stack.remove(pos);
                 }
                 frame.body.push(event);
@@ -861,7 +877,11 @@ where
             }
         }
 
-        frame.inner_stack.is_empty()
+        if frame.inner_stack.is_empty() {
+            FrameStep::Closed
+        } else {
+            FrameStep::Open
+        }
     }
 
     /// Run recognition on the current frame's body buffer and emit the
@@ -1751,9 +1771,18 @@ where
                 self.pending_refmark.is_none(),
                 "a pending refmark should have been absorbed or flushed before frame entry"
             );
-            let outer_closed = self.append_to_frame(event);
-            if outer_closed {
-                self.recognize_and_emit();
+            match self.append_to_frame(event) {
+                FrameStep::Closed => self.recognize_and_emit(),
+                FrameStep::Abandoned => {
+                    // The pair stage expired the frame's own open (newline
+                    // expiry of a line-spanning `［`, or the EOF drain):
+                    // replay the buffered body as plain, exactly like the
+                    // dangling-frame path at stream exhaustion.
+                    let frame = self.frame.take().expect("abandoned frame is active");
+                    let refmark = frame.gaiji_refmark;
+                    self.replay_unrecognised_body(frame.body, refmark);
+                }
+                FrameStep::Open => {}
             }
             return;
         }

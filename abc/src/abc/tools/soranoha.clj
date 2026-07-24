@@ -7,6 +7,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-source-snapshot :as materialize-source-snapshot]
             [abc.tools.publication-policy :as publication-policy]
+            [abc.tools.publication-release :as publication-release]
             [abc.tools.request-set-resolver :as request-set-resolver]
             [abc.tools.schema :as schema]
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
@@ -93,6 +94,32 @@
       file
       (or (fs/parent file)
           (io/file ".")))))
+
+;; Repo-relative parser-authority + rights-policy source paths the retained
+;; projections use to RECOMPUTE current admissibility. verify-release-root!
+;; derives the provenance path from the candidate the index names.
+(def release-authority-sources
+  {:runs-root "docs/reports/parser-rq/runs"
+   :registry-path "data/aat-parser-ir-compatibility.edn"
+   :measurements-path "docs/reports/parser-release-qualification-measurements.edn"
+   :qualification-report-path "docs/reports/parser-release-qualification-report.json"
+   :decisions-path "docs/adr/decisions.edn"})
+
+(defn- print-release-verdict!
+  "Recompute and print the CURRENT release admissibility of an installed root
+  plus the loader-derived authority hashes. This never trusts or rewrites the
+  build-time result in publications/publications-report.json; it recomputes the
+  closure and re-authenticates the candidate the index names."
+  [root]
+  (let [{:keys [admissible? authority-hashes]}
+        (publication-release/verify-release-root!
+         {:root root
+          :parser-authority-sources release-authority-sources
+          :rights-policy-path publication-policy/policy-path})]
+    (println "release_admissible:" admissible?)
+    (println "decisions_file_hash:" (:decisions-file authority-hashes))
+    (println "registry_file_hash:" (:registry-file authority-hashes))
+    (println "rights_policy_file_hash:" (:rights-policy-file authority-hashes))))
 
 (defn read-valid-snapshot-index
   "Delegates to the single file-loading boundary owned by
@@ -212,6 +239,8 @@
     (println "success_count:" (get summary "success_count"))
     (println "failure_count:" (get summary "failure_count"))
     (println "failure_rate:" (get summary "failure_rate"))
+    (when (fs/directory? (io/file path))
+      (print-release-verdict! (io/file path)))
     0))
 
 (defn validate! [snapshot-root]
@@ -222,6 +251,8 @@
     (println "snapshot_valid: true")
     (println "snapshot_date:" (get snapshot "snapshot_date"))
     (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
+    (when (fs/directory? (io/file snapshot-root))
+      (print-release-verdict! (io/file snapshot-root)))
     0))
 
 (defn- generated-at-from-date [snapshot-date]

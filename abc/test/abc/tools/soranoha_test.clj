@@ -1,5 +1,6 @@
 (ns abc.tools.soranoha-test
-  (:require [abc.tools.files :as files]
+  (:require [abc.test-fs :refer [with-temp-dir]]
+            [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
@@ -9,6 +10,7 @@
             [abc.tools.source-snapshot-fixture :as fixture]
             [abc.tools.soranoha :as soranoha]
             [abc.tools.soranoha-build-publication :as build-publication]
+            [abc.tools.snapshot-index-test :as six]
             [abc.tools.source-bundle :as source-bundle]
             [babashka.fs :as fs]
             [clojure.java.io :as io]
@@ -198,6 +200,25 @@
     (is (string/includes? out "snapshot_valid: true"))
     (is (string/includes? out (get snapshot "snapshot_date")))
     (is (string/includes? out (get snapshot "snapshot_identity_hash")))))
+
+(deftest validate-on-a-root-recomputes-admissibility-and-ignores-report-test
+  ;; The retained validate/explain-snapshot projections recompute current
+  ;; admissibility over the installed root; they never trust or rewrite the
+  ;; build-time publications-report.json.
+  (with-temp-dir [dir]
+    (let [{:keys [root]} (six/build-completed-root! (io/file dir "root"))]
+      (files/write-text! (io/file root "publications" "publications-report.json")
+                         "{\"admissible?\":true,\"problems\":[]}")
+      (let [out (with-out-str
+                  (is (zero? (soranoha/run! ["validate" (str root)]))))]
+        (is (string/includes? out "snapshot_valid: true"))
+        (is (string/includes? out "release_admissible: false")
+            "the fixture root is recomputed as inadmissible despite the asserted report")
+        (is (string/includes? out "rights_policy_file_hash:")))
+      (let [out (with-out-str
+                  (is (zero? (soranoha/run! ["explain-snapshot" (str root)]))))]
+        (is (string/includes? out "release_admissible: false"))
+        (is (string/includes? out "decisions_file_hash:"))))))
 
 (deftest source-snapshot-command-generates-workset-and-snapshot-test
   (let [root (fixture/temp-dir "abc-soranoha-source-snapshot")

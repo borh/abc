@@ -8,6 +8,7 @@ flowchart LR
   cultural_heritage_lod_profile["Cultural-Heritage LOD Publication Profile"]:::accepted
   custom_parser_ownership_and_neutral_comparison["Custom Parser Ownership and Neutral Comparison"]:::accepted
   custom_parser_release_qualification["Custom Parser Release Qualification"]:::accepted
+  data_driven_decision_records["Data-Driven Decision Records"]:::accepted
   diagrams_as_gated_derived_views["Diagrams as Gated Derived Views"]:::accepted
   edtf_level1_decade_century["EDTF Level 1 — Decade Markers and BCE Century Prose"]:::accepted
   external_parser_validation_boundary["External Parser Validation Boundary"]:::accepted
@@ -76,6 +77,9 @@ flowchart LR
   custom_parser_release_qualification -.->|"depends on"| parser_evaluation
   custom_parser_release_qualification -.->|"depends on"| parser_release_instrument_bindings
   custom_parser_release_qualification -.->|"depends on"| process_tree_memory_qualification
+  data_driven_decision_records -.->|"depends on"| adr_governance_validation
+  data_driven_decision_records ==>|"supersedes — ADR Markdown header and claim grammar"| adr_governance_validation
+  data_driven_decision_records -->|"amends — decision-graph source of truth"| diagrams_as_gated_derived_views
   diagrams_as_gated_derived_views -.->|"depends on"| v0_design_bundle_validation
   edtf_level1_decade_century -.->|"restates hard rule"| manifest_identity
   edtf_level1_decade_century -.->|"schema hash cascade"| temporal_modeling

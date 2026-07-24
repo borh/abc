@@ -1773,4 +1773,45 @@
    :title "Subtractive Evidence Simplification",
    :topics [:governance :evidence],
    :status :accepted,
-   :validation-scope :structural}]}
+   :validation-scope :structural}
+  {:slug "data-driven-decision-records",
+   :title "Data-Driven Decision Records",
+   :status :accepted,
+   :date "2026-07-24",
+   :accepted "2026-07-24",
+   :validation-scope :structural,
+   :release-authority :none,
+   :source
+   "`docs/superpowers/specs/2026-07-24-adr-data-driven-decision-records-design.md`",
+   :topics [:governance],
+   :relations
+   [{:class :lifecycle,
+     :type :supersedes,
+     :to "adr-governance-validation",
+     :scope "ADR Markdown header and claim grammar"}
+    {:class :lifecycle,
+     :type :amends,
+     :to "diagrams-as-gated-derived-views",
+     :scope "decision-graph source of truth"}
+    {:class :lifecycle, :type :depends-on, :to "adr-governance-validation"}],
+   :claims
+   [{:id :c1,
+     :kind :structural-invariant,
+     :statement
+     "decisions.edn is loaded through a strict boundary: missing, malformed, or multi-form input yields :invalid-edn problem maps and nonzero governance exit. Evidence boundary: `test/abc/tools/decisions_test.clj`.",
+     :evidence ["test/abc/tools/decisions_test.clj"]}
+    {:id :c2,
+     :kind :structural-invariant,
+     :statement
+     "The relation model fails closed: misspelled lifecycle types and unknown relation classes are schema errors, and lifecycle graphs are irreflexive and acyclic. Evidence boundary: `test/abc/tools/decisions_test.clj`.",
+     :evidence ["test/abc/tools/decisions_test.clj"]}
+    {:id :c3,
+     :kind :structural-invariant,
+     :statement
+     "Repository governance validates the decisions corpus strictly — shape, graph semantics, evidence paths, narrative pairing, INDEX currency — with nonzero exit on any problem. Evidence boundary: `test/abc/tools/adr_governance_test.clj`.",
+     :evidence ["test/abc/tools/adr_governance_test.clj"]}
+    {:id :c4,
+     :kind :structural-invariant,
+     :statement
+     "No Markdown ADR grammar machinery remains: the legacy parser, relations sidecar, claim-header grammar, invalid-Markdown fixtures, and migration scaffolding are absent from the working tree. Evidence boundary: `test/abc/tools/adr_governance_test.clj`.",
+     :evidence ["test/abc/tools/adr_governance_test.clj"]}]}]}

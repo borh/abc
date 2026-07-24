@@ -11,9 +11,12 @@
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-capture :as capture]
             [babashka.fs :as fs]
+            [clojure.edn :as edn]
             [clojure.string :as string]
             [clojure.walk :as walk])
-  (:import [java.nio.charset StandardCharsets]
+  (:import [java.io PushbackReader StringReader]
+           [java.nio ByteBuffer]
+           [java.nio.charset CodingErrorAction StandardCharsets]
            [java.time Instant]))
 
 (def predicate-ids
@@ -920,12 +923,44 @@
     (fs/copy-tree evaluation-root target)
     reference))
 
-(defn promotion-errors
+(defn- decode-strict-utf8 [^bytes bytes]
+  (let [decoder (doto (.newDecoder StandardCharsets/UTF_8)
+                  (.onMalformedInput CodingErrorAction/REPORT)
+                  (.onUnmappableCharacter CodingErrorAction/REPORT))]
+    (str (.decode decoder (ByteBuffer/wrap bytes)))))
+
+(defn- read-registry-envelope
+  "Read the registry file's bytes exactly once, decode them as strict UTF-8,
+  and parse exactly one EDN form (followed by EOF) from that text. Returns
+  {:registry value :bytes bytes} so a caller's :registry-file-hash and the
+  parsed registry value are guaranteed to come from the same read."
+  [path]
+  (let [bytes (fs/read-all-bytes path)
+        text (decode-strict-utf8 bytes)
+        eof (Object.)]
+    (with-open [r (PushbackReader. (StringReader. text))]
+      (let [form (edn/read {:eof eof} r)
+            extra (edn/read {:eof eof} r)]
+        (when (identical? eof form)
+          (throw (ex-info "registry file contains no EDN form"
+                          {:errors ["registry file contains no EDN form"]})))
+        (when-not (identical? eof extra)
+          (throw (ex-info "registry file must contain exactly one EDN form"
+                          {:errors ["registry file must contain exactly one EDN form"]})))
+        {:registry form :bytes bytes}))))
+
+(defn promotion-verification
   "Resolve and authenticate a promotion solely from committed campaign paths.
 
   Callers provide coordinates, never verdict booleans, capture counts, ADR
   statuses, or canonical-equality claims. Those facts are derived here from
-  the immutable generation directories and referenced bytes."
+  the immutable generation directories and referenced bytes.
+
+  Returns {:problems :candidate :qualification-report :evaluation
+  :registry-ref :registry-file-hash :provenance}. Authenticated values are
+  only populated when campaign resolution itself succeeds; a malformed or
+  unresolvable input reports :problems alone, exactly like the prior
+  promotion-errors contract."
   [{:keys [runs_root candidate_ref registry_path measurements_path report_path
            provenance_path decisions_path]}]
   (try
@@ -940,7 +975,10 @@
           capture-root (fs/file candidate-dir "captures"
                                 (ref-directory-name (:capture_generation_ref capture-index)))
           capture-generation (load-capture-generation candidate capture-root)
-          registry (files/read-edn registry_path)
+          registry-envelope (read-registry-envelope registry_path)
+          registry (:registry registry-envelope)
+          registry-file-hash (hash/format-sha256
+                              (hash/sha256-bytes (:bytes registry-envelope)))
           registry-ref (current-registry-ref registry)
           evaluation-indexes (read-generation-indexes (fs/file candidate-dir "evaluations")
                                                       "evaluation-index.edn")
@@ -977,11 +1015,27 @@
                    :canonical_equal
                    (and (canonical-file-equal? measurements_path
                                                (:measurements capture-generation))
-                        (canonical-file-equal? report_path qualification-report))}]
-      (vec (concat binding-errors (promotion-value-errors derived))))
+                        (canonical-file-equal? report_path qualification-report))}
+          problems (vec (concat binding-errors (promotion-value-errors derived)))]
+      {:problems problems
+       :candidate candidate
+       :qualification-report qualification-report
+       :evaluation evaluation-index
+       :registry-ref registry-ref
+       :registry-file-hash registry-file-hash
+       :provenance provenance})
     (catch Exception error
-      [(or (some-> error ex-data :errors first)
-           (.getMessage error))])))
+      {:problems [(or (some-> error ex-data :errors first)
+                      (.getMessage error))]})))
+
+(defn promotion-errors
+  "Resolve and authenticate a promotion solely from committed campaign paths.
+
+  Callers provide coordinates, never verdict booleans, capture counts, ADR
+  statuses, or canonical-equality claims. Those facts are derived here from
+  the immutable generation directories and referenced bytes."
+  [opts]
+  (:problems (promotion-verification opts)))
 
 (defn- parse-options [args]
   (loop [remaining args options {}]

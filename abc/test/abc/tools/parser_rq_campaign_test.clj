@@ -702,6 +702,21 @@
             (decision "parser-release-instrument-bindings" :accepted)]}]
       (write-edn! decisions-path accepted-corpus)
       (is (= [] (campaign/promotion-errors options)))
+      (let [verification (campaign/promotion-verification options)]
+        (is (= [] (:problems verification))
+            "promotion-errors and promotion-verification agree on success")
+        (is (= (:candidate_ref candidate-value)
+               (:candidate_ref (:candidate verification))))
+        (is (= (walk/keywordize-keys (files/read-json report-path))
+               (:qualification-report verification)))
+        (is (= (:evaluation_generation_ref evaluation-index)
+               (:evaluation_generation_ref (:evaluation verification))))
+        (is (= registry-ref (:registry-ref verification)))
+        (is (= (hash/format-sha256 (hash/sha256-file registry-path))
+               (:registry-file-hash verification))
+            "registry-file-hash authenticates the exact registry bytes read")
+        (is (= (walk/keywordize-keys (files/read-json provenance-path))
+               (:provenance verification))))
       (write-edn! decisions-path
                   {:decisions
                    [(decision "process-tree-memory-qualification" :proposed)

@@ -6,7 +6,9 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-publication :as materialize-publication]
             [abc.tools.publication-policy :as publication-policy]
+            [abc.tools.publication-release :as publication-release]
             [abc.tools.request-set-resolver :as resolver]
+            [abc.tools.snapshot-index :as snapshot-index]
             [abc.tools.source-snapshot-fixture :as fixture]
             [abc.tools.soranoha :as soranoha]
             [abc.tools.soranoha-build-publication :as build-publication]
@@ -15,7 +17,7 @@
             [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.test :refer [deftest is testing]])
+            [clojure.test :refer [deftest is testing use-fixtures]])
   (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio.charset StandardCharsets]
            [java.nio.file AccessDeniedException NoSuchFileException]
@@ -157,6 +159,45 @@
                                "coverage" "body-paragraphs"}
       "nodes" [] "warnings" [] "errors" []})
     (abc-json/write-deterministic-json-file! divergence-file {"stub" true})))
+
+;; Parser resolution is independent of source trust: real-resolve-parser-runtime!
+;; now resolves the real adapter for every trust mode, so a build with no adapter
+;; binaries present must inject a well-formed (but unauthenticated) runtime
+;; identity. Every build test binds the parser-runtime boundary to this stub;
+;; the default is installed for the whole namespace by a fixture so individual
+;; tests only bind the source→parser-IR derivation double.
+(def ^:private fixture-parser-runtime-identity
+  {"adapter_id" "aozora2html"
+   "adapter_argv_template" build-publication/parser-argv-template
+   "converter_argv_template" build-publication/converter-argv-template
+   "parser_build_hash" (files/example-hash "70")
+   "converter_build_hash" (files/example-hash "71")
+   "aat_parser_ir_mapping_hash" (files/example-hash "72")
+   "parser_ir_schema_hash" (manifest/schema-hash "schemas/parser-ir.schema.json")})
+
+(defn- fixed-parser-runtime
+  "Injectable *resolve-parser-runtime!* double carrying a caller-supplied,
+  authenticated-shaped CANONICAL runtime identity object: lets a test rotate
+  exactly the parser/mapping coordinates a real profile/mapping/parser-build
+  change would rotate, without needing the real adapter binaries for a second
+  profile."
+  [runtime-identity]
+  (fn [_options]
+    {:adapter nil
+     :parser-runtime-identity runtime-identity
+     :parser-config-hash (hash/format-sha256
+                          (hash/sha256-json-jcs runtime-identity))
+     :candidate-ref nil
+     :qualification-identity-ref nil
+     :problems []}))
+
+(def ^:private stub-parser-runtime
+  (fixed-parser-runtime fixture-parser-runtime-identity))
+
+(use-fixtures :each
+  (fn [f]
+    (binding [build-publication/*resolve-parser-runtime!* stub-parser-runtime]
+      (f))))
 
 (deftest list-request-sets-prints-checked-in-labels-test
   (let [out (with-out-str
@@ -310,18 +351,22 @@
                   (binding [build-publication/*derive-parser-ir!*
                             stub-derive-parser-ir!]
                     (with-out-str
-                      (is (zero? (soranoha/run!
-                                  ["build-publication"
-                                   "--aozora-root" (str aozora-root)
-                                   "--config" "abc/config/publication-basic-ja.json"
-                                   "--snapshot-date" "2026-07-08"
-                                   "--output-root" (str output-root)]))))))
+                      ;; A fixture-trust build is NOT release-admissible; it
+                      ;; installs an inspectable diagnostic index-v2 root and
+                      ;; exits 1.
+                      (is (= 1 (soranoha/run!
+                                ["build-publication"
+                                 "--aozora-root" (str aozora-root)
+                                 "--config" "abc/config/publication-basic-ja.json"
+                                 "--snapshot-date" "2026-07-08"
+                                 "--output-root" (str output-root)]))))))
             slug "000001_000879_000001_ruby_fixture"
             work-dir (io/file output-root "materialized-root" "works" slug)
+            pub-dir (io/file output-root "publications" slug)
             official-source-file (io/file work-dir "official-source.json")
             source-bundle-file (io/file work-dir "source-bundle.json")
             parser-ir-file (io/file work-dir "parser-ir.json")
-            source-manifest-file (io/file work-dir "source.manifest.json")
+            source-manifest-file (io/file pub-dir "source.manifest.json")
             source-selection-report-file (io/file output-root
                                                   "source-selection-report.json")
             build-workflow-run-file (io/file output-root "workflow-run.json")
@@ -331,6 +376,7 @@
             publications-report-file (io/file output-root "publications"
                                               "publications-report.json")]
         (is (string/includes? out "build_publication_root:"))
+        (is (string/includes? out "release_admissible: false"))
         (is (.exists official-source-file))
         (is (.exists source-bundle-file))
         (is (.exists parser-ir-file))
@@ -358,7 +404,8 @@
                        (get % "member_hash"))
                     (get source-bundle "members"))]
           (is (= 1 (get report "selected_source_count")))
-          (is (true? (get report "release_admissible")))
+          (is (not (contains? report "release_admissible"))
+              "source-selection-report no longer carries a locally-derived verdict")
           (is (<= 2 (get report "rejected_source_count")))
           (is (= ["cards/000879/files/000001_ruby_fixture.zip"]
                  (mapv #(get % "text_zip_relpath")
@@ -387,7 +434,13 @@
         (let [publications-report (files/read-json publications-report-file)]
           (is (= 1 (get publications-report "publication_count")))
           (is (= 1 (get publications-report "passed")))
-          (is (= 0 (get publications-report "failed"))))
+          (is (= 0 (get publications-report "failed")))
+          ;; The verifier result is recorded in publications-report.json: a
+          ;; fixture-trust build is inadmissible on source trust and rights.
+          (is (false? (get publications-report "release_admissible")))
+          (is (contains? (set (map #(get % "code")
+                                   (get publications-report "release_problems")))
+                         "release-source-not-official")))
         (let [workflow-run (files/read-json build-workflow-run-file)]
           (is (= "soranoha.build-publication.v1"
                  (get workflow-run "workflow_id")))
@@ -396,6 +449,80 @@
                   "write-build-records"
                   "materialize-publications"]
                  (mapv #(get % "id") (get workflow-run "steps"))))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-installs-and-exits-zero-when-admissible-test
+  ;; A fully-authorized release installs the root atomically and exits 0. The
+  ;; release-facing exit is controlled solely by the fresh verify-release-root!
+  ;; result; here it is an in-memory admissible verdict.
+  (let [root (fixture/temp-dir "abc-soranoha-build-admissible")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")]
+    (try
+      (let [out (binding [build-publication/*derive-parser-ir!* stub-derive-parser-ir!]
+                  (with-redefs
+                   [publication-release/verify-release-root!
+                    (fn [_]
+                      {:admissible? true
+                       :problems []
+                       :authority-hashes
+                       {:decisions-file (files/example-hash "d1")
+                        :registry-file (files/example-hash "d2")
+                        :rights-policy-file (files/example-hash "d3")}})]
+                    (with-out-str
+                      (is (= 0 (soranoha/run!
+                                ["build-publication"
+                                 "--aozora-root" (str aozora-root)
+                                 "--config" "abc/config/publication-basic-ja.json"
+                                 "--snapshot-date" "2026-07-08"
+                                 "--output-root" (str output-root)]))))))]
+        (is (string/includes? out "release_admissible: true"))
+        (is (.exists output-root))
+        (let [report (files/read-json (io/file output-root "publications"
+                                               "publications-report.json"))]
+          (is (true? (get report "release_admissible")))
+          (is (empty? (get report "release_problems")))
+          (is (= (files/example-hash "d3")
+                 (get-in report ["authority_hashes" "rights-policy-file"]))))
+        (is (true? (snapshot-index/validate-snapshot-index!
+                    (files/read-json (io/file output-root
+                                              "snapshot-index.json"))))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-report-records-and-recomputes-verifier-result-test
+  ;; Re-establishes publication-report coverage: the build-time verifier result
+  ;; is recorded in publications/publications-report.json AND independently
+  ;; recomputable from the installed root. For a fixture-trust build both agree
+  ;; it is inadmissible, with the same problem codes.
+  (let [root (fixture/temp-dir "abc-soranoha-build-report-coverage")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")]
+    (try
+      (binding [build-publication/*derive-parser-ir!* stub-derive-parser-ir!]
+        (with-out-str
+          (is (= 1 (soranoha/run!
+                    ["build-publication"
+                     "--aozora-root" (str aozora-root)
+                     "--config" "abc/config/publication-basic-ja.json"
+                     "--snapshot-date" "2026-07-08"
+                     "--output-root" (str output-root)])))))
+      (let [report (files/read-json (io/file output-root "publications"
+                                             "publications-report.json"))
+            recomputed (publication-release/verify-release-root!
+                        {:root (str output-root)
+                         :parser-authority-sources
+                         build-publication/release-authority-sources
+                         :rights-policy-path publication-policy/policy-path})]
+        (is (false? (get report "release_admissible")))
+        (is (= (:admissible? recomputed) (get report "release_admissible"))
+            "recomputing admissibility from the installed root agrees with the report")
+        (is (= (set (map #(get % "code") (get report "release_problems")))
+               (set (map :code (:problems recomputed))))
+            "the recorded and recomputed problem codes agree")
+        (is (contains? (set (map :code (:problems recomputed)))
+                       "release-source-not-official")))
       (finally
         (delete-tree! root)))))
 
@@ -427,27 +554,28 @@
       (with-release-policy-allowed
         #(binding [build-publication/*derive-parser-ir!* stub-derive-parser-ir!]
            (with-out-str
-             (is (zero? (soranoha/run!
-                         ["build-publication"
-                          "--aozora-root" (str aozora-root)
-                          "--config" "abc/config/publication-basic-ja.json"
-                          "--snapshot-date" "2026-07-08"
-                          "--output-root" (str output-root)]))))))
+             (is (= 1 (soranoha/run!
+                       ["build-publication"
+                        "--aozora-root" (str aozora-root)
+                        "--config" "abc/config/publication-basic-ja.json"
+                        "--snapshot-date" "2026-07-08"
+                        "--output-root" (str output-root)]))))))
       (let [slug "000001_000879_000001_ruby_fixture"
             work-dir (io/file output-root "materialized-root" "works" slug)
             build-pub-dir (io/file output-root "publications" slug)
             build-plan (files/read-json (io/file output-root "build-plan.json"))
             parser-runtime (get build-plan "parser_runtime")
             runtime-identity (get parser-runtime "parser_runtime_identity_object")
-            ;; Task 4 computes the authenticated parser runtime identity ONCE
-            ;; and the build now injects it into every work's manifest; a bare
-            ;; materialize-publication! call must be given the SAME value to
-            ;; stay byte-equivalent to what the build wrote.
+            ;; The authenticated parser runtime identity is computed ONCE and the
+            ;; build injects it into every work's manifest; a bare
+            ;; materialize-publication! call must be given the SAME (canonical)
+            ;; value to stay byte-equivalent to what the build wrote.
             parser-identity {:parser-build-hash (get runtime-identity
-                                                     "parser_executable_hash")
+                                                     "parser_build_hash")
                              :parser-config-hash (get parser-runtime
                                                       "parser_config_hash")
-                             :mapping-hash (get runtime-identity "mapping_hash")
+                             :mapping-hash (get runtime-identity
+                                                "aat_parser_ir_mapping_hash")
                              :parser-ir-schema-hash (get runtime-identity
                                                          "parser_ir_schema_hash")}]
         ;; The direct build never invokes a private/duplicated rendering path:
@@ -457,7 +585,8 @@
         ;; timestamp each invocation was given.
         (materialize-publication/materialize-publication!
          {:parser-ir-path (str (io/file work-dir "parser-ir.json"))
-          :source-manifest-path (str (io/file work-dir "source.manifest.json"))
+          :source-manifest-path (str (io/file output-root "publications" slug
+                                              "source.manifest.json"))
           :metadata-record-path (str (io/file work-dir "metadata-record.json"))
           :persons-dir (str (io/file output-root "materialized-root" "persons"))
           :output-dir (str direct-output)
@@ -506,13 +635,13 @@
                    #(binding [build-publication/*derive-parser-ir!*
                               stub-derive-parser-ir!]
                       (with-out-str
-                        (is (zero? (soranoha/run!
-                                    (cond-> ["build-publication"
-                                             "--aozora-root" (str aozora-root)
-                                             "--config" "abc/config/publication-basic-ja.json"
-                                             "--snapshot-date" "2026-07-08"
-                                             "--output-root" (str output-root)]
-                                      replace? (conj "--replace")))))))))]
+                        (is (= 1 (soranoha/run!
+                                  (cond-> ["build-publication"
+                                           "--aozora-root" (str aozora-root)
+                                           "--config" "abc/config/publication-basic-ja.json"
+                                           "--snapshot-date" "2026-07-08"
+                                           "--output-root" (str output-root)]
+                                    replace? (conj "--replace")))))))))]
     (try
       (build! false)
       (let [first-report (files/read-json
@@ -559,12 +688,12 @@
       (with-release-policy-allowed
         #(binding [build-publication/*derive-parser-ir!* stub-derive-parser-ir!]
            (with-out-str
-             (is (zero? (soranoha/run!
-                         ["build-publication"
-                          "--aozora-root" (str aozora-root)
-                          "--config" "abc/config/publication-basic-ja.json"
-                          "--snapshot-date" "2026-07-08"
-                          "--output-root" (str output-root)]))))))
+             (is (= 1 (soranoha/run!
+                       ["build-publication"
+                        "--aozora-root" (str aozora-root)
+                        "--config" "abc/config/publication-basic-ja.json"
+                        "--snapshot-date" "2026-07-08"
+                        "--output-root" (str output-root)]))))))
       (let [work-dir (io/file output-root "materialized-root" "works" slug)
             first-manifest (files/read-json
                             (io/file output-root "publications" slug
@@ -573,15 +702,17 @@
             parser-runtime (get build-plan "parser_runtime")
             runtime-identity (get parser-runtime "parser_runtime_identity_object")
             parser-identity {:parser-build-hash (get runtime-identity
-                                                     "parser_executable_hash")
+                                                     "parser_build_hash")
                              :parser-config-hash (get parser-runtime
                                                       "parser_config_hash")
-                             :mapping-hash (get runtime-identity "mapping_hash")
+                             :mapping-hash (get runtime-identity
+                                                "aat_parser_ir_mapping_hash")
                              :parser-ir-schema-hash (get runtime-identity
                                                          "parser_ir_schema_hash")}]
         (materialize-publication/materialize-publication!
          {:parser-ir-path (str (io/file work-dir "parser-ir.json"))
-          :source-manifest-path (str (io/file work-dir "source.manifest.json"))
+          :source-manifest-path (str (io/file output-root "publications" slug
+                                              "source.manifest.json"))
           :metadata-record-path (str (io/file work-dir "metadata-record.json"))
           :persons-dir (str (io/file output-root "materialized-root" "persons"))
           :output-dir (str second-output)
@@ -598,36 +729,23 @@
       (finally
         (delete-tree! root)))))
 
-(defn- fixed-parser-runtime
-  "Injectable *resolve-parser-runtime!* double carrying a caller-supplied,
-  authenticated-shaped runtime identity: lets a test rotate exactly the
-  parser/mapping coordinates a real profile/mapping/parser-build change would
-  rotate, without needing the real adapter binaries for a second profile."
-  [runtime-identity]
-  (fn [_options]
-    {:adapter nil
-     :parser-runtime-identity runtime-identity
-     :parser-config-hash (hash/format-sha256
-                          (hash/sha256-json-jcs runtime-identity))
-     :problems []}))
-
 (deftest build-publication-parser-identity-change-rotates-artifact-id-test
   (let [root (fixture/temp-dir "abc-soranoha-build-parser-identity-rotation")
         aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
         slug "000001_000879_000001_ruby_fixture"
         base-identity {"adapter_id" "aozora2html"
-                       "parser_argv_template" build-publication/parser-argv-template
+                       "adapter_argv_template" build-publication/parser-argv-template
                        "converter_argv_template"
                        build-publication/converter-argv-template
-                       "parser_executable_hash" (files/example-hash "70")
-                       "converter_executable_hash" (files/example-hash "71")
-                       "mapping_hash" (files/example-hash "72")
+                       "parser_build_hash" (files/example-hash "70")
+                       "converter_build_hash" (files/example-hash "71")
+                       "aat_parser_ir_mapping_hash" (files/example-hash "72")
                        "parser_ir_schema_hash"
                        (manifest/schema-hash "schemas/parser-ir.schema.json")}
         ;; Represents what changes for a different parser build, a different
         ;; aat->parser-IR mapping pin, or a different profile: the mapping
         ;; coordinate rotates while the source content is untouched.
-        changed-identity (assoc base-identity "mapping_hash"
+        changed-identity (assoc base-identity "aat_parser_ir_mapping_hash"
                                 (files/example-hash "73"))
         build! (fn [output-root runtime-identity]
                  (with-release-policy-allowed
@@ -714,14 +832,14 @@
                  (binding [build-publication/*derive-parser-ir!*
                            stub-derive-parser-ir!]
                    (with-out-str
-                     (is (zero? (soranoha/run!
-                                 (cond-> ["build-publication"
-                                          "--aozora-root" (str aozora-root)
-                                          "--config" "abc/config/publication-basic-ja.json"
-                                          "--snapshot-date" "2026-07-12"
-                                          "--output-root" (str output-root)]
-                                   concurrency-arg
-                                   (into ["--concurrency" concurrency-arg])))))))))
+                     (is (= 1 (soranoha/run!
+                               (cond-> ["build-publication"
+                                        "--aozora-root" (str aozora-root)
+                                        "--config" "abc/config/publication-basic-ja.json"
+                                        "--snapshot-date" "2026-07-12"
+                                        "--output-root" (str output-root)]
+                                 concurrency-arg
+                                 (into ["--concurrency" concurrency-arg])))))))))
         sequential-root (io/file root "out-sequential")
         parallel-root (io/file root "out-parallel")
         default-root (io/file root "out-default")]
@@ -761,12 +879,12 @@
                  (with-release-policy-allowed
                    #(binding [build-publication/*derive-parser-ir!*
                               stub-derive-parser-ir!]
-                      (is (zero? (soranoha/run!
-                                  ["build-publication"
-                                   "--aozora-root" (str aozora-root)
-                                   "--config" "abc/config/publication-basic-ja.json"
-                                   "--snapshot-date" snapshot-date
-                                   "--output-root" (str output-root)]))))))
+                      (is (= 1 (soranoha/run!
+                                ["build-publication"
+                                 "--aozora-root" (str aozora-root)
+                                 "--config" "abc/config/publication-basic-ja.json"
+                                 "--snapshot-date" snapshot-date
+                                 "--output-root" (str output-root)]))))))
         identity (fn [output-root]
                    (let [work-dir (io/file output-root "materialized-root" "works"
                                            "000001_000879_000001_ruby_fixture")]

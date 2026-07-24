@@ -103,6 +103,87 @@
                   "notes" notes}]
     manifest))
 
+(def ^:private manifest-schema-path "schemas/manifest.schema.json")
+
+(defn source-bundle-artifact-manifest
+  "Reusable `source` artifact manifest that names source-bundle.json as its
+  content. Every identity value is explicit: `corpus-snapshot-hash`,
+  `work-content-hash`, `metadata-record-hash`, the pre-built `content` map, the
+  `validation-status`, and `generated-at`. No CLI directory layout is assumed,
+  so both the release build and any other caller that supplies the same value
+  obtain the same manifest. `output_format_spec_hash` is the manifest schema
+  hash (a source bundle has no downstream output-format spec of its own)."
+  [{:keys [corpus-snapshot-hash work-content-hash metadata-record-hash
+           content validation-status sidecars generated-at activity-id agent
+           used was-derived-from notes]
+    :or {validation-status "passed"
+         sidecars []
+         activity-id "https://w3id.org/abc/activity/materialize-source-bundle"
+         agent "abc.tools.manifest"}}]
+  (let [manifest-schema-hash (schema-hash manifest-schema-path)
+        io (assoc (identity-object
+                   {"corpus_snapshot_hash" corpus-snapshot-hash
+                    "work_content_hash" work-content-hash
+                    "metadata_record_hash" metadata-record-hash}
+                   {:manifest-schema-hash manifest-schema-hash
+                    :output-format-spec-hash manifest-schema-hash})
+                  "metadata_record_hash" metadata-record-hash)]
+    (artifact-manifest
+     {:artifact-kind "source"
+      :validation-status validation-status
+      :identity-object io
+      :content content
+      :sidecars (vec sidecars)
+      :generated-at generated-at
+      :activity-id activity-id
+      :agent agent
+      :plan-hash nil
+      :used (or used
+                (vec (keep identity [corpus-snapshot-hash work-content-hash
+                                     metadata-record-hash])))
+      :was-derived-from (or was-derived-from
+                            (vec (keep identity [work-content-hash])))
+      :notes notes})))
+
+(defn parser-ir-artifact-manifest
+  "Reusable `parser-ir` artifact manifest that names parser-ir.json as its
+  content. `manifest-inputs` carries the explicit corpus/work/parser/mapping
+  identity values, `content` is the pre-built content map, and `sidecars`,
+  `validation-status`, and `generated-at` are explicit. No CLI directory layout
+  is assumed: the release build and the materialize-import CLI produce the same
+  manifest for the same explicit value. `output_format_spec_hash` is the
+  parser-IR schema hash."
+  [{:keys [manifest-inputs content validation-status sidecars generated-at
+           activity-id agent used was-derived-from notes]
+    :or {validation-status "warning"
+         sidecars []
+         activity-id "https://w3id.org/abc/activity/materialize-parser-ir"
+         agent "abc.tools.manifest"}}]
+  (let [manifest-schema-hash (schema-hash manifest-schema-path)
+        io (identity-object
+            manifest-inputs
+            {:manifest-schema-hash manifest-schema-hash
+             :output-format-spec-hash (get manifest-inputs "parser_ir_schema_hash")})]
+    (artifact-manifest
+     {:artifact-kind "parser-ir"
+      :validation-status validation-status
+      :identity-object io
+      :content content
+      :sidecars (vec sidecars)
+      :generated-at generated-at
+      :activity-id activity-id
+      :agent agent
+      :plan-hash nil
+      :used (or used
+                [(get manifest-inputs "work_content_hash")
+                 (get manifest-inputs "parser_build_hash")
+                 (get manifest-inputs "parser_config_hash")
+                 (get manifest-inputs "mapping_hash")
+                 (get manifest-inputs "parser_ir_schema_hash")])
+      :was-derived-from (or was-derived-from
+                            [(get manifest-inputs "work_content_hash")])
+      :notes notes})))
+
 (defn stable-json-value [value]
   (abc-json/prepare-deterministic-json value))
 

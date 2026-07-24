@@ -53,31 +53,22 @@
                      "source-region-coverage.json")))))
 
 (defn parser-ir-manifest [input-dir manifest-inputs generated-at]
-  (let [parser-ir-file (imported-file input-dir "parser-ir.json")
-        manifest-schema-hash (manifest/schema-hash "schemas/manifest.schema.json")
-        identity-object (manifest/identity-object
-                         manifest-inputs
-                         {:manifest-schema-hash manifest-schema-hash
-                          :output-format-spec-hash (get manifest-inputs "parser_ir_schema_hash")})]
-    (manifest/artifact-manifest
-     {:artifact-kind "parser-ir"
-      :validation-status (run-summary-status input-dir)
-      :identity-object identity-object
+  ;; Thin CLI adapter over the reusable manifest owner: this namespace supplies
+  ;; the CLI-derived content, sidecars, and status; the manifest identity and
+  ;; provenance shape live with abc.tools.manifest so the release build produces
+  ;; the same manifest from the same explicit value.
+  (let [parser-ir-file (imported-file input-dir "parser-ir.json")]
+    (manifest/parser-ir-artifact-manifest
+     {:manifest-inputs manifest-inputs
       :content (manifest/content parser-ir-file
                                  "application/json"
                                  "parser-ir.json"
                                  files/sha256-file)
+      :validation-status (run-summary-status input-dir)
       :sidecars (parser-ir-sidecars input-dir)
       :generated-at generated-at
       :activity-id "https://w3id.org/abc/activity/materialize-imported-parser-ir"
       :agent "abc.tools.materialize-import"
-      :plan-hash nil
-      :used [(get manifest-inputs "work_content_hash")
-             (get manifest-inputs "parser_build_hash")
-             (get manifest-inputs "parser_config_hash")
-             (get manifest-inputs "mapping_hash")
-             (get manifest-inputs "parser_ir_schema_hash")]
-      :was-derived-from [(get manifest-inputs "work_content_hash")]
       :notes "Generated from imported ab-validator parser IR output."})))
 
 (defn warnings-manifest [input-dir manifest-inputs generated-at]

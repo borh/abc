@@ -224,44 +224,52 @@
 (def ^:private p5-parser-ir-schema-hash
   "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec")
 
+;; The runtime identity object is the CANONICAL parser_runtime_identity_object
+;; (the exact shape the snapshot index and release verifier recompute), so the
+;; build stamps ONE parser_config_hash into the index and every per-work
+;; manifest. The argv templates are recorded (they bind parser_config_hash) but
+;; the authentication comparison is by binary build hash + mapping + schema.
 (defn- correct-ab-aozora-identity-object []
   {"adapter_id" "ab-aozora"
-   ;; argv templates are recorded (they bind parser_config_hash) but the
-   ;; converter here runs `convert`, not the provenance's `qualify`.
-   "parser_argv_template" ["{executable}" "--mode" "{mode}"]
+   "adapter_argv_template" ["{executable}" "--mode" "{mode}"]
    "converter_argv_template" ["{executable}" "convert"]
-   "parser_executable_hash" p5-parser-build-hash
-   "converter_executable_hash" p5-converter-build-hash
-   "mapping_hash" p5-mapping-hash
+   "parser_build_hash" p5-parser-build-hash
+   "converter_build_hash" p5-converter-build-hash
+   "aat_parser_ir_mapping_hash" p5-mapping-hash
    "parser_ir_schema_hash" p5-parser-ir-schema-hash})
 
 (deftest correct-ab-aozora-build-records-no-coordinate-problem-test
   (testing "matching binary+mapping+schema authenticate with no problem even though the converter argv is `convert`, not the provenance `qualify`"
-    (let [problems (#'build-publication/authentication-problems
-                    (correct-ab-aozora-identity-object)
-                    p5-candidate-ref)]
-      (is (= [] problems)))))
+    (let [result (#'build-publication/authenticate-runtime
+                  "ab-aozora"
+                  (correct-ab-aozora-identity-object)
+                  p5-candidate-ref)]
+      (is (= [] (:problems result)))
+      (is (some? (:candidate-ref result)))
+      (is (some? (:qualification-identity-ref result))))))
 
 (deftest divergent-build-hash-or-mapping-records-coordinate-problem-test
   (let [mismatched (fn [k v]
-                     (#'build-publication/authentication-problems
-                      (assoc (correct-ab-aozora-identity-object) k v)
-                      p5-candidate-ref))
+                     (:problems
+                      (#'build-publication/authenticate-runtime
+                       "ab-aozora"
+                       (assoc (correct-ab-aozora-identity-object) k v)
+                       p5-candidate-ref)))
         wrong-hash "sha256:0000000000000000000000000000000000000000000000000000000000000000"]
     (testing "a divergent parser build hash is a coordinate mismatch"
-      (let [problems (mismatched "parser_executable_hash" wrong-hash)]
+      (let [problems (mismatched "parser_build_hash" wrong-hash)]
         (is (some #(and (= :parser-runtime-coordinate-mismatch (:kind %))
-                        (= "parser_executable_hash" (:coordinate %)))
+                        (= "parser_build_hash" (:coordinate %)))
                   problems))))
     (testing "a divergent converter build hash is a coordinate mismatch"
-      (let [problems (mismatched "converter_executable_hash" wrong-hash)]
+      (let [problems (mismatched "converter_build_hash" wrong-hash)]
         (is (some #(and (= :parser-runtime-coordinate-mismatch (:kind %))
-                        (= "converter_executable_hash" (:coordinate %)))
+                        (= "converter_build_hash" (:coordinate %)))
                   problems))))
     (testing "a divergent mapping hash is a coordinate mismatch"
-      (let [problems (mismatched "mapping_hash" wrong-hash)]
+      (let [problems (mismatched "aat_parser_ir_mapping_hash" wrong-hash)]
         (is (some #(and (= :parser-runtime-coordinate-mismatch (:kind %))
-                        (= "mapping_hash" (:coordinate %)))
+                        (= "aat_parser_ir_mapping_hash" (:coordinate %)))
                   problems))))
     (testing "a divergent parser-IR schema hash is a coordinate mismatch"
       (let [problems (mismatched "parser_ir_schema_hash" wrong-hash)]
@@ -270,10 +278,11 @@
                   problems))))))
 
 (deftest aozora2html-without-candidate-records-absent-candidate-problem-test
-  (let [problems (#'build-publication/parser-runtime-problems
-                  "aozora2html" {"adapter_id" "aozora2html"} nil)]
-    (is (= 1 (count problems)))
-    (is (= :absent-parser-candidate (:kind (first problems))))))
+  (let [result (#'build-publication/authenticate-runtime
+                "aozora2html" {"adapter_id" "aozora2html"} nil)]
+    (is (= 1 (count (:problems result))))
+    (is (= :absent-parser-candidate (:kind (first (:problems result)))))
+    (is (nil? (:candidate-ref result)))))
 
 (deftest source-provenance-fixture-records-null-commit-and-never-calls-git-test
   (fs/with-temp-dir [root {:prefix "bp-source-fixture"}]

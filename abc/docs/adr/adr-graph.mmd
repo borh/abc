@@ -33,6 +33,7 @@ flowchart LR
   reserved["Reserved / Withdrawn"]:::withdrawn
   rights_assessment_and_external_statements["Rights Assessment and External Statements"]:::proposed
   ruby_annotation_view["Ruby Annotation View for the Token and Analysis Chain"]:::proposed
+  sole_publication_release_identity["Sole Publication Release Identity"]:::accepted
   source_bundle_identity["Source Bundle Identity"]:::accepted
   subtractive_evidence_simplification["Subtractive Evidence Simplification"]:::accepted
   supply_chain_release_security["Supply-Chain Release Security"]:::draft
@@ -120,6 +121,9 @@ flowchart LR
   ruby_annotation_view -.->|"depends on"| owned_aat_parser_ir_mapping
   ruby_annotation_view -.->|"depends on"| parser_ir_publication_rendering
   ruby_annotation_view -.->|"depends on"| parser_ir_span_and_ruby_direction
+  sole_publication_release_identity -.->|"depends on"| custom_parser_release_qualification
+  sole_publication_release_identity -.->|"depends on"| manifest_identity
+  sole_publication_release_identity -.->|"depends on"| source_bundle_identity
   source_bundle_identity -->|"amends — work_content_hash equality relation"| manifest_identity
   source_bundle_identity -.->|"depends on"| manifest_identity_hardening
   source_bundle_identity -.->|"depends on"| owned_aat_parser_ir_mapping

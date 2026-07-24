@@ -1457,9 +1457,11 @@
      :evidence ["test/abc/tools/source_bundle_test.clj"]}
     {:id :c11,
      :statement
-     "Strict admission failure aborts\natomically; best-effort admission records counted failures with\n`release_admissible=false`, continues only the partial workflow, and exits\nthe build with status 1, as asserted by\n`test/abc/sim/content_sim_test.clj`.",
+     "Release admissibility is the shared\n`abc.tools.publication-release/verify-release-root!` predicate recomputed over\nthe completed candidate root, not a locally derived selection flag: a strict\nworkflow exception never replaces the prior target root; a best-effort partial\nor fixture/policy diagnostic root is installed only when configured, records\nthe verifier result in `publications/publications-report.json` with\n`release_admissible=false`, and exits the build with status 1; and only an\nadmissible verifier result installs and exits 0, as asserted by\n`test/abc/sim/content_sim_test.clj` and `test/abc/tools/soranoha_test.clj`.",
      :kind :fixture-behavior,
-     :evidence ["test/abc/sim/content_sim_test.clj"]}],
+     :evidence
+     ["test/abc/sim/content_sim_test.clj"
+      "test/abc/tools/soranoha_test.clj"]}],
    :legacy-number 33,
    :accepted "2026-07-12",
    :source
@@ -1645,6 +1647,58 @@
    :topics [:parser :release],
    :status :accepted,
    :validation-scope :smoke-corpus}
+  {:date "2026-07-24",
+   :slug "sole-publication-release-identity",
+   :release-authority :publication,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "custom-parser-release-qualification"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "source-bundle-identity"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "manifest-identity"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "`soranoha build-publication` is the sole assembler and installer of an\nauthenticated publication root: it selects official source, renders the\ncorpus, constructs `snapshot-index.json`, and atomically installs the result;\nno other command or duplicate composition assembles a release, as asserted by\n`test/abc/tools/soranoha_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence ["test/abc/tools/soranoha_test.clj"]}
+    {:id :c2,
+     :statement
+     "Snapshot-index `0.2.0` is the one live publication identity value: it is\nconstructed from the actual source selection, parser runtime identity,\nfailures, and the four canonical artifact references, and validates against\nits closed schema, as asserted by `test/abc/tools/snapshot_index_test.clj`\nand `test/abc/tools/soranoha_test.clj`.",
+     :kind :structural-invariant,
+     :evidence
+     ["test/abc/tools/snapshot_index_test.clj"
+      "test/abc/tools/soranoha_test.clj"]}
+    {:id :c3,
+     :statement
+     "Release admissibility is recomputable and carries no receipt: it is\ndecided only through the fail-closed\n`abc.tools.publication-release/verify-release-root!`, which reads the\ncandidate the index names, recomputes the closure, and derives authority\nhashes from the same bytes its loaders parsed; the build never precomputes a\nverdict, and installation alone never implies admissibility, as asserted by\n`test/abc/tools/publication_release_test.clj` and\n`test/abc/tools/soranoha_test.clj`.",
+     :kind :operational-behavior,
+     :evidence
+     ["test/abc/tools/publication_release_test.clj"
+      "test/abc/tools/soranoha_test.clj"]}
+    {:id :c4,
+     :statement
+     "The release depends on the exact Accepted\n`custom-parser-release-qualification` decision and its\n`:release-authority :publication`: parser release authority authenticates the\ncandidate against that governed record, and `:validation-scope` is never\nreinterpreted as an ordered runtime scope hierarchy, as asserted by\n`test/abc/tools/publication_release_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/publication_release_test.clj"]}
+    {:id :c5,
+     :statement
+     "The release closes over an exact parser/source/manifest set: the closure\nverifier rejects an unreferenced regular file in a referenced per-work\ndirectory and any source, parser-IR, or publication manifest whose bytes or\nhashes disagree, while exempting the derived\n`publications/publications-report.json`, as asserted by\n`test/abc/tools/snapshot_index_test.clj` and\n`test/abc/tools/soranoha_test.clj`.",
+     :kind :fixture-behavior,
+     :evidence
+     ["test/abc/tools/snapshot_index_test.clj"
+      "test/abc/tools/soranoha_test.clj"]}],
+   :accepted "2026-07-24",
+   :source
+   "`docs/superpowers/plans/2026-07-24-sole-publication-producer.md`",
+   :title "Sole Publication Release Identity",
+   :topics [:publication :release :identity],
+   :status :accepted,
+   :validation-scope :full-corpus}
   {:date "2026-07-20",
    :slug "process-tree-memory-qualification",
    :release-authority :development,

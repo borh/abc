@@ -2,6 +2,7 @@
   (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-import :as materialize]
+            [abc.tools.schema :as schema]
             [abc.tools.validate-design-bundle :as validate]
             [babashka.fs :as fs]
             [charred.api :as json]
@@ -290,6 +291,57 @@
                                 (= "mapping-divergence" (get item "role"))))
                       first)]
       (is (= "divergence.jsonl" (get legacy "path_hint"))))))
+
+(deftest parser-ir-artifact-manifest-owner-produces-same-manifest-as-import-test
+  ;; The parser-IR manifest construction now lives with the manifest owner and
+  ;; is CLI-layout-free. The import command and the release build both call it;
+  ;; given the SAME explicit value (content + inputs + sidecars + provenance),
+  ;; they must produce byte-identical manifests.
+  (fs/with-temp-dir [dir {:prefix "abc-test-"}]
+    (let [inputs (temp-manifest-inputs {"work_id" "owner-parity"})
+          _ (manifest/write-json-file! (fs/file dir "parser-ir.json") {"ir" true})
+          _ (files/write-text! (str (fs/file dir "warnings.jsonl")) "")
+          via-import (materialize/parser-ir-manifest
+                      (fs/file dir) inputs materialize/default-generated-at)
+          content (manifest/content (fs/file dir "parser-ir.json")
+                                    "application/json" "parser-ir.json"
+                                    files/sha256-file)
+          via-owner (manifest/parser-ir-artifact-manifest
+                     {:manifest-inputs inputs
+                      :content content
+                      :validation-status (materialize/run-summary-status (fs/file dir))
+                      :sidecars (#'materialize/parser-ir-sidecars (fs/file dir))
+                      :generated-at materialize/default-generated-at
+                      :activity-id "https://w3id.org/abc/activity/materialize-imported-parser-ir"
+                      :agent "abc.tools.materialize-import"
+                      :notes "Generated from imported ab-validator parser IR output."})]
+      (is (= via-import via-owner)
+          "import CLI and manifest owner agree for the same explicit value")
+      (is (= "parser-ir" (get via-owner "artifact_kind")))
+      (is (= mapping-hash
+             (get-in via-owner ["manifest_identity_object"
+                                "aat_parser_ir_mapping_hash"]))))))
+
+(deftest source-bundle-artifact-manifest-is-schema-valid-and-names-source-bundle-test
+  (let [content {"content_hash" (files/example-hash "53")
+                 "media_type" "application/json"
+                 "byte_length" 12
+                 "path_hint" "source-bundle.json"}
+        m (manifest/source-bundle-artifact-manifest
+           {:corpus-snapshot-hash (files/example-hash "c1")
+            :work-content-hash (files/example-hash "b1")
+            :metadata-record-hash (files/example-hash "e5")
+            :content content
+            :generated-at materialize/default-generated-at})
+        schema (files/read-json "schemas/manifest.schema.json")]
+    (is (nil? (schema/validation-errors schema m))
+        "the source-bundle manifest validates against the closed manifest schema")
+    (is (= "source" (get m "artifact_kind")))
+    (is (= "source-bundle.json" (get-in m ["content" "path_hint"])))
+    (is (= (files/example-hash "e5")
+           (get-in m ["manifest_identity_object" "metadata_record_hash"])))
+    (is (= (manifest/schema-hash "schemas/manifest.schema.json")
+           (get-in m ["manifest_identity_object" "output_format_spec_hash"])))))
 
 (deftest materialized-output-is-deterministic-test
   (fs/with-temp-dir [root {:prefix "abc-test-"}]

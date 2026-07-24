@@ -85,10 +85,33 @@
       "materialization_scope" "smoke"})
     (str f)))
 
+;; Parser resolution is independent of source trust; the temp-directory fixtures
+;; have no adapter binaries, so the build's parser-runtime boundary is bound to a
+;; well-formed (but unauthenticated) canonical runtime identity. Source trust
+;; (fixture) and rights still make the resulting root non-admissible.
+(def ^:private fixture-parser-runtime-identity
+  {"adapter_id" "aozora2html"
+   "adapter_argv_template" build-publication/parser-argv-template
+   "converter_argv_template" build-publication/converter-argv-template
+   "parser_build_hash" (files/example-hash "70")
+   "converter_build_hash" (files/example-hash "71")
+   "aat_parser_ir_mapping_hash" (files/example-hash "72")
+   "parser_ir_schema_hash" (manifest/schema-hash "schemas/parser-ir.schema.json")})
+
+(defn- stub-parser-runtime [_]
+  {:adapter nil
+   :parser-runtime-identity fixture-parser-runtime-identity
+   :parser-config-hash (hash/format-sha256
+                        (hash/sha256-json-jcs fixture-parser-runtime-identity))
+   :candidate-ref nil
+   :qualification-identity-ref nil
+   :problems []})
+
 (defn- run-build! [{:keys [aozora-root out-root config-path snapshot-date replace?]}]
   (let [exit (with-redefs [publication-policy/assert-release-allowed!
                            (constantly :ok)]
                (binding [build-publication/*derive-parser-ir!* realistic-stub
+                         build-publication/*resolve-parser-runtime!* stub-parser-runtime
                          *out* (java.io.StringWriter.)]
                  (build-publication/build-publication!
                   {:aozora-root (str aozora-root)
@@ -218,7 +241,10 @@
           (is (= 1 (get selection "selected_source_count")))
           (is (= 1 (get selection "derive_failed_count")))
           (is (= 1 (count (get selection "derive_failures"))))
-          (is (false? (get selection "release_admissible")))
+          (is (not (contains? selection "release_admissible"))
+              "the locally-derived verdict is gone from source-selection-report")
+          (is (false? (get-in reports [:publications "release_admissible"]))
+              "admissibility is the recorded verifier result")
           (is (= {"work_id" "000101"
                   "person_id" "000001"
                   "text_zip_relpath" "cards/000001/files/000101_t.zip"
@@ -285,7 +311,7 @@
                                  :snapshot-date "2026-07-12"})
             workflow (abc-json/read-json-file (fs/file output "workflow-run.json"))]
         (is (= 1 (:exit reports)))
-        (is (false? (get-in reports [:selection "release_admissible"])))
+        (is (false? (get-in reports [:publications "release_admissible"])))
         (is (= "partial" (get workflow "status")))
         ;; A best-effort (continue_on_failure) derive failure does not abort
         ;; the build: the current, still-not-release-admissible partial root
@@ -400,7 +426,7 @@
           (is (= #{"unsafe-member-path"}
                  (set (map #(get % "reason")
                            (get-in reports [:selection "derive_failures"])))))
-          (is (false? (get-in reports [:selection "release_admissible"])))
+          (is (false? (get-in reports [:publications "release_admissible"])))
           (is (= 0 (get-in reports [:publications "publication_count"])))
           (is (= "partial" (get workflow "status")))))
       (testing "all damaged works follow the same counted disposition"
@@ -637,7 +663,7 @@
                             (= bundle_hash (get bundle "bundle_hash"))
                             (= bundle_hash
                                (get-in (abc-json/read-json-file
-                                        (io/file out "materialized-root" "works" slug
+                                        (io/file out "publications" slug
                                                  "source.manifest.json"))
                                        ["manifest_identity_object" "work_content_hash"])))))
                    (:selected expected))

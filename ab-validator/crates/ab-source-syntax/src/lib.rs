@@ -134,6 +134,9 @@ pub fn aozora_body_range(source: &str) -> (core::ops::Range<usize>, usize) {
             body_start = skip_blank_lines(source, separators[1].1);
         }
     }
+    if body_start == 0 {
+        body_start = hyoki_note_header_end(source);
+    }
 
     let mut body_end = source.len();
     let mut tail_start = source.len();
@@ -153,6 +156,38 @@ pub fn aozora_body_range(source: &str) -> (core::ops::Range<usize>, usize) {
 fn is_aozora_separator(line: &str) -> bool {
     let trimmed = line.trim();
     trimmed.len() >= 10 && trimmed.chars().all(|ch| ch == '-')
+}
+
+/// Variant editorial header: a bracketed ［表記について］ heading within the
+/// first 15 lines, whose note block (example text carries literal marker
+/// syntax such as 「《ルビ》」) runs to the next dash- or equals-run
+/// separator line. Returns the body start after that separator, or 0 when
+/// the shape is absent.
+fn hyoki_note_header_end(source: &str) -> usize {
+    let mut offset = 0_usize;
+    let mut heading_seen = false;
+    for (idx, line) in source.split_inclusive('\n').enumerate() {
+        let end = offset + line.len();
+        let trimmed = line.trim();
+        if !heading_seen {
+            if idx >= 15 {
+                return 0;
+            }
+            if (trimmed.starts_with('［') || trimmed.starts_with('['))
+                && trimmed.contains("表記について")
+            {
+                heading_seen = true;
+            }
+        } else {
+            let is_run =
+                |ch: char| trimmed.chars().count() >= 10 && trimmed.chars().all(|c| c == ch);
+            if is_run('-') || is_run('=') {
+                return skip_blank_lines(source, end);
+            }
+        }
+        offset = end;
+    }
+    0
 }
 
 fn skip_blank_lines(source: &str, mut offset: usize) -> usize {
@@ -1041,6 +1076,36 @@ mod tests {
         let (body, tail_start) = aozora_body_range(src);
         assert_eq!(&src[body], "本文です。");
         assert!(src[tail_start..].starts_with("底本："));
+    }
+
+    #[test]
+    fn aozora_body_range_cuts_hyoki_note_header_at_dash_run() {
+        // Variant editorial header (9 works corpus-wide): a bracketed
+        // ［表記について］ heading near the top, notes whose example text
+        // contains literal marker syntax (「《ルビ》」), closed by a
+        // dash-run. The header ends at that separator.
+        let src = "ガドルフの百合\n宮沢賢治\n\n［表記について］\n●ルビは「《ルビ》」の形式で処理した。\n------------------\n本文《ほんぶん》です。\n";
+        let (body, _) = aozora_body_range(src);
+        assert_eq!(&src[body], "本文《ほんぶん》です。\n");
+    }
+
+    #[test]
+    fn aozora_body_range_cuts_hyoki_note_header_at_equals_run() {
+        // 000067_395 shape: the note block is closed by an equals-run.
+        let src = "散文詩集\n著者\n\n［表記について］\n●ルビは「《ルビ》」の形式で処理した。\n==================\n　海\n";
+        let (body, _) = aozora_body_range(src);
+        assert_eq!(&src[body], "　海\n");
+    }
+
+    #[test]
+    fn aozora_body_range_ignores_hyoki_note_deep_in_body() {
+        // The variant heading only counts near the top of the file; a
+        // bracketed mention later is body text.
+        let line = "本文の一行。\n";
+        let mut src = line.repeat(20);
+        src.push_str("［表記について］\n後記の説明。\n------------------\nあとがき。\n");
+        let (body, _) = aozora_body_range(&src);
+        assert_eq!(body.start, 0);
     }
 
     #[test]

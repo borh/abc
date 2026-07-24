@@ -24,6 +24,14 @@
       (is (= :blocked-pending-assessment-migration
              (:rights-publication (edn/read-string (slurp policy-file))))))))
 
+;; The single-work CLI now routes through materialize-publication! itself: no
+;; per-work function wraps it with a rights gate, so no per-work function can
+;; be mistaken for the release decision. That decision lives solely in
+;; abc.tools.publication-release/verify-release-root!.
+(deftest materialize-release-publication-is-retired-test
+  (is (nil? (ns-resolve 'abc.tools.materialize-publication
+                        'materialize-release-publication!))))
+
 (def generated-at "2026-07-03T00:00:00Z")
 
 (defn- temp-dir [prefix]

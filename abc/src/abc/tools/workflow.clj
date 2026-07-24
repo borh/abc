@@ -85,7 +85,12 @@
    "workflow_id" workflow-id
    "steps" (mapv json-step-plan steps)})
 
-(defn- summarize-run [workflow-id run-id started-at ended-at steps]
+(defn run-value
+  "Build a workflow-run JSON value from an already-rendered `steps` vector
+  (each a `step-value` map). Public so non-run-workflow! callers (e.g. a batch
+  adapter that synthesizes its own steps) can share this constructor instead
+  of duplicating the run-summary shape."
+  [workflow-id run-id started-at ended-at steps]
   (let [failed (count (filter #(= "failed" (get % "status")) steps))
         partial (count (filter #(= "partial" (get % "status")) steps))
         passed (count (filter #(= "passed" (get % "status")) steps))]
@@ -195,7 +200,11 @@
                 (step-order-errors steps))]
     (vec errors)))
 
-(defn- step-record [{:keys [step status started-at ended-at result error]}]
+(defn step-value
+  "Build a workflow step-record JSON value. Public so non-run-workflow!
+  callers (e.g. a batch adapter) can share this constructor instead of
+  duplicating the step-record shape."
+  [{:keys [step status started-at ended-at result error]}]
   (cond-> {"id" (key-name (:id step))
            "status" status
            "started_at" started-at
@@ -233,7 +242,7 @@
            records []]
       (if (empty? remaining)
         (let [ended-at (invoke-clock clock)
-              run (summarize-run workflow-id run-id started-at ended-at records)]
+              run (run-value workflow-id run-id started-at ended-at records)]
           (write-run! output-root run)
           {:state state :run run :plan plan})
         (let [step (first remaining)
@@ -242,13 +251,13 @@
                        (invoke-step-run (:run step) state)
                        (catch Throwable t
                          (let [step-end (invoke-clock clock)
-                               record (step-record {:step step
+                               record (step-value {:step step
                                                     :status "failed"
                                                     :started-at step-start
                                                     :ended-at step-end
                                                     :result {}
                                                     :error t})
-                               run (summarize-run workflow-id
+                               run (run-value workflow-id
                                                   run-id
                                                   started-at
                                                   step-end
@@ -257,13 +266,13 @@
                            (throw t))))
               status (name (or (:status result) :passed))
               step-end (invoke-clock clock)
-              record (step-record {:step step
+              record (step-value {:step step
                                    :status status
                                    :started-at step-start
                                    :ended-at step-end
                                    :result result})
               records' (conj records record)
-              interim (summarize-run workflow-id
+              interim (run-value workflow-id
                                      run-id
                                      started-at
                                      step-end

@@ -13,6 +13,7 @@
             [abc.tools.schematron :as schematron]
             [abc.tools.tei :as tei]
             [abc.tools.tei-header :as tei-header]
+            [abc.tools.workflow :as workflow]
             [babashka.fs :as fs]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]
@@ -653,13 +654,6 @@
      :tei-manifest tei-manifest-file
      :tei-validation-result tei-validation-result-file}))
 
-(defn materialize-release-publication!
-  "Materialize release-facing artifacts after the global rights gate.
-  Development fixture validation calls materialize-publication! directly."
-  [opts]
-  (publication-policy/assert-release-allowed!)
-  (materialize-publication! opts))
-
 (defn- batch-job-value [job key]
   (or (get job key)
       (get job (name key))))
@@ -702,11 +696,11 @@
 (defn- materialize-batch-jobs! [jobs concurrency]
   (parallel/ordered-pmap concurrency materialize-batch-job! jobs))
 
-(def workflow-run-schema-id
-  "https://w3id.org/abc/schemas/workflow-run.schema.json")
-
-(defn- now-utc []
-  (str (java.time.Instant/now)))
+;; The batch adapter builds its own synthetic (all-at-once, zero-duration)
+;; steps rather than timing a real abc.tools.workflow/run-workflow! execution,
+;; so it cannot call run-workflow! itself; it shares run-workflow!'s two JSON
+;; constructors (workflow/run-value, workflow/step-value) instead of keeping a
+;; second, duplicate copy of the workflow-run/step-record shapes.
 
 (defn- batch-step-status [result]
   (case (get result "status")
@@ -715,45 +709,31 @@
     "skipped" "skipped"
     "failed"))
 
-(defn- batch-step-record [started-at ended-at result]
-  {"id" (str (get result "id"))
-   "status" (batch-step-status result)
-   "started_at" started-at
-   "ended_at" ended-at
-   "duration_ms" 0
-   "requires" []
-   "produces" ["publication-output"]
-   "inputs" []
-   "outputs" (cond-> []
-               (get result "tei")
-               (conj {"role" "tei"
-                      "path" (get result "tei")})
-               (get result "plain_text")
-               (conj {"role" "plain-text"
-                      "path" (get result "plain_text")}))
-   "messages" []})
+(defn- batch-step-outputs [result]
+  (cond-> []
+    (get result "tei")
+    (conj {"role" "tei"
+           "path" (get result "tei")})
+    (get result "plain_text")
+    (conj {"role" "plain-text"
+           "path" (get result "plain_text")})))
 
-(defn- batch-workflow-run [results]
-  (let [started-at (now-utc)
-        ended-at started-at
-        failed (count (filter #(= "failed" (batch-step-status %)) results))
-        partial (count (filter #(= "partial" (batch-step-status %)) results))
-        passed (count (filter #(= "passed" (batch-step-status %)) results))]
-    {"schema_id" workflow-run-schema-id
-     "schema_version" "soranoha-workflow-run-v1"
-     "workflow_id" "soranoha.materialize-publications-batch.v1"
-     "run_id" "local-batch"
-     "status" (cond
-                (pos? failed) "failed"
-                (pos? partial) "partial"
-                :else "passed")
-     "started_at" started-at
-     "ended_at" ended-at
-     "duration_ms" 0
-     "step_count" (count results)
-     "steps_passed" passed
-     "steps_failed" failed
-     "steps" (mapv #(batch-step-record started-at ended-at %) results)}))
+(defn- batch-step-value [now result]
+  (workflow/step-value
+   {:step {:id (get result "id")
+           :requires []
+           :produces ["publication-output"]}
+    :status (batch-step-status result)
+    :started-at now
+    :ended-at now
+    :result {:outputs (batch-step-outputs result)}}))
+
+(defn- batch-run-value [results]
+  (let [now (str (java.time.Instant/now))
+        steps (mapv #(batch-step-value now %) results)]
+    (workflow/run-value "soranoha.materialize-publications-batch.v1"
+                        "local-batch"
+                        now now steps)))
 
 (defn materialize-publications-batch!
   [{:keys [batch-path summary-path jobs]}]
@@ -777,13 +757,14 @@
     (when workflow-run-file
       (abc-json/write-deterministic-json-file!
        workflow-run-file
-       (batch-workflow-run results)))
+       (batch-run-value results)))
     (when summary-path
       (abc-json/write-deterministic-json-file! summary-path summary))
     summary))
 
 (defn usage []
   (tel/log! :warn "Usage: clojure -M:abc/materialize-publication <parser-ir.json> <metadata-record.json> <persons-dir> <output-dir> [--source-manifest source.manifest.json] [--generated-at instant]")
+  (tel/log! :warn "  (non-release renderer: renders one work's publication artifacts; release admissibility is decided solely by soranoha's publication-release/verify-release-root! over a completed root, never here)")
   (tel/log! :warn "   or: clojure -M:abc/materialize-publications-batch --batch jobs.json --summary summary.json"))
 
 (def cli-options
@@ -828,7 +809,7 @@
           (usage)
           (System/exit 2))
         (do
-          (materialize-release-publication!
+          (materialize-publication!
            {:parser-ir-path parser-ir-path
             :metadata-record-path metadata-record-path
             :persons-dir persons-dir

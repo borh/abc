@@ -140,6 +140,41 @@
                            {:state-updates {:out true}})}]})))
     (is (= [] @calls))))
 
+;; run-value/step-value are the two shared JSON constructors run-workflow!
+;; builds its own workflow-run.json from (see the two calls above). They are
+;; public precisely so a non-run-workflow! adapter (the materialize-publication
+;; batch adapter) can share them instead of keeping a second, duplicate copy of
+;; the workflow-run/step-record shapes.
+(deftest run-value-and-step-value-are-the-shared-public-constructors-test
+  (is (some? (ns-resolve 'abc.tools.workflow 'run-value)))
+  (is (some? (ns-resolve 'abc.tools.workflow 'step-value)))
+  (let [step (workflow/step-value
+              {:step {:id :example :requires [] :produces [:x]}
+               :status "passed"
+               :started-at "2026-07-08T00:00:00Z"
+               :ended-at "2026-07-08T00:00:00Z"
+               :result {:outputs [{:role "tei" :path "tei.xml"}]}})
+        run (workflow/run-value "example.workflow.v1" "example-run"
+                                "2026-07-08T00:00:00Z" "2026-07-08T00:00:00Z"
+                                [step])]
+    (is (= {"id" "example"
+            "status" "passed"
+            "started_at" "2026-07-08T00:00:00Z"
+            "ended_at" "2026-07-08T00:00:00Z"
+            "duration_ms" 0
+            "requires" []
+            "produces" ["x"]
+            "inputs" []
+            "outputs" [{"role" "tei" "path" "tei.xml"}]
+            "messages" []}
+           step))
+    (is (nil? (schema/validation-errors
+               (files/read-json workflow-run-schema-path) run)))
+    (is (= "passed" (get run "status")))
+    (is (= 1 (get run "step_count")))
+    (is (= 1 (get run "steps_passed")))
+    (is (= 0 (get run "steps_failed")))))
+
 (deftest node-summary-sidecar-protocol-is-retired-test
   (testing "the target-graph engine and workflow-nodes apparatus stay deleted"
     (doseq [path ["src/abc/tools/workflow/target.clj"

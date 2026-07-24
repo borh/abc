@@ -252,31 +252,31 @@
                        (catch Throwable t
                          (let [step-end (invoke-clock clock)
                                record (step-value {:step step
-                                                    :status "failed"
-                                                    :started-at step-start
-                                                    :ended-at step-end
-                                                    :result {}
-                                                    :error t})
+                                                   :status "failed"
+                                                   :started-at step-start
+                                                   :ended-at step-end
+                                                   :result {}
+                                                   :error t})
                                run (run-value workflow-id
-                                                  run-id
-                                                  started-at
-                                                  step-end
-                                                  (conj records record))]
+                                              run-id
+                                              started-at
+                                              step-end
+                                              (conj records record))]
                            (write-run! output-root run)
                            (throw t))))
               status (name (or (:status result) :passed))
               step-end (invoke-clock clock)
               record (step-value {:step step
-                                   :status status
-                                   :started-at step-start
-                                   :ended-at step-end
-                                   :result result})
+                                  :status status
+                                  :started-at step-start
+                                  :ended-at step-end
+                                  :result result})
               records' (conj records record)
               interim (run-value workflow-id
-                                     run-id
-                                     started-at
-                                     step-end
-                                     records')]
+                                 run-id
+                                 started-at
+                                 step-end
+                                 records')]
           (write-run! output-root interim)
           (recur (merge state (:state-updates result))
                  (rest remaining)

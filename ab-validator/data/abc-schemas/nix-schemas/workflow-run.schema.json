@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/workflow-run.schema.json",
   "title": "Soranoha workflow run report",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -117,19 +117,7 @@
           "type": "array",
           "items": {"$ref": "#/$defs/message"}
         },
-        "error": {"$ref": "#/$defs/error"},
-        "node_summary_ref": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["schema_version", "path", "node_count", "realized_count", "skipped_count"],
-          "properties": {
-            "schema_version": {"const": "soranoha-workflow-nodes-v1"},
-            "path": {"type": "string"},
-            "node_count": {"type": "integer", "minimum": 0},
-            "realized_count": {"type": "integer", "minimum": 0},
-            "skipped_count": {"type": "integer", "minimum": 0}
-          }
-        }
+        "error": {"$ref": "#/$defs/error"}
       }
     }
   }

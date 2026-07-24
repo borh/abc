@@ -1,2 +1,0 @@
-{"schema_version":"soranoha-workflow-nodes-v1","run_id":"fixture-run","workflow_id":"soranoha.publication-admission.v1","step_id":"admission","key":"admission-decision","node_type":"leaf","status":"passed","realized":true,"inputs":["request-set","snapshot-index"],"conditional_inputs_skipped":["tei-validation-report"]}
-{"schema_version":"soranoha-workflow-nodes-v1","run_id":"fixture-run","key":"tei-validation-report","node_type":"leaf","status":"skipped","realized":false,"inputs":[]}

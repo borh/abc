@@ -139,3 +139,31 @@
                            (swap! calls conj :bad)
                            {:state-updates {:out true}})}]})))
     (is (= [] @calls))))
+
+(deftest node-summary-sidecar-protocol-is-retired-test
+  (testing "the target-graph engine and workflow-nodes apparatus stay deleted"
+    (doseq [path ["src/abc/tools/workflow/target.clj"
+                  "src/abc/tools/workflow/report.clj"
+                  "src/abc/tools/workflow/nix_bridge.clj"
+                  "src/abc/tools/workflow/cache.clj"
+                  "src/abc/tools/workflow/query.clj"
+                  "schemas/workflow-nodes.schema.json"
+                  "examples/workflow/admission.workflow-nodes.jsonl"
+                  "fixtures/v0/invalid/workflow-nodes"]]
+      (is (not (files/exists? path)) path)))
+  (testing "workflow-run 0.3.0 rejects the retired node_summary_ref member"
+    (let [run-schema (files/read-json workflow-run-schema-path)
+          base-run (files/read-json "examples/workflow/passed.workflow-run.json")
+          run-with-ref (assoc-in base-run ["steps" 0 "node_summary_ref"]
+                                 {"schema_version" "soranoha-workflow-nodes-v1"
+                                  "path" "admission.workflow-nodes.jsonl"
+                                  "node_count" 2
+                                  "realized_count" 1
+                                  "skipped_count" 1})]
+      (is (= "0.3.0" (get run-schema "version")))
+      (is (nil? (schema/validation-errors run-schema base-run)))
+      (is (seq (schema/validation-errors run-schema run-with-ref))
+          "the contract surface narrowed; node_summary_ref is no longer accepted")))
+  (testing "the contract manifest carries no workflow-nodes row"
+    (let [rows (get (files/read-json "schemas/schema-contracts.json") "schemas")]
+      (is (not-any? #(re-find #"workflow-nodes" (get % "path" "")) rows)))))

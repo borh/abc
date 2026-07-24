@@ -64,8 +64,7 @@
    "schemas/pack-policy.schema.json" "0.1.0"
    "schemas/tokenizer-profile.schema.json" "0.1.0"
    "schemas/token-output.schema.json" "0.1.0"
-   "schemas/workflow-run.schema.json" "0.2.0"
-   "schemas/workflow-nodes.schema.json" "0.1.0"})
+   "schemas/workflow-run.schema.json" "0.3.0"})
 
 (deftest cross-project-schemas-carry-explicit-versions-test
   (doseq [[path expected-version] cross-project-schema-versions]

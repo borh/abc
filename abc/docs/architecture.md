@@ -134,8 +134,11 @@ committed as frozen deliverables:
 They are frozen presentation views, not architecture sources; their
 reproducible rendering pipeline (font embedding, SVG sanitization, drift
 gate) has been retired. Future presentation-quality figures build a graph
-value, emit DOT with `abc.tools.diagram.graphviz/dot`, and render on demand
-with `dot -Tsvg`.
+value, apply the canonical theme in `abc.tools.diagram.figure-theme`
+(black canvas, semantic role palette, Noto Sans CJK JP, 34/24 type scale),
+emit DOT with `abc.tools.diagram.graphviz/dot`, and render on demand with
+`dot -Tsvg` — the development shell pins font resolution to the store, and
+the `figure-render-smoke` check keeps that path exercised.
 
 Each layer records the identity inputs that can invalidate it. A text-only
 change invalidates that work's downstream artifacts. A parser, mapping, TEI

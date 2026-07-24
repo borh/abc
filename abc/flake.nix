@@ -334,6 +334,11 @@
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
           };
+          figureFontConfig = pkgs.makeFontsConf {
+            fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
+          };
           manifestLines =
             path:
             builtins.filter (line: line != "" && !(pkgs.lib.hasPrefix "#" line)) (
@@ -427,6 +432,38 @@
 
                 mkdir -p "$out"
                 echo "ADR + architecture diagrams current; header/sidecar/stage lints clean." > "$out/result.txt"
+              '';
+
+          # Retained-capability smoke: presentation figures stay renderable
+          # on demand with a store-resolved Noto Sans CJK JP. This is not a
+          # drift gate — it never compares bytes against the frozen SVGs.
+          figure-render-smoke =
+            pkgs.runCommand "abc-figure-render-smoke"
+              {
+                nativeBuildInputs = [
+                  pkgs.graphviz
+                  pkgs.fontconfig
+                ];
+                FONTCONFIG_FILE = figureFontConfig;
+              }
+              ''
+                export XDG_CACHE_HOME="$TMPDIR/font-cache"
+                mkdir -p "$XDG_CACHE_HOME"
+                resolved="$(fc-match -f '%{file}' 'Noto Sans CJK JP')"
+                case "$resolved" in
+                  /nix/store/*) ;;
+                  *)
+                    echo "Noto Sans CJK JP resolved outside the store: $resolved" >&2
+                    exit 1
+                    ;;
+                esac
+                mkdir -p "$out"
+                for figure in ${./docs/figures}/*.dot; do
+                  svg="$out/$(basename "$figure" .dot).svg"
+                  dot -Tsvg "$figure" -o "$svg"
+                  test -s "$svg"
+                done
+                echo "Presentation figures render with store-resolved fonts." > "$out/result.txt"
               '';
 
           clj-kondo =
@@ -755,10 +792,19 @@
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
           };
+          # Isolated Fontconfig so on-demand `dot -Tsvg` figure renders resolve
+          # Noto Sans CJK JP from the store instead of machine-local fonts.
+          # Deliberately minimal: no fonttools/subsetting, no render gate.
+          figureFontConfig = pkgs.makeFontsConf {
+            fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
+          };
         in
         {
           default = pkgs.mkShell {
             TEI_SCHEMA_PATH = "${tei.teiAllSchema}";
+            FONTCONFIG_FILE = "${figureFontConfig}";
             packages = with pkgs; [
               cljfmt
               clojure
@@ -768,6 +814,7 @@
               jdk21
               jq
               libxml2
+              noto-fonts-cjk-sans
             ];
           };
 

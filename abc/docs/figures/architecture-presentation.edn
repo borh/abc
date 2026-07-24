@@ -1,3 +1,6 @@
+;; Frozen source metadata for the JADH 2026 presentation figures in this
+;; directory. Nothing reads this file; the rendering pipeline that consumed
+;; it was retired (see docs/superpowers/reports/2026-07-24-system-simplification-audit.md, F2).
 {:version 1
  :coordinates
  {"manifest_schema_hash" {:family :publication :label "Manifest schema"}

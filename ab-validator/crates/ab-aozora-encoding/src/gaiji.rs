@@ -402,19 +402,19 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
 ///   - a description embedding `［＃` (a nested annotation opener would leak a
 ///     bare `［＃` outside the directive wrapper, violating the Tier A canary),
 ///     and
-///   - a description carrying structural `「…」` quotes, *except* the
-///     composed-glyph / 正字 / 屋号 forms (balanced quotes anchored by a
-///     trailing `、mencode`; a quote-bearing description without a mencode
-///     anchor stays rejected, since the serializer's wrapper would unbalance
-///     it).
+///   - a description carrying structural `「…」` quotes without a trailing
+///     `、mencode` anchor (the anchor is what marks the body as a glyph
+///     reference rather than a directive quoting text). Anchored forms are
+///     kept VERBATIM — including editor quote typos with an orphan 「 or 」
+///     (`くさかんむり／（月＋曷）」、第3水準…`) — so serialization reproduces
+///     the source bytes and the reference stays resolvable.
 #[must_use]
 pub fn gaiji_description_serializable(description: &str, has_mencode: bool) -> bool {
     if description.contains("［＃") {
         return false;
     }
     if description.contains(['「', '」']) {
-        let balanced = description.matches('「').count() == description.matches('」').count();
-        return balanced && has_mencode;
+        return has_mencode;
     }
     true
 }
@@ -1096,6 +1096,33 @@ mod tests {
         // A non-numeral `ローマ数字` body and out-of-range N stay directives.
         assert!(recognize_gaiji_body("ローマ数字").is_none());
         assert!(recognize_gaiji_body("ローマ数字0").is_none());
+    }
+
+    #[test]
+    fn recognize_dictionary_description_with_unanchored_page_line() {
+        // A near-miss page-line locator (`87-16`) normally needs a real
+        // mencode anchor, but when the description itself is a dictionary
+        // entry the reference is unambiguous: the name alone resolves the
+        // glyph and the locator is provenance.
+        let parsed = recognize_gaiji_body("小書き平仮名ん、87-16").expect("dictionary-described");
+        assert_eq!(parsed.description, "小書き平仮名ん");
+        assert_eq!(parsed.mencode, Some("87-16"));
+        // A non-dictionary description with the same unanchored locator
+        // stays a plain directive (the original FP guard).
+        assert!(recognize_gaiji_body("ルビの「おや」は底本では「をや」、58-下15").is_none());
+    }
+
+    #[test]
+    fn recognize_unbalanced_quote_typo_with_mencode_anchor() {
+        // Editor typo: the opening 「 was dropped, but the trailing real
+        // mencode anchors the reference. The description is kept verbatim
+        // (orphan quote included) so serialization reproduces the source.
+        let parsed = recognize_gaiji_body("くさかんむり／（月＋曷）」、第3水準1-91-26")
+            .expect("mencode-anchored typo");
+        assert_eq!(parsed.description, "くさかんむり／（月＋曷）」");
+        assert_eq!(parsed.mencode, Some("第3水準1-91-26"));
+        // Without a mencode anchor an unbalanced-quote body stays out.
+        assert!(recognize_gaiji_body("くさかんむり／（月＋曷）」").is_none());
     }
 
     #[test]

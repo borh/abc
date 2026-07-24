@@ -21,6 +21,10 @@ pub use classified_source::{
 use sha2::{Digest, Sha256};
 
 use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json};
+// Body/tail boundary detection is the shared `ab-source-syntax` authority
+// so the checker's comparison source (`ab-check::body_text`) can never
+// drift from the parser's own cut.
+use ab_source_syntax::aozora_body_range;
 
 /// The sanitize stage's `Diagnostic` type is the exact same
 /// `ab_aozora_spec::Diagnostic` the facade re-exports as `Diagnostic` (and
@@ -373,76 +377,6 @@ fn sanitize_for_aat(text: &str) -> SanitizedForAat {
         tail,
         tail_offset: tail_start,
     }
-}
-
-/// Returns the BODY range (unchanged boundary semantics: trailing blank
-/// lines before the `底本：` line are trimmed off the body end) and the
-/// TAIL start offset — the byte offset of the `底本：` line itself, NOT
-/// `body_range.end` (blank lines between the last body content and the
-/// `底本：` line belong to neither region). When no `底本：` line exists,
-/// both `body_range.end` and the tail start are `source.len()` (no tail).
-fn aozora_body_range(source: &str) -> (Range<usize>, usize) {
-    let mut separators = Vec::new();
-    let mut start = 0_usize;
-    for line in source.split_inclusive('\n') {
-        let end = start + line.len();
-        if is_aozora_separator(line) {
-            separators.push((start, end));
-        }
-        start = end;
-    }
-
-    let mut body_start = 0_usize;
-    if separators.len() >= 2 {
-        let legend = &source[separators[0].1..separators[1].0];
-        if legend.contains("テキスト中に現れる記号について") || legend.contains("《》：ルビ")
-        {
-            body_start = skip_blank_lines(source, separators[1].1);
-        }
-    }
-
-    let mut body_end = source.len();
-    let mut tail_start = source.len();
-    for (line_start, line) in lines_from(source, body_start) {
-        if line.trim_start().starts_with("底本：") {
-            body_end = trim_trailing_blank_lines(source, line_start);
-            tail_start = line_start;
-            break;
-        }
-    }
-
-    (body_start..body_end, tail_start)
-}
-
-fn is_aozora_separator(line: &str) -> bool {
-    let trimmed = line.trim();
-    trimmed.len() >= 10 && trimmed.chars().all(|ch| ch == '-')
-}
-
-fn skip_blank_lines(source: &str, mut offset: usize) -> usize {
-    while let Some(line) = source[offset..].split_inclusive('\n').next() {
-        if !line.trim().is_empty() {
-            break;
-        }
-        offset += line.len();
-        if offset >= source.len() {
-            break;
-        }
-    }
-    offset
-}
-
-fn trim_trailing_blank_lines(source: &str, offset: usize) -> usize {
-    source[..offset].trim_end_matches(['\n', '\r']).len()
-}
-
-fn lines_from(source: &str, offset: usize) -> impl Iterator<Item = (usize, &str)> {
-    let mut cursor = offset;
-    source[offset..].split_inclusive('\n').map(move |line| {
-        let start = cursor;
-        cursor += line.len();
-        (start, line)
-    })
 }
 
 #[allow(

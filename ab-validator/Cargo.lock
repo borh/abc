@@ -42,6 +42,7 @@ dependencies = [
  "ab-aozora-facade",
  "ab-aozora-pipeline",
  "ab-rq-artifact-store",
+ "ab-source-syntax",
  "anyhow",
  "encoding_rs",
  "hegeltest",

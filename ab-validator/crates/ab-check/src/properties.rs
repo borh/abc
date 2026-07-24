@@ -139,34 +139,14 @@ impl Property for RubyCompleteness {
 
 #[must_use]
 pub fn body_text(text: &str) -> &str {
-    let mut separator_count = 0;
-    let mut body_start = 0;
-    let mut offset = 0;
-    for line in text.split_inclusive('\n') {
-        let trimmed = line.trim_end_matches(['\r', '\n']);
-        if trimmed.chars().all(|ch| ch == '-') && trimmed.chars().count() >= 20 {
-            separator_count += 1;
-            if separator_count == 2 {
-                body_start = offset + line.len();
-                break;
-            }
-        }
-        offset += line.len();
-    }
-    let body = &text[body_start..];
-    // The terminal-provenance trailer is a line that STARTS with 底本：.
-    // A mid-line occurrence (most commonly 翻訳の底本： in translated
-    // works) is body text and must not truncate the comparison source.
-    let mut body_end = body.len();
-    let mut line_offset = 0;
-    for line in body.split_inclusive('\n') {
-        if line.starts_with("底本：") || line.starts_with("底本:") {
-            body_end = line_offset;
-            break;
-        }
-        line_offset += line.len();
-    }
-    &body[..body_end]
+    // The parser's own boundary authority: the header is cut only when
+    // the first two dash-runs fence the editorial legend (dash-runs used
+    // as scene/poem dividers leave the body uncut), and the tail is the
+    // line-anchored 底本： trailer (mid-line 翻訳の底本： is body text).
+    // Sharing the one implementation keeps this comparison source from
+    // drifting against the projection the parser actually emitted.
+    let (range, _tail_start) = ab_source_syntax::aozora_body_range(text);
+    &text[range]
 }
 
 impl Property for GaijiResolution {
@@ -294,6 +274,17 @@ mod tests {
         assert!(body.contains("翻訳の底本：Foo"));
         assert!(body.contains("まだ本文。"));
         assert!(!body.contains("「全集」"));
+    }
+
+    /// body_text is the parser's own boundary authority
+    /// (`ab_source_syntax::aozora_body_range`): dash-runs used as
+    /// scene/poem dividers carry no legend between the first two, so the
+    /// header cut must not fire and the whole source stays comparable.
+    #[test]
+    fn body_text_keeps_content_dash_runs_uncut() {
+        let text = "小熊秀雄全集-1\n短歌集\n\n第一歌\n--------------------\n\
+                    第二歌\n--------------------\n第三歌\n";
+        assert_eq!(body_text(text), text);
     }
 
     /// The parser's sanitize stage composes Aozora accent notation

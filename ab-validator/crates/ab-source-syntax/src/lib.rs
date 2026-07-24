@@ -98,6 +98,76 @@ pub struct SourceAnnotationsBoth<'a> {
     pub full: SourceAnnotations<'a>,
 }
 
+/// Returns the Aozora BODY range and TAIL start of a source text — the one
+/// authority for "where does the body start/end", shared by the parser
+/// (`ab-aozora-aat` sanitize stage) and the checker (`ab-check::body_text`)
+/// so the two sides of any source↔AAT comparison cannot drift.
+///
+/// Head: the header is cut ONLY when the region between the first two
+/// dash-run separator lines carries the editorial legend
+/// (テキスト中に現れる記号について / 《》：ルビ). Dash-runs used as scene or
+/// poem dividers carry no legend and leave the body uncut.
+///
+/// Tail: the terminal-provenance trailer is the line whose
+/// (indent-trimmed) start is `底本：`; trailing blank lines before it are
+/// trimmed off the body end, and the tail start is the `底本：` line
+/// itself. A mid-line occurrence (翻訳の底本：) is body text. When no
+/// `底本：` line exists, both the body end and the tail start are
+/// `source.len()`.
+#[must_use]
+pub fn aozora_body_range(source: &str) -> (core::ops::Range<usize>, usize) {
+    let mut separators = Vec::new();
+    let mut start = 0_usize;
+    for line in source.split_inclusive('\n') {
+        let end = start + line.len();
+        if is_aozora_separator(line) {
+            separators.push((start, end));
+        }
+        start = end;
+    }
+
+    let mut body_start = 0_usize;
+    if separators.len() >= 2 {
+        let legend = &source[separators[0].1..separators[1].0];
+        if legend.contains("テキスト中に現れる記号について") || legend.contains("《》：ルビ")
+        {
+            body_start = skip_blank_lines(source, separators[1].1);
+        }
+    }
+
+    let mut body_end = source.len();
+    let mut tail_start = source.len();
+    let mut cursor = body_start;
+    for line in source[body_start..].split_inclusive('\n') {
+        if line.trim_start().starts_with("底本：") {
+            body_end = source[..cursor].trim_end_matches(['\n', '\r']).len();
+            tail_start = cursor;
+            break;
+        }
+        cursor += line.len();
+    }
+
+    (body_start..body_end, tail_start)
+}
+
+fn is_aozora_separator(line: &str) -> bool {
+    let trimmed = line.trim();
+    trimmed.len() >= 10 && trimmed.chars().all(|ch| ch == '-')
+}
+
+fn skip_blank_lines(source: &str, mut offset: usize) -> usize {
+    while let Some(line) = source[offset..].split_inclusive('\n').next() {
+        if !line.trim().is_empty() {
+            break;
+        }
+        offset += line.len();
+        if offset >= source.len() {
+            break;
+        }
+    }
+    offset
+}
+
 #[must_use]
 pub fn comparison_lossy_body(txt: &str) -> Cow<'_, str> {
     if !needs_lossy_projection(txt) {
@@ -964,6 +1034,35 @@ fn is_note_boundary(ch: char) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn aozora_body_range_cuts_legend_fenced_header() {
+        let src = "題名\n著者\n\n----------\n【テキスト中に現れる記号について】\n《》：ルビ\n----------\n\n本文です。\n\n底本：底本社\n";
+        let (body, tail_start) = aozora_body_range(src);
+        assert_eq!(&src[body], "本文です。");
+        assert!(src[tail_start..].starts_with("底本："));
+    }
+
+    #[test]
+    fn aozora_body_range_keeps_content_dash_runs_uncut() {
+        // Dash-run lines used as scene/poem dividers carry no legend
+        // between the first two runs, so the header cut must not fire
+        // (e.g. the 小熊秀雄全集 volumes, poem-per-fence collections).
+        let src = "小熊秀雄全集-1\n短歌集\n\n第一歌\n--------------------\n第二歌\n--------------------\n第三歌\n";
+        let (body, tail_start) = aozora_body_range(src);
+        assert_eq!(body, 0..src.len());
+        assert_eq!(tail_start, src.len());
+    }
+
+    #[test]
+    fn aozora_body_range_tail_cut_is_line_anchored() {
+        // 翻訳の底本： mid-body must not truncate; the trailer is the
+        // line whose (indent-trimmed) start is 底本：.
+        let src = "本文の前半。\n翻訳の底本：原書\n本文の後半。\n底本：底本社\n";
+        let (body, tail_start) = aozora_body_range(src);
+        assert_eq!(&src[body], "本文の前半。\n翻訳の底本：原書\n本文の後半。");
+        assert!(src[tail_start..].starts_with("底本："));
+    }
 
     #[test]
     fn comparison_lossy_body_without_markup_borrows() {

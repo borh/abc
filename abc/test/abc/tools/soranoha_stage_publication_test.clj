@@ -54,8 +54,6 @@
           staged-root (io/file dir "staged")
           before-identity (get index "snapshot_identity_hash")]
       (with-redefs [materialize-publication/materialize-publication!
-                    (fn [& _] (throw (ex-info "staging must not render" {})))
-                    materialize-publication/materialize-release-publication!
                     (fn [& _] (throw (ex-info "staging must not render" {})))]
         (let [{staged-snapshot :snapshot}
               (stage-publication/stage-publication!

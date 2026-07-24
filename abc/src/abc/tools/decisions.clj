@@ -3,6 +3,7 @@
    schema, and corpus semantic checks over docs/adr/decisions.edn.
    Replaces the retired abc.tools.adr Markdown grammar."
   (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.malli :as am]
             [abc.tools.path-containment :as containment]
             [babashka.fs :as fs]
@@ -11,7 +12,9 @@
             [malli.core :as m]
             [malli.error :as me]
             [malli.registry :as mr])
-  (:import [java.io PushbackReader StringReader]))
+  (:import [java.io PushbackReader StringReader]
+           [java.nio ByteBuffer]
+           [java.nio.charset CodingErrorAction StandardCharsets]))
 
 (def corpus-file "docs/adr/decisions.edn")
 
@@ -20,9 +23,20 @@
 
 (def ^:private eof ::eof)
 
+(defn- decode-strict-utf8
+  "Decode bytes as EDN source, failing (rather than substituting) on
+   malformed or unmappable byte sequences."
+  [^bytes bytes]
+  (let [decoder (doto (.newDecoder StandardCharsets/UTF_8)
+                  (.onMalformedInput CodingErrorAction/REPORT)
+                  (.onUnmappableCharacter CodingErrorAction/REPORT))]
+    (str (.decode decoder (ByteBuffer/wrap bytes)))))
+
 (defn load-corpus
-  "Read exactly one EDN form (followed by EOF) from path.
-   Returns {:corpus value} or {:problems [{:kind :invalid-edn …}]}."
+  "Read the decisions file's bytes exactly once, decode them as strict
+   UTF-8, and parse exactly one EDN form (followed by EOF) from that text.
+   Returns {:corpus value :bytes bytes} — the same bytes callers may hash
+   without a second read — or {:problems [{:kind :invalid-edn …}]}."
   [path]
   (let [fail (fn [msg] {:problems [(problem :invalid-edn (str path) msg)]})]
     (cond
@@ -30,13 +44,15 @@
       (fs/directory? path) (fail "decisions path is not a file")
       :else
       (try
-        (with-open [r (PushbackReader. (StringReader. (slurp (fs/file path))))]
-          (let [form (edn/read {:eof eof} r)
-                extra (edn/read {:eof eof} r)]
-            (cond
-              (= eof form) (fail "decisions file contains no EDN form")
-              (not= eof extra) (fail "decisions file must contain exactly one EDN form")
-              :else {:corpus form})))
+        (let [bytes (fs/read-all-bytes path)
+              text (decode-strict-utf8 bytes)]
+          (with-open [r (PushbackReader. (StringReader. text))]
+            (let [form (edn/read {:eof eof} r)
+                  extra (edn/read {:eof eof} r)]
+              (cond
+                (= eof form) (fail "decisions file contains no EDN form")
+                (not= eof extra) (fail "decisions file must contain exactly one EDN form")
+                :else {:corpus form :bytes bytes}))))
         (catch Exception e
           (fail (str "decisions file is not readable EDN: "
                      (.getMessage e))))))))
@@ -146,11 +162,44 @@
               (pr-str (me/humanize explanation)))]
     []))
 
-;; --- semantic checks ---------------------------------------------------------
-;; These run only on a shape-valid corpus and may assume well-formed records.
+;; --- shared strict corpus boundary -------------------------------------------
+;; Composes load-corpus and shape-problems into the one authority other
+;; namespaces (parser release qualification, publication admissibility, …)
+;; depend on. This boundary promises strict load plus shape only; corpus
+;; semantic governance (relation graphs, evidence paths, narrative files)
+;; stays out of scope and lives in the checks below.
 
 (defn- by-slug [corpus]
   (into {} (map (juxt :slug identity)) (:decisions corpus)))
+
+(defn load-shape-valid-corpus!
+  "Strictly load and shape-validate the decisions corpus at path.
+
+   Returns {:corpus corpus :content-hash sha256}, where content-hash
+   authenticates the exact bytes the corpus was parsed from. On any load or
+   shape failure, throws ex-info carrying a stable :errors vector of
+   message strings."
+  [path]
+  (let [{:keys [corpus problems bytes]} (load-corpus path)
+        file (str path)
+        problems (into (vec problems)
+                       (when corpus (shape-problems corpus file)))]
+    (if (seq problems)
+      (throw (ex-info "decisions corpus invalid"
+                      {:errors (mapv :message problems)}))
+      {:corpus corpus
+       :content-hash (hash/format-sha256 (hash/sha256-bytes bytes))})))
+
+(defn decision-by-slug!
+  "Return the one decision record in corpus with slug. Throws ex-info
+   carrying a stable :errors vector when no record has that slug."
+  [corpus slug]
+  (or (get (by-slug corpus) slug)
+      (throw (ex-info "decision slug not found"
+                      {:errors [(str "no decision record has slug " (pr-str slug))]}))))
+
+;; --- semantic checks ---------------------------------------------------------
+;; These run only on a shape-valid corpus and may assume well-formed records.
 
 (defn- lifecycle-edges [record type & {:keys [unscoped-only]}]
   (for [r (:relations record)

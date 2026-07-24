@@ -1,5 +1,6 @@
 (ns abc.tools.decisions-test
   (:require [abc.tools.decisions :as d]
+            [abc.tools.hash :as hash]
             [babashka.fs :as fs]
             [clojure.test :refer [deftest is]]))
 
@@ -135,6 +136,70 @@
                   (assoc :claims [{:id :c1 :statement "promotion condition"}]))]
     (is (empty? (shape-of draft))
         "draft claims may omit kind and evidence")))
+
+;; --- shared strict corpus boundary -------------------------------------------
+;; load-shape-valid-corpus! and decision-by-slug! promise strict load plus
+;; shape only; corpus semantic governance stays out of this boundary.
+
+(defn- load-shape-valid-str [s]
+  (let [f (str (fs/create-temp-file {:suffix ".edn"}))]
+    (spit f s)
+    (d/load-shape-valid-corpus! f)))
+
+(defn- thrown-errors [thunk]
+  (try
+    (thunk)
+    ::did-not-throw
+    (catch clojure.lang.ExceptionInfo e
+      (:errors (ex-data e)))))
+
+(deftest load-shape-valid-corpus-succeeds-on-one-valid-form
+  (let [s (pr-str {:decisions [valid-record]})
+        f (str (fs/create-temp-file {:suffix ".edn"}))]
+    (spit f s)
+    (let [{:keys [corpus content-hash]} (d/load-shape-valid-corpus! f)]
+      (is (= {:decisions [valid-record]} corpus))
+      (is (= (hash/format-sha256 (hash/sha256-bytes (.getBytes s "UTF-8")))
+             content-hash)
+          "content-hash is derived from the same bytes read for the corpus"))))
+
+(deftest load-shape-valid-corpus-rejects-empty-file
+  (let [errors (thrown-errors #(load-shape-valid-str ""))]
+    (is (vector? errors))
+    (is (seq errors))))
+
+(deftest load-shape-valid-corpus-rejects-malformed-edn
+  (doseq [s ["{:decisions [" "{:decisions ]}" "#=(boom)"]]
+    (let [errors (thrown-errors #(load-shape-valid-str s))]
+      (is (vector? errors) s)
+      (is (seq errors) s))))
+
+(deftest load-shape-valid-corpus-rejects-trailing-second-form
+  (let [errors (thrown-errors #(load-shape-valid-str "{:decisions []} {:junk true}"))]
+    (is (some #(re-find #"exactly one EDN form" %) errors))))
+
+(deftest load-shape-valid-corpus-rejects-invalid-shape
+  (let [errors (thrown-errors
+                #(load-shape-valid-str
+                  (pr-str {:decisions [(assoc valid-record :status :acceptedd)]})))]
+    (is (vector? errors))
+    (is (seq errors))))
+
+(deftest load-shape-valid-corpus-rejects-duplicate-slugs
+  (let [errors (thrown-errors
+                #(load-shape-valid-str
+                  (pr-str {:decisions [valid-record valid-record]})))]
+    (is (some #(re-find #"unique" %) errors))))
+
+(deftest decision-by-slug-returns-the-one-record
+  (let [corpus {:decisions [valid-record]}]
+    (is (= valid-record (d/decision-by-slug! corpus (:slug valid-record))))))
+
+(deftest decision-by-slug-rejects-missing-slug
+  (let [corpus {:decisions [valid-record]}
+        errors (thrown-errors #(d/decision-by-slug! corpus "no-such-slug"))]
+    (is (vector? errors))
+    (is (seq errors))))
 
 ;; --- semantic checks --------------------------------------------------------
 

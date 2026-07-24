@@ -760,22 +760,20 @@
 
 (defn- load-decision-statuses
   "Resolve the promotion-dependency decision statuses from the authoritative
-  decisions.edn corpus. Fails closed: an unreadable or shape-invalid corpus
-  throws with :errors so promotion-errors reports it like any other
-  resolution failure, and statuses are only trusted from a corpus that
-  passes the decision schema (unique slugs, well-formed records)."
+  decisions.edn corpus via the shared strict corpus boundary. Fails closed:
+  an unreadable or shape-invalid corpus throws with :errors so
+  promotion-errors reports it like any other resolution failure, and
+  statuses are only trusted from a corpus that passes the decision schema
+  (unique slugs, well-formed records). A missing dependency decision
+  resolves to a nil status, which the same \"is not accepted\" check below
+  rejects identically to a present-but-wrong-status decision."
   [decisions-path]
-  (let [{:keys [corpus problems]} (decisions/load-corpus decisions-path)
-        problems (concat problems
-                         (when corpus
-                           (decisions/shape-problems corpus decisions-path)))]
-    (when (seq problems)
-      (throw (ex-info "decisions corpus invalid"
-                      {:errors (mapv :message problems)})))
+  (let [{:keys [corpus]} (decisions/load-shape-valid-corpus! decisions-path)]
     (into {}
           (for [[label slug] promotion-dependency-slugs]
-            [label (some #(when (= slug (:slug %)) (:status %))
-                         (:decisions corpus))]))))
+            [label (try
+                     (:status (decisions/decision-by-slug! corpus slug))
+                     (catch clojure.lang.ExceptionInfo _ nil))]))))
 
 (defn- promotion-value-errors
   [{:keys [candidate authorization capture evaluation current_registry_ref

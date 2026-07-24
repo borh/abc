@@ -330,6 +330,44 @@
            (reason #(inspection [[path (utf8-bytes "x")]])))
         path)))
 
+(deftest trailing-garbage-zip-recovers-with-provenance-test
+  ;; The 58100_txt_60357.zip shape: a fully intact archive followed by
+  ;; trailing bytes that carry a decoy EOCD (claimed entries, central
+  ;; directory offset pointing at a local header), which makes the zip
+  ;; reader reject the whole file. Admission recovers by retrying at the
+  ;; true archive end and records the trimmed byte count; the archive
+  ;; identity stays the hash of the file as shipped, garbage included.
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]])]
+    (let [decoy-eocd (byte-array [80 75 5 6      ; PK\5\6
+                                  0 0 0 0        ; disk numbers
+                                  5 0 5 0        ; claimed entry counts
+                                  10 0 0 0       ; cd size
+                                  0 0 0 0        ; cd offset -> local header
+                                  0 0])]         ; comment length
+      (with-open [out (java.io.FileOutputStream. zip true)]
+        (.write out decoy-eocd))
+      ;; Pin the reader failure on the whole file (the zip reader's exact
+      ;; tolerance of a decoy EOCD varies by corruption shape); the retry
+      ;; at the true archive end runs the real scan.
+      (let [original-scan @#'source-bundle/scan-open-zip
+            calls (atom 0)
+            inspection
+            (with-redefs-fn
+              {#'source-bundle/scan-open-zip
+               (fn [archive-path stable-file limits]
+                 (if (= 1 (swap! calls inc))
+                   (#'source-bundle/unreadable-zip!
+                    archive-path stable-file
+                    (IOException.
+                     "Central directory is empty, can't expand corrupt archive."))
+                   (original-scan archive-path stable-file limits)))}
+              #(source-bundle/inspect-zip zip))]
+        (is (= (count decoy-eocd) (:trailing-garbage-trimmed inspection)))
+        (is (= "work.txt" (:primary-text-member inspection)))
+        (is (= (hash/format-sha256 (files/sha256-file zip))
+               (:archive-hash inspection)))))))
+
 (deftest unreadable-zip-is-an-admission-error-test
   (with-zips [file (temp-file ".zip")]
     (spit file "not a ZIP")

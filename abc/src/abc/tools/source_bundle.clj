@@ -386,12 +386,85 @@
         (Files/deleteIfExists staged)
         (throw t)))))
 
+(defn- eocd-candidate-ends
+  "Byte offsets just past each plausible end-of-central-directory record
+  in the archive, scanning backward (candidate end = signature + fixed 22
+  bytes + declared comment length, kept only when it fits the file)."
+  [^bytes data]
+  (let [n (alength data)]
+    (loop [i (- n 22)
+           ends []]
+      (if (neg? i)
+        ends
+        (if (and (= 80 (aget data i))
+                 (= 75 (aget data (inc i)))
+                 (= 5 (aget data (+ i 2)))
+                 (= 6 (aget data (+ i 3))))
+          (let [comment-len (bit-or (bit-and (aget data (+ i 20)) 0xff)
+                                    (bit-shift-left
+                                     (bit-and (aget data (+ i 21)) 0xff) 8))
+                end (+ i 22 comment-len)]
+            (recur (dec i) (if (<= end n) (conj ends end) ends)))
+          (recur (dec i) ends))))))
+
+(defn- stage-truncated-archive! [^bytes data end]
+  (let [attributes (make-array java.nio.file.attribute.FileAttribute 0)
+        staged (Files/createTempFile
+                "abc-source-bundle-trimmed-" ".zip" attributes)]
+    (try
+      (Files/write staged (java.util.Arrays/copyOfRange data 0 (int end))
+                   (make-array java.nio.file.OpenOption 0))
+      (when-not (.setReadOnly (.toFile staged))
+        (throw (IOException. "could not make trimmed source archive read-only")))
+      (.toFile staged)
+      (catch Throwable t
+        (Files/deleteIfExists staged)
+        (throw t)))))
+
+(defn- unreadable-zip-error? [t]
+  (and (instance? clojure.lang.ExceptionInfo t)
+       (= :unreadable-zip (:reason (ex-data t)))))
+
+(defn- scan-zip-with-trailing-garbage-recovery
+  "Retry an unreadable archive at earlier end-of-central-directory
+  candidates: some shipped archives (e.g. Aozora's 58100_txt_60357.zip)
+  carry trailing bytes with a decoy EOCD after the intact archive, which
+  the zip reader trusts and then rejects. A successful retry records the
+  trimmed byte count; the archive identity stays the hash of the file as
+  shipped, garbage included."
+  [zip-file staged limits original-error]
+  (let [data (Files/readAllBytes (.toPath ^java.io.File staged))
+        n (alength data)
+        candidates (->> (eocd-candidate-ends data)
+                        (filter #(< % n))
+                        (sort-by -)
+                        (take 3))]
+    (or (some (fn [end]
+                (let [trimmed (stage-truncated-archive! data end)]
+                  (try
+                    (-> (scan-open-zip zip-file trimmed limits)
+                        (assoc :archive-hash (hash/format-sha256
+                                              (files/sha256-file staged))
+                               :trailing-garbage-trimmed (- n end)))
+                    (catch clojure.lang.ExceptionInfo e
+                      (when-not (unreadable-zip-error? e) (throw e))
+                      nil)
+                    (finally (files/delete-file! trimmed)))))
+              candidates)
+        (throw original-error))))
+
 (defn scan-zip
   ([zip-file] (scan-zip zip-file default-limits))
   ([zip-file limits]
-   (let [staged (stage-archive! zip-file)]
+   (let [staged (stage-archive! zip-file)
+         limits (merge default-limits limits)]
      (try
-       (scan-open-zip zip-file staged (merge default-limits limits))
+       (try
+         (scan-open-zip zip-file staged limits)
+         (catch clojure.lang.ExceptionInfo e
+           (if (unreadable-zip-error? e)
+             (scan-zip-with-trailing-garbage-recovery zip-file staged limits e)
+             (throw e))))
        (finally (files/delete-file! staged))))))
 
 (defn- validate-admission-collisions! [archive-path members]
@@ -428,13 +501,15 @@
     (when-not (and primary-hash (= primary-hash retained-hash))
       (fail! :primary-text-retention-mismatch archive-path
              {:primary-text-member primary-path}))
-    {:identity-object identity-object
-     :bundle-hash (bundle-identity-hash identity-object)
-     :archive-hash (:archive-hash scan)
-     :members members
-     :primary-text-member primary-path
-     :primary-text-hash primary-hash
-     :primary-text-bytes primary-bytes}))
+    (cond-> {:identity-object identity-object
+             :bundle-hash (bundle-identity-hash identity-object)
+             :archive-hash (:archive-hash scan)
+             :members members
+             :primary-text-member primary-path
+             :primary-text-hash primary-hash
+             :primary-text-bytes primary-bytes}
+      (:trailing-garbage-trimmed scan)
+      (assoc :trailing-garbage-trimmed (:trailing-garbage-trimmed scan)))))
 
 (defn inspect-zip
   ([zip-file] (inspect-zip zip-file default-limits))

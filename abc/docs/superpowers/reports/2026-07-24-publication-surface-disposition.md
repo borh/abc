@@ -1,6 +1,6 @@
-# Publication Surface Disposition — Sole Publication Producer, Task 1
+# Publication Surface Disposition — Sole Publication Producer, Task 1 (closed Task 13)
 
-Date: 2026-07-24
+Date: 2026-07-24 (opened); closed 2026-07-25 (Task 13)
 Companion to `abc/docs/superpowers/specs/2026-07-24-sole-publication-producer-design.md`
 and `abc/docs/superpowers/plans/2026-07-24-sole-publication-producer.md`. This
 report changes no production code. It is the closed disposition audit
@@ -8,6 +8,17 @@ required before Lane 2 may delete anything: one row per Soranoha command,
 Clojure entry point, root/`abc` flake app and alias, schema/example, Accepted
 claim, active document, in-repository caller, and test family touched by the
 migration.
+
+**Closeout note (Task 13):** every disposition row below was written at Task 1
+and corrected/rebased in Task 7; none is `unknown` (verified by `grep -i
+unknown` over this file — the only disposition-relevant match is the
+vocabulary sentence in §0 that states the rule; the other two matches below
+are this closeout's own prose citing that check and an unrelated `--version`
+string, not unresolved rows). §§9-13 below record the measured
+before/after deltas, the added-vs-deleted separation the brief requires, and
+the honestly-deferred follow-ups. Measurements compare `main@d5048939` (the
+migration's branch point) against this branch's HEAD at close
+(`605a453e`).
 
 ## Disposition vocabulary
 
@@ -264,7 +275,251 @@ only their apparatus tests):
    retained producer) with coverage re-established in Task 8 (layout-report,
    stage-publication, root-reference validation) and Task 10 (publication-report).
    The projection **commands** themselves are all retained.
-3. No root-flake CI check yet invokes the real `soranoha build-publication`
-   app over a committed fixture through the flake-exported adapter/parser/
-   mapping paths (plan Lane 0 requirement); this is a gap recorded here, not
-   an existing surface to disposition.
+3. **Resolved in Task 11 — and RED by design, deferred per explicit user
+   decision.** `checks.<system>.publication-build-real-wiring`
+   (`tests/publication-build-real-wiring-smoke.sh`) now invokes the real
+   `soranoha build-publication` app over a committed fixture through the
+   flake-exported adapter/parser/mapping paths, closing the Lane 0 gap this
+   row used to record. Running it (`nix build
+   .#checks.x86_64-linux.publication-build-real-wiring --print-build-logs`)
+   is honestly RED: `release_admissible: false` /
+   `build_exit_code: 1` with two non-rights problems —
+   `release-converter-build-hash-mismatch` (actual
+   `sha256:8073c1dc520f...`, expected `sha256:a2656fc9404b...`) and
+   `release-parser-build-hash-mismatch` (actual `sha256:ff31d3036ab6...`,
+   expected `sha256:482728cad5bc...`, the same accepted P5
+   `ab-aozora` executable hash pinned in
+   `parser_release_authority_test.clj`). This is a genuine
+   candidate-reproducibility drift the authentication code correctly
+   surfaced, not a flake-wiring defect — see §13 for the full record and
+   re-qualification follow-up.
+
+## 9. Measured before/after deltas (Task 13 closeout)
+
+Measured with `git diff --stat d5048939..HEAD`, `git show <rev>:<path> | wc
+-l`, `rg`, and direct `nix build`/`bin/kaocha` runs against a throwaway
+`git worktree add ... d5048939` checkout of the branch point (removed after
+measurement; no files from it are part of this commit).
+
+### 9.1 Retired-family source/test LOC (the four retiring commands and their
+exclusive apparatus, per §§1/8)
+
+| File | Before (d5048939) | After (HEAD) | Δ | Note |
+| --- | --- | --- | --- | --- |
+| `abc/src/abc/tools/soranoha.clj` | 1296 | 424 | **−872** | Dispatcher shrinks from 15 to 11 commands (§9.2); every internal helper exclusive to `snapshot-index`/`reproduce`/`publication-rehearsal`/`validate-workflow`/`materialize-snapshot-root!` (`build-snapshot-index`, `write-parser-ir-artifacts!`, `write-publication-artifacts!`, `write-annotation-artifacts!`, `materialization-entries`, `run-summary`, `materialize-entry!`, `validate-annotation-manifests!`, `materialize-snapshot-root!`, `reproduce!`, `validate-manifest-reference-fields!`, `validate-loose-reference!`, `validate-archive-member-reference!`, `validate-run-summary!`, `validate-workflow!`, `zstd-archives`, `archive-summary`, `validate-staged-root!`, `publication-rehearsal-report`, `publication-rehearsal-steps`, `publication-rehearsal!`, plus their private generated-fixture/analysis-recipe helpers — 39 `defn`/`defn-` forms total) is gone. The 11 retained commands (`list-request-sets`, `explain-request-set`, `resolve-request-set`, `validate`, `explain-snapshot`, `publication-report`, `layout-report`, `stage-publication`, `source-snapshot`, `annotation-join-stats`, `annotation-join-stats-run`) and their thin wrappers remain, unchanged in behavior. |
+| `abc/test/abc/tools/soranoha_test.clj` | 1401 | 1252 | −149 | 15 apparatus/fixture-only tests removed (the 8 named in §8's apparatus table + the 6 fixture-setup tests Task 7 retired + `archive-summary-does-not-descend-through-directory-symlinks-test`), 10 new tests added characterizing `build-publication!`, the rebased `explain-snapshot`/`validate` example-index tests, and the retired-surface-absence proof (`retired-publication-producer-surface-is-absent-test`). Net LOC drop is smaller than the source file's because the surviving/added `build-publication-*` characterization is denser per line than the deleted apparatus. |
+| `abc/test/abc/tools/soranoha_annotation_test.clj` | 104 | 0 (deleted) | **−104** | Its whole fixture was built via the now-retired `materialize-snapshot-root!` + deleted demo snapshot plans; independent annotation coverage remains in `materialize_annotations_test.clj` (untouched). |
+| `abc/data/snapshot-plans/{demo-annotation-ja,demo-basic-ja,smoke-basic-ja}.json` | 270 (fixture JSON, 3 files) | 0 (all deleted) | **−270** | Rehearsal/reproduce/snapshot-index-only fixtures; `full-corpus-*` request-set plans (still used by retained `resolve-request-set`/`build-publication`) are untouched. |
+| **Retired-family total (source + test + apparatus fixtures)** | — | — | **≈ −1,395 lines** | Sum of the four rows above (872 + 149 + 104 + 270); this is the actual deletion the migration bought, not a net-LOC-across-the-whole-diff number. |
+
+### 9.2 Command / alias count
+
+| Surface | Before | After | Δ |
+| --- | --- | --- | --- |
+| `abc.tools.soranoha` dispatch-table commands (`positional-command "..."` entries) | 15 | 11 | **−4** (`snapshot-index`, `reproduce`, `publication-rehearsal`, `validate-workflow` retired; confirmed by direct `grep -n 'positional-command "'` diff against both revisions) |
+| `abc/deps.edn` Soranoha-family aliases (`:abc/soranoha`, `:abc/materialize-import`, `:abc/materialize-publication`, `:abc/materialize-publications-batch`, `:abc/source-snapshot-workset`, `:abc/materialize-source-snapshot`, `:abc/parser-rq-publication-materialize`) | 7 | 7 | **0** — the four retired commands lived inside the single `:abc/soranoha` dispatcher, not as their own aliases, so alias count is unaffected; the reduction is entirely internal to the dispatch table. |
+| Root `flake.nix` exported apps referencing `soranoha`/`materialize-publication*` (`mkAdapterAwareSoranohaApp` wrapper, `soranoha`, `materialize-publication`, `materialize-publications-batch`) | same 3 named apps (refactored to take `system` explicitly; no app added or removed) | same 3 | **0**, refactor only |
+
+### 9.3 Schema count and content
+
+| Metric | Before | After | Δ |
+| --- | --- | --- | --- |
+| Files under `abc/schemas/` | 83 | 83 | **0** — no schema file added or removed by this migration. |
+| `abc/schemas/snapshot-index.schema.json` `"version"` | `0.1.1` | `0.2.0` | In-place identity-v2 cut (§1's `snapshot-index` schema-owner disposition); a new `schema_version: {"const": "0.2.0"}` field was added to the schema body. Same file, new content — not counted as a new schema. |
+| `abc/schemas/soranoha-publication-build-config.schema.json` | present, unversioned bump in Task 4 | present | Content changed (admissibility/parser-identity fields); file count unaffected. |
+
+### 9.4 Namespace-dependency count (`abc.tools.soranoha`'s own `:require`)
+
+| Metric | Before | After | Δ |
+| --- | --- | --- | --- |
+| `abc.tools.*` namespaces required by `soranoha.clj` | 22 | 15 | **−7** |
+
+Removed (no longer needed once the retiring commands and their helpers left
+the dispatcher): `hash`, `manifest-index`, `materialize-analysis`,
+`materialize-annotations`, `materialize-publication`, `parser-evidence`,
+`tar`, `workflow` (8 removed). Added: `publication-release` (1 added, the new
+release-admissibility/verifier boundary the dispatcher's `validate!` path now
+calls through `print-release-verdict!`). Net **8 removed − 1 added = −7**,
+confirmed by direct line count of the `:require` block's `abc.tools` entries
+in both revisions (`22` → `15`).
+
+### 9.5 Standing check / test-suite time
+
+No before/after pair exists for `checks.<system>.publication-build-real-wiring`
+itself — before Task 11 no root-flake check invoked the real build at all
+(the exact gap §2/item-3 above records), so there is nothing to diff it
+against; only its current cost is measurable: one full `nix build
+.#checks.x86_64-linux.publication-build-real-wiring --print-build-logs` run
+(uncached, `--rebuild`-equivalent cost) took **≈1m24s** wall-clock and ends
+RED as described in item 3 above and §13.
+
+The full `abc` Kaocha suite *is* commensurably measurable both sides,
+measured via a throwaway `git worktree add <scratch> d5048939` checkout run
+with the same `TEI_SCHEMA_PATH` nix-store `tei_all.rng` export used on HEAD:
+
+| Metric | Before (d5048939) | After (HEAD) | Δ |
+| --- | --- | --- | --- |
+| `bin/kaocha` (full suite) tests | 1064 | 1124 | **+60** |
+| assertions | 11050 | 11575 | **+525** |
+| wall-clock (`time bin/kaocha`, single uncached run each side) | ≈51.4s | ≈45.2s | not a reliable delta (single-sample, local-machine noise); directionally flat-to-faster despite +60 tests, consistent with the deleted rehearsal/reproduce apparatus (which materialized real filesystem trees per test) being replaced by more, but lighter, `build-publication!`/`parser-release-authority`/`publication-release` characterization tests. Not claimed as a measured performance win — recorded only because the brief asks for standing check time "where measurable." |
+
+## 10. Correctness code ADDED vs. apparatus DELETED (honesty separation, per
+the brief)
+
+The brief requires this report to **not** present net LOC as "architectural
+simplification." The two are kept apart here:
+
+### 10.1 Added — trust/identity correctness code (this is added surface
+area, not a simplification credit)
+
+| File | Status | LOC | Purpose |
+| --- | --- | --- | --- |
+| `abc/src/abc/tools/parser_release_authority.clj` | new | 95 | Authenticates the release parser by binary + mapping hash against the committed P5 qualification provenance (Task 2/3); the fail-closed gate `checks.<system>.publication-build-real-wiring` exercises. |
+| `abc/src/abc/tools/publication_release.clj` | new | 324 | Assembles the one closed release value / `verify-release-root!` recomputable admissibility check (Task 5/9). |
+| `abc/test/abc/tools/parser_release_authority_test.clj` | new | 154 | Characterizes the authentication boundary against the exact committed P5 candidate tuple (`sha256:15affdfb…`/`sha256:6f365a44…`/`sha256:482728cad5…`). |
+| `abc/test/abc/tools/publication_release_test.clj` | new | 360 | Characterizes release assembly/verification. |
+| **Added correctness total** | | **933** | 419 source + 514 test. This is cost paid for trust/identity, credited nowhere as a deletion. |
+
+Also added (smaller, same category): `abc/src/abc/tools/manifest.clj` (+81),
+`abc/src/abc/tools/materialize_import.clj` (+25),
+`abc/src/abc/tools/publication_policy.clj` (+68),
+`abc/test/abc/tools/materialize_import_test.clj` (+52),
+`abc/test/abc/tools/source_assertion_test.clj` (+19, new file), plus growth
+inside `abc/src/abc/tools/snapshot_index.clj` (294→462, +168, the v0.2.0
+identity cut) and `abc/src/abc/tools/soranoha_build_publication.clj`
+(793→1203, +410, absorbing the one real release-composition workflow that
+used to be split across the dispatcher and the rehearsal path) and their
+test files (`snapshot_index_test.clj` 538 lines of diff,
+`soranoha_build_publication_test.clj` +224). None of this growth is "the
+simplification" — it is the correctness apparatus the sole-producer design
+requires, and it is why the whole-repo diffstat (`+5237/−3026`, net +2211
+lines) is *not* the number this report reports as savings.
+
+### 10.2 Deleted — rehearsal/reproduce/snapshot-index apparatus (this is the
+actual simplification)
+
+Per §9.1: **≈1,395 lines** of source + test + fixture apparatus retired
+outright (the four dispatcher commands, their 39 exclusive `soranoha.clj`
+helpers, 15 apparatus tests, one whole annotation-fixture test file, and
+three JSON fixture files), plus the dispatcher's own namespace-dependency
+footprint shrinking by 7 (§9.4). This deletion — not the net LOC delta — is
+the architectural simplification the migration claims: one real
+source-to-release composition (`build-publication!`) replaces the rehearsal/
+reproduction/snapshot-index-producer path that a second, competing assembler
+used to walk.
+
+### 10.3 Why net LOC is not reported as the headline number
+
+Whole-repo `git diff --stat d5048939..HEAD`: **55 files changed, 5237
+insertions(+), 3026 deletions(-)** (net **+2211**). Reporting that number
+alone would read as "the migration added complexity," which is true by raw
+line count and *false* as a characterization of what changed: the added
+lines are almost entirely the new trust boundary (parser/release
+authentication, closed-index assembly, their tests — §10.1) plus the
+snapshot-index v0.2.0 identity cut, while the actual retired surface (§9.1,
+§10.2) is a clean, complete deletion of a second, unauthenticated,
+rehearsal-shaped release path. The simplification is "one producer, fail-
+closed," not "fewer lines."
+
+## 11. Coverage-gap closures (Task 7 deletions, re-established Task 8/Task
+10) — closed
+
+Task 7 retired the command-level tests for `publication-report`,
+`layout-report`, `stage-publication`, and the root-directory-reference path
+of `validate` because their full-materialized-root fixture was unbuildable
+by any retained producer at the time (§8 table above). This is now **closed**:
+
+- **Task 8** re-established `layout-report-command-*` and
+  `stage-publication-command-*` coverage against a committed v0.2.0
+  completed-root fixture, and re-established the root-reference-validation
+  path of `validate` against the same fixture.
+- **Task 10** re-established `publication-report-command-*` coverage
+  (`publications-report.json`) against the same class of completed-root
+  fixture.
+
+No command-level coverage gap from Task 7's deletions remains open; the
+projection commands themselves were never removed (§1), only their
+fixture-dependent tests, and those fixtures now exist.
+
+## 12. `validate-design-bundle` shrink — accepted, out-of-scope, Lane 5
+
+`abc/src/abc/tools/validate_design_bundle.clj` and its consumer surface were
+explicitly out of scope for every task in this migration (Tasks 1–13 never
+read or modified `validate_design_bundle*`; confirmed again here — no task
+report in `.superpowers/sdd/task-{1..13}-report.md` lists it among changed
+files). Its Accepted-claim evidence citations (42 counted against
+`decisions.edn` at Task 1 scoping time) are unaffected by the sole-producer
+cutover and remain a deferred Lane 5 follow-up, not a defect of this
+migration.
+
+## 13. Deferred: P5 candidate reproducibility drift + re-qualification
+follow-up (explicit user decision: land now, re-qualify separately)
+
+Per an explicit user decision to land the sole-publication-producer
+migration now and re-qualify the P5 candidate as a separate, later action,
+this item is recorded here as a real, tracked, currently-RED outcome — not
+smoothed over.
+
+**What is RED and why it is correct for it to be RED:** running
+`nix build .#checks.x86_64-linux.publication-build-real-wiring
+--print-build-logs` (Task 11's real-wiring check, now closing the former
+Lane 0 gap — §2/item 3 above) against the fresh `ab-aozora`/
+`ab-aat-to-parser-ir` build the flake wires today produces
+`release_admissible: false`, `build_exit_code: 1`, and exactly two non-rights
+problems:
+
+- `release-converter-build-hash-mismatch` — actual
+  `sha256:8073c1dc520f2a829375d43473d61a3b9a3dc03bc26df60f0cdd3011a0d1b81f`,
+  expected `sha256:a2656fc9404be9a8eb08e5ba16667db814c8a22ad45bdf684d78973befaf5936`.
+- `release-parser-build-hash-mismatch` — actual
+  `sha256:ff31d3036ab636c2ffec11802d223e78c9be4ca777df191a89c4732b48fb8bff`,
+  expected `sha256:482728cad5bc663c0742ca9e8c6d6fa7031c1a84117d024921cd48628e2eb034`
+  (the same P5 `ab-aozora` executable hash pinned as
+  `p5-ab-aozora-executable-sha256` in
+  `abc/test/abc/tools/parser_release_authority_test.clj:25`).
+
+Task 11 traced the root cause: rebuilding `ab-validator`'s
+`parser-rq-candidate` package fresh from current HEAD reproduces
+`ab-aat-to-parser-ir`'s hash exactly, but **not** `ab-aozora`'s — despite an
+identical `--version` string (`ab-aozora 0.6.0 aat-schema 2 facade 0.3.0
+wire-schema 3 (git unknown)`) in both. The frozen `parser-rq-candidate`
+derivation no longer reproduces its own recorded provenance hash; this is a
+build/dependency-drift reproducibility gap in the *qualified* candidate, and
+the migration's authentication code (`parser-release-authority`,
+`publication-release/verify-release-root!`) is working exactly as designed
+— it exposed a pre-existing drift rather than silently accepting an
+unauthenticated parser build. The release-rights problem this same check
+surfaced at Task 11 time (`release-rights-blocked
+:blocked-pending-assessment-migration`) is no longer present as of this
+measurement — only the two hash-mismatch problems remain.
+
+**Re-qualification follow-up (tracked, not done in this migration):**
+
+1. Re-run the P5 capture (`abc.tools.parser-rq-*` campaign machinery) against
+   the current `ab-aozora`/`ab-aat-to-parser-ir` build to regenerate:
+   - a fresh `executable-provenance.json` under a new
+     `docs/reports/parser-rq/runs/<candidate_ref>/`,
+   - a new `candidate_ref` (currently `sha256:15affdfb677cc6a9…`),
+   - a new `qualification_identity_ref` (currently
+     `sha256:6f365a44b975465943da88d0e3fe4f123672e00913285a3e998ab465bc79edca`).
+2. Update the Accepted `custom-parser-release-qualification` decision
+   (`abc/docs/adr/decisions.edn`, slug at line 1594) to cite the new
+   provenance/candidate/qualification-identity tuple.
+3. Update the pinned hashes in
+   `abc/test/abc/tools/parser_release_authority_test.clj`
+   (`p5-candidate-ref` = `sha256:15affdfb…`, `p5-qualification-identity-ref` =
+   `sha256:6f365a44…`, `p5-ab-aozora-executable-sha256` =
+   `sha256:482728cad5…`) and the same tuple pinned in
+   `abc/test/abc/tools/soranoha_build_publication_test.clj` (lines 91, 219).
+4. Update the `parser-rq-p5-promotion-audit` check to the regenerated
+   evidence.
+5. Resolve, as an explicit governance decision, whether the release build
+   should bind the frozen `parser-rq-candidate` binaries or continue binding
+   mainline `ab-aozora`/`ab-aat-to-parser-ir` — the two are different
+   derivations (different `cargoBuildFlags` recipes) and will keep diverging
+   either way; qualification and release-build wiring need to agree on which
+   one is authoritative.
+
+Until this follow-up lands, `checks.<system>.publication-build-real-wiring`
+is expected to stay RED in CI for this specific, understood, tracked reason
+— not because the sole-producer migration itself is broken.

@@ -2,14 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json",
   "title": "Soranoha Publication Build Config",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "config_schema_id",
-    "request_set_label",
-    "snapshot_scope",
+    "config_schema_version",
+    "source_trust_mode",
     "parser_profile",
+    "parser_candidate_ref",
     "publication_profile",
     "continue_on_failure",
     "materialization_scope"
@@ -18,9 +19,15 @@
     "config_schema_id": {
       "const": "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json"
     },
-    "request_set_label": { "type": "string", "minLength": 1 },
-    "snapshot_scope": { "type": "string", "minLength": 1 },
+    "config_schema_version": { "const": "0.2.0" },
+    "source_trust_mode": {
+      "enum": ["official-git", "fixture"]
+    },
     "parser_profile": { "type": "string", "minLength": 1 },
+    "parser_candidate_ref": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
     "publication_profile": { "type": "string", "minLength": 1 },
     "continue_on_failure": { "type": "boolean" },
     "materialization_scope": {

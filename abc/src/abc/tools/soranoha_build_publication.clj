@@ -8,6 +8,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-publication :as materialize-publication]
             [abc.tools.parallel :as parallel]
+            [abc.tools.parser-release-authority :as parser-release-authority]
             [abc.tools.publication-policy :as publication-policy]
             [abc.tools.schema :as schema]
             [abc.tools.source-bundle :as source-bundle]
@@ -185,10 +186,11 @@
 
 (defn- convert-aat->parser-ir!
   "Run ab-aat-to-parser-ir convert with the profile-pinned mapping, emitting
-  parser-IR + divergence sidecar."
-  [{:keys [aat-file parser-ir-file divergence-file work-content-hash mapping]}]
-  (let [convert-bin (require-env "AB_AAT_TO_PARSER_IR_BIN" "ab-aat-to-parser-ir")
-        {:keys [exit err]}
+  parser-IR + divergence sidecar. The convert binary is the once-resolved
+  converter path carried on the adapter (never re-resolved per work)."
+  [{:keys [aat-file parser-ir-file divergence-file work-content-hash mapping
+           convert-bin]}]
+  (let [{:keys [exit err]}
         (run-process! {:args [convert-bin "convert"
                               "--aat" aat-file
                               "--mapping" mapping
@@ -201,19 +203,18 @@
     parser-ir-file))
 
 (defn- real-derive-parser-ir!
-  "Production source→parser-IR: resolve the adapter (and its mapping pin) for
-  the profile, run the source→AAT adapter, then ab-aat-to-parser-ir convert.
-  Adapter resolution is lazy here so the injectable boundary below can be
-  stubbed without the adapter binaries present."
-  [{:keys [parser-profile source-bytes work-content-hash aat-file parser-ir-file
+  "Production source→parser-IR: run the source→AAT adapter, then
+  ab-aat-to-parser-ir convert, using the ONCE-resolved adapter/converter value
+  passed in (env vars are resolved a single time up front, never per work)."
+  [{:keys [adapter source-bytes work-content-hash aat-file parser-ir-file
            divergence-file]}]
-  (let [adapter (resolve-adapter parser-profile)]
-    (write-aat! aat-file {:adapter adapter :source-bytes source-bytes})
-    (convert-aat->parser-ir! {:aat-file (str aat-file)
-                              :work-content-hash work-content-hash
-                              :parser-ir-file (str parser-ir-file)
-                              :divergence-file (str divergence-file)
-                              :mapping (:mapping adapter)})))
+  (write-aat! aat-file {:adapter adapter :source-bytes source-bytes})
+  (convert-aat->parser-ir! {:aat-file (str aat-file)
+                            :work-content-hash work-content-hash
+                            :parser-ir-file (str parser-ir-file)
+                            :divergence-file (str divergence-file)
+                            :mapping (:mapping adapter)
+                            :convert-bin (:converter-bin adapter)}))
 
 (def ^{:dynamic true
        :doc "Injectable source→parser-IR boundary. Bound to a stub in tests so
@@ -222,6 +223,143 @@
 
 (defn invoke-derive-parser-ir! [options]
   (*derive-parser-ir!* options))
+
+;; ── Authenticated parser runtime identity ──────────────────────────────────
+;; Computed ONCE, before source derivation, from the once-resolved adapter and
+;; converter. `parser_runtime_identity_object` is deliberately path-free (no
+;; Nix store path); `parser_config_hash` is JCS SHA-256 over it. For the owned
+;; parser the configured candidate is authenticated through
+;; parser-release-authority/authenticate and the runtime coordinates are
+;; compared field-by-field; divergences are RECORDED as problems rather than
+;; collapsed into an "admitted" boolean.
+
+(def ^{:doc "The parser argv template every profile invokes the source→AAT
+             adapter with (`[wrapper --mode aat]`), templated path-free."}
+  parser-argv-template ["{executable}" "--mode" "{mode}"])
+
+(def ^{:doc "The converter subcommand publication renders with, templated
+             path-free at the same granularity the qualification provenance
+             records (`[{executable} <subcommand>]`)."}
+  converter-argv-template ["{executable}" "convert"])
+
+(defn- runtime-authenticate-options
+  "Repo-relative campaign/authority paths for a candidate ref, matching the
+  layout parser-release-authority/authenticate reads (abc working dir)."
+  [candidate-ref]
+  {:runs_root "docs/reports/parser-rq/runs"
+   :candidate_ref candidate-ref
+   :registry_path "data/aat-parser-ir-compatibility.edn"
+   :measurements_path "docs/reports/parser-release-qualification-measurements.edn"
+   :report_path "docs/reports/parser-release-qualification-report.json"
+   :provenance_path (str "docs/reports/parser-rq/runs/"
+                         (subs candidate-ref (count "sha256:"))
+                         "/executable-provenance.json")
+   :decisions_path "docs/adr/decisions.edn"})
+
+(defn- coordinate-problem [coordinate expected actual]
+  (when (not= expected actual)
+    {:kind :parser-runtime-coordinate-mismatch
+     :coordinate coordinate
+     :expected expected
+     :actual actual}))
+
+(defn- authentication-problems
+  "Authenticate the configured candidate and compare the runtime identity
+  object's coordinates against the authenticated qualification identity and
+  executable provenance. Returns a (possibly empty) problem vector; an
+  authentication failure surfaces as authority problems, never a throw."
+  [identity-object candidate-ref]
+  (try
+    (let [auth (parser-release-authority/authenticate
+                (runtime-authenticate-options candidate-ref))
+          qualification (:qualification-identity auth)
+          executables (:executables (:executable-provenance auth))
+          by-name (into {} (map (juxt :name identity)) executables)
+          parser-exe (get by-name (get identity-object "adapter_id"))
+          converter-exe (get by-name "ab-aat-to-parser-ir")]
+      (vec
+       (keep identity
+             [(coordinate-problem "adapter_id"
+                                  (:aat_adapter qualification)
+                                  (get identity-object "adapter_id"))
+              (coordinate-problem "parser_executable_hash"
+                                  (:sha256 parser-exe)
+                                  (get identity-object "parser_executable_hash"))
+              (coordinate-problem "converter_executable_hash"
+                                  (:sha256 converter-exe)
+                                  (get identity-object "converter_executable_hash"))
+              (coordinate-problem "mapping_hash"
+                                  (:mapping_hash qualification)
+                                  (get identity-object "mapping_hash"))
+              (coordinate-problem "parser_ir_schema_hash"
+                                  (:parser_ir_schema_hash qualification)
+                                  (get identity-object "parser_ir_schema_hash"))
+              (coordinate-problem "parser_argv_template"
+                                  (:argv_template parser-exe)
+                                  (get identity-object "parser_argv_template"))
+              (coordinate-problem "converter_argv_template"
+                                  (:argv_template converter-exe)
+                                  (get identity-object "converter_argv_template"))])))
+    (catch clojure.lang.ExceptionInfo error
+      (mapv (fn [problem] (assoc problem :kind :parser-authority-problem))
+            (or (:problems (ex-data error))
+                [{:message (ex-message error)}])))))
+
+(defn- parser-runtime-problems
+  "For the owned parser, authenticate and compare; for any profile without a
+  configured candidate (e.g. diagnostic aozora2html), record the runtime hashes
+  and a single absent-candidate problem."
+  [parser-profile identity-object candidate-ref]
+  (if (string/blank? candidate-ref)
+    [{:kind :absent-parser-candidate
+      :message "no parser_candidate_ref configured; runtime parser identity is unauthenticated"
+      :parser_profile parser-profile}]
+    (authentication-problems identity-object candidate-ref)))
+
+(defn- real-resolve-parser-runtime!
+  "Resolve the adapter and converter ONCE, hash their actual bytes, hash the
+  mapping via its GOVERNED JSON construction, read the target parser-IR schema
+  hash from the mapping, and compute the path-free config hash. Official-Git
+  builds authenticate; `fixture`/non-release trust returns an explicit
+  non-release value that resolves no adapter (fixtures cannot prove parser
+  identity) and never touches the adapter binaries."
+  [{:keys [parser-profile source-trust-mode parser-candidate-ref]}]
+  (if (= "official-git" source-trust-mode)
+    (let [adapter (resolve-adapter parser-profile)
+          converter-bin (require-env "AB_AAT_TO_PARSER_IR_BIN" "ab-aat-to-parser-ir")
+          mapping-doc (files/read-json (:mapping adapter))
+          identity-object {"adapter_id" (:adapter-id adapter)
+                           "parser_argv_template" parser-argv-template
+                           "converter_argv_template" converter-argv-template
+                           "parser_executable_hash"
+                           (hash/format-sha256 (hash/sha256-file (:wrapper adapter)))
+                           "converter_executable_hash"
+                           (hash/format-sha256 (hash/sha256-file converter-bin))
+                           "mapping_hash" (hash/sha256-json-abc-legacy-v0 mapping-doc)
+                           "parser_ir_schema_hash"
+                           (get mapping-doc "target_parser_ir_schema_hash")}]
+      {:adapter (assoc adapter :converter-bin converter-bin)
+       :parser-runtime-identity identity-object
+       :parser-config-hash (hash/format-sha256
+                            (hash/sha256-json-jcs identity-object))
+       :problems (parser-runtime-problems parser-profile identity-object
+                                          parser-candidate-ref)})
+    {:adapter nil
+     :parser-runtime-identity nil
+     :parser-config-hash nil
+     :problems [{:kind :non-release-source-trust
+                 :message (str "source_trust_mode " (pr-str source-trust-mode)
+                               " is not official-git; parser runtime identity is non-release")
+                 :source_trust_mode source-trust-mode}]}))
+
+(def ^{:dynamic true
+       :doc "Injectable authenticated-parser-runtime boundary. Bound to a stub
+             in tests so the workflow can be exercised without the adapter
+             binaries and campaign evidence present."}
+  *resolve-parser-runtime!* real-resolve-parser-runtime!)
+
+(defn invoke-resolve-parser-runtime! [options]
+  (*resolve-parser-runtime!* options))
 
 (defn- corpus-snapshot-hash
   "Content-addressed identity of this build's source snapshot: the pinned
@@ -272,7 +410,7 @@
     parser-ir))
 
 (defn- write-materialized-work!
-  [{:keys [rows catalog-provenance materialized-root selected parser-profile
+  [{:keys [rows catalog-provenance materialized-root selected adapter
            corpus-hash]}]
   (let [{:keys [row file relpath]} selected
         work-id (row-work-id row)
@@ -296,7 +434,7 @@
     ;; Real AAT + parser-IR from the owned adapters (replaces the former stub),
     ;; through the injectable boundary so tests can stub it.
     (source-bundle/write-manifest! source-bundle-file inspection)
-    (invoke-derive-parser-ir! {:parser-profile parser-profile
+    (invoke-derive-parser-ir! {:adapter adapter
                                :source-bytes source-bytes
                                :work-content-hash work-hash
                                :aat-file aat-file
@@ -400,7 +538,7 @@
     {:ok (write-materialized-work! (assoc context :selected candidate))}))
 
 (defn- materialize-selected-sources!
-  [{:keys [aozora-root output-root parser-profile snapshot-date
+  [{:keys [aozora-root output-root adapter snapshot-date
            aozora-git-commit continue-on-failure concurrency]}]
   (let [{:keys [csv-text catalog-csv-hash]} (read-catalog-zip aozora-root)
         rows (aozora-csv/read-rows-from-string csv-text)
@@ -426,7 +564,7 @@
         derive-context {:rows rows
                         :catalog-provenance catalog-provenance
                         :materialized-root materialized-root
-                        :parser-profile parser-profile
+                        :adapter adapter
                         :corpus-hash corpus-hash
                         :continue-on-failure continue-on-failure}
         ;; A single corrupt/unreadable work ZIP (e.g. a zip Java's reader
@@ -491,39 +629,84 @@
                        :errors errors})))
     config))
 
-(defn- git-sh [aozora-root & args]
+(defn- git-command
+  "Run `git -C aozora-root args...`, returning {:exit :out} or nil when git
+  cannot be executed at all (missing binary / IO error). Never confuses an
+  unavailable inspection with a clean result."
+  [aozora-root args]
   (try
     (let [{:keys [exit out]}
           (process/sh (into ["git" "-C" (str aozora-root)] args))]
-      (when (zero? exit)
-        (string/trim out)))
+      {:exit exit :out (some-> out string/trim)})
     (catch java.io.IOException _
       nil)))
 
-(defn- git-provenance [aozora-root]
-  (let [commit (or (git-sh aozora-root "rev-parse" "HEAD")
-                   (let [head (io/file aozora-root ".git" "HEAD")]
-                     (when (files/file? head)
-                       (string/trim (files/read-text head)))))
-        dirty-output (git-sh aozora-root "status" "--porcelain" "--"
-                             "cards" "index_pages")]
-    {"aozora_git_commit" commit
-     "aozora_git_dirty" (if (nil? dirty-output)
-                          false
-                          (not (string/blank? dirty-output)))
-     "dirty_scope" "cards index_pages"}))
+(defn- source-provenance!
+  "The explicit source-trust boundary (replaces the former nil-means-clean
+  git-provenance). Returns the recorded provenance value for the configured
+  source_trust_mode, or throws — fail closed — when official-Git state cannot
+  be proven clean.
 
-(defn- build-plan [opts config materialization-result]
+  - `official-git`: requires a successful `git rev-parse HEAD` and
+    `git status --porcelain -- cards index_pages`. A failed/absent Git
+    inspection is unknown, never clean (`source-git-unavailable`); a non-blank
+    relevant status is dirty (`source-git-dirty`). Callers must run this before
+    any temporary-root write.
+  - `fixture`: an explicit, recorded non-release trust value. Records a null
+    Git commit and never invokes Git; makes release admissibility fail."
+  [{:keys [source-trust-mode aozora-root]}]
+  (case source-trust-mode
+    "fixture"
+    {"source_trust_mode" "fixture"
+     "aozora_git_commit" nil
+     "aozora_git_dirty" false
+     "dirty_scope" "cards index_pages"
+     "release_source" false}
+
+    "official-git"
+    (let [rev (git-command aozora-root ["rev-parse" "HEAD"])
+          status (git-command aozora-root ["status" "--porcelain" "--"
+                                           "cards" "index_pages"])]
+      (when (or (nil? rev) (not (zero? (:exit rev))) (string/blank? (:out rev))
+                (nil? status) (not (zero? (:exit status))))
+        (throw (ex-info "official source Git state is unprovable; refusing to release"
+                        {:code "source-git-unavailable"
+                         :aozora_root (str aozora-root)})))
+      (when-not (string/blank? (:out status))
+        (throw (ex-info "official source has uncommitted changes under relevant paths"
+                        {:code "source-git-dirty"
+                         :aozora_root (str aozora-root)
+                         :dirty_scope "cards index_pages"})))
+      {"source_trust_mode" "official-git"
+       "aozora_git_commit" (:out rev)
+       "aozora_git_dirty" false
+       "dirty_scope" "cards index_pages"
+       "release_source" true})
+
+    (throw (ex-info "unsupported source_trust_mode"
+                    {:code "source-trust-mode-unsupported"
+                     :source_trust_mode source-trust-mode}))))
+
+(defn- parser-runtime-plan
+  "Operational projection of the authenticated parser runtime identity: the
+  path-free identity object, its config hash, and the recorded problems (as
+  strings, since a build record is JSON). No adapter/store path leaks in."
+  [parser-runtime]
+  {"parser_runtime_identity_object" (:parser-runtime-identity parser-runtime)
+   "parser_config_hash" (:parser-config-hash parser-runtime)
+   "problems" (mapv pr-str (:problems parser-runtime))})
+
+(defn- build-plan [opts config materialization-result source-provenance
+                   parser-runtime]
   {"build_schema_version" "soranoha-build-publication-v0"
    "config_hash" (analysis-identity/hash-json-value config)
    "config" config
    "aozora_root" (str (:aozora-root opts))
    "snapshot_date" (:snapshot-date opts)
-   "git" (git-provenance (:aozora-root opts))
+   "source_provenance" source-provenance
+   "parser_runtime" (parser-runtime-plan parser-runtime)
    "materialized_root" (str (:materialized-root materialization-result))
    "source_selection_report" "source-selection-report.json"
-   "request_set_label" (get config "request_set_label")
-   "snapshot_scope" (get config "snapshot_scope")
    "selected_source_count" (get-in materialization-result
                                    [:report "selected_source_count"])
    "concurrency" (:concurrency opts)})
@@ -681,14 +864,14 @@
                                    results)}}))
 
 (defn materialize-source-selection-step
-  [{:keys [aozora-root output-root config-value snapshot-date opts]}]
+  [{:keys [aozora-root output-root config-value snapshot-date opts
+           source-provenance parser-runtime]}]
   (let [result (materialize-selected-sources!
                 {:aozora-root aozora-root
                  :output-root output-root
-                 :parser-profile (get config-value "parser_profile")
+                 :adapter (:adapter parser-runtime)
                  :snapshot-date snapshot-date
-                 :aozora-git-commit (get (git-provenance aozora-root)
-                                         "aozora_git_commit")
+                 :aozora-git-commit (get source-provenance "aozora_git_commit")
                  :continue-on-failure
                  (boolean (get config-value "continue_on_failure"))
                  :concurrency (:concurrency opts)})
@@ -703,8 +886,10 @@
                 :content_hash (manifest/file-hash selection-report-file)}]}))
 
 (defn write-build-records-step
-  [{:keys [opts config-value materialization-result output-root]}]
-  (let [plan (build-plan opts config-value materialization-result)
+  [{:keys [opts config-value materialization-result output-root
+           source-provenance parser-runtime]}]
+  (let [plan (build-plan opts config-value materialization-result
+                         source-provenance parser-runtime)
         config-file (io/file output-root "build-config.json")
         plan-file (io/file output-root "build-plan.json")]
     (abc-json/write-deterministic-json-file! config-file config-value)
@@ -741,11 +926,13 @@
 
 (defn- build-publication-steps []
   [{:id :materialize-source-selection
-    :requires [:aozora-root :output-root :config-value :snapshot-date :opts]
+    :requires [:aozora-root :output-root :config-value :snapshot-date :opts
+               :source-provenance :parser-runtime]
     :produces [:materialization-result]
     :run materialize-source-selection-step}
    {:id :write-build-records
-    :requires [:opts :config-value :materialization-result :output-root]
+    :requires [:opts :config-value :materialization-result :output-root
+               :source-provenance :parser-runtime]
     :produces [:build-plan]
     :run write-build-records-step}
    {:id :materialize-publications
@@ -763,7 +950,18 @@
       (throw (ex-info "snapshot-date is required for build-publication"
                       {:config config})))
     (publication-policy/assert-release-allowed!)
-    (let [prior-output-root (when (files/directory? output-root)
+    ;; Prove source trust and compute the authenticated parser runtime identity
+    ;; BEFORE any temporary-root write: an unprovable/dirty official source
+    ;; throws here, before prepare-output-root!, so no partial root is created.
+    (let [source-trust-mode (get config-value "source_trust_mode")
+          source-provenance (source-provenance! {:source-trust-mode source-trust-mode
+                                                 :aozora-root aozora-root})
+          parser-runtime (invoke-resolve-parser-runtime!
+                          {:parser-profile (get config-value "parser_profile")
+                           :source-trust-mode source-trust-mode
+                           :parser-candidate-ref (get config-value
+                                                      "parser_candidate_ref")})
+          prior-output-root (when (files/directory? output-root)
                               (str output-root))
           tmp-root (prepare-output-root! output-root replace)]
       (files/create-dirs! tmp-root)
@@ -780,6 +978,8 @@
                               :snapshot-date snapshot-date
                               :output-root tmp-root
                               :prior-output-root prior-output-root
+                              :source-provenance source-provenance
+                              :parser-runtime parser-runtime
                               :opts opts}
               :steps (build-publication-steps)})
             final-root (promote-output-root! tmp-root output-root replace)]

@@ -71,9 +71,12 @@
     (abc-json/write-deterministic-json-file!
      f
      {"config_schema_id" "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json"
-      "request_set_label" "sim-content"
-      "snapshot_scope" "sim"
+      "config_schema_version" "0.2.0"
+      ;; Temp-directory fixtures cannot prove official Git provenance, so they
+      ;; explicitly request the recorded non-release `fixture` trust mode.
+      "source_trust_mode" "fixture"
       "parser_profile" "aozora2html"
+      "parser_candidate_ref" nil
       "publication_profile" "tei-publication-basic-ja-v1"
       "continue_on_failure" continue-on-failure?
       "materialization_scope" "smoke"})

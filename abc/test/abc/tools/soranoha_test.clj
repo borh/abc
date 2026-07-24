@@ -21,6 +21,9 @@
            [java.nio.file AccessDeniedException Files NoSuchFileException]
            [java.util.zip ZipEntry ZipOutputStream]))
 
+;; --replace is solely atomic installation policy: it governs whether an
+;; existing output-root may be replaced by a successful build's temporary
+;; root, never publication content reuse.
 (deftest publication-filesystem-contract-test
   (fs/with-temp-dir [root {}]
     (let [output (fs/file root "out")
@@ -39,24 +42,7 @@
       (spit (fs/file tmp "artifact") "ok")
       (let [result (#'build-publication/promote-output-root! tmp target false)]
         (is (instance? java.io.File result))
-        (is (= "ok" (slurp (fs/file target "artifact"))))))
-    (let [publication (fs/file root "publication")]
-      (fs/create-dirs publication)
-      (spit (fs/file publication "tei.manifest.json") "{}")
-      (spit (fs/file publication "source_work_content_hash.txt") " hash\n")
-      (is (#'build-publication/publication-up-to-date? publication "hash"))
-      (fs/delete (fs/file publication "tei.manifest.json"))
-      (is (not (#'build-publication/publication-up-to-date? publication "hash"))))
-    (let [from (fs/file root "from")
-          to (fs/file root "to")]
-      (fs/create-dirs (fs/file from "nested"))
-      (spit (fs/file from "b") "b")
-      (spit (fs/file from "a") "a")
-      (spit (fs/file from "nested" "ignored") "ignored")
-      (is (= (fs/file to) (#'build-publication/copy-dir-files! from to)))
-      (is (= ["a" "b"] (->> (fs/list-dir to)
-                            (map (comp str fs/file-name))
-                            sort vec))))))
+        (is (= "ok" (slurp (fs/file target "artifact"))))))))
 
 (defn- temp-json-path [prefix]
   (let [file (java.io.File/createTempFile prefix ".json")]
@@ -1012,6 +998,183 @@
                           ["provenance" "generated_at"])
                   (get-in (files/read-json (io/file direct-output "tei.manifest.json"))
                           ["provenance" "generated_at"]))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-second-identical-build-rerenders-same-artifact-ids-test
+  ;; Same snapshot-date on both builds (a literal identical-build retry, e.g.
+  ;; after an unrelated downstream failure): corpus_snapshot_hash — and
+  ;; therefore generated_at, which this build derives from snapshot-date —
+  ;; coincide too, so a passing SUT must reproduce the FULL manifest
+  ;; byte-for-byte, not merely its artifact_id. Before this task, the second
+  ;; build would have returned "skipped" from the manifest-reuse cache
+  ;; instead of re-rendering at all.
+  (let [root (fixture/temp-dir "abc-soranoha-build-identical-rebuild")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")
+        slug "000001_000879_000001_ruby_fixture"
+        build! (fn [replace?]
+                 (with-release-policy-allowed
+                   #(binding [build-publication/*derive-parser-ir!*
+                              stub-derive-parser-ir!]
+                      (with-out-str
+                        (is (zero? (soranoha/run!
+                                    (cond-> ["build-publication"
+                                             "--aozora-root" (str aozora-root)
+                                             "--config" "abc/config/publication-basic-ja.json"
+                                             "--snapshot-date" "2026-07-08"
+                                             "--output-root" (str output-root)]
+                                      replace? (conj "--replace")))))))))]
+    (try
+      (build! false)
+      (let [first-report (files/read-json
+                          (io/file output-root "publications"
+                                   "publications-report.json"))
+            first-manifest (files/read-json
+                            (io/file output-root "publications" slug
+                                     "tei.manifest.json"))]
+        (build! true)
+        (let [second-report (files/read-json
+                             (io/file output-root "publications"
+                                      "publications-report.json"))
+              second-manifest (files/read-json
+                               (io/file output-root "publications" slug
+                                        "tei.manifest.json"))]
+          (testing "both builds re-render — never reused or skipped"
+            (is (= #{"passed"}
+                   (set (map #(get % "status") (get first-report "publications")))
+                   (set (map #(get % "status") (get second-report "publications")))))
+            (is (= 0 (get first-report "failed") (get second-report "failed")))
+            (is (not (contains? (set (keys first-report)) "reused")))
+            (is (not (contains? (set (keys first-report)) "skipped"))))
+          (testing "an identical rebuild reproduces the same artifact_id (and full manifest)"
+            (is (= (get first-manifest "artifact_id")
+                   (get second-manifest "artifact_id")))
+            (is (= first-manifest second-manifest)))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest materialize-publication-artifact-id-is-independent-of-generated-at-test
+  ;; Isolates the "normalizing generated_at" half of the same claim at the
+  ;; renderer boundary, where generated_at is free to vary independently of
+  ;; every other identity input (in the CLI build it is pinned to
+  ;; snapshot-date, so it cannot vary on its own there): re-rendering the
+  ;; SAME upstream artifacts with a different generated_at must reproduce the
+  ;; same artifact_id, with the full manifest equal once generated_at (and the
+  ;; provenance-derived preservation-sidecar hash) is stripped.
+  (let [root (fixture/temp-dir "abc-soranoha-materialize-generated-at")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")
+        second-output (io/file root "second-render")
+        slug "000001_000879_000001_ruby_fixture"]
+    (try
+      (with-release-policy-allowed
+        #(binding [build-publication/*derive-parser-ir!* stub-derive-parser-ir!]
+           (with-out-str
+             (is (zero? (soranoha/run!
+                         ["build-publication"
+                          "--aozora-root" (str aozora-root)
+                          "--config" "abc/config/publication-basic-ja.json"
+                          "--snapshot-date" "2026-07-08"
+                          "--output-root" (str output-root)]))))))
+      (let [work-dir (io/file output-root "materialized-root" "works" slug)
+            first-manifest (files/read-json
+                            (io/file output-root "publications" slug
+                                     "tei.manifest.json"))
+            build-plan (files/read-json (io/file output-root "build-plan.json"))
+            parser-runtime (get build-plan "parser_runtime")
+            runtime-identity (get parser-runtime "parser_runtime_identity_object")
+            parser-identity {:parser-build-hash (get runtime-identity
+                                                     "parser_executable_hash")
+                             :parser-config-hash (get parser-runtime
+                                                      "parser_config_hash")
+                             :mapping-hash (get runtime-identity "mapping_hash")
+                             :parser-ir-schema-hash (get runtime-identity
+                                                         "parser_ir_schema_hash")}]
+        (materialize-publication/materialize-publication!
+         {:parser-ir-path (str (io/file work-dir "parser-ir.json"))
+          :source-manifest-path (str (io/file work-dir "source.manifest.json"))
+          :metadata-record-path (str (io/file work-dir "metadata-record.json"))
+          :persons-dir (str (io/file output-root "materialized-root" "persons"))
+          :output-dir (str second-output)
+          :generated-at "2099-01-01T00:00:00Z"
+          :parser-identity parser-identity})
+        (let [second-manifest (files/read-json
+                               (io/file second-output "tei.manifest.json"))]
+          (is (not= (get-in first-manifest ["provenance" "generated_at"])
+                    (get-in second-manifest ["provenance" "generated_at"])))
+          (is (= (get first-manifest "artifact_id")
+                 (get second-manifest "artifact_id")))
+          (is (= (strip-generated-at first-manifest)
+                 (strip-generated-at second-manifest)))))
+      (finally
+        (delete-tree! root)))))
+
+(defn- fixed-parser-runtime
+  "Injectable *resolve-parser-runtime!* double carrying a caller-supplied,
+  authenticated-shaped runtime identity: lets a test rotate exactly the
+  parser/mapping coordinates a real profile/mapping/parser-build change would
+  rotate, without needing the real adapter binaries for a second profile."
+  [runtime-identity]
+  (fn [_options]
+    {:adapter nil
+     :parser-runtime-identity runtime-identity
+     :parser-config-hash (hash/format-sha256
+                          (hash/sha256-json-jcs runtime-identity))
+     :problems []}))
+
+(deftest build-publication-parser-identity-change-rotates-artifact-id-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-parser-identity-rotation")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        slug "000001_000879_000001_ruby_fixture"
+        base-identity {"adapter_id" "aozora2html"
+                       "parser_argv_template" build-publication/parser-argv-template
+                       "converter_argv_template"
+                       build-publication/converter-argv-template
+                       "parser_executable_hash" (files/example-hash "70")
+                       "converter_executable_hash" (files/example-hash "71")
+                       "mapping_hash" (files/example-hash "72")
+                       "parser_ir_schema_hash"
+                       (manifest/schema-hash "schemas/parser-ir.schema.json")}
+        ;; Represents what changes for a different parser build, a different
+        ;; aat->parser-IR mapping pin, or a different profile: the mapping
+        ;; coordinate rotates while the source content is untouched.
+        changed-identity (assoc base-identity "mapping_hash"
+                                (files/example-hash "73"))
+        build! (fn [output-root runtime-identity]
+                 (with-release-policy-allowed
+                   #(binding [build-publication/*derive-parser-ir!*
+                              stub-derive-parser-ir!
+                              build-publication/*resolve-parser-runtime!*
+                              (fixed-parser-runtime runtime-identity)]
+                      (build-publication/build-publication!
+                       {:aozora-root (str aozora-root)
+                        :config "abc/config/publication-basic-ja.json"
+                        :snapshot-date "2026-07-08"
+                        :output-root (str output-root)}))))
+        base-out (io/file root "build-base")
+        changed-out (io/file root "build-changed")]
+    (try
+      (build! base-out base-identity)
+      (build! changed-out changed-identity)
+      (let [base-manifest (files/read-json
+                           (io/file base-out "publications" slug
+                                    "tei.manifest.json"))
+            changed-manifest (files/read-json
+                              (io/file changed-out "publications" slug
+                                       "tei.manifest.json"))]
+        (testing "identical content"
+          (is (= (get-in base-manifest ["manifest_identity_object"
+                                        "work_content_hash"])
+                 (get-in changed-manifest ["manifest_identity_object"
+                                           "work_content_hash"]))))
+        (testing "a changed parser/mapping coordinate rotates the identity object and artifact_id"
+          (is (not= (get-in base-manifest ["manifest_identity_object"
+                                           "aat_parser_ir_mapping_hash"])
+                    (get-in changed-manifest ["manifest_identity_object"
+                                              "aat_parser_ir_mapping_hash"])))
+          (is (not= (get base-manifest "artifact_id")
+                    (get changed-manifest "artifact_id")))))
       (finally
         (delete-tree! root)))))
 

@@ -279,16 +279,13 @@
                  ["index_pages/list_person_all_extended_utf8.zip" "not-under-cards-files"]}}))
 
 (defn expected-statuses
-  "slug → \"reused\"|\"passed\" over the current selection: reused iff the
-  identical slug existed previously with the identical bundle hash. Packaging
-  metadata can therefore change archive bytes without forcing a rebuild.
-  Slugs absent from the current selection are absent.
-  \"skipped\" is never predicted — pub-dirs are built in a fresh temp root,
-  so the skip branch is unreachable in normal runs; properties assert its
-  count is 0."
-  [prev-selection cur-selection]
-  (let [prev (into {} (map (juxt :slug :bundle_hash)) (:selected prev-selection))]
-    (into (sorted-map)
-          (map (fn [{:keys [slug bundle_hash]}]
-                 [slug (if (= bundle_hash (get prev slug)) "reused" "passed")]))
-          (:selected cur-selection))))
+  "slug → \"passed\" for every currently selected work. There is no
+  publication cache: every selected successful work re-renders in the fresh
+  temporary root regardless of whether an identical slug existed in a prior
+  build with the identical bundle hash, so status prediction depends only on
+  the current selection, never on a prior one. \"reused\" and \"skipped\" are
+  never predicted — they are not direct-publication statuses."
+  [cur-selection]
+  (into (sorted-map)
+        (map (fn [{:keys [slug]}] [slug "passed"]))
+        (:selected cur-selection)))

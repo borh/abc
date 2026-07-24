@@ -330,15 +330,16 @@
                                                :images (sorted-map)}))
         sel1 (oracle/expected-selection (render/model->rows m1) (render/content-sources m1))
         sel2 (oracle/expected-selection (render/model->rows m2) (render/content-sources m2))]
-    (is (= {"000101_000001_000101_t" "passed"   ;; text changed
-            "000102_000002_000102_t" "reused"   ;; untouched
-            "000103_000003_000103_t" "passed"}  ;; new
-           (oracle/expected-statuses sel1 sel2)))
-    (testing "identical states are all reused; slug change forces passed"
-      (is (every? #(= "reused" %) (vals (oracle/expected-statuses sel1 sel1))))
+    (testing "every currently selected slug is passed — changed, untouched, and new alike"
+      (is (= {"000101_000001_000101_t" "passed"   ;; text changed
+              "000102_000002_000102_t" "passed"   ;; untouched
+              "000103_000003_000103_t" "passed"}  ;; new
+             (oracle/expected-statuses sel2))))
+    (testing "an identical selection is still all passed — there is no reuse to predict"
+      (is (every? #(= "passed" %) (vals (oracle/expected-statuses sel1)))))
+    (testing "a slug change (same bytes, different winning pid) is still passed"
       (let [m2' (assoc-in m1 [:edges ["000102" "著者"]] #{"000003"})
             sel2' (oracle/expected-selection (render/model->rows m2')
                                              (render/content-sources m2'))]
-        ;; same bytes, but 000102's winning row pid changed → new slug → passed
-        (is (= "passed" (get (oracle/expected-statuses sel1 sel2')
+        (is (= "passed" (get (oracle/expected-statuses sel2')
                              "000102_000003_000102_t")))))))

@@ -1,8 +1,11 @@
 (ns abc.sim.content-sim-test
   "P16 content-side evolution properties (spec
   2026-07-12-content-side-evolution-simulation-design.md): cross-snapshot
-  skip/reuse/rebuild of soranoha-build-publication over generated content
-  trees, pin-chain composition (D7), and sampled integrity faults.
+  re-render/artifact-identity evolution of soranoha-build-publication over
+  generated content trees (every selected work re-renders in a fresh
+  temporary root — there is no publication cache, so identity evolution is
+  observed through artifact_id, never a reused/skipped status), pin-chain
+  composition (D7), and sampled integrity faults.
 
   The parser adapter is stubbed with the REAL split identity contract:
   parser-IR source.work_content_hash is the bundle hash supplied by ABC,
@@ -103,10 +106,6 @@
         (map (juxt #(get % "slug") #(get % "status")))
         (get-in reports [:publications "publications"])))
 
-(defn- marker [out-root slug]
-  (string/trim (slurp (io/file out-root "publications" slug
-                               "source_work_content_hash.txt"))))
-
 (defn- official-source [out-root slug]
   (abc-json/read-json-file
    (io/file out-root "materialized-root" "works" slug "official-source.json")))
@@ -114,13 +113,6 @@
 (defn- source-bundle [out-root slug]
   (abc-json/read-json-file
    (io/file out-root "materialized-root" "works" slug "source-bundle.json")))
-
-(defn- pub-files [out-root slug]
-  (into (sorted-map)
-        (keep (fn [^java.io.File f]
-                (when (.isFile f)
-                  [(.getName f) (vec (Files/readAllBytes (.toPath f)))])))
-        (file-seq (io/file out-root "publications" slug))))
 
 (defn- root-file-bytes
   "relative-path -> byte vector for every file under root. Used to pin that a
@@ -358,7 +350,7 @@
             (is (= "2026-07-13" (get plan "snapshot_date")))
             (is (not= sentinel (root-file-bytes output)))))))))
 
-(deftest build-plan-records-temporary-absolute-materialized-root-test
+(deftest build-plan-records-only-relative-locators-test
   (fs/with-temp-dir [root {:prefix "abc-test-"}]
     (let [aozora (fs/file root "aozora")
           output (fs/file root "output")
@@ -369,16 +361,22 @@
                    :config-path (write-config! config-root false)
                    :snapshot-date "2026-07-12"})
       (let [plan (abc-json/read-json-file (io/file output "build-plan.json"))
-            recorded-root (get plan "materialized_root")
-            actual-root (str (io/file output "materialized-root"))]
-        ;; Pins the current place/value defect (removed by a later task): the
-        ;; promoted build-plan.json still names the discarded temporary root
-        ;; the build actually wrote to, not the promoted output-root.
-        (is (string/starts-with? recorded-root "/"))
-        (is (string/includes? recorded-root ".tmp-"))
-        (is (not= actual-root recorded-root))
-        (is (not (.exists (io/file recorded-root))))
-        (is (.exists (io/file actual-root)))))))
+            recorded-materialized-root (get plan "materialized_root")
+            recorded-selection-report (get plan "source_selection_report")
+            recorded-publications (get plan "publications")]
+        ;; Fixes the place/value defect Task 1 pinned: the promoted
+        ;; build-plan.json now names every place as a RELATIVE locator under
+        ;; the (eventual) output-root, never the discarded temporary root the
+        ;; build actually wrote to and never the source aozora-root.
+        (is (= "materialized-root" recorded-materialized-root))
+        (is (= "source-selection-report.json" recorded-selection-report))
+        (is (= "publications" recorded-publications))
+        (is (not (string/starts-with? recorded-materialized-root "/")))
+        (is (not (string/includes? recorded-materialized-root ".tmp-")))
+        (is (not (contains? plan "aozora_root")))
+        (is (.exists (io/file output recorded-materialized-root)))
+        (is (.exists (io/file output recorded-selection-report)))
+        (is (.exists (io/file output recorded-publications)))))))
 
 (deftest p16-best-effort-promotes-all-rejected-evidence-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}
@@ -489,6 +487,10 @@
         (is (not= "workflow wrapper" (get failure "error")))
         (is (= {slug-b "passed"} (statuses reports)))))))
 
+;; A tampered work re-renders with its new content hash; the untouched
+;; sibling work re-renders too (never reused/skipped — every selected work
+;; renders in the fresh temporary root, so tamper on one work cannot be
+;; masked by, nor mask, a stale publication for another).
 (deftest p16-4-tamper-rebuild-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}
   (with-temp-dirs [aozora out cfg]
@@ -504,35 +506,8 @@
                                         :config-path config
                                         :snapshot-date "2026-07-13" :replace? true}))]
           (is (= "passed" (get st slug-a)))
-          (is (= "reused" (get st slug-b)))
-          (is (= tampered-hash (get (official-source out slug-a) "source_hash")))
-          (is (= (get (official-source out slug-a) "bundle_hash")
-                 (marker out slug-a))))))))
-
-(deftest p16-4-prior-marker-fault-test
-  ^{:clj-kondo/ignore [:unresolved-symbol]}
-  (with-temp-dirs [aozora out cfg]
-    (let [m (synthetic-state)
-          config (write-config! cfg false)
-          marker-file #(io/file out "publications" slug-a "source_work_content_hash.txt")]
-      (render/write-aozora-root! aozora m)
-      (run-build! {:aozora-root aozora :out-root out :config-path config
-                   :snapshot-date "2026-07-12"})
-      (testing "corrupt marker → rebuild, never reuse"
-        (spit (marker-file) "sha256:0000000000000000000000000000000000000000000000000000000000000000")
-        (let [st (statuses (run-build! {:aozora-root aozora :out-root out
-                                        :config-path config
-                                        :snapshot-date "2026-07-13" :replace? true}))]
-          (is (= "passed" (get st slug-a)))
-          (is (= "reused" (get st slug-b)))
-          (is (= (get (official-source out slug-a) "bundle_hash")
-                 (marker out slug-a)))))
-      (testing "missing marker → rebuild"
-        (is (.delete (marker-file)))
-        (let [st (statuses (run-build! {:aozora-root aozora :out-root out
-                                        :config-path config
-                                        :snapshot-date "2026-07-14" :replace? true}))]
-          (is (= "passed" (get st slug-a))))))))
+          (is (= "passed" (get st slug-b)))
+          (is (= tampered-hash (get (official-source out slug-a) "source_hash"))))))))
 
 (deftest p16-4-no-text-member-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}
@@ -578,7 +553,7 @@
                                    :replace? true})
               image (official-source out slug-a)]
           (testing "image change rebuilds through conservative bundle invalidation"
-            (is (= {slug-a "passed" slug-b "reused"} (statuses r-image)))
+            (is (= {slug-a "passed" slug-b "passed"} (statuses r-image)))
             (is (not= (get base "bundle_hash") (get image "bundle_hash")))
             (is (= (get base "primary_text_hash")
                    (get image "primary_text_hash"))))
@@ -594,8 +569,8 @@
                                       :snapshot-date "2026-07-03"
                                       :replace? true})
                 repacked (official-source out slug-a)]
-            (testing "metadata-only repack changes archive identity and reuses"
-              (is (= {slug-a "reused" slug-b "reused"} (statuses r-repack)))
+            (testing "metadata-only repack changes archive identity but re-renders"
+              (is (= {slug-a "passed" slug-b "passed"} (statuses r-repack)))
               (is (not= (get image "archive_hash")
                         (get repacked "archive_hash")))
               (is (= (get image "bundle_hash") (get repacked "bundle_hash")))
@@ -609,7 +584,7 @@
                                       :replace? true})
                   text-edited (official-source out slug-a)]
               (testing "text edit changes bundle and primary text and rebuilds"
-                (is (= {slug-a "passed" slug-b "reused"} (statuses r-text)))
+                (is (= {slug-a "passed" slug-b "passed"} (statuses r-text)))
                 (is (not= (get repacked "bundle_hash")
                           (get text-edited "bundle_hash")))
                 (is (not= (get repacked "primary_text_hash")
@@ -664,13 +639,11 @@
                                (get-in (abc-json/read-json-file
                                         (io/file out "materialized-root" "works" slug
                                                  "source.manifest.json"))
-                                       ["manifest_identity_object" "work_content_hash"]))
-                            (= bundle_hash (marker out slug)))))
+                                       ["manifest_identity_object" "work_content_hash"])))))
                    (:selected expected))
      :statuses (and (every? #(= "passed" %) (vals st))
                     (= (count (:selected expected)) (count st))
-                    (zero? (get-in reports [:publications "failed"]))
-                    (zero? (get-in reports [:publications "skipped"])))}))
+                    (zero? (get-in reports [:publications "failed"])))}))
 
 (deftest p16-1-build-sim-test
   (let [counter (harness/ratio-counter)]
@@ -797,10 +770,33 @@
     (is (not (exact-status-map? slugs "passed"
                                 {"a" "passed" "b" "passed" "c" "passed"})))))
 
+(defn- artifact-id [out-root slug]
+  (get (abc-json/read-json-file
+        (io/file out-root "publications" slug "tei.manifest.json"))
+       "artifact_id"))
+
+(defn- rendered-work-content-hash
+  "The rendered artifact's own record of the source it was rendered from
+  (independent of corpus_snapshot_hash/snapshot-date, which legitimately
+  rotate the whole artifact_id every dated leg — snapshot-date is release
+  identity too, not a cache key)."
+  [out-root slug]
+  (get-in (abc-json/read-json-file
+           (io/file out-root "publications" slug "tei.manifest.json"))
+          ["manifest_identity_object" "work_content_hash"]))
+
 (defn- evolution-checks
-  "Runs the three build legs and returns boolean checks (all must be true).
-  s-before/s-after per the spec: around the seeded edit."
-  [s-before s-after exp-status]
+  "Runs three build legs and returns boolean checks (all must be true).
+  s-before/s-after per the spec: around the seeded edit. No leg reuses or
+  skips: every selected work re-renders in a fresh temporary root, every leg,
+  so every status is \"passed\". leg1→leg2 advances the snapshot-date as
+  content evolves (unchanged works must still keep the SAME rendered
+  work_content_hash; edited works must rotate it — content identity, not the
+  date-carrying artifact_id). leg2→leg3 is a literal identical rebuild — the
+  SAME snapshot-date, same content — so it is held to the stronger claim:
+  the SAME artifact_id (this is exactly the property that the old cache would
+  have called \"reused\" instead of independently re-verifying)."
+  [s-before s-after]
   (with-temp-dirs [aozora out cfg]
     (let [aozora2 (render/temp-dir "sim-aozora2")]
       (try
@@ -813,44 +809,56 @@
                                          (render/content-sources s-after)))
               before-slugs (mapv :slug selected-before)
               after-slugs (mapv :slug selected-after)
-              expected-slugs (set (map :slug selected-after))]
+              before-bundle (into {} (map (juxt :slug :bundle_hash)) selected-before)
+              after-bundle (into {} (map (juxt :slug :bundle_hash)) selected-after)
+              unchanged-slugs (set (filter (fn [slug]
+                                             (and (contains? before-bundle slug)
+                                                  (= (get before-bundle slug)
+                                                     (get after-bundle slug))))
+                                           after-slugs))
+              changed-slugs (remove unchanged-slugs after-slugs)]
           (render/write-aozora-root! aozora s-before)
           (let [r1 (run-build! {:aozora-root aozora :out-root out
                                 :config-path config :snapshot-date "2026-07-01"})
                 st1 (statuses r1)
-                prior (into {} (map (fn [s] [s (pub-files out s)])) (keys st1))]
+                content1 (into {}
+                               (map (fn [slug]
+                                      [slug (rendered-work-content-hash out slug)]))
+                               before-slugs)]
             (render/write-aozora-root! aozora2 s-after)
             (let [r2 (run-build! {:aozora-root aozora2 :out-root out
                                   :config-path config :snapshot-date "2026-07-02"
                                   :replace? true})
                   st2 (statuses r2)
-                  cur-hash (into {}
-                                 (map (juxt #(get % "slug")
-                                            #(get % "bundle_hash")))
-                                 (filter #(contains? expected-slugs (get % "slug"))
-                                         (get-in r2 [:selection "selected_sources"])))
-                  r2-markers (into {} (map (fn [slug] [slug (marker out slug)]))
-                                   (keys cur-hash))
-                  r2-files (into {} (map (fn [slug] [slug (pub-files out slug)]))
-                                 (keys st2))
+                  content2 (into {}
+                                 (map (fn [slug]
+                                        [slug (rendered-work-content-hash out slug)]))
+                                 after-slugs)
+                  ids2 (into {} (map (fn [slug] [slug (artifact-id out slug)]))
+                             after-slugs)
+                  ;; Same snapshot-date and same content as leg2 — a literal
+                  ;; identical rebuild, not the next day's evolution.
                   r3 (run-build! {:aozora-root aozora2 :out-root out
-                                  :config-path config :snapshot-date "2026-07-03"
+                                  :config-path config :snapshot-date "2026-07-02"
                                   :replace? true})
-                  st3 (statuses r3)]
+                  st3 (statuses r3)
+                  ids3 (into {} (map (fn [slug] [slug (artifact-id out slug)]))
+                             after-slugs)]
               {:leg1-all-passed (exact-status-map? before-slugs "passed" st1)
-               :leg1-counts (and (zero? (get-in r1 [:publications "failed"]))
-                                 (zero? (get-in r1 [:publications "skipped"])))
-               :leg2-statuses (= exp-status st2)
-               :leg2-counts (and (zero? (get-in r2 [:publications "failed"]))
-                                 (zero? (get-in r2 [:publications "skipped"])))
-               :markers (every? (fn [[slug h]] (= h (get r2-markers slug))) cur-hash)
-               :reused-bytes (every? (fn [[slug status]]
-                                       (or (not= "reused" status)
-                                           (= (get prior slug) (get r2-files slug))))
-                                     st2)
-               :leg3-all-reused (exact-status-map? after-slugs "reused" st3)
-               :leg3-counts (and (zero? (get-in r3 [:publications "failed"]))
-                                 (zero? (get-in r3 [:publications "skipped"])))})))
+               :leg1-counts (zero? (get-in r1 [:publications "failed"]))
+               :leg2-all-passed (exact-status-map? after-slugs "passed" st2)
+               :leg2-counts (zero? (get-in r2 [:publications "failed"]))
+               :leg3-all-passed (exact-status-map? after-slugs "passed" st3)
+               :leg3-counts (zero? (get-in r3 [:publications "failed"]))
+               :unchanged-content-keeps-content-identity
+               (every? (fn [slug] (= (get content1 slug) (get content2 slug)))
+                       unchanged-slugs)
+               :changed-content-rotates-content-identity
+               (every? (fn [slug] (not= (get content1 slug) (get content2 slug)))
+                       changed-slugs)
+               :identical-rebuild-keeps-artifact-id
+               (every? (fn [slug] (= (get ids2 slug) (get ids3 slug)))
+                       after-slugs)})))
         (finally (render/delete-tree! aozora2))))))
 
 (deftest p16-2-evolution-sim-test
@@ -871,11 +879,18 @@
                                                               (render/content-sources s-after))]
                          (if (empty? (:selected sel-b))
                            (do (harness/tick! counter false) true)
-                           (let [exp (oracle/expected-statuses sel-b sel-a)
-                                 statuses-set (set (vals exp))]
-                             (harness/tick! counter (and (contains? statuses-set "passed")
-                                                         (contains? statuses-set "reused")))
-                             (let [checks (evolution-checks s-before s-after exp)]
+                           (let [before-bundle (into {} (map (juxt :slug :bundle_hash))
+                                                     (:selected sel-b))
+                                 after-bundle (into {} (map (juxt :slug :bundle_hash))
+                                                    (:selected sel-a))
+                                 unchanged? (some (fn [[slug hash]]
+                                                    (= hash (get before-bundle slug)))
+                                                  after-bundle)
+                                 changed? (some (fn [[slug hash]]
+                                                  (not= hash (get before-bundle slug)))
+                                                after-bundle)]
+                             (harness/tick! counter (boolean (and unchanged? changed?)))
+                             (let [checks (evolution-checks s-before s-after)]
                                (when-not (every? val checks)
                                  (println "P16.2 failing checks:"
                                           (vec (keep (fn [[k v]] (when-not v k)) checks))))

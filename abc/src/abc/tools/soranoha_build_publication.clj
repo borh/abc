@@ -705,17 +705,22 @@
      :mapping-hash (get runtime-identity "mapping_hash")
      :parser-ir-schema-hash (get runtime-identity "parser_ir_schema_hash")}))
 
-(defn- build-plan [opts config materialization-result source-provenance
-                   parser-runtime]
+(defn- build-plan
+  "Every place-valued field here is a RELATIVE logical locator under the
+  eventual output-root, never an absolute path: not the source aozora_root,
+  not the discarded temporary root the build actually wrote to, and not the
+  installed output-root itself. build-plan.json is release identity, not an
+  operational trace of this process's filesystem layout."
+  [opts config materialization-result source-provenance parser-runtime]
   {"build_schema_version" "soranoha-build-publication-v0"
    "config_hash" (analysis-identity/hash-json-value config)
    "config" config
-   "aozora_root" (str (:aozora-root opts))
    "snapshot_date" (:snapshot-date opts)
    "source_provenance" source-provenance
    "parser_runtime" (parser-runtime-plan parser-runtime)
-   "materialized_root" (str (:materialized-root materialization-result))
+   "materialized_root" "materialized-root"
    "source_selection_report" "source-selection-report.json"
+   "publications" "publications"
    "selected_source_count" (get-in materialization-result
                                    [:report "selected_source_count"])
    "concurrency" (:concurrency opts)})
@@ -767,24 +772,6 @@
 (defn- generated-at-for [snapshot-date]
   (str snapshot-date "T00:00:00Z"))
 
-(defn- publication-up-to-date?
-  "Content-addressed skip: a work's publication is reusable when a prior run
-  materialized it from the identical source (work_content_hash). Prevents
-  recomputation and makes drift observable as a hash mismatch."
-  [pub-dir work-hash]
-  (let [marker (io/file pub-dir "source_work_content_hash.txt")]
-    (and (files/file? (fs/file pub-dir "tei.manifest.json"))
-         (files/file? marker)
-         (= work-hash (string/trim (files/read-text marker))))))
-
-(defn- copy-dir-files!
-  "Copy the flat set of publication artifacts from one dir to another."
-  [from to]
-  (files/create-dirs! to)
-  (doseq [f (files/list-files from)]
-    (files/copy-file! (str f) (fs/file to (fs/file-name f))))
-  (fs/file to))
-
 (defn- relative-to-output-root
   "Path of file relative to output-root, so publications-report.json survives
   the tmp-root -> output-root promotion instead of pinning a since-renamed-away
@@ -795,61 +782,42 @@
                                   (normalized-abs-path file))))
 
 (defn- materialize-one-publication!
-  [{:keys [output-root prior-output-root generated-at continue-on-failure
-           parser-identity work]}]
-  (let [{:keys [slug work_content_hash parser_ir_path source_manifest_path
+  "Every selected work renders in the fresh temporary root: no prior build's
+  output is inspected or copied forward, so a parser/mapping/profile change
+  can never be masked by a stale reused publication."
+  [{:keys [output-root generated-at continue-on-failure parser-identity work]}]
+  (let [{:keys [slug parser_ir_path source_manifest_path
                 metadata_record_path persons_dir]} work
-        pub-dir (io/file output-root "publications" slug)
-        prior-pub-dir (when prior-output-root
-                        (io/file prior-output-root "publications" slug))]
-    (cond
-      ;; Already materialized in this output-root from identical source.
-      (publication-up-to-date? pub-dir work_content_hash)
-      {:slug slug :status "skipped"
-       :tei_manifest (relative-to-output-root output-root
-                                              (io/file pub-dir "tei.manifest.json"))}
-
-      ;; A prior promoted build holds a byte-identical-source publication —
-      ;; copy it forward instead of recomputing (content-addressed cache hit).
-      (and prior-pub-dir (publication-up-to-date? prior-pub-dir work_content_hash))
-      (do (copy-dir-files! prior-pub-dir pub-dir)
-          {:slug slug :status "reused"
-           :tei_manifest (relative-to-output-root output-root
-                                                  (io/file pub-dir "tei.manifest.json"))})
-
-      :else
-      (try
-        (let [result (materialize-publication/materialize-publication!
-                      {:parser-ir-path parser_ir_path
-                       :source-manifest-path source_manifest_path
-                       :metadata-record-path metadata_record_path
-                       :persons-dir persons_dir
-                       :output-dir (str pub-dir)
-                       :generated-at generated-at
-                       :parser-identity parser-identity})]
-          (files/write-text! (io/file pub-dir "source_work_content_hash.txt")
-                             work_content_hash)
-          {:slug slug :status "passed"
-           :tei (relative-to-output-root output-root (:tei result))
-           :tei_manifest (relative-to-output-root output-root
-                                                  (:tei-manifest result))
-           :tei_validation_result (relative-to-output-root
-                                   output-root (:tei-validation-result result))})
-        (catch Throwable t
-          (if continue-on-failure
-            {:slug slug :status "failed" :error (.getMessage t)}
-            (throw t)))))))
+        pub-dir (io/file output-root "publications" slug)]
+    (try
+      (let [result (materialize-publication/materialize-publication!
+                    {:parser-ir-path parser_ir_path
+                     :source-manifest-path source_manifest_path
+                     :metadata-record-path metadata_record_path
+                     :persons-dir persons_dir
+                     :output-dir (str pub-dir)
+                     :generated-at generated-at
+                     :parser-identity parser-identity})]
+        {:slug slug :status "passed"
+         :tei (relative-to-output-root output-root (:tei result))
+         :tei_manifest (relative-to-output-root output-root
+                                                (:tei-manifest result))
+         :tei_validation_result (relative-to-output-root
+                                 output-root (:tei-validation-result result))})
+      (catch Throwable t
+        (if continue-on-failure
+          {:slug slug :status "failed" :error (.getMessage t)}
+          (throw t))))))
 
 (defn materialize-publication-item [[context work]]
   (materialize-one-publication! (assoc context :work work)))
 
 (defn- materialize-publications!
-  [{:keys [output-root prior-output-root materialization-result config-value
+  [{:keys [output-root materialization-result config-value
            snapshot-date concurrency parser-runtime]}]
   (let [continue-on-failure (boolean (get config-value "continue_on_failure"))
         generated-at (generated-at-for snapshot-date)
         context {:output-root output-root
-                 :prior-output-root prior-output-root
                  :generated-at generated-at
                  :continue-on-failure continue-on-failure
                  :parser-identity (parser-identity-for-materialization
@@ -865,8 +833,6 @@
                                       materialization-result)
               "publication_count" (count results)
               "passed" (count (filter #(= "passed" (:status %)) results))
-              "reused" (count (filter #(= "reused" (:status %)) results))
-              "skipped" (count (filter #(= "skipped" (:status %)) results))
               "failed" (count (filter #(= "failed" (:status %)) results))
               "publications" (mapv (fn [r]
                                      {"slug" (:slug r)
@@ -917,11 +883,10 @@
 
 (defn materialize-publications-step
   [{:keys [config-value materialization-result output-root
-           prior-output-root snapshot-date opts parser-runtime]}]
+           snapshot-date opts parser-runtime]}]
   (let [{:keys [results report]}
         (materialize-publications!
          {:output-root output-root
-          :prior-output-root prior-output-root
           :materialization-result materialization-result
           :config-value config-value
           :snapshot-date snapshot-date
@@ -951,7 +916,7 @@
     :run write-build-records-step}
    {:id :materialize-publications
     :requires [:build-plan :config-value :materialization-result :output-root
-               :prior-output-root :snapshot-date :opts :parser-runtime]
+               :snapshot-date :opts :parser-runtime]
     :produces [:publication-result]
     :run materialize-publications-step}])
 
@@ -975,8 +940,6 @@
                            :source-trust-mode source-trust-mode
                            :parser-candidate-ref (get config-value
                                                       "parser_candidate_ref")})
-          prior-output-root (when (files/directory? output-root)
-                              (str output-root))
           tmp-root (prepare-output-root! output-root replace)]
       (files/create-dirs! tmp-root)
       (let [opts (-> opts
@@ -991,7 +954,6 @@
                               :config-value config-value
                               :snapshot-date snapshot-date
                               :output-root tmp-root
-                              :prior-output-root prior-output-root
                               :source-provenance source-provenance
                               :parser-runtime parser-runtime
                               :opts opts}

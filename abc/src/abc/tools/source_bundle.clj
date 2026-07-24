@@ -412,8 +412,8 @@
         staged (Files/createTempFile
                 "abc-source-bundle-trimmed-" ".zip" attributes)]
     (try
-      (Files/write staged (java.util.Arrays/copyOfRange data 0 (int end))
-                   (make-array java.nio.file.OpenOption 0))
+      (files/write-bytes! (.toFile staged)
+                          (java.util.Arrays/copyOfRange data 0 (int end)))
       (when-not (.setReadOnly (.toFile staged))
         (throw (IOException. "could not make trimmed source archive read-only")))
       (.toFile staged)
@@ -433,7 +433,7 @@
   trimmed byte count; the archive identity stays the hash of the file as
   shipped, garbage included."
   [zip-file staged limits original-error]
-  (let [data (Files/readAllBytes (.toPath ^java.io.File staged))
+  (let [data ^bytes (files/read-bytes staged)
         n (alength data)
         candidates (->> (eocd-candidate-ends data)
                         (filter #(< % n))

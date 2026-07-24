@@ -37,13 +37,15 @@ def default_report_dir(cwd: pathlib.Path) -> pathlib.Path:
 
 
 def default_abc_tei_dirs(cwd: pathlib.Path) -> list[str]:
+    # Only explicit ABC_TEI_EAJ_ABC_TEI_DIRS values are honored. The former
+    # implicit fallback named the retired snapshot producer's output place
+    # (target/soranoha/full-corpus-publication-basic-ja/artifacts); it was not a
+    # value contract, so a coincidentally-existing old target dir must not be
+    # picked up. Absent the env var, there is no default TEI directory.
     env_value = os.environ.get("ABC_TEI_EAJ_ABC_TEI_DIRS")
     if env_value:
         return [path for path in env_value.split(os.pathsep) if path]
-    candidates = [
-        cwd / "target" / "soranoha" / "full-corpus-publication-basic-ja" / "artifacts",
-    ]
-    return [candidate.as_posix() for candidate in candidates if candidate.exists()]
+    return []
 
 
 def run_compare(context: ReportContext, extra: list[str], output: pathlib.Path) -> None:

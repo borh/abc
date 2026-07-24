@@ -4,11 +4,9 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-publication :as materialize-publication]
-            [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.publication-policy :as publication-policy]
             [abc.tools.request-set-resolver :as resolver]
             [abc.tools.source-snapshot-fixture :as fixture]
-            [abc.tools.snapshot-index :as snapshot-index]
             [abc.tools.soranoha :as soranoha]
             [abc.tools.soranoha-build-publication :as build-publication]
             [abc.tools.source-bundle :as source-bundle]
@@ -18,7 +16,7 @@
             [clojure.test :refer [deftest is testing]])
   (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio.charset StandardCharsets]
-           [java.nio.file AccessDeniedException Files NoSuchFileException]
+           [java.nio.file AccessDeniedException NoSuchFileException]
            [java.util.zip ZipEntry ZipOutputStream]))
 
 ;; --replace is solely atomic installation policy: it governs whether an
@@ -43,26 +41,6 @@
       (let [result (#'build-publication/promote-output-root! tmp target false)]
         (is (instance? java.io.File result))
         (is (= "ok" (slurp (fs/file target "artifact"))))))))
-
-(defn- temp-json-path [prefix]
-  (let [file (java.io.File/createTempFile prefix ".json")]
-    (.delete file)
-    (str file)))
-
-(deftest archive-summary-does-not-descend-through-directory-symlinks-test
-  (let [base (fixture/temp-dir "abc-soranoha-symlinked-archives")
-        root (io/file base "root")
-        external (io/file base "external")]
-    (.mkdirs root)
-    (.mkdirs external)
-    (spit (io/file root "z.tar.zst") "z")
-    (spit (io/file external "b.tar.zst") "b")
-    (spit (io/file external "a.tar.zst") "a")
-    (Files/createSymbolicLink (.toPath (io/file root "linked"))
-                              (.toPath external)
-                              (make-array java.nio.file.attribute.FileAttribute 0))
-    (is (= ["z.tar.zst"]
-           (get (#'soranoha/archive-summary root) "paths")))))
 
 (deftest work-zip-files-does-not-descend-through-directory-symlinks-test
   (fs/with-temp-dir [base {}]
@@ -178,33 +156,6 @@
       "nodes" [] "warnings" [] "errors" []})
     (abc-json/write-deterministic-json-file! divergence-file {"stub" true})))
 
-(defn- write-generated-source-request-set!
-  [root label]
-  (let [input-root (io/file root "materialized")
-        source-snapshot-root (io/file root "source-snapshot")
-        request-set-file (io/file root (str label ".json"))]
-    (fixture/materialized-work! input-root
-                                {:slug "alpha"
-                                 :title "一"
-                                 :work-id "000001"
-                                 :person-id "000879"
-                                 :work-hash (fixture/example-hash "a1")})
-    (with-out-str
-      (is (zero? (soranoha/run!
-                  ["source-snapshot"
-                   (str input-root)
-                   (str source-snapshot-root)
-                   "unit-test-source-snapshot"
-                   "2026-07-07"]))))
-    (with-out-str
-      (is (zero? (soranoha/run!
-                  ["resolve-request-set"
-                   label
-                   (str request-set-file)
-                   (str (io/file source-snapshot-root
-                                 "source-snapshot.json"))]))))
-    request-set-file))
-
 (deftest list-request-sets-prints-checked-in-labels-test
   (let [out (with-out-str
               (is (zero? (soranoha/run! ["list-request-sets"]))))]
@@ -220,189 +171,31 @@
     (is (string/includes? out (get resolved "request_set_id")))
     (is (not (string/includes? out "fixture_role")))))
 
-(deftest snapshot-index-command-generates-index-from-plan-test
-  (let [output-path (temp-json-path "abc-soranoha-snapshot-index")
-        request-set (resolver/resolve-request-set "smoke-basic-ja")
+;; The producer commands (snapshot-index/reproduce/materialize-snapshot-root!)
+;; were retired with the competing publication composition. The read-only
+;; explain/validate projections stay and are characterized here against the
+;; checked-in 0.1.1 example index (a read-only value, not a materialized root)
+;; until Task 8 versions the index and its projections to 0.2.0.
+(def ^:private example-snapshot-index-path
+  "examples/v0/snapshot/snapshot-index.json")
+
+(deftest explain-snapshot-command-explains-checked-in-example-index-test
+  (let [snapshot (files/read-json example-snapshot-index-path)
         out (with-out-str
-              (is (zero? (soranoha/run! ["snapshot-index"
-                                         "smoke-basic-ja"
-                                         output-path]))))
-        snapshot (files/read-json output-path)]
-    (try
-      (is (string/includes? out output-path))
-      (is (= (get request-set "request_set_id")
-             (get-in snapshot ["snapshot_index_identity_object"
-                               "request_set_id"])))
-      (is (= (manifest/schema-hash "schemas/snapshot-index.schema.json")
-             (get snapshot "schema_hash")))
-      (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
-      (finally
-        (.delete (io/file output-path))))))
+              (is (zero? (soranoha/run! ["explain-snapshot"
+                                         example-snapshot-index-path]))))]
+    (is (string/includes? out (get snapshot "snapshot_label")))
+    (is (string/includes? out (get snapshot "snapshot_identity_hash")))
+    (is (string/includes? out "failure_rate:"))))
 
-(deftest snapshot-index-command-accepts-resolved-request-set-file-test
-  (let [root (fixture/temp-dir "abc-soranoha-request-set-file-index")
-        request-set-file (io/file root "request-set.json")
-        output-path (io/file root "snapshot-index.json")
-        request-set (resolver/resolve-request-set "smoke-basic-ja")]
-    (try
-      (manifest/write-json-file! request-set-file request-set)
-      (let [out (with-out-str
-                  (is (zero? (soranoha/run! ["snapshot-index"
-                                             (str request-set-file)
-                                             (str output-path)]))))
-            snapshot (files/read-json output-path)]
-        (is (string/includes? out (str output-path)))
-        (is (= (get request-set "request_set_id")
-               (get-in snapshot ["snapshot_index_identity_object"
-                                 "request_set_id"])))
-        (is (= (get request-set "label")
-               (get snapshot "request_set_label")))
-        (is (true? (snapshot-index/validate-snapshot-index! snapshot))))
-      (finally
-        (delete-tree! root)))))
-
-(deftest explain-snapshot-command-validates-and-prints-identity-test
-  (let [output-path (temp-json-path "abc-soranoha-explain-snapshot")]
-    (try
-      (with-out-str
-        (is (zero? (soranoha/run! ["snapshot-index" "smoke-basic-ja" output-path]))))
-      (let [snapshot (files/read-json output-path)
-            out (with-out-str
-                  (is (zero? (soranoha/run! ["explain-snapshot"
-                                             output-path]))))]
-        (is (string/includes? out (get snapshot "snapshot_label")))
-        (is (string/includes? out (get snapshot "snapshot_identity_hash")))
-        (is (string/includes? out "failure_rate:")))
-      (finally
-        (.delete (io/file output-path))))))
-
-(deftest validate-command-accepts-snapshot-root-test
-  (let [root (io/file "target/soranoha/smoke-basic-ja")]
-    (try
-      (delete-tree! root)
-      (with-out-str
-        (is (zero? (soranoha/run! ["reproduce" "smoke-basic-ja"]))))
-      (let [out (with-out-str
-                  (is (zero? (soranoha/run! ["validate" (str root)]))))]
-        (is (string/includes? out "snapshot_valid: true")))
-      (finally
-        (delete-tree! root)))))
-
-(deftest validate-command-rejects-missing-referenced-manifest-test
-  (let [root (io/file "target/soranoha/smoke-basic-ja")
-        missing-manifest (io/file root
-                                  "artifacts/analysis/analysis.manifest.json")]
-    (try
-      (delete-tree! root)
-      (with-out-str
-        (is (zero? (soranoha/run! ["reproduce" "smoke-basic-ja"]))))
-      (is (.delete missing-manifest))
-      (let [err (java.io.StringWriter.)]
-        (binding [*err* err]
-          (is (= 1 (soranoha/run! ["validate" (str root)]))))
-        (is (string/includes? (str err)
-                              "Referenced snapshot manifest does not exist")))
-      (finally
-        (delete-tree! root)))))
-
-(deftest reproduce-command-writes-default-smoke-snapshot-index-test
-  (let [root (io/file "target/soranoha/smoke-basic-ja")
-        output-path (io/file root "snapshot-index.json")
-        expected-files ["artifacts/parser-ir/parser-ir.json"
-                        "artifacts/parser-ir/parser-ir.manifest.json"
-                        "artifacts/plaintext/plain.txt"
-                        "artifacts/plaintext/plaintext.manifest.json"
-                        "artifacts/tei/tei.xml"
-                        "artifacts/tei/tei.manifest.json"
-                        "artifacts/analysis/analysis-result.json"
-                        "artifacts/analysis/analysis.manifest.json"]]
-    (try
-      (delete-tree! root)
-      (let [out (with-out-str
-                  (is (zero? (soranoha/run! ["reproduce" "smoke-basic-ja"]))))]
-        (is (.exists output-path))
-        (doseq [path expected-files]
-          (is (.exists (io/file root path))
-              (str path " should be materialized into the smoke snapshot root")))
-        (is (string/includes? out (str output-path)))
-        (let [snapshot (files/read-json output-path)
-              references (get snapshot "artifact_references")
-              reference-kinds (set (map #(get % "artifact_kind") references))
-              locators (set (map #(get-in % ["locator" "path"]) references))]
-          (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
-          (is (contains? reference-kinds "parser-ir"))
-          (is (contains? reference-kinds "plaintext"))
-          (is (contains? reference-kinds "tei"))
-          (is (contains? reference-kinds "analysis"))
-          (is (contains? locators "artifacts/analysis/analysis.manifest.json"))))
-      (finally
-        (delete-tree! root)))))
-
-(deftest reproduce-command-accepts-resolved-request-set-file-test
-  (let [request-set-root (fixture/temp-dir "abc-soranoha-request-set-file-reproduce")
-        request-set-file (io/file request-set-root "request-set.json")
-        snapshot-root (io/file "target/soranoha/smoke-basic-ja")]
-    (try
-      (delete-tree! snapshot-root)
-      (manifest/write-json-file! request-set-file
-                                 (resolver/resolve-request-set "smoke-basic-ja"))
-      (let [out (with-out-str
-                  (is (zero? (soranoha/run! ["reproduce"
-                                             (str request-set-file)]))))
-            output-path (io/file snapshot-root "snapshot-index.json")]
-        (is (.exists output-path))
-        (is (string/includes? out (str output-path)))
-        (is (= "smoke-basic-ja"
-               (get (files/read-json output-path) "request_set_label")))
-        (with-out-str
-          (is (zero? (soranoha/run! ["validate" (str snapshot-root)])))))
-      (finally
-        (delete-tree! snapshot-root)
-        (delete-tree! request-set-root)))))
-
-(deftest reproduce-command-materializes-demo-request-set-test
-  (let [root (io/file "target/soranoha/demo-basic-ja")
-        output-path (io/file root "snapshot-index.json")
-        expected-work-hashes #{"sha256:2323232323232323232323232323232323232323232323232323232323232323"
-                               "sha256:2424242424242424242424242424242424242424242424242424242424242424"}
-        expected-files ["artifacts/works/demo-fixture-a/parser-ir/parser-ir.manifest.json"
-                        "artifacts/works/demo-fixture-a/plaintext/plaintext.manifest.json"
-                        "artifacts/works/demo-fixture-a/tei/tei.manifest.json"
-                        "artifacts/works/demo-fixture-a/analysis/analysis.manifest.json"
-                        "artifacts/works/demo-fixture-b/parser-ir/parser-ir.manifest.json"
-                        "artifacts/works/demo-fixture-b/plaintext/plaintext.manifest.json"
-                        "artifacts/works/demo-fixture-b/tei/tei.manifest.json"
-                        "artifacts/works/demo-fixture-b/analysis/analysis.manifest.json"]]
-    (try
-      (delete-tree! root)
-      (with-out-str
-        (is (zero? (soranoha/run! ["reproduce" "demo-basic-ja"]))))
-      (is (.exists output-path))
-      (doseq [path expected-files]
-        (is (.exists (io/file root path))
-            (str path " should be materialized into the demo snapshot root")))
-      (when (.exists output-path)
-        (let [snapshot (files/read-json output-path)
-              references (get snapshot "artifact_references")
-              reference-kinds (frequencies (map #(get % "artifact_kind")
-                                                references))
-              manifest-work-hashes (set
-                                    (for [path expected-files]
-                                      (get-in (files/read-json
-                                               (io/file root path))
-                                              ["manifest_identity_object"
-                                               "work_content_hash"])))]
-          (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
-          (is (= {"parser-ir" 2
-                  "plaintext" 2
-                  "tei" 2
-                  "analysis" 2}
-                 reference-kinds))
-          (is (= expected-work-hashes manifest-work-hashes))
-          (with-out-str
-            (is (zero? (soranoha/run! ["validate" (str root)]))))))
-      (finally
-        (delete-tree! root)))))
+(deftest validate-command-validates-checked-in-example-index-test
+  (let [snapshot (files/read-json example-snapshot-index-path)
+        out (with-out-str
+              (is (zero? (soranoha/run! ["validate"
+                                         example-snapshot-index-path]))))]
+    (is (string/includes? out "snapshot_valid: true"))
+    (is (string/includes? out (get snapshot "snapshot_label")))
+    (is (string/includes? out (get snapshot "snapshot_identity_hash")))))
 
 (deftest source-snapshot-command-generates-workset-and-snapshot-test
   (let [root (fixture/temp-dir "abc-soranoha-source-snapshot")
@@ -481,330 +274,6 @@
         (is (string/includes? out (str request-set-file)))
         (is (string/includes? out (get resolved "request_set_id")))
         (is (string/includes? out "subjects_count: 1")))
-      (finally
-        (delete-tree! root)))))
-
-(deftest reproduce-command-uses-generated-full-corpus-request-set-test
-  (let [root (fixture/temp-dir "abc-soranoha-reproduce-source-snapshot")
-        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")]
-    (try
-      (delete-tree! snapshot-root)
-      (let [request-set-file (write-generated-source-request-set!
-                              root
-                              "full-corpus-basic-ja")
-            out (with-out-str
-                  (is (zero? (soranoha/run!
-                              ["reproduce" (str request-set-file)]))))
-            snapshot-file (io/file snapshot-root "snapshot-index.json")
-            run-summary-file (io/file snapshot-root "run-summary.json")
-            parser-manifest (io/file snapshot-root
-                                     "artifacts/works/alpha/parser-ir/parser-ir.manifest.json")]
-        (is (string/includes? out (str snapshot-file)))
-        (is (.exists parser-manifest))
-        (is (.exists snapshot-file))
-        (is (.exists run-summary-file))
-        (let [snapshot (files/read-json snapshot-file)]
-          (is (= "full-corpus-basic-ja" (get snapshot "request_set_label")))
-          (is (= 4 (get-in snapshot ["summary" "total_artifacts"])))
-          (is (= (parser-evidence/citable-hashes)
-                 (get-in snapshot ["snapshot_index_identity_object"
-                                   "parser_evidence_hashes"])))
-          (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
-          (let [run-summary (files/read-json run-summary-file)]
-            (is (= (get snapshot "snapshot_identity_hash")
-                   (get run-summary "snapshot_identity_hash")))
-            (is (= (get snapshot "summary")
-                   (get run-summary "snapshot_summary")))
-            (is (= (get-in snapshot ["snapshot_index_identity_object"
-                                     "parser_evidence_hashes"])
-                   (get run-summary "parser_evidence_hashes"))))
-          (with-out-str
-            (is (zero? (soranoha/run! ["validate" (str snapshot-root)]))))))
-      (finally
-        (delete-tree! snapshot-root)
-        (delete-tree! root)))))
-
-(deftest publication-report-command-writes-citable-reproduction-evidence-test
-  (let [root (fixture/temp-dir "abc-soranoha-publication-report")
-        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")
-        report-file (io/file root "publication-report.json")]
-    (try
-      (delete-tree! snapshot-root)
-      (let [request-set-file (write-generated-source-request-set!
-                              root
-                              "full-corpus-basic-ja")]
-        (with-out-str
-          (is (zero? (soranoha/run!
-                      ["reproduce" (str request-set-file)]))))
-        (let [out (with-out-str
-                    (is (zero? (soranoha/run!
-                                ["publication-report"
-                                 (str snapshot-root)
-                                 (str report-file)]))))
-              snapshot (files/read-json (io/file snapshot-root
-                                                 "snapshot-index.json"))
-              run-summary (files/read-json (io/file snapshot-root
-                                                    "run-summary.json"))
-              report (files/read-json report-file)]
-          (is (string/includes? out (str report-file)))
-          (is (= "https://w3id.org/abc/soranoha-publication-report-v0.json"
-                 (get report "schema_id")))
-          (is (= "0.1.0" (get report "report_version")))
-          (is (= (get snapshot "snapshot_label")
-                 (get report "snapshot_label")))
-          (is (= (get snapshot "snapshot_identity_hash")
-                 (get report "snapshot_identity_hash")))
-          (is (= (get snapshot "request_set_label")
-                 (get report "request_set_label")))
-          (is (= (get-in snapshot ["snapshot_index_identity_object"
-                                   "request_set_id"])
-                 (get report "request_set_id")))
-          (is (= (get-in snapshot ["snapshot_index_identity_object"
-                                   "source_snapshot_hash"])
-                 (get report "source_snapshot_hash")))
-          (is (= (get snapshot "summary")
-                 (get report "snapshot_summary")))
-          (is (= {"analysis" 1
-                  "parser-ir" 1
-                  "plaintext" 1
-                  "tei" 1}
-                 (get report "artifact_kind_counts")))
-          (is (= 4 (get report "manifest_reference_count")))
-          (is (= (get run-summary "artifact_manifest_count")
-                 (get report "artifact_manifest_count")))
-          (is (= (get run-summary "materialization_count")
-                 (get report "materialization_count")))
-          (is (= (parser-evidence/citable-hashes)
-                 (get report "parser_evidence_hashes")))
-          (is (= (get run-summary "runtime_environment")
-                 (get report "runtime_environment")))
-          (is (= {"snapshot_root_valid" true
-                  "checked_manifest_references" 4
-                  "run_summary_valid" true}
-                 (get report "validation")))))
-      (finally
-        (delete-tree! snapshot-root)
-        (delete-tree! root)))))
-
-(deftest layout-report-command-compares-static-layout-strategies-test
-  (let [root (fixture/temp-dir "abc-soranoha-layout-report")
-        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")
-        report-file (io/file root "layout-report.json")]
-    (try
-      (delete-tree! snapshot-root)
-      (let [request-set-file (write-generated-source-request-set!
-                              root
-                              "full-corpus-basic-ja")]
-        (with-out-str
-          (is (zero? (soranoha/run!
-                      ["reproduce" (str request-set-file)]))))
-        (let [out (with-out-str
-                    (is (zero? (soranoha/run!
-                                ["layout-report"
-                                 (str snapshot-root)
-                                 (str report-file)]))))
-              snapshot (files/read-json (io/file snapshot-root
-                                                 "snapshot-index.json"))
-              report (files/read-json report-file)
-              strategies (into {}
-                               (map (juxt #(get % "strategy_id") identity))
-                               (get report "strategy_estimates"))]
-          (is (string/includes? out (str report-file)))
-          (is (= "https://w3id.org/abc/soranoha-layout-report-v0.json"
-                 (get report "schema_id")))
-          (is (= "0.1.0" (get report "report_version")))
-          (is (= (get snapshot "snapshot_identity_hash")
-                 (get report "snapshot_identity_hash")))
-          (is (= (get snapshot "summary")
-                 (get report "snapshot_summary")))
-          (is (= {"analysis" 1
-                  "parser-ir" 1
-                  "plaintext" 1
-                  "tei" 1}
-                 (get report "artifact_kind_counts")))
-          (is (= {"snapshot_root_valid" true
-                  "checked_manifest_references" 4}
-                 (get report "validation")))
-          (is (= 4 (get-in report ["actual_root" "referenced_manifest_count"])))
-          (is (pos? (get-in report ["actual_root" "file_count"])))
-          (is (pos? (get-in report ["actual_root" "byte_count"])))
-          (is (= {"loose_artifact_kinds" ["annotation" "plaintext" "tei"]
-                  "batched_artifact_kinds" ["analysis" "tokenized"]}
-                 (select-keys (get strategies "mixed-default-v1")
-                              ["loose_artifact_kinds"
-                               "batched_artifact_kinds"])))
-          (is (= 2 (get-in strategies ["mixed-default-v1"
-                                       "loose_content_file_count"])))
-          (is (= 1 (get-in strategies ["mixed-default-v1"
-                                       "archive_count"])))
-          (is (= 4 (get-in strategies ["all-loose-v1"
-                                       "loose_content_file_count"])))
-          (is (= 0 (get-in strategies ["all-loose-v1"
-                                       "archive_count"])))
-          (is (= 0 (get-in strategies ["all-batched-v1"
-                                       "loose_content_file_count"])))
-          (is (= 4 (get-in strategies ["all-batched-v1"
-                                       "archive_count"])))))
-      (finally
-        (delete-tree! snapshot-root)
-        (delete-tree! root)))))
-
-(deftest stage-publication-command-writes-mixed-static-layout-test
-  (let [root (fixture/temp-dir "abc-soranoha-stage-publication")
-        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")
-        staged-root (io/file root "published")]
-    (try
-      (delete-tree! snapshot-root)
-      (let [request-set-file (write-generated-source-request-set!
-                              root
-                              "full-corpus-basic-ja")]
-        (with-out-str
-          (is (zero? (soranoha/run!
-                      ["reproduce" (str request-set-file)]))))
-        (let [staged-index-file (io/file staged-root "index.json")
-              analysis-archive-file (io/file staged-root
-                                             "artifacts/analysis/batches/analysis-batch-0001.tar.zst")
-              out (with-redefs [publication-policy/assert-release-allowed!
-                                (constantly :ok)]
-                    (with-out-str
-                      (is (zero? (soranoha/run!
-                                  ["stage-publication"
-                                   (str snapshot-root)
-                                   (str staged-root)])))))]
-          (is (string/includes? out (str staged-index-file)))
-          (is (.exists staged-index-file))
-          (when (.exists staged-index-file)
-            (let [staged-index (files/read-json staged-index-file)
-                  references (get staged-index "artifact_references")
-                  reference-by-kind (into {}
-                                          (map (juxt #(get % "artifact_kind")
-                                                     identity))
-                                          references)
-                  plaintext-ref (get reference-by-kind "plaintext")
-                  tei-ref (get reference-by-kind "tei")
-                  analysis-ref (get reference-by-kind "analysis")]
-              (is (.exists (io/file staged-root "run-summary.json")))
-              (is (= (get (files/read-json (io/file snapshot-root
-                                                    "snapshot-index.json"))
-                          "snapshot_identity_hash")
-                     (get staged-index "snapshot_identity_hash")))
-              (is (= "loose" (get-in plaintext-ref ["locator" "kind"])))
-              (is (= "manifests/by-work/alpha/plaintext.manifest.json"
-                     (get-in plaintext-ref ["locator" "path"])))
-              (is (.exists (io/file staged-root
-                                    "artifacts/plaintext/by-work/alpha/plain.txt")))
-              (is (= "loose" (get-in tei-ref ["locator" "kind"])))
-              (is (= "manifests/by-work/alpha/tei.manifest.json"
-                     (get-in tei-ref ["locator" "path"])))
-              (is (.exists (io/file staged-root
-                                    "artifacts/tei/by-work/alpha/tei.xml")))
-              (is (= "archive-member" (get-in analysis-ref ["locator"
-                                                            "kind"])))
-              (is (= "tar.zst" (get-in staged-index ["layout_policy"
-                                                     "archive_format"])))
-              (is (= "artifacts/analysis/batches/analysis-batch-0001.tar.zst"
-                     (get-in analysis-ref ["locator" "archive_path"])))
-              (is (= "alpha/analysis.manifest.json"
-                     (get-in analysis-ref ["locator" "member_path"])))
-              (is (pos? (.length analysis-archive-file)))
-              (is (true? (snapshot-index/validate-snapshot-index! staged-index)))
-              (with-out-str
-                (is (zero? (soranoha/run! ["validate" (str staged-root)]))))
-              (spit analysis-archive-file "")
-              (let [err (java.io.StringWriter.)]
-                (binding [*err* err]
-                  (is (= 1 (soranoha/run! ["validate" (str staged-root)]))))
-                (is (string/includes? (str err)
-                                      "Referenced snapshot archive does not contain member")))))))
-      (finally
-        (delete-tree! snapshot-root)
-        (delete-tree! root)))))
-
-(deftest publication-rehearsal-command-runs-full-chain-test
-  (let [root (fixture/temp-dir "abc-soranoha-publication-rehearsal")
-        input-root (io/file root "materialized")
-        output-root (io/file root "rehearsal")]
-    (try
-      (fixture/materialized-work! input-root
-                                  {:slug "alpha"
-                                   :title "一"
-                                   :work-id "000001"
-                                   :person-id "000879"
-                                   :work-hash (fixture/example-hash "a1")})
-      (let [out (with-out-str
-                  (is (zero? (soranoha/run!
-                              ["publication-rehearsal"
-                               (str input-root)
-                               (str output-root)
-                               "full-corpus-basic-ja"
-                               "unit-test-source-snapshot"
-                               "2026-07-07"]))))
-            report-file (io/file output-root "rehearsal-report.json")
-            request-set-file (io/file output-root
-                                      "request-sets"
-                                      "full-corpus-basic-ja.json")
-            snapshot-root (io/file output-root "snapshot-root")
-            staged-root (io/file output-root "publication")
-            publication-report-file (io/file output-root
-                                             "reports"
-                                             "publication-report.json")
-            layout-report-file (io/file output-root
-                                        "reports"
-                                        "layout-report.json")
-            workflow-plan-file (io/file output-root "workflow-plan.json")
-            workflow-run-file (io/file output-root "workflow-run.json")]
-        (is (string/includes? out (str report-file)))
-        (is (.exists request-set-file))
-        (is (.exists (io/file snapshot-root "snapshot-index.json")))
-        (is (.exists (io/file staged-root "index.json")))
-        (is (.exists publication-report-file))
-        (is (.exists layout-report-file))
-        (is (.exists workflow-plan-file))
-        (is (.exists workflow-run-file))
-        (with-out-str
-          (is (zero? (soranoha/run! ["validate" (str staged-root)]))))
-        (let [workflow-run (files/read-json workflow-run-file)
-              report (files/read-json report-file)
-              staged-index (files/read-json (io/file staged-root "index.json"))
-              request-set (files/read-json request-set-file)]
-          (is (= "soranoha.publication-rehearsal.v1"
-                 (get workflow-run "workflow_id")))
-          (is (= "passed" (get workflow-run "status")))
-          (is (= 8 (get workflow-run "step_count")))
-          (is (= ["source-snapshot"
-                  "resolve-request-set"
-                  "materialize-snapshot-root"
-                  "validate-snapshot-root"
-                  "publication-report"
-                  "layout-report"
-                  "stage-publication"
-                  "validate-staged-publication"]
-                 (mapv #(get % "id") (get workflow-run "steps"))))
-          (is (= "https://w3id.org/abc/soranoha-publication-rehearsal-report-v0.json"
-                 (get report "schema_id")))
-          (is (= "0.1.0" (get report "report_version")))
-          (is (= (get request-set "request_set_id")
-                 (get report "request_set_id")))
-          (is (= (get staged-index "snapshot_identity_hash")
-                 (get report "snapshot_identity_hash")))
-          (is (= 1 (get report "work_count")))
-          (is (= 4 (get report "manifest_reference_count")))
-          (is (= "tar.zst" (get report "archive_format")))
-          (is (= "soranoha publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"
-                 (get report "rehearsal_command")))
-          (is (= ["source-snapshot"
-                  "resolve-request-set"
-                  "materialize-snapshot-root"
-                  "publication-report"
-                  "layout-report"
-                  "stage-publication"
-                  "validate-staged"]
-                 (mapv #(get % "step") (get report "internal_steps"))))
-          (is (nil? (get report "commands")))
-          (is (= true (get-in report ["validation"
-                                      "snapshot_root_valid"])))
-          (is (= true (get-in report ["validation"
-                                      "staged_root_valid"])))))
       (finally
         (delete-tree! root)))))
 
@@ -903,11 +372,7 @@
           (is (= ["materialize-source-selection"
                   "write-build-records"
                   "materialize-publications"]
-                 (mapv #(get % "id") (get workflow-run "steps"))))
-          (with-out-str
-            (is (zero? (soranoha/run!
-                        ["validate-workflow"
-                         (str build-workflow-run-file)]))))))
+                 (mapv #(get % "id") (get workflow-run "steps"))))))
       (finally
         (delete-tree! root)))))
 
@@ -1556,33 +1021,6 @@
                            :replace false
                            :concurrency 3}))))))
 
-(deftest reproduce-command-skips-analysis-for-generated-publication-request-set-test
-  (let [root (fixture/temp-dir "abc-soranoha-reproduce-publication-source")
-        snapshot-root (io/file "target/soranoha/full-corpus-publication-basic-ja")]
-    (try
-      (delete-tree! snapshot-root)
-      (let [request-set-file (write-generated-source-request-set!
-                              root
-                              "full-corpus-publication-basic-ja")
-            out (with-out-str
-                  (is (zero? (soranoha/run!
-                              ["reproduce" (str request-set-file)]))))
-            snapshot-file (io/file snapshot-root "snapshot-index.json")
-            analysis-manifest (io/file snapshot-root
-                                       "artifacts/works/alpha/analysis/analysis.manifest.json")]
-        (is (string/includes? out (str snapshot-file)))
-        (is (not (.exists analysis-manifest)))
-        (let [snapshot (files/read-json snapshot-file)]
-          (is (= "full-corpus-publication-basic-ja"
-                 (get snapshot "request_set_label")))
-          (is (= 3 (get-in snapshot ["summary" "total_artifacts"])))
-          (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
-          (with-out-str
-            (is (zero? (soranoha/run! ["validate" (str snapshot-root)]))))))
-      (finally
-        (delete-tree! snapshot-root)
-        (delete-tree! root)))))
-
 (deftest cli-status-and-stream-contract-test
   (testing "global help is successful stdout"
     (doseq [args [[] ["help"] ["--help"]]]
@@ -1602,19 +1040,19 @@
   (testing "fixed positional arity is status 2 on stderr"
     (let [err (java.io.StringWriter.)]
       (binding [*err* err]
-        (is (= 2 (soranoha/run! ["snapshot-index"]))))
+        (is (= 2 (soranoha/run! ["explain-request-set"]))))
       (is (string/includes? (str err) "Required option")))))
 
 (deftest generated-command-help-test
-  (doseq [args [["help" "snapshot-index"]
-                ["snapshot-index" "--help"]
-                ["snapshot-index" "-h"]]]
+  (doseq [args [["help" "publication-report"]
+                ["publication-report" "--help"]
+                ["publication-report" "-h"]]]
     (let [out (java.io.StringWriter.)
           err (java.io.StringWriter.)]
       (binding [*out* out *err* err]
         (is (= 0 (soranoha/run! args))))
-      (is (string/includes? (str out) "Usage: soranoha snapshot-index"))
-      (is (string/includes? (str out) "<label-or-request-set-json>"))
+      (is (string/includes? (str out) "Usage: soranoha publication-report"))
+      (is (string/includes? (str out) "<snapshot-root>"))
       (is (string/includes? (str out) "<output-path>"))
       (is (string/includes? (str out) "--help"))
       (is (string/blank? (str err))))))
@@ -1631,18 +1069,18 @@
               (is (= 0 (soranoha/run! ["--help"]))))]
     (is (string/includes? out "Usage: soranoha"))
     (is (string/includes? out "Commands:"))
-    (doseq [command ["snapshot-index" "build-publication"
+    (doseq [command ["explain-request-set" "build-publication"
                      "annotation-join-stats-run"]]
       (is (string/includes? out command)))))
 
 (deftest command-help-does-not-run-command-test
   (let [ran? (atom false)]
-    (with-redefs [soranoha/snapshot-index! (fn [& _] (reset! ran? true))]
-      (is (= 0 (soranoha/run! ["snapshot-index" "--help"]))))
+    (with-redefs [soranoha/publication-report! (fn [& _] (reset! ran? true))]
+      (is (= 0 (soranoha/run! ["publication-report" "--help"]))))
     (is (false? @ran?))))
 
 (deftest malformed-help-requests-are-usage-errors-test
-  (doseq [args [["help" "nope"] ["help" "snapshot-index" "extra"]]]
+  (doseq [args [["help" "nope"] ["help" "explain-request-set" "extra"]]]
     (let [err (java.io.StringWriter.)]
       (binding [*err* err]
         (is (= 2 (soranoha/run! args))))
@@ -1653,3 +1091,21 @@
     (binding [*err* err]
       (is (= 2 (soranoha/run! ["nope"]))))
     (is (string/includes? (str err) "Unknown command"))))
+
+;; Executable proof that the competing publication composition is gone: the four
+;; retired dispatcher commands no longer resolve, and the five retired producer
+;; vars are absent from the namespace.
+(deftest retired-publication-producer-surface-is-absent-test
+  (testing "retired dispatcher commands return the unknown-command exit"
+    (doseq [command ["snapshot-index" "reproduce"
+                     "publication-rehearsal" "validate-workflow"]]
+      (let [err (java.io.StringWriter.)]
+        (binding [*err* err]
+          (is (= 2 (soranoha/run! [command])) command))
+        (is (string/includes? (str err) "Unknown command") command))))
+  (testing "retired producer vars no longer resolve"
+    (doseq [var-name ['build-snapshot-index 'snapshot-index!
+                      'materialize-snapshot-root! 'reproduce!
+                      'publication-rehearsal!]]
+      (is (nil? (ns-resolve 'abc.tools.soranoha var-name))
+          (str var-name)))))

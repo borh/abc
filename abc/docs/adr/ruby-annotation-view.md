@@ -65,18 +65,17 @@ built:
   outside the recipe system too (the publication flow consumes the
   plaintext view, as in `full-corpus-publication-basic-ja`; the annotation
   materializer consumes annotation views directly), so dead-view detection
-  is not decidable from the recipe registry. Materializing annotation artifacts *per request set* landed 2026-07-10:
-  `abc.tools.soranoha/materialize-snapshot-root!` resolves the annotation
-  view once per run
-  (`abc.tools.materialize-annotations/resolve-annotation-materialization`,
-  fail-closed on unknown/duplicate policy hashes and on anything but exactly
-  one aligned plaintext view), materializes per-work
-  `annotations/body-annotations.json` + `annotation.manifest.json`, includes
-  them in `snapshot-index.json` (snapshot-index schema v0.1.1 admits the
-  `annotation` kind), and runs the annotation release guardrails in the
-  batch path (`abc.tools.soranoha/validate-annotation-manifests!`). Covered
-  by `test/abc/tools/soranoha_annotation_test.clj` and
-  `test/abc/tools/materialize_annotations_test.clj`. Corpus-scale join
+  is not decidable from the recipe registry. Materializing annotation artifacts *per request set* landed 2026-07-10; the snapshot batch-loop host (`abc.tools.soranoha/materialize-snapshot-root!`) was retired 2026-07-24 with the sole-publication-producer cutover (`refactor(publication)!`).
+  The annotation capability itself is retained:
+  `abc.tools.materialize-annotations/resolve-annotation-materialization`
+  resolves the annotation view once per run
+  (fail-closed on unknown/duplicate policy hashes and on anything but exactly
+  one aligned plaintext view) and materializes per-work
+  `annotations/body-annotations.json` + `annotation.manifest.json`; the
+  annotation release guardrails remain enforced by the manifest-index
+  validators (`abc.tools.manifest-index/validate-annotation-release-guardrail!`).
+  Covered by `test/abc/tools/materialize_annotations_test.clj` and
+  `test/abc/tools/manifest_index_test.clj`. Corpus-scale join
   statistics tooling exists (`soranoha annotation-join-stats`,
   `test/abc/tools/annotation_join_stats_test.clj`); the corpus run and its
   D7/D9 evidence are pending

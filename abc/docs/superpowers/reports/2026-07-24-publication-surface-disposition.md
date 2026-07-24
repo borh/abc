@@ -62,7 +62,7 @@ disposition itself.
 | `layout-report` | `soranoha/layout-report!` | **projection** | Derived static-layout comparison; retained. |
 | `stage-publication` | `soranoha/stage-publication!` (delegates to `abc.tools.soranoha-stage-publication`) | **projection** | Downstream derived producer that copies/arranges bytes and cites the source index; explicitly retained per the brief. |
 | `annotation-join-stats` / `annotation-join-stats-run` | `annotation-join-stats/run-join-stats!`, `annotation-join-stats-run/run-annotation-join-stats-run!` | **shared domain capability** | Independent analysis/annotation capability; out of the publication-producer cut entirely. |
-| — (internal, not dispatched) | `soranoha/materialize-snapshot-root!` | **shared domain capability**, pending Lane 4 relocation | Directly called (not only through `reproduce!`) by the live annotation domain test `abc/test/abc/tools/soranoha_annotation_test.clj`. The design's Lane 2 lists it among functions removed *from `soranoha.clj`*, but Task 1 does not delete anything; this row records that a consumer migration (move the annotation-materialization path to its domain owner) must land before/with that removal, not that the capability itself is dead. |
+| — (internal, not dispatched) | `soranoha/materialize-snapshot-root!` | **retire** | Corrected in Task 7 from the earlier "shared domain capability, pending Lane 4 relocation". Its only *production* callers are inside the retiring slice (`reproduce!` and `publication-rehearsal-steps`); the only other reference was the apparatus test `soranoha_annotation_test.clj`, which builds its whole fixture via this producer + the deleted demo snapshot plans and therefore retires with it. Its exclusive helpers `soranoha/write-annotation-artifacts!` and `soranoha/validate-annotation-manifests!` retire with it; the independent annotation capability is the retained `abc.tools.materialize-annotations` namespace (its own test `materialize_annotations_test.clj` and the retained `validate_design_bundle.clj` consumer are untouched). |
 | — (internal, not dispatched) | `materialize_publication.clj#materialize-release-publication!` | **non-release renderer adapter**, target: retire as a *release-named* boundary | Thin `assert-release-allowed!` + `materialize-publication!` wrapper used by the single-work CLI's default (non-`--batch`) path; per the design, its rights check should move to `build-publication` and the name should stop implying release authority. Not renamed or removed in Task 1. |
 
 ## 2. Root and `abc` flake apps, `deps.edn` aliases, launchers, checks
@@ -188,18 +188,34 @@ exercised incidentally at the end of
 needs to move to `workflow/validate-run` directly when the command is
 retired — noted here, not changed in Task 1.
 
-### Tests that use a retiring command only as fixture setup for a retained capability
+### Tests that used a retiring command only as fixture setup for a retained capability — Task 7 resolution
 
-| Test | Retained capability under test | Retiring command used only for setup |
+The retained projection **commands** stay (`validate`, `explain-snapshot`,
+`publication-report`, `layout-report`, `stage-publication`); only their
+now-unbuildable command **tests** are affected. The projections read/validate a
+0.1.1 index; two inspect the index value directly and were rebased onto the
+checked-in 0.1.1 example (`examples/v0/snapshot/snapshot-index.json`), the rest
+required a full materialized root that no retained producer can build until
+Task 8/10 introduces a proper completed-root example, so their tests are retired
+now with coverage explicitly re-established later.
+
+| Test | Command retained? | Task 7 disposition |
 | --- | --- | --- |
-| `validate-command-accepts-snapshot-root-test`, `validate-command-rejects-missing-referenced-manifest-test` | `validate` (**projection**) | `reproduce` |
-| `explain-snapshot-command-validates-and-prints-identity-test` | `explain-snapshot` (**projection**) | `snapshot-index` |
-| `publication-report-command-writes-citable-reproduction-evidence-test`, `layout-report-command-compares-static-layout-strategies-test`, `stage-publication-command-writes-mixed-static-layout-test` | `publication-report`, `layout-report`, `stage-publication` (**projection**) | `reproduce` (via `write-generated-source-request-set!` + `reproduce`) |
+| `explain-snapshot-command-validates-and-prints-identity-test` | `explain-snapshot` — yes | **rebased**, kept: now `explain-snapshot-command-explains-checked-in-example-index-test` reads the checked-in 0.1.1 example index directly. |
+| `validate-command-accepts-snapshot-root-test` (index-value part) | `validate` — yes | **rebased**, kept: now `validate-command-validates-checked-in-example-index-test` validates the checked-in 0.1.1 example index file (read-only, non-directory path). |
+| `validate-command-rejects-missing-referenced-manifest-test` (root-directory reference validation) | `validate` — yes | **test retired now; command retained; coverage re-established Task 8** — needs a full materialized root with a referenced manifest, unbuildable by any retained producer until the Task 8 completed-root example. |
+| `publication-report-command-writes-citable-reproduction-evidence-test` | `publication-report` — yes | **test retired now; command retained; coverage re-established Task 10** (publications-report.json coverage). |
+| `layout-report-command-compares-static-layout-strategies-test` | `layout-report` — yes | **test retired now; command retained; coverage re-established Task 8** against the 0.2.0 completed-root fixture. |
+| `stage-publication-command-writes-mixed-static-layout-test` | `stage-publication` — yes | **test retired now; command retained; coverage re-established Task 8** against the 0.2.0 completed-root fixture. |
 
-These are **fixture characterization** with respect to their setup path and
-**projection** with respect to what they actually assert; retiring `reproduce`
-requires re-plumbing their setup (a later-task consumer migration), not
-deleting the tests.
+These are **not silent drops**: the projection commands are retained, and the
+retired command-level characterizations are re-established in Task 8 (layout-report,
+stage-publication, root-reference validation) and Task 10 (publication-report).
+The underlying projection library logic remains covered now by the dedicated
+domain tests `soranoha_layout_report_test.clj` and `soranoha_stage_publication_test.clj`.
+`snapshot-index-command-*` and `reproduce-command-*` tests (whose sole subject is
+the retired producer) and `archive-summary-does-not-descend-through-directory-symlinks-test`
+(exercises the retired private `archive-summary`) are retired outright.
 
 ### Domain characterization tests unaffected by retirement
 
@@ -235,15 +251,19 @@ only their apparatus tests):
 
 ## Open items carried to later tasks (not resolved by Task 1)
 
-1. `materialize-snapshot-root!` has a live consumer outside the retiring
-   `reproduce!` composition (`soranoha_annotation_test.clj`); Lane 4's
-   "move retained request-set/analysis operations to their domain owners"
-   must land before or with any deletion from `soranoha.clj`.
-2. `validate`, `explain-snapshot`, `publication-report`, `layout-report`, and
-   `stage-publication` tests currently build their fixtures through the
-   retiring `reproduce`/`snapshot-index` commands; their setup must be
-   re-plumbed onto a retained path in the same change that retires those
-   commands (Lane 2), not deleted along with them.
+1. **Resolved in Task 7.** `materialize-snapshot-root!`'s only non-production
+   reference was the apparatus test `soranoha_annotation_test.clj`, which builds
+   its fixture entirely via that producer + the deleted demo snapshot plans, so
+   the file was retired with the producer (not migrated). Independent annotation
+   coverage remains in `materialize_annotations_test.clj`. Its exclusive helpers
+   `write-annotation-artifacts!`/`validate-annotation-manifests!` retired with it.
+2. **Resolved in Task 7.** `validate`/`explain-snapshot` characterizations were
+   rebased onto the checked-in 0.1.1 example index (kept); the
+   `publication-report`/`layout-report`/`stage-publication`/root-directory-`validate`
+   command tests were retired now (their full-root fixture is unbuildable by any
+   retained producer) with coverage re-established in Task 8 (layout-report,
+   stage-publication, root-reference validation) and Task 10 (publication-report).
+   The projection **commands** themselves are all retained.
 3. No root-flake CI check yet invokes the real `soranoha build-publication`
    app over a committed fixture through the flake-exported adapter/parser/
    mapping paths (plan Lane 0 requirement); this is a gap recorded here, not

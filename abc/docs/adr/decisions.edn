@@ -1210,9 +1210,9 @@
       "test/abc/tools/request_set_fixture_test.clj"]}
     {:id :c6,
      :statement
-     "**Done (2026-07-10).** Annotation artifacts materialize per request set\nthrough the batch loop with release guardrails, and join-statistics\ntooling is fixture-tested: `test/abc/tools/soranoha_annotation_test.clj`,\n`test/abc/tools/annotation_join_stats_test.clj`.",
+     "**Done (2026-07-10); snapshot batch-loop retired 2026-07-24.** The\nper-request-set snapshot batch loop that materialized annotation artifacts\n(`materialize-snapshot-root!`) was retired with the sole-publication-producer\ncutover (`refactor(publication)!`). Annotation artifacts still materialize\nthrough the retained `abc.tools.materialize-annotations` capability with release\nguardrails, and join-statistics tooling is fixture-tested:\n`test/abc/tools/materialize_annotations_test.clj`,\n`test/abc/tools/annotation_join_stats_test.clj`.",
      :evidence
-     ["test/abc/tools/soranoha_annotation_test.clj"
+     ["test/abc/tools/materialize_annotations_test.clj"
       "test/abc/tools/annotation_join_stats_test.clj"]}
     {:id :c7,
      :statement
@@ -1485,8 +1485,7 @@
      "`test/abc/tools/adr_test.clj` and\n`test/abc/tools/adr_governance_test.clj` demonstrate lifecycle validation,\ncycle-safe stable dependency witnesses, audit containment, and enforcement\nexit behavior.",
      :kind :structural-invariant,
      :evidence
-     [
-      "test/abc/tools/adr_governance_test.clj"]}
+     ["test/abc/tools/adr_governance_test.clj"]}
     {:id :c3,
      :statement
      "The immutable pre-promotion snapshot of\nevery Accepted ADR except ADR 0034 records the exact corpus and criterion\ncounts, committed governance epoch, `ok = true`, and zero strict problems;\nfinal promotion additionally requires live strict conformance including\nthis ADR.",

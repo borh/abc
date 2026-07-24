@@ -161,6 +161,11 @@
                 abValidatorPackages."ab-aat-to-parser-ir"
               }/bin/ab-aat-to-parser-ir"
               export AB_AAT_TO_PARSER_IR_MAPPING="${ab-validator}/data/aat-to-parser-ir-mapping-v1.json"
+              # The project-owned parser (parser_profile "ab-aozora"): one
+              # native stdin→AAT binary plus the v2 mapping pin — the mapping
+              # selects the AAT schema, so each profile carries its own.
+              export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
+              export AB_AAT_TO_PARSER_IR_MAPPING_V2="${ab-validator}/data/aat-to-parser-ir-mapping-v2.json"
               exec ${soranohaApp.program} "$@"
             '';
         in

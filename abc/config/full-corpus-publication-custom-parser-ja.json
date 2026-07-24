@@ -1,0 +1,9 @@
+{
+  "config_schema_id": "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json",
+  "request_set_label": "full-corpus-publication-basic-ja",
+  "snapshot_scope": "full-corpus",
+  "parser_profile": "ab-aozora",
+  "publication_profile": "tei-profile-v0",
+  "continue_on_failure": true,
+  "materialization_scope": "full-corpus"
+}

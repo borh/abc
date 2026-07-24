@@ -106,8 +106,15 @@
 ;; annotation-join-stats-run). Keeping them as an injected boundary keeps
 ;; build-publication hermetic and lets parser_profile select the adapter.
 
+(def ^{:dynamic true
+       :doc "Injectable environment lookup (name → value). Bound to a map
+             lookup in tests so adapter/profile resolution can be exercised
+             without mutating the JVM environment."}
+  *env*
+  (fn [k] (System/getenv k)))
+
 (defn- env-value [k]
-  (let [v (System/getenv k)]
+  (let [v (*env* k)]
     (when-not (string/blank? v) v)))
 
 (defn- require-env [k what]
@@ -116,9 +123,11 @@
                       {:env_var k}))))
 
 (defn- resolve-adapter
-  "Resolve the source→AAT adapter for the configured parser_profile. Only
-  aozora2html is wired today; any other profile is an explicit, loud error so a
-  build never silently falls back to a stub."
+  "Resolve the source→AAT adapter AND its aat→parser-IR mapping pin for the
+  configured parser_profile. The mapping selects the AAT schema version the
+  converter accepts (the v1 mapping rejects ab-aozora's AAT v2), so it rides
+  with the profile instead of being a build-wide global. Any other profile is
+  an explicit, loud error so a build never silently falls back to a stub."
   [parser-profile]
   (case parser-profile
     ("aozora2html" "aozora2html-v1" "aozora2html-smoke-v1")
@@ -127,10 +136,23 @@
      :extra-env {"AB_AOZORA2HTML_BIN"
                  (require-env "AB_AOZORA2HTML_BIN" "aozora2html parser")
                  "AB_AOZORA2HTML_MAPPER_BIN"
-                 (require-env "AB_AOZORA2HTML_MAPPER_BIN" "aozora2html rust mapper")}}
+                 (require-env "AB_AOZORA2HTML_MAPPER_BIN" "aozora2html rust mapper")}
+     :mapping (require-env "AB_AAT_TO_PARSER_IR_MAPPING"
+                           "aat→parser-IR mapping document")}
+
+    ;; The project-owned parser (ADR 0038/0039): one native stdin→AAT binary,
+    ;; no external renderer and no separate mapper — the binary is the whole
+    ;; adapter identity, paired with the v2 mapping (AAT schema 2).
+    "ab-aozora"
+    {:adapter-id "ab-aozora"
+     :wrapper (require-env "AB_AOZORA_BIN" "ab-aozora parser")
+     :extra-env {}
+     :mapping (require-env "AB_AAT_TO_PARSER_IR_MAPPING_V2"
+                           "aat→parser-IR v2 mapping document")}
+
     (throw (ex-info "unsupported parser_profile for real materialization"
                     {:parser_profile parser-profile
-                     :supported ["aozora2html"]}))))
+                     :supported ["aozora2html" "ab-aozora"]}))))
 
 (defn- run-process!
   "Run a subprocess inheriting the current environment plus extra-env, feeding
@@ -145,27 +167,27 @@
     {:exit exit :out-bytes out :err err}))
 
 (defn- write-aat!
-  "Run the aozora2html adapter wrapper (parse + align) over the raw source
-  bytes, writing the AAT JSON to aat-file."
+  "Run the profile's source→AAT adapter over the raw source bytes, writing
+  the AAT JSON to aat-file."
   [aat-file {:keys [adapter source-bytes]}]
-  (let [{:keys [wrapper extra-env]} adapter
+  (let [{:keys [adapter-id wrapper extra-env]} adapter
         {:keys [exit out-bytes err]}
         (run-process! {:args [wrapper "--mode" "aat"]
                        :stdin-bytes source-bytes
                        :extra-env extra-env})]
     (when-not (zero? exit)
-      (throw (ex-info "aozora2html adapter failed" {:exit exit :stderr err})))
+      (throw (ex-info (str adapter-id " adapter failed")
+                      {:adapter adapter-id :exit exit :stderr err})))
     (io/make-parents aat-file)
     (with-open [os (io/output-stream aat-file)]
       (.write os ^bytes out-bytes))
     aat-file))
 
 (defn- convert-aat->parser-ir!
-  "Run ab-aat-to-parser-ir convert, emitting parser-IR + divergence sidecar."
-  [{:keys [aat-file parser-ir-file divergence-file work-content-hash]}]
+  "Run ab-aat-to-parser-ir convert with the profile-pinned mapping, emitting
+  parser-IR + divergence sidecar."
+  [{:keys [aat-file parser-ir-file divergence-file work-content-hash mapping]}]
   (let [convert-bin (require-env "AB_AAT_TO_PARSER_IR_BIN" "ab-aat-to-parser-ir")
-        mapping (require-env "AB_AAT_TO_PARSER_IR_MAPPING"
-                             "aat→parser-IR mapping document")
         {:keys [exit err]}
         (run-process! {:args [convert-bin "convert"
                               "--aat" aat-file
@@ -179,10 +201,10 @@
     parser-ir-file))
 
 (defn- real-derive-parser-ir!
-  "Production source→parser-IR: resolve the adapter for the profile, run the
-  aozora2html adapter to AAT, then ab-aat-to-parser-ir convert. Adapter
-  resolution is lazy here so the injectable boundary below can be stubbed
-  without the adapter binaries present."
+  "Production source→parser-IR: resolve the adapter (and its mapping pin) for
+  the profile, run the source→AAT adapter, then ab-aat-to-parser-ir convert.
+  Adapter resolution is lazy here so the injectable boundary below can be
+  stubbed without the adapter binaries present."
   [{:keys [parser-profile source-bytes work-content-hash aat-file parser-ir-file
            divergence-file]}]
   (let [adapter (resolve-adapter parser-profile)]
@@ -190,7 +212,8 @@
     (convert-aat->parser-ir! {:aat-file (str aat-file)
                               :work-content-hash work-content-hash
                               :parser-ir-file (str parser-ir-file)
-                              :divergence-file (str divergence-file)})))
+                              :divergence-file (str divergence-file)
+                              :mapping (:mapping adapter)})))
 
 (def ^{:dynamic true
        :doc "Injectable source→parser-IR boundary. Bound to a stub in tests so

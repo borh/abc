@@ -1207,7 +1207,20 @@ impl Diagnostic {
             | Self::ForwardReferentNotStylable { .. }
             | Self::BreakInSingleLineContainer { .. }
             | Self::KaeritenOutsideKanbun { .. }
-            | Self::NonCanonicalDirective { .. } => Severity::Warning,
+            | Self::NonCanonicalDirective { .. }
+            // Prose quotation marks (「」) are the one pair family whose
+            // imbalance is authorial style, not markup loss: the quote
+            // characters stay literal text in the AAT (multi-paragraph
+            // dialogue conventionally leaves 「 unclosed), so the
+            // observation must not gate parse_complete.
+            | Self::UnclosedBracket {
+                kind: PairKind::Quote,
+                ..
+            }
+            | Self::UnmatchedClose {
+                kind: PairKind::Quote,
+                ..
+            } => Severity::Warning,
             Self::AccentDecompositionApplied { .. } => Severity::Note,
             Self::UnclosedBracket { .. }
             | Self::UnmatchedClose { .. }
@@ -1754,10 +1767,38 @@ mod tests {
 
     #[test]
     fn unmatched_close_is_error_severity_from_source() {
-        let diag = Diagnostic::unmatched_close(Span::new(0, 3), PairKind::Quote);
+        let diag = Diagnostic::unmatched_close(Span::new(0, 3), PairKind::Bracket);
         assert_eq!(diag.severity(), Severity::Error);
         assert_eq!(diag.source(), DiagnosticSource::Source);
         assert_eq!(diag.code(), codes::UNMATCHED_CLOSE);
+    }
+
+    #[test]
+    fn prose_quote_pairing_is_warning_severity() {
+        // Unbalanced prose quotation marks (「」) are an authorial-style
+        // observation — multi-paragraph dialogue conventionally leaves 「
+        // unclosed, and the quote characters stay literal text in the AAT,
+        // so nothing is structurally lost. Only markup-bearing pair kinds
+        // keep error severity (and with it the parse_complete gate).
+        let unclosed = Diagnostic::unclosed_bracket(Span::new(0, 3), PairKind::Quote);
+        assert_eq!(unclosed.severity(), Severity::Warning);
+        let unmatched = Diagnostic::unmatched_close(Span::new(0, 3), PairKind::Quote);
+        assert_eq!(unmatched.severity(), Severity::Warning);
+        for kind in [
+            PairKind::Bracket,
+            PairKind::Ruby,
+            PairKind::Tortoise,
+            PairKind::AngleQuote,
+        ] {
+            assert_eq!(
+                Diagnostic::unclosed_bracket(Span::new(0, 3), kind).severity(),
+                Severity::Error
+            );
+            assert_eq!(
+                Diagnostic::unmatched_close(Span::new(0, 3), kind).severity(),
+                Severity::Error
+            );
+        }
     }
 
     #[test]

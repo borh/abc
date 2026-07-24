@@ -3,6 +3,7 @@
             [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
+            [abc.tools.materialize-publication :as materialize-publication]
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.publication-policy :as publication-policy]
             [abc.tools.request-set-resolver :as resolver]
@@ -921,6 +922,80 @@
             (is (zero? (soranoha/run!
                         ["validate-workflow"
                          (str build-workflow-run-file)]))))))
+      (finally
+        (delete-tree! root)))))
+
+(defn- strip-generated-at
+  "Removes the run-varying generated_at provenance field (and, for the TEI
+  manifest, the preservation-sidecar content hash that transitively varies
+  with it, since preservation.json itself embeds generated_at) from a
+  manifest or preservation JSON value, so two independently-timestamped
+  renders can be compared for structural equivalence."
+  [m]
+  (cond-> m
+    (contains? m "provenance") (update "provenance" dissoc "generated_at")
+    (contains? m "producer") (update "producer" dissoc "generated_at")
+    (contains? m "sidecars")
+    (update "sidecars"
+            (fn [sidecars]
+              (mapv (fn [sidecar]
+                      (cond-> sidecar
+                        (= "preservation" (get sidecar "role"))
+                        (dissoc "hash")))
+                    sidecars)))))
+
+(deftest build-publication-equals-direct-materialize-publication-invocation-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-vs-materialize")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")
+        direct-output (io/file root "direct-publication")]
+    (try
+      (with-release-policy-allowed
+        #(binding [build-publication/*derive-parser-ir!* stub-derive-parser-ir!]
+           (with-out-str
+             (is (zero? (soranoha/run!
+                         ["build-publication"
+                          "--aozora-root" (str aozora-root)
+                          "--config" "abc/config/publication-basic-ja.json"
+                          "--snapshot-date" "2026-07-08"
+                          "--output-root" (str output-root)]))))))
+      (let [slug "000001_000879_000001_ruby_fixture"
+            work-dir (io/file output-root "materialized-root" "works" slug)
+            build-pub-dir (io/file output-root "publications" slug)]
+        ;; The direct build never invokes a private/duplicated rendering path:
+        ;; feeding materialize-publication! the same inputs the build wrote
+        ;; for this work reproduces the same publication artifact set, up to
+        ;; the generated-at provenance timestamp each invocation was given.
+        (materialize-publication/materialize-publication!
+         {:parser-ir-path (str (io/file work-dir "parser-ir.json"))
+          :source-manifest-path (str (io/file work-dir "source.manifest.json"))
+          :metadata-record-path (str (io/file work-dir "metadata-record.json"))
+          :persons-dir (str (io/file output-root "materialized-root" "persons"))
+          :output-dir (str direct-output)})
+        (is (= (slurp (io/file build-pub-dir "plain.txt"))
+               (slurp (io/file direct-output "plain.txt"))))
+        (is (= (slurp (io/file build-pub-dir "tei.xml"))
+               (slurp (io/file direct-output "tei.xml"))))
+        (is (= (strip-generated-at
+                (files/read-json (io/file build-pub-dir "plaintext.manifest.json")))
+               (strip-generated-at
+                (files/read-json (io/file direct-output "plaintext.manifest.json")))))
+        (is (= (strip-generated-at
+                (files/read-json (io/file build-pub-dir "tei.manifest.json")))
+               (strip-generated-at
+                (files/read-json (io/file direct-output "tei.manifest.json")))))
+        (is (= (strip-generated-at
+                (files/read-json (io/file build-pub-dir "preservation.json")))
+               (strip-generated-at
+                (files/read-json (io/file direct-output "preservation.json")))))
+        (is (= (files/read-json (io/file build-pub-dir "tei-validation-result.json"))
+               (files/read-json (io/file direct-output "tei-validation-result.json"))))
+        ;; The two invocations were in fact given different generated-at
+        ;; values, so the strip above is load-bearing, not a no-op.
+        (is (not= (get-in (files/read-json (io/file build-pub-dir "tei.manifest.json"))
+                          ["provenance" "generated_at"])
+                  (get-in (files/read-json (io/file direct-output "tei.manifest.json"))
+                          ["provenance" "generated_at"]))))
       (finally
         (delete-tree! root)))))
 

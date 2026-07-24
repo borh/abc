@@ -119,6 +119,18 @@
                   [(.getName f) (vec (Files/readAllBytes (.toPath f)))])))
         (file-seq (io/file out-root "publications" slug))))
 
+(defn- root-file-bytes
+  "relative-path -> byte vector for every file under root. Used to pin that a
+  root's byte content is (or is not) touched by a subsequent build attempt."
+  [root]
+  (let [root-file (io/file root)]
+    (into (sorted-map)
+          (keep (fn [^java.io.File f]
+                  (when (.isFile f)
+                    [(str (.relativize (.toPath root-file) (.toPath f)))
+                     (vec (Files/readAllBytes (.toPath f)))])))
+          (file-seq root-file))))
+
 (defn- ex-chain [t]
   (take-while some? (iterate #(.getCause ^Throwable %) t)))
 
@@ -279,7 +291,91 @@
             workflow (abc-json/read-json-file (fs/file output "workflow-run.json"))]
         (is (= 1 (:exit reports)))
         (is (false? (get-in reports [:selection "release_admissible"])))
-        (is (= "partial" (get workflow "status")))))))
+        (is (= "partial" (get workflow "status")))
+        ;; A best-effort (continue_on_failure) derive failure does not abort
+        ;; the build: the current, still-not-release-admissible partial root
+        ;; is installed at the configured output path, and the run exits
+        ;; nonzero rather than silently succeeding.
+        (is (.exists output))
+        (is (.exists (io/file output "source-selection-report.json")))
+        (is (.exists (io/file output "publications" "publications-report.json")))
+        (is (= {slug-b "passed"} (statuses reports)))))))
+
+(deftest strict-derive-failure-preserves-existing-root-byte-for-byte-test
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [aozora (fs/file root "aozora")
+          output (fs/file root "output")
+          config-root (fs/file root "config")
+          state (synthetic-state)
+          strict-config (write-config! config-root false)]
+      (render/write-aozora-root! aozora state)
+      (run-build! {:aozora-root aozora :out-root output :config-path strict-config
+                   :snapshot-date "2026-07-12"})
+      (let [sentinel (root-file-bytes output)]
+        (overwrite-zip! aozora state "000101" (unsafe-path-zip-bytes))
+        (let [thrown (try
+                       (run-build! {:aozora-root aozora :out-root output
+                                    :config-path strict-config
+                                    :snapshot-date "2026-07-13" :replace? true})
+                       nil
+                       (catch Throwable t t))]
+          (is (some? thrown))
+          (is (some #(= :unsafe-member-path (:reason (ex-data %))) (ex-chain thrown)))
+          ;; A strict (non-continue_on_failure) derive failure never reaches
+          ;; promote-output-root!, even when --replace was requested: the
+          ;; already-installed sentinel root is left byte-for-byte intact.
+          (is (.exists output))
+          (is (= sentinel (root-file-bytes output))))))))
+
+(deftest build-replaces-existing-root-only-with-replace-test
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [aozora (fs/file root "aozora")
+          output (fs/file root "output")
+          config-root (fs/file root "config")
+          state (synthetic-state)
+          config (write-config! config-root false)]
+      (render/write-aozora-root! aozora state)
+      (run-build! {:aozora-root aozora :out-root output :config-path config
+                   :snapshot-date "2026-07-12"})
+      (let [sentinel (root-file-bytes output)]
+        (testing "without --replace, a build over an existing root is rejected and leaves it untouched"
+          (let [thrown (try
+                         (run-build! {:aozora-root aozora :out-root output
+                                      :config-path config
+                                      :snapshot-date "2026-07-13"})
+                         nil
+                         (catch clojure.lang.ExceptionInfo t t))]
+            (is (some? thrown))
+            (is (string/includes? (ex-message thrown) "output-root already exists"))
+            (is (= sentinel (root-file-bytes output)))))
+        (testing "with --replace, a successful build replaces the existing root"
+          (run-build! {:aozora-root aozora :out-root output :config-path config
+                       :snapshot-date "2026-07-13" :replace? true})
+          (let [plan (abc-json/read-json-file (io/file output "build-plan.json"))]
+            (is (= "2026-07-13" (get plan "snapshot_date")))
+            (is (not= sentinel (root-file-bytes output)))))))))
+
+(deftest build-plan-records-temporary-absolute-materialized-root-test
+  (fs/with-temp-dir [root {:prefix "abc-test-"}]
+    (let [aozora (fs/file root "aozora")
+          output (fs/file root "output")
+          config-root (fs/file root "config")
+          state (synthetic-state)]
+      (render/write-aozora-root! aozora state)
+      (run-build! {:aozora-root aozora :out-root output
+                   :config-path (write-config! config-root false)
+                   :snapshot-date "2026-07-12"})
+      (let [plan (abc-json/read-json-file (io/file output "build-plan.json"))
+            recorded-root (get plan "materialized_root")
+            actual-root (str (io/file output "materialized-root"))]
+        ;; Pins the current place/value defect (removed by a later task): the
+        ;; promoted build-plan.json still names the discarded temporary root
+        ;; the build actually wrote to, not the promoted output-root.
+        (is (string/starts-with? recorded-root "/"))
+        (is (string/includes? recorded-root ".tmp-"))
+        (is (not= actual-root recorded-root))
+        (is (not (.exists (io/file recorded-root))))
+        (is (.exists (io/file actual-root)))))))
 
 (deftest p16-best-effort-promotes-all-rejected-evidence-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}

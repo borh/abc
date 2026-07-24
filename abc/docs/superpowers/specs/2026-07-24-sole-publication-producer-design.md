@@ -409,30 +409,17 @@ status.
 
 ## Cache semantics
 
-The render cache and release manifests are different values and must be treated
-separately.
+Lane 1 deletes direct-publication cache reuse. Every selected work rerenders
+and every manifest and release-coupled sidecar is regenerated. The existing
+`work_content_hash` plus `tei.manifest.json` check is not a complete cache key,
+and inventing a second cache protocol during the identity cutover would add
+more machinery than the saved rendering warrants.
 
-The Lane 1 default is to regenerate manifests and release-coupled sidecars.
-Reusable deterministic content bytes may be keyed by all inputs that determine
-those bytes. In particular, a matching `work_content_hash` plus the existence
-of `tei.manifest.json` is insufficient.
-
-For each artifact the implementation takes one of two honest paths:
-
-1. **Default — content reuse or rerender:** reuse deterministic content bytes
-   only when their complete content inputs match, then regenerate current
-   manifests/release-coupled sidecars; if separating those bytes would add more
-   machinery than rerendering, rerender the artifact.
-2. **Deferred exact reuse:** reuse a manifest only after version 0.2.0 provides
-   a complete identity object and that complete object matches. Lane 1 does not
-   depend on this optimization.
-
-A cache hit must not copy an old corpus snapshot, metadata identity, parser or
-mapping identity, profile hash, timestamp policy, or locator into a new
-release.
-
-Cache keys are implementation details. The release index authenticates the
-result and does not trust a cache-hit claim.
+This is not a permanent ban on caching. A later measured bottleneck may justify
+content-byte reuse keyed by every byte-determining input, or exact manifest
+reuse keyed by a complete 0.2.0 identity object. Such a cache remains an
+implementation detail: the release index authenticates results and never
+trusts a cache-hit claim.
 
 ## Failure, installation, and admissibility semantics
 
@@ -516,7 +503,7 @@ Deletion still requires a closed consumer and decision-claim audit.
 | Single-work materializer CLI/Nix app | Keep as a non-release renderer adapter while live consumers exist | `ab-validator` and publication smokes actively use it. |
 | Batch materializer CLI/Nix app | Keep pending explicit consumer migration | It is live qualification/report support; simplify duplicate run-record code separately. |
 | Parser-RQ publication materializer | Keep as a qualification instrument | It produces evidence through the shared renderer, not releases. |
-| `publication-rehearsal!`, command, report, and workflow | Retire after direct build emits the release index | It is the superseded end-to-end composition. |
+| `publication-rehearsal!`, command, report, and workflow | Retire after direct-build trust/cache characterization and before index 0.2.0 | It is the superseded end-to-end composition; deleting first prevents a third transitional producer. |
 | `reproduce!` publication loop | Split and retire its competing composition | Retain only independently owned request-set/analysis/annotation capabilities. |
 | Source-snapshot and request-set functions | Keep as pure domain values where the direct index or live analysis needs them | Their value semantics are useful; rehearsal orchestration is not. |
 | Snapshot-index value functions/schema | Version to 0.2.0 and keep as the release-index protocol | The closure mechanism is useful; request-set identity and missing parser coordinates make 0.1.1 unsuitable for direct publication. |
@@ -596,14 +583,36 @@ Land separately reviewed correctness changes:
    `custom-parser-release-qualification` decision from `decisions.edn`, and
    bind the exact candidate/qualification/registry tuple;
 3. bind and propagate parser build/configuration and mapping hashes;
-4. stop reusing old manifests; reuse proven content bytes or rerender while
-   regenerating current release-coupled values;
+4. delete the direct-publication reuse path and rerender every selected work;
 5. remove stale absolute temporary-root paths from retained values.
 
 These may intentionally tighten behavior. They require focused tests and
-decision amendments where governed contracts change.
+decision amendments where governed contracts change. Content reuse can return
+later only with measured need and a complete content-input key; this campaign
+does not add that second protocol while changing release identity.
 
-### Lane 2: make the direct build emit the release value
+### Lane 2: retire the secondary producer before adding the new protocol
+
+Remove the confirmed-dead rehearsal/reproduction vertical slice atomically
+after Lane 1 protects the real direct build. In `soranoha.clj`, remove:
+
+- `build-snapshot-index`;
+- `snapshot-index!`;
+- `materialize-snapshot-root!`;
+- `reproduce!`;
+- `publication-rehearsal!`.
+
+Remove the associated command-table entries, public orchestration functions,
+workflow/report emitters, apparatus-only snapshot plans and tests, and active
+documentation advertising the retired workflow. Retain request-set, analysis,
+and annotation domain values that have independent consumers. Retain
+`read-valid-snapshot-index` and the live read-only 0.1.1 projections until Lane
+3 cuts all of them to 0.2.0 in one change.
+
+This ordering prevents Lanes 1–3 from leaving a third half-finished
+composition. Historical reports retain their recorded command strings.
+
+### Lane 3: emit index 0.2.0 and cut every live projection atomically
 
 Version the snapshot-index schema and construct version 0.2.0 from the actual
 direct-build selection and render results:
@@ -620,44 +629,20 @@ direct-build selection and render results:
 - keep `publications-report.json` derived;
 - keep run plans/traces operational.
 
+Rebase validation, explanation, reports, and staging on the direct-build
+release index. Staging already copies bytes and changes locators; adapt its
+loose-locator input seam rather than rewriting it.
+
 Migrate schema contracts, examples, validators, explanation, reports, and
 staging in the same lane. Version 0.1.1 remains frozen history, not a supported
 producer/projection protocol. Do not write both versions and do not run two
 authoritative corpus identities in parallel.
 
-### Lane 3: rebase consumers, then retire the secondary composition
-
-Rebase validation, explanation, reports, and staging on the direct-build
-release index. Staging already copies bytes and changes locators; adapt its
-loose-locator input seam rather than rewriting it.
-
-Then remove the confirmed-dead rehearsal/reproduction vertical slice
-atomically. In `soranoha.clj`, move the retained direct index assembly behind
-`build-publication` and remove the producer half:
-
-- `build-snapshot-index`;
-- `snapshot-index!`;
-- `materialize-snapshot-root!`;
-- `reproduce!`;
-- `publication-rehearsal!`.
-
-Retain and rebase `read-valid-snapshot-index` and the live validation,
-explanation, report, and staging projections. Remove the associated:
-
-- command-table entries;
-- public orchestration functions;
-- Nix apps and `deps.edn` aliases;
-- workflow/report emitters;
-- apparatus-only schemas and fixtures;
-- apparatus-only tests;
-- active documentation advertising the retired workflow.
-
-Historical reports retain their recorded command strings.
-
-Lanes 1 and 2 are release-correctness work, not simplification credit. They may
+Lanes 1 and 3 are release-correctness work, not simplification credit. They may
 add validation code but must add it only inside the retained build, value, and
-verification boundaries—never as a third composition. Do not advertise a
-supported release path until Lane 3 removes the superseded producer.
+verification boundaries. Lane 2 is the deletion that earns the simplification.
+Do not advertise a supported release path until Lane 3 is complete and the
+real-wiring check is green.
 
 ### Lane 4: collapse the surviving modules
 
@@ -727,7 +712,7 @@ incidental orchestration.
 - changing corpus snapshot, metadata, parser, mapping, profile, or policy
   cannot reuse an old manifest;
 - Lane 1 regenerates all manifests and release-coupled sidecars;
-- content-byte reuse, where retained, regenerates current manifests;
+- direct-publication reports and identities contain no cache-hit status;
 - the final index validates independently of cache events.
 
 ### Architecture
@@ -815,8 +800,7 @@ The refactor is complete when:
    mapping, policies, per-work manifests, and the artifact set.
 7. Parser build/configuration and mapping hashes are present rather than null
    wherever the governed manifest contracts require them.
-8. Cache reuse cannot carry a manifest across different identity-bearing
-   inputs.
+8. The direct build contains no manifest/content reuse path.
 9. Operational configuration, concurrency, timestamps, cache events, workflow
    ids, and machine paths do not affect release identity.
 10. `release-admissible?` is a pure fail-closed predicate with no receipt, and

@@ -67,6 +67,50 @@
         flake: outputName: system:
         lib.attrByPath [ outputName system ] { } flake;
 
+      # build-publication materializes real TEI by shelling out to validator-
+      # owned adapters. Inject those private dependencies (and the shell tools
+      # the aozora2html wrapper needs) without re-exporting them from the root,
+      # so `nix run .#soranoha` is hermetic and never falls back to a stub.
+      # Lifted out of `apps` so `apps.<system>.soranoha` and
+      # `checks.<system>.publication-build-real-wiring` share the exact SAME
+      # wrapped derivation instead of two independently-built copies.
+      mkAdapterAwareSoranohaApp =
+        system: soranohaApp:
+        let
+          pkgs = pkgsFor system;
+          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
+        in
+        pkgs.writeShellScript "soranoha-with-adapters" ''
+          export PATH="${
+            pkgs.lib.makeBinPath [
+              pkgs.bash
+              pkgs.coreutils
+              pkgs.gnugrep
+              pkgs.perl
+              pkgs.glibc.bin
+              pkgs._7zz
+            ]
+          }:''${PATH:-}"
+          # 7zz recovers work ZIPs java.util.zip can't parse (damaged central
+          # directories); build-publication falls back to it per work.
+          export AB_SEVENZIP_BIN="${pkgs._7zz}/bin/7zz"
+          export AB_AOZORA2HTML_ADAPTER="${ab-validator}/adapters/aozora2html/aozora2html-adapter"
+          export AB_AOZORA2HTML_BIN="${abValidatorPackages."upstream-parser-aozora2html"}/bin/aozora2html"
+          export AB_AOZORA2HTML_MAPPER_BIN="${
+            abValidatorPackages."aozora2html-adapter"
+          }/bin/aozora2html-adapter"
+          export AB_AAT_TO_PARSER_IR_BIN="${
+            abValidatorPackages."ab-aat-to-parser-ir"
+          }/bin/ab-aat-to-parser-ir"
+          export AB_AAT_TO_PARSER_IR_MAPPING="${ab-validator}/data/aat-to-parser-ir-mapping-v1.json"
+          # The project-owned parser (parser_profile "ab-aozora"): one
+          # native stdin→AAT binary plus the v2 mapping pin — the mapping
+          # selects the AAT schema, so each profile carries its own.
+          export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
+          export AB_AAT_TO_PARSER_IR_MAPPING_V2="${ab-validator}/data/aat-to-parser-ir-mapping-v2.json"
+          exec ${soranohaApp.program} "$@"
+        '';
+
       monorepoScripts =
         pkgs:
         let
@@ -126,53 +170,16 @@
           pkgs = pkgsFor system;
           scripts = monorepoScripts pkgs;
           abcApps = optionalOutputAttrs abc "apps" system;
-          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
           mkScriptApp = program: description: {
             type = "app";
             program = "${program}";
             meta.description = description;
           };
-          # build-publication materializes real TEI by shelling out to validator-
-          # owned adapters. Inject those private dependencies (and the shell tools
-          # the aozora2html wrapper needs) without re-exporting them from the root,
-          # so `nix run .#soranoha` is hermetic and never falls back to a stub.
-          mkAdapterAwareSoranohaApp =
-            soranohaApp:
-            pkgs.writeShellScript "soranoha-with-adapters" ''
-              export PATH="${
-                pkgs.lib.makeBinPath [
-                  pkgs.bash
-                  pkgs.coreutils
-                  pkgs.gnugrep
-                  pkgs.perl
-                  pkgs.glibc.bin
-                  pkgs._7zz
-                ]
-              }:''${PATH:-}"
-              # 7zz recovers work ZIPs java.util.zip can't parse (damaged central
-              # directories); build-publication falls back to it per work.
-              export AB_SEVENZIP_BIN="${pkgs._7zz}/bin/7zz"
-              export AB_AOZORA2HTML_ADAPTER="${ab-validator}/adapters/aozora2html/aozora2html-adapter"
-              export AB_AOZORA2HTML_BIN="${abValidatorPackages."upstream-parser-aozora2html"}/bin/aozora2html"
-              export AB_AOZORA2HTML_MAPPER_BIN="${
-                abValidatorPackages."aozora2html-adapter"
-              }/bin/aozora2html-adapter"
-              export AB_AAT_TO_PARSER_IR_BIN="${
-                abValidatorPackages."ab-aat-to-parser-ir"
-              }/bin/ab-aat-to-parser-ir"
-              export AB_AAT_TO_PARSER_IR_MAPPING="${ab-validator}/data/aat-to-parser-ir-mapping-v1.json"
-              # The project-owned parser (parser_profile "ab-aozora"): one
-              # native stdin→AAT binary plus the v2 mapping pin — the mapping
-              # selects the AAT schema, so each profile carries its own.
-              export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
-              export AB_AAT_TO_PARSER_IR_MAPPING_V2="${ab-validator}/data/aat-to-parser-ir-mapping-v2.json"
-              exec ${soranohaApp.program} "$@"
-            '';
         in
         (
           if builtins.hasAttr "soranoha" abcApps then
             {
-              soranoha = mkScriptApp (mkAdapterAwareSoranohaApp abcApps.soranoha) (
+              soranoha = mkScriptApp (mkAdapterAwareSoranohaApp system abcApps.soranoha) (
                 abcApps.soranoha.meta.description or "Soranoha snapshot publication command dispatcher"
               );
             }
@@ -435,6 +442,56 @@
                 PY
               '';
         }
+        // (
+          if builtins.hasAttr "soranoha" abcApps then
+            {
+              # The real end-to-end integration proof: runs `build-publication`
+              # through the exact SAME wrapped program `apps.<system>.soranoha`
+              # exports (real ab-aozora + real ab-aat-to-parser-ir + the
+              # governed mapping), over a committed git-backed Aozora fixture.
+              # Success does not depend on the rights policy staying blocked —
+              # see tests/publication-build-real-wiring-smoke.sh.
+              publication-build-real-wiring =
+                pkgs.runCommand "soranoha-publication-build-real-wiring"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bash
+                      pkgs.coreutils
+                      pkgs.findutils
+                      pkgs.gnugrep
+                      pkgs.git
+                      pkgs.zip
+                      pkgs.jq
+                    ];
+                    src = self;
+                  }
+                  ''
+                    cd "$src"
+                    work="$TMPDIR/publication-build-real-wiring"
+                    mkdir -p "$work"
+                    # The wrapped Soranoha program shells out to a `clojure -M`
+                    # invocation whose own launcher already points HOME at this
+                    # exact offline clj-nix dependency cache (a pure function of
+                    # the same abc/deps-lock.json, hence the identical
+                    # derivation). JAVA_TOOL_OPTIONS additionally forces
+                    # -Duser.home on every JVM the `clojure` launcher spawns,
+                    # including its own classpath-resolution bootstrap step,
+                    # which plain $HOME does not reach inside this
+                    # network-isolated build sandbox.
+                    export HOME="${cljDepsCache}"
+                    export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                    export CLJ_CONFIG="$HOME/.clojure"
+                    export CLJ_CACHE="$TMPDIR/cp-cache"
+                    export GITLIBS="$HOME/.gitlibs"
+                    bash tests/publication-build-real-wiring-smoke.sh \
+                      "${mkAdapterAwareSoranohaApp system abcApps.soranoha}" \
+                      "$work"
+                    touch "$out"
+                  '';
+            }
+          else
+            { }
+        )
       );
 
       packages = forAllSystems (

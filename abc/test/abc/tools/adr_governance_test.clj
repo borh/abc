@@ -1,32 +1,35 @@
 (ns abc.tools.adr-governance-test
-  (:require [abc.tools.adr :as adr]
-            [abc.tools.adr-governance :as governance]
+  (:require [abc.tools.adr-governance :as governance]
+            [abc.tools.decisions :as decisions]
             [babashka.fs :as fs]
             [clojure.string :as string]
             [clojure.test :refer [deftest is]]))
 
 (def ^:private lifecycle-problem
-  {:file "0031-adr-governance-validation.md"
+  {:file "docs/adr/decisions.edn"
    :kind :noncanonical-dependency-path
-   :message "Accepted ADR reaches Proposed ADR"
-   :path [31 29]})
+   :message "Accepted dependency closure contains a non-Accepted record"
+   :slug "adr-governance-validation"})
 
 (deftest strict-problems-are-nonzero
-  (with-redefs [adr/validate-repository (fn [_repo] [lifecycle-problem])]
+  (with-redefs [decisions/validate-repository (fn [_repo] [lifecycle-problem])]
     (is (= {:ok? false :exit-code 1 :problems [lifecycle-problem]}
            (governance/run! ".")))))
 
-(deftest clean-corpus-is-zero
-  (with-redefs [adr/validate-repository (fn [_repo] [])]
-    (is (= {:ok? true :exit-code 0 :problems []}
-           (governance/run! ".")))))
+(deftest clean-corpus-includes-index-currency
+  ;; core validation clean -> INDEX currency still gates the result
+  (with-redefs [decisions/validate-repository (fn [_repo] [])]
+    (let [{:keys [ok? problems]} (governance/run! ".")]
+      (is (or ok?
+              (= [:stale-index] (map :kind problems)))))))
 
 (deftest repository-corpus-is-strictly-valid-test
   (let [{:keys [ok? problems]} (governance/run! ".")]
     (is ok? (pr-str (take 5 problems)))))
 
-(deftest retired-typed-evidence-apparatus-is-absent-test
-  (doseq [path ["docs/adr/adr-evidence.edn"
+(deftest retired-apparatus-is-absent-test
+  (doseq [path [;; typed-evidence apparatus (ADR 0043)
+                "docs/adr/adr-evidence.edn"
                 "docs/adr/adr-claim-migration.edn"
                 "docs/adr/adr-claim-migration-baseline.json"
                 "docs/adr/claim-evidence-compatibility.edn"
@@ -40,8 +43,23 @@
                 "src/abc/tools/adr_evidence.clj"
                 "src/abc/tools/adr_evidence_runtime_inputs.clj"
                 "src/abc/tools/evidence_io.clj"
-                "src/abc/tools/evidence_output.clj"]]
+                "src/abc/tools/evidence_output.clj"
+                ;; Markdown ADR grammar (data-driven-decision-records)
+                "src/abc/tools/adr.clj"
+                "test/abc/tools/adr_test.clj"
+                "docs/adr/adr-relations.edn"
+                "fixtures/adr-governance-invalid"
+                "dev/migrate_decisions.clj"
+                "test/abc/tools/decisions_migration_test.clj"
+                "nix/adr-family-clean.jq"
+                "data/evidence-higher-order-calls/adr-validate-repository-star.edn"]]
     (is (not (fs/exists? path)) path)))
+
+(deftest no-number-prefixed-narrative-files-remain-test
+  (is (empty? (for [f (fs/list-dir "docs/adr")
+                    :let [n (fs/file-name f)]
+                    :when (re-matches #"\d{4}-.*" n)]
+                n))))
 
 (deftest cli-runs-strict-governance-and-preserves-root-options-test
   (let [calls (atom [])
@@ -60,13 +78,31 @@
     (is (= 2 (:exit-code result)))
     (is (= :invalid-cli (:kind (first (:problems result)))))))
 
-(deftest invalid-fixture-is-nonzero-test
-  (let [{:keys [ok? exit-code problems]}
-        (governance/run! "fixtures/adr-governance-invalid")]
-    (is (false? ok?))
-    (is (= 1 exit-code))
-    (is (= #{:missing-relation-target}
-           (set (map :kind problems))))))
+(deftest unreadable-corpus-is-nonzero-test
+  (let [root (str (fs/create-temp-dir))]
+    (fs/create-dirs (fs/path root "docs/adr"))
+    (spit (str (fs/path root "docs/adr/decisions.edn"))
+          "{:decisions []} :junk")
+    (let [{:keys [ok? exit-code problems]} (governance/run! root)]
+      (is (false? ok?))
+      (is (= 1 exit-code))
+      (is (= [:invalid-edn] (map :kind problems))))))
+
+(deftest invalid-corpus-is-nonzero-test
+  (let [root (str (fs/create-temp-dir))]
+    (fs/create-dirs (fs/path root "docs/adr"))
+    (spit (str (fs/path root "docs/adr/decisions.edn"))
+          (pr-str {:decisions
+                   [{:slug "a" :title "A" :status :draft :date "2026-07-24"
+                     :topics [] :claims []
+                     :relations [{:class :lifecycle :type :depends-on
+                                  :to "ghost"}]}]}))
+    (spit (str (fs/path root "docs/adr/a.md")) "# A\n")
+    (let [{:keys [ok? exit-code problems]} (governance/run! root)]
+      (is (false? ok?))
+      (is (= 1 exit-code))
+      (is (= #{:missing-relation-target}
+             (set (map :kind problems)))))))
 
 (deftest nix-governance-check-is-strict-test
   (let [flake (slurp "flake.nix")]

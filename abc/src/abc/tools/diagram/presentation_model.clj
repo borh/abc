@@ -1,13 +1,11 @@
 (ns abc.tools.diagram.presentation-model
-  (:require [abc.tools.adr :as adr]
-            [abc.tools.diagram.architecture-graph :as architecture]
+  (:require [abc.tools.diagram.architecture-graph :as architecture]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
             [clojure.set :as set]))
 
 (def metadata-path "docs/architecture-presentation.edn")
 (def manifest-schema-path "schemas/manifest.schema.json")
-(def adr-dir "docs/adr")
 (def coordinate-families #{:source :parsing :publication :analysis :output})
 (def stage-roles #{:source :evidence :contract :identity :output})
 
@@ -32,7 +30,7 @@
                    (json/read-json-file manifest-schema-path))
      :coordinate-owners (get-in stage-doc
                                 [:manifest-identity-contract :coordinates])
-     :adr-nums (set (map :num (adr/parse-all adr-dir)))}))
+     :adr-slugs (architecture/adr-slugs)}))
 
 (defn reachable? [edges from to]
   (loop [frontier [from] seen #{}]
@@ -57,7 +55,7 @@
         stages (vec stages)
         missing (sort (remove stage-ids stages))
         allowed-adrs (canonical-stage-adrs context stages)
-        nonexistent-adrs (sort (remove (:adr-nums context) adrs))
+        nonexistent-adrs (sort (remove (:adr-slugs context) adrs))
         invalid-adrs (sort (remove allowed-adrs adrs))]
     (cond-> []
       (empty? stages) (conj "aggregate backing must name at least one stage")

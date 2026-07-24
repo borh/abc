@@ -1,4 +1,0 @@
-{:schema-version :abc-evidence-higher-order-call-v1
- :caller abc.tools.adr/validate-repository*
- :parameters {validate-fn [abc.tools.adr/validate-adrs
-                           abc.tools.adr/validate-adrs-legacy]}}

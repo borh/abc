@@ -31,22 +31,26 @@
   (let [context (model/canonical-context)]
     (is (seq (model/backing-problems
               context
-              {:stages [:missing] :adrs [1]})))
+              {:stages [:missing] :adrs ["manifest-identity"]})))
     (is (seq (model/backing-problems
               context
-              {:stages [:manifest] :adrs [30]})))
+              {:stages [:manifest] :adrs ["aozora-parser-selection"]})))
     (is (= [] (model/backing-problems
                context
-               {:stages [:manifest] :adrs [1 10 23 27 28]})))))
+               {:stages [:manifest]
+                :adrs ["manifest-identity" "manifest-identity-hardening"
+                       "owned-aat-parser-ir-mapping"
+                       "analysis-packs-and-tokenizer-profiles"
+                       "ruby-annotation-view"]})))))
 
 (deftest staged-citations-must-also-exist-in-the-live-adr-set
   (let [context (-> (model/canonical-context)
-                    (assoc-in [:stages :manifest :adr] [9999])
-                    (update :adr-nums disj 9999))]
+                    (assoc-in [:stages :manifest :adr] ["no-such-decision"])
+                    (update :adr-slugs disj "no-such-decision"))]
     (is (some #(str/includes? % "non-existent ADR")
               (model/backing-problems
                context
-               {:stages [:manifest] :adrs [9999]})))))
+               {:stages [:manifest] :adrs ["no-such-decision"]})))))
 
 (deftest current-parser-inset-must-resolve-the-live-path
   (let [metadata (assoc-in (model/load-metadata)

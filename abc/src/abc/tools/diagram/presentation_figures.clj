@@ -109,8 +109,8 @@
                (not (contains? backing :path)))
       ["reachable targets require a backing path"])
     (when (and (contains? backing :adrs)
-               (not (and (sequential? adrs) (every? integer? adrs))))
-      ["backing ADRs must be a sequential collection of integers"]))))
+               (not (and (sequential? adrs) (every? string? adrs))))
+      ["backing ADRs must be a sequential collection of decision slugs"]))))
 
 (defn- item-relation-problems [item-type role backing]
   (let [actual (set/intersection relation-keys (set (keys backing)))
@@ -147,7 +147,7 @@
                            (mapcat #(get (:coordinate-owners context) %)
                                    coordinate-values)))
         invalid-adrs (sort (remove allowed-adrs adr-values))
-        nonexistent-adrs (sort (remove (:adr-nums context) adr-values))
+        nonexistent-adrs (sort (remove (:adr-slugs context) adr-values))
         path-source (first path-values)
         unreachable (if path-ready?
                       (sort (remove #(model/reachable? (:stage-edges context)

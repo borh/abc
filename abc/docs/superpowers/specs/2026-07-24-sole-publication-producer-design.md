@@ -1,39 +1,42 @@
 # Sole Publication Producer
 
-**Date:** 2026-07-24 · **Status:** Provisional design — architecture selected;
-implementation blocked on the trust and cache repairs below
+**Date:** 2026-07-24 · **Status:** Approved design — implementation starts
+with the trust and cache repairs below
 
 ## Decision
 
-Soranoha will have one authority that can assemble, install, and admit a
-publication release:
+Soranoha will have one authority that can assemble and install a publication
+root. Whether that root is release-admissible is a recomputable predicate, not
+an event or receipt:
 
 ```text
 authenticated source + admitted parser/mapping/policies
                              |
                              v
                   soranoha build-publication
-               sole release assembler/admitter
+               sole release assembler/installer
                     |                  \
                     | invokes           \ assembles
                     v                    v
-         materialize-publication!    immutable release index
-           one per-work renderer     refs · failures · identities
+         materialize-publication!    candidate release root
+           one per-work renderer       + closed index
                 /         \                    |
-       qualification     fixtures       +-----+------+
-         evidence       characterization |     |      |
-                                     validate explain stage/package
+       qualification     fixtures              v
+         evidence       characterization  release-admissible?
+                                             /        \
+                                          release   diagnostic
 ```
 
-`soranoha build-publication` is the sole release assembler and release
-admission boundary. `materialize-publication!` is the sole renderer of the
-canonical per-work publication artifact set.
+`soranoha build-publication` is the sole release assembler and installer.
+`materialize-publication!` is the sole renderer of the canonical per-work
+publication artifact set. `release-admissible?` is a pure verifier over the
+closed index and explicit authoritative policy values.
 
 This is intentionally more precise than saying that only one command may write
 TEI or plaintext. Qualification and fixture tools need to render candidate
-artifacts. They do not make releases. Candidate bytes become part of a release
-only when `build-publication` closes over their identities in the authenticated
-release index and the release passes admission.
+artifacts. They do not make releases. Candidate bytes belong to a release only
+when `build-publication` closes over their identities in the authenticated
+index and `release-admissible?` returns no problems.
 
 The simplification is therefore:
 
@@ -53,18 +56,28 @@ The design uses distinct words for distinct things:
 - **Release assembler** — selects authenticated inputs, invokes the renderer,
   collects results, and constructs the closed release value.
 - **Release index** — the immutable, hash-authenticated closure of selected
-  inputs, artifact references, policies, and failures. During this migration
-  the existing `snapshot-index.json` contract is the release-index protocol.
+  inputs, artifact references, policies, and failures. The direct publication
+  protocol is the planned `snapshot-index.json` version 0.2.0 successor.
 - **Installation** — atomically makes a completed or diagnostic run root
   visible at an output place.
-- **Admission** — declares a closed, successful index to be a release.
-  Installing a partial diagnostic root is not release admission.
+- **Release admissibility** — the result of a pure, fail-closed predicate over
+  a candidate root's closed index and explicit current decision, registry, and
+  publication-policy values. It returns `{admissible?, problems}` and writes no
+  receipt. Installation does not imply admissibility.
 - **Operational trace** — plans, timestamps, concurrency decisions, cache
   events, temporary paths, and step records. These explain a run but do not
   identify a release.
 
 These distinctions prevent three common conflations: bytes with releases,
-places with values, and a successful filesystem move with release admission.
+places with values, and a successful filesystem move with release
+admissibility.
+
+Admissibility is deliberately a function of two values: the immutable release
+root and an explicit current authority set. A later decision, registry, or
+rights-policy change may change whether an old root is currently admissible
+without changing that root's artifact identity. Verifier output names the
+authority hashes and problems it used for explanation, but it is derived
+output—not an admission receipt.
 
 ## Why this boundary has the highest leverage
 
@@ -104,20 +117,21 @@ apparatus, schemas, and gates a reliable deletion seam.
 
 ## Architectural boundaries
 
-### `build-publication`: sole release assembler and admitter
+### `build-publication`: sole release assembler and installer
 
 `soranoha build-publication` owns:
 
 - validation of the official source checkout;
 - construction and authentication of release inputs;
-- exact parser-candidate, qualification, mapping, and policy admission;
+- exact parser-candidate, qualification, mapping, and policy authentication;
 - source selection and source/parser derivation;
 - failure policy and release-admissibility accounting;
 - concurrency and cache policy;
 - calls to the per-work renderer;
 - construction and validation of the release index;
 - installation of the run root;
-- admission of a completed index as a release.
+- evaluation of the shared release-admissibility predicate before a successful
+  release-facing result is reported.
 
 No other command may combine those responsibilities into an alternative
 source-to-release workflow.
@@ -131,7 +145,7 @@ build-publication
   ├── select and derive candidate works
   ├── render each work through materialize-publication!
   ├── assemble and validate the release index
-  └── install the run root; admit only a closed success
+  └── install the run root; report release success only for an admissible root
 ```
 
 The internal capabilities remain ordinary functions with domain ownership.
@@ -173,9 +187,9 @@ The following callers are legitimate:
 - fixture and integration checks, which characterize the renderer;
 - focused development tools that render candidate artifacts.
 
-Only the first caller has release authority. The distinction is conferred by
-authenticated inclusion and admission, not by preventing other code from
-calling the renderer.
+Only the first caller assembles the release root. The distinction is conferred
+by authenticated inclusion and the release-admissibility predicate, not by
+preventing other code from calling the renderer.
 
 ### Retained adapters are not release front doors
 
@@ -216,31 +230,49 @@ reconstruct the release.
 
 ## Authoritative release value
 
-### Decision: use the existing snapshot-index protocol
+### Decision: version the snapshot-index protocol
 
-The authoritative corpus value will be `snapshot-index.json`, constructed
-directly from the actual results of `build-publication`.
+The authoritative corpus value will remain `snapshot-index.json`, but direct
+publication requires a minimal version 0.2.0 successor constructed from the
+actual results of `build-publication`. This schema change is planned, not
+contingent.
 
-This choice avoids adding a parallel `release-index` schema. The current
-snapshot index already supplies the essential semantics:
+Version 0.1.1 supplies a useful closure shape:
 
 - a schema-pinned identity object;
-- source and request-set identity;
 - an authenticated artifact-set hash;
 - sorted artifact references with manifest and content hashes;
 - failure and layout policy hashes;
-- parser, schema, tokenizer, and analysis evidence hashes;
 - a recomputable `snapshot_identity_hash`.
 
-The direct build must construct those values from the source selection and
-artifacts it actually used. It must not invoke the rehearsal, read a hand-built
-snapshot plan, or synthesize fields merely to satisfy the schema.
+It does not supply the required direct-publication semantics. Its required
+`request_set_id`, request-set-derived tokenizer/analysis hashes, snapshot-label
+pattern, and generated snapshot-plan fields belong to the fixture/rehearsal
+model. The checked-in `full-corpus-publication-basic-ja` request set contains
+two fixture subjects, while the direct build independently discovers the
+official source corpus. Reusing that identity would be false. The 0.1.1
+identity object also has no explicit candidate, qualification, parser-build,
+parser-configuration, or mapping coordinates.
 
-The existing protocol is retained during the behavior-preserving migration.
-If a required field cannot truthfully describe a direct production build, that
-is a schema-version decision: remove or replace the field in a minimal
-successor and supersede the old contract. Do not put an arbitrary value into
-the field, and do not create a second corpus identity beside it.
+Version 0.2.0 therefore:
+
+- replaces request-set identity with a hash-authenticated source-selection
+  identity built from the actual selected source bundles;
+- includes `candidate_ref`, `qualification_identity_ref`,
+  `parser_build_hash`, `parser_config_hash`, `mapping_hash`, and the relevant
+  parser-IR/schema coordinates;
+- retains the artifact-set, failure-policy, layout-policy, and schema hashes
+  that are actual publication inputs;
+- omits tokenizer and analysis recipe hashes unless the published artifact set
+  genuinely depends on them;
+- adds an explicit schema version and truthful direct-build label semantics.
+
+The direct build must not invoke the rehearsal, read a hand-built snapshot
+plan, synthesize a `request_set_id`, or populate irrelevant arrays to satisfy
+0.1.1. Version 0.1.1 artifacts remain frozen historical facts, not a live
+producer or validation obligation, while all live release projections move
+atomically to 0.2.0. There is never more than one authoritative publication
+identity.
 
 `publications-report.json` remains a derived operational/corpus report. It is
 not authoritative: it currently has no matching schema, no authenticated
@@ -274,6 +306,10 @@ The index and every identity-bearing manifest use relative locators. An output
 directory, temporary root, cache directory, or absolute checkout path is a
 place and must never enter artifact identity.
 
+The index records the exact parser and mapping coordinates. It does not copy a
+claim that they are “admitted.” Admissibility is recomputed from those
+coordinates and the explicit current authority values described below.
+
 ### Values excluded from release identity
 
 The following remain operational facts unless a governed contract explicitly
@@ -305,11 +341,17 @@ state:
 - treat failed Git inspection as unknown, never as clean;
 - identify the selected source contents, not only the checkout commit and
   catalog;
-- provide an explicit, recorded non-release override only if an operator needs
-  diagnostic builds from dirty source.
+- provide an explicit, recorded `fixture`/non-release trust mode for tests and
+  diagnostics that cannot prove official Git provenance.
 
 The current behavior records dirty state without rejecting it and can interpret
 unavailable status output as clean. That cannot authorize a release.
+
+The non-release mode is not “skip the check when the root is not a Git
+repository.” It is an explicit input, is recorded in the build values, and
+causes `release-admissible?` to return a problem. Existing temporary-directory
+fixtures must opt into it in the same change that makes official mode
+fail-closed.
 
 ### Exact parser and mapping admission
 
@@ -326,13 +368,34 @@ This follows the Accepted parser qualification and owned AAT-to-parser-IR
 mapping decisions. Authority must not float with `HEAD`, `PATH`, or an
 environment variable.
 
+Authority comes through `docs/adr/decisions.edn`, not a new
+`"admitted": true` configuration field. The shared verifier must:
+
+1. load exactly one decision corpus form and reject loader or shape problems;
+2. resolve `custom-parser-release-qualification` by slug;
+3. require `:status :accepted`, `:release-authority :publication`, and the
+   validation scope required by publication policy;
+4. verify the index's `candidate_ref` and `qualification_identity_ref` against
+   the immutable parser-RQ candidate, capture/evaluation generation,
+   compatibility registry, qualification report, and promotion evidence;
+5. require the index's parser/mapping coordinates to equal that verified
+   qualification identity.
+
+The decision record authorizes the governed qualification capability; it does
+not itself contain the exact tuple. Exact tuple identity comes from the
+candidate/evaluation/registry values. Reuse the fail-closed decision and
+promotion verification boundary introduced for `verify-promotion`; do not
+duplicate a weaker status lookup in publication code. The existing helper must
+be extended because it currently resolves only the ADR 0040/0041 dependency
+slugs.
+
 The resulting hashes must reach the per-work manifests and the release index.
 The current `nil` parser-build, parser-config, and mapping fields are a release
 blocker, not optional provenance.
 
 ### Closed references
 
-Before admission, the build must validate:
+`release-admissible?` must validate:
 
 - the release index schema and recomputed identity;
 - every required relative reference;
@@ -349,17 +412,20 @@ status.
 The render cache and release manifests are different values and must be treated
 separately.
 
-Reusable content bytes may be keyed by all inputs that determine those bytes.
-A release manifest may be reused only when its complete identity-bearing input
-object is identical. In particular, a matching `work_content_hash` plus the
-existence of `tei.manifest.json` is insufficient.
+The Lane 1 default is to regenerate manifests and release-coupled sidecars.
+Reusable deterministic content bytes may be keyed by all inputs that determine
+those bytes. In particular, a matching `work_content_hash` plus the existence
+of `tei.manifest.json` is insufficient.
 
-For each artifact the implementation must choose one of two honest paths:
+For each artifact the implementation takes one of two honest paths:
 
-1. **Exact reuse:** content and manifest are reused only when the complete
-   render and release identity matches.
-2. **Content reuse:** deterministic content bytes are reused, while manifests
-   and references are regenerated from the current release inputs.
+1. **Default — content reuse or rerender:** reuse deterministic content bytes
+   only when their complete content inputs match, then regenerate current
+   manifests/release-coupled sidecars; if separating those bytes would add more
+   machinery than rerendering, rerender the artifact.
+2. **Deferred exact reuse:** reuse a manifest only after version 0.2.0 provides
+   a complete identity object and that complete object matches. Lane 1 does not
+   depend on this optimization.
 
 A cache hit must not copy an old corpus snapshot, metadata identity, parser or
 mapping identity, profile hash, timestamp policy, or locator into a new
@@ -368,29 +434,31 @@ release.
 Cache keys are implementation details. The release index authenticates the
 result and does not trust a cache-hit claim.
 
-## Failure, installation, and admission semantics
+## Failure, installation, and admissibility semantics
 
 Singular authority makes the state transitions explicit:
 
 ```text
 candidate run root
-    | validate closure
-    +-- closed success --> atomic installation --> release admission
+    | release-admissible?(root, decisions, registry, policies)
+    +-- no problems --> atomic installation --> release-facing success
     |
     +-- strict failure --> no replacement of prior root
     |
     +-- best-effort partial --> optional diagnostic installation
                                 + nonzero exit
-                                + no release admission
+                                + predicate remains false
 ```
 
 The existing best-effort contract may keep an inspectable partial root. That
 root must be visibly non-admissible and must not be mistaken for a release just
 because it occupies the configured output path. If it contains a candidate
-snapshot index, the index must encode its failures and fail release admission.
+snapshot index, the index must encode its failures and make
+`release-admissible?` return problems.
 
-A strict failure does not replace the last admitted root. Malformed identities,
-broken references, or inadmissible source/parser state fail before admission.
+A strict failure does not replace the last admissible root. Malformed
+identities, broken references, or inadmissible source/parser state prevent a
+release-facing success.
 
 The implementation must characterize the current strict, partial, and atomic
 replacement behavior before changing it. This spec separates the concepts; it
@@ -432,9 +500,9 @@ Relative paths must remain valid after temporary-root installation. The current
 absolute `materialized_root` recorded from the temporary build place is a
 place/value defect and must not become part of the supported contract.
 
-A user should be able to determine what was selected, what was admitted, what
-failed, and which hashes bind the source, parser, mapping, policies, manifests,
-and artifacts without replaying a workflow.
+A user should be able to determine what was selected, why the root is or is not
+currently admissible, what failed, and which hashes bind the source, parser,
+mapping, policies, manifests, and artifacts without replaying a workflow.
 
 ## Current surface disposition
 
@@ -442,7 +510,7 @@ Deletion still requires a closed consumer and decision-claim audit.
 
 | Current surface | Target disposition | Reason |
 | --- | --- | --- |
-| `soranoha build-publication` | Keep and deepen: sole release assembler/admitter | It is the real full-corpus path and owns failure policy and installation. |
+| `soranoha build-publication` | Keep and deepen: sole release assembler/installer | It is the real full-corpus path and owns failure policy and installation. |
 | `materialize-publication!` | Keep and deepen: sole per-work renderer | It centralizes the canonical publication artifact set. |
 | `materialize-release-publication!` | Retire as a release-named boundary; move any required rights check to `build-publication` | Per-work rendering cannot independently confer release authority. |
 | Single-work materializer CLI/Nix app | Keep as a non-release renderer adapter while live consumers exist | `ab-validator` and publication smokes actively use it. |
@@ -451,15 +519,15 @@ Deletion still requires a closed consumer and decision-claim audit.
 | `publication-rehearsal!`, command, report, and workflow | Retire after direct build emits the release index | It is the superseded end-to-end composition. |
 | `reproduce!` publication loop | Split and retire its competing composition | Retain only independently owned request-set/analysis/annotation capabilities. |
 | Source-snapshot and request-set functions | Keep as pure domain values where the direct index or live analysis needs them | Their value semantics are useful; rehearsal orchestration is not. |
-| Snapshot-index functions/schema | Keep as the release-index protocol, then simplify only by versioned contract change | It already provides the authenticated closure missing from the direct build. |
+| Snapshot-index value functions/schema | Version to 0.2.0 and keep as the release-index protocol | The closure mechanism is useful; request-set identity and missing parser coordinates make 0.1.1 unsuitable for direct publication. |
 | Snapshot validate/explain/report | Rebase on the release index and retain only live projections | These should inspect values, not reproduce them. |
 | Staging/packaging | Keep as a downstream derived producer where live | It creates deployment values that cite, but do not redefine, the release. |
-| `validate-workflow` in the Soranoha dispatcher | Move to its domain or retire | Generic run-record validation is not publication dispatch. |
+| `validate-workflow` in the Soranoha dispatcher | Retire the command; keep `workflow/validate-run` with its domain tests | It has no live operator or automation consumer outside its own CLI test and archived handoffs. |
 | `validate-design-bundle` publication fixture | Keep as small integration characterization | It exercises a retained boundary without owning release authority. |
 
 The live adapter findings correct the earlier proposed “one artifact-producing
 command” rule. Exclusive writing is not the invariant; exclusive release
-assembly and admission is.
+assembly and installation plus one shared admissibility predicate is.
 
 ## Closed disposition audit
 
@@ -512,14 +580,24 @@ record:
 
 Complete the surface and identity disposition tables in the same review slice.
 
+Add one root-flake CI check that invokes the real `soranoha` app over a tiny
+committed Git-backed Aozora fixture. It must use the flake-exported adapter,
+parser, converter, and mapping paths rather than binding `*env*` or replacing
+the parser function. Unit tests may still inject faults; this check proves the
+actual production wiring.
+
 ### Lane 1: repair the release trust boundary
 
 Land separately reviewed correctness changes:
 
-1. fail closed on dirty or unprovable official source identity;
-2. bind the exact admitted parser candidate/qualification tuple;
+1. fail closed on dirty or unprovable official source identity, while requiring
+   every non-Git fixture to request and record the non-release trust mode;
+2. extract a shared decision/promotion verifier, resolve the shape-valid
+   `custom-parser-release-qualification` decision from `decisions.edn`, and
+   bind the exact candidate/qualification/registry tuple;
 3. bind and propagate parser build/configuration and mapping hashes;
-4. repair cache reuse so old manifests cannot cross release identities;
+4. stop reusing old manifests; reuse proven content bytes or rerender while
+   regenerating current release-coupled values;
 5. remove stale absolute temporary-root paths from retained values.
 
 These may intentionally tighten behavior. They require focused tests and
@@ -527,26 +605,44 @@ decision amendments where governed contracts change.
 
 ### Lane 2: make the direct build emit the release value
 
-Construct `snapshot-index.json` from the actual direct-build selection and
-render results:
+Version the snapshot-index schema and construct version 0.2.0 from the actual
+direct-build selection and render results:
 
-- use the pure request-set/source/index value functions where they express true
-  facts;
+- replace request-set identity with source-selection identity;
+- add the exact candidate, qualification, parser, mapping, and schema
+  coordinates;
+- remove request-set, tokenizer, and analysis fields that are not publication
+  inputs;
+- reuse pure source/index value functions only where they express true facts;
 - do not call `publication-rehearsal!`;
 - close over the actual per-work manifests;
-- validate all references and hashes before admission;
+- validate all references and hashes through `release-admissible?`;
 - keep `publications-report.json` derived;
 - keep run plans/traces operational.
 
-If the existing snapshot-index schema cannot represent the direct build
-truthfully, make one minimal versioned schema change and migrate projections.
-Do not run two authoritative corpus identities in parallel.
+Migrate schema contracts, examples, validators, explanation, reports, and
+staging in the same lane. Version 0.1.1 remains frozen history, not a supported
+producer/projection protocol. Do not write both versions and do not run two
+authoritative corpus identities in parallel.
 
 ### Lane 3: rebase consumers, then retire the secondary composition
 
 Rebase validation, explanation, reports, and staging on the direct-build
-release index. Then remove the confirmed-dead rehearsal/reproduction vertical
-slice atomically:
+release index. Staging already copies bytes and changes locators; adapt its
+loose-locator input seam rather than rewriting it.
+
+Then remove the confirmed-dead rehearsal/reproduction vertical slice
+atomically. In `soranoha.clj`, move the retained direct index assembly behind
+`build-publication` and remove the producer half:
+
+- `build-snapshot-index`;
+- `snapshot-index!`;
+- `materialize-snapshot-root!`;
+- `reproduce!`;
+- `publication-rehearsal!`.
+
+Retain and rebase `read-valid-snapshot-index` and the live validation,
+explanation, report, and staging projections. Remove the associated:
 
 - command-table entries;
 - public orchestration functions;
@@ -557,6 +653,11 @@ slice atomically:
 - active documentation advertising the retired workflow.
 
 Historical reports retain their recorded command strings.
+
+Lanes 1 and 2 are release-correctness work, not simplification credit. They may
+add validation code but must add it only inside the retained build, value, and
+verification boundaries—never as a third composition. Do not advertise a
+supported release path until Lane 3 removes the superseded producer.
 
 ### Lane 4: collapse the surviving modules
 
@@ -604,32 +705,38 @@ incidental orchestration.
 - current strict, partial, and atomic installation behavior;
 - current per-work artifact bytes and manifests;
 - current active single/batch renderer consumers;
-- release-index validation and projection behavior.
+- release-index validation and projection behavior;
+- one CI path through the real flake adapter/mapping wiring and a committed
+  Git-backed fixture.
 
 ### Trust and identity
 
-- dirty relevant source blocks admission;
-- failed Git inspection blocks admission;
-- parser candidate/qualification mismatch blocks admission;
-- mapping or parser identity mismatch blocks admission;
+- dirty relevant source makes the admissibility predicate fail;
+- failed Git inspection makes the admissibility predicate fail;
+- explicit fixture trust mode remains buildable but never admissible;
+- malformed decision corpus, wrong decision slug/status/authority/scope, or
+  parser-RQ promotion failure makes the predicate fail;
+- parser candidate/qualification mismatch makes the predicate fail;
+- mapping or parser identity mismatch makes the predicate fail;
 - required identity hashes are non-null and propagate to manifests/index;
 - absolute or temporary paths do not affect identity;
 - tampered manifests, contents, references, policies, or index fail closed.
 
 ### Cache
 
-- identical complete inputs permit exact reuse;
 - changing corpus snapshot, metadata, parser, mapping, profile, or policy
   cannot reuse an old manifest;
-- content-byte reuse regenerates current manifests;
+- Lane 1 regenerates all manifests and release-coupled sidecars;
+- content-byte reuse, where retained, regenerates current manifests;
 - the final index validates independently of cache events.
 
 ### Architecture
 
-- only `build-publication` can admit a release;
+- only `build-publication` can assemble and install a release root;
+- every caller uses the same pure `release-admissible?` verifier;
 - all canonical per-work artifact sets pass through
   `materialize-publication!`;
-- qualification and fixture adapters cannot emit an admitted release index;
+- qualification and fixture adapters cannot emit a release-admissible index;
 - projections never call rendering;
 - staging cites the source release identity and cannot replace it;
 - retired commands and compositions are absent after their breaking lane.
@@ -654,7 +761,8 @@ incidental orchestration.
 - no publication rewrite;
 - no generic command registry, pipeline framework, target graph, or release
   database;
-- no new corpus identity while the snapshot-index contract can state the truth;
+- no parallel corpus identity: snapshot-index 0.2.0 supersedes 0.1.1 for live
+  direct publication;
 - no deletion of live qualification or fixture rendering capability;
 - no byte-for-byte drift gate over operational timestamps or paths;
 - no opportunistic F4/F5 refactor mixed into trust-boundary repairs.
@@ -678,8 +786,8 @@ The design has failed if it yields:
   happened to match.
 - **Place identity:** temporary or absolute paths become part of release
   identity or survive installation as broken references.
-- **Partial-as-release:** a diagnostic root is called admitted because it was
-  installed.
+- **Partial-as-release:** a diagnostic root is treated as admissible because it
+  was installed.
 - **A new introspection subsystem:** a query engine or database explains values
   that should be explicit on disk.
 - **Capability loss by reachability alone:** request-set, analysis, annotation,
@@ -692,15 +800,17 @@ The design has failed if it yields:
 The refactor is complete when:
 
 1. `soranoha build-publication` is the only supported operation that
-   authenticates release inputs, closes a corpus index, and admits a release.
+   authenticates release inputs, closes a corpus index, and installs a
+   release-facing root.
 2. `materialize-publication!` is the only function that writes the canonical
    per-work publication artifact set.
 3. Qualification, fixture, and development adapters are explicitly
    non-release and reuse that renderer.
 4. Active single/batch adapter consumers are preserved or deliberately
    migrated before their entry points change.
-5. `snapshot-index.json` is constructed from actual direct-build results and is
-   the sole authoritative corpus release value.
+5. `snapshot-index.json` version 0.2.0 is constructed from actual direct-build
+   results and is the sole authoritative corpus release value; no synthetic
+   request-set identity remains.
 6. One documented identity chain binds clean source, exact admitted parser and
    mapping, policies, per-work manifests, and the artifact set.
 7. Parser build/configuration and mapping hashes are present rather than null
@@ -709,8 +819,9 @@ The refactor is complete when:
    inputs.
 9. Operational configuration, concurrency, timestamps, cache events, workflow
    ids, and machine paths do not affect release identity.
-10. A partial diagnostic installation is visibly non-admissible and cannot
-    replace the meaning of an admitted release.
+10. `release-admissible?` is a pure fail-closed predicate with no receipt, and
+    a partial diagnostic installation cannot pass it merely by occupying the
+    output path.
 11. Validation and explanation consume the release index; staging/packaging
     produce derived values that cite it.
 12. The old rehearsal/reproduce release composition, its public commands, and
@@ -726,8 +837,8 @@ The immediate deletion is useful, but the architectural gain is larger:
 
 - publication changes have one release boundary;
 - identity changes have one value chain;
-- policy and parser admission have one enforcement point;
-- failure, installation, and admission stop being conflated;
+- policy and parser admission have one verification boundary;
+- failure, installation, and release admissibility stop being conflated;
 - per-work rendering remains independently useful and testable;
 - parser qualification shares production rendering without becoming
   production;

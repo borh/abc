@@ -72,6 +72,13 @@ use ab_aozora_spec::Diagnostic;
 // resolved (open, close) view zipped during the pair pass.
 pub use ab_aozora_spec::{PairKind, PairLink};
 
+/// How many newlines a `［＃` DIRECTIVE bracket may span before the
+/// newline expiry reclaims it. Legitimate multi-line directives exist
+/// but are bounded (the corpus maximum is a 12-line ［＃入力者註：…］
+/// editorial note); a stray unclosed ［＃ typo must not swallow the
+/// document, only at most this many lines.
+const MULTILINE_DIRECTIVE_NEWLINE_ALLOWANCE: u8 = 32;
+
 /// One event in the pair-stage stream.
 ///
 /// `PairOpen` and `PairClose` carry only their `kind` and `span`.
@@ -209,7 +216,7 @@ where
     I: Iterator<Item = Token>,
 {
     tokens: I,
-    stack: SmallVec<[(PairKind, Span, bool); 8]>,
+    stack: SmallVec<[(PairKind, Span, u8); 8]>,
     diagnostics: Vec<Diagnostic>,
     /// Resolved (open, close) pairs collected as the stack matches.
     /// Mirrors the `PairOutputIn::links` side-table for streaming
@@ -267,7 +274,7 @@ where
 
     fn classify_trigger(&mut self, kind: TriggerKind, span: Span) -> PairEvent {
         if let Some(pair_kind) = open_kind_of(kind) {
-            self.stack.push((pair_kind, span, false));
+            self.stack.push((pair_kind, span, 0));
             return PairEvent::PairOpen {
                 kind: pair_kind,
                 span,
@@ -343,7 +350,7 @@ where
             && top.0 == PairKind::Bracket
             && top.1.end == span.start
         {
-            top.2 = true;
+            top.2 = MULTILINE_DIRECTIVE_NEWLINE_ALLOWANCE;
         }
         PairEvent::Solo { kind, span }
     }
@@ -389,10 +396,15 @@ where
                 // and everything nested above it, innermost-first —
                 // mirroring the EOF drain — then surface the newline.
                 // Opens BELOW the bracket (a multi-paragraph 「) survive.
+                for entry in &mut self.stack {
+                    if entry.0 == PairKind::Bracket && entry.2 > 0 {
+                        entry.2 -= 1;
+                    }
+                }
                 if let Some(lowest) = self
                     .stack
                     .iter()
-                    .position(|&(k, _, directive)| k == PairKind::Bracket && !directive)
+                    .position(|&(k, _, allowance)| k == PairKind::Bracket && allowance == 0)
                 {
                     while self.stack.len() > lowest {
                         let (k, open_span, _) = self.stack.pop().expect("len > lowest");
@@ -522,6 +534,25 @@ mod tests {
                 .any(|&(what, _)| what == "unclosed")
         );
         assert!(diagnostics.is_empty());
+    }
+
+    #[test]
+    fn directive_bracket_expires_after_bounded_newline_allowance() {
+        // A stray unclosed ［＃ (a typo'd nested marker like
+        // ［＃［愛」に「ママ」の注記］) may span lines, but only up to the
+        // bounded allowance — beyond it the expiry reclaims it so the
+        // rest of the document still classifies.
+        let mut src = String::from("可愛［＃タイポ\n");
+        for _ in 0..40 {
+            src.push_str("本文の一行。\n");
+        }
+        let (events, diagnostics) = run(&src);
+        assert!(
+            pair_kinds(&events)
+                .iter()
+                .any(|&(what, kind)| what == "unclosed" && kind == PairKind::Bracket)
+        );
+        assert_eq!(diagnostics.len(), 1);
     }
 
     #[test]

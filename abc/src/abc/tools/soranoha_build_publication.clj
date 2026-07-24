@@ -130,7 +130,7 @@
   an explicit, loud error so a build never silently falls back to a stub."
   [parser-profile]
   (case parser-profile
-    ("aozora2html" "aozora2html-v1" "aozora2html-smoke-v1")
+    "aozora2html"
     {:adapter-id "aozora2html"
      :wrapper (require-env "AB_AOZORA2HTML_ADAPTER" "aozora2html adapter wrapper")
      :extra-env {"AB_AOZORA2HTML_BIN"

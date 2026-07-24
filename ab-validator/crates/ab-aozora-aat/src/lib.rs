@@ -1721,9 +1721,19 @@ fn ruby_node(
     gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
 ) -> Value {
     if let Some(entry) = ruby_by_span.get(&(node.span.start, node.span.end)) {
+        // A retrospective annotation whose node span is the marker alone
+        // (`…《ルビ》［＃「X」の左に「Y」のルビ］`) re-quotes a target that
+        // was already emitted; keeping the quoted base would double the
+        // word in every projection (the style/tcy duplication class, in
+        // its ruby form). The base text lives outside this span, so the
+        // node keeps reading + direction and projects no base of its own.
+        let marker_only = {
+            let source = source_slice(&decoded.span_text, &node.span);
+            source.starts_with("［＃") || source.starts_with("[#")
+        };
         return json!({
             "kind": "ruby",
-            "base": entry.base,
+            "base": if marker_only { "" } else { entry.base.as_str() },
             "reading": entry.reading,
             "direction": entry.side,
             "span": span_json(&node.span, &decoded.span_ctx)
@@ -2467,6 +2477,44 @@ mod tests {
         assert_eq!(ruby["direction"], "left");
         assert_eq!(ruby["base"], "名");
         assert_eq!(ruby["reading"], "な");
+    }
+
+    /// A retrospective left-ruby whose target already carries ordinary
+    /// ruby (`謝肉《しゃにく》［＃「謝肉」の左に「カルネワル」のルビ］`)
+    /// anchors on the marker alone — the target was already emitted — so
+    /// re-quoting the target as `base` would double the word in every
+    /// projection, plain.txt included (the 傍点/太字 duplication class
+    /// fixed for style/tcy spans, in its ruby form).
+    #[test]
+    fn marker_only_left_ruby_span_does_not_duplicate_target() {
+        let src = "謝肉《しゃにく》［＃「謝肉」の左に「カルネワル」のルビ］の祭\n";
+        let aat = aat_value_for(src);
+        let blocks = &aat["blocks"][0]["content"];
+        let rubies: Vec<&Value> = blocks
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|n| n["kind"] == "ruby")
+            .collect();
+        assert_eq!(rubies.len(), 2);
+        assert_eq!(rubies[0]["base"], "謝肉");
+        assert_eq!(rubies[0]["reading"], "しゃにく");
+        assert_eq!(rubies[1]["direction"], "left");
+        assert_eq!(rubies[1]["reading"], "カルネワル");
+        // Marker-only span: the base is already emitted by the first node,
+        // so the projection (text values + ruby bases) carries 謝肉 once.
+        assert_eq!(rubies[1]["base"], "");
+        let projected: String = blocks
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|n| match n["kind"].as_str() {
+                Some("text") => n["value"].as_str().map(ToOwned::to_owned),
+                Some("ruby") => n["base"].as_str().map(ToOwned::to_owned),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(projected.matches("謝肉").count(), 1);
     }
 
     /// Gaiji-base ruby (`※［＃…］《reading》`): the base is a deferred gaiji

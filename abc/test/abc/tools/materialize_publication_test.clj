@@ -451,6 +451,83 @@
       (finally
         (delete-tree! work-dir)))))
 
+(def example-parser-identity
+  {:parser-build-hash (files/example-hash "b1")
+   :parser-config-hash (files/example-hash "c1")
+   :mapping-hash (files/example-hash "d1")
+   :parser-ir-schema-hash (files/example-hash "e1")})
+
+(defn- render-with-parser-identity! [out-dir parser-identity]
+  (materialize/materialize-publication!
+   {:parser-ir-path "examples/v0/example-work/parser-ir.json"
+    :source-manifest-path "examples/v0/example-work/source.manifest.json"
+    :metadata-record-path "examples/v0/example-work/metadata-record.json"
+    :persons-dir "examples/v0/example-persons"
+    :output-dir out-dir
+    :generated-at generated-at
+    :parser-identity parser-identity}))
+
+(deftest materialize-publication-threads-parser-identity-into-manifests-test
+  (let [out-dir (temp-dir "abc-materialize-publication-parser-identity")
+        manifest-schema (files/read-json "schemas/manifest.schema.json")]
+    (try
+      (render-with-parser-identity! out-dir example-parser-identity)
+      (let [plaintext-manifest (files/read-json (io/file out-dir "plaintext.manifest.json"))
+            tei-manifest (files/read-json (io/file out-dir "tei.manifest.json"))]
+        (doseq [[label manifest] [["plaintext" plaintext-manifest]
+                                  ["tei" tei-manifest]]]
+          (testing (str label " manifest_identity_object carries all four parser identity hashes")
+            (is (= (:parser-build-hash example-parser-identity)
+                   (get-in manifest ["manifest_identity_object" "parser_build_hash"])))
+            (is (= (:parser-config-hash example-parser-identity)
+                   (get-in manifest ["manifest_identity_object" "parser_config_hash"])))
+            (is (= (:mapping-hash example-parser-identity)
+                   (get-in manifest ["manifest_identity_object" "aat_parser_ir_mapping_hash"])))
+            (is (= (:parser-ir-schema-hash example-parser-identity)
+                   (get-in manifest ["manifest_identity_object" "parser_ir_schema_hash"]))))
+          (testing (str label " provenance used array is sorted and includes all four hashes")
+            (let [used (get-in manifest ["provenance" "used"])]
+              (is (= (sort used) used))
+              (doseq [hash (vals example-parser-identity)]
+                (is (some #{hash} used)))))
+          (testing (str label " manifest remains schema-valid")
+            (is (nil? (schema/validation-errors manifest-schema manifest))))))
+      (finally
+        (delete-tree! out-dir)))))
+
+(deftest materialize-publication-rotates-artifact-id-per-parser-identity-hash-test
+  (doseq [[k suffix] [[:parser-build-hash "b2"]
+                      [:parser-config-hash "c2"]
+                      [:mapping-hash "d2"]
+                      [:parser-ir-schema-hash "e2"]]]
+    (testing (str "rotating " k)
+      (let [out-base (temp-dir "abc-materialize-publication-parser-identity-base")
+            out-variant (temp-dir "abc-materialize-publication-parser-identity-variant")]
+        (try
+          (render-with-parser-identity! out-base example-parser-identity)
+          (render-with-parser-identity! out-variant
+                                        (assoc example-parser-identity
+                                               k (files/example-hash suffix)))
+          (is (= (slurp (io/file out-base "plain.txt"))
+                 (slurp (io/file out-variant "plain.txt")))
+              "rendered plaintext bytes must not change")
+          (is (= (slurp (io/file out-base "tei.xml"))
+                 (slurp (io/file out-variant "tei.xml")))
+              "rendered TEI bytes must not change")
+          (let [base-plaintext (files/read-json (io/file out-base "plaintext.manifest.json"))
+                variant-plaintext (files/read-json (io/file out-variant "plaintext.manifest.json"))
+                base-tei (files/read-json (io/file out-base "tei.manifest.json"))
+                variant-tei (files/read-json (io/file out-variant "tei.manifest.json"))]
+            (is (not= (get base-plaintext "artifact_id")
+                      (get variant-plaintext "artifact_id"))
+                "plaintext artifact id must rotate")
+            (is (not= (get base-tei "artifact_id")
+                      (get variant-tei "artifact_id"))
+                "tei artifact id must rotate"))
+          (finally
+            (delete-tree! out-base)
+            (delete-tree! out-variant)))))))
+
 (deftest materialized-publication-output-is-deterministic-test
   (let [out-dir-a (temp-dir "abc-materialize-publication-a")
         out-dir-b (temp-dir "abc-materialize-publication-b")]

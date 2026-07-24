@@ -961,17 +961,33 @@
                           "--output-root" (str output-root)]))))))
       (let [slug "000001_000879_000001_ruby_fixture"
             work-dir (io/file output-root "materialized-root" "works" slug)
-            build-pub-dir (io/file output-root "publications" slug)]
+            build-pub-dir (io/file output-root "publications" slug)
+            build-plan (files/read-json (io/file output-root "build-plan.json"))
+            parser-runtime (get build-plan "parser_runtime")
+            runtime-identity (get parser-runtime "parser_runtime_identity_object")
+            ;; Task 4 computes the authenticated parser runtime identity ONCE
+            ;; and the build now injects it into every work's manifest; a bare
+            ;; materialize-publication! call must be given the SAME value to
+            ;; stay byte-equivalent to what the build wrote.
+            parser-identity {:parser-build-hash (get runtime-identity
+                                                     "parser_executable_hash")
+                             :parser-config-hash (get parser-runtime
+                                                      "parser_config_hash")
+                             :mapping-hash (get runtime-identity "mapping_hash")
+                             :parser-ir-schema-hash (get runtime-identity
+                                                         "parser_ir_schema_hash")}]
         ;; The direct build never invokes a private/duplicated rendering path:
-        ;; feeding materialize-publication! the same inputs the build wrote
-        ;; for this work reproduces the same publication artifact set, up to
-        ;; the generated-at provenance timestamp each invocation was given.
+        ;; feeding materialize-publication! the same inputs (including parser
+        ;; identity) the build wrote for this work reproduces the same
+        ;; publication artifact set, up to the generated-at provenance
+        ;; timestamp each invocation was given.
         (materialize-publication/materialize-publication!
          {:parser-ir-path (str (io/file work-dir "parser-ir.json"))
           :source-manifest-path (str (io/file work-dir "source.manifest.json"))
           :metadata-record-path (str (io/file work-dir "metadata-record.json"))
           :persons-dir (str (io/file output-root "materialized-root" "persons"))
-          :output-dir (str direct-output)})
+          :output-dir (str direct-output)
+          :parser-identity parser-identity})
         (is (= (slurp (io/file build-pub-dir "plain.txt"))
                (slurp (io/file direct-output "plain.txt"))))
         (is (= (slurp (io/file build-pub-dir "tei.xml"))

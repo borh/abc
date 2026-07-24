@@ -191,14 +191,15 @@
       (throw (ex-info "Publication materialization requires a source manifest with corpus_snapshot_hash"
                       {:source-manifest-present? (some? source-manifest)}))))
 
-(defn- manifest-inputs [parser-ir metadata-record source-manifest]
+(defn- manifest-inputs [parser-ir metadata-record source-manifest parser-identity]
   {"corpus_snapshot_hash" (corpus-snapshot-hash source-manifest)
    "work_content_hash" (get-in parser-ir ["source" "work_content_hash"])
    "metadata_record_hash" (metadata-record/record-hash metadata-record)
-   "parser_build_hash" nil
-   "parser_config_hash" nil
-   "mapping_hash" nil
-   "parser_ir_schema_hash" (get parser-ir "schema_hash")})
+   "parser_build_hash" (:parser-build-hash parser-identity)
+   "parser_config_hash" (:parser-config-hash parser-identity)
+   "mapping_hash" (:mapping-hash parser-identity)
+   "parser_ir_schema_hash" (or (:parser-ir-schema-hash parser-identity)
+                               (get parser-ir "schema_hash"))})
 
 (defn- publication-identity-object
   [manifest-inputs {:keys [output-format-spec-hash tei-profile-hash]}]
@@ -516,8 +517,10 @@
     :notes notes}))
 
 (defn plaintext-manifest
-  [{:keys [plain-file parser-ir metadata-record source-manifest generated-at]}]
-  (let [inputs (manifest-inputs parser-ir metadata-record source-manifest)
+  [{:keys [plain-file parser-ir metadata-record source-manifest generated-at
+           parser-identity]}]
+  (let [inputs (manifest-inputs parser-ir metadata-record source-manifest
+                                parser-identity)
         policy-hash (policy/policy-hash publication-policy-path)
         identity-object (publication-identity-object
                          inputs
@@ -535,14 +538,19 @@
       :used (compact-hashes (get inputs "corpus_snapshot_hash")
                             (get inputs "work_content_hash")
                             (get inputs "metadata_record_hash")
+                            (get inputs "parser_build_hash")
+                            (get inputs "parser_config_hash")
+                            (get inputs "mapping_hash")
                             (get inputs "parser_ir_schema_hash")
                             policy-hash)
       :notes "Generated from parser-IR by ABC plaintext publication renderer."})))
 
 (defn tei-manifest
   [{:keys [tei-file validation-result-file validation-result
-           preservation-file parser-ir metadata-record source-manifest generated-at]}]
-  (let [inputs (manifest-inputs parser-ir metadata-record source-manifest)
+           preservation-file parser-ir metadata-record source-manifest generated-at
+           parser-identity]}]
+  (let [inputs (manifest-inputs parser-ir metadata-record source-manifest
+                                parser-identity)
         tei-profile-hash (profile-hash)
         identity-object (publication-identity-object
                          inputs
@@ -568,13 +576,26 @@
       :used (compact-hashes (get inputs "corpus_snapshot_hash")
                             (get inputs "work_content_hash")
                             (get inputs "metadata_record_hash")
+                            (get inputs "parser_build_hash")
+                            (get inputs "parser_config_hash")
+                            (get inputs "mapping_hash")
                             (get inputs "parser_ir_schema_hash")
                             tei-profile-hash)
       :notes "Generated from parser-IR by ABC TEI publication renderer."})))
 
 (defn materialize-publication!
+  "Render the sole per-work publication artifact set (plaintext + TEI, with
+  their manifests, preservation sidecar, and TEI validation result).
+
+  `:parser-identity` is an OPTIONAL {:parser-build-hash :parser-config-hash
+  :mapping-hash :parser-ir-schema-hash} value. When given, its four hashes are
+  bound into both manifests' identity object and provenance `used` array
+  verbatim — this function never reads environment variables or parser
+  authority itself; it only consumes what the caller passes. Non-release
+  callers (single/batch, qualification, fixture adapters) omit it, leaving the
+  parser coordinates null."
   [{:keys [parser-ir-path metadata-record-path persons-dir output-dir
-           source-manifest-path generated-at]
+           source-manifest-path generated-at parser-identity]
     :or {generated-at default-generated-at}}]
   (let [output-dir (fs/file output-dir)
         _ (files/create-dirs! output-dir)
@@ -612,7 +633,8 @@
                             :parser-ir parser-ir
                             :metadata-record metadata-record
                             :source-manifest source-manifest
-                            :generated-at generated-at}))
+                            :generated-at generated-at
+                            :parser-identity parser-identity}))
       (manifest/write-json-file!
        tei-manifest-file
        (tei-manifest {:tei-file tei-file
@@ -622,7 +644,8 @@
                       :parser-ir parser-ir
                       :metadata-record metadata-record
                       :source-manifest source-manifest
-                      :generated-at generated-at})))
+                      :generated-at generated-at
+                      :parser-identity parser-identity})))
     {:plaintext plain-file
      :tei tei-file
      :preservation preservation-file

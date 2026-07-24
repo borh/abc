@@ -690,6 +690,21 @@
    "parser_config_hash" (:parser-config-hash parser-runtime)
    "problems" (mapv pr-str (:problems parser-runtime))})
 
+(defn- parser-identity-for-materialization
+  "Project the ONCE-computed authenticated parser runtime identity into the
+  materialize-publication! `:parser-identity` shape. Path-free and derived
+  entirely from the value Task 4 already resolved before source derivation —
+  never re-reads env vars or parser authority. `fixture`/non-release builds
+  carry a nil `:parser-runtime-identity`, so every coordinate here is nil and
+  every work's manifest keeps null parser coordinates, same as before this
+  value was threaded."
+  [parser-runtime]
+  (let [runtime-identity (:parser-runtime-identity parser-runtime)]
+    {:parser-build-hash (get runtime-identity "parser_executable_hash")
+     :parser-config-hash (:parser-config-hash parser-runtime)
+     :mapping-hash (get runtime-identity "mapping_hash")
+     :parser-ir-schema-hash (get runtime-identity "parser_ir_schema_hash")}))
+
 (defn- build-plan [opts config materialization-result source-provenance
                    parser-runtime]
   {"build_schema_version" "soranoha-build-publication-v0"
@@ -780,7 +795,8 @@
                                   (normalized-abs-path file))))
 
 (defn- materialize-one-publication!
-  [{:keys [output-root prior-output-root generated-at continue-on-failure work]}]
+  [{:keys [output-root prior-output-root generated-at continue-on-failure
+           parser-identity work]}]
   (let [{:keys [slug work_content_hash parser_ir_path source_manifest_path
                 metadata_record_path persons_dir]} work
         pub-dir (io/file output-root "publications" slug)
@@ -809,7 +825,8 @@
                        :metadata-record-path metadata_record_path
                        :persons-dir persons_dir
                        :output-dir (str pub-dir)
-                       :generated-at generated-at})]
+                       :generated-at generated-at
+                       :parser-identity parser-identity})]
           (files/write-text! (io/file pub-dir "source_work_content_hash.txt")
                              work_content_hash)
           {:slug slug :status "passed"
@@ -828,13 +845,15 @@
 
 (defn- materialize-publications!
   [{:keys [output-root prior-output-root materialization-result config-value
-           snapshot-date concurrency]}]
+           snapshot-date concurrency parser-runtime]}]
   (let [continue-on-failure (boolean (get config-value "continue_on_failure"))
         generated-at (generated-at-for snapshot-date)
         context {:output-root output-root
                  :prior-output-root prior-output-root
                  :generated-at generated-at
-                 :continue-on-failure continue-on-failure}
+                 :continue-on-failure continue-on-failure
+                 :parser-identity (parser-identity-for-materialization
+                                   parser-runtime)}
         results (parallel/ordered-pmap
                  concurrency
                  materialize-publication-item
@@ -898,7 +917,7 @@
 
 (defn materialize-publications-step
   [{:keys [config-value materialization-result output-root
-           prior-output-root snapshot-date opts]}]
+           prior-output-root snapshot-date opts parser-runtime]}]
   (let [{:keys [results report]}
         (materialize-publications!
          {:output-root output-root
@@ -906,7 +925,8 @@
           :materialization-result materialization-result
           :config-value config-value
           :snapshot-date snapshot-date
-          :concurrency (:concurrency opts)})
+          :concurrency (:concurrency opts)
+          :parser-runtime parser-runtime})
         report-file (io/file output-root "publications"
                              "publications-report.json")]
     (abc-json/write-deterministic-json-file! report-file report)
@@ -931,7 +951,7 @@
     :run write-build-records-step}
    {:id :materialize-publications
     :requires [:build-plan :config-value :materialization-result :output-root
-               :prior-output-root :snapshot-date :opts]
+               :prior-output-root :snapshot-date :opts :parser-runtime]
     :produces [:publication-result]
     :run materialize-publications-step}])
 

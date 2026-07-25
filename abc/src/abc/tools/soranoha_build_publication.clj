@@ -350,7 +350,7 @@
 (def ^{:dynamic true
        :doc "Injectable authenticated-parser-runtime boundary. Bound to a stub
              in tests so the workflow can be exercised without the adapter
-             binaries and campaign evidence present."}
+             binaries and authenticated parser-runtime evidence present."}
   *resolve-parser-runtime!* real-resolve-parser-runtime!)
 
 (defn invoke-resolve-parser-runtime! [options]

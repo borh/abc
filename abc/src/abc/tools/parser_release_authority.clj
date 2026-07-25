@@ -75,8 +75,14 @@
 (defn- load-shape-valid-record!
   "Read and EDN-parse the release-parser-identity record at path. Throws the
   standard authentication failure on an unreadable/unparseable file (the record
-  is the content authority; without it there is nothing to authenticate).
-  Returns the parsed value; shape validation is `record-problems`, gathered
+  is the content authority; without it there is nothing to authenticate), and
+  ALSO on a parsed value whose outermost shape is unsafe for downstream
+  consumers: a non-map record (authenticate dissocs :candidate_ref from it) or a
+  non-sequential :executables (record-problems iterates it). Guarding both here
+  means every failure mode of this loader — not just the readable-EDN one —
+  reaches callers as the closed :problems vector instead of a raw
+  ClassCastException/IllegalArgumentException escaping past it. Returns the
+  parsed value; the remaining shape validation is `record-problems`, gathered
   alongside the decision, integrity, and binding problems."
   [path]
   (let [fail (fn [msg]
@@ -88,11 +94,19 @@
       (not (fs/regular-file? path))
       (fail (str "release parser identity record is not a file: " path))
       :else
-      (try
-        (edn/read-string (slurp (fs/file path)))
-        (catch Exception e
-          (fail (str "release parser identity record is not readable EDN: "
-                     (.getMessage e))))))))
+      (let [parsed (try
+                     (edn/read-string (slurp (fs/file path)))
+                     (catch Exception e
+                       (fail (str "release parser identity record is not readable EDN: "
+                                  (.getMessage e)))))]
+        (cond
+          (not (map? parsed))
+          (fail (str "release parser identity record is not a map: " path))
+
+          (not (or (nil? (:executables parsed)) (sequential? (:executables parsed))))
+          (fail "release parser identity record :executables is not a sequence")
+
+          :else parsed)))))
 
 ;; --- decision resolution + authority -----------------------------------------
 

@@ -172,3 +172,30 @@
   (let [problems (authenticate-problems {:release_parser_identity_path "no/such/record.edn"
                                          :decisions_path decisions-path})]
     (is (some #(= :invalid-release-parser-identity (:kind %)) problems))))
+
+;; --- a non-map / malformed-shape record fails closed, not with a raw --------
+;; --- ClassCastException / IllegalArgumentException --------------------------
+
+(deftest non-map-record-fails-closed-test
+  (testing "a record file whose EDN parses to a non-map value is rejected with :problems"
+    (doseq [contents [[1 2 3] "nope" 42 :keyword]]
+      (let [path (write-temp-edn! "release-parser-identity.edn" contents)]
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"authentication failed"
+                              (authority/authenticate {:release_parser_identity_path path
+                                                       :decisions_path decisions-path}))
+            (str "contents: " (pr-str contents)))
+        (let [problems (authenticate-problems {:release_parser_identity_path path
+                                               :decisions_path decisions-path})]
+          (is (some #(= :invalid-release-parser-identity (:kind %)) problems)
+              (str "contents: " (pr-str contents))))))))
+
+(deftest non-sequential-executables-fails-closed-test
+  (testing "a map record whose :executables is a non-sequential scalar is rejected with :problems"
+    (let [malformed (assoc (read-record) :executables "not-a-sequence")
+          path (write-temp-edn! "release-parser-identity.edn" malformed)]
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"authentication failed"
+                            (authority/authenticate {:release_parser_identity_path path
+                                                     :decisions_path decisions-path})))
+      (let [problems (authenticate-problems {:release_parser_identity_path path
+                                             :decisions_path decisions-path})]
+        (is (some #(= :invalid-release-parser-identity (:kind %)) problems))))))

@@ -93,7 +93,7 @@ The new decision's binding (in `decisions.edn`):
  ;;   a lifecycle dep on the campaign would re-couple publication authority to research (review Blocker 1).
  :release-parser-identity {:record_path "data/release-parser-identity-v1.edn"
                            :schema_version "1.0.0"
-                           :candidate_ref "sha256:<record candidate_ref from Task 3>"}
+                           :candidate_ref "sha256:3bca1db2c3b5bc3bce41b451942d513f327e4b6190d21a5728cf8a6bdb644757"}
  :claims
  [{:id :c1 :kind :structural-invariant
    :statement "Publication parser-release authority binds exactly the release-parser-identity record whose candidate_ref is named here; parser-release-authority/authenticate rejects any record whose recomputed candidate_ref does not equal this bound value. Evidence: `test/abc/tools/parser_release_authority_test.clj`."

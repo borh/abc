@@ -91,6 +91,28 @@
     (is (seq (shape-of bad)) label)
     (is (every? #(= :invalid-shape (:kind %)) (shape-of bad)) label)))
 
+(def ^:private valid-release-parser-identity
+  {:record_path "data/release-parser-identity-v1.edn"
+   :schema_version "1.0.0"
+   :candidate_ref "sha256:3bca1db2c3b5bc3bce41b451942d513f327e4b6190d21a5728cf8a6bdb644757"})
+
+(deftest release-parser-identity-binding-shape
+  (is (empty? (shape-of (assoc valid-record
+                               :release-parser-identity valid-release-parser-identity)))
+      "a well-formed release-parser-identity binding validates")
+  (doseq [[label bad]
+          {"malformed candidate_ref"
+           (assoc valid-record :release-parser-identity
+                  (assoc valid-release-parser-identity :candidate_ref "not-a-hash"))
+           "extra key in binding"
+           (assoc valid-record :release-parser-identity
+                  (assoc valid-release-parser-identity :extra true))
+           "blank record_path"
+           (assoc valid-record :release-parser-identity
+                  (assoc valid-release-parser-identity :record_path ""))}]
+    (is (seq (shape-of bad)) label)
+    (is (every? #(= :invalid-shape (:kind %)) (shape-of bad)) label)))
+
 (deftest corpus-level-shape-rejections
   (let [two (fn [f] {:decisions [valid-record (f valid-record)]})]
     (is (seq (d/shape-problems (two identity) "decisions.edn"))

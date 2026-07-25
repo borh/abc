@@ -10,7 +10,6 @@
     "config_schema_version",
     "source_trust_mode",
     "parser_profile",
-    "parser_candidate_ref",
     "publication_profile",
     "continue_on_failure",
     "materialization_scope"
@@ -24,6 +23,10 @@
       "enum": ["official-git", "fixture"]
     },
     "parser_profile": { "type": "string", "minLength": 1 },
+    "release_parser_identity": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
     "parser_candidate_ref": {
       "type": ["string", "null"],
       "pattern": "^sha256:[0-9a-f]{64}$"

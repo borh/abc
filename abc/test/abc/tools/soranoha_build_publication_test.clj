@@ -87,16 +87,15 @@
 
 ;; --- config schema 0.2.0 -------------------------------------------------
 
-(def ^:private p5-candidate-ref
-  "sha256:15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab")
+(def ^:private record-path "data/release-parser-identity-v1.edn")
 
 (deftest checked-in-configs-are-version-0-2-0-test
-  (testing "the custom-parser config carries the exact P5 candidate ref, ab-aozora, official-git"
+  (testing "the custom-parser config binds the release-parser-identity record, ab-aozora, official-git"
     (let [config (#'build-publication/read-config
                   "config/full-corpus-publication-custom-parser-ja.json")]
       (is (= "0.2.0" (get config "config_schema_version")))
       (is (= "official-git" (get config "source_trust_mode")))
-      (is (= p5-candidate-ref (get config "parser_candidate_ref")))))
+      (is (= record-path (get config "release_parser_identity")))))
   (testing "the diagnostic aozora2html full-corpus config carries a null candidate ref"
     (let [config (#'build-publication/read-config
                   "config/full-corpus-publication-basic-ja.json")]
@@ -215,10 +214,12 @@
 ;; self-identify `qualify`) is bound into parser_config_hash as OUTPUT identity
 ;; but is deliberately NOT part of the authentication comparison.
 
+;; The release-parser-identity record's real executable sha256 (Task 3): the
+;; build's resolved runtime identity is authenticated by binary against these.
 (def ^:private p5-parser-build-hash
-  "sha256:482728cad5bc663c0742ca9e8c6d6fa7031c1a84117d024921cd48628e2eb034")
+  "sha256:7f75b8f94de9170bf913e6081790ee20e741526027003414034a97ce8a0451dd")
 (def ^:private p5-converter-build-hash
-  "sha256:a2656fc9404be9a8eb08e5ba16667db814c8a22ad45bdf684d78973befaf5936")
+  "sha256:8073c1dc520f2a829375d43473d61a3b9a3dc03bc26df60f0cdd3011a0d1b81f")
 (def ^:private p5-mapping-hash
   "sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142")
 (def ^:private p5-parser-ir-schema-hash
@@ -243,7 +244,7 @@
     (let [result (#'build-publication/authenticate-runtime
                   "ab-aozora"
                   (correct-ab-aozora-identity-object)
-                  p5-candidate-ref)]
+                  record-path)]
       (is (= [] (:problems result)))
       (is (some? (:candidate-ref result)))
       (is (some? (:qualification-identity-ref result))))))
@@ -254,7 +255,7 @@
                       (#'build-publication/authenticate-runtime
                        "ab-aozora"
                        (assoc (correct-ab-aozora-identity-object) k v)
-                       p5-candidate-ref)))
+                       record-path)))
         wrong-hash "sha256:0000000000000000000000000000000000000000000000000000000000000000"]
     (testing "a divergent parser build hash is a coordinate mismatch"
       (let [problems (mismatched "parser_build_hash" wrong-hash)]

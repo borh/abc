@@ -12,7 +12,7 @@ use anyhow::{Context, Result, ensure};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
-use super::{
+use ab_aozora_aat::{
     DecodedSource, aat_json_from_bytes, adapter_version, decode_source_bytes,
     diagnostics_json_from_bytes,
 };

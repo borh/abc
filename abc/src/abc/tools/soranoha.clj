@@ -97,12 +97,9 @@
 
 ;; Repo-relative parser-authority + rights-policy source paths the retained
 ;; projections use to RECOMPUTE current admissibility. verify-release-root!
-;; derives the provenance path from the candidate the index names.
+;; authenticates the decision-bound release-parser-identity record.
 (def release-authority-sources
-  {:runs-root "docs/reports/parser-rq/runs"
-   :registry-path "data/aat-parser-ir-compatibility.edn"
-   :measurements-path "docs/reports/parser-release-qualification-measurements.edn"
-   :qualification-report-path "docs/reports/parser-release-qualification-report.json"
+  {:release-parser-identity-path "data/release-parser-identity-v1.edn"
    :decisions-path "docs/adr/decisions.edn"})
 
 (defn- print-release-verdict!

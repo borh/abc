@@ -2,7 +2,7 @@
 
 use std::{fs, str};
 
-use ab_aozora_aat::{
+use ab_aozora_capture::{
     capture_generation_from_bytes, classified_source_ledger_from_bytes, verify_capture_generation,
 };
 use hegel::generators;
@@ -23,7 +23,7 @@ fn canonical(value: &Value) -> Vec<u8> {
     bytes
 }
 
-fn reseal_ledger(generation: &mut ab_aozora_aat::CaptureGeneration, ledger: &Value) {
+fn reseal_ledger(generation: &mut ab_aozora_capture::CaptureGeneration, ledger: &Value) {
     generation.classified_source_ledger = canonical(ledger);
     let digest = hash(&generation.classified_source_ledger);
     let hex = digest.strip_prefix("sha256:").unwrap();
@@ -39,7 +39,7 @@ fn reseal_ledger(generation: &mut ab_aozora_aat::CaptureGeneration, ledger: &Val
     generation.manifest = canonical(&manifest);
 }
 
-fn reseal_manifest(generation: &mut ab_aozora_aat::CaptureGeneration, mut manifest: Value) {
+fn reseal_manifest(generation: &mut ab_aozora_capture::CaptureGeneration, mut manifest: Value) {
     manifest.as_object_mut().unwrap().remove("generation_ref");
     let identity = serde_json::to_vec(&manifest).unwrap();
     manifest["generation_ref"] = Value::String(hash(&identity));

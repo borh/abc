@@ -124,6 +124,12 @@
      [:release-authority {:optional true}
       (into [:enum] (sort release-authorities))]
      [:source {:optional true} ::am/nonblank-string]
+     [:release-parser-identity {:optional true}
+      [:map {:closed true}
+       [:record_path ::am/nonblank-string]
+       [:schema_version ::am/nonblank-string]
+       [:candidate_ref [:re {:error/message "must be a sha256:… ref"}
+                        hash/hash-pattern]]]]
      [:topics [:vector :keyword]]
      [:relations [:vector ::relation]]
      [:claims [:vector ::claim]]]

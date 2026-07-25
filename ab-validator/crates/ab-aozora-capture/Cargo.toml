@@ -1,0 +1,29 @@
+[package]
+name = "ab-aozora-capture"
+description = "Authenticated classified-source capture at the decoded-coordinate boundary, extracted from ab-aozora-aat so the release-gated ab-aozora/ab-aat-to-parser-ir binaries never link its four abc include_bytes! embeds"
+version = "0.6.0"
+edition.workspace = true
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+# The capture module consumes ab-aozora-aat's decode/AAT/diagnostics
+# constructors (DecodedSource, decode_source_bytes, aat_json_from_bytes,
+# diagnostics_json_from_bytes, adapter_version). No cycle: ab-aozora-aat
+# does not depend on this crate.
+ab-aozora-aat = { path = "../ab-aozora-aat" }
+# ClassifiedSource* fact types, ConstructId, Span, lex.
+ab-aozora-pipeline = { path = "../ab-aozora-pipeline" }
+# publish_blob / PublishedBlob for the capture ledger.
+ab-rq-artifact-store = { path = "../ab-rq-artifact-store" }
+anyhow = "1.0"
+serde_json = "1.0"
+sha2 = "0.10"
+jsonschema.workspace = true
+
+[dev-dependencies]
+hegeltest = "0.28"
+tempfile.workspace = true

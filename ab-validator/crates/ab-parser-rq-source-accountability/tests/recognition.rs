@@ -1,4 +1,4 @@
-use ab_aozora_aat::{CaptureGeneration, capture_generation_from_bytes};
+use ab_aozora_capture::{CaptureGeneration, capture_generation_from_bytes};
 use ab_parser_rq_source_accountability::{
     RecognitionInput, RecognitionStatus, analyze_recognition,
 };
@@ -286,7 +286,7 @@ fn successful_analysis_does_not_mutate_or_reinterpret_legacy_p1() {
         classified_source_ledger: input.ledger_bytes.clone(),
         manifest: input.generation_manifest.clone(),
     };
-    assert!(ab_aozora_aat::verify_capture_generation(&generation).is_ok());
+    assert!(ab_aozora_capture::verify_capture_generation(&generation).is_ok());
     assert_eq!(
         analyze_recognition(input).record.status,
         RecognitionStatus::Ok

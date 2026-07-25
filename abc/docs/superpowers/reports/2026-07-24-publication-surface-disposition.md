@@ -523,3 +523,51 @@ measurement — only the two hash-mismatch problems remain.
 Until this follow-up lands, `checks.<system>.publication-build-real-wiring`
 is expected to stay RED in CI for this specific, understood, tracked reason
 — not because the sole-producer migration itself is broken.
+
+### 2026-07-25 closeout — RED resolved by decoupling release parser authentication from the parser-rq campaign
+
+The `release-converter-build-hash-mismatch` / `release-parser-build-hash-mismatch`
+drift recorded above is now resolved — not by re-qualifying the frozen P5
+candidate in place, but by the decoupling design this same migration's Task
+5 report (`.superpowers/sdd/task-5-report.md`) closes out:
+
+- **D1** pins the release parser/converter build to an exact reproducible
+  git revision instead of tracking mainline `ab-aozora`/`ab-aat-to-parser-ir`
+  HEAD, so the release build reproduces the same bytes every time.
+- **D2** extracts `ab-aozora-capture` so release binaries embed no `abc`
+  bytes, removing the coupling that let the parser-rq campaign's file layout
+  leak into what the release build authenticates.
+- **D3** rewrites `abc.tools.parser-release-authority/authenticate` to read
+  the governed record `abc/data/release-parser-identity-v1.edn` and require
+  BOTH the record's own integrity (its refs recompute from its bytes) AND
+  the Accepted `release-parser-identity-approval` decision binding that
+  exact `candidate_ref` — replacing the old path that recomposed the
+  parser-rq campaign's promotion verification (runs root, registry,
+  measurements, report, provenance) on every release.
+
+With D1–D3 landed, `nix build
+.#checks.x86_64-linux.publication-build-real-wiring --print-build-logs` is
+GREEN: verdict `publication-build-real-wiring smoke ok (release_admissible=false,
+sole-permitted-problem=release-rights-blocked, build_exit=1)`. The smoke's
+Step 9 permits *only* the `release-rights-blocked` problem and fails the
+check on any parser/mapping/schema/hash/manifest problem, so this verdict
+means the parser now authenticates cleanly against the decision-bound
+governed record — neither `release-converter-build-hash-mismatch` nor
+`release-parser-build-hash-mismatch` reappears. The remaining
+`release_admissible: false` / `build_exit_code: 1` is the fixture's designed
+steady state: it is `release-rights-blocked` because the fixture's source
+lacks release rights by policy, a rights-policy gate wholly unrelated to
+parser authentication — not a defect and not a re-manifestation of the
+reproducibility drift this section originally recorded.
+
+The re-qualification follow-up numbered above (re-running the P5 capture,
+updating the Accepted `custom-parser-release-qualification` decision, and
+its pinned hashes) is superseded by this decoupling for the purpose of
+unblocking publication: publication release authority no longer depends on
+re-deriving the parser-rq campaign's candidate at all, so items 1–5 above are
+no longer required to keep the real-wiring gate green. `custom-parser-release-
+qualification` is marked historical research evidence (dated note,
+2026-07-25) rather than updated in place; see that ADR and the new Accepted
+`release-parser-identity-approval` decision for the current release-authority
+chain. This closes the item; `checks.<system>.publication-build-real-wiring`
+is green in CI for the reason recorded above.

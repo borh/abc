@@ -228,6 +228,46 @@
         {
           # One canonical strict-governance derivation: the abc component check.
           monorepo-adr-governance = abc.checks.${system}.adr-governance;
+
+          # The freshly built release binaries must match the APPROVED identity.
+          # Approved hashes are resolved through parser-release-authority/authenticate
+          # — the full integrity + decision-binding authority path runtime uses, not
+          # a shape-only loader — and compared byte-for-byte against the actual
+          # ab-validator build outputs. This lives in the monorepo flake because it
+          # is the only place with both the abc authenticate boundary and the
+          # standalone ab-validator package set (abc's own flake has neither an
+          # ab-validator input nor a non-empty local-pkgs overlay).
+          release-parser-build-matches-approved-identity =
+            pkgs.runCommand "soranoha-release-parser-build-matches-approved-identity"
+              {
+                nativeBuildInputs = [
+                  cljPkgs.clojure
+                  pkgs.coreutils
+                ];
+              }
+              ''
+                cp -R ${self}/abc abc
+                chmod -R u+w abc
+                cd abc
+                export HOME="${cljDepsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+                export GITLIBS="$HOME/.gitlibs"
+                read want_a want_c < <(clojure -M -e '(require (quote [abc.tools.parser-release-authority :as a]))
+                  (let [r (a/authenticate {:release_parser_identity_path "data/release-parser-identity-v1.edn"
+                                           :decisions_path "docs/adr/decisions.edn"})
+                        h (fn [n] (:sha256 (first (filter #(= n (:name %))
+                                                          (get-in r [:executable-provenance :executables])))))]
+                    (println (subs (h "ab-aozora") 7) (subs (h "ab-aat-to-parser-ir") 7)))')
+                a=$(sha256sum ${abValidatorPackages."ab-aozora"}/bin/ab-aozora | cut -d' ' -f1)
+                c=$(sha256sum ${abValidatorPackages."ab-aat-to-parser-ir"}/bin/ab-aat-to-parser-ir | cut -d' ' -f1)
+                [ "$a" = "$want_a" ] || { echo "ab-aozora $a != approved $want_a" >&2; exit 1; }
+                [ "$c" = "$want_c" ] || { echo "converter $c != approved $want_c" >&2; exit 1; }
+                mkdir -p "$out"
+                echo "release parser build matches approved (authenticated) identity" > "$out/result.txt"
+              '';
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =
             mkMonorepoCheck "soranoha-monorepo-tei-version-coherence"

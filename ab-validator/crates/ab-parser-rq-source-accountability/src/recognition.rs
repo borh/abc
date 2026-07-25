@@ -1,4 +1,4 @@
-use ab_aozora_aat::{CaptureGeneration, verify_capture_generation};
+use ab_aozora_capture::{CaptureGeneration, verify_capture_generation};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};

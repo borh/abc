@@ -76,7 +76,18 @@ evidence-gate:
 		"./abc#checks.$system.tei-profile-drift" --print-build-logs
 	@nix run ./abc#validate-design-bundle
 
-validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance evidence-gate
+# release-parser-reproducible: the two release binaries must rebuild
+# byte-identically. `nix build --rebuild` re-realizes each derivation and fails
+# if the freshly built output differs byte-for-byte from the cached path, so it
+# establishes reproducibility independent of any single build. This needs the
+# Nix daemon (a sandboxed runCommand builder cannot invoke it), so it is a just
+# recipe rather than a checks.<system> derivation.
+release-parser-reproducible:
+	nix build ./ab-validator#ab-aozora --rebuild --no-link --print-build-logs
+	nix build ./ab-validator#ab-aat-to-parser-ir --rebuild --no-link --print-build-logs
+	@echo "release parser binaries rebuild reproducibly"
+
+validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance evidence-gate release-parser-reproducible
 
 # Unseeded simulation soak (15x counts); failures print the seed to replay.
 sim-soak:

@@ -85,3 +85,21 @@ Withdraw this ADR if release qualification is redefined, or supersede it once a
 committed instrument set and an admitted HEAD build produce a fully passing
 captured gate. Do not repurpose comparison or neutral evidence as release
 evidence.
+
+## 2026-07-25 note — historical research evidence, no longer the publication gate
+
+Publication release authority has moved off this decision. The Accepted
+`release-parser-identity-approval` decision now authenticates the release
+parser as a decision-bound, content-addressed governed record,
+`abc/data/release-parser-identity-v1.edn`: authentication requires BOTH the
+record's integrity (its `qualification_identity_ref` and `candidate_ref`
+recompute from its own bytes) AND that Accepted decision binding the exact
+`candidate_ref`. `soranoha build-publication`'s release-admissibility check
+(`abc.tools.publication-release/verify-release-root!`) authenticates through
+that record, not through this ADR or the parser-rq campaign it governs.
+
+This ADR's substantive claims above are unchanged and remain the historical
+record of how the P5 candidate was release-qualified through the predeclared
+predicate set over the pinned corpus. It is retained as historical research
+evidence for that qualification work; it no longer gates publication, and no
+claim above is amended or withdrawn by this note.

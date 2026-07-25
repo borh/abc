@@ -246,17 +246,10 @@
   converter-argv-template ["{executable}" "convert"])
 
 (defn- runtime-authenticate-options
-  "Repo-relative campaign/authority paths for a candidate ref, matching the
-  layout parser-release-authority/authenticate reads (abc working dir)."
-  [candidate-ref]
-  {:runs_root "docs/reports/parser-rq/runs"
-   :candidate_ref candidate-ref
-   :registry_path "data/aat-parser-ir-compatibility.edn"
-   :measurements_path "docs/reports/parser-release-qualification-measurements.edn"
-   :report_path "docs/reports/parser-release-qualification-report.json"
-   :provenance_path (str "docs/reports/parser-rq/runs/"
-                         (subs candidate-ref (count "sha256:"))
-                         "/executable-provenance.json")
+  "Repo-relative authority paths for the release-parser-identity record, matching
+  the layout parser-release-authority/authenticate reads (abc working dir)."
+  [record-path]
+  {:release_parser_identity_path record-path
    :decisions_path "docs/adr/decisions.edn"})
 
 (defn- coordinate-problem [coordinate expected actual]
@@ -271,19 +264,19 @@
   identity object, comparing its coordinates against the authenticated
   qualification identity and executable provenance. Returns
   {:problems [...] :candidate-ref sha :qualification-identity-ref sha}. A
-  diagnostic profile with no configured candidate records one absent-candidate
-  problem and null refs; an authentication failure surfaces as authority
-  problems with null refs, never a throw."
-  [parser-profile identity-object candidate-ref]
-  (if (string/blank? candidate-ref)
+  diagnostic profile with no configured release-parser-identity record records
+  one absent-candidate problem and null refs; an authentication failure surfaces
+  as authority problems with null refs, never a throw."
+  [parser-profile identity-object record-path]
+  (if (string/blank? record-path)
     {:problems [{:kind :absent-parser-candidate
-                 :message "no parser_candidate_ref configured; runtime parser identity is unauthenticated"
+                 :message "no release_parser_identity configured; runtime parser identity is unauthenticated"
                  :parser_profile parser-profile}]
      :candidate-ref nil
      :qualification-identity-ref nil}
     (try
       (let [auth (parser-release-authority/authenticate
-                  (runtime-authenticate-options candidate-ref))
+                  (runtime-authenticate-options record-path))
             qualification (:qualification-identity auth)
             executables (:executables (:executable-provenance auth))
             by-name (into {} (map (juxt :name identity)) executables)
@@ -329,7 +322,7 @@
   (recorded by source-provenance!), not which parser rendered the corpus, so a
   fixture build renders real publications into a non-admissible root instead of
   being unrenderable."
-  [{:keys [parser-profile parser-candidate-ref]}]
+  [{:keys [parser-profile release-parser-identity-path]}]
   (let [adapter (resolve-adapter parser-profile)
         converter-bin (require-env "AB_AAT_TO_PARSER_IR_BIN" "ab-aat-to-parser-ir")
         mapping-doc (files/read-json (:mapping adapter))
@@ -345,7 +338,7 @@
                          "parser_ir_schema_hash"
                          (get mapping-doc "target_parser_ir_schema_hash")}
         auth (authenticate-runtime parser-profile identity-object
-                                   parser-candidate-ref)]
+                                   release-parser-identity-path)]
     {:adapter (assoc adapter :converter-bin converter-bin)
      :parser-runtime-identity identity-object
      :parser-config-hash (hash/format-sha256
@@ -357,7 +350,7 @@
 (def ^{:dynamic true
        :doc "Injectable authenticated-parser-runtime boundary. Bound to a stub
              in tests so the workflow can be exercised without the adapter
-             binaries and campaign evidence present."}
+             binaries and authenticated parser-runtime evidence present."}
   *resolve-parser-runtime!* real-resolve-parser-runtime!)
 
 (defn invoke-resolve-parser-runtime! [options]
@@ -1105,10 +1098,7 @@
 ;; problems, parsed authority values, hashes, or a verdict.
 
 (def release-authority-sources
-  {:runs-root "docs/reports/parser-rq/runs"
-   :registry-path "data/aat-parser-ir-compatibility.edn"
-   :measurements-path "docs/reports/parser-release-qualification-measurements.edn"
-   :qualification-report-path "docs/reports/parser-release-qualification-report.json"
+  {:release-parser-identity-path "data/release-parser-identity-v1.edn"
    :decisions-path "docs/adr/decisions.edn"})
 
 (defn- verify-result->json
@@ -1152,8 +1142,8 @@
           parser-runtime (invoke-resolve-parser-runtime!
                           {:parser-profile (get config-value "parser_profile")
                            :source-trust-mode source-trust-mode
-                           :parser-candidate-ref (get config-value
-                                                      "parser_candidate_ref")})
+                           :release-parser-identity-path
+                           (get config-value "release_parser_identity")})
           tmp-root (prepare-output-root! output-root replace)]
       (files/create-dirs! tmp-root)
       (let [opts (-> opts

@@ -249,31 +249,20 @@
 ;; ── Impure fail-closed orchestrator ─────────────────────────────────────────
 
 (defn- authenticate-parser-authority
-  "Authenticate the candidate the index names. Any authentication failure
-  (unreadable/malformed decision or registry, missing slug, wrong authority,
-  stale registry, wrong candidate) is captured as {:problems [...]} so the
-  release is inadmissible rather than throwing; the authority hashes are then
-  simply never reported."
-  [{:keys [runs-root registry-path measurements-path qualification-report-path
-           provenance-path decisions-path]}
-   candidate-ref]
-  (let [provenance (or provenance-path
-                       (when candidate-ref
-                         (str runs-root "/"
-                              (subs candidate-ref (count "sha256:"))
-                              "/executable-provenance.json")))]
-    (try
-      (parser-release-authority/authenticate
-       {:runs_root runs-root
-        :candidate_ref candidate-ref
-        :registry_path registry-path
-        :measurements_path measurements-path
-        :report_path qualification-report-path
-        :provenance_path provenance
-        :decisions_path decisions-path})
-      (catch clojure.lang.ExceptionInfo error
-        {:problems (or (:problems (ex-data error))
-                       [{:message (ex-message error)}])}))))
+  "Authenticate the release parser identity: the decision-bound governed record.
+  Any authentication failure (unreadable/malformed record or decision, missing
+  slug, wrong authority, non-recomputing content ref, or a decision that does
+  not bind this record) is captured as {:problems [...]} so the release is
+  inadmissible rather than throwing; the authority hashes are then simply never
+  reported."
+  [{:keys [release-parser-identity-path decisions-path]}]
+  (try
+    (parser-release-authority/authenticate
+     {:release_parser_identity_path release-parser-identity-path
+      :decisions_path decisions-path})
+    (catch clojure.lang.ExceptionInfo error
+      {:problems (or (:problems (ex-data error))
+                     [{:message (ex-message error)}])})))
 
 (defn- read-parser-derived-manifests
   "Read each parser-derived per-work manifest the index references, projecting
@@ -302,10 +291,7 @@
   [{:keys [root parser-authority-sources rights-policy-path]}]
   (let [index (snapshot-index/read-valid-snapshot-index root)
         closure (snapshot-index/closure-problems root index)
-        candidate-ref (get-in index ["snapshot_index_identity_object"
-                                     "candidate_ref"])
-        parser-authority (authenticate-parser-authority parser-authority-sources
-                                                        candidate-ref)
+        parser-authority (authenticate-parser-authority parser-authority-sources)
         rights-envelope (publication-policy/load-rights-authority! rights-policy-path)
         manifest-coordinate
         (manifest-coordinate-problems
@@ -320,5 +306,5 @@
      :problems problems
      :authority-hashes
      {:decisions-file (get-in parser-authority [:authority-hashes :decisions-file])
-      :registry-file (get-in parser-authority [:authority-hashes :registry-file])
+      :registry-file (get-in parser-authority [:authority-hashes :record-file])
       :rights-policy-file (:content-hash rights-envelope)}}))

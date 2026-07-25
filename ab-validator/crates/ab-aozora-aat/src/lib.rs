@@ -10,14 +10,6 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-mod classified_source;
-
-pub use classified_source::{
-    CaptureGeneration, PublishedCaptureGeneration, capture_generation_from_bytes,
-    capture_generation_from_bytes_for_identity,
-    capture_generation_from_bytes_for_identity_and_work, classified_source_ledger_from_bytes,
-    verify_capture_generation,
-};
 use sha2::{Digest, Sha256};
 
 use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json};
@@ -56,7 +48,13 @@ pub struct DecodedSource {
     /// Decoded text with sanitization for span alignment.
     pub span_text: String,
     /// Complete sanitized text before the body/tail projection.
-    pub(crate) sanitized_text: String,
+    ///
+    /// `pub` (not `pub(crate)`) because the classified-source capture reader
+    /// now lives in the `ab-aozora-capture` crate; it aligns spans against
+    /// this field (see `classified_source::…`). Nothing inside `ab-aozora-aat`
+    /// reads it, so `pub(crate)` would be both dead code here and unreachable
+    /// from the capture crate.
+    pub sanitized_text: String,
     /// The encoding that was successfully decoded (utf-8, utf-8-bom, windows-31j, or lossy variant).
     pub encoding: &'static str,
     /// Hex-encoded SHA256 hash of the input bytes.
@@ -86,7 +84,9 @@ pub struct DecodedSource {
     /// Sanitize offset maps + body offset + line index for span rebasing
     /// (ADR 0024: emitted spans are offsets against the full decoded
     /// source `text`, with real 1-based line numbers).
-    span_ctx: SpanContext,
+    /// Sanitized→decoded span-mapping context. `pub` so the extracted
+    /// classified-source capture crate can rebase spans (see `SpanContext`).
+    pub span_ctx: SpanContext,
 }
 
 /// Composition chain for translating a parser/sanitize-stage byte offset
@@ -97,21 +97,29 @@ pub struct DecodedSource {
 /// `sanitize_diagnostics` carry full-sanitized-text offsets. Both compose
 /// through `maps` (sanitized → decoded `text`); the former additionally
 /// needs `body_offset` added first (body-relative → full-sanitized).
+///
+/// `pub` (with `pub` `maps`/`body_offset`/`to_decoded`) because the
+/// classified-source capture reader now lives in the `ab-aozora-capture`
+/// crate and composes sanitized→decoded offsets through this context. The
+/// remaining members stay private (used only within this crate).
 #[derive(Debug)]
-struct SpanContext {
-    maps: SanitizeMaps,
+pub struct SpanContext {
+    /// Sanitized→decoded byte-offset maps.
+    pub maps: SanitizeMaps,
     /// Byte offset of the body slice within the SANITIZED text.
-    body_offset: usize,
+    pub body_offset: usize,
     /// Byte offsets of line starts in the DECODED text (`text`).
     line_starts: Vec<usize>,
 }
 
 impl SpanContext {
-    fn to_decoded(&self, body_offset: usize) -> usize {
+    /// Map a body-relative sanitized offset to its DECODED-text offset.
+    pub fn to_decoded(&self, body_offset: usize) -> usize {
         self.maps.to_source_offset(body_offset + self.body_offset)
     }
 
-    fn to_decoded_end(&self, body_end: usize) -> usize {
+    /// Map a body-relative sanitized end offset to its DECODED-text offset.
+    pub fn to_decoded_end(&self, body_end: usize) -> usize {
         self.maps.to_source_end(body_end + self.body_offset)
     }
 

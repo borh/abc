@@ -3,7 +3,7 @@
   "config_schema_version": "0.2.0",
   "source_trust_mode": "official-git",
   "parser_profile": "ab-aozora",
-  "parser_candidate_ref": "sha256:15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab",
+  "release_parser_identity": "data/release-parser-identity-v1.edn",
   "publication_profile": "tei-profile-v0",
   "continue_on_failure": true,
   "materialization_scope": "full-corpus"

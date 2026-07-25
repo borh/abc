@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make `checks.<system>.publication-build-real-wiring` durably GREEN by (a) making the standalone production `ab-aozora`/`ab-aat-to-parser-ir` reproducible, and (b) **decoupling** the publication release's parser authentication from the `parser-rq` research campaign — the release authenticates the standalone production parser against a small committed *governed record*, not the 5-parser campaign bundle.
+**Goal:** Make `checks.<system>.publication-build-real-wiring` durably GREEN by (a) making the standalone production `ab-aozora`/`ab-aat-to-parser-ir` reproducible, and (b) **decoupling** the publication release's parser authentication from the `parser-rq` research campaign — the release authenticates the standalone production parser against a small committed *governed record* that a new Accepted decision **binds by exact content identity**, not the 5-parser campaign bundle.
 
-**Architecture:** The sole-publication-producer migration wired the release to authenticate its parser through `abc.tools.parser-rq-campaign` (the 5-parser comparison campaign). Per an explicit user decision, that campaign is a *research artifact* and must have **no bearing** on the publication system. This plan replaces the one coupling seam — `parser-release-authority/authenticate`, which today projects `campaign/promotion-verification` — with a read of a committed `release-parser-identity` record carrying the approved production parser's reproducible build hashes. The release-time verifier and build-time runtime check consume the identical return shape, so blast radius is small. Two supporting reproducibility fixes (pin the parser's build-time git-rev; move the abc-embedding capture module out of the release binaries' crate) keep the recorded hashes stable across commits and unrelated abc edits.
+**Architecture:** The sole-publication-producer migration wired the release to authenticate its parser through `abc.tools.parser-rq-campaign` (the 5-parser comparison campaign). Per an explicit user decision, that campaign is a *research artifact* and must have **no bearing** on the publication system. This plan replaces the one coupling seam — `parser-release-authority/authenticate`, which today projects `campaign/promotion-verification` — with a read of a committed `release-parser-identity` record whose exact `candidate_ref` a new Accepted decision binds. The release-time verifier and build-time runtime check consume the identical return shape, so blast radius is small. Two supporting reproducibility fixes (pin the parser's build-time git-rev; move the abc-embedding capture module out of the release binaries' crate) keep the recorded hashes stable across commits and unrelated abc edits.
 
 **Tech Stack:** Nix flakes (`ab-validator/flake.nix`, root `flake.nix`); Rust (`ab-validator` crates); Clojure 1.12 + Kaocha (abc); EDN governed records + RFC 8785/JCS SHA-256 content identities.
 
@@ -15,7 +15,7 @@ An execution attempt of the earlier (campaign-based) version of this plan surfac
 1. **Two build topologies can never be byte-equal.** The release binds the *standalone* `packages.ab-aozora` / `packages.ab-aat-to-parser-ir` (root `flake.nix:109`), while the qualification captured the *5-package* `parser-rq-candidate` bundle (`parser-rq-campaign-provenance.py:178`). Even after pinning the git-rev env, the standalone `ab-aozora` (`ff31d303…`, 4,888,440 B) ≠ the bundle's (`63d619aa…`, 4,888,816 B): Cargo feature-unification across the 5 packages plus the bundle's `gaijiEnv`/`gaijiBuildInputs`/`AB_ABC_ROOT` produce different bytes. No env fix reconciles this.
 2. **User decision (verbatim):** *"the state of the 5 parsers should have no bearing on this system — the parser comparison is mostly a research artifact."* The release must authenticate the **standalone production** parser, and the campaign must not gate publication.
 
-So the release stops routing through the campaign. The legitimate invariant it enforced — *a publication may only release an approved, reproducible parser* — is preserved by a committed governed record + a CI check that proves the buildable standalone matches it. The `parser-rq` campaign remains, as research, untouched and no longer on the release critical path. **Nothing in this plan requires a host campaign, corpus run, or cgroup measurement** — every hash is `nix build … | sha256sum`, runnable in CI/sandbox.
+So the release stops routing through the campaign. The legitimate invariant it enforced — *a publication may only release an approved, reproducible parser* — is preserved by a committed governed record that an Accepted decision binds, plus CI checks that prove the buildable standalone matches it and is reproducible. The `parser-rq` campaign remains, as research, untouched and no longer on the release critical path. **Nothing in this plan requires a host campaign, corpus run, or cgroup measurement** — every hash is `nix build … | sha256sum`, runnable in CI/sandbox.
 
 ### The one coupling seam (verified)
 
@@ -25,24 +25,33 @@ So the release stops routing through the campaign. The legitimate invariant it e
 - `soranoha_build_publication.clj` `authenticate-runtime` (`:269-317`): the build-time `parser_build_hash` = sha256 of the actual `AB_AOZORA_BIN` executable (`real-resolve-parser-runtime!:339-340`), checked against the same campaign `:executables[].sha256` (`:289-291,300-303`).
 - `parser_candidate_ref` in `config/full-corpus-publication-custom-parser-ja.json:6` flows to `authenticate` as `:candidate_ref` (`soranoha_build_publication.clj:1155-1156` → `:248-260`), selecting the campaign run directory.
 
-**Decoupling target:** change *where the expected `ab-aozora`/`ab-aat-to-parser-ir` sha256, `mapping_hash`, and `parser_ir_schema_hash` come from* — from the campaign to a committed record — while keeping `authenticate`'s return shape so `publication_release.clj` and `soranoha_build_publication.clj` consume it unchanged.
+**Decoupling target:** change *where the expected `ab-aozora`/`ab-aat-to-parser-ir` sha256, `mapping_hash`, and `parser_ir_schema_hash` come from* — from the campaign to a decision-bound committed record — while keeping `authenticate`'s return shape so `publication_release.clj` and `soranoha_build_publication.clj` consume it unchanged.
 
 ---
 
 ## Global Constraints
 
 - **The `parser-rq` campaign has no bearing on the publication release.** After this plan, `parser_release_authority.clj` must not `:require` `abc.tools.parser-rq-campaign`. The campaign namespace, its `runs/`, and its checks (`parser-rq-p5-promotion-audit`, `parser-rq-campaign-*`) remain as **research** — do not delete them; just sever the publication dependency.
-- **Recompute, never trust.** The governed record's identity refs (`candidate_ref`, `qualification_identity_ref`) are content hashes `authenticate` **recomputes** from the record's canonical (JCS) bytes and requires to match the asserted values — same discipline the campaign used. Never trust an asserted ref.
-- **Release identity = approved reproducible build hash + mapping + schema, authorized by the Accepted decision.** Not argv, not git rev, not the campaign bundle.
-- **Reproducibility is the trust basis.** The recorded `parser_build_hash`/`converter_build_hash` MUST equal what `nix build ./ab-validator#ab-aozora` / `#ab-aat-to-parser-ir` produce, proven by the CI check in Task 4. Build the parser reproducibly; never record a hash you cannot reproduce.
-- **SUCCESS = `nix build ./abc#checks.x86_64-linux.publication-build-real-wiring` GREEN** (`release_admissible: true`), full abc Kaocha suite 0 failures, `clj-kondo`/`cljfmt`/`nix fmt` clean, `monorepo-adr-governance` + `./abc#adr-governance` green.
-- **Governance edits by hand.** The `custom-parser-release-qualification` decision is amended through the normal workflow, never by tooling.
+- **Authorization = integrity AND binding.** `authenticate` requires *both*: (a) the record's `candidate_ref`/`qualification_identity_ref` recompute correctly from its JCS bytes (integrity — never trust an asserted ref), **and** (b) the Accepted `release-parser-identity-approval` decision **binds** that exact `candidate_ref` (+ `qualification_identity_ref`, `adapter_id`, converter name, `schema_version`). A shape-valid, self-consistent record that the decision does not bind is **rejected**. Recompute proves integrity; the decision binding proves *approval*.
+- **Supersede, don't amend.** `custom-parser-release-qualification` stays historical research evidence (its claims describe the campaign and remain true). Publication authority moves to the new `release-parser-identity-approval` decision; `sole-publication-release-identity` (dependency + c4) is repointed to it. No claim is appended to the old decision.
+- **Release identity = approved reproducible build hash + mapping + schema, bound by the Accepted decision.** Not argv, not git rev, not the campaign bundle.
+- **Build-match and reproducibility are separate, separately-named, both-required properties.** `release-parser-build-matches-approved-identity` (one build == the record) and `release-parser-reproducible` (two independent `--rebuild` realizations of **both** `ab-aozora` and `ab-aat-to-parser-ir` are byte-identical) are distinct checks; both are release acceptance criteria. Do not let a single-build match stand in for reproducibility.
+- **One parsing protocol at the trust boundary.** The CI build-match check reads `release-parser-identity-v1.edn` through the **same** strict Clojure loader `authenticate` uses (`abc.tools.parser-release-authority/load-shape-valid-record!` via `clojure -M -e` or a tiny `-main`), never a line-shape regex. Two consumers, one interpretation.
+- **No committed PENDING-authority state.** The record is committed with **real** reproducible hashes (Task 3); the binding decision + the code that enforces it land together and atomically (Task 4). At no commit is active `authenticate` wiring pointed at a non-authoritative or unbound record: Task 3's record is inert (no reader) until Task 4 wires and binds it in one commit.
+- **SUCCESS = both `release-parser-*` checks + `publication-build-real-wiring` GREEN** (`release_admissible: true`), full abc Kaocha suite 0 failures, `clj-kondo`/`cljfmt`/`nix fmt` clean, `monorepo-adr-governance` + `./abc#adr-governance` green.
+- **Governance edits by hand.** Decisions in `decisions.edn` are authored/amended through the normal governance workflow, never written by tooling.
 
-### Design decisions (RATIFIED direction; record-location noted for review)
+### Design decisions (RATIFIED)
 
 - **D1 — reproducible standalone parser (git-rev pin).** Standalone `abAozora` bakes `AB_AOZORA_GIT_REV = self.rev or "unknown"` (`ab-validator/flake.nix:1904`), so its hash changes every commit. Pin it to `"unknown"` so the recorded `parser_build_hash` is stable and reproducible. (The env edit is already applied uncommitted in the working tree from the earlier attempt.)
-- **D2 — release binaries stop embedding abc files (extract capture crate).** `ab-aozora`/`ab-aat-to-parser-ir` link `ab-aozora-aat`, which `include_bytes!`s four `abc` files via `classified_source.rs`; they never call it. Extract `classified_source` into a new `ab-aozora-capture` crate that only the rq adapters depend on, so the release binaries embed no abc bytes and their recorded hash stays valid across unrelated abc edits. Behavior-preserving structural move (goldens unchanged). *(Full rationale/ground-truth retained from the prior revision; unchanged.)*
-- **D3 — governed record replaces campaign authentication.** Add `abc/data/release-parser-identity-v1.edn` (see shape below). `authenticate` reads it + the Accepted decision and returns the same-shaped map. **Record-location sub-choice (please confirm at review):** a **separate data file** (chosen here — keeps reproducible hashes out of the ADR prose corpus, content-addressed as data) vs. embedding the hashes inside the `custom-parser-release-qualification` decision in `decisions.edn` (one fewer file, hashes live in the ADR corpus). The plan below is written for the separate-file choice; switching to in-decision changes only Task 3's read source.
+- **D2 — release binaries stop embedding abc files (extract capture crate).** `ab-aozora`/`ab-aat-to-parser-ir` link `ab-aozora-aat`, which `include_bytes!`s four `abc` files via `classified_source.rs`; they never call it. Extract `classified_source` into a new `ab-aozora-capture` crate that only the rq adapters depend on, so the release binaries embed no abc bytes and their recorded hash stays valid across unrelated abc edits. Behavior-preserving structural move (goldens unchanged).
+- **D3 — a *bound* governed record replaces campaign authentication.** Decoupling from the campaign is a genuine **redefinition of release authority**, not just a change of data source (per review). So it takes a **new Accepted decision** that approves *one exact* parser identity, and `authenticate` must reject any record the decision does not bind. Two artifacts:
+  1. **The record — `abc/data/release-parser-identity-v1.edn`** (separate data file, per user answer): the approved parser identity (reproducible executable hashes + mapping/schema coordinates). Its `candidate_ref` is a content hash over the record's meaningful contents, so binding `candidate_ref` transitively commits to the executable hashes.
+  2. **A new Accepted decision — `release-parser-identity-approval`** in `decisions.edn` — that carries a `:release-parser-identity` binding of the record's **exact** `candidate_ref` (plus `qualification_identity_ref`, `schema_version`, `adapter_id`, converter name, and `record_path`). This decision holds `:release-authority :publication`; it may cite the parser-rq campaign as research justification but derives no authority from it.
+
+  `authenticate` then requires **both** (a) the record's own refs recompute correctly (integrity) **and** (b) the Accepted decision's bound `candidate_ref`/`qualification_identity_ref`/names/schema **equal** the record's (authorization). This closes the review's Blocker 1: swapping the executable hashes changes the record's `candidate_ref`, which no longer matches the decision's bound ref → **rejected** until a governance action updates the decision. Changing parser bytes now requires editing *both* the record and the decision — exactly the intended approval boundary.
+
+  **Supersede, do not amend (Blocker 2).** The existing `custom-parser-release-qualification` decision + ADR assert release qualification happens *only* through the predicate campaign with the immutable P5 capture authoritative — contradictory with binding an exact standalone binary. So this plan does **not** append a claim to it; it stays **historical research evidence**. The new `release-parser-identity-approval` decision holds publication authority, and `sole-publication-release-identity`'s dependency + its c4 claim are repointed from `custom-parser-release-qualification` to the new decision. `parser_release_authority.clj`'s `release-qualification-slug` becomes the new slug.
 
 **The governed record — `abc/data/release-parser-identity-v1.edn`:**
 
@@ -50,19 +59,40 @@ So the release stops routing through the campaign. The legitimate invariant it e
 {:schema_version "1.0.0"
  :adapter_id "ab-aozora"
  :adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)"
- ;; reproducible sha256 of the STANDALONE release binaries (established in Task 5):
- :executables [{:name "ab-aozora" :sha256 "sha256:<standalone ab-aozora, Task 5>"}
-               {:name "ab-aat-to-parser-ir" :sha256 "sha256:<standalone converter, Task 5>"}]
+ ;; reproducible sha256 of the STANDALONE release binaries (established in Task 3, post D1+D2):
+ :executables [{:name "ab-aozora" :sha256 "sha256:<standalone ab-aozora>"}
+               {:name "ab-aat-to-parser-ir" :sha256 "sha256:<standalone converter>"}]
  ;; production coordinates computed from the committed mapping + schema files:
  :qualification_identity {:aat_adapter "ab-aozora"
                           :mapping_hash "sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142"
                           :parser_ir_schema_hash "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"}
- ;; self-referential identity refs (recomputed + verified by authenticate):
- :qualification_identity_ref "sha256:<JCS(qualification_identity), Task 3>"
- :candidate_ref "sha256:<JCS(record minus candidate_ref), Task 3>"}
+ ;; content-identity refs (authenticate RECOMPUTES these AND checks the decision binds them):
+ :qualification_identity_ref "sha256:<JCS(qualification_identity)>"
+ :candidate_ref "sha256:<JCS(record minus candidate_ref)>"}
 ```
 
-`mapping_hash`/`parser_ir_schema_hash` are the *current committed* values (mapping unchanged from P5); verify them in Task 3, don't invent. The two executable sha256 are the only genuinely-new values and are filled in Task 5 after D1+D2 land.
+The new decision's binding (in `decisions.edn`):
+
+```clojure
+{:slug "release-parser-identity-approval"
+ :status :accepted
+ :accepted "2026-07-25"
+ :release-authority :publication
+ :title "Release Parser Identity Approval"
+ :release-parser-identity {:record_path "data/release-parser-identity-v1.edn"
+                           :schema_version "1.0.0"
+                           :adapter_id "ab-aozora"
+                           :converter_name "ab-aat-to-parser-ir"
+                           :candidate_ref "sha256:<record candidate_ref>"
+                           :qualification_identity_ref "sha256:<record qual ref>"}
+ :relations [{:class :lifecycle :type :depends-on :to "custom-parser-release-qualification"}] ; research citation only
+ :claims [ ... c1: publication authority binds exactly this record's candidate_ref;
+               c2: the parser-rq campaign is research/justification, not authority;
+               c3: replacement requires a new record + updated binding (approval boundary);
+               each :evidence a real test file ... ]}
+```
+
+`mapping_hash`/`parser_ir_schema_hash` are the *current committed* values (mapping unchanged); verify them, don't invent. The two executable sha256 are the only genuinely-new values, established in Task 3 after D1+D2 land — the record is committed with **real** hashes, never a `PENDING` placeholder (Blocker 5).
 
 ---
 
@@ -72,7 +102,7 @@ So the release stops routing through the campaign. The legitimate invariant it e
 - Modify: `ab-validator/flake.nix` (the `abAozora` derivation `env` block, ~`:1900-1908`)
 
 **Interfaces:**
-- Produces: a standalone `packages.ab-aozora` that builds reproducibly (build-a == build-b) with `AB_AOZORA_GIT_REV="unknown"`. Task 5 records its sha256.
+- Produces: a standalone `packages.ab-aozora` that builds reproducibly (build-a == build-b) with `AB_AOZORA_GIT_REV="unknown"`. Task 3 records its sha256 (post D2).
 
 - [ ] **Step 1: Confirm/apply the env edit**
 
@@ -210,67 +240,155 @@ valid across unrelated abc edits. Behavior-preserving (goldens byte-identical).
 
 ---
 
-### Task 3: Decouple `authenticate` onto the governed record (D3)
+### Task 3: Establish the approved record with real reproducible hashes (inert)
 
 **Files:**
-- Create: `abc/data/release-parser-identity-v1.edn` (the governed record; executable sha256 as placeholders `"sha256:PENDING-ab-aozora"`/`"sha256:PENDING-converter"` — Task 5 fills them and recomputes the refs)
-- Modify: `abc/src/abc/tools/parser_release_authority.clj` — rewrite `authenticate` to read the record + decision; drop the `abc.tools.parser-rq-campaign` require
-- Modify: `abc/src/abc/tools/publication_release.clj` — `authenticate-parser-authority` (`:251-276`) stops deriving a campaign provenance path; passes the record path instead
-- Modify: `abc/src/abc/tools/soranoha_build_publication.clj` — `runtime-authenticate-options`/`release-authority-sources` pass the record path, not campaign paths; drop `:provenance_path` derivation
-- Modify: `abc/config/full-corpus-publication-custom-parser-ja.json` — replace `parser_candidate_ref` with `release_parser_identity: "data/release-parser-identity-v1.edn"` (or keep `parser_candidate_ref` carrying the record's `candidate_ref` — pick one and use consistently)
-- Modify: `abc/docs/adr/decisions.edn` `custom-parser-release-qualification` — Step 5 records that it now authorizes `data/release-parser-identity-v1.edn` (governance edit); this task only wires the code
+- Create: `abc/data/release-parser-identity-v1.edn` — with **real** executable sha256 and correctly-computed refs
+
+**Interfaces:**
+- Consumes: Tasks 1–2 (reproducible, abc-decoupled standalone binaries).
+- Produces: the committed governed record. It is **inert** — no code reads it yet (Task 4 wires and binds it atomically). No PENDING placeholder is ever committed.
+
+- [ ] **Step 1: Build the standalone binaries reproducibly; capture real hashes**
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+a1=$(nix build ./ab-validator#ab-aozora --no-link --print-out-paths --rebuild)
+a2=$(nix build ./ab-validator#ab-aozora --no-link --print-out-paths --rebuild)
+ha=$(sha256sum "$a1/bin/ab-aozora"|cut -d' ' -f1); test "$ha" = "$(sha256sum "$a2/bin/ab-aozora"|cut -d' ' -f1)" || { echo "ab-aozora NOT reproducible" >&2; exit 1; }
+c1=$(nix build ./ab-validator#ab-aat-to-parser-ir --no-link --print-out-paths --rebuild)
+c2=$(nix build ./ab-validator#ab-aat-to-parser-ir --no-link --print-out-paths --rebuild)
+hc=$(sha256sum "$c1/bin/ab-aat-to-parser-ir"|cut -d' ' -f1); test "$hc" = "$(sha256sum "$c2/bin/ab-aat-to-parser-ir"|cut -d' ' -f1)" || { echo "converter NOT reproducible" >&2; exit 1; }
+echo "ab-aozora=$ha  ab-aat-to-parser-ir=$hc"
+```
+
+Expected: both reproducible (each pair identical). Record `ha`/`hc`. If either is not reproducible, STOP — Task 1/2 incomplete.
+
+- [ ] **Step 2: Verify the mapping/schema coordinates are the current committed values**
+
+```bash
+cd abc && clojure -M -e '(require (quote [abc.tools.hash :as h])) (println (h/format-sha256 (h/sha256-file "../ab-validator/data/aat-to-parser-ir-mapping-v2.json")))'
+```
+
+Confirm `mapping_hash`/`parser_ir_schema_hash` in the record shape equal the current committed values (the mapping is unchanged; use the repo's own hashing, matching how `build-candidate` computed them). If they differ, investigate — do not invent a value.
+
+- [ ] **Step 3: Write the record with real executable hashes**
+
+Create `abc/data/release-parser-identity-v1.edn` per the D3 shape with `:executables` sha256 = `sha256:$ha` / `sha256:$hc`, real `:qualification_identity`, and placeholder refs to be filled in Step 4.
+
+- [ ] **Step 4: Compute the record's identity refs with the repo's own hashing**
+
+Compute `qualification_identity_ref = SHA-256(JCS(:qualification_identity))` and `candidate_ref = SHA-256(JCS(record without :candidate_ref))` using `abc.tools.hash`/`abc.tools.jcs` — the exact functions `authenticate` will recompute with (Task 4) — via `clojure -M -e`, and write them into the record:
+
+```bash
+cd abc && clojure -M -e '(require (quote [abc.tools.hash :as h]) (quote [abc.tools.jcs :as jcs]) (quote [clojure.edn :as edn]))
+  (let [r (edn/read-string (slurp "data/release-parser-identity-v1.edn"))
+        qi (:qualification_identity r)]
+    (println :qi (h/format-sha256 (h/sha256-bytes (jcs/canonical-json-bytes qi))))
+    (println :cand (h/format-sha256 (h/sha256-bytes (jcs/canonical-json-bytes (dissoc r :candidate_ref))))))'
+```
+
+Write the two printed values into `:qualification_identity_ref`/`:candidate_ref`. (Confirm the exact canonical-bytes helper matches what `authenticate` uses — align on one function; the campaign used `hash/sha256-json-jcs`.)
+
+- [ ] **Step 5: Commit the inert record**
+
+```bash
+git add abc/data/release-parser-identity-v1.edn
+git commit -m "feat(abc): add governed release-parser-identity record (real reproducible hashes)
+
+The approved standalone ab-aozora/ab-aat-to-parser-ir identity, with content
+refs computed by the repo's own JCS+sha256. Inert here (nothing reads it yet);
+Task 4 wires authenticate to it and binds it in a governance decision atomically.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+```
+
+---
+
+### Task 4: Atomic decouple — bind the record, rewrite `authenticate`, add both CI checks
+
+This is one coherent trust-boundary transition: the binding decision, the rewritten `authenticate` (integrity + binding), the two consumers, the config, the tests, and the two CI checks land **together**. Before this commit the record is inert; after it, the release authenticates the bound record and no longer touches the campaign.
+
+**Files:**
+- Modify: `abc/docs/adr/decisions.edn` — add the Accepted `release-parser-identity-approval` decision binding the record's exact `candidate_ref`/`qualification_identity_ref`/`adapter_id`/`converter_name`/`schema_version` (values from Task 3's record)
+- Modify: `abc/src/abc/tools/parser_release_authority.clj` — rewrite `authenticate`; add `load-shape-valid-record!`; drop `[abc.tools.parser-rq-campaign]`; `release-qualification-slug` → `"release-parser-identity-approval"`
+- Modify: `abc/src/abc/tools/publication_release.clj` — `authenticate-parser-authority` (`:251-276`) passes `{:release_parser_identity_path … :decisions_path …}`; no campaign provenance path
+- Modify: `abc/src/abc/tools/soranoha_build_publication.clj` — `runtime-authenticate-options` (`:248-260`) / `release-authority-sources` (`:1107-1112`) supply the record path; drop `:provenance_path`/`:runs_root`/`:candidate_ref`/`:measurements_path`/`:report_path`
+- Modify: `abc/config/full-corpus-publication-custom-parser-ja.json` — replace `parser_candidate_ref` with `"release_parser_identity": "data/release-parser-identity-v1.edn"`; update the schema `abc/schemas/soranoha-publication-build-config.schema.json`; update `build-publication!` read (`:1155-1156`)
+- Modify: `abc/flake.nix` — add checks `release-parser-build-matches-approved-identity` + `release-parser-reproducible`
 - Test: `abc/test/abc/tools/parser_release_authority_test.clj`, `publication_release_test.clj`, `soranoha_build_publication_test.clj`
 
 **Interfaces:**
-- Produces: `authenticate` returns the SAME map keys as today (`:candidate-ref :qualification-identity-ref :qualification-identity :executable-provenance :decision :authority-hashes`), sourced from the record. `:executable-provenance` is `{:executables [{:name "ab-aozora" :sha256 …} {:name "ab-aat-to-parser-ir" :sha256 …}]}`. Downstream consumers are unchanged.
+- Produces: `authenticate` returns the SAME keys as today (`:candidate-ref :qualification-identity-ref :qualification-identity :executable-provenance :decision :authority-hashes`), sourced from the record + decision. `:executable-provenance` = `{:executables (:executables record)}`. Downstream consumers read the same fields.
 
-- [ ] **Step 1: Write the failing authenticate test against the record**
+- [ ] **Step 1: Write failing authenticate tests (integrity + binding)**
 
-In `parser_release_authority_test.clj`, replace the campaign-coupled tests with record-based ones. Add a fixture record (a temp EDN mirroring `release-parser-identity-v1.edn` with two known executable sha256) and assert:
+Replace the campaign-coupled tests in `parser_release_authority_test.clj` with:
 
 ```clojure
-(deftest authenticate-projects-governed-record-test
-  (testing "authenticate returns the record's coordinates, decision-authorized, campaign-free"
-    (let [result (authority/authenticate
-                  {:release_parser_identity_path <fixture-record>
-                   :decisions_path decisions-path})]
-      (is (= "ab-aozora" (get-in result [:qualification-identity :aat_adapter])))
-      (is (= <fixture-ab-aozora-sha> (:sha256 (first (filter #(= "ab-aozora" (:name %))
-                                        (get-in result [:executable-provenance :executables]))))))
-      ;; refs are RECOMPUTED, not trusted:
-      (is (= (:qualification-identity-ref result)
-             (hash/format-sha256 (hash/sha256-json-jcs (:qualification-identity result))))))))
+(deftest authenticate-projects-bound-record-test
+  (testing "returns the record's coordinates when the decision binds it"
+    (let [r (authority/authenticate {:release_parser_identity_path record-path
+                                     :decisions_path decisions-path})]
+      (is (= "ab-aozora" (get-in r [:qualification-identity :aat_adapter])))
+      (is (= recorded-ab-aozora-sha
+             (:sha256 (first (filter #(= "ab-aozora" (:name %))
+                                     (get-in r [:executable-provenance :executables])))))))))
 
-(deftest authenticate-rejects-non-accepted-decision-test ...)   ; authority-problems unchanged
-(deftest authenticate-recomputes-and-rejects-tampered-ref-test ...) ; asserted ref != recomputed -> problem
+(deftest authenticate-recomputes-and-rejects-tampered-ref-test ...)   ; asserted ref != recomputed -> problem
+(deftest authenticate-rejects-record-the-decision-does-not-bind-test  ; Blocker-1 guard
+  (testing "a shape-valid record whose candidate_ref the decision does not bind is rejected"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"authentication failed"
+          (authority/authenticate {:release_parser_identity_path tampered-record  ; new hashes, new self-refs, decision unchanged
+                                   :decisions_path decisions-path})))))
+(deftest authenticate-rejects-non-accepted-or-non-publication-decision-test ...)  ; authority-problems retained
 ```
 
-Also delete the `promotion-verification`/`:registry-ref`/`:candidate_ref`-breakage tests (`:78-98,138-154`) — they exercise campaign coupling that no longer exists.
+Delete `authenticates-the-committed-p5-candidate-test` and the `promotion-verification`/`:candidate_ref`/`:registry_path`/`:measurements_path` breakage tests (`:78-98,138-154`) — they exercise campaign coupling that no longer exists.
 
-- [ ] **Step 2: Run to verify it fails**
+- [ ] **Step 2: Run to verify failure**
 
 Run: `cd abc && bin/kaocha --focus abc.tools.parser-release-authority-test`
-Expected: FAIL (new keys/behavior not implemented).
+Expected: FAIL (record/binding path not implemented).
 
-- [ ] **Step 3: Rewrite `authenticate`**
+- [ ] **Step 3: Add the binding decision**
 
-Rewrite `abc/src/abc/tools/parser_release_authority.clj`: drop `[abc.tools.parser-rq-campaign :as campaign]`; add `[abc.tools.hash :as hash]` + a strict record loader. `authenticate` now:
+In `decisions.edn`, add the `release-parser-identity-approval` Accepted decision (D3 shape) with `:release-parser-identity` bound to Task 3's record `candidate_ref`/`qualification_identity_ref` and names/schema. Claims c1–c3 as in D3; each `:evidence` cites a real test file (`test/abc/tools/parser_release_authority_test.clj`, `test/abc/tools/publication_release_test.clj`) that this task updates to assert the binding.
+
+- [ ] **Step 4: Rewrite `authenticate`**
+
+Drop `[abc.tools.parser-rq-campaign :as campaign]`; add `[abc.tools.hash :as hash]` + `[abc.tools.jcs :as jcs]` (or reuse `hash/sha256-json-jcs`). Implement `load-shape-valid-record!` (require `:schema_version :adapter_id :adapter_version :executables :qualification_identity :qualification_identity_ref :candidate_ref`; each executable `{:name :sha256}` sha256 pattern-valid; report `:invalid-release-parser-identity` problems, mirroring the decisions loader). Rewrite `authenticate`:
 
 ```clojure
-(defn authenticate
-  [{:keys [release_parser_identity_path decisions_path]}]
-  (let [record (load-shape-valid-record! release_parser_identity_path)   ; throws->problems on bad shape
+(def release-qualification-slug "release-parser-identity-approval")
+
+(defn- binding-problems [decision record]
+  (let [b (:release-parser-identity decision)]
+    (cond-> []
+      (nil? b) (conj (problem :decision-has-no-release-parser-identity-binding "…"))
+      (and b (not= (:candidate_ref b) (:candidate_ref record)))
+      (conj (problem :decision-does-not-bind-record-candidate-ref "…"
+                     :bound (:candidate_ref b) :record (:candidate_ref record)))
+      (and b (not= (:qualification_identity_ref b) (:qualification_identity_ref record)))
+      (conj (problem :decision-qualification-identity-ref-mismatch "…"))
+      (and b (not= (:adapter_id b) (:adapter_id record)))
+      (conj (problem :decision-adapter-id-mismatch "…"))
+      (and b (not= (:schema_version b) (:schema_version record)))
+      (conj (problem :decision-schema-version-mismatch "…")))))
+
+(defn authenticate [{:keys [release_parser_identity_path decisions_path]}]
+  (let [record (load-shape-valid-record! release_parser_identity_path)
         {:keys [decision content-hash problems]} (decision-resolution decisions_path)
-        authority (if decision (authority-problems decision) [])
         qi (:qualification_identity record)
-        recomputed-qi-ref (hash/format-sha256 (hash/sha256-json-jcs qi))
-        recomputed-cand-ref (hash/format-sha256 (hash/sha256-json-jcs (dissoc record :candidate_ref)))
-        ref-problems (cond-> []
-                       (not= recomputed-qi-ref (:qualification_identity_ref record))
-                       (conj (problem :qualification-identity-ref-mismatch "…"))
-                       (not= recomputed-cand-ref (:candidate_ref record))
-                       (conj (problem :candidate-ref-mismatch "…")))
-        all (vec (concat (record-problems record) problems authority ref-problems))]
+        recompute-qi (hash/format-sha256 (hash/sha256-json-jcs qi))
+        recompute-cand (hash/format-sha256 (hash/sha256-json-jcs (dissoc record :candidate_ref)))
+        integrity (cond-> []
+                    (not= recompute-qi (:qualification_identity_ref record))
+                    (conj (problem :qualification-identity-ref-mismatch "…"))
+                    (not= recompute-cand (:candidate_ref record))
+                    (conj (problem :candidate-ref-mismatch "…")))
+        authority (if decision (into (authority-problems decision) (binding-problems decision record)) [])
+        all (vec (concat (record-problems record) problems integrity authority))]
     (if (seq all)
       (throw (ex-info "parser release authority authentication failed" {:problems all}))
       {:candidate-ref (:candidate_ref record)
@@ -282,145 +400,94 @@ Rewrite `abc/src/abc/tools/parser_release_authority.clj`: drop `[abc.tools.parse
                           :record-file (hash/format-sha256 (hash/sha256-file release_parser_identity_path))}})))
 ```
 
-Keep `decision-resolution`/`authority-problems`/`release-qualification-slug` unchanged. Add `load-shape-valid-record!` (require `:schema_version :adapter_id :adapter_version :executables :qualification_identity :qualification_identity_ref :candidate_ref`; each executable `{:name :sha256}`; sha256 pattern-valid) reporting `:invalid-release-parser-identity` problems, mirroring the decisions loader's strictness.
+- [ ] **Step 5: Repoint consumers + config + schema**
 
-- [ ] **Step 4: Repoint the two consumers**
+`publication_release.clj` `authenticate-parser-authority` (`:251-276`): pass `{:release_parser_identity_path … :decisions_path …}`; drop the campaign-provenance-path derivation. `soranoha_build_publication.clj` `runtime-authenticate-options`/`release-authority-sources`: supply the record path; drop `:provenance_path`/`:runs_root`/`:candidate_ref`/`:measurements_path`/`:report_path`. Only the opts *construction* changes; the fields read off the result are unchanged. Update the config field + its schema + the `build-publication!` read.
 
-`publication_release.clj` `authenticate-parser-authority` (`:251-276`): pass `{:release_parser_identity_path … :decisions_path …}` instead of the campaign path bundle + `candidate-ref`→provenance-path derivation. `soranoha_build_publication.clj` `runtime-authenticate-options` (`:248-260`)/`release-authority-sources` (`:1107-1112`): supply the record path; drop `:provenance_path`/`:runs_root`/`:candidate_ref`/`:measurements_path`/`:report_path`. Update `parser-authority-problems`/`authenticate-runtime` only where the opts map is built — the fields they *read* off the result are unchanged.
+- [ ] **Step 6: Implement + pass**
 
-- [ ] **Step 5: Update the config**
+Run: `cd abc && bin/kaocha --focus abc.tools.parser-release-authority-test`
+Expected: PASS. Then update `publication_release_test.clj` (`matching-authority` fixture `:29-38` → sourced from a record fixture; mismatch tests `:151-172` stay) and `soranoha_build_publication_test.clj` (replace `p5-candidate-ref` plumbing with the record path; `p5-parser-build-hash`/`p5-converter-build-hash` become the record's real executable sha256 from Task 3). Run all three focuses; expected PASS.
 
-In `config/full-corpus-publication-custom-parser-ja.json`, replace `parser_candidate_ref` with `"release_parser_identity": "data/release-parser-identity-v1.edn"`; update `build-publication!` (`:1155-1156`) to read it. Grep the schema `soranoha-publication-build-config.schema.json` and update the field there too if `parser_candidate_ref` is declared.
+- [ ] **Step 7: Add the two CI checks (build-match via strict loader; reproducible)**
 
-- [ ] **Step 6: Update the two downstream test files**
-
-`publication_release_test.clj`: the `matching-authority` fixture (`:29-38`) already hard-codes an `:executable-provenance {:executables […]}` shape — keep that shape but source it from a record fixture; the mismatch tests (`:151-172`) stay (they test the same coordinate check). `soranoha_build_publication_test.clj`: replace `p5-candidate-ref` plumbing (`:90-91,241-278`) with the record path; the `p5-parser-build-hash`/`p5-converter-build-hash` values become the record's executable sha256 (final values in Task 5 — use `"sha256:PENDING-*"` placeholders now, or point the test at the fixture record).
-
-- [ ] **Step 7: Run all three suites**
-
-```bash
-cd abc && bin/kaocha --focus abc.tools.parser-release-authority-test \
-  --focus abc.tools.publication-release-test \
-  --focus abc.tools.soranoha-build-publication-test
-```
-
-Expected: PASS (against fixture/placeholder hashes; real hashes land in Task 5). Requires `TEI_SCHEMA_PATH` (run in `nix develop` or the nix check env).
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add abc/data/release-parser-identity-v1.edn abc/src/abc/tools/parser_release_authority.clj abc/src/abc/tools/publication_release.clj abc/src/abc/tools/soranoha_build_publication.clj abc/config/full-corpus-publication-custom-parser-ja.json abc/schemas/soranoha-publication-build-config.schema.json abc/test/abc/tools/parser_release_authority_test.clj abc/test/abc/tools/publication_release_test.clj abc/test/abc/tools/soranoha_build_publication_test.clj
-git commit -m "refactor(abc): authenticate release parser from governed record, not the campaign
-
-parser-release-authority/authenticate now reads a committed
-data/release-parser-identity-v1.edn (approved reproducible parser hashes +
-mapping/schema), recomputing its identity refs, instead of projecting the
-parser-rq campaign. The publication release no longer depends on the 5-parser
-research campaign. Return shape unchanged; consumers untouched.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)"
-```
-
----
-
-### Task 4: CI check — buildable standalone parser matches the governed record
-
-**Files:**
-- Modify: `abc/flake.nix` (add `checks.<system>.ab-aozora-release-identity`)
-
-**Interfaces:**
-- Produces: a check that fails if `nix build`'s standalone `ab-aozora`/`ab-aat-to-parser-ir` sha256 ≠ the record's `:executables[].sha256`. This is the trust link: the governed record is only valid if the buildable release parser reproduces it.
-
-- [ ] **Step 1: Add the check**
-
-In `abc/flake.nix` `checks.<system>`, add a check that reads `data/release-parser-identity-v1.edn`, builds the two standalone `ab-validator` packages, and byte-compares:
+In `abc/flake.nix`:
 
 ```nix
-          ab-aozora-release-identity =
-            pkgs.runCommand "abc-ab-aozora-release-identity"
-              { nativeBuildInputs = [ pkgs.coreutils pkgs.jq ]; }
+          release-parser-build-matches-approved-identity =
+            pkgs.runCommand "abc-release-parser-build-matches-approved-identity"
+              { nativeBuildInputs = [ pkgs.clojure pkgs.coreutils ]; }
               ''
                 ${copyWritableSource}
-                a=$(sha256sum ${abValidator.ab-aozora}/bin/ab-aozora | cut -d' ' -f1)
-                c=$(sha256sum ${abValidator.ab-aat-to-parser-ir}/bin/ab-aat-to-parser-ir | cut -d' ' -f1)
-                # extract recorded hashes (strip sha256: prefix) from the EDN record:
-                want_a=$(grep -oE 'ab-aozora" :sha256 "sha256:[0-9a-f]{64}' data/release-parser-identity-v1.edn | grep -oE '[0-9a-f]{64}$')
-                want_c=$(grep -oE 'ab-aat-to-parser-ir" :sha256 "sha256:[0-9a-f]{64}' data/release-parser-identity-v1.edn | grep -oE '[0-9a-f]{64}$')
-                [ "$a" = "$want_a" ] || { echo "ab-aozora build $a != recorded $want_a" >&2; exit 1; }
-                [ "$c" = "$want_c" ] || { echo "ab-aat-to-parser-ir build $c != recorded $want_c" >&2; exit 1; }
-                mkdir -p "$out"; echo "release parser build matches governed record" > "$out/result.txt"
+                ${cljSandboxEnv}
+                # read recorded hashes through the SAME strict loader authenticate uses:
+                read want_a want_c < <(clojure -M -e '(require (quote [abc.tools.parser-release-authority :as a]))
+                  (let [r (a/load-shape-valid-record! "data/release-parser-identity-v1.edn")
+                        h (fn [n] (:sha256 (first (filter #(= n (:name %)) (:executables r)))))]
+                    (println (subs (h "ab-aozora") 7) (subs (h "ab-aat-to-parser-ir") 7)))')
+                a=$(sha256sum ${abValidatorPackages."ab-aozora"}/bin/ab-aozora | cut -d' ' -f1)
+                c=$(sha256sum ${abValidatorPackages."ab-aat-to-parser-ir"}/bin/ab-aat-to-parser-ir | cut -d' ' -f1)
+                [ "$a" = "$want_a" ] || { echo "ab-aozora $a != recorded $want_a" >&2; exit 1; }
+                [ "$c" = "$want_c" ] || { echo "converter $c != recorded $want_c" >&2; exit 1; }
+                mkdir -p "$out"; echo "release parser build matches approved record" > "$out/result.txt"
+              '';
+
+          release-parser-reproducible =
+            pkgs.runCommand "abc-release-parser-reproducible"
+              { nativeBuildInputs = [ pkgs.coreutils ]; }
+              ''
+                # two independently-realized store paths per binary must be byte-identical.
+                a1=$(sha256sum ${abAozoraA}/bin/ab-aozora|cut -d' ' -f1); a2=$(sha256sum ${abAozoraB}/bin/ab-aozora|cut -d' ' -f1)
+                c1=$(sha256sum ${abConvA}/bin/ab-aat-to-parser-ir|cut -d' ' -f1); c2=$(sha256sum ${abConvB}/bin/ab-aat-to-parser-ir|cut -d' ' -f1)
+                [ "$a1" = "$a2" ] && [ "$c1" = "$c2" ] || { echo "not reproducible" >&2; exit 1; }
+                mkdir -p "$out"; echo "ab-aozora=$a1 converter=$c1 reproducible" > "$out/result.txt"
               '';
 ```
 
-> **Implementer note:** confirm how the root/abc flake exposes the standalone `ab-validator` packages to `abc/flake.nix` (the migration already references `abValidatorPackages."ab-aozora"` at root `flake.nix:109`; reuse the same accessor here). If a robust EDN read is preferred over `grep`, use `clojure -M -e` to read the record — but keep the check dependency-light.
+> **Implementer note:** for `release-parser-reproducible`, realize two independent builds of each binary. If the flake's fixed-output/`--rebuild` model makes two in-eval realizations collapse to one store path, use the provenance script's `realize-build`×2 mechanism or `nix build --rebuild` in a `runCommand` with the daemon — pick whichever genuinely produces two independent realizations, and document in the task report exactly what independence the check establishes. Confirm how `abc/flake.nix` accesses the standalone `ab-validator` packages (`abValidatorPackages` per root `flake.nix:109`).
 
-- [ ] **Step 2: Format + note it will be RED until Task 5**
-
-`nix fmt abc/flake.nix`. This check is expected RED now (record holds `PENDING` placeholders); Task 5 fills the real hashes and turns it green. Do **not** build-verify green here.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 8: Format, build both checks GREEN**
 
 ```bash
-git add abc/flake.nix
-git commit -m "test(abc): add ab-aozora-release-identity check (standalone build == governed record)
+nix fmt abc/flake.nix
+cd abc && bin/kaocha --focus abc.tools.parser-release-authority-test --focus abc.tools.publication-release-test --focus abc.tools.soranoha-build-publication-test
+nix build ./abc#checks.x86_64-linux.release-parser-build-matches-approved-identity --print-build-logs
+nix build ./abc#checks.x86_64-linux.release-parser-reproducible --print-build-logs
+```
+
+Expected: suites PASS; both checks GREEN (the record's hashes match the real reproducible builds).
+
+- [ ] **Step 9: Commit (atomic trust-boundary transition)**
+
+```bash
+git add abc/docs/adr/decisions.edn abc/src/abc/tools/parser_release_authority.clj abc/src/abc/tools/publication_release.clj abc/src/abc/tools/soranoha_build_publication.clj abc/config/full-corpus-publication-custom-parser-ja.json abc/schemas/soranoha-publication-build-config.schema.json abc/flake.nix abc/test/abc/tools/parser_release_authority_test.clj abc/test/abc/tools/publication_release_test.clj abc/test/abc/tools/soranoha_build_publication_test.clj
+git commit -m "refactor(abc): authenticate release parser from a decision-bound governed record
+
+parser-release-authority/authenticate now reads data/release-parser-identity-v1.edn
+and requires BOTH its content refs to recompute AND the Accepted
+release-parser-identity-approval decision to bind that exact candidate_ref —
+integrity plus approval. Drops the parser-rq-campaign dependency; return shape
+unchanged so consumers are untouched. Adds build-match + reproducibility checks.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)"
 ```
 
 ---
 
-### Task 5: Establish the reproducible hashes; turn the gate green; record governance
+### Task 5: Green the release gate; repoint governance; full verification
 
 **Files:**
-- Modify: `abc/data/release-parser-identity-v1.edn` (fill the two executable sha256 + recompute refs)
-- Modify: `abc/test/abc/tools/soranoha_build_publication_test.clj`, `parser_release_authority_test.clj` (any remaining pinned hashes → the recorded values)
-- Modify: `abc/docs/adr/decisions.edn` + `abc/docs/adr/custom-parser-release-qualification.md` (governance: record authorizes the production identity; may cite research)
-- Modify: `abc/docs/superpowers/reports/2026-07-24-publication-surface-disposition.md` §13 (close: decoupled from campaign)
+- Modify: `abc/docs/adr/decisions.edn` — repoint `sole-publication-release-identity` (its `:depends-on` relation + c4 claim) from `custom-parser-release-qualification` to `release-parser-identity-approval`
+- Modify: `abc/docs/adr/custom-parser-release-qualification.md` — note it remains historical research evidence; publication release authority moved to `release-parser-identity-approval`
+- Modify: `abc/docs/superpowers/reports/2026-07-24-publication-surface-disposition.md` §13 — close the follow-up
 
 **Interfaces:**
-- Consumes: Tasks 1–4 (reproducible, decoupled binaries + the record + the check).
-- Produces: `publication-build-real-wiring` GREEN.
+- Consumes: Task 4 (bound record + rewired authenticate + checks).
+- Produces: `publication-build-real-wiring` GREEN and a consistent governance narrative.
 
-- [ ] **Step 1: Record the reproducible standalone hashes**
+- [ ] **Step 1: Repoint `sole-publication-release-identity` to the new authority**
 
-```bash
-cd "$(git rev-parse --show-toplevel)"
-a=$(nix build ./ab-validator#ab-aozora --no-link --print-out-paths --rebuild)
-a2=$(nix build ./ab-validator#ab-aozora --no-link --print-out-paths --rebuild)
-test "$(sha256sum "$a/bin/ab-aozora"|cut -d' ' -f1)" = "$(sha256sum "$a2/bin/ab-aozora"|cut -d' ' -f1)" || { echo "ab-aozora not reproducible" >&2; exit 1; }
-c=$(nix build ./ab-validator#ab-aat-to-parser-ir --no-link --print-out-paths)
-echo "ab-aozora    sha256: $(sha256sum "$a/bin/ab-aozora"|cut -d' ' -f1)"
-echo "ab-aat-to-ir sha256: $(sha256sum "$c/bin/ab-aat-to-parser-ir"|cut -d' ' -f1)"
-```
-
-Write both into `release-parser-identity-v1.edn` as `sha256:<value>` (replacing the `PENDING` placeholders). If ab-aozora is not reproducible, STOP — Task 1/2 incomplete.
-
-- [ ] **Step 2: Recompute the record's identity refs**
-
-Compute `qualification_identity_ref = SHA-256(JCS(:qualification_identity))` and `candidate_ref = SHA-256(JCS(record without :candidate_ref))` using the repo's own hashing (`clojure -M -e` calling `abc.tools.hash`/`abc.tools.jcs`, matching `authenticate`), and write them into the record. Verify by running the authenticate test against the real record:
-
-```bash
-cd abc && bin/kaocha --focus abc.tools.parser-release-authority-test
-```
-
-Expected: PASS (recomputed == asserted).
-
-- [ ] **Step 3: Propagate the recorded hashes into the remaining tests**
-
-Set the recorded `ab-aozora`/`ab-aat-to-parser-ir` sha256 into `soranoha_build_publication_test.clj` (`p5-parser-build-hash`/`p5-converter-build-hash`, now the standalone values) and any fixture in `parser_release_authority_test.clj`. Run both focuses; expected PASS.
-
-- [ ] **Step 4: Green the CI checks (the acceptance criteria)**
-
-```bash
-nix build ./abc#checks.x86_64-linux.ab-aozora-release-identity --print-build-logs
-nix build ./abc#checks.x86_64-linux.publication-build-real-wiring --print-build-logs
-```
-
-Expected: BOTH GREEN. `publication-build-real-wiring` shows `release_admissible: true`, no `release-parser-build-hash-mismatch`/`release-converter-build-hash-mismatch`. This is the plan's success condition.
-
-- [ ] **Step 5: Record governance + close §13**
-
-Amend `custom-parser-release-qualification` in `decisions.edn` (by hand): bump `:accepted "2026-07-25"`; add a claim that the release parser is the reproducible standalone `ab-aozora`/`ab-aat-to-parser-ir` recorded in `data/release-parser-identity-v1.edn` and proven buildable by `checks.<system>.ab-aozora-release-identity`; the parser-rq campaign is cited as research justification only, with no release authority. Update the ADR `.md` prose. In disposition §13, close the follow-up: the real-wiring RED is resolved by decoupling the release from the research campaign (D3) atop the reproducible, abc-decoupled standalone parser (D1+D2). Validate:
+In `decisions.edn`, change its `:depends-on` relation and c4 claim text from `custom-parser-release-qualification` to `release-parser-identity-approval` (the release now depends on the exact Accepted identity-approval decision). Validate:
 
 ```bash
 cd abc && bin/kaocha --focus abc.tools.decisions-test
@@ -430,7 +497,19 @@ nix build .#checks.x86_64-linux.monorepo-adr-governance --print-build-logs
 
 Expected: PASS/GREEN.
 
-- [ ] **Step 6: Full suite + hygiene**
+- [ ] **Step 2: The release gate (acceptance criterion)**
+
+```bash
+nix build ./abc#checks.x86_64-linux.publication-build-real-wiring --print-build-logs
+```
+
+Expected: **GREEN** — `release_admissible: true`, no `release-parser-build-hash-mismatch`/`release-converter-build-hash-mismatch`. (This likely already passed after Task 4's authenticate flip; confirm here as the final gate.)
+
+- [ ] **Step 3: Governance prose + close §13**
+
+Update `custom-parser-release-qualification.md` (historical/research note). In disposition §13, add a dated closeout: the real-wiring RED is resolved by decoupling the release from the research campaign onto a decision-bound reproducible standalone parser (D1+D2+D3); the parser-rq campaign is research only.
+
+- [ ] **Step 4: Full suite + hygiene**
 
 ```bash
 cd abc && bin/kaocha
@@ -439,16 +518,16 @@ nix build ./abc#checks.x86_64-linux.clj-kondo --print-build-logs
 
 Expected: 0 failures; lint/format clean.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add abc/data/release-parser-identity-v1.edn abc/test abc/docs
-git commit -m "feat(abc): record reproducible release parser; publication-build-real-wiring green
+git add abc/docs
+git commit -m "docs(governance): move publication authority to release-parser-identity-approval
 
-Filled the governed record with the reproducible standalone ab-aozora/
-ab-aat-to-parser-ir hashes, recomputed its identity refs, and turned the
-real-wiring gate green — the release now authenticates the production parser,
-fully decoupled from the parser-rq research campaign.
+Repoint sole-publication-release-identity to the exact bound identity decision;
+mark custom-parser-release-qualification historical research; close disposition
+§13. publication-build-real-wiring is green — the release authenticates the
+reproducible standalone parser, fully decoupled from the parser-rq campaign.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)"
 ```
@@ -457,15 +536,17 @@ fully decoupled from the parser-rq research campaign.
 
 ## Out of scope (explicit follow-ups)
 
-- **Delete/retire the campaign-coupling remnants** now unused by the release (e.g. any `parser_candidate_ref` plumbing, `parser_phase5_frozen_tuple.clj` if fully unreferenced). Only after confirming zero references — a separate cleanup, not this plan.
+- **Delete/retire the campaign-coupling remnants** now unused by the release (any residual `parser_candidate_ref` plumbing, `parser_phase5_frozen_tuple.clj` if fully unreferenced). Only after confirming zero references — a separate cleanup, not this plan.
 - **Fully relocate the four classified-source files' ownership** to `ab-validator` (remove the last `../abc` `include_bytes!` reach-up in the rq adapters). D2 frees the release binaries; ownership relocation is a separate design decision.
 - **Lane 5** (`validate_design_bundle.clj` shrink) and the two pre-existing-on-main reds (`nix-format-check` on `abc/flake.nix`, `validate-migration-eval-cache-smoke`) — unrelated.
 
 ## Self-review
 
-- **Coverage of the user pivot:** release no longer requires the campaign (Task 3 drops the `parser-rq-campaign` require; Global Constraints forbid re-adding it). Campaign left intact as research (not deleted). ✔
-- **No host dependency:** every hash is `nix build … | sha256sum`; no corpus/cgroup/auth-window. Tasks 1–5 all run in CI/sandbox. ✔
-- **Invariant preserved:** "release only an approved, reproducible parser" → governed record + Accepted decision + `ab-aozora-release-identity` build-match check. ✔
-- **Blast radius:** `authenticate` keeps its return shape, so `publication_release.clj`/`soranoha_build_publication.clj` consumers are near-unchanged; the churn is the auth source + config + tests. ✔
-- **Values-not-knowable-in-advance:** the two standalone executable sha256 are outputs of D1+D2; Task 3 uses `PENDING` placeholders, Task 5 fills the reproducible values and greens the gate. Intentional, not a placeholder-defect. ✔
-- **Open sub-choice for review:** record-as-separate-file (chosen) vs record-in-decision (D3 note) — only Task 3's read source differs.
+- **Blocker 1 (approval, not just integrity):** `authenticate`'s `binding-problems` requires the Accepted decision to bind the record's exact `candidate_ref` (+ qual-ref/adapter/schema); a self-consistent-but-unbound record is rejected (`authenticate-rejects-record-the-decision-does-not-bind-test`). ✔
+- **Blocker 2 (supersede, not amend):** a new `release-parser-identity-approval` decision holds authority; `custom-parser-release-qualification` is left historical; `sole-publication-release-identity` is repointed (Task 5). No contradictory claim appended. ✔
+- **Strong 3 (build-match ≠ reproducible):** two separately-named checks, both required; `release-parser-reproducible` realizes both binaries twice. ✔
+- **Strong 4 (parse EDN as EDN):** the build-match check reads the record via `load-shape-valid-record!` — the same loader `authenticate` uses — not a regex. ✔
+- **Strong 5 (no PENDING authority):** Task 3 commits the record with real hashes but inert (no reader); Task 4 lands the binding decision + wiring + checks atomically. No commit has active wiring to an unbound/placeholder record. ✔
+- **Decouple pivot:** `parser_release_authority.clj` drops the `parser-rq-campaign` require (Global Constraint); campaign left intact as research. ✔
+- **No host dependency:** every hash is `nix build … | sha256sum`; all tasks run in CI/sandbox. ✔
+- **Values-not-knowable-in-advance:** the two executable sha256 are outputs of D1+D2, established with real values in Task 3 (never placeholders); the record's refs and the decision binding derive from them. Intentional, not a placeholder-defect. ✔

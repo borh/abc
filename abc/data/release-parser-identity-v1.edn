@@ -1,0 +1,10 @@
+{:schema_version "1.0.0"
+ :adapter_id "ab-aozora"
+ :adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)"
+ :executables [{:name "ab-aozora" :sha256 "sha256:7f75b8f94de9170bf913e6081790ee20e741526027003414034a97ce8a0451dd"}
+               {:name "ab-aat-to-parser-ir" :sha256 "sha256:8073c1dc520f2a829375d43473d61a3b9a3dc03bc26df60f0cdd3011a0d1b81f"}]
+ :qualification_identity {:aat_adapter "ab-aozora"
+                          :mapping_hash "sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142"
+                          :parser_ir_schema_hash "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"}
+ :qualification_identity_ref "sha256:65887787e081a41872e01f141d4faa9674d84d77b17e05f3a5624d7134686710"
+ :candidate_ref "sha256:3bca1db2c3b5bc3bce41b451942d513f327e4b6190d21a5728cf8a6bdb644757"}

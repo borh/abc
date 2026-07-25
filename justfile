@@ -74,7 +74,7 @@ evidence-gate:
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
 	{{nix_eval}} build "./abc#checks.$system.clj-nix-focused-tests" \
 		"./abc#checks.$system.tei-profile-drift" --print-build-logs
-	@nix run ./abc#validate-design-bundle
+	@{{nix_eval}} run ./abc#validate-design-bundle
 
 # release-parser-reproducible: the two release binaries must rebuild
 # byte-identically. `nix build --rebuild` re-realizes each derivation and fails

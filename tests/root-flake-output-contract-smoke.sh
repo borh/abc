@@ -3,7 +3,10 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix flake show --json --all-systems "$repo_root" | python -c '
+# eval-cache disabled to match the validate-migration cache-independence
+# policy: this check exists to detect an output surface that drifted from the
+# contract, which a stale eval cache would hide.
+nix --option eval-cache false flake show --json --all-systems "$repo_root" | python -c '
 import json
 import sys
 

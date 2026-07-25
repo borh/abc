@@ -8,7 +8,11 @@ expected_tag="P5_Release_${expected_version}"
 if [ -n "${AB_TEI_P5_ROOT:-}" ]; then
   tei_root="$AB_TEI_P5_ROOT"
 else
-  tei_root="$(nix build --no-link --print-out-paths "$repo_root#tei-p5-reference")"
+  # eval-cache disabled to match the validate-migration cache-independence
+  # policy: a stale eval cache could resolve tei-p5-reference to a derivation
+  # that no longer matches the flake this gate is validating.
+  tei_root="$(nix --option eval-cache false build --no-link --print-out-paths \
+    "$repo_root#tei-p5-reference")"
 fi
 
 actual_version="$(cat "$tei_root/VERSION")"

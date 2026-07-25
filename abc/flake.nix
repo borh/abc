@@ -494,8 +494,7 @@
           # against the authoritative decisions.edn — without re-running any
           # measurement.
           parser-rq-p5-promotion-audit =
-            pkgs.runCommand "abc-parser-rq-p5-promotion-audit"
-              { nativeBuildInputs = [ pkgs.clojure ]; }
+            pkgs.runCommand "abc-parser-rq-p5-promotion-audit" { nativeBuildInputs = [ pkgs.clojure ]; }
               ''
                 ${copyWritableSource}
                 ${cljSandboxEnv}
@@ -530,7 +529,6 @@
                 mkdir -p "$out"
                 echo "ABC focused Clojure lint and format checks passed." > "$out/result.txt"
               '';
-
 
           parser-rq-core-attempt =
             pkgs.runCommand "abc-parser-rq-core-attempt"
@@ -620,14 +618,6 @@
             mkdir -p "$out"
             echo "schemas/tei-profile.{rng,sch} match the ODD-derived artifacts." > "$out/result.txt"
           '';
-
-
-
-
-
-
-
-
 
           parser-rq-campaign-site =
             pkgs.runCommand "abc-parser-rq-campaign-site-tests"

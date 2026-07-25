@@ -49,6 +49,7 @@ expected = {
         "monorepo-workflow-run-lib",
         "parser-rq-production-wiring",
         "publication-build-real-wiring",
+        "release-parser-build-matches-approved-identity",
         "tei-eaj-aozora-alignment-probe-generation",
     },
 }

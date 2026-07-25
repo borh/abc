@@ -424,7 +424,7 @@
                          "irrelevant — overwritten below\n")]
         ;; Corrupt the SECOND claimant so ZIP inspection would fail on it.
         (spit (fs/file (fs/path aozora-root "cards" "000880" "files"
-                               "000001_ruby_fixture.zip"))
+                                "000001_ruby_fixture.zip"))
               "not a zip at all")
         (let [output-root (fs/path tmp "out")
               materialize #'build-publication/materialize-selected-sources!

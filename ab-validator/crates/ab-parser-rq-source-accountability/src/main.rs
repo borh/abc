@@ -295,7 +295,7 @@ fn main() -> Result<()> {
                     anyhow::bail!("source path escapes its configured root");
                 }
                 let generation =
-                    ab_aozora_aat::capture_generation_from_bytes_for_identity_and_work(
+                    ab_aozora_capture::capture_generation_from_bytes_for_identity_and_work(
                         &fs::read(source_path)?,
                         &identity_ref,
                         &entry.corpus_entry.work_id,

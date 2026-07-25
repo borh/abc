@@ -28,6 +28,7 @@ members = [
     "crates/ab-aozora-proptest",
     "crates/ab-aozora-corpus",
     "crates/ab-aozora-aat",
+    "crates/ab-aozora-capture",
     "crates/ab-aozora",
     "crates/ab-parser-study-report",
     "crates/ab-parser-rq-source-accountability",

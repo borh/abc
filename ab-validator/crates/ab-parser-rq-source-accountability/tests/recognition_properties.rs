@@ -1,4 +1,4 @@
-use ab_aozora_aat::capture_generation_from_bytes;
+use ab_aozora_capture::capture_generation_from_bytes;
 use ab_parser_rq_source_accountability::{
     RecognitionInput, RecognitionInterval, RecognitionStatus, analyze_recognition,
 };

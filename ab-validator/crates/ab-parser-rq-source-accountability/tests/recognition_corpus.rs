@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use ab_aozora_aat::{CaptureGeneration, capture_generation_from_bytes};
+use ab_aozora_capture::{CaptureGeneration, capture_generation_from_bytes};
 use ab_parser_rq_source_accountability::{
     RecognitionCorpusInput, RecognitionGenerationEntry, RecognitionGenerationIndex,
     RecognitionIndex, RecognitionStatus, RecognitionWorkRecord, aggregate_recognition,

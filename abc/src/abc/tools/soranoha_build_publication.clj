@@ -104,6 +104,38 @@
         stem (subs basename 0 (- (count basename) (count ".zip")))]
     (str work-id "_" person-id "_" stem)))
 
+(defn- candidate-slug-collisions
+  "PURE. Candidate slug claims grouped by slug, keeping only slugs claimed more
+  than once. Runs BEFORE archive inspection: the slug is a function of
+  (work_id, person_id, relpath) alone, so a collision is knowable without
+  opening a ZIP — and must be known before any `works/<slug>` write."
+  [candidates]
+  (->> candidates
+       (map (fn [{:keys [row relpath]}]
+              {"slug" (slug (row-work-id row) (row-person-id row) relpath)
+               "text_zip_relpath" relpath}))
+       (group-by #(get % "slug"))
+       (filter (fn [[_ claims]] (< 1 (count claims))))
+       (sort-by key)
+       (mapv (fn [[work-slug claims]]
+               {"slug" work-slug
+                "sources" (mapv (fn [claim]
+                                  {"text_zip_relpath" (get claim "text_zip_relpath")})
+                                (sort-by #(get % "text_zip_relpath") claims))}))))
+
+(defn- assert-candidate-slugs-unique!
+  "Return `candidates` when every candidate claims a distinct slug; otherwise
+  throw before any slug-addressed filesystem write occurs. A candidate claims
+  its identity from the catalog, so an unreadable archive does not withdraw the
+  claim: `continue_on_failure` must not resolve a collision."
+  [candidates]
+  (let [collisions (candidate-slug-collisions candidates)]
+    (when (seq collisions)
+      (throw (ex-info "selected sources claim duplicate publication slugs"
+                      {:code "publication-slug-collision"
+                       :collisions collisions})))
+    candidates))
+
 ;; ── Real source→parser-IR derivation via the owned, Nix-built adapters ──
 ;; The adapter/converter binaries are provided by the flake through env vars
 ;; (mirroring the existing AB_AAT_TO_PARSER_IR_BIN wiring used by
@@ -558,6 +590,11 @@
                         :catalog-provenance catalog-provenance
                         :materialized-root materialized-root
                         :continue-on-failure continue-on-failure}
+        ;; Identity before inspection: `inspect-selected-work!` writes into
+        ;; works/<slug> from inside the parallel map below, so two candidates
+        ;; claiming one slug would silently overwrite each other. Assert here,
+        ;; before any slug-addressed write.
+        _ (assert-candidate-slugs-unique! selected-candidates)
         ;; A single corrupt/unreadable work ZIP (e.g. a zip Java's reader
         ;; rejects with "invalid CEN header") must not abort a whole-corpus
         ;; selection. With continue_on_failure, record and skip it; otherwise

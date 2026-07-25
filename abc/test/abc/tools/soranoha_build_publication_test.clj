@@ -311,3 +311,36 @@
       ;; which replaces it with the governed identity invariant.
       (is (= a b))
       (is (= "047896_000075_47896_ruby_49619" a)))))
+
+(defn- candidate-stub [work-id person-id relpath]
+  {:row {"作品ID" work-id "人物ID" person-id} :relpath relpath :file nil})
+
+(deftest candidate-slug-collisions-detects-duplicate-claims
+  (let [collisions #'build-publication/candidate-slug-collisions]
+    (testing "injective candidates yield no collisions"
+      (is (= [] (collisions [(candidate-stub "1" "9" "cards/000009/files/a.zip")
+                             (candidate-stub "2" "9" "cards/000009/files/b.zip")]))))
+    (testing "same work/person and same basename in two card dirs collide"
+      (is (= [{"slug" "047896_000075_47896_ruby_49619"
+               "sources" [{"text_zip_relpath" "cards/000075/files/47896_ruby_49619.zip"}
+                          {"text_zip_relpath" "cards/001030/files/47896_ruby_49619.zip"}]}]
+             (collisions
+              [(candidate-stub "047896" "000075" "cards/001030/files/47896_ruby_49619.zip")
+               (candidate-stub "047896" "000075" "cards/000075/files/47896_ruby_49619.zip")]))))
+    (testing "same basename under a different work id does NOT collide"
+      (is (= [] (collisions
+                 [(candidate-stub "047896" "000075" "cards/000075/files/x.zip")
+                  (candidate-stub "047897" "000075" "cards/001030/files/x.zip")]))))))
+
+(deftest assert-candidate-slugs-unique-fails-closed
+  (let [assert-fn #'build-publication/assert-candidate-slugs-unique!
+        colliding [(candidate-stub "047896" "000075" "cards/000075/files/x.zip")
+                   (candidate-stub "047896" "000075" "cards/001030/files/x.zip")]
+        thrown (try (assert-fn colliding) nil
+                    (catch clojure.lang.ExceptionInfo e e))]
+    (is (some? thrown))
+    (is (= "publication-slug-collision" (:code (ex-data thrown))))
+    (is (= 1 (count (:collisions (ex-data thrown)))))
+    (testing "an injective candidate set passes through unchanged"
+      (let [ok [(candidate-stub "1" "9" "cards/000009/files/a.zip")]]
+        (is (= ok (assert-fn ok)))))))

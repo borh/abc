@@ -25,8 +25,8 @@
 ;; --- content-ref recompute ---------------------------------------------------
 ;; The record carries keyword keys; JCS canonicalization
 ;; (abc.tools.jcs/canonical-json-object) throws on keyword keys, so every value
-;; is keyword-stringified before hashing. This is the identical recipe Task 3
-;; used to MINT the committed refs, so recompute is byte-exact.
+;; is keyword-stringified before hashing. This is the identical recipe that
+;; MINTED the committed refs, so recompute is byte-exact.
 
 (defn- canonical-value [v]
   (walk/postwalk

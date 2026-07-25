@@ -309,9 +309,12 @@
     (let [slug-fn #'build-publication/slug
           a (slug-fn "047896" "000075" "cards/000075/files/47896_ruby_49619.zip")
           b (slug-fn "047896" "000075" "cards/001030/files/47896_ruby_49619.zip")]
-      ;; CHARACTERIZATION of CURRENT (defective) behavior. Retired by Task 5
-      ;; Step 1 of docs/superpowers/plans/2026-07-25-publication-slug-collision-integrity.md,
-      ;; which replaces it with the governed identity invariant.
+      ;; CHARACTERIZATION of CURRENT (defective) behavior: two sources that
+      ;; differ only by card directory claim one publication identity, so the
+      ;; second overwrites the first. `assert-candidate-slugs-unique!` makes
+      ;; that fail closed; it does not make the slug injective. Retire this
+      ;; test when governed slug resolution is implemented, replacing it with
+      ;; the injectivity invariant that resolution establishes.
       (is (= a b))
       (is (= "047896_000075_47896_ruby_49619" a)))))
 

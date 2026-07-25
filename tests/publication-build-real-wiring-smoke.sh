@@ -65,7 +65,10 @@ git -C "$aozora_root" add -A
 git -C "$aozora_root" commit -q -m "smoke: 000127 catalog + synthetic ruby fixture card"
 
 # ── Step 5: best-effort config 0.2.0 — official-git source trust, the
-# project-owned ab-aozora parser profile, and the real qualified P5 candidate.
+# project-owned ab-aozora parser profile, and the decision-bound release parser
+# identity record (the standalone parser is authenticated against
+# data/release-parser-identity-v1.edn, which release-parser-identity-approval
+# binds — no longer the parser-rq campaign candidate).
 config_json="$work_dir/config.json"
 cat > "$config_json" <<JSON
 {
@@ -73,7 +76,7 @@ cat > "$config_json" <<JSON
   "config_schema_version": "0.2.0",
   "source_trust_mode": "official-git",
   "parser_profile": "ab-aozora",
-  "parser_candidate_ref": "sha256:15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab",
+  "release_parser_identity": "data/release-parser-identity-v1.edn",
   "publication_profile": "tei-profile-v0",
   "continue_on_failure": true,
   "materialization_scope": "smoke"

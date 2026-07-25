@@ -27,10 +27,6 @@
       "type": ["string", "null"],
       "minLength": 1
     },
-    "parser_candidate_ref": {
-      "type": ["string", "null"],
-      "pattern": "^sha256:[0-9a-f]{64}$"
-    },
     "publication_profile": { "type": "string", "minLength": 1 },
     "continue_on_failure": { "type": "boolean" },
     "materialization_scope": {

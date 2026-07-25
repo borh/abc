@@ -96,19 +96,19 @@
       (is (= "0.2.0" (get config "config_schema_version")))
       (is (= "official-git" (get config "source_trust_mode")))
       (is (= record-path (get config "release_parser_identity")))))
-  (testing "the diagnostic aozora2html full-corpus config carries a null candidate ref"
+  (testing "the diagnostic aozora2html full-corpus config declares no release parser identity"
     (let [config (#'build-publication/read-config
                   "config/full-corpus-publication-basic-ja.json")]
       (is (= "0.2.0" (get config "config_schema_version")))
       (is (= "official-git" (get config "source_trust_mode")))
-      (is (nil? (get config "parser_candidate_ref")))
+      (is (nil? (get config "release_parser_identity")))
       (is (= "aozora2html" (get config "parser_profile")))))
   (testing "the fixture diagnostic config is an explicit non-release source-trust value"
     (let [config (#'build-publication/read-config
                   "config/publication-basic-ja.json")]
       (is (= "0.2.0" (get config "config_schema_version")))
       (is (= "fixture" (get config "source_trust_mode")))
-      (is (nil? (get config "parser_candidate_ref"))))))
+      (is (nil? (get config "release_parser_identity"))))))
 
 (defn- read-config-error [config-value]
   (let [path (str (fs/file (fs/create-temp-dir {:prefix "bp-config-test"})
@@ -124,7 +124,6 @@
    "config_schema_version" "0.2.0"
    "source_trust_mode" "fixture"
    "parser_profile" "aozora2html"
-   "parser_candidate_ref" nil
    "publication_profile" "tei-publication-basic-ja-v1"
    "continue_on_failure" true
    "materialization_scope" "smoke"})

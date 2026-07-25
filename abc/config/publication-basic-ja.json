@@ -3,7 +3,6 @@
   "config_schema_version": "0.2.0",
   "source_trust_mode": "fixture",
   "parser_profile": "aozora2html",
-  "parser_candidate_ref": null,
   "publication_profile": "tei-publication-basic-ja-v1",
   "continue_on_failure": true,
   "materialization_scope": "smoke"

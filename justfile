@@ -83,8 +83,8 @@ evidence-gate:
 # Nix daemon (a sandboxed runCommand builder cannot invoke it), so it is a just
 # recipe rather than a checks.<system> derivation.
 release-parser-reproducible:
-	nix build ./ab-validator#ab-aozora --rebuild --no-link --print-build-logs
-	nix build ./ab-validator#ab-aat-to-parser-ir --rebuild --no-link --print-build-logs
+	{{nix_eval}} build ./ab-validator#ab-aozora --rebuild --no-link --print-build-logs
+	{{nix_eval}} build ./ab-validator#ab-aat-to-parser-ir --rebuild --no-link --print-build-logs
 	@echo "release parser binaries rebuild reproducibly"
 
 validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance evidence-gate release-parser-reproducible

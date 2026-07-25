@@ -164,7 +164,7 @@ fi
 # ── Step 8: the real artifacts a closed candidate root must contain: parser-IR
 # and TEI content, all four per-work manifest kinds, and a live snapshot-index
 # 0.2.0.
-work_slug="000127_000879_000001_ruby_fixture"
+work_slug="000127_000879_000879_000001_ruby_fixture"
 pub_dir="$output_root/publications/$work_slug"
 
 for required in \

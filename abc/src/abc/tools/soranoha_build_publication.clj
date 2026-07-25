@@ -99,10 +99,29 @@
                :relpath (aozora-work-zip? aozora-root file)}))
        vec))
 
-(defn- slug [work-id person-id relpath]
+(defn- card-directory
+  "The contributor card directory a work ZIP lives under, e.g. \"001030\" for
+  cards/001030/files/47896_ruby_49619.zip. Aozora files one work_id under
+  several contributor cards, and `person_id` comes from primary-person metadata
+  rather than the directory, so this is the ONLY element that distinguishes
+  those copies. Fails closed rather than yielding a slug that cannot address a
+  unique source; the pattern matches `aozora-work-zip?`, which every selected
+  candidate has already satisfied."
+  [relpath]
+  (or (second (re-matches #"^cards/([0-9]{6})/files/[^/]+\.zip$" relpath))
+      (throw (ex-info "work ZIP relpath names no card directory"
+                      {:code "unslugifiable-source-relpath"
+                       :text_zip_relpath relpath}))))
+
+(defn- slug
+  "Publication identity for one source. Injective over selected sources, and a
+  function of that source's own coordinates ALONE — never of what else the
+  corpus contains, so adding or removing an unrelated source can never change
+  another work's identity."
+  [work-id person-id relpath]
   (let [basename (.getName (io/file relpath))
         stem (subs basename 0 (- (count basename) (count ".zip")))]
-    (str work-id "_" person-id "_" stem)))
+    (str work-id "_" person-id "_" (card-directory relpath) "_" stem)))
 
 (defn- candidate-slug-collisions
   "PURE. Candidate slug claims grouped by slug, keeping only slugs claimed more

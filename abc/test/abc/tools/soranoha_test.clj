@@ -360,7 +360,7 @@
                                  "--config" "abc/config/publication-basic-ja.json"
                                  "--snapshot-date" "2026-07-08"
                                  "--output-root" (str output-root)]))))))
-            slug "000001_000879_000001_ruby_fixture"
+            slug "000001_000879_000879_000001_ruby_fixture"
             work-dir (io/file output-root "materialized-root" "works" slug)
             pub-dir (io/file output-root "publications" slug)
             official-source-file (io/file work-dir "official-source.json")
@@ -560,7 +560,7 @@
                         "--config" "abc/config/publication-basic-ja.json"
                         "--snapshot-date" "2026-07-08"
                         "--output-root" (str output-root)]))))))
-      (let [slug "000001_000879_000001_ruby_fixture"
+      (let [slug "000001_000879_000879_000001_ruby_fixture"
             work-dir (io/file output-root "materialized-root" "works" slug)
             build-pub-dir (io/file output-root "publications" slug)
             build-plan (files/read-json (io/file output-root "build-plan.json"))
@@ -629,7 +629,7 @@
   (let [root (fixture/temp-dir "abc-soranoha-build-identical-rebuild")
         aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
         output-root (io/file root "build-output")
-        slug "000001_000879_000001_ruby_fixture"
+        slug "000001_000879_000879_000001_ruby_fixture"
         build! (fn [replace?]
                  (with-release-policy-allowed
                    #(binding [build-publication/*derive-parser-ir!*
@@ -683,7 +683,7 @@
         aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
         output-root (io/file root "build-output")
         second-output (io/file root "second-render")
-        slug "000001_000879_000001_ruby_fixture"]
+        slug "000001_000879_000879_000001_ruby_fixture"]
     (try
       (with-release-policy-allowed
         #(binding [build-publication/*derive-parser-ir!* stub-derive-parser-ir!]
@@ -732,7 +732,7 @@
 (deftest build-publication-parser-identity-change-rotates-artifact-id-test
   (let [root (fixture/temp-dir "abc-soranoha-build-parser-identity-rotation")
         aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
-        slug "000001_000879_000001_ruby_fixture"
+        slug "000001_000879_000879_000001_ruby_fixture"
         base-identity {"adapter_id" "aozora2html"
                        "adapter_argv_template" build-publication/parser-argv-template
                        "converter_argv_template"
@@ -887,7 +887,7 @@
                                  "--output-root" (str output-root)]))))))
         identity (fn [output-root]
                    (let [work-dir (io/file output-root "materialized-root" "works"
-                                           "000001_000879_000001_ruby_fixture")]
+                                           "000001_000879_000879_000001_ruby_fixture")]
                      (files/read-json (io/file work-dir "official-source.json"))))]
     (try
       (write-repacked-zip! work-zip {"000001.txt" "本文です。"} "repack-a")

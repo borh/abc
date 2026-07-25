@@ -30,6 +30,7 @@ flowchart LR
   portable_parser_rq_evidence_integrity["Keep Parser-RQ Evidence Portable and Self-Contained"]:::accepted
   predicate_rename_batch_1["Predicate Rename Batch 1 — `abc:reading` and `abc:copyrightExpired`"]:::accepted
   process_tree_memory_qualification["Qualify Process-Tree Cgroup Memory"]:::accepted
+  publication_slug_source_injectivity["Publication Slug Source Injectivity"]:::accepted
   release_parser_identity_approval["Release Parser Identity Approval"]:::accepted
   reserved["Reserved / Withdrawn"]:::withdrawn
   rights_assessment_and_external_statements["Rights Assessment and External Statements"]:::proposed
@@ -115,6 +116,7 @@ flowchart LR
   predicate_rename_batch_1 -->|"amends"| vocabulary_review
   predicate_rename_batch_1 -.->|"schema hash cascade"| vocabulary_review
   process_tree_memory_qualification -.->|"depends on"| parser_evaluation
+  publication_slug_source_injectivity -->|"amends — work slug derivation and source-slug injectivity"| sole_publication_release_identity
   release_parser_identity_approval -.->|"depends on"| owned_aat_parser_ir_mapping
   rights_assessment_and_external_statements -->|"amends — Boolean-to-external-rights RDF mapping"| predicate_rename_batch_1
   rights_assessment_and_external_statements -.->|"depends on"| subtractive_evidence_simplification

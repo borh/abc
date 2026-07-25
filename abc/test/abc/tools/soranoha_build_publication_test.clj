@@ -304,34 +304,56 @@
 
 ;; ── Work-slug identity ──────────────────────────────────────────────────────
 
-(deftest slug-is-not-injective-over-source-directories
-  (testing "two sources differing only by card directory collapse to one slug"
+(deftest slug-is-injective-over-source-directories
+  (testing "two sources differing only by card directory derive DISTINCT slugs"
+    ;; The contributor card directory is the ONLY element distinguishing two
+    ;; Aozora copies of one work_id, so it is part of publication identity.
+    ;; Injectivity is unconditional: a source's slug is a function of its own
+    ;; coordinates alone, never of what else the corpus contains.
     (let [slug-fn #'build-publication/slug
           a (slug-fn "047896" "000075" "cards/000075/files/47896_ruby_49619.zip")
           b (slug-fn "047896" "000075" "cards/001030/files/47896_ruby_49619.zip")]
-      ;; CHARACTERIZATION of CURRENT (defective) behavior: two sources that
-      ;; differ only by card directory claim one publication identity, so the
-      ;; second overwrites the first. `assert-candidate-slugs-unique!` makes
-      ;; that fail closed; it does not make the slug injective. Retire this
-      ;; test when governed slug resolution is implemented, replacing it with
-      ;; the injectivity invariant that resolution establishes.
-      (is (= a b))
-      (is (= "047896_000075_47896_ruby_49619" a)))))
+      (is (not= a b))
+      (is (= "047896_000075_000075_47896_ruby_49619" a))
+      (is (= "047896_000075_001030_47896_ruby_49619" b)))))
+
+(deftest slug-requires-a-card-path
+  (testing "a relpath that names no card directory fails closed"
+    (let [slug-fn #'build-publication/slug
+          thrown (try (slug-fn "047896" "000075" "support/tools.zip") nil
+                      (catch clojure.lang.ExceptionInfo e e))]
+      (is (some? thrown))
+      (is (= "unslugifiable-source-relpath" (:code (ex-data thrown)))))))
 
 (defn- candidate-stub [work-id person-id relpath]
   {:row {"作品ID" work-id "人物ID" person-id} :relpath relpath :file nil})
+
+;; The guard below is now a defence-in-depth invariant check rather than a
+;; filter that fires in normal operation. Because the slug includes the card
+;; directory, it is injective in `relpath` alone, and distinct sources have
+;; distinct relpaths — so no *distinct* pair of candidates can collide. The
+;; guard stays because it converts any future weakening of the formula into a
+;; loud failure instead of a silently overwritten publication, and because a
+;; duplicated candidate still must not produce two writes to one directory.
 
 (deftest candidate-slug-collisions-detects-duplicate-claims
   (let [collisions #'build-publication/candidate-slug-collisions]
     (testing "injective candidates yield no collisions"
       (is (= [] (collisions [(candidate-stub "1" "9" "cards/000009/files/a.zip")
                              (candidate-stub "2" "9" "cards/000009/files/b.zip")]))))
-    (testing "same work/person and same basename in two card dirs collide"
-      (is (= [{"slug" "047896_000075_47896_ruby_49619"
+    (testing "the same basename in two card dirs no longer collides"
+      ;; Regression guard for the injectivity mechanism itself: this is the
+      ;; exact shape that silently destroyed 7 publications before the card
+      ;; directory entered the slug.
+      (is (= [] (collisions
+                 [(candidate-stub "047896" "000075" "cards/001030/files/47896_ruby_49619.zip")
+                  (candidate-stub "047896" "000075" "cards/000075/files/47896_ruby_49619.zip")]))))
+    (testing "a duplicated candidate is still a duplicate slug claim"
+      (is (= [{"slug" "047896_000075_000075_47896_ruby_49619"
                "sources" [{"text_zip_relpath" "cards/000075/files/47896_ruby_49619.zip"}
-                          {"text_zip_relpath" "cards/001030/files/47896_ruby_49619.zip"}]}]
+                          {"text_zip_relpath" "cards/000075/files/47896_ruby_49619.zip"}]}]
              (collisions
-              [(candidate-stub "047896" "000075" "cards/001030/files/47896_ruby_49619.zip")
+              [(candidate-stub "047896" "000075" "cards/000075/files/47896_ruby_49619.zip")
                (candidate-stub "047896" "000075" "cards/000075/files/47896_ruby_49619.zip")]))))
     (testing "same basename under a different work id does NOT collide"
       (is (= [] (collisions
@@ -340,15 +362,19 @@
 
 (deftest assert-candidate-slugs-unique-fails-closed
   (let [assert-fn #'build-publication/assert-candidate-slugs-unique!
-        colliding [(candidate-stub "047896" "000075" "cards/000075/files/x.zip")
-                   (candidate-stub "047896" "000075" "cards/001030/files/x.zip")]
-        thrown (try (assert-fn colliding) nil
+        duplicated (repeat 2 (candidate-stub "047896" "000075"
+                                             "cards/000075/files/x.zip"))
+        thrown (try (assert-fn (vec duplicated)) nil
                     (catch clojure.lang.ExceptionInfo e e))]
     (is (some? thrown))
     (is (= "publication-slug-collision" (:code (ex-data thrown))))
     (is (= 1 (count (:collisions (ex-data thrown)))))
     (testing "an injective candidate set passes through unchanged"
       (let [ok [(candidate-stub "1" "9" "cards/000009/files/a.zip")]]
+        (is (= ok (assert-fn ok)))))
+    (testing "two card copies of one work pass through unchanged"
+      (let [ok [(candidate-stub "047896" "000075" "cards/000075/files/x.zip")
+                (candidate-stub "047896" "000075" "cards/001030/files/x.zip")]]
         (is (= ok (assert-fn ok)))))))
 
 (defn- write-zip!
@@ -383,69 +409,70 @@
                 {"000001.txt" second-card-content})
     root))
 
-(deftest colliding-selection-is-rejected-before-any-slug-write
-  (testing "two cards sharing a basename fail closed with no works/<slug> written"
-    (fs/with-temp-dir [tmp {:prefix "slug-collision-"}]
+(defn- materialize-fixture! [aozora-root output-root]
+  (let [materialize #'build-publication/materialize-selected-sources!]
+    (materialize {:aozora-root (str aozora-root)
+                  :output-root (str output-root)
+                  :snapshot-date "2026-07-25"
+                  :source-trust-mode "fixture"
+                  :aozora-git-commit nil
+                  :continue-on-failure true
+                  :concurrency 2})))
+
+(deftest two-card-copies-materialize-as-distinct-publications
+  (testing "one work_id under two cards yields TWO publications, not one"
+    ;; Before the card directory entered the slug this fixture produced a
+    ;; single works/<slug> directory: the second write silently overwrote the
+    ;; first. Both copies must now survive with distinct identities.
+    (fs/with-temp-dir [tmp {:prefix "slug-identity-"}]
       (let [aozora-root (two-card-colliding-aozora-root!
                          (fs/path tmp "aozora")
                          "000001_ruby_fixture.zip"
                          "こちらは別の本文である。\n")
             output-root (fs/path tmp "out")
-            materialize #'build-publication/materialize-selected-sources!
-            thrown (try
-                     (materialize {:aozora-root (str aozora-root)
-                                   :output-root (str output-root)
-                                   :snapshot-date "2026-07-25"
-                                   :source-trust-mode "fixture"
-                                   :aozora-git-commit nil
-                                   :continue-on-failure true
-                                   :concurrency 2})
-                     nil
-                     (catch clojure.lang.ExceptionInfo e e))]
-        (is (some? thrown) "expected ExceptionInfo for colliding candidates")
-        (is (= "publication-slug-collision" (:code (ex-data thrown))))
-        (testing "both claimants are named in the failure"
-          (let [relpaths (->> (:collisions (ex-data thrown))
-                              first
-                              (#(get % "sources"))
-                              (map #(get % "text_zip_relpath"))
-                              set)]
-            (is (= 2 (count relpaths)))
-            (is (some #(string/includes? % "cards/000879/") relpaths))
-            (is (some #(string/includes? % "cards/000880/") relpaths))))
-        (testing "NO slug-addressed directory was written"
-          ;; This is the regression guard for the placement bug: moving the
-          ;; assertion back to the `selected` binding makes this fail.
-          (is (not (fs/exists? (fs/path output-root "materialized-root" "works")))))))))
+            result (materialize-fixture! aozora-root output-root)
+            slugs (set (map :slug (:selected result)))
+            works-dir (fs/path output-root "materialized-root" "works")]
+        (is (= 2 (count (:selected result))) "both card copies are selected")
+        (is (= [] (:derive-failures result)) "neither archive fails to derive")
+        (is (= #{"000127_000879_000879_000001_ruby_fixture"
+                 "000127_000879_000880_000001_ruby_fixture"}
+               slugs)
+            "slugs differ only by card directory")
+        (testing "each slug owns its own output directory"
+          (is (= 2 (count (fs/list-dir works-dir))))
+          (doseq [work-slug slugs]
+            (is (fs/exists? (fs/path works-dir work-slug))
+                (str "missing works/" work-slug))))))))
 
-(deftest unreadable-archive-does-not-resolve-a-collision
-  (testing "continue_on_failure must not let a corrupt claimant excuse a collision"
-    (fs/with-temp-dir [tmp {:prefix "slug-collision-corrupt-"}]
+(deftest unreadable-archive-fails-only-its-own-source
+  (testing "a corrupt archive fails itself and does not affect the other copy"
+    ;; The admission rule's post-governance form: identity is claimed from the
+    ;; catalog before inspection, so a corrupt claimant neither blocks nor
+    ;; renames its healthy sibling. Under continue_on_failure it becomes one
+    ;; recorded derive failure, and exactly ONE publication is written.
+    (fs/with-temp-dir [tmp {:prefix "slug-identity-corrupt-"}]
       (let [aozora-root (two-card-colliding-aozora-root!
                          (fs/path tmp "aozora")
                          "000001_ruby_fixture.zip"
                          "irrelevant — overwritten below\n")]
-        ;; Corrupt the SECOND claimant so ZIP inspection would fail on it.
         (spit (fs/file (fs/path aozora-root "cards" "000880" "files"
                                 "000001_ruby_fixture.zip"))
               "not a zip at all")
         (let [output-root (fs/path tmp "out")
-              materialize #'build-publication/materialize-selected-sources!
-              thrown (try
-                       (materialize {:aozora-root (str aozora-root)
-                                     :output-root (str output-root)
-                                     :snapshot-date "2026-07-25"
-                                     :source-trust-mode "fixture"
-                                     :aozora-git-commit nil
-                                     :continue-on-failure true
-                                     :concurrency 2})
-                       nil
-                       (catch clojure.lang.ExceptionInfo e e))]
-          (is (some? thrown))
-          (is (= "publication-slug-collision" (:code (ex-data thrown)))
-              "must fail on identity, not on the corrupt archive")
-          (is (not (fs/exists? (fs/path output-root "materialized-root" "works")))
-              "collision must be detected before ZIP inspection"))))))
+              result (materialize-fixture! aozora-root output-root)
+              works-dir (fs/path output-root "materialized-root" "works")]
+          (is (= 1 (count (:selected result))) "only the healthy copy is selected")
+          (is (= ["000127_000879_000879_000001_ruby_fixture"]
+                 (mapv :slug (:selected result)))
+              "the healthy copy keeps its own identity, unchanged by the failure")
+          (is (= 1 (count (:derive-failures result)))
+              "the corrupt copy is recorded as a derive failure")
+          (is (= "cards/000880/files/000001_ruby_fixture.zip"
+                 (get (first (:derive-failures result)) "text_zip_relpath"))
+              "the failure names the corrupt source, not its sibling")
+          (testing "exactly one publication directory exists"
+            (is (= 1 (count (fs/list-dir works-dir))))))))))
 
 (def ^:private known-2026-07-25-collisions
   "All seven duplicate slug claims from the 2026-07-25 full-corpus run on
@@ -481,8 +508,10 @@
     :hashes ["sha256:f8ae61ea7efc561ef02c5df483389e605e1ea7a53734821687e9c14a92d964ba"
              "sha256:f8ae61ea7efc561ef02c5df483389e605e1ea7a53734821687e9c14a92d964ba"]}])
 
-(deftest all-seven-known-collisions-are-rejected
-  (let [assert-fn #'build-publication/assert-candidate-slugs-unique!]
+(deftest all-seven-known-collisions-resolve-injectively
+  (let [assert-fn #'build-publication/assert-candidate-slugs-unique!
+        slug-fn #'build-publication/slug
+        relpath (fn [card basename] (str "cards/" card "/files/" basename))]
     (testing "the table matches the observed corpus state"
       (is (= 7 (count known-2026-07-25-collisions)))
       (is (= 4 (count (filter #(= :a (:class %)) known-2026-07-25-collisions))))
@@ -492,11 +521,19 @@
             "Class B iff both work_content_hashes are equal")))
     (doseq [{:keys [work-id person-id basename cards class]} known-2026-07-25-collisions]
       (testing (str work-id " (class " (name class) ")")
-        (let [candidates (mapv (fn [card]
-                                 (candidate-stub work-id person-id
-                                                 (str "cards/" card "/files/" basename)))
+        (let [candidates (mapv #(candidate-stub work-id person-id (relpath % basename))
                                cards)
-              thrown (try (assert-fn candidates) nil
-                          (catch clojure.lang.ExceptionInfo e e))]
-          (is (some? thrown) (str "expected rejection for " work-id))
-          (is (= "publication-slug-collision" (:code (ex-data thrown)))))))))
+              slugs (mapv #(slug-fn work-id person-id (relpath % basename)) cards)]
+          (is (= 2 (count (set slugs)))
+              (str work-id ": both card copies must derive distinct slugs"))
+          (is (= candidates (assert-fn candidates))
+              (str work-id ": an injective pair must pass the guard unchanged")))))
+    (testing "all 14 coordinates across the table are globally distinct"
+      ;; Per-entry distinctness is not enough: two different table entries must
+      ;; not collide with each other either.
+      (let [all-slugs (for [{:keys [work-id person-id basename cards]}
+                            known-2026-07-25-collisions
+                            card cards]
+                        (slug-fn work-id person-id (relpath card basename)))]
+        (is (= 14 (count all-slugs)))
+        (is (= 14 (count (set all-slugs))))))))

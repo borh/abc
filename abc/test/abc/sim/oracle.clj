@@ -236,6 +236,15 @@
        (reduce into (sorted-set))
        first))
 
+(defn- relpath-card-directory
+  "Card directory from a work-zip relpath, mirroring the SUT's slug input. The
+  SUT puts this in the slug because it is the only element distinguishing two
+  card copies of one work_id — `person_id` follows catalog last-row-wins and so
+  can name neither directory. Derived from relpath, not from the projection, so
+  the oracle depends on the same value the SUT sees."
+  [relpath]
+  (second (re-matches #"^cards/([0-9]{6})/files/[^/]+\.zip$" relpath)))
+
 (defn- winning-rows
   "basename → row via catalog-index's documented last-row-wins reduction
   over the shared row projection (render/model->rows). The oracle consumes
@@ -265,7 +274,8 @@
                        :let [pid (get row "人物ID")]]
                    {:work_id wid
                     :person_id pid
-                    :slug (str wid "_" pid "_" wid "_t")
+                    :slug (str wid "_" pid "_" (relpath-card-directory relpath)
+                               "_" wid "_t")
                     :text_zip_relpath relpath
                     :archive_hash archive-hash
                     :bundle_hash bundle-hash

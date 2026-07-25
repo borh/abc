@@ -1901,4 +1901,35 @@
      :kind :structural-invariant,
      :statement
      "No Markdown ADR grammar machinery remains: the legacy parser, relations sidecar, claim-header grammar, invalid-Markdown fixtures, and migration scaffolding are absent from the working tree. Evidence boundary: `test/abc/tools/adr_governance_test.clj`.",
-     :evidence ["test/abc/tools/adr_governance_test.clj"]}]}]}
+     :evidence ["test/abc/tools/adr_governance_test.clj"]}]}
+  {:slug "publication-slug-source-injectivity",
+   :title "Publication Slug Source Injectivity",
+   :status :accepted,
+   :date "2026-07-25",
+   :accepted "2026-07-25",
+   :validation-scope :full-corpus,
+   :release-authority :publication,
+   :source
+   "`docs/superpowers/plans/2026-07-25-publication-slug-collision-integrity.md`",
+   :topics [:publication :identity],
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "sole-publication-release-identity",
+     :scope "work slug derivation and source-slug injectivity"}],
+   :claims
+   [{:id :c1,
+     :kind :structural-invariant,
+     :statement
+     "The work slug is `work_id`_`person_id`_`card_directory`_`zip_stem` and is injective over selected sources. It includes the contributor card directory because Aozora files one `work_id` under several cards while `person_id` follows catalog last-row-wins, so `person_id` can name neither directory; the directory is the only distinguishing element. A slug is a function of that one source's own coordinates alone — never of what else the corpus contains — so adding or removing an unrelated source can never change another work's identity. A relpath naming no card directory fails closed rather than yielding a non-addressing slug. Evidence boundary: `test/abc/tools/soranoha_build_publication_test.clj`.",
+     :evidence ["test/abc/tools/soranoha_build_publication_test.clj"]}
+    {:id :c2,
+     :kind :structural-invariant,
+     :statement
+     "Candidate slug uniqueness is asserted before any slug-addressed filesystem write, not after selection: `inspect-selected-work!` writes `works/<slug>/` from inside the parallel selection map, so a post-selection check would run after colliding writes had already occurred. A catalog-backed candidate claims identity before archive inspection, so an unreadable archive does not withdraw that claim and `continue_on_failure` never resolves a slug collision — publication membership therefore cannot change when archive corruption is repaired. Evidence boundary: `test/abc/tools/soranoha_build_publication_test.clj`.",
+     :evidence ["test/abc/tools/soranoha_build_publication_test.clj"]}
+    {:id :c3,
+     :kind :structural-invariant,
+     :statement
+     "Snapshot-index validation rejects any index whose `source_selection_identity_object.sources` carries duplicate slug claims. That object is the only index location retaining such evidence for both collision classes: artifact references pass through `distinct` in `sort-artifact-references`, so they retain it only when the colliding works differ in content, and byte-identical duplicates leave no trace there at all. No correct index can contain duplicate source slug claims, so nothing legitimate is newly rejected. Evidence boundary: `test/abc/tools/snapshot_index_test.clj`.",
+     :evidence ["test/abc/tools/snapshot_index_test.clj"]}]}]}

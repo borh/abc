@@ -168,8 +168,8 @@
 
 (def ^:private text-a "作品000101 本文 春")
 (def ^:private text-b "作品000102 本文 秋")
-(def ^:private slug-a "000101_000001_000101_t")
-(def ^:private slug-b "000102_000002_000102_t")
+(def ^:private slug-a "000101_000001_000001_000101_t")
+(def ^:private slug-b "000102_000002_000002_000102_t")
 
 (defn- synthetic-state []
   (-> (model/bootstrap 2)

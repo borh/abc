@@ -281,7 +281,10 @@
   ;; person_id follows last-row-wins over the shared row projection; the
   ;; work's rows sort by [wid relation pid] and 著者 (U+8457) sorts after
   ;; 翻訳者 (U+7FFB), so the 著者 row wins here — pid 000002 — while
-  ;; card-pid stays the edge-minimum 000001.
+  ;; card-pid stays the edge-minimum 000001. That divergence is why the slug
+  ;; must carry the card directory: person_id cannot identify the directory a
+  ;; copy lives under, so without it two card copies of one work collapse to
+  ;; one publication. Hence the doubled component here: pid 000002, dir 000001.
   (let [m (-> (model/bootstrap 2)
               (assoc-in [:contents "000101"] {:text "作品000101 本文 春"
                                               :images (sorted-map)})
@@ -291,7 +294,7 @@
         sel (oracle/expected-selection (render/model->rows m) sources)]
     (is (= [{:work_id "000101"
              :person_id "000002"
-             :slug "000101_000002_000101_t"
+             :slug "000101_000002_000001_000101_t"
              :text_zip_relpath "cards/000001/files/000101_t.zip"
              :archive_hash (get-in sources ["000101" :archive-hash])
              :bundle_hash (get-in sources ["000101" :bundle-hash])
@@ -331,9 +334,9 @@
         sel1 (oracle/expected-selection (render/model->rows m1) (render/content-sources m1))
         sel2 (oracle/expected-selection (render/model->rows m2) (render/content-sources m2))]
     (testing "every currently selected slug is passed — changed, untouched, and new alike"
-      (is (= {"000101_000001_000101_t" "passed"   ;; text changed
-              "000102_000002_000102_t" "passed"   ;; untouched
-              "000103_000003_000103_t" "passed"}  ;; new
+      (is (= {"000101_000001_000001_000101_t" "passed"   ;; text changed
+              "000102_000002_000002_000102_t" "passed"   ;; untouched
+              "000103_000003_000003_000103_t" "passed"}  ;; new
              (oracle/expected-statuses sel2))))
     (testing "an identical selection is still all passed — there is no reuse to predict"
       (is (every? #(= "passed" %) (vals (oracle/expected-statuses sel1)))))
@@ -342,4 +345,4 @@
             sel2' (oracle/expected-selection (render/model->rows m2')
                                              (render/content-sources m2'))]
         (is (= "passed" (get (oracle/expected-statuses sel2')
-                             "000102_000003_000102_t")))))))
+                             "000102_000003_000003_000102_t")))))))

@@ -79,7 +79,6 @@
       ;; explicitly request the recorded non-release `fixture` trust mode.
       "source_trust_mode" "fixture"
       "parser_profile" "aozora2html"
-      "parser_candidate_ref" nil
       "publication_profile" "tei-publication-basic-ja-v1"
       "continue_on_failure" continue-on-failure?
       "materialization_scope" "smoke"})

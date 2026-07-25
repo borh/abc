@@ -468,7 +468,7 @@
                        :problems []
                        :authority-hashes
                        {:decisions-file (files/example-hash "d1")
-                        :registry-file (files/example-hash "d2")
+                        :record-file (files/example-hash "d2")
                         :rights-policy-file (files/example-hash "d3")}})]
                     (with-out-str
                       (is (= 0 (soranoha/run!

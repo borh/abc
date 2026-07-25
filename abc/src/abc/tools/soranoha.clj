@@ -115,7 +115,7 @@
           :rights-policy-path publication-policy/policy-path})]
     (println "release_admissible:" admissible?)
     (println "decisions_file_hash:" (:decisions-file authority-hashes))
-    (println "registry_file_hash:" (:registry-file authority-hashes))
+    (println "record_file_hash:" (:record-file authority-hashes))
     (println "rights_policy_file_hash:" (:rights-policy-file authority-hashes))))
 
 (defn read-valid-snapshot-index

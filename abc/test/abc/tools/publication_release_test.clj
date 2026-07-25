@@ -307,7 +307,7 @@
             "a computed closure overrides an asserted admissibility claim")
         (is (seq (:problems result))
             "the fixture root's fake candidate + null manifest coords + blocked rights are recomputed")
-        (is (= #{:decisions-file :registry-file :rights-policy-file}
+        (is (= #{:decisions-file :record-file :rights-policy-file}
                (set (keys (:authority-hashes result)))))))))
 
 (deftest verify-flags-null-manifest-coordinates-on-a-real-root-test
@@ -345,7 +345,7 @@
           result (verify-completed-root root
                                         :release-parser-identity-path "no/such/record.edn")]
       (is (false? (:admissible? result)))
-      (is (nil? (get-in result [:authority-hashes :registry-file]))
+      (is (nil? (get-in result [:authority-hashes :record-file]))
           "a failed record loader reports no authority hash"))))
 
 (deftest verify-unreadable-rights-file-is-an-error-test

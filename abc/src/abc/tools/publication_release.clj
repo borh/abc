@@ -306,5 +306,5 @@
      :problems problems
      :authority-hashes
      {:decisions-file (get-in parser-authority [:authority-hashes :decisions-file])
-      :registry-file (get-in parser-authority [:authority-hashes :record-file])
+      :record-file (get-in parser-authority [:authority-hashes :record-file])
       :rights-policy-file (:content-hash rights-envelope)}}))

@@ -1836,7 +1836,6 @@
             "--package"
             "ab-aat-to-parser-ir"
           ];
-          extra.preBuild = stageParserRqAbcAuthorities;
         };
 
         # The morphological-analysis engine (`ab-morph-run analyze-aat`). Built
@@ -1903,7 +1902,6 @@
           env = {
             AB_AOZORA_GIT_REV = "unknown";
           };
-          extra.preBuild = stageParserRqAbcAuthorities;
         };
 
         abAatToParserIrCheck = mkSmokeCheck {

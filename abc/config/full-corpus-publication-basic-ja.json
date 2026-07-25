@@ -3,7 +3,6 @@
   "config_schema_version": "0.2.0",
   "source_trust_mode": "official-git",
   "parser_profile": "aozora2html",
-  "parser_candidate_ref": null,
   "publication_profile": "tei-profile-v0",
   "continue_on_failure": true,
   "materialization_scope": "full-corpus"

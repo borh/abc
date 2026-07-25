@@ -346,3 +346,58 @@
       (files/write-text! (io/file root "publications" "publications-report.json")
                          "{\"report\":true}")
       (is (empty? (snapshot-index/closure-problems root index))))))
+
+;; ── Source-slug injectivity ─────────────────────────────────────────────────
+
+(deftest source-slug-collisions-detects-duplicate-claims
+  (let [collisions #'snapshot-index/source-slug-collisions]
+    (testing "injective sources yield no collisions"
+      (is (= [] (collisions {"sources" [{"slug" "a" "text_zip_relpath" "cards/1/files/a.zip"}
+                                        {"slug" "b" "text_zip_relpath" "cards/2/files/b.zip"}]}))))
+    (testing "Class B (identical content) duplicate slug claims are detected"
+      (is (= [{"slug" "062694_002402_62694_ruby_78206"
+               "sources" [{"text_zip_relpath" "cards/001085/files/62694_ruby_78206.zip"}
+                          {"text_zip_relpath" "cards/002385/files/62694_ruby_78206.zip"}]}]
+             (collisions
+              {"sources" [{"slug" "062694_002402_62694_ruby_78206"
+                           "text_zip_relpath" "cards/002385/files/62694_ruby_78206.zip"}
+                          {"slug" "062694_002402_62694_ruby_78206"
+                           "text_zip_relpath" "cards/001085/files/62694_ruby_78206.zip"}]}))))
+    (testing "absent sources is not an error here"
+      (is (= [] (collisions {}))))))
+
+(deftest validate-snapshot-index-rejects-duplicate-source-slugs
+  (testing "a schema-valid, self-consistent index with duplicate slugs is rejected"
+    (let [collision-slug "062694_002402_62694_ruby_78206"
+          source-row (first (get source-selection "sources"))
+          colliding-selection
+          (assoc source-selection
+                 "sources"
+                 [(assoc source-row
+                         "slug" collision-slug
+                         "text_zip_relpath"
+                         "cards/001085/files/62694_ruby_78206.zip")
+                  (assoc source-row
+                         "slug" collision-slug
+                         "text_zip_relpath"
+                         "cards/002385/files/62694_ruby_78206.zip")])
+          index (snapshot-index/build-snapshot-index
+                 (build-args :source-selection colliding-selection))
+          schema-json (files/read-json "schemas/snapshot-index.schema.json")
+          thrown (try
+                   (snapshot-index/validate-snapshot-index! index)
+                   nil
+                   (catch clojure.lang.ExceptionInfo e e))]
+      (is (nil? (schema/validation-errors schema-json index))
+          "fixture must be schema-valid, or the test proves nothing")
+      (is (some? thrown) "expected validate-snapshot-index! to reject the index")
+      (is (= "snapshot-source-slug-collision" (:code (ex-data thrown))))
+      (testing "both claimants are named"
+        (let [relpaths (->> (:collisions (ex-data thrown))
+                            first
+                            (#(get % "sources"))
+                            (map #(get % "text_zip_relpath"))
+                            set)]
+          (is (= #{"cards/001085/files/62694_ruby_78206.zip"
+                   "cards/002385/files/62694_ruby_78206.zip"}
+                 relpaths)))))))

@@ -63,6 +63,24 @@
                  (sort-by source-sort-key)
                  vec))))
 
+(defn- source-slug-collisions
+  "PURE. Duplicate slug claims within the index's source-selection object. The
+  slug names the single output directory `publications/<slug>/`, so two claimants
+  mean one publication was overwritten. This object is the only index location
+  that RELIABLY retains that evidence for both collision classes: artifact
+  references pass through `distinct` in `sort-artifact-references`, so they
+  retain evidence only when the colliding works differ in content."
+  [source-selection]
+  (->> (get source-selection "sources" [])
+       (group-by #(get % "slug"))
+       (filter (fn [[_ claims]] (< 1 (count claims))))
+       (sort-by key)
+       (mapv (fn [[work-slug claims]]
+               {"slug" work-slug
+                "sources" (mapv (fn [claim]
+                                  {"text_zip_relpath" (get claim "text_zip_relpath")})
+                                (sort-by #(get % "text_zip_relpath") claims))}))))
+
 (defn source-selection-hash [source-selection]
   (hash-json-value (canonical-source-selection source-selection)))
 
@@ -239,6 +257,15 @@
                    (source-selection-hash
                     (get snapshot-index "source_selection_identity_object"))
                    (get identity-object "source_selection_hash"))
+    ;; A tampered index fails on its hash above first; this rejects an index
+    ;; that is internally consistent but describes a corpus in which two
+    ;; sources claimed one publication directory.
+    (let [source-collisions (source-slug-collisions
+                             (get snapshot-index "source_selection_identity_object"))]
+      (when (seq source-collisions)
+        (throw (ex-info "snapshot index source selection claims duplicate slugs"
+                        {:code "snapshot-source-slug-collision"
+                         :collisions source-collisions}))))
     (compare-hash! "parser_config_hash"
                    (parser-config-hash
                     (get snapshot-index "parser_runtime_identity_object"))

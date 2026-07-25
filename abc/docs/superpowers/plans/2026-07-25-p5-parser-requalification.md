@@ -80,22 +80,34 @@ So the release stops routing through the campaign. The legitimate invariant it e
 The new decision's binding (in `decisions.edn`):
 
 ```clojure
-{:slug "release-parser-identity-approval"
- :status :accepted
- :accepted "2026-07-25"
+;; SCHEMA-VALID against decisions.clj ::record (which is {:closed true}), so Task 4
+;; MUST first extend that schema with an optional :release-parser-identity field
+;; (see Task 4 Step 3a). Required keys: :date :slug :title :status :topics :relations
+;; :claims; :accepted+:validation-scope+:release-authority required because :accepted.
+{:date "2026-07-25"
+ :slug "release-parser-identity-approval"
  :release-authority :publication
- :title "Release Parser Identity Approval"
+ :validation-scope :structural
+ :relations [{:class :lifecycle :type :depends-on :to "owned-aat-parser-ir-mapping"}]
+ ;; ^ a GENUINE ownership dep (the record binds mapping_hash). NOT custom-parser-release-qualification —
+ ;;   a lifecycle dep on the campaign would re-couple publication authority to research (review Blocker 1).
  :release-parser-identity {:record_path "data/release-parser-identity-v1.edn"
                            :schema_version "1.0.0"
-                           :candidate_ref "sha256:<record candidate_ref>"}
- ;; NO {:class :lifecycle :type :depends-on :to "custom-parser-release-qualification"} —
- ;; a lifecycle dep would re-couple publication authority to the research campaign.
- ;; Only genuine ownership deps (mapping/schema decisions) belong here, if truly required.
- :relations [ ...genuine ownership deps only, NOT the campaign... ]
- :claims [ ... c1: publication authority binds exactly this record's candidate_ref;
-               c2: the parser-rq campaign informed selection but grants NO release authority (research/justification only);
-               c3: replacement requires a new record + updated candidate_ref binding (approval boundary);
-               each :evidence a real test file ... ]}
+                           :candidate_ref "sha256:<record candidate_ref from Task 3>"}
+ :claims
+ [{:id :c1 :kind :structural-invariant
+   :statement "Publication parser-release authority binds exactly the release-parser-identity record whose candidate_ref is named here; parser-release-authority/authenticate rejects any record whose recomputed candidate_ref does not equal this bound value. Evidence: `test/abc/tools/parser_release_authority_test.clj`."
+   :evidence ["test/abc/tools/parser_release_authority_test.clj"]}
+  {:id :c2 :kind :structural-invariant
+   :statement "The parser-rq research campaign informed parser selection but grants no publication release authority: authenticate no longer requires or reads the campaign. Evidence: `test/abc/tools/parser_release_authority_test.clj`."
+   :evidence ["test/abc/tools/parser_release_authority_test.clj"]}
+  {:id :c3 :kind :operational-behavior
+   :statement "Changing the released parser requires a new record and an updated candidate_ref binding in this decision; integrity plus binding is enforced at release verification. Evidence: `test/abc/tools/publication_release_test.clj`."
+   :evidence ["test/abc/tools/publication_release_test.clj"]}]
+ :accepted "2026-07-25"
+ :title "Release Parser Identity Approval"
+ :topics [:parser :release :identity]
+ :status :accepted}
 ```
 
 `mapping_hash`/`parser_ir_schema_hash` are the *current committed* values (mapping unchanged); verify them, don't invent. The two executable sha256 are the only genuinely-new values, established in Task 3 after D1+D2 land — the record is committed with **real** hashes, never a `PENDING` placeholder (Blocker 5).
@@ -338,6 +350,7 @@ This is one coherent trust-boundary transition: the binding decision, the rewrit
 
 **Files:**
 - Modify: `abc/docs/adr/decisions.edn` — (a) add the Accepted `release-parser-identity-approval` decision binding `{:record_path :schema_version :candidate_ref}` (values from Task 3's record), with **no** lifecycle dep on the campaign; **and** (b) repoint `sole-publication-release-identity`'s `:depends-on` relation + c4 claim from `custom-parser-release-qualification` to `release-parser-identity-approval` — this governance repoint lands in the **same atomic commit** as the runtime flip (review Finding 5: after this commit, both the code and the decision graph name the new authority; Task 5 no longer touches the dependency graph)
+- Modify: `abc/src/abc/tools/decisions.clj` — extend the `{:closed true}` `::record` malli schema with an OPTIONAL `:release-parser-identity` field (else `adr-governance` rejects the new decision's binding key). This is the typed EDN boundary the CI check + authenticate read (review Strong 4: parse EDN as EDN)
 - Modify: `abc/src/abc/tools/parser_release_authority.clj` — rewrite `authenticate`; add private `load-shape-valid-record!`; drop `[abc.tools.parser-rq-campaign]`; `release-qualification-slug` → `"release-parser-identity-approval"`
 - Modify: `abc/src/abc/tools/publication_release.clj` — `authenticate-parser-authority` (`:251-276`) passes `{:release_parser_identity_path … :decisions_path …}`; no campaign provenance path
 - Modify: `abc/src/abc/tools/soranoha_build_publication.clj` — `runtime-authenticate-options` (`:248-260`) / `release-authority-sources` (`:1107-1112`) supply the record path; drop `:provenance_path`/`:runs_root`/`:candidate_ref`/`:measurements_path`/`:report_path`
@@ -378,9 +391,23 @@ Delete `authenticates-the-committed-p5-candidate-test` and the `promotion-verifi
 Run: `cd abc && bin/kaocha --focus abc.tools.parser-release-authority-test`
 Expected: FAIL (record/binding path not implemented).
 
-- [ ] **Step 3: Add the binding decision + repoint `sole-publication-release-identity` (atomic governance move)**
+- [ ] **Step 3a: Extend the decision schema to allow the binding field**
 
-In `decisions.edn`: (a) add the `release-parser-identity-approval` Accepted decision (D3 shape) with `:release-parser-identity` bound to `{:record_path "data/release-parser-identity-v1.edn" :schema_version "1.0.0" :candidate_ref <Task-3 candidate_ref>}` — no lifecycle dep on the campaign; claims c1–c3 as in D3, each `:evidence` citing a real test file (`test/abc/tools/parser_release_authority_test.clj`, `test/abc/tools/publication_release_test.clj`) that this task updates to assert the binding. (b) In the **same edit**, repoint `sole-publication-release-identity`'s `:depends-on` relation + c4 claim text from `custom-parser-release-qualification` to `release-parser-identity-approval`, so the dependency graph and the runtime flip transition together. Validate governance after Step 6: `cd abc && bin/kaocha --focus abc.tools.decisions-test` and `nix build ./abc#checks.x86_64-linux.adr-governance --print-build-logs` + `nix build .#checks.x86_64-linux.monorepo-adr-governance --print-build-logs`.
+`decisions.clj`'s `::record` is `[:map {:closed true} …]`, so an unknown `:release-parser-identity` key is REJECTED. Add it as an optional, closed sub-map (place it among the other optional record keys, near `:source`, before `:topics`):
+
+```clojure
+[:release-parser-identity {:optional true}
+ [:map {:closed true}
+  [:record_path ::am/nonblank-string]
+  [:schema_version ::am/nonblank-string]
+  [:candidate_ref [:re {:error/message "must be a sha256:… ref"} #"^sha256:[0-9a-f]{64}$"]]]]
+```
+
+(`::am/nonblank-string` is already imported as `am`. Confirm the `:re` form matches the codebase's other sha256 patterns — reuse `hash/hash-pattern` if that's the house style.) Add/extend a `decisions-test` case asserting a decision with a well-formed `:release-parser-identity` validates and a malformed one (bad `candidate_ref`, extra key) is rejected.
+
+- [ ] **Step 3b: Add the binding decision + repoint `sole-publication-release-identity` (atomic governance move)**
+
+In `decisions.edn`: (a) add the `release-parser-identity-approval` Accepted decision — use the COMPLETE schema-valid D3 block above (with `:date`, `:topics [:parser :release :identity]`, `:validation-scope :structural`, `:relations` = the single genuine `owned-aat-parser-ir-mapping` ownership dep, claims c1–c3 each with `:kind`+`:evidence`) and `:release-parser-identity` bound to `{:record_path "data/release-parser-identity-v1.edn" :schema_version "1.0.0" :candidate_ref <Task-3 candidate_ref>}` — NO lifecycle dep on the campaign. (b) In the **same edit**, repoint `sole-publication-release-identity`'s `:depends-on` relation (`decisions.edn:1654-1656`, `:to "custom-parser-release-qualification"` → `"release-parser-identity-approval"`) and rewrite its c4 claim text (`:1683-1687`) so it references `release-parser-identity-approval` and the integrity+binding model instead of the campaign's `:validation-scope`. Validate governance after Step 6: `cd abc && bin/kaocha --focus abc.tools.decisions-test` and `nix build ./abc#checks.x86_64-linux.adr-governance --print-build-logs` + `nix build .#checks.x86_64-linux.monorepo-adr-governance --print-build-logs`.
 
 - [ ] **Step 4: Rewrite `authenticate`**
 

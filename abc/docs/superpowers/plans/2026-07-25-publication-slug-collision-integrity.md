@@ -681,8 +681,8 @@ Under mechanism **1b** the slug function alone may remain non-injective; in that
   - `all-seven-known-collisions-are-rejected` → cannot survive under *any* final policy, because Step 5 also requires 17,602 successful publications; a mechanism that still rejects these seven cannot produce that count. Rename to `all-seven-known-collisions-resolve-injectively` and assert that each entry's two coordinates derive **distinct** slugs (and, across the whole table, that all 14 slugs are distinct). Keep the table's hashes and class-count assertions as provenance.
 
   "Keep it if the mechanism still rejects" was wrong: rejection and the full-corpus success criterion are mutually exclusive.
-- [ ] **Step 5: Re-run the full-corpus build** and require: 17,602 output directories, zero `closure-*` problems, `release-rights-blocked` as the sole release problem.
-- [ ] **Step 6: Commit**, and update `abc/docs/superpowers/reports/2026-07-24-publication-surface-disposition.md` with the closeout.
+- [x] **Step 5: Re-run the full-corpus build** and require: 17,602 output directories, zero `closure-*` problems, `release-rights-blocked` as the sole release problem.
+- [x] **Step 6: Commit**, and update `abc/docs/superpowers/reports/2026-07-24-publication-surface-disposition.md` with the closeout.
 
 ---
 

@@ -571,3 +571,63 @@ qualification` is marked historical research evidence (dated note,
 `release-parser-identity-approval` decision for the current release-authority
 chain. This closes the item; `checks.<system>.publication-build-real-wiring`
 is green in CI for the reason recorded above.
+
+### 2026-07-25 closeout — work-slug non-injectivity: 7 destroyed publications recovered
+
+The first full-corpus run against this surface exposed a defect that no
+fixture-scale check could see. The work slug — publication identity, naming the
+one `works/<slug>/` and `publications/<slug>/` a source materializes into — was
+derived from `(work_id, person_id, zip basename)`, discarding the contributor
+card directory. Aozora files one `work_id` under several cards, and `person_id`
+follows catalog last-row-wins so it names none of them, leaving the directory as
+the only distinguishing element. Seven of 17,602 selected sources therefore
+claimed the same slug as a sibling, and the second materialization silently
+overwrote the first: **17,602 selected, 17,595 directories, 7 publications
+destroyed with no error.**
+
+Only four of the seven were detectable downstream, and the reason determined
+where the new check belongs. Both writes appended artifact references, but
+`sort-artifact-references` applies `distinct` before the index is stored, so the
+three byte-identical pairs collapsed before any verifier could observe them —
+**no diagnostic of any kind.** The four content-differing pairs surfaced as 36
+closure problems. The arithmetic confirmed the mechanism exactly: 17,595 × 4 =
+70,380 expected references against 70,396 held, a difference of 16 = 4 × 4.
+
+Resolved by three changes, recorded as Accepted decision
+`publication-slug-source-injectivity` (amends `sole-publication-release-identity`,
+scope: work slug derivation and source-slug injectivity):
+
+1. The slug carries the card directory, unconditionally. A discriminator applied
+   only on collision would make identity a function of the whole selected set,
+   so an unrelated source entering the corpus could rename a publication.
+2. Candidate slug uniqueness is asserted **before any slug-addressed write** —
+   `inspect-selected-work!` writes `works/<slug>/` from inside the parallel
+   selection map, so a post-selection check would run after the colliding writes.
+3. Snapshot-index validation rejects duplicate slug claims in
+   `source_selection_identity_object.sources`, the only index location retaining
+   that evidence for both collision classes.
+
+Admission rule: a catalog-backed candidate claims identity before archive
+inspection, so `continue_on_failure` never resolves a slug collision and
+publication membership cannot change when corruption is later repaired.
+
+Verified by a full-corpus run on aozorabunko
+`0e9ea3e586eb0aa34039fabfc85a407d2f98b165` (official-git, clean in the gate's
+`cards index_pages` scope):
+
+| Criterion | Before | After |
+|---|---|---|
+| `works/` directories | 17,595 | **17,602** |
+| `publication_count` / `passed` / `failed` | 17,602 / 17,602 / 0 | 17,602 / 17,602 / 0 |
+| counted-vs-on-disk gap | 7 | **0** |
+| `closure-*` problems | 36 | **0** |
+| release problems | 37 | **1 — `release-rights-blocked`** |
+
+All fourteen directories for the seven pairs exist, and the A/B split was
+re-confirmed independently against `bundle_hash`: four pairs differ (the content
+that had been destroyed), three are identical. `release_admissible` remains
+`false` and the command still exits non-zero, on `release-rights-blocked` alone —
+rights assessment is now the single remaining release gate for this surface.
+
+This also closes the "17,602 counted but 17,595 on disk" gap recorded above; it
+was the same defect, not a separate accounting error.

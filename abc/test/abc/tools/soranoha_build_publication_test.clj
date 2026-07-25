@@ -298,3 +298,16 @@
       (is (= "fixture" (get provenance "source_trust_mode")))
       (is (nil? (get provenance "aozora_git_commit")))
       (is (false? (get provenance "release_source"))))))
+
+;; ── Work-slug identity ──────────────────────────────────────────────────────
+
+(deftest slug-is-not-injective-over-source-directories
+  (testing "two sources differing only by card directory collapse to one slug"
+    (let [slug-fn #'build-publication/slug
+          a (slug-fn "047896" "000075" "cards/000075/files/47896_ruby_49619.zip")
+          b (slug-fn "047896" "000075" "cards/001030/files/47896_ruby_49619.zip")]
+      ;; CHARACTERIZATION of CURRENT (defective) behavior. Retired by Task 5
+      ;; Step 1 of docs/superpowers/plans/2026-07-25-publication-slug-collision-integrity.md,
+      ;; which replaces it with the governed identity invariant.
+      (is (= a b))
+      (is (= "047896_000075_47896_ruby_49619" a)))))

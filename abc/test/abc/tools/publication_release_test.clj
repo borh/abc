@@ -35,7 +35,7 @@
    :executable-provenance {:executables [{:name "ab-aozora" :sha256 (h "f1")}
                                          {:name "ab-aat-to-parser-ir"
                                           :sha256 (h "f2")}]}
-   :authority-hashes {:decisions-file (h "d1") :registry-file (h "d2")}})
+   :authority-hashes {:decisions-file (h "d1") :record-file (h "d2")}})
 
 (def allowed-rights {:rights-publication :assessment-required})
 
@@ -286,10 +286,7 @@
 ;; ── Layer 2: verify-release-root! (impure) ──────────────────────────────────
 
 (def repo-authority-sources
-  {:runs-root "docs/reports/parser-rq/runs"
-   :registry-path "data/aat-parser-ir-compatibility.edn"
-   :measurements-path "docs/reports/parser-release-qualification-measurements.edn"
-   :qualification-report-path "docs/reports/parser-release-qualification-report.json"
+  {:release-parser-identity-path "data/release-parser-identity-v1.edn"
    :decisions-path "docs/adr/decisions.edn"})
 
 (defn- verify-completed-root [root & {:as source-overrides}]
@@ -342,12 +339,14 @@
       (is (some #(= "release-parser-authority-unauthenticated" (:code %))
                 (:problems result))))))
 
-(deftest verify-unreadable-registry-file-reports-no-authority-hash-test
+(deftest verify-unreadable-record-file-reports-no-authority-hash-test
   (with-temp-dir [dir]
     (let [{:keys [root]} (six/build-completed-root! (io/file dir "root"))
-          result (verify-completed-root root :registry-path "no/such/registry.edn")]
+          result (verify-completed-root root
+                                        :release-parser-identity-path "no/such/record.edn")]
       (is (false? (:admissible? result)))
-      (is (nil? (get-in result [:authority-hashes :registry-file]))))))
+      (is (nil? (get-in result [:authority-hashes :registry-file]))
+          "a failed record loader reports no authority hash"))))
 
 (deftest verify-unreadable-rights-file-is-an-error-test
   (with-temp-dir [dir]

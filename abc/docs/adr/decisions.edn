@@ -1647,13 +1647,47 @@
    :topics [:parser :release],
    :status :accepted,
    :validation-scope :smoke-corpus}
+  {:date "2026-07-25",
+   :slug "release-parser-identity-approval",
+   :release-authority :publication,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "owned-aat-parser-ir-mapping"}],
+   :claims
+   [{:id :c1,
+     :statement
+     "Release parser identity is a content-addressed governed record whose two\ncontent refs recompute from its own bytes: the qualification-identity ref and\nthe candidate ref are both re-derived through\n`format-sha256(sha256-json-jcs(canonical-value x))`, and a tampered ref is\nrejected. Evidence: `test/abc/tools/parser_release_authority_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_release_authority_test.clj"]}
+    {:id :c2,
+     :statement
+     "Integrity alone does not authenticate: a self-consistent record whose\ncandidate_ref this decision does not bind is rejected, and only this Accepted\n`:release-authority :publication` decision, binding the exact candidate_ref,\nschema_version, and record path, grants release authority. Evidence:\n`test/abc/tools/parser_release_authority_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/parser_release_authority_test.clj"]}
+    {:id :c3,
+     :statement
+     "The binding is a closed, typed EDN field on the decision record\n(`:release-parser-identity` with `:record_path`, `:schema_version`, and a\nsha256-shaped `:candidate_ref`); a malformed candidate_ref or an extra key is\nrejected by the shape schema. Evidence: `test/abc/tools/decisions_test.clj`.",
+     :kind :structural-invariant,
+     :evidence ["test/abc/tools/decisions_test.clj"]}],
+   :accepted "2026-07-25",
+   :source
+   "`docs/superpowers/plans/2026-07-24-sole-publication-producer.md`",
+   :title "Release Parser Identity Approval",
+   :topics [:parser :release :identity],
+   :status :accepted,
+   :validation-scope :structural,
+   :release-parser-identity
+   {:record_path "data/release-parser-identity-v1.edn",
+    :schema_version "1.0.0",
+    :candidate_ref "sha256:3bca1db2c3b5bc3bce41b451942d513f327e4b6190d21a5728cf8a6bdb644757"}}
   {:date "2026-07-24",
    :slug "sole-publication-release-identity",
    :release-authority :publication,
    :relations
    [{:class :lifecycle,
      :type :depends-on,
-     :to "custom-parser-release-qualification"}
+     :to "release-parser-identity-approval"}
     {:class :lifecycle,
      :type :depends-on,
      :to "source-bundle-identity"}
@@ -1682,7 +1716,7 @@
       "test/abc/tools/soranoha_test.clj"]}
     {:id :c4,
      :statement
-     "The release depends on the exact Accepted\n`custom-parser-release-qualification` decision and its\n`:release-authority :publication`: parser release authority authenticates the\ncandidate against that governed record, and `:validation-scope` is never\nreinterpreted as an ordered runtime scope hierarchy, as asserted by\n`test/abc/tools/publication_release_test.clj`.",
+     "The release depends on the exact Accepted\n`release-parser-identity-approval` decision and its\n`:release-authority :publication`: parser release authority authenticates the\ndecision-bound, content-addressed release-parser-identity record — both content\nrefs must recompute AND the decision must bind that exact candidate_ref — as\nasserted by `test/abc/tools/publication_release_test.clj`.",
      :kind :structural-invariant,
      :evidence ["test/abc/tools/publication_release_test.clj"]}
     {:id :c5,

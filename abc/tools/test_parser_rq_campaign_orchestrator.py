@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import hashlib
+import inspect
 import json
 import os
 import re
@@ -49,11 +50,18 @@ def write_json(path: Path, value: object) -> Path:
     return path
 
 
+# The corpus_root the governed corpus artifact declares
+# (abc/data/parser-release-qualification-corpus.edn). Capture used to restate
+# this literal instead of reading it.
+GOVERNED_CORPUS_ROOT = "ab-validator/crates/ab-index/tests/fixtures/corpus"
+
+
 def fixture(tmp_path: Path) -> Any:
     candidate_tree = tmp_path / "candidate-tree"
     evidence_tree = tmp_path / "evidence-tree"
     (candidate_tree / "abc/data").mkdir(parents=True)
     (candidate_tree / "abc/tools").mkdir(parents=True)
+    (candidate_tree / GOVERNED_CORPUS_ROOT).mkdir(parents=True)
     graph: dict[str, Any] = {
         "schema_version": "abc/parser-rq-production-graph/v1",
         "members": [
@@ -284,7 +292,9 @@ def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
     paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
     lock = orchestrator.LockCapability(fd=9, device=10, inode=11)
     commands = {
-        operation: orchestrator.operation_argv(operation, campaign, paths, lock)
+        operation: orchestrator.operation_argv(
+            operation, campaign, paths, lock, campaign.config.candidate_tree / GOVERNED_CORPUS_ROOT
+        )
         for operation in campaign.operations
     }
     assert commands["capture-core"][0] == sys.executable
@@ -308,7 +318,9 @@ def test_operation_argv_is_exhaustive_and_uses_only_authenticated_coordinates(
     assert commands["capture-publication"][0] == sys.executable
     assert commands["capture-resource"][0] == sys.executable
     with pytest.raises(orchestrator.ProtocolError):
-        orchestrator.operation_argv("unknown", campaign, paths, lock)
+        orchestrator.operation_argv(
+            "unknown", campaign, paths, lock, campaign.config.candidate_tree / GOVERNED_CORPUS_ROOT
+        )
 
 
 def real_campaign_config(tmp_path: Path, repository_root: Path, candidate_root: Path) -> Any:
@@ -563,7 +575,9 @@ def test_real_candidate_core_argv_uses_authenticated_adapter(tmp_path: Path) -> 
     paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
     lock = orchestrator.LockCapability(fd=9, device=10, inode=11)
 
-    argv = orchestrator.operation_argv("capture-core", campaign, paths, lock)
+    argv = orchestrator.operation_argv(
+        "capture-core", campaign, paths, lock, campaign.config.candidate_tree / GOVERNED_CORPUS_ROOT
+    )
 
     adapter_index = argv.index("--adapter") + 1
     assert Path(argv[adapter_index]) == campaign.executables["ab-aozora"]
@@ -666,6 +680,7 @@ def test_publication_capture_input_rehashes_the_closed_artifact_set(tmp_path: Pa
             "candidate": {"qualification_identity": {"parser_git_rev": "a" * 40}},
             "corpus": {
                 "corpus_id": "fixture",
+                "corpus_root": GOVERNED_CORPUS_ROOT,
                 "corpus_snapshot_hash": "sha256:" + "1" * 64,
                 "list_hash": "sha256:" + "2" * 64,
                 "entries": [{"work_id": "w1", "source_sha256": "sha256:" + "3" * 64}],
@@ -768,7 +783,7 @@ class FakeRunner:
                             "corpus_snapshot_hash": "sha256:" + "1" * 64,
                         }
                     },
-                    "corpus": {"corpus_root": "ab-validator/corpus", "entries": []},
+                    "corpus": {"corpus_root": GOVERNED_CORPUS_ROOT, "entries": []},
                     "source_accountability_corpus": [],
                 },
             )
@@ -874,7 +889,7 @@ def test_execute_operation_passes_lock_fd_only_to_core(tmp_path: Path) -> None:
                     "parser_git_rev": "a" * 40,
                 }
             },
-            "corpus": {"entries": []},
+            "corpus": {"corpus_root": GOVERNED_CORPUS_ROOT, "entries": []},
         },
     )
 
@@ -951,3 +966,54 @@ def test_execute_graph_keeps_one_lock_through_closed_composition(tmp_path: Path)
         __import__("os").fstat(inherited[0][0])
     assert len(set(runner.cwds)) == 1
     assert runner.cwds[0].name == "detached-cwd"
+
+
+def test_resolve_corpus_root_reproduces_the_retired_hardcoded_path(tmp_path: Path) -> None:
+    """CHARACTERIZATION: for the governed corpus_root, the resolver yields exactly
+    the path the two retired hardcodes produced, so unifying them changed nothing
+    about which bytes capture reads."""
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    candidate_tree = campaign.config.candidate_tree
+    # The two retired expressions, spelled as they were in each capture path.
+    retired_core = candidate_tree / "ab-validator" / "crates/ab-index/tests/fixtures/corpus"
+    retired_resource = candidate_tree / "ab-validator/crates/ab-index/tests/fixtures/corpus"
+
+    resolved = orchestrator.resolve_corpus_root(candidate_tree, GOVERNED_CORPUS_ROOT)
+
+    assert resolved == retired_core.resolve(strict=True)
+    assert resolved == retired_resource.resolve(strict=True)
+
+
+def test_resolve_corpus_root_fails_closed_on_escaping_or_absent_roots(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    tree = campaign.config.candidate_tree
+    for bad in (None, "", 7, "/etc", "../outside", "ab-validator/does-not-exist"):
+        with pytest.raises(orchestrator.ProtocolError):
+            orchestrator.resolve_corpus_root(tree, bad)
+
+
+def test_resolve_corpus_root_rejects_a_file(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    tree = campaign.config.candidate_tree
+    (tree / "ab-validator/not-a-dir").write_text("x")
+    with pytest.raises(orchestrator.ProtocolError):
+        orchestrator.resolve_corpus_root(tree, "ab-validator/not-a-dir")
+
+
+def test_core_and_resource_capture_read_one_corpus_root(tmp_path: Path) -> None:
+    """Both consumers must receive the SAME resolved root. Fixing only one capture
+    path would leave the other reading the old location."""
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    paths = orchestrator.RuntimePaths.below(campaign.config.staging_root)
+    lock = orchestrator.LockCapability(fd=9, device=10, inode=11)
+    resolved = orchestrator.resolve_corpus_root(
+        campaign.config.candidate_tree, GOVERNED_CORPUS_ROOT
+    )
+
+    argv = orchestrator.operation_argv("capture-core", campaign, paths, lock, resolved)
+
+    assert argv[argv.index("--corpus-root") + 1] == str(resolved)
+    # _prepare_resource passes the same value through to ab-check's --corpus.
+    source = inspect.getsource(orchestrator._prepare_resource)
+    assert "fixtures/corpus" not in source, "resource capture still restates the corpus path"
+    assert "str(corpus_root)" in source

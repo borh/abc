@@ -34,6 +34,11 @@ EXPECTED_GRAPH = (
     ("resource", "capture-resource"),
 )
 
+# The only operations that read corpus BYTES, and so the only ones needing a
+# resolved corpus root. Every other operation works from the runtime corpus
+# object alone, so it must not acquire a dependency on one.
+CORPUS_BYTE_CONSUMERS = ("capture-core", "capture-resource")
+
 EXPECTED_INSTALLED_MEMBERS = (
     "core_attempt",
     "source_recognition",
@@ -332,16 +337,55 @@ def _driver(campaign: AuthenticatedCampaign, relative: str) -> str:
     return str(campaign.drivers[relative])
 
 
+def resolve_corpus_root(candidate_tree: Path, corpus_root: object) -> Path:
+    """Physical corpus root for every capture that reads corpus bytes.
+
+    The governed corpus artifact declares `corpus_root` as a repository-relative
+    path; this resolves it below the authenticated candidate tree. It exists so
+    that knowledge lives in exactly one place: previously the literal
+    `ab-validator/crates/ab-index/tests/fixtures/corpus` was restated in two
+    capture paths, spelled two different ways, and neither read the governed
+    value — so the three could silently disagree.
+    """
+    if not isinstance(corpus_root, str) or not corpus_root:
+        raise ProtocolError("governed corpus root is malformed")
+    relative = Path(corpus_root)
+    if relative.is_absolute() or ".." in relative.parts:
+        raise ProtocolError("governed corpus root escapes the candidate tree")
+    try:
+        tree = candidate_tree.resolve(strict=True)
+        resolved = (tree / relative).resolve(strict=True)
+    except OSError as error:
+        raise ProtocolError("governed corpus root is unavailable") from error
+    if not resolved.is_relative_to(tree):
+        raise ProtocolError("governed corpus root escapes the candidate tree")
+    if not resolved.is_dir():
+        raise ProtocolError("governed corpus root is not a directory")
+    return resolved
+
+
+def _runtime_corpus_root(campaign: AuthenticatedCampaign, paths: RuntimePaths) -> Path:
+    runtime = _read_object(paths.runtime, "runtime inputs")
+    corpus = runtime.get("corpus")
+    return resolve_corpus_root(
+        campaign.config.candidate_tree,
+        corpus.get("corpus_root") if isinstance(corpus, dict) else None,
+    )
+
+
 def operation_argv(
     operation: str,
     campaign: AuthenticatedCampaign,
     paths: RuntimePaths,
     lock: LockCapability,
+    corpus_root: Path | None = None,
 ) -> tuple[str, ...]:
     candidate_tree = campaign.config.candidate_tree.resolve()
     abc_root = candidate_tree / "abc"
     ab_root = candidate_tree / "ab-validator"
     if operation == "capture-core":
+        if corpus_root is None:
+            raise ProtocolError("core capture requires a governed corpus root")
         return (
             sys.executable,
             _driver(
@@ -357,7 +401,7 @@ def operation_argv(
             "--adapter",
             str(campaign.executables["ab-aozora"]),
             "--corpus-root",
-            str(ab_root / "crates/ab-index/tests/fixtures/corpus"),
+            str(corpus_root),
             "--corpus-index",
             str(paths.ab_check_index),
             "--work-ids",
@@ -1067,7 +1111,11 @@ def _prepare_publication(
     )
 
 
-def _prepare_resource(campaign: AuthenticatedCampaign, paths: RuntimePaths) -> None:
+def _prepare_resource(
+    campaign: AuthenticatedCampaign, paths: RuntimePaths, corpus_root: Path | None
+) -> None:
+    if corpus_root is None:
+        raise ProtocolError("resource capture requires a governed corpus root")
     runtime = _read_object(paths.runtime, "runtime inputs")
     corpus = runtime.get("corpus")
     entries = corpus.get("entries") if isinstance(corpus, dict) else None
@@ -1079,9 +1127,6 @@ def _prepare_resource(campaign: AuthenticatedCampaign, paths: RuntimePaths) -> N
             raise ProtocolError("resource corpus entry is malformed")
         work_id = entry["work_id"]
         _atomic_json(work_ids_root / f"{work_id}.json", [work_id])
-    corpus_root = (
-        campaign.config.candidate_tree / "ab-validator/crates/ab-index/tests/fixtures/corpus"
-    )
     argv = [
         str(campaign.executables["ab-check"]),
         "--index",
@@ -1123,9 +1168,12 @@ def _execute_operation(
         _prepare_diagnostic_input(campaign, paths)
     if operation == "capture-publication":
         _prepare_publication(campaign, paths, runner, cwd)
+    corpus_root = (
+        _runtime_corpus_root(campaign, paths) if operation in CORPUS_BYTE_CONSUMERS else None
+    )
     if operation == "capture-resource":
-        _prepare_resource(campaign, paths)
-    command = operation_argv(operation, campaign, paths, lock)
+        _prepare_resource(campaign, paths, corpus_root)
+    command = operation_argv(operation, campaign, paths, lock, corpus_root)
     inherited = (lock.fd,) if operation == "capture-core" else ()
     _run_checked(runner, command, cwd, pass_fds=inherited)
     _project_operation(operation, campaign, paths, runner, cwd)

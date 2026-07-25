@@ -65,13 +65,16 @@ So the release stops routing through the campaign. The legitimate invariant it e
  ;; reproducible sha256 of the STANDALONE release binaries (established in Task 3, post D1+D2):
  :executables [{:name "ab-aozora" :sha256 "sha256:<standalone ab-aozora>"}
                {:name "ab-aat-to-parser-ir" :sha256 "sha256:<standalone converter>"}]
- ;; production coordinates computed from the committed mapping + schema files:
+ ;; The EXACT three keys verify-release-root! reads off :qualification-identity.
+ ;; mapping_hash = sha256-json-abc-legacy-v0(parsed mapping) — matches the real build's
+ ;; aat_parser_ir_mapping_hash; parser_ir_schema_hash = mapping's target_parser_ir_schema_hash field.
  :qualification_identity {:aat_adapter "ab-aozora"
                           :mapping_hash "sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142"
                           :parser_ir_schema_hash "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"}
- ;; content-identity refs (authenticate RECOMPUTES these AND checks the decision binds them):
- :qualification_identity_ref "sha256:<JCS(qualification_identity)>"
- :candidate_ref "sha256:<JCS(record minus candidate_ref)>"}
+ ;; refs = format-sha256(sha256-json-jcs(canonical-value x)); authenticate RECOMPUTES both
+ ;; AND checks the decision binds candidate_ref. qualification_identity_ref is fixed (exe-independent):
+ :qualification_identity_ref "sha256:65887787e081a41872e01f141d4faa9674d84d77b17e05f3a5624d7134686710"
+ :candidate_ref "sha256:<ref(record minus :candidate_ref) — depends on the exe hashes, computed in Task 3 Step 4>"}
 ```
 
 The new decision's binding (in `decisions.edn`):
@@ -267,31 +270,52 @@ echo "ab-aozora=$ha  ab-aat-to-parser-ir=$hc"
 
 Expected: both reproducible (each pair identical). Record `ha`/`hc`. If either is not reproducible, STOP — Task 1/2 incomplete.
 
-- [ ] **Step 2: Verify the mapping/schema coordinates are the current committed values**
+- [ ] **Step 2: Compute the mapping/schema coordinates with the SAME algorithm the real build's manifest uses**
+
+CRITICAL — these are NOT file hashes. The real build (`soranoha_build_publication/real-resolve-parser-runtime!:343-346`) computes the manifest's `aat_parser_ir_mapping_hash` as `hash/sha256-json-abc-legacy-v0` of the *parsed mapping JSON doc* (a pre-JCS legacy-ABC canonicalization, NOT `sha256-file`, NOT JCS), and reads `parser_ir_schema_hash` verbatim from the mapping's `target_parser_ir_schema_hash` field. `verify-release-root!` requires the record's `:mapping_hash`/`:parser_ir_schema_hash` to equal exactly those, so the record MUST carry these exact values:
 
 ```bash
-cd abc && clojure -M -e '(require (quote [abc.tools.hash :as h])) (println (h/format-sha256 (h/sha256-file "../ab-validator/data/aat-to-parser-ir-mapping-v2.json")))'
+cd abc && clojure -M -e '(require (quote [abc.tools.hash :as h]) (quote [abc.tools.files :as files]))
+  (let [m (files/read-json "../ab-validator/data/aat-to-parser-ir-mapping-v2.json")]
+    (println "mapping_hash        =" (h/sha256-json-abc-legacy-v0 m))
+    (println "parser_ir_schema_hash =" (get m "target_parser_ir_schema_hash")))'
 ```
 
-Confirm `mapping_hash`/`parser_ir_schema_hash` in the record shape equal the current committed values (the mapping is unchanged; use the repo's own hashing, matching how `build-candidate` computed them). If they differ, investigate — do not invent a value.
+GROUND TRUTH (already computed and validated by the controller — the record must match these):
+- `mapping_hash` = `sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142`
+- `parser_ir_schema_hash` = `sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec`
+
+If the command prints anything different, STOP and report — the mapping changed under us; do not invent a value.
 
 - [ ] **Step 3: Write the record with real executable hashes**
 
 Create `abc/data/release-parser-identity-v1.edn` per the D3 shape with `:executables` sha256 = `sha256:$ha` / `sha256:$hc`, real `:qualification_identity`, and placeholder refs to be filled in Step 4.
 
-- [ ] **Step 4: Compute the record's identity refs with the repo's own hashing**
+- [ ] **Step 4: Compute the record's identity refs — with the mandatory keyword-stringify step**
 
-Compute `qualification_identity_ref = SHA-256(JCS(:qualification_identity))` and `candidate_ref = SHA-256(JCS(record without :candidate_ref))` using `abc.tools.hash`/`abc.tools.jcs` — the exact functions `authenticate` will recompute with (Task 4) — via `clojure -M -e`, and write them into the record:
+CRITICAL — `jcs/canonical-json-object` THROWS on non-string keys ("JCS object keys must be strings", `jcs.clj:25-27`). So you CANNOT call `sha256-json-jcs` directly on a keyword-keyed EDN map — you must first stringify keywords with a `canonical-value` postwalk (exactly as `parser_release_qualification/canonical-json-value` and the old campaign's `content-ref` do). The ref recipe — used IDENTICALLY here (Task 3) and inside `authenticate` (Task 4) — is:
 
-```bash
-cd abc && clojure -M -e '(require (quote [abc.tools.hash :as h]) (quote [abc.tools.jcs :as jcs]) (quote [clojure.edn :as edn]))
-  (let [r (edn/read-string (slurp "data/release-parser-identity-v1.edn"))
-        qi (:qualification_identity r)]
-    (println :qi (h/format-sha256 (h/sha256-bytes (jcs/canonical-json-bytes qi))))
-    (println :cand (h/format-sha256 (h/sha256-bytes (jcs/canonical-json-bytes (dissoc r :candidate_ref))))))'
+```
+ref(x, self-field) = format-sha256(sha256-json-jcs(canonical-value(dissoc(x, self-field))))
+  where canonical-value = walk/postwalk stringifying keyword keys AND keyword values.
+qualification_identity_ref = format-sha256(sha256-json-jcs(canonical-value(:qualification_identity)))   ; no dissoc
+candidate_ref              = ref(whole-record, :candidate_ref)
 ```
 
-Write the two printed values into `:qualification_identity_ref`/`:candidate_ref`. (Confirm the exact canonical-bytes helper matches what `authenticate` uses — align on one function; the campaign used `hash/sha256-json-jcs`.)
+Compute and write them:
+
+```bash
+cd abc && clojure -M -e '(require (quote [abc.tools.hash :as h]) (quote [clojure.edn :as edn]) (quote [clojure.walk :as walk]))
+  (defn canonical-value [v] (walk/postwalk (fn [x] (cond (keyword? x) (name x)
+                                                         (map? x) (into {} (map (fn [[k vv]] [(if (keyword? k) (name k) k) vv])) x)
+                                                         :else x)) v))
+  (defn cref [v self] (-> v (dissoc self) canonical-value h/sha256-json-jcs h/format-sha256))
+  (let [r (edn/read-string (slurp "data/release-parser-identity-v1.edn"))]
+    (println "qualification_identity_ref =" (-> (:qualification_identity r) canonical-value h/sha256-json-jcs h/format-sha256))
+    (println "candidate_ref              =" (cref r :candidate_ref)))'
+```
+
+GROUND-TRUTH CHECK (controller pre-validated): with the 3-field `:qualification_identity` `{:aat_adapter "ab-aozora" :mapping_hash sha256:9be58ff3… :parser_ir_schema_hash sha256:43a6a6…}`, `qualification_identity_ref` MUST print `sha256:65887787e081a41872e01f141d4faa9674d84d77b17e05f3a5624d7134686710`. If it doesn't, the `:qualification_identity` map is not exactly those three keys/values — fix the record before computing `candidate_ref`. (The `candidate_ref` value depends on the real executable hashes from Step 1, so it has no pre-known value; just write whatever this command prints.) Write both printed values into the record.
 
 - [ ] **Step 5: Commit the inert record**
 
@@ -360,7 +384,19 @@ In `decisions.edn`: (a) add the `release-parser-identity-approval` Accepted deci
 
 - [ ] **Step 4: Rewrite `authenticate`**
 
-Drop `[abc.tools.parser-rq-campaign :as campaign]`; add `[abc.tools.hash :as hash]` + `[abc.tools.jcs :as jcs]` (or reuse `hash/sha256-json-jcs`). Implement `load-shape-valid-record!` (require `:schema_version :adapter_id :adapter_version :executables :qualification_identity :qualification_identity_ref :candidate_ref`; each executable `{:name :sha256}` sha256 pattern-valid; report `:invalid-release-parser-identity` problems, mirroring the decisions loader). Rewrite `authenticate`:
+Drop `[abc.tools.parser-rq-campaign :as campaign]`; add `[abc.tools.hash :as hash]` + `[clojure.walk :as walk]`. Implement `load-shape-valid-record!` (require `:schema_version :adapter_id :adapter_version :executables :qualification_identity :qualification_identity_ref :candidate_ref`; each executable `{:name :sha256}` sha256 pattern-valid; report `:invalid-release-parser-identity` problems, mirroring the decisions loader).
+
+**MANDATORY** — the ref recompute must keyword-stringify before JCS (else `jcs/canonical-json-object` throws on the record's keyword keys, `jcs.clj:25-27`). Use the identical helper Task 3 used:
+
+```clojure
+(defn- canonical-value [v]
+  (walk/postwalk (fn [x] (cond (keyword? x) (name x)
+                               (map? x) (into {} (map (fn [[k vv]] [(if (keyword? k) (name k) k) vv])) x)
+                               :else x)) v))
+(defn- ref-of [v] (hash/format-sha256 (hash/sha256-json-jcs (canonical-value v))))
+```
+
+Rewrite `authenticate`:
 
 ```clojure
 (def release-qualification-slug "release-parser-identity-approval")
@@ -386,8 +422,8 @@ Drop `[abc.tools.parser-rq-campaign :as campaign]`; add `[abc.tools.hash :as has
   (let [record (load-shape-valid-record! release_parser_identity_path)
         {:keys [decision content-hash problems]} (decision-resolution decisions_path)
         qi (:qualification_identity record)
-        recompute-qi (hash/format-sha256 (hash/sha256-json-jcs qi))
-        recompute-cand (hash/format-sha256 (hash/sha256-json-jcs (dissoc record :candidate_ref)))
+        recompute-qi (ref-of qi)                          ; canonical-value inside ref-of — MUST stringify keywords
+        recompute-cand (ref-of (dissoc record :candidate_ref))
         integrity (cond-> []
                     (not= recompute-qi (:qualification_identity_ref record))
                     (conj (problem :qualification-identity-ref-mismatch "…"))

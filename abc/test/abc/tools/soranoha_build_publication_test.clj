@@ -12,7 +12,10 @@
             [babashka.fs :as fs]
             [babashka.process :as process]
             [charred.api :as charred]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.java.io :as io]
+            [clojure.string :as string]
+            [clojure.test :refer [deftest is testing]])
+  (:import [java.util.zip ZipEntry ZipOutputStream]))
 
 (defn- env-stub [m]
   (fn [k] (get m k)))
@@ -344,3 +347,153 @@
     (testing "an injective candidate set passes through unchanged"
       (let [ok [(candidate-stub "1" "9" "cards/000009/files/a.zip")]]
         (is (= ok (assert-fn ok)))))))
+
+(defn- write-zip!
+  "Write a ZIP at `target` containing `entries` ({name -> content-string}).
+  Deterministic entry order; no external `zip` binary required."
+  [target entries]
+  (fs/create-dirs (fs/parent target))
+  (with-open [out (ZipOutputStream. (io/output-stream (fs/file target)))]
+    (doseq [[entry-name content] (sort-by key entries)]
+      (.putNextEntry out (ZipEntry. ^String entry-name))
+      (.write out (.getBytes ^String content "UTF-8"))
+      (.closeEntry out))))
+
+(defn- two-card-colliding-aozora-root!
+  "Build a minimal aozora root in which ONE catalog row matches the SAME zip
+  basename in TWO card directories — the real collision shape. Catalog matching
+  keys solely on the basename, so both copies match the single row and derive
+  one slug. `second-card-content` differing from the first makes this Class A;
+  passing identical content makes it Class B. Returns the aozora root path."
+  [root basename second-card-content]
+  (let [csv-source (fs/path "examples/v0/example-work/aozora-csv"
+                            "list_person_all_extended_utf8_127.csv")
+        csv-text (-> (slurp (fs/file csv-source))
+                     (string/replace "127_ruby_150.zip" basename))]
+    (write-zip! (fs/path root "index_pages" "list_person_all_extended_utf8.zip")
+                {"list_person_all_extended_utf8.csv" csv-text})
+    ;; Person 000879 is the catalog fixture's person; the SECOND card directory
+    ;; is deliberately a different person dir, which the slug discards.
+    (write-zip! (fs/path root "cards" "000879" "files" basename)
+                {"000001.txt" "吾輩《わがはい》は猫である。\n"})
+    (write-zip! (fs/path root "cards" "000880" "files" basename)
+                {"000001.txt" second-card-content})
+    root))
+
+(deftest colliding-selection-is-rejected-before-any-slug-write
+  (testing "two cards sharing a basename fail closed with no works/<slug> written"
+    (fs/with-temp-dir [tmp {:prefix "slug-collision-"}]
+      (let [aozora-root (two-card-colliding-aozora-root!
+                         (fs/path tmp "aozora")
+                         "000001_ruby_fixture.zip"
+                         "こちらは別の本文である。\n")
+            output-root (fs/path tmp "out")
+            materialize #'build-publication/materialize-selected-sources!
+            thrown (try
+                     (materialize {:aozora-root (str aozora-root)
+                                   :output-root (str output-root)
+                                   :snapshot-date "2026-07-25"
+                                   :source-trust-mode "fixture"
+                                   :aozora-git-commit nil
+                                   :continue-on-failure true
+                                   :concurrency 2})
+                     nil
+                     (catch clojure.lang.ExceptionInfo e e))]
+        (is (some? thrown) "expected ExceptionInfo for colliding candidates")
+        (is (= "publication-slug-collision" (:code (ex-data thrown))))
+        (testing "both claimants are named in the failure"
+          (let [relpaths (->> (:collisions (ex-data thrown))
+                              first
+                              (#(get % "sources"))
+                              (map #(get % "text_zip_relpath"))
+                              set)]
+            (is (= 2 (count relpaths)))
+            (is (some #(string/includes? % "cards/000879/") relpaths))
+            (is (some #(string/includes? % "cards/000880/") relpaths))))
+        (testing "NO slug-addressed directory was written"
+          ;; This is the regression guard for the placement bug: moving the
+          ;; assertion back to the `selected` binding makes this fail.
+          (is (not (fs/exists? (fs/path output-root "materialized-root" "works")))))))))
+
+(deftest unreadable-archive-does-not-resolve-a-collision
+  (testing "continue_on_failure must not let a corrupt claimant excuse a collision"
+    (fs/with-temp-dir [tmp {:prefix "slug-collision-corrupt-"}]
+      (let [aozora-root (two-card-colliding-aozora-root!
+                         (fs/path tmp "aozora")
+                         "000001_ruby_fixture.zip"
+                         "irrelevant — overwritten below\n")]
+        ;; Corrupt the SECOND claimant so ZIP inspection would fail on it.
+        (spit (fs/file (fs/path aozora-root "cards" "000880" "files"
+                               "000001_ruby_fixture.zip"))
+              "not a zip at all")
+        (let [output-root (fs/path tmp "out")
+              materialize #'build-publication/materialize-selected-sources!
+              thrown (try
+                       (materialize {:aozora-root (str aozora-root)
+                                     :output-root (str output-root)
+                                     :snapshot-date "2026-07-25"
+                                     :source-trust-mode "fixture"
+                                     :aozora-git-commit nil
+                                     :continue-on-failure true
+                                     :concurrency 2})
+                       nil
+                       (catch clojure.lang.ExceptionInfo e e))]
+          (is (some? thrown))
+          (is (= "publication-slug-collision" (:code (ex-data thrown)))
+              "must fail on identity, not on the corrupt archive")
+          (is (not (fs/exists? (fs/path output-root "materialized-root" "works")))
+              "collision must be detected before ZIP inspection"))))))
+
+(def ^:private known-2026-07-25-collisions
+  "All seven duplicate slug claims from the 2026-07-25 full-corpus run on
+  aozorabunko 0e9ea3e586eb0aa34039fabfc85a407d2f98b165. Class A = differing
+  work_content_hash (visible to closure verification); Class B = identical
+  (invisible to it, because sort-artifact-references applies distinct)."
+  [{:class :b :work-id "045183" :person-id "000107" :basename "45183_ruby_23453.zip"
+    :cards ["000019" "000107"]
+    :hashes ["sha256:81b1b92c912d78fdb85dd46cd04a65cb8dbbad5b01e86b5cc63653f5e621c419"
+             "sha256:81b1b92c912d78fdb85dd46cd04a65cb8dbbad5b01e86b5cc63653f5e621c419"]}
+   {:class :a :work-id "047896" :person-id "000075" :basename "47896_ruby_49619.zip"
+    :cards ["000075" "001030"]
+    :hashes ["sha256:91ec677857fe17aa46afae0c0a95886d2d33a41f28b0a4c2359abdf6bdc161d7"
+             "sha256:87cba36cfd6793da678e870c1a3c93ea888ac6a90185f1dac00be8887230ebd4"]}
+   {:class :a :work-id "047957" :person-id "001030" :basename "47957_ruby_40644.zip"
+    :cards ["001030" "001769"]
+    :hashes ["sha256:478d4cbebbe7ac2069878d8773feec93a858a50408881ce0e33564fa44ff0955"
+             "sha256:7ed77464f724f62cd76c7616530a64483ed350f1f02d3a34455b77a2d8b8f109"]}
+   {:class :a :work-id "047959" :person-id "000075" :basename "47959_ruby_40639.zip"
+    :cards ["000075" "001030"]
+    :hashes ["sha256:0f331c885b929ed915e130052d0bbe169bca33d3bb24d2367be48b484adb1d90"
+             "sha256:998a07914ac4f617772c82edb8c9fab0bc0da3297b768f05d9d6291752c16c84"]}
+   {:class :a :work-id "047971" :person-id "000075" :basename "47971_txt_40650.zip"
+    :cards ["000075" "001030"]
+    :hashes ["sha256:9ba20d7e099f6256d5c5534224fbb3fc7407ee472283431d3b1f1f37139a8b1d"
+             "sha256:eef28bf7e798e78802612f129cdb44107b0a7419960e3b85aa7cf953d418b0d9"]}
+   {:class :b :work-id "050558" :person-id "000975" :basename "50558_ruby_61314.zip"
+    :cards ["000150" "000975"]
+    :hashes ["sha256:c16514dfb963b0d8c347ab1925d579287e5d4e0a3f21d43e987ae728c743be9e"
+             "sha256:c16514dfb963b0d8c347ab1925d579287e5d4e0a3f21d43e987ae728c743be9e"]}
+   {:class :b :work-id "062694" :person-id "002402" :basename "62694_ruby_78206.zip"
+    :cards ["001085" "002385"]
+    :hashes ["sha256:f8ae61ea7efc561ef02c5df483389e605e1ea7a53734821687e9c14a92d964ba"
+             "sha256:f8ae61ea7efc561ef02c5df483389e605e1ea7a53734821687e9c14a92d964ba"]}])
+
+(deftest all-seven-known-collisions-are-rejected
+  (let [assert-fn #'build-publication/assert-candidate-slugs-unique!]
+    (testing "the table matches the observed corpus state"
+      (is (= 7 (count known-2026-07-25-collisions)))
+      (is (= 4 (count (filter #(= :a (:class %)) known-2026-07-25-collisions))))
+      (is (= 3 (count (filter #(= :b (:class %)) known-2026-07-25-collisions))))
+      (doseq [{:keys [class hashes]} known-2026-07-25-collisions]
+        (is (= (= :b class) (apply = hashes))
+            "Class B iff both work_content_hashes are equal")))
+    (doseq [{:keys [work-id person-id basename cards class]} known-2026-07-25-collisions]
+      (testing (str work-id " (class " (name class) ")")
+        (let [candidates (mapv (fn [card]
+                                 (candidate-stub work-id person-id
+                                                 (str "cards/" card "/files/" basename)))
+                               cards)
+              thrown (try (assert-fn candidates) nil
+                          (catch clojure.lang.ExceptionInfo e e))]
+          (is (some? thrown) (str "expected rejection for " work-id))
+          (is (= "publication-slug-collision" (:code (ex-data thrown)))))))))

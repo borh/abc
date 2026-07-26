@@ -1,0 +1,236 @@
+{
+  "coverage":
+  {
+    "classes": ["custom_sidecar"],
+    "record_count": 15
+  },
+  "mapping":
+  {
+    "mapping_id": "https:\/\/w3id.org\/abc\/mappings\/aat-v2-to-parser-ir-v1\/generated-probe",
+    "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
+    "mapping_version": "0.5.0"
+  },
+  "parser_ir":
+  {
+    "schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
+    "schema_id": "https:\/\/w3id.org\/abc\/schemas\/parser-ir.schema.json",
+    "work_id": null
+  },
+  "producer":
+  {
+    "agent": "abc.tools.materialize-publication",
+    "generated_at": "2026-07-17T00:00:00Z"
+  },
+  "records": [
+    {
+      "class": "custom_sidecar",
+      "construct": "source_identity",
+      "count": 1,
+      "first_path": "\/source\/work_content_hash",
+      "ir_pointer": "\/source\/work_content_hash",
+      "message": "Parser-IR source identity is preserved in the ABC preservation sidecar and manifests.",
+      "record_id": "r000000",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "sha256:f52fa5a06842f566238c15c2327f5f2e4ffe43a6e7ae4d6fd7bab8ad4449549c"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "source_identity",
+      "count": 1,
+      "first_path": "\/source\/source_path",
+      "ir_pointer": "\/source\/source_path",
+      "message": "Parser-IR source identity is preserved in the ABC preservation sidecar and manifests.",
+      "record_id": "r000001",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": null
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "source_identity",
+      "count": 1,
+      "first_path": "\/source\/encoding",
+      "ir_pointer": "\/source\/encoding",
+      "message": "Parser-IR source identity is preserved in the ABC preservation sidecar and manifests.",
+      "record_id": "r000002",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "UTF-8"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "source_identity",
+      "count": 1,
+      "first_path": "\/source\/normalization",
+      "ir_pointer": "\/source\/normalization",
+      "message": "Parser-IR source identity is preserved in the ABC preservation sidecar and manifests.",
+      "record_id": "r000003",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "source"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "mapping_identity",
+      "count": 1,
+      "first_path": "\/derived_from\/mapping_id",
+      "ir_pointer": "\/derived_from\/mapping_id",
+      "message": "AAT-to-parser-IR mapping identity is preserved outside TEI publication XML.",
+      "record_id": "r000004",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "https:\/\/w3id.org\/abc\/mappings\/aat-v2-to-parser-ir-v1\/generated-probe"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "mapping_identity",
+      "count": 1,
+      "first_path": "\/derived_from\/mapping_version",
+      "ir_pointer": "\/derived_from\/mapping_version",
+      "message": "AAT-to-parser-IR mapping identity is preserved outside TEI publication XML.",
+      "record_id": "r000005",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "0.5.0"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "mapping_identity",
+      "count": 1,
+      "first_path": "\/derived_from\/mapping_schema_hash",
+      "ir_pointer": "\/derived_from\/mapping_schema_hash",
+      "message": "AAT-to-parser-IR mapping identity is preserved outside TEI publication XML.",
+      "record_id": "r000006",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "span_coordinates",
+      "count": 1,
+      "first_path": "\/nodes\/0\/span",
+      "ir_pointer": "\/nodes\/0\/span",
+      "message": "Parser-IR span coordinates are preserved outside TEI publication XML.",
+      "record_id": "r000007",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "{\"coordinate_system\" \"decoded_utf8\", \"start\" 0, \"line\" 1, \"column\" nil, \"end\" 9}"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "span_coordinates",
+      "count": 1,
+      "first_path": "\/nodes\/1\/span",
+      "ir_pointer": "\/nodes\/1\/span",
+      "message": "Parser-IR span coordinates are preserved outside TEI publication XML.",
+      "record_id": "r000008",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "{\"coordinate_system\" \"decoded_utf8\", \"start\" 9, \"line\" 1, \"column\" nil, \"end\" 12}"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "span_coordinates",
+      "count": 1,
+      "first_path": "\/nodes\/2\/span",
+      "ir_pointer": "\/nodes\/2\/span",
+      "message": "Parser-IR span coordinates are preserved outside TEI publication XML.",
+      "record_id": "r000009",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "{\"coordinate_system\" \"decoded_utf8\", \"start\" 12, \"line\" 1, \"column\" nil, \"end\" 25}"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "span_coordinates",
+      "count": 1,
+      "first_path": "\/paragraphs\/0\/span",
+      "ir_pointer": "\/paragraphs\/0\/span",
+      "message": "Parser-IR span coordinates are preserved outside TEI publication XML.",
+      "record_id": "r000010",
+      "source_inventory_row": null,
+      "source_pointer": "blocks[0]",
+      "tei_pointer": null,
+      "value": "{\"coordinate_system\" \"decoded_utf8\", \"start\" 0, \"line\" 1, \"column\" nil, \"end\" 25}"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "paragraph.node_range",
+      "count": 1,
+      "first_path": "\/paragraphs\/0\/node_range",
+      "ir_pointer": "\/paragraphs\/0\/node_range",
+      "message": "Paragraph node ranges are ABC traceability data, not TEI publication text.",
+      "record_id": "r000011",
+      "source_inventory_row": null,
+      "source_pointer": "blocks[0]",
+      "tei_pointer": null,
+      "value": "{\"start\" 0, \"end\" 3}"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "paragraph.source_pointer",
+      "count": 1,
+      "first_path": "\/paragraphs\/0\/source_pointer",
+      "ir_pointer": "\/paragraphs\/0\/source_pointer",
+      "message": "Paragraph source pointers preserve source-authority traceability.",
+      "record_id": "r000012",
+      "source_inventory_row": null,
+      "source_pointer": "blocks[0]",
+      "tei_pointer": null,
+      "value": "blocks[0]"
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "gaiji_resolution",
+      "count": 1,
+      "first_path": "\/nodes\/1\/gaiji\/resolved",
+      "ir_pointer": "\/nodes\/1\/gaiji\/resolved",
+      "message": "Gaiji resolution status and diagnostics are preserved outside TEI publication XML.",
+      "record_id": "r000013",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": true
+    },
+    {
+      "class": "custom_sidecar",
+      "construct": "sentence_segmentation",
+      "count": 1,
+      "first_path": "\/sentence_segmentation",
+      "ir_pointer": "\/sentence_segmentation",
+      "message": "Sentence <s> boundaries and node\/paragraph ranges were rewritten for segmentation by splitter ab-plaintext-japanese-v2 over body-paragraphs; source text is preserved in the TEI body.",
+      "record_id": "r000014",
+      "source_inventory_row": null,
+      "source_pointer": null,
+      "tei_pointer": null,
+      "value": "ab-plaintext-japanese-v2"
+    }],
+  "schema_hash": "sha256:d521fe8c249ef9b25655e4d0ef4fbcb6006564ac4584271985459a57999d3869",
+  "schema_id": "https:\/\/w3id.org\/abc\/schemas\/parser-ir-publication-preservation.schema.json",
+  "schema_version": "0.3.0",
+  "source":
+  {
+    "corpus_snapshot_hash": "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e",
+    "encoding": "UTF-8",
+    "normalization": "source",
+    "source_path": null,
+    "work_content_hash": "sha256:f52fa5a06842f566238c15c2327f5f2e4ffe43a6e7ae4d6fd7bab8ad4449549c"
+  },
+  "tei":
+  {
+    "profile_hash": "sha256:b4b12fd7591f2ebe1f9417f8fa2bb938d025694c4202ef48c0bfe16045b120ac",
+    "profile_id": "abc-tei-profile-v0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "parser_ir": {
+    "bytes": 2402,
+    "media_type": "application/json",
+    "sha256": "sha256:8b7def27faa020f274f05fb82474d5f6b10b0ec18662c684df05643c75196157"
+  },
+  "policy_hash": "sha256:b320b34c9961b2b656bd51f50262728c0070e44d4ec1731745e5df4f0315549e",
+  "qualification_identity_ref": "sha256:8c1716f07a76ecf79109fe922a84878765c8dbae795b94bdff66e354d960d366",
+  "schema_id": "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-work.schema.json",
+  "schema_version": "1.0.0",
+  "status": "schema_valid",
+  "work_id": "000001_1"
+}

@@ -103,3 +103,45 @@ record of how the P5 candidate was release-qualified through the predeclared
 predicate set over the pinned corpus. It is retained as historical research
 evidence for that qualification work; it no longer gates publication, and no
 claim above is amended or withdrawn by this note.
+
+## 2026-07-26 note — requalified after the instrument-semantics rotation
+
+The qualification recorded above has been superseded by a new capture. Three
+governed rotations landed between them, and one capture settles all three:
+
+- `package-scoped-instrument-dependency-identity` scoped each instrument's
+  dependency identity to its own package and corrected the
+  diagnostic-completeness reviewed closure, rotating both instruments'
+  `validator_semantics_hash`.
+- `governed-diagnostic-expectation-and-instrument-coordinate` gave instrument
+  identity its own coordinate, `instrument_policy_hashes`, and made
+  `diagnostic_completeness` the ratio its predicate always declared.
+
+The new coordinates are `candidate_ref`
+`sha256:24d61fc75b0dd2405a423ebc0a06bd3002e37b7d8b9ed4a76b2c21d57eb2b3ec`
+and `qualification_identity_ref`
+`sha256:8c1716f07a76ecf79109fe922a84878765c8dbae795b94bdff66e354d960d366`,
+with `gate_status: release-qualified` and 9/9 predicates `pass` over the same
+pinned three-work corpus. `verify-promotion` returns `ok` against
+`docs/adr/decisions.edn`.
+
+What changed in substance, not just in hashes. The prior capture passed
+`diagnostic-completeness` over zero evidence: `diagnostic_completeness 1.0`
+with `diagnostic_count 0` and `vacuous true`, where the `1.0` was a literal
+and no ratio was computed anywhere. The new capture records the same `1.0`,
+but as `matching_works 3` of `expected_works 3` — three works each observed to
+match the diagnostic expectation their corpus entry governs. The number is
+unchanged and now means something. A work emitting a diagnostic it is not
+governed to emit, or failing to emit one it is, drops the ratio below 1.0 and
+fails the existing comparator.
+
+`predicate_set_hash` is unchanged at
+`sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203`.
+That is deliberate and is the point of the coordinate separation: what a
+release must prove did not move, only how it was measured and how that
+measurement is identified.
+
+The 2026-07-25 note above still holds. This ADR remains historical research
+evidence and does not gate publication; the requalification is recorded here
+because this is where the qualification it supersedes is recorded. No claim
+above is amended or withdrawn by this note.

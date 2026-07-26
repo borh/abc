@@ -44,10 +44,18 @@
             (qualification/install-resource-observation {} envelope))))))
 
 (def ^:private campaign-capture-root
+  "The capture the committed report was projected from.
+
+  This tracks the live projection, not a frozen run: the assertions below tie
+  `docs/reports/parser-release-qualification-report.json` to the capture it
+  came from, so it must move whenever a requalification replaces that report.
+  The frozen historical run is pinned separately by the
+  `parser-rq-p5-promotion-audit` flake check, which is where a fixed audit
+  target belongs."
   (str "docs/reports/parser-rq/runs/"
-       "15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab"
+       "24d61fc75b0dd2405a423ebc0a06bd3002e37b7d8b9ed4a76b2c21d57eb2b3ec"
        "/captures/"
-       "a25937cf9b75e4808c9307fbb73edaa44d01be69198614c563972c2e364c9c1f"))
+       "e27fa29f2ed85eb68e17586b8617f24287cee9adfbb096553735027c5c1841cd"))
 
 (deftest hinoki-resource-witness-binds-the-campaign-capture
   (let [smoke (files/read-json

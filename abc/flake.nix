@@ -489,16 +489,26 @@
                 echo "Theme->emitter->Graphviz path renders with the black canvas and store-resolved fonts." > "$out/result.txt"
               '';
 
-          # Historical-audit pin (ADRs 0039-0042): verify the exact committed
-          # P5 promotion — closed membership, hashes, and decision binding
-          # against the authoritative decisions.edn — without re-running any
-          # measurement.
+          # Audit the promotion of record (ADRs 0039-0042): closed membership,
+          # hashes, and decision binding against the authoritative
+          # decisions.edn, without re-running any measurement.
+          #
+          # This pins the CURRENT promotion, not a frozen one, and must move
+          # with every requalification. It reads the shared projections in
+          # docs/reports/, and `canonical_equal` is what makes them
+          # load-bearing: it proves the published measurements and report are
+          # the immutable generation's own bytes rather than a hand-edited
+          # copy. That check only says something about the candidate those
+          # projections describe. Superseded runs stay on disk as immutable,
+          # content-addressed history; pointing this check at one of them would
+          # have to compare its own members against themselves, which asserts
+          # nothing.
           parser-rq-p5-promotion-audit =
             pkgs.runCommand "abc-parser-rq-p5-promotion-audit" { nativeBuildInputs = [ pkgs.clojure ]; }
               ''
                 ${copyWritableSource}
                 ${cljSandboxEnv}
-                candidate_ref=sha256:15affdfb677cc6a94a4a5364da68ca2d11441f899737651e727dbac90eddc5ab
+                candidate_ref=sha256:24d61fc75b0dd2405a423ebc0a06bd3002e37b7d8b9ed4a76b2c21d57eb2b3ec
                 run_root="docs/reports/parser-rq/runs/''${candidate_ref#sha256:}"
                 clojure -M:abc/parser-rq-campaign verify-promotion \
                   --runs-root docs/reports/parser-rq/runs \

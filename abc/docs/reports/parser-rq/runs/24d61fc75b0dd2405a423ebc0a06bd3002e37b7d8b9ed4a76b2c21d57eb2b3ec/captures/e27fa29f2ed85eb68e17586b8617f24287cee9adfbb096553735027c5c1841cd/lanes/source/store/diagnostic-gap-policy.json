@@ -1,0 +1,32 @@
+{
+  "schema_version": "abc/parser-rq-diagnostic-gap-policy/v1",
+  "policy_id": "parser-rq-ab-aozora-diagnostic-gap-v1",
+  "policy_hash": "sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5",
+  "raw_diagnostic_schema_hash": "sha256:e467a46ac8196b0193d658012375fda69f55a780e8edb9d1976e36fcf8417592",
+  "identity": {"algorithm": "SHA-256", "canonicalization": "RFC 8785 JCS", "projection": "complete-policy-minus-policy_hash"},
+  "parser": "ab-aozora",
+  "coordinate_system": "decoded_utf8",
+  "rules": [
+    {"code":"source-contains-pua","kind":"source_contains_pua","severity":"warning","source":"source","disposition":"authorize_exact_span"},
+    {"code":"unclosed-bracket","kind":"unclosed_bracket","severity":"error","source":"source","disposition":"observe_only"},
+    {"code":"unmatched-close","kind":"unmatched_close","severity":"error","source":"source","disposition":"observe_only"},
+    {"code":"accent-decomposition-applied","kind":"accent_decomposition_applied","severity":"note","source":"source","disposition":"observe_only"},
+    {"code":"unresolved-gaiji","kind":"unresolved_gaiji","severity":"warning","source":"source","disposition":"observe_only"},
+    {"code":"mismatched-container-close","kind":"mismatched_container_close","severity":"error","source":"source","disposition":"observe_only"},
+    {"code":"empty-ruby-reading","kind":"empty_ruby_reading","severity":"error","source":"source","disposition":"observe_only"},
+    {"code":"nested-ruby","kind":"nested_ruby","severity":"error","source":"source","disposition":"observe_only"},
+    {"code":"unrecognised-container-directive","kind":"unrecognised_container_directive","severity":"warning","source":"source","disposition":"observe_only"},
+    {"code":"tcy-target-not-found","kind":"tcy_target_not_found","severity":"warning","source":"source","disposition":"observe_only"},
+    {"code":"bouten-target-ambiguous","kind":"bouten_target_ambiguous","severity":"warning","source":"source","disposition":"observe_only"},
+    {"code":"forward-referent-not-stylable","kind":"forward_referent_not_stylable","severity":"warning","source":"source","disposition":"observe_only"},
+    {"code":"break-in-single-line-container","kind":"break_in_single_line_container","severity":"warning","source":"source","disposition":"observe_only"},
+    {"code":"bracketed-kaeriten-no-pair","kind":"bracketed_kaeriten_no_pair","severity":"error","source":"source","disposition":"observe_only"},
+    {"code":"kaeriten-outside-kanbun","kind":"kaeriten_outside_kanbun","severity":"warning","source":"source","disposition":"observe_only"},
+    {"code":"mismatched-bouten-container","kind":"mismatched_bouten_container","severity":"error","source":"source","disposition":"observe_only"},
+    {"code":"non-canonical-directive","kind":"non_canonical_directive","severity":"warning","source":"source","disposition":"observe_only"},
+    {"code":"residual-annotation-marker","kind":"residual_annotation_marker","severity":"error","source":"internal","disposition":"reject_internal"},
+    {"code":"unregistered-sentinel","kind":"unregistered_sentinel","severity":"error","source":"internal","disposition":"reject_internal"},
+    {"code":"registry-out-of-order","kind":"registry_out_of_order","severity":"error","source":"internal","disposition":"reject_internal"},
+    {"code":"registry-position-mismatch","kind":"registry_position_mismatch","severity":"error","source":"internal","disposition":"reject_internal"}
+  ]
+}

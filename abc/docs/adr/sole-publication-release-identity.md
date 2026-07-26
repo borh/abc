@@ -13,6 +13,28 @@ fail-closed, over the completed candidate by
 controls installation and the release-facing exit status. The competing
 request-set rehearsal/reproduction producer was retired in the same campaign.
 
+### 2026-07-26 note — the release-authority decision is now `release-parser-identity-approval`
+
+The Decision section below names `custom-parser-release-qualification` as the
+record whose `:release-authority :publication` the release depends on. That was
+the code's reality when this record was accepted and is no longer.
+`abc.tools.parser-release-authority` resolves the slug
+`release-parser-identity-approval`, requires it Accepted with
+`:release-authority :publication`, and additionally requires it to bind the
+exact `candidate_ref`, `schema_version`, and record path of
+`data/release-parser-identity-v1.edn`, whose two content refs must recompute
+from its own bytes.
+
+The move came from decoupling release parser authentication from the parser-rq
+campaign: publication authority no longer depends on re-deriving that
+campaign's candidate, so a parser-rq requalification does not rotate it.
+`custom-parser-release-qualification` is retained as historical research
+evidence. What this record decided is unchanged in substance — the release
+depends on an exact, Accepted, publication-authority decision binding a
+content-addressed parser identity — and only the slug carrying that authority
+moved. Recorded here rather than edited above, because narrative Decision text
+is immutable and is superseded or amended by a new record, never rewritten.
+
 ## Context
 
 Before this campaign the direct build derived per-work artifacts but never

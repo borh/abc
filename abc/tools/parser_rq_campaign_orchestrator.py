@@ -49,6 +49,23 @@ EXPECTED_INSTALLED_MEMBERS = (
     "resource",
 )
 
+# Policies that restate corpus membership, and the field each restates it in.
+# The restatement is closed-membership authentication, not duplication: an
+# instrument folds an exact workset and fails closed on any divergence. But a
+# restatement only authenticates if something compares it to the authority it
+# restates, and two of these were not compared. Resource measured its own
+# policy's work ids against an index built from the same policy, so a stale
+# policy silently measured a subset; core-attempt failed only indirectly, when
+# a work with no corpus source produced no report and the missing-report error
+# named the symptom. The publication policy is absent because it carries no
+# membership -- publication membership lives in its fixtures and capture input.
+MEMBERSHIP_POLICIES = (
+    ("abc/data/parser-rq-core-attempt-policy-v1.json", "expected_work_ids"),
+    ("abc/data/parser-rq-diagnostic-completeness-policy-v1.json", "expected_work_ids"),
+    ("abc/data/parser-rq-parser-ir-conformance-policy-v1.json", "expected_work_ids"),
+    ("abc/data/parser-rq-resource-policy-v1.json", "work_ids"),
+)
+
 PUBLICATION_ARTIFACTS = {
     "tei.xml": "application/tei+xml",
     "plain.txt": "text/plain; charset=utf-8",
@@ -687,6 +704,48 @@ def _materialize_runtime(paths: RuntimePaths) -> None:
     _atomic_json(paths.ab_check_work_ids, work_ids)
 
 
+def _authenticate_policy_membership(candidate_tree: Path, corpus: dict[str, Any]) -> None:
+    """Every membership-carrying policy must name exactly the governed corpus.
+
+    Order is significant. The instruments compare their expected and actual
+    work-id lists as sequences, so a policy holding the right works in the
+    wrong order is a divergence there and must be one here.
+
+    `expected_sources` additionally pins each work's source bytes, which the
+    corpus pins too. Membership equality alone would let a policy claim the
+    right works against the wrong bytes, so the hashes are compared as well.
+    """
+    entries = corpus.get("entries")
+    if not isinstance(entries, list):
+        raise ProtocolError("governed corpus membership is malformed")
+    work_ids: list[str] = []
+    source_hashes: dict[str, object] = {}
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("work_id"), str):
+            raise ProtocolError("governed corpus membership is malformed")
+        work_ids.append(entry["work_id"])
+        source_hashes[entry["work_id"]] = entry.get("source_sha256")
+    for relative, field in MEMBERSHIP_POLICIES:
+        policy = _read_object(candidate_tree / relative, f"{relative} policy")
+        declared = policy.get(field)
+        if not isinstance(declared, list) or any(
+            not isinstance(work_id, str) for work_id in declared
+        ):
+            raise ProtocolError(f"{relative} membership is malformed")
+        if declared != work_ids:
+            raise ProtocolError(f"{relative} membership differs from the governed corpus")
+        sources = policy.get("expected_sources")
+        if sources is None:
+            continue
+        if not isinstance(sources, list) or len(sources) != len(work_ids):
+            raise ProtocolError(f"{relative} membership is malformed")
+        for entry in sources:
+            if not isinstance(entry, dict) or entry.get("work_id") not in source_hashes:
+                raise ProtocolError(f"{relative} membership is malformed")
+            if entry.get("source_sha256") != source_hashes[entry["work_id"]]:
+                raise ProtocolError(f"{relative} source identity differs from the governed corpus")
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -1206,6 +1265,13 @@ def execute_graph(
             _run_checked(runner, command, cwd)
         _verify_wiring(campaign, runner, cwd)
         _materialize_runtime(paths)
+        # Before the lock, before any capture: a policy that disagrees with the
+        # governed corpus can only produce evidence about a workset nobody
+        # authorized, so the divergence is worth naming here rather than
+        # surfacing later as a missing report.
+        _authenticate_policy_membership(
+            config.candidate_tree, _read_object(paths.corpus, "governed corpus")
+        )
         lock = _acquire_lock(Path(str(campaign.site_descriptor["campaign_lock_path"])))
         captured_at = now().astimezone(UTC).isoformat().replace("+00:00", "Z")
         temporal = _clojure(

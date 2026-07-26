@@ -95,13 +95,20 @@ def fixture(tmp_path: Path) -> Any:
         candidate_tree / "abc/data/parser-rq-ab-aozora-diagnostic-gap-v1.json",
         {"fixture": True},
     )
-    for name in (
-        "parser-rq-core-attempt-policy-v1.json",
-        "parser-rq-diagnostic-completeness-policy-v1.json",
-        "parser-rq-parser-ir-conformance-policy-v1.json",
-        "parser-rq-resource-policy-v1.json",
+    # Membership is declared empty to agree with FakeRunner's empty runtime
+    # corpus, matching the shape the resource policy below already used. The
+    # run now authenticates every one of these against the governed corpus, so
+    # a placeholder that declares no membership at all is a divergence.
+    for name, membership in (
+        (
+            "parser-rq-core-attempt-policy-v1.json",
+            {"expected_work_ids": [], "expected_sources": []},
+        ),
+        ("parser-rq-diagnostic-completeness-policy-v1.json", {"expected_work_ids": []}),
+        ("parser-rq-parser-ir-conformance-policy-v1.json", {"expected_work_ids": []}),
+        ("parser-rq-resource-policy-v1.json", {"work_ids": []}),
     ):
-        write_json(candidate_tree / "abc/data" / name, {"fixture": True})
+        write_json(candidate_tree / "abc/data" / name, {"fixture": True, **membership})
     write_json(
         candidate_tree / "abc/data/parser-rq-publication-policy-v1.json",
         {
@@ -1014,3 +1021,186 @@ def test_core_and_resource_capture_read_one_corpus_root(tmp_path: Path) -> None:
     source = inspect.getsource(orchestrator._prepare_resource)
     assert "fixtures/corpus" not in source, "resource capture still restates the corpus path"
     assert "str(corpus_root)" in source
+
+
+# Finding D of the instrument-semantics audit. diagnostic-completeness,
+# parser-IR conformance, and publication already compare their membership
+# against a corpus-derived authority. Resource compared its policy to itself,
+# and core-attempt only failed indirectly -- a policy work absent from the
+# corpus produced no report, and the missing-report error named a symptom
+# rather than the divergence. Both now fail closed on the divergence itself.
+MEMBERSHIP_SOURCES = (
+    ("w1", "sha256:" + "1" * 64),
+    ("w2", "sha256:" + "2" * 64),
+)
+
+
+def membership_corpus(sources: tuple[tuple[str, str], ...] = MEMBERSHIP_SOURCES) -> dict[str, Any]:
+    return {
+        "corpus_id": "abc/parser-release-qualification-corpus/v1",
+        "corpus_root": GOVERNED_CORPUS_ROOT,
+        "entries": [
+            {
+                "work_id": work_id,
+                "source_path": f"{GOVERNED_CORPUS_ROOT}/{work_id}.txt",
+                "source_sha256": digest,
+            }
+            for work_id, digest in sources
+        ],
+    }
+
+
+def write_membership_policies(
+    candidate_tree: Path,
+    sources: tuple[tuple[str, str], ...] = MEMBERSHIP_SOURCES,
+) -> None:
+    work_ids = [work_id for work_id, _ in sources]
+    expected_sources = [
+        {"work_id": work_id, "source_sha256": digest} for work_id, digest in sources
+    ]
+    write_json(
+        candidate_tree / "abc/data/parser-rq-core-attempt-policy-v1.json",
+        {"expected_work_ids": work_ids, "expected_sources": expected_sources},
+    )
+    for relative in (
+        "abc/data/parser-rq-diagnostic-completeness-policy-v1.json",
+        "abc/data/parser-rq-parser-ir-conformance-policy-v1.json",
+    ):
+        write_json(candidate_tree / relative, {"expected_work_ids": work_ids})
+    write_json(
+        candidate_tree / "abc/data/parser-rq-resource-policy-v1.json",
+        {"work_ids": work_ids},
+    )
+
+
+def test_policy_membership_agreeing_with_the_corpus_is_authenticated(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    write_membership_policies(campaign.config.candidate_tree)
+
+    orchestrator._authenticate_policy_membership(
+        campaign.config.candidate_tree, membership_corpus()
+    )
+
+
+@pytest.mark.parametrize(
+    ("relative", "field", "value"),
+    [
+        ("abc/data/parser-rq-resource-policy-v1.json", "work_ids", ["w1"]),
+        ("abc/data/parser-rq-resource-policy-v1.json", "work_ids", ["w1", "w2", "w3"]),
+        ("abc/data/parser-rq-resource-policy-v1.json", "work_ids", ["w2", "w1"]),
+        (
+            "abc/data/parser-rq-core-attempt-policy-v1.json",
+            "expected_work_ids",
+            ["w1", "w3"],
+        ),
+        (
+            "abc/data/parser-rq-diagnostic-completeness-policy-v1.json",
+            "expected_work_ids",
+            ["w1"],
+        ),
+        (
+            "abc/data/parser-rq-parser-ir-conformance-policy-v1.json",
+            "expected_work_ids",
+            ["w1"],
+        ),
+    ],
+)
+def test_policy_membership_divergence_fails_closed(
+    tmp_path: Path, relative: str, field: str, value: list[str]
+) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    write_membership_policies(campaign.config.candidate_tree)
+    policy = json.loads((campaign.config.candidate_tree / relative).read_bytes())
+    policy[field] = value
+    write_json(campaign.config.candidate_tree / relative, policy)
+
+    with pytest.raises(orchestrator.ProtocolError, match="membership differs"):
+        orchestrator._authenticate_policy_membership(
+            campaign.config.candidate_tree, membership_corpus()
+        )
+
+
+def test_core_attempt_source_hash_divergence_fails_closed(tmp_path: Path) -> None:
+    """`expected_sources` pins bytes the corpus also pins; they must agree.
+
+    Membership equality alone would let a policy claim the right works against
+    the wrong bytes.
+    """
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    write_membership_policies(campaign.config.candidate_tree)
+    relative = "abc/data/parser-rq-core-attempt-policy-v1.json"
+    policy = json.loads((campaign.config.candidate_tree / relative).read_bytes())
+    policy["expected_sources"][1]["source_sha256"] = "sha256:" + "9" * 64
+    write_json(campaign.config.candidate_tree / relative, policy)
+
+    with pytest.raises(orchestrator.ProtocolError, match="source identity differs"):
+        orchestrator._authenticate_policy_membership(
+            campaign.config.candidate_tree, membership_corpus()
+        )
+
+
+def test_membership_authentication_rejects_a_malformed_policy(tmp_path: Path) -> None:
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    write_membership_policies(campaign.config.candidate_tree)
+    write_json(
+        campaign.config.candidate_tree / "abc/data/parser-rq-resource-policy-v1.json",
+        {"work_ids": "w1"},
+    )
+
+    with pytest.raises(orchestrator.ProtocolError, match="membership is malformed"):
+        orchestrator._authenticate_policy_membership(
+            campaign.config.candidate_tree, membership_corpus()
+        )
+
+
+def test_committed_policies_agree_with_the_governed_corpus() -> None:
+    """Characterization: the present corpus and policies already agree.
+
+    The membership authentication above changes no outcome on the workset in
+    force. It changes what happens when they stop agreeing.
+    """
+    repository_root = Path(__file__).resolve().parents[2]
+    corpus_edn = (repository_root / "abc/data/parser-release-qualification-corpus.edn").read_text(
+        encoding="utf-8"
+    )
+    work_ids = re.findall(r':work_id "([^"]+)"', corpus_edn)
+    digests = re.findall(r':source_sha256 "([^"]+)"', corpus_edn)
+    assert len(work_ids) == len(digests) == 3
+
+    orchestrator._authenticate_policy_membership(
+        repository_root,
+        {
+            "entries": [
+                {"work_id": work_id, "source_sha256": digest}
+                for work_id, digest in zip(work_ids, digests, strict=True)
+            ]
+        },
+    )
+
+
+def test_execute_graph_refuses_to_capture_under_diverging_membership(tmp_path: Path) -> None:
+    """The authentication must be reached by the run, not merely callable.
+
+    It fails before `capture-start.json` exists, so a campaign whose policies
+    disagree with the governed corpus produces no evidence at all rather than
+    evidence about a workset nobody authorized.
+    """
+    campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
+    write_json(
+        campaign.config.candidate_tree / "abc/data/parser-rq-resource-policy-v1.json",
+        {
+            "policy_hash": "sha256:" + "8" * 64,
+            "production_command_hash": orchestrator.RESOURCE_COMMAND_HASH,
+            "work_ids": ["a-work-the-corpus-does-not-contain"],
+        },
+    )
+
+    result = orchestrator.execute_graph(
+        campaign,
+        FakeRunner(campaign.config.staging_root),
+        now=lambda: datetime(2026, 7, 18, tzinfo=UTC),
+    )
+
+    assert result.status == "preparation_failed"
+    assert "membership differs from the governed corpus" in result.reason
+    assert not (campaign.config.staging_root / "capture-start.json").exists()

@@ -1,8 +1,10 @@
 {
   "attempt_disposition": "parsed",
-  "complete_diagnostics": 0,
   "emitted_diagnostics": 0,
-  "policy_hash": "sha256:6dc02b91e18e9e06c125011fcccee04b6818312a5a3a438cb8a6c52561f3973a",
+  "expected_diagnostics": [],
+  "matches_expectation": true,
+  "observed_diagnostics": [],
+  "policy_hash": "sha256:1a6ca2cd40b8dc9816b2fb9b4963234978705deabd8578da88147ee5808fb5c0",
   "qualification_identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "raw_diagnostics": {
     "bytes": 30,

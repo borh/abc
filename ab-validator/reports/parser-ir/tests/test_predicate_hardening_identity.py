@@ -113,7 +113,11 @@ def test_policies_have_distinct_closed_identities(module):
     diagnostic_manifest = module.build_manifest(REPO_ROOT, "diagnostic-completeness")
     parser_manifest = module.build_manifest(REPO_ROOT, "parser-ir-conformance")
     diagnostic = module.build_policy(
-        REPO_ROOT, "diagnostic-completeness", diagnostic_manifest, ["work-a"]
+        REPO_ROOT,
+        "diagnostic-completeness",
+        diagnostic_manifest,
+        ["work-a"],
+        {"work-a": []},
     )
     parser_ir = module.build_policy(
         REPO_ROOT,
@@ -139,7 +143,11 @@ def test_committed_policy_equals_its_regenerated_form(module, instrument):
     committed = json.loads((REPO_ROOT / COMMITTED_POLICIES[instrument]).read_text(encoding="utf-8"))
     manifest = module.build_manifest(REPO_ROOT, instrument)
     generated = module.build_policy(
-        REPO_ROOT, instrument, manifest, list(committed["expected_work_ids"])
+        REPO_ROOT,
+        instrument,
+        manifest,
+        list(committed["expected_work_ids"]),
+        committed.get("expected_diagnostics"),
     )
     assert generated == committed
 
@@ -306,3 +314,58 @@ def test_a_declared_dependency_missing_from_the_lock_fails_closed(module, tmp_pa
     _write_lock(lock, [{**BASE_LOCK[0], "dependencies": ["leaf 9.9.9"]}, *BASE_LOCK[1:]])
     with pytest.raises(ValueError, match="does not select one locked package"):
         module.locked_dependency_projection(tmp_path, "subject")
+
+
+def test_a_work_without_a_governed_expectation_cannot_enter_the_policy(module):
+    """Membership and expectation are one claim, not two that may disagree.
+
+    The diagnostic-completeness instrument divides by the expected workset, so
+    a work present in one list and absent from the other would either be
+    measured against nothing or counted in a denominator it has no term in.
+    """
+    manifest = module.build_manifest(REPO_ROOT, "diagnostic-completeness")
+    for expectation in (None, {}, {"work-a": []}, {"work-a": [], "work-c": []}):
+        with pytest.raises(ValueError, match="one governed expectation per expected work"):
+            module.build_policy(
+                REPO_ROOT,
+                "diagnostic-completeness",
+                manifest,
+                ["work-a", "work-b"],
+                expectation,
+            )
+
+
+def test_expectation_codes_are_sorted_into_the_policy_hash(module):
+    """Two callers naming the same codes in different orders must agree.
+
+    The corpus is the authority and its order is incidental; leaving it in
+    would make `policy_hash` depend on how the expectation was typed.
+    """
+    manifest = module.build_manifest(REPO_ROOT, "diagnostic-completeness")
+    ordered = module.build_policy(
+        REPO_ROOT,
+        "diagnostic-completeness",
+        manifest,
+        ["work-a"],
+        {"work-a": ["nested-ruby", "unclosed-bracket"]},
+    )
+    reversed_codes = module.build_policy(
+        REPO_ROOT,
+        "diagnostic-completeness",
+        manifest,
+        ["work-a"],
+        {"work-a": ["unclosed-bracket", "nested-ruby"]},
+    )
+    assert ordered == reversed_codes
+
+
+def test_work_diagnostics_arguments_parse_into_one_expectation(module):
+    assert module.parse_work_diagnostics(["a=", "b=nested-ruby,unclosed-bracket"]) == {
+        "a": [],
+        "b": ["nested-ruby", "unclosed-bracket"],
+    }
+    for malformed in (["a"], ["=x"]):
+        with pytest.raises(ValueError, match="is not WORK_ID=CODE,CODE"):
+            module.parse_work_diagnostics(malformed)
+    with pytest.raises(ValueError, match="more than once"):
+        module.parse_work_diagnostics(["a=", "a=nested-ruby"])

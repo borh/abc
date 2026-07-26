@@ -284,28 +284,40 @@ def build_policy(
     instrument: str,
     manifest: dict[str, Any],
     expected_work_ids: list[str],
+    expected_diagnostics: dict[str, list[str]] | None = None,
 ) -> dict[str, Any]:
     if not expected_work_ids or len(expected_work_ids) != len(set(expected_work_ids)):
         raise ValueError("policy work ids must be a nonempty unique list")
     repo_root = repo_root.resolve()
     common = {
-        "schema_version": "1.0.0",
         "expected_work_ids": expected_work_ids,
         "expected_work_set_hash": _sha256(_canonical(expected_work_ids)),
         "validator_semantics_hash": manifest["validator_semantics_hash"],
     }
     if instrument == "diagnostic-completeness":
+        # Restated from the qualification corpus, which is the authority. The
+        # campaign orchestrator authenticates this restatement against the
+        # governed corpus before any capture runs, so a policy that disagrees
+        # with what the corpus expects cannot produce evidence at all.
+        if expected_diagnostics is None or set(expected_diagnostics) != set(expected_work_ids):
+            raise ValueError(
+                "diagnostic-completeness requires one governed expectation per expected work"
+            )
         policy = {
             **common,
+            "schema_version": "2.0.0",
             "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-policy.schema.json",
             "policy_id": "abc/parser-rq-diagnostic-completeness/v1",
-            "algorithm_version": "diagnostic-envelope-completeness-v1",
+            "algorithm_version": "diagnostic-expectation-conformance-v2",
+            "expected_diagnostics": {
+                work: sorted(codes) for work, codes in expected_diagnostics.items()
+            },
             "raw_diagnostic_schema_id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
             "raw_diagnostic_schema_hash": _json_logical_hash(
                 repo_root / "abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
             ),
             "diagnostic_wire_version": 3,
-            "vacuity_semantics": "valid_empty_passes_with_disclosure",
+            "vacuity_semantics": "empty_expectation_match_is_a_positive_observation",
             "status_mapping": {
                 "allowed_statuses": ["measured", "invalid_diagnostic_envelope"],
                 "values": {
@@ -317,6 +329,7 @@ def build_policy(
     else:
         policy = {
             **common,
+            "schema_version": "1.0.0",
             "schema_id": "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-policy.schema.json",
             "policy_id": "abc/parser-rq-parser-ir-conformance/v1",
             "algorithm_version": "parser-ir-schema-conformance-v1",
@@ -350,7 +363,36 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", required=True, type=pathlib.Path)
     parser.add_argument("--policy-out", type=pathlib.Path)
     parser.add_argument("--work-id", action="append", default=[])
+    parser.add_argument(
+        "--work-diagnostics",
+        action="append",
+        default=[],
+        metavar="WORK_ID=CODE[,CODE...]",
+        help=(
+            "governed diagnostic expectation for one work, restated from the "
+            "qualification corpus; a trailing empty list means the work must "
+            "emit no diagnostics"
+        ),
+    )
     return parser.parse_args()
+
+
+def parse_work_diagnostics(pairs: list[str]) -> dict[str, list[str]]:
+    """Parse repeated WORK_ID=CODE,CODE arguments into one expectation map.
+
+    A work named twice is rejected rather than last-wins: two disagreeing
+    expectations for one work is a caller mistake, and silently keeping one of
+    them would put an unreviewed expectation into the policy hash.
+    """
+    expectation: dict[str, list[str]] = {}
+    for pair in pairs:
+        work, separator, codes = pair.partition("=")
+        if not separator or not work:
+            raise ValueError(f"--work-diagnostics {pair!r} is not WORK_ID=CODE,CODE")
+        if work in expectation:
+            raise ValueError(f"--work-diagnostics names {work!r} more than once")
+        expectation[work] = [code for code in codes.split(",") if code]
+    return expectation
 
 
 def main() -> int:
@@ -360,7 +402,13 @@ def main() -> int:
     if args.policy_out:
         _write_json(
             args.policy_out,
-            build_policy(args.repo_root, args.instrument, manifest, args.work_id),
+            build_policy(
+                args.repo_root,
+                args.instrument,
+                manifest,
+                args.work_id,
+                parse_work_diagnostics(args.work_diagnostics) or None,
+            ),
         )
     return 0
 

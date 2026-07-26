@@ -2,11 +2,13 @@
   "diagnostic_completeness": {
     "details": {
       "diagnostic_count": 1,
+      "expected_works": 3,
+      "matching_works": 2,
       "vacuous": false,
       "works_with_diagnostics": 1
     },
     "identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "value": 1.0
+    "value": 0.6666666666666666
   },
   "parser_ir_schema_validation": {
     "details": {

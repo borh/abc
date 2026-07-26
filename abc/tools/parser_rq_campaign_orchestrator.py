@@ -714,17 +714,27 @@ def _authenticate_policy_membership(candidate_tree: Path, corpus: dict[str, Any]
     `expected_sources` additionally pins each work's source bytes, which the
     corpus pins too. Membership equality alone would let a policy claim the
     right works against the wrong bytes, so the hashes are compared as well.
+
+    `expected_diagnostics` is the same shape of claim one level further in:
+    the diagnostic-completeness instrument measures each work against it, so
+    a restatement that disagrees with the corpus would silently move what the
+    predicate is testing.
     """
     entries = corpus.get("entries")
     if not isinstance(entries, list):
         raise ProtocolError("governed corpus membership is malformed")
     work_ids: list[str] = []
     source_hashes: dict[str, object] = {}
+    expected_diagnostics: dict[str, list[str]] = {}
     for entry in entries:
         if not isinstance(entry, dict) or not isinstance(entry.get("work_id"), str):
             raise ProtocolError("governed corpus membership is malformed")
         work_ids.append(entry["work_id"])
         source_hashes[entry["work_id"]] = entry.get("source_sha256")
+        codes = entry.get("expected_diagnostics")
+        if not isinstance(codes, list) or any(not isinstance(code, str) for code in codes):
+            raise ProtocolError("governed corpus membership is malformed")
+        expected_diagnostics[entry["work_id"]] = sorted(codes)
     for relative, field in MEMBERSHIP_POLICIES:
         policy = _read_object(candidate_tree / relative, f"{relative} policy")
         declared = policy.get(field)
@@ -734,6 +744,19 @@ def _authenticate_policy_membership(candidate_tree: Path, corpus: dict[str, Any]
             raise ProtocolError(f"{relative} membership is malformed")
         if declared != work_ids:
             raise ProtocolError(f"{relative} membership differs from the governed corpus")
+        declared_diagnostics = policy.get("expected_diagnostics")
+        if declared_diagnostics is not None:
+            if not isinstance(declared_diagnostics, dict) or any(
+                not isinstance(codes, list) or any(not isinstance(code, str) for code in codes)
+                for codes in declared_diagnostics.values()
+            ):
+                raise ProtocolError(f"{relative} membership is malformed")
+            if {
+                work: sorted(codes) for work, codes in declared_diagnostics.items()
+            } != expected_diagnostics:
+                raise ProtocolError(
+                    f"{relative} diagnostic expectation differs from the governed corpus"
+                )
         sources = policy.get("expected_sources")
         if sources is None:
             continue

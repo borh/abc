@@ -104,6 +104,7 @@ diag_entries = []
 ir_entries = []
 diagnostic_count = 0
 works_with_diagnostics = 0
+matching_works = 0
 valid_outputs = 0
 invalid_outputs = 0
 no_outputs = 0
@@ -115,6 +116,13 @@ for work_id in work_ids:
     emitted = len(diag_value["data"])
     diagnostic_count += emitted
     works_with_diagnostics += int(emitted > 0)
+    # The governed expectation, restated from the corpus into the policy and
+    # authenticated against it before capture. This fixture deliberately feeds
+    # one work a source that emits a diagnostic it is not governed to emit, so
+    # the ratio here is below 1.0 on purpose.
+    expected_codes = sorted(diag_policy["expected_diagnostics"][work_id])
+    observed_codes = sorted(entry["code"] for entry in diag_value["data"])
+    matching_works += int(observed_codes == expected_codes)
     raw_member = publish_bytes(raw_diag)
     diag_record = {
         "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-work.schema.json",
@@ -126,7 +134,9 @@ for work_id in work_ids:
         "raw_diagnostics": raw_member["ref"],
         "status": "complete",
         "emitted_diagnostics": emitted,
-        "complete_diagnostics": emitted,
+        "expected_diagnostics": expected_codes,
+        "observed_diagnostics": observed_codes,
+        "matches_expectation": observed_codes == expected_codes,
         "vacuous": emitted == 0,
     }
     diag_record_member = publish(diag_record)
@@ -183,7 +193,8 @@ diag_aggregate = {
     "status": "measured",
     "expected_works": 3,
     "work_count": 3,
-    "diagnostic_completeness": 1.0,
+    "diagnostic_completeness": matching_works / len(work_ids),
+    "matching_works": matching_works,
     "diagnostic_count": diagnostic_count,
     "works_with_diagnostics": works_with_diagnostics,
     "vacuous": diagnostic_count == 0,
@@ -207,8 +218,11 @@ ir_aggregate = {
 for value in (diag_index, ir_index, diag_aggregate, ir_aggregate):
     publish(value)
 measurements = {
-    "diagnostic_completeness": {"value": 1.0, "identity_ref": identity_ref,
-                                 "details": {"diagnostic_count": diagnostic_count,
+    "diagnostic_completeness": {"value": matching_works / len(work_ids),
+                                 "identity_ref": identity_ref,
+                                 "details": {"expected_works": len(work_ids),
+                                             "matching_works": matching_works,
+                                             "diagnostic_count": diagnostic_count,
                                              "works_with_diagnostics": works_with_diagnostics,
                                              "vacuous": diagnostic_count == 0}},
     "parser_ir_schema_validation": {"value": parser_ratio,

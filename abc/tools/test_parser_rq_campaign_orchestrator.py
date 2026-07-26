@@ -104,7 +104,10 @@ def fixture(tmp_path: Path) -> Any:
             "parser-rq-core-attempt-policy-v1.json",
             {"expected_work_ids": [], "expected_sources": []},
         ),
-        ("parser-rq-diagnostic-completeness-policy-v1.json", {"expected_work_ids": []}),
+        (
+            "parser-rq-diagnostic-completeness-policy-v1.json",
+            {"expected_work_ids": [], "expected_diagnostics": {}},
+        ),
         ("parser-rq-parser-ir-conformance-policy-v1.json", {"expected_work_ids": []}),
         ("parser-rq-resource-policy-v1.json", {"work_ids": []}),
     ):
@@ -408,7 +411,7 @@ def bounded_identity() -> dict[str, object]:
         "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
         "parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
         "corpus_snapshot_hash": "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e",
-        "corpus_list_hash": "sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd",
+        "corpus_list_hash": "sha256:dbe17138be9eee5f681b91fd2247f72a0dda5f717147e22ad149f0485da08708",
         "predicate_set_hash": "sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203",
         "instrument_versions": {
             "diagnostic_completeness": "ab-aozora --mode diagnostics envelope entries {code,severity,source,span}",
@@ -1044,6 +1047,7 @@ def membership_corpus(sources: tuple[tuple[str, str], ...] = MEMBERSHIP_SOURCES)
                 "work_id": work_id,
                 "source_path": f"{GOVERNED_CORPUS_ROOT}/{work_id}.txt",
                 "source_sha256": digest,
+                "expected_diagnostics": [],
             }
             for work_id, digest in sources
         ],
@@ -1062,11 +1066,17 @@ def write_membership_policies(
         candidate_tree / "abc/data/parser-rq-core-attempt-policy-v1.json",
         {"expected_work_ids": work_ids, "expected_sources": expected_sources},
     )
-    for relative in (
-        "abc/data/parser-rq-diagnostic-completeness-policy-v1.json",
-        "abc/data/parser-rq-parser-ir-conformance-policy-v1.json",
-    ):
-        write_json(candidate_tree / relative, {"expected_work_ids": work_ids})
+    write_json(
+        candidate_tree / "abc/data/parser-rq-diagnostic-completeness-policy-v1.json",
+        {
+            "expected_work_ids": work_ids,
+            "expected_diagnostics": {work_id: [] for work_id in work_ids},
+        },
+    )
+    write_json(
+        candidate_tree / "abc/data/parser-rq-parser-ir-conformance-policy-v1.json",
+        {"expected_work_ids": work_ids},
+    )
     write_json(
         candidate_tree / "abc/data/parser-rq-resource-policy-v1.json",
         {"work_ids": work_ids},
@@ -1165,17 +1175,29 @@ def test_committed_policies_agree_with_the_governed_corpus() -> None:
     )
     work_ids = re.findall(r':work_id "([^"]+)"', corpus_edn)
     digests = re.findall(r':source_sha256 "([^"]+)"', corpus_edn)
-    assert len(work_ids) == len(digests) == 3
+    expectations = re.findall(r":expected_diagnostics \[([^]]*)\]", corpus_edn)
+    assert len(work_ids) == len(digests) == len(expectations) == 3
 
-    orchestrator._authenticate_policy_membership(
-        repository_root,
+    entries = [
         {
-            "entries": [
-                {"work_id": work_id, "source_sha256": digest}
-                for work_id, digest in zip(work_ids, digests, strict=True)
-            ]
-        },
-    )
+            "work_id": work_id,
+            "source_sha256": digest,
+            "expected_diagnostics": re.findall(r'"([^"]+)"', expectation),
+        }
+        for work_id, digest, expectation in zip(work_ids, digests, expectations, strict=True)
+    ]
+    orchestrator._authenticate_policy_membership(repository_root, {"entries": entries})
+
+    # ... and stop agreeing the moment the corpus expects something the policy
+    # does not restate. Without this the diagnostic-completeness instrument
+    # would measure against an expectation nobody governed.
+    diverged = [dict(entry) for entry in entries]
+    diverged[0]["expected_diagnostics"] = ["unclosed-bracket"]
+    with pytest.raises(
+        orchestrator.ProtocolError,
+        match="diagnostic expectation differs from the governed corpus",
+    ):
+        orchestrator._authenticate_policy_membership(repository_root, {"entries": diverged})
 
 
 def test_execute_graph_refuses_to_capture_under_diverging_membership(tmp_path: Path) -> None:

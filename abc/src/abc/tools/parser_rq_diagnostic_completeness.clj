@@ -30,8 +30,18 @@
   (let [policy (into {} (map (fn [[key value]]
                                [(if (string? key) (keyword key) key) value]))
                      policy)
-        status-map (:status_mapping policy)]
-    (assoc policy :status_mapping (capture/normalize-status-map status-map))))
+        status-map (:status_mapping policy)
+        expectation (:expected_diagnostics policy)]
+    (cond-> (assoc policy :status_mapping (capture/normalize-status-map status-map))
+      ;; Work ids are JSON object keys, so a recursively keywordized policy
+      ;; arrives with keyword keys and a shallow one with strings. Both name
+      ;; the same works; the wire form is the string.
+      (map? expectation)
+      (assoc :expected_diagnostics
+             (into {}
+                   (map (fn [[work codes]]
+                          [(if (keyword? work) (name work) work) (vec codes)]))
+                   expectation)))))
 
 (defn- projected-hash
   [value field]
@@ -47,6 +57,11 @@
        (= (:expected_work_set_hash policy)
           (hash/format-sha256
            (hash/sha256-json-jcs (:expected_work_ids policy))))
+       ;; Every expected work carries a governed expectation and no other work
+       ;; does. Without this the ratio could be taken over a denominator the
+       ;; corpus never authorized.
+       (= (set (:expected_work_ids policy))
+          (set (keys (:expected_diagnostics policy))))
        (= (:raw_diagnostic_schema_hash policy)
           (schema/schema-hash
            "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"))))
@@ -108,6 +123,7 @@
           (not (and (string? qualification-identity-ref)
                     (re-matches hash/hash-pattern qualification-identity-ref)))
           (not (some #{work_id} (:expected_work_ids policy)))
+          (not (contains? (:expected_diagnostics policy) work_id))
           (not (string? work_id))
           (string/blank? work_id)
           (not (contains? #{"parsed" "failed" "timeout"}
@@ -122,12 +138,18 @@
             result (validation-result bytes)]
         (if-let [value (:value result)]
           (let [diagnostics (or (get value "data") (:data value))
-                diagnostic-count (count diagnostics)]
+                diagnostic-count (count diagnostics)
+                observed (vec (sort (map #(or (get % "code") (:code %)) diagnostics)))
+                expected (vec (sort (get (:expected_diagnostics policy) work_id)))]
             {:record (assoc base
                             :raw_diagnostics raw-ref
                             :status "complete"
                             :emitted_diagnostics diagnostic-count
-                            :complete_diagnostics diagnostic-count
+                            :expected_diagnostics expected
+                            :observed_diagnostics observed
+                            ;; Sorted sequence equality, so a repeated code is
+                            ;; a different claim than a single one.
+                            :matches_expectation (= observed expected)
                             :vacuous (zero? diagnostic-count))})
           (let [errors (:errors result)
                 ledger (ledger-blob errors)]
@@ -179,20 +201,38 @@
       :else
       (let [diagnostic-count (reduce + 0 (map :emitted_diagnostics work-records))
             works-with-diagnostics (count (filter #(pos? (:emitted_diagnostics %))
-                                                  work-records))]
+                                                  work-records))
+            matching-works (count (filter :matches_expectation work-records))]
         (assoc base
                :status "measured"
-               :diagnostic_completeness 1.0
+               ;; The ratio the predicate declares: works whose observed
+               ;; diagnostics equal their governed expectation, over the works
+               ;; the corpus expects. A clean corpus passes at 3/3 because
+               ;; three works each matched an empty expectation, not because
+               ;; there was nothing to measure.
+               ;; IEEE division of two doubles, not `(double (/ int int))`.
+               ;; The latter builds an exact Ratio and rounds through
+               ;; BigDecimal, which differs from every other language's
+               ;; division in the last bit -- 2/3 becomes ...667 here and
+               ;; ...666 in the Python capture driver. This value lands in
+               ;; content-addressed evidence, so the two must agree exactly.
+               :diagnostic_completeness (/ (double matching-works)
+                                           (double (count expected-work-ids)))
+               :matching_works matching-works
                :diagnostic_count diagnostic-count
                :works_with_diagnostics works-with-diagnostics
                :vacuous (zero? diagnostic-count))))))
 
 (defn- observation-value
-  [policy status]
+  [policy status aggregate]
   (let [value (capture/map-wire-status (:status_mapping policy) status)]
     (cond
       (map? value) :unavailable
       (= "invalid_diagnostic_envelope" value) :invalid-diagnostic-envelope
+      ;; The measured value is the derived ratio, not the status map's
+      ;; constant. The map still gates which statuses may produce a value at
+      ;; all, exactly as it does for parser-IR conformance.
+      (= "measured" status) (double (:diagnostic_completeness aggregate))
       :else value)))
 
 (defn derive-observation
@@ -206,9 +246,10 @@
              (= (:policy_hash policy) (:policy_hash aggregate)))
       (capture/observation-envelope
        qualification-identity-ref
-       (observation-value policy (:status aggregate))
+       (observation-value policy (:status aggregate) aggregate)
        (when (= "measured" (:status aggregate))
          (select-keys aggregate
-                      [:diagnostic_count :works_with_diagnostics :vacuous])))
+                      [:expected_works :matching_works :diagnostic_count
+                       :works_with_diagnostics :vacuous])))
       (capture/observation-envelope qualification-identity-ref :unavailable
                                     {:reason :identity-mismatch}))))

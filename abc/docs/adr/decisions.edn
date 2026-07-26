@@ -1993,8 +1993,11 @@
   {:slug "governed-diagnostic-expectation-and-instrument-coordinate",
    :title
    "Bind Diagnostic Expectation to the Corpus, Instrument Identity to Its Own Coordinate",
-   :status :proposed,
+   :status :accepted,
    :date "2026-07-26",
+   :accepted "2026-07-26",
+   :validation-scope :structural,
+   :release-authority :development,
    :topics [:parser :release],
    :relations
    [{:class :lifecycle,
@@ -2008,12 +2011,18 @@
    [{:id :c1,
      :kind :structural-invariant,
      :statement
-     "Observed diagnostics are compared against each corpus entry's `:expected_diagnostics`, and that field joins `corpus-entry-identity-keys`. A global \"at least one diagnostic\" floor is rejected: it is satisfiable by any single diagnostic anywhere, says nothing about which works produced which, and would fail a corpus governed to be clean. The accepted verdict recorded `diagnostic_completeness 1.0` with `diagnostic_count 0` and `vacuous true` — consistent with a corpus declaring `:expected_diagnostics []` on every entry, but that declaration was read by nothing and bound into no identity."}
+     "Observed diagnostics are compared against each corpus entry's `:expected_diagnostics`, and that field joins `corpus-entry-identity-keys`. A global \"at least one diagnostic\" floor is rejected: it is satisfiable by any single diagnostic anywhere, says nothing about which works produced which, and would fail a corpus governed to be clean. The accepted verdict recorded `diagnostic_completeness 1.0` with `diagnostic_count 0` and `vacuous true` — consistent with a corpus declaring `:expected_diagnostics []` on every entry, but that declaration was read by nothing and bound into no identity. The instrument now derives `diagnostic_completeness` as works matching their governed expectation over expected works, a work whose expectation the policy does not restate cannot be measured at all, and the campaign orchestrator authenticates the policy's restatement against the governed corpus before any capture runs. Evidence boundary: `test/abc/tools/parser_rq_diagnostic_completeness_test.clj`.",
+     :evidence
+     ["test/abc/tools/parser_rq_diagnostic_completeness_test.clj"]}
     {:id :c2,
      :kind :structural-invariant,
      :statement
-     "A new `instrument_policy_hashes` key in the qualification identity binds each instrument's governed `policy_hash`, replacing reliance on the predicate set's descriptive `:instrument` prose. Editing that prose is rejected as the remedy because it rotates `predicate_set_hash`, braiding what must be true with how it was measured. The candidate schema declares `identity` with `additionalProperties: false`, so the key is a schema change and `parser-rq-candidate.schema.json` bumps off `schema_version` `1.0.0`."}
+     "A new `instrument_policy_hashes` key in the qualification identity binds each instrument's governed `policy_hash`, replacing reliance on the predicate set's descriptive `:instrument` prose. Editing that prose is rejected as the remedy because it rotates `predicate_set_hash`, braiding what must be true with how it was measured. The candidate schema declares `identity` with `additionalProperties: false`, so the key is a schema change and `parser-rq-candidate.schema.json` bumps off `schema_version` `1.0.0`. What the key binds is the content of each governed authority document — the sha256 of its canonical JSON bytes — not the `policy_hash` the document declares about itself: the ignored-regions taxonomy behind source recognition declares no hash at all, so a declaration-based rule would have had to omit that member and reintroduce the gap one level down, and where a policy does declare one that declaration is among the hashed bytes. Membership is closed over exactly the seven capture members that contribute observations, and a named-but-missing policy fails the candidate build. Evidence boundary: `test/abc/tools/parser_rq_campaign_test.clj`.",
+     :evidence
+     ["test/abc/tools/parser_rq_campaign_test.clj"]}
     {:id :c3,
      :kind :structural-invariant,
      :statement
-     "The predicate declares `:unit \"ratio\"` while `diagnostic_completeness` is a literal `1.0` and `complete_diagnostics` is assigned equal to `emitted_diagnostics` unconditionally, so no ratio is computed. The declaration is made true rather than corrected: `diagnostic_completeness` becomes the works whose observed diagnostics match their governed expectation over expected works. On the present corpus that is 3/3 = 1.0 and no outcome changes. Editing the declaration instead would rotate `predicate_set_hash`, braiding the predicate contract with an instrument concern — the same fault c2 rejects — so the dimension, comparator, threshold, and unit all stay as written and the semantics change is carried by a bumped `algorithm_version` in the instrument policy."}]}]}
+     "The predicate declares `:unit \"ratio\"` while `diagnostic_completeness` is a literal `1.0` and `complete_diagnostics` is assigned equal to `emitted_diagnostics` unconditionally, so no ratio is computed. The declaration is made true rather than corrected: `diagnostic_completeness` becomes the works whose observed diagnostics match their governed expectation over expected works. On the present corpus that is 3/3 = 1.0 and no outcome changes. Editing the declaration instead would rotate `predicate_set_hash`, braiding the predicate contract with an instrument concern — the same fault c2 rejects — so the dimension, comparator, threshold, and unit all stay as written and the semantics change is carried by a bumped `algorithm_version` in the instrument policy. The ratio is computed as IEEE division of two doubles rather than `(double (/ int int))`, whose exact-Ratio rounding differs in the last bit from every other language's division and so would have disagreed with the Python capture driver over a value that lands in content-addressed evidence. Evidence boundary: `test/abc/tools/parser_rq_diagnostic_completeness_test.clj`.",
+     :evidence
+     ["test/abc/tools/parser_rq_diagnostic_completeness_test.clj"]}]}]}

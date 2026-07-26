@@ -4,30 +4,30 @@
     "000002_2",
     "000003_3"
   ],
-  "policy_hash": "sha256:6dc02b91e18e9e06c125011fcccee04b6818312a5a3a438cb8a6c52561f3973a",
+  "policy_hash": "sha256:1a6ca2cd40b8dc9816b2fb9b4963234978705deabd8578da88147ee5808fb5c0",
   "qualification_identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "records": [
     {
       "record": {
-        "bytes": 660,
+        "bytes": 722,
         "media_type": "application/json",
-        "sha256": "sha256:3de4156acceedd2af6d68ea9b626590d35e15ea8e81045faabbab66b3c637254"
+        "sha256": "sha256:11dc6890163b574d7525ab1e9375618c331e3aaee5dce32cb46ac37d3e3a6e61"
       },
       "work_id": "000001_1"
     },
     {
       "record": {
-        "bytes": 660,
+        "bytes": 722,
         "media_type": "application/json",
-        "sha256": "sha256:d1ab13f7c3d2195b1474d9a3eb6ef4c21e3537c49fd4db666dc67819ed37f4ab"
+        "sha256": "sha256:cddb356c348cfaa1d29115724d889fca9950ef71cd0b6f9aaed468b562f27676"
       },
       "work_id": "000002_2"
     },
     {
       "record": {
-        "bytes": 662,
+        "bytes": 751,
         "media_type": "application/json",
-        "sha256": "sha256:3b583f54524cfcbf2e6f4b83a7bbcd40a1ca3b1ef1a588711f08a2b652c4c4cf"
+        "sha256": "sha256:5ea966cfa47a031041ea337cbdd1f6e361518202b1848785ff58f92e8b1413f4"
       },
       "work_id": "000003_3"
     }

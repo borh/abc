@@ -2,10 +2,16 @@
 
 ## Implementation Status
 
-Proposed on 2026-07-26. Decided ahead of implementation because both changes
-rotate identity and must land as one governed migration, not as code that
+Accepted on 2026-07-26. Decided ahead of implementation because both changes
+rotate identity and must land as governed migrations, not as code that
 retroactively acquires a rationale. Step 3 of the instrument-semantics audit
-implements them; this record becomes accepted when its evidence exists.
+implemented them as two commits — the instrument coordinate first, since it
+rotates a different coordinate than the diagnostic expectation and is atomic
+on its own.
+
+Requalification is owed and not yet done: a new capture settles this record's
+two rotations together with the instrument rotation recorded in
+[[package-scoped-instrument-dependency-identity]].
 
 ## Context
 
@@ -151,9 +157,30 @@ gate question.
 
 ## Evidence
 
-Recorded when step 3 lands. The per-work expectation comparison and its
-identity binding will be checked in
-`test/abc/tools/parser_rq_diagnostic_completeness_test.clj` and
-`test/abc/tools/parser_release_qualification_test.clj`; the new identity
-coordinate in `test/abc/tools/parser_rq_campaign_test.clj` and
-`test/abc/tools/validate_design_bundle_test.clj`.
+The per-work expectation comparison is checked in
+`test/abc/tools/parser_rq_diagnostic_completeness_test.clj`: a corpus where
+every work expects nothing and emits nothing passes at 3/3 rather than by
+vacuity, a work emitting a diagnostic it should not drops the ratio to 2/3, a
+work failing to emit one it should drops it to 0, a repeated code is a
+different claim than a single one, and a work the policy does not govern
+cannot be measured at all. The new identity coordinate is checked in
+`test/abc/tools/parser_rq_campaign_test.clj`: the bound membership equals the
+capture members exactly, a missing policy fails the build, and editing an
+instrument policy rotates `qualification_identity_ref` while leaving
+`predicate_set_hash` unmoved.
+
+The committed predicate-hardening capture is the fixture that makes both
+load-bearing. Regenerating it now yields `diagnostic_completeness` 0.667, not
+1.0, because one of its three works is fed a source that emits a diagnostic it
+is not governed to emit — the first evidence in this campaign that the
+predicate discriminates at all.
+
+One defect surfaced only through that fixture and is worth naming. The ratio
+was first written `(double (/ matching expected))`, which builds an exact
+Ratio and rounds through BigDecimal; 2/3 becomes `...667` on that path and
+`...666` under IEEE division, so the Clojure instrument and the Python capture
+driver disagreed on a value that lands in content-addressed evidence. It is
+now IEEE division of two doubles on both sides. The sibling parser-IR
+conformance instrument computes its ratio the same unsafe way and has not been
+changed here, because doing so rotates a second instrument identity and is its
+own governed change.

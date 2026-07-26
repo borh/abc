@@ -427,21 +427,24 @@
          "raw_diagnostics" parser-rq-test-blob
          "status" "complete"
          "emitted_diagnostics" 0
-         "complete_diagnostics" 0
+         "expected_diagnostics" []
+         "observed_diagnostics" []
+         "matches_expectation" true
          "vacuous" true}
         diag-policy
         {"schema_id" "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-policy.schema.json"
-         "schema_version" "1.0.0"
+         "schema_version" "2.0.0"
          "policy_id" "abc/parser-rq-diagnostic-completeness/v1"
-         "algorithm_version" "diagnostic-envelope-completeness-v1"
+         "algorithm_version" "diagnostic-expectation-conformance-v2"
          "policy_hash" parser-rq-test-hash
          "expected_work_ids" ["w1"]
          "expected_work_set_hash" parser-rq-test-hash
+         "expected_diagnostics" {"w1" []}
          "raw_diagnostic_schema_id" "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
          "raw_diagnostic_schema_hash" parser-rq-test-hash
          "diagnostic_wire_version" 3
          "validator_semantics_hash" parser-rq-test-hash
-         "vacuity_semantics" "valid_empty_passes_with_disclosure"
+         "vacuity_semantics" "empty_expectation_match_is_a_positive_observation"
          "status_mapping"
          {"allowed_statuses" ["measured" "invalid_diagnostic_envelope"]
           "values" {"measured" 1.0
@@ -451,7 +454,8 @@
             (assoc "status" "invalid_diagnostic_envelope"
                    "validation_ledger" parser-rq-test-blob
                    "validation_witnesses" ["invalid JSON"])
-            (dissoc "emitted_diagnostics" "complete_diagnostics" "vacuous"))
+            (dissoc "emitted_diagnostics" "expected_diagnostics"
+                    "observed_diagnostics" "matches_expectation" "vacuous"))
         ir-valid
         {"schema_id" "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-work.schema.json"
          "schema_version" "1.0.0"
@@ -502,6 +506,7 @@
          "expected_works" 1
          "work_count" 1
          "diagnostic_completeness" 1.0
+         "matching_works" 1
          "diagnostic_count" 0
          "works_with_diagnostics" 0
          "vacuous" true}
@@ -532,7 +537,7 @@
     (testing "candidate failure and unavailability cannot be conflated"
       (is (seq (schema/validation-errors
                 diag-work-schema
-                (dissoc diag-complete "complete_diagnostics"))))
+                (dissoc diag-complete "matches_expectation"))))
       (is (seq (schema/validation-errors
                 diag-work-schema
                 (dissoc diag-invalid "validation_ledger"))))

@@ -41,8 +41,14 @@
   "Fields that make a corpus entry's contract identity. The list hash is taken
   over exactly these fields, in file order, so a reason edit does not silently
   change corpus identity but a work/path/hash/category/expected-status edit
-  does."
-  [:work_id :source_path :source_sha256 :category :expected_status])
+  does.
+
+  `:expected_diagnostics` is here because the diagnostic-completeness
+  instrument now measures against it. A governed value an instrument reads
+  must move corpus identity when it changes; until it did, the field was
+  declared, read by nothing, and free to be edited without consequence."
+  [:work_id :source_path :source_sha256 :category :expected_status
+   :expected_diagnostics])
 
 (defn corpus-snapshot-hash
   "Deterministic identity of the exact source bytes the corpus pins: the

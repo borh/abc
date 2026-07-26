@@ -16,7 +16,7 @@
    :parser_ir_schema_hash "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"
    :parser_git_rev "004deaf548f34a36abbc17d0f7a162df010a6292"
    :corpus_snapshot_hash "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e"
-   :corpus_list_hash "sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd"
+   :corpus_list_hash "sha256:dbe17138be9eee5f681b91fd2247f72a0dda5f717147e22ad149f0485da08708"
    :predicate_set_hash (q/predicate-set-hash (q/load-predicates))
    :instrument_versions {:fixture "v1"}
    :instrument_policy_hashes

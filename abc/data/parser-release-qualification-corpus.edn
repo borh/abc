@@ -11,7 +11,7 @@
  :source "docs/v0-design-bundle/ci-smoke-corpus.md"
  :corpus_root "ab-validator/crates/ab-index/tests/fixtures/corpus"
  :corpus_snapshot_hash "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e"
- :list_hash "sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd"
+ :list_hash "sha256:dbe17138be9eee5f681b91fd2247f72a0dda5f717147e22ad149f0485da08708"
  :performance_baseline_ref nil
  :entries
  [{:work_id "000001_1"

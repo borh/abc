@@ -1417,10 +1417,18 @@
               nativeBuildInputs = [ pythonWithAatSchemaDeps ];
             }
             ''
+              # Stage the monorepo layout, not the ab-validator subtree alone.
+              # test_predicate_hardening_identity.py resolves its repository root
+              # as parents[4] of the test file, which is correct for a checkout
+              # and requires both ab-validator/ and abc/ to be present: the
+              # reviewed semantic closure spans both trees. Staging only this
+              # subtree made every test in that file error at import.
               work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
+              mkdir -p "$work_dir/repo"
+              cp -R "${source}" "$work_dir/repo/ab-validator"
+              cp -R "${abcSource}" "$work_dir/repo/abc"
+              chmod -R +w "$work_dir/repo"
+              cd "$work_dir/repo/ab-validator"
               python -m pytest reports/parser-ir/tests -q
               touch "$out"
             '';

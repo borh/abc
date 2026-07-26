@@ -87,7 +87,18 @@ release-parser-reproducible:
 	{{nix_eval}} build ./ab-validator#ab-aat-to-parser-ir --rebuild --no-link --print-build-logs
 	@echo "release parser binaries rebuild reproducibly"
 
-validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance evidence-gate release-parser-reproducible
+# parser-rq-instrument-identity: build the predicate-hardening identity suite,
+# which authenticates each instrument policy against the reviewed source closure
+# it claims to bind. `check-no-build` only EVALUATES flake checks, so this
+# derivation had never been built by any recipe; the suite meanwhile errored at
+# import for want of a monorepo-shaped staging root, and two committed identity
+# faults went unobserved. Building it here is what makes that repair stick.
+parser-rq-instrument-identity:
+	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
+	{{nix_eval}} build "./ab-validator#checks.$system.parser-rq-publication-pytest" \
+		--no-link --print-build-logs
+
+validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance evidence-gate parser-rq-instrument-identity release-parser-reproducible
 
 # Unseeded simulation soak (15x counts); failures print the seed to replay.
 sim-soak:

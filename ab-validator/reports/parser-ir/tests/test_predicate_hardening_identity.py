@@ -11,6 +11,43 @@ import pytest
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[4]
 SCRIPT = REPO_ROOT / "ab-validator/reports/parser-ir/predicate-hardening-identity.py"
 
+# The instrument policies this generator authors, and the membership they pin.
+# The equality test below reads work ids from the committed policy on purpose:
+# it isolates the semantic-identity question from corpus membership, which is a
+# separate authority (see finding D of the audit named below).
+COMMITTED_POLICIES = {
+    "diagnostic-completeness": "abc/data/parser-rq-diagnostic-completeness-policy-v1.json",
+    "parser-ir-conformance": "abc/data/parser-rq-parser-ir-conformance-policy-v1.json",
+}
+
+# Step 1a of
+# abc/docs/superpowers/reports/2026-07-26-parser-rq-instrument-semantics-audit.md.
+# Until that repair, every test in this file errored at import because the Nix
+# check staged only the ab-validator subtree, so two committed faults went
+# unobserved. They are recorded here as strict xfails rather than left red:
+# step 1c regenerates the affected identities and removes the markers, and
+# `strict=True` turns a forgotten marker into a failure once the fault is gone.
+STALE_CLOSURE = pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "A1: the diagnostic-completeness reviewed closure names "
+        "abc/src/abc/tools/evidence_io.clj, deleted in b042c7cd, plus three "
+        "sources that are no longer required. The generator refuses to run, so "
+        "the committed policy's validator_semantics_hash covers bytes that no "
+        "longer exist."
+    ),
+)
+
+COMMITTED_DRIFT = pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "A2: the committed parser-IR policy no longer equals its regenerated "
+        "form. No reviewed source changed since 2026-07-17; the manifest binds "
+        "ab-validator/Cargo.lock wholesale, which moved for an unrelated "
+        "workspace package. Scope is decided in step 1b before regeneration."
+    ),
+)
+
 
 @pytest.fixture
 def module():
@@ -21,13 +58,20 @@ def module():
     return loaded
 
 
-@pytest.mark.parametrize("instrument", ["diagnostic-completeness", "parser-ir-conformance"])
+@pytest.mark.parametrize(
+    "instrument",
+    [
+        pytest.param("diagnostic-completeness", marks=STALE_CLOSURE),
+        "parser-ir-conformance",
+    ],
+)
 def test_reviewed_sources_equal_discovered_owned_closure(module, instrument):
     assert module.discover_owned_sources(REPO_ROOT, instrument) == {
         REPO_ROOT / path for path in module.INSTRUMENTS[instrument].reviewed_sources
     }
 
 
+@STALE_CLOSURE
 def test_helper_byte_mutation_changes_semantic_hash(module, tmp_path):
     root = tmp_path / "repo"
     config = module.INSTRUMENTS["diagnostic-completeness"]
@@ -89,6 +133,7 @@ def test_schema_mutation_changes_manifest_and_policy_identity(module, tmp_path):
     assert before_policy["policy_hash"] != after_policy["policy_hash"]
 
 
+@STALE_CLOSURE
 def test_policies_have_distinct_closed_identities(module):
     diagnostic_manifest = module.build_manifest(REPO_ROOT, "diagnostic-completeness")
     parser_manifest = module.build_manifest(REPO_ROOT, "parser-ir-conformance")
@@ -105,3 +150,21 @@ def test_policies_have_distinct_closed_identities(module):
     assert diagnostic["policy_hash"] != parser_ir["policy_hash"]
     assert diagnostic["policy_hash"] == module.projected_hash(diagnostic, "policy_hash")
     assert parser_ir["policy_hash"] == module.projected_hash(parser_ir, "policy_hash")
+
+
+@COMMITTED_DRIFT
+@pytest.mark.parametrize("instrument", sorted(COMMITTED_POLICIES))
+def test_committed_policy_equals_its_regenerated_form(module, instrument):
+    """The governed policy must be exactly what this generator produces.
+
+    Nothing asserted this before. The other tests here check closure discovery,
+    mutation sensitivity, and the self-consistency of *generated* values, so a
+    committed policy could drift from the implementation it claims to bind with
+    no test disagreeing. This is the check that makes regeneration load-bearing.
+    """
+    committed = json.loads((REPO_ROOT / COMMITTED_POLICIES[instrument]).read_text(encoding="utf-8"))
+    manifest = module.build_manifest(REPO_ROOT, instrument)
+    generated = module.build_policy(
+        REPO_ROOT, instrument, manifest, list(committed["expected_work_ids"])
+    )
+    assert generated == committed

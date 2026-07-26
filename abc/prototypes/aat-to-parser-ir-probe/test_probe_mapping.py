@@ -137,8 +137,13 @@ class ProbeMappingTest(unittest.TestCase):
         self.assertEqual(2, len(rules))
         self.assertEqual(["A-01", "L-01"], [rule["rule_id"] for rule in rules])
         self.assertIn("Observed 2 occurrences", rules[0]["description"])
+        # The hash of schemas/parser-ir.schema.json under the abc canonicalizer.
+        # Restated here, so it must be rotated with the schema; the authoritative
+        # copy is :parser_ir_schema_hash in data/release-parser-identity-v1.edn,
+        # and a mismatch between the two means one of them was missed rather than
+        # that this probe found a defect.
         self.assertEqual(
-            "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2",
+            "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
             doc["target_parser_ir_schema_hash"],
         )
         self.assertRegex(doc["mapping_schema_hash"], r"^sha256:[0-9a-f]{64}$")

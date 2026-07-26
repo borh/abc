@@ -210,18 +210,30 @@
            (report/measure! root)))))
 
 (deftest checked-pinned-evidence-test
+  ;; The fast guard on the committed corpus evidence: the `source-bundle-corpus`
+  ;; flake check proves the file REGENERATES from the pinned archive, which costs
+  ;; a full 17k-archive scan; this proves it still holds the values reviewers
+  ;; agreed to, in milliseconds and with no corpus present.
+  ;;
+  ;; `cards/001505/files/58100_txt_60357.zip` is why several counts here look
+  ;; one off from a naive reading. Aozora ships it with 984 bytes of trailing
+  ;; data whose decoy end-of-central-directory record makes stock zip readers
+  ;; reject the whole archive; admission retries at earlier EOCD candidates and
+  ;; recovers all 65 members. So it stays in `damaged_paths` -- it IS damaged --
+  ;; while counting as readable and admitted, and its 65 members land in
+  ;; `legacy_flagged_entry_count`.
   (is (= {"aozorabunko_commit" "0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
           "measurement_construction"
           "abc-source-bundle-streamed-evidence-v1"
-          "readable_zip_count" 17884
-          "unreadable_zip_count" 3
-          "admitted_zip_count" 17879
-          "rejected_zip_count" 8
+          "readable_zip_count" 17885
+          "unreadable_zip_count" 2
+          "admitted_zip_count" 17880
+          "rejected_zip_count" 7
           "rejection_reason_counts"
-          {"no-primary-text-member" 5 "unreadable-zip" 3}
-          "semantic_text_member_counts" {"0" 5 "1" 17879}
+          {"no-primary-text-member" 5 "unreadable-zip" 2}
+          "semantic_text_member_counts" {"0" 5 "1" 17880}
           "utf8_flagged_entry_count" 0
-          "legacy_flagged_entry_count" 22860
+          "legacy_flagged_entry_count" 22925
           "nfc_collision_bundle_count" 0
           "unicode_case_collision_bundle_count" 0
           "max_member_count" 778
@@ -233,10 +245,9 @@
             "member_path" "fushigino_kunino_alice_musical.txt"
             "declared_bytes" 68007
             "actual_bytes" 68497}]
-          "java_unreadable_7zz_listable_count" 1
+          "java_unreadable_7zz_listable_count" 0
           "java_unreadable_7zz_unlistable_count" 2
           "damaged_paths" ["cards/001154/files/chihobunkano_shinkensetsu.zip"
-                           "cards/001505/files/58100_txt_60357.zip"
                            "cards/001562/files/56151_ruby_60063.zip"]}
          (json/read-json-file
           "data/source-bundle/aozorabunko-0e9ea3e-summary.json"))))

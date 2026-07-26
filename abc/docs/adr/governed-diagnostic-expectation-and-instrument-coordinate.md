@@ -84,8 +84,25 @@ rotates `predicate_set_hash` as a side effect, braiding predicate identity with
 instrument identity. What must be true and how it was measured are different
 questions and belong to different coordinates.
 
-The declared `:unit "ratio"` is corrected in the same migration, since it
-describes a computation the instrument does not perform.
+The declared `:unit "ratio"` is **made true rather than corrected**. This
+record originally proposed editing the declaration to match the constant the
+instrument emits. The better move is the reverse: define
+`diagnostic_completeness` as the ratio it already claims to be — works whose
+observed diagnostics match their governed expectation, over expected works.
+
+On the present corpus every work expects no diagnostics and emits none, so the
+ratio is 3/3 = 1.0 and the outcome is unchanged. A work emitting a diagnostic
+it should not, or failing to emit one it should, drops the ratio below 1.0 and
+fails the existing `:= 1.0` comparator.
+
+This matters beyond tidiness. Editing the declaration would rotate
+`predicate_set_hash` — braiding the predicate contract with an instrument
+concern, which is precisely what claim c2 rejects for the coordinate question.
+Making the declaration true leaves the predicate contract untouched: the
+dimension, comparator, threshold, and unit all stay as written, and the
+hardcoded `1.0` disappears from the instrument instead. The semantics change is
+carried where it belongs, by a bumped `algorithm_version` in the instrument
+policy.
 
 ## Consequences
 

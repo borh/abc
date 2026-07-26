@@ -4,18 +4,19 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
+import ctypes.util
 import fcntl
 import hashlib
 import importlib.util
 import json
 import os
 import shutil
-import subprocess
 import sys
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 
 @dataclass(frozen=True)
@@ -198,14 +199,90 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
-def _clock_synchronized() -> bool:
-    completed = subprocess.run(
-        ["timedatectl", "show", "-p", "NTPSynchronized", "--value"],
-        check=False,
-        capture_output=True,
-        text=True,
+class ClockReading(NamedTuple):
+    """One `adjtimex(2)` answer: the clock state and the kernel's own bounds."""
+
+    code: int
+    status: int
+    maxerror: int
+
+
+class _Timex(ctypes.Structure):
+    """The leading fields of the kernel's `struct timex`, through `maxerror`.
+
+    Only the prefix matters. `adjtimex` fills a fixed-size struct, so reading
+    these fields needs the offsets up to them to be right and nothing after;
+    the tail is padding sized well past any real layout.
+    """
+
+    _fields_ = (
+        ("modes", ctypes.c_int),
+        ("offset", ctypes.c_long),
+        ("freq", ctypes.c_long),
+        ("maxerror", ctypes.c_long),
+        ("esterror", ctypes.c_long),
+        ("status", ctypes.c_int),
+        ("_tail", ctypes.c_long * 40),
     )
-    return completed.returncode == 0 and completed.stdout.strip().lower() == "yes"
+
+
+# `man 2 adjtimex`. STA_UNSYNC is set at boot and cleared only by a client that
+# disciplines the clock. TIME_ERROR is the state adjtimex reports for a clock
+# that is not synchronized. The 16-second bound on maxerror is the kernel's own
+# ceiling for a usable error estimate: once nothing is correcting the clock the
+# kernel widens maxerror until it reaches that ceiling, so a time source that
+# synchronized once and then died expires without anything having to notice.
+_ADJ_QUERY_ONLY = 0
+_STA_UNSYNC = 0x0040
+_TIME_ERROR = 5
+_MAXERROR_CEILING_MICROSECONDS = 16_000_000
+
+
+def read_kernel_clock() -> ClockReading | None:
+    """Ask the kernel directly whether its clock is disciplined.
+
+    Replaces a `timedatectl show -p NTPSynchronized` subprocess, which asks
+    systemd the same question over D-Bus and so returned "not synchronized" on
+    a correctly synchronized host whenever the bus was unreachable -- every
+    container, sandbox, and busless CI runner. That answer was
+    indistinguishable from a real unsynchronized clock, and it blocked capture
+    preflight on hosts whose clocks were fine.
+
+    Returns None when the call cannot be made at all, which the caller treats
+    as unsynchronized: no reading is not a passing reading.
+    """
+    try:
+        libc = ctypes.CDLL(ctypes.util.find_library("c") or "libc.so.6", use_errno=True)
+        adjtimex = libc.adjtimex
+    except (OSError, AttributeError):
+        return None
+    adjtimex.argtypes = (ctypes.POINTER(_Timex),)
+    adjtimex.restype = ctypes.c_int
+    request = _Timex(modes=_ADJ_QUERY_ONLY)
+    code = adjtimex(ctypes.byref(request))
+    if code < 0:
+        return None
+    return ClockReading(code=code, status=request.status, maxerror=request.maxerror)
+
+
+def clock_synchronized_from(reading: ClockReading | None) -> bool:
+    """Interpret one clock reading, failing closed on every doubt.
+
+    Both conditions are required, so this cannot be weaker than asking systemd
+    however systemd happens to derive its answer -- it has used each of these
+    two tests across versions.
+    """
+    if reading is None:
+        return False
+    return (
+        reading.code != _TIME_ERROR
+        and not reading.status & _STA_UNSYNC
+        and 0 <= reading.maxerror < _MAXERROR_CEILING_MICROSECONDS
+    )
+
+
+def _clock_synchronized() -> bool:
+    return clock_synchronized_from(read_kernel_clock())
 
 
 def _lock_available(path: Path) -> bool:

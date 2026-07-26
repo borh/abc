@@ -261,3 +261,61 @@ def test_cli_has_no_policy_or_persisted_preflight_option() -> None:
 def test_every_site_cli_subcommand_has_help() -> None:
     for command in ("preflight-site", "seal-readiness", "recheck-readiness"):
         assert site.main([command, "--help"]) == 0
+
+
+# --- Kernel clock discipline ------------------------------------------------
+#
+# `_clock_synchronized` had no test at all: every case above injects
+# `RuntimeFacts` directly, so nothing exercised how the fact is obtained. It
+# was obtained by shelling out to `timedatectl`, which needs a reachable
+# systemd D-Bus and therefore fails on a correctly synchronized host whenever
+# the bus is not attached -- containers, sandboxes, CI. That failure is
+# indistinguishable from a genuinely unsynchronized clock.
+
+
+def clock_reading(*, code: int = 0, status: int = 0x2001, maxerror: int = 368_000) -> Any:
+    return site.ClockReading(code=code, status=status, maxerror=maxerror)
+
+
+def test_a_disciplined_kernel_clock_is_synchronized() -> None:
+    assert site.clock_synchronized_from(clock_reading()) is True
+
+
+def test_an_undisciplined_clock_is_not_synchronized() -> None:
+    # STA_UNSYNC is set at boot and only an NTP client that disciplines the
+    # clock clears it, so a host with no time source fails closed.
+    assert site.clock_synchronized_from(clock_reading(status=0x2041)) is False
+
+
+def test_a_clock_whose_error_bound_has_grown_is_not_synchronized() -> None:
+    # The kernel widens maxerror once nothing is correcting the clock, so a
+    # daemon that synced and then died expires on its own.
+    assert site.clock_synchronized_from(clock_reading(maxerror=16_000_000)) is False
+    assert site.clock_synchronized_from(clock_reading(maxerror=15_999_999)) is True
+
+
+def test_a_clock_in_error_state_is_not_synchronized() -> None:
+    assert site.clock_synchronized_from(clock_reading(code=5)) is False
+
+
+def test_an_unavailable_reading_is_not_synchronized() -> None:
+    # No reading is not a passing reading.
+    assert site.clock_synchronized_from(None) is False
+
+
+def test_the_kernel_reading_is_obtainable_without_a_message_bus() -> None:
+    """The regression this replaces: no subprocess, no bus, no systemd.
+
+    Asserted as a shape, not a value -- whether *this* host is synchronized is
+    not this test's business.
+    """
+    reading = site.read_kernel_clock()
+    assert reading is not None
+    assert isinstance(reading.code, int)
+    assert isinstance(reading.status, int)
+    assert isinstance(reading.maxerror, int)
+    # A plausible `struct timex` prefix: adjtimex reports one of the documented
+    # clock states, and the status word only uses its low bits. A wrong struct
+    # layout would show up here as garbage rather than as a silent wrong answer.
+    assert 0 <= reading.code <= 5
+    assert 0 <= reading.status <= 0xFFFF

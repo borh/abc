@@ -8,6 +8,7 @@ import hashlib
 import json
 import pathlib
 import re
+import tomllib
 from typing import Any
 
 
@@ -18,10 +19,12 @@ class Instrument:
         reviewed_sources: tuple[pathlib.Path, ...],
         artifacts: tuple[pathlib.Path, ...],
         validator_id: str,
+        locked_package: str | None = None,
     ) -> None:
         self.reviewed_sources = reviewed_sources
         self.artifacts = artifacts
         self.validator_id = validator_id
+        self.locked_package = locked_package
 
 
 INSTRUMENTS = {
@@ -34,10 +37,6 @@ INSTRUMENTS = {
             pathlib.Path("abc/src/abc/tools/hash.clj"),
             pathlib.Path("abc/src/abc/tools/json.clj"),
             pathlib.Path("abc/src/abc/tools/jcs.clj"),
-            pathlib.Path("abc/src/abc/tools/evidence_io.clj"),
-            pathlib.Path("abc/src/abc/tools/path_containment.clj"),
-            pathlib.Path("abc/src/abc/tools/malli.clj"),
-            pathlib.Path("abc/src/abc/annotation/schema.clj"),
         ),
         artifacts=(pathlib.Path("abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"),),
         validator_id="abc/parser-rq-diagnostic-completeness/v1",
@@ -53,11 +52,9 @@ INSTRUMENTS = {
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/ortho_annotations.rs"),
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs"),
         ),
-        artifacts=(
-            pathlib.Path("abc/schemas/parser-ir.schema.json"),
-            pathlib.Path("ab-validator/Cargo.lock"),
-        ),
+        artifacts=(pathlib.Path("abc/schemas/parser-ir.schema.json"),),
         validator_id="ab-validator/parser-ir-schema-conformance/v1",
+        locked_package="ab-aat-to-parser-ir",
     ),
 }
 
@@ -122,6 +119,85 @@ def discover_owned_sources(repo_root: pathlib.Path, instrument: str) -> set[path
     return _parser_ir_closure(repo_root, config)
 
 
+CARGO_LOCK = pathlib.Path("ab-validator/Cargo.lock")
+
+
+def locked_dependency_projection(repo_root: pathlib.Path, package: str) -> list[dict[str, str]]:
+    """Project one package's transitive Cargo.lock closure into a sorted value.
+
+    The lockfile is workspace-wide, so binding its bytes made this instrument's
+    identity rotate whenever any unrelated workspace package moved. That is not
+    hypothetical: adding `ab-aozora-capture` rotated the parser-IR identity
+    while `ab-aat-to-parser-ir`'s own lock entry stayed byte-identical and no
+    resolved third-party version changed anywhere. This projection keeps the
+    claim worth making — the resolved graph the instrument actually compiles
+    against, `jsonschema` included, since that crate decides schema-valid from
+    schema-invalid — and drops the part that never authenticated anything.
+
+    Known and deliberately not closed here: workspace-local members carry no
+    checksum, so their bytes are outside this projection and outside
+    `reviewed_sources`. Editing a sibling crate that this instrument depends on
+    rotates nothing. Cargo.lock likewise records no feature selection. Both
+    gaps are stated in ADR `package-scoped-instrument-dependency-identity`
+    rather than silently papered over by a wider hash.
+    """
+    lock = tomllib.loads((repo_root / CARGO_LOCK).read_text(encoding="utf-8"))
+    # Keyed by (name, version), not name. Thirty-six names in this workspace
+    # resolve to more than one version at once -- `sha2`, `rand`, `hashbrown`,
+    # `windows-sys` among them. Collapsing them by name would let one version's
+    # entry stand in for another's, so a bump of the one actually compiled
+    # could leave this projection unmoved.
+    packages = {(entry["name"], entry["version"]): entry for entry in lock["package"]}
+    by_name: dict[str, list[tuple[str, str]]] = {}
+    for key in packages:
+        by_name.setdefault(key[0], []).append(key)
+
+    def resolve(dependency: str) -> tuple[str, str]:
+        # Lock dependency entries are "name", "name version", or
+        # "name version (source)". Cargo omits the version only when the name
+        # is unambiguous, so a bare name with several candidates is a lockfile
+        # this reader does not understand -- fail rather than guess. A named
+        # version that no entry carries fails the same way: skipping it would
+        # drop a package out of the identity with nothing said.
+        parts = dependency.split()
+        candidates = [(parts[0], parts[1])] if len(parts) > 1 else list(by_name.get(parts[0], []))
+        if len(candidates) != 1 or candidates[0] not in packages:
+            raise ValueError(
+                f"dependency {dependency!r} does not select one locked package: {candidates}"
+            )
+        return candidates[0]
+
+    pending = [resolve(package)]
+    visited: set[tuple[str, str]] = set()
+    while pending:
+        current = pending.pop()
+        if current in visited:
+            continue
+        visited.add(current)
+        pending.extend(
+            resolve(dependency) for dependency in packages[current].get("dependencies", [])
+        )
+    projection = []
+    for key in sorted(visited):
+        entry = packages[key]
+        projected = {"name": key[0], "version": key[1]}
+        if "checksum" in entry:
+            projected["checksum"] = entry["checksum"]
+        else:
+            projected["origin"] = "workspace-local"
+        projection.append(projected)
+    return projection
+
+
+def locked_version(projection: list[dict[str, str]], name: str) -> str:
+    versions = sorted({entry["version"] for entry in projection if entry["name"] == name})
+    if len(versions) != 1:
+        raise ValueError(
+            f"{name} is absent from the locked dependency projection or ambiguous: {versions}"
+        )
+    return versions[0]
+
+
 def _sha256(data: bytes) -> str:
     return "sha256:" + hashlib.sha256(data).hexdigest()
 
@@ -158,8 +234,13 @@ def build_manifest(repo_root: pathlib.Path, instrument: str) -> dict[str, Any]:
         raise ValueError(
             f"reviewed semantic closure differs: unreviewed={unreviewed}, stale={stale}"
         )
+    projection = (
+        locked_dependency_projection(repo_root, config.locked_package)
+        if config.locked_package
+        else None
+    )
     manifest: dict[str, Any] = {
-        "schema_version": "parser-rq-predicate-validator-identity-v1",
+        "schema_version": "parser-rq-predicate-validator-identity-v2",
         "instrument": instrument,
         "validator_id": config.validator_id,
         "runtime": (
@@ -172,7 +253,11 @@ def build_manifest(repo_root: pathlib.Path, instrument: str) -> dict[str, Any]:
             else {
                 "language": "rust",
                 "edition": "2024",
-                "jsonschema_crate": "0.46.9",
+                # Read out of the projection, not restated. A literal here
+                # claimed 0.46.9 with nothing enforcing it, so a crate bump
+                # could have left the runtime block asserting a version the
+                # instrument no longer compiled against.
+                "jsonschema_crate": locked_version(projection, "jsonschema"),
             }
         ),
         "sources": [
@@ -184,6 +269,12 @@ def build_manifest(repo_root: pathlib.Path, instrument: str) -> dict[str, Any]:
             for path in config.artifacts
         ],
     }
+    if projection is not None:
+        manifest["locked_dependencies"] = {
+            "package": config.locked_package,
+            "lockfile": CARGO_LOCK.as_posix(),
+            "closure": projection,
+        }
     manifest["validator_semantics_hash"] = projected_hash(manifest, "validator_semantics_hash")
     return manifest
 

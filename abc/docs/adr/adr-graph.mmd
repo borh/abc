@@ -21,6 +21,7 @@ flowchart LR
   nix_materialization["Nix Materialization Policy"]:::draft
   operational_runtime["Operational Runtime, API, and Retention"]:::draft
   owned_aat_parser_ir_mapping["Owned AAT to Parser-IR Mapping and Compatibility Registry"]:::accepted
+  package_scoped_instrument_dependency_identity["Scope Instrument Dependency Identity to the Package, Not the Workspace"]:::accepted
   parser_evaluation["Parser Evaluation Criteria"]:::accepted
   parser_fork_hard_detach["Parser Fork Hard Detach"]:::accepted
   parser_ir_publication_rendering["Parser-IR Publication Rendering"]:::accepted
@@ -101,6 +102,7 @@ flowchart LR
   owned_aat_parser_ir_mapping -.->|"depends on"| manifest_identity
   owned_aat_parser_ir_mapping -.->|"depends on"| parser_ir_span_and_ruby_direction
   owned_aat_parser_ir_mapping -.->|"depends on"| v0_design_bundle_validation
+  package_scoped_instrument_dependency_identity -->|"amends — instrument semantic identity and its dependency boundary"| parser_release_instrument_bindings
   parser_fork_hard_detach -->|"amends"| aozora_parser_selection
   parser_fork_hard_detach -.->|"depends on"| aozora_parser_selection
   parser_ir_publication_rendering -.->|"depends on"| external_parser_validation_boundary

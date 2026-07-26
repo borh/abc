@@ -10,7 +10,7 @@
   "no_output_semantics": "available_failure_when_generated_outputs_zero",
   "parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
   "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "policy_hash": "sha256:7b2af97952610baab3bdd4f359c4c0f1ab14ff6e5125c664dd2f6dc9a354a9ac",
+  "policy_hash": "sha256:b320b34c9961b2b656bd51f50262728c0070e44d4ec1731745e5df4f0315549e",
   "policy_id": "abc/parser-rq-parser-ir-conformance/v1",
   "schema_id": "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-policy.schema.json",
   "schema_version": "1.0.0",
@@ -24,5 +24,5 @@
       "no_parser_ir_output": "no_parser_ir_output"
     }
   },
-  "validator_semantics_hash": "sha256:28ffc4e46e0b47bd8ad9acbe24f421dfe822a2c3fea3ec4ba350b5de796bfb11"
+  "validator_semantics_hash": "sha256:a94dfafdadce2743e6bcdaf5fd810af9f1104f133016cfef68ea5dcbacb93757"
 }

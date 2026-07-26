@@ -95,6 +95,10 @@ Three of the four still exist and are merely out of the closure. The fourth,
 a source set that includes bytes absent from the repository — a governed
 simplification silently changed an instrument's semantic identity.
 
+*Repaired 2026-07-26. The closure is the seven sources that survive; the other
+three were reachable only through `evidence_io.clj`, so one deletion accounts
+for the whole discrepancy. Identity rotated.*
+
 ### A2. The parser-IR conformance policy has already drifted
 
 The generator *does* run for this instrument, and produces a different policy
@@ -138,6 +142,22 @@ the worse failure. What is needed is a package-specific projection — the
 transitive locked closure of `ab-aat-to-parser-ir`, with resolved versions and
 enabled features — tested in both directions: an unrelated workspace package
 must not rotate it, and a relevant version or feature change must.
+
+*Repaired 2026-07-26, with one correction to the paragraph above: **features
+cannot be part of it.** `Cargo.lock` records resolved packages, not feature
+selection, so a feature change that alters behaviour without changing the
+resolved set rotates nothing — under the old whole-lockfile binding as much as
+under the new projection. That is now a stated gap in ADR
+`package-scoped-instrument-dependency-identity`, alongside the larger one:
+twenty-two workspace-local crates sit in this closure carrying no checksum, so
+their bytes were never covered either. Whole-lockfile hashing bought the
+appearance of dependency coverage without the substance.*
+
+*Confirmed while deciding: `ab-aat-to-parser-ir`'s own lock entry is
+byte-identical since `2acfcce4`, no resolved version changed anywhere in the
+file, and `ab-aozora-capture` is absent from the package's 480-entry transitive
+closure — so the projection provably would not have rotated on the change that
+caused this drift, while still covering `jsonschema 0.46.9`.*
 
 ### A3. The identity suite has been erroring, not running — and would not have caught A2 anyway
 
@@ -402,6 +422,10 @@ reviewed sources, plus which projection of the dependency graph? This is a
 protocol decision and it determines whether the committed policies are stale or
 correctly frozen.
 
+*Decided 2026-07-26: a package-scoped locked projection, with the
+workspace-local-source and Cargo-feature gaps named and deferred rather than
+closed. Recorded as ADR `package-scoped-instrument-dependency-identity`.*
+
 **Step 1c — change the generator and regenerate atomically.** Correct the
 reviewed closure (A1) and the artifact scope per 1b (A2) in one commit with the
 regenerated manifests and policies, since every one of those edits moves the
@@ -411,6 +435,45 @@ same hashes. This *is* an identity rotation and must be governed as one.
 asserting the committed policies equal the generator's output, against the
 artifacts 1c produced. Green from the first commit, red forever after on
 undeclared drift.
+
+### Execution record — steps 1b through 1d (2026-07-26)
+
+1c and 1d could not be separate commits. Both faults were held open by strict
+xfail markers, so the commit that repairs either one must remove its marker in
+the same change or the suite fails on `XPASS(strict)`. The rotation is atomic by
+construction; splitting it would have left an intermediate commit with a failing
+gate.
+
+Three things the plan did not anticipate:
+
+- **The manifests of record had drifted too, and nothing checked them either.**
+  `ab-validator/data/parser-rq-*-validator-v1.json` are the generator's `--out`
+  artifacts. No active code reads them and no test compared them. They are
+  regenerated, and `test_committed_manifest_equals_its_regenerated_form` now
+  holds them to the same standard as the policies.
+- **The predicate-hardening capture fixture had to be regenerated.** It embeds
+  `policy_hash` in content-addressed records, so rotating the policies
+  re-addressed ten blobs and the manifest. The sanctioned path already existed:
+  `ab-validator/tests/parser-rq-predicate-hardening-capture-smoke.sh` takes a
+  write target and generates twice, diffing for reproducibility. Verified before
+  writing that every blob is byte-identical once `policy_hash` is projected out,
+  and that the two index blobs differ solely in the refs their re-addressed
+  records produced — so no measured value moved.
+- **Regenerated fixture blobs are invisible to the flake until staged.** The
+  `abc` source derivation is git-backed, so `clj-nix-focused-tests` failed on the
+  old fixture while the same tests passed locally. Same class as the
+  missing-narrative failure in the previous tranche.
+
+`jsonschema_crate` is now read from the projection rather than restated; a crate
+absent from the closure fails closed. The manifest schema is
+`parser-rq-predicate-validator-identity-v2`, and both instruments rotate
+together — `diagnostic-completeness` for A1, `parser-ir-conformance` for the
+scope change.
+
+Suite: 39 passed, no xfails remaining. The five new projection tests check both
+directions — an unrelated sibling package is ignored, a transitive version move
+and a newly acquired dependency both rotate, local members are marked uncovered,
+and the schema crate is read rather than restated.
 
 **Step 2 — decide finding C explicitly**, and with it finding B's coordinate
 question. A reader decision, recorded as a decision record before code moves.
@@ -452,21 +515,23 @@ failure no capture has produced.
 
 ## Open questions for the reader
 
-Ordered by what blocks what. Q3 gates step 1c; Q1 and Q2 gate step 3 onward.
+Ordered by what blocks what. Q1 is answered; Q2 and Q3 gate step 3 onward.
 
-1. **Finding A2 — the dependency-identity boundary (step 1b).** Which
-   projection of the dependency graph belongs in an instrument's semantic
-   identity? Whole-lockfile hashing is over-scoped: it rotated on a workspace
-   package addition that cannot affect the converter. But dropping it without a
-   replacement under-scopes, and the declared `jsonschema_crate` literal is not
-   a substitute — it is hand-maintained and unverified against the resolved
-   build. A package-specific locked projection over the transitive closure of
-   `ab-aat-to-parser-ir`, with versions and features, is the shape to specify
-   and test in both directions.
+1. ~~**Finding A2 — the dependency-identity boundary (step 1b).**~~ **Answered
+   2026-07-26.** A package-scoped locked projection over the transitive
+   `Cargo.lock` closure of `ab-aat-to-parser-ir`, as name, version, and
+   checksum. Features are not in it: `Cargo.lock` records no feature selection,
+   so the revision-2 phrasing "with versions and features" was not implementable
+   as stated, and that gap is now named in the ADR rather than assumed away.
 
-   This question also decides a governance fact: whether the committed policies
-   are **stale** (requalification already owed) or **correctly frozen** against
-   the build that produced the accepted verdict.
+   The governance fact it also decided: the committed policies were **stale**,
+   not correctly frozen. They read as live capture inputs
+   (`tools/parser_rq_campaign_orchestrator.py:861,865`), so a policy that no
+   longer matches the code the next capture runs is a false claim, not a
+   historical record. The accepted verdict's own capture agreed with them
+   exactly before this rotation — nothing had drifted silently — so
+   requalification is owed for the rotation itself, and the published capture
+   stays accepted as of the inputs it names.
 
 2. **Finding C.** Must a release-qualified parser have emitted at least one
    diagnostic over the qualification corpus? Nothing in steps 2–5 can be

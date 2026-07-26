@@ -1956,4 +1956,37 @@
      :kind :structural-invariant,
      :statement
      "Which corpus a release is qualified against is a governed value, not a runtime one. `data/parser-release-qualification-corpus.edn` declares a repository-relative `:corpus_root` that every member's `:source_path` must begin with, and `:source_path` is one of `corpus-entry-identity-keys`, so relocating the corpus rotates `corpus_list_hash` and with it the candidate's qualification identity. No site configuration can change it. Evidence boundary: `test/abc/tools/parser_rq_campaign_test.clj`.",
-     :evidence ["test/abc/tools/parser_rq_campaign_test.clj"]}]}]}
+     :evidence ["test/abc/tools/parser_rq_campaign_test.clj"]}]}
+  {:slug "package-scoped-instrument-dependency-identity",
+   :title "Scope Instrument Dependency Identity to the Package, Not the Workspace",
+   :status :accepted,
+   :date "2026-07-26",
+   :accepted "2026-07-26",
+   :validation-scope :structural,
+   :release-authority :development,
+   :topics [:parser :release],
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "parser-release-instrument-bindings",
+     :scope "instrument semantic identity and its dependency boundary"}],
+   :claims
+   [{:id :c1,
+     :kind :structural-invariant,
+     :statement
+     "The `parser-ir-conformance` instrument binds a package-scoped locked dependency projection — the transitive `Cargo.lock` closure of `ab-aat-to-parser-ir` alone, as name, version, and checksum — rather than the workspace lockfile's bytes, and reads `jsonschema_crate` out of that projection instead of restating it as a literal. Adding a workspace package the instrument does not depend on no longer rotates its identity; a version change inside its own closure still does. The closure is keyed by name and version, because thirty-six names resolve to several versions at once and collapsing them by name both substitutes one version's entry for another's and drops the siblings; a dependency entry that names no single locked package is rejected rather than guessed at. Two gaps are stated rather than closed: workspace-local members carry no checksum and are marked `\"origin\": \"workspace-local\"` because their bytes lie outside this identity, and `Cargo.lock` records no feature selection. Neither gap was closed by hashing the lockfile whole. The projection's discrimination is checked in the `ab-validator` flake check `parser-rq-publication-pytest`, outside the evidence roots; within them the governed consequence is that the committed policies equal what the generator produces, so the capture re-derives from them. Evidence boundary: `test/abc/tools/parser_rq_predicate_hardening_capture_test.clj`.",
+     :evidence
+     ["test/abc/tools/parser_rq_predicate_hardening_capture_test.clj"]}
+    {:id :c2,
+     :kind :structural-invariant,
+     :statement
+     "The `diagnostic-completeness` reviewed closure is the seven sources that survive `abc/src/abc/tools/evidence_io.clj`'s deletion under ADR 0043, which also removed the three sources reachable only through it. Its previous identity covered bytes absent from the repository and its generator refused to run. Both instruments' identities therefore rotate together, and the manifest schema is `parser-rq-predicate-validator-identity-v2`. Evidence boundary: `test/abc/tools/parser_rq_predicate_hardening_capture_test.clj`.",
+     :evidence
+     ["test/abc/tools/parser_rq_predicate_hardening_capture_test.clj"]}
+    {:id :c3,
+     :kind :fixture-behavior,
+     :statement
+     "The rotation changes no measured value. Re-deriving the committed predicate-hardening capture from the live policies reproduces every record byte-for-byte, and regenerating the fixture moved only content addresses: each blob is identical once `policy_hash` is projected out, and the two index blobs differ solely in the refs their re-addressed records produced. The committed policies remain schema-valid and closed under the rotated hashes. Evidence boundary: `test/abc/tools/parser_rq_diagnostic_completeness_test.clj` and `test/abc/tools/parser_rq_parser_ir_conformance_test.clj`.",
+     :evidence
+     ["test/abc/tools/parser_rq_diagnostic_completeness_test.clj"
+      "test/abc/tools/parser_rq_parser_ir_conformance_test.clj"]}]}]}

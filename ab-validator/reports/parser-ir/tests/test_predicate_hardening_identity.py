@@ -20,33 +20,16 @@ COMMITTED_POLICIES = {
     "parser-ir-conformance": "abc/data/parser-rq-parser-ir-conformance-policy-v1.json",
 }
 
-# Step 1a of
-# abc/docs/superpowers/reports/2026-07-26-parser-rq-instrument-semantics-audit.md.
-# Until that repair, every test in this file errored at import because the Nix
-# check staged only the ab-validator subtree, so two committed faults went
-# unobserved. They are recorded here as strict xfails rather than left red:
-# step 1c regenerates the affected identities and removes the markers, and
-# `strict=True` turns a forgotten marker into a failure once the fault is gone.
-STALE_CLOSURE = pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "A1: the diagnostic-completeness reviewed closure names "
-        "abc/src/abc/tools/evidence_io.clj, deleted in b042c7cd, plus three "
-        "sources that are no longer required. The generator refuses to run, so "
-        "the committed policy's validator_semantics_hash covers bytes that no "
-        "longer exist."
+# The manifests of record. Nothing asserted these matched their generator
+# either, and they carry the disclosure the policy hash only summarizes.
+COMMITTED_MANIFESTS = {
+    "diagnostic-completeness": (
+        "ab-validator/data/parser-rq-diagnostic-completeness-validator-v1.json"
     ),
-)
-
-COMMITTED_DRIFT = pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "A2: the committed parser-IR policy no longer equals its regenerated "
-        "form. No reviewed source changed since 2026-07-17; the manifest binds "
-        "ab-validator/Cargo.lock wholesale, which moved for an unrelated "
-        "workspace package. Scope is decided in step 1b before regeneration."
+    "parser-ir-conformance": (
+        "ab-validator/data/parser-rq-parser-ir-conformance-validator-v1.json"
     ),
-)
+}
 
 
 @pytest.fixture
@@ -58,20 +41,13 @@ def module():
     return loaded
 
 
-@pytest.mark.parametrize(
-    "instrument",
-    [
-        pytest.param("diagnostic-completeness", marks=STALE_CLOSURE),
-        "parser-ir-conformance",
-    ],
-)
+@pytest.mark.parametrize("instrument", sorted(COMMITTED_POLICIES))
 def test_reviewed_sources_equal_discovered_owned_closure(module, instrument):
     assert module.discover_owned_sources(REPO_ROOT, instrument) == {
         REPO_ROOT / path for path in module.INSTRUMENTS[instrument].reviewed_sources
     }
 
 
-@STALE_CLOSURE
 def test_helper_byte_mutation_changes_semantic_hash(module, tmp_path):
     root = tmp_path / "repo"
     config = module.INSTRUMENTS["diagnostic-completeness"]
@@ -117,7 +93,7 @@ def test_added_or_removed_helper_fails_reviewed_set_equality(module, tmp_path):
 def test_schema_mutation_changes_manifest_and_policy_identity(module, tmp_path):
     root = tmp_path / "repo"
     config = module.INSTRUMENTS["parser-ir-conformance"]
-    for path in (*config.reviewed_sources, *config.artifacts):
+    for path in (*config.reviewed_sources, *config.artifacts, module.CARGO_LOCK):
         destination = root / path
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes((REPO_ROOT / path).read_bytes())
@@ -133,7 +109,6 @@ def test_schema_mutation_changes_manifest_and_policy_identity(module, tmp_path):
     assert before_policy["policy_hash"] != after_policy["policy_hash"]
 
 
-@STALE_CLOSURE
 def test_policies_have_distinct_closed_identities(module):
     diagnostic_manifest = module.build_manifest(REPO_ROOT, "diagnostic-completeness")
     parser_manifest = module.build_manifest(REPO_ROOT, "parser-ir-conformance")
@@ -152,7 +127,6 @@ def test_policies_have_distinct_closed_identities(module):
     assert parser_ir["policy_hash"] == module.projected_hash(parser_ir, "policy_hash")
 
 
-@COMMITTED_DRIFT
 @pytest.mark.parametrize("instrument", sorted(COMMITTED_POLICIES))
 def test_committed_policy_equals_its_regenerated_form(module, instrument):
     """The governed policy must be exactly what this generator produces.
@@ -168,3 +142,167 @@ def test_committed_policy_equals_its_regenerated_form(module, instrument):
         REPO_ROOT, instrument, manifest, list(committed["expected_work_ids"])
     )
     assert generated == committed
+
+
+@pytest.mark.parametrize("instrument", sorted(COMMITTED_MANIFESTS))
+def test_committed_manifest_equals_its_regenerated_form(module, instrument):
+    committed = json.loads(
+        (REPO_ROOT / COMMITTED_MANIFESTS[instrument]).read_text(encoding="utf-8")
+    )
+    assert module.build_manifest(REPO_ROOT, instrument) == committed
+
+
+def _write_lock(path: pathlib.Path, packages: list[dict[str, object]]) -> None:
+    body = []
+    for package in packages:
+        entry = [
+            "[[package]]",
+            f'name = "{package["name"]}"',
+            f'version = "{package["version"]}"',
+        ]
+        if "checksum" in package:
+            entry.append(f'checksum = "{package["checksum"]}"')
+        if package.get("dependencies"):
+            listed = ",\n".join(f' "{name}"' for name in package["dependencies"])
+            entry.append(f"dependencies = [\n{listed},\n]")
+        body.append("\n".join(entry))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n\n".join(body) + "\n", encoding="utf-8")
+
+
+BASE_LOCK = [
+    {"name": "subject", "version": "0.1.0", "dependencies": ["leaf", "jsonschema"]},
+    {"name": "leaf", "version": "1.2.3", "checksum": "aa"},
+    {"name": "jsonschema", "version": "0.46.9", "checksum": "bb"},
+]
+
+
+DUPLICATE_LOCK = [
+    {"name": "subject", "version": "0.1.0", "dependencies": ["dup 1.0.0", "mid", "jsonschema"]},
+    {"name": "mid", "version": "0.1.0", "dependencies": ["dup 2.0.0"]},
+    {"name": "dup", "version": "1.0.0", "checksum": "11"},
+    {"name": "dup", "version": "2.0.0", "checksum": "22"},
+    {"name": "jsonschema", "version": "0.46.9", "checksum": "bb"},
+]
+
+
+def test_projection_keeps_co_resolved_versions_of_one_name_distinct(module, tmp_path):
+    """Thirty-six names in this workspace resolve to several versions at once.
+
+    Keying the closure by name alone would let one version's entry stand in for
+    another's, so the projection would carry an arbitrary version and a bump of
+    the one actually compiled could leave it unmoved. Against the real lockfile
+    that mistake dropped 53 packages from the closure.
+    """
+    lock = tmp_path / "ab-validator/Cargo.lock"
+    _write_lock(lock, DUPLICATE_LOCK)
+    projection = module.locked_dependency_projection(tmp_path, "subject")
+    assert [entry["version"] for entry in projection if entry["name"] == "dup"] == [
+        "1.0.0",
+        "2.0.0",
+    ]
+    bumped = [
+        {**package, "checksum": "33"}
+        if (package["name"], package["version"]) == ("dup", "2.0.0")
+        else package
+        for package in DUPLICATE_LOCK
+    ]
+    _write_lock(lock, bumped)
+    assert module.locked_dependency_projection(tmp_path, "subject") != projection
+
+
+def test_ambiguous_bare_dependency_fails_closed(module, tmp_path):
+    """Cargo omits the version only when the name is unambiguous.
+
+    A bare name with several candidates means this reader has misunderstood the
+    lockfile, and guessing a version would forge part of the identity.
+    """
+    lock = tmp_path / "ab-validator/Cargo.lock"
+    _write_lock(lock, [{**DUPLICATE_LOCK[0], "dependencies": ["dup"]}, *DUPLICATE_LOCK[1:]])
+    with pytest.raises(ValueError, match="does not select one locked package"):
+        module.locked_dependency_projection(tmp_path, "subject")
+
+
+def test_projection_ignores_workspace_packages_the_subject_does_not_use(module, tmp_path):
+    """An unrelated sibling package must not rotate this instrument's identity.
+
+    This is the observed regression, not a hypothetical: adding
+    `ab-aozora-capture` to the workspace moved the whole-lockfile hash while
+    `ab-aat-to-parser-ir`'s own lock entry stayed byte-identical and no resolved
+    third-party version changed. Binding the lockfile wholesale made every
+    workspace edit look like a semantic change to this instrument.
+    """
+    lock = tmp_path / "ab-validator/Cargo.lock"
+    _write_lock(lock, BASE_LOCK)
+    before = module.locked_dependency_projection(tmp_path, "subject")
+    _write_lock(
+        lock,
+        [*BASE_LOCK, {"name": "unrelated-sibling", "version": "0.6.0", "dependencies": ["leaf"]}],
+    )
+    assert module.locked_dependency_projection(tmp_path, "subject") == before
+
+
+def test_projection_rotates_when_a_transitive_dependency_moves(module, tmp_path):
+    lock = tmp_path / "ab-validator/Cargo.lock"
+    _write_lock(lock, BASE_LOCK)
+    before = module.locked_dependency_projection(tmp_path, "subject")
+    bumped = [
+        {**package, "version": "1.2.4", "checksum": "cc"} if package["name"] == "leaf" else package
+        for package in BASE_LOCK
+    ]
+    _write_lock(lock, bumped)
+    assert module.locked_dependency_projection(tmp_path, "subject") != before
+
+
+def test_projection_rotates_when_the_subject_gains_a_dependency(module, tmp_path):
+    lock = tmp_path / "ab-validator/Cargo.lock"
+    _write_lock(lock, BASE_LOCK)
+    before = module.locked_dependency_projection(tmp_path, "subject")
+    _write_lock(
+        lock,
+        [
+            {**BASE_LOCK[0], "dependencies": ["leaf", "jsonschema", "added"]},
+            *BASE_LOCK[1:],
+            {"name": "added", "version": "0.1.0", "checksum": "dd"},
+        ],
+    )
+    assert module.locked_dependency_projection(tmp_path, "subject") != before
+
+
+def test_projection_marks_workspace_local_members_as_uncovered(module):
+    """Local members carry no checksum, so their bytes are outside this identity.
+
+    Asserting the marker keeps the gap legible in the manifest instead of
+    letting a version-only entry read as though it bound the crate's source.
+    See ADR `package-scoped-instrument-dependency-identity`.
+    """
+    projection = module.locked_dependency_projection(REPO_ROOT, "ab-aat-to-parser-ir")
+    local = {entry["name"] for entry in projection if entry.get("origin") == "workspace-local"}
+    assert "ab-aozora-aat" in local
+    assert all("checksum" not in entry for entry in projection if entry["name"] in local)
+
+
+def test_runtime_crate_version_is_read_from_the_lock_not_restated(module, tmp_path):
+    """A hardcoded `jsonschema_crate` could assert a version nothing compiled."""
+    lock = tmp_path / "ab-validator/Cargo.lock"
+    _write_lock(lock, BASE_LOCK)
+    projection = module.locked_dependency_projection(tmp_path, "subject")
+    assert module.locked_version(projection, "jsonschema") == "0.46.9"
+    with pytest.raises(ValueError, match="absent .* or ambiguous"):
+        module.locked_version(projection, "not-a-dependency")
+    # A name resolved at two versions cannot be reported as one, either.
+    _write_lock(lock, DUPLICATE_LOCK)
+    with pytest.raises(ValueError, match="absent .* or ambiguous"):
+        module.locked_version(module.locked_dependency_projection(tmp_path, "subject"), "dup")
+
+
+def test_a_declared_dependency_missing_from_the_lock_fails_closed(module, tmp_path):
+    """Skipping an unresolvable entry would drop a package with nothing said."""
+    lock = tmp_path / "ab-validator/Cargo.lock"
+    _write_lock(lock, [package for package in BASE_LOCK if package["name"] != "jsonschema"])
+    with pytest.raises(ValueError, match="does not select one locked package"):
+        module.locked_dependency_projection(tmp_path, "subject")
+    # Same for a dependency that names a version no entry carries.
+    _write_lock(lock, [{**BASE_LOCK[0], "dependencies": ["leaf 9.9.9"]}, *BASE_LOCK[1:]])
+    with pytest.raises(ValueError, match="does not select one locked package"):
+        module.locked_dependency_projection(tmp_path, "subject")

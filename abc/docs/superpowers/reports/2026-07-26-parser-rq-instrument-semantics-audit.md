@@ -478,6 +478,51 @@ and the schema crate is read rather than restated.
 **Step 2 — decide finding C explicitly**, and with it finding B's coordinate
 question. A reader decision, recorded as a decision record before code moves.
 
+*Decided 2026-07-26 and recorded as the `:proposed` ADR
+`governed-diagnostic-expectation-and-instrument-coordinate`, which becomes
+accepted when step 3 supplies its evidence. Neither answer was the binary the
+finding offered; see the execution record below.*
+
+### Execution record — step 2 (2026-07-26)
+
+Three facts moved the decision off the yes/no axis finding C posed.
+
+- **The accepted verdict passed this predicate over zero evidence.**
+  `measurements.json` records `diagnostic_completeness 1.0`,
+  `diagnostic_count 0`, `works_with_diagnostics 0`, `vacuous true`. One of nine
+  release predicates contributed nothing.
+- **The corpus governs that, and nothing enforces it.** All three entries
+  declare `:expected_diagnostics []`, so the clean result matches intent. But
+  that field is read by no capture, instrument, or test, and is absent from
+  `corpus-entry-identity-keys` (`[:work_id :source_path :source_sha256
+  :category :expected_status]`). It changes no behaviour and rotates no
+  identity — decoration, the same class as finding F.
+- **This report described the instrument wrongly, and so does the predicate.**
+  Finding C calls it a ratio and the contract declares `:unit "ratio"`.
+  `diagnostic_completeness` is the literal `1.0` at
+  `parser_rq_diagnostic_completeness.clj:185`, and `complete_diagnostics` is
+  assigned equal to `emitted_diagnostics` unconditionally at `:130` — the two
+  cannot diverge. The predicate's real content is that the envelope validates
+  against the v3 schema, which requires code, severity, source, and span. It
+  does discriminate, against a malformed envelope; it had no diagnostics to
+  discriminate over.
+
+So the decision is neither branch. The global floor is rejected — satisfiable
+by any single diagnostic anywhere, silent about which works produced which, and
+it would fail a corpus governed to be clean. Instead the **already-governed
+per-work expectation becomes the authority**: observed diagnostics are compared
+against `:expected_diagnostics`, which joins the corpus entry identity keys.
+The check stops being vacuous on its own as the corpus grows, with no second
+gate redesign and no predicate dimension rewritten to restate what the corpus
+already says.
+
+Finding B is answered as the report recommended: a new
+`instrument_policy_hashes` coordinate, not an edit to the `:instrument` prose.
+One mechanical fact the finding did not record — the candidate schema declares
+`identity` with `additionalProperties: false` and a closed `required` list, so
+this is a schema change plus an honest `schema_version` bump off `1.0.0`, not
+only a code edit.
+
 **Step 3a — add cross-authority membership checks on the current corpus.**
 Resource corpus authentication and core-attempt's explicit membership
 comparison (finding D) change failure behaviour, so they are characterized
@@ -515,7 +560,8 @@ failure no capture has produced.
 
 ## Open questions for the reader
 
-Ordered by what blocks what. Q1 is answered; Q2 and Q3 gate step 3 onward.
+All three are answered. Retained with their answers so the reasoning that
+settled them is not re-litigated.
 
 1. ~~**Finding A2 — the dependency-identity boundary (step 1b).**~~ **Answered
    2026-07-26.** A package-scoped locked projection over the transitive
@@ -533,13 +579,17 @@ Ordered by what blocks what. Q1 is answered; Q2 and Q3 gate step 3 onward.
    requalification is owed for the rotation itself, and the published capture
    stays accepted as of the inputs it names.
 
-2. **Finding C.** Must a release-qualified parser have emitted at least one
-   diagnostic over the qualification corpus? Nothing in steps 2–5 can be
-   specified until this is answered.
+2. ~~**Finding C.**~~ **Answered 2026-07-26.** Neither branch. A global
+   diagnostic floor is rejected as blunt and as failing a corpus governed to be
+   clean; keeping the vacuity untouched is rejected because it leaves
+   `:expected_diagnostics` dead. The governed per-work expectation becomes the
+   authority and joins `corpus-entry-identity-keys`. The question as posed
+   assumed the instrument computes a ratio; it does not.
 
-3. **Finding B.** Should instrument identity get its own coordinate — e.g.
-   `instrument_policy_hashes` — rather than riding on the predicate set's
-   descriptive `:instrument` prose? Doing so rotates `qualification_identity_ref`
-   and `candidate_ref` but leaves `predicate_set_hash` untouched, which is the
-   cleaner separation. Editing the prose instead rotates the predicate contract
-   for a reason that has nothing to do with predicates.
+3. ~~**Finding B.**~~ **Answered 2026-07-26: yes.** `instrument_policy_hashes`
+   is added, binding each instrument's governed `policy_hash`; the `:instrument`
+   prose stays descriptive and `predicate_set_hash` is untouched. One mechanical
+   fact this question omitted: `parser-rq-candidate.schema.json` declares
+   `identity` with `additionalProperties: false` and a closed `required` list,
+   so the coordinate is a schema change plus a `schema_version` bump off
+   `1.0.0`, not only a code edit.

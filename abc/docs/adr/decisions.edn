@@ -1989,4 +1989,31 @@
      "The rotation changes no measured value. Re-deriving the committed predicate-hardening capture from the live policies reproduces every record byte-for-byte, and regenerating the fixture moved only content addresses: each blob is identical once `policy_hash` is projected out, and the two index blobs differ solely in the refs their re-addressed records produced. The committed policies remain schema-valid and closed under the rotated hashes. Evidence boundary: `test/abc/tools/parser_rq_diagnostic_completeness_test.clj` and `test/abc/tools/parser_rq_parser_ir_conformance_test.clj`.",
      :evidence
      ["test/abc/tools/parser_rq_diagnostic_completeness_test.clj"
-      "test/abc/tools/parser_rq_parser_ir_conformance_test.clj"]}]}]}
+      "test/abc/tools/parser_rq_parser_ir_conformance_test.clj"]}]}
+  {:slug "governed-diagnostic-expectation-and-instrument-coordinate",
+   :title
+   "Bind Diagnostic Expectation to the Corpus, Instrument Identity to Its Own Coordinate",
+   :status :proposed,
+   :date "2026-07-26",
+   :topics [:parser :release],
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "parser-release-instrument-bindings",
+     :scope "diagnostic expectation authority and the instrument identity coordinate"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "package-scoped-instrument-dependency-identity"}],
+   :claims
+   [{:id :c1,
+     :kind :structural-invariant,
+     :statement
+     "Observed diagnostics are compared against each corpus entry's `:expected_diagnostics`, and that field joins `corpus-entry-identity-keys`. A global \"at least one diagnostic\" floor is rejected: it is satisfiable by any single diagnostic anywhere, says nothing about which works produced which, and would fail a corpus governed to be clean. The accepted verdict recorded `diagnostic_completeness 1.0` with `diagnostic_count 0` and `vacuous true` — consistent with a corpus declaring `:expected_diagnostics []` on every entry, but that declaration was read by nothing and bound into no identity."}
+    {:id :c2,
+     :kind :structural-invariant,
+     :statement
+     "A new `instrument_policy_hashes` key in the qualification identity binds each instrument's governed `policy_hash`, replacing reliance on the predicate set's descriptive `:instrument` prose. Editing that prose is rejected as the remedy because it rotates `predicate_set_hash`, braiding what must be true with how it was measured. The candidate schema declares `identity` with `additionalProperties: false`, so the key is a schema change and `parser-rq-candidate.schema.json` bumps off `schema_version` `1.0.0`."}
+    {:id :c3,
+     :kind :structural-invariant,
+     :statement
+     "The predicate's declared `:unit \"ratio\"` is corrected: `diagnostic_completeness` is a literal `1.0` and `complete_diagnostics` is assigned equal to `emitted_diagnostics` unconditionally, so no ratio is computed. The predicate's real content is that the diagnostics envelope validates against the v3 schema, which requires code, severity, source, and span."}]}]}

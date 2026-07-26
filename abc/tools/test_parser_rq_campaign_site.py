@@ -54,8 +54,7 @@ def graph_policy() -> dict[str, Any]:
 def descriptor(tmp_path: Path) -> dict[str, object]:
     return {
         "schema_id": "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json",
-        "schema_version": "2.0.0",
-        "corpus_root": str(tmp_path / "corpus"),
+        "schema_version": "3.0.0",
         "evidence_store_root": str(tmp_path / "evidence"),
         "scratch_root": str(tmp_path / "scratch"),
         "campaign_lock_path": str(tmp_path / "campaign.lock"),
@@ -63,7 +62,7 @@ def descriptor(tmp_path: Path) -> dict[str, object]:
 
 
 def prepare_roots(value: dict[str, object]) -> None:
-    for key in ("corpus_root", "evidence_store_root", "scratch_root"):
+    for key in ("evidence_store_root", "scratch_root"):
         Path(str(value[key])).mkdir(parents=True)
 
 
@@ -111,6 +110,32 @@ def test_runtime_authentication_is_place_portable(tmp_path: Path) -> None:
             Path(str(value["evidence_store_root"])).resolve(),
             Path(str(value["scratch_root"])).resolve(),
         ]
+
+
+def test_runtime_authentication_declares_no_corpus_place(tmp_path: Path) -> None:
+    """The corpus a capture reads is a governed value resolved below the
+    authenticated candidate tree, not a runtime place the operator selects. A
+    descriptor that still names one violates the closed contract rather than
+    being tolerated and ignored, so no operator can believe it selects bytes."""
+    value = descriptor(tmp_path)
+    prepare_roots(value)
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    with pytest.raises(site.SiteUnavailable, match="closed contract"):
+        site.authenticate_runtime(
+            {**value, "corpus_root": str(corpus)}, runtime_facts(), FakeProbe()
+        )
+
+
+def test_runtime_authentication_rejects_the_superseded_descriptor_version(
+    tmp_path: Path,
+) -> None:
+    value = descriptor(tmp_path)
+    prepare_roots(value)
+    with pytest.raises(site.SiteUnavailable, match="unsupported"):
+        site.authenticate_runtime(
+            {**value, "schema_version": "2.0.0"}, runtime_facts(), FakeProbe()
+        )
 
 
 @pytest.mark.parametrize(

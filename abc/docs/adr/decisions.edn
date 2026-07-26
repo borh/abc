@@ -1932,4 +1932,28 @@
      :kind :structural-invariant,
      :statement
      "Snapshot-index validation rejects any index whose `source_selection_identity_object.sources` carries duplicate slug claims. That object is the only index location retaining such evidence for both collision classes: artifact references pass through `distinct` in `sort-artifact-references`, so they retain it only when the colliding works differ in content, and byte-identical duplicates leave no trace there at all. No correct index can contain duplicate source slug claims, so nothing legitimate is newly rejected. Evidence boundary: `test/abc/tools/snapshot_index_test.clj`.",
-     :evidence ["test/abc/tools/snapshot_index_test.clj"]}]}]}
+     :evidence ["test/abc/tools/snapshot_index_test.clj"]}]}
+  {:slug "governed-qualification-corpus-location",
+   :title "Locate the Qualification Corpus by Governance, Not Site Configuration",
+   :status :accepted,
+   :date "2026-07-26",
+   :accepted "2026-07-26",
+   :validation-scope :structural,
+   :release-authority :development,
+   :topics [:parser :evidence],
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "portable-parser-rq-evidence-integrity",
+     :scope "runtime places supplied by site configuration"}],
+   :claims
+   [{:id :c1,
+     :kind :structural-invariant,
+     :statement
+     "The parser-RQ site descriptor declares exactly three runtime places — `evidence_store_root`, `scratch_root`, and `campaign_lock_path` — at schema version `3.0.0`. It declares no corpus locator, and a descriptor carrying one is rejected by the closed contract rather than accepted and ignored, because no capture ever read corpus bytes from it. Evidence boundary: `test/abc/tools/validate_design_bundle_test.clj`.",
+     :evidence ["test/abc/tools/validate_design_bundle_test.clj"]}
+    {:id :c2,
+     :kind :structural-invariant,
+     :statement
+     "Which corpus a release is qualified against is a governed value, not a runtime one. `data/parser-release-qualification-corpus.edn` declares a repository-relative `:corpus_root` that every member's `:source_path` must begin with, and `:source_path` is one of `corpus-entry-identity-keys`, so relocating the corpus rotates `corpus_list_hash` and with it the candidate's qualification identity. No site configuration can change it. Evidence boundary: `test/abc/tools/parser_rq_campaign_test.clj`.",
+     :evidence ["test/abc/tools/parser_rq_campaign_test.clj"]}]}]}

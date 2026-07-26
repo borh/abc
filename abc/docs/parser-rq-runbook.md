@@ -67,22 +67,24 @@ below that root (`_below` in `tools/parser_rq_campaign_orchestrator.py`).
 `--evidence-tree` is **not** the repository checkout; pointing it at the
 checkout fails with `candidate is not below its authenticated tree`.
 
-**[corrected]** Two site-descriptor fields do not do what their names
-suggest on this path. `capture-core` resolves the corpus as
-`{candidate_tree}/ab-validator/crates/ab-index/tests/fixtures/corpus`
-(hardcoded), and the capture writes its output under `--staging-root`.
-The descriptor's `corpus_root` is authenticated by preflight only as "an
-absolute, existing directory" — an *empty* directory passes — and
-`evidence_store_root` is left untouched by the capture. Do not expect
-either to select or receive evidence. Consequently a full-corpus
-requalification is **not** reachable by repointing the descriptor; it
-requires changing that hardcoded corpus root.
+The site descriptor selects no corpus. Both captures that read corpus
+bytes resolve it as `{candidate_tree}/<corpus_root>`, where `corpus_root`
+comes from the governed corpus artifact
+(`data/parser-release-qualification-corpus.edn`) — so which bytes are
+qualified is a governed decision, not an operator one. A full-corpus
+requalification is therefore **not** reachable by pointing the descriptor
+somewhere else; it requires a governed corpus change.
+
+**[corrected]** `evidence_store_root` still does not do what its name
+suggests on this path: the capture writes its output under
+`--staging-root`, and the descriptor's evidence store is left untouched.
+Do not expect it to receive evidence.
 
 1. **Describe and preflight the site.** Copy
    `config/parser-rq-site.example.json` to `$work/site.json` and point
-   `corpus_root`, `evidence_store_root`, `scratch_root`, and
-   `campaign_lock_path` at the runtime root (committed manifests never
-   contain these locators — ADR 0042):
+   `evidence_store_root`, `scratch_root`, and `campaign_lock_path` at the
+   runtime root (committed manifests never contain these locators —
+   ADR 0042):
 
    ```bash
    python3 tools/parser_rq_campaign_site.py preflight-site \

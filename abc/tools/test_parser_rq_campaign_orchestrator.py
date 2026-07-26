@@ -163,15 +163,12 @@ def fixture(tmp_path: Path) -> Any:
     evidence_store.mkdir()
     scratch = tmp_path / "scratch"
     scratch.mkdir()
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
     site_descriptor = {
         "schema_id": "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json",
-        "schema_version": "2.0.0",
+        "schema_version": "3.0.0",
         "campaign_lock_path": str(tmp_path / "campaign.lock"),
         "evidence_store_root": str(evidence_store),
         "scratch_root": str(scratch),
-        "corpus_root": str(corpus),
     }
     evidence_tree.mkdir()
     candidate = evidence_tree / "candidate.edn"

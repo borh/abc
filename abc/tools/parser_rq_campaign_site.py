@@ -59,7 +59,6 @@ def authenticate_runtime(descriptor: dict[str, object], facts: RuntimeFacts, pro
     if set(descriptor) != {
         "schema_id",
         "schema_version",
-        "corpus_root",
         "evidence_store_root",
         "scratch_root",
         "campaign_lock_path",
@@ -68,27 +67,19 @@ def authenticate_runtime(descriptor: dict[str, object], facts: RuntimeFacts, pro
     if (
         descriptor["schema_id"]
         != "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json"
-        or descriptor["schema_version"] != "2.0.0"
+        or descriptor["schema_version"] != "3.0.0"
     ):
         raise SiteUnavailable("runtime descriptor identity is unsupported")
-    roots = [
-        Path(str(descriptor[key])) for key in ("corpus_root", "evidence_store_root", "scratch_root")
-    ]
+    roots = [Path(str(descriptor[key])) for key in ("evidence_store_root", "scratch_root")]
     lock_path = Path(str(descriptor["campaign_lock_path"]))
     if not all(path.is_absolute() for path in [*roots, lock_path]):
         raise SiteUnavailable("runtime descriptor paths must be absolute")
-    try:
-        corpus = roots[0].resolve(strict=True)
-    except OSError as error:
-        raise SiteUnavailable("corpus root is unavailable") from error
-    if not corpus.is_dir():
-        raise SiteUnavailable("corpus root is not a directory")
     if not facts.clock_synchronized:
         raise SiteUnavailable("local clock is not synchronized")
     if not facts.lock_available:
         raise SiteUnavailable("campaign lock is unavailable")
+    probe.verify_writable(roots[0].resolve())
     probe.verify_writable(roots[1].resolve())
-    probe.verify_writable(roots[2].resolve())
 
 
 def _authenticate_graph(graph: dict[str, object]) -> None:

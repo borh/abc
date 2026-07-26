@@ -1,7 +1,6 @@
 {
   "schema_id": "https://w3id.org/abc/schemas/parser-rq-site-descriptor.schema.json",
-  "schema_version": "2.0.0",
-  "corpus_root": "/runtime/parser-rq/corpus",
+  "schema_version": "3.0.0",
   "evidence_store_root": "/runtime/parser-rq/evidence",
   "scratch_root": "/runtime/parser-rq/scratch",
   "campaign_lock_path": "/runtime/parser-rq/campaign.lock"

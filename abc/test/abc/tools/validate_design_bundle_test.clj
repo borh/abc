@@ -311,8 +311,7 @@
          "schemas/parser-rq-evidence-integrity-receipt.schema.json")
         portable-descriptor
         {"schema_id" (schema-id "parser-rq-site-descriptor")
-         "schema_version" "2.0.0"
-         "corpus_root" "/runtime/corpus"
+         "schema_version" "3.0.0"
          "evidence_store_root" "/runtime/evidence"
          "scratch_root" "/runtime/scratch"
          "campaign_lock_path" "/runtime/parser-rq.lock"}
@@ -367,6 +366,12 @@
       (is (seq (schema/validation-errors
                 descriptor-schema
                 (assoc portable-descriptor (str "kernel" "_hostname") "hinoki"))))
+      ;; The corpus a capture reads is a governed value below the authenticated
+      ;; candidate tree, so the descriptor of runtime places declares no corpus
+      ;; locator at all: a descriptor naming one is rejected, not ignored.
+      (is (seq (schema/validation-errors
+                descriptor-schema
+                (assoc portable-descriptor "corpus_root" "/runtime/corpus"))))
       (is (seq (schema/validation-errors
                 readiness-schema
                 (assoc portable-readiness "site_facts" {}))))

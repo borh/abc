@@ -13,6 +13,7 @@ flowchart LR
   edtf_level1_decade_century["EDTF Level 1 — Decade Markers and BCE Century Prose"]:::accepted
   external_parser_validation_boundary["External Parser Validation Boundary"]:::accepted
   generated_fixture_policy["Generated Output Policy"]:::accepted
+  governed_qualification_corpus_location["Locate the Qualification Corpus by Governance, Not Site Configuration"]:::accepted
   iiif_applicability["IIIF Applicability for ABC v0"]:::accepted
   imported_output_materialization["Imported Parser Output Materialization"]:::accepted
   manifest_identity["Manifest Identity"]:::accepted
@@ -90,6 +91,7 @@ flowchart LR
   generated_fixture_policy -.->|"depends on"| imported_output_materialization
   generated_fixture_policy -.->|"depends on"| manifest_identity
   generated_fixture_policy -.->|"depends on"| manifest_identity_hardening
+  governed_qualification_corpus_location -->|"amends — runtime places supplied by site configuration"| portable_parser_rq_evidence_integrity
   iiif_applicability -.->|"restates hard rule"| manifest_identity
   manifest_identity_hardening -->|"amends"| imported_output_materialization
   manifest_identity_hardening -->|"amends"| manifest_identity

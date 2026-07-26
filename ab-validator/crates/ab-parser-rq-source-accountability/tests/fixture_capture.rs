@@ -32,6 +32,10 @@ fn identity() -> QualificationIdentity {
             "source_accountability".into(),
             "parser-rq-source-accountability-v1".into(),
         )]),
+        instrument_policy_hashes: BTreeMap::from([(
+            "source_recognition".into(),
+            format!("sha256:{}", "7".repeat(64)),
+        )]),
     }
 }
 

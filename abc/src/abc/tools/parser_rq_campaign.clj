@@ -42,6 +42,26 @@
 (def capture-member-keys
   (conj (set (keys member-observed-keys)) :measurements))
 
+(def instrument-policy-paths
+  "The governed authority document behind each capture member's instrument,
+  keyed by the member whose observations it governs and resolved against the
+  abc root.
+
+  Closed on purpose, and closed over exactly `member-observed-keys`:
+  build-candidate binds every entry and fails on a missing file, so an
+  instrument cannot enter the qualification identity as an absent key. That
+  absence is the fault this coordinate exists to remove -- before it, a change
+  to instrument semantics rotated the instrument's own policy_hash and nothing
+  the admission and promotion chain binds."
+  (sorted-map
+   :core_attempt "data/parser-rq-core-attempt-policy-v1.json"
+   :diagnostic_completeness "data/parser-rq-diagnostic-completeness-policy-v1.json"
+   :diagnostic_gap "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
+   :parser_ir_conformance "data/parser-rq-parser-ir-conformance-policy-v1.json"
+   :publication_structure "data/parser-rq-publication-policy-v1.json"
+   :resource "data/parser-rq-resource-policy-v1.json"
+   :source_recognition "data/parser-rq-ignored-regions-v1.json"))
+
 (def capture-keys
   #{:schema_id :schema_version :capture_generation_ref :capture_started_at_utc
     :authorization_ref :candidate_ref :qualification_identity_ref :members})
@@ -175,6 +195,26 @@
 
 (declare provenance-errors verify-provenance-errors)
 
+(defn instrument-policy-hashes
+  "Bind each instrument's governed authority document by content.
+
+  The hash is taken over the document's canonical JSON bytes, not over its
+  self-declared `policy_hash`. One derivation covers every member: the
+  ignored-regions taxonomy declares no hash at all, and where a policy does
+  declare one that declaration is itself among the hashed bytes, so binding
+  the content is strictly stronger than binding the claim about it."
+  [abc-root]
+  (reduce-kv
+   (fn [hashes member relative]
+     (let [path (fs/file abc-root relative)]
+       (when-not (fs/regular-file? path)
+         (throw (ex-info "governed instrument policy is missing"
+                         {:member member :path (str path)})))
+       (assoc hashes (name member)
+              (hash/format-sha256 (hash/sha256-json-jcs (files/read-json path))))))
+   (sorted-map)
+   instrument-policy-paths))
+
 (defn build-candidate [repo parser-git-rev provenance]
   (let [abc-root (fs/file repo "abc")
         corpus (qualification/load-corpus
@@ -203,14 +243,15 @@
                   :instrument_versions
                   (into (sorted-map)
                         (map (juxt (comp name :observed_key) :instrument))
-                        (:predicates predicates))}
+                        (:predicates predicates))
+                  :instrument_policy_hashes (instrument-policy-hashes abc-root)}
         identity-ref (qualification/qualification-identity-ref identity)]
     (when (or (seq (provenance-errors provenance))
               (not= parser-git-rev (:parser_git_rev parser)))
       (throw (ex-info "executable provenance does not bind the requested parser revision"
                       {:parser_git_rev parser-git-rev})))
     (let [candidate {:schema_id "https://w3id.org/abc/schemas/parser-rq-candidate.schema.json"
-                     :schema_version "1.0.0"
+                     :schema_version "2.0.0"
                      :qualification_identity_ref identity-ref
                      :qualification_identity identity
                      :executable_provenance_ref (executable-provenance-ref provenance)}]

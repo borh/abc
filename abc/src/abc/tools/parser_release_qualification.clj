@@ -235,7 +235,7 @@
   "The closed identity tuple to which every observation envelope is bound."
   (into admission-identity-keys
         [:parser_git_rev :corpus_snapshot_hash :corpus_list_hash
-         :predicate_set_hash :instrument_versions]))
+         :predicate_set_hash :instrument_versions :instrument_policy_hashes]))
 
 (def qualification-hash-keys
   [:mapping_hash :mapping_schema_hash :parser_ir_schema_hash
@@ -258,14 +258,33 @@
                       (nonblank-string? version)))
                versions)))
 
-(defn- qualification-identity-values-valid?
+(defn- valid-instrument-policy-hashes?
+  "Shape only. Which instruments must appear is a campaign question, decided
+  by the closed `instrument-policy-paths` membership that builds this map;
+  this gate owns the contract that every entry names an instrument and binds
+  a real content hash rather than a version string or a placeholder."
+  [hashes]
+  (and (map? hashes)
+       (seq hashes)
+       (every? (fn [[instrument value]]
+                 (and (or (keyword? instrument) (nonblank-string? instrument))
+                      (string? value)
+                      (boolean (re-matches hash/hash-pattern value))))
+               hashes)))
+
+(defn identity-values-valid?
+  "The typed, nonblank value contract every qualification identity must
+  satisfy, independent of whether the key set itself is complete. Public
+  because the source-accountability instrument authenticates the same
+  identity and must apply the same rule rather than a copy of it."
   [identity]
   (and (pos-int? (:aat_version identity))
        (every? #(nonblank-string? (get identity %)) qualification-string-keys)
        (every? #(and (string? (get identity %))
                      (re-matches hash/hash-pattern (get identity %)))
                qualification-hash-keys)
-       (valid-instrument-versions? (:instrument_versions identity))))
+       (valid-instrument-versions? (:instrument_versions identity))
+       (valid-instrument-policy-hashes? (:instrument_policy_hashes identity))))
 
 (defn admission-query
   [identity]
@@ -341,7 +360,7 @@
       (conj (str "qualification identity has unexpected fields: "
                  (string/join ", " unexpected)))
 
-      (not (qualification-identity-values-valid? identity))
+      (not (identity-values-valid? identity))
       (conj "qualification identity values violate the typed, nonblank identity contract")
 
       (not= (:corpus_list_hash identity) (:list_hash corpus))

@@ -139,27 +139,12 @@
             (reduce + 0 (map #(- (:end %) (:start %)) uncovered))))))
 
 (defn- valid-identity?
+  "Complete key set plus the gate's own value contract. The value rules live
+  in the qualification namespace so this instrument and the gate cannot drift
+  into disagreeing about what a well-formed identity is."
   [identity]
-  (let [required (set qualification/qualification-identity-keys)
-        hash-keys (set qualification/qualification-hash-keys)
-        string-keys (set qualification/qualification-string-keys)
-        instruments (:instrument_versions identity)]
-    (and (= required (set (keys identity)))
-         (pos-int? (:aat_version identity))
-         (every? #(and (string? (get identity %))
-                       (not (string/blank? (get identity %))))
-                 string-keys)
-         (every? #(and (string? (get identity %))
-                       (re-matches hash/hash-pattern (get identity %)))
-                 hash-keys)
-         (map? instruments)
-         (every? (fn [[instrument version]]
-                   (and (or (keyword? instrument)
-                            (and (string? instrument)
-                                 (not (string/blank? instrument))))
-                        (string? version)
-                        (not (string/blank? version))))
-                 instruments))))
+  (and (= (set qualification/qualification-identity-keys) (set (keys identity)))
+       (qualification/identity-values-valid? identity)))
 
 (defn- source-accountability-identity-valid?
   [identity]

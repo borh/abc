@@ -28,7 +28,8 @@
    :corpus_snapshot_hash sha
    :corpus_list_hash sha
    :predicate_set_hash sha
-   :instrument_versions {:core "v1"}})
+   :instrument_versions {:core "v1"}
+   :instrument_policy_hashes {:core sha}})
 
 (defn with-ref [value field ref-fn]
   (assoc value field (ref-fn value)))
@@ -185,6 +186,15 @@
 
 (defn canonical-bytes [value]
   (jcs/canonical-json-bytes (json-value value)))
+
+(defn write-edn! [path value]
+  (io/make-parents (io/file path))
+  (spit path (str (pr-str value) "\n")))
+
+(defn write-canonical-json! [path value]
+  (io/make-parents (io/file path))
+  (with-open [output (io/output-stream path)]
+    (.write output ^bytes (canonical-bytes value))))
 
 (defn blob-for [locator value]
   (let [bytes (canonical-bytes value)]
@@ -419,6 +429,90 @@
                   "--authorization" (str authorization-path)
                   "--clock-synchronized" "true")))))
 
+(defn- write-live-contracts!
+  "Stage the governed authorities build-candidate reads into a synthetic repo
+  root, copied from the live abc tree so the test binds what the campaign
+  actually ships rather than a restatement of it."
+  [root]
+  (write-edn! (fs/file root "abc/data/parser-release-qualification-corpus.edn")
+              (edn/read-string (slurp "data/parser-release-qualification-corpus.edn")))
+  (write-edn! (fs/file root "abc/data/parser-release-qualification-predicates.edn")
+              (edn/read-string (slurp "data/parser-release-qualification-predicates.edn")))
+  (doseq [relative (vals campaign/instrument-policy-paths)
+          :let [target (fs/file root "abc" relative)]]
+    (files/create-parent-dirs! target)
+    (fs/copy (fs/file relative) target {:replace-existing true}))
+  (write-canonical-json!
+   (fs/file root "ab-validator/data/aat-to-parser-ir-mapping-v2.json")
+   {:source_aat_version 2
+    :mapping_id "mapping"
+    :mapping_version "1"
+    :mapping_schema_hash sha
+    :target_parser_ir_schema_id "parser-ir"
+    :target_parser_ir_schema_hash sha}))
+
+(deftest instrument-policy-hashes-close-the-membership-they-claim-to-bind
+  (let [root (fs/create-temp-dir {:prefix "parser-rq-instrument-policy"})
+        revision (apply str (repeat 40 "a"))
+        executable {:name "ab-aozora" :nix_output "/nix/store/parser"
+                    :nar_hash sha :sha256 sha :bytes 1 :adapter "ab-aozora"
+                    :adapter_version "v1" :parser_git_rev revision
+                    :argv_template ["{executable}"]}
+        provenance (with-ref
+                     {:status :reproducible
+                      :builds [{:build_id "build-a" :output_ref sha}
+                               {:build_id "build-b" :output_ref sha}]
+                      :executables [executable]}
+                     :provenance_core_ref campaign/provenance-core-ref)
+        _ (write-live-contracts! root)
+        value (campaign/build-candidate root revision provenance)
+        bound (get-in value [:qualification_identity :instrument_policy_hashes])]
+    ;; Every capture member that contributes an observation must name a
+    ;; governed authority. A member missing here is exactly the gap this key
+    ;; exists to close, so the two sets are compared rather than sampled.
+    (is (= (into (sorted-set) (map name) (keys campaign/member-observed-keys))
+           (into (sorted-set) (keys bound))))
+    (is (= (hash/format-sha256
+            (hash/sha256-json-jcs
+             (files/read-json (fs/file root "abc"
+                                       (:resource campaign/instrument-policy-paths)))))
+           (get bound "resource")))
+    ;; A policy that is named but absent must fail the build rather than
+    ;; producing an identity with a hole in it.
+    (fs/delete (fs/file root "abc" (:resource campaign/instrument-policy-paths)))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (campaign/build-candidate root revision provenance)))))
+
+(deftest instrument-policy-edits-rotate-identity-without-touching-the-predicate-contract
+  (let [root (fs/create-temp-dir {:prefix "parser-rq-instrument-rotation"})
+        revision (apply str (repeat 40 "a"))
+        executable {:name "ab-aozora" :nix_output "/nix/store/parser"
+                    :nar_hash sha :sha256 sha :bytes 1 :adapter "ab-aozora"
+                    :adapter_version "v1" :parser_git_rev revision
+                    :argv_template ["{executable}"]}
+        provenance (with-ref
+                     {:status :reproducible
+                      :builds [{:build_id "build-a" :output_ref sha}
+                               {:build_id "build-b" :output_ref sha}]
+                      :executables [executable]}
+                     :provenance_core_ref campaign/provenance-core-ref)
+        _ (write-live-contracts! root)
+        before (campaign/build-candidate root revision provenance)
+        policy-path (fs/file root "abc"
+                             (:diagnostic_completeness campaign/instrument-policy-paths))
+        _ (write-canonical-json!
+           policy-path
+           (assoc (walk/keywordize-keys (files/read-json policy-path))
+                  :algorithm_version "edited-for-this-test"))
+        after (campaign/build-candidate root revision provenance)]
+    ;; The whole point of the coordinate: instrument semantics move the
+    ;; identity the admission and promotion chain binds ...
+    (is (not= (:qualification_identity_ref before) (:qualification_identity_ref after)))
+    (is (not= (:candidate_ref before) (:candidate_ref after)))
+    ;; ... without braiding themselves into what the release must prove.
+    (is (= (get-in before [:qualification_identity :predicate_set_hash])
+           (get-in after [:qualification_identity :predicate_set_hash])))))
+
 (deftest candidate-is-derived-from-live-contracts-and-reproducible-provenance
   (let [root (fs/create-temp-dir {:prefix "parser-rq-candidate"})
         revision (apply str (repeat 40 "a"))
@@ -432,20 +526,7 @@
                                {:build_id "build-b" :output_ref sha}]
                       :executables [executable]}
                      :provenance_core_ref campaign/provenance-core-ref)
-        _ (write-edn! (fs/file root "abc/data/parser-release-qualification-corpus.edn")
-                      (edn/read-string
-                       (slurp "data/parser-release-qualification-corpus.edn")))
-        _ (write-edn! (fs/file root "abc/data/parser-release-qualification-predicates.edn")
-                      (edn/read-string
-                       (slurp "data/parser-release-qualification-predicates.edn")))
-        _ (write-canonical-json!
-           (fs/file root "ab-validator/data/aat-to-parser-ir-mapping-v2.json")
-           {:source_aat_version 2
-            :mapping_id "mapping"
-            :mapping_version "1"
-            :mapping_schema_hash sha
-            :target_parser_ir_schema_id "parser-ir"
-            :target_parser_ir_schema_hash sha})
+        _ (write-live-contracts! root)
         value (campaign/build-candidate root revision provenance)
         receipt-value (-> receipt
                           (assoc :candidate_ref (:candidate_ref value)
@@ -527,15 +608,6 @@
     (is (= evaluation (campaign/resolve-current-evaluation-values sha [evaluation])))
     (is (thrown? clojure.lang.ExceptionInfo
                  (campaign/resolve-current-evaluation-values sha [])))))
-
-(defn write-edn! [path value]
-  (io/make-parents (io/file path))
-  (spit path (str (pr-str value) "\n")))
-
-(defn write-canonical-json! [path value]
-  (io/make-parents (io/file path))
-  (with-open [output (io/output-stream path)]
-    (.write output ^bytes (canonical-bytes value))))
 
 (deftest measurement-projection-does-not-require-an-evaluation
   (let [root (fs/create-temp-dir {:prefix "parser-rq-measurement-projection"})

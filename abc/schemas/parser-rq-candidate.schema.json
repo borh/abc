@@ -7,7 +7,7 @@
   "required": ["schema_id", "schema_version", "candidate_ref", "qualification_identity_ref", "qualification_identity", "executable_provenance_ref"],
   "properties": {
     "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-candidate.schema.json"},
-    "schema_version": {"const": "1.0.0"},
+    "schema_version": {"const": "2.0.0"},
     "candidate_ref": {"$ref": "#/$defs/hash"},
     "qualification_identity_ref": {"$ref": "#/$defs/hash"},
     "qualification_identity": {"$ref": "#/$defs/identity"},
@@ -17,7 +17,7 @@
     "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
     "identity": {
       "type": "object", "additionalProperties": false,
-      "required": ["aat_version", "aat_adapter", "aat_adapter_version", "mapping_id", "mapping_version", "mapping_hash", "mapping_schema_hash", "parser_ir_schema_id", "parser_ir_schema_hash", "parser_git_rev", "corpus_snapshot_hash", "corpus_list_hash", "predicate_set_hash", "instrument_versions"],
+      "required": ["aat_version", "aat_adapter", "aat_adapter_version", "mapping_id", "mapping_version", "mapping_hash", "mapping_schema_hash", "parser_ir_schema_id", "parser_ir_schema_hash", "parser_git_rev", "corpus_snapshot_hash", "corpus_list_hash", "predicate_set_hash", "instrument_versions", "instrument_policy_hashes"],
       "properties": {
         "aat_version": {"type": "integer", "minimum": 0},
         "aat_adapter": {"type": "string", "minLength": 1},
@@ -32,7 +32,8 @@
         "corpus_snapshot_hash": {"$ref": "#/$defs/hash"},
         "corpus_list_hash": {"$ref": "#/$defs/hash"},
         "predicate_set_hash": {"$ref": "#/$defs/hash"},
-        "instrument_versions": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "string", "minLength": 1}}
+        "instrument_versions": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "string", "minLength": 1}},
+        "instrument_policy_hashes": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/hash"}}
       }
     }
   }

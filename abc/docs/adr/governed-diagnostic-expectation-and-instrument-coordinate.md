@@ -76,8 +76,21 @@ rewritten to say something the corpus already says.
 
 **Instrument identity gets its own machine coordinate.** A new
 `instrument_policy_hashes` key in the qualification identity binds each
-instrument's governed `policy_hash`. It replaces reliance on the `:instrument`
-prose, which stays descriptive.
+instrument's governed authority document. It replaces reliance on the
+`:instrument` prose, which stays descriptive.
+
+What it binds is the *content* of that document — the sha256 of its canonical
+JSON bytes — not the `policy_hash` the document declares about itself. One
+derivation then covers every member. The ignored-regions taxonomy behind
+source-recognition declares no hash at all, so a declaration-based rule would
+have had to leave that member out, reintroducing the same silent gap one level
+down. And where a policy does declare a `policy_hash`, that declaration is
+itself among the hashed bytes, so binding the content is strictly stronger than
+binding the claim.
+
+Membership is closed over exactly the seven capture members that contribute
+observations, and a named-but-missing policy fails the candidate build rather
+than yielding an identity with a hole in it.
 
 Editing the prose strings was the available alternative and is rejected: it
 rotates `predicate_set_hash` as a side effect, braiding predicate identity with

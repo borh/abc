@@ -50,7 +50,8 @@
                   "corpus_snapshot_hash" parser-rq-test-hash
                   "corpus_list_hash" parser-rq-test-hash
                   "predicate_set_hash" parser-rq-test-hash
-                  "instrument_versions" {"core_attempt" "1.0.0"}}
+                  "instrument_versions" {"core_attempt" "1.0.0"}
+                  "instrument_policy_hashes" {"core_attempt" parser-rq-test-hash}}
         core-policy {"schema_id" (schema-id "parser-rq-core-attempt-policy")
                      "schema_version" "1.0.0"
                      "instrument_id" "parser-rq-core-attempt-v1"
@@ -143,7 +144,7 @@
                          {"repetition" 3 "fatal_failures" 0
                           "wall_time_seconds" 1.1 "timeouts" 0}]}
         candidate {"schema_id" (schema-id "parser-rq-candidate")
-                   "schema_version" "1.0.0"
+                   "schema_version" "2.0.0"
                    "candidate_ref" parser-rq-test-hash
                    "qualification_identity_ref" parser-rq-test-hash
                    "qualification_identity" identity

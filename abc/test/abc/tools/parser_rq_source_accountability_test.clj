@@ -24,7 +24,9 @@
    :corpus_snapshot_hash (str "sha256:" (apply str (repeat 64 "4")))
    :corpus_list_hash (str "sha256:" (apply str (repeat 64 "5")))
    :predicate_set_hash (str "sha256:" (apply str (repeat 64 "6")))
-   :instrument_versions {:source_accountability "parser-rq-source-accountability-v1"}})
+   :instrument_versions {:source_accountability "parser-rq-source-accountability-v1"}
+   :instrument_policy_hashes
+   {:source_recognition (str "sha256:" (apply str (repeat 64 "7")))}})
 
 (def identity-ref
   (qualification/qualification-identity-ref qualification-identity))
@@ -213,7 +215,7 @@
                store manifest aggregate identity))))
 
 (deftest qualification-identity-ref-matches-rust-golden
-  (is (= "sha256:8823c4600a7b9cff9b03728247dbd991474a8bbdf528cec8752b63219e68ae85"
+  (is (= "sha256:45b662893c840cdb68647baa9c2af48fdbc7dae14cb064f903d35c939e220088"
          identity-ref)))
 
 (deftest production-recognition-fixture-drives-the-real-envelope-and-gate

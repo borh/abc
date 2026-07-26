@@ -24,12 +24,16 @@ fn qualification_identity_matches_p0_flat_wire_and_golden_ref() {
             "source_accountability".into(),
             "parser-rq-source-accountability-v1".into(),
         )]),
+        instrument_policy_hashes: BTreeMap::from([(
+            "source_recognition".into(),
+            format!("sha256:{}", "7".repeat(64)),
+        )]),
     };
     let bytes = canonical_json(&identity).unwrap();
     assert!(!bytes.contains("adapter_coordinates"));
     assert!(bytes.contains("\"instrument_versions\":{\"source_accountability\""));
     assert_eq!(
         qualification_identity_ref(&identity).unwrap(),
-        "sha256:8823c4600a7b9cff9b03728247dbd991474a8bbdf528cec8752b63219e68ae85"
+        "sha256:45b662893c840cdb68647baa9c2af48fdbc7dae14cb064f903d35c939e220088"
     );
 }

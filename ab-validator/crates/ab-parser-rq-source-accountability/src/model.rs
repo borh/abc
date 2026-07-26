@@ -44,6 +44,10 @@ pub struct QualificationIdentity {
     pub corpus_list_hash: String,
     pub predicate_set_hash: String,
     pub instrument_versions: BTreeMap<String, String>,
+    /// Content identity of each instrument's governed policy document. The
+    /// prose in `instrument_versions` describes how a measurement was taken;
+    /// this is the coordinate that actually moves when that changes.
+    pub instrument_policy_hashes: BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

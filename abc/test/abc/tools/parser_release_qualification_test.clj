@@ -18,7 +18,9 @@
    :corpus_snapshot_hash "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e"
    :corpus_list_hash "sha256:ace3fa3f4fb6565d46276d8276b4a2e183c58e595f27f0e3149d7395ca6554dd"
    :predicate_set_hash (q/predicate-set-hash (q/load-predicates))
-   :instrument_versions {:fixture "v1"}})
+   :instrument_versions {:fixture "v1"}
+   :instrument_policy_hashes
+   {:fixture "sha256:0000000000000000000000000000000000000000000000000000000000000000"}})
 
 (def all-pass-values
   {:fatal_failures 0 :source_span_coverage 1.0 :silent_drops 0
@@ -266,18 +268,26 @@
            (get-in report [:coherence :identity_ref])))))
 
 (deftest gate-not-qualified-when-full-identity-is-incomplete
-  (let [incomplete (dissoc admitted-identity :parser_git_rev :instrument_versions)
+  (let [incomplete (dissoc admitted-identity :parser_git_rev :instrument_versions
+                           :instrument_policy_hashes)
         report (q/build-report (report-input incomplete
                                              (envelopes incomplete all-pass-values)))]
     (is (= :not-qualified (:gate_status report)))
     (is (some #(re-find #"parser_git_rev" %) (get-in report [:coherence :errors])))
-    (is (some #(re-find #"instrument_versions" %) (get-in report [:coherence :errors])))))
+    (is (some #(re-find #"instrument_versions" %) (get-in report [:coherence :errors])))
+    (is (some #(re-find #"instrument_policy_hashes" %)
+              (get-in report [:coherence :errors])))))
 
 (deftest gate-not-qualified-when-identity-values-are-malformed
   (doseq [malformed [(assoc admitted-identity :parser_git_rev nil)
                      (assoc admitted-identity :parser_git_rev "  ")
                      (assoc admitted-identity :instrument_versions {:fixture nil})
-                     (assoc admitted-identity :instrument_versions {"" "v1"})]]
+                     (assoc admitted-identity :instrument_versions {"" "v1"})
+                     ;; A version string where a content hash belongs would
+                     ;; leave the coordinate looking bound while carrying
+                     ;; nothing an edit could rotate.
+                     (assoc admitted-identity :instrument_policy_hashes {:fixture "v1"})
+                     (assoc admitted-identity :instrument_policy_hashes {})]]
     (let [report (q/build-report
                   (report-input malformed (envelopes malformed all-pass-values)))]
       (is (= :not-qualified (:gate_status report)))

@@ -827,6 +827,75 @@ not body. The true body-interior figure is **~10,500 bytes**, and 23 of 299
 works lack two separator lines entirely, so a governed frame rule cannot rely on
 the separator heuristic used here.
 
+### Q16, settled 2026-07-27 — not silent drift, but a real attribution defect
+
+**Decision: bind `data/parser-rq-ab-aozora-classified-source-v1.json` into
+`instrument_policy_hashes`, and do it *before* the Q15 amendment.**
+
+The traced answer first, because the question was posed as a possible hole and
+it is not one. **A classified-source policy edit cannot drift silently.** Three
+independent coordinates move:
+
+| Coordinate | Why it moves | What it reaches |
+|---|---|---|
+| `parser_git_rev` | the policy is a repo file, so the edit must be committed | **`qualification_identity_ref`** — it is a field of the identity map (`parser_rq_campaign.clj:239`) |
+| accountability binary `sha256` | the policy is `include_bytes!`-embedded in `ab-aozora-capture` (`classified_source.rs:20`), so editing it rebuilds the binary | `executable_provenance_ref` → `candidate_ref` |
+| authority pin | `parser-rq-classified-source-authority-v1.json` pins the policy by `raw_bytes_hash` and `identity_hash` | fails closed unless updated in lockstep |
+
+Committed run evidence confirms the second: across five runs in
+`docs/reports/parser-rq/runs/`, `ab-parser-rq-source-accountability` carries a
+constant `sha256:96cf4cda…` while `parser_git_rev` differs in every one — the
+binaries are genuinely content-addressed, and a change to their embedded bytes
+would show.
+
+**So why bind it anyway.** Because the identity rotates without ever *naming*
+what changed. `parser_git_rev` moves on every commit, so a recognition-semantics
+change is indistinguishable from an unrelated one, and no coordinate in the
+identity answers "which recognition policy was in force?". Meanwhile
+`instrument_policy_hashes[:source_recognition]` binds
+`data/parser-rq-ignored-regions-v1.json` — which is `{"rules":[]}`, governs
+*exemptions* rather than recognition, and has never changed.
+
+The asymmetry is the clearest evidence. Every other member binds its
+instrument's substantive policy, and the two parser-specific policies are named
+in exact parallel:
+
+| Document | Bound in `instrument-policy-paths`? |
+|---|---|
+| `parser-rq-ab-aozora-diagnostic-gap-v1.json` | **yes**, as `:diagnostic_gap` |
+| `parser-rq-ab-aozora-classified-source-v1.json` | **no** |
+
+`instrument-policy-paths` says it is "closed on purpose … so an instrument
+cannot enter the qualification identity as an absent key," and that the fault it
+removes is a change to instrument semantics rotating "the instrument's own
+`policy_hash` and nothing the admission and promotion chain binds." For
+`:source_recognition` that guarantee holds **formally** — the key is present —
+and fails **substantively**: the key points at the wrong document, and the
+policy whose 31 rules decide every recognized byte is bound only as a side
+effect of the commit rev.
+
+**Two consequences for the change.**
+
+1. **Bind the policy's own canonical bytes, not the authority document.** The
+   codebase already settles this: `instrument-policy-hashes` hashes "the
+   document's canonical JSON bytes, not … its self-declared `policy_hash`,"
+   because "binding the content is strictly stronger than binding the claim
+   about it." The authority document is precisely a claim about the policy.
+2. **`:source_recognition` has two governed documents, so the map's shape must
+   widen.** The taxonomy governs which bytes are *eligible*; the classified-source
+   policy governs which eligible bytes are *recognized*. Both belong. Today
+   `instrument-policy-paths` is member → one path, so this is a small structural
+   change to member → set of paths, not merely a new entry.
+
+**Sequence it before Q15.** If the binding lands first, the Q15 policy amendment
+rotates the identity through a coordinate that says *the recognition policy
+changed*. If Q15 lands first, the identity still rotates — via `parser_git_rev`
+— but the reason is unattributable, and the one campaign where the recognition
+semantics demonstrably moved would be the one campaign that fails to record it.
+
+This amends the `parser-release-instrument-bindings` decision, which is among
+this design's declared dependencies.
+
 `decisions.edn` is authored by hand; this section records the decision and its
 evidence, not the governance entry.
 
@@ -1171,7 +1240,7 @@ Stated explicitly, because "blocker" without a scope stalls everything equally.
 | **Q9** (population equality) | Describing tier 2 as a census; the accounted difference against the admission and conversion-audit populations | Accepting that a snapshot tier should exist; tier 2's population definition and name, both now fixed by Q11 |
 | **D8** (repetition protocol) | Tier-relative repetition counts | Everything else; tier 2 can run at the current fixed 3 |
 | **Q15** (execute the Q14 decision) | **The confirmatory tier 2 campaign** — coverage cannot reach its declared `1.0` until the policy covers `publication_metadata`, the absent close-marker rules, and `底本` correction notes; and reading any tier 2 coverage observation as a parser verdict before then | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
-| **Q16** (is the classified-source policy in the identity?) | **Landing Q15's amendment**, which is the first change to exercise it | Everything else; the change fails closed either way |
+| **Q16 execution** (decided; bind the policy) | **Landing Q15's amendment** — bind first, so that amendment's rotation is attributable | Everything else; a policy edit cannot drift silently either way |
 | ~~**Q14**~~ (decided 2026-07-27) | — | — · the instrument is incomplete; threshold and ratio both stand. Execution is Q15 |
 | ~~**Q1**~~ (closed 2026-07-27) | — | — · the capture layer is 9.25× all of `ab-check`; it reshapes the budget, not the architecture |
 | ~~**Q2**~~ (closed 2026-07-27) | — | — · closing it *corrected* D6's instrument attribution; see *D6 correction* |
@@ -1234,8 +1303,9 @@ Then:
    instrument, not the threshold) and Part B is diagnosed, so Parts A and B are
    **one policy amendment and one `policy_hash` rotation**:
    `publication_metadata`, `warichu_close`, `framed_close`, and a `底本`
-   correction-note rule. **Settle Q16 before that amendment lands**, since it
-   decides whether the rotation reaches `qualification_identity_ref`. Part C —
+   correction-note rule. **Land the Q16 binding first**, so that amendment
+   rotates the identity through a coordinate that names the recognition policy
+   rather than only through `parser_git_rev`. Part C —
    predeclaring the residual threshold — is step 5 itself and must not be pulled
    forward. Q1 is measured, so what remains here is Q5's host class and the other
    open questions.
@@ -1353,17 +1423,17 @@ Every governance edit to `decisions.edn` is authored by hand.
   exploratory campaign, per *Governance Path* step 5; with A+B landed, coverage
   would still be ~0.9892, the remainder being `preserved_opaque` fidelity
   exposure. **This gates the confirmatory tier 2 campaign.**
-- **Q16 — Is the classified-source policy bound into the qualification
-  identity?** `instrument-policy-paths` binds `:source_recognition` to
-  `data/parser-rq-ignored-regions-v1.json`, which is `{"rules":[]}` — **not** to
-  `data/parser-rq-ab-aozora-classified-source-v1.json`, the document that
-  actually decides what `source_span_coverage` recognizes. The policy is pinned
-  by `parser-rq-classified-source-authority-v1.json`
-  (`raw_bytes_hash`/`identity_hash`), so a change **fails closed** rather than
-  drifting silently; the open question is whether it should also rotate
-  `qualification_identity_ref`, which today it does not. **Q15's amendment is
-  the first change that will exercise this**, so decide it first. Not traced
-  through the full promotion chain — stated as a question, not a defect.
+- **Q16 — SETTLED 2026-07-27: bind the classified-source policy, before Q15.**
+  Traced: an edit **cannot** drift silently — `parser_git_rev` (a field of the
+  identity), the `include_bytes!`-embedded binary's `sha256`, and the authority
+  pin all move. But the identity never *names* what changed, because
+  `instrument_policy_hashes[:source_recognition]` binds the empty
+  `parser-rq-ignored-regions-v1.json` rather than the policy whose 31 rules
+  decide every recognized byte — while the parallel
+  `parser-rq-ab-aozora-diagnostic-gap-v1.json` **is** bound. Bind the policy's
+  canonical bytes (not its authority document), widening
+  `instrument-policy-paths` from member → one path to member → set. See
+  *Q16, settled*.
 - **Q13 — Is `:parser_ir_node_span_coverage` safe to retain?** It is kept as
   supporting evidence beside the ledger-authoritative observation, but on real
   works it is not a source-coverage ratio at all: node spans are a running offset

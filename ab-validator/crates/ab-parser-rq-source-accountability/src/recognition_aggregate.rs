@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 use crate::interval::{Interval, normalize, subtract};
 use crate::recognition_corpus::{MAX_SAFE_INTEGER, authenticate_corpus_generation_ref};
 use crate::{
-    RecognitionIndex, RecognitionInterval, RecognitionStatus, RecognitionWorkRecord, canonical_json,
+    RecognitionIndex, RecognitionInterval, RecognitionMetadata, RecognitionStatus,
+    RecognitionWorkRecord, canonical_json,
 };
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -57,6 +58,18 @@ pub struct RecognitionAggregate {
     pub semantic_gaps: Option<Vec<RecognitionWorkInterval>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unaccounted: Option<Vec<RecognitionWorkInterval>>,
+    /// The metadata population, folded across the corpus.
+    ///
+    /// Present so that the two predicates a work must clear -- body-projection
+    /// coverage and metadata attribution -- both have a corpus-level number,
+    /// and so that the corpus total still sums to the decoded bytes rather
+    /// than to the body bytes alone.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_eligible_bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_accounted_bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_unaccounted_bytes: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<String>>,
 }
@@ -92,7 +105,7 @@ fn semantic_intervals(intervals: &[RecognitionInterval], bound: u64) -> Result<V
 }
 
 const INDEX_SCHEMA: &str = "abc/parser-rq-source-recognition-index/v1";
-const WORK_SCHEMA: &str = "abc/parser-rq-source-recognition-work/v1";
+const WORK_SCHEMA: &str = "abc/parser-rq-source-recognition-work/v2";
 const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v1";
 const GENERATION_ALGORITHM: &str = "sha256-rfc8785-safe-integer-domain-abc-v1";
 fn valid_hash(value: &str) -> bool {
@@ -216,17 +229,55 @@ fn validate_record(
     let unaccounted_bytes = record
         .unaccounted_bytes
         .ok_or_else(|| anyhow::anyhow!("unaccounted total absent"))?;
-    anyhow::ensure!(valid_intervals(recognized, eligible) && valid_intervals(accounted, eligible));
-    anyhow::ensure!(valid_intervals(gaps, eligible) && valid_intervals(unaccounted, eligible));
-    let recognized_semantic = semantic_intervals(recognized, eligible)?;
-    let accounted_semantic = semantic_intervals(accounted, eligible)?;
-    let gaps_semantic = semantic_intervals(gaps, eligible)?;
-    let unaccounted_semantic = semantic_intervals(unaccounted, eligible)?;
-    let eligible_bound = usize::try_from(eligible)?;
-    let full = if eligible_bound == 0 {
+    // Intervals are absolute offsets into the decoded file; `eligible` is a
+    // byte COUNT. Those are two different quantities, and the frame for
+    // bounding an interval is the body REGION, not the count of bytes in it.
+    //
+    // This distinction is the whole subject of the region partition, and this
+    // validator previously collapsed it -- bounding intervals by `eligible`
+    // and subtracting them from `[0, eligible)`. That was correct only while
+    // the body happened to be the whole file starting at zero. It is stated
+    // explicitly now so the two cannot drift back together.
+    let regions = record
+        .regions
+        .ok_or_else(|| anyhow::anyhow!("regions absent"))?;
+    anyhow::ensure!(
+        regions.header.start == 0
+            && regions.header.end == regions.body.start
+            && regions.body.end == regions.tail.start,
+        "published regions do not partition the decoded source"
+    );
+    let decoded_bytes = regions.tail.end;
+    let body_bytes = regions.body.end - regions.body.start;
+    let metadata_bytes =
+        (regions.header.end - regions.header.start) + (regions.tail.end - regions.tail.start);
+    anyhow::ensure!(
+        body_bytes == eligible && body_bytes.checked_add(metadata_bytes) == Some(decoded_bytes),
+        "region totals do not conserve the decoded source"
+    );
+
+    let bound = regions.body.end;
+    anyhow::ensure!(valid_intervals(recognized, bound) && valid_intervals(accounted, bound));
+    anyhow::ensure!(valid_intervals(gaps, bound) && valid_intervals(unaccounted, bound));
+    anyhow::ensure!(
+        [recognized, accounted, gaps, unaccounted]
+            .iter()
+            .all(|set| set.iter().all(|i| i.start >= regions.body.start)),
+        "a body interval starts before the body"
+    );
+    let recognized_semantic = semantic_intervals(recognized, bound)?;
+    let accounted_semantic = semantic_intervals(accounted, bound)?;
+    let gaps_semantic = semantic_intervals(gaps, bound)?;
+    let unaccounted_semantic = semantic_intervals(unaccounted, bound)?;
+    let body_bound = usize::try_from(bound)?;
+    let full = if body_bytes == 0 {
         Vec::new()
     } else {
-        vec![Interval::new(0, eligible_bound, eligible_bound)?]
+        vec![Interval::new(
+            usize::try_from(regions.body.start)?,
+            body_bound,
+            body_bound,
+        )?]
     };
     anyhow::ensure!(subtract(&recognized_semantic, &accounted_semantic).is_empty());
     anyhow::ensure!(subtract(&full, &recognized_semantic) == gaps_semantic);
@@ -238,6 +289,34 @@ fn validate_record(
     anyhow::ensure!(recognized_bytes.checked_add(gap_bytes) == Some(eligible));
     anyhow::ensure!(accounted_bytes.checked_add(unaccounted_bytes) == Some(eligible));
     anyhow::ensure!(recognized_bytes <= accounted_bytes);
+
+    // The metadata population, in its own frame: intervals lie in the header
+    // or the tail, and its own totals conserve.
+    let metadata = record
+        .metadata
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("metadata absent"))?;
+    anyhow::ensure!(metadata.eligible_bytes == metadata_bytes);
+    anyhow::ensure!(
+        metadata
+            .accounted_bytes
+            .checked_add(metadata.unaccounted_bytes)
+            == Some(metadata_bytes)
+    );
+    anyhow::ensure!(
+        valid_intervals(&metadata.accounted, decoded_bytes)
+            && valid_intervals(&metadata.unaccounted, decoded_bytes)
+    );
+    anyhow::ensure!(
+        [&metadata.accounted, &metadata.unaccounted]
+            .iter()
+            .all(|set| set
+                .iter()
+                .all(|i| i.end <= regions.header.end || i.start >= regions.tail.start)),
+        "a metadata interval escapes the header and tail"
+    );
+    anyhow::ensure!(total(&metadata.accounted) == Some(metadata.accounted_bytes));
+    anyhow::ensure!(total(&metadata.unaccounted) == Some(metadata.unaccounted_bytes));
     Ok(())
 }
 
@@ -290,6 +369,9 @@ pub fn aggregate_recognition(
     let mut accounted = 0_u64;
     let mut gap_bytes = 0_u64;
     let mut unaccounted_bytes = 0_u64;
+    let mut metadata_eligible = 0_u64;
+    let mut metadata_accounted = 0_u64;
+    let mut metadata_unaccounted = 0_u64;
     let mut semantic_gaps = Vec::new();
     let mut unaccounted = Vec::new();
     if errors.is_empty() {
@@ -339,6 +421,24 @@ pub fn aggregate_recognition(
                         break;
                     };
                     unaccounted_bytes = next;
+                    let metadata = record.metadata.clone().unwrap_or(RecognitionMetadata {
+                        eligible_bytes: 0,
+                        accounted_bytes: 0,
+                        unaccounted_bytes: 0,
+                        accounted: Vec::new(),
+                        unaccounted: Vec::new(),
+                    });
+                    let totals = metadata_eligible
+                        .checked_add(metadata.eligible_bytes)
+                        .zip(metadata_accounted.checked_add(metadata.accounted_bytes))
+                        .zip(metadata_unaccounted.checked_add(metadata.unaccounted_bytes));
+                    let Some(((next_eligible, next_accounted), next_unaccounted)) = totals else {
+                        errors.push("aggregate-total-overflow".into());
+                        break;
+                    };
+                    metadata_eligible = next_eligible;
+                    metadata_accounted = next_accounted;
+                    metadata_unaccounted = next_unaccounted;
                     for interval in record.semantic_gaps.unwrap() {
                         semantic_gaps.push(RecognitionWorkInterval {
                             work_id: entry.work_id.clone(),
@@ -364,6 +464,9 @@ pub fn aggregate_recognition(
         accounted,
         gap_bytes,
         unaccounted_bytes,
+        metadata_eligible,
+        metadata_accounted,
+        metadata_unaccounted,
     ]
     .into_iter()
     .any(|total| total > MAX_SAFE_INTEGER)
@@ -371,7 +474,7 @@ pub fn aggregate_recognition(
         errors.push("safe-integer-domain-exceeded".to_owned());
     }
     let base = RecognitionAggregate {
-        schema_version: "abc/parser-rq-source-recognition-aggregate/v1".to_owned(),
+        schema_version: "abc/parser-rq-source-recognition-aggregate/v2".to_owned(),
         qualification_identity_ref: valid_hash(&index.qualification_identity_ref)
             .then(|| index.qualification_identity_ref.clone()),
         corpus_generation_ref: valid_hash(&index.corpus_generation_ref)
@@ -397,6 +500,9 @@ pub fn aggregate_recognition(
         unaccounted_bytes: errors.is_empty().then_some(unaccounted_bytes),
         semantic_gaps: errors.is_empty().then_some(semantic_gaps),
         unaccounted: errors.is_empty().then_some(unaccounted),
+        metadata_eligible_bytes: errors.is_empty().then_some(metadata_eligible),
+        metadata_accounted_bytes: errors.is_empty().then_some(metadata_accounted),
+        metadata_unaccounted_bytes: errors.is_empty().then_some(metadata_unaccounted),
         errors: (!errors.is_empty()).then_some(errors),
     };
     Ok(base)

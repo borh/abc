@@ -190,11 +190,8 @@ reviewed.
 1. **Characterize the current behaviour — DONE 2026-07-27.** See *Task 1
    result*. It changed what task 6 has to decide.
 2. **Declare the partition — DONE 2026-07-27.** See *Task 2 result*.
-3. **Move `source_span_coverage` onto the body region.** Thread the partition
-   into `RecognitionInput`, replace the hard-coded whole-file eligibility, keep
-   the existing per-region conservation assertions. Rotates the recognition
-   schemas and `instrument_policy_hashes`; whether it rotates
-   `predicate_set_hash` depends on task 6.
+3. **Move `source_span_coverage` onto the body region — DONE 2026-07-27.**
+   See *Task 3 result*.
 4. **Build metadata attribution.** A fact producer for the header and tail
    regions, then roles, dispositions and spans for packaging metadata —
    `publication_metadata` among them. New schemas, new tests.
@@ -352,6 +349,63 @@ three works — header 505/495/621, body 30,985/258,077/558,100, tail
 658/748/791 — so the body-projection fold of **0.9911** is now instrument
 output rather than a reconstruction. It is still not an acceptance value; that
 is task 6's to fix, after task 3 actually moves the denominator.
+
+## Task 3 result
+
+**Eligibility is the body region.** `analyze_recognition` intersects the
+recognized and accounted sets against the body and takes the complement within
+it, so the numerator and denominator finally inhabit one coordinate. The
+metadata population — header and tail folded, since they qualify under one
+conjunctive predicate — is measured in its own frame and published as
+`metadata`. No byte leaves the accounting; the cross-region identity
+`body + metadata == decoded` is asserted and fails closed.
+
+**Measured on the three real works**, through the built binary:
+
+| | eligible | accounted/recognized | fold |
+|---|---|---|---|
+| body | 847,162 | 839,647 recognized | **0.9911** |
+| metadata | 3,818 | 194 accounted | **0.0508** |
+| sum | 850,980 | — | equals decoded |
+
+The two numbers are diagnostic in exactly the way the single number was not.
+0.9911 says the parser leaves ~0.9% of body bytes unrecognized; 0.0508 says
+packaging is almost entirely unattributed. The old 0.9869 said neither, and
+could not distinguish them.
+
+### The same defect, found inside the fix
+
+Moving the denominator made the aggregate validator reject every record, and
+the reason is worth recording because it is this plan's own subject matter
+reappearing one level down.
+
+`validate_record` bounded intervals by `eligible_bytes` and subtracted them
+from `[0, eligible_bytes)`. But **an interval is an absolute offset into the
+decoded file and `eligible_bytes` is a count** — those coincide only while the
+measured region starts at zero, which the whole file did and the body does not.
+The validator had the shape of a conservation check and the strength of an
+assumption.
+
+The same conflation was in the Clojure validators —
+`canonical-intervals? intervals eligible_bytes` and
+`interval-complement recognized eligible_bytes`. Both now take the region's
+absolute bounds; the count-based arities are retained with a docstring saying
+what they assume, because callers measuring from zero are still correct.
+
+This is the third instance of one defect class in this area, and the first that
+a check caught rather than a measurement. That is the partition earning its
+cost: the conservation identity failed loudly instead of returning a believable
+number.
+
+### Versioning
+
+The work and aggregate wire versions go to **v2**. `eligible_bytes` keeps its
+name and changes its contract, which is precisely the case that must be
+versioned rather than allowed to drift — a v1 artifact read as a v2 measurement
+would silently compare a whole-file denominator against a body one. The v1
+schemas are frozen alongside, with sample documents and a test asserting neither
+version validates the other's records. The **index** schema does not move: it
+carries provenance, not measurement.
 
 ## Sequencing: decide Q13 first
 

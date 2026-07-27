@@ -1,46 +1,48 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-source-recognition-aggregate.schema.json",
-  "title": "Parser release qualification source-recognition aggregate",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-source-recognition-work-v1.schema.json",
+  "title": "Parser release qualification source-recognition work record (v1, frozen)",
+  "description": "Frozen. Validates recognition work records on the retired wire version abc/parser-rq-source-recognition-work/v1, whose eligible_bytes was the whole decoded file. v2 measures the body region instead, so the same field name carries a different contract and the two must not validate each other. Nothing emits this shape; it exists so already-published evidence stays checkable. See docs/adr/parser-rq-source-region-partition.md.",
   "type": "object",
   "required": [
     "schema_version",
-    "corpus_generation_algorithm",
+    "instrument_version",
     "coordinate_system",
-    "status",
-    "work_completeness"
+    "status"
   ],
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "abc/parser-rq-source-recognition-aggregate/v2"
+      "const": "abc/parser-rq-source-recognition-work/v1"
     },
     "qualification_identity_ref": {
       "$ref": "#/$defs/hash"
     },
-    "corpus_generation_ref": {
+    "capture_generation_ref": {
       "$ref": "#/$defs/hash"
-    },
-    "corpus_generation_algorithm": {
-      "const": "sha256-rfc8785-safe-integer-domain-abc-v1"
     },
     "policy_hash": {
       "$ref": "#/$defs/hash"
     },
-    "membership_ref": {
-      "$ref": "#/$defs/hash"
+    "instrument_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "work_id": {
+      "type": "string",
+      "minLength": 1
     },
     "coordinate_system": {
       "const": "decoded_utf8"
+    },
+    "ledger": {
+      "$ref": "#/$defs/blob"
     },
     "status": {
       "enum": [
         "ok",
         "unavailable"
       ]
-    },
-    "work_completeness": {
-      "$ref": "#/$defs/completeness"
     },
     "eligible_bytes": {
       "type": "integer",
@@ -67,17 +69,17 @@
       "minimum": 0,
       "maximum": 9007199254740991
     },
+    "recognized": {
+      "$ref": "#/$defs/intervals"
+    },
+    "accounted": {
+      "$ref": "#/$defs/intervals"
+    },
     "semantic_gaps": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/work_interval"
-      }
+      "$ref": "#/$defs/intervals"
     },
     "unaccounted": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/work_interval"
-      }
+      "$ref": "#/$defs/intervals"
     },
     "errors": {
       "type": "array",
@@ -86,18 +88,6 @@
         "type": "string",
         "minLength": 1
       }
-    },
-    "metadata_eligible_bytes": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "metadata_accounted_bytes": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "metadata_unaccounted_bytes": {
-      "type": "integer",
-      "minimum": 0
     }
   },
   "oneOf": [
@@ -105,25 +95,21 @@
       "properties": {
         "status": {
           "const": "ok"
-        },
-        "work_completeness": {
-          "properties": {
-            "complete": {
-              "const": true
-            }
-          }
         }
       },
       "required": [
         "qualification_identity_ref",
-        "corpus_generation_ref",
+        "capture_generation_ref",
         "policy_hash",
-        "membership_ref",
+        "work_id",
+        "ledger",
         "eligible_bytes",
         "recognized_bytes",
         "accounted_bytes",
         "semantic_gap_bytes",
         "unaccounted_bytes",
+        "recognized",
+        "accounted",
         "semantic_gaps",
         "unaccounted"
       ],
@@ -171,6 +157,16 @@
           },
           {
             "required": [
+              "recognized"
+            ]
+          },
+          {
+            "required": [
+              "accounted"
+            ]
+          },
+          {
+            "required": [
               "semantic_gaps"
             ]
           },
@@ -188,19 +184,14 @@
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
-    "work_interval": {
+    "interval": {
       "type": "object",
       "required": [
-        "work_id",
         "start",
         "end"
       ],
       "additionalProperties": false,
       "properties": {
-        "work_id": {
-          "type": "string",
-          "minLength": 1
-        },
         "start": {
           "type": "integer",
           "minimum": 0,
@@ -213,30 +204,38 @@
         }
       }
     },
-    "completeness": {
+    "intervals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/interval"
+      }
+    },
+    "blob": {
       "type": "object",
       "required": [
-        "expected",
-        "observed",
-        "complete"
+        "sha256",
+        "bytes",
+        "media_type",
+        "locator"
       ],
       "additionalProperties": false,
       "properties": {
-        "expected": {
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "bytes": {
           "type": "integer",
           "minimum": 0,
           "maximum": 9007199254740991
         },
-        "observed": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991
+        "media_type": {
+          "const": "application/json"
         },
-        "complete": {
-          "type": "boolean"
+        "locator": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }
-  },
-  "description": "v2. eligible_bytes folds BODY-region denominators; the metadata_* totals fold the header and tail population. See docs/adr/parser-rq-source-region-partition.md."
+  }
 }

@@ -712,6 +712,32 @@
                    aggregate)))
       (is (empty? (source-recognition/coherence-errors
                    index aggregate [work]))))
+    (testing "the frozen v1 contracts still validate their own retired shape"
+      ;; v2 moved `eligible_bytes` from the whole decoded file to the body
+      ;; region, so the same field name carries a different contract on either
+      ;; side. Nothing produces v1 any more, which is exactly why the frozen
+      ;; schemas need evidence: neither version may validate the other's
+      ;; documents, or a v1 artifact could be read as a v2 measurement.
+      (doseq [[frozen sample]
+              [["schemas/parser-rq-source-recognition-work-v1.schema.json"
+                "work-ok-v1"]
+               ["schemas/parser-rq-source-recognition-work-v1.schema.json"
+                "work-unavailable-v1"]
+               ["schemas/parser-rq-source-recognition-aggregate-v1.schema.json"
+                "aggregate-ok-v1"]
+               ["schemas/parser-rq-source-recognition-aggregate-v1.schema.json"
+                "aggregate-unavailable-v1"]]]
+        (is (nil? (schema/validation-errors (files/read-json frozen)
+                                            (files/read-json (str root "/" sample ".json"))))
+            sample))
+      (is (seq (schema/validation-errors
+                (files/read-json "schemas/parser-rq-source-recognition-work-v1.schema.json")
+                work))
+          "the v1 contract rejects a v2 record")
+      (is (seq (schema/validation-errors
+                work-schema
+                (files/read-json (str root "/work-ok-v1.json"))))
+          "the v2 contract rejects a v1 record"))
     (testing "unknown fields and unavailable trusted totals are rejected"
       (is (seq (schema/validation-errors work-schema (assoc work "unknown" true))))
       (is (seq (schema/validation-errors
@@ -815,8 +841,8 @@
                                        "accounted_bytes" 20
                                        "semantic_gap_bytes" 4
                                        "semantic_gaps"
-                                       [{"work_id" "fixture-work" "start" 4 "end" 6}
-                                        {"work_id" "other-work" "start" 4 "end" 6}]))]
+                                       [{"work_id" "fixture-work" "start" 6 "end" 8}
+                                        {"work_id" "other-work" "start" 6 "end" 8}]))]
         (is (not= (get work "capture_generation_ref")
                   (get other-work "capture_generation_ref")))
         (is (empty? (source-recognition/index-errors

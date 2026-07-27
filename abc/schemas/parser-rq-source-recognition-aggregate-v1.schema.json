@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-source-recognition-aggregate.schema.json",
-  "title": "Parser release qualification source-recognition aggregate",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-source-recognition-aggregate-v1.schema.json",
+  "title": "Parser release qualification source-recognition aggregate (v1, frozen)",
+  "description": "Frozen. Validates recognition aggregates on the retired wire version abc/parser-rq-source-recognition-aggregate/v1, whose eligible_bytes folded whole-file denominators. Nothing emits this shape; it exists so already-published evidence stays checkable. See docs/adr/parser-rq-source-region-partition.md.",
   "type": "object",
   "required": [
     "schema_version",
@@ -13,7 +14,7 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "abc/parser-rq-source-recognition-aggregate/v2"
+      "const": "abc/parser-rq-source-recognition-aggregate/v1"
     },
     "qualification_identity_ref": {
       "$ref": "#/$defs/hash"
@@ -86,18 +87,6 @@
         "type": "string",
         "minLength": 1
       }
-    },
-    "metadata_eligible_bytes": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "metadata_accounted_bytes": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "metadata_unaccounted_bytes": {
-      "type": "integer",
-      "minimum": 0
     }
   },
   "oneOf": [
@@ -237,6 +226,5 @@
         }
       }
     }
-  },
-  "description": "v2. eligible_bytes folds BODY-region denominators; the metadata_* totals fold the header and tail population. See docs/adr/parser-rq-source-region-partition.md."
+  }
 }

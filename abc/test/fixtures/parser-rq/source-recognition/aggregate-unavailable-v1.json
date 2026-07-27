@@ -1,5 +1,5 @@
 {
-  "schema_version": "abc/parser-rq-source-recognition-aggregate/v2",
+  "schema_version": "abc/parser-rq-source-recognition-aggregate/v1",
   "qualification_identity_ref": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
   "corpus_generation_ref": "sha256:826ba280067699af1c867b6849d822579b96073b4e760e39c5cd2bc67e510aac",
   "corpus_generation_algorithm": "sha256-rfc8785-safe-integer-domain-abc-v1",
@@ -7,12 +7,6 @@
   "membership_ref": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
   "coordinate_system": "decoded_utf8",
   "status": "unavailable",
-  "work_completeness": {
-    "expected": 1,
-    "observed": 0,
-    "complete": false
-  },
-  "errors": [
-    "record fixture-work is unavailable"
-  ]
+  "work_completeness": {"expected": 1, "observed": 0, "complete": false},
+  "errors": ["record fixture-work is unavailable"]
 }

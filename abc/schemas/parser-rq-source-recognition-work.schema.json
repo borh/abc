@@ -12,7 +12,7 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "abc/parser-rq-source-recognition-work/v1"
+      "const": "abc/parser-rq-source-recognition-work/v2"
     },
     "qualification_identity_ref": {
       "$ref": "#/$defs/hash"
@@ -82,6 +82,9 @@
     },
     "unaccounted": {
       "$ref": "#/$defs/intervals"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
     },
     "errors": {
       "type": "array",
@@ -278,6 +281,39 @@
           "minimum": 0
         }
       }
+    },
+    "metadata": {
+      "description": "The metadata population: header and tail folded together. They are distinct regions so a failure localizes to one end of the file, but they qualify under one conjunctive predicate, so their totals are folded here.",
+      "type": "object",
+      "required": [
+        "eligible_bytes",
+        "accounted_bytes",
+        "unaccounted_bytes",
+        "accounted",
+        "unaccounted"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "eligible_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accounted_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unaccounted_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accounted": {
+          "$ref": "#/$defs/intervals"
+        },
+        "unaccounted": {
+          "$ref": "#/$defs/intervals"
+        }
+      }
     }
-  }
+  },
+  "description": "v2. eligible_bytes is the BODY region, not the whole decoded file: the ledger's facts come from lexing the body projection, so a whole-file denominator divided across a coordinate boundary. The header and tail are measured separately under `metadata`, so no byte leaves the accounting. Published v1 records are validated by parser-rq-source-recognition-work-v1.schema.json. See docs/adr/parser-rq-source-region-partition.md."
 }

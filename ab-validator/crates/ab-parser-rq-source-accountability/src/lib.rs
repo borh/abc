@@ -21,7 +21,8 @@ pub use interval::Interval;
 pub use model::*;
 pub use recognition::{
     RecognitionAnalysis, RecognitionBlobRef, RecognitionInput, RecognitionInterval,
-    RecognitionRegions, RecognitionStatus, RecognitionWorkRecord, analyze_recognition,
+    RecognitionMetadata, RecognitionRegions, RecognitionStatus, RecognitionWorkRecord,
+    analyze_recognition,
 };
 pub use recognition_aggregate::{
     RecognitionAggregate, RecognitionWorkCompleteness, RecognitionWorkInterval,

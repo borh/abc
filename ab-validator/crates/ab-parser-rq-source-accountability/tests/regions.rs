@@ -1,10 +1,14 @@
 //! The declared three-region partition, as recognition derives and publishes it.
 //!
-//! The partition is declared and published before any measurement moves onto
-//! it, so that the conservation identity is assertable first and the change in
-//! denominator is visible as a change when it happens. These tests hold both
-//! halves: the regions are present, correct and self-conserving, and
-//! `eligible_bytes` is still the whole decoded file.
+//! The declared three-region partition, and the body-projection measure taken
+//! against it.
+//!
+//! `eligible_bytes` is the BODY region. The ledger's facts come from lexing the
+//! body projection, so the whole-file denominator it replaced divided across a
+//! coordinate boundary and could mean neither parser fidelity nor packaging
+//! attribution. The header and tail are measured separately under `metadata`,
+//! so no byte leaves the accounting -- they move to a different accounted
+//! region, which is what distinguishes this from a denominator reduction.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -91,11 +95,11 @@ fn the_published_regions_partition_the_decoded_source() {
     assert_eq!(regions.header.start, 0);
     assert_eq!(regions.header.end, regions.body.start);
     assert_eq!(regions.body.end, regions.tail.start);
-    assert_eq!(regions.tail.end, record.eligible_bytes.unwrap());
+    assert_eq!(regions.tail.end, LEGEND_FENCED.len() as u64);
     let covered = (regions.header.end - regions.header.start)
         + (regions.body.end - regions.body.start)
         + (regions.tail.end - regions.tail.start);
-    assert_eq!(covered, record.eligible_bytes.unwrap());
+    assert_eq!(covered, LEGEND_FENCED.len() as u64);
 
     // All three regions are non-empty for this shape, and they slice to what
     // they claim. The tail includes the blank line the body end trimmed --
@@ -114,23 +118,73 @@ fn the_published_regions_partition_the_decoded_source() {
 }
 
 #[test]
-fn declaring_the_partition_does_not_move_the_measurement() {
-    // Declaring the partition is not measuring against it. `eligible_bytes` is
-    // still the whole decoded file, so the header and tail remain in the
-    // denominator and the ratio has not moved. Moving it is a separate change,
-    // and this assertion is what makes that change visible rather than silent.
-    let root = temp("no-movement");
+fn eligibility_is_the_body_and_the_two_populations_still_sum_to_the_file() {
+    let root = temp("body-denominator");
     let record = analyze(LEGEND_FENCED, &root).record;
     let regions = record.regions.unwrap();
+    let metadata = record.metadata.as_ref().unwrap();
+
     assert_eq!(
         record.eligible_bytes.unwrap(),
-        LEGEND_FENCED.len() as u64,
-        "v1 eligibility is still whole-file"
+        regions.body.end - regions.body.start,
+        "the denominator is the body region"
     );
     assert!(
-        regions.body.end - regions.body.start < record.eligible_bytes.unwrap(),
-        "the body is a strict subset, so the two are distinguishable"
+        record.eligible_bytes.unwrap() < LEGEND_FENCED.len() as u64,
+        "and is a strict subset of the file, or the change is not observable"
     );
+
+    // The cross-region identity: no byte is measured twice and none by
+    // nothing. This is what makes the partition a partition rather than a
+    // denominator reduction, and it is the check that can actually fail.
+    assert_eq!(
+        record.eligible_bytes.unwrap() + metadata.eligible_bytes,
+        LEGEND_FENCED.len() as u64
+    );
+    assert_eq!(
+        metadata.eligible_bytes,
+        (regions.header.end - regions.header.start) + (regions.tail.end - regions.tail.start)
+    );
+    // Per-population conservation, restated from the whole-file assertions the
+    // measure previously carried.
+    assert_eq!(
+        record.recognized_bytes.unwrap() + record.semantic_gap_bytes.unwrap(),
+        record.eligible_bytes.unwrap()
+    );
+    assert_eq!(
+        record.accounted_bytes.unwrap() + record.unaccounted_bytes.unwrap(),
+        record.eligible_bytes.unwrap()
+    );
+    assert_eq!(
+        metadata.accounted_bytes + metadata.unaccounted_bytes,
+        metadata.eligible_bytes
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn body_intervals_never_escape_the_body_region() {
+    // Every published body interval lies inside the body. Facts do fall
+    // outside it -- see the CRLF test below -- so this holds because the
+    // measure intersects against the region, not because the producer happens
+    // to stay inside it.
+    let root = temp("containment");
+    let crlf = LEGEND_FENCED.replace('\n', "\r\n");
+    let record = analyze(&crlf, &root).record;
+    let regions = record.regions.unwrap();
+    for (label, intervals) in [
+        ("recognized", record.recognized.as_ref().unwrap()),
+        ("accounted", record.accounted.as_ref().unwrap()),
+        ("semantic_gaps", record.semantic_gaps.as_ref().unwrap()),
+        ("unaccounted", record.unaccounted.as_ref().unwrap()),
+    ] {
+        for interval in intervals {
+            assert!(
+                interval.start >= regions.body.start && interval.end <= regions.body.end,
+                "{label} escaped the body: {interval:?}"
+            );
+        }
+    }
     fs::remove_dir_all(root).unwrap();
 }
 
@@ -152,30 +206,28 @@ fn crlf_sources_carry_facts_outside_the_body_and_lf_sources_do_not() {
     let record = analyze(&crlf, &root).record;
     assert_eq!(record.status, RecognitionStatus::Ok, "{:?}", record.errors);
     let regions = record.regions.unwrap();
-    let outside = record
-        .accounted
-        .as_ref()
-        .unwrap()
-        .iter()
-        .filter(|i| i.start < regions.body.start || i.end > regions.body.end)
-        .count();
+    let metadata = record.metadata.as_ref().unwrap();
     assert!(
-        outside > 0,
-        "CRLF header and tail line endings are accounted for"
+        metadata.accounted_bytes > 0,
+        "CRLF header and tail line endings are accounted metadata facts"
     );
+    for interval in &metadata.accounted {
+        assert!(
+            interval.end <= regions.header.end || interval.start >= regions.tail.start,
+            "metadata facts lie in the metadata regions: {interval:?}"
+        );
+    }
 
     let lf_root = temp("lf");
     let lf = analyze(LEGEND_FENCED, &lf_root).record;
-    let lf_regions = lf.regions.unwrap();
     assert_eq!(
-        lf.accounted
-            .as_ref()
-            .unwrap()
-            .iter()
-            .filter(|i| i.start < lf_regions.body.start || i.end > lf_regions.body.end)
-            .count(),
+        lf.metadata.as_ref().unwrap().accounted_bytes,
         0,
-        "an LF source has nothing accounted outside its body"
+        "an LF source has no facts in its header or tail at all"
+    );
+    assert!(
+        lf.metadata.as_ref().unwrap().eligible_bytes > 0,
+        "though it still has header and tail bytes to attribute"
     );
     fs::remove_dir_all(root).unwrap();
     fs::remove_dir_all(lf_root).unwrap();

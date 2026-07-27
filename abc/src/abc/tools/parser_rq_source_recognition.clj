@@ -23,7 +23,12 @@
   (let [record (walk/keywordize-keys record)]
     (if (not= "ok" (:status record))
       []
-      (let [eligible (:eligible_bytes record)
+      (let [regions (:regions record)
+            ;; The body region is the frame; eligible bytes is its length.
+            ;; Bounding an absolute interval by a length is only correct while
+            ;; the region starts at zero.
+            body-start (get-in regions [:body :start] 0)
+            body-end (get-in regions [:body :end] (:eligible_bytes record))
             recognized (:recognized record)
             accounted (:accounted record)
             semantic-gaps (:semantic_gaps record)
@@ -31,7 +36,7 @@
         (vec
          (concat
           (mapcat #(decoded-utf8/canonical-interval-errors
-                    (first %) (second %) eligible)
+                    (first %) (second %) body-start body-end)
                   [["recognized" recognized] ["accounted" accounted]
                    ["semantic_gaps" semantic-gaps]
                    ["unaccounted" unaccounted]])
@@ -55,17 +60,47 @@
                        (decoded-utf8/interval-bytes unaccounted))
             ["unaccounted_bytes does not equal unaccounted intervals"])
           (when-not (= semantic-gaps
-                       (decoded-utf8/interval-complement recognized eligible))
+                       (decoded-utf8/interval-complement recognized body-start body-end))
             ["semantic gaps are not the exact recognized complement"])
           (when-not (= unaccounted
-                       (decoded-utf8/interval-complement accounted eligible))
+                       (decoded-utf8/interval-complement accounted body-start body-end))
             ["unaccounted intervals are not the exact accounted complement"])
-          (when-not (= eligible (+ (:recognized_bytes record)
-                                   (:semantic_gap_bytes record)))
+          (when-not (= (- body-end body-start) (+ (:recognized_bytes record)
+                                                  (:semantic_gap_bytes record)))
             ["recognized byte conservation does not hold"])
-          (when-not (= eligible (+ (:accounted_bytes record)
-                                   (:unaccounted_bytes record)))
-            ["accounted byte conservation does not hold"])))))))
+          (when-not (= (- body-end body-start) (+ (:accounted_bytes record)
+                                                  (:unaccounted_bytes record)))
+            ["accounted byte conservation does not hold"])
+          ;; The metadata population, in its own frame. Header and tail are
+          ;; distinct regions so a failure localizes to one end of the file,
+          ;; but they fold into one measure because they qualify under one
+          ;; conjunctive predicate.
+          (let [metadata (:metadata record)
+                header-end (get-in regions [:header :end])
+                tail-start (get-in regions [:tail :start])
+                decoded-bytes (get-in regions [:tail :end])]
+            (concat
+             (when-not (and (some? regions) (some? metadata))
+               ["regions or metadata are absent"])
+             (when (and regions metadata)
+               (concat
+                (when-not (and (= 0 (get-in regions [:header :start]))
+                               (= header-end body-start)
+                               (= body-end tail-start))
+                  ["regions do not partition the decoded source"])
+                (when-not (= decoded-bytes
+                             (+ (- body-end body-start) (:eligible_bytes metadata)))
+                  ["body and metadata regions do not conserve the decoded source"])
+                (when-not (= (:eligible_bytes metadata)
+                             (+ (:accounted_bytes metadata)
+                                (:unaccounted_bytes metadata)))
+                  ["metadata byte conservation does not hold"])
+                (when-not (every? (fn [interval]
+                                    (or (<= (:end interval) header-end)
+                                        (>= (:start interval) tail-start)))
+                                  (concat (:accounted metadata)
+                                          (:unaccounted metadata)))
+                  ["a metadata interval escapes the header and tail"])))))))))))
 
 (defn index-errors [index]
   (let [index (walk/keywordize-keys index)

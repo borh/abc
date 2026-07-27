@@ -442,8 +442,32 @@
   [store p0-manifest record index-entry index membership-record]
   (let [{:keys [eligible_bytes recognized_bytes accounted_bytes
                 semantic_gap_bytes unaccounted_bytes recognized accounted
-                semantic_gaps unaccounted]} record]
+                semantic_gaps unaccounted regions metadata]} record
+        ;; Intervals are absolute offsets into the decoded file; eligible
+        ;; bytes is a count. The frame for bounding an interval is the body
+        ;; REGION, not the number of bytes in it. Those coincide only while
+        ;; the body is the whole file starting at zero, which is what this
+        ;; validator previously assumed.
+        body-start (get-in regions [:body :start])
+        body-end (get-in regions [:body :end])
+        header-end (get-in regions [:header :end])
+        tail-start (get-in regions [:tail :start])
+        decoded-bytes (get-in regions [:tail :end])
+        metadata-bytes (and metadata (:eligible_bytes metadata))]
     (and (nil? (schema/validation-errors @recognition-work-schema record))
+         (some? regions) (some? metadata)
+         (= 0 (get-in regions [:header :start]))
+         (= header-end body-start)
+         (= body-end tail-start)
+         (= eligible_bytes (- body-end body-start))
+         (= metadata-bytes (+ (- header-end 0) (- decoded-bytes tail-start)))
+         (= decoded-bytes (+ eligible_bytes metadata-bytes))
+         (= (:eligible_bytes metadata)
+            (+ (:accounted_bytes metadata) (:unaccounted_bytes metadata)))
+         (every? (fn [interval]
+                   (or (<= (:end interval) header-end)
+                       (>= (:start interval) tail-start)))
+                 (concat (:accounted metadata) (:unaccounted metadata)))
          (valid-ledger-chain? store p0-manifest record index-entry index membership-record)
          (= "ok" (:status record))
          (= source-recognition-instrument-version (:instrument_version record))
@@ -453,15 +477,17 @@
          (= (:work_id index-entry) (:work_id record))
          (= (:capture_generation_ref index-entry)
             (:capture_generation_ref record))
-         (every? #(decoded-utf8/canonical-intervals? % eligible_bytes)
+         (every? #(decoded-utf8/canonical-intervals? % body-start body-end)
                  [recognized accounted semantic_gaps unaccounted])
          (= recognized_bytes (decoded-utf8/interval-bytes recognized))
          (= accounted_bytes (decoded-utf8/interval-bytes accounted))
          (= semantic_gap_bytes (decoded-utf8/interval-bytes semantic_gaps))
          (= unaccounted_bytes (decoded-utf8/interval-bytes unaccounted))
          (decoded-utf8/interval-subset? recognized accounted)
-         (= semantic_gaps (decoded-utf8/interval-complement recognized eligible_bytes))
-         (= unaccounted (decoded-utf8/interval-complement accounted eligible_bytes))
+         (= semantic_gaps
+            (decoded-utf8/interval-complement recognized body-start body-end))
+         (= unaccounted
+            (decoded-utf8/interval-complement accounted body-start body-end))
          (= eligible_bytes (+ recognized_bytes semantic_gap_bytes))
          (= eligible_bytes (+ accounted_bytes unaccounted_bytes)))))
 

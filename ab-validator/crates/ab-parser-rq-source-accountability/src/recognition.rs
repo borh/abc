@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use crate::interval::{Interval, normalize, subtract, total_len};
+use crate::interval::{Interval, intersect, normalize, subtract, total_len};
 
 const POLICY_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../abc/schemas/parser-rq-classified-source-policy.schema.json");
@@ -61,6 +61,23 @@ pub struct RecognitionBlobRef {
     pub locator: String,
 }
 
+/// The metadata population: the header and tail regions measured together.
+///
+/// They are recorded as distinct regions so a failure localizes to one end of
+/// the file, but they qualify under a single conjunctive predicate, so their
+/// totals are folded here. This block is what keeps the partition from being a
+/// denominator reduction: the metadata bytes leave the body measure for a
+/// different accounted region, not for nowhere.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecognitionMetadata {
+    pub eligible_bytes: u64,
+    pub accounted_bytes: u64,
+    pub unaccounted_bytes: u64,
+    pub accounted: Vec<RecognitionInterval>,
+    pub unaccounted: Vec<RecognitionInterval>,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct RecognitionWorkRecord {
@@ -98,6 +115,8 @@ pub struct RecognitionWorkRecord {
     pub semantic_gaps: Option<Vec<RecognitionInterval>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unaccounted: Option<Vec<RecognitionInterval>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<RecognitionMetadata>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub errors: Vec<String>,
 }
@@ -218,6 +237,16 @@ fn canonical_json(value: &Value) -> Option<Vec<u8>> {
     Some(bytes)
 }
 
+/// One interval for a non-empty range, none for an empty one. An empty region
+/// is legitimate, and an empty interval is not representable.
+fn interval_list(range: &core::ops::Range<usize>, bound: usize) -> Vec<Interval> {
+    Interval::new(range.start, range.end, bound)
+        .ok()
+        .filter(|_| range.start < range.end)
+        .into_iter()
+        .collect()
+}
+
 fn interval_of(range: &core::ops::Range<usize>) -> RecognitionInterval {
     RecognitionInterval {
         start: range.start as u64,
@@ -237,7 +266,7 @@ fn wire(intervals: &[Interval]) -> Vec<RecognitionInterval> {
 
 fn base_record() -> RecognitionWorkRecord {
     RecognitionWorkRecord {
-        schema_version: "abc/parser-rq-source-recognition-work/v1".to_owned(),
+        schema_version: "abc/parser-rq-source-recognition-work/v2".to_owned(),
         qualification_identity_ref: None,
         capture_generation_ref: None,
         policy_hash: None,
@@ -256,6 +285,7 @@ fn base_record() -> RecognitionWorkRecord {
         accounted: None,
         semantic_gaps: None,
         unaccounted: None,
+        metadata: None,
         errors: Vec::new(),
     }
 }
@@ -523,30 +553,80 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     if !subtract(&recognized, &accounted).is_empty() {
         return unavailable(record, "recognition-subset-failed");
     }
-    let eligible = if decoded.is_empty() {
-        Vec::new()
-    } else {
-        vec![Interval::new(0, decoded.len(), decoded.len()).expect("full interval")]
-    };
-    let semantic_gaps = subtract(&eligible, &recognized);
-    let unaccounted = subtract(&eligible, &accounted);
-    let Ok(eligible_bytes) = u64::try_from(decoded.len()) else {
-        return unavailable(record, "recognition-total-overflow");
-    };
-    let (Ok(recognized_bytes), Ok(accounted_bytes), Ok(semantic_gap_bytes), Ok(unaccounted_bytes)) = (
+    // Eligibility is the BODY region, not the whole decoded file.
+    //
+    // The numerator has always been body-derived -- the ledger's facts come
+    // from lexing `span_text`, which is the body projection -- while the
+    // denominator was the whole file. Dividing across that boundary averaged
+    // parser fidelity against packaging attribution and could mean neither.
+    //
+    // Facts do fall outside the body: `sanitizer_entries` walks the whole
+    // sanitized text, so every header and tail line ending in a CRLF source
+    // carries a normalization fact. Those belong to the metadata population,
+    // so the body measure intersects against the body and the metadata measure
+    // takes the remainder. No byte leaves the accounting; the metadata bytes
+    // move to a different accounted region.
+    let body = interval_list(&regions.body(), decoded.len());
+    let metadata_regions = normalize(
+        regions
+            .metadata()
+            .iter()
+            .flat_map(|region| interval_list(region, decoded.len()))
+            .collect(),
+    );
+    let recognized = intersect(&recognized, &body);
+    let accounted_in_body = intersect(&accounted, &body);
+    let metadata_accounted = intersect(&accounted, &metadata_regions);
+    let metadata_unaccounted = subtract(&metadata_regions, &accounted);
+    let semantic_gaps = subtract(&body, &recognized);
+    let unaccounted = subtract(&body, &accounted_in_body);
+    let accounted = accounted_in_body;
+    let (
+        Ok(eligible_bytes),
+        Ok(recognized_bytes),
+        Ok(accounted_bytes),
+        Ok(semantic_gap_bytes),
+        Ok(unaccounted_bytes),
+        Ok(metadata_eligible_bytes),
+        Ok(metadata_accounted_bytes),
+        Ok(metadata_unaccounted_bytes),
+    ) = (
+        total_len(&body),
         total_len(&recognized),
         total_len(&accounted),
         total_len(&semantic_gaps),
         total_len(&unaccounted),
-    ) else {
+        total_len(&metadata_regions),
+        total_len(&metadata_accounted),
+        total_len(&metadata_unaccounted),
+    )
+    else {
         return unavailable(record, "recognition-total-overflow");
     };
+    // The original whole-file conservation assertions, restated per region.
     if recognized_bytes > accounted_bytes
         || accounted_bytes > eligible_bytes
         || recognized_bytes.checked_add(semantic_gap_bytes) != Some(eligible_bytes)
         || accounted_bytes.checked_add(unaccounted_bytes) != Some(eligible_bytes)
     {
         return unavailable(record, "recognition-conservation-failed");
+    }
+    if metadata_accounted_bytes.checked_add(metadata_unaccounted_bytes)
+        != Some(metadata_eligible_bytes)
+    {
+        return unavailable(record, "metadata-conservation-failed");
+    }
+    // The cross-region identity. Body and metadata partition the decoded file,
+    // so no byte is measured twice and none is measured by nothing. This is
+    // the check that distinguishes a partition from a denominator reduction,
+    // and it is the one that can actually fail.
+    let Ok(decoded_bytes) = u64::try_from(decoded.len()) else {
+        return unavailable(record, "recognition-total-overflow");
+    };
+    if eligible_bytes.checked_add(metadata_eligible_bytes) != Some(decoded_bytes)
+        || !intersect(&body, &metadata_regions).is_empty()
+    {
+        return unavailable(record, "region-conservation-failed");
     }
 
     record.status = RecognitionStatus::Ok;
@@ -559,5 +639,12 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     record.accounted = Some(wire(&accounted));
     record.semantic_gaps = Some(wire(&semantic_gaps));
     record.unaccounted = Some(wire(&unaccounted));
+    record.metadata = Some(RecognitionMetadata {
+        eligible_bytes: metadata_eligible_bytes,
+        accounted_bytes: metadata_accounted_bytes,
+        unaccounted_bytes: metadata_unaccounted_bytes,
+        accounted: wire(&metadata_accounted),
+        unaccounted: wire(&metadata_unaccounted),
+    });
     RecognitionAnalysis { record }
 }

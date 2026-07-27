@@ -1,5 +1,5 @@
 {
-  "schema_version": "abc/parser-rq-source-recognition-work/v2",
+  "schema_version": "abc/parser-rq-source-recognition-work/v1",
   "qualification_identity_ref": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
   "capture_generation_ref": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
   "policy_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
@@ -13,7 +13,5 @@
     "locator": "records/fixture-work/ledger.json"
   },
   "status": "unavailable",
-  "errors": [
-    "ledger generation does not match capture generation"
-  ]
+  "errors": ["ledger generation does not match capture generation"]
 }

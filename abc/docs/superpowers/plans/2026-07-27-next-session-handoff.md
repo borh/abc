@@ -131,6 +131,12 @@ Task sequence, traced constraints, and a draft `decisions.edn` entry are in
   implementation must declare where those bytes go — widening `body_end` to
   `tail_start` is the wrong answer, because body coverage would then depend on
   how many blank lines a transcriber left.
+- **Q15 tasks 1–5 are now done too** (2026-07-27), and task 6 is deliberately
+  not executed because its precondition is unmet: the metadata instrument
+  classifies one form and leaves ~70% of packaging bytes unattributed, so a
+  threshold fixed now would encode that gap as a permanent governed allowance.
+  What is owed before it can run is listed in
+  `plans/2026-07-27-q15-region-partition.md`.
 - **Q13 is now done** (2026-07-27, all six tasks), so partition task 3 no longer
   inherits it. `analyze.rs`'s whole-file eligibility is gone, `aggregate.rs` and
   the P1 aggregate schema are deleted, and the work record is at

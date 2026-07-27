@@ -552,5 +552,13 @@ source through the built binary, never through a reconstruction.
 
 ## Status
 
-Decision recorded. Implementation not started; no code changed. Tasks 1 and 2
-are unblocked. Task 3 waits on Q13.
+**Tasks 1–5 done, 2026-07-27. Task 6 deliberately not executed** — its own
+precondition is unmet; see *Task 6: not executed, and why*.
+
+The partition is declared, published and asserted; `source_span_coverage` is
+body-projection coverage; metadata attribution exists and is measured.
+Body fold **0.9911**, metadata fold **0.3002**, cross-region conservation holds.
+
+Neither threshold is fixed, and neither should be carried forward from `:= 1.0`.
+Both wire versions moved to v2 with the v1 schemas frozen, and the
+classified-source policy rotation moved `qualification_identity_ref`.

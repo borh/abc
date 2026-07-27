@@ -14,9 +14,16 @@ against 299 real works and **not one reaches its declared `:= 1.0`** (fold
 inferred: same binary, same taxonomy, same policy hash, 177/177 bytes recognized
 on the governed corpus and 12,597,285/13,068,347 on real source. The current
 predicate and the proposed tier 2 population are incompatible, and 177 bytes of
-corpus is why nobody could see it. That is tracked as **Q14**; it gates the
-confirmatory campaign the whole governance path builds toward, and it now needs a
-decision rather than more measurement.
+corpus is why nobody could see it.
+
+**Q14 is decided: the instrument is incomplete, and neither the threshold nor the
+ratio moves.** `publication_metadata` is a `source_role` the classified-source
+policy declares and none of its 31 rules implements, and that category — Aozora's
+header and `底本：` colophon frames — is 65% of the gap. Fixing the instrument is
+tracked as **Q15**, and *that* now gates the confirmatory campaign the whole
+governance path builds toward. **Q1** is closed alongside it: the RQ capture
+layer costs 9.25× all of `ab-check`, which reshapes the campaign budget rather
+than the architecture.
 
 The rest blocks something specific rather than everything: **Q3**
 (LOSS/AMBIGUITY untraced) blocks *predicting* outcomes from D6, not measuring
@@ -659,7 +666,7 @@ evidence **a tier 2 campaign at snapshot scale fails that predicate on every
 work**, by a wide margin, and not because of anything the parser did wrong: 72%
 of the gap is source the ledger never claims to describe.
 
-Three readings, and the design does not choose between them here:
+Three readings were offered:
 
 1. The **classified-source policy is incomplete** — 31 rules do not cover
    Aozora's construct inventory, so real works accumulate unclassified bytes.
@@ -673,11 +680,90 @@ Three readings, and the design does not choose between them here:
    (0.9740 here), not `recognized / eligible`. That is a predicate-semantics
    question of the same kind as D7.
 
-All three are live. What is now settled is that **the current predicate and the
-proposed tier 2 population are incompatible**, and that this was invisible at
-177 bytes. This is the sharpest instance of D4's evidence asymmetry in the whole
-document: publication authority rests on a predicate that has never been
-observed against a population capable of falsifying it.
+**The current predicate and the proposed tier 2 population are incompatible**,
+and this was invisible at 177 bytes. This is the sharpest instance of D4's
+evidence asymmetry in the whole document: publication authority rests on a
+predicate that has never been observed against a population capable of
+falsifying it.
+
+### Q14, decided 2026-07-27 — reading 1; the other two are non-answers
+
+**Decision: the classified-source instrument is incomplete. Do not move the
+threshold, and do not move the ratio.**
+
+The gap was decomposed before deciding, because "the predicate fails" does not
+say what failed. Splitting the 340,752 unaccounted bytes by position — Aozora's
+header frame, its `底本：` colophon frame, and the body between them:
+
+| Unaccounted region | Bytes | Share |
+|---|---|---|
+| Colophon frame | 195,235 | 57.3% |
+| Header frame | 26,373 | 7.7% |
+| **Body interior** | **119,144** | **35.0%** |
+
+The frame content is unmistakable: title, author, translator, the separator
+rules, the `【テキスト中に現れる記号について】` notation legend and its
+`（例）` examples, `底本：` and its publication history, and the input/proofing
+credits. This is Aozora's packaging, not the work.
+
+**The decisive evidence is in the policy's own vocabulary.**
+`data/parser-rq-ab-aozora-classified-source-v1.json` declares fifteen
+`source_role` values, and **`publication_metadata` is declared by the policy and
+implemented by none of its 31 rules.** (`preserved_sidecar_value` is likewise a
+declared disposition no rule uses.) The category that dominates the gap is one
+the policy authors named and never wired up. That is not a threshold problem or
+a ratio problem; it is an unimplemented rule.
+
+Why the other two readings are rejected — on the merits, not merely on
+insufficiency:
+
+- **Reading 3 (`accounted / eligible`) is wrong in kind.** It recovers only the
+  28% `preserved_opaque` share and lands at 0.9739, still not 1.0. Worse, it
+  would collapse the distinction that carries the predicate's meaning:
+  `recovered_verbatim` means *the parser could not type this construct*, which is
+  precisely what a recognition predicate should count against. Folding it into
+  the numerator would make the predicate easier to pass by making it say less.
+- **Reading 2 (lower the threshold) is wrong *now*.** Setting a threshold to
+  accommodate an unimplemented policy rule sets it to match a defect rather than
+  a requirement, and D2 already establishes that such a value drifts with corpus
+  composition — an arbitrary number replacing a crisp one. It also converts the
+  one predicate stated as an exact contract into a negotiated one.
+
+**But reading 2 becomes correct later, and this is the load-bearing part of the
+decision.** Even with the entire frame exempted, coverage reaches only **0.9809**
+— 119,144 body-interior bytes and 130,310 `preserved_opaque` bytes remain. Some
+residual is *genuine parser limitation*, and no amount of policy work will drive
+it to 1.0. So the sequencing is:
+
+1. **Part A — implement `publication_metadata`** (65% of the gap). Rotates
+   `policy_hash`. Prefer classifying the frame over declaring it a governed
+   ignored region: the role already exists, showing the authors' intent was to
+   classify; and shrinking `eligible_bytes` is the more dangerous move, being the
+   same denominator-shrinkage hazard Q11 rejected.
+2. **Part B — diagnose the 119,144 body-interior bytes** (35%). These sit under
+   `［＃` annotations, `｜` ruby delimiters, and `《` ruby, all of which *do* have
+   policy rules — so this is either a missing rule or a ledger-builder gap, and
+   **which one must be established before anything rotates.**
+3. **Part C — only then predeclare a threshold.** After A and B, whatever remains
+   is real fidelity exposure rather than instrument incompleteness, and a
+   threshold predeclared from the exploratory campaign is honest rather than a
+   cover-up. This is exactly what *Governance Path* step 5 is for.
+
+The rule this encodes: **a predicate threshold may be relaxed only once the
+instrument is known to be measuring what it claims.** Relaxing it first would
+have converted an instrument defect into a permanent governed allowance, and the
+177-byte corpus would have kept it invisible indefinitely.
+
+Method limit on the split: frame boundaries were detected heuristically — the
+second 40-hyphen separator rule for the header, the first `底本：` for the
+colophon — over 299 works, all of which had a detectable frame. The 57/8/35 split
+is indicative, not exact, and Part B's true size should be re-derived once Part A
+lands. The decision does not depend on the split's precision: it rests on
+`publication_metadata` being declared and unimplemented, which is a fact about
+the policy file.
+
+`decisions.edn` is authored by hand; this section records the decision and its
+evidence, not the governance entry.
 
 Method limits, now narrower. The instrument objection is discharged. What
 remains:
@@ -1019,7 +1105,9 @@ Stated explicitly, because "blocker" without a scope stalls everything equally.
 | **D7 prerequisites** (decided; unimplemented) | The fixture tier containing adversarial or malformed inputs, until `allowed_dispositions` is untangled and the expected-outcome model specified | The tier architecture; tier 2 and tier 3 work; the `wall-time` reshape |
 | **Q9** (population equality) | Describing tier 2 as a census; the accounted difference against the admission and conversion-audit populations | Accepting that a snapshot tier should exist; tier 2's population definition and name, both now fixed by Q11 |
 | **D8** (repetition protocol) | Tier-relative repetition counts | Everything else; tier 2 can run at the current fixed 3 |
-| **Q14** (coverage predicate vs tier 2) | **The confirmatory tier 2 campaign** — it cannot pass `source-span-coverage := 1.0` as predicated; and reading any tier 2 coverage observation as a parser verdict | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
+| **Q15** (execute the Q14 decision) | **The confirmatory tier 2 campaign** — coverage cannot reach its declared `1.0` until `publication_metadata` is implemented and the body-interior gap diagnosed; and reading any tier 2 coverage observation as a parser verdict before then | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
+| ~~**Q14**~~ (decided 2026-07-27) | — | — · the instrument is incomplete; threshold and ratio both stand. Execution is Q15 |
+| ~~**Q1**~~ (closed 2026-07-27) | — | — · the capture layer is 9.25× all of `ab-check`; it reshapes the budget, not the architecture |
 | ~~**Q2**~~ (closed 2026-07-27) | — | — · closing it *corrected* D6's instrument attribution; see *D6 correction* |
 | ~~**Q12**~~ (closed 2026-07-27) | — | — · it demonstrated D6's conclusion on the right instrument, and raised Q14 |
 | ~~**Q11**~~ (decided 2026-07-27) | — | — |
@@ -1050,13 +1138,15 @@ Current blocker status, plainly:
   Q12 then re-derived the section's mechanism over ledger dispositions and
   **confirmed its conclusion** — 2,154 residue intervals are recognized by the
   ledger while the converter emits no node for them. Substantially resolved.
-- **B5 — Q14. NEW, and the most serious open item.** `source-span-coverage :=
-  1.0` fails on 299 of 299 real works — **confirmed through the built
-  instrument**, byte-identical to the reconstruction, against exactly 1.0 on the
-  governed corpus from the same binary. Until it is resolved, tier 2 has a
-  population it cannot qualify against, and *step 5 of the governance path cannot
+- **B5 — Q14 decided; Q15 open, and the most serious remaining item.**
+  `source-span-coverage := 1.0` fails on 299 of 299 real works — confirmed
+  through the built instrument, against exactly 1.0 on the governed corpus from
+  the same binary. The cause is now named: `publication_metadata` is declared by
+  the classified-source policy and implemented by no rule. **The threshold and
+  the ratio both stand**; the instrument gets fixed instead. Until Parts A and B
+  land, tier 2 has a population it cannot qualify against and *step 5 cannot
   complete*. It does not block accepting the architecture or running the
-  exploratory campaign. What it needs now is a decision, not more measurement.
+  exploratory campaign.
 - **B2 — D7.** **Decided** (Option 1, `unexpected-fatal-failures ≤ 0`).
   **Unimplemented:** `allowed_dispositions` is still level-confused and the
   expected-outcome model is unspecified, so the adversarial fixture tier remains
@@ -1074,13 +1164,13 @@ Current blocker status, plainly:
 
 Then:
 
-1. **Settle Q14 first — it now gates step 5.** The measurement is confirmed
-   through the built instrument, so what is left is the choice among policy
-   completion, threshold predeclaration, and `preserved_opaque` semantics — a
-   governance decision, not more measurement. Widening the sample toward a census
-   would sharpen the number but cannot change its sign. **Q1 is measured** — the
-   capture layer, not the parser, sets campaign cost — so what remains here is
-   Q5's host class and the other open questions.
+1. **Execute Q15 first — it now gates step 5.** Q14 is decided (fix the
+   instrument, not the threshold), so this is implementation in a fixed order:
+   Part A `publication_metadata`, Part B diagnose the body-interior gap **before**
+   rotating anything, Part C predeclare the residual threshold — which is step 5
+   itself, and must not be pulled forward. Q1 is measured — the capture layer,
+   not the parser, sets campaign cost — so what remains here is Q5's host class
+   and the other open questions.
 2. Discharge the D7 prerequisites in order — untangle `allowed_dispositions`
    first — and define tier semantics and authority **before** changing any hash.
 3. Reshape `wall-time`, apply the D7 decision, carry the D8 protocol migration if
@@ -1179,17 +1269,20 @@ Every governance edit to `decisions.edn` is authored by hand.
   predicate: **0 of 299 real works reach `source_span_coverage = 1.0`** (fold
   0.9640, worst 0.2466), against exactly 1.0 on all three governed corpus works.
   See *Q12, closed*. The successor is **Q14**.
-- **Q14 — `source-span-coverage := 1.0` and tier 2 are incompatible. Which
-  gives?** Q12 shows the predicate fails on every real work, 72% of the gap being
-  source with no ledger entry at all. Either the classified-source policy is
-  incomplete (31 rules, rotates `policy_hash`), or the exact `1.0` threshold was
-  an artefact of a 177-byte corpus and must be predeclared from the exploratory
-  campaign, or `preserved_opaque` is mis-counted and the ratio wants
-  `accounted / eligible` (0.9739) — a predicate-semantics question of D7's kind.
-  **This now gates the confirmatory tier 2 campaign.** Confirmed through the
-  built `ab-parser-rq-source-accountability` binary, agreeing with the Python
-  reconstruction to the byte, with the governed corpus returning exactly 1.0 on
-  the same binary — so the remaining uncertainty is the sample, not the method.
+- **Q14 — DECIDED 2026-07-27: the instrument is incomplete; the threshold and
+  the ratio both stay.** `publication_metadata` is a policy-declared
+  `source_role` that none of its 31 rules implements, and that category dominates
+  the gap (65%, the header and `底本：` colophon frames). Reading 3
+  (`accounted / eligible`) is rejected in kind — it would fold "the parser could
+  not type this" into the numerator. Reading 2 is rejected *for now* and becomes
+  correct only after Parts A and B, since even a fully exempted frame reaches
+  just 0.9809. See *Q14, decided*. **Execution is open**, tracked as Q15.
+- **Q15 — Execute the Q14 decision.** Part A: implement `publication_metadata`
+  (rotates `policy_hash`). Part B: diagnose the 119,144 body-interior unaccounted
+  bytes — missing rule or ledger-builder gap, **established before anything
+  rotates**. Part C: predeclare the residual threshold from the exploratory
+  campaign, per *Governance Path* step 5. **This gates the confirmatory tier 2
+  campaign.**
 - **Q13 — Is `:parser_ir_node_span_coverage` safe to retain?** It is kept as
   supporting evidence beside the ledger-authoritative observation, but on real
   works it is not a source-coverage ratio at all: node spans are a running offset

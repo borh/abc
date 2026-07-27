@@ -245,8 +245,15 @@ needs its own scoped plan before code changes:
    `sentences.rs` uses that string for the visible-text projection, and
    `analyze.rs` reads it as the decoded source file. The published number is
    approximately visible-text bytes ÷ decoded-source bytes. It costs 9.80 ms/work
-   and is authoritative for no predicate. The plan recommends dropping it. It
-   still needs confirmation through the built binary before implementation.
+   and is authoritative for no predicate. The plan recommends dropping it, and
+   the diagnosis is **confirmed through the built binary** (governed corpus
+   0.5814 / 0.4310 / 0.3289 with `covered_eligible_bytes` = 25 for all three
+   despite sources of 43/58/76 bytes; one real work at 0.8646 where the decoded
+   source under a node's span matches that node's text 7 times in 8,137). Every
+   record returned `status: "ok"` with no errors. The probe also found that
+   parser-IR mixes two coordinates in one document, both labelled `decoded_utf8`
+   — the `source-note` arm emits genuine source spans while every other arm emits
+   accumulator offsets — which is a parser-IR emitter question, not Q13's.
 2. **D7 prerequisites:** separate record `status` from measured `disposition`,
    then specify closed expected-outcome vocabularies. Initially only `parsed` and
    `fatal_error` may be expected; `adapter_timeout`, `protocol_error`, and

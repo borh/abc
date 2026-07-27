@@ -106,6 +106,126 @@ which is `recognition.rs`, not `analyze.rs`. Consumers found:
 `abc/schemas/parser-rq-source-accountability-work.schema.json` (the analyzer's
 published work record), and the crate's own `tests/analyze_work.rs`.
 
+## Confirmed through the built binary, 2026-07-27
+
+The characterization above was traced from source. It has now been measured
+through the built `ab-parser-rq-source-accountability` binary
+(`analyze-work`), on the governed three-work corpus and on one real work. Every
+record returned `status: "ok"` with an empty `errors` array — the instrument
+reports no problem with any of this.
+
+Method and its limits are recorded under *Probe method* below. The qualification
+identity is **synthesized** and authenticates nothing.
+
+### The governed corpus
+
+| Work | source bytes | `eligible_bytes` | `covered_eligible_bytes` | ratio |
+|---|---|---|---|---|
+| `000001_1` (ruby) | 43 | 43 | **25** | 0.5814 |
+| `000002_2` (gaiji) | 58 | 58 | **25** | 0.4310 |
+| `000003_3` (both) | 76 | 76 | **25** | 0.3289 |
+
+The design's reconstruction recorded 0.58 / 0.43 / 0.33. Confirmed through the
+instrument.
+
+**The decisive column is `covered_eligible_bytes`: it is 25 for all three.**
+Three works of 43, 58 and 76 source bytes produce identical covered totals,
+because all three emit the same eight visible characters plus a newline — 25
+bytes of UTF-8. The numerator does not move with the source at all. It moves
+with the emitted text, which is the claim under test.
+
+In each work the union is a single interval `[0, 25)` and every node's span
+extent equals the UTF-8 length of that node's own emitted text (2/2, 3/3, 4/4),
+with every adjacent pair contiguous.
+
+### One real work — `cards/000005/files/53194_ruby_44732.zip` (`hatsukoi.txt`)
+
+| Quantity | Value |
+|---|---|
+| `eligible_bytes` (decoded, windows-31j) | 259,320 |
+| `covered_eligible_bytes` | 224,205 |
+| ratio | **0.8646** |
+| nodes | 8,137 |
+| adjacent span pairs contiguous | 8,135 / 8,136 |
+| span extent == own emitted text length | 8,136 / 8,137 |
+| **decoded source under span == node's own text** | **7 / 8,137** |
+| sum of nodes' own emitted text bytes | 224,201 |
+
+The design recorded 0.865. Confirmed.
+
+**The falsifying test is the bolded row.** If `coordinate_system: "decoded_utf8"`
+meant what the analyzer takes it to mean, then slicing the decoded source at each
+node's span would reproduce that node's own text — 8,137 of 8,137. It reproduces
+it 7 times, 0.086%, which is the coincidence rate for short spans near offset 0.
+Node 8135 ends at offset 224,010; the decoded source at 224,010 is mid-sentence
+in unrelated body text, and 224,010 is **not a UTF-8 character boundary** in the
+decoded source.
+
+That last point is worth separating, because it shows a second guard is absent:
+`Interval::new` (`interval.rs:10`) validates only `start <= end <= bound`. Unlike
+the recognition path, `analyze.rs` never checks `decoded.is_char_boundary`. A
+span that lands mid-character in the decoded file is accepted without comment.
+
+### An unplanned finding: the parser-IR mixes two coordinates in one document
+
+Nodes 0–8135 run contiguously from 0 to 224,010 in accumulator coordinates. Node
+8136 is a single `source-note` (`note_type: "source-attribution"`, the `底本：`
+colophon) whose span is `[258580, 258775)` — and that span is a **genuine
+decoded-source span**: slicing the decoded file there yields exactly the colophon
+text, differing from the node's own `text` only by CRLF versus LF. That 4-byte
+difference is the whole gap between `covered_eligible_bytes` (224,205) and the
+sum of the nodes' own emitted text (224,201).
+
+So a single parser-IR document carries spans in **two different coordinate
+systems, both labelled `decoded_utf8`**, and the analyzer unions across them
+without noticing — adding a projection-coordinate run to a real source interval
+and reporting the total as coverage. This is the residue of exactly the defect
+`sentences.rs:260` describes as historical ("copied raw AAT source offsets […]
+for some nodes"): it is not fully historical, it survives in the source-note arm.
+
+Whether that is a bug in the source-note arm or the only arm doing the right
+thing depends on which coordinate parser-IR spans are *supposed* to inhabit —
+which is a question for the emitter's owner, and is outside Q13's scope. Q13 only
+needs the consequence: the analyzer cannot tell the two apart, and neither can
+any consumer of the published record.
+
+### What this changes in the options below
+
+Nothing in the recommendation. It strengthens the case against a rename-only
+fix: a renamed field would still be computed by unioning intervals from two
+coordinate systems. It also adds a fact the owner should weigh — Option 3
+(re-derive over real source offsets) is larger than stated, since the emitter
+does not have one coordinate to correct but two to reconcile.
+
+### Probe method
+
+Non-authoritative. Recorded here so the numbers can be reproduced or refuted.
+
+- Binaries: `cargo build --release` in `ab-validator`, at tree
+  `6d317103`, giving `target/release/{ab-aozora, ab-aat-to-parser-ir,
+  ab-parser-rq-source-accountability}`.
+- Path: `ab-aozora --mode aat` → `ab-aat-to-parser-ir convert --mapping
+  ab-validator/data/aat-to-parser-ir-mapping-v2.json` (the mapping
+  `parser_rq_campaign.clj:257` selects) → `analyze-work`.
+- Taxonomy: `abc/data/parser-rq-ignored-regions-v1.json` unmodified, rules empty.
+- The **qualification identity was synthesized** from each parser-IR's own
+  `derived_from` so that `analyze-work` returns `ok`, with placeholder
+  `parser_git_rev`, corpus and predicate-set hashes. It authenticates nothing and
+  is meaningless outside this probe. The measured coverage quantities do not
+  depend on it: the identity is compared for equality and recorded, never used in
+  the arithmetic.
+- Real work: `cards/000005/files/53194_ruby_44732.zip` from the pinned
+  `aozorabunko` checkout, revision `0e9ea3e586eb0aa34039fabfc85a407d2f98b165`,
+  verified before use.
+- The probe script was written to session scratch and is not tracked, per the
+  standing rule against committing one-off capture probes. The comparisons it
+  performs are: span contiguity, span extent versus the node's own emitted text
+  length, and decoded-source-slice versus node text. All three are recomputable
+  from the parser-IR and the decoded source alone.
+- **Not measured:** the 9.80 ms/work cost was not re-timed, and no second real
+  work was analyzed. One real work plus the governed control is enough to
+  confirm the characterization; it is not a population claim.
+
 ## Why "rename it" is not sufficient
 
 A rename fixes what a reader of the qualification record concludes. It leaves
@@ -214,17 +334,17 @@ comment.
 
 ## Work required before implementation, whichever option wins
 
-1. Confirm the visible-text-ratio characterization through the **built**
-   `ab-parser-rq-source-accountability` binary on at least one real work plus the
-   governed corpus — compare the analyzer's `covered_bytes` against the
-   parser-IR visible-text length. The characterization above is traced from
-   source and consistent with the recorded measurements, but it has not been
-   confirmed against instrument output, and this plan should not be implemented
-   from an untested claim.
+1. ~~Confirm the characterization through the built binary.~~ **Done 2026-07-27;
+   see *Confirmed through the built binary*.**
 2. Enumerate every consumer of the analyzer's work record and index, including
    any published manifest, before removing or renaming anything. Published
-   manifests are immutable.
-3. Write the implementation plan against the chosen option.
+   manifests are immutable. The enumeration recorded above is grep-level, not
+   exhaustive against published artifacts.
+3. Decide whether the mixed-coordinate finding — the `source-note` arm emitting
+   genuine source spans while every other arm emits accumulator offsets — is
+   raised as its own item against the parser-IR emitter. It is not Q13's to fix,
+   but Q13 should not be the only place it is written down.
+4. Write the implementation plan against the chosen option.
 
 ## Verification gate
 
@@ -244,6 +364,11 @@ just validate-migration
 
 ## Status
 
-Diagnosis traced to source and consistent with the design's recorded
-measurements. **Not confirmed through the built instrument** (item 1 above).
-Awaiting an owner selection among Options 1–3; no code changed.
+Diagnosis traced to source and **confirmed through the built instrument** on the
+governed three-work corpus and one real work, 2026-07-27. Awaiting an owner
+selection among Options 1–3; no code changed.
+
+The instrument returned `status: "ok"` and no errors on every work measured. That
+is the finding, not an aside: an analyzer can be fully green while unioning
+intervals from two different coordinate systems and dividing by a third
+quantity's denominator.

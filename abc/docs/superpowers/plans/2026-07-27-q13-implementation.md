@@ -178,11 +178,9 @@ Each task is separately reviewable and separately committable.
    no artifact hash changes. Doing this first proves the enumeration: if
    something breaks here, the "zero production callers" finding was wrong, and
    that is worth learning before touching the wire format.
-3. **Remove the coverage quantity from the Rust record.** Fields, basis enum,
-   span union, conservation checks. Bump `WorkSchemaVersion`. Update
-   `analyze_work.rs` and `aggregate.rs` tests.
-4. **Apply the open scope decision** — eligibility and the P1 aggregate, per
-   Option A or B.
+3. **Remove the coverage quantity from the Rust record — DONE 2026-07-27**,
+   in one commit with task 4. See *Tasks 3 and 4 result*.
+4. **Apply the open scope decision — DONE 2026-07-27.** Option A.
 5. **Freeze v1 — DONE 2026-07-27**, ahead of tasks 3 and 4 rather than after
    them. Freezing is purely additive, so doing it first means published v1
    evidence is validatable at every commit; doing it last would leave a window
@@ -208,17 +206,30 @@ nix build ./abc#checks.x86_64-linux.parser-rq-p5-promotion-audit
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
 nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
 nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
-nix build ./ab-validator#checks.x86_64-linux.cargo-test
+(cd ab-validator && cargo test --workspace)
 just validate-migration
 ```
 
-**`cargo-test` was missing from this list and its absence cost a regression.**
-Task 2 deleted `abc/test/fixtures/parser-rq/source-accountability` as orphaned;
-it was not, because `tests/fixture_capture.rs` reads that directory as its
-committed witness set. Nothing in the gate caught it: `cargo-check`,
-`cargo-clippy` and `cargo-fmt` do not execute tests, and `just
-validate-migration` reaches `cargo-test` only through `flake check --no-build`,
-which evaluates the derivation without building it. Restored in `c993b685`.
+**Running the Rust tests was missing from this list and its absence cost a
+regression.** Task 2 deleted `abc/test/fixtures/parser-rq/source-accountability`
+as orphaned; it was not, because `tests/fixture_capture.rs` reads that directory
+as its committed witness set. Nothing in the gate caught it: `cargo-check`,
+`cargo-clippy` and `cargo-fmt` do not execute tests. Restored in `c993b685`.
+
+**And the obvious fix does not work.** `nix build
+./ab-validator#checks.x86_64-linux.cargo-test` cannot build at all — verified
+2026-07-27 by stashing this branch's changes and building it on the unmodified
+tree, where it fails identically. `ab-aozora-capture` `include_bytes!`s four
+files from `abc/` (`classified_source.rs:21-27`) and the `ab-validator` flake
+source does not stage `abc/`, so the derivation fails at compile. That is why
+`just validate-migration` reaches `cargo-test` only through `flake check
+--no-build`, which evaluates it without building: the check is registered but
+has never been runnable. So the gate step is `cargo test --workspace` run
+directly, which does work.
+
+Worth stating plainly, because it is the more general lesson: a check that is
+registered, evaluated, and never built is indistinguishable from a passing check
+when you read the gate output.
 
 Two lessons, both cheap to apply and both about this plan rather than the code.
 A consumer enumeration scoped to one language misses cross-language consumers —
@@ -306,6 +317,71 @@ assertions:
 
 Without this, tasks 3–5 could have shrunk the work record and broken the handoff
 to recognition with nothing failing.
+
+### Tasks 3 and 4 result
+
+**Done as one commit, deliberately.** Task 3 bumps `WorkSchemaVersion` and task
+4 removes eligibility; splitting them would have published an intermediate v2
+carrying eligibility but no coverage — a wire version that never ships and that
+the frozen-schema discipline would then owe a schema. One version bump, one
+shape.
+
+**`WorkRecord` v2 is 13 fields.** Gone: `coverage_basis`, `covered_eligible`,
+`uncovered_eligible`, `covered_eligible_bytes`, `uncovered_eligible_bytes`,
+`ignored`, `eligible`, `ignored_bytes`, `eligible_bytes` — and
+`decoded_source_bytes`, which was not on the plan's list. It duplicated
+`decoded_source.bytes`; it existed as the conservation denominator, and
+`aggregate.rs` carried an explicit check that the two agreed. With the
+conservation gone the duplicate is just a second copy of a number the record
+already carries, so it went with them.
+
+`coordinate_system` **stays**, and the reason is worth recording because it
+looks like an oversight. It no longer qualifies any interval — the record
+publishes none — but it does qualify `decoded_source.bytes`, which survives.
+Same for the index, whose shape does not move at all.
+
+**The node-span walk went with the quantity, not just the union.** v1 bounded
+each span against the decoded source and could mark a work `unavailable` on
+`node-span-out-of-bounds`, `node-span-coordinate-system-mismatch` and four other
+codes. Those checks were the defect, not a casualty of removing it: parser-IR
+spans are offsets into emitted visible text, which is shorter than its source,
+so bounding them against the decoded file admitted everything. Parser-IR node
+structure has its own instrument — `parser-rq-parser-ir-conformance-*` — and
+that is where it belongs. What this instrument still authenticates about
+parser-IR is its schema identity and its `derived_from` coordinates, untouched.
+
+`node_spans_no_longer_affect_the_record_at_all` pins that: three parser-IR
+documents — no nodes, spans with no declared coordinate, spans running past the
+end of the source — now produce equal records. Two of the three were
+`unavailable` under v1. `parser_ir` is excluded from the comparison and asserted
+*different*, because the record still records which document it saw; that is
+provenance, and it is the half being kept.
+
+**Deleted:** `src/aggregate.rs`, `tests/aggregate.rs` (459 lines), the
+`Aggregate` subcommand, the P1 aggregate from `capture-corpus` output,
+`AggregateRecord`, `AggregateSchemaVersion`, `WorkCompleteness`, `WorkInterval`,
+`WireInterval`, `NodeSpan`, `CoverageBasis`, and
+`schemas/parser-rq-source-accountability-aggregate.schema.json`. `interval.rs`
+and `reconcile.rs` stay: `recognition.rs` uses `Interval`, and `reconcile` is
+called from `ab-parser-rq-diagnostic-authorization` over R1 semantic gaps.
+
+**Two retirements are asserted rather than assumed.**
+`the_retired_aggregate_subcommand_is_gone` invokes `aggregate --help` and
+requires failure; the CLI-shape unit test now requires the same parse to be an
+error where it previously required success. A subcommand can come back by
+accident; a test that says it must not is cheap.
+
+**One test was replaced rather than deleted.**
+`aggregate_cli_resolves_index_locators_against_separate_store_root` tested a
+property of the *index* — that it is written outside the store and every locator
+it carries resolves and authenticates inside it — through the aggregate CLI,
+which is now gone. The property outlives its old vehicle, so it is now asserted
+against `analyze_corpus` directly.
+
+**Fixture witnesses re-blessed.** `abc/test/fixtures/parser-rq/source-accountability`
+loses `aggregate.json`; `index.json` and `manifest.json` move because the record
+hashes inside them move. That movement is `membership_ref` rotating in miniature,
+and it is the visible record of the shape change.
 
 ### Task 5 result
 

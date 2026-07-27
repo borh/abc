@@ -407,7 +407,13 @@
 (def taxonomy-hash
   (hash/format-sha256 (hash/sha256-string taxonomy-text)))
 
-(defn- aggregate-value
+(defn- retired-p1-aggregate-value
+  "A P1 aggregate in its retired v1 shape.
+
+  Nothing produces this any more -- the aggregate went with the node-span
+  coverage quantity it totalled. The one test below still needs *some*
+  non-recognition payload to stand in for a P0-only capture, and this remains
+  the historically accurate thing for such a capture to have contained."
   []
   {:schema_version "abc/parser-rq-source-accountability-aggregate/v1"
    :identity_ref identity-ref
@@ -635,7 +641,7 @@
   ;; value available to report: the node-span observation this could once have
   ;; fallen back to was retired, so the fallback is now structurally
   ;; impossible rather than merely rejected.
-  (with-capture (aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
+  (with-capture (retired-p1-aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
     (fn [{:keys [store manifest]}]
       (is (= {:value :instrument-missing
               :identity_ref recognition-identity-ref}

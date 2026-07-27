@@ -193,48 +193,33 @@ fn record_index_references_exact_content_addressed_bytes() {
 }
 
 #[test]
-fn aggregate_cli_resolves_index_locators_against_separate_store_root() {
-    let root = temp_root("aggregate-cli-store-root");
+fn index_locators_resolve_against_a_store_root_the_index_does_not_live_in() {
+    // This property used to be tested through the `aggregate` subcommand,
+    // which the node-span coverage retirement removed. It is a property of the
+    // index rather than of the aggregate, so it outlives it: the index is
+    // written outside the store, and every locator it carries resolves inside
+    // the store and authenticates there.
+    let root = temp_root("separate-store-root");
     let input = input(&root);
-    let corpus_path = root.join("corpus.json");
-    let identity_path = root.join("identity.json");
-    let taxonomy_path = root.join("taxonomy.json");
-    fs::write(&corpus_path, serde_json::to_vec(&input.entries).unwrap()).unwrap();
-    fs::write(
-        &identity_path,
-        serde_json::to_vec(&input.qualification_identity).unwrap(),
-    )
-    .unwrap();
-    fs::write(&taxonomy_path, &input.taxonomy.taxonomy_jcs_bytes).unwrap();
-    analyze_corpus(input.clone()).unwrap();
+    let index = analyze_corpus(input.clone()).unwrap();
     assert_ne!(input.index_out.parent(), Some(input.store_root.as_path()));
+    assert!(input.index_out.exists());
+    for entry in &index.records {
+        let resolved = input.store_root.join(&entry.locator);
+        assert!(resolved.starts_with(&input.store_root));
+        assert_eq!(hash(&fs::read(&resolved).unwrap()), entry.sha256);
+    }
+    fs::remove_dir_all(root).unwrap();
+}
 
-    let out = root.join("aggregate.json");
+#[test]
+fn the_retired_aggregate_subcommand_is_gone() {
     let status =
         std::process::Command::new(env!("CARGO_BIN_EXE_ab-parser-rq-source-accountability"))
-            .args([
-                "aggregate",
-                "--corpus",
-                corpus_path.to_str().unwrap(),
-                "--work-record-index",
-                input.index_out.to_str().unwrap(),
-                "--store-root",
-                input.store_root.to_str().unwrap(),
-                "--qualification-identity",
-                identity_path.to_str().unwrap(),
-                "--taxonomy",
-                taxonomy_path.to_str().unwrap(),
-                "--out",
-                out.to_str().unwrap(),
-            ])
+            .args(["aggregate", "--help"])
             .status()
             .unwrap();
-    assert!(status.success());
-    assert_eq!(
-        serde_json::from_slice::<serde_json::Value>(&fs::read(out).unwrap()).unwrap()["status"],
-        "ok"
-    );
-    fs::remove_dir_all(root).unwrap();
+    assert!(!status.success());
 }
 
 #[test]

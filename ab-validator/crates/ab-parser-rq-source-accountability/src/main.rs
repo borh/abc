@@ -2,9 +2,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use ab_parser_rq_source_accountability::{
-    CorpusEntry, CorpusInput, CorpusSourceEntry, QualificationIdentity, RecognitionCorpusInput,
-    RecognitionGenerationIndex, RecognitionIndex, RecordIndex, TaxonomyIdentity, WorkInput,
-    aggregate, aggregate_recognition, analyze_corpus, analyze_recognition_corpus, analyze_work,
+    CorpusInput, CorpusSourceEntry, QualificationIdentity, RecognitionCorpusInput,
+    RecognitionGenerationIndex, RecognitionIndex, TaxonomyIdentity, WorkInput,
+    aggregate_recognition, analyze_corpus, analyze_recognition_corpus, analyze_work,
     canonical_json,
 };
 use ab_rq_artifact_store::{publish_blob, write_atomic_summary};
@@ -53,21 +53,6 @@ enum Command {
         store_root: PathBuf,
         #[arg(long)]
         index_out: PathBuf,
-    },
-    /// Authenticate a closed work-record index and aggregate exact byte evidence.
-    Aggregate {
-        #[arg(long)]
-        corpus: PathBuf,
-        #[arg(long = "work-record-index")]
-        work_record_index: PathBuf,
-        #[arg(long = "qualification-identity")]
-        qualification_identity: PathBuf,
-        #[arg(long)]
-        taxonomy: PathBuf,
-        #[arg(long)]
-        store_root: PathBuf,
-        #[arg(long)]
-        out: PathBuf,
     },
     /// Derive one authenticated recognition record for every exact P1 member.
     AnalyzeRecognitionCorpus {
@@ -193,26 +178,6 @@ fn main() -> Result<()> {
             })?;
             println!("{}", canonical_json(&index)?);
         }
-        Command::Aggregate {
-            corpus,
-            work_record_index,
-            qualification_identity,
-            taxonomy: taxonomy_path,
-            store_root,
-            out,
-        } => {
-            let corpus: Vec<CorpusEntry> = read_json::<Vec<CorpusSourceEntry>>(&corpus)?
-                .into_iter()
-                .map(|entry| entry.corpus_entry)
-                .collect();
-            let index = read_json::<RecordIndex>(&work_record_index)?;
-            let identity = read_json::<QualificationIdentity>(&qualification_identity)?;
-            let taxonomy = taxonomy(&taxonomy_path)?;
-            let result = aggregate(&corpus, &index, &store_root, &identity, &taxonomy)?;
-            let bytes = canonical_json(&result)?;
-            fs::write(out, &bytes)?;
-            println!("{bytes}");
-        }
         Command::AnalyzeRecognitionCorpus {
             membership_index,
             generation_index,
@@ -263,20 +228,9 @@ fn main() -> Result<()> {
             })?;
             let membership_bytes = canonical_json(&membership)?.into_bytes();
             publish_blob(&store_root, "json", &membership_bytes)?;
-            let p1_aggregate = aggregate(
-                &corpus_entries
-                    .iter()
-                    .map(|entry| entry.corpus_entry.clone())
-                    .collect::<Vec<_>>(),
-                &membership,
-                &store_root,
-                &identity,
-                &taxonomy,
-            )?;
-            write_atomic_summary(
-                &output_dir.join("source-accountability-aggregate.json"),
-                canonical_json(&p1_aggregate)?.as_bytes(),
-            )?;
+            // No P1 aggregate is produced. It existed to total the retired
+            // node-span coverage quantity across the corpus; the membership
+            // index is what recognition consumes, and it is written above.
             let identity_ref =
                 ab_parser_rq_source_accountability::qualification_identity_ref(&identity)?;
             let source_root = fs::canonicalize(&source_root)?;
@@ -360,7 +314,8 @@ mod tests {
             "record.json",
         ]);
         assert!(cli.is_ok());
-        let aggregate = Cli::try_parse_from([
+        // The retired P1 aggregate subcommand must not come back by accident.
+        let retired_aggregate = Cli::try_parse_from([
             "tool",
             "aggregate",
             "--corpus",
@@ -376,7 +331,7 @@ mod tests {
             "--out",
             "aggregate.json",
         ]);
-        assert!(aggregate.is_ok());
+        assert!(retired_aggregate.is_err());
         let capture = Cli::try_parse_from([
             "tool",
             "capture-corpus",

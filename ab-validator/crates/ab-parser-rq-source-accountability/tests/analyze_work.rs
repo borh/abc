@@ -82,7 +82,7 @@ thread_local! {
 }
 
 #[test]
-fn lossy_shift_jis_is_unavailable_even_when_span_covers_replacement() {
+fn lossy_shift_jis_is_unavailable() {
     let result = analyze_work(input(
         vec![0xff, 0x82],
         json!([
@@ -118,7 +118,6 @@ fn work_record_rejects_unknown_wire_discriminators() {
         ("/diagnostics/media_type", "text/plain"),
         ("/taxonomy_version", "parser-rq-ignored-regions-v9"),
         ("/coordinate_system", "raw_bytes"),
-        ("/coverage_basis", "parser_ir.paragraphs[*].span"),
         ("/status", "partial"),
     ] {
         let mut changed = original.clone();
@@ -131,34 +130,59 @@ fn work_record_rejects_unknown_wire_discriminators() {
 }
 
 #[test]
-fn absent_coordinate_system_is_unavailable() {
-    let result = analyze_work(input(b"x".to_vec(), json!([{"span":{"start":0,"end":1}}])));
-    assert_eq!(result.record.status, WorkStatus::Unavailable);
+fn node_spans_no_longer_affect_the_record_at_all() {
+    // v1 read `nodes[*].span` and let it decide both a coverage quantity and
+    // the record's status. v2 does not read it, so these three parser-IR
+    // documents -- no nodes, spans with no declared coordinate, and spans that
+    // run past the end of the decoded source -- must now produce equal records.
+    // Under v1 the second and third were `unavailable`.
+    //
+    // `parser_ir` is excluded from the comparison and asserted separately: the
+    // three documents genuinely differ, and the record still records which one
+    // it saw. That is provenance, which v2 keeps; what it stops doing is
+    // drawing a measurement or a verdict out of the spans inside.
+    let records = [
+        json!([]),
+        json!([{"span":{"start":0,"end":1}}]),
+        json!([{"span":{"start":0,"end":9_999,"coordinate_system":"raw_bytes"}}]),
+    ]
+    .map(|nodes| {
+        let record = analyze_work(input(b"abc".to_vec(), nodes)).record;
+        assert_eq!(record.status, WorkStatus::Ok, "{:?}", record.errors);
+        let mut value = serde_json::to_value(&record).unwrap();
+        let parser_ir = value["parser_ir"].take();
+        (value, parser_ir)
+    });
+    assert_eq!(records[0].0, records[1].0);
+    assert_eq!(records[1].0, records[2].0);
+    assert_ne!(records[0].1, records[1].1);
+    assert_ne!(records[1].1, records[2].1);
+}
+
+#[test]
+fn a_v1_record_cannot_be_read_as_v2() {
+    // The wire enums are closed with `deny_unknown_fields`, so the version
+    // string changing is what makes prior evidence protocol-incompatible
+    // rather than silently reinterpretable. Both directions must fail.
+    let record = analyze_work(input(
+        b"x".to_vec(),
+        json!([{"span":{"start":0,"end":1,"coordinate_system":"decoded_utf8"}}]),
+    ))
+    .record;
+    let v2 = serde_json::to_value(&record).unwrap();
     assert_eq!(
-        result.record.errors,
-        ["node-span-coordinate-system-missing"]
+        v2["schema_version"],
+        "abc/parser-rq-source-accountability-work/v2"
     );
-}
 
-#[test]
-fn paragraph_and_sentence_spans_do_not_cover_missing_nodes() {
-    let result = analyze_work(input(b"abc".to_vec(), json!([])));
-    assert_eq!(result.record.covered_eligible_bytes, 0);
-    assert_eq!(result.record.uncovered_eligible_bytes, 3);
-}
+    let mut downgraded = v2.clone();
+    downgraded["schema_version"] = json!("abc/parser-rq-source-accountability-work/v1");
+    assert!(serde_json::from_value::<WorkRecord>(downgraded).is_err());
 
-#[test]
-fn nested_node_spans_count_union_bytes_once() {
-    let result = analyze_work(input(
-        b"0123456789".to_vec(),
-        json!([
-            {"span":{"start":0,"end":10,"coordinate_system":"decoded_utf8","line":1,"column":null}},
-            {"span":{"start":2,"end":4,"coordinate_system":"decoded_utf8","line":1,"column":null}}
-        ]),
-    ));
-    assert_eq!(result.record.status, WorkStatus::Ok);
-    assert_eq!(result.record.covered_eligible_bytes, 10);
-    assert_eq!(result.record.uncovered_eligible_bytes, 0);
+    let mut v1_shaped = v2;
+    v1_shaped["coverage_basis"] = json!("parser_ir.nodes[*].span");
+    v1_shaped["eligible_bytes"] = json!(1);
+    assert!(serde_json::from_value::<WorkRecord>(v1_shaped).is_err());
 }
 
 #[test]
@@ -187,9 +211,6 @@ fn bom_crlf_and_sanitizer_coordinates_address_full_decoded_text() {
         "底本：本".as_bytes()
     );
     assert_eq!(result.record.status, WorkStatus::Ok);
-    assert!(result.record.covered_eligible.iter().any(|span| {
-        span.start == post_collision_start as u64 && span.end == post_collision_end as u64
-    }));
     assert!(
         serde_json::from_slice::<Value>(result.diagnostics_bytes.as_ref().unwrap()).unwrap()["data"]
             .is_array()

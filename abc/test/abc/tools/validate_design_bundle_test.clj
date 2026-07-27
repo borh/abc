@@ -1165,10 +1165,12 @@
                 "test/fixtures/parser-rq/parser-rq-ignored-regions.schema.json"]
                ["schemas/parser-rq-source-accountability-work.schema.json"
                 "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json"]
+               ["schemas/parser-rq-source-accountability-work-v1.schema.json"
+                "test/fixtures/parser-rq/parser-rq-source-accountability-work-v1.schema.json"]
                ["schemas/parser-rq-source-accountability-index.schema.json"
                 "test/fixtures/parser-rq/parser-rq-source-accountability-index.schema.json"]
-               ["schemas/parser-rq-source-accountability-aggregate.schema.json"
-                "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate.schema.json"]]]
+               ["schemas/parser-rq-source-accountability-aggregate-v1.schema.json"
+                "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate-v1.schema.json"]]]
     (doseq [[path fixture] pairs]
       (let [contract (files/read-json path)]
         (is (= false (get contract "additionalProperties")) path)
@@ -1180,10 +1182,12 @@
                            "test/fixtures/parser-rq/parser-rq-ignored-regions.schema.json"]
                           ["schemas/parser-rq-source-accountability-work.schema.json"
                            "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json"]
+                          ["schemas/parser-rq-source-accountability-work-v1.schema.json"
+                           "test/fixtures/parser-rq/parser-rq-source-accountability-work-v1.schema.json"]
                           ["schemas/parser-rq-source-accountability-index.schema.json"
                            "test/fixtures/parser-rq/parser-rq-source-accountability-index.schema.json"]
-                          ["schemas/parser-rq-source-accountability-aggregate.schema.json"
-                           "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate.schema.json"]]]
+                          ["schemas/parser-rq-source-accountability-aggregate-v1.schema.json"
+                           "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate-v1.schema.json"]]]
     (let [contract (files/read-json path)
           document (assoc (files/read-json fixture) "unexpected" true)]
       (is (seq (schema/validation-errors contract document)) path))))
@@ -1199,8 +1203,13 @@
                               (assoc-in ["decoded_source" "encoding"]
                                         "windows-31j-lossy"))
         unavailable-no-diagnostics (dissoc unavailable-lossy "diagnostics")
-        invalid-documents [(dissoc document "coverage_basis")
-                           (assoc document "coverage_basis" "parser_ir.paragraphs[*].span")
+        invalid-documents [;; v2 publishes no measurement, so a v1-shaped
+                           ;; document must be rejected outright rather than
+                           ;; read as a v2 record with extra fields.
+                           (assoc document "coverage_basis" "parser_ir.nodes[*].span")
+                           (assoc document "eligible_bytes" 3)
+                           (assoc document "schema_version"
+                                  "abc/parser-rq-source-accountability-work/v1")
                            (update document "diagnostics" dissoc "profile")
                            (assoc-in document ["diagnostics" "profile"]
                                      "abc/authorized-parser-diagnostics-schema-v3")
@@ -1214,13 +1223,33 @@
     (doseq [invalid invalid-documents]
       (is (seq (schema/validation-errors contract invalid))))))
 
-(deftest parser-rq-source-accountability-unavailable-aggregate-rejects-numeric-test
-  (let [contract (files/read-json
-                  "schemas/parser-rq-source-accountability-aggregate.schema.json")
-        document (-> (files/read-json
-                      "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate.schema.json")
-                     (assoc "status" "unavailable" "errors" ["record unavailable"]))]
-    (is (seq (schema/validation-errors contract document)))))
+(deftest frozen-v1-source-accountability-contracts-still-hold-their-shape-test
+  ;; The live aggregate schema is gone with the aggregate; only the frozen v1
+  ;; remains, and nothing produces documents for it any more. These are the
+  ;; assertions its retired producer used to be evidence for: an unavailable
+  ;; aggregate may not carry byte totals, and a v1 work record still requires
+  ;; the measurement fields v2 dropped.
+  (let [aggregate-contract (files/read-json
+                            "schemas/parser-rq-source-accountability-aggregate-v1.schema.json")
+        aggregate (files/read-json
+                   "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate-v1.schema.json")
+        work-contract (files/read-json
+                       "schemas/parser-rq-source-accountability-work-v1.schema.json")
+        work (files/read-json
+              "test/fixtures/parser-rq/parser-rq-source-accountability-work-v1.schema.json")]
+    (is (seq (schema/validation-errors
+              aggregate-contract
+              (assoc aggregate "status" "unavailable" "errors" ["record unavailable"]))))
+    (is (nil? (schema/validation-errors work-contract work)))
+    (doseq [dropped ["coverage_basis" "eligible_bytes" "covered_eligible_bytes"
+                     "uncovered_eligible_bytes" "decoded_source_bytes"]]
+      (is (seq (schema/validation-errors work-contract (dissoc work dropped)))
+          dropped))
+    ;; And the two versions must not validate each other.
+    (is (seq (schema/validation-errors
+              work-contract
+              (files/read-json
+               "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json"))))))
 
 (deftest parser-rq-v1-taxonomy-is-empty-test
   (let [taxonomy (files/read-json "data/parser-rq-ignored-regions-v1.json")]

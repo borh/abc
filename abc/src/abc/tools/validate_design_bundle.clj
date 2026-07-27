@@ -369,7 +369,6 @@
    "schemas/parser-rq-parser-ir-conformance-index.schema.json"
    "schemas/parser-rq-parser-ir-conformance-policy.schema.json"
    "schemas/parser-rq-parser-ir-conformance-work.schema.json"
-   "schemas/parser-rq-source-accountability-aggregate.schema.json"
    "schemas/parser-rq-source-accountability-aggregate-v1.schema.json"
    "schemas/parser-rq-source-accountability-index.schema.json"
    "schemas/parser-rq-source-accountability-work.schema.json"
@@ -508,7 +507,6 @@
         parser-rq-parser-ir-conformance-policy-schema (files/read-json "schemas/parser-rq-parser-ir-conformance-policy.schema.json")
         parser-rq-parser-ir-conformance-work-schema (files/read-json "schemas/parser-rq-parser-ir-conformance-work.schema.json")
         parser-rq-ignored-regions-schema (files/read-json "schemas/parser-rq-ignored-regions.schema.json")
-        parser-rq-source-accountability-aggregate-schema (files/read-json "schemas/parser-rq-source-accountability-aggregate.schema.json")
         parser-rq-source-accountability-aggregate-v1-schema (files/read-json "schemas/parser-rq-source-accountability-aggregate-v1.schema.json")
         parser-rq-source-accountability-index-schema (files/read-json "schemas/parser-rq-source-accountability-index.schema.json")
         parser-rq-source-accountability-work-schema (files/read-json "schemas/parser-rq-source-accountability-work.schema.json")
@@ -576,7 +574,6 @@
                            ["schemas/parser-rq-parser-ir-conformance-policy.schema.json" parser-rq-parser-ir-conformance-policy-schema]
                            ["schemas/parser-rq-parser-ir-conformance-work.schema.json" parser-rq-parser-ir-conformance-work-schema]
                            ["schemas/parser-rq-ignored-regions.schema.json" parser-rq-ignored-regions-schema]
-                           ["schemas/parser-rq-source-accountability-aggregate.schema.json" parser-rq-source-accountability-aggregate-schema]
                            ["schemas/parser-rq-source-accountability-aggregate-v1.schema.json" parser-rq-source-accountability-aggregate-v1-schema]
                            ["schemas/parser-rq-source-accountability-index.schema.json" parser-rq-source-accountability-index-schema]
                            ["schemas/parser-rq-source-accountability-work.schema.json" parser-rq-source-accountability-work-schema]

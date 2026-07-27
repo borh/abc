@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/parser-rq-source-accountability-aggregate-v1.schema.json",
+  "title": "Parser release qualification source-accountability aggregate (v1, frozen)",
+  "description": "Frozen. Validates the retired P1 aggregate, abc/parser-rq-source-accountability-aggregate/v1. The aggregate existed to total the node-span coverage quantity and was removed with it; nothing emits this shape. It exists so already-published evidence stays checkable. See docs/adr/parser-rq-retire-node-span-coverage.md.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "identity_ref",
+    "taxonomy_version",
+    "taxonomy_hash",
+    "coordinate_system",
+    "status",
+    "work_completeness"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "abc/parser-rq-source-accountability-aggregate/v1"
+    },
+    "identity_ref": {
+      "$ref": "#/$defs/hash"
+    },
+    "taxonomy_version": {
+      "const": "parser-rq-ignored-regions-v1"
+    },
+    "taxonomy_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "coordinate_system": {
+      "const": "decoded_utf8"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "unavailable"
+      ]
+    },
+    "work_completeness": {
+      "$ref": "#/$defs/work_completeness"
+    },
+    "eligible_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "covered_eligible_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "uncovered_eligible_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "uncovered": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/work_interval"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "eligible_bytes",
+        "covered_eligible_bytes",
+        "uncovered_eligible_bytes",
+        "uncovered"
+      ],
+      "properties": {
+        "status": {
+          "const": "ok"
+        }
+      },
+      "not": {
+        "required": [
+          "errors"
+        ]
+      }
+    },
+    {
+      "required": [
+        "errors"
+      ],
+      "properties": {
+        "status": {
+          "const": "unavailable"
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "eligible_bytes"
+            ]
+          },
+          {
+            "required": [
+              "covered_eligible_bytes"
+            ]
+          },
+          {
+            "required": [
+              "uncovered_eligible_bytes"
+            ]
+          },
+          {
+            "required": [
+              "uncovered"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "interval": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "work_interval": {
+      "type": "object",
+      "required": [
+        "work_id",
+        "start",
+        "end"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "work_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "work_completeness": {
+      "type": "object",
+      "required": [
+        "expected",
+        "observed",
+        "complete"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "expected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "complete": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

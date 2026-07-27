@@ -140,9 +140,12 @@ was in force, which is provenance rather than measurement.
 
 ## The v1 retention question — decide before task 1
 
-Twenty-two artifacts under `docs/reports/parser-rq/runs/` carry the
-`parser_ir.nodes[*].span` basis, six in the promoted run
-`24d61fc7…`. Published manifests are immutable, so they are not rewritten.
+Measured 2026-07-27: **18** artifacts under `docs/reports/parser-rq/runs/`
+carry a v1 P1 wire version — 9 work records, 3 aggregates, 6 indexes, exactly 6
+per run across three runs, one of them the promoted `24d61fc7…`. The 9 work
+records are the ones carrying the `parser_ir.nodes[*].span` basis. The
+"twenty-two" figure carried by earlier drafts was unmeasured and wrong.
+Published manifests are immutable, so none are rewritten.
 
 **Decided 2026-07-27: retain the v1 schemas as frozen alongside v2.** Deleting them
 would leave published evidence that nothing can validate, which is the outcome
@@ -180,7 +183,10 @@ Each task is separately reviewable and separately committable.
    `analyze_work.rs` and `aggregate.rs` tests.
 4. **Apply the open scope decision** — eligibility and the P1 aggregate, per
    Option A or B.
-5. **Freeze v1 and update the schemas.** Per the retention decision.
+5. **Freeze v1 — DONE 2026-07-27**, ahead of tasks 3 and 4 rather than after
+   them. Freezing is purely additive, so doing it first means published v1
+   evidence is validatable at every commit; doing it last would leave a window
+   where it was not. See *Task 5 result*.
 6. **Re-measure and record the rotation.** Re-run the governed control, confirm
    recognition still authenticates against the new membership index, and record
    the `membership_ref` movement explicitly as a protocol-incompatibility for
@@ -300,6 +306,38 @@ assertions:
 
 Without this, tasks 3–5 could have shrunk the work record and broken the handoff
 to recognition with nothing failing.
+
+### Task 5 result
+
+Done before tasks 3 and 4, not after. Freezing is purely additive, so taking it
+first means published v1 evidence is validatable at every commit on the branch.
+Taken last it would have left a window where it was not, which is the outcome
+the decision record forbids.
+
+Added `schemas/parser-rq-source-accountability-work-v1.schema.json` and
+`-aggregate-v1.schema.json` — standalone copies with their own `$id`, not
+`$ref` aliases. An alias would track whatever the live schema became, which is
+the opposite of a freeze. Both registered in `validate_design_bundle.clj`'s
+schema closure.
+
+**The index is deliberately not frozen.** `RecordIndex` never carried a coverage
+quantity, so its shape does not move; the live schema keeps validating both the
+6 published v1 indexes and everything produced after the retirement. Freezing it
+would assert a version boundary that does not exist.
+
+**A frozen schema has no live producer to keep it honest.** That is precisely
+how one drifts out of agreement with what it claims to validate, unnoticed, and
+it is why the freeze needed evidence rather than just files. Two tests in
+`parser_rq_source_accountability_test.clj`:
+
+- `published-v1-evidence-still-validates-against-the-frozen-schemas` walks
+  `docs/reports/parser-rq/runs/`, groups every JSON by its declared
+  `schema_version`, and validates each against the schema for that wire version.
+  It also asserts the counts — 9 work, 3 aggregate, 6 index — so that a run
+  losing an artifact fails loudly instead of silently shrinking the validated
+  set toward zero.
+- `the-frozen-v1-schemas-are-frozen-copies-and-not-aliases` asserts each frozen
+  document still *requires* the retired fields it exists to validate.
 
 ### Task 2 result
 

@@ -104,12 +104,33 @@ membership index contains rotates `membership_ref`, and therefore every
 recognition record. Prior captured evidence becomes protocol-incompatible rather
 than merely stale.
 
-**Published artifacts are not rewritten.** Twenty-two artifacts under
-`docs/reports/parser-rq/runs/` carry the `parser_ir.nodes[*].span` basis, six of
-them in the currently promoted run. Published manifests are immutable. **Decided
-2026-07-27: the v1 schemas are retained frozen alongside v2**, so those artifacts
-stay validatable. Deleting them would leave published evidence that nothing can
-check.
+**Published artifacts are not rewritten.** Counted 2026-07-27 during
+implementation: **18** artifacts under `docs/reports/parser-rq/runs/` carry a v1
+P1 wire version — 9 work records, 3 aggregates and 6 indexes, distributed
+exactly 6 per run across three runs, one of which is the promoted
+`24d61fc7…`. Of these, the **9 work records** are the ones carrying the
+`parser_ir.nodes[*].span` basis. An earlier draft of this record said
+"twenty-two artifacts carry the basis"; that number was not measured and is
+wrong on both the count and the population it counted.
+
+Published manifests are immutable. **Decided 2026-07-27: the v1 schemas are
+retained frozen alongside v2**, so those artifacts stay validatable. Deleting
+them would leave published evidence that nothing can check.
+
+The freeze is `schemas/parser-rq-source-accountability-work-v1.schema.json` and
+`-aggregate-v1.schema.json`: standalone copies, not `$ref` aliases, since an
+alias would track whatever the live schema became and would not be a freeze. The
+index schema is **not** frozen, because `RecordIndex` never carried a coverage
+quantity and its shape does not move; the live schema keeps validating both
+sides of the change.
+
+A frozen schema has no live producer to keep it honest, which is how one quietly
+stops matching what it claims to validate. Two tests hold it:
+`published-v1-evidence-still-validates-against-the-frozen-schemas` validates all
+18 published artifacts and asserts the 9/3/6 counts, so a vanished artifact
+fails rather than shrinking the validated set to nothing; and
+`the-frozen-v1-schemas-are-frozen-copies-and-not-aliases` asserts each still
+requires the retired fields it was frozen to validate.
 
 **The cost saving is re-measured, not assumed.** 9.80 ms per work is an estimate
 attached to the computation being removed.

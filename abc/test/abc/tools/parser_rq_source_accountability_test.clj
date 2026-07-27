@@ -1,10 +1,12 @@
 (ns abc.tools.parser-rq-source-accountability-test
-  (:require [abc.tools.hash :as hash]
+  (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-source-accountability :as rq-source]
             [abc.tools.parser-rq-source-recognition :as source-recognition]
+            [abc.tools.schema :as schema]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is]]
@@ -1018,3 +1020,68 @@
       (is (= :unavailable
              (:status (rq-source/silent-drops-envelope store changed-manifest changed-identity)))
           label))))
+
+;; The frozen v1 schemas, and the published evidence that is their whole
+;; reason for existing.
+;;
+;; Retiring node-span coverage moves the work record to a v2 wire version and
+;; deletes the P1 aggregate outright. Nothing emits either v1 shape any more,
+;; so the frozen schemas have no live producer to keep them honest -- which is
+;; exactly how a frozen schema quietly stops matching what it claims to
+;; validate. This test is the check that keeps them load-bearing: it reads the
+;; published run artifacts, which are immutable, and asserts each still
+;; validates against the schema for the wire version it declares.
+;;
+;; The counts are asserted too. Without them a run directory could lose an
+;; artifact and the validation loop would pass over an empty set.
+
+(def ^:private p1-v1-wire-schemas
+  {"abc/parser-rq-source-accountability-work/v1"
+   ["schemas/parser-rq-source-accountability-work-v1.schema.json" 9]
+   "abc/parser-rq-source-accountability-aggregate/v1"
+   ["schemas/parser-rq-source-accountability-aggregate-v1.schema.json" 3]
+   ;; The index shape does not move: `RecordIndex` never carried a coverage
+   ;; quantity, so the live schema still validates both the published v1
+   ;; indexes and everything produced after the retirement.
+   "abc/parser-rq-source-accountability-index/v1"
+   ["schemas/parser-rq-source-accountability-index.schema.json" 6]})
+
+(defn- published-run-json-files []
+  (->> (file-seq (io/file (files/path "docs/reports/parser-rq/runs")))
+       (filter #(.isFile ^java.io.File %))
+       (filter #(string/ends-with? (.getName ^java.io.File %) ".json"))))
+
+(deftest published-v1-evidence-still-validates-against-the-frozen-schemas
+  (let [declared (fn [file]
+                   (try (get (json/read-json-file file) "schema_version")
+                        (catch Exception _ nil)))
+        by-wire (->> (published-run-json-files)
+                     (keep (fn [file]
+                             (when-let [wire (declared file)]
+                               (when (contains? p1-v1-wire-schemas wire)
+                                 [wire file]))))
+                     (group-by first))]
+    (doseq [[wire [schema-path expected-count]] p1-v1-wire-schemas
+            :let [files (mapv second (get by-wire wire))
+                  schema (files/read-json schema-path)]]
+      (is (= expected-count (count files))
+          (str "published artifact count changed for " wire))
+      (doseq [file files]
+        (is (nil? (schema/validation-errors schema (json/read-json-file file)))
+            (str (.getPath ^java.io.File file) " no longer validates against " schema-path))))))
+
+(deftest the-frozen-v1-schemas-are-frozen-copies-and-not-aliases
+  ;; A freeze that is a `$ref` to the live schema is not a freeze -- it tracks
+  ;; whatever the live schema becomes. These must be standalone documents that
+  ;; still require the retired fields.
+  (doseq [[path required]
+          [["schemas/parser-rq-source-accountability-work-v1.schema.json"
+            ["coverage_basis" "covered_eligible_bytes" "uncovered_eligible_bytes"
+             "eligible" "eligible_bytes" "ignored" "ignored_bytes"]]
+           ["schemas/parser-rq-source-accountability-aggregate-v1.schema.json"
+            ["work_completeness"]]]]
+    (let [schema (files/read-json path)]
+      (is (string/ends-with? (get schema "$id") "-v1.schema.json") path)
+      (is (string/starts-with? (get schema "description") "Frozen.") path)
+      (is (every? (set (get schema "required")) required)
+          (str path " no longer requires the fields it was frozen to validate")))))

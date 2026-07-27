@@ -226,23 +226,35 @@ and **`:kind` plus non-empty `:evidence` on every claim**, with evidence paths
 that exist under `test/`, `fixtures/`, `nix/`, or `docs/evidence/external/`.
 Q14's and Q15's claims have no such evidence — nothing is implemented, and the
 measurements behind them were taken under a synthesized qualification identity
-that authenticates nothing. Q16's claims *do* carry evidence and would validate
-as `:accepted`, but acceptance is a governance act, so the record is offered for
-promotion rather than asserting it.
+that authenticates nothing. Promoting either is rejected by the schema, which is
+the correct outcome.
+
+`parser-rq-classified-source-policy-binding` **does** promote cleanly, verified
+by loading the corpus, setting `:status :accepted` with an accepted date in
+memory, and checking both `shape-problems` and `semantic-problems` return empty.
+Acceptance is a governance act, so the record is offered for promotion rather
+than asserting it. This was not true when the record was first written: claim c3
+carried no evidence and review caught it. c3 now cites
+`test/abc/tools/validate_design_bundle_test.clj`, which authenticates the
+authority descriptor's `raw_bytes_hash` and `identity_hash` against the policy's
+exact bytes — the fact c3 rests on.
 
 ### Regeneration and gate notes
 
-Adding a record requires three derived artifacts to be regenerated, or the branch
-gate fails:
+Adding a record invalidates **two generated files**, and requires a third
+artifact that is authored rather than generated:
 
-```sh
-clojure -M:abc/adr-governance --write-index   # docs/adr/INDEX.md
-clojure -M:abc/diagrams                       # docs/adr/adr-graph.mmd
-clojure -M:abc/adr-governance                 # validate; exit 1 on any problem
-```
+| Artifact | How it is produced |
+|---|---|
+| `docs/adr/INDEX.md` | generated — `clojure -M:abc/adr-governance --write-index` |
+| `docs/adr/adr-graph.mmd` | generated — `clojure -M:abc/diagrams` |
+| `docs/adr/<slug>.md` | **authored by hand**; mandatory |
 
-A narrative file `docs/adr/<slug>.md` is mandatory: `narrative-problems` reports
-both missing narratives and orphan files.
+`narrative-problems` reports both missing narratives and orphan files, so the
+narrative is not optional. Validate with `clojure -M:abc/adr-governance`, which
+exits 1 on any problem. The stale diagram is caught by
+`clj-nix-focused-tests`, not by ADR governance — running only the latter will
+pass while the branch gate fails.
 
 Records do **not** rotate `qualification_identity_ref`. `decision_statuses` is a
 promotion-gate input, not an identity field. `parser-rq-p5-promotion-audit` was
@@ -265,7 +277,10 @@ stale.
 
 Q15's contract is decided; its implementation is not started. Partition tasks 1
 and 2 are unblocked and are the shortest path to a check that can fail — see
-`plans/2026-07-27-q15-region-partition.md`. The streams below are independent of
+`plans/2026-07-27-q15-region-partition.md`. Task 2 became executable only on
+2026-07-27, when the region set was closed at three regions with the tail
+extending back to `body_end`; before that the ADR asserted conservation over a
+set that provably did not conserve, and review caught it. The streams below are independent of
 it, and each still needs its own scoped plan before code changes. **Q13 should be
 settled first**: dropping the `NodeSpans` path removes `analyze.rs`,
 `aggregate.rs`, two schemas and four test files from the partition change set.

@@ -8,8 +8,9 @@ denominators for one ratio.
 Governing design:
 `docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`.
 `docs/adr/decisions.edn` is hand-authored and becomes authoritative once
-accepted; a draft entry is proposed at the end of this plan for transfer, not
-applied.
+accepted. The record `parser-rq-source-region-partition` was written on
+2026-07-27 and is **`:proposed`**; it is the governance authority for this plan,
+which carries the task sequence rather than the contract.
 
 ## The decision
 
@@ -74,6 +75,8 @@ The extra cost is what buys the invariant; it is not a middle path.
 | Region authority is `aozora_body_range` alone | **Decided** |
 | `source_span_coverage` = body-projection coverage | **Decided** |
 | Header and tail are distinct regions under one metadata predicate | **Decided** |
+| The region set is closed: header, body, tail — no fourth | **Decided 2026-07-27** |
+| The tail is `[body_end, len)`, absorbing the separating blank lines | **Decided 2026-07-27** |
 | Clearance is conjunctive | **Decided** |
 | The metadata predicate's threshold | **Not decided — deliberately** |
 | Whether `source_span_coverage` keeps `:= 1.0` | **Not decided** (see below) |
@@ -99,7 +102,7 @@ there.
 Stated with citations, per the design's rule that mechanism claims be traced
 rather than inferred.
 
-### 1. `aozora_body_range` does not currently partition the file
+### 1. The region set, and why it is not `aozora_body_range` verbatim
 
 `ab-source-syntax/src/lib.rs:118` returns `(body_start..body_end, tail_start)`.
 When a `底本：` line is found:
@@ -111,18 +114,34 @@ tail_start = cursor;                                                // :147
 
 `body_end` is trim-adjusted; `tail_start` is not. **Whenever a tail exists there
 is a gap of at least one byte between `body_end` and `tail_start`** — the blank
-lines separating the body from the colophon — and those bytes currently belong to
-no region.
+lines separating the body from the colophon.
 
-This is structural, not incidental, and it is exactly what the conservation check
-is for. The plan found it before implementation rather than after, which is the
-argument for the check.
+**Resolved 2026-07-27: the tail region is `[body_end, len)`, not
+`[tail_start, len)`.** It extends backward to meet the body, so the three regions
+close the file with no fourth region and no unassigned byte:
 
-**The implementation must declare where those bytes go.** Do not silently widen
-`body_end` to `tail_start`: that puts blank separator lines into the body
-population, and body coverage then depends on how many blank lines a transcriber
-left. The defensible options are a fourth declared region, or extending the tail
-region backward to `body_end`. Either is fine; choosing neither is not.
+| Region | Extent |
+|---|---|
+| header | `[0, body_start)` |
+| body | `[body_start, body_end)` |
+| tail | `[body_end, len)` |
+
+This is symmetric with the header, which already absorbs its adjacent blank lines
+because `skip_blank_lines` (`ab-source-syntax/src/lib.rs:193`) advances
+`body_start` past them.
+
+Two alternatives were rejected. Widening `body_end` *forward* to `tail_start`
+puts transcriber whitespace into the body population, so body coverage would
+depend on how many blank lines a transcriber left; metadata attribution over
+packaging whitespace is trivially satisfiable by comparison. Changing
+`aozora_body_range` itself is rejected because `sanitized.body` is the projection
+handed to the parser, so moving that boundary would move `source_span_coverage`'s
+numerator as a side effect of a partition fix.
+
+An earlier draft of the ADR asserted whole-file conservation over three regions
+while separately conceding a fourth was needed. Review caught the contradiction.
+That the conservation identity is what exposed it — twice, once here and once in
+review — is the argument for declaring it before relying on it.
 
 Also handle: no `底本：` line (then `body_end = tail_start = source.len()`, empty
 tail — reached by `if body_start == 0` fallback at `:137`); fewer than two
@@ -215,48 +234,37 @@ and the mixed-coordinate finding recorded in
 note — a partition cannot be imposed on spans whose coordinate is undetermined.
 
 **Recommendation: settle Q13 before starting task 3.** Tasks 1 and 2 are
-unaffected and can begin now.
+unaffected and can begin now — task 2 became executable only once the region set
+was closed on 2026-07-27; before that it carried an undecided fourth region.
 
-## Draft `decisions.edn` entry — for hand transfer, not applied
+## Governance records — written 2026-07-27
 
-`decisions.edn` is authored by hand, never generated, so this is proposed text
-rather than an edit. Slug and claim ids are suggestions; relations should be
-checked against the live file before transfer.
+Applied, not drafted. Three `:proposed` records with narrative files:
 
-```clojure
-{:slug "parser-rq-source-region-partition"
- :release-authority :development
- :relations
- [{:class :lifecycle :type :depends-on
-   :to "parser-release-instrument-bindings"}
-  {:class :lifecycle :type :depends-on
-   :to "custom-parser-release-qualification"}]
- :claims
- [{:id :c1
-   :statement
-   "The decoded source is partitioned into declared regions derived solely from `aozora_body_range`: a body projection carrying the work (prose and annotations) and metadata regions carrying the header and the `底本：` colophon. No separator or `底本：` heuristic is maintained elsewhere. The regions are pairwise disjoint and their union is the whole decoded file; the instrument asserts that conservation and fails closed when it does not hold."
-   :kind :structural-invariant}
-  {:id :c2
-   :statement
-   "`source_span_coverage` is body-projection coverage: classified-source ledger facts over `decoded.span_text`, divided by the body projection. Numerator and denominator inhabit one declared coordinate. It is not a whole-file measure and must not be read as one."
-   :kind :measurement-contract}
-  {:id :c3
-   :statement
-   "Packaging metadata is measured by a separate attribution predicate over the header and tail regions in their own coordinate. Header and tail are recorded as distinct regions so a failure localizes, and qualify under a single conjunctive predicate. This is an attribution measure over packaging, not a parser-fidelity measure."
-   :kind :measurement-contract}
-  {:id :c4
-   :statement
-   "A work is cleared only when both body-projection coverage and metadata attribution clear. Neither predicate alone qualifies a work."
-   :kind :qualification-rule}
-  {:id :c5
-   :statement
-   "Neither threshold is fixed before its instrument has been built and measured under an explicitly non-authoritative exploratory campaign. `source_span_coverage`'s prior `:= 1.0` was declared against a whole-file denominator and is not carried forward by default; under a body denominator the same literal is a different contract."
-   :kind :governance-rule}]}
+| Slug | Covers |
+|---|---|
+| `parser-rq-instrument-before-threshold` | The rule and the traced coordinate mismatch |
+| `parser-rq-source-region-partition` | This contract |
+| `parser-rq-classified-source-policy-binding` | The identity binding, `:amends parser-release-instrument-bindings` |
+
+`parser-rq-source-region-partition` carries the contract as claims c1–c6; c1
+declares the closed three-region set and the conservation identity, c6 records
+the tail-extends-backward derivation and the two rejected alternatives.
+
+Adding a record invalidates two generated files — `docs/adr/INDEX.md` and
+`docs/adr/adr-graph.mmd` — and requires an authored narrative at
+`docs/adr/<slug>.md`:
+
+```sh
+clojure -M:abc/adr-governance --write-index
+clojure -M:abc/diagrams
+clojure -M:abc/adr-governance
 ```
 
-Supersedes, in the same transfer: the Q14 record must not preserve the
-`publication_metadata`-missing-rule causal claim, and the Q15 record replaces the
-Option A / Option B framing entirely.
+Promotion to `:accepted` additionally requires `:kind` and non-empty `:evidence`
+on **every** claim, with paths under `test/`, `fixtures/`, `nix/`, or
+`docs/evidence/external/`. Only the policy-binding record satisfies that today;
+the other two have nothing implemented to point at.
 
 ## Verification gate
 

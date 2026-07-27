@@ -5,7 +5,8 @@
 Not implemented. The contract is decided; the task sequence is in
 `docs/superpowers/plans/2026-07-27-q15-region-partition.md`. Tasks 1 and 2
 (characterize the control, declare the partition) are unblocked and change no
-measurement.
+measurement — task 2 only since the region set was closed, which an earlier draft
+of this record left open while asserting conservation over it.
 
 ## Context
 
@@ -35,11 +36,14 @@ and establishing that it was entirely the latter took three attempts.
 Partition the decoded source into declared regions and measure the populations
 separately, with conjunctive clearance.
 
-| Region | Derivation | Measured by |
+| Region | Extent | Measured by |
 | --- | --- | --- |
-| body | `aozora_body_range` body projection | `source_span_coverage` |
 | header | `[0, body_start)` | metadata attribution |
-| tail | colophon onward | metadata attribution |
+| body | `[body_start, body_end)` | `source_span_coverage` |
+| tail | `[body_end, len)` | metadata attribution |
+
+Three regions, no fourth, no unassigned byte. Note the tail begins at `body_end`
+and **not** at `aozora_body_range`'s `tail_start` — see *Consequences*.
 
 - Region authority is `aozora_body_range` **alone**. No separator or `底本：`
   heuristic is maintained anywhere else.
@@ -73,15 +77,30 @@ structure here that breaks loudly instead of returning a plausible number.
 **The cost is both earlier options combined**, plus a partition schema and its
 checks. This is not a middle path, and it should not be adopted believing it is.
 
-**`aozora_body_range` does not currently partition the file.** It returns
-`(body_start..body_end, tail_start)` where `body_end` is trim-adjusted for
-trailing newlines and `tail_start` is not, so whenever a tail exists at least one
-byte belongs to no region. Widening `body_end` to `tail_start` is rejected as the
-fix: it would place transcriber whitespace into the body population, making body
-coverage depend on how many blank lines a transcriber left. The gap gets an
-explicit region. This was found by writing the plan rather than by running the
-instrument, which is the argument for declaring the partition before relying on
-it.
+**`aozora_body_range`'s return value is not itself a partition**, so the region
+derivation does not use it verbatim. It returns `(body_start..body_end,
+tail_start)` where `body_end` is trim-adjusted for trailing newlines and
+`tail_start` is not, so whenever a tail exists at least one byte lies between
+them.
+
+The tail region is therefore `[body_end, len)`, extending backward to meet the
+body and absorbing the blank lines that separate them. This is symmetric with the
+header, which already absorbs its adjacent blank lines because `skip_blank_lines`
+advances `body_start` past them.
+
+Two alternatives were rejected. Widening `body_end` *forward* to `tail_start`
+puts transcriber whitespace into the body population, making body coverage depend
+on how many blank lines a transcriber left; metadata attribution over packaging
+whitespace is trivially satisfiable by comparison, since the ledger vocabulary
+already carries a `newline` disposition. Changing `aozora_body_range` itself is
+rejected because `sanitized.body` is the projection handed to the parser, so
+moving that boundary would move `source_span_coverage`'s numerator as a side
+effect of a partition fix.
+
+This gap was found by writing the plan rather than by running the instrument —
+and an earlier draft of this record asserted whole-file conservation over three
+regions while separately conceding a fourth was needed, which review caught. Both
+are the argument for declaring the partition explicitly before relying on it.
 
 **Sequencing.** Retiring the parser-IR node-span coverage path removes
 `analyze.rs`, `aggregate.rs`, two schemas and four test files from this change

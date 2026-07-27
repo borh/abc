@@ -9,10 +9,14 @@ successor probe **Q12** then closed as well.
 **The headline is no longer the architecture.** Q12 measured
 `source-span-coverage` — the predicate the architecture would carry to tier 2 —
 against 299 real works and **not one reaches its declared `:= 1.0`** (fold
-0.9640, worst 0.2466), while all three governed corpus works sit at exactly 1.0.
-The current predicate and the proposed tier 2 population are incompatible, and
-177 bytes of corpus is why nobody could see it. That is tracked as **Q14**, and
-it gates the confirmatory campaign the whole governance path builds toward.
+0.9640, worst 0.2466), while the governed corpus sits at exactly 1.0. This is
+**confirmed through the built `ab-parser-rq-source-accountability` binary**, not
+inferred: same binary, same taxonomy, same policy hash, 177/177 bytes recognized
+on the governed corpus and 12,597,285/13,068,347 on real source. The current
+predicate and the proposed tier 2 population are incompatible, and 177 bytes of
+corpus is why nobody could see it. That is tracked as **Q14**; it gates the
+confirmatory campaign the whole governance path builds toward, and it now needs a
+decision rather than more measurement.
 
 The rest blocks something specific rather than everything: **Q3**
 (LOSS/AMBIGUITY untraced) blocks *predicting* outcomes from D6, not measuring
@@ -566,11 +570,31 @@ The `preserved_opaque` share is `recovered_verbatim` (41,506 occurrences /
 125,382 bytes) and `unknown_directive` (47 / 5,864 bytes) — both under role
 `unrecognized_source_form`.
 
-**Control.** The same measurement over the three governed corpus works returns
-exactly **1.0000 / 1.0000 / 1.0000** (43/43, 58/58, 76/76 bytes), which is
-consistent with the predicate passing today. The method reproduces the known
-value on the governed corpus and fails on real data; that is the strongest form
-this evidence can take short of running the built instrument.
+**Confirmed through the built instrument.** The figures above were first
+reconstructed in Python; they have since been reproduced by running
+`ab-parser-rq-source-accountability capture-corpus` over the same 299 works,
+with the ledger, recognition records, and both aggregates produced by the binary
+itself. The two agree **to the byte on every quantity**:
+
+| | Instrument | Python | Δ |
+|---|---|---|---|
+| `eligible_bytes` | 13,068,347 | 13,068,347 | **0** |
+| `recognized_bytes` | 12,597,285 | 12,597,285 | **0** |
+| `accounted_bytes` | 12,727,595 | 12,727,595 | **0** |
+| `semantic_gap_bytes` | 471,062 | 471,062 | **0** |
+| `unaccounted_bytes` | 340,752 | 340,752 | **0** |
+| `recognized / eligible` | **0.9639539721435313** | 0.9639539721435313 | **0** |
+
+The aggregate carries `"status": "ok"` and an empty `errors` list — this is a
+valid measurement, not an error path. `accounted / eligible` is **0.9739253939**.
+
+**Control, same binary.** Over the three governed corpus works the instrument
+returns `eligible_bytes` **177**, `recognized_bytes` **177**,
+`semantic_gap_bytes` **0**, `unaccounted_bytes` **0** — coverage exactly
+**1.0** — which is why the predicate passes today. One binary, one identity, one
+taxonomy, one policy hash: **1.0 on 177 governed bytes, 0.9640 on 13 MB of real
+source.** The corpus is not merely small; it is the only population on which this
+predicate has ever been satisfiable.
 
 #### What this means for the design
 
@@ -599,23 +623,29 @@ proposed tier 2 population are incompatible**, and that this was invisible at
 document: publication authority rests on a predicate that has never been
 observed against a population capable of falsifying it.
 
-Method limits: exploratory, one stride sample, stock-`zipfile` first-`.txt`
-member rather than ABC's semantic primary-text selection. The ledger is
-production-identical — `classified_source_ledger_from_bytes` and
-`capture_generation_from_bytes_for_identity_and_work` call the same
-`build_ledger`, differing only in the attached identity — but the aggregate fold
-was reconstructed in Python from `recognition.rs:461,467–479` and
-`parser_rq_source_accountability.clj:704`; **the built
-`ab-parser-rq-source-accountability` binary was not run.** Before any of this
-drives a decision, it should be reproduced through the real instrument. These
-are disposable observations, not durable evidence.
+Method limits, now narrower. The instrument objection is discharged. What
+remains:
 
-Reproduction: the probe reads the ledger from a 15-line `examples/dump_ledger.rs`
-in `ab-aozora-capture` that pipes stdin through
-`classified_source_ledger_from_bytes`. It was **deliberately not committed** —
-adding a permanent example to the release-gated capture crate is governed surface
-for a one-off probe, and this document's own rule is that these tools must not
-accrete into governance inputs.
+- **Sample, not census.** One deterministic 300-archive stride sample (299
+  measured), taking the name-sorted first `.txt` member via stock `zipfile`
+  rather than ABC's semantic primary-text selection. A different member
+  selection could move individual archives, though it cannot plausibly move a
+  471 KB aggregate gap to zero.
+- **Synthesized qualification identity.** The identity was built to mirror the
+  real parser-IR `derived_from` so per-work records return `ok` rather than
+  identity-mismatched. It is not a campaign identity, and the
+  `qualification_identity_ref` these runs carry is meaningless outside them.
+  This measures coverage; it authenticates nothing.
+- **Still a disposable observation.** Per the *Deterministic Tail Set* rule,
+  nothing here is durable evidence until it carries snapshot identity and an
+  expected digest.
+
+Reproduction needs a 15-line `examples/dump_ledger.rs` in `ab-aozora-capture`
+piping stdin through `classified_source_ledger_from_bytes`, plus
+`capture-corpus` over an extracted source tree and its converted parser-IR. The
+example was **deliberately not committed** — a permanent example in the
+release-gated capture crate is governed surface for a one-off probe, and this
+document's own rule is that these tools must not accrete into governance inputs.
 
 ### D6 and D4
 
@@ -957,10 +987,12 @@ Current blocker status, plainly:
   **confirmed its conclusion** — 2,154 residue intervals are recognized by the
   ledger while the converter emits no node for them. Substantially resolved.
 - **B5 — Q14. NEW, and the most serious open item.** `source-span-coverage :=
-  1.0` fails on 299 of 299 real works. Until it is resolved, tier 2 has a
+  1.0` fails on 299 of 299 real works — **confirmed through the built
+  instrument**, byte-identical to the reconstruction, against exactly 1.0 on the
+  governed corpus from the same binary. Until it is resolved, tier 2 has a
   population it cannot qualify against, and *step 5 of the governance path cannot
   complete*. It does not block accepting the architecture or running the
-  exploratory campaign — measuring this is what that campaign is for.
+  exploratory campaign. What it needs now is a decision, not more measurement.
 - **B2 — D7.** **Decided** (Option 1, `unexpected-fatal-failures ≤ 0`).
   **Unimplemented:** `allowed_dispositions` is still level-confused and the
   expected-outcome model is unspecified, so the adversarial fixture tier remains
@@ -978,11 +1010,12 @@ Current blocker status, plainly:
 
 Then:
 
-1. **Settle Q14 first — it now gates step 5.** Reproduce the Q12 coverage
-   measurement through the built `ab-parser-rq-source-accountability` instrument,
-   then choose among policy completion, threshold predeclaration, and
-   `preserved_opaque` semantics. Measure the remaining harness layer (Q1), and
-   settle the other open questions.
+1. **Settle Q14 first — it now gates step 5.** The measurement is confirmed
+   through the built instrument, so what is left is the choice among policy
+   completion, threshold predeclaration, and `preserved_opaque` semantics — a
+   governance decision, not more measurement. Widening the sample toward a census
+   would sharpen the number but cannot change its sign. Measure the remaining
+   harness layer (Q1), and settle the other open questions.
 2. Discharge the D7 prerequisites in order — untangle `allowed_dispositions`
    first — and define tier semantics and authority **before** changing any hash.
 3. Reshape `wall-time`, apply the D7 decision, carry the D8 protocol migration if
@@ -1081,9 +1114,11 @@ Every governance edit to `decisions.edn` is authored by hand.
   incomplete (31 rules, rotates `policy_hash`), or the exact `1.0` threshold was
   an artefact of a 177-byte corpus and must be predeclared from the exploratory
   campaign, or `preserved_opaque` is mis-counted and the ratio wants
-  `accounted / eligible` (0.9740) — a predicate-semantics question of D7's kind.
-  **This now gates the confirmatory tier 2 campaign**, and it should be
-  reproduced through the built instrument before it drives any decision.
+  `accounted / eligible` (0.9739) — a predicate-semantics question of D7's kind.
+  **This now gates the confirmatory tier 2 campaign.** Confirmed through the
+  built `ab-parser-rq-source-accountability` binary, agreeing with the Python
+  reconstruction to the byte, with the governed corpus returning exactly 1.0 on
+  the same binary — so the remaining uncertainty is the sample, not the method.
 - **Q13 — Is `:parser_ir_node_span_coverage` safe to retain?** It is kept as
   supporting evidence beside the ledger-authoritative observation, but on real
   works it is not a source-coverage ratio at all: node spans are a running offset

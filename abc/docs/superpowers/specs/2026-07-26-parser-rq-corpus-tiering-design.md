@@ -827,6 +827,81 @@ not body. The true body-interior figure is **~10,500 bytes**, and 23 of 299
 works lack two separator lines entirely, so a governed frame rule cannot rely on
 the separator heuristic used here.
 
+### Q14 mechanism, corrected again 2026-07-27 — a coordinate mismatch, not a missing rule
+
+**Attempting Q15 Part A voided its own premise. `publication_metadata` is not
+why the frame is unrecognized, and implementing that rule would change
+nothing.** The decision to fix the instrument rather than the threshold stands;
+the mechanism named for it does not. This is the third statement of that
+mechanism, and it is the first one traced to the code rather than inferred from
+the policy file.
+
+The classified-source ledger is built by lexing **`decoded.span_text`**
+(`classified_source.rs:585`), and `span_text` is `sanitized.body`
+(`ab-aozora-aat/src/lib.rs:296`) — the **body projection**, produced by
+`aozora_body_range` (`ab-source-syntax/src/lib.rs:118`), which splits a work
+into header, body, and `底本：` tail. But the ledger reports
+`eligible_bytes` from **`decoded.text.len()`** — the whole decoded file
+(`classified_source.rs:615`).
+
+> **`source_span_coverage` divides a body-derived numerator by a whole-file
+> denominator.** The header and the colophon are not unclassified; they are
+> *outside the coordinate space every classified-source fact comes from*. No
+> policy rule can reach them.
+
+Demonstrated on a synthetic work with a standard header, one body line, and a
+`底本：` colophon: **3 entries covering 51 of 375 bytes**, with the entire
+216-byte header and 108-byte tail carrying no entry of any kind — not
+`plain_text`, not `newline`. A missing `publication_metadata` rule cannot
+produce that, because `plain_text` alone would have covered those lines had they
+been lexed.
+
+**What this changes.** `publication_metadata` being declared and unimplemented
+is real, but it is a *consequence*, not the cause: there is no rule because
+there are no facts to classify. The earlier reasoning — policy vocabulary names
+the category, therefore the missing rule explains the gap — inferred a cause
+from a correlation and was wrong.
+
+**What it does not change.** Readings 2 and 3 stay rejected for the reasons
+given; the residual after any fix is still non-zero; and the sequencing rule —
+relax a threshold only once the instrument measures what it claims — is
+reinforced, since the instrument turns out to be even further from that than the
+first diagnosis suggested.
+
+**The corrected fix, and it needs no new heuristic.** The governed mechanism
+already exists and is already bound. `aozora_body_range` defines the header and
+tail deterministically, including the cases my own frame heuristic could not
+reach — it handles works with fewer than two separator lines and works with no
+`底本：` line explicitly, which is exactly the caveat recorded under *Part B,
+diagnosed*. The **ignored-regions taxonomy** is the governed instrument for
+making bytes ineligible, its `rules` array is empty, the predicate's own declared
+dimension is "excluding documented ignored regions", and it is the very document
+`instrument_policy_hashes[:source_recognition]` already binds. So:
+
+> Declare the header and tail projections as governed ignored regions derived
+> from `aozora_body_range`, so that `eligible_bytes` is stated in the same
+> coordinate space as the facts. This documents an existing, governed parser
+> behaviour rather than inventing an exemption.
+
+This is a denominator reduction, which *Q11* warns about — but a principled one:
+it does not hide unrecognized body content, it stops charging the instrument for
+bytes it was never given. Estimated effect, using the corrected frame split:
+eligible falls to ≈12,738,888 and coverage rises to ≈**0.9889**, with the
+residual being body-interior gaps and `preserved_opaque` exposure. That estimate
+is derived from this design's separator heuristic, **not** from
+`aozora_body_range`, so it must be re-measured against the real projection.
+
+**Part B's scope also grows.** `node_policy`
+(`ab-aozora-pipeline/src/fold.rs:154`) maps only 2 of the 14 `DirectiveKind`
+variants — `Unknown` and `WarichuOpen`. The other twelve — `Sic`,
+`BaseTextVariant`, `InvalidRubySpan`, `WarichuClose`, `Empty`, `EditorNote`,
+`RubyAttached`, `RubyRetarget`, `RubyPairOpen`, `RubyPairClose`,
+`MarginNotePairOpen`, `MarginNotePairClose` — hit `_ => return None` and produce
+no fact, which is precisely why they never reach the `unknown_directive`
+catch-all. `BaseTextVariant` is the `底本` correction note seen in the Part B
+witnesses. So the body-interior fix is twelve `node_policy` arms plus their
+`ConstructId` and policy rules, not the two close-marker rules first proposed.
+
 ### Q16, settled 2026-07-27 — not silent drift, but a real attribution defect
 
 **Decision: bind `data/parser-rq-ab-aozora-classified-source-v1.json` into
@@ -1445,8 +1520,16 @@ Every governance edit to `decisions.edn` is authored by hand.
   not type this" into the numerator. Reading 2 is rejected *for now* and becomes
   correct only after Parts A and B, since even a fully classified frame reaches
   just **0.9892**. See *Q14, decided*. **Execution is open**, tracked as Q15.
-- **Q15 — Execute the Q14 decision. Part B is diagnosed; A+B are now one
-  amendment.** The classified-source policy needs `publication_metadata` (96.7%
+- **Q15 — RESCOPED 2026-07-27; Part A as written is void.** Attempting it showed
+  the frame is unrecognized because the ledger lexes the **body projection**
+  while `eligible_bytes` counts the **whole file** — a coordinate mismatch no
+  policy rule can fix. See *Q14 mechanism, corrected again*. The corrected work
+  is (i) declare header and tail as governed ignored regions derived from
+  `aozora_body_range`, and (ii) map the **twelve** unmapped `DirectiveKind`
+  variants in `node_policy`, not the two close markers first proposed.
+  Superseded text follows for the record:
+- ~~**Q15 — Execute the Q14 decision. Part B is diagnosed; A+B are now one
+  amendment.**~~ The classified-source policy needs `publication_metadata` (96.7%
   of the gap) plus the absent `warichu_close` / `framed_close` rules and a rule
   covering `底本` correction notes (~10,500 B) — one policy amendment, one
   `policy_hash` rotation. Part C: predeclare the residual threshold from the

@@ -162,11 +162,10 @@ actually change rather than the fields quietly disappearing.
 
 Each task is separately reviewable and separately committable.
 
-1. **Characterize.** *(not started)* Capture the current per-work record, index, and aggregate
-   for the governed three-work corpus through the built binary, and record their
-   hashes. This is the before-image any later movement is attributed against.
-   Add a test asserting the membership index authenticates and recognition
-   succeeds — the property that must survive every later task.
+1. **Characterize — DONE 2026-07-27.** Record the current per-work record, index
+   and aggregate for the governed three-work corpus, and add a test asserting
+   the membership index authenticates and recognition succeeds — the property
+   that must survive every later task. See *Task 1 result*.
 2. **Delete the dead Clojure — DONE 2026-07-27.**
    `install-source-recognition-observation`,
    `derive-source-span-envelope`, `valid-aggregate?`,
@@ -203,8 +202,23 @@ nix build ./abc#checks.x86_64-linux.parser-rq-p5-promotion-audit
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
 nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
 nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
+nix build ./ab-validator#checks.x86_64-linux.cargo-test
 just validate-migration
 ```
+
+**`cargo-test` was missing from this list and its absence cost a regression.**
+Task 2 deleted `abc/test/fixtures/parser-rq/source-accountability` as orphaned;
+it was not, because `tests/fixture_capture.rs` reads that directory as its
+committed witness set. Nothing in the gate caught it: `cargo-check`,
+`cargo-clippy` and `cargo-fmt` do not execute tests, and `just
+validate-migration` reaches `cargo-test` only through `flake check --no-build`,
+which evaluates the derivation without building it. Restored in `c993b685`.
+
+Two lessons, both cheap to apply and both about this plan rather than the code.
+A consumer enumeration scoped to one language misses cross-language consumers —
+a Rust integration test reading a path under `abc/test` is exactly the shape
+that hides from a Clojure-side search. And a verification list that omits the
+one check which runs the tests will report green while a test is broken.
 
 `parser-rq-p5-promotion-audit` is the one to watch. It verifies the **current**
 promotion against `decisions.edn` and reads the published projections in
@@ -235,6 +249,57 @@ when a derivation has no prior output. Any Rust change here needs
 
 Written 2026-07-27 against a recorded decision. Both scope questions settled.
 **Task 2 done**; tasks 1 and 3–6 not started.
+
+### Task 1 result
+
+**The before-image is the promoted run, not a fresh probe.** Run
+`24d61fc7…`, capture `e27fa29f…`, lane `source` — an immutable published
+artifact set, which is a stronger baseline than anything re-derived under a
+synthesized identity, because it is the state the release actually qualified
+against.
+
+| Coordinate | Value |
+|---|---|
+| `identity_ref` | `sha256:8c1716f0…d960d366` |
+| membership index sha256 | `746b9989…6d2e78` |
+| `membership_ref` in every recognition record | `sha256:746b9989…6d2e78` |
+| per-work record bytes | 1,524 for each of `000001_1`, `000002_2`, `000003_3` |
+| P1 aggregate | `eligible_bytes` 177, `covered_eligible_bytes` **75**, `uncovered_eligible_bytes` 102 |
+
+`membership_ref` is the sha256 of the index file verbatim — confirmed by hashing
+the committed file — so the rotation task 6 must record is exactly the movement
+of that one digest.
+
+The aggregate confirms the characterization at run scale without re-running
+anything: 43 + 58 + 76 = 177 source bytes, and 3 × 25 = **75** covered. The
+numerator is three identical 25-byte contributions from works of three different
+sizes.
+
+The second baseline is the fixture witness set restored in `c993b685` —
+`abc/test/fixtures/parser-rq/source-accountability`, two works, `eligible_bytes`
+9 and `covered_eligible_bytes` 9. That one is checked byte-for-byte by
+`tests/fixture_capture.rs` on every run, so it is the baseline that will *fail*
+when tasks 3 and 4 land, and re-blessing it via `BLESS_PARSER_RQ_FIXTURE` is the
+visible record of the shape change.
+
+**The seam test the task called for did not exist and now does.**
+`tests/membership_seam.rs`. Every existing recognition test drives
+`analyze_recognition_corpus` from a **hand-written** membership index
+(`tests/recognition_corpus.rs:119`), so no test asserted that a membership index
+the production `analyze_corpus` actually produces is accepted. That is precisely
+the seam this retirement stresses: the coverage fields leave the work record →
+record hashes move → index bytes move → `membership_ref` rotates. Three
+assertions:
+
+- a real `analyze_corpus` index drives recognition to `Ok`, and
+  `membership_ref` equals the sha256 of the exact bytes written to disk;
+- a semantically identical but pretty-printed index is **rejected** —
+  `membership_ref` is a claim about bytes, not about meaning;
+- the index's own key set is provenance-only, so retiring coverage moves the
+  hashes it lists without changing its shape.
+
+Without this, tasks 3–5 could have shrunk the work record and broken the handoff
+to recognition with nothing failing.
 
 ### Task 2 result
 

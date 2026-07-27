@@ -1,5 +1,3 @@
-//! The declared three-region partition, as recognition derives and publishes it.
-//!
 //! The declared three-region partition, and the body-projection measure taken
 //! against it.
 //!
@@ -39,8 +37,8 @@ const LEGEND_FENCED: &str = concat!(
     "底本：「テスト全集」テスト書房\n",
 );
 
-/// The same shape carrying every legend line form, plus a free-text remark of
-/// the kind the transcriber writes and this producer must not claim.
+/// The same shape carrying every legend line form, plus a `＊` note matching
+/// none of them, which the fence claims as block membership and nothing more.
 const LEGEND_FENCED_WITH_REMARK: &str = concat!(
     "はつ恋\n",
     "ツルゲーネフ\n",
@@ -73,14 +71,14 @@ const LEGEND_TRAILING_SPACE: &str = concat!(
     "底本：「テスト全集」テスト書房\n",
 );
 
-/// A full bibliographic block and a colophon with continuation runs.
+/// A full bibliographic block and a colophon carrying every tail run.
 ///
 /// The header carries title, original title, author and translator, which is
 /// the widest shape the 597-work sample holds. The tail carries two indented
-/// continuations under `底本：`, a second field, and then two unindented lines
-/// -- the file's own dating line and a transcriber remark -- that belong to no
-/// field's run, followed by an indented line whose run reaches only that
-/// remark.
+/// continuations under `底本：`, a second field, the file's own dating line,
+/// a transcriber remark and the line continuing it -- and then, after a blank
+/// line, a stray prose line that opens no run and continues none. That last
+/// line is the decline this test turns on.
 const BIBLIOGRAPHIC_AND_COLOPHON_RUN: &str = concat!(
     "はつ恋\n",
     "初恋\n",
@@ -101,6 +99,8 @@ const BIBLIOGRAPHIC_AND_COLOPHON_RUN: &str = concat!(
     "1999年1月20日作成\n",
     "※底本では、この作品はテストです。\n",
     "　　　この行は注の続きで、どの項目の続きでもありません。\n",
+    "\n",
+    "この一行はどの run の下にもありません。\n",
 );
 
 /// The two notice families, the second with the fullwidth-colon URL typo that
@@ -264,6 +264,9 @@ fn classified(source: &str) -> Vec<(String, String, String)> {
                     | "editorial_legend"
                     | "bibliographic"
                     | "distribution_notice"
+                    | "editorial_remark"
+                    | "file_provenance"
+                    | "licence_terms"
             )
         })
         .map(|entry| {
@@ -318,9 +321,14 @@ fn the_two_key_value_forms_are_separated_by_region_and_not_by_shape() {
 ///
 /// The block is a closed pair of separator rules enclosing a `【...】` heading.
 /// Each line form inside gets its own construct, and a line matching none of
-/// them stays unattributed -- the transcriber's free-text remarks are prose,
-/// not a typed form, and claiming them would be claiming to understand a
-/// sentence.
+/// them is claimed as `editorial_legend_line` -- block membership, with nothing
+/// claimed about its form. The fence is what makes that safe: a header with no
+/// matched pair yields no facts at all, which
+/// `a_fenced_block_without_a_heading_is_declined_rather_than_guessed_at` holds.
+///
+/// Note the `　　　` on the note line's witness. A line fact covers its line,
+/// indentation included, because indentation is evidence rather than noise --
+/// it is what makes a colophon continuation a continuation.
 ///
 /// The title and author lines sit outside the fence and are claimed by the
 /// bibliographic producer instead, under a different role -- they are
@@ -361,8 +369,13 @@ fn the_fenced_legend_block_is_classified_line_form_by_line_form() {
                 "editorial_legend".to_owned()
             ),
             (
-                "（数字は、JIS X 0213の面区点番号）".to_owned(),
+                "　　　（数字は、JIS X 0213の面区点番号）".to_owned(),
                 "editorial_legend_note".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "＊濁点付きの二倍の踊り字は「／″＼」".to_owned(),
+                "editorial_legend_line".to_owned(),
                 "editorial_legend".to_owned()
             ),
             (
@@ -390,12 +403,12 @@ fn a_trailing_space_does_not_change_how_a_legend_line_is_classified() {
     let rows = classified(LEGEND_TRAILING_SPACE);
     let note = rows
         .iter()
-        .find(|(form, ..)| form.starts_with('（'))
+        .find(|(form, ..)| form.contains('（'))
         .expect("the note line is classified despite its trailing space");
     assert_eq!(
         (note.0.as_str(), note.1.as_str()),
         (
-            "（数字は、JIS X 0213の面区点番号）",
+            "　　　（数字は、JIS X 0213の面区点番号） ",
             "editorial_legend_note"
         ),
         "the claimed span must exclude the trailing space, not include it"
@@ -435,15 +448,19 @@ fn a_fenced_block_without_a_heading_is_declined_rather_than_guessed_at() {
 /// continuation is the indented run under a field. Both are bounded by where
 /// they sit, not by what they say.
 ///
-/// Three declines carry the weight of this test. `1999年1月20日作成` is the
-/// file's own dating line: it sits directly under a colophon field but carries
-/// no indentation, so it is not a continuation of that field and nothing here
-/// claims it. The `※` remark below it is prose. And the indented line after
-/// that remark reaches no field before it, so indentation alone does not make
-/// a continuation either -- the run has to start at a field.
+/// Every construct here is decided by the run it sits in. `1999年1月20日作成`
+/// carries no indentation, so it is not a continuation of the `入力：` field
+/// above it -- it opens as the file's own dating line, under its own role,
+/// because it dates the FILE and not the publication. The `※` line opens a
+/// remark run and the indented line below continues it, so the same
+/// indentation that would mean "continues the field" means "continues the
+/// remark" three lines later. Position, not shape.
 ///
-/// Were any of those claimed, the measure would drift toward 1.0 by widening
-/// the claim rather than by understanding more of the packaging.
+/// **The decline is the last line, and it is what keeps the measure honest.**
+/// It follows a blank, so no run is open; it opens none itself; and nothing
+/// claims it. A producer that claimed it would be claiming by position alone,
+/// and the measure would drift toward 1.0 by widening the claim rather than by
+/// understanding more of the packaging.
 #[test]
 fn the_bibliographic_block_and_the_colophon_run_are_bounded_by_position() {
     assert_eq!(
@@ -495,12 +512,12 @@ fn the_bibliographic_block_and_the_colophon_run_are_bounded_by_position() {
                 "publication_metadata".to_owned()
             ),
             (
-                "1967（昭和42）年7月10日発行".to_owned(),
+                "　　　1967（昭和42）年7月10日発行".to_owned(),
                 "publication_metadata_continuation".to_owned(),
                 "publication_metadata".to_owned()
             ),
             (
-                "1985（昭和60）年5月30日54刷改版".to_owned(),
+                "　　　1985（昭和60）年5月30日54刷改版".to_owned(),
                 "publication_metadata_continuation".to_owned(),
                 "publication_metadata".to_owned()
             ),
@@ -508,6 +525,21 @@ fn the_bibliographic_block_and_the_colophon_run_are_bounded_by_position() {
                 "入力：テスト太郎".to_owned(),
                 "publication_metadata_line".to_owned(),
                 "publication_metadata".to_owned()
+            ),
+            (
+                "1999年1月20日作成".to_owned(),
+                "file_dating_line".to_owned(),
+                "file_provenance".to_owned()
+            ),
+            (
+                "※底本では、この作品はテストです。".to_owned(),
+                "editorial_remark_line".to_owned(),
+                "editorial_remark".to_owned()
+            ),
+            (
+                "　　　この行は注の続きで、どの項目の続きでもありません。".to_owned(),
+                "editorial_remark_continuation".to_owned(),
+                "editorial_remark".to_owned()
             ),
         ]
     );
@@ -789,4 +821,235 @@ fn the_published_regions_validate_against_the_live_abc_schema() {
         .collect::<Vec<_>>();
     assert!(errors.is_empty(), "schema errors: {errors:?}");
     fs::remove_dir_all(root).unwrap();
+}
+
+/// A colophon continuation whose citation opens with a gaiji annotation.
+///
+/// Taken verbatim from the pinned corpus. Exactly four tail lines corpus-wide
+/// are indented and open with `※`, and three of them are this: a `底本の親本`
+/// citation whose title begins `※［＃...］`. They are continuations of the
+/// field run above, not remarks.
+const INDENTED_GAIJI_CITATION: &str = concat!(
+    "はつ恋\n",
+    "\n",
+    "本文《ほんぶん》です。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+    "　　　※［＃「糸＋條」、第4水準2-84-53］蟲「三田文学　第四巻第二号」三田文学会\n",
+);
+
+/// A remark run: an opener, two unindented lines continuing it, and a field
+/// that ends it.
+const REMARK_RUN: &str = concat!(
+    "はつ恋\n",
+    "\n",
+    "本文《ほんぶん》です。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+    "※底本の表記をあらためました。\n",
+    "その際、以下の置き換えをおこないました。\n",
+    "「或→ある　（て）居→い・お」\n",
+    "入力：テスト太郎\n",
+);
+
+/// The file's own dating line, and a publication date of the source edition
+/// written unindented in the same shape.
+const DATING_FORMS: &str = concat!(
+    "はつ恋\n",
+    "\n",
+    "本文《ほんぶん》です。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+    "1946年3月1日初版第1刷発行\n",
+    "2007年4月2日作成\n",
+);
+
+/// A licence statement opening with `※`, and the line that continues it.
+const LICENCE_BLOCK: &str = concat!(
+    "はつ恋\n",
+    "\n",
+    "本文《ほんぶん》です。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+    "※この翻訳は「クリエイティブ・コモンズ 表示 2.1 日本 ライセンス」です。\n",
+    "上記のライセンスに従って、訳者に断りなく自由に利用できます。\n",
+);
+
+/// A field name whose value opens with a quoted title rather than a colon,
+/// and the same shape inside a remark run, where it means something else.
+const TITLED_FIELD: &str = concat!(
+    "はつ恋\n",
+    "\n",
+    "本文《ほんぶん》です。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+    "底本の親本「テスト百合子全集　第六巻」河出書房\n",
+    "　　　1952（昭和27）年12月発行\n",
+    "※底本の表記をあらためました。\n",
+    "繰返し記号「ゝ」「ゞ」は、仮名に書き換えました。\n",
+);
+
+/// Which construct each tail line of a fixture got, in source order.
+fn tail_constructs(source: &str) -> Vec<(String, String)> {
+    classified(source)
+        .into_iter()
+        .filter(|(_, _, role)| role != "bibliographic" && role != "editorial_legend")
+        .map(|(form, construct, _)| (form, construct))
+        .collect()
+}
+
+/// `※` opens a remark only at column zero, and the column is what saves three
+/// real citations.
+///
+/// The corpus has four indented `※` tail lines. Three are `底本の親本`
+/// citations whose title happens to begin with a gaiji annotation, and this is
+/// one of them verbatim. Reading `※` without reading the column would relabel
+/// them as remarks -- the exact failure the bibliographic producer already
+/// avoids by not consulting shape inside its block.
+///
+/// Both readings attribute the byte, so this costs the measure nothing either
+/// way. What it costs is the ledger's truthfulness about what the line is.
+#[test]
+fn an_indented_gaiji_citation_continues_the_field_and_does_not_open_a_remark() {
+    assert_eq!(
+        tail_constructs(INDENTED_GAIJI_CITATION),
+        [
+            (
+                "底本：「テスト全集」テスト書房".to_owned(),
+                "publication_metadata_line".to_owned()
+            ),
+            (
+                "　　　※［＃「糸＋條」、第4水準2-84-53］蟲「三田文学　第四巻第二号」三田文学会"
+                    .to_owned(),
+                "publication_metadata_continuation".to_owned()
+            ),
+        ]
+    );
+}
+
+/// A remark runs on until something else opens, and a field is something else.
+///
+/// The continuation lines carry no marker of their own -- `その際、以下の置き
+/// 換えをおこないました。` is an ordinary sentence -- so what makes them
+/// continuations is the remark above and the absence of a new opener. `入力：`
+/// is an opener, and it ends the run rather than being swallowed by it.
+#[test]
+fn a_remark_runs_until_the_next_opener_and_a_field_ends_it() {
+    assert_eq!(
+        tail_constructs(REMARK_RUN),
+        [
+            (
+                "底本：「テスト全集」テスト書房".to_owned(),
+                "publication_metadata_line".to_owned()
+            ),
+            (
+                "※底本の表記をあらためました。".to_owned(),
+                "editorial_remark_line".to_owned()
+            ),
+            (
+                "その際、以下の置き換えをおこないました。".to_owned(),
+                "editorial_remark_continuation".to_owned()
+            ),
+            (
+                "「或→ある　（て）居→い・お」".to_owned(),
+                "editorial_remark_continuation".to_owned()
+            ),
+            (
+                "入力：テスト太郎".to_owned(),
+                "publication_metadata_line".to_owned()
+            ),
+        ]
+    );
+}
+
+/// A dating line is the file's, and a publication date in the same shape is
+/// not.
+///
+/// `1946年3月1日初版第1刷発行` is when the SOURCE EDITION was printed;
+/// `2007年4月2日作成` is when this file was made. The suffix is the only thing
+/// that separates them, which is why the suffix set is closed at the three
+/// that are 99.9% of the corpus rather than accepting any trailing text.
+/// Nothing claims the publication date here: it is unindented, so it is not a
+/// continuation of the field above it either.
+#[test]
+fn a_publication_date_is_not_the_files_own_dating_line() {
+    assert_eq!(
+        tail_constructs(DATING_FORMS),
+        [
+            (
+                "底本：「テスト全集」テスト書房".to_owned(),
+                "publication_metadata_line".to_owned()
+            ),
+            ("2007年4月2日作成".to_owned(), "file_dating_line".to_owned()),
+        ]
+    );
+}
+
+/// The licence is tested before the remark, because most licences open `※`.
+///
+/// 89 of the corpus's 216 licence lines open with `※` and would be read as
+/// remarks under the other order. Both attribute, so the ordering moves no
+/// byte of the measure; it decides only whether the ledger says the line
+/// states terms or states commentary, and those are different questions a
+/// consumer asks.
+#[test]
+fn a_licence_statement_is_recognized_before_a_remark() {
+    assert_eq!(
+        tail_constructs(LICENCE_BLOCK),
+        [
+            (
+                "底本：「テスト全集」テスト書房".to_owned(),
+                "publication_metadata_line".to_owned()
+            ),
+            (
+                "※この翻訳は「クリエイティブ・コモンズ 表示 2.1 日本 ライセンス」です。".to_owned(),
+                "licence_statement_line".to_owned()
+            ),
+            (
+                "上記のライセンスに従って、訳者に断りなく自由に利用できます。".to_owned(),
+                "licence_statement_continuation".to_owned()
+            ),
+        ]
+    );
+}
+
+/// The same `名前「題」` shape is a field in a field run and a sentence in a
+/// remark run.
+///
+/// `底本の親本「テスト百合子全集　第六巻」河出書房` is a colophon field whose
+/// separator is a quote rather than a colon -- 56 such lines corpus-wide, every
+/// one a real field name. `繰返し記号「ゝ」「ゞ」は、仮名に書き換えました。`
+/// has the identical shape and is a transcriber's sentence. Nothing in either
+/// line's text tells them apart; the run above each does.
+///
+/// The indented line under the titled field is the second thing this buys.
+/// Without the field being recognized the run would be closed, and its
+/// continuation would go unattributed with it.
+#[test]
+fn a_titled_field_is_a_field_only_inside_a_field_run() {
+    assert_eq!(
+        tail_constructs(TITLED_FIELD),
+        [
+            (
+                "底本：「テスト全集」テスト書房".to_owned(),
+                "publication_metadata_line".to_owned()
+            ),
+            (
+                "底本の親本「テスト百合子全集　第六巻」河出書房".to_owned(),
+                "publication_metadata_line".to_owned()
+            ),
+            (
+                "　　　1952（昭和27）年12月発行".to_owned(),
+                "publication_metadata_continuation".to_owned()
+            ),
+            (
+                "※底本の表記をあらためました。".to_owned(),
+                "editorial_remark_line".to_owned()
+            ),
+            (
+                "繰返し記号「ゝ」「ゞ」は、仮名に書き換えました。".to_owned(),
+                "editorial_remark_continuation".to_owned()
+            ),
+        ]
+    );
 }

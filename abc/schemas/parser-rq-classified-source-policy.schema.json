@@ -10,7 +10,7 @@
     "policy_hash": {"$ref": "#/$defs/hash"},
     "parser": {"const": "ab-aozora"},
     "coordinate_system": {"const": "decoded_utf8"},
-    "roles": {"const": ["visible_text", "structural_newline", "ruby", "typography", "gaiji", "layout", "break", "heading", "illustration", "kunten", "source_annotation", "container_syntax", "terminal_provenance", "publication_metadata", "editorial_legend", "bibliographic", "distribution_notice", "unrecognized_source_form"]},
+    "roles": {"const": ["visible_text", "structural_newline", "ruby", "typography", "gaiji", "layout", "break", "heading", "illustration", "kunten", "source_annotation", "container_syntax", "terminal_provenance", "publication_metadata", "editorial_legend", "bibliographic", "distribution_notice", "editorial_remark", "file_provenance", "licence_terms", "unrecognized_source_form"]},
     "dispositions": {"const": ["emitted_semantic_value", "preserved_sidecar_value", "structural_control", "lossless_normalization", "preserved_opaque"]},
     "metadata_attributing_roles": {"description": "The closed set of source roles whose facts ATTRIBUTE a metadata byte: the numerator of the metadata attribution measure. Governed data rather than a constant in the instrument, so widening what counts as understood packaging rotates this policy_hash and, through instrument_policy_hashes, the qualification identity. Two rules are structural and deliberately NOT expressible here. A preserved_opaque entry never attributes, because that disposition IS the statement that no claim is made about the bytes. And a role outside this set may still ACCOUNT for a byte without attributing it, which is how a colophon line ending carries a crlf_normalization fact without making the colophon understood.", "type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/role"}},
     "accent_mappings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/accent_mapping"}},
@@ -18,7 +18,7 @@
   },
   "$defs": {
     "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-    "role": {"enum": ["visible_text", "structural_newline", "ruby", "typography", "gaiji", "layout", "break", "heading", "illustration", "kunten", "source_annotation", "container_syntax", "terminal_provenance", "publication_metadata", "editorial_legend", "bibliographic", "distribution_notice", "unrecognized_source_form"]},
+    "role": {"enum": ["visible_text", "structural_newline", "ruby", "typography", "gaiji", "layout", "break", "heading", "illustration", "kunten", "source_annotation", "container_syntax", "terminal_provenance", "publication_metadata", "editorial_legend", "bibliographic", "distribution_notice", "editorial_remark", "file_provenance", "licence_terms", "unrecognized_source_form"]},
     "disposition": {"enum": ["emitted_semantic_value", "preserved_sidecar_value", "structural_control", "lossless_normalization", "preserved_opaque"]},
     "accent_mapping": {"type": "object", "required": ["source", "normalized"], "additionalProperties": false, "properties": {"source": {"type": "string", "pattern": "^[A-Za-z]{1,2}['`^:~&,/_]$"}, "normalized": {"type": "string", "minLength": 1, "maxLength": 1}}},
     "rule": {

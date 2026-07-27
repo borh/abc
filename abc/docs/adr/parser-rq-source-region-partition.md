@@ -22,34 +22,46 @@ the qualitative claim that the coordinate mismatch is the whole story. The
 partition is still worth its cost, because it makes the two failure modes
 separable; it is not the fix that reaches the declared threshold.
 
-Three classifiers landed 2026-07-27 and took metadata attribution from 0.126768
-to 0.500786 (editorial legend), 0.616815 (bibliographic block and colophon
-continuations) and 0.784180 (distribution notice). Each is new coverage, not a
-correction to a reported number; what remains unattributed is enumerated under
-*Decision*.
+Four rounds of classifiers landed 2026-07-27 and took metadata attribution from
+0.126768 to 0.500786 (editorial legend), 0.616815 (bibliographic block and
+colophon continuations), 0.784180 (distribution notice) and 0.949188
+(transcriber remarks, file dating lines, licence statements and the legend
+block's untyped lines). The last round also corrected a span: a line fact now
+covers its own layout whitespace, because a colophon continuation is recognized
+BY its indentation and a fact that excludes it declines to cover its own
+evidence.
 
 **Measured across a 597-work random sample of the pinned corpus** (25,080,140
 decoded bytes, every work returning `ok`, conservation exact): body recognition
-folds to 0.987916 and metadata attribution to 0.810653, both close to the
+folds to 0.987916 and metadata attribution to 0.950577, both close to the
 three-work control. The distributions matter more than the folds, because
 clearance is per work:
 
 | | median | max | works at 1.0 |
 |---|---|---|---|
 | body recognition | 0.9934 | 1.0000 | 105 / 597 |
-| metadata attribution | 0.8757 | 0.9494 | **0 / 597** |
+| metadata attribution | 0.9486 | 0.9833 | **0 / 597** |
 
-**This settles what `:= 1.0` would mean for either measure.** It fails 492 of
-597 works on the body and every work on metadata. On the metadata side it is
-not merely unmet but unreachable: line terminators and layout whitespace can
-never attribute, which caps that measure at 0.9270. The body literal was
-declared against the old whole-file denominator and cannot simply be carried
-across; the metadata measure has no declared threshold and must not inherit
-that one. Both
-figures are in
-`docs/reports/parser-rq-region-partition-exploratory-v1.md`, which also records
-that the sample is the classifier's own design population and therefore not a
-generalization test.
+**This settles what `:= 1.0` would mean for the body measure.** It fails 492 of
+597 works. The body literal was declared against the old whole-file denominator
+and cannot simply be carried across.
+
+**On the metadata side the question has changed shape, and the change is the
+main finding of the last round.** Classification is finished: every content byte
+of the header and tail of all 597 works is attributed, and the entire 34,464-byte
+residue is line terminators and blank layout. The measure therefore caps at
+0.950577 — not because packaging is misunderstood, but because
+`metadata_eligible_bytes` counts delimiters that no construct is permitted to
+claim. It also leaves the measure sensitive to line-ending convention in the
+wrong direction: a CRLF work scores strictly lower than a byte-identical LF work
+whose packaging is understood exactly as well.
+
+**Whether to leave that, to let a construct claim its own terminator, or to
+report attribution over a content denominator, is undecided and is a governance
+act.** The exploratory report states the three options, their arithmetic and a
+recommendation; it does not take the decision. Nothing in this record should be
+read as having taken it either. All figures are in
+`docs/reports/parser-rq-region-partition-exploratory-v1.md`.
 
 Review of the implementation found four defects, all now closed and all of a
 piece with what this record says about invariants that cannot fire: malformed
@@ -154,9 +166,12 @@ a line's shape — with one deliberate exception, named below.
 | Producer | Region | Constructs |
 |---|---|---|
 | colophon | tail | `publication_metadata_line`, `publication_metadata_continuation` |
-| editorial legend | header, inside its fence | `editorial_separator_rule`, `editorial_legend_heading`, `editorial_legend_entry`, `editorial_legend_example`, `editorial_legend_note` |
+| editorial legend | header, inside its fence | `editorial_separator_rule`, `editorial_legend_heading`, `editorial_legend_entry`, `editorial_legend_example`, `editorial_legend_note`, `editorial_legend_line` |
 | bibliographic block | header, before the legend | `bibliographic_header_line` |
 | distribution notice | tail | `distribution_notice_line` |
+| transcriber remark | tail, run-bounded | `editorial_remark_line`, `editorial_remark_continuation` |
+| file provenance | tail | `file_dating_line` |
+| licence | tail, run-bounded | `licence_statement_line`, `licence_statement_continuation` |
 
 **Region, not shape, is what separates them.** A legend entry `《》：ルビ` and a
 colophon field `底本：…` are the same shape — non-empty key, fullwidth colon,
@@ -172,10 +187,12 @@ headers carry such a block, every fence is a run of ASCII hyphens, and no fenced
 pair was found without a heading — so a fence with no heading is a shape this
 producer has never seen, and it declines the block rather than guessing.
 
-Lines inside the block matching none of the four forms stay unattributed: 70 of
-3,631 non-blank block lines in the sample, all of them transcriber prose
-(`＊濁点付きの…`, bare URLs, `※底本では…`). Claiming them would be claiming to
-understand a sentence.
+Lines inside the block matching none of the four forms — 70 of 3,631 non-blank
+block lines in the sample, `＊濁点付きの…`, bare URLs, `※底本では…` — are claimed
+as `editorial_legend_line`: block membership, with nothing claimed about the
+line's form. **The fence is what makes that safe, and it is why the same
+catch-all would be wrong anywhere else.** A header carrying no matched pair
+yields no facts at all rather than a catch-all over its whole text.
 
 The bibliographic block is the header's opening run, ending at the first blank
 line, separator rule or bracketed editorial heading. It claims block membership
@@ -208,18 +225,42 @@ one of the 17,680 tail lines beginning `このファイルは、` corpus-wide is
 notice. It carries its own role so that the predicate's owner can exclude
 boilerplate without excluding the colophon.
 
-**What still has no producer**, measured across the 597-work sample: 42.8% of
-the remaining unattributed bytes are transcriber `※` remarks, 26.1% are line
-terminators and 12.5% is layout whitespace that the attribution contract
-structurally excludes, 12.2% are the file's own dating lines, and the rest is
-other prose plus 0.5% of Creative Commons licence statements. Those licence
-lines state terms rather than provenance, so folding them into the notice
-construct would make it mean two things; they are declined for now.
+**A remark, a dating line and a licence statement are each their own role**,
+not more `publication_metadata`, because a consumer asking for provenance and a
+consumer asking for terms are not asking the same question and one role
+answering both would make the distinction unrecoverable from the ledger. The
+dating line dates the FILE; `底本：` dates the publication. The three anchors
+were each measured over the whole corpus rather than over the sample: `※` is
+the only marker any tail line opens a remark with (12,526 lines, and neither
+`＊` nor `●` ever appears in that position); `作成`, `修正` and `公開` are 99.9%
+of the 21,990 dated tail lines, and the other 16 suffixes are publication dates
+of the source edition, so accepting any suffix would relabel one as file
+provenance; and every one of the 216 licence lines names
+`クリエイティブ・コモンズ`.
 
-**The contract's own ceiling is 0.9270**, because terminators and layout
-whitespace can never attribute. The instrument measures 0.810653 against it. If
-prose is never attributable, the reachable ceiling is lower still, which the
-predicate's owner must know before fixing a threshold.
+**A remark opener must sit at column zero, and the column is load-bearing.**
+Four tail lines corpus-wide are indented and open with `※`, and three are
+`底本の親本` citations whose title begins with a gaiji annotation. Reading `※`
+without reading the column would relabel those citations as remarks.
+
+**Nothing is claimed by position alone.** Every construct needs an opener, and
+a tail line that opens no run and continues none stays unattributed. The check
+that this discipline held is that the measure did not reach 1.0: it reached
+0.950577, and the residue is entirely line structure.
+
+**What still has no producer: nothing, in content terms.** Every content byte
+of the header and tail of all 597 sampled works is attributed, and the same
+holds on a **held-out sample of 583 works under a different seed, disjoint from
+the design sample**: metadata attribution 0.950575 against 0.950577, residue
+again 100% line terminators. The classifiers are not fitted to the works they
+were designed against. What remains is the denominator question recorded under
+*Implementation Status*.
+
+**The held-out sample also found a capture that fails closed**, on an unclosed
+accent bracket containing a closed one, which yields two identical
+`recovered_verbatim` facts at one span. It is pre-existing, it is the designed
+behaviour, and it means a corpus-wide campaign will meet works that produce no
+record at all. Recorded in the report; not fixed here.
 
 ## Consequences
 

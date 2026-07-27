@@ -479,11 +479,14 @@ fn normalization_entry(
 /// inside a sentence must not decide which construct the sentence is.
 ///
 /// The header's editorial legend block and bibliographic block have producers
-/// of their own, `legend_entries` and `bibliographic_entries`. Everything
-/// outside all three -- the transcriber's free text above all -- is
-/// deliberately left unattributed. Blanket-claiming every metadata byte would
-/// make the metadata measure reach 1.0 by construction and therefore mean
-/// nothing.
+/// of their own, `legend_entries` and `bibliographic_entries`.
+///
+/// **Nothing here is claimed by position alone.** Every construct below needs
+/// an opener that was measured over the whole corpus, and a line that opens no
+/// run and continues none stays unattributed. Blanket-claiming every metadata
+/// byte would make the measure reach 1.0 by construction and therefore mean
+/// nothing; the check that this has not happened is that it does not reach 1.0
+/// -- no work of the 597-work sample does, because line terminators remain.
 ///
 /// The span excludes the line terminator, which already carries its own
 /// normalization or newline fact. Two producers must not claim the same byte.
@@ -496,35 +499,188 @@ fn metadata_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Val
         return Vec::new();
     };
     let mut entries = Vec::new();
-    let mut in_field_run = false;
+    let mut run = TailRun::None;
     for line in region_lines(text, tail.start) {
         let content = line.content.as_str();
         if content.is_empty() {
-            in_field_run = false;
+            run = TailRun::None;
             continue;
         }
-        if is_distribution_notice(content) {
-            in_field_run = false;
-            entries.push(region_fact(
-                &line,
+        // Openers are tested before continuations, and among themselves in the
+        // order below. Each ordering is load-bearing and each has a test.
+        let opened = if is_distribution_notice(content) {
+            Some((
+                TailRun::None,
                 "distribution_notice_line",
                 "distribution_notice",
-            ));
+            ))
+        } else if !line.indented && is_licence_statement(content) {
+            Some((TailRun::Licence, "licence_statement_line", "licence_terms"))
+        } else if !line.indented && is_transcriber_remark(content) {
+            Some((TailRun::Remark, "editorial_remark_line", "editorial_remark"))
+        } else if is_colophon_field(content) {
+            Some((
+                TailRun::Field,
+                "publication_metadata_line",
+                "publication_metadata",
+            ))
+        } else if !line.indented && is_file_dating_line(content) {
+            Some((TailRun::None, "file_dating_line", "file_provenance"))
+        } else {
+            None
+        };
+        if let Some((next, construct, role)) = opened {
+            run = next;
+            entries.push(region_fact(&line, construct, role));
             continue;
         }
-        let construct = if is_colophon_field(content) {
-            in_field_run = true;
-            "publication_metadata_line"
-        } else if line.indented && in_field_run {
-            "publication_metadata_continuation"
-        } else {
-            in_field_run = false;
+        let continued = match run {
+            TailRun::Field if line.indented => {
+                Some(("publication_metadata_continuation", "publication_metadata"))
+            }
+            // A field name whose value opens with its own quoted title rather
+            // than a colon -- see `is_titled_colophon_field`.
+            TailRun::Field if is_titled_colophon_field(content) => {
+                Some(("publication_metadata_line", "publication_metadata"))
+            }
+            TailRun::Remark => Some(("editorial_remark_continuation", "editorial_remark")),
+            TailRun::Licence => Some(("licence_statement_continuation", "licence_terms")),
+            _ => None,
+        };
+        let Some((construct, role)) = continued else {
+            run = TailRun::None;
             continue;
         };
-        entries.push(region_fact(&line, construct, "publication_metadata"));
+        entries.push(region_fact(&line, construct, role));
     }
     let _ = parser;
     entries
+}
+
+/// Which block of the colophon the scan is currently inside.
+///
+/// The tail is a line-structured record of blocks, and a line's construct
+/// depends on the block above it as much as on its own text. `None` is not
+/// "unknown" but "no block is open": the next line must open one itself or go
+/// unattributed.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TailRun {
+    None,
+    Field,
+    Remark,
+    Licence,
+}
+
+/// The transcriber's own remark about the transcription.
+///
+/// `※「旧字、旧仮名で書かれた作品を、現代表記にあらためる際の作業指針」に基づ
+/// いて、底本の表記をあらためました。` is the commonest, and the rest say what
+/// was normalized, what was left alone and what was checked against which
+/// edition.
+///
+/// **`※` at column zero is the whole test, and both halves of it are
+/// measured.** Across the pinned corpus's 17,718 colophon-bearing works, `※`
+/// is the ONLY marker any tail line opens a remark with -- 12,526 lines, and
+/// neither `＊` nor `●` ever appears in that position, though both do inside
+/// the header's legend block, which a different producer bounds.
+///
+/// The column matters because indentation already means something else here.
+/// Exactly four tail lines in the corpus are indented and open with `※`, and
+/// **three of them are not remarks**: they are colophon continuations whose
+/// cited title begins with a gaiji annotation, as in `※［＃「糸＋條」、第4水準
+/// 2-84-53］蟲「三田文学　第四巻第二号」三田文学会`. Reading `※` without
+/// reading the column would reclassify those three citations as remarks. The
+/// fourth is a genuine remark that happens to be indented, and it is read as a
+/// continuation instead; under a field run that is the honest reading, because
+/// indentation under a field is what a continuation is.
+///
+/// Claiming this is not claiming to understand the sentence. What is claimed
+/// is which act the line performs -- editorial commentary on the transcription,
+/// not bibliographic data about the source -- exactly as
+/// `bibliographic_header_line` claims block membership without claiming which
+/// bibliographic item a line is.
+fn is_transcriber_remark(line: &str) -> bool {
+    line.starts_with('※')
+}
+
+/// The file's own dating line: `2007年4月2日作成`, and nothing else on it.
+///
+/// This is provenance about the FILE rather than about the publication, which
+/// is why it carries `file_provenance` and not `publication_metadata`. The
+/// `底本：` block says where the text came from; this says when this file was
+/// made from it.
+///
+/// **The three suffixes are closed and measured.** Corpus-wide, tail lines
+/// matching `YYYY年M月D日...` carry 19 distinct suffixes over 21,990 lines, and
+/// `作成` (15,780), `修正` (4,240) and `公開` (1,944) are 99.9% of them. The
+/// other 16 -- `初版第1刷発行`, `第14刷`, `改版` -- are publication dates of the
+/// source edition that happen to be written unindented, so they are NOT file
+/// dating lines and are deliberately left out of the set. A looser test that
+/// accepted any suffix would relabel a publication date as file provenance.
+fn is_file_dating_line(line: &str) -> bool {
+    let Some(rest) = line.strip_suffix("作成").or_else(|| {
+        line.strip_suffix("修正")
+            .or_else(|| line.strip_suffix("公開"))
+    }) else {
+        return false;
+    };
+    let Some(rest) = rest.strip_suffix('日') else {
+        return false;
+    };
+    let Some((year, day)) = rest.split_once('年') else {
+        return false;
+    };
+    let Some((month, day)) = day.split_once('月') else {
+        return false;
+    };
+    year.len() == 4
+        && [year, month, day]
+            .iter()
+            .all(|part| !part.is_empty() && part.chars().all(|ch| ch.is_ascii_digit()))
+}
+
+/// A licence statement: the terms the file is offered under.
+///
+/// A different act from the distribution notice, which says how the file came
+/// to exist. These say what a reader may do with it, so they carry their own
+/// role: a consumer that wants provenance and a consumer that wants terms are
+/// not asking the same question, and one role answering both would make the
+/// distinction unrecoverable from the ledger.
+///
+/// **The anchor is the licence's own name.** Corpus-wide these are 216 lines in
+/// 12 distinct head forms, and every one of them contains
+/// `クリエイティブ・コモンズ` -- with and without the interpunct, with and
+/// without the bracket, opened with `※` and opened plainly. The 72 lines
+/// reading `上記のライセンスに従って、訳者に断りなく…` carry no such name and
+/// are not tested for: they always follow one of the 72 `※この翻訳は「クリエイ
+/// ティブ・コモンズ…` lines, so the run continues onto them.
+///
+/// Tested BEFORE the remark, because 89 of the 216 open with `※` and would
+/// otherwise be read as remarks. Both claims attribute, so the ordering does
+/// not move the measure by a byte -- it decides only whether the ledger says
+/// "terms" or "commentary", which is the part worth getting right.
+fn is_licence_statement(line: &str) -> bool {
+    line.contains("クリエイティブ・コモンズ")
+}
+
+/// A colophon field whose value opens with a quoted title instead of a colon:
+/// `底本の親本「宮本百合子全集　第六巻」河出書房`.
+///
+/// **Recognized only inside an open field run, never on its own.** The shape
+/// alone is far too loose -- `繰返し記号「ゝ」「ゞ」は、仮名に書き換えました。`
+/// is a transcriber's sentence with the same shape, and it is read correctly
+/// because it sits in a remark run rather than a field one. Position is again
+/// what separates two identical shapes.
+///
+/// Corpus-wide this catches 56 lines in 6 forms, and every one is a real field
+/// name: `底本の親本` (47), `初出` and its punctuated variants (7),
+/// `底本の親本一、` (1), `初出時の表題は` (1). Without it those lines also cost
+/// the indented continuations beneath them, which lose the run they hang from.
+fn is_titled_colophon_field(line: &str) -> bool {
+    let Some((name, _title)) = line.split_once('「') else {
+        return false;
+    };
+    !name.is_empty() && name.chars().all(|ch| !ch.is_control())
 }
 
 /// The archive's own distribution notice: how this file came to exist.
@@ -577,43 +733,57 @@ fn is_colophon_field(line: &str) -> bool {
     !key.is_empty() && !key.contains('：') && key.chars().all(|ch| !ch.is_control())
 }
 
-/// One line of a metadata region, with its absolute span and its surrounding
-/// whitespace stripped.
+/// One line of a metadata region: its absolute span, the text as written, and
+/// the trimmed text the form tests read.
 struct RegionLine {
+    /// The whole line, its terminator excluded. Layout whitespace INCLUDED --
+    /// see `region_lines`.
     start: usize,
     end: usize,
+    /// The line as written between those offsets: what the fact witnesses.
+    source_form: String,
+    /// The same line with layout whitespace trimmed off both ends: what the
+    /// form tests read, so that a stray trailing space cannot decide whether a
+    /// line is recognized.
     content: String,
     /// Whether the line was written with leading layout whitespace. Kept
-    /// because the stripped content cannot say so, and a colophon continuation
+    /// because the trimmed content cannot say so, and a colophon continuation
     /// is recognized by its indentation under a field rather than by its text.
     indented: bool,
 }
 
-/// A metadata region's lines, terminators and surrounding whitespace excluded
-/// from every span.
+/// A metadata region's lines, terminators excluded and layout whitespace kept.
 ///
-/// Trimmed at BOTH ends, and the symmetry is the point. Stripping only the
-/// indentation left a line's classification depending on whether the
-/// transcriber happened to leave a trailing space: measured across a 597-work
-/// sample, exactly one legend line carried one, and it fell through every form
-/// test to unattributed because `）` was no longer the last character. Layout
-/// whitespace is not content at either end, and it must not decide whether a
-/// line is recognized.
+/// **A line fact covers its line.** An earlier version of this trimmed the
+/// indentation off the span as well as off the text, on the reasoning that a
+/// claim should cover content and not the space in front of it. That was
+/// wrong, and the producer below is what shows it: a colophon continuation is
+/// recognized BY its indentation. A fact that claims the continuation while
+/// declining to cover the whitespace declines to cover its own discriminator,
+/// and leaves 16,470 bytes of a 597-work sample unattributable by
+/// construction. Whitespace is not content, but it is evidence, and the span a
+/// fact asserts over should be the span it read.
+///
+/// The trimmed `content` still drives every form test, and the symmetry there
+/// is the point. Stripping only the indentation left a line's classification
+/// depending on whether the transcriber happened to leave a trailing space:
+/// measured across a 597-work sample, exactly one legend line carried one, and
+/// it fell through every form test to unattributed because `）` was no longer
+/// the last character.
 ///
 /// `trim` here is Unicode whitespace, so the fullwidth `　` that Aozora indents
-/// colophon continuations with is stripped exactly as an ASCII space would be.
+/// colophon continuations with is treated exactly as an ASCII space would be.
 fn region_lines(text: &str, region_start: usize) -> Vec<RegionLine> {
     let mut lines = Vec::new();
     let mut offset = region_start;
     for raw in text.split_inclusive('\n') {
         let stripped = raw.trim_end_matches(['\n', '\r']);
-        let trimmed = stripped.trim();
-        let indent = stripped.len() - stripped.trim_start().len();
         lines.push(RegionLine {
-            start: offset + indent,
-            end: offset + indent + trimmed.len(),
-            content: trimmed.to_owned(),
-            indented: indent != 0,
+            start: offset,
+            end: offset + stripped.len(),
+            source_form: stripped.to_owned(),
+            content: stripped.trim().to_owned(),
+            indented: stripped.starts_with(char::is_whitespace),
         });
         offset += raw.len();
     }
@@ -623,8 +793,8 @@ fn region_lines(text: &str, region_start: usize) -> Vec<RegionLine> {
 /// One classified line of a metadata region.
 ///
 /// Every metadata producer emits the same shape: a structural-control claim
-/// over the line's trimmed span, witnessed by the line itself. The witness is
-/// what lets a reader of the ledger check the claim against the source without
+/// over the line's span, witnessed by the line as written. The witness is what
+/// lets a reader of the ledger check the claim against the source without
 /// re-deriving the region.
 fn region_fact(line: &RegionLine, construct: &str, role: &str) -> Value {
     json!({
@@ -639,7 +809,7 @@ fn region_fact(line: &RegionLine, construct: &str, role: &str) -> Value {
             "construct_id": construct,
             "start": line.start,
             "end": line.end,
-            "source_form": line.content.clone()
+            "source_form": line.source_form.clone()
         }
     })
 }
@@ -674,13 +844,22 @@ fn is_separator_rule(line: &str) -> bool {
 /// was found without one -- so a fence pair with no heading is a shape this
 /// producer has never seen and declines to interpret.
 ///
-/// Lines inside the block that match none of the four forms stay unattributed.
-/// They are the transcriber's free-text remarks -- `＊濁点付きの二倍の踊り字は…`,
-/// bare URLs, `※底本では…` notes -- 70 of 3,631 non-blank block lines in the
-/// sample. They are prose, not a typed form, and claiming them would be
-/// claiming to understand a sentence. Blank lines inside the block are left
-/// alone too: their only bytes are the terminator, which already carries a
-/// line-ending fact.
+/// Lines inside the block that match none of the four forms are claimed as
+/// `editorial_legend_line`: block membership, with no claim about which form
+/// the line takes. They are `＊濁点付きの二倍の踊り字は…`, `※底本では…` notes,
+/// `アクセント分解についての詳細は下記URLを参照してください` and the bare URL
+/// under it -- 70 of 3,631 non-blank block lines in the sample.
+///
+/// **The fence is what makes that claim safe, and it is why the same catch-all
+/// would not be safe anywhere else.** The block is entered only on a matched
+/// pair of separator rules enclosing a `【...】` heading; a header carrying no
+/// such pair yields no facts at all rather than a catch-all over its whole
+/// text. What is claimed of these lines is that they are notation-legend
+/// material -- not body, not bibliography, not colophon -- which is the
+/// question the metadata measure asks, and is weaker than reading them.
+///
+/// Blank lines inside the block are left alone: their only bytes are the
+/// terminator, which already carries a line-ending fact.
 fn legend_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value> {
     let Ok(regions) = decoded.source_regions() else {
         return Vec::new();
@@ -724,7 +903,7 @@ fn legend_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value
         } else if is_legend_entry(content) {
             "editorial_legend_entry"
         } else {
-            continue;
+            "editorial_legend_line"
         };
         emit(line, construct);
     }

@@ -1,7 +1,7 @@
 {
   "schema_version": "abc/parser-rq-classified-source-policy/v1",
   "policy_id": "parser-rq-ab-aozora-classified-source-v1",
-  "policy_hash": "sha256:2e63e45ed9b366c458e35cd1e3625e88e2ff61c525c4ac06c7b1461e5115bf75",
+  "policy_hash": "sha256:42949d485493331f1c20dcd1098477c4a314dd9837057fc094688095e1850bee",
   "parser": "ab-aozora",
   "coordinate_system": "decoded_utf8",
   "roles": [
@@ -22,6 +22,9 @@
     "editorial_legend",
     "bibliographic",
     "distribution_notice",
+    "editorial_remark",
+    "file_provenance",
+    "licence_terms",
     "unrecognized_source_form"
   ],
   "dispositions": [
@@ -35,7 +38,10 @@
     "publication_metadata",
     "editorial_legend",
     "bibliographic",
-    "distribution_notice"
+    "distribution_notice",
+    "editorial_remark",
+    "file_provenance",
+    "licence_terms"
   ],
   "accent_mappings": [
     {
@@ -775,6 +781,48 @@
       "disposition": "structural_control",
       "evidence_class": "structural_token",
       "witness_kind": "distribution_notice_line"
+    },
+    {
+      "construct_id": "editorial_legend_line",
+      "source_role": "editorial_legend",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "editorial_legend_line"
+    },
+    {
+      "construct_id": "editorial_remark_line",
+      "source_role": "editorial_remark",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "editorial_remark_line"
+    },
+    {
+      "construct_id": "editorial_remark_continuation",
+      "source_role": "editorial_remark",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "editorial_remark_continuation"
+    },
+    {
+      "construct_id": "file_dating_line",
+      "source_role": "file_provenance",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "file_dating_line"
+    },
+    {
+      "construct_id": "licence_statement_line",
+      "source_role": "licence_terms",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "licence_statement_line"
+    },
+    {
+      "construct_id": "licence_statement_continuation",
+      "source_role": "licence_terms",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "licence_statement_continuation"
     }
   ]
 }

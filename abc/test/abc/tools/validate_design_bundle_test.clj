@@ -963,11 +963,11 @@
                (hash/format-sha256 (hash/sha256-json-jcs value))))
         (is (= identity (get-in authority [section "identity_hash"])))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:372ca2ddeb86cf48688d70a40140cd4362e86098f50405e05827c7baf037e1d7"
+            "sha256:0672136dc176e20e866ebebc85cb288d9005d0a8b726278fcbaefa8661ded8a8"
             "schemas/parser-rq-classified-source-authority.schema.json"
             "sha256:cfe47129b725e29c4a5a5922ccbf7e2a17e9e8c5db716a3d1baf083fbb41fe1c"
             "schemas/parser-rq-classified-source-ledger.schema.json"
-            "sha256:847859c16935ee88aefda2afdf89fb380a299c9e61be0d24f43d1adcb3fc7e13"
+            "sha256:041ad940ae06479e0748d4bac04cbd3165a48cf1344621232efc3c55e6203697"
             "schemas/parser-rq-capture-generation.schema.json"
             "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"}
            (into {} (map (fn [path]
@@ -982,7 +982,8 @@
             "gaiji" "layout" "break" "heading" "illustration" "kunten"
             "source_annotation" "container_syntax" "terminal_provenance"
             "publication_metadata" "editorial_legend" "bibliographic"
-            "distribution_notice" "unrecognized_source_form"]
+            "distribution_notice" "editorial_remark" "file_provenance"
+            "licence_terms" "unrecognized_source_form"]
            (get policy "roles")))
     (is (every? #(contains? % "construct_id") (get policy "rules")))
     (is (not-any? #(contains? % "case") (get policy "rules")))
@@ -1152,7 +1153,25 @@
                    "editorial_legend_heading" "【テキスト中に現れる記号について】"
                    "editorial_legend_entry" "《》：ルビ"
                    "editorial_legend_example" "（例）金森《かなもり》"
-                   "editorial_legend_note" "（数字は、JIS X 0213の面区点番号）"}
+                   "editorial_legend_note" "（数字は、JIS X 0213の面区点番号）"
+                   ;; A line inside the fenced block matching none of the four
+                   ;; forms above. The fence is what makes the claim: block
+                   ;; membership, with nothing claimed about the line's form.
+                   "editorial_legend_line" "＊濁点付きの二倍の踊り字は「／″＼」"
+                   ;; The transcriber's own commentary, and the lines that
+                   ;; continue it. What is claimed is which act the line
+                   ;; performs, not what the sentence says.
+                   "editorial_remark_line" "※底本の表記をあらためました。"
+                   "editorial_remark_continuation" "その際、以下の置き換えをおこないました。"
+                   ;; Provenance of the FILE rather than of the publication,
+                   ;; which is why it carries its own role.
+                   "file_dating_line" "2007年4月2日作成"
+                   ;; The terms the file is offered under -- a different act
+                   ;; from the notice, which says how it came to exist.
+                   "licence_statement_line"
+                   "この作品は、クリエイティブ・コモンズ「表示 2.1 日本」です。"
+                   "licence_statement_continuation"
+                   "上記のライセンスに従って、訳者に断りなく自由に利用できます。"}
             structural-rules (filter #(= "structural_control"
                                          (get % "disposition"))
                                      (get policy "rules"))]

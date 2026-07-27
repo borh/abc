@@ -12,12 +12,12 @@
   "object_key_domain": "schema-fixed-ascii"
  },
  "policy": {
-  "raw_bytes_hash": "sha256:73d8a6ec5eb239201621d39e52eb1360aac45cbc6f5e92b147edd7931c30677c",
-  "identity_hash": "sha256:2e63e45ed9b366c458e35cd1e3625e88e2ff61c525c4ac06c7b1461e5115bf75"
+  "raw_bytes_hash": "sha256:3212d69119b7687c43a21720d14f9c56cc3068f1aeec1c42b930683160c9f05b",
+  "identity_hash": "sha256:42949d485493331f1c20dcd1098477c4a314dd9837057fc094688095e1850bee"
  },
  "ledger_schema": {
-  "raw_bytes_hash": "sha256:2da2384cf836d73cf1d3c90f498a4513dc6c6e085f02fdb79523e92dc482d3dc",
-  "identity_hash": "sha256:847859c16935ee88aefda2afdf89fb380a299c9e61be0d24f43d1adcb3fc7e13"
+  "raw_bytes_hash": "sha256:6e8db5c3b2b0d18a95e95ecece75fc211c4e954dc3d599716fd7db47edee26d9",
+  "identity_hash": "sha256:041ad940ae06479e0748d4bac04cbd3165a48cf1344621232efc3c55e6203697"
  },
  "generation_schema": {
   "raw_bytes_hash": "sha256:d41410f21b43981e6b6c79d4e251dd96c2eb13415b1cb26648022f61452a6b86",

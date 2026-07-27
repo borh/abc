@@ -10,9 +10,10 @@ Scope: remove the node-span coverage quantity. **Retain** the membership index
 and the per-work authentication it carries, because the release-authoritative
 recognition path depends on both.
 
-> **One scope decision is left open below** — whether the per-work record also
-> sheds its eligibility fields and the P1 aggregate. It changes the diff size and
-> what Q15 inherits. Recommendation given; not settled.
+> **Both open scope questions were settled 2026-07-27, taking the
+> recommendations:** the per-work record also sheds its eligibility fields and
+> the P1 aggregate (Option A), and the v1 schemas are retained frozen alongside
+> v2. Both are recorded in `docs/adr/parser-rq-retire-node-span-coverage.md`.
 
 ## What does not move, and why that is worth stating first
 
@@ -130,7 +131,7 @@ migrate. Under Option B it stays, and Q15 inherits it.
 a reduced aggregate. But it leaves a denominator with no numerator and hands Q15
 a migration this plan could have retired.
 
-**Recommendation: A.** The eligibility fields exist to support a coverage
+**Decided 2026-07-27: A.** The eligibility fields exist to support a coverage
 computation that is going away; keeping them preserves the shape of a measurement
 without the measurement. Q15 will declare region eligibility on its own terms,
 and it should not inherit a whole-file one it has to undo. Retain
@@ -143,7 +144,7 @@ Twenty-two artifacts under `docs/reports/parser-rq/runs/` carry the
 `parser_ir.nodes[*].span` basis, six in the promoted run
 `24d61fc7…`. Published manifests are immutable, so they are not rewritten.
 
-**Recommendation: retain the v1 schemas as frozen alongside v2.** Deleting them
+**Decided 2026-07-27: retain the v1 schemas as frozen alongside v2.** Deleting them
 would leave published evidence that nothing can validate, which is the outcome
 the decision record explicitly forbids. Freezing them costs three files that
 never change again and keeps the historical captures checkable.
@@ -161,12 +162,13 @@ actually change rather than the fields quietly disappearing.
 
 Each task is separately reviewable and separately committable.
 
-1. **Characterize.** Capture the current per-work record, index, and aggregate
+1. **Characterize.** *(not started)* Capture the current per-work record, index, and aggregate
    for the governed three-work corpus through the built binary, and record their
    hashes. This is the before-image any later movement is attributed against.
    Add a test asserting the membership index authenticates and recognition
    succeeds — the property that must survive every later task.
-2. **Delete the dead Clojure.** `install-source-recognition-observation`,
+2. **Delete the dead Clojure — DONE 2026-07-27.**
+   `install-source-recognition-observation`,
    `derive-source-span-envelope`, `valid-aggregate?`,
    `source-accountability-identity-valid?`,
    `source-accountability-instrument-version`, and their tests. **No Rust, no
@@ -231,5 +233,37 @@ when a derivation has no prior output. Any Rust change here needs
 
 ## Status
 
-Written 2026-07-27 against a recorded decision. Not started. Two things to settle
-before task 1: the eligibility/aggregate scope, and v1 retention.
+Written 2026-07-27 against a recorded decision. Both scope questions settled.
+**Task 2 done**; tasks 1 and 3–6 not started.
+
+### Task 2 result
+
+Deleted, with zero production callers as the enumeration predicted:
+`install-source-recognition-observation`, `derive-source-span-envelope`,
+`valid-aggregate?`, `valid-uncovered?`, `valid-taxonomy?`,
+`source-accountability-identity-valid?`, `source-accountability-instrument-version`,
+`aggregate-schema`, `taxonomy-schema`, `expected-locators`; the nine P1
+span-envelope deftests and one demotion deftest; the helpers left dead by them;
+and the orphaned `test/fixtures/parser-rq/source-accountability` fixtures.
+
+`exact-display-ratio` and `valid-identity?` were **kept** — both are also used by
+the recognition path. `write-blob!`, `capture`, `with-capture`, `aggregate-value`,
+`taxonomy-text` and `taxonomy-hash` were kept for the same reason.
+
+One surviving test needed rewriting rather than deleting.
+`malformed-or-missing-recognition-evidence-cannot-fall-back-to-node-spans`
+asserted that a P0-only capture yields `instrument-missing` from the recognition
+envelope *while* the node-span envelope would have returned `0.9M`. With the
+node-span envelope gone the comparison cannot be written, but the property is
+still worth holding, so it now asserts the `instrument-missing` result alone and
+is renamed `…-reports-instrument-missing`. The fallback is now structurally
+impossible rather than merely rejected.
+
+**Test counts moved as predicted, and the one surprise is explained.**
+1,145 → 1,135 tests (ten deftests removed) and 11,754 → 11,727 assertions.
+Deleting the orphaned fixtures dropped assertions again, 11,727 → 11,672, without
+failing anything — because `active-parser-rq-surface-has-no-site-or-backup-policy`
+scans every file under `abc/test` for each of 11 forbidden tokens, and the
+directory held 5 files: 5 × 11 = 55. The scanned population shrank; no assertion
+weakened. Worth knowing before reading a future assertion-count drop as coverage
+loss.

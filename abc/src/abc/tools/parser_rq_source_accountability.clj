@@ -9,14 +9,7 @@
             [abc.tools.parser-rq-diagnostic-gap :as diagnostic-gap]
             [abc.tools.parser-rq-source-recognition :as source-recognition]
             [abc.tools.schema :as schema]
-            [clojure.string :as string]
             [clojure.walk :as walk]))
-
-(def aggregate-schema
-  (delay (files/read-json "schemas/parser-rq-source-accountability-aggregate.schema.json")))
-
-(def taxonomy-schema
-  (delay (files/read-json "schemas/parser-rq-ignored-regions.schema.json")))
 
 (def recognition-aggregate-schema
   (delay (files/read-json "schemas/parser-rq-source-recognition-aggregate.schema.json")))
@@ -51,9 +44,6 @@
 (def classified-source-authority
   (delay (-> (files/read-json "data/parser-rq-classified-source-authority-v1.json")
              walk/keywordize-keys)))
-
-(def source-accountability-instrument-version
-  "parser-rq-source-accountability-v1")
 
 (def source-recognition-instrument-version
   "parser-rq-source-recognition-v1")
@@ -93,11 +83,6 @@
             walk/keywordize-keys)))
     (catch Exception _ nil)))
 
-(def expected-locators
-  {:aggregate "aggregate.json"
-   :identity "identity.json"
-   :taxonomy "taxonomy.json"})
-
 (def recognition-locators
   {:aggregate "recognition-aggregate.json"
    :index "recognition-index.json"
@@ -116,28 +101,6 @@
     (let [matches (filterv #(= locator (:locator %)) (:blobs manifest))]
       (when (= 1 (count matches)) (first matches)))))
 
-(defn- valid-uncovered?
-  [uncovered uncovered-bytes eligible-bytes]
-  (let [valid-span? (fn [{:keys [start end]}]
-                      (and (int? start)
-                           (int? end)
-                           (<= 0 start)
-                           (< start end)
-                           (<= end eligible-bytes)))
-        ordered (->> uncovered
-                     (group-by :work_id)
-                     vals
-                     (map #(sort-by (juxt :start :end) %)))
-        disjoint? (fn [spans]
-                    (every? (fn [[left right]]
-                              (<= (:end left) (:start right)))
-                            (partition 2 1 spans)))]
-    (and (vector? uncovered)
-         (every? valid-span? uncovered)
-         (every? disjoint? ordered)
-         (= uncovered-bytes
-            (reduce + 0 (map #(- (:end %) (:start %)) uncovered))))))
-
 (defn- valid-identity?
   "Complete key set plus the gate's own value contract. The value rules live
   in the qualification namespace so this instrument and the gate cannot drift
@@ -145,83 +108,6 @@
   [identity]
   (and (= (set qualification/qualification-identity-keys) (set (keys identity)))
        (qualification/identity-values-valid? identity)))
-
-(defn- source-accountability-identity-valid?
-  [identity]
-  (and (valid-identity? identity)
-       (= source-accountability-instrument-version
-          (get-in identity [:instrument_versions :source_accountability]))))
-
-(defn- valid-aggregate?
-  [aggregate identity-ref]
-  (let [{:keys [eligible_bytes covered_eligible_bytes uncovered_eligible_bytes
-                taxonomy_hash work_completeness uncovered]} aggregate]
-    (and (nil? (schema/validation-errors @aggregate-schema aggregate))
-         (= "ok" (:status aggregate))
-         (= "decoded_utf8" (:coordinate_system aggregate))
-         (= identity-ref (:identity_ref aggregate))
-         (= "parser-rq-ignored-regions-v1" (:taxonomy_version aggregate))
-         (string? taxonomy_hash)
-         (re-matches hash/hash-pattern taxonomy_hash)
-         (true? (:complete work_completeness))
-         (= (:expected work_completeness) (:observed work_completeness))
-         (pos-int? eligible_bytes)
-         (= eligible_bytes (+ covered_eligible_bytes uncovered_eligible_bytes))
-         (valid-uncovered? uncovered uncovered_eligible_bytes eligible_bytes))))
-
-(defn- valid-taxonomy?
-  [taxonomy taxonomy-member aggregate]
-  (and taxonomy
-       (nil? (schema/validation-errors @taxonomy-schema taxonomy))
-       (= (:taxonomy_version aggregate) (:taxonomy_version taxonomy))
-       (= (:coordinate_system aggregate) (:coordinate_system taxonomy))
-       (= (:taxonomy_hash aggregate) (get-in taxonomy-member [:ref :sha256]))))
-
-(defn derive-source-span-envelope
-  "Reverify a P0 capture and derive R1 only from authenticated integer totals."
-  [store manifest aggregate identity]
-  (let [verified (capture/verify-manifest store manifest)
-        store (assoc store :authenticated_blobs (:authenticated_blobs verified))
-        expected (qualification/qualification-identity-ref identity)
-        denominator (:denominator manifest)
-        aggregate-member (selected-member manifest (:aggregate expected-locators))
-        identity-member (selected-member manifest (:identity expected-locators))
-        taxonomy-member (selected-member manifest (:taxonomy expected-locators))
-        authenticated-aggregate (some->> aggregate-member
-                                         (authenticated-json-value store))
-        authenticated-identity (some->> identity-member
-                                        (authenticated-json-value store))
-        taxonomy (some->> taxonomy-member
-                          (authenticated-json-value store))]
-    (cond
-      (not= :ok (:status verified))
-      verified
-
-      (not (source-accountability-identity-valid? identity))
-      (unavailable "qualification identity violates the closed P0 contract")
-
-      (not= identity authenticated-identity)
-      (unavailable "qualification identity is absent from verified manifest evidence")
-
-      (not= aggregate authenticated-aggregate)
-      (unavailable "aggregate argument does not match verified aggregate bytes")
-
-      (not (valid-taxonomy? taxonomy taxonomy-member aggregate))
-      (unavailable "taxonomy is absent, ambiguous, invalid, or inconsistent")
-
-      (not= "decoded_utf8_bytes" (:unit denominator))
-      (unavailable "manifest denominator is not decoded UTF-8 bytes")
-
-      (not= (:eligible_bytes aggregate) (:value denominator))
-      (unavailable "manifest denominator does not equal aggregate eligible bytes")
-
-      (not (valid-aggregate? aggregate expected))
-      (unavailable "aggregate violates schema, identity, taxonomy, or conservation contracts")
-
-      :else
-      {:value (exact-display-ratio (:covered_eligible_bytes aggregate)
-                                   (:eligible_bytes aggregate))
-       :identity_ref expected})))
 
 (defn- unique-member-by-hash
   [manifest expected-hash]

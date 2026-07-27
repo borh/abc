@@ -2,8 +2,13 @@
 
 ## Implementation Status
 
-Not implemented. The decision is recorded; the scoped plan is
+**Task 2 of 6 done** (2026-07-27): the dead Clojure is deleted. The Rust record,
+schemas, and P1 aggregate are untouched, so no wire format or artifact hash has
+moved yet.
+
+Diagnosis and enumeration:
 `docs/superpowers/plans/2026-07-27-q13-node-span-coverage.md`.
+Task sequence: `docs/superpowers/plans/2026-07-27-q13-implementation.md`.
 
 ## Context
 
@@ -75,10 +80,18 @@ it — for the closed work list, the identity reference, the coherence counts, a
 `membership_ref`, the hash of the index bytes recorded into every recognition
 record. It reads no coverage number from it.
 
-So the retirement removes the span union and the coverage fields. It retains the
-membership derivation and the per-work authentication that index carries:
-parser-IR `schema_id` and `schema_hash` against the qualification identity, and
-`derived_from` against its AAT and mapping coordinates.
+So the retirement removes the span union and the coverage fields — and, decided
+2026-07-27, the record's `eligible`/`ignored` fields and the P1 aggregate with
+them. Those exist to support a computation that is going away; keeping them would
+preserve the shape of a measurement without the measurement, and would hand the
+region partition a whole-file eligibility it must then undo. P1 becomes a
+provenance-and-authentication record.
+
+It retains the membership derivation and the per-work authentication that index
+carries: parser-IR `schema_id` and `schema_hash` against the qualification
+identity, and `derived_from` against its AAT and mapping coordinates.
+`taxonomy_version` and `taxonomy_hash` stay too — they record which taxonomy was
+in force, which is provenance rather than measurement.
 
 An earlier statement of this decision said "drop the observation and retire the
 `NodeSpans` analyzer path." That was too broad — it would have taken the
@@ -93,10 +106,10 @@ than merely stale.
 
 **Published artifacts are not rewritten.** Twenty-two artifacts under
 `docs/reports/parser-rq/runs/` carry the `parser_ir.nodes[*].span` basis, six of
-them in the currently promoted run. Published manifests are immutable. The v1
-schemas must either be retained so those artifacts stay validatable, or the
-artifacts must be explicitly declared protocol-incompatible. Choosing neither
-would leave published evidence that nothing can check.
+them in the currently promoted run. Published manifests are immutable. **Decided
+2026-07-27: the v1 schemas are retained frozen alongside v2**, so those artifacts
+stay validatable. Deleting them would leave published evidence that nothing can
+check.
 
 **The cost saving is re-measured, not assumed.** 9.80 ms per work is an estimate
 attached to the computation being removed.

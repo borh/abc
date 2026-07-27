@@ -131,9 +131,11 @@ Task sequence, traced constraints, and a draft `decisions.edn` entry are in
   implementation must declare where those bytes go — widening `body_end` to
   `tail_start` is the wrong answer, because body coverage would then depend on
   how many blank lines a transcriber left.
-- **Settle Q13 before partition task 3.** Dropping the `NodeSpans` path removes
-  `analyze.rs`, `aggregate.rs`, two schemas and four test files from this
-  change set.
+- **Q13 is now done** (2026-07-27, all six tasks), so partition task 3 no longer
+  inherits it. `analyze.rs`'s whole-file eligibility is gone, `aggregate.rs` and
+  the P1 aggregate schema are deleted, and the work record is at
+  `abc/parser-rq-source-accountability-work/v2` carrying no measurement at all.
+  Q15 declares region eligibility on its own terms with nothing to undo first.
 
 ### Acceptance conditions
 
@@ -213,7 +215,7 @@ Still owed:
 |---|---|---|
 | Q11 | Decided in a prior session | Record tier 2 as the publication's successfully-selected projection, named the *publication-workload snapshot*, with `candidates_considered`, `derive_failures`, and `rejected` declared |
 | D7 | Decided in a prior session | Record `unexpected-fatal-failures <= 0` and its safe initial expected-outcome vocabulary |
-| Q13 | **Decided 2026-07-27** | Recorded as `parser-rq-retire-node-span-coverage` |
+| Q13 | **Decided and implemented 2026-07-27** | Recorded as `parser-rq-retire-node-span-coverage`; all six implementation tasks done. Still `:proposed` — c1, c2, c4 and c5 lack evidence paths |
 
 Q11 and D7 were left alone deliberately: their reasoning belongs to the sessions
 that decided them, and writing their claims second-hand would put words in those
@@ -281,11 +283,11 @@ and 2 are unblocked and are the shortest path to a check that can fail — see
 2026-07-27, when the region set was closed at three regions with the tail
 extending back to `body_end`; before that the ADR asserted conservation over a
 set that provably did not conserve, and review caught it. The streams below are independent of
-it, and each still needs its own scoped plan before code changes. **Q13 should be
-settled first**: dropping the `NodeSpans` path removes `analyze.rs`,
-`aggregate.rs`, two schemas and four test files from the partition change set.
+it, and each still needs its own scoped plan before code changes. **Q13 is
+settled and implemented**, so the partition no longer inherits `analyze.rs`'s
+whole-file eligibility.
 
-1. **Q13: decided 2026-07-27 — retire the quantity.** Recorded as
+1. **Q13: decided and implemented 2026-07-27 — quantity retired.** Recorded as
    `docs/adr/parser-rq-retire-node-span-coverage.md`; plan at
    `plans/2026-07-27-q13-node-span-coverage.md`. Parser-IR node spans are running
    offsets over emitted visible text; the emitter hard-codes their label to
@@ -304,10 +306,37 @@ settled first**: dropping the `NodeSpans` path removes `analyze.rs`,
    written: `plans/2026-07-27-q13-implementation.md`. It establishes that
    **`qualification_identity_ref` does not rotate** — `instrument_versions` is
    derived from the predicate set and no predicate names this instrument — while
-   `membership_ref` does, making prior captures protocol-incompatible. Two things
-   remain to settle before task 1: whether the per-work record also sheds its
-   eligibility fields and the P1 aggregate, and whether the v1 schemas are frozen
-   alongside v2 so the 22 published artifacts stay validatable.
+   `membership_ref` does, making prior captures protocol-incompatible.
+
+   **Implemented 2026-07-27, all six tasks** (`c993b685`…`a536c829`). Both open
+   scope questions were settled by taking the recommendations: the record also
+   sheds eligibility and the P1 aggregate, and the v1 schemas are frozen
+   alongside v2. Re-measured on the governed corpus under the promoted identity:
+   `qualification_identity_ref` **unchanged**, `membership_ref`
+   `746b9989…` → `93e9dbd4…`, per-work record 1,524 → 1,225 bytes, recognition
+   still `ok` on all three works. The published-artifact count was 18 (9 work,
+   3 aggregate, 6 index), not the 22 carried by earlier drafts.
+
+   Two things a reader should carry forward. **The 9.80 ms/work saving is not
+   claimed** — it was not re-measured, and the retirement rests on the coordinate
+   defect alone. **The record is still `:proposed`**: c3 and c6 now carry
+   evidence, c1, c2, c4 and c5 do not, and the Rust tests holding most of the
+   implementation cannot be cited at all, because the governance schema admits
+   only `test/`, `fixtures/`, `nix/` and `docs/evidence/external/` prefixes while
+   those files live under `ab-validator/crates/`. Promotion needs that gap
+   addressed, not worked around.
+
+   **One thing went wrong and is worth repeating as a warning.** Task 2 deleted
+   `abc/test/fixtures/parser-rq/source-accountability` as orphaned; it was not,
+   because a Rust integration test reads it as a committed witness set. The
+   enumeration behind that task was scoped to Clojure and missed a cross-language
+   consumer, and the branch gate never ran the Rust tests —
+   `nix build …#cargo-test` **cannot build at all** on this tree (verified by
+   stashing and rebuilding on the unmodified tree: `ab-aozora-capture`
+   `include_bytes!`s four files from `abc/`, which the ab-validator flake source
+   does not stage), so `just validate-migration` only ever *evaluates* it. A
+   check that is registered, evaluated, and never built reads exactly like a
+   passing check. Use `cargo test --workspace` directly.
 
 2. **D7 prerequisites:** separate record `status` from measured `disposition`,
    then specify closed expected-outcome vocabularies. Initially only `parsed` and

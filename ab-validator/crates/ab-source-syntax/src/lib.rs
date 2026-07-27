@@ -98,6 +98,124 @@ pub struct SourceAnnotationsBoth<'a> {
     pub full: SourceAnnotations<'a>,
 }
 
+/// The three declared regions of an Aozora source, in one coordinate.
+///
+/// The body is the work — prose and annotations. The header and tail are
+/// metadata *about* the work. They are two populations, not two candidate
+/// denominators for one ratio, and measuring their union averages parser
+/// fidelity against packaging attribution and can mean neither. See
+/// `docs/adr/parser-rq-source-region-partition.md`.
+///
+/// The regions are derived from [`aozora_body_range`] alone; no separator or
+/// `底本：` heuristic is maintained anywhere else. Note that the tail is
+/// anchored on the body **end**, not on the tail start that function returns:
+/// `body_end` is trim-adjusted for trailing newlines and `tail_start` is not,
+/// so anchoring on the latter would leave the blank lines between them in no
+/// region at all.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceRegions {
+    header: core::ops::Range<usize>,
+    body: core::ops::Range<usize>,
+    tail: core::ops::Range<usize>,
+}
+
+/// Why a proposed region set is not a partition of its source.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RegionError {
+    /// A region's start exceeds its end.
+    Inverted,
+    /// Two adjacent regions do not meet, or the set does not span `[0, len)`.
+    NotContiguous,
+    /// A boundary does not land on a UTF-8 character boundary.
+    NotCharBoundary,
+}
+
+impl SourceRegions {
+    /// Declare the partition from two boundaries and a length.
+    ///
+    /// This is the only constructor, so the conservation identity cannot be
+    /// bypassed by assembling the regions field by field. Every defect traced
+    /// in this area shared one property — no invariant existed that could
+    /// catch it — so this one is checked rather than documented.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RegionError`] when the boundaries do not partition
+    /// `[0, len)`, or when either lands mid-character in `source`.
+    pub fn declare(source: &str, body_start: usize, body_end: usize) -> Result<Self, RegionError> {
+        let len = source.len();
+        if body_start > body_end || body_end > len {
+            return Err(RegionError::Inverted);
+        }
+        if !source.is_char_boundary(body_start) || !source.is_char_boundary(body_end) {
+            return Err(RegionError::NotCharBoundary);
+        }
+        let regions = Self {
+            header: 0..body_start,
+            body: body_start..body_end,
+            tail: body_end..len,
+        };
+        // Conservation and disjointness, asserted rather than assumed. The
+        // regions are half-open and adjacent by construction above, so this
+        // can only fail on arithmetic overflow — which is exactly the case a
+        // reader would otherwise assume away.
+        let covered = regions
+            .header
+            .len()
+            .checked_add(regions.body.len())
+            .and_then(|sum| sum.checked_add(regions.tail.len()));
+        if covered != Some(len) {
+            return Err(RegionError::NotContiguous);
+        }
+        Ok(regions)
+    }
+
+    /// Derive the partition for `source` directly, using [`aozora_body_range`]
+    /// as the sole boundary authority.
+    ///
+    /// Callers holding a sanitized→decoded mapping must not use this: they
+    /// have to map the boundaries through it first, because
+    /// `aozora_body_range` runs over sanitized text while the regions must be
+    /// stated in decoded coordinates.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RegionError`] when the derived boundaries do not partition
+    /// `source`.
+    pub fn derive(source: &str) -> Result<Self, RegionError> {
+        let (body, _tail_start) = aozora_body_range(source);
+        Self::declare(source, body.start, body.end)
+    }
+
+    #[must_use]
+    pub fn header(&self) -> core::ops::Range<usize> {
+        self.header.clone()
+    }
+
+    #[must_use]
+    pub fn body(&self) -> core::ops::Range<usize> {
+        self.body.clone()
+    }
+
+    #[must_use]
+    pub fn tail(&self) -> core::ops::Range<usize> {
+        self.tail.clone()
+    }
+
+    /// The two metadata regions, in file order. They are recorded separately
+    /// so a failure localizes to one end of the file, but they qualify under a
+    /// single conjunctive predicate.
+    #[must_use]
+    pub fn metadata(&self) -> [core::ops::Range<usize>; 2] {
+        [self.header(), self.tail()]
+    }
+
+    #[must_use]
+    pub fn decoded_len(&self) -> usize {
+        self.tail.end
+    }
+}
+
 /// Returns the Aozora BODY range and TAIL start of a source text — the one
 /// authority for "where does the body start/end", shared by the parser
 /// (`ab-aozora-aat` sanitize stage) and the checker (`ab-check::body_text`)
@@ -1139,18 +1257,13 @@ mod tests {
     // Note that the tail is anchored on `body_end`, NOT on the returned
     // `tail_start`. The two differ, and the next test says by how much.
 
-    fn regions(source: &str) -> [core::ops::Range<usize>; 3] {
-        let (body, _) = aozora_body_range(source);
-        [0..body.start, body.clone(), body.end..source.len()]
-    }
-
     fn assert_partitions(source: &str, label: &str) {
-        let [header, body, tail] = regions(source);
+        let regions = SourceRegions::derive(source).expect(label);
+        let (header, body, tail) = (regions.header(), regions.body(), regions.tail());
         assert_eq!(header.start, 0, "{label}: header must open the file");
         assert_eq!(header.end, body.start, "{label}: header/body gap");
         assert_eq!(body.end, tail.start, "{label}: body/tail gap");
         assert_eq!(tail.end, source.len(), "{label}: tail must close the file");
-        assert!(body.start <= body.end, "{label}: body inverted");
         let covered = header.len() + body.len() + tail.len();
         assert_eq!(covered, source.len(), "{label}: conservation");
     }
@@ -1227,10 +1340,45 @@ mod tests {
         // `body_end` trims to 0 and the body region is empty. Every byte is
         // tail. An empty body is a legitimate region, not an error.
         let src = "底本：底本社\n奥付\n";
-        let [header, body, tail] = regions(src);
-        assert!(header.is_empty());
-        assert!(body.is_empty());
-        assert_eq!(tail, 0..src.len());
+        let regions = SourceRegions::derive(src).unwrap();
+        assert!(regions.header().is_empty());
+        assert!(regions.body().is_empty());
+        assert_eq!(regions.tail(), 0..src.len());
+    }
+
+    #[test]
+    fn declaring_a_region_set_that_is_not_a_partition_fails() {
+        let src = "本文です。\n底本：底本社\n";
+        // Inverted, out of bounds, and mid-character boundaries are all
+        // refused. The last matters most: every other guard traced in this
+        // area accepted intervals landing mid-character, because it checked
+        // only `start <= end <= bound`.
+        assert_eq!(
+            SourceRegions::declare(src, 6, 3),
+            Err(RegionError::Inverted)
+        );
+        assert_eq!(
+            SourceRegions::declare(src, 0, src.len() + 1),
+            Err(RegionError::Inverted)
+        );
+        assert_eq!(
+            SourceRegions::declare(src, 1, src.len()),
+            Err(RegionError::NotCharBoundary)
+        );
+        assert!(SourceRegions::declare(src, 0, src.len()).is_ok());
+    }
+
+    #[test]
+    fn the_metadata_regions_are_the_header_and_tail_in_file_order() {
+        let src = "題名\n著者\n\n----------\n【テキスト中に現れる記号について】\n《》：ルビ\n----------\n\n本文です。\n\n底本：底本社\n";
+        let regions = SourceRegions::derive(src).unwrap();
+        assert_eq!(regions.metadata(), [regions.header(), regions.tail()]);
+        assert_eq!(&src[regions.body()], "本文です。");
+        assert!(src[regions.header()].contains("《》：ルビ"));
+        // The tail absorbs the blank line the body end trimmed, which is the
+        // whole reason it is anchored on `body_end` and not on `tail_start`.
+        assert_eq!(&src[regions.tail()], "\n\n底本：底本社\n");
+        assert_eq!(regions.decoded_len(), src.len());
     }
 
     #[test]

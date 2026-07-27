@@ -3,51 +3,281 @@
   "$id": "https://w3id.org/abc/schemas/parser-rq-source-recognition-work.schema.json",
   "title": "Parser release qualification source-recognition work record",
   "type": "object",
-  "required": ["schema_version", "instrument_version", "coordinate_system", "status"],
+  "required": [
+    "schema_version",
+    "instrument_version",
+    "coordinate_system",
+    "status"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"const": "abc/parser-rq-source-recognition-work/v1"},
-    "qualification_identity_ref": {"$ref": "#/$defs/hash"},
-    "capture_generation_ref": {"$ref": "#/$defs/hash"},
-    "policy_hash": {"$ref": "#/$defs/hash"},
-    "instrument_version": {"type": "string", "minLength": 1},
-    "work_id": {"type": "string", "minLength": 1},
-    "coordinate_system": {"const": "decoded_utf8"},
-    "ledger": {"$ref": "#/$defs/blob"},
-    "status": {"enum": ["ok", "unavailable"]},
-    "eligible_bytes": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
-    "recognized_bytes": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
-    "accounted_bytes": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
-    "semantic_gap_bytes": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
-    "unaccounted_bytes": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
-    "recognized": {"$ref": "#/$defs/intervals"},
-    "accounted": {"$ref": "#/$defs/intervals"},
-    "semantic_gaps": {"$ref": "#/$defs/intervals"},
-    "unaccounted": {"$ref": "#/$defs/intervals"},
-    "errors": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+    "schema_version": {
+      "const": "abc/parser-rq-source-recognition-work/v1"
+    },
+    "qualification_identity_ref": {
+      "$ref": "#/$defs/hash"
+    },
+    "capture_generation_ref": {
+      "$ref": "#/$defs/hash"
+    },
+    "policy_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "instrument_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "work_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "coordinate_system": {
+      "const": "decoded_utf8"
+    },
+    "ledger": {
+      "$ref": "#/$defs/blob"
+    },
+    "regions": {
+      "$ref": "#/$defs/regions"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "unavailable"
+      ]
+    },
+    "eligible_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "recognized_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "accounted_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "semantic_gap_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "unaccounted_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "recognized": {
+      "$ref": "#/$defs/intervals"
+    },
+    "accounted": {
+      "$ref": "#/$defs/intervals"
+    },
+    "semantic_gaps": {
+      "$ref": "#/$defs/intervals"
+    },
+    "unaccounted": {
+      "$ref": "#/$defs/intervals"
+    },
+    "errors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
   },
   "oneOf": [
     {
-      "properties": {"status": {"const": "ok"}},
-      "required": ["qualification_identity_ref", "capture_generation_ref", "policy_hash", "work_id", "ledger", "eligible_bytes", "recognized_bytes", "accounted_bytes", "semantic_gap_bytes", "unaccounted_bytes", "recognized", "accounted", "semantic_gaps", "unaccounted"],
-      "not": {"required": ["errors"]}
+      "properties": {
+        "status": {
+          "const": "ok"
+        }
+      },
+      "required": [
+        "qualification_identity_ref",
+        "capture_generation_ref",
+        "policy_hash",
+        "work_id",
+        "ledger",
+        "eligible_bytes",
+        "recognized_bytes",
+        "accounted_bytes",
+        "semantic_gap_bytes",
+        "unaccounted_bytes",
+        "recognized",
+        "accounted",
+        "semantic_gaps",
+        "unaccounted"
+      ],
+      "not": {
+        "required": [
+          "errors"
+        ]
+      }
     },
     {
-      "properties": {"status": {"const": "unavailable"}},
-      "required": ["errors"],
-      "not": {"anyOf": [
-        {"required": ["eligible_bytes"]}, {"required": ["recognized_bytes"]},
-        {"required": ["accounted_bytes"]}, {"required": ["semantic_gap_bytes"]},
-        {"required": ["unaccounted_bytes"]}, {"required": ["recognized"]},
-        {"required": ["accounted"]}, {"required": ["semantic_gaps"]},
-        {"required": ["unaccounted"]}
-      ]}
+      "properties": {
+        "status": {
+          "const": "unavailable"
+        }
+      },
+      "required": [
+        "errors"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "eligible_bytes"
+            ]
+          },
+          {
+            "required": [
+              "recognized_bytes"
+            ]
+          },
+          {
+            "required": [
+              "accounted_bytes"
+            ]
+          },
+          {
+            "required": [
+              "semantic_gap_bytes"
+            ]
+          },
+          {
+            "required": [
+              "unaccounted_bytes"
+            ]
+          },
+          {
+            "required": [
+              "recognized"
+            ]
+          },
+          {
+            "required": [
+              "accounted"
+            ]
+          },
+          {
+            "required": [
+              "semantic_gaps"
+            ]
+          },
+          {
+            "required": [
+              "unaccounted"
+            ]
+          }
+        ]
+      }
     }
   ],
   "$defs": {
-    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-    "interval": {"type": "object", "required": ["start", "end"], "additionalProperties": false, "properties": {"start": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}, "end": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}}},
-    "intervals": {"type": "array", "items": {"$ref": "#/$defs/interval"}},
-    "blob": {"type": "object", "required": ["sha256", "bytes", "media_type", "locator"], "additionalProperties": false, "properties": {"sha256": {"$ref": "#/$defs/hash"}, "bytes": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}, "media_type": {"const": "application/json"}, "locator": {"type": "string", "minLength": 1}}}
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "interval": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "intervals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/interval"
+      }
+    },
+    "blob": {
+      "type": "object",
+      "required": [
+        "sha256",
+        "bytes",
+        "media_type",
+        "locator"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "media_type": {
+          "const": "application/json"
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "regions": {
+      "description": "The three declared source regions in decoded_utf8 coordinates: header [0, body_start), body [body_start, body_end), tail [body_end, len). Derived from aozora_body_range alone and mapped back through the sanitize map. The tail is anchored on the body end, not on that function's tail start, so the blank lines between them belong to the tail rather than to no region. See docs/adr/parser-rq-source-region-partition.md.",
+      "type": "object",
+      "required": [
+        "header",
+        "body",
+        "tail"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "header": {
+          "$ref": "#/$defs/region_interval"
+        },
+        "body": {
+          "$ref": "#/$defs/region_interval"
+        },
+        "tail": {
+          "$ref": "#/$defs/region_interval"
+        }
+      }
+    },
+    "region_interval": {
+      "description": "A declared region. Unlike a measurement interval this may be empty: a work with no editorial header has an empty header region and one with no colophon has an empty tail, and both are legitimate rather than defective.",
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
   }
 }

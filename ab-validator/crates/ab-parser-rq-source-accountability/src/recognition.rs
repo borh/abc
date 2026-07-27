@@ -1,3 +1,4 @@
+use ab_aozora_aat::decode_source_bytes;
 use ab_aozora_capture::{CaptureGeneration, verify_capture_generation};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -38,6 +39,19 @@ pub struct RecognitionInterval {
     pub end: u64,
 }
 
+/// The declared three-region partition of the decoded source, as published.
+///
+/// Recorded even though v1 still measures over the whole file, so the regions
+/// are auditable in the artifact before any measurement moves onto them: a
+/// reader can check the conservation identity from the published record alone.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecognitionRegions {
+    pub header: RecognitionInterval,
+    pub body: RecognitionInterval,
+    pub tail: RecognitionInterval,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct RecognitionBlobRef {
@@ -63,6 +77,8 @@ pub struct RecognitionWorkRecord {
     pub coordinate_system: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ledger: Option<RecognitionBlobRef>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub regions: Option<RecognitionRegions>,
     pub status: RecognitionStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub eligible_bytes: Option<u64>,
@@ -202,6 +218,13 @@ fn canonical_json(value: &Value) -> Option<Vec<u8>> {
     Some(bytes)
 }
 
+fn interval_of(range: &core::ops::Range<usize>) -> RecognitionInterval {
+    RecognitionInterval {
+        start: range.start as u64,
+        end: range.end as u64,
+    }
+}
+
 fn wire(intervals: &[Interval]) -> Vec<RecognitionInterval> {
     intervals
         .iter()
@@ -222,6 +245,7 @@ fn base_record() -> RecognitionWorkRecord {
         work_id: None,
         coordinate_system: "decoded_utf8".to_owned(),
         ledger: None,
+        regions: None,
         status: RecognitionStatus::Unavailable,
         eligible_bytes: None,
         recognized_bytes: None,
@@ -428,6 +452,34 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     let Ok(decoded) = std::str::from_utf8(&input.decoded_source) else {
         return unavailable(record, "decoded-source-invalid-utf8");
     };
+    // The three declared regions, derived from the authenticated decoded
+    // source rather than carried alongside it.
+    //
+    // `aozora_body_range` runs over SANITIZED text and its boundaries must be
+    // mapped back, so the derivation has to go through `decode_source_bytes`
+    // -- deriving straight off the decoded text would produce a different
+    // boundary from the one the ledger's facts came from, which is precisely
+    // the coordinate error this partition exists to remove. Re-decoding
+    // already-valid UTF-8 takes the identity branch, so `text` is the same
+    // string and the sanitize map is the same map.
+    //
+    // Recomputing from authenticated bytes is not weaker than carrying the
+    // regions in the ledger: a carried value can disagree with the bytes it
+    // describes, and a derived one cannot. What it does mean is that the fact
+    // producer and this denominator agree because they call the same code on
+    // the same input, so `every_ledger_entry_lies_inside_the_body_region`
+    // holds that coupling to account.
+    let Ok(regions) = decode_source_bytes(&input.decoded_source)
+        .map_err(|_| ())
+        .and_then(|source| source.source_regions().map_err(|_| ()))
+    else {
+        return unavailable(record, "source-region-partition-failed");
+    };
+    record.regions = Some(RecognitionRegions {
+        header: interval_of(&regions.header()),
+        body: interval_of(&regions.body()),
+        tail: interval_of(&regions.tail()),
+    });
     if ledger.parser_status != "complete" || !ledger.errors.is_empty() {
         return unavailable(record, "ledger-parser-incomplete");
     }

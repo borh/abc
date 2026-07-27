@@ -189,9 +189,7 @@ reviewed.
 
 1. **Characterize the current behaviour — DONE 2026-07-27.** See *Task 1
    result*. It changed what task 6 has to decide.
-2. **Declare the partition.** Schema plus derivation from `aozora_body_range`,
-   with the gap resolved explicitly. Assert conservation and disjointness. This
-   task adds a check that can fail and changes no measurement.
+2. **Declare the partition — DONE 2026-07-27.** See *Task 2 result*.
 3. **Move `source_span_coverage` onto the body region.** Thread the partition
    into `RecognitionInput`, replace the hard-coded whole-file eligibility, keep
    the existing per-region conservation assertions. Rotates the recognition
@@ -280,6 +278,80 @@ drifting from the mapping. It is a prediction for task 5 to confirm or refute
 through the built instrument, and it is not an acceptance value — the same
 caution this plan already applies to the ≈0.9889 separator-heuristic estimate,
 which it happens to sit close to.
+
+## Task 2 result
+
+**`SourceRegions` lives in `ab-source-syntax`, beside the boundary authority it
+restates.** Private fields and one checked constructor, `declare`, so the
+conservation identity cannot be bypassed by assembling the regions field by
+field. It refuses inverted ranges, out-of-bounds ends, and — the one that
+matters — boundaries landing mid-character, which is the check every guard
+traced in this area was missing.
+
+**The derivation lives in `ab-aozora-aat`, as `DecodedSource::source_regions`.**
+`aozora_body_range` runs over *sanitized* text, so its boundaries cannot be used
+verbatim; they are mapped back through `span_ctx`. `SourceRegions::derive` is
+the direct form and is correct only for a caller with no sanitize map to compose
+through — which this crate never is.
+
+**Recognition derives the regions rather than being handed them, and that is a
+deliberate deviation from constraint 2.** The plan called the partition "a new
+authenticated input". Carrying it in the ledger would have been that literally,
+and it would have cost a ledger schema version plus regeneration of 22 capture
+fixtures and 9 published ledgers. Instead `analyze_recognition` derives the
+regions from `input.decoded_source`, which the generation manifest already
+authenticates, by re-decoding it — already-valid UTF-8 takes the identity
+branch, so the text and the sanitize map are the same ones the fact producer
+used.
+
+This is not weaker than carrying them. **A carried value can disagree with the
+bytes it describes; a derived one cannot.** What it does mean is that the fact
+producer and the denominator agree because they call the same code on the same
+input, and that coupling is held to account by a test rather than assumed.
+
+The regions are **published** in the recognition work record (`regions`, with
+its own `region_interval` `$def` — unlike a measurement interval a region may be
+empty, because a work with no editorial header or no colophon is legitimate, not
+defective). So conservation is checkable from the published artifact alone,
+which is the point of declaring it.
+
+**Task 2 moves no measurement, and there is a test that says so.**
+`declaring_the_partition_does_not_move_the_measurement` asserts `eligible_bytes`
+is still the whole decoded file while the body is a strict subset of it. Task 3
+is what changes that, and it will be visible as a change.
+
+### The measurement that corrected two recorded claims
+
+`crlf_sources_carry_facts_outside_the_body_and_lf_sources_do_not`.
+
+`parser-rq-instrument-before-threshold` c2 says the header and tail carry "no
+entry of any kind, not even `plain_text`", demonstrated on a synthetic work.
+That holds for **LF** sources. Real Aozora sources are **CRLF**, and
+`sanitizer_entries` (`classified_source.rs:444`) walks the whole sanitized text
+rather than the body — so every line ending in the header and tail already
+carries a `crlf_normalization` fact with a `structural_newline` role.
+
+Measured on the three real works: 32, 31 and 34 accounted intervals fall outside
+the body, all of them genuine `\r\n` pairs, 50 in the headers and 47 in the
+tails — 194 of 3,818 metadata bytes.
+
+Two consequences, both recorded in `decisions.edn`:
+
+- **Task 3 must not assume the body region contains every accounted interval.**
+  It does not, and setting eligibility to the body without handling this would
+  break `recognized ⊆ eligible` on every real CRLF work.
+- **Task 4 is smaller than the plan states, and has a new hazard.** The metadata
+  fact producer has to cover the non-newline metadata bytes only, and it must
+  not re-derive the newlines that already have facts, or two producers will
+  double-count the same interval.
+
+### Confirmed: the task 1 prediction was right
+
+The instrument-derived regions match the Python reconstruction exactly on all
+three works — header 505/495/621, body 30,985/258,077/558,100, tail
+658/748/791 — so the body-projection fold of **0.9911** is now instrument
+output rather than a reconstruction. It is still not an acceptance value; that
+is task 6's to fix, after task 3 actually moves the denominator.
 
 ## Sequencing: decide Q13 first
 

@@ -38,6 +38,10 @@ fn record(work_id: &str, generation: &str, gaps: &[(u64, u64)]) -> RecognitionWo
             media_type: "application/json".into(),
             locator: "ledger.json".into(),
         }),
+        // The diagnostic-authorization aggregate reads `semantic_gap_bytes`
+        // and nothing else from this record, so the region partition is
+        // irrelevant here and is left absent rather than fabricated.
+        regions: None,
         status: RecognitionStatus::Ok,
         eligible_bytes: Some(eligible),
         recognized_bytes: Some(eligible - gap_bytes),

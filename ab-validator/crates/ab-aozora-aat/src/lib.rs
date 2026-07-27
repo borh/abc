@@ -16,7 +16,7 @@ use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
-use ab_source_syntax::aozora_body_range;
+use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
 /// The sanitize stage's `Diagnostic` type is the exact same
 /// `ab_aozora_spec::Diagnostic` the facade re-exports as `Diagnostic` (and
@@ -87,6 +87,34 @@ pub struct DecodedSource {
     /// Sanitized→decoded span-mapping context. `pub` so the extracted
     /// classified-source capture crate can rebase spans (see `SpanContext`).
     pub span_ctx: SpanContext,
+}
+
+impl DecodedSource {
+    /// The three declared source regions, in DECODED-text coordinates.
+    ///
+    /// `aozora_body_range` runs over the *sanitized* text, so its boundaries
+    /// cannot be used verbatim: they are mapped back through `span_ctx` here.
+    /// That is the whole reason this derivation lives beside the mapping
+    /// rather than in `ab-source-syntax` — `SourceRegions::derive` is correct
+    /// only for a caller that has no sanitize map to compose through, and this
+    /// crate always does.
+    ///
+    /// The body is `span_text` seen in decoded coordinates: its start is the
+    /// body-relative offset 0 mapped forward, and its end is `span_text.len()`
+    /// mapped forward. Everything before is header and everything after is
+    /// tail, so the three regions close the decoded file.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RegionError`] when the mapped boundaries do not partition the
+    /// decoded text — which would mean the sanitize map and the body range
+    /// disagree, and is a fail-closed condition rather than something to
+    /// round off.
+    pub fn source_regions(&self) -> Result<SourceRegions, RegionError> {
+        let body_start = self.span_ctx.to_decoded(0);
+        let body_end = self.span_ctx.to_decoded_end(self.span_text.len());
+        SourceRegions::declare(&self.text, body_start, body_end)
+    }
 }
 
 /// Composition chain for translating a parser/sanitize-stage byte offset

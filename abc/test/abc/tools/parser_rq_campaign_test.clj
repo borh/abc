@@ -519,8 +519,12 @@
         policy-path (fs/file root "abc"
                              "data/parser-rq-ab-aozora-classified-source-v1.json")
         policy (walk/keywordize-keys (files/read-json policy-path))
-        ;; Exactly the Q15 amendment in miniature: implement the declared but
-        ;; unimplemented `publication_metadata` role.
+        ;; A representative policy edit: implement the declared but
+        ;; unimplemented `publication_metadata` role. This stands in for any
+        ;; Q15 amendment; it is NOT the Q15 fix itself. The frame gap is a
+        ;; coordinate mismatch -- the ledger lexes the body projection while
+        ;; `eligible_bytes` counts the whole file -- so this rule would not
+        ;; change any coverage measurement. What it exercises is rotation.
         _ (write-canonical-json!
            policy-path
            (update policy :rules conj

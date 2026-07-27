@@ -17,13 +17,20 @@ predicate and the proposed tier 2 population are incompatible, and 177 bytes of
 corpus is why nobody could see it.
 
 **Q14 is decided: the instrument is incomplete, and neither the threshold nor the
-ratio moves.** `publication_metadata` is a `source_role` the classified-source
-policy declares and none of its 31 rules implements, and that category — Aozora's
-header and `底本：` colophon frames — is 65% of the gap. Fixing the instrument is
-tracked as **Q15**, and *that* now gates the confirmatory campaign the whole
-governance path builds toward. **Q1** is closed alongside it: the RQ capture
-layer costs 9.25× all of `ab-check`, which reshapes the campaign budget rather
-than the architecture.
+ratio moves.** The *mechanism* behind that decision was stated three times and
+was wrong twice; the traced answer is a **coordinate mismatch**, not a missing
+policy rule. The classified-source ledger lexes the `aozora_body_range` body
+projection while `eligible_bytes` counts the whole decoded file, so
+`source_span_coverage` divides a body-derived numerator by a whole-file
+denominator — Aozora's header and `底本：` colophon frames are not unclassified,
+they are outside the coordinate space every classified-source fact comes from,
+and no policy rule can reach them. See *Q14 mechanism, corrected again*; the
+earlier `publication_metadata` explanation survives below as marked history only.
+Executing the fix is tracked as **Q15**, which is **blocked on an owner
+decision** — which coordinate `source_span_coverage` is meant to express — and
+*that* gates the confirmatory campaign the whole governance path builds toward.
+**Q1** is closed alongside it: the RQ capture layer costs 9.25× all of
+`ab-check`, which reshapes the campaign budget rather than the architecture.
 
 The rest blocks something specific rather than everything: **Q3**
 (LOSS/AMBIGUITY untraced) blocks *predicting* outcomes from D6, not measuring
@@ -691,6 +698,16 @@ falsifying it.
 **Decision: the classified-source instrument is incomplete. Do not move the
 threshold, and do not move the ratio.**
 
+> **Mechanism superseded 2026-07-27 — read the rest of this section as history,
+> not as instructions.** The decision above stands. The *cause* this section
+> names does not: it attributes the frame gap to an unimplemented
+> `publication_metadata` rule, inferred from the policy file's vocabulary. A
+> later trace through the code found those bytes are never lexed at all, so no
+> policy rule can change the result — see *Q14 mechanism, corrected again*. The
+> **Part A** step below is void; do not implement from it. Every byte split and
+> percentage here derives from a disposable separator heuristic rather than from
+> `aozora_body_range`, so none of them is an acceptance value.
+
 The gap was decomposed before deciding, because "the predicate fails" does not
 say what failed. Splitting the 340,752 unaccounted bytes by position — Aozora's
 header frame, its `底本：` colophon frame, and the body between them:
@@ -746,11 +763,15 @@ decision.** Even with the entire frame classified, coverage reaches only
 remain. Some residual is *genuine parser limitation*, and no amount of policy
 work will drive it to 1.0. So the sequencing is:
 
-1. **Part A — implement `publication_metadata`** (65% of the gap). Rotates
-   `policy_hash`. Prefer classifying the frame over declaring it a governed
-   ignored region: the role already exists, showing the authors' intent was to
-   classify; and shrinking `eligible_bytes` is the more dangerous move, being the
-   same denominator-shrinkage hazard Q11 rejected.
+1. ~~**Part A — implement `publication_metadata`** (65% of the gap). Rotates
+   `policy_hash`.~~ **Void — the frame bytes are never lexed, so this rule cannot
+   fire.** One argument here does survive the correction and is now live in the
+   owner decision: *prefer classifying the frame over declaring it a governed
+   ignored region*, because the role already exists (evidence the authors
+   intended to classify) and shrinking `eligible_bytes` is the more dangerous
+   move, being the same denominator-shrinkage hazard Q11 rejected. That is the
+   case for whole-file coverage over body-projection coverage; it is now
+   Option B in the handoff's *Owner decision: Q15 source coordinate*.
 2. **Part B — diagnose the body-interior bytes. DONE; see *Part B, diagnosed*.**
    It is **11,293 bytes, not 119,144**, and it is a **missing-rule class**, not a
    ledger-builder extent bug. It groups with Part A into one policy amendment.
@@ -773,6 +794,16 @@ lands. The decision does not depend on the split's precision: it rests on
 the policy file.
 
 ### Part B, diagnosed — asymmetric close-marker rules, not a builder bug
+
+> **Scope superseded 2026-07-27; the discriminator and its verdict stand.** The
+> finding below — that these gaps are a missing-rule class, not a
+> ledger-builder extent bug — holds and was reached by evidence, not inference.
+> What is superseded is its *size*: this section names two absent close-marker
+> rules and a `底本` correction-note rule, but `node_policy` leaves **twelve**
+> `DirectiveKind` variants unmapped, which is why those constructs produce no
+> fact at all rather than falling through to `unknown_directive`. See *Q14
+> mechanism, corrected again*, "Part B's scope also grows". The byte figures
+> here also come from a separator heuristic and are indicative only.
 
 Part B asked whether the body-interior unaccounted bytes are a **missing policy
 rule** or a **ledger-builder gap**. The discriminator is adjacency: a rule that
@@ -813,11 +844,13 @@ the other. The remaining witnesses are `底本` correction notes of the form
 not even fall through to the `unknown_directive` catch-all, so no fact is
 produced for them at all.
 
-**This is the same species of defect as `publication_metadata`: a governed
-vocabulary that does not cover constructs the parser already emits.** It is not
-an extent bug and not a rotation-sensitive builder change, so **Parts A and B
-collapse into a single policy amendment and a single `policy_hash` rotation**,
-rather than the two-stage sequence the decision originally assumed.
+**This is a governed vocabulary that does not cover constructs the parser
+already emits.** It is not an extent bug and not a rotation-sensitive builder
+change. ~~So Parts A and B collapse into a single policy amendment and a single
+`policy_hash` rotation.~~ **That merger no longer holds:** Part A is void, and
+what remains of Part B is a separate deliverable from the coordinate fix — the
+twelve unmapped `node_policy` arms with their `ConstructId` values and policy
+rules, which does rotate `policy_hash` on its own.
 
 Caveat on the 793 bytes of "bare text": the witnesses are `底本：` lines,
 publication dates, and an editorial note in works using **bare-CR** line
@@ -991,8 +1024,8 @@ Measured over the live tree, exactly one coordinate moved:
 
 Pinned by two tests: the existing membership test now also asserts the
 single-document case is byte-identical and checks the multi-document fold, and
-`classified-source-policy-edits-rotate-the-qualification-identity` applies the
-Q15 amendment in miniature — adding the `publication_metadata` rule — and
+`classified-source-policy-edits-rotate-the-qualification-identity` applies a
+representative policy edit — adding a `publication_metadata` rule — and
 asserts that at the *same* commit and parser revision both
 `instrument_policy_hashes["source_recognition"]` and
 `qualification_identity_ref` move, while `predicate_set_hash` does not.
@@ -1344,7 +1377,7 @@ Stated explicitly, because "blocker" without a scope stalls everything equally.
 | **D7 prerequisites** (decided; unimplemented) | The fixture tier containing adversarial or malformed inputs, until `allowed_dispositions` is untangled and the expected-outcome model specified | The tier architecture; tier 2 and tier 3 work; the `wall-time` reshape |
 | **Q9** (population equality) | Describing tier 2 as a census; the accounted difference against the admission and conversion-audit populations | Accepting that a snapshot tier should exist; tier 2's population definition and name, both now fixed by Q11 |
 | **D8** (repetition protocol) | Tier-relative repetition counts | Everything else; tier 2 can run at the current fixed 3 |
-| **Q15** (execute the Q14 decision) | **The confirmatory tier 2 campaign** — coverage cannot reach its declared `1.0` until the policy covers `publication_metadata`, the absent close-marker rules, and `底本` correction notes; and reading any tier 2 coverage observation as a parser verdict before then | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
+| **Q15** (execute the Q14 decision; **blocked on an owner decision**) | **The confirmatory tier 2 campaign** — coverage cannot reach its declared `1.0` while numerator and denominator inhabit different coordinates, and which coordinate the predicate expresses is not yet chosen; and reading any tier 2 coverage observation as a parser verdict before then | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
 | ~~**Q16**~~ (decided and landed 2026-07-27) | — | — · the classified-source policy is now bound; `source_recognition` and `qualification_identity_ref` rotated, making Q15's amendment attributable |
 | ~~**Q14**~~ (decided 2026-07-27) | — | — · the instrument is incomplete; threshold and ratio both stand. Execution is Q15 |
 | ~~**Q1**~~ (closed 2026-07-27) | — | — · the capture layer is 9.25× all of `ab-check`; it reshapes the budget, not the architecture |
@@ -1378,15 +1411,19 @@ Current blocker status, plainly:
   Q12 then re-derived the section's mechanism over ledger dispositions and
   **confirmed its conclusion** — 2,154 residue intervals are recognized by the
   ledger while the converter emits no node for them. Substantially resolved.
-- **B5 — Q14 decided; Q15 open, and the most serious remaining item.**
-  `source-span-coverage := 1.0` fails on 299 of 299 real works — confirmed
-  through the built instrument, against exactly 1.0 on the governed corpus from
-  the same binary. The cause is now named: `publication_metadata` is declared by
-  the classified-source policy and implemented by no rule. **The threshold and
-  the ratio both stand**; the instrument gets fixed instead. Until Parts A and B
-  land, tier 2 has a population it cannot qualify against and *step 5 cannot
-  complete*. It does not block accepting the architecture or running the
-  exploratory campaign.
+- **B5 — Q14 decided; Q15 open and blocked on an owner decision, and the most
+  serious remaining item.** `source-span-coverage := 1.0` fails on 299 of 299
+  real works — confirmed through the built instrument, against exactly 1.0 on
+  the governed corpus from the same binary. The traced cause is a **coordinate
+  mismatch**: the ledger lexes the `aozora_body_range` body projection while
+  `eligible_bytes` counts the whole decoded file. (An earlier draft named an
+  unimplemented `publication_metadata` rule; that claim is superseded — those
+  bytes are never lexed, so the rule could not fire.) **The threshold and the
+  ratio both stand**; the instrument gets fixed instead. Fixing it first requires
+  the owner to choose which coordinate the predicate expresses, and until that
+  choice is recorded and executed, tier 2 has a population it cannot qualify
+  against and *step 5 cannot complete*. It does not block accepting the
+  architecture or running the exploratory campaign.
 - **B2 — D7.** **Decided** (Option 1, `unexpected-fatal-failures ≤ 0`).
   **Unimplemented:** `allowed_dispositions` is still level-confused and the
   expected-outcome model is unspecified, so the adversarial fixture tier remains
@@ -1404,16 +1441,31 @@ Current blocker status, plainly:
 
 Then:
 
-1. **Execute Q15 first — it now gates step 5.** Q14 is decided (fix the
-   instrument, not the threshold) and Part B is diagnosed, so Parts A and B are
-   **one policy amendment and one `policy_hash` rotation**:
-   `publication_metadata`, `warichu_close`, `framed_close`, and a `底本`
-   correction-note rule. **The Q16 binding has landed**, so that amendment now
-   rotates the identity through a coordinate that names the recognition policy
-   rather than only through `parser_git_rev`. Part C —
-   predeclaring the residual threshold — is step 5 itself and must not be pulled
-   forward. Q1 is measured, so what remains here is Q5's host class and the other
-   open questions.
+1. **Record the Q15 coordinate decision, then execute Q15 — it gates step 5.**
+   Q14 is decided (fix the instrument, not the threshold), but executing it is
+   **two separable deliverables**, not the single policy amendment an earlier
+   draft described:
+
+   - **The coordinate.** Make the numerator's facts and the denominator's
+     intervals inhabit one declared coordinate. Which one is the owner's
+     decision — body-projection coverage or whole-file coverage — and either way
+     it is a versioned instrument and protocol change reaching the recognition
+     crate, its schemas, and its tests, not a taxonomy-data edit. Record the
+     decision in `decisions.edn` before implementing it.
+   - **The unmapped directives.** `node_policy`
+     (`ab-aozora-pipeline/src/fold.rs`) maps 2 of 14 `DirectiveKind` variants;
+     the other **twelve** return `None` and so produce no fact at all, which is
+     why they never reach the `unknown_directive` catch-all. Mapping them, with
+     their `ConstructId` values and classified-source policy rules, is a separate
+     reviewable deliverable that rotates `policy_hash`. The earlier scope —
+     `publication_metadata`, `warichu_close`, `framed_close`, and a `底本`
+     correction-note rule — was both too narrow and, in its first item, void.
+
+   **The Q16 binding has landed**, so either amendment now rotates the identity
+   through a coordinate that names the recognition policy rather than only
+   through `parser_git_rev`. Part C — predeclaring the residual threshold — is
+   step 5 itself and must not be pulled forward. Q1 is measured, so what remains
+   here is Q5's host class and the other open questions.
 2. Discharge the D7 prerequisites in order — untangle `allowed_dispositions`
    first — and define tier semantics and authority **before** changing any hash.
 3. Reshape `wall-time`, apply the D7 decision, carry the D8 protocol migration if
@@ -1513,21 +1565,29 @@ Every governance edit to `decisions.edn` is authored by hand.
   0.9640, worst 0.2466), against exactly 1.0 on all three governed corpus works.
   See *Q12, closed*. The successor is **Q14**.
 - **Q14 — DECIDED 2026-07-27: the instrument is incomplete; the threshold and
-  the ratio both stay.** `publication_metadata` is a policy-declared
-  `source_role` that none of its 31 rules implements, and that category dominates
-  the gap — **96.7%**, the header and `底本：` colophon frames. Reading 3
-  (`accounted / eligible`) is rejected in kind — it would fold "the parser could
-  not type this" into the numerator. Reading 2 is rejected *for now* and becomes
-  correct only after Parts A and B, since even a fully classified frame reaches
-  just **0.9892**. See *Q14, decided*. **Execution is open**, tracked as Q15.
+  the ratio both stay.** The gap is dominated by Aozora's header and `底本：`
+  colophon frames, but the traced reason they are unaccounted is a **coordinate
+  mismatch** — those bytes are never lexed — not an unimplemented
+  `publication_metadata` rule. That causal claim is superseded; see *Q14
+  mechanism, corrected again*. Reading 3 (`accounted / eligible`) is rejected in
+  kind — it would fold "the parser could not type this" into the numerator.
+  Reading 2 is rejected *for now* and becomes correct only once the instrument
+  measures what it claims, since a non-zero residual survives any instrument
+  fix. Read *Q14, decided* for the decision; read its mechanism as history.
+  **Execution is open**, tracked as Q15.
 - **Q15 — RESCOPED 2026-07-27; Part A as written is void.** Attempting it showed
   the frame is unrecognized because the ledger lexes the **body projection**
   while `eligible_bytes` counts the **whole file** — a coordinate mismatch no
   policy rule can fix. See *Q14 mechanism, corrected again*. The corrected work
-  is (i) declare header and tail as governed ignored regions derived from
-  `aozora_body_range`, and (ii) map the **twelve** unmapped `DirectiveKind`
-  variants in `node_policy`, not the two close markers first proposed.
-  Superseded text follows for the record:
+  is (i) align numerator and denominator on one coordinate, and (ii) map the
+  **twelve** unmapped `DirectiveKind` variants in `node_policy`, not the two
+  close markers first proposed. **(i) is BLOCKED ON AN OWNER DECISION**: reducing
+  the denominator to the `aozora_body_range` projection and extending capture so
+  the header and tail produce facts are both coherent answers, and they mean
+  different things by `source_span_coverage = 1.0`. This section proposes the
+  former; that is a proposal, not a settled contract. Whichever is chosen, its
+  header and tail boundaries must come from `aozora_body_range` alone — never
+  from a separator or `底本：` heuristic. Superseded text follows for the record:
 - ~~**Q15 — Execute the Q14 decision. Part B is diagnosed; A+B are now one
   amendment.**~~ The classified-source policy needs `publication_metadata` (96.7%
   of the gap) plus the absent `warichu_close` / `framed_close` rules and a rule

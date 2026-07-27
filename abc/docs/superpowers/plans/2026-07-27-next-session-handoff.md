@@ -30,9 +30,11 @@ accepted.
    - *What each open item blocks*
    - the Q15 and Q13 entries under *Open Questions*
 
-3. Treat the later Q15 rescope as the current diagnosis. Before using the design
-   as an implementation source, reconcile the stale passages named under
-   *Known contradiction in the design* below.
+3. Treat the later Q15 rescope as the current diagnosis. The design's superseded
+   passages were reconciled on 2026-07-27 and their old diagnoses kept behind
+   explicit history markers — see *Design self-contradiction — reconciled* below
+   for what changed and for the figures that remain indicative rather than
+   authoritative.
 
 The durable checkpoint is commit `a2c8ad73` (the original handoff).
 `06f6cd37` added the initial design plus non-authoritative corpus inventory/tail
@@ -161,28 +163,45 @@ currently unlexed bytes must first exist.
   predicate contract itself changes.
 - Old evidence is rejected as stale or protocol-incompatible, as appropriate.
 
-## Known contradiction in the design
+## Design self-contradiction — reconciled 2026-07-27
 
-**Severity: blocker for implementation from the design.**
+**Severity was: blocker for implementation from the design. Now discharged.**
 
-The later *Q14 mechanism, corrected again* and Q15 *Open Questions* entry contain
-the traced diagnosis above. Earlier text still says the frame is fixed by adding
-`publication_metadata`, `warichu_close`, `framed_close`, and a `底本` rule. The
-stale instructions remain in at least:
+The design previously carried the traced diagnosis in *Q14 mechanism, corrected
+again* and the Q15 *Open Questions* entry while earlier text still instructed the
+superseded fix — add `publication_metadata`, `warichu_close`, `framed_close`, and
+a `底本` rule. Those passages were reconciled in the commit that follows this
+handoff's rewrite. Each superseded diagnosis was kept as history behind an
+explicit marker rather than deleted, so the record of being wrong twice survives:
 
-- the opening *Status* discussion of Q14/Q15;
-- the Q14 “Part A” sequence;
-- *What each open item blocks*, row Q15;
-- *Current blocker status*, B5;
-- *Governance Path*, step 1.
+| Passage | Now reads |
+|---|---|
+| *Status* | The traced coordinate mismatch; Q15 blocked on an owner decision |
+| *Q14, decided* | Decision stands; a banner marks the whole section's mechanism as history and voids Part A |
+| *Part B, diagnosed* | Discriminator and verdict stand; scope corrected to twelve variants; the A+B merger withdrawn |
+| *What each open item blocks*, row Q15 | Blocked on the coordinate choice, not on missing rules |
+| *Current blocker status*, B5 | Coordinate mismatch named; the superseded rule claim marked as such |
+| *Governance Path*, step 1 | Two separable deliverables: the coordinate, then the twelve `node_policy` arms |
+| Q14 *Open Questions* | Superseded causal claim removed from the entry itself |
+| Q15 *Open Questions* | Part (i) marked blocked on the owner decision; its proposal labelled a proposal |
 
-Those passages also say only two close-marker rules are missing. The traced
-scope is broader: `node_policy` maps only `DirectiveKind::Unknown` and
-`DirectiveKind::WarichuOpen`; the other **twelve** variants return `None`.
+One stale claim was also found in code and corrected: the comment in
+`classified-source-policy-edits-rotate-the-qualification-identity` called its
+fixture edit "exactly the Q15 amendment in miniature". The test is sound — it
+proves a policy edit rotates the identity without moving `predicate_set_hash` —
+but its edit is a *representative* policy edit, not the Q15 fix, which the
+comment now says.
 
-Reconcile the design before or in the same reviewed change that records the Q15
-decision. Preserve the superseded diagnosis as history only if it is clearly
-marked and cannot be mistaken for current instructions.
+Two verification notes for whoever implements Q15. The design's ≈0.9889 and
+≈0.9892 coverage estimates, its 57.1/39.6/3.3 frame split, and the 96.7% and 65%
+figures all derive from the disposable separator heuristic; the surviving text
+marks them indicative, and none is an acceptance value. And re-check for drift
+before trusting any single passage:
+
+```sh
+grep -n 'publication_metadata\|warichu_close\|framed_close\|Part A' \
+  abc/docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md
+```
 
 ## Decisions and governance records still owed
 

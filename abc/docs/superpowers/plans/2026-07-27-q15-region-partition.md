@@ -421,16 +421,27 @@ newline fact — two producers must not claim the same byte.
 
 ### Measured, 2026-07-27
 
-| | before task 4 | after |
-|---|---|---|
-| body fold | 0.9911 | **0.9911** (unchanged) |
-| metadata fold | 0.0508 | **0.3002** (1,146 / 3,818) |
-| cross-region | 850,980 | 850,980 |
+| | before task 4 | after | **corrected** |
+|---|---|---|---|
+| body fold | 0.9911 | 0.9911 (unchanged) | **0.991129** |
+| metadata fold | 0.0508 | 0.3002 (1,146 / 3,818) | **0.126768** (484 / 3,818) |
+| cross-region | 850,980 | 850,980 | 850,980 |
 
 The body number not moving is the check that the producer stayed in its own
-population. The metadata number is meaningfully below 1.0: roughly 70% of
-packaging bytes still have no classifier, which is the honest state of the
-instrument and the reason task 6 cannot proceed as written.
+population. The metadata number is meaningfully below 1.0, which is the honest
+state of the instrument and the reason task 6 cannot proceed as written.
+
+**The 0.3002 figure is superseded, 2026-07-27.** Review found it counted two
+things that are not attribution: the sanitizer's line-ending normalizations,
+which are true of every line in the file whether or not anything understands the
+packaging and which made the number depend on a work's line endings; and header
+lines matching the colophon field shape, including the standard notation legend
+`《》：ルビ`, which is a `key：value` line by shape and is not publication
+metadata. With attribution confined to the tail and to policy-named roles the
+fold is **0.126768**, and roughly seven eighths of packaging bytes have no
+classifier. Body recognition is unchanged across the correction. The reproducible
+measurement is
+`docs/reports/parser-rq-region-partition-exploratory-v1.md`.
 
 ### The identity rotation this cost
 
@@ -557,8 +568,20 @@ precondition is unmet; see *Task 6: not executed, and why*.
 
 The partition is declared, published and asserted; `source_span_coverage` is
 body-projection coverage; metadata attribution exists and is measured.
-Body fold **0.9911**, metadata fold **0.3002**, cross-region conservation holds.
+Body fold **0.991129**, metadata fold **0.126768**, cross-region conservation
+holds. Reproducible measurement:
+`docs/reports/parser-rq-region-partition-exploratory-v1.md`.
 
 Neither threshold is fixed, and neither should be carried forward from `:= 1.0`.
 Both wire versions moved to v2 with the v1 schemas frozen, and the
 classified-source policy rotation moved `qualification_identity_ref`.
+
+**Reviewed and corrected, 2026-07-27**, in four places. Malformed region sets
+underflowed the aggregate validator instead of being rejected; the colophon
+producer also classified the header's notation legend; metadata attribution
+counted `preserved_opaque` facts and line-ending normalizations; and the changed
+measure was still shipping as `parser-rq-source-recognition-v1`, so the gate
+scored a body denominator against a threshold predeclared for a whole-file one.
+The instrument is now v2 while the predicate set stays at v1, which makes the
+observation `:unavailable` until the predicate's owner declares a contract for
+what is now measured.

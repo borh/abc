@@ -2,11 +2,34 @@
 
 ## Implementation Status
 
-Not implemented. The contract is decided; the task sequence is in
-`docs/superpowers/plans/2026-07-27-q15-region-partition.md`. Tasks 1 and 2
-(characterize the control, declare the partition) are unblocked and change no
-measurement — task 2 only since the region set was closed, which an earlier draft
-of this record left open while asserting conservation over it.
+**Tasks 1–5 implemented, 2026-07-27, then reviewed and corrected. Task 6
+(predeclare both thresholds) deliberately not executed.** The task sequence is
+in `docs/superpowers/plans/2026-07-27-q15-region-partition.md`.
+
+Measured through the built binary on three real works (850,980 decoded bytes):
+body recognition **0.991129**, metadata attribution **0.126768**, cross-region
+conservation exact. Reproducible in
+`docs/reports/parser-rq-region-partition-exploratory-v1.md`, which is
+non-authoritative and says so.
+
+The measurement qualifies the premise this record inherited.
+`parser-rq-instrument-before-threshold` c2 holds that the shortfall was
+*entirely* packaging never being lexed. The header and tail do behave that way,
+but two thirds of the total gap lies inside the body, and moving to a body
+denominator moves the fold only from 0.9869 to 0.9911. Populations differ — c2
+rests on a 299-work sample — so this does not refute the sampled figure, only
+the qualitative claim that the coordinate mismatch is the whole story. The
+partition is still worth its cost, because it makes the two failure modes
+separable; it is not the fix that reaches the declared threshold.
+
+Review of the implementation found four defects, all now closed and all of a
+piece with what this record says about invariants that cannot fire: malformed
+region sets underflowed the aggregate validator rather than being rejected; the
+colophon producer also classified the header's notation legend, which is a
+`key：value` line by shape; metadata attribution counted facts that are not
+attribution (see *Decision*); and the changed measure still declared
+`parser-rq-source-recognition-v1`, so the gate scored a body denominator against
+a threshold predeclared for a whole-file one.
 
 ## Context
 
@@ -58,6 +81,41 @@ and **not** at `aozora_body_range`'s `tail_start` — see *Consequences*.
 - **A work clears only when both clear.**
 - Neither threshold is carried forward by default. Build, measure under an
   explicitly non-authoritative exploratory campaign, then predeclare.
+
+### What attributes a metadata byte
+
+Decided 2026-07-27, after review found the first implementation counted every
+accounted interval and so measured something other than attribution.
+
+A metadata byte is **attributed** when a fact covers it whose `source_role`
+appears in the classified-source policy's closed `metadata_attributing_roles`,
+and whose disposition is not `preserved_opaque`. Nothing else attributes.
+
+Both exclusions are load-bearing.
+
+`preserved_opaque` is the disposition that records "these bytes are carried
+through and nothing is claimed about them." Counting it would let the measure
+improve by *declining* to classify, which is not a weakness of degree but a
+contradiction of what the number reports.
+
+A role outside the attributing set can still **account** for a byte without
+attributing it. Every metadata line ending in a CRLF source carries a
+`crlf_normalization` fact under `structural_newline`, because the sanitizer
+walks the whole text rather than the body. That fact is true, and it is not
+knowledge about the packaging: it holds of every line in the file whether or not
+anything understands it. Counting it gave CRLF works several percent of
+attribution for free and made the number move when line endings changed rather
+than when packaging became understood.
+
+The attributing role set is **governed data, not a constant in the instrument**,
+so widening what counts as understood packaging rotates the policy hash and,
+through `instrument_policy_hashes`, the qualification identity. That is the same
+attribution route `parser-rq-classified-source-policy-binding` exists to create.
+
+The published field names are `attributed`/`unattributed`, distinct from the
+body population's `accounted`/`unaccounted`, so no reader can average a
+recognition ratio and an attribution ratio into a single whole-file number —
+which is the failure this whole record exists to prevent.
 
 ## Consequences
 
@@ -111,13 +169,41 @@ reviewable deliverable, not blocked by the partition.
 **Identity.** The predicate contract changes, so `predicate_set_hash` moves.
 Prior captured evidence is stale.
 
+**The instrument is quarantined at v2 until the predicate set catches up.**
+Observed 2026-07-27: the measure changed while the instrument still declared
+`parser-rq-source-recognition-v1`, and on the governed corpus the gate reported
+`pass` for `source-span-coverage` against `:= 1.0` — a threshold predeclared for
+a denominator that no longer exists. Wire versioning did not catch this, because
+the wire format was not what changed.
+
+The instrument is now `parser-rq-source-recognition-v2` and the predicate set is
+deliberately left naming v1. `instrument_versions` is taken from the predicate
+set's declared `:instrument`, and both readers require the record's
+`instrument_version` to match it, so the two disagree and the observation is
+`:unavailable`. Verified against the promoted identity of run `24d61fc7…`: it is
+refused. This is the intended transitional state. Qualification is unavailable
+rather than wrong, and it stays unavailable until the predicate's owner declares
+a contract for what is now measured. Bumping the predicate set to v2 without
+redeclaring the threshold would restore exactly the defect this quarantine
+exists to stop.
+
 ## Evidence
 
-No claim of this record carries an evidence path: nothing is implemented. The
-measurements motivating it were taken under a synthesized qualification identity
-that authenticates nothing. Promotion to Accepted requires evidence for each
-claim, the governed three-work corpus as a control, and a real-source sample
-re-measured through the built binary.
+The implementation is held by tests in `ab-validator/crates/`, which the
+governance schema cannot reference: it admits only `test/`, `fixtures/`, `nix/`
+and `docs/evidence/external/` prefixes. That is a gap in what this corpus can
+cite, not an absence of evidence, and it is worth naming rather than working
+around. The same gap is recorded in
+[parser-rq-retire-node-span-coverage](parser-rq-retire-node-span-coverage.md).
+
+`docs/reports/parser-rq-region-partition-exploratory-v1.md` binds the source
+hashes, governed document hashes, code revision and command behind the measured
+folds, but it is explicitly non-authoritative: its qualification identity is
+synthesized and its corpus is three hand-picked works.
+
+Promotion to Accepted requires evidence for each claim, the governed three-work
+corpus as a control, and a real-source *sample* — not three works — measured
+through the built binary under an identity that authenticates something.
 
 Plan: `docs/superpowers/plans/2026-07-27-q15-region-partition.md`.
 Design: `docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`.

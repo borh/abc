@@ -1129,6 +1129,110 @@ mod tests {
         assert!(src[tail_start..].starts_with("底本："));
     }
 
+    // Boundary cases for the three-region partition Q15 derives from this
+    // function. They are here rather than in the consumer because this is the
+    // one authority for where the body starts and ends, and a partition is
+    // only as sound as the range it is derived from.
+    //
+    // Region set, in this function's own coordinates:
+    //   header [0, body_start)   body [body_start, body_end)   tail [body_end, len)
+    // Note that the tail is anchored on `body_end`, NOT on the returned
+    // `tail_start`. The two differ, and the next test says by how much.
+
+    fn regions(source: &str) -> [core::ops::Range<usize>; 3] {
+        let (body, _) = aozora_body_range(source);
+        [0..body.start, body.clone(), body.end..source.len()]
+    }
+
+    fn assert_partitions(source: &str, label: &str) {
+        let [header, body, tail] = regions(source);
+        assert_eq!(header.start, 0, "{label}: header must open the file");
+        assert_eq!(header.end, body.start, "{label}: header/body gap");
+        assert_eq!(body.end, tail.start, "{label}: body/tail gap");
+        assert_eq!(tail.end, source.len(), "{label}: tail must close the file");
+        assert!(body.start <= body.end, "{label}: body inverted");
+        let covered = header.len() + body.len() + tail.len();
+        assert_eq!(covered, source.len(), "{label}: conservation");
+    }
+
+    #[test]
+    fn the_returned_tail_start_leaves_a_gap_that_body_end_does_not() {
+        // This is the defect the partition must resolve, pinned as behaviour
+        // rather than left as prose. `body_end` is trim-adjusted for trailing
+        // newlines (:146) while `tail_start` is not (:147), so whenever a tail
+        // exists at least one byte lies between them and belongs to no region.
+        let src = "本文です。\n\n\n底本：底本社\n";
+        let (body, tail_start) = aozora_body_range(src);
+        assert!(
+            body.end < tail_start,
+            "expected a gap between body_end and tail_start"
+        );
+        assert_eq!(&src[body.end..tail_start], "\n\n\n");
+        // Anchoring the tail on `tail_start` loses those bytes; anchoring it on
+        // `body_end` does not. That is why the region set uses `body_end`.
+        assert_ne!(
+            body.len() + (src.len() - tail_start),
+            src.len() - body.start
+        );
+        assert_partitions(src, "gap");
+    }
+
+    #[test]
+    fn the_three_regions_close_every_boundary_shape() {
+        for (label, src) in [
+            // No 底本 line at all: body_end == tail_start == len, empty tail.
+            ("no colophon", "本文です。\n"),
+            // Fewer than two separator lines: no legend cut, header is empty.
+            (
+                "one separator",
+                "題名\n----------\n本文です。\n底本：底本社\n",
+            ),
+            ("no separator", "本文です。\n底本：底本社\n"),
+            // Legend-fenced header, the ordinary shape.
+            (
+                "legend header",
+                "題名\n著者\n\n----------\n【テキスト中に現れる記号について】\n《》：ルビ\n----------\n\n本文です。\n\n底本：底本社\n",
+            ),
+            // Bare CR line endings: `split_inclusive('\n')` does not split on
+            // them, so the whole file is one line and no separator is seen.
+            ("bare cr", "題名\r----------\r本文です。\r底本：底本社\r"),
+            // Empty and whitespace-only inputs.
+            ("empty", ""),
+            ("blank", "\n\n\n"),
+            // A colophon with nothing before it.
+            ("colophon only", "底本：底本社\n"),
+        ] {
+            assert_partitions(src, label);
+        }
+    }
+
+    #[test]
+    fn bare_cr_sources_do_not_find_a_colophon_line() {
+        // Recorded because it decides which region a bare-CR work's colophon
+        // lands in, and the answer is "the body". `split_inclusive('\n')`
+        // yields one line for the whole file, so the 底本： line is never seen
+        // at a line start. The partition still conserves -- the tail is simply
+        // empty -- but a metadata predicate over the tail measures nothing
+        // here, and that is a property of the input, not of the partition.
+        let src = "本文です。\r底本：底本社\r";
+        let (body, tail_start) = aozora_body_range(src);
+        assert_eq!(body, 0..src.len());
+        assert_eq!(tail_start, src.len());
+        assert_partitions(src, "bare cr colophon");
+    }
+
+    #[test]
+    fn a_colophon_with_no_body_still_partitions() {
+        // `body_start` is 0 and the 底本： line is the first line, so
+        // `body_end` trims to 0 and the body region is empty. Every byte is
+        // tail. An empty body is a legitimate region, not an error.
+        let src = "底本：底本社\n奥付\n";
+        let [header, body, tail] = regions(src);
+        assert!(header.is_empty());
+        assert!(body.is_empty());
+        assert_eq!(tail, 0..src.len());
+    }
+
     #[test]
     fn comparison_lossy_body_without_markup_borrows() {
         let projected = comparison_lossy_body("吾輩は猫");

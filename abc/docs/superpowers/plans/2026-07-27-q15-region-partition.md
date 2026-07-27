@@ -187,11 +187,8 @@ Each task is separately reviewable. Do not combine them to reduce commit count;
 combine identity rotations only after each constituent change is independently
 reviewed.
 
-1. **Characterize the current behaviour.** Capture the governed three-work
-   control and one real work through the built binary as they stand, so any
-   later movement is attributable. Add failing boundary tests *before* changing
-   the instrument: no `底本：` line, fewer than two separators, bare-CR line
-   endings, and the body/tail gap from constraint 1.
+1. **Characterize the current behaviour — DONE 2026-07-27.** See *Task 1
+   result*. It changed what task 6 has to decide.
 2. **Declare the partition.** Schema plus derivation from `aozora_body_range`,
    with the gap resolved explicitly. Assert conservation and disjointness. This
    task adds a check that can fail and changes no measurement.
@@ -219,6 +216,70 @@ reviewed.
 unmapped `DirectiveKind` variants in `ab-aozora-pipeline/src/fold.rs::node_policy`
 with their `ConstructId` values and policy rules. That is body-side — annotations
 are part of the work — and it rotates `policy_hash` on its own.
+
+## Task 1 result — and a finding that revises the premise
+
+**Boundary tests first, and they all pass.** Added to `ab-source-syntax`'s own
+test module, because that function is the single authority for where the body
+starts and ends and a partition is only as sound as the range it derives from.
+`assert_partitions` checks header/body/tail conservation and adjacency over
+eight shapes: no `底本：` line, one separator, no separator, the ordinary
+legend-fenced header, bare-CR line endings, empty input, blank-only input, and a
+colophon with no body before it.
+
+Two are worth naming. `the_returned_tail_start_leaves_a_gap_that_body_end_does_not`
+pins the constraint-1 defect as behaviour rather than prose — on
+`"本文です。\n\n\n底本：底本社\n"` the bytes between `body_end` and
+`tail_start` are exactly `"\n\n\n"`, and anchoring the tail on `tail_start`
+loses them while anchoring on `body_end` does not. `bare_cr_sources_do_not_find_a_colophon_line`
+records that `split_inclusive('\n')` never sees a line start in a bare-CR file,
+so its colophon lands in the **body** and its tail is empty. The partition still
+conserves; a metadata predicate simply measures nothing there. That is a
+property of the input, not a defect in the partition.
+
+**Measured through the built binary on three real works** from the pinned
+`aozorabunko` checkout (`0e9ea3e5…`, resolved through the flake input):
+`hashire_merosu`, `hatsukoi`, `kokoro` — 850,980 decoded bytes together.
+
+| Work | decoded | gap | gap @header | gap @body | gap @tail |
+|---|---|---|---|---|---|
+| `hashire_merosu` | 32,148 | 1,473 | 473 | **372** | 628 |
+| `hatsukoi` | 259,320 | 4,062 | 461 | **2,883** | 718 |
+| `kokoro` | 559,512 | 5,604 | 587 | **4,260** | 757 |
+| fold | 850,980 | 11,139 | 1,521 | **7,515** | 2,103 |
+
+Whole-file fold: **0.9869**. Body-projection fold: **0.9911**.
+
+**The premise needs qualifying.** `parser-rq-instrument-before-threshold` c2
+says the observed shortfall was *entirely* packaging never being lexed, and the
+synthetic demonstration behind it showed a header and tail carrying no entry of
+any kind. The header and tail do behave that way here — 3,624 of their 3,818
+bytes are gap. **But two thirds of the total gap, 7,515 of 11,139 bytes, is
+inside the body**, and moving to a body denominator moves the fold only from
+0.9869 to 0.9911. It does not approach 1.0.
+
+Populations differ — c2 rests on a 299-work sample and this is three works — so
+this does not refute the sampled figure. What it does refute is the qualitative
+claim that the coordinate mismatch is the whole story. It cannot be, for any
+work whose body carries gap, and all three of these do.
+
+**What that changes.** Task 6 was already told not to carry `:= 1.0` forward.
+Now there is a measured reason rather than a precaution: on this evidence a body
+denominator leaves roughly 0.9% of body bytes unrecognized, and that residue is
+parser limitation, which is exactly the category c4 of
+`parser-rq-instrument-before-threshold` says no instrument work will remove.
+The partition remains worth building — it is what makes the two failure modes
+separable and the conservation assertable — but it should not be sold as the
+fix that gets `source_span_coverage` to its declared threshold.
+
+The 0.9911 figure is a **reconstruction**, not instrument output: the region
+boundaries were recomputed in Python over the decoded text, while the instrument
+derives them over *sanitized* text and maps back. Roughly 100 header bytes read
+as recognized, which they should not, and that discrepancy is the reconstruction
+drifting from the mapping. It is a prediction for task 5 to confirm or refute
+through the built instrument, and it is not an acceptance value — the same
+caution this plan already applies to the ≈0.9889 separator-heuristic estimate,
+which it happens to sit close to.
 
 ## Sequencing: decide Q13 first
 

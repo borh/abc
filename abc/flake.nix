@@ -606,6 +606,28 @@
                 echo "AAT parser-IR probe tests passed." > "$out/result.txt"
               '';
 
+          corpus-exploratory-tool-tests =
+            pkgs.runCommand "abc-corpus-exploratory-tool-tests"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                ];
+              }
+              ''
+                ${copyWritableSource}
+                # Guards determinism and metric definitions for the corpus
+                # inventory and tail selector. Those tools read a pinned
+                # aozorabunko checkout, which this check deliberately does not
+                # build: the properties at risk -- path-sorted output across
+                # traversal orders, and metrics meaning what the tiering design
+                # says -- are provable against synthetic archives and invisible
+                # to a single-host run over the real corpus.
+                python -m unittest tools/test_corpus_inventory.py
+
+                mkdir -p "$out"
+                echo "Corpus exploratory tool tests passed." > "$out/result.txt"
+              '';
+
           contract-surface = pkgs.runCommand "abc-contract-surface-check" { } ''
             cd ${./.}
             for path in ${pkgs.lib.escapeShellArgs contractSurfacePaths}; do

@@ -578,8 +578,11 @@ precondition is unmet; see *Task 6: not executed, and why*.
 
 The partition is declared, published and asserted; `source_span_coverage` is
 body-projection coverage; metadata attribution exists and is measured.
-Body fold **0.991129**, metadata fold **0.500786**, cross-region conservation
-holds. Reproducible measurement:
+Body fold **0.991129**, metadata fold **0.500786** on the three-work control,
+cross-region conservation holds. Across a 597-work random sample of the pinned
+corpus: body **0.987916**, metadata **0.512965**, all 597 `ok`, conservation
+exact — and **no work reaches 1.0 on metadata** (max 0.8449) while only 105 of
+597 reach it on the body. Reproducible measurement:
 `docs/reports/parser-rq-region-partition-exploratory-v1.md`.
 
 Neither threshold is fixed, and neither should be carried forward from `:= 1.0`.

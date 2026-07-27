@@ -59,6 +59,20 @@ const LEGEND_FENCED_WITH_REMARK: &str = concat!(
     "底本：「テスト全集」テスト書房\n",
 );
 
+/// A note line carrying a trailing space, as one work in a 597-work sample does.
+const LEGEND_TRAILING_SPACE: &str = concat!(
+    "はつ恋\n",
+    "\n",
+    "-------------------------------------------------------\n",
+    "【テキスト中に現れる記号について】\n",
+    "　　　（数字は、JIS X 0213の面区点番号） \n",
+    "-------------------------------------------------------\n",
+    "\n",
+    "本文《ほんぶん》の一行目。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+);
+
 /// A fenced pair with no heading. Nothing inside is claimed.
 const FENCE_WITHOUT_HEADING: &str = concat!(
     "はつ恋\n",
@@ -277,6 +291,29 @@ fn the_fenced_legend_block_is_classified_line_form_by_line_form() {
 /// than guess at an unfamiliar fenced block, the producer declines it entirely,
 /// so those bytes stay unattributed and show up as a gap rather than as
 /// confident nonsense.
+/// Trailing layout whitespace must not decide whether a line is recognized.
+///
+/// Found by running the classifier over a 597-work sample: exactly one legend
+/// line carries a trailing space, and stripping only the indentation left it
+/// failing every form test -- `）` was no longer its last character -- so it
+/// fell through to unattributed. Whitespace is layout at both ends of a line.
+#[test]
+fn a_trailing_space_does_not_change_how_a_legend_line_is_classified() {
+    let rows = classified(LEGEND_TRAILING_SPACE);
+    let note = rows
+        .iter()
+        .find(|(form, ..)| form.starts_with('（'))
+        .expect("the note line is classified despite its trailing space");
+    assert_eq!(
+        (note.0.as_str(), note.1.as_str()),
+        (
+            "（数字は、JIS X 0213の面区点番号）",
+            "editorial_legend_note"
+        ),
+        "the claimed span must exclude the trailing space, not include it"
+    );
+}
+
 #[test]
 fn a_fenced_block_without_a_heading_is_declined_rather_than_guessed_at() {
     assert_eq!(

@@ -163,6 +163,111 @@ before fixing a threshold.
 the body and metadata interval sets. The instrument refuses to emit a record
 where this fails.
 
+## The 597-work sample
+
+Three works cannot support a claim about the corpus. This section can, within
+the limits stated at the end of it.
+
+**Population.** Every `.zip` under the pinned checkout, path-sorted (17,887 of
+them), sampled with Python's `random.sample(zips, 600)` under `random.seed(20260727)`.
+Three of the 600 are index archives carrying no `.txt` member and are recorded
+as skipped rather than silently dropped, leaving **597 works, 25,080,140 decoded
+bytes**. This is the same seed and the same sorted list the legend classifier's
+line forms were designed against, so these are the works the design saw — a
+held-out sample would be a stronger test and this is not one.
+
+**Method.** Each work's raw Shift-JIS bytes through
+`capture_generation_from_bytes_for_identity_and_work` and then
+`analyze_recognition`, which is the real capture producer and the real
+measurement path. Nothing is reconstructed. Parser-IR is not involved, because
+the per-work recognition record does not require it.
+
+**Every one of the 597 returned `status: ok`.** No capture failure, no
+unavailable record, no conservation rejection across 25 MB.
+
+| | bytes | fold |
+|---|---|---|
+| body recognized / eligible | 24,088,179 / 24,382,817 | **0.987916** |
+| metadata attributed / eligible | 357,702 / 697,323 | **0.512965** |
+| body + metadata | 25,080,140 | = decoded, exactly |
+
+### The distribution, which is what a per-work predicate needs
+
+Clearance is conjunctive and per work, so an aggregate fold is not what a
+threshold would be tested against. The distributions are:
+
+| | min | p05 | median | p95 | max | at 1.0 |
+|---|---|---|---|---|---|---|
+| body recognition | 0.6588 | 0.9689 | 0.9934 | 1.0000 | 1.0000 | **105 / 597** |
+| metadata attribution | 0.1313 | 0.3091 | 0.5384 | 0.6376 | 0.8449 | **0 / 597** |
+
+**No work reaches 1.0 on metadata attribution.** The best is 0.8449. A `:= 1.0`
+metadata threshold would fail every work in the sample, and it would do so for
+reasons that are mostly not defects — see the residue below.
+
+**105 of 597 works reach 1.0 on body recognition**, and the median is 0.9934. A
+`:= 1.0` body threshold — the literal currently in the predicate set, declared
+for the old whole-file denominator — would fail 492 of 597 works, 82% of them.
+
+### Classifier coverage
+
+| construct | lines | bytes |
+|---|---|---|
+| `publication_metadata_line` | 2,969 | 115,977 |
+| `editorial_legend_entry` | 1,404 | 75,493 |
+| `editorial_separator_rule` | 1,114 | 61,265 |
+| `editorial_legend_example` | 1,403 | 59,247 |
+| `editorial_legend_heading` | 557 | 28,407 |
+| `editorial_legend_note` | 197 | 17,313 |
+
+557 of 597 works carry a recognized legend block, and 591 carry a recognized
+colophon. Both absences were checked rather than assumed:
+
+- The **40 works with no legend block** were re-scanned for a fenced pair and a
+  `【...】` heading in the header. **Zero** have one. Every absence is genuine;
+  the classifier missed nothing.
+- The **6 works with no colophon** have a tail region of exactly 0 bytes. There
+  is no colophon to classify.
+
+Every construct count above matches an independent reconstruction of the same
+sample line by line, which is the cross-check that the instrument's region
+derivation and the design analysis agree.
+
+### One defect, found by running this
+
+The two counts initially disagreed by one: 196 notes from the instrument against
+197 from the reconstruction. The cause was a legend line carrying a **trailing
+space**. `header_lines` stripped indentation but not trailing whitespace, so
+`）` was no longer the line's last character, the note test failed, and the line
+fell through every form to unattributed.
+
+It is one line in 597 works and 85 bytes, so its effect on the fold is nil. Its
+cause was not: whether a line is recognized should never depend on whether a
+transcriber left a trailing space. Trimming is now symmetric, and the figures in
+this section are post-fix. A single unexplained one-line discrepancy is exactly
+the shape every earlier defect in this area took, which is the argument for
+chasing it rather than rounding it away.
+
+### What the unattributed 322,389 bytes are
+
+| | bytes | share |
+|---|---|---|
+| title, author and colophon continuation lines | 250,514 | 77.7% |
+| free-text transcriber remarks (`※…`, `＊…`) | 57,185 | 17.7% |
+| whitespace and line terminators | 14,408 | 4.5% |
+| bare URLs | 282 | 0.1% |
+
+The shape holds from three works to 597: the dominant residue is a **real typed
+form with no producer** — `姫柚子の讃`, `佐藤垢石`,
+`1993（平成5）年2月10日第1刷発行`. Bibliographic attribution is the next
+classifier, and on these proportions it is worth roughly 0.36 of the metadata
+measure.
+
+The 17.7% of transcriber prose is the part that may never be attributable. If it
+is not, **this instrument's ceiling is near 0.87**, not 1.0, and no amount of
+further classification reaches the literal the predicate set currently carries
+for the body measure.
+
 ## Reproducing
 
 Stage the three works, their parser-IR documents, a probe qualification identity
@@ -183,18 +288,25 @@ from the records the index in `<out>/source-recognition-index.json` addresses.
 
 ## What this does not establish
 
-No threshold. Three hand-picked works under a synthesized identity cannot
-support one, and the metadata instrument still leaves half of packaging bytes
-unattributed — most of it a bibliographic form that has no producer yet, and
-some of it free prose that may never have one. A threshold fixed here would
-encode the current classifier inventory as a permanent governed allowance.
-Predeclaration belongs to the predicate's owner, after the instrument measures
-what its predicate would claim.
+**No threshold.** That is a governance act for the predicate's owner, and this
+report is input to it, not a substitute for it. What the sample does establish
+is that the literal currently in the predicate set is not a candidate for either
+measure: `:= 1.0` fails 492 of 597 works on the body and all 597 on metadata.
 
-Nor does it establish that the legend classifier generalizes. Its line forms
-were designed against a 597-work random sample of the pinned corpus, in which
-557 headers carry a fenced legend block and the four classified forms cover
-3,561 of 3,631 non-blank block lines; but the *folds* above are three works, and
-the sampling script is exploratory scratch work that is not committed. Running
-the classifier across that sample and publishing the coverage is the next
-measurement worth taking.
+**Not a held-out test of the classifier.** The legend classifier's line forms
+were designed against this same sample under this same seed. The coverage
+figures are therefore a description of the design population, not a prediction
+about unseen works. A second sample under a different seed would be the honest
+generalization test and has not been run.
+
+**Not an authoritative campaign.** The qualification identity is synthesized,
+the run is not a capture under the promoted identity, and the probe binary and
+sampling script are scratch state rather than committed tooling — deliberately,
+since neither should become a governance input. Reproducing the sample requires
+re-running them, which the *Reproducing* section describes but does not
+automate.
+
+**Not a claim about the corpus.** 597 of 17,887 works is 3.3%, drawn at random
+but from a single snapshot, and the aozorabunko population is not homogeneous —
+old-orthography works, accent-decomposition works and modern transcriptions
+carry different packaging conventions. Nothing here is stratified.

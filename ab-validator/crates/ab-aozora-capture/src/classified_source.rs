@@ -525,21 +525,31 @@ fn is_colophon_field(line: &str) -> bool {
     !key.is_empty() && !key.contains('：') && key.chars().all(|ch| !ch.is_control())
 }
 
-/// One line of the header, with its absolute span and its indentation stripped.
+/// One line of the header, with its absolute span and its surrounding
+/// whitespace stripped.
 struct HeaderLine {
     start: usize,
     end: usize,
     content: String,
 }
 
-/// The header's lines, terminators and indentation excluded from every span.
+/// The header's lines, terminators and surrounding whitespace excluded from
+/// every span.
+///
+/// Trimmed at BOTH ends, and the symmetry is the point. Stripping only the
+/// indentation left a line's classification depending on whether the
+/// transcriber happened to leave a trailing space: measured across a 597-work
+/// sample, exactly one legend line carried one, and it fell through every form
+/// test to unattributed because `）` was no longer the last character. Layout
+/// whitespace is not content at either end, and it must not decide whether a
+/// line is recognized.
 fn header_lines(text: &str, region_start: usize) -> Vec<HeaderLine> {
     let mut lines = Vec::new();
     let mut offset = region_start;
     for raw in text.split_inclusive('\n') {
         let stripped = raw.trim_end_matches(['\n', '\r']);
-        let trimmed = stripped.trim_start();
-        let indent = stripped.len() - trimmed.len();
+        let trimmed = stripped.trim();
+        let indent = stripped.len() - stripped.trim_start().len();
         lines.push(HeaderLine {
             start: offset + indent,
             end: offset + indent + trimmed.len(),

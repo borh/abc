@@ -26,6 +26,26 @@ The editorial legend classifier landed 2026-07-27 and took metadata attribution
 from 0.126768 to 0.500786. That is new coverage, not a correction to a reported
 number; what remains unattributed is enumerated under *Decision*.
 
+**Measured across a 597-work random sample of the pinned corpus** (25,080,140
+decoded bytes, every work returning `ok`, conservation exact): body recognition
+folds to 0.987916 and metadata attribution to 0.512965, both close to the
+three-work control. The distributions matter more than the folds, because
+clearance is per work:
+
+| | median | max | works at 1.0 |
+|---|---|---|---|
+| body recognition | 0.9934 | 1.0000 | 105 / 597 |
+| metadata attribution | 0.5384 | 0.8449 | **0 / 597** |
+
+**This settles what `:= 1.0` would mean for either measure.** It fails 492 of
+597 works on the body and every work on metadata. The body literal was declared
+against the old whole-file denominator and cannot simply be carried across; the
+metadata measure has no declared threshold and must not inherit that one. Both
+figures are in
+`docs/reports/parser-rq-region-partition-exploratory-v1.md`, which also records
+that the sample is the classifier's own design population and therefore not a
+generalization test.
+
 Review of the implementation found four defects, all now closed and all of a
 piece with what this record says about invariants that cannot fire: malformed
 region sets underflowed the aggregate validator rather than being rejected; the

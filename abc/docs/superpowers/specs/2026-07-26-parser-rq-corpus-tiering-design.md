@@ -697,9 +697,20 @@ header frame, its `底本：` colophon frame, and the body between them:
 
 | Unaccounted region | Bytes | Share |
 |---|---|---|
-| Colophon frame | 195,235 | 57.3% |
-| Header frame | 26,373 | 7.7% |
-| **Body interior** | **119,144** | **35.0%** |
+| Colophon frame | 194,442 | 57.1% |
+| Header frame | 135,017 | 39.6% |
+| **Body interior** | **11,293** | **3.3%** |
+
+> **Corrected 2026-07-27.** This table first read 195,235 / 26,373 / **119,144
+> (35.0%)**. That was a defect in the frame detector, not in the instrument: it
+> scanned for a 40-hyphen *substring* advancing by one byte, so inside a single
+> 55-hyphen rule it matched sixteen times and "the second separator" was the
+> second overlapping match within the **first** rule. The
+> `【テキスト中に現れる記号について】` notation legend between the two real rules
+> was therefore misfiled as body text. Detecting separators as whole *lines*
+> gives the figures above. The correction **strengthens** the decision below —
+> the frame is **96.7%** of the unaccounted bytes, not 65% — and it shrinks
+> Part B by an order of magnitude.
 
 The frame content is unmistakable: title, author, translator, the separator
 rules, the `【テキスト中に現れる記号について】` notation legend and its
@@ -730,20 +741,19 @@ insufficiency:
   one predicate stated as an exact contract into a negotiated one.
 
 **But reading 2 becomes correct later, and this is the load-bearing part of the
-decision.** Even with the entire frame exempted, coverage reaches only **0.9809**
-— 119,144 body-interior bytes and 130,310 `preserved_opaque` bytes remain. Some
-residual is *genuine parser limitation*, and no amount of policy work will drive
-it to 1.0. So the sequencing is:
+decision.** Even with the entire frame classified, coverage reaches only
+**0.9892** — 11,293 body-interior bytes and 130,310 `preserved_opaque` bytes
+remain. Some residual is *genuine parser limitation*, and no amount of policy
+work will drive it to 1.0. So the sequencing is:
 
 1. **Part A — implement `publication_metadata`** (65% of the gap). Rotates
    `policy_hash`. Prefer classifying the frame over declaring it a governed
    ignored region: the role already exists, showing the authors' intent was to
    classify; and shrinking `eligible_bytes` is the more dangerous move, being the
    same denominator-shrinkage hazard Q11 rejected.
-2. **Part B — diagnose the 119,144 body-interior bytes** (35%). These sit under
-   `［＃` annotations, `｜` ruby delimiters, and `《` ruby, all of which *do* have
-   policy rules — so this is either a missing rule or a ledger-builder gap, and
-   **which one must be established before anything rotates.**
+2. **Part B — diagnose the body-interior bytes. DONE; see *Part B, diagnosed*.**
+   It is **11,293 bytes, not 119,144**, and it is a **missing-rule class**, not a
+   ledger-builder extent bug. It groups with Part A into one policy amendment.
 3. **Part C — only then predeclare a threshold.** After A and B, whatever remains
    is real fidelity exposure rather than instrument incompleteness, and a
    threshold predeclared from the exploratory campaign is honest rather than a
@@ -761,6 +771,61 @@ is indicative, not exact, and Part B's true size should be re-derived once Part 
 lands. The decision does not depend on the split's precision: it rests on
 `publication_metadata` being declared and unimplemented, which is a fact about
 the policy file.
+
+### Part B, diagnosed — asymmetric close-marker rules, not a builder bug
+
+Part B asked whether the body-interior unaccounted bytes are a **missing policy
+rule** or a **ledger-builder gap**. The discriminator is adjacency: a rule that
+fires with too narrow an extent leaves a gap *partially overlapped* by its own
+entry, whereas a construct with no rule leaves a gap *flanked* by its
+neighbours' entries.
+
+| Body-interior unaccounted | Bytes | n |
+|---|---|---|
+| `［＃` annotations | **10,500** (93.0%) | 220 |
+| bare text | 793 (7.0%) | 10 |
+| **Total** | **11,293** | 230 |
+
+**100% are flanked on both sides by ledger entries; none is partially
+overlapped.** The dominant neighbour pairs are `plain_text | plain_text` (157)
+and `ruby | plain_text` (36) — the builder classifies the text either side of
+the annotation and emits nothing for the annotation itself. That rules out an
+extent bug.
+
+The 10,500 bytes are **the same 220 intervals** *Q12, closed* found as residue
+with no ledger entry — the two probes converge on one set from opposite
+directions.
+
+The cause is visible in the policy's open/close symmetry:
+
+| Pair | `_open` | `_close` |
+|---|---|---|
+| `container` | ✓ | ✓ |
+| `warichu` | ✓ | **absent** |
+| `framed` | ✓ | **absent** |
+
+`ab-aozora` emits `［＃割り注］` and `［＃割り注終わり］` as raw nodes of
+identical shape (`x-provenance: "parser-derived"`,
+`x-source-marker-kind: "directive"`), so the parser sees the close marker
+exactly as it sees the open marker. The policy declares a rule for one and not
+the other. The remaining witnesses are `底本` correction notes of the form
+`［＃「X」は底本では「Y」］`, which no rule covers either — and notably they do
+not even fall through to the `unknown_directive` catch-all, so no fact is
+produced for them at all.
+
+**This is the same species of defect as `publication_metadata`: a governed
+vocabulary that does not cover constructs the parser already emits.** It is not
+an extent bug and not a rotation-sensitive builder change, so **Parts A and B
+collapse into a single policy amendment and a single `policy_hash` rotation**,
+rather than the two-stage sequence the decision originally assumed.
+
+Caveat on the 793 bytes of "bare text": the witnesses are `底本：` lines,
+publication dates, and an editorial note in works using **bare-CR** line
+endings, which the line-based frame detector splits on `\n` and therefore misses
+(their neighbours are `bare_cr_normalization` entries). They are residual frame,
+not body. The true body-interior figure is **~10,500 bytes**, and 23 of 299
+works lack two separator lines entirely, so a governed frame rule cannot rely on
+the separator heuristic used here.
 
 `decisions.edn` is authored by hand; this section records the decision and its
 evidence, not the governance entry.
@@ -1105,7 +1170,8 @@ Stated explicitly, because "blocker" without a scope stalls everything equally.
 | **D7 prerequisites** (decided; unimplemented) | The fixture tier containing adversarial or malformed inputs, until `allowed_dispositions` is untangled and the expected-outcome model specified | The tier architecture; tier 2 and tier 3 work; the `wall-time` reshape |
 | **Q9** (population equality) | Describing tier 2 as a census; the accounted difference against the admission and conversion-audit populations | Accepting that a snapshot tier should exist; tier 2's population definition and name, both now fixed by Q11 |
 | **D8** (repetition protocol) | Tier-relative repetition counts | Everything else; tier 2 can run at the current fixed 3 |
-| **Q15** (execute the Q14 decision) | **The confirmatory tier 2 campaign** — coverage cannot reach its declared `1.0` until `publication_metadata` is implemented and the body-interior gap diagnosed; and reading any tier 2 coverage observation as a parser verdict before then | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
+| **Q15** (execute the Q14 decision) | **The confirmatory tier 2 campaign** — coverage cannot reach its declared `1.0` until the policy covers `publication_metadata`, the absent close-marker rules, and `底本` correction notes; and reading any tier 2 coverage observation as a parser verdict before then | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
+| **Q16** (is the classified-source policy in the identity?) | **Landing Q15's amendment**, which is the first change to exercise it | Everything else; the change fails closed either way |
 | ~~**Q14**~~ (decided 2026-07-27) | — | — · the instrument is incomplete; threshold and ratio both stand. Execution is Q15 |
 | ~~**Q1**~~ (closed 2026-07-27) | — | — · the capture layer is 9.25× all of `ab-check`; it reshapes the budget, not the architecture |
 | ~~**Q2**~~ (closed 2026-07-27) | — | — · closing it *corrected* D6's instrument attribution; see *D6 correction* |
@@ -1165,12 +1231,14 @@ Current blocker status, plainly:
 Then:
 
 1. **Execute Q15 first — it now gates step 5.** Q14 is decided (fix the
-   instrument, not the threshold), so this is implementation in a fixed order:
-   Part A `publication_metadata`, Part B diagnose the body-interior gap **before**
-   rotating anything, Part C predeclare the residual threshold — which is step 5
-   itself, and must not be pulled forward. Q1 is measured — the capture layer,
-   not the parser, sets campaign cost — so what remains here is Q5's host class
-   and the other open questions.
+   instrument, not the threshold) and Part B is diagnosed, so Parts A and B are
+   **one policy amendment and one `policy_hash` rotation**:
+   `publication_metadata`, `warichu_close`, `framed_close`, and a `底本`
+   correction-note rule. **Settle Q16 before that amendment lands**, since it
+   decides whether the rotation reaches `qualification_identity_ref`. Part C —
+   predeclaring the residual threshold — is step 5 itself and must not be pulled
+   forward. Q1 is measured, so what remains here is Q5's host class and the other
+   open questions.
 2. Discharge the D7 prerequisites in order — untangle `allowed_dispositions`
    first — and define tier semantics and authority **before** changing any hash.
 3. Reshape `wall-time`, apply the D7 decision, carry the D8 protocol migration if
@@ -1272,17 +1340,30 @@ Every governance edit to `decisions.edn` is authored by hand.
 - **Q14 — DECIDED 2026-07-27: the instrument is incomplete; the threshold and
   the ratio both stay.** `publication_metadata` is a policy-declared
   `source_role` that none of its 31 rules implements, and that category dominates
-  the gap (65%, the header and `底本：` colophon frames). Reading 3
+  the gap — **96.7%**, the header and `底本：` colophon frames. Reading 3
   (`accounted / eligible`) is rejected in kind — it would fold "the parser could
   not type this" into the numerator. Reading 2 is rejected *for now* and becomes
-  correct only after Parts A and B, since even a fully exempted frame reaches
-  just 0.9809. See *Q14, decided*. **Execution is open**, tracked as Q15.
-- **Q15 — Execute the Q14 decision.** Part A: implement `publication_metadata`
-  (rotates `policy_hash`). Part B: diagnose the 119,144 body-interior unaccounted
-  bytes — missing rule or ledger-builder gap, **established before anything
-  rotates**. Part C: predeclare the residual threshold from the exploratory
-  campaign, per *Governance Path* step 5. **This gates the confirmatory tier 2
-  campaign.**
+  correct only after Parts A and B, since even a fully classified frame reaches
+  just **0.9892**. See *Q14, decided*. **Execution is open**, tracked as Q15.
+- **Q15 — Execute the Q14 decision. Part B is diagnosed; A+B are now one
+  amendment.** The classified-source policy needs `publication_metadata` (96.7%
+  of the gap) plus the absent `warichu_close` / `framed_close` rules and a rule
+  covering `底本` correction notes (~10,500 B) — one policy amendment, one
+  `policy_hash` rotation. Part C: predeclare the residual threshold from the
+  exploratory campaign, per *Governance Path* step 5; with A+B landed, coverage
+  would still be ~0.9892, the remainder being `preserved_opaque` fidelity
+  exposure. **This gates the confirmatory tier 2 campaign.**
+- **Q16 — Is the classified-source policy bound into the qualification
+  identity?** `instrument-policy-paths` binds `:source_recognition` to
+  `data/parser-rq-ignored-regions-v1.json`, which is `{"rules":[]}` — **not** to
+  `data/parser-rq-ab-aozora-classified-source-v1.json`, the document that
+  actually decides what `source_span_coverage` recognizes. The policy is pinned
+  by `parser-rq-classified-source-authority-v1.json`
+  (`raw_bytes_hash`/`identity_hash`), so a change **fails closed** rather than
+  drifting silently; the open question is whether it should also rotate
+  `qualification_identity_ref`, which today it does not. **Q15's amendment is
+  the first change that will exercise this**, so decide it first. Not traced
+  through the full promotion chain — stated as a question, not a defect.
 - **Q13 — Is `:parser_ir_node_span_coverage` safe to retain?** It is kept as
   supporting evidence beside the ledger-authoritative observation, but on real
   works it is not a source-coverage ratio at all: node spans are a running offset

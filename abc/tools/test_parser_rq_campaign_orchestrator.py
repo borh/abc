@@ -424,6 +424,25 @@ def bounded_identity() -> dict[str, object]:
             "timeouts": "parser-rq-core-attempt-v1",
             "wall_time_seconds": "parser-rq-core-attempt-v1",
         },
+        # Required by the Rust identity struct with no serde default, so omitting
+        # it fails deserialization in every candidate binary rather than just
+        # producing a thinner identity. `instrument_versions` above describes how
+        # a measurement is taken in prose; this binds the governed policy document
+        # each instrument actually read.
+        #
+        # These are the live values from abc/src/abc/tools/parser_rq_campaign.clj's
+        # `instrument-policy-hashes`, which hashes the canonical JSON of each
+        # document under `instrument-policy-paths`. Restated here because this is
+        # a fixture, not a recomputation; rotate them with the policy documents.
+        "instrument_policy_hashes": {
+            "core_attempt": "sha256:87ebecc299852b0d378f0963ced57424bcb6d78f038e14b7ee8ef1524a99bc20",
+            "diagnostic_completeness": "sha256:ede249362fcd93bc32a38c65c2d3f95993e6818163286a49ad688751631d80a3",
+            "diagnostic_gap": "sha256:6a82444829b3657e996b5fc81e2d0fac1d08954762b2b6f53aba67b954346d15",
+            "parser_ir_conformance": "sha256:062dd8952188e82440de0758b052de9a236175d9c18bf83a27484c21e679bf60",
+            "publication_structure": "sha256:1bafc7da20e5f8290dd1c89f6eb6e11ea202629d4a8726a8dfaec6afbe615da0",
+            "resource": "sha256:dc9c6630dac7aa59b4732d9179aeeef499fbc49394a8674c8decf60f339cf48e",
+            "source_recognition": "sha256:c099072a65a5c1fcffe3887805ba17354b25a76ab7cbd12d9c3a4b5c0e75aa42",
+        },
     }
 
 

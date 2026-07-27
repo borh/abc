@@ -217,6 +217,7 @@ event:
 | Q16 | Decided and implemented | Record the classified-source policy as a bound source-recognition authority |
 | Instrument-binding amendment | Implied by Q16 | Amend `parser-release-instrument-bindings` so its documented authority closure matches the code |
 | Q15 | **Owner decision required** | Record Option A or B before implementation |
+| Q13 | **Owner decision required** | Record one of the three options in `plans/2026-07-27-q13-node-span-coverage.md`; state the quantity actually measured, not "renamed for clarity" |
 
 The Q16 implementation widened `instrument-policy-paths` from member → path to
 member → ordered vector. `:source_recognition` now binds both:
@@ -236,10 +237,16 @@ stale.
 These streams do not require choosing the source coordinate, but each still
 needs its own scoped plan before code changes:
 
-1. **Q13:** drop `:parser_ir_node_span_coverage` or rename it only after defining
-   the quantity it actually measures. It costs 9.80 ms/work and is authoritative
-   for no predicate; its current ratio-like name invites the exact
-   misinterpretation that exposed D6.
+1. **Q13: scoped 2026-07-27 — see
+   `plans/2026-07-27-q13-node-span-coverage.md`; awaiting an owner selection
+   among three options.** The traced diagnosis is stronger than the naming
+   objection first recorded: parser-IR node spans are running offsets over
+   emitted visible text, the emitter hard-codes their label to `decoded_utf8`,
+   `sentences.rs` uses that string for the visible-text projection, and
+   `analyze.rs` reads it as the decoded source file. The published number is
+   approximately visible-text bytes ÷ decoded-source bytes. It costs 9.80 ms/work
+   and is authoritative for no predicate. The plan recommends dropping it. It
+   still needs confirmation through the built binary before implementation.
 2. **D7 prerequisites:** separate record `status` from measured `disposition`,
    then specify closed expected-outcome vocabularies. Initially only `parsed` and
    `fatal_error` may be expected; `adapter_timeout`, `protocol_error`, and

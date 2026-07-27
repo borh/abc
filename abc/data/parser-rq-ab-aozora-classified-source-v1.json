@@ -1,45 +1,715 @@
 {
   "schema_version": "abc/parser-rq-classified-source-policy/v1",
   "policy_id": "parser-rq-ab-aozora-classified-source-v1",
-  "policy_hash": "sha256:defc1c9bd3ac7a3a3ce63ea4aae6948698b37d4de8071d6b3ac66176984b980a",
+  "policy_hash": "sha256:36c5197b59c6f6fba0adebac0193be18da61d6e944e4eac6ac7ca4f46212799e",
   "parser": "ab-aozora",
   "coordinate_system": "decoded_utf8",
-  "roles": ["visible_text", "structural_newline", "ruby", "typography", "gaiji", "layout", "break", "heading", "illustration", "kunten", "source_annotation", "container_syntax", "terminal_provenance", "publication_metadata", "unrecognized_source_form"],
-  "dispositions": ["emitted_semantic_value", "preserved_sidecar_value", "structural_control", "lossless_normalization", "preserved_opaque"],
+  "roles": [
+    "visible_text",
+    "structural_newline",
+    "ruby",
+    "typography",
+    "gaiji",
+    "layout",
+    "break",
+    "heading",
+    "illustration",
+    "kunten",
+    "source_annotation",
+    "container_syntax",
+    "terminal_provenance",
+    "publication_metadata",
+    "unrecognized_source_form"
+  ],
+  "dispositions": [
+    "emitted_semantic_value",
+    "preserved_sidecar_value",
+    "structural_control",
+    "lossless_normalization",
+    "preserved_opaque"
+  ],
   "accent_mappings": [
-    {"source":"ae&","normalized":"æ"},    {"source":"AE&","normalized":"Æ"},    {"source":"oe&","normalized":"œ"},    {"source":"OE&","normalized":"Œ"},    {"source":"s&","normalized":"ß"},    {"source":"a`","normalized":"à"},    {"source":"a'","normalized":"á"},    {"source":"a^","normalized":"â"},    {"source":"a~","normalized":"ã"},    {"source":"a:","normalized":"ä"},    {"source":"a&","normalized":"å"},    {"source":"a_","normalized":"ā"},    {"source":"c,","normalized":"ç"},    {"source":"c'","normalized":"ć"},    {"source":"c^","normalized":"ĉ"},    {"source":"d/","normalized":"đ"},    {"source":"e`","normalized":"è"},    {"source":"e'","normalized":"é"},    {"source":"e^","normalized":"ê"},    {"source":"e:","normalized":"ë"},    {"source":"e_","normalized":"ē"},    {"source":"e~","normalized":"ẽ"},    {"source":"g^","normalized":"ĝ"},    {"source":"h^","normalized":"ĥ"},    {"source":"h/","normalized":"ħ"},    {"source":"i`","normalized":"ì"},    {"source":"i'","normalized":"í"},    {"source":"i^","normalized":"î"},    {"source":"i:","normalized":"ï"},    {"source":"i_","normalized":"ī"},    {"source":"i/","normalized":"ɨ"},    {"source":"i~","normalized":"ĩ"},    {"source":"j^","normalized":"ĵ"},    {"source":"l/","normalized":"ł"},    {"source":"l'","normalized":"ĺ"},    {"source":"m'","normalized":"ḿ"},    {"source":"n`","normalized":"ǹ"},    {"source":"n~","normalized":"ñ"},    {"source":"n'","normalized":"ń"},    {"source":"o`","normalized":"ò"},    {"source":"o'","normalized":"ó"},    {"source":"o^","normalized":"ô"},    {"source":"o~","normalized":"õ"},    {"source":"o:","normalized":"ö"},    {"source":"o/","normalized":"ø"},    {"source":"o_","normalized":"ō"},    {"source":"r'","normalized":"ŕ"},    {"source":"s'","normalized":"ś"},    {"source":"s,","normalized":"ş"},    {"source":"s^","normalized":"ŝ"},    {"source":"t,","normalized":"ţ"},    {"source":"u`","normalized":"ù"},    {"source":"u'","normalized":"ú"},    {"source":"u^","normalized":"û"},    {"source":"u:","normalized":"ü"},    {"source":"u_","normalized":"ū"},    {"source":"u&","normalized":"ů"},    {"source":"u~","normalized":"ũ"},    {"source":"y'","normalized":"ý"},    {"source":"y:","normalized":"ÿ"},    {"source":"z'","normalized":"ź"},    {"source":"A`","normalized":"À"},    {"source":"A'","normalized":"Á"},    {"source":"A^","normalized":"Â"},    {"source":"A~","normalized":"Ã"},    {"source":"A:","normalized":"Ä"},    {"source":"A&","normalized":"Å"},    {"source":"A_","normalized":"Ā"},    {"source":"C,","normalized":"Ç"},    {"source":"C'","normalized":"Ć"},    {"source":"C^","normalized":"Ĉ"},    {"source":"D/","normalized":"Đ"},    {"source":"E`","normalized":"È"},    {"source":"E'","normalized":"É"},    {"source":"E^","normalized":"Ê"},    {"source":"E:","normalized":"Ë"},    {"source":"E_","normalized":"Ē"},    {"source":"E~","normalized":"Ẽ"},    {"source":"G^","normalized":"Ĝ"},    {"source":"H^","normalized":"Ĥ"},    {"source":"I`","normalized":"Ì"},    {"source":"I'","normalized":"Í"},    {"source":"I^","normalized":"Î"},    {"source":"I:","normalized":"Ï"},    {"source":"I_","normalized":"Ī"},    {"source":"I~","normalized":"Ĩ"},    {"source":"J^","normalized":"Ĵ"},    {"source":"L/","normalized":"Ł"},    {"source":"L'","normalized":"Ĺ"},    {"source":"M'","normalized":"Ḿ"},    {"source":"N`","normalized":"Ǹ"},    {"source":"N~","normalized":"Ñ"},    {"source":"N'","normalized":"Ń"},    {"source":"O`","normalized":"Ò"},    {"source":"O'","normalized":"Ó"},    {"source":"O^","normalized":"Ô"},    {"source":"O~","normalized":"Õ"},    {"source":"O:","normalized":"Ö"},    {"source":"O/","normalized":"Ø"},    {"source":"O_","normalized":"Ō"},    {"source":"R'","normalized":"Ŕ"},    {"source":"S'","normalized":"Ś"},    {"source":"S,","normalized":"Ş"},    {"source":"S^","normalized":"Ŝ"},    {"source":"T,","normalized":"Ţ"},    {"source":"U`","normalized":"Ù"},    {"source":"U'","normalized":"Ú"},    {"source":"U^","normalized":"Û"},    {"source":"U:","normalized":"Ü"},    {"source":"U_","normalized":"Ū"},    {"source":"U&","normalized":"Ů"},    {"source":"U~","normalized":"Ũ"},    {"source":"Y'","normalized":"Ý"},    {"source":"Z'","normalized":"Ź"}
+    {
+      "source": "ae&",
+      "normalized": "æ"
+    },
+    {
+      "source": "AE&",
+      "normalized": "Æ"
+    },
+    {
+      "source": "oe&",
+      "normalized": "œ"
+    },
+    {
+      "source": "OE&",
+      "normalized": "Œ"
+    },
+    {
+      "source": "s&",
+      "normalized": "ß"
+    },
+    {
+      "source": "a`",
+      "normalized": "à"
+    },
+    {
+      "source": "a'",
+      "normalized": "á"
+    },
+    {
+      "source": "a^",
+      "normalized": "â"
+    },
+    {
+      "source": "a~",
+      "normalized": "ã"
+    },
+    {
+      "source": "a:",
+      "normalized": "ä"
+    },
+    {
+      "source": "a&",
+      "normalized": "å"
+    },
+    {
+      "source": "a_",
+      "normalized": "ā"
+    },
+    {
+      "source": "c,",
+      "normalized": "ç"
+    },
+    {
+      "source": "c'",
+      "normalized": "ć"
+    },
+    {
+      "source": "c^",
+      "normalized": "ĉ"
+    },
+    {
+      "source": "d/",
+      "normalized": "đ"
+    },
+    {
+      "source": "e`",
+      "normalized": "è"
+    },
+    {
+      "source": "e'",
+      "normalized": "é"
+    },
+    {
+      "source": "e^",
+      "normalized": "ê"
+    },
+    {
+      "source": "e:",
+      "normalized": "ë"
+    },
+    {
+      "source": "e_",
+      "normalized": "ē"
+    },
+    {
+      "source": "e~",
+      "normalized": "ẽ"
+    },
+    {
+      "source": "g^",
+      "normalized": "ĝ"
+    },
+    {
+      "source": "h^",
+      "normalized": "ĥ"
+    },
+    {
+      "source": "h/",
+      "normalized": "ħ"
+    },
+    {
+      "source": "i`",
+      "normalized": "ì"
+    },
+    {
+      "source": "i'",
+      "normalized": "í"
+    },
+    {
+      "source": "i^",
+      "normalized": "î"
+    },
+    {
+      "source": "i:",
+      "normalized": "ï"
+    },
+    {
+      "source": "i_",
+      "normalized": "ī"
+    },
+    {
+      "source": "i/",
+      "normalized": "ɨ"
+    },
+    {
+      "source": "i~",
+      "normalized": "ĩ"
+    },
+    {
+      "source": "j^",
+      "normalized": "ĵ"
+    },
+    {
+      "source": "l/",
+      "normalized": "ł"
+    },
+    {
+      "source": "l'",
+      "normalized": "ĺ"
+    },
+    {
+      "source": "m'",
+      "normalized": "ḿ"
+    },
+    {
+      "source": "n`",
+      "normalized": "ǹ"
+    },
+    {
+      "source": "n~",
+      "normalized": "ñ"
+    },
+    {
+      "source": "n'",
+      "normalized": "ń"
+    },
+    {
+      "source": "o`",
+      "normalized": "ò"
+    },
+    {
+      "source": "o'",
+      "normalized": "ó"
+    },
+    {
+      "source": "o^",
+      "normalized": "ô"
+    },
+    {
+      "source": "o~",
+      "normalized": "õ"
+    },
+    {
+      "source": "o:",
+      "normalized": "ö"
+    },
+    {
+      "source": "o/",
+      "normalized": "ø"
+    },
+    {
+      "source": "o_",
+      "normalized": "ō"
+    },
+    {
+      "source": "r'",
+      "normalized": "ŕ"
+    },
+    {
+      "source": "s'",
+      "normalized": "ś"
+    },
+    {
+      "source": "s,",
+      "normalized": "ş"
+    },
+    {
+      "source": "s^",
+      "normalized": "ŝ"
+    },
+    {
+      "source": "t,",
+      "normalized": "ţ"
+    },
+    {
+      "source": "u`",
+      "normalized": "ù"
+    },
+    {
+      "source": "u'",
+      "normalized": "ú"
+    },
+    {
+      "source": "u^",
+      "normalized": "û"
+    },
+    {
+      "source": "u:",
+      "normalized": "ü"
+    },
+    {
+      "source": "u_",
+      "normalized": "ū"
+    },
+    {
+      "source": "u&",
+      "normalized": "ů"
+    },
+    {
+      "source": "u~",
+      "normalized": "ũ"
+    },
+    {
+      "source": "y'",
+      "normalized": "ý"
+    },
+    {
+      "source": "y:",
+      "normalized": "ÿ"
+    },
+    {
+      "source": "z'",
+      "normalized": "ź"
+    },
+    {
+      "source": "A`",
+      "normalized": "À"
+    },
+    {
+      "source": "A'",
+      "normalized": "Á"
+    },
+    {
+      "source": "A^",
+      "normalized": "Â"
+    },
+    {
+      "source": "A~",
+      "normalized": "Ã"
+    },
+    {
+      "source": "A:",
+      "normalized": "Ä"
+    },
+    {
+      "source": "A&",
+      "normalized": "Å"
+    },
+    {
+      "source": "A_",
+      "normalized": "Ā"
+    },
+    {
+      "source": "C,",
+      "normalized": "Ç"
+    },
+    {
+      "source": "C'",
+      "normalized": "Ć"
+    },
+    {
+      "source": "C^",
+      "normalized": "Ĉ"
+    },
+    {
+      "source": "D/",
+      "normalized": "Đ"
+    },
+    {
+      "source": "E`",
+      "normalized": "È"
+    },
+    {
+      "source": "E'",
+      "normalized": "É"
+    },
+    {
+      "source": "E^",
+      "normalized": "Ê"
+    },
+    {
+      "source": "E:",
+      "normalized": "Ë"
+    },
+    {
+      "source": "E_",
+      "normalized": "Ē"
+    },
+    {
+      "source": "E~",
+      "normalized": "Ẽ"
+    },
+    {
+      "source": "G^",
+      "normalized": "Ĝ"
+    },
+    {
+      "source": "H^",
+      "normalized": "Ĥ"
+    },
+    {
+      "source": "I`",
+      "normalized": "Ì"
+    },
+    {
+      "source": "I'",
+      "normalized": "Í"
+    },
+    {
+      "source": "I^",
+      "normalized": "Î"
+    },
+    {
+      "source": "I:",
+      "normalized": "Ï"
+    },
+    {
+      "source": "I_",
+      "normalized": "Ī"
+    },
+    {
+      "source": "I~",
+      "normalized": "Ĩ"
+    },
+    {
+      "source": "J^",
+      "normalized": "Ĵ"
+    },
+    {
+      "source": "L/",
+      "normalized": "Ł"
+    },
+    {
+      "source": "L'",
+      "normalized": "Ĺ"
+    },
+    {
+      "source": "M'",
+      "normalized": "Ḿ"
+    },
+    {
+      "source": "N`",
+      "normalized": "Ǹ"
+    },
+    {
+      "source": "N~",
+      "normalized": "Ñ"
+    },
+    {
+      "source": "N'",
+      "normalized": "Ń"
+    },
+    {
+      "source": "O`",
+      "normalized": "Ò"
+    },
+    {
+      "source": "O'",
+      "normalized": "Ó"
+    },
+    {
+      "source": "O^",
+      "normalized": "Ô"
+    },
+    {
+      "source": "O~",
+      "normalized": "Õ"
+    },
+    {
+      "source": "O:",
+      "normalized": "Ö"
+    },
+    {
+      "source": "O/",
+      "normalized": "Ø"
+    },
+    {
+      "source": "O_",
+      "normalized": "Ō"
+    },
+    {
+      "source": "R'",
+      "normalized": "Ŕ"
+    },
+    {
+      "source": "S'",
+      "normalized": "Ś"
+    },
+    {
+      "source": "S,",
+      "normalized": "Ş"
+    },
+    {
+      "source": "S^",
+      "normalized": "Ŝ"
+    },
+    {
+      "source": "T,",
+      "normalized": "Ţ"
+    },
+    {
+      "source": "U`",
+      "normalized": "Ù"
+    },
+    {
+      "source": "U'",
+      "normalized": "Ú"
+    },
+    {
+      "source": "U^",
+      "normalized": "Û"
+    },
+    {
+      "source": "U:",
+      "normalized": "Ü"
+    },
+    {
+      "source": "U_",
+      "normalized": "Ū"
+    },
+    {
+      "source": "U&",
+      "normalized": "Ů"
+    },
+    {
+      "source": "U~",
+      "normalized": "Ũ"
+    },
+    {
+      "source": "Y'",
+      "normalized": "Ý"
+    },
+    {
+      "source": "Z'",
+      "normalized": "Ź"
+    }
   ],
   "rules": [
-    {"construct_id":"crlf_normalization","source_role":"structural_newline","disposition":"lossless_normalization","evidence_class":"sanitizer_transform","target_relation":"emits"},
-    {"construct_id":"bare_cr_normalization","source_role":"structural_newline","disposition":"lossless_normalization","evidence_class":"sanitizer_transform","target_relation":"emits"},
-    {"construct_id":"accent_normalization","source_role":"visible_text","disposition":"lossless_normalization","evidence_class":"sanitizer_transform","target_relation":"emits"},
-    {"construct_id":"plain_text","source_role":"visible_text","disposition":"emitted_semantic_value","evidence_class":"accepted_text","target_relation":"emits"},
-    {"construct_id":"recovered_verbatim","source_role":"unrecognized_source_form","disposition":"preserved_opaque","evidence_class":"recovered_verbatim","witness_kind":"recovered_verbatim"},
-    {"construct_id":"newline","source_role":"structural_newline","disposition":"structural_control","evidence_class":"structural_token","witness_kind":"newline"},
-    {"construct_id":"unknown_directive","source_role":"unrecognized_source_form","disposition":"preserved_opaque","evidence_class":"unknown_directive","witness_kind":"unknown_directive"},
-    {"construct_id":"ruby","source_role":"ruby","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"bouten","source_role":"typography","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"combine_upright","source_role":"typography","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"gaiji","source_role":"gaiji","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"indent","source_role":"layout","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"align_end","source_role":"layout","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"center","source_role":"layout","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"warichu_open","source_role":"source_annotation","disposition":"structural_control","evidence_class":"structural_token","witness_kind":"warichu_open"},
-    {"construct_id":"framed_open","source_role":"container_syntax","disposition":"structural_control","evidence_class":"typed_container","witness_kind":"container_open"},
-    {"construct_id":"line_gothic","source_role":"typography","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"line_font_size","source_role":"typography","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"page_break","source_role":"break","disposition":"structural_control","evidence_class":"structural_token","witness_kind":"page_break"},
-    {"construct_id":"section_break","source_role":"break","disposition":"structural_control","evidence_class":"structural_token","witness_kind":"section_break"},
-    {"construct_id":"body_end","source_role":"terminal_provenance","disposition":"structural_control","evidence_class":"structural_token","witness_kind":"body_end"},
-    {"construct_id":"forced_break","source_role":"break","disposition":"structural_control","evidence_class":"structural_token","witness_kind":"forced_break"},
-    {"construct_id":"heading","source_role":"heading","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"heading_hint","source_role":"heading","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"illustration","source_role":"illustration","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"kaeriten","source_role":"kunten","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"angle_quote","source_role":"source_annotation","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"emphasis","source_role":"typography","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"margin_note","source_role":"source_annotation","disposition":"emitted_semantic_value","evidence_class":"typed_node","target_relation":"emits"},
-    {"construct_id":"container_open","source_role":"container_syntax","disposition":"structural_control","evidence_class":"typed_container","witness_kind":"container_open"},
-    {"construct_id":"container_close","source_role":"container_syntax","disposition":"structural_control","evidence_class":"typed_container","witness_kind":"container_close"}
+    {
+      "construct_id": "crlf_normalization",
+      "source_role": "structural_newline",
+      "disposition": "lossless_normalization",
+      "evidence_class": "sanitizer_transform",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "bare_cr_normalization",
+      "source_role": "structural_newline",
+      "disposition": "lossless_normalization",
+      "evidence_class": "sanitizer_transform",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "accent_normalization",
+      "source_role": "visible_text",
+      "disposition": "lossless_normalization",
+      "evidence_class": "sanitizer_transform",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "plain_text",
+      "source_role": "visible_text",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "accepted_text",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "recovered_verbatim",
+      "source_role": "unrecognized_source_form",
+      "disposition": "preserved_opaque",
+      "evidence_class": "recovered_verbatim",
+      "witness_kind": "recovered_verbatim"
+    },
+    {
+      "construct_id": "newline",
+      "source_role": "structural_newline",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "newline"
+    },
+    {
+      "construct_id": "unknown_directive",
+      "source_role": "unrecognized_source_form",
+      "disposition": "preserved_opaque",
+      "evidence_class": "unknown_directive",
+      "witness_kind": "unknown_directive"
+    },
+    {
+      "construct_id": "ruby",
+      "source_role": "ruby",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "bouten",
+      "source_role": "typography",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "combine_upright",
+      "source_role": "typography",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "gaiji",
+      "source_role": "gaiji",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "indent",
+      "source_role": "layout",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "align_end",
+      "source_role": "layout",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "center",
+      "source_role": "layout",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "warichu_open",
+      "source_role": "source_annotation",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "warichu_open"
+    },
+    {
+      "construct_id": "framed_open",
+      "source_role": "container_syntax",
+      "disposition": "structural_control",
+      "evidence_class": "typed_container",
+      "witness_kind": "container_open"
+    },
+    {
+      "construct_id": "line_gothic",
+      "source_role": "typography",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "line_font_size",
+      "source_role": "typography",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "page_break",
+      "source_role": "break",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "page_break"
+    },
+    {
+      "construct_id": "section_break",
+      "source_role": "break",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "section_break"
+    },
+    {
+      "construct_id": "body_end",
+      "source_role": "terminal_provenance",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "body_end"
+    },
+    {
+      "construct_id": "forced_break",
+      "source_role": "break",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "forced_break"
+    },
+    {
+      "construct_id": "heading",
+      "source_role": "heading",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "heading_hint",
+      "source_role": "heading",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "illustration",
+      "source_role": "illustration",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "kaeriten",
+      "source_role": "kunten",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "angle_quote",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "emphasis",
+      "source_role": "typography",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "margin_note",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "container_open",
+      "source_role": "container_syntax",
+      "disposition": "structural_control",
+      "evidence_class": "typed_container",
+      "witness_kind": "container_open"
+    },
+    {
+      "construct_id": "container_close",
+      "source_role": "container_syntax",
+      "disposition": "structural_control",
+      "evidence_class": "typed_container",
+      "witness_kind": "container_close"
+    },
+    {
+      "construct_id": "publication_metadata_line",
+      "source_role": "publication_metadata",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "publication_metadata_line"
+    }
   ]
 }

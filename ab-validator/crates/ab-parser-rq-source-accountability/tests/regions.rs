@@ -218,16 +218,20 @@ fn crlf_sources_carry_facts_outside_the_body_and_lf_sources_do_not() {
         );
     }
 
+    // The same source with LF endings has no line-ending facts in its
+    // metadata regions -- the sanitizer rewrites nothing -- so its metadata
+    // attribution comes entirely from the colophon field producer and is
+    // strictly smaller. Both are nonzero, and neither region is fully
+    // attributed: the editorial legend block has no classification yet, which
+    // is what keeps this measure from being satisfiable by construction.
     let lf_root = temp("lf");
     let lf = analyze(LEGEND_FENCED, &lf_root).record;
-    assert_eq!(
-        lf.metadata.as_ref().unwrap().accounted_bytes,
-        0,
-        "an LF source has no facts in its header or tail at all"
-    );
+    let lf_metadata = lf.metadata.as_ref().unwrap();
+    assert!(lf_metadata.accounted_bytes > 0);
+    assert!(lf_metadata.accounted_bytes < metadata.accounted_bytes);
     assert!(
-        lf.metadata.as_ref().unwrap().eligible_bytes > 0,
-        "though it still has header and tail bytes to attribute"
+        lf_metadata.unaccounted_bytes > 0,
+        "metadata attribution must not be satisfiable by construction"
     );
     fs::remove_dir_all(root).unwrap();
     fs::remove_dir_all(lf_root).unwrap();

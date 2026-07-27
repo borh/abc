@@ -192,15 +192,9 @@ reviewed.
 2. **Declare the partition — DONE 2026-07-27.** See *Task 2 result*.
 3. **Move `source_span_coverage` onto the body region — DONE 2026-07-27.**
    See *Task 3 result*.
-4. **Build metadata attribution.** A fact producer for the header and tail
-   regions, then roles, dispositions and spans for packaging metadata —
-   `publication_metadata` among them. New schemas, new tests.
-5. **Rebuild and re-measure.** The classified-source policy is
-   `include_bytes!`-embedded and
-   `parser-rq-classified-source-authority-v1.json` fails closed on
-   `raw_bytes_hash` and `identity_hash`. Re-run the governed control, then
-   re-measure a real-source sample through the built binary. The ≈0.9889 figure
-   is not an acceptance value.
+4. **Build metadata attribution — DONE 2026-07-27, partially by design.**
+   See *Tasks 4 and 5 result*.
+5. **Rebuild and re-measure — DONE 2026-07-27.** See *Tasks 4 and 5 result*.
 6. **Exploratory campaign, then predeclare both thresholds.** Own predicate-set
    identity, explicitly non-authoritative. Only then fix the metadata threshold
    and re-fix `source_span_coverage`'s. The confirmatory campaign takes a
@@ -406,6 +400,94 @@ would silently compare a whole-file denominator against a body one. The v1
 schemas are frozen alongside, with sample documents and a test asserting neither
 version validates the other's records. The **index** schema does not move: it
 carries provenance, not measurement.
+
+## Tasks 4 and 5 result
+
+**`metadata_entries` classifies exactly one metadata form: the `key：value`
+colophon line.** That is what the Aozora colophon is built from — `底本：`,
+`入力：`, `校正：`, `初出：` — a genuinely typed shape, so attributing it says
+something. The rule is
+`publication_metadata_line / publication_metadata / structural_control /
+structural_token`, filling the role the policy declared and never used.
+
+**Everything else in the header and tail is left unattributed on purpose.**
+Blanket-claiming every metadata byte would drive the measure to 1.0 by
+construction, and a predicate that cannot fail measures nothing. The editorial
+legend block and the separator rules need their own classification before they
+can be counted, and until they have one the number should show them missing.
+
+The span excludes the line terminator, which already carries a normalization or
+newline fact — two producers must not claim the same byte.
+
+### Measured, 2026-07-27
+
+| | before task 4 | after |
+|---|---|---|
+| body fold | 0.9911 | **0.9911** (unchanged) |
+| metadata fold | 0.0508 | **0.3002** (1,146 / 3,818) |
+| cross-region | 850,980 | 850,980 |
+
+The body number not moving is the check that the producer stayed in its own
+population. The metadata number is meaningfully below 1.0: roughly 70% of
+packaging bytes still have no classifier, which is the honest state of the
+instrument and the reason task 6 cannot proceed as written.
+
+### The identity rotation this cost
+
+Adding a rule rotates `policy_hash`, which is bound into
+`instrument_policy_hashes[:source_recognition]` and therefore rotates
+`qualification_identity_ref` — exactly the attribution route
+`parser-rq-classified-source-policy-binding` was written to create, now
+exercised for the first time. The policy identity moved
+`defc1c9b…` → `36c5197b…`, and the ledger schema `f508dfee…` → `07197d26…`
+because the witness enum gained a member. Both `raw_bytes_hash` and
+`identity_hash` in `parser-rq-classified-source-authority-v1.json` were resealed;
+the capture chain fails closed on either.
+
+`production_fixture_regenerates_byte_identically` had **no regeneration flag**,
+alone among the capture fixtures, so a policy rotation had to be hand-applied to
+bytes nobody can read. It has one now.
+
+One test had to be repaired rather than re-blessed:
+`structural witnesses are role-specific and span-bound` substituted the literal
+role `publication_metadata` to prove the rule lookup is role-specific. That role
+now has a rule, so the substitution became a no-op and the assertion stopped
+testing anything. It now picks any role other than the rule's own. A hard-coded
+negative case silently stops being a test the moment the thing it names becomes
+valid.
+
+## Task 6: not executed, and why
+
+**The precondition this plan sets for itself is not met.** Task 6 predeclares
+both thresholds after an exploratory campaign. The rule it inherits from Q14 —
+and restates in c5 of `parser-rq-source-region-partition` — is that a threshold
+may be fixed only once its instrument is known to measure what it claims.
+
+The metadata instrument does not yet measure what its predicate would claim. It
+classifies one metadata form and leaves ~70% of packaging bytes unattributed,
+so any threshold fixed now would encode "colophon fields are classified and
+nothing else is" as a permanent governed allowance. That is precisely the error
+Q14 rejected for `source_span_coverage`, and running a campaign first would not
+change it: a campaign measures the instrument you have.
+
+`source_span_coverage`'s own threshold is in better shape but still not ready.
+Its instrument is now correct — numerator and denominator in one coordinate,
+conservation asserted — and it reads **0.9911** on three real works. But three
+works is not a population, the design's own figure is over 299, and the residue
+is parser limitation rather than instrument error, which c4 of
+`parser-rq-instrument-before-threshold` says no instrument work will remove.
+
+**What is owed before task 6 can run**, in order:
+
+1. A classifier for the editorial legend block and separator rules, so metadata
+   attribution can reach a number that means something.
+2. An exploratory campaign over a real-source sample with its own
+   predicate-set identity, explicitly non-authoritative.
+3. Then, and only then, predeclaration of both thresholds — by the predicate's
+   owner. Fixing them is a governance act, not an implementation detail, and
+   `:= 1.0` must not be carried forward for either.
+
+The measurements above are the input to that decision, not the decision.
 
 ## Sequencing: decide Q13 first
 

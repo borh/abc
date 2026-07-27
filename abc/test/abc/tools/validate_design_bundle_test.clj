@@ -967,7 +967,7 @@
             "schemas/parser-rq-classified-source-authority.schema.json"
             "sha256:cfe47129b725e29c4a5a5922ccbf7e2a17e9e8c5db716a3d1baf083fbb41fe1c"
             "schemas/parser-rq-classified-source-ledger.schema.json"
-            "sha256:f508dfeecb44cebbfb36ede4cfb72cee94cf44e5716041071345dae9c5e1530f"
+            "sha256:07197d26a9323220af8cb4b2944d8b67eb70071d5e919dc56acae2c953f00fe5"
             "schemas/parser-rq-capture-generation.schema.json"
             "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"}
            (into {} (map (fn [path]
@@ -1125,7 +1125,10 @@
                    "body_end" "［＃本文終わり］"
                    "forced_break" "［＃改行］"
                    "container_open" "［＃ここから］"
-                   "container_close" "［＃ここで終わり］"}
+                   "container_close" "［＃ここで終わり］"
+                   ;; The colophon field line, attributed in the header and
+                   ;; tail regions where the parser never lexes.
+                   "publication_metadata_line" "底本：「テスト全集」テスト書房"}
             structural-rules (filter #(= "structural_control"
                                          (get % "disposition"))
                                      (get policy "rules"))]
@@ -1147,11 +1150,18 @@
                       ledger-for-rule (assoc structural "entries" [entry])]]
           (is (empty? (classified-source/ledger-errors
                        policy ledger-for-rule source-form)))
-          (is (seq (classified-source/ledger-errors
-                    policy
-                    (assoc-in ledger-for-rule ["entries" 0 "source_role"]
-                              "publication_metadata")
-                    source-form))))
+          ;; Any role other than the rule's own must invalidate the entry:
+          ;; each construct_id has exactly one rule, so the lookup is role-
+          ;; specific. The substituted role is chosen relative to the rule
+          ;; rather than hard-coded, because a hard-coded one silently stops
+          ;; testing anything the moment that role acquires a rule of its own.
+          (let [other-role (first (remove #{(get rule "source_role")}
+                                          (get policy "roles")))]
+            (is (seq (classified-source/ledger-errors
+                      policy
+                      (assoc-in ledger-for-rule ["entries" 0 "source_role"]
+                                other-role)
+                      source-form)))))
         (doseq [invalid [(assoc-in structural ["entries" 0 "construct_witness"
                                                "construct_id"] "page_break")
                          (assoc-in structural ["entries" 0 "construct_witness"

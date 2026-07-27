@@ -439,6 +439,80 @@ fn normalization_entry(
     })
 }
 
+/// Classified facts for the header and tail regions.
+///
+/// The body is lexed by the parser; the metadata regions are not, so without a
+/// producer of their own they carry no fact at all except the line-ending
+/// normalizations, which only exist because the sanitizer walks the whole text.
+/// That left the packaging unattributed rather than attributed-and-clear.
+///
+/// Only one metadata form is classified here: the `key：value` line, which is
+/// what the Aozora colophon is built from -- `底本：`, `入力：`, `校正：`,
+/// `初出：` and the rest. It is a genuinely typed form with a recognizable
+/// shape, so attributing it says something.
+///
+/// Everything else in the header and tail is deliberately left unattributed.
+/// Blanket-claiming every metadata byte would make the metadata measure reach
+/// 1.0 by construction and therefore mean nothing; the editorial legend block
+/// and the separator rules need their own classification before they can be
+/// counted, and until they have one the number should show them missing.
+///
+/// The span excludes the line terminator, which already carries its own
+/// normalization or newline fact. Two producers must not claim the same byte.
+fn metadata_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value> {
+    let Ok(regions) = decoded.source_regions() else {
+        return Vec::new();
+    };
+    let mut entries = Vec::new();
+    for region in regions.metadata() {
+        let Some(text) = decoded.text.get(region.clone()) else {
+            continue;
+        };
+        let mut offset = region.start;
+        for line in text.split_inclusive('\n') {
+            let content = line.trim_end_matches(['\n', '\r']);
+            let trimmed = content.trim_start();
+            let indent = content.len() - trimmed.len();
+            if is_colophon_field(trimmed) {
+                let start = offset + indent;
+                let end = start + trimmed.len();
+                if let Some(source_form) = decoded.text.get(start..end) {
+                    entries.push(json!({
+                        "start": start,
+                        "end": end,
+                        "construct_id": "publication_metadata_line",
+                        "source_role": "publication_metadata",
+                        "disposition": "structural_control",
+                        "evidence_class": "structural_token",
+                        "parser_evidence_code": "metadata:publication_metadata_line",
+                        "construct_witness": {
+                            "construct_id": "publication_metadata_line",
+                            "start": start,
+                            "end": end,
+                            "source_form": source_form
+                        }
+                    }));
+                }
+            }
+            offset += line.len();
+        }
+    }
+    let _ = parser;
+    entries
+}
+
+/// A colophon field line: a non-empty key, a fullwidth colon, and a value.
+///
+/// The key must not itself contain a colon, so a line that merely mentions one
+/// mid-sentence is not a field. An empty value is still a field -- `初出：`
+/// with the citation on the following lines is a real shape.
+fn is_colophon_field(line: &str) -> bool {
+    let Some((key, _value)) = line.split_once('：') else {
+        return false;
+    };
+    !key.is_empty() && !key.contains('：') && key.chars().all(|ch| !ch.is_control())
+}
+
 fn sanitizer_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value> {
     let mut entries = Vec::new();
     for (sanitized_start, character) in decoded.sanitized_text.char_indices() {
@@ -588,6 +662,7 @@ fn build_ledger(
         .filter_map(|fact| fact_entry(fact, decoded, &parser))
         .collect::<Vec<_>>();
     entries.extend(sanitizer_entries(decoded, &parser));
+    entries.extend(metadata_entries(decoded, &parser));
     entries.sort_unstable_by_key(|entry| {
         let mut canonical = String::new();
         canonical_value(entry, &mut canonical);

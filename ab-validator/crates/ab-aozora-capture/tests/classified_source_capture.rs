@@ -1,6 +1,6 @@
 //! End-to-end classified-source capture and publication checks.
 
-use std::{fs, str};
+use std::{env, fs, str};
 
 use ab_aozora_capture::{
     capture_generation_from_bytes, classified_source_ledger_from_bytes, verify_capture_generation,
@@ -312,13 +312,24 @@ fn production_fixture_regenerates_byte_identically() {
     let first = capture_generation_from_bytes(source).unwrap();
     let second = capture_generation_from_bytes(source).unwrap();
     assert_eq!(first, second);
-    for (name, actual) in [
+    let members = [
         ("decoded.txt", first.decoded_source.as_slice()),
         ("parser-output.json", first.parser_output.as_slice()),
         ("raw-diagnostics.json", first.raw_diagnostics.as_slice()),
         ("ledger.json", first.classified_source_ledger.as_slice()),
         ("generation.json", first.manifest.as_slice()),
-    ] {
+    ];
+    // The committed witnesses move whenever the policy identity moves, which
+    // is a deliberate and reviewable event rather than an accident. Every
+    // other capture fixture in this workspace has a regeneration flag; this
+    // one did not, and its absence meant a policy rotation had to be
+    // hand-applied to bytes nobody can read.
+    if env::var_os("UPDATE_CLASSIFIED_SOURCE_FIXTURE").is_some() {
+        for (name, actual) in members {
+            fs::write(format!("{ROOT}/{name}"), actual).unwrap();
+        }
+    }
+    for (name, actual) in members {
         assert_eq!(
             fs::read(format!("{ROOT}/{name}")).unwrap(),
             actual,

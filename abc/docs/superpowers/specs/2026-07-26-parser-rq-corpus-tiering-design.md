@@ -26,9 +26,13 @@ denominator — Aozora's header and `底本：` colophon frames are not unclassi
 they are outside the coordinate space every classified-source fact comes from,
 and no policy rule can reach them. See *Q14 mechanism, corrected again*; the
 earlier `publication_metadata` explanation survives below as marked history only.
-Executing the fix is tracked as **Q15**, which is **blocked on an owner
-decision** — which coordinate `source_span_coverage` is meant to express — and
-*that* gates the confirmatory campaign the whole governance path builds toward.
+Executing the fix is tracked as **Q15, decided 2026-07-27**: the body and the
+packaging metadata are **two populations**, not two candidate denominators for
+one ratio. `source_span_coverage` becomes body-projection coverage, a separate
+predicate attributes the header and colophon in their own coordinate, and a work
+clears only when both clear — over a declared partition with an asserted
+conservation identity. Implementation is planned but not started, and *that*
+still gates the confirmatory campaign the whole governance path builds toward.
 **Q1** is closed alongside it: the RQ capture layer costs 9.25× all of
 `ab-check`, which reshapes the campaign budget rather than the architecture.
 
@@ -770,8 +774,10 @@ work will drive it to 1.0. So the sequencing is:
    ignored region*, because the role already exists (evidence the authors
    intended to classify) and shrinking `eligible_bytes` is the more dangerous
    move, being the same denominator-shrinkage hazard Q11 rejected. That is the
-   case for whole-file coverage over body-projection coverage; it is now
-   Option B in the handoff's *Owner decision: Q15 source coordinate*.
+   case for the header and colophon being *attributed* rather than exempted,
+   and the Q15 decision of 2026-07-27 grants it: those bytes get their own
+   facts and their own predicate, in their own coordinate, rather than either
+   being classified into the body's ratio or dropped from a denominator.
 2. **Part B — diagnose the body-interior bytes. DONE; see *Part B, diagnosed*.**
    It is **11,293 bytes, not 119,144**, and it is a **missing-rule class**, not a
    ledger-builder extent bug. It groups with Part A into one policy amendment.
@@ -1377,7 +1383,7 @@ Stated explicitly, because "blocker" without a scope stalls everything equally.
 | **D7 prerequisites** (decided; unimplemented) | The fixture tier containing adversarial or malformed inputs, until `allowed_dispositions` is untangled and the expected-outcome model specified | The tier architecture; tier 2 and tier 3 work; the `wall-time` reshape |
 | **Q9** (population equality) | Describing tier 2 as a census; the accounted difference against the admission and conversion-audit populations | Accepting that a snapshot tier should exist; tier 2's population definition and name, both now fixed by Q11 |
 | **D8** (repetition protocol) | Tier-relative repetition counts | Everything else; tier 2 can run at the current fixed 3 |
-| **Q15** (execute the Q14 decision; **blocked on an owner decision**) | **The confirmatory tier 2 campaign** — coverage cannot reach its declared `1.0` while numerator and denominator inhabit different coordinates, and which coordinate the predicate expresses is not yet chosen; and reading any tier 2 coverage observation as a parser verdict before then | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
+| **Q15** (decided 2026-07-27; **implementation not started**) | **The confirmatory tier 2 campaign** — until the region partition lands, coverage divides a body numerator by a whole-file denominator; and reading any tier 2 coverage observation as a parser verdict before then | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this; partition tasks 1–2, which are unblocked |
 | ~~**Q16**~~ (decided and landed 2026-07-27) | — | — · the classified-source policy is now bound; `source_recognition` and `qualification_identity_ref` rotated, making Q15's amendment attributable |
 | ~~**Q14**~~ (decided 2026-07-27) | — | — · the instrument is incomplete; threshold and ratio both stand. Execution is Q15 |
 | ~~**Q1**~~ (closed 2026-07-27) | — | — · the capture layer is 9.25× all of `ab-check`; it reshapes the budget, not the architecture |
@@ -1411,19 +1417,22 @@ Current blocker status, plainly:
   Q12 then re-derived the section's mechanism over ledger dispositions and
   **confirmed its conclusion** — 2,154 residue intervals are recognized by the
   ledger while the converter emits no node for them. Substantially resolved.
-- **B5 — Q14 decided; Q15 open and blocked on an owner decision, and the most
+- **B5 — Q14 and Q15 both decided 2026-07-27; Q15's implementation is the most
   serious remaining item.** `source-span-coverage := 1.0` fails on 299 of 299
   real works — confirmed through the built instrument, against exactly 1.0 on
   the governed corpus from the same binary. The traced cause is a **coordinate
   mismatch**: the ledger lexes the `aozora_body_range` body projection while
   `eligible_bytes` counts the whole decoded file. (An earlier draft named an
   unimplemented `publication_metadata` rule; that claim is superseded — those
-  bytes are never lexed, so the rule could not fire.) **The threshold and the
-  ratio both stand**; the instrument gets fixed instead. Fixing it first requires
-  the owner to choose which coordinate the predicate expresses, and until that
-  choice is recorded and executed, tier 2 has a population it cannot qualify
-  against and *step 5 cannot complete*. It does not block accepting the
-  architecture or running the exploratory campaign.
+  bytes are never lexed, so the rule could not fire.) The instrument gets fixed
+  rather than the threshold. The fix is decided: partition the file into declared
+  regions, measure the body and the packaging metadata separately, and clear a
+  work only when both clear. Note the consequence for the threshold — under a
+  body denominator, `:= 1.0` is a *different* contract from the one declared
+  against a whole-file denominator, so it is not carried forward by default.
+  Until the partition lands, tier 2 has a population it cannot qualify against
+  and *step 5 cannot complete*. It does not block accepting the architecture or
+  running the exploratory campaign.
 - **B2 — D7.** **Decided** (Option 1, `unexpected-fatal-failures ≤ 0`).
   **Unimplemented:** `allowed_dispositions` is still level-confused and the
   expected-outcome model is unspecified, so the adversarial fixture tier remains
@@ -1441,17 +1450,21 @@ Current blocker status, plainly:
 
 Then:
 
-1. **Record the Q15 coordinate decision, then execute Q15 — it gates step 5.**
-   Q14 is decided (fix the instrument, not the threshold), but executing it is
-   **two separable deliverables**, not the single policy amendment an earlier
-   draft described:
+1. **Execute Q15 — it gates step 5.** Q14 is decided (fix the instrument, not the
+   threshold) and Q15's contract was decided 2026-07-27. Executing it is **two
+   separable deliverables**, not the single policy amendment an earlier draft
+   described:
 
-   - **The coordinate.** Make the numerator's facts and the denominator's
-     intervals inhabit one declared coordinate. Which one is the owner's
-     decision — body-projection coverage or whole-file coverage — and either way
-     it is a versioned instrument and protocol change reaching the recognition
-     crate, its schemas, and its tests, not a taxonomy-data edit. Record the
-     decision in `decisions.edn` before implementing it.
+   - **The region partition.** Partition the decoded file into declared regions
+     from `aozora_body_range` alone, assert conservation and disjointness, move
+     `source_span_coverage` onto the body region, and add a metadata-attribution
+     predicate over the header and tail. Clearance is conjunctive. This is a
+     versioned instrument and protocol change reaching the recognition crate, its
+     schemas, and its tests — not a taxonomy-data edit. Task sequence in
+     `docs/superpowers/plans/2026-07-27-q15-region-partition.md`. Note that
+     `aozora_body_range` does **not** currently partition the file: `body_end` is
+     trim-adjusted while `tail_start` is not (`ab-source-syntax/src/lib.rs:146`),
+     so bytes between them belong to no region.
    - **The unmapped directives.** `node_policy`
      (`ab-aozora-pipeline/src/fold.rs`) maps 2 of 14 `DirectiveKind` variants;
      the other **twelve** return `None` and so produce no fact at all, which is
@@ -1581,13 +1594,18 @@ Every governance edit to `decisions.edn` is authored by hand.
   policy rule can fix. See *Q14 mechanism, corrected again*. The corrected work
   is (i) align numerator and denominator on one coordinate, and (ii) map the
   **twelve** unmapped `DirectiveKind` variants in `node_policy`, not the two
-  close markers first proposed. **(i) is BLOCKED ON AN OWNER DECISION**: reducing
-  the denominator to the `aozora_body_range` projection and extending capture so
-  the header and tail produce facts are both coherent answers, and they mean
-  different things by `source_span_coverage = 1.0`. This section proposes the
-  former; that is a proposal, not a settled contract. Whichever is chosen, its
-  header and tail boundaries must come from `aozora_body_range` alone — never
-  from a separator or `底本：` heuristic. Superseded text follows for the record:
+  close markers first proposed. **(i) DECIDED 2026-07-27 — and neither of the two
+  candidate denominators was chosen.** Both framed the body and the packaging
+  metadata as competing denominators for one ratio; they are **two populations**.
+  The body is the work — prose and annotations. The header and `底本：` colophon
+  are metadata about the work. They are measured separately in their own
+  coordinates, and a work is cleared only when both clear. This is not a
+  denominator reduction: no byte leaves the accounting, and the file is
+  partitioned with an asserted conservation identity — the first check in this
+  area that *can* fail. Region authority is `aozora_body_range` alone.
+  Implementation plan: `docs/superpowers/plans/2026-07-27-q15-region-partition.md`.
+  Neither threshold is carried forward by default; see that plan.
+  Superseded text follows for the record:
 - ~~**Q15 — Execute the Q14 decision. Part B is diagnosed; A+B are now one
   amendment.**~~ The classified-source policy needs `publication_metadata` (96.7%
   of the gap) plus the absent `warichu_close` / `framed_close` rules and a rule

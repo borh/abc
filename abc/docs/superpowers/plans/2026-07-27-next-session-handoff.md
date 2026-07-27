@@ -6,10 +6,13 @@ plan and not a new source of governance authority. The governing design remains
 hand-authored records in `docs/adr/decisions.edn` become authoritative once
 accepted.
 
-> **Stop condition:** Do not implement Q15 until the owner chooses the coordinate
-> represented by `source_span_coverage`. In particular, do not add a
-> `publication_metadata` policy rule as the frame fix: the ledger never lexes
-> those bytes, so that rule cannot change the result.
+> **Q15 was decided 2026-07-27** — the body and the packaging metadata are two
+> populations measured separately, with conjunctive clearance over a declared
+> partition. See *Q15 — decided* below and
+> `plans/2026-07-27-q15-region-partition.md`. The standing caution survives the
+> decision: do not add a `publication_metadata` policy rule as the frame fix. The
+> ledger never lexes those bytes, so a rule alone classifies nothing — metadata
+> attribution needs a fact producer first.
 
 ## Start here
 
@@ -30,7 +33,8 @@ accepted.
    - *What each open item blocks*
    - the Q15 and Q13 entries under *Open Questions*
 
-3. Treat the later Q15 rescope as the current diagnosis. The design's superseded
+3. Q15's contract is decided; its implementation is not started. Treat the later
+   Q15 rescope as the current diagnosis. The design's superseded
    passages were reconciled on 2026-07-27 and their old diagnoses kept behind
    explicit history markers — see *Design self-contradiction — reconciled* below
    for what changed and for the figures that remain indicative rather than
@@ -79,7 +83,7 @@ nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests --no-link \
   --print-build-logs
 ```
 
-## Owner decision: Q15 source coordinate
+## Q15 — decided 2026-07-27
 
 The traced mechanism is:
 
@@ -89,78 +93,64 @@ The traced mechanism is:
 - the recognition instrument currently takes `eligible_bytes` from the entire
   decoded file.
 
-The result divides a body-derived numerator by a whole-file denominator. The
-owner must choose which contract the predicate is meant to express:
+The result divides a body-derived numerator by a whole-file denominator.
 
-### Option A — body-projection coverage
+**The decision rejected the framing this section previously used.** Options A and
+B offered two competing denominators for one ratio. The body and the packaging
+metadata are **two populations**: the body is the work — prose and annotations —
+and the header and `底本：` colophon are metadata *about* the work. A single ratio
+over their union averages parser fidelity against packaging attribution and can
+mean neither.
 
-Make the eligible region exactly the projection supplied to the parser. Header
-and tail intervals must come from `aozora_body_range`, never from separator or
-`底本：` heuristics maintained elsewhere.
+- The decoded file is partitioned into declared regions derived from
+  `aozora_body_range` **alone**.
+- `source_span_coverage` becomes **body-projection coverage**.
+- A **separate metadata-attribution predicate** covers the header and tail in
+  their own coordinate. Header and tail are distinct regions so a failure
+  localizes; they qualify under one conjunctive predicate.
+- **A work clears only when both clear.**
+- Neither threshold is carried forward by default. Build, measure under an
+  explicitly non-authoritative exploratory campaign, then predeclare — Q14's rule
+  applied to both predicates.
 
-This is the direction proposed by the latest Q15 text. It is a principled
-denominator reduction because it removes bytes outside the parser's input
-coordinate, not unrecognized bytes inside that coordinate. It also changes the
-meaning of `source_span_coverage = 1.0` from whole-file coverage to body-input
-coverage and therefore requires an explicit owner decision.
+This is **not** a denominator reduction: no byte leaves the accounting. The
+metadata bytes move to a different *accounted* region. And the partition makes
+conservation assertable — `header + body + tail == decoded file`, disjoint —
+which is the first check in this area that *can* fail. Every defect traced here
+shared one property: no invariant existed that could catch it.
 
-This is **not** a taxonomy-data-only edit. The v1 schema requires `rules` to be
-empty and the Rust taxonomy reader rejects non-empty rules. More importantly,
-the release-authoritative recognition path hard-codes the eligible interval to
-the complete decoded source, and `RecognitionInput` does not accept the taxonomy
-whose rules would justify exclusions. The older node-span accountability path
-also requires empty ignored regions and whole-file eligibility. Adopting this
-option therefore needs an authenticated taxonomy input and a versioned
-instrument/protocol change across at least:
+Honest cost: this is Option A's work **plus** Option B's. It is not a middle
+path; the extra cost buys the invariant.
 
-- `abc/schemas/parser-rq-ignored-regions.schema.json`
-- `abc/data/parser-rq-ignored-regions-v1.json`
-- `ab-validator/crates/ab-parser-rq-source-accountability/src/main.rs`
-- `ab-validator/crates/ab-parser-rq-source-accountability/src/recognition.rs`
-- `ab-validator/crates/ab-parser-rq-source-accountability/src/recognition_aggregate.rs`
-- `ab-validator/crates/ab-parser-rq-source-accountability/src/analyze.rs`
-- `ab-validator/crates/ab-parser-rq-source-accountability/src/aggregate.rs`
-- `abc/schemas/parser-rq-source-recognition-work.schema.json`
-- `abc/schemas/parser-rq-source-recognition-index.schema.json`
-- `abc/schemas/parser-rq-source-recognition-aggregate.schema.json`
-- `ab-validator/crates/ab-parser-rq-source-accountability/tests/recognition.rs`
-- `ab-validator/crates/ab-parser-rq-source-accountability/tests/recognition_corpus.rs`
-- `ab-validator/crates/ab-parser-rq-source-accountability/tests/aggregate.rs`
-- `ab-validator/crates/ab-parser-rq-source-accountability/tests/analyze_work.rs`
-- `abc/test/abc/tools/parser_rq_source_accountability_test.clj`
-- `abc/test/abc/tools/validate_design_bundle_test.clj`
+Task sequence, traced constraints, and a draft `decisions.edn` entry are in
+`plans/2026-07-27-q15-region-partition.md`. Two findings from writing it:
 
-Write a dedicated implementation plan after this option is accepted; do not
-infer a v1 wire shape or an ambient taxonomy dependency from the current empty
-taxonomy.
+- **`aozora_body_range` does not currently partition the file.** `body_end` is
+  trim-adjusted while `tail_start` is not (`ab-source-syntax/src/lib.rs:146-147`),
+  so whenever a tail exists at least one byte belongs to no region. The
+  implementation must declare where those bytes go — widening `body_end` to
+  `tail_start` is the wrong answer, because body coverage would then depend on
+  how many blank lines a transcriber left.
+- **Settle Q13 before partition task 3.** Dropping the `NodeSpans` path removes
+  `analyze.rs`, `aggregate.rs`, two schemas and four test files from this
+  change set.
 
-### Option B — whole-file coverage
+### Acceptance conditions
 
-Keep the denominator as the complete decoded file and extend classified-source
-capture so header and tail produce attributable facts in the same coordinate as
-body facts. This preserves the whole-file reading of the predicate and avoids a
-denominator reduction, but it broadens the instrument beyond the parser's body
-input and requires explicit roles, dispositions, spans, and tests for packaging
-metadata.
-
-A policy rule alone is insufficient under this option too: facts for the
-currently unlexed bytes must first exist.
-
-### Acceptance conditions for either option
-
-- Numerator facts and denominator intervals inhabit one declared coordinate.
-- Header and tail boundaries have one authority: `aozora_body_range`.
-- Works without two separator lines or without a `底本：` line are covered by
-  tests.
+- Numerator facts and denominator intervals inhabit one declared coordinate, per
+  region.
+- Region boundaries have one authority: `aozora_body_range`.
+- Conservation and disjointness are asserted and fail closed.
+- Works without two separator lines, without a `底本：` line, and with bare-CR
+  line endings are covered by tests.
 - The governed three-work corpus remains the control and returns its expected
   result.
 - A real-source sample is re-measured through the built
-  `ab-parser-rq-source-accountability` binary.
-- If ignored regions exist, the exact taxonomy content that derives them is
-  authenticated into every work record and aggregate that consumes them.
+  `ab-parser-rq-source-accountability` binary. The ≈0.9889 estimate came from a
+  disposable separator heuristic and is not an acceptance value.
 - The affected policy/schema hashes and `qualification_identity_ref` rotate
-  through their intended coordinates; `predicate_set_hash` moves only if the
-  predicate contract itself changes.
+  through their intended coordinates. `predicate_set_hash` moves when the
+  predicate contract changes — and under this decision it does.
 - Old evidence is rejected as stale or protocol-incompatible, as appropriate.
 
 ## Design self-contradiction — reconciled 2026-07-27
@@ -176,14 +166,14 @@ explicit marker rather than deleted, so the record of being wrong twice survives
 
 | Passage | Now reads |
 |---|---|
-| *Status* | The traced coordinate mismatch; Q15 blocked on an owner decision |
+| *Status* | The traced coordinate mismatch; Q15's decided contract |
 | *Q14, decided* | Decision stands; a banner marks the whole section's mechanism as history and voids Part A |
 | *Part B, diagnosed* | Discriminator and verdict stand; scope corrected to twelve variants; the A+B merger withdrawn |
-| *What each open item blocks*, row Q15 | Blocked on the coordinate choice, not on missing rules |
+| *What each open item blocks*, row Q15 | Blocked on the coordinate choice, not on missing rules (since decided) |
 | *Current blocker status*, B5 | Coordinate mismatch named; the superseded rule claim marked as such |
 | *Governance Path*, step 1 | Two separable deliverables: the coordinate, then the twelve `node_policy` arms |
 | Q14 *Open Questions* | Superseded causal claim removed from the entry itself |
-| Q15 *Open Questions* | Part (i) marked blocked on the owner decision; its proposal labelled a proposal |
+| Q15 *Open Questions* | Part (i) now records the decided contract; the earlier proposal is marked superseded |
 
 One stale claim was also found in code and corrected: the comment in
 `classified-source-policy-edits-rotate-the-qualification-identity` called its
@@ -216,7 +206,7 @@ event:
 | Q14 | Decided | Record “fix the instrument before setting the residual threshold”; do not preserve the superseded causal claim |
 | Q16 | Decided and implemented | Record the classified-source policy as a bound source-recognition authority |
 | Instrument-binding amendment | Implied by Q16 | Amend `parser-release-instrument-bindings` so its documented authority closure matches the code |
-| Q15 | **Owner decision required** | Record Option A or B before implementation |
+| Q15 | **Decided 2026-07-27** | Record the region partition and conjunctive clearance; a draft entry is proposed in `plans/2026-07-27-q15-region-partition.md` for hand transfer |
 | Q13 | **Owner decision required** | Record one of the three options in `plans/2026-07-27-q13-node-span-coverage.md`; state the quantity actually measured, not "renamed for clarity" |
 
 The Q16 implementation widened `instrument-policy-paths` from member → path to
@@ -232,10 +222,14 @@ document hashes. Only `source_recognition` moved
 `qualification_identity_ref`, so captures made against the old identity are
 stale.
 
-## Work available before Q15 is decided
+## Work not blocked by the Q15 implementation
 
-These streams do not require choosing the source coordinate, but each still
-needs its own scoped plan before code changes:
+Q15's contract is decided; its implementation is not started. Partition tasks 1
+and 2 are unblocked and are the shortest path to a check that can fail — see
+`plans/2026-07-27-q15-region-partition.md`. The streams below are independent of
+it, and each still needs its own scoped plan before code changes. **Q13 should be
+settled first**: dropping the `NodeSpans` path removes `analyze.rs`,
+`aggregate.rs`, two schemas and four test files from the partition change set.
 
 1. **Q13: scoped 2026-07-27 — see
    `plans/2026-07-27-q13-node-span-coverage.md`; awaiting an owner selection
@@ -276,29 +270,22 @@ reviewed.
 
 ## Post-Q15 sequence
 
-Once the owner decision is recorded:
+Superseded by `plans/2026-07-27-q15-region-partition.md`, which carries the
+task-by-task sequence against the decided contract. Two rules from the earlier
+sequence that the plan inherits and that are easy to lose:
 
-1. Write a task-by-task implementation plan for the selected coordinate.
-2. Characterize the current three-work control and add failing boundary tests
-   before changing the instrument.
-3. Align numerator and denominator using the selected contract.
-4. Map all twelve currently unmapped `DirectiveKind` variants in
-   `ab-validator/crates/ab-aozora-pipeline/src/fold.rs::node_policy`, adding the
-   required `ConstructId` values and classified-source policy rules. Treat this
-   as a separate reviewable deliverable from the coordinate change.
-5. Rebuild because the classified-source policy is `include_bytes!`-embedded and
-   `parser-rq-classified-source-authority-v1.json` fails closed on
-   `raw_bytes_hash` and `identity_hash`.
-6. Re-run the governed control, then re-measure the real-source sample through
-   the built accountability binary. The earlier ≈0.9889 estimate came from a
-   disposable separator heuristic and is not an acceptance value.
-7. Only after the instrument measures its declared contract, use an explicitly
-   non-authoritative exploratory campaign to choose and predeclare any residual
-   confirmatory threshold.
+- The twelve unmapped `DirectiveKind` variants in
+  `ab-validator/crates/ab-aozora-pipeline/src/fold.rs::node_policy` are a
+  **separate reviewable deliverable**, body-side, not blocked by the partition.
+- Rebuild after any policy change: the classified-source policy is
+  `include_bytes!`-embedded and `parser-rq-classified-source-authority-v1.json`
+  fails closed on `raw_bytes_hash` and `identity_hash`.
 
 The exploratory and confirmatory campaigns must have distinct predicate-set
 identities. A post-hoc threshold must not be presented as preregistered
-confirmation.
+confirmation. Under the Q15 decision this applies to **both** predicates —
+body-projection coverage and metadata attribution — and neither threshold is
+carried forward by default.
 
 ## Measurements worth carrying
 

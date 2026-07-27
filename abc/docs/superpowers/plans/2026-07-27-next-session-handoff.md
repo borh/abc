@@ -193,21 +193,60 @@ grep -n 'publication_metadata\|warichu_close\|framed_close\|Part A' \
   abc/docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md
 ```
 
-## Decisions and governance records still owed
+## Governance records — three written 2026-07-27, three still owed
 
-`decisions.edn` is edited by hand, never generated. Keep these records distinct
-so that decision, implementation, and measurement do not collapse into one
-event:
+`decisions.edn` is edited by hand, never generated. Records are kept distinct so
+that decision, implementation, and measurement do not collapse into one event.
+
+Written 2026-07-27, all **`:proposed`** with narrative files, `INDEX.md` and
+`adr-graph.mmd` regenerated, `clojure -M:abc/adr-governance` clean:
+
+| Slug | Covers | Note |
+|---|---|---|
+| `parser-rq-instrument-before-threshold` | Q14 | The rule plus the traced coordinate mismatch. The two superseded causal claims are deliberately **not** preserved as claims |
+| `parser-rq-source-region-partition` | Q15 | Partition, both measurement contracts, conjunctive clearance, and the `aozora_body_range` gap |
+| `parser-rq-classified-source-policy-binding` | Q16 **and** the instrument-binding amendment | `:amends parser-release-instrument-bindings` scoped to the `source_recognition` policy closure — the amends relation *is* the amendment, so these were one record, not two |
+
+Still owed:
 
 | Record | Current state | Required action |
 |---|---|---|
-| Q11 | Decided | Record tier 2 as the publication's successfully-selected projection, named the *publication-workload snapshot*, with `candidates_considered`, `derive_failures`, and `rejected` declared |
-| D7 | Decided | Record `unexpected-fatal-failures <= 0` and its safe initial expected-outcome vocabulary |
-| Q14 | Decided | Record “fix the instrument before setting the residual threshold”; do not preserve the superseded causal claim |
-| Q16 | Decided and implemented | Record the classified-source policy as a bound source-recognition authority |
-| Instrument-binding amendment | Implied by Q16 | Amend `parser-release-instrument-bindings` so its documented authority closure matches the code |
-| Q15 | **Decided 2026-07-27** | Record the region partition and conjunctive clearance; a draft entry is proposed in `plans/2026-07-27-q15-region-partition.md` for hand transfer |
+| Q11 | Decided in a prior session | Record tier 2 as the publication's successfully-selected projection, named the *publication-workload snapshot*, with `candidates_considered`, `derive_failures`, and `rejected` declared |
+| D7 | Decided in a prior session | Record `unexpected-fatal-failures <= 0` and its safe initial expected-outcome vocabulary |
 | Q13 | **Owner decision required** | Record one of the three options in `plans/2026-07-27-q13-node-span-coverage.md`; state the quantity actually measured, not "renamed for clarity" |
+
+Q11 and D7 were left alone deliberately: their reasoning belongs to the sessions
+that decided them, and writing their claims second-hand would put words in those
+decisions' mouths.
+
+### Why Proposed rather than Accepted
+
+`:accepted` requires an accepted date, a validation scope, a release authority,
+and **`:kind` plus non-empty `:evidence` on every claim**, with evidence paths
+that exist under `test/`, `fixtures/`, `nix/`, or `docs/evidence/external/`.
+Q14's and Q15's claims have no such evidence — nothing is implemented, and the
+measurements behind them were taken under a synthesized qualification identity
+that authenticates nothing. Q16's claims *do* carry evidence and would validate
+as `:accepted`, but acceptance is a governance act, so the record is offered for
+promotion rather than asserting it.
+
+### Regeneration and gate notes
+
+Adding a record requires three derived artifacts to be regenerated, or the branch
+gate fails:
+
+```sh
+clojure -M:abc/adr-governance --write-index   # docs/adr/INDEX.md
+clojure -M:abc/diagrams                       # docs/adr/adr-graph.mmd
+clojure -M:abc/adr-governance                 # validate; exit 1 on any problem
+```
+
+A narrative file `docs/adr/<slug>.md` is mandatory: `narrative-problems` reports
+both missing narratives and orphan files.
+
+Records do **not** rotate `qualification_identity_ref`. `decision_statuses` is a
+promotion-gate input, not an identity field. `parser-rq-p5-promotion-audit` was
+run and passes against the edited corpus.
 
 The Q16 implementation widened `instrument-policy-paths` from member → path to
 member → ordered vector. `:source_recognition` now binds both:

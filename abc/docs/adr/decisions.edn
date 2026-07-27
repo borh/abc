@@ -2025,4 +2025,110 @@
      :statement
      "The predicate declares `:unit \"ratio\"` while `diagnostic_completeness` is a literal `1.0` and `complete_diagnostics` is assigned equal to `emitted_diagnostics` unconditionally, so no ratio is computed. The declaration is made true rather than corrected: `diagnostic_completeness` becomes the works whose observed diagnostics match their governed expectation over expected works. On the present corpus that is 3/3 = 1.0 and no outcome changes. Editing the declaration instead would rotate `predicate_set_hash`, braiding the predicate contract with an instrument concern — the same fault c2 rejects — so the dimension, comparator, threshold, and unit all stay as written and the semantics change is carried by a bumped `algorithm_version` in the instrument policy. The ratio is computed as IEEE division of two doubles rather than `(double (/ int int))`, whose exact-Ratio rounding differs in the last bit from every other language's division and so would have disagreed with the Python capture driver over a value that lands in content-addressed evidence. Evidence boundary: `test/abc/tools/parser_rq_diagnostic_completeness_test.clj`.",
      :evidence
-     ["test/abc/tools/parser_rq_diagnostic_completeness_test.clj"]}]}]}
+     ["test/abc/tools/parser_rq_diagnostic_completeness_test.clj"]}]}
+  {:date "2026-07-27",
+   :slug "parser-rq-instrument-before-threshold",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "parser-release-instrument-bindings"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "governed-qualification-corpus-location"}],
+   :claims
+   [{:id :c1,
+     :kind :corpus-behavior,
+     :statement
+     "The `source-span-coverage := 1.0` predicate fails on 299 of 299 sampled real works (fold 0.9640, worst 0.2466) while the governed three-work corpus returns exactly 1.0 from the same built `ab-parser-rq-source-accountability` binary, same taxonomy and same policy hash. A 177-byte corpus is why the divergence was invisible: it is small enough that the instrument's defect does not show. Measurement over a 299-work sample under a synthesized qualification identity; it establishes behaviour, not a qualified campaign."}
+    {:id :c2,
+     :kind :structural-invariant,
+     :statement
+     "The predicate divides a body-derived numerator by a whole-file denominator. The classified-source ledger is built by lexing `decoded.span_text`, which is the `aozora_body_range` body projection, while the recognition instrument takes `eligible_bytes` from the whole decoded file. Aozora's header and `底本：` colophon are therefore not unclassified — they lie outside the coordinate space every classified-source fact comes from, and no policy rule can reach them. Demonstrated on a synthetic work: three entries covering 51 of 375 bytes, with the entire 216-byte header and 108-byte tail carrying no entry of any kind, not even `plain_text`. Two earlier statements of this mechanism — a missing `publication_metadata` rule, then a corrected byte split — inferred a cause from a correlation and were wrong; they are not preserved as claims. Mechanism claims in this area require a source-line trace."}
+    {:id :c3,
+     :kind :domain-interpretation,
+     :statement
+     "A predicate threshold may be relaxed only once its instrument is known to measure what it claims. Relaxing first converts an instrument defect into a permanent governed allowance, and a corpus small enough to hide the defect would have kept that allowance invisible indefinitely. So the instrument is fixed and neither the threshold nor the ratio moves on account of this gap."}
+    {:id :c4,
+     :kind :domain-interpretation,
+     :statement
+     "Redefining the ratio as `accounted / eligible` is rejected in kind, not merely as insufficient: `recovered_verbatim` means the parser could not type a construct, which is precisely what a recognition predicate should count against, so folding it into the numerator would make the predicate easier to pass by making it say less. Lowering the threshold is rejected for now and becomes admissible only after the instrument measures its declared contract, since some residual is genuine parser limitation that no instrument work will remove."}],
+   :source
+   "`docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`",
+   :title "Fix the Instrument Before Setting the Residual Threshold",
+   :topics [:parser :release],
+   :status :proposed,
+   :validation-scope :structural}
+  {:date "2026-07-27",
+   :slug "parser-rq-source-region-partition",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "parser-rq-instrument-before-threshold"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "custom-parser-release-qualification"}],
+   :claims
+   [{:id :c1,
+     :kind :structural-invariant,
+     :statement
+     "The decoded source is partitioned into declared regions derived solely from `aozora_body_range`: a body projection carrying the work — prose and annotations — and metadata regions carrying the header and the `底本：` colophon. No separator or `底本：` heuristic is maintained anywhere else; an earlier hand-rolled detector scanning for a 40-hyphen substring matched sixteen overlapping positions inside a single 55-hyphen rule, and 23 of 299 sampled works lack two separator lines entirely. The regions are pairwise disjoint and their union is the whole decoded file. The instrument asserts that conservation and fails closed when it does not hold."}
+    {:id :c2,
+     :kind :domain-interpretation,
+     :statement
+     "The body and the packaging metadata are two populations, not two candidate denominators for one ratio. A single ratio over their union averages parser fidelity against packaging attribution and can mean neither: the observed 0.9640 could not distinguish \"the parser missed prose\" from \"packaging is never lexed\", and establishing that it was entirely the latter took three attempts. `source_span_coverage` is therefore body-projection coverage — classified-source ledger facts over `decoded.span_text`, divided by the body projection — with numerator and denominator in one declared coordinate. It is not a whole-file measure and must not be read as one."}
+    {:id :c3,
+     :kind :domain-interpretation,
+     :statement
+     "Packaging metadata is measured by a separate attribution predicate over the header and tail regions in their own coordinate. This is an attribution measure over packaging, not a parser-fidelity measure, and it does not widen the parser's contract beyond the parser's input. It requires a fact producer before it requires a policy rule: those bytes are never lexed today, so the declared-but-unimplemented `publication_metadata` role classifies nothing until facts for them exist."}
+    {:id :c4,
+     :kind :domain-interpretation,
+     :statement
+     "Header and tail are recorded as distinct regions so that a failure localizes to one end of the file, and they qualify under a single conjunctive metadata predicate rather than one predicate each. A work is cleared only when body-projection coverage and metadata attribution both clear; neither alone qualifies a work. This is not the denominator reduction Q11 rejected: no byte leaves the accounting, the metadata bytes move to a different accounted region, and the conservation identity is what keeps that honest."}
+    {:id :c5,
+     :kind :domain-interpretation,
+     :statement
+     "Neither threshold is fixed before its instrument has been built and measured under an explicitly non-authoritative exploratory campaign carrying its own predicate-set identity. `source_span_coverage`'s prior `:= 1.0` was declared against a whole-file denominator; under a body denominator the same literal is a different contract, so it is not carried forward by default. The ≈0.9889 estimate circulating for the post-fix value derives from a disposable separator heuristic rather than from `aozora_body_range` and is not an acceptance value. The confirmatory campaign takes a distinct predicate-set identity from the exploratory one."}
+    {:id :c6,
+     :kind :structural-invariant,
+     :statement
+     "`aozora_body_range` does not currently partition the file, and the implementation must close that gap before relying on it. It returns `(body_start..body_end, tail_start)` where `body_end` is trim-adjusted for trailing newlines while `tail_start` is not, so whenever a tail exists at least one byte belongs to no region. Widening `body_end` to `tail_start` is rejected as the fix: it places transcriber whitespace into the body population, which would make body coverage depend on how many blank lines a transcriber left. The gap is assigned an explicit region instead. Works with no `底本：` line, with fewer than two separator lines, and with bare-CR line endings are boundary cases of the same derivation and are covered by tests."}],
+   :source
+   "`docs/superpowers/plans/2026-07-27-q15-region-partition.md`",
+   :title "Partition the Source into Body and Metadata Populations",
+   :topics [:parser :release],
+   :status :proposed,
+   :validation-scope :structural}
+  {:date "2026-07-27",
+   :slug "parser-rq-classified-source-policy-binding",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "parser-release-instrument-bindings",
+     :scope "the source_recognition instrument policy closure"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "package-scoped-instrument-dependency-identity"}],
+   :claims
+   [{:id :c1,
+     :kind :structural-invariant,
+     :statement
+     "`instrument_policy_hashes[:source_recognition]` binds the classified-source policy `data/parser-rq-ab-aozora-classified-source-v1.json` alongside the ignored-regions taxonomy it already bound. The policy's rules decide which eligible bytes are recognized and therefore decide `source_span_coverage`, while the parallel diagnostic-gap policy was already bound — so the documented authority closure did not match the instrument's actual authority. `instrument-policy-paths` widens from member to one path into member to an ordered vector of paths. The wire shape stays `member -> sha256`: a single-document member retains its document hash byte-for-byte, and a multi-document member folds its documents' hashes in declared order, so `parser-rq-candidate.schema.json` is untouched. Evidence boundary: `test/abc/tools/parser_rq_campaign_test.clj`.",
+     :evidence ["test/abc/tools/parser_rq_campaign_test.clj"]}
+    {:id :c2,
+     :kind :fixture-behavior,
+     :statement
+     "At the same commit and the same parser revision, editing the classified-source policy moves `instrument_policy_hashes[\"source_recognition\"]` and hence `qualification_identity_ref`, while leaving `predicate_set_hash` unchanged — the two rotation routes stay separate. Measured over the live tree, exactly one member coordinate moved. This rotates `qualification_identity_ref`, so captures made against the prior identity are stale; that is the intended consequence, and it is what makes a later recognition-policy amendment attributable. Evidence boundary: `test/abc/tools/parser_rq_campaign_test.clj`.",
+     :evidence ["test/abc/tools/parser_rq_campaign_test.clj"]}
+    {:id :c3,
+     :kind :domain-interpretation,
+     :statement
+     "This corrects an attribution defect, not silent drift. A policy edit could not pass unnoticed before the binding: `parser_git_rev`, the `include_bytes!`-embedded binary's sha256, and the authority pin all move with it. What the identity could not do was name what changed — it rotated on every commit for any reason, so a recognition-policy change was indistinguishable from an unrelated one. The bound value is the policy's canonical bytes rather than its authority document, so the pin and the content stay one coordinate."}],
+   :source
+   "`docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`",
+   :title "Bind the Classified-Source Policy into the Qualification Identity",
+   :topics [:parser :release :identity],
+   :status :proposed,
+   :validation-scope :structural}]}

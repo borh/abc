@@ -2,15 +2,24 @@
 
 Date: 2026-07-26 (revised 2026-07-27)
 Status: The three-tier **architecture** is proposed for acceptance. Of the five
-items previously open, **Q11 and D7 are now decided** and **Q2 is closed by
-measurement**; the closure also corrected a wrong instrument attribution in D6
-(see *D6 correction*, below, which is the most consequential change in this
-revision). What remains open blocks something specific rather than everything:
-**Q3** (LOSS/AMBIGUITY untraced) blocks *predicting* outcomes from D6, not
-measuring them; **D8** (repetition count is a schema constant) blocks
-tier-relative repetitions; **Q9** (population equality, unproven) blocks calling
-tier 2 a census — its prerequisite Q11 is now settled, so the equality target is
-fixed. See *What each open item blocks*.
+items previously open, **Q11 and D7 are decided** and **Q2 is closed by
+measurement**; closing Q2 corrected a wrong instrument attribution in D6, and the
+successor probe **Q12** then closed as well.
+
+**The headline is no longer the architecture.** Q12 measured
+`source-span-coverage` — the predicate the architecture would carry to tier 2 —
+against 299 real works and **not one reaches its declared `:= 1.0`** (fold
+0.9640, worst 0.2466), while all three governed corpus works sit at exactly 1.0.
+The current predicate and the proposed tier 2 population are incompatible, and
+177 bytes of corpus is why nobody could see it. That is tracked as **Q14**, and
+it gates the confirmatory campaign the whole governance path builds toward.
+
+The rest blocks something specific rather than everything: **Q3**
+(LOSS/AMBIGUITY untraced) blocks *predicting* outcomes from D6, not measuring
+them; **D8** (repetition count is a schema constant) blocks tier-relative
+repetitions; **Q9** (population equality, unproven) blocks calling tier 2 a
+census — its prerequisite Q11 is settled, so the equality target is fixed. See
+*What each open item blocks*.
 Depends on: `docs/adr/decisions.edn` slugs `custom-parser-release-qualification`,
 `governed-qualification-corpus-location`, `parser-release-instrument-bindings`
 
@@ -501,6 +510,113 @@ Python over `ab-aozora --mode aat` output, and approximates admission the way
 not a census, and not durable evidence — the same status the *Deterministic Tail
 Set* section assigns its own figures.
 
+### Q12, closed — the residue is mostly recognized, and coverage fails anyway
+
+Q12 asked whether the dropped residue bytes reach the recognition ledger. They
+mostly do. Answering it also measured the predicate itself, and **that** is the
+consequential result.
+
+First the formula, since D6 previously got the instrument wrong. Coverage is
+
+```clojure
+;; parser_rq_source_accountability.clj:704
+(exact-display-ratio (:recognized_bytes aggregate) (:eligible_bytes aggregate))
+```
+
+and `recognition.rs:461` routes every `preserved_opaque` entry to `accounted`
+but **not** to `recognized`. So `source_span_coverage = recognized / eligible`,
+and there are two distinct ways to lose: an entry dispositioned
+`preserved_opaque`, or a byte with **no ledger entry at all**.
+
+#### The residue question, answered
+
+| Residue intervals (299 works) | Count | Bytes |
+|---|---|---|
+| Overlapping only **recognized** entries | **2,154** | 44,638 |
+| Overlapping only `preserved_opaque` entries | 47 | 5,864 |
+| **No ledger entry at all** | **220** | 10,500 |
+
+The recognized-side constructs are `kaeriten` (1,164), `indent` (206),
+`container_close`/`container_open` (196/192), `page_break` (136), `heading_hint`
+and `margin_note` (51 each), `section_break` (46), `warichu_open` (35),
+`illustration` (31), `align_end` (23), `center` (15), `body_end` (6).
+
+**This is D6's conclusion, finally demonstrated on the right instrument.** The
+ledger recognizes constructs the parser-IR converter emits no node for — so
+representational loss genuinely does coexist with recognition, and the nine
+predicates cannot detect it. The mechanism withdrawn in the *D6 correction* is
+hereby replaced by a measured one. The 220 entry-less intervals are a separate,
+smaller exposure.
+
+#### The predicate, measured
+
+| Quantity | Value |
+|---|---|
+| Works measured | 299 (stride sample, 1 unreadable by stock `zipfile`) |
+| **Works reaching `source_span_coverage = 1.0`** | **0** |
+| Works carrying unaccounted bytes | **299** |
+| Corpus fold, `recognized / eligible` | **0.9640** |
+| Worst single work | **0.2466** |
+| Eligible / recognized / accounted bytes | 13,068,347 / 12,597,285 / 12,727,595 |
+| Semantic gap (`eligible − recognized`) | **471,062** |
+| — of which `preserved_opaque` | 130,310 (28%) |
+| — of which **unaccounted, no entry** | **340,752 (72%)** |
+
+The `preserved_opaque` share is `recovered_verbatim` (41,506 occurrences /
+125,382 bytes) and `unknown_directive` (47 / 5,864 bytes) — both under role
+`unrecognized_source_form`.
+
+**Control.** The same measurement over the three governed corpus works returns
+exactly **1.0000 / 1.0000 / 1.0000** (43/43, 58/58, 76/76 bytes), which is
+consistent with the predicate passing today. The method reproduces the known
+value on the governed corpus and fails on real data; that is the strongest form
+this evidence can take short of running the built instrument.
+
+#### What this means for the design
+
+`source-span-coverage` is declared `{:comparator := :value 1.0}` — exact. On this
+evidence **a tier 2 campaign at snapshot scale fails that predicate on every
+work**, by a wide margin, and not because of anything the parser did wrong: 72%
+of the gap is source the ledger never claims to describe.
+
+Three readings, and the design does not choose between them here:
+
+1. The **classified-source policy is incomplete** — 31 rules do not cover
+   Aozora's construct inventory, so real works accumulate unclassified bytes.
+   Then the fix is policy work, and it rotates `policy_hash`.
+2. The **threshold is wrong for a real population** — `:= 1.0` was predeclared
+   against a 177-byte corpus where it is trivially satisfiable. Then the
+   confirmatory threshold must be set from the exploratory campaign, exactly as
+   *Governance Path* step 5 anticipates.
+3. **`preserved_opaque` is being counted wrongly** — if the intent is "the parser
+   accounted for this byte", the ratio arguably wants `accounted / eligible`
+   (0.9740 here), not `recognized / eligible`. That is a predicate-semantics
+   question of the same kind as D7.
+
+All three are live. What is now settled is that **the current predicate and the
+proposed tier 2 population are incompatible**, and that this was invisible at
+177 bytes. This is the sharpest instance of D4's evidence asymmetry in the whole
+document: publication authority rests on a predicate that has never been
+observed against a population capable of falsifying it.
+
+Method limits: exploratory, one stride sample, stock-`zipfile` first-`.txt`
+member rather than ABC's semantic primary-text selection. The ledger is
+production-identical — `classified_source_ledger_from_bytes` and
+`capture_generation_from_bytes_for_identity_and_work` call the same
+`build_ledger`, differing only in the attached identity — but the aggregate fold
+was reconstructed in Python from `recognition.rs:461,467–479` and
+`parser_rq_source_accountability.clj:704`; **the built
+`ab-parser-rq-source-accountability` binary was not run.** Before any of this
+drives a decision, it should be reproduced through the real instrument. These
+are disposable observations, not durable evidence.
+
+Reproduction: the probe reads the ledger from a 15-line `examples/dump_ledger.rs`
+in `ab-aozora-capture` that pipes stdin through
+`classified_source_ledger_from_bytes`. It was **deliberately not committed** —
+adding a permanent example to the release-gated capture crate is governed surface
+for a one-off probe, and this document's own rule is that these tools must not
+accrete into governance inputs.
+
 ### D6 and D4
 
 This bears directly on D4. A green full-corpus report must not be read as "the
@@ -809,7 +925,9 @@ Stated explicitly, because "blocker" without a scope stalls everything equally.
 | **D7 prerequisites** (decided; unimplemented) | The fixture tier containing adversarial or malformed inputs, until `allowed_dispositions` is untangled and the expected-outcome model specified | The tier architecture; tier 2 and tier 3 work; the `wall-time` reshape |
 | **Q9** (population equality) | Describing tier 2 as a census; the accounted difference against the admission and conversion-audit populations | Accepting that a snapshot tier should exist; tier 2's population definition and name, both now fixed by Q11 |
 | **D8** (repetition protocol) | Tier-relative repetition counts | Everything else; tier 2 can run at the current fixed 3 |
+| **Q14** (coverage predicate vs tier 2) | **The confirmatory tier 2 campaign** — it cannot pass `source-span-coverage := 1.0` as predicated; and reading any tier 2 coverage observation as a parser verdict | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
 | ~~**Q2**~~ (closed 2026-07-27) | — | — · closing it *corrected* D6's instrument attribution; see *D6 correction* |
+| ~~**Q12**~~ (closed 2026-07-27) | — | — · it demonstrated D6's conclusion on the right instrument, and raised Q14 |
 | ~~**Q11**~~ (decided 2026-07-27) | — | — |
 
 So the three-tier **architecture** is acceptable now. What is not yet available
@@ -832,11 +950,17 @@ full-snapshot report would have concealed.
 
 Current blocker status, plainly:
 
-- **B1 — D6.** **Q2 closed; Q3 still open.** The closure also found that this
+- **B1 — D6.** **Q2 and Q12 closed; Q3 still open.** Q2's closure found that this
   section named the wrong instrument: `source_span_coverage` is
   ledger-authoritative (`parser-rq-source-recognition-v1`), not node-span based.
-  The section's *conclusion* survives; its stated *mechanism* is withdrawn and
-  has not been re-derived over ledger dispositions. Partially resolved.
+  Q12 then re-derived the section's mechanism over ledger dispositions and
+  **confirmed its conclusion** — 2,154 residue intervals are recognized by the
+  ledger while the converter emits no node for them. Substantially resolved.
+- **B5 — Q14. NEW, and the most serious open item.** `source-span-coverage :=
+  1.0` fails on 299 of 299 real works. Until it is resolved, tier 2 has a
+  population it cannot qualify against, and *step 5 of the governance path cannot
+  complete*. It does not block accepting the architecture or running the
+  exploratory campaign — measuring this is what that campaign is for.
 - **B2 — D7.** **Decided** (Option 1, `unexpected-fatal-failures ≤ 0`).
   **Unimplemented:** `allowed_dispositions` is still level-confused and the
   expected-outcome model is unspecified, so the adversarial fixture tier remains
@@ -854,9 +978,11 @@ Current blocker status, plainly:
 
 Then:
 
-1. Run the Q12 ledger probe — the cheapest remaining item, and the one that
-   determines whether the residue drop is a coverage hole. Measure the remaining
-   harness layer (Q1), and settle the other open questions.
+1. **Settle Q14 first — it now gates step 5.** Reproduce the Q12 coverage
+   measurement through the built `ab-parser-rq-source-accountability` instrument,
+   then choose among policy completion, threshold predeclaration, and
+   `preserved_opaque` semantics. Measure the remaining harness layer (Q1), and
+   settle the other open questions.
 2. Discharge the D7 prerequisites in order — untangle `allowed_dispositions`
    first — and define tier semantics and authority **before** changing any hash.
 3. Reshape `wall-time`, apply the D7 decision, carry the D8 protocol migration if
@@ -943,14 +1069,21 @@ Every governance edit to `decisions.edn` is authored by hand.
   pre-attempt population carries no `:source_sha256` and no primary-text member
   for exactly its distinguishing members, so it can supply neither
   `corpus-snapshot-hash` nor Q9's join key. See *Q11, decided*.
-- **Q12 — Are the dropped residue bytes in the recognition ledger?** Q2 shows
-  `map_raw_to_nodes` emits no parser-IR node over 61,002 bytes of real source in
-  a 299-work sample. Because coverage is ledger-authoritative (*D6 correction*),
-  whether that is a coverage hole depends on whether those intervals appear as
-  ledger entries and whether their disposition is `preserved_opaque` (accounted,
-  not recognized) or absent entirely (unaccounted). Answerable from ledger
-  evidence without a full campaign; **this is the successor to Q2 and the
-  cheapest remaining probe.**
+- **Q12 — CLOSED 2026-07-27.** The residue bytes are mostly ledger-recognized
+  (2,154 of 2,421 intervals), which demonstrates D6's conclusion on the correct
+  instrument; 220 intervals have no ledger entry. Closing it also measured the
+  predicate: **0 of 299 real works reach `source_span_coverage = 1.0`** (fold
+  0.9640, worst 0.2466), against exactly 1.0 on all three governed corpus works.
+  See *Q12, closed*. The successor is **Q14**.
+- **Q14 — `source-span-coverage := 1.0` and tier 2 are incompatible. Which
+  gives?** Q12 shows the predicate fails on every real work, 72% of the gap being
+  source with no ledger entry at all. Either the classified-source policy is
+  incomplete (31 rules, rotates `policy_hash`), or the exact `1.0` threshold was
+  an artefact of a 177-byte corpus and must be predeclared from the exploratory
+  campaign, or `preserved_opaque` is mis-counted and the ratio wants
+  `accounted / eligible` (0.9740) — a predicate-semantics question of D7's kind.
+  **This now gates the confirmatory tier 2 campaign**, and it should be
+  reproduced through the built instrument before it drives any decision.
 - **Q13 — Is `:parser_ir_node_span_coverage` safe to retain?** It is kept as
   supporting evidence beside the ledger-authoritative observation, but on real
   works it is not a source-coverage ratio at all: node spans are a running offset

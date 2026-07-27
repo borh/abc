@@ -301,9 +301,13 @@ settled first**: dropping the `NodeSpans` path removes `analyze.rs`,
    produces the membership index the release-authoritative recognition path
    authenticates against. The span union and coverage fields go; the membership
    derivation and its per-work parser-IR authentication stay. Implementation plan
-   not yet written; it must decide whether the v1 schemas are retained so the 22
-   published artifacts carrying this basis stay validatable, or those artifacts
-   are declared protocol-incompatible.
+   written: `plans/2026-07-27-q13-implementation.md`. It establishes that
+   **`qualification_identity_ref` does not rotate** — `instrument_versions` is
+   derived from the predicate set and no predicate names this instrument — while
+   `membership_ref` does, making prior captures protocol-incompatible. Two things
+   remain to settle before task 1: whether the per-work record also sheds its
+   eligibility fields and the P1 aggregate, and whether the v1 schemas are frozen
+   alongside v2 so the 22 published artifacts stay validatable.
 
 2. **D7 prerequisites:** separate record `status` from measured `disposition`,
    then specify closed expected-outcome vocabularies. Initially only `parsed` and

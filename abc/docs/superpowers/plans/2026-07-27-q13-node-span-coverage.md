@@ -18,8 +18,9 @@ accepted.
 > publishes. **Retain** the membership index `analyze_corpus` produces and the
 > per-work parser-IR authentication it carries, because the release-authoritative
 > recognition path depends on both. Governance record:
-> `docs/adr/parser-rq-retire-node-span-coverage.md`. This plan does not authorize
-> code changes; the implementation plan is still to be written.
+> `docs/adr/parser-rq-retire-node-span-coverage.md`. Implementation plan:
+> `plans/2026-07-27-q13-implementation.md`. This plan does not authorize code
+> changes.
 
 ## Q13 as previously stated, and why it needs restating
 
@@ -400,9 +401,10 @@ comment.
    c7 of `parser-rq-retire-node-span-coverage` so that retiring the consumer does
    not bury it, but retiring the consumer does not make the emitter's coordinate
    determinate.
-4. Write the implementation plan. It must decide the v1-schema question above,
-   and sequence the `membership_ref` rotation against the region partition's own
-   identity movement.
+4. ~~Write the implementation plan.~~ **Done 2026-07-27:**
+   `plans/2026-07-27-q13-implementation.md`. Two things remain to settle before
+   its task 1: whether the per-work record also sheds its eligibility fields and
+   the P1 aggregate, and whether the v1 schemas are frozen alongside v2.
 
 ## Verification gate
 
@@ -425,8 +427,8 @@ just validate-migration
 **Decided 2026-07-27: Option 1, scoped to the quantity.** Diagnosis traced to
 source, confirmed through the built instrument on the governed three-work corpus
 and one real work, and the consumer enumeration completed. Governance record
-written as `:proposed`. No code changed; the implementation plan is not yet
-written.
+written as `:proposed`; implementation plan written
+(`plans/2026-07-27-q13-implementation.md`). No code changed.
 
 The instrument returned `status: "ok"` and no errors on every work measured. That
 is the finding, not an aside: an analyzer can be fully green while unioning

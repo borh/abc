@@ -1,152 +1,326 @@
 # Handoff: Parser-RQ Corpus Tiering (2026-07-27)
 
-Continues `docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`,
-which grew 721 → 1,562 lines this session. Read that document's *Status* block
-first; this file records what a fresh session needs that the design does not
-say about itself.
+This is an operational checkpoint for the next session, not an implementation
+plan and not a new source of governance authority. The governing design remains
+`docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`;
+hand-authored records in `docs/adr/decisions.edn` become authoritative once
+accepted.
 
-## State
+> **Stop condition:** Do not implement Q15 until the owner chooses the coordinate
+> represented by `source_span_coverage`. In particular, do not add a
+> `publication_metadata` policy rule as the frame fix: the ledger never lexes
+> those bytes, so that rule cannot change the result.
 
-Branch `parser-rq-corpus-tiering`, **13 commits ahead of `main`**, unmerged and
-unpushed. Working tree clean. Nine commits this session, **one of which touches
-code** (`3a329ea0`); the rest are the design document.
+## Start here
 
-Tests: **162 tests / 816 assertions / 0 failures** across
-`abc.tools.parser-rq-campaign-test`, `parser-release-qualification-test`,
-`parser-rq-source-accountability-test`, `validate-design-bundle-test`. The two
-errors in wider runs are `TEI_SCHEMA_PATH must be set` and were **proven
-pre-existing on a stashed clean tree**. `nix flake check` and the full suite
-were **not** run — they need that env var, unset in this environment.
+1. Recalculate live repository state rather than trusting historical counts:
 
+   ```sh
+   git status --short
+   git log --oneline --decorate main..HEAD
+   git diff --stat main...HEAD
+   ```
+
+2. Read these design sections in order:
+
+   - *Status*
+   - *Q14 mechanism, corrected again 2026-07-27 — a coordinate mismatch, not a
+     missing rule*
+   - *Q16, settled 2026-07-27*
+   - *What each open item blocks*
+   - the Q15 and Q13 entries under *Open Questions*
+
+3. Treat the later Q15 rescope as the current diagnosis. Before using the design
+   as an implementation source, reconcile the stale passages named under
+   *Known contradiction in the design* below.
+
+The durable checkpoint is commit `a2c8ad73` (the original handoff).
+`06f6cd37` added the initial design plus non-authoritative corpus inventory/tail
+tools and their quality wiring. `3a329ea0` is the only later change to active
+parser-RQ qualification code; it binds the classified-source policy into the
+qualification identity. Counts such as “commits ahead of `main`” and working-tree
+cleanliness are deliberately not recorded here because they become false as soon
+as work resumes.
+
+## Historical verification baseline
+
+At the checkpoint, the focused Clojure run reported **162 tests / 816
+assertions / 0 failures / 2 environment errors** across:
+
+- `abc.tools.parser-rq-campaign-test`
+- `abc.tools.parser-release-qualification-test`
+- `abc.tools.parser-rq-source-accountability-test`
+- `abc.tools.validate-design-bundle-test`
+
+Both errors were `TEI_SCHEMA_PATH must be set` in
+`validate-design-bundle-test`; they were reproduced on the then-clean tree and
+were not caused by this branch. The raw command below is therefore diagnostic
+unless that variable is configured:
+
+```sh
+(cd abc && clojure -M:test:kaocha -m kaocha.runner \
+  --focus abc.tools.parser-rq-campaign-test \
+  --focus abc.tools.parser-release-qualification-test \
+  --focus abc.tools.parser-rq-source-accountability-test \
+  --focus abc.tools.validate-design-bundle-test)
 ```
-clojure -M:test:kaocha -m kaocha.runner --focus abc.tools.parser-rq-campaign-test
+
+The standard Nix-backed checks below are the verification authority. They supply
+their governed dependencies and must pass before completion; do not recast the
+raw command's two errors as a successful full test run.
+
+During the handoff review, the Nix-backed full focused check passed **1,145 tests
+/ 11,754 assertions / 0 failures**:
+
+```sh
+nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests --no-link \
+  --print-build-logs
 ```
 
-## Decided — five entries now await hand-authored `decisions.edn` records
+## Owner decision: Q15 source coordinate
 
-| Item | Decision | Basis |
+The traced mechanism is:
+
+- `ab-aozora-capture/src/classified_source.rs::build_ledger` lexes
+  `decoded.span_text`;
+- `decoded.span_text` is the `aozora_body_range` body projection;
+- the recognition instrument currently takes `eligible_bytes` from the entire
+  decoded file.
+
+The result divides a body-derived numerator by a whole-file denominator. The
+owner must choose which contract the predicate is meant to express:
+
+### Option A — body-projection coverage
+
+Make the eligible region exactly the projection supplied to the parser. Header
+and tail intervals must come from `aozora_body_range`, never from separator or
+`底本：` heuristics maintained elsewhere.
+
+This is the direction proposed by the latest Q15 text. It is a principled
+denominator reduction because it removes bytes outside the parser's input
+coordinate, not unrecognized bytes inside that coordinate. It also changes the
+meaning of `source_span_coverage = 1.0` from whole-file coverage to body-input
+coverage and therefore requires an explicit owner decision.
+
+This is **not** a taxonomy-data-only edit. The v1 schema requires `rules` to be
+empty and the Rust taxonomy reader rejects non-empty rules. More importantly,
+the release-authoritative recognition path hard-codes the eligible interval to
+the complete decoded source, and `RecognitionInput` does not accept the taxonomy
+whose rules would justify exclusions. The older node-span accountability path
+also requires empty ignored regions and whole-file eligibility. Adopting this
+option therefore needs an authenticated taxonomy input and a versioned
+instrument/protocol change across at least:
+
+- `abc/schemas/parser-rq-ignored-regions.schema.json`
+- `abc/data/parser-rq-ignored-regions-v1.json`
+- `ab-validator/crates/ab-parser-rq-source-accountability/src/main.rs`
+- `ab-validator/crates/ab-parser-rq-source-accountability/src/recognition.rs`
+- `ab-validator/crates/ab-parser-rq-source-accountability/src/recognition_aggregate.rs`
+- `ab-validator/crates/ab-parser-rq-source-accountability/src/analyze.rs`
+- `ab-validator/crates/ab-parser-rq-source-accountability/src/aggregate.rs`
+- `abc/schemas/parser-rq-source-recognition-work.schema.json`
+- `abc/schemas/parser-rq-source-recognition-index.schema.json`
+- `abc/schemas/parser-rq-source-recognition-aggregate.schema.json`
+- `ab-validator/crates/ab-parser-rq-source-accountability/tests/recognition.rs`
+- `ab-validator/crates/ab-parser-rq-source-accountability/tests/recognition_corpus.rs`
+- `ab-validator/crates/ab-parser-rq-source-accountability/tests/aggregate.rs`
+- `ab-validator/crates/ab-parser-rq-source-accountability/tests/analyze_work.rs`
+- `abc/test/abc/tools/parser_rq_source_accountability_test.clj`
+- `abc/test/abc/tools/validate_design_bundle_test.clj`
+
+Write a dedicated implementation plan after this option is accepted; do not
+infer a v1 wire shape or an ambient taxonomy dependency from the current empty
+taxonomy.
+
+### Option B — whole-file coverage
+
+Keep the denominator as the complete decoded file and extend classified-source
+capture so header and tail produce attributable facts in the same coordinate as
+body facts. This preserves the whole-file reading of the predicate and avoids a
+denominator reduction, but it broadens the instrument beyond the parser's body
+input and requires explicit roles, dispositions, spans, and tests for packaging
+metadata.
+
+A policy rule alone is insufficient under this option too: facts for the
+currently unlexed bytes must first exist.
+
+### Acceptance conditions for either option
+
+- Numerator facts and denominator intervals inhabit one declared coordinate.
+- Header and tail boundaries have one authority: `aozora_body_range`.
+- Works without two separator lines or without a `底本：` line are covered by
+  tests.
+- The governed three-work corpus remains the control and returns its expected
+  result.
+- A real-source sample is re-measured through the built
+  `ab-parser-rq-source-accountability` binary.
+- If ignored regions exist, the exact taxonomy content that derives them is
+  authenticated into every work record and aggregate that consumes them.
+- The affected policy/schema hashes and `qualification_identity_ref` rotate
+  through their intended coordinates; `predicate_set_hash` moves only if the
+  predicate contract itself changes.
+- Old evidence is rejected as stale or protocol-incompatible, as appropriate.
+
+## Known contradiction in the design
+
+**Severity: blocker for implementation from the design.**
+
+The later *Q14 mechanism, corrected again* and Q15 *Open Questions* entry contain
+the traced diagnosis above. Earlier text still says the frame is fixed by adding
+`publication_metadata`, `warichu_close`, `framed_close`, and a `底本` rule. The
+stale instructions remain in at least:
+
+- the opening *Status* discussion of Q14/Q15;
+- the Q14 “Part A” sequence;
+- *What each open item blocks*, row Q15;
+- *Current blocker status*, B5;
+- *Governance Path*, step 1.
+
+Those passages also say only two close-marker rules are missing. The traced
+scope is broader: `node_policy` maps only `DirectiveKind::Unknown` and
+`DirectiveKind::WarichuOpen`; the other **twelve** variants return `None`.
+
+Reconcile the design before or in the same reviewed change that records the Q15
+decision. Preserve the superseded diagnosis as history only if it is clearly
+marked and cannot be mistaken for current instructions.
+
+## Decisions and governance records still owed
+
+`decisions.edn` is edited by hand, never generated. Keep these records distinct
+so that decision, implementation, and measurement do not collapse into one
+event:
+
+| Record | Current state | Required action |
 |---|---|---|
-| **Q11** | Tier 2 binds publication's **successfully-selected** projection; named the *publication-workload snapshot*; carries a declared denominator (`candidates_considered`, `derive_failures`, `rejected`) | Constructibility, not preference: a pre-attempt candidate is `{:file :relpath :row}` — no `:source_sha256` (required by `corpus-snapshot-hash`) and no primary-text member (required by Q9's join key), because both come from the fallible `inspect-selected-work!` |
-| **D7** | `unexpected-fatal-failures ≤ 0` | Owner's selection. **Unimplemented**: untangle `allowed_dispositions` first — it lists the *status* value `protocol_error` in a *disposition* vocabulary |
-| **Q14** | Fix the instrument, not the threshold | Reading 3 (`accounted/eligible`) rejected in kind — it folds "the parser could not type this" into the numerator. Reading 2 (lower threshold) rejected *for now*, correct only once the instrument measures what it claims |
-| **Q16** | Bind the classified-source policy into the identity | **Decided and landed** — the only code change this session |
+| Q11 | Decided | Record tier 2 as the publication's successfully-selected projection, named the *publication-workload snapshot*, with `candidates_considered`, `derive_failures`, and `rejected` declared |
+| D7 | Decided | Record `unexpected-fatal-failures <= 0` and its safe initial expected-outcome vocabulary |
+| Q14 | Decided | Record “fix the instrument before setting the residual threshold”; do not preserve the superseded causal claim |
+| Q16 | Decided and implemented | Record the classified-source policy as a bound source-recognition authority |
+| Instrument-binding amendment | Implied by Q16 | Amend `parser-release-instrument-bindings` so its documented authority closure matches the code |
+| Q15 | **Owner decision required** | Record Option A or B before implementation |
 
-The fifth pending entry is the amendment to `parser-release-instrument-bindings`
-that Q16 implies.
+The Q16 implementation widened `instrument-policy-paths` from member → path to
+member → ordered vector. `:source_recognition` now binds both:
 
-## Closed by measurement
+- `data/parser-rq-ab-aozora-classified-source-v1.json`
+- `data/parser-rq-ignored-regions-v1.json`
 
-- **Q2** — premise falsified. 2,421 `ParserResidue` occurrences over 299 works,
-  **100%** via the `x-provenance == "parser-derived"` arm, **100%** carrying real
-  non-zero source spans (61,002 B). The `is_parser_raw_residue` string heuristic
-  that Q4 flags as the hazard **never fired once**.
-- **D6 corrected** — it named the wrong instrument. `source_span_coverage` is
-  ledger-authoritative (`parser-rq-source-recognition-v1`);
-  `parser_release_qualification.clj:190` demotes node-span coverage to
-  `:parser_ir_node_span_coverage`.
-- **Q12** — **0 of 299 real works reach `source_span_coverage = 1.0`** (fold
-  0.9640, worst 0.2466) while the governed 3-work corpus is exactly 1.0.
-  Confirmed through the **built** `ab-parser-rq-source-accountability` binary,
-  byte-identical to the Python reconstruction on all six quantities.
-- **Q1** — the capture layer is **232.4 ms/work, 9.25× all of `ab-check`**; only
-  2.2% is parsing and 4.2% is the non-authoritative P1 analysis. Byte-proportional
-  at ~5,400 ms/MB decoded, so one serial full-snapshot pass is **78–85 min**,
-  ≈3.5× the entire ×3 `ab-check` campaign the design had used as its cost model.
-- **Q6 narrowed** — 662 KB/work, **15.2× expansion** over decoded source,
-  **≈12 GB** per capture generation at 17,878 works. Retention across generations
-  and closed-membership cost remain unmeasured.
+The wire shape remains `member -> sha256`: a single-document member retains its
+document hash byte-for-byte, while a multi-document member folds the ordered
+document hashes. Only `source_recognition` moved
+(`sha256:c099072a…` → `sha256:81547652…`). This rotated
+`qualification_identity_ref`, so captures made against the old identity are
+stale.
 
-## The one code change (`3a329ea0`)
+## Work available before Q15 is decided
 
-`instrument-policy-paths` is now member → vector, and `:source_recognition` binds
-both the ignored-regions taxonomy **and**
-`data/parser-rq-ab-aozora-classified-source-v1.json`. Wire shape is unchanged
-(`member -> sha256`), so `parser-rq-candidate.schema.json` is untouched:
-single-document members keep their hash **byte-for-byte**, multi-document members
-fold their documents' hashes in declared order. Exactly one coordinate moved —
-`source_recognition` `sha256:c099072a…` → `sha256:81547652…`.
+These streams do not require choosing the source coordinate, but each still
+needs its own scoped plan before code changes:
 
-> **This rotated `qualification_identity_ref`. Any existing captured evidence is
-> stale against the new identity.** Intended: it is what makes the eventual
-> policy amendment attributable.
+1. **Q13:** drop `:parser_ir_node_span_coverage` or rename it only after defining
+   the quantity it actually measures. It costs 9.80 ms/work and is authoritative
+   for no predicate; its current ratio-like name invites the exact
+   misinterpretation that exposed D6.
+2. **D7 prerequisites:** separate record `status` from measured `disposition`,
+   then specify closed expected-outcome vocabularies. Initially only `parsed` and
+   `fatal_error` may be expected; `adapter_timeout`, `protocol_error`, and
+   `unavailable` remain unconditional failures.
+3. **Q9:** authenticate set equality with the publication's selected projection
+   and produce an accounted set difference against admission and conversion-audit
+   populations. Do not demand equality with admission.
+4. **Q3:** trace `LOSS` and `AMBIGUITY` paths. Directly measured campaign results
+   do not prove those mechanisms preserve coverage.
+5. **D8:** decide whether repetitions remain fixed at three or become
+   tier-relative. The latter is a schema and core-attempt protocol migration, not
+   an analyzer flag.
+6. **Q5/Q6:** define the governed host class and the capture retention policy.
+   One measured capture generation is approximately 12 GB; retention across
+   generations and closed-membership verification cost remain unknown.
 
-## Open — ranked
+Do not combine these merely to minimize the number of commits. Combine identity
+rotations only after the semantics of every constituent change are independently
+reviewed.
 
-1. **The Q15 denominator decision. Owner's call, and it blocks the work.**
-   Declaring header/tail ineligible is a denominator reduction — the hazard Q11
-   rejected. The argument for it: it stops charging the instrument for bytes it
-   was never given, rather than hiding unrecognized body content. But it changes
-   what `source_span_coverage = 1.0` *means*, so it should not be decided
-   unilaterally.
-2. **Then implement Q15 (rescoped), two independent pieces.** (i) Ignored-regions
-   rules derived from `aozora_body_range` — **no new heuristic needed**, and it
-   handles the works with fewer than two separator lines and no `底本：` line that
-   defeated this session's hand-rolled detector. (ii) The **twelve** unmapped
-   `DirectiveKind` arms in `node_policy` (`ab-aozora-pipeline/src/fold.rs:154`
-   maps only `Unknown` and `WarichuOpen`), plus their `ConstructId` values and
-   policy rules. Then **re-measure**: the ≈0.9889 estimate uses this session's
-   heuristic, not the real projection.
-3. **Q13** — drop or rename `:parser_ir_node_span_coverage`. It now has a cost
-   argument as well as a naming one: 9.80 ms/work to produce a number that is
-   authoritative for no predicate and reads as a ratio it does not compute.
-4. **D7 prerequisites**, then **Q9**, **Q3**, **D8**, **Q5**. Q5's governed host
-   class matters considerably more after Q1.
+## Post-Q15 sequence
 
-Any policy or `ConstructId` change must also update
-`parser-rq-classified-source-authority-v1.json`, which pins the policy by
-`raw_bytes_hash` and `identity_hash` and **fails closed** otherwise. The policy
-is `include_bytes!`-embedded (`ab-aozora-capture/src/classified_source.rs:20`),
-so edits require a rebuild.
+Once the owner decision is recorded:
 
-## Warnings a reviewer should carry
+1. Write a task-by-task implementation plan for the selected coordinate.
+2. Characterize the current three-work control and add failing boundary tests
+   before changing the instrument.
+3. Align numerator and denominator using the selected contract.
+4. Map all twelve currently unmapped `DirectiveKind` variants in
+   `ab-validator/crates/ab-aozora-pipeline/src/fold.rs::node_policy`, adding the
+   required `ConstructId` values and classified-source policy rules. Treat this
+   as a separate reviewable deliverable from the coordinate change.
+5. Rebuild because the classified-source policy is `include_bytes!`-embedded and
+   `parser-rq-classified-source-authority-v1.json` fails closed on
+   `raw_bytes_hash` and `identity_hash`.
+6. Re-run the governed control, then re-measure the real-source sample through
+   the built accountability binary. The earlier ≈0.9889 estimate came from a
+   disposable separator heuristic and is not an acceptance value.
+7. Only after the instrument measures its declared contract, use an explicitly
+   non-authoritative exploratory campaign to choose and predeclare any residual
+   confirmatory threshold.
 
-**The frame mechanism was stated three times and was wrong twice.** First a
-"missing `publication_metadata` rule" (inferred from the policy file), then a
-corrected byte split, finally the traced answer: the ledger lexes
-`decoded.span_text` = `sanitized.body` while `eligible_bytes` counts
-`decoded.text`, so `source_span_coverage` divides a body-derived numerator by a
-whole-file denominator. **Treat any mechanism in the design document that is not
-traced to a specific line as suspect.** The failure mode each time was inferring
-a cause from a correlation.
+The exploratory and confirmatory campaigns must have distinct predicate-set
+identities. A post-hoc threshold must not be presented as preregistered
+confirmation.
 
-A **buggy frame heuristic** also shipped and was corrected in-document:
-`find(b'-'*40)` matches overlapping positions inside a single 55-hyphen rule, so
-"the second separator" was the second match inside the *first* rule. That put the
-notation legend in "body interior" and inflated it from a corrected **11,293** to
-119,144. Both corrections are recorded in the document, not silently fixed.
+## Measurements worth carrying
 
-**Always run the governed 3-work corpus as a control.** A node-span coverage
-reconstruction looked like a major finding until the corpus returned
-0.58/0.43/0.33 where the predicate passes at 1.0 — which is what revealed the
-*reconstruction* was measuring the wrong thing, not the instrument.
+- Q2: 2,421 `ParserResidue` occurrences over 299 works; 100% use the
+  `x-provenance == "parser-derived"` arm and 100% carry non-zero source spans.
+  The string heuristic under Q4 did not fire.
+- Q12: no sampled real work reached `source_span_coverage = 1.0` (fold 0.9640,
+  worst 0.2466), while all three governed works did.
+- Q1: capture costs 232.4 ms/work, **9.25×** all of serial `ab-check`; only 2.2%
+  is parsing and 4.2% is the non-authoritative node-span analysis.
+- Capture cost is approximately byte-proportional at 5,400 ms/MB decoded:
+  **78–85 minutes** for one serial full-snapshot pass.
+- Capture storage is 662 KB/work, **15.2×** decoded source, or about **12 GB**
+  per 17,878-work generation.
 
-## Constraints
+These are measurements from a 299-work sample and synthesized identity. They
+measure behavior and cost; they do not authenticate a campaign.
 
-- `decisions.edn` edits are authored by hand, never by tooling.
-- Published manifests are immutable; `tools/corpus_inventory.py` and
-  `tools/corpus_tail_set.py` stay non-authoritative and must not become
-  governance inputs.
-- Untracked files are invisible to `scripts/python-quality.sh` (it reads
-  `git ls-files`) and to `nix flake check` — `git add` before running.
-- `examples/dump_ledger.rs` in `ab-aozora-capture` was **deliberately not
-  committed**: a permanent example in the release-gated capture crate is governed
-  surface for a one-off probe. Recreate as ~12 lines piping stdin through
-  `ab_aozora_capture::classified_source_ledger_from_bytes`, then
-  `cargo build --release --example dump_ledger -p ab-aozora-capture`.
+## Failure modes to keep visible
 
-## Reproduction
+- The frame mechanism was stated three times and was wrong twice because causes
+  were inferred from correlations. Require a source-line trace for future
+  mechanism claims.
+- Searching for `b'-' * 40` found overlapping offsets inside one 55-hyphen
+  separator. Never restore that detector; use `aozora_body_range`.
+- Always run the governed three-work corpus as a control. It exposed a
+  node-span reconstruction that measured the wrong quantity.
+- `tools/corpus_inventory.py` and `tools/corpus_tail_set.py` are exploratory,
+  non-authoritative tools. They must not become governance inputs.
+- Published manifests are immutable.
+- Add new tracked files before quality checks: Python quality and Nix evaluation
+  intentionally do not see untracked sources in the same way.
+- Do not commit one-off capture probes as release-crate examples. If a probe is
+  recreated, keep it in configured scratch state and record its exact source or
+  method in the resulting evidence.
 
-The pinned corpus is already local at `/home/bor/Dependencies/aozorabunko` at rev
-`0e9ea3e586eb0aa34039fabfc85a407d2f98b165` — **no refetch needed**.
+## Reproduction and verification
 
-Probe scripts were written to the session scratchpad and do not survive it;
-recreate from the design document's method notes if needed:
-`q2_residue_probe.py` (residue classification), `q12_ledger_probe.py` (ledger
-dispositions and coverage), `partb_diagnose.py` (unaccounted-byte adjacency),
-`q1_capture_cost.py` (capture-layer scaling fit), `q14_build_inputs.py`
-(`capture-corpus` inputs).
+Use the pinned `aozorabunko-src` flake input. If an extracted checkout is needed
+for an exploratory probe, pass its path explicitly through task-local
+configuration and first verify revision
+`0e9ea3e586eb0aa34039fabfc85a407d2f98b165`; do not add a machine-local path to
+tracked code or documentation.
 
-The last builds a **synthesized qualification identity** mirroring the real
-parser-IR `derived_from` so per-work records return `ok`. It measures coverage
-and **authenticates nothing**; its `qualification_identity_ref` is meaningless
-outside those runs.
+Focused checks should match the files changed. The final branch gate remains:
+
+```sh
+just comment-hygiene
+nix build ./abc#checks.x86_64-linux.clj-kondo
+nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
+nix build ./ab-validator#checks.x86_64-linux.cargo-check
+nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
+nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
+just validate-migration
+```
+
+For documentation-only edits to this handoff, inspect the rendered structure and
+run `git diff --check`; do not claim that historical code tests were rerun.

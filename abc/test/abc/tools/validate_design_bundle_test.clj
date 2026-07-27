@@ -963,11 +963,11 @@
                (hash/format-sha256 (hash/sha256-json-jcs value))))
         (is (= identity (get-in authority [section "identity_hash"])))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:44015e45625422dc60fec483855e53e519ef35288ce72ca498061d08939dfc06"
+            "sha256:f816233d43c37ab8a75d5cd69eb890d06be6cb6a99e70e296f8a4a6838e657c4"
             "schemas/parser-rq-classified-source-authority.schema.json"
             "sha256:cfe47129b725e29c4a5a5922ccbf7e2a17e9e8c5db716a3d1baf083fbb41fe1c"
             "schemas/parser-rq-classified-source-ledger.schema.json"
-            "sha256:134d1507bb6ca2388a4f42192fa4a33ef8d05dc9f5da0c5587f6d6c8a980d783"
+            "sha256:a859ba4e2a49bd392d4c499661a9d6d201f5ecaad905fe7cd78af391f8e8c9fa"
             "schemas/parser-rq-capture-generation.schema.json"
             "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"}
            (into {} (map (fn [path]
@@ -981,7 +981,8 @@
     (is (= ["visible_text" "structural_newline" "ruby" "typography"
             "gaiji" "layout" "break" "heading" "illustration" "kunten"
             "source_annotation" "container_syntax" "terminal_provenance"
-            "publication_metadata" "editorial_legend" "unrecognized_source_form"]
+            "publication_metadata" "editorial_legend" "bibliographic"
+            "unrecognized_source_form"]
            (get policy "roles")))
     (is (every? #(contains? % "construct_id") (get policy "rules")))
     (is (not-any? #(contains? % "case") (get policy "rules")))
@@ -1127,8 +1128,17 @@
                    "container_open" "［＃ここから］"
                    "container_close" "［＃ここで終わり］"
                    ;; The colophon field line, attributed in the tail region
-                   ;; where the parser never lexes.
+                   ;; where the parser never lexes, and the indented line that
+                   ;; continues it. A continuation is recognized by the run it
+                   ;; sits in -- indented, under a field, no blank between --
+                   ;; and never by what it says.
                    "publication_metadata_line" "底本：「テスト全集」テスト書房"
+                   "publication_metadata_continuation" "1967（昭和42）年7月10日発行"
+                   ;; The header's opening bibliographic block. One construct
+                   ;; for every line of it: which item a line is -- title,
+                   ;; original title, author, translator -- is not claimed,
+                   ;; because position within the block does not reliably say.
+                   "bibliographic_header_line" "はつ恋"
                    ;; The header's fenced notation legend. Its entry form is
                    ;; byte-identical in shape to the colophon field above --
                    ;; the region each producer scans is what tells them apart,

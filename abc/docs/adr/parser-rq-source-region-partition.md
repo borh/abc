@@ -143,12 +143,14 @@ which is the failure this whole record exists to prevent.
 
 ### What attributes: the classifiers that exist
 
-Two producers, each bound to a region and never to a line's shape.
+Three producers, each bound to a region and a position within it, and never to
+a line's shape.
 
 | Producer | Region | Constructs |
 |---|---|---|
-| colophon fields | tail | `publication_metadata_line` |
+| colophon | tail | `publication_metadata_line`, `publication_metadata_continuation` |
 | editorial legend | header, inside its fence | `editorial_separator_rule`, `editorial_legend_heading`, `editorial_legend_entry`, `editorial_legend_example`, `editorial_legend_note` |
+| bibliographic block | header, before the legend | `bibliographic_header_line` |
 
 **Region, not shape, is what separates them.** A legend entry `《》：ルビ` and a
 colophon field `底本：…` are the same shape — non-empty key, fullwidth colon,
@@ -169,12 +171,32 @@ Lines inside the block matching none of the four forms stay unattributed: 70 of
 (`＊濁点付きの…`, bare URLs, `※底本では…`). Claiming them would be claiming to
 understand a sentence.
 
-**What still has no producer**, measured on the three-work corpus: 73.0% of the
-remaining unattributed bytes are title, author and colophon continuation lines —
-a real typed form, and the obvious next classifier — 22.7% are the transcriber
-prose above, and 4.3% are whitespace. If prose is never attributable, this
-instrument's ceiling sits below 1.0 by construction, which the predicate's owner
-must know before fixing a threshold.
+The bibliographic block is the header's opening run, ending at the first blank
+line, separator rule or bracketed editorial heading. It claims block membership
+and not which item a line is: line 1 is usually the title and the last is
+usually a translator, but original titles and subtitles break the ordering, and
+reading the item off the position would be a guess dressed as a fact.
+
+The colophon continuation is an indented line under a field, reaching it
+without crossing a blank. That bound is what keeps the tail's other unindented
+lines — the distribution notice, the file's own dating lines, the transcriber's
+`※` remarks — out of the claim.
+
+**Shape must not be consulted inside a bound block, and the sample says so
+twice.** One work's title is
+`※［＃「氓のへん／（虫＋虫）」、第3水準1-91-58］の囁き`, and one colophon
+continuation is a citation whose title opens the same way. A leading `※`
+elsewhere in these regions marks transcriber prose, so a producer that declined
+`※` lines by shape would have declined a real title and a real citation. The
+block is the claim's justification; within it, every line belongs.
+
+**What still has no producer**, measured across the 597-work sample: 36.8% of
+the remaining unattributed bytes are the Aozora distribution notice — one fixed
+sentence per file — 15.7% are transcriber `※` remarks, 10.1% are line
+terminators that the attribution contract structurally excludes, 4.7% are the
+file's own dating lines, and the rest is whitespace and unclassified tail lines.
+If prose is never attributable, this instrument's ceiling sits below 1.0 by
+construction, which the predicate's owner must know before fixing a threshold.
 
 ## Consequences
 

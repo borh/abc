@@ -32,7 +32,7 @@ when the disposition is `preserved_opaque`. See
 
 | | |
 |---|---|
-| repository revision | `d81d5409d3085ac7fa7c3e6cee6936c33369edd8` |
+| repository revision | `6c988cbe` plus the bibliographic classifier of this commit |
 | corpus | `aozorabunko` at `0e9ea3e586eb0aa34039fabfc85a407d2f98b165`, resolved through the flake input |
 | toolchain | `rustc 1.96.1 (31fca3adb 2026-06-26)` |
 | instrument | `parser-rq-source-recognition-v2` |
@@ -42,8 +42,8 @@ Governed documents, by raw file bytes:
 
 | document | sha256 |
 |---|---|
-| `data/parser-rq-ab-aozora-classified-source-v1.json` | `f16e27e11da484bc8b9fb3afa0b199af44c614c9897f8fdc29c6f43d95f90598` |
-| `schemas/parser-rq-classified-source-ledger.schema.json` | `b1139dd9f6dcf11ab998a7ad658c038c5f3a4b3c44deec550bb60564f8ad2731` |
+| `data/parser-rq-ab-aozora-classified-source-v1.json` | `4438e056dcc7542a5f37c7fb7f69db5a16d5c67640e6bd8b42c037a0d96bdac6` |
+| `schemas/parser-rq-classified-source-ledger.schema.json` | `168110a21dd23c089532e3af7b4b5dda4518eddcd7f48b991588eb3a77e6876e` |
 | `schemas/parser-rq-source-recognition-work.schema.json` | `600f7c195e99c8bac5b6102eaadf59d9ff334759dbdaeb7ad1148d4a031c9474` |
 | `schemas/parser-rq-source-recognition-aggregate.schema.json` | `b1c43492208185989fe9e028fc2710ce64f2a4a90952072efc847a101209d1f8` |
 
@@ -51,7 +51,7 @@ Run identities, as the instrument emitted them:
 
 | | |
 |---|---|
-| `policy_hash` | `sha256:3805facf…0b7231f1` |
+| `policy_hash` | `sha256:ac748c54…e1806f4f` |
 | `qualification_identity_ref` | `sha256:228669fe…1eae1365` (**synthesized**) |
 | `membership_ref` | `sha256:e5268dea…ccb0962c` |
 | `corpus_generation_ref` | `sha256:2d3e7eff…53be1914` |
@@ -104,20 +104,21 @@ packaging never being lexed.
 
 | work | metadata | attributed | fold |
 |---|---|---|---|
-| `hashire_merosu` | 1,163 | 660 | 0.567498 |
-| `hatsukoi` | 1,243 | 545 | 0.438455 |
-| `kokoro` | 1,412 | 707 | 0.500708 |
-| **fold** | **3,818** | **1,912** | **0.500786** |
+| `hashire_merosu` | 1,163 | 817 | 0.702494 |
+| `hatsukoi` | 1,243 | 696 | 0.559936 |
+| `kokoro` | 1,412 | 842 | 0.596317 |
+| **fold** | **3,818** | **2,355** | **0.616815** |
 
-Two producers contribute: the colophon fields in the tail, and the fenced
-editorial legend block in the header. The measure has moved twice, and the two
-moves are different in kind.
+Three producers contribute: the colophon in the tail, the fenced editorial
+legend block in the header, and the bibliographic block above it. The measure
+has moved three times, and the moves are different in kind.
 
 | | metadata fold | |
 |---|---|---|
 | colophon producer, first draft | 0.3002 | **superseded, wrong** |
 | after the attribution contract | 0.126768 | correction |
-| after the legend classifier | **0.500786** | new coverage |
+| after the legend classifier | 0.500786 | new coverage |
+| after the bibliographic classifier | **0.616815** | new coverage |
 
 The **0.3002** figure counted two things that are not attribution: the
 line-ending normalizations the sanitizer emits across the whole file, which are
@@ -128,34 +129,13 @@ which is a `key：value` line by shape and is not publication metadata. Confinin
 attribution to the tail and to policy-named roles put the colophon's real
 contribution at 0.126768.
 
-The move from 0.126768 to **0.500786** is the legend classifier, which is
-coverage the instrument did not have before rather than a correction to a
-number it already reported.
+The move from 0.126768 to 0.500786 is the legend classifier and the move to
+**0.616815** is the bibliographic one. Both are coverage the instrument did not
+have before, rather than corrections to numbers it already reported.
 
-Body recognition is unchanged at 0.991129 across both moves. That is the check
-that the metadata producers stayed inside their own population; it is the one
-number that must not move when a metadata producer is added.
-
-### What the remaining 1,809 bytes are
-
-Measured, not estimated, over the same three works:
-
-| | bytes | share |
-|---|---|---|
-| title, author and colophon continuation lines | 1,320 | 73.0% |
-| free-text transcriber remarks (`※…`, `＊…`, bare URLs) | 411 | 22.7% |
-| whitespace and line terminators | 78 | 4.3% |
-
-The largest share is a real typed form with no producer yet: `走れメロス`,
-`太宰治`, and colophon continuation lines like
-`1988（昭和63）年10月25日初版発行` that sit under a field rather than carrying
-their own `key：`. Bibliographic attribution is the obvious next classifier.
-
-The transcriber remarks are prose. They are not a typed form and arguably
-should never be attributed — claiming them would be claiming to understand a
-sentence. If that judgement holds, this instrument's ceiling is below 1.0 by
-construction, which is itself something the predicate's owner needs to know
-before fixing a threshold.
+Body recognition is unchanged at 0.991129 across all three moves. That is the
+check that the metadata producers stayed inside their own population; it is the
+one number that must not move when a metadata producer is added.
 
 ## Conservation
 
@@ -188,8 +168,11 @@ unavailable record, no conservation rejection across 25 MB.
 | | bytes | fold |
 |---|---|---|
 | body recognized / eligible | 24,088,179 / 24,382,817 | **0.987916** |
-| metadata attributed / eligible | 357,702 / 697,323 | **0.512965** |
+| metadata attributed / eligible | 439,675 / 697,323 | **0.630518** |
 | body + metadata | 25,080,140 | = decoded, exactly |
+
+Metadata attribution was **0.512965** before the bibliographic classifier; body
+recognition is byte-identical across that change.
 
 ### The distribution, which is what a per-work predicate needs
 
@@ -199,11 +182,14 @@ threshold would be tested against. The distributions are:
 | | min | p05 | median | p95 | max | at 1.0 |
 |---|---|---|---|---|---|---|
 | body recognition | 0.6588 | 0.9689 | 0.9934 | 1.0000 | 1.0000 | **105 / 597** |
-| metadata attribution | 0.1313 | 0.3091 | 0.5384 | 0.6376 | 0.8449 | **0 / 597** |
+| metadata attribution | 0.1690 | 0.4667 | 0.6564 | 0.7298 | 0.9494 | **0 / 597** |
 
-**No work reaches 1.0 on metadata attribution.** The best is 0.8449. A `:= 1.0`
+**No work reaches 1.0 on metadata attribution.** The best is 0.9494. A `:= 1.0`
 metadata threshold would fail every work in the sample, and it would do so for
-reasons that are mostly not defects — see the residue below.
+reasons that are mostly not defects — see the residue below. Three classifiers
+have now moved the median from 0.5384 to 0.6564 and the maximum from 0.8449 to
+0.9494 without moving a single work to 1.0, which is the shape of a measure
+approaching a ceiling rather than a target.
 
 **105 of 597 works reach 1.0 on body recognition**, and the median is 0.9934. A
 `:= 1.0` body threshold — the literal currently in the predicate set, declared
@@ -211,23 +197,34 @@ for the old whole-file denominator — would fail 492 of 597 works, 82% of them.
 
 ### Classifier coverage
 
-| construct | lines | bytes |
-|---|---|---|
-| `publication_metadata_line` | 2,969 | 115,977 |
-| `editorial_legend_entry` | 1,404 | 75,493 |
-| `editorial_separator_rule` | 1,114 | 61,265 |
-| `editorial_legend_example` | 1,403 | 59,247 |
-| `editorial_legend_heading` | 557 | 28,407 |
-| `editorial_legend_note` | 197 | 17,313 |
+| construct | lines | bytes | works |
+|---|---|---|---|
+| `publication_metadata_line` | 2,969 | 115,971 | 591 |
+| `editorial_legend_entry` | 1,404 | 75,493 | 557 |
+| `publication_metadata_continuation` | 1,622 | 61,451 | 589 |
+| `editorial_separator_rule` | 1,114 | 61,265 | 557 |
+| `editorial_legend_example` | 1,403 | 59,247 | 557 |
+| `editorial_legend_heading` | 557 | 28,407 | 557 |
+| `bibliographic_header_line` | 1,256 | 20,528 | 557 |
+| `editorial_legend_note` | 197 | 17,313 | 197 |
 
-557 of 597 works carry a recognized legend block, and 591 carry a recognized
-colophon. Both absences were checked rather than assumed:
+557 of 597 works carry a recognized legend block and a recognized bibliographic
+block, and 591 carry a recognized colophon. Every absence was checked rather
+than assumed:
 
 - The **40 works with no legend block** were re-scanned for a fenced pair and a
   `【...】` heading in the header. **Zero** have one. Every absence is genuine;
   the classifier missed nothing.
-- The **6 works with no colophon** have a tail region of exactly 0 bytes. There
-  is no colophon to classify.
+- Those same 40 works have a **zero-byte header**, which is why they carry no
+  bibliographic block either. There is nothing there to classify.
+- The **6 works with no colophon** have a tail region of exactly 0 bytes.
+- The **8 works with no continuation run** either have no colophon at all or a
+  colophon whose fields are each complete on their own line.
+
+The bibliographic block is 1 to 6 lines, 437 works carrying exactly the two of
+title and author. No sampled header holds a further non-blank line between that
+block's terminating blank and the legend fence, so the blank line is a real
+terminator rather than a convenient one.
 
 Every construct count above matches an independent reconstruction of the same
 sample line by line, which is the cross-check that the instrument's region
@@ -237,7 +234,7 @@ derivation and the design analysis agree.
 
 The two counts initially disagreed by one: 196 notes from the instrument against
 197 from the reconstruction. The cause was a legend line carrying a **trailing
-space**. `header_lines` stripped indentation but not trailing whitespace, so
+space**. `region_lines` stripped indentation but not trailing whitespace, so
 `）` was no longer the line's last character, the note test failed, and the line
 fell through every form to unattributed.
 
@@ -248,25 +245,50 @@ this section are post-fix. A single unexplained one-line discrepancy is exactly
 the shape every earlier defect in this area took, which is the argument for
 chasing it rather than rounding it away.
 
-### What the unattributed 322,389 bytes are
+### What the unattributed 257,648 bytes are
+
+Every interval split at line boundaries and categorized, so the table is
+exhaustive and sums to the residue exactly:
 
 | | bytes | share |
 |---|---|---|
-| title, author and colophon continuation lines | 250,514 | 77.7% |
-| free-text transcriber remarks (`※…`, `＊…`) | 57,185 | 17.7% |
-| whitespace and line terminators | 14,408 | 4.5% |
-| bare URLs | 282 | 0.1% |
+| Aozora distribution notice | 126,228 | 49.0% |
+| transcriber remarks (`※…`, `＊…`, `●…`) | 56,532 | 21.9% |
+| line terminators | 34,464 | 13.4% |
+| layout whitespace | 16,469 | 6.4% |
+| the file's own dating lines (`2007年4月2日作成`) | 16,125 | 6.3% |
+| other prose and unclassified lines | 7,554 | 2.9% |
+| bare URLs | 276 | 0.1% |
 
-The shape holds from three works to 597: the dominant residue is a **real typed
-form with no producer** — `姫柚子の讃`, `佐藤垢石`,
-`1993（平成5）年2月10日第1刷発行`. Bibliographic attribution is the next
-classifier, and on these proportions it is worth roughly 0.36 of the metadata
-measure.
+**The previous version of this table was wrong and is corrected here.** It
+claimed a 322,389-byte residue of which 77.7% was "title, author and colophon
+continuation lines". The residue was 339,621 bytes — the table did not sum to
+it — and the bibliographic forms were 24.1% of it, which is what the classifier
+in fact took. The error was in the report's own line-level reconstruction, not
+in the instrument: the aggregate's `metadata_eligible_bytes` minus
+`metadata_attributed_bytes` was 339,621 then and is 257,648 now, and both agree
+with the per-work unattributed intervals to the byte. The categorization above
+is now derived from those intervals rather than reconstructed alongside them.
 
-The 17.7% of transcriber prose is the part that may never be attributable. If it
-is not, **this instrument's ceiling is near 0.87**, not 1.0, and no amount of
-further classification reaches the literal the predicate set currently carries
-for the body measure.
+**Two rows are structurally unattributable, not merely unclassified.** Line
+terminators carry `structural_newline` facts, and that role is deliberately
+outside `metadata_attributing_roles` — counting it would make the measure move
+when line endings changed. Layout whitespace is the indentation the producers
+trim off a continuation before claiming it, because a claim should cover content
+and not the space in front of it. Together they are 51,933 bytes, so **the
+attribution contract alone caps this measure at 0.9270** no matter how many
+classifiers are added.
+
+The largest remaining form is the **Aozora distribution notice**: one fixed
+sentence per file, `このファイルは、インターネットの図書館、青空文庫（…）で
+作られました。…`. It is prose in form but a constant in fact, and recognizing a
+known literal is not the same act as parsing a sentence — it is the obvious next
+classifier. With it and the dating lines, attribution would reach 0.8347.
+
+The 21.9% of transcriber remarks is the part that may never be attributable.
+Every classifier so far has moved the measure without moving any work to 1.0,
+and no amount of further classification reaches the literal the predicate set
+currently carries for the body measure.
 
 ## Reproducing
 
@@ -291,13 +313,20 @@ from the records the index in `<out>/source-recognition-index.json` addresses.
 **No threshold.** That is a governance act for the predicate's owner, and this
 report is input to it, not a substitute for it. What the sample does establish
 is that the literal currently in the predicate set is not a candidate for either
-measure: `:= 1.0` fails 492 of 597 works on the body and all 597 on metadata.
+measure: `:= 1.0` fails 492 of 597 works on the body and all 597 on metadata,
+and on the metadata side it is not reachable at all — the attribution contract
+caps that measure at 0.9270.
 
-**Not a held-out test of the classifier.** The legend classifier's line forms
-were designed against this same sample under this same seed. The coverage
-figures are therefore a description of the design population, not a prediction
-about unseen works. A second sample under a different seed would be the honest
-generalization test and has not been run.
+**Not a held-out test of the classifiers.** Both the legend classifier's line
+forms and the bibliographic classifier's block bounds were designed against this
+same sample under this same seed. The coverage figures are therefore a
+description of the design population, not a prediction about unseen works. A
+second sample under a different seed would be the honest generalization test and
+has not been run. This matters more for the bibliographic block than for the
+legend: its terminator set was chosen because every sampled header separates
+bibliography from legend with a blank line, and a header that does not would be
+carried only by the separator-rule and bracketed-heading terminators, which the
+sample never exercised.
 
 **Not an authoritative campaign.** The qualification identity is synthesized,
 the run is not a capture under the promoted identity, and the probe binary and

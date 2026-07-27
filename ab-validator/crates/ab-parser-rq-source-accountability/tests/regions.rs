@@ -73,6 +73,77 @@ const LEGEND_TRAILING_SPACE: &str = concat!(
     "底本：「テスト全集」テスト書房\n",
 );
 
+/// A full bibliographic block and a colophon with continuation runs.
+///
+/// The header carries title, original title, author and translator, which is
+/// the widest shape the 597-work sample holds. The tail carries two indented
+/// continuations under `底本：`, a second field, and then two unindented lines
+/// -- the file's own dating line and a transcriber remark -- that belong to no
+/// field's run, followed by an indented line whose run reaches only that
+/// remark.
+const BIBLIOGRAPHIC_AND_COLOPHON_RUN: &str = concat!(
+    "はつ恋\n",
+    "初恋\n",
+    "ツルゲーネフ\n",
+    "神西清訳\n",
+    "\n",
+    "-------------------------------------------------------\n",
+    "【テキスト中に現れる記号について】\n",
+    "《》：ルビ\n",
+    "-------------------------------------------------------\n",
+    "\n",
+    "本文《ほんぶん》の一行目。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+    "　　　1967（昭和42）年7月10日発行\n",
+    "　　　1985（昭和60）年5月30日54刷改版\n",
+    "入力：テスト太郎\n",
+    "1999年1月20日作成\n",
+    "※底本では、この作品はテストです。\n",
+    "　　　この行は注の続きで、どの項目の続きでもありません。\n",
+);
+
+/// A title whose first character is a gaiji annotation, as one sample work has.
+const GAIJI_TITLE: &str = concat!(
+    "※［＃「氓のへん／（虫＋虫）」、第3水準1-91-58］の囁き\n",
+    "蘭郁二郎\n",
+    "\n",
+    "-------------------------------------------------------\n",
+    "【テキスト中に現れる記号について】\n",
+    "《》：ルビ\n",
+    "-------------------------------------------------------\n",
+    "\n",
+    "本文《ほんぶん》の一行目。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+);
+
+/// A header whose legend fence follows the author with no blank line between.
+const NO_BLANK_BEFORE_FENCE: &str = concat!(
+    "はつ恋\n",
+    "ツルゲーネフ\n",
+    "-------------------------------------------------------\n",
+    "【テキスト中に現れる記号について】\n",
+    "《》：ルビ\n",
+    "-------------------------------------------------------\n",
+    "\n",
+    "本文《ほんぶん》の一行目。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+);
+
+/// The unfenced `［表記について］` header variant, again with no blank line.
+const NO_BLANK_BEFORE_BRACKET: &str = concat!(
+    "ガドルフの百合\n",
+    "宮沢賢治\n",
+    "［表記について］\n",
+    "●ルビは「《ルビ》」の形式で処理した。\n",
+    "------------------\n",
+    "本文《ほんぶん》です。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+);
+
 /// A fenced pair with no heading. Nothing inside is claimed.
 const FENCE_WITHOUT_HEADING: &str = concat!(
     "はつ恋\n",
@@ -180,7 +251,7 @@ fn classified(source: &str) -> Vec<(String, String, String)> {
         .filter(|entry| entry["construct_witness"].is_object())
         .filter(|entry| {
             let role = entry["source_role"].as_str().unwrap_or_default();
-            role == "publication_metadata" || role == "editorial_legend"
+            role == "publication_metadata" || role == "editorial_legend" || role == "bibliographic"
         })
         .map(|entry| {
             (
@@ -238,13 +309,24 @@ fn the_two_key_value_forms_are_separated_by_region_and_not_by_shape() {
 /// not a typed form, and claiming them would be claiming to understand a
 /// sentence.
 ///
-/// The title and author lines sit outside the fence and are not claimed here.
-/// They are bibliographic, not notation, and they need a producer of their own.
+/// The title and author lines sit outside the fence and are claimed by the
+/// bibliographic producer instead, under a different role -- they are
+/// bibliography, not notation.
 #[test]
 fn the_fenced_legend_block_is_classified_line_form_by_line_form() {
     assert_eq!(
         classified(LEGEND_FENCED_WITH_REMARK),
         [
+            (
+                "はつ恋".to_owned(),
+                "bibliographic_header_line".to_owned(),
+                "bibliographic".to_owned()
+            ),
+            (
+                "ツルゲーネフ".to_owned(),
+                "bibliographic_header_line".to_owned(),
+                "bibliographic".to_owned()
+            ),
             (
                 "-------------------------------------------------------".to_owned(),
                 "editorial_separator_rule".to_owned(),
@@ -284,13 +366,6 @@ fn the_fenced_legend_block_is_classified_line_form_by_line_form() {
     );
 }
 
-/// A fence with no heading is a shape this producer has never seen.
-///
-/// Over a 597-work sample of the pinned corpus, every separator-fenced pair in
-/// a header contained exactly one `【...】` heading; not one lacked it. Rather
-/// than guess at an unfamiliar fenced block, the producer declines it entirely,
-/// so those bytes stay unattributed and show up as a gap rather than as
-/// confident nonsense.
 /// Trailing layout whitespace must not decide whether a line is recognized.
 ///
 /// Found by running the classifier over a 597-work sample: exactly one legend
@@ -314,15 +389,164 @@ fn a_trailing_space_does_not_change_how_a_legend_line_is_classified() {
     );
 }
 
+/// A fence with no heading is a shape this producer has never seen.
+///
+/// Over a 597-work sample of the pinned corpus, every separator-fenced pair in
+/// a header contained exactly one `【...】` heading; not one lacked it. Rather
+/// than guess at an unfamiliar fenced block, the producer declines it entirely,
+/// so those bytes stay unattributed and show up as a gap rather than as
+/// confident nonsense.
+///
+/// The title line above the fence is still claimed: the bibliographic block
+/// ends at the fence and does not depend on what the fence encloses.
 #[test]
 fn a_fenced_block_without_a_heading_is_declined_rather_than_guessed_at() {
     assert_eq!(
         classified(FENCE_WITHOUT_HEADING),
-        [(
-            "底本：「テスト全集」テスト書房".to_owned(),
-            "publication_metadata_line".to_owned(),
-            "publication_metadata".to_owned()
-        )]
+        [
+            (
+                "はつ恋".to_owned(),
+                "bibliographic_header_line".to_owned(),
+                "bibliographic".to_owned()
+            ),
+            (
+                "底本：「テスト全集」テスト書房".to_owned(),
+                "publication_metadata_line".to_owned(),
+                "publication_metadata".to_owned()
+            )
+        ]
+    );
+}
+
+/// The bibliographic block is the header's opening run, and the colophon
+/// continuation is the indented run under a field. Both are bounded by where
+/// they sit, not by what they say.
+///
+/// Three declines carry the weight of this test. `1999年1月20日作成` is the
+/// file's own dating line: it sits directly under a colophon field but carries
+/// no indentation, so it is not a continuation of that field and nothing here
+/// claims it. The `※` remark below it is prose. And the indented line after
+/// that remark reaches no field before it, so indentation alone does not make
+/// a continuation either -- the run has to start at a field.
+///
+/// Were any of those claimed, the measure would drift toward 1.0 by widening
+/// the claim rather than by understanding more of the packaging.
+#[test]
+fn the_bibliographic_block_and_the_colophon_run_are_bounded_by_position() {
+    assert_eq!(
+        classified(BIBLIOGRAPHIC_AND_COLOPHON_RUN),
+        [
+            (
+                "はつ恋".to_owned(),
+                "bibliographic_header_line".to_owned(),
+                "bibliographic".to_owned()
+            ),
+            (
+                "初恋".to_owned(),
+                "bibliographic_header_line".to_owned(),
+                "bibliographic".to_owned()
+            ),
+            (
+                "ツルゲーネフ".to_owned(),
+                "bibliographic_header_line".to_owned(),
+                "bibliographic".to_owned()
+            ),
+            (
+                "神西清訳".to_owned(),
+                "bibliographic_header_line".to_owned(),
+                "bibliographic".to_owned()
+            ),
+            (
+                "-------------------------------------------------------".to_owned(),
+                "editorial_separator_rule".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "【テキスト中に現れる記号について】".to_owned(),
+                "editorial_legend_heading".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "《》：ルビ".to_owned(),
+                "editorial_legend_entry".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "-------------------------------------------------------".to_owned(),
+                "editorial_separator_rule".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "底本：「テスト全集」テスト書房".to_owned(),
+                "publication_metadata_line".to_owned(),
+                "publication_metadata".to_owned()
+            ),
+            (
+                "1967（昭和42）年7月10日発行".to_owned(),
+                "publication_metadata_continuation".to_owned(),
+                "publication_metadata".to_owned()
+            ),
+            (
+                "1985（昭和60）年5月30日54刷改版".to_owned(),
+                "publication_metadata_continuation".to_owned(),
+                "publication_metadata".to_owned()
+            ),
+            (
+                "入力：テスト太郎".to_owned(),
+                "publication_metadata_line".to_owned(),
+                "publication_metadata".to_owned()
+            ),
+        ]
+    );
+}
+
+/// The blank line is not the only thing that ends the bibliographic block.
+///
+/// Every one of the 597 sampled headers separates its bibliography from the
+/// legend with a blank line, so on that corpus the blank alone would do. The
+/// separator rule and the bracketed heading are kept as terminators anyway,
+/// because a header written without that blank would otherwise swallow the
+/// fence, the `【...】` heading and the legend body into the bibliographic
+/// block -- confidently, and with the wrong role on every line. The failure a
+/// guard prevents is worth a test even where the corpus has not yet produced
+/// it, or the guard is one refactor from being deleted as unreachable.
+#[test]
+fn the_bibliographic_block_ends_at_the_legend_even_with_no_blank_line() {
+    for (label, source, expected) in [
+        ("fence", NO_BLANK_BEFORE_FENCE, "ツルゲーネフ"),
+        ("bracket", NO_BLANK_BEFORE_BRACKET, "宮沢賢治"),
+    ] {
+        let claimed = classified(source)
+            .into_iter()
+            .filter(|(_, construct, _)| construct == "bibliographic_header_line")
+            .map(|(form, ..)| form)
+            .collect::<Vec<_>>();
+        assert_eq!(claimed.len(), 2, "{label}: {claimed:?}");
+        assert_eq!(claimed[1], expected, "{label}");
+    }
+}
+
+/// A header line is not tested for its shape, and one real title shows why.
+///
+/// `※［＃「氓のへん／（虫＋虫）」、第3水準1-91-58］の囁き` is a work's title
+/// whose first character is a gaiji annotation. Elsewhere in these regions a
+/// leading `※` marks a transcriber's remark, which is prose and is never
+/// claimed. A producer that declined `※` lines by shape would have declined a
+/// title; block membership is what decides, and the title is in the block.
+#[test]
+fn a_title_that_opens_with_a_gaiji_annotation_is_still_a_title() {
+    let rows = classified(GAIJI_TITLE);
+    assert_eq!(
+        rows.first().map(|(form, construct, role)| (
+            form.as_str(),
+            construct.as_str(),
+            role.as_str()
+        )),
+        Some((
+            "※［＃「氓のへん／（虫＋虫）」、第3水準1-91-58］の囁き",
+            "bibliographic_header_line",
+            "bibliographic"
+        ))
     );
 }
 

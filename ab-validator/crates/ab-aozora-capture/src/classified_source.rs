@@ -446,10 +446,12 @@ fn normalization_entry(
 /// normalizations, which only exist because the sanitizer walks the whole text.
 /// That left the packaging unattributed rather than attributed-and-clear.
 ///
-/// Only one metadata form is classified here: the `key：value` line, which is
-/// what the Aozora colophon is built from -- `底本：`, `入力：`, `校正：`,
-/// `初出：` and the rest. It is a genuinely typed form with a recognizable
-/// shape, so attributing it says something.
+/// Two colophon forms are classified here. The `key：value` line is what the
+/// Aozora colophon is built from -- `底本：`, `入力：`, `校正：`, `初出：` and
+/// the rest. Under a field sits its **continuation run**: indented lines that
+/// carry the rest of what the field states and have no `key：` of their own,
+/// `　　　1993（平成5）年2月10日第1刷発行` under a `底本：`, or the
+/// per-piece citations under an `初出：`.
 ///
 /// **The tail is what bounds this producer, not the shape of the line.**
 /// `is_colophon_field` is a shape test and a loose one: the standard notation
@@ -459,11 +461,21 @@ fn normalization_entry(
 /// scan back to `regions.metadata()` would silently reclassify the legend
 /// block as publication metadata.
 ///
-/// The header's editorial legend block has its own producer,
-/// `legend_entries`. Everything outside both -- the title and author lines, the
-/// transcriber's free-text remarks -- is deliberately left unattributed.
-/// Blanket-claiming every metadata byte would make the metadata measure reach
-/// 1.0 by construction and therefore mean nothing.
+/// **A continuation is bounded by the run it sits in, not by what it says.**
+/// It must be indented and it must reach a field line above it without crossing
+/// a blank line. The tail's other unindented lines -- the transcriber's `※`
+/// remarks, the distribution notice, the file's own dating lines -- are not
+/// continuations of anything and stay unattributed. Testing the text instead
+/// would be worse in both directions: one continuation in the 597-work sample
+/// is a citation whose title opens with a `※［＃...］` gaiji annotation, so a
+/// producer that declined `※` lines by shape would decline a real one.
+///
+/// The header's editorial legend block and bibliographic block have producers
+/// of their own, `legend_entries` and `bibliographic_entries`. Everything
+/// outside all three -- the transcriber's free text above all -- is
+/// deliberately left unattributed. Blanket-claiming every metadata byte would
+/// make the metadata measure reach 1.0 by construction and therefore mean
+/// nothing.
 ///
 /// The span excludes the line terminator, which already carries its own
 /// normalization or newline fact. Two producers must not claim the same byte.
@@ -471,38 +483,28 @@ fn metadata_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Val
     let Ok(regions) = decoded.source_regions() else {
         return Vec::new();
     };
-    let mut entries = Vec::new();
     let tail = regions.tail();
     let Some(text) = decoded.text.get(tail.clone()) else {
-        return entries;
+        return Vec::new();
     };
-    let mut offset = tail.start;
-    for line in text.split_inclusive('\n') {
-        let content = line.trim_end_matches(['\n', '\r']);
-        let trimmed = content.trim_start();
-        let indent = content.len() - trimmed.len();
-        if is_colophon_field(trimmed) {
-            let start = offset + indent;
-            let end = start + trimmed.len();
-            if let Some(source_form) = decoded.text.get(start..end) {
-                entries.push(json!({
-                    "start": start,
-                    "end": end,
-                    "construct_id": "publication_metadata_line",
-                    "source_role": "publication_metadata",
-                    "disposition": "structural_control",
-                    "evidence_class": "structural_token",
-                    "parser_evidence_code": "metadata:publication_metadata_line",
-                    "construct_witness": {
-                        "construct_id": "publication_metadata_line",
-                        "start": start,
-                        "end": end,
-                        "source_form": source_form
-                    }
-                }));
-            }
+    let mut entries = Vec::new();
+    let mut in_field_run = false;
+    for line in region_lines(text, tail.start) {
+        let content = line.content.as_str();
+        if content.is_empty() {
+            in_field_run = false;
+            continue;
         }
-        offset += line.len();
+        let construct = if is_colophon_field(content) {
+            in_field_run = true;
+            "publication_metadata_line"
+        } else if line.indented && in_field_run {
+            "publication_metadata_continuation"
+        } else {
+            in_field_run = false;
+            continue;
+        };
+        entries.push(region_fact(&line, construct, "publication_metadata"));
     }
     let _ = parser;
     entries
@@ -525,16 +527,20 @@ fn is_colophon_field(line: &str) -> bool {
     !key.is_empty() && !key.contains('：') && key.chars().all(|ch| !ch.is_control())
 }
 
-/// One line of the header, with its absolute span and its surrounding
+/// One line of a metadata region, with its absolute span and its surrounding
 /// whitespace stripped.
-struct HeaderLine {
+struct RegionLine {
     start: usize,
     end: usize,
     content: String,
+    /// Whether the line was written with leading layout whitespace. Kept
+    /// because the stripped content cannot say so, and a colophon continuation
+    /// is recognized by its indentation under a field rather than by its text.
+    indented: bool,
 }
 
-/// The header's lines, terminators and surrounding whitespace excluded from
-/// every span.
+/// A metadata region's lines, terminators and surrounding whitespace excluded
+/// from every span.
 ///
 /// Trimmed at BOTH ends, and the symmetry is the point. Stripping only the
 /// indentation left a line's classification depending on whether the
@@ -543,21 +549,49 @@ struct HeaderLine {
 /// test to unattributed because `）` was no longer the last character. Layout
 /// whitespace is not content at either end, and it must not decide whether a
 /// line is recognized.
-fn header_lines(text: &str, region_start: usize) -> Vec<HeaderLine> {
+///
+/// `trim` here is Unicode whitespace, so the fullwidth `　` that Aozora indents
+/// colophon continuations with is stripped exactly as an ASCII space would be.
+fn region_lines(text: &str, region_start: usize) -> Vec<RegionLine> {
     let mut lines = Vec::new();
     let mut offset = region_start;
     for raw in text.split_inclusive('\n') {
         let stripped = raw.trim_end_matches(['\n', '\r']);
         let trimmed = stripped.trim();
         let indent = stripped.len() - stripped.trim_start().len();
-        lines.push(HeaderLine {
+        lines.push(RegionLine {
             start: offset + indent,
             end: offset + indent + trimmed.len(),
             content: trimmed.to_owned(),
+            indented: indent != 0,
         });
         offset += raw.len();
     }
     lines
+}
+
+/// One classified line of a metadata region.
+///
+/// Every metadata producer emits the same shape: a structural-control claim
+/// over the line's trimmed span, witnessed by the line itself. The witness is
+/// what lets a reader of the ledger check the claim against the source without
+/// re-deriving the region.
+fn region_fact(line: &RegionLine, construct: &str, role: &str) -> Value {
+    json!({
+        "start": line.start,
+        "end": line.end,
+        "construct_id": construct,
+        "source_role": role,
+        "disposition": "structural_control",
+        "evidence_class": "structural_token",
+        "parser_evidence_code": format!("metadata:{construct}"),
+        "construct_witness": {
+            "construct_id": construct,
+            "start": line.start,
+            "end": line.end,
+            "source_form": line.content.clone()
+        }
+    })
 }
 
 /// A separator rule: a run of ASCII hyphens alone on its line.
@@ -605,7 +639,7 @@ fn legend_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value
     let Some(text) = decoded.text.get(header.clone()) else {
         return Vec::new();
     };
-    let lines = header_lines(text, header.start);
+    let lines = region_lines(text, header.start);
     let fences = lines
         .iter()
         .enumerate()
@@ -621,22 +655,8 @@ fn legend_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value
     }
 
     let mut entries = Vec::new();
-    let mut emit = |line: &HeaderLine, construct: &str| {
-        entries.push(json!({
-            "start": line.start,
-            "end": line.end,
-            "construct_id": construct,
-            "source_role": "editorial_legend",
-            "disposition": "structural_control",
-            "evidence_class": "structural_token",
-            "parser_evidence_code": format!("metadata:{construct}"),
-            "construct_witness": {
-                "construct_id": construct,
-                "start": line.start,
-                "end": line.end,
-                "source_form": line.content.clone()
-            }
-        }));
+    let mut emit = |line: &RegionLine, construct: &str| {
+        entries.push(region_fact(line, construct, "editorial_legend"));
     };
     emit(&lines[open], "editorial_separator_rule");
     emit(&lines[close], "editorial_separator_rule");
@@ -665,6 +685,73 @@ fn legend_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value
 /// The legend block's heading: a `【...】` line and nothing else.
 fn is_legend_heading(line: &str) -> bool {
     line.starts_with('【') && line.ends_with('】') && line.chars().count() > 2
+}
+
+/// Classified facts for the bibliographic block, which is the HEADER only.
+///
+/// An Aozora header opens with the work's own identification, one item to a
+/// line and nothing else on it: title, then any original title, subtitle or
+/// volume line, then the author, then any translator or editor.
+/// `早すぎる埋葬` / `THE PREMATURE BURIAL` / `エドガー・アラン・ポー Edgar
+/// Allan Poe` / `佐々木直次郎訳` is the full shape. What follows is the
+/// notation legend, and then the body.
+///
+/// **The block is what bounds this producer, not the shape of a line.** The
+/// block is the run of lines from the start of the header to the first blank
+/// line, separator rule or bracketed editorial heading, whichever comes first.
+/// Across a 597-work sample of the pinned corpus that run is 1 to 6 lines --
+/// 437 works have exactly the two of title and author -- and no header carries
+/// a further non-blank line between the blank and the legend fence, so the
+/// blank line is a real terminator rather than a convenient one. The 40 works
+/// with no run at all have a zero-byte header: there is nothing to classify.
+///
+/// No claim is made about WHICH bibliographic item a line is. Line 1 is usually
+/// the title and the last is usually a translator, but subtitles and original
+/// titles break the ordering and reading it off the position would be a guess
+/// dressed as a fact. What is claimed is block membership: these bytes are the
+/// work's front matter, not body text, not legend, not transcriber prose.
+///
+/// Shape is not consulted inside the block, and one work in the sample shows
+/// why. Its title is `※［＃「氓のへん／（虫＋虫）」、第3水準1-91-58］の囁き`
+/// -- a title whose first character is a gaiji annotation. A producer that
+/// declined `※` lines as transcriber remarks by shape would have declined a
+/// title. The two bracketed-heading forms are excluded as terminators of the
+/// block rather than as forms within it, because `【テキスト中に現れる記号に
+/// ついて】` and `［表記について］` are where the legend starts.
+fn bibliographic_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value> {
+    let Ok(regions) = decoded.source_regions() else {
+        return Vec::new();
+    };
+    let header = regions.header();
+    let Some(text) = decoded.text.get(header.clone()) else {
+        return Vec::new();
+    };
+    let mut entries = Vec::new();
+    for line in region_lines(text, header.start) {
+        let content = line.content.as_str();
+        if content.is_empty() || is_separator_rule(content) || is_bracketed_heading(content) {
+            break;
+        }
+        entries.push(region_fact(
+            &line,
+            "bibliographic_header_line",
+            "bibliographic",
+        ));
+    }
+    let _ = parser;
+    entries
+}
+
+/// A bracketed editorial heading: `【...】` or `［...］` alone on its line.
+///
+/// Looser than `is_legend_heading` on purpose. That one runs INSIDE a fenced
+/// block and only has to recognize the legend's own heading; this one has to
+/// stop the bibliographic block before ANY editorial heading, including the
+/// `［表記について］` variant header that carries no fence around it.
+fn is_bracketed_heading(line: &str) -> bool {
+    let bracketed = (line.starts_with('【') && line.ends_with('】'))
+        || (line.starts_with('［') && line.ends_with('］'));
+    bracketed && line.chars().count() > 2
 }
 
 /// A legend entry: a notation symbol, a fullwidth colon, then its explanation.
@@ -831,6 +918,7 @@ fn build_ledger(
     entries.extend(sanitizer_entries(decoded, &parser));
     entries.extend(metadata_entries(decoded, &parser));
     entries.extend(legend_entries(decoded, &parser));
+    entries.extend(bibliographic_entries(decoded, &parser));
     entries.sort_unstable_by_key(|entry| {
         let mut canonical = String::new();
         canonical_value(entry, &mut canonical);

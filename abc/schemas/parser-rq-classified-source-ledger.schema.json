@@ -121,6 +121,7 @@
         "terminal_provenance",
         "publication_metadata",
         "editorial_legend",
+        "bibliographic",
         "unrecognized_source_form"
       ]
     },
@@ -216,6 +217,7 @@
       "properties": {
         "construct_id": {
           "enum": [
+            "bibliographic_header_line",
             "body_end",
             "container_close",
             "container_open",
@@ -227,6 +229,7 @@
             "forced_break",
             "newline",
             "page_break",
+            "publication_metadata_continuation",
             "publication_metadata_line",
             "recovered_verbatim",
             "section_break",

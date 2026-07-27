@@ -213,7 +213,7 @@ Still owed:
 |---|---|---|
 | Q11 | Decided in a prior session | Record tier 2 as the publication's successfully-selected projection, named the *publication-workload snapshot*, with `candidates_considered`, `derive_failures`, and `rejected` declared |
 | D7 | Decided in a prior session | Record `unexpected-fatal-failures <= 0` and its safe initial expected-outcome vocabulary |
-| Q13 | **Owner decision required** | Record one of the three options in `plans/2026-07-27-q13-node-span-coverage.md`; state the quantity actually measured, not "renamed for clarity" |
+| Q13 | **Decided 2026-07-27** | Recorded as `parser-rq-retire-node-span-coverage` |
 
 Q11 and D7 were left alone deliberately: their reasoning belongs to the sessions
 that decided them, and writing their claims second-hand would put words in those
@@ -285,23 +285,26 @@ it, and each still needs its own scoped plan before code changes. **Q13 should b
 settled first**: dropping the `NodeSpans` path removes `analyze.rs`,
 `aggregate.rs`, two schemas and four test files from the partition change set.
 
-1. **Q13: scoped 2026-07-27 — see
-   `plans/2026-07-27-q13-node-span-coverage.md`; awaiting an owner selection
-   among three options.** The traced diagnosis is stronger than the naming
-   objection first recorded: parser-IR node spans are running offsets over
-   emitted visible text, the emitter hard-codes their label to `decoded_utf8`,
-   `sentences.rs` uses that string for the visible-text projection, and
-   `analyze.rs` reads it as the decoded source file. The published number is
-   approximately visible-text bytes ÷ decoded-source bytes. It costs 9.80 ms/work
-   and is authoritative for no predicate. The plan recommends dropping it, and
-   the diagnosis is **confirmed through the built binary** (governed corpus
-   0.5814 / 0.4310 / 0.3289 with `covered_eligible_bytes` = 25 for all three
-   despite sources of 43/58/76 bytes; one real work at 0.8646 where the decoded
-   source under a node's span matches that node's text 7 times in 8,137). Every
-   record returned `status: "ok"` with no errors. The probe also found that
-   parser-IR mixes two coordinates in one document, both labelled `decoded_utf8`
-   — the `source-note` arm emits genuine source spans while every other arm emits
-   accumulator offsets — which is a parser-IR emitter question, not Q13's.
+1. **Q13: decided 2026-07-27 — retire the quantity.** Recorded as
+   `docs/adr/parser-rq-retire-node-span-coverage.md`; plan at
+   `plans/2026-07-27-q13-node-span-coverage.md`. Parser-IR node spans are running
+   offsets over emitted visible text; the emitter hard-codes their label to
+   `decoded_utf8`, `sentences.rs` uses that string for the visible-text
+   projection, and `analyze.rs` reads it as the decoded source file. Confirmed
+   through the built binary: the governed works of 43/58/76 bytes all report
+   `covered_eligible_bytes` of 25, and on one real work the decoded source under a
+   node's span matches that node's text 7 times in 8,137.
+
+   **Scoped to the quantity, not the analyzer.** The enumeration found every
+   consumer of the coverage number is a test — `install-source-recognition-observation` and `derive-source-span-envelope` have zero production callers, and
+   the key is absent from published measurements — but `analyze_corpus` also
+   produces the membership index the release-authoritative recognition path
+   authenticates against. The span union and coverage fields go; the membership
+   derivation and its per-work parser-IR authentication stay. Implementation plan
+   not yet written; it must decide whether the v1 schemas are retained so the 22
+   published artifacts carrying this basis stay validatable, or those artifacts
+   are declared protocol-incompatible.
+
 2. **D7 prerequisites:** separate record `status` from measured `disposition`,
    then specify closed expected-outcome vocabularies. Initially only `parsed` and
    `fatal_error` may be expected; `adapter_timeout`, `protocol_error`, and

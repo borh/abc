@@ -30,6 +30,7 @@ flowchart LR
   parser_release_instrument_bindings["Bind Final Parser Release Instruments"]:::accepted
   parser_rq_classified_source_policy_binding["Bind the Classified-Source Policy into the Qualification Identity"]:::proposed
   parser_rq_instrument_before_threshold["Fix the Instrument Before Setting the Residual Threshold"]:::proposed
+  parser_rq_retire_node_span_coverage["Retire Parser-IR Node-Span Coverage"]:::proposed
   parser_rq_source_region_partition["Partition the Source into Body and Metadata Populations"]:::proposed
   person_identity_drift_data_model["Person Identity Drift Data Model"]:::accepted
   person_identity_drift_harness["Person Identity Drift Harness Contract"]:::accepted
@@ -121,6 +122,7 @@ flowchart LR
   parser_rq_classified_source_policy_binding -->|"amends — the source_recognition instrument policy closure"| parser_release_instrument_bindings
   parser_rq_instrument_before_threshold -.->|"depends on"| governed_qualification_corpus_location
   parser_rq_instrument_before_threshold -.->|"depends on"| parser_release_instrument_bindings
+  parser_rq_retire_node_span_coverage -.->|"depends on"| parser_release_instrument_bindings
   parser_rq_source_region_partition -.->|"depends on"| custom_parser_release_qualification
   parser_rq_source_region_partition -.->|"depends on"| parser_rq_instrument_before_threshold
   person_identity_drift_data_model -.->|"restates hard rule"| manifest_identity

@@ -2132,4 +2132,46 @@
    :title "Bind the Classified-Source Policy into the Qualification Identity",
    :topics [:parser :release :identity],
    :status :proposed,
+   :validation-scope :structural}
+  {:date "2026-07-27",
+   :slug "parser-rq-retire-node-span-coverage",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "parser-release-instrument-bindings"}],
+   :claims
+   [{:id :c1,
+     :kind :corpus-behavior,
+     :statement
+     "`:parser_ir_node_span_coverage` and the `parser_ir.nodes[*].span` coverage basis do not measure source coverage. Measured through the built `ab-parser-rq-source-accountability` binary: the three governed works of 43, 58 and 76 source bytes all report `covered_eligible_bytes` of exactly 25, because all three emit the same eight visible characters plus a newline — the numerator does not move with the source. On one real work, slicing the decoded source at each node's span reproduces that node's own text 7 times in 8,137. The quantity is approximately visible-text bytes divided by decoded-source bytes: a markup-density ratio published as coverage. Every record measured returned `status` \"ok\" with no errors."}
+    {:id :c2,
+     :kind :structural-invariant,
+     :statement
+     "The cause is one coordinate name meaning two things in two crates. `map_node_span` (`ab-aat-to-parser-ir/src/convert.rs`) discards the AAT span's byte offsets, emits the caller's running accumulator over each node's own emitted text, and hard-codes `coordinate_system` to `decoded_utf8`; `sentences.rs` uses that same string for the visible-text projection and states the invariant that depends on it. `analyze.rs` reads it as the decoded source file. The guard cannot fire, because it compares the label against a value the emitter hard-codes, and bounds validation cannot catch it either: emitted text is shorter than its source, so every interval validates. `Interval::new` checks only `start <= end <= bound` and, unlike the recognition path, never checks `is_char_boundary` — a span ending mid-character in the decoded file is accepted silently."}
+    {:id :c3,
+     :kind :structural-invariant,
+     :statement
+     "Every consumer of the coverage quantity is a test. `install-source-recognition-observation`, which demotes the former observation to `:parser_ir_node_span_coverage`, has one caller and it is `test/abc/tools/parser_release_qualification_test.clj`. `derive-source-span-envelope`, which turns the P1 aggregate's `covered_eligible_bytes` into a ratio, has nine references and all are in `test/abc/tools/parser_rq_source_accountability_test.clj`. The field appears nowhere in `docs/reports/parser-release-qualification-measurements.edn`. The release-authoritative envelope is `derive-source-recognition-envelope`, which reads the recognition index and aggregate, not the node-span aggregate. No predicate declares the key."}
+    {:id :c4,
+     :kind :domain-interpretation,
+     :statement
+     "Retire the quantity: the `:parser_ir_node_span_coverage` measurement key, the `NodeSpans` coverage basis, the span-union computation, and the coverage byte fields it publishes. Renaming is rejected because a renamed field is still computed by unioning intervals from two coordinate systems and the published record still declares a coordinate it does not inhabit. Re-deriving it over genuine source offsets is rejected on its own motivation: the emitter would have to reconcile two coordinates rather than correct one, it is a parser-IR schema change with publication-pipeline blast radius, and no predicate wants the result. If a real parser-IR source-coverage measure is ever needed, a predicate that requires it should justify it."}
+    {:id :c5,
+     :kind :structural-invariant,
+     :statement
+     "The retirement is scoped to the quantity, not to the analyzer. `analyze_corpus` also produces the membership index that `analyze_recognition_corpus` authenticates against, and the release-authoritative recognition path depends on it — for the closed work list, the identity reference, the coherence counts, and `membership_ref`, the hash of the index bytes recorded into every recognition record. It reads no coverage number from it. The per-work authentication that the index carries — parser-IR `schema_id` and `schema_hash` against the qualification identity, and `derived_from` against its AAT and mapping coordinates — is also retained. What is removed is the span union and the coverage fields, not the membership derivation or its authentication."}
+    {:id :c6,
+     :kind :structural-invariant,
+     :statement
+     "Consequences that must be carried rather than discovered. Changing what the membership index contains rotates `membership_ref` and therefore every recognition record, so this is a versioned instrument change and prior captured evidence becomes protocol-incompatible rather than merely stale. Twenty-two published artifacts under `docs/reports/parser-rq/runs/` carry the `parser_ir.nodes[*].span` basis, six in the currently promoted run; published manifests are immutable, so they are not rewritten, and the v1 schemas must either be retained so those artifacts stay validatable or the artifacts must be explicitly declared protocol-incompatible. The measured 9.80 ms per work is a cost estimate for the removed computation and is re-measured rather than assumed if it is claimed as a saving."}
+    {:id :c7,
+     :kind :domain-interpretation,
+     :statement
+     "One finding is deliberately not resolved here because it belongs to the parser-IR emitter rather than to this instrument: a single parser-IR document carries spans in two coordinate systems, both labelled `decoded_utf8`. Nodes run contiguously in accumulator coordinates while the `底本` `source-note` node carries a genuine decoded-source span that slices to exactly the colophon. `sentences.rs` describes this as a historical defect; it survives in the source-note arm. Retiring the coverage quantity removes the consumer that silently unioned across both, but it does not make the emitter's coordinate determinate, and that question needs its own owner."}],
+   :source
+   "`docs/superpowers/plans/2026-07-27-q13-node-span-coverage.md`",
+   :title "Retire Parser-IR Node-Span Coverage",
+   :topics [:parser :release],
+   :status :proposed,
    :validation-scope :structural}]}

@@ -1626,8 +1626,8 @@ Every governance edit to `decisions.edn` is authored by hand.
   `instrument-policy-paths` from member → one path to member → set. **Landed
   2026-07-27**; rotates `source_recognition` and hence `qualification_identity_ref`. See
   *Q16, settled*.
-- **Q13 — Is `:parser_ir_node_span_coverage` safe to retain? SCOPED 2026-07-27;
-  awaiting an owner selection.** It is kept as supporting evidence beside the
+- **Q13 — DECIDED 2026-07-27: retire the quantity.** Recorded as
+  `docs/adr/parser-rq-retire-node-span-coverage.md`. It is kept as supporting evidence beside the
   ledger-authoritative observation, but on real works it is not a source-coverage
   ratio at all: node spans are a running offset over emitted text carrying a
   `decoded_utf8` label (*D6 correction*, measured aside). Traced to source, the
@@ -1640,8 +1640,11 @@ Every governance edit to `decisions.edn` is authored by hand.
   two crates**, and the guard that compares it to a hard-coded constant can never
   fail. The published number is therefore approximately visible-text bytes ÷
   decoded-source bytes — a markup-density ratio reported as coverage. Same defect
-  class as Q15. Three options (drop, rename plus correct the declared coordinate,
-  or re-derive over real source offsets) with a recommendation are in
+  class as Q15. Retirement is scoped to the quantity, not the
+  analyzer: every consumer of the coverage number is a test, but `analyze_corpus`
+  also produces the membership index the release-authoritative recognition path
+  authenticates against, so the span union and coverage fields go while the
+  membership derivation and its parser-IR authentication stay. See
   `docs/superpowers/plans/2026-07-27-q13-node-span-coverage.md`.
 - **Q10 — Fidelity across corpus growth.** If the fidelity predicate (Q7) is
   adopted, its observed value depends on corpus composition like the others, so

@@ -12,10 +12,14 @@ Governing checkpoint:
 `docs/adr/decisions.edn` records are hand-authored and become authoritative once
 accepted.
 
-> **This plan does not authorize code changes.** It records a traced diagnosis
-> and three options. The owner picks one; only then is an implementation plan
-> written. The plan is deliberately separable from Q15 — but see *Relation to
-> Q15*, because the two share a root cause and the ordering matters.
+> **Decided 2026-07-27: Option 1, scoped to the quantity rather than the
+> analyzer.** Retire the `:parser_ir_node_span_coverage` key, the `NodeSpans`
+> coverage basis, the span-union computation, and the coverage byte fields it
+> publishes. **Retain** the membership index `analyze_corpus` produces and the
+> per-work parser-IR authentication it carries, because the release-authoritative
+> recognition path depends on both. Governance record:
+> `docs/adr/parser-rq-retire-node-span-coverage.md`. This plan does not authorize
+> code changes; the implementation plan is still to be written.
 
 ## Q13 as previously stated, and why it needs restating
 
@@ -285,13 +289,64 @@ records that mixing the two caused corpus-wide sentence-projection failures.
 Adding a parallel source-coordinate span is a parser-IR schema change with
 publication-pipeline blast radius, in service of a number no predicate consumes.
 
-**Recommendation: Option 1**, with the naming work of Option 2 folded in only if
-the owner wants the emitter regression signal kept. Nothing consumes the number;
-its cost is measured and non-trivial; and the cheapest honest thing to do with an
-artifact that declares a coordinate it does not inhabit is to stop publishing it.
-Option 3 should not be undertaken on Q13's motivation alone — if a real
-parser-IR source-coverage measure is ever wanted, it should be justified by a
-predicate that needs it.
+**Decided: Option 1**, at the scope the enumeration below establishes. Nothing
+in production consumes the number; its cost is measured; and the cheapest honest
+thing to do with an artifact that declares a coordinate it does not inhabit is to
+stop publishing it. Option 2's emitter-regression signal was not judged worth
+keeping a 9.80 ms/work computation and a false coordinate claim for. Option 3 is
+not undertaken on Q13's motivation alone.
+
+## Consumer enumeration, completed 2026-07-27
+
+This was task 2 of *Work required before implementation*, and doing it changed
+the decision's scope. An earlier draft said "drop the observation and retire the
+`NodeSpans` analyzer path". That was too broad.
+
+### Every consumer of the coverage number is a test
+
+| Consumer | Production callers | Test callers |
+|---|---|---|
+| `install-source-recognition-observation` (demotes to `:parser_ir_node_span_coverage`) | **0** | 1, `parser_release_qualification_test.clj:140` |
+| `derive-source-span-envelope` (P1 aggregate → ratio) | **0** | 9, `parser_rq_source_accountability_test.clj` |
+| `parser_rq_member.clj` projectors | — | no projector emits the key at all |
+| `docs/reports/parser-release-qualification-measurements.edn` | key absent | — |
+
+The release-authoritative envelope is `derive-source-recognition-envelope`, which
+reads `recognition-aggregate.json` and `recognition-index.json` — not the
+node-span P1 aggregate. No predicate declares the key.
+
+### But the analyzer has a production role the coverage number does not
+
+`capture-corpus` calls `analyze_corpus`, whose membership index is then passed to
+`analyze_recognition_corpus` as `membership_index_bytes`. Recognition uses from
+it:
+
+- `identity_ref` — the qualification identity every recognition record carries;
+- `records[].work_id` — the closed work list;
+- `status`, `errors`, `expected_work_count`, `record_count` — coherence;
+- `membership_ref` — the hash of the index bytes, recorded into every record.
+
+It reads **no coverage number**. So the coverage computation is not load-bearing
+for recognition; the closed membership index is. The retirement is scoped
+accordingly: the span union and coverage fields go, the membership derivation and
+its per-work parser-IR authentication (`schema_id`, `schema_hash`, `derived_from`
+against the identity) stay.
+
+### Published artifacts
+
+Twenty-two files under `docs/reports/parser-rq/runs/` carry the
+`parser_ir.nodes[*].span` basis, six in the currently promoted run
+`24d61fc7…`. One of them is byte-identical to the record this plan's probe
+reproduced — `covered_eligible_bytes: 25` over `decoded_source.bytes: 43`.
+
+Published manifests are immutable, so these are not rewritten. The implementation
+must choose explicitly: retain the v1 schemas so those artifacts stay
+validatable, or declare them protocol-incompatible. Choosing neither leaves
+published evidence nothing can check.
+
+Changing what the membership index contains rotates `membership_ref` and
+therefore every recognition record, so this is a versioned instrument change and
+prior evidence becomes protocol-incompatible rather than merely stale.
 
 ## Relation to Q15
 
@@ -336,15 +391,18 @@ comment.
 
 1. ~~Confirm the characterization through the built binary.~~ **Done 2026-07-27;
    see *Confirmed through the built binary*.**
-2. Enumerate every consumer of the analyzer's work record and index, including
-   any published manifest, before removing or renaming anything. Published
-   manifests are immutable. The enumeration recorded above is grep-level, not
-   exhaustive against published artifacts.
-3. Decide whether the mixed-coordinate finding — the `source-note` arm emitting
-   genuine source spans while every other arm emits accumulator offsets — is
-   raised as its own item against the parser-IR emitter. It is not Q13's to fix,
-   but Q13 should not be the only place it is written down.
-4. Write the implementation plan against the chosen option.
+2. ~~Enumerate every consumer of the analyzer's work record and index.~~
+   **Done 2026-07-27; see *Consumer enumeration*.** It changed the decision's
+   scope.
+3. **Open — needs an owner.** The mixed-coordinate finding, where the
+   `source-note` arm emits genuine source spans while every other arm emits
+   accumulator offsets, is a parser-IR emitter question. It is recorded as claim
+   c7 of `parser-rq-retire-node-span-coverage` so that retiring the consumer does
+   not bury it, but retiring the consumer does not make the emitter's coordinate
+   determinate.
+4. Write the implementation plan. It must decide the v1-schema question above,
+   and sequence the `membership_ref` rotation against the region partition's own
+   identity movement.
 
 ## Verification gate
 
@@ -364,9 +422,11 @@ just validate-migration
 
 ## Status
 
-Diagnosis traced to source and **confirmed through the built instrument** on the
-governed three-work corpus and one real work, 2026-07-27. Awaiting an owner
-selection among Options 1–3; no code changed.
+**Decided 2026-07-27: Option 1, scoped to the quantity.** Diagnosis traced to
+source, confirmed through the built instrument on the governed three-work corpus
+and one real work, and the consumer enumeration completed. Governance record
+written as `:proposed`. No code changed; the implementation plan is not yet
+written.
 
 The instrument returned `status: "ok"` and no errors on every work measured. That
 is the finding, not an aside: an analyzer can be fully green while unioning

@@ -1,15 +1,16 @@
 # Parser-RQ Corpus Tiering Design
 
-Date: 2026-07-26
-Status: The three-tier **architecture** is proposed for acceptance. Five items
-remain open, each blocking something specific rather than everything: **Q2/Q3**
-(incomplete divergence trace) block *predicting* outcomes from D6, not measuring
-them; **D7** (expected-outcome semantics, unresolved) blocks an adversarial
-fixture tier; **D8** (repetition count is a schema constant) blocks tier-relative
-repetitions; **Q11** (which selection projection binds tier 2) blocks that tier's
-population definition and its name; **Q9** (population equality, unproven, and
-prerequisite on Q11) blocks calling tier 2 a census. See *What each open item
-blocks*.
+Date: 2026-07-26 (revised 2026-07-27)
+Status: The three-tier **architecture** is proposed for acceptance. Of the five
+items previously open, **Q11 and D7 are now decided** and **Q2 is closed by
+measurement**; the closure also corrected a wrong instrument attribution in D6
+(see *D6 correction*, below, which is the most consequential change in this
+revision). What remains open blocks something specific rather than everything:
+**Q3** (LOSS/AMBIGUITY untraced) blocks *predicting* outcomes from D6, not
+measuring them; **D8** (repetition count is a schema constant) blocks
+tier-relative repetitions; **Q9** (population equality, unproven) blocks calling
+tier 2 a census — its prerequisite Q11 is now settled, so the equality target is
+fixed. See *What each open item blocks*.
 Depends on: `docs/adr/decisions.edn` slugs `custom-parser-release-qualification`,
 `governed-qualification-corpus-location`, `parser-release-instrument-bindings`
 
@@ -171,7 +172,28 @@ under the current predicate. Three ways out, to be chosen explicitly:
    parsed-and-diagnosed result**, and state that requirement explicitly. Keeps one
    aggregate, but constrains what the fixture tier may contain.
 
-**Status: UNRESOLVED.** Option 1 is the best design and is *not selected*. It is
+**Status: DECIDED 2026-07-27 — Option 1, `unexpected-fatal-failures ≤ 0`.**
+The predicate is to be redefined to compare each observed disposition against a
+governed expected outcome, so that it says what it means. This is a decision to
+adopt, not an implementation: the prerequisites below are unchanged and must be
+discharged first, in this order —
+
+1. **untangle `allowed_dispositions`** (it lists the *status* value
+   `protocol_error` in a *disposition* vocabulary; nothing can be compared
+   against it until the two levels are separated);
+2. specify the two-level expected-outcome model and its closed,
+   schema-enforced vocabularies, including which values are never expectable;
+3. adopt the safe initial contract below — expectations restricted to
+   `parsed` and `fatal_error`;
+4. map corpus expectations to wire values, authenticate exact membership
+   between expectations and observed records, and specify behaviour for a
+   missing or unknown expectation.
+
+Sequence with the `wall-time` reshape so one identity rotation covers both.
+Until step 4 lands, the fixture tier still cannot carry adversarial cases —
+**the decision unblocks the work, it does not unblock the tier.**
+
+The rationale for the choice is recorded below and stands as written. It is
 not merely a matter of reading an existing field: `:expected_status` is in
 `corpus-entry-identity-keys`, so it already moves corpus identity, but **no schema
 validates its vocabulary** and nothing compares it against core-attempt
@@ -203,9 +225,8 @@ unconditional failures — an expected timeout would make the timeout predicate
 vacuous, and an expected protocol error would let a harness fault masquerade as a
 governed outcome.
 
-Until those are specified and chosen, the fixture tier cannot contain the
-adversarial cases this design promises. Sequence with the `wall-time` reshape so
-one identity rotation covers both.
+Until those are specified, the fixture tier cannot contain the adversarial cases
+this design promises.
 
 ### D8 — Repetition count is a protocol constant, not an analyzer detail
 
@@ -307,8 +328,9 @@ retired by accident.
 ### D6 — Representational loss can coexist with complete span coverage
 
 **Scope of this trace: `UNSUPPORTED` and `STRUCTURAL` emission sites only.**
-`LOSS` and `AMBIGUITY` are untraced (Q3), and one `UNSUPPORTED` arm is
-unresolved (Q2). An earlier draft of this section claimed an exhaustive trace
+`LOSS` and `AMBIGUITY` are untraced (Q3). The one previously unresolved
+`UNSUPPORTED` arm is now measured — see *Q2, closed* — and its premise was
+wrong. An earlier draft of this section claimed an exhaustive trace
 and concluded globally that the audit categories "predict no predicate failure."
 That claim exceeded its evidence and is withdrawn; the narrower finding below is
 what the trace supports.
@@ -321,7 +343,7 @@ All six `UNSUPPORTED` emission sites in
 | block container (631) | records the lost boundary, recurses `map_block` over children | covered |
 | `caption` (1188) | records, then `visible_content_text`, `end = offset + utf8_len(&text)` | covered |
 | synthetic-span site (1457) | emits `"span": synthetic_span(offset, end)` | covered |
-| `map_raw_to_nodes` (1608) | `PageBreak` / `SourceNote` push nodes; `ParserResidue` emits none | covered / covered / **open, see Q2** |
+| `map_raw_to_nodes` (1599) | `PageBreak` / `SourceNote` push nodes; `ParserResidue` emits none | covered / covered / **emits no node over real source bytes — see Q2, closed** |
 | `map_warigaki_to_nodes` (1793) | `map_inline_content` for upper and lower | covered |
 | `warigaki` in visible-content projection (1958) | records, then `append_visible_content_text` for upper and lower into `out` | **different output** — appends to the visible-text projection, not to `nodes` |
 
@@ -330,32 +352,156 @@ than the node list, so its relationship to span coverage is different in kind
 from the other five. Lines 2031/2034 are a `has_rule` query in
 `warigaki_target`, not an emission.
 
-`source_span_coverage` is computed over parser-IR node spans
-(`CoverageBasis { NodeSpans => "parser_ir.nodes[*].span" }`, consuming
-`input.parser_ir_bytes`), and the governed ignored-regions taxonomy
-`data/parser-rq-ignored-regions-v1.json` is `{"rules":[]}` — nothing is exempt.
-`silent-drops` partitions the resulting source gaps into diagnosed and silent.
+#### D6 correction — this section named the wrong instrument
+
+An earlier draft of this section asserted:
+
+> `source_span_coverage` is computed over parser-IR node spans
+> (`CoverageBasis { NodeSpans => "parser_ir.nodes[*].span" }`, consuming
+> `input.parser_ir_bytes`).
+
+**That is false, and it was the premise of the whole section.** It describes
+`ab-parser-rq-source-accountability/src/analyze.rs`, which is a different
+analyzer in the same crate. The predicate declares instrument
+**`parser-rq-source-recognition-v1`**
+(`data/parser-release-qualification-predicates.edn`), which is
+`recognition.rs`: it builds `recognized` from **source-recognition ledger
+entries**, each validated against the decoded source itself
+(`end > decoded.len()`, `decoded.is_char_boundary(start)`), and partitions on
+each entry's `disposition` — `preserved_opaque` entries land in `accounted`
+but not in `recognized`.
+
+`parser_release_qualification.clj:190` states the supersession outright:
+
+```clojure
+(defn install-source-recognition-observation
+  "Install ledger-authoritative R1 evidence while retaining the former
+  Parser-IR node-span observation under its explicit supporting name."
+  [measurements recognition-envelope]
+  (cond-> (assoc measurements :source_span_coverage recognition-envelope)
+    (contains? measurements :source_span_coverage)
+    (assoc :parser_ir_node_span_coverage (:source_span_coverage measurements))))
+```
+
+So the node-span observation is **demoted to `:parser_ir_node_span_coverage`**,
+retained as supporting evidence, and the predicate is bound to the ledger
+envelope. The accountability analyzer's `NodeSpans` basis is not the instrument
+of any of the nine predicates.
+
+What survives the correction, and what does not:
+
+- **Survives:** the trace of the six `UNSUPPORTED` emission sites, and the
+  finding that representational loss can coexist with complete coverage. The
+  ledger basis makes that *easier* to satisfy, not harder — a `preserved_opaque`
+  disposition accounts bytes without recognizing them, and a recognized interval
+  says nothing about whether the node covering it says the right thing.
+- **Does not survive:** the stated *mechanism*. "`source_span_coverage = 1.0`
+  can be satisfied by a text node standing in for a lost `warigaki`, because the
+  bytes are covered" describes node-span arithmetic that no longer computes the
+  predicate. The claim must be re-derived over ledger dispositions, and it has
+  not been.
+- **Unaffected:** the conclusion that the nine predicates do not imply fidelity,
+  and the case for a tenth predicate. That argument never depended on which
+  coverage basis is authoritative.
+
+**Measured aside — the retained supporting observation is not a coverage
+ratio.** Parser-IR node spans do not address the decoded-source coordinate on
+real works. Their extents are the byte lengths of each node's own *emitted*
+text, accumulated as a running offset, while carrying
+`"coordinate_system": "decoded_utf8"`. On `cards/000005/files/53194_ruby_44732.zip`
+(`hatsukoi.txt`, 259,320 decoded bytes) the 8,137 nodes run contiguously to
+224,010 and the source at any given node's offset is unrelated text — node 8000
+spans 135 bytes, exactly the UTF-8 length of its own text. Reconstructing
+`analyze.rs`'s union over that gives 0.865, and over the three corpus works
+0.58 / 0.43 / 0.33. Method limit: this reconstructs the analyzer in Python from
+`ab-aozora --mode aat | ab-aat-to-parser-ir convert` (the production path, per
+`soranoha_build_publication.clj:241`); the built instrument was not run, and
+**no ledger-basis coverage was measured here**, so nothing in this aside
+predicts whether a tier 2 campaign passes.
+
+The governed ignored-regions taxonomy `data/parser-rq-ignored-regions-v1.json`
+is `{"rules":[]}` — nothing is exempt. `silent-drops` partitions the resulting
+source gaps into diagnosed and silent.
 
 The defensible finding, stated at the strength the trace supports:
 
 > The inspected unsupported paths demonstrate that representational loss **can
 > coexist with complete span coverage**. Therefore the nine predicates do not
 > imply fidelity. Whether *all* current divergence paths preserve coverage
-> remains open under Q2 and Q3.
+> remains open under Q3, and the *mechanism* by which loss and coverage coexist
+> must be re-derived over ledger dispositions (Q12) rather than node spans.
 
 So `rules_emitted: 54` of `690` and `unsupported_occurrences: 195,437` document a
 major known fidelity exposure in a dimension the predicate set cannot detect.
 They do **not** license waiving full-corpus uncertainty: this section must not be
 cited to conclude that a full-snapshot campaign will pass.
 
-`source_span_coverage = 1.0` **can be** satisfied by a text node standing in for
-a lost `warigaki`, because the bytes are covered. The trace shows the mechanism
-by which that happens; no captured `warigaki` witness has been produced showing
-the predicate actually returning `1.0` over such a work. Attaching one — a
-fixture or a real capture — would turn this from a mechanism into a
-demonstration. The nine predicates measure coverage,
+`source_span_coverage = 1.0` **can be** satisfied while a `warigaki` is lost,
+because recognition and fidelity are different propositions — but per the *D6
+correction* the node-span mechanism previously offered for this is not the one
+the predicate computes, and the ledger-basis mechanism has not been derived. No
+captured `warigaki` witness has been produced showing the predicate actually
+returning `1.0` over such a work. Attaching one — a fixture or a real capture —
+would turn this from a conjecture into a demonstration, and is now the *only*
+route to the claim, since the mechanism argument has been withdrawn. The nine
+predicates measure coverage,
 validity, diagnosis, and resources — not whether the node covering a byte says
 the right thing about it.
+
+### Q2, closed — the residue arm drops real source bytes
+
+Q2 asked whether any `ParserResidue` occurrence carries an eligible source span,
+reasoning that selection on `x-provenance == "parser-derived"` *should* mean it
+does not. **Measured, that premise is false.**
+
+Over a deterministic 300-archive stride sample of the pinned `0e9ea3e` checkout
+(299 measured, 1 unreadable by stock `zipfile`):
+
+| Quantity | Value |
+|---|---|
+| `ParserResidue` occurrences | **2,421** |
+| — via the `x-provenance == "parser-derived"` arm | 2,421 (**100%**) |
+| — via the `is_parser_raw_residue` string heuristic | **0** |
+| Occurrences carrying a `span` | 2,421 (**100%**) |
+| Occurrences with a **non-zero** span extent | 2,421 (**100%**) |
+| Total residue source bytes | **61,002** |
+
+Span extent equals source-text length for every occurrence. The witnesses are
+unambiguously real source, not parser artefacts:
+`［＃ページの左右中央］`, `［＃４字下げ］`, `［＃改丁］`, `［＃割り注］`,
+`［＃挿絵１（fig55882_01.png、横657×縦776）入る］`, and
+`≪愛さでやまぬ胸なれば≫` — the last being body text, not an annotation.
+
+So `x-provenance: "parser-derived"` marks *how the AAT emitter derived the
+node*, *not* the absence of a source extent, and `map_raw_to_nodes`
+(`convert.rs:1639`) emits no parser-IR node for any of them.
+
+Two corrections follow, and neither is the one Q2 anticipated:
+
+1. **The exposure is the provenance arm, not the heuristic.** Q4 flags
+   `is_parser_raw_residue` as a string-inspection heuristic that could change
+   coverage without a policy hash moving. On this sample **it never fired
+   once** — every classification came from the provenance test. Q4 remains a
+   real latent hazard; it is not the operative one.
+2. **This does not establish a coverage hole.** Per the *D6 correction*,
+   `source_span_coverage` is computed from the recognition ledger, not from
+   parser-IR nodes, so "no node emitted" does not by itself mean "byte
+   unrecognized" — it depends on the ledger entry and its disposition, which
+   was not measured here. The dropped bytes are also far too few to explain the
+   node-span deficit: on `hatsukoi.txt` residue accounts for **249 bytes**
+   against a 34,570-byte shortfall, which is markup overhead, not residue.
+
+What Q2 now leaves open is narrower and better posed: **do the residue bytes
+appear in the recognition ledger, and with what disposition?** That is a ledger
+question, answerable without a full campaign.
+
+Method limit: this replicates `raw_recovery_class` / `is_parser_raw_residue` in
+Python over `ab-aozora --mode aat` output, and approximates admission the way
+`tools/corpus_inventory.py` does. It is an exploratory observation on 299 works,
+not a census, and not durable evidence — the same status the *Deterministic Tail
+Set* section assigns its own figures.
+
+### D6 and D4
 
 This bears directly on D4. A green full-corpus report must not be read as "the
 parser is faithful." Closing it requires a **tenth predicate on representational
@@ -367,7 +513,7 @@ question, not a corpus question, and it does not block tiering.
 | Tier | Population | Purpose | Cadence |
 |---|---|---|---|
 | **1. Fixture / conformance** | Small synthetic works, expected-output-bearing, adversarial, including malformed inputs and exact diagnostic contracts | Feature interactions and negative cases that natural data may never exercise | Every PR |
-| **2. Snapshot qualification** *(name pending Q11)* | The governed qualification population derived from publication source selection — **exact binding pending Q11, equality proof pending Q9** | Exhaustive exposure of owned-contract predicates | Release / high-risk change |
+| **2. Publication-workload snapshot** | Publication's successfully-selected source projection, carried with a declared denominator (`candidates_considered`, `derive_failures`, `rejected`) — **bound by Q11; equality proof pending Q9** | Exhaustive exposure of owned-contract predicates | Release / high-risk change |
 | **3. Stress / resource envelope** | Governed extremes selected by rank on notation properties | Resource envelope and pathological-input behaviour | Release, plus on parser change |
 
 Tier 2 cannot replace tier 1: naturally occurring data need not contain
@@ -388,18 +534,18 @@ selection should equal source-bundle admission. Demanding it would either be
 unsatisfiable or would push tier 2 back to every admitted archive purely to
 manufacture the equality.
 
-Three populations, three different obligations. **The tier 2 row is one of two
-candidate designs and is settled by Q11**, so the relation below is provisional:
+Three populations, three different obligations. **Q11 is now decided**, so the
+relation below is settled:
 
 | Population | Relation to tier 2 | Obligation |
 |---|---|---|
 | Source-bundle admission universe | superset | **accounted set difference** — every excluded archive explained |
-| **Publication-selected projection** | *if Q11 picks successful selection:* **identical** · *if Q11 picks the pre-attempt candidate population:* **authenticated accounted projection** | exact set equality, or a typed accounted difference — **pending Q11** |
+| **Publication-selected projection** | **identical** | exact set equality — authenticate that tier 2 was projected from `source_selection_hash`, not re-derived |
 | Conversion-audit population | overlapping | **accounted set difference** — reconciled, not equalised |
 
-What is fixed regardless of Q11: tier 2's population is *derived from publication
-source selection* rather than from an independent walk of the checkout, and its
-relation to every other population is authenticated rather than assumed.
+Tier 2's population is *derived from publication source selection* rather than
+from an independent walk of the checkout, and its relation to every other
+population is authenticated rather than assumed.
 
 **Set equality needs a common identity coordinate before it means anything.** The
 three populations are keyed differently today — the source-bundle census by
@@ -458,10 +604,73 @@ The real trade-off is narrower:
   failure rather than relying on the downstream release boundary; qualifies works
   publication did not emit.
 
-Tracked as Q11. The tier's name follows the decision: "full-snapshot
-qualification" is apt for the pre-attempt population, whereas the successful
-population is more precisely a **publication-workload snapshot** — and neither
-should imply the source-bundle admission universe.
+#### Q11, decided 2026-07-27 — successful selection, with a declared denominator
+
+**Tier 2 binds to publication's successfully-selected projection**, and the tier
+is named the **publication-workload snapshot**. This was decided on
+constructibility, not preference: the pre-attempt population *cannot supply
+corpus-entry identity for exactly the members that distinguish it.*
+
+A corpus entry's identity is `corpus-entry-identity-keys`
+(`parser_release_qualification.clj:40`) — `:work_id :source_path :source_sha256
+:category :expected_status :expected_diagnostics` — and `corpus-snapshot-hash`
+is the sha256 over the sorted `:source_sha256` of **every** entry. Now compare
+what each candidate population actually carries:
+
+| | Pre-attempt candidate | Successfully selected |
+|---|---|---|
+| Shape | `{:file :relpath :row}` (`materialize-selected-sources!`, line 583) | full identity row (`inspect-selected-work!`, line 439) |
+| `:source_sha256` | **absent** | `archive_hash` / `primary_text_hash` |
+| Primary-text member | **absent** | `primary_text_member` |
+| Content-addressed identity | **none** | `source-selection-hash` over `source-selection-identity-object` |
+
+Every one of those missing fields is produced by `source-bundle/inspect-zip`
+*inside* `inspect-selected-work!` — which is precisely the fallible step
+`select-candidate` wraps in `try`/`catch`. So a derivation-failed member has no
+source hash **because it failed**, and it cannot be hashed into
+`corpus-snapshot-hash` without inventing an absent-hash representation that
+would weaken the pinning for every other entry. The same gap defeats Q9: the
+canonical join key that section demands is "archive relpath plus primary-text
+member", and the pre-attempt population has the relpath but not the member.
+
+The successful projection, by contrast, is *already* content-addressed exactly
+as this design asked for — `source-selection-identity-object` is built from
+`selected` alone, from "official Git/catalog/archive/bundle/primary-text/
+metadata facts only — never from parser output", and hashed to the
+`corpus_snapshot_hash` the source and publication manifests share.
+
+**The shrinkage objection is answered by attestation, not by the release gate.**
+Binding to `selected` alone would leave the qualification report green on a
+corpus a `continue_on_failure` regression had quietly shrunk, with only the
+independent `publication-release/failure-problems` gate to notice. Rather than
+accept that coupling, tier 2's report must carry its own denominator:
+
+- `candidates_considered` — `(count selected-candidates)`, the catalog-backed
+  pre-attempt count;
+- the `derive_failures` set and `derive_failed_count`;
+- the `rejected` set with its reasons.
+
+All three are already computed and emitted by `materialize-selected-sources!`,
+so this is a **projection of data publication already produces**, not new
+machinery — which is the second reason this option is the simpler one. A
+non-empty failure set makes the qualification report self-describing about its
+own denominator, independently of the downstream gate.
+
+Minor observation, recorded rather than acted on: `rejected`'s `:else
+"not-selected"` reason appears unreachable — a candidate is admitted to
+`selected-candidates` iff it has a non-nil relpath *and* a `rows-by-basename`
+row, so any removed candidate satisfies one of the two preceding branches. It is
+harmless, but a reason string that can never be emitted should not be read as
+evidence that a "selected but not chosen" class exists.
+
+**Consequences for Q9.** The equality target is now fixed: exact set equality
+between tier 2 and publication's selected projection — which is near-tautological
+by construction, since tier 2 *is* that projection, and reduces to authenticating
+that the corpus was projected from `source_selection_hash` rather than
+re-derived. The substantive Q9 work is unchanged: the **accounted set
+difference** against the source-bundle admission universe and the
+conversion-audit population, which is where the 17,878 / 17,880 / 17,886 spread
+has to be explained. Q9 remains open.
 
 Once proven, the claim would be **a census of one snapshot** coinciding with **an
 operational claim about the publication workload**. It is in no case a statistical
@@ -596,32 +805,47 @@ Stated explicitly, because "blocker" without a scope stalls everything equally.
 
 | Item | Blocks | Does **not** block |
 |---|---|---|
-| **Q2 / Q3** (incomplete divergence trace) | **Predicting** outcomes from D6; claiming all divergence paths preserve coverage; inferring fidelity from a green report; using D6 as a substitute for measurement | Accepting the architecture; running the exploratory campaign; **reporting directly measured predicate observations from either campaign**, exploratory or confirmatory |
-| **D7** (expected-failure semantics) | The fixture tier containing adversarial or malformed inputs | The tier architecture; tier 2 and tier 3 work; the `wall-time` reshape |
-| **Q11** (which selection projection) | Tier 2's population definition, its relation to publication selection, and the tier's name | Accepting that a snapshot tier should exist |
-| **Q9** (population equality; depends on Q11) | Describing tier 2 as a census; defining its governed membership | Accepting that a snapshot tier should exist |
+| **Q3** (LOSS/AMBIGUITY untraced) | **Predicting** outcomes from D6; claiming all divergence paths preserve coverage; inferring fidelity from a green report; using D6 as a substitute for measurement | Accepting the architecture; running the exploratory campaign; **reporting directly measured predicate observations from either campaign**, exploratory or confirmatory |
+| **D7 prerequisites** (decided; unimplemented) | The fixture tier containing adversarial or malformed inputs, until `allowed_dispositions` is untangled and the expected-outcome model specified | The tier architecture; tier 2 and tier 3 work; the `wall-time` reshape |
+| **Q9** (population equality) | Describing tier 2 as a census; the accounted difference against the admission and conversion-audit populations | Accepting that a snapshot tier should exist; tier 2's population definition and name, both now fixed by Q11 |
 | **D8** (repetition protocol) | Tier-relative repetition counts | Everything else; tier 2 can run at the current fixed 3 |
+| ~~**Q2**~~ (closed 2026-07-27) | — | — · closing it *corrected* D6's instrument attribution; see *D6 correction* |
+| ~~**Q11**~~ (decided 2026-07-27) | — | — |
 
 So the three-tier **architecture** is acceptable now. What is not yet available
 is a confirmatory qualification at tier 2, an adversarial tier 1, or a census
 claim.
 
-**The exploratory campaign does not by itself close Q2/Q3.** A green campaign
-does not show that every `ParserResidue` lacks an eligible source span, nor that
-every `LOSS`/`AMBIGUITY` path preserves coverage — measured outcomes are not the
-same proposition as the mechanism that produced them. Closing Q2 needs the actual
-`ParserResidue` occurrences inspected or instrumented; closing Q3 needs
-class-specific ledger and code-path analysis. The campaign's role is to **supply
-the evidence population and witnesses** for those dedicated probes.
+**The exploratory campaign does not by itself close Q3 or Q12.** A green campaign
+does not show that the residue bytes are ledger-recognized, nor that every
+`LOSS`/`AMBIGUITY` path preserves coverage — measured outcomes are not the same
+proposition as the mechanism that produced them. Closing Q12 needs the ledger
+entries over the residue intervals inspected; closing Q3 needs class-specific
+ledger and code-path analysis. The campaign's role is to **supply the evidence
+population and witnesses** for those dedicated probes.
+
+Q2 is the worked example of why that distinction matters. It was closed by
+direct measurement of 299 works, not by a campaign — and it did not merely
+answer its own question, it falsified its premise *and* surfaced that D6 named
+the wrong instrument. A dedicated probe found in one pass what a green
+full-snapshot report would have concealed.
 
 Current blocker status, plainly:
 
-- **B1 — D6 scope.** Wording corrected; **Q2/Q3 still open.** Partially resolved.
-- **B2 — D7.** **Unresolved.** Option 1 recommended but not selected, and its
-  expected-outcome model is unspecified.
-- **B3 — Q9, gated on Q11.** **Unproven.** The document no longer overclaims, but
-  the equality proof does not exist, no canonical join key is predeclared, and
-  Q11 must be decided first — the equality target itself depends on it.
+- **B1 — D6.** **Q2 closed; Q3 still open.** The closure also found that this
+  section named the wrong instrument: `source_span_coverage` is
+  ledger-authoritative (`parser-rq-source-recognition-v1`), not node-span based.
+  The section's *conclusion* survives; its stated *mechanism* is withdrawn and
+  has not been re-derived over ledger dispositions. Partially resolved.
+- **B2 — D7.** **Decided** (Option 1, `unexpected-fatal-failures ≤ 0`).
+  **Unimplemented:** `allowed_dispositions` is still level-confused and the
+  expected-outcome model is unspecified, so the adversarial fixture tier remains
+  blocked on the work, not on the decision.
+- **B3 — Q9.** **Unproven**, but its prerequisite Q11 is decided, so the equality
+  target is now fixed: set equality with the selected projection (tautological by
+  construction, reducing to authenticating the projection), plus the substantive
+  accounted difference against the admission and conversion-audit populations. No
+  canonical join key is predeclared yet.
 - **B4 — D8.** **Open.** Tier-relative repetitions are still proposed in the
   wall-time reshape, so this is in scope, not incidental. If the migration is not
   wanted, the accepted architecture must instead **explicitly retain three fixed
@@ -630,8 +854,11 @@ Current blocker status, plainly:
 
 Then:
 
-1. Measure the remaining harness layer (Q1) and settle the other open questions.
-2. Define tier semantics and authority **before** changing any hash.
+1. Run the Q12 ledger probe — the cheapest remaining item, and the one that
+   determines whether the residue drop is a coverage hole. Measure the remaining
+   harness layer (Q1), and settle the other open questions.
+2. Discharge the D7 prerequisites in order — untangle `allowed_dispositions`
+   first — and define tier semantics and authority **before** changing any hash.
 3. Reshape `wall-time`, apply the D7 decision, carry the D8 protocol migration if
    tier-relative repetitions are kept, and, if adopted, add the fidelity
    predicate — **one identity rotation covering all four**. They rotate the
@@ -673,10 +900,12 @@ Every governance edit to `decisions.edn` is authored by hand.
 - **Q1 — The RQ capture layer is unmeasured.** Measurements cover `ab-aozora`
   and `ab-check`, not evidence writing, hashing, and envelope construction above
   them. That third layer could add materially to 25.12 ms/work.
-- **Q2 — `ParserResidue` spans unverified.** It is the only non-covering arm. It
-  is selected on `x-provenance == "parser-derived"`, which *should* mean no
-  eligible source span, but this is not confirmed. If any occurrence carries a
-  real span, it is a coverage hole.
+- **Q2 — CLOSED 2026-07-27, premise falsified.** All 2,421 `ParserResidue`
+  occurrences in a 299-work sample carry a real, non-zero source span (61,002
+  bytes); `x-provenance == "parser-derived"` does **not** mean "no eligible
+  source span". The string heuristic never fired. See *Q2, closed*. The
+  successor question — whether those bytes appear in the recognition ledger and
+  with what disposition — is tracked as **Q12**.
 - **Q3 — LOSS and AMBIGUITY untraced.** D6 traced `UNSUPPORTED` and
   `STRUCTURAL`. The bulk of 4,938,800 divergences may be `LOSS`, whose coverage
   behaviour is unchecked.
@@ -695,26 +924,40 @@ Every governance edit to `decisions.edn` is authored by hand.
   (`docs/v0-design-bundle/ci-smoke-corpus.md`) specifies 9 buckets totalling 23
   works; 2 buckets and 3 works exist. Which adversarial cases are authored, and
   what their expected diagnostics are, is unspecified.
-- **Q9 — Population reconciliation. PREREQUISITE for the tier 2 claim, not a
-  minor item.** 17,878 inventoried against `admitted_zip_count` 17,880 and audit
+- **Q9 — Population reconciliation. PREREQUISITE for the tier 2 *census claim*,
+  not a minor item.** Its prerequisite Q11 is decided, so the target is fixed.
+  17,878 inventoried against `admitted_zip_count` 17,880 and audit
   `files_scanned` 17,886. Resolving it means proving **set equality with
-  publication's selected projection only**, and producing an **accounted set
-  difference** — not equality — against the source-bundle admission universe and
+  publication's selected projection only** — now near-tautological, reducing to
+  authenticating that tier 2 was projected from `source_selection_hash` rather
+  than re-derived — and producing an **accounted set difference** — not
+  equality — against the source-bundle admission universe and
   the conversion-audit population, explaining `rejected`, `derive-failures`, and
   `continue_on_failure` skips. Requiring equality against admission would be the
   wrong condition and would push tier 2 back to every admitted archive purely to
   satisfy it. Until proven, tier 2 is "intended to census the publication-source
   population," not a census.
-- **Q11 — Which selection projection binds tier 2? Prerequisite to Q9, and it
-  determines the tier's name.** The successfully selected publication population
-  (exactly the published workload; qualification can stay green on a shrunken
-  denominator while the independent release gate rejects the partial corpus), or
-  the pre-attempt catalog-backed candidate population with selection failures
-  retained as qualification failures (qualification exposes the failure itself,
-  but qualifies works publication did not emit). Until decided, tier 2's relation
-  to the publication-selected projection is *provisional*, and the tier is named
-  "snapshot qualification" rather than "full-snapshot" so it cannot be read as the
-  admission universe.
+- **Q11 — DECIDED 2026-07-27.** Tier 2 binds to publication's
+  successfully-selected projection and is named the **publication-workload
+  snapshot**, with a declared denominator. Decided on constructibility: the
+  pre-attempt population carries no `:source_sha256` and no primary-text member
+  for exactly its distinguishing members, so it can supply neither
+  `corpus-snapshot-hash` nor Q9's join key. See *Q11, decided*.
+- **Q12 — Are the dropped residue bytes in the recognition ledger?** Q2 shows
+  `map_raw_to_nodes` emits no parser-IR node over 61,002 bytes of real source in
+  a 299-work sample. Because coverage is ledger-authoritative (*D6 correction*),
+  whether that is a coverage hole depends on whether those intervals appear as
+  ledger entries and whether their disposition is `preserved_opaque` (accounted,
+  not recognized) or absent entirely (unaccounted). Answerable from ledger
+  evidence without a full campaign; **this is the successor to Q2 and the
+  cheapest remaining probe.**
+- **Q13 — Is `:parser_ir_node_span_coverage` safe to retain?** It is kept as
+  supporting evidence beside the ledger-authoritative observation, but on real
+  works it is not a source-coverage ratio at all: node spans are a running offset
+  over emitted text carrying a `decoded_utf8` label (*D6 correction*, measured
+  aside). A retained number that looks like a ratio, is named like a ratio, and
+  measures something else invites exactly the misreading D6 warns against. Either
+  re-derive what it means, rename it, or drop it.
 - **Q10 — Fidelity across corpus growth.** If the fidelity predicate (Q7) is
   adopted, its observed value depends on corpus composition like the others, so
   its threshold cannot be set from the 3-work corpus either. It has to be

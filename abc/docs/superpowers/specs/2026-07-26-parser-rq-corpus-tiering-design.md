@@ -101,9 +101,65 @@ different populations.
 | Process spawn floor | ~0.99 ms | 50 × `ab-aozora` on empty input |
 | `ab-check --jobs 1` | fixed **327 ms**, per-work **25.12 ms** | two-point fit over N = 50, 200, 800 |
 | `systemd-run --user --wait --collect` | **20.3 ms/work** (median 15.6, max 38.0) | 20 × `true`, with the resource policy's own properties |
+| **RQ capture layer** (`capture-corpus`) | fixed **7,410 ms**, per-work **232.4 ms** | Q1; least-squares fit over N = 50, 101, 200, 299, cold store per run, best of 2 |
 
 Parse is **26%** of `ab-check`'s per-work cost; the remaining **74%** is zip
 open/read, adapter spawn, AAT deserialize, checks, and report write.
+
+### Q1, closed — the capture layer dominates everything below it
+
+Q1 asked whether the layer above `ab-aozora` and `ab-check` — evidence writing,
+hashing, envelope construction — "could add materially to 25.12 ms/work". It
+does not add to it; **it dwarfs it by an order of magnitude.**
+
+| Component of `capture-corpus` | ms/work | Share |
+|---|---|---|
+| Re-parse done in-process (AAT + diagnostics) | 5.11 | 2.2% |
+| P1 node-span accountability (`analyze-corpus`) | 9.80 | 4.2% |
+| **Capture generation, recognition, aggregates** | **222.57** | **95.8%** |
+| **Total** | **232.37** | — |
+| *Reference:* all of `ab-check --jobs 1` | *25.12* | — |
+
+**The capture layer is 9.25× the entire `ab-check` per-work cost**, and only
+2.2% of it is parsing. Note the re-parse: `capture_generation_from_bytes_*` runs
+the AAT and diagnostics parsers again in-process, so that 5.11 ms is work the
+6.57 ms/work parse figure already counted — it is small enough not to matter, and
+that is itself the finding. Note also that P1 — the node-span basis the *D6
+correction* shows is not authoritative for any predicate — costs 9.80 ms/work,
+more than the parse.
+
+Marginal cost is **byte-proportional, not per-work**: net of the fixed 7,410 ms,
+the measured cost is ~5,400 ms per MB of decoded source across N = 101, 200, 299
+(5,383 / 5,417 / 5,441), i.e. ~**0.185 MB/s**. Extrapolating a single serial
+capture pass to the full snapshot, by total source bytes (×64.7) and by work
+count (×59.8) respectively:
+
+| Path | Full-snapshot serial |
+|---|---|
+| `ab-check --jobs 1`, ×1 | 449 s (7.5 min) |
+| `ab-check --jobs 1`, ×3 repetitions | 1,348 s (22.5 min) |
+| **RQ capture layer, one pass** | **≈ 4,700–5,100 s (78–85 min)** |
+
+**One capture pass is roughly 3.5× the entire three-repetition `ab-check`
+campaign the design previously treated as the cost model.** Any tier 2 wall-time
+budget derived from `ab-check` alone is wrong by an order of magnitude, which
+sharpens the *Wall-Time Reshape*: the confounded 300 s predicate is not merely
+measuring the wrong things, it is measuring the cheap layer.
+
+**Q6 falls out of the same run.** The content-addressed store holds
+**662 KB/work** — a **15.2× expansion over decoded source** — dominated by the
+AAT `parser_output` blob, consistent with the 15.7× AAT expansion in *Tail
+behaviour*. At 17,878 works that is **≈ 12 GB** per capture generation. P1's own
+records are negligible by comparison (2,178 B/work). Retention and
+closed-membership cost remain unmeasured, so Q6 is narrowed, not closed.
+
+Method limits: serial by construction, so this is governed serial cost and not
+achievable throughput — `capture-corpus` was not tested under concurrency, and
+the 26× figure in D5 is an `ab-check` result that must not be transferred to it.
+Single host, cold store per run, best of 2. Same 299-work stride sample and
+synthesized identity as *Q12, closed*; the sample's mean source size (29,355 B)
+is 0.92× the corpus mean (31,780 B), which is why the extrapolation is given
+both ways.
 
 Extrapolated to 17,878 works:
 
@@ -873,6 +929,14 @@ Split the one confounded predicate into two honest ones:
 stability on 3 works; at 17,878 works aggregate timing is already stable and
 three passes cost 3× (1,348 s against 449 s) for little gain.
 
+**Q1 changes the budget arithmetic.** Both numbers above are `ab-check` alone,
+and the capture layer above it costs ~78–85 min for a single pass — roughly 3.5×
+the whole ×3 `ab-check` campaign. A tier 2 campaign-duration budget derived from
+`ab-check` extrapolations would be wrong by an order of magnitude. Whichever
+number tier 2 declares, it must be measured over the layer that actually
+dominates, and the declared **governed host class** (Q5) matters correspondingly
+more.
+
 ## Deterministic Tail Set
 
 Selection is by **rank on measured notation properties**, not sampling: the same
@@ -1014,8 +1078,9 @@ Then:
    through the built instrument, so what is left is the choice among policy
    completion, threshold predeclaration, and `preserved_opaque` semantics — a
    governance decision, not more measurement. Widening the sample toward a census
-   would sharpen the number but cannot change its sign. Measure the remaining
-   harness layer (Q1), and settle the other open questions.
+   would sharpen the number but cannot change its sign. **Q1 is measured** — the
+   capture layer, not the parser, sets campaign cost — so what remains here is
+   Q5's host class and the other open questions.
 2. Discharge the D7 prerequisites in order — untangle `allowed_dispositions`
    first — and define tier semantics and authority **before** changing any hash.
 3. Reshape `wall-time`, apply the D7 decision, carry the D8 protocol migration if
@@ -1056,9 +1121,12 @@ Every governance edit to `decisions.edn` is authored by hand.
 
 ## Open Questions
 
-- **Q1 — The RQ capture layer is unmeasured.** Measurements cover `ab-aozora`
-  and `ab-check`, not evidence writing, hashing, and envelope construction above
-  them. That third layer could add materially to 25.12 ms/work.
+- **Q1 — CLOSED 2026-07-27, and the answer is large.** The capture layer costs
+  **232.4 ms/work** (fixed 7,410 ms) against `ab-check`'s entire 25.12 ms/work —
+  **9.25×** — with only 2.2% of it parsing and 4.2% the non-authoritative P1
+  analysis. Cost is byte-proportional at ~5,400 ms/MB decoded, so one serial
+  full-snapshot pass is **78–85 min**, ~3.5× the whole ×3 `ab-check` campaign.
+  See *Q1, closed*.
 - **Q2 — CLOSED 2026-07-27, premise falsified.** All 2,421 `ParserResidue`
   occurrences in a 299-work sample carry a real, non-zero source span (61,002
   bytes); `x-provenance == "parser-derived"` does **not** mean "no eligible
@@ -1074,8 +1142,11 @@ Every governance edit to `decisions.edn` is authored by hand.
   coverage without any policy hash moving.
 - **Q5 — Host class undefined.** All figures are single-host. A throughput
   predicate requires a declared host class to be meaningful.
-- **Q6 — Evidence volume at tier 2.** 17,878 per-work records against a store
-  designed around 3; size, retention, and closed-membership cost unmeasured.
+- **Q6 — Evidence volume at tier 2. NARROWED 2026-07-27, not closed.** Measured:
+  **662 KB/work**, a **15.2× expansion over decoded source**, dominated by the
+  AAT `parser_output` blob — **≈ 12 GB** at 17,878 works per capture generation.
+  Retention across generations and closed-membership verification cost remain
+  unmeasured. See *Q1, closed*.
 - **Q7 — Fidelity predicate shape.** If adopted, what does it assert — rules
   emitted over rules total, divergence occurrences per node, or per-category
   ceilings? Unresolved.

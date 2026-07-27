@@ -7,7 +7,7 @@
   "original_source": {"artifact_ref":"source/original","value_hash":"sha256:3333333333333333333333333333333333333333333333333333333333333333"},
   "decoded_source": {"artifact_ref":"source/decoded","value_hash":"sha256:4444444444444444444444444444444444444444444444444444444444444444","encoding":"utf-8","bytes":2},
   "policy_id": "parser-rq-ab-aozora-classified-source-v1",
-  "policy_hash": "sha256:36c5197b59c6f6fba0adebac0193be18da61d6e944e4eac6ac7ca4f46212799e",
+  "policy_hash": "sha256:69eefe9fd7b6f6d65a5a02736b27d75b9f20a901acaa4ffc086fca7aa227e5b1",
   "coordinate_system": "decoded_utf8",
   "parser_status": "complete",
   "entries": [{"start":0,"end":2,"construct_id":"crlf_normalization","source_role":"structural_newline","disposition":"lossless_normalization","evidence_class":"sanitizer_transform","target_identity":{"artifact_ref":"aat/output","value_hash":"sha256:5555555555555555555555555555555555555555555555555555555555555555","relation":"emits"},"parser_evidence_code":"sanitize-crlf","normalization_proof":{"source_form":"\r\n","normalized_form":"\n","source_bytes_hash":"sha256:7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6","normalized_bytes_hash":"sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b","inverse_rule":"crlf"}}],

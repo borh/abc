@@ -264,7 +264,7 @@
       }
     },
     "region_interval": {
-      "description": "A declared region. Unlike a measurement interval this may be empty: a work with no editorial header has an empty header region and one with no colophon has an empty tail, and both are legitimate rather than defective.",
+      "description": "A declared region. Unlike a measurement interval this may be empty: a work with no editorial header has an empty header region and one with no colophon has an empty tail, and both are legitimate rather than defective. Endpoints share the safe-integer maximum every other offset in this protocol carries, so a region cannot describe a file no consumer could address; start <= end is NOT expressible here and is enforced by the validators, which check the whole ordered chain across all three regions rather than each region alone.",
       "type": "object",
       "required": [
         "start",
@@ -274,42 +274,47 @@
       "properties": {
         "start": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
         "end": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         }
       }
     },
     "metadata": {
-      "description": "The metadata population: header and tail folded together. They are distinct regions so a failure localizes to one end of the file, but they qualify under one conjunctive predicate, so their totals are folded here.",
+      "description": "The metadata population: header and tail folded together. They are distinct regions so a failure localizes to one end of the file, but they qualify under one conjunctive predicate, so their totals are folded here. The measure is ATTRIBUTION and not byte accounting: a byte counts only when covered by a fact whose source_role the classified-source policy lists in metadata_attributing_roles, and a preserved_opaque fact never counts because that disposition is the statement that nothing is claimed about the bytes. A byte may therefore be accounted for by some fact and still be unattributed -- a colophon line ending carries a crlf_normalization fact without making the colophon understood.",
       "type": "object",
       "required": [
         "eligible_bytes",
-        "accounted_bytes",
-        "unaccounted_bytes",
-        "accounted",
-        "unaccounted"
+        "attributed_bytes",
+        "unattributed_bytes",
+        "attributed",
+        "unattributed"
       ],
       "additionalProperties": false,
       "properties": {
         "eligible_bytes": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
-        "accounted_bytes": {
+        "attributed_bytes": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
-        "unaccounted_bytes": {
+        "unattributed_bytes": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
-        "accounted": {
+        "attributed": {
           "$ref": "#/$defs/intervals"
         },
-        "unaccounted": {
+        "unattributed": {
           "$ref": "#/$defs/intervals"
         }
       }

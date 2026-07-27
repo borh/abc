@@ -12,8 +12,8 @@
   "object_key_domain": "schema-fixed-ascii"
  },
  "policy": {
-  "raw_bytes_hash": "sha256:984b44d2cdcb162ea4cb7f96b737b5e32356aac8764d919693951ae5fffeda3e",
-  "identity_hash": "sha256:36c5197b59c6f6fba0adebac0193be18da61d6e944e4eac6ac7ca4f46212799e"
+  "raw_bytes_hash": "sha256:4d7728c8cbdd2822400681e1841d39c548fba84dbad59149c802c19081eb5da0",
+  "identity_hash": "sha256:69eefe9fd7b6f6d65a5a02736b27d75b9f20a901acaa4ffc086fca7aa227e5b1"
  },
  "ledger_schema": {
   "raw_bytes_hash": "sha256:73150fb3b9785f53d4665eba7fc337fa5dbf35b6b6b60bd086e1b5e8ef92ecb1",

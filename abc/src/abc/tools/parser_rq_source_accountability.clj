@@ -46,7 +46,23 @@
              walk/keywordize-keys)))
 
 (def source-recognition-instrument-version
-  "parser-rq-source-recognition-v1")
+  "The committed source-recognition instrument.
+
+  v2 because the MEASURE changed: `eligible_bytes` moved from the whole
+  decoded file to the body region, and a metadata attribution measure appeared
+  beside it. A v1 and a v2 record carry the same field names and can carry
+  similar-looking numbers while meaning different things, which is what a
+  version string exists to prevent.
+
+  `recognition-identity-valid?` requires this to equal the identity's
+  `instrument_versions.source_span_coverage`, and that value is taken from the
+  predicate set's declared `:instrument`. The predicate set still names v1 and
+  still asks for `:= 1.0` -- a threshold predeclared for the old denominator --
+  so the two disagree and the observation is `:unavailable`. That is the
+  intended state, not an oversight: qualification is unavailable until the
+  predicate's owner supplies a contract compatible with what is now measured,
+  rather than passing under a threshold that was never declared for it."
+  "parser-rq-source-recognition-v2")
 
 (def ^:private diagnostic-gap-policy-v1-hash
   "sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5")
@@ -456,6 +472,21 @@
         metadata-bytes (and metadata (:eligible_bytes metadata))]
     (and (nil? (schema/validation-errors @recognition-work-schema record))
          (some? regions) (some? metadata)
+         ;; The whole ordered chain, not three adjacency equalities.
+         ;; Adjacency alone admits an inverted region -- header 0..10,
+         ;; body 10..5, tail 5..5 satisfies both equalities -- and the
+         ;; subtractions below would then run on a region that runs
+         ;; backwards. Clojure gives a negative rather than a wrap, so the
+         ;; totals would merely disagree; stating the ordering makes the
+         ;; rejection a contract instead of an accident of arithmetic.
+         (<= 0
+             (get-in regions [:header :start])
+             header-end
+             body-start
+             body-end
+             tail-start
+             decoded-bytes
+             decoded-utf8/max-safe-integer)
          (= 0 (get-in regions [:header :start]))
          (= header-end body-start)
          (= body-end tail-start)
@@ -463,11 +494,11 @@
          (= metadata-bytes (+ (- header-end 0) (- decoded-bytes tail-start)))
          (= decoded-bytes (+ eligible_bytes metadata-bytes))
          (= (:eligible_bytes metadata)
-            (+ (:accounted_bytes metadata) (:unaccounted_bytes metadata)))
+            (+ (:attributed_bytes metadata) (:unattributed_bytes metadata)))
          (every? (fn [interval]
                    (or (<= (:end interval) header-end)
                        (>= (:start interval) tail-start)))
-                 (concat (:accounted metadata) (:unaccounted metadata)))
+                 (concat (:attributed metadata) (:unattributed metadata)))
          (valid-ledger-chain? store p0-manifest record index-entry index membership-record)
          (= "ok" (:status record))
          (= source-recognition-instrument-version (:instrument_version record))

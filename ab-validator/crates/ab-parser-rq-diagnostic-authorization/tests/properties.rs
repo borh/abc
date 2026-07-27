@@ -12,7 +12,7 @@ fn hash(b: &[u8]) -> String {
 }
 fn record(source: &[u8]) -> RecognitionWorkRecord {
     let n = source.len();
-    serde_json::from_value(serde_json::json!({"schema_version":"abc/parser-rq-source-recognition-work/v1","qualification_identity_ref":format!("sha256:{}","4".repeat(64)),"capture_generation_ref":format!("sha256:{}","1".repeat(64)),"policy_hash":format!("sha256:{}","5".repeat(64)),"instrument_version":"parser-rq-source-recognition-v1","work_id":hash(source),"coordinate_system":"decoded_utf8","ledger":{"sha256":format!("sha256:{}","6".repeat(64)),"bytes":1,"media_type":"application/json","locator":"x"},"status":"ok","eligible_bytes":n,"recognized_bytes":0,"accounted_bytes":n,"semantic_gap_bytes":n,"unaccounted_bytes":0,"recognized":[],"accounted":[{"start":0,"end":n}],"semantic_gaps":[{"start":0,"end":n}],"unaccounted":[]})).unwrap()
+    serde_json::from_value(serde_json::json!({"schema_version":"abc/parser-rq-source-recognition-work/v1","qualification_identity_ref":format!("sha256:{}","4".repeat(64)),"capture_generation_ref":format!("sha256:{}","1".repeat(64)),"policy_hash":format!("sha256:{}","5".repeat(64)),"instrument_version":"parser-rq-source-recognition-v2","work_id":hash(source),"coordinate_system":"decoded_utf8","ledger":{"sha256":format!("sha256:{}","6".repeat(64)),"bytes":1,"media_type":"application/json","locator":"x"},"status":"ok","eligible_bytes":n,"recognized_bytes":0,"accounted_bytes":n,"semantic_gap_bytes":n,"unaccounted_bytes":0,"recognized":[],"accounted":[{"start":0,"end":n}],"semantic_gaps":[{"start":0,"end":n}],"unaccounted":[]})).unwrap()
 }
 fn run(
     entries: Vec<serde_json::Value>,

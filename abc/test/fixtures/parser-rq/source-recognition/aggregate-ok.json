@@ -26,6 +26,6 @@
   ],
   "unaccounted": [],
   "metadata_eligible_bytes": 5,
-  "metadata_accounted_bytes": 2,
-  "metadata_unaccounted_bytes": 3
+  "metadata_attributed_bytes": 2,
+  "metadata_unattributed_bytes": 3
 }

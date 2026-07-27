@@ -89,15 +89,18 @@
     },
     "metadata_eligible_bytes": {
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "maximum": 9007199254740991
     },
-    "metadata_accounted_bytes": {
+    "metadata_attributed_bytes": {
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "maximum": 9007199254740991
     },
-    "metadata_unaccounted_bytes": {
+    "metadata_unattributed_bytes": {
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "maximum": 9007199254740991
     }
   },
   "oneOf": [

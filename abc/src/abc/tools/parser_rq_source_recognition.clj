@@ -75,6 +75,12 @@
           ;; distinct regions so a failure localizes to one end of the file,
           ;; but they fold into one measure because they qualify under one
           ;; conjunctive predicate.
+          ;;
+          ;; The metadata measure is ATTRIBUTION, not byte accounting: only a
+          ;; fact whose role the policy names attributing counts, and never a
+          ;; `preserved_opaque` one. The body measure above stays accounting.
+          ;; The two words are not interchangeable and the field names differ
+          ;; so no reader can average them into a single whole-file ratio.
           (let [metadata (:metadata record)
                 header-end (get-in regions [:header :end])
                 tail-start (get-in regions [:tail :start])
@@ -92,14 +98,14 @@
                              (+ (- body-end body-start) (:eligible_bytes metadata)))
                   ["body and metadata regions do not conserve the decoded source"])
                 (when-not (= (:eligible_bytes metadata)
-                             (+ (:accounted_bytes metadata)
-                                (:unaccounted_bytes metadata)))
+                             (+ (:attributed_bytes metadata)
+                                (:unattributed_bytes metadata)))
                   ["metadata byte conservation does not hold"])
                 (when-not (every? (fn [interval]
                                     (or (<= (:end interval) header-end)
                                         (>= (:start interval) tail-start)))
-                                  (concat (:accounted metadata)
-                                          (:unaccounted metadata)))
+                                  (concat (:attributed metadata)
+                                          (:unattributed metadata)))
                   ["a metadata interval escapes the header and tail"])))))))))))
 
 (defn index-errors [index]

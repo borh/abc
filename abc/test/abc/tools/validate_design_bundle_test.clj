@@ -963,7 +963,7 @@
                (hash/format-sha256 (hash/sha256-json-jcs value))))
         (is (= identity (get-in authority [section "identity_hash"])))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:c9f68f073afcbdd2fca81e0e926c1428e7fcbb3f00307b5eff016a7c25276e60"
+            "sha256:35af4957a8e7c373008b4038f8eed04a8ccf09337201edd30b193528fc1df2c0"
             "schemas/parser-rq-classified-source-authority.schema.json"
             "sha256:cfe47129b725e29c4a5a5922ccbf7e2a17e9e8c5db716a3d1baf083fbb41fe1c"
             "schemas/parser-rq-classified-source-ledger.schema.json"

@@ -3,6 +3,16 @@
   strict UTF-8 byte slices, Unicode private-use scalars, and canonical
   interval algebra over eligible decoded bytes.")
 
+(def max-safe-integer
+  "The largest offset this protocol can address.
+
+  Every published number crosses JSON, so the addressable domain is the
+  double-precision safe-integer range rather than the host integer range.
+  Clojure would carry a larger offset without complaint and a JSON consumer
+  would silently round it, so the bound belongs at the coordinate system
+  rather than at each instrument."
+  9007199254740991)
+
 (defn decoded-slice
   "Strictly decode the byte interval [start, end) of `source-bytes`.
   Nil unless the interval is a nonempty in-bounds slice that decodes as

@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 const IDENTITY_REF: &str =
-    "sha256:c516f78850fa7119ac7e847793f2544a1ef87ce7ee8f529d1d22b09121ef4169";
+    "sha256:8764ae22817902b81f69511bbd8ade2088897af52b097a49977ada595091375a";
 const POLICY: &[u8] =
     include_bytes!("../../../../abc/data/parser-rq-ab-aozora-diagnostic-gap-v1.json");
 
@@ -47,7 +47,7 @@ fn identity() -> Value {
         "corpus_list_hash":format!("sha256:{}", "5".repeat(64)),
         "predicate_set_hash":format!("sha256:{}", "6".repeat(64)),
         "instrument_versions":{"source_accountability":"parser-rq-source-accountability-v1",
-                               "source_span_coverage":"parser-rq-source-recognition-v1"},
+                               "source_span_coverage":"parser-rq-source-recognition-v2"},
         "instrument_policy_hashes":{"source_recognition":format!("sha256:{}", "7".repeat(64))}
     })
 }

@@ -10,7 +10,23 @@ const POLICY_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../abc/schemas/parser-rq-classified-source-policy.schema.json");
 const AUTHORITY_BYTES: &[u8] =
     include_bytes!("../../../../abc/data/parser-rq-classified-source-authority-v1.json");
-const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v1";
+/// v2 because the measure changed, not because the wire format did.
+///
+/// `eligible_bytes` moved from the whole decoded file to the body region, and
+/// a metadata attribution measure appeared beside it. A v1 and a v2 record can
+/// carry identical field names and identical-looking numbers and mean
+/// different things, which is exactly what a version string exists to prevent.
+///
+/// The predicate set still binds `source_span_coverage` to
+/// `parser-rq-source-recognition-v1` and still asks for `:= 1.0`, a threshold
+/// declared for the old denominator. Because the qualification identity takes
+/// `instrument_versions` FROM the predicate set and the readers require the
+/// record's `instrument_version` to match it, this mismatch makes the
+/// observation `:unavailable` rather than letting new semantics be scored
+/// against an old threshold. That is deliberate: the predicate's owner
+/// supplies a compatible contract, and until then qualification is unavailable
+/// rather than wrong.
+const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v2";
 
 #[derive(Clone, Debug)]
 pub struct RecognitionInput {
@@ -68,14 +84,23 @@ pub struct RecognitionBlobRef {
 /// totals are folded here. This block is what keeps the partition from being a
 /// denominator reduction: the metadata bytes leave the body measure for a
 /// different accounted region, not for nowhere.
+///
+/// The measure is ATTRIBUTION, not byte accounting, and the words are not
+/// interchangeable. A byte is attributed when a fact whose role the policy
+/// lists in `metadata_attributing_roles` covers it, and `preserved_opaque`
+/// never attributes. An earlier draft counted every accounted interval here,
+/// which let a `preserved_opaque` fact -- the explicit statement that nothing
+/// is claimed about the bytes -- raise the number, and let the line-ending
+/// normalizations the sanitizer emits across the whole file stand in for
+/// knowledge about the packaging.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct RecognitionMetadata {
     pub eligible_bytes: u64,
-    pub accounted_bytes: u64,
-    pub unaccounted_bytes: u64,
-    pub accounted: Vec<RecognitionInterval>,
-    pub unaccounted: Vec<RecognitionInterval>,
+    pub attributed_bytes: u64,
+    pub unattributed_bytes: u64,
+    pub attributed: Vec<RecognitionInterval>,
+    pub unattributed: Vec<RecognitionInterval>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -141,6 +166,7 @@ struct Policy {
     _roles: Vec<String>,
     #[serde(rename = "dispositions")]
     _dispositions: Vec<String>,
+    metadata_attributing_roles: Vec<String>,
     #[serde(rename = "accent_mappings")]
     _accent_mappings: Vec<Value>,
     rules: Vec<PolicyRule>,
@@ -536,6 +562,26 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
 
     let mut recognized = Vec::new();
     let mut opaque = Vec::new();
+    // The metadata numerator, kept separate from the body one from the start.
+    //
+    // A byte is ATTRIBUTED only by a fact whose role the policy names as
+    // attributing packaging, and never by a `preserved_opaque` fact. Those two
+    // exclusions are what stop the measure from rising for the wrong reasons.
+    //
+    // `preserved_opaque` is the disposition that records "these bytes are
+    // carried through and nothing is claimed about them". Counting it would
+    // make the measure improve by DECLINING to classify, which is not a
+    // weakness of degree but a contradiction.
+    //
+    // A role outside the attributing set can still account for the byte. Every
+    // metadata line ending in a CRLF source carries a `crlf_normalization`
+    // fact under `structural_newline`, because the sanitizer walks the whole
+    // text. That fact is true and it is not knowledge about the packaging: it
+    // holds of every line in the file whether or not anything understands it.
+    // Counting it would give a CRLF work a few percent of attribution for
+    // free and make the number move when line endings change rather than when
+    // packaging becomes understood.
+    let mut attributing = Vec::new();
     for entry in &ledger.entries {
         let start = usize::try_from(entry.start).expect("entry endpoints were validated");
         let end = usize::try_from(entry.end).expect("entry endpoints were validated");
@@ -544,9 +590,16 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
             opaque.push(interval);
         } else {
             recognized.push(interval);
+            if policy
+                .metadata_attributing_roles
+                .contains(&entry.source_role)
+            {
+                attributing.push(interval);
+            }
         }
     }
     let recognized = normalize(recognized);
+    let attributing = normalize(attributing);
     let mut accounted_entries = recognized.clone();
     accounted_entries.extend(opaque);
     let accounted = normalize(accounted_entries);
@@ -566,6 +619,12 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     // so the body measure intersects against the body and the metadata measure
     // takes the remainder. No byte leaves the accounting; the metadata bytes
     // move to a different accounted region.
+    //
+    // The two populations are measured by two DIFFERENT questions, and that is
+    // deliberate. The body asks whether the parser recognized the byte; the
+    // metadata asks whether the byte is attributed to an understood packaging
+    // construct. Publishing both under one word would invite a single ratio
+    // over their sum, which is the whole-file average this partition removed.
     let body = interval_list(&regions.body(), decoded.len());
     let metadata_regions = normalize(
         regions
@@ -576,8 +635,8 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     );
     let recognized = intersect(&recognized, &body);
     let accounted_in_body = intersect(&accounted, &body);
-    let metadata_accounted = intersect(&accounted, &metadata_regions);
-    let metadata_unaccounted = subtract(&metadata_regions, &accounted);
+    let metadata_attributed = intersect(&attributing, &metadata_regions);
+    let metadata_unattributed = subtract(&metadata_regions, &attributing);
     let semantic_gaps = subtract(&body, &recognized);
     let unaccounted = subtract(&body, &accounted_in_body);
     let accounted = accounted_in_body;
@@ -588,8 +647,8 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
         Ok(semantic_gap_bytes),
         Ok(unaccounted_bytes),
         Ok(metadata_eligible_bytes),
-        Ok(metadata_accounted_bytes),
-        Ok(metadata_unaccounted_bytes),
+        Ok(metadata_attributed_bytes),
+        Ok(metadata_unattributed_bytes),
     ) = (
         total_len(&body),
         total_len(&recognized),
@@ -597,8 +656,8 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
         total_len(&semantic_gaps),
         total_len(&unaccounted),
         total_len(&metadata_regions),
-        total_len(&metadata_accounted),
-        total_len(&metadata_unaccounted),
+        total_len(&metadata_attributed),
+        total_len(&metadata_unattributed),
     )
     else {
         return unavailable(record, "recognition-total-overflow");
@@ -611,7 +670,7 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     {
         return unavailable(record, "recognition-conservation-failed");
     }
-    if metadata_accounted_bytes.checked_add(metadata_unaccounted_bytes)
+    if metadata_attributed_bytes.checked_add(metadata_unattributed_bytes)
         != Some(metadata_eligible_bytes)
     {
         return unavailable(record, "metadata-conservation-failed");
@@ -641,10 +700,10 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     record.unaccounted = Some(wire(&unaccounted));
     record.metadata = Some(RecognitionMetadata {
         eligible_bytes: metadata_eligible_bytes,
-        accounted_bytes: metadata_accounted_bytes,
-        unaccounted_bytes: metadata_unaccounted_bytes,
-        accounted: wire(&metadata_accounted),
-        unaccounted: wire(&metadata_unaccounted),
+        attributed_bytes: metadata_attributed_bytes,
+        unattributed_bytes: metadata_unattributed_bytes,
+        attributed: wire(&metadata_attributed),
+        unattributed: wire(&metadata_unattributed),
     });
     RecognitionAnalysis { record }
 }

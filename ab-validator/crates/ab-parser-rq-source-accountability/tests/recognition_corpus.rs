@@ -387,6 +387,87 @@ fn resealed_protocol_mutations_cannot_contribute_aggregate_totals() {
     }
 }
 
+/// A malformed region set is data to reject, not a reason to abort.
+///
+/// The three regions are read back from the store, so the aggregate validator
+/// is a trust boundary and every one of these shapes is something a corrupted
+/// or hostile record can present. Adjacency equalities alone accept several of
+/// them: `header 0..10, body 10..5, tail 5..5` satisfies both
+/// `header.end == body.start` and `body.end == tail.start` while the body runs
+/// backwards, and the endpoint subtraction that follows then underflows.
+///
+/// Reaching the end of this test IS the assertion for that case. An unchecked
+/// subtraction panics the process in a debug build and silently wraps to a
+/// nonsense total in a release build, and neither is a verdict.
+#[test]
+fn malformed_region_sets_are_rejected_rather_than_arithmetic_faults() {
+    let cases: &[(&str, Value)] = &[
+        (
+            "body-inverted",
+            json!({"header": {"start": 0, "end": 10},
+                   "body": {"start": 10, "end": 5},
+                   "tail": {"start": 5, "end": 5}}),
+        ),
+        (
+            "tail-inverted",
+            json!({"header": {"start": 0, "end": 0},
+                   "body": {"start": 0, "end": 10},
+                   "tail": {"start": 10, "end": 5}}),
+        ),
+        // An inverted header needs `start > end` and the header must start at
+        // zero, so `header.start == 0` already covers that shape and there is
+        // no separate case for it here.
+        (
+            "header-does-not-start-at-zero",
+            json!({"header": {"start": 4, "end": 10},
+                   "body": {"start": 10, "end": 20},
+                   "tail": {"start": 20, "end": 20}}),
+        ),
+        (
+            "header-and-body-not-contiguous",
+            json!({"header": {"start": 0, "end": 4},
+                   "body": {"start": 10, "end": 20},
+                   "tail": {"start": 20, "end": 20}}),
+        ),
+        (
+            "body-and-tail-not-contiguous",
+            json!({"header": {"start": 0, "end": 4},
+                   "body": {"start": 4, "end": 10},
+                   "tail": {"start": 14, "end": 20}}),
+        ),
+        (
+            "beyond-the-safe-integer-domain",
+            json!({"header": {"start": 0, "end": 0},
+                   "body": {"start": 0, "end": 9007199254740992_u64},
+                   "tail": {"start": 9007199254740992_u64, "end": 9007199254740992_u64}}),
+        ),
+    ];
+    for (name, regions) in cases {
+        let root = temp(&format!("regions-{name}"));
+        let input = inputs(&root);
+        let valid = analyze_recognition_corpus(input.clone()).unwrap();
+        let mut index = serde_json::to_value(&valid).unwrap();
+        let record_bytes = fs::read(
+            input
+                .store_root
+                .join(index["records"][0]["locator"].as_str().unwrap()),
+        )
+        .unwrap();
+        let mut record: Value = serde_json::from_slice(&record_bytes).unwrap();
+        record["regions"] = regions.clone();
+        republish_record(&input.store_root, &mut index, &record);
+        let index = serde_json::from_value(index).unwrap();
+        let aggregate = aggregate_recognition(&index, &input.store_root).unwrap();
+        assert_eq!(aggregate.status, RecognitionStatus::Unavailable, "{name}");
+        assert!(aggregate.eligible_bytes.is_none(), "{name}");
+        assert_schema(
+            "parser-rq-source-recognition-aggregate.schema.json",
+            &aggregate,
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
 #[test]
 fn closed_protocol_types_reject_unknown_fields() {
     let root = temp("unknown-fields");

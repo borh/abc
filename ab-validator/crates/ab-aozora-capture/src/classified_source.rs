@@ -439,7 +439,7 @@ fn normalization_entry(
     })
 }
 
-/// Classified facts for the header and tail regions.
+/// Classified facts for the colophon, which is the TAIL region only.
 ///
 /// The body is lexed by the parser; the metadata regions are not, so without a
 /// producer of their own they carry no fact at all except the line-ending
@@ -450,6 +450,14 @@ fn normalization_entry(
 /// what the Aozora colophon is built from -- `底本：`, `入力：`, `校正：`,
 /// `初出：` and the rest. It is a genuinely typed form with a recognizable
 /// shape, so attributing it says something.
+///
+/// **The tail is what bounds this producer, not the shape of the line.**
+/// `is_colophon_field` is a shape test and a loose one: the standard notation
+/// legend `《》：ルビ` is a fullwidth-colon `key：value` line by that test and
+/// nothing about its shape distinguishes it from `底本：`. The legend sits in
+/// the HEADER, so scanning the tail alone is what keeps it out. Widening this
+/// scan back to `regions.metadata()` would silently reclassify the legend
+/// block as publication metadata.
 ///
 /// Everything else in the header and tail is deliberately left unattributed.
 /// Blanket-claiming every metadata byte would make the metadata measure reach
@@ -464,38 +472,37 @@ fn metadata_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Val
         return Vec::new();
     };
     let mut entries = Vec::new();
-    for region in regions.metadata() {
-        let Some(text) = decoded.text.get(region.clone()) else {
-            continue;
-        };
-        let mut offset = region.start;
-        for line in text.split_inclusive('\n') {
-            let content = line.trim_end_matches(['\n', '\r']);
-            let trimmed = content.trim_start();
-            let indent = content.len() - trimmed.len();
-            if is_colophon_field(trimmed) {
-                let start = offset + indent;
-                let end = start + trimmed.len();
-                if let Some(source_form) = decoded.text.get(start..end) {
-                    entries.push(json!({
+    let tail = regions.tail();
+    let Some(text) = decoded.text.get(tail.clone()) else {
+        return entries;
+    };
+    let mut offset = tail.start;
+    for line in text.split_inclusive('\n') {
+        let content = line.trim_end_matches(['\n', '\r']);
+        let trimmed = content.trim_start();
+        let indent = content.len() - trimmed.len();
+        if is_colophon_field(trimmed) {
+            let start = offset + indent;
+            let end = start + trimmed.len();
+            if let Some(source_form) = decoded.text.get(start..end) {
+                entries.push(json!({
+                    "start": start,
+                    "end": end,
+                    "construct_id": "publication_metadata_line",
+                    "source_role": "publication_metadata",
+                    "disposition": "structural_control",
+                    "evidence_class": "structural_token",
+                    "parser_evidence_code": "metadata:publication_metadata_line",
+                    "construct_witness": {
+                        "construct_id": "publication_metadata_line",
                         "start": start,
                         "end": end,
-                        "construct_id": "publication_metadata_line",
-                        "source_role": "publication_metadata",
-                        "disposition": "structural_control",
-                        "evidence_class": "structural_token",
-                        "parser_evidence_code": "metadata:publication_metadata_line",
-                        "construct_witness": {
-                            "construct_id": "publication_metadata_line",
-                            "start": start,
-                            "end": end,
-                            "source_form": source_form
-                        }
-                    }));
-                }
+                        "source_form": source_form
+                    }
+                }));
             }
-            offset += line.len();
         }
+        offset += line.len();
     }
     let _ = parser;
     entries
@@ -506,6 +513,11 @@ fn metadata_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Val
 /// The key must not itself contain a colon, so a line that merely mentions one
 /// mid-sentence is not a field. An empty value is still a field -- `初出：`
 /// with the citation on the following lines is a real shape.
+///
+/// This is a shape test only, and shape does not separate a colophon field
+/// from the header's notation legend: `《》：ルビ` passes it. Only the caller's
+/// tail-region scope makes that distinction, so this must not be reused
+/// against text from any other region.
 fn is_colophon_field(line: &str) -> bool {
     let Some((key, _value)) = line.split_once('：') else {
         return false;

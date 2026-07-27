@@ -29,7 +29,7 @@ fn record(work_id: &str, generation: &str, gaps: &[(u64, u64)]) -> RecognitionWo
         qualification_identity_ref: Some(hash('4')),
         capture_generation_ref: Some(generation.into()),
         policy_hash: Some(hash('5')),
-        instrument_version: "parser-rq-source-recognition-v1".into(),
+        instrument_version: "parser-rq-source-recognition-v2".into(),
         work_id: Some(work_id.to_owned()),
         coordinate_system: "decoded_utf8".into(),
         ledger: Some(RecognitionBlobRef {

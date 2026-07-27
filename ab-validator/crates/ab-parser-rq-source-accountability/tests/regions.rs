@@ -117,6 +117,55 @@ fn the_published_regions_partition_the_decoded_source() {
     fs::remove_dir_all(root).unwrap();
 }
 
+/// The colophon is classified; the notation legend is not.
+///
+/// `is_colophon_field` is a shape test, and by shape the header's standard
+/// legend line `《》：ルビ` is indistinguishable from `底本：` -- non-empty key,
+/// fullwidth colon, value. Only the tail-region scope of `metadata_entries`
+/// separates them. `LEGEND_FENCED` has carried that legend line since this
+/// suite was written and nothing asserted what the ledger did with it, so
+/// widening the scan back to the header would have gone unnoticed.
+///
+/// The legend must stay unattributed until it has a classifier of its own.
+/// Counting it as `publication_metadata` would inflate metadata attribution
+/// with a construct nothing understands and label it with the wrong role.
+#[test]
+fn the_colophon_is_classified_as_metadata_and_the_notation_legend_is_not() {
+    let root = temp("legend-unattributed");
+    let generation = capture_generation_from_bytes_for_identity_and_work(
+        LEGEND_FENCED.as_bytes(),
+        &identity_ref(),
+        "w",
+    )
+    .unwrap();
+    let ledger: Value = serde_json::from_slice(&generation.classified_source_ledger).unwrap();
+    let metadata_lines = ledger["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|entry| entry["construct_id"] == "publication_metadata_line")
+        .map(|entry| {
+            entry["construct_witness"]["source_form"]
+                .as_str()
+                .unwrap()
+                .to_owned()
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(metadata_lines, ["底本：「テスト全集」テスト書房"]);
+
+    // Stated as its own assertion rather than left to the equality above, so
+    // the reason this line is absent is on the record.
+    assert!(
+        !ledger["entries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|entry| entry["construct_witness"]["source_form"] == "《》：ルビ"),
+        "the notation legend was classified; it has no classifier yet"
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
 #[test]
 fn eligibility_is_the_body_and_the_two_populations_still_sum_to_the_file() {
     let root = temp("body-denominator");
@@ -156,7 +205,7 @@ fn eligibility_is_the_body_and_the_two_populations_still_sum_to_the_file() {
         record.eligible_bytes.unwrap()
     );
     assert_eq!(
-        metadata.accounted_bytes + metadata.unaccounted_bytes,
+        metadata.attributed_bytes + metadata.unattributed_bytes,
         metadata.eligible_bytes
     );
     fs::remove_dir_all(root).unwrap();
@@ -201,36 +250,61 @@ fn crlf_sources_carry_facts_outside_the_body_and_lf_sources_do_not() {
     // accounted interval -- it does not, on any real CRLF work -- and a
     // metadata fact producer must not re-derive these newlines, or two
     // producers will double-count the same bytes.
+    //
+    // What these facts must NOT do is attribute. They are true of every line
+    // in the file whether or not anything understands the packaging, so this
+    // test pins metadata attribution as invariant under line endings.
     let root = temp("crlf");
     let crlf = LEGEND_FENCED.replace('\n', "\r\n");
+    let generation =
+        capture_generation_from_bytes_for_identity_and_work(crlf.as_bytes(), &identity_ref(), "w")
+            .unwrap();
+    let ledger: Value = serde_json::from_slice(&generation.classified_source_ledger).unwrap();
     let record = analyze(&crlf, &root).record;
     assert_eq!(record.status, RecognitionStatus::Ok, "{:?}", record.errors);
     let regions = record.regions.unwrap();
     let metadata = record.metadata.as_ref().unwrap();
+
+    // The facts are there: line-ending normalizations inside the header and
+    // tail, which exist only because the sanitizer walks the whole text.
+    let metadata_newline_facts = ledger["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|entry| entry["construct_id"] == "crlf_normalization")
+        .filter(|entry| {
+            let start = entry["start"].as_u64().unwrap();
+            let end = entry["end"].as_u64().unwrap();
+            end <= regions.header.end || start >= regions.tail.start
+        })
+        .count();
     assert!(
-        metadata.accounted_bytes > 0,
-        "CRLF header and tail line endings are accounted metadata facts"
+        metadata_newline_facts > 0,
+        "a CRLF source must carry line-ending facts in its header and tail"
     );
-    for interval in &metadata.accounted {
+
+    // And they do not attribute. `structural_newline` is not in the policy's
+    // `metadata_attributing_roles`, so a byte covered only by one of these
+    // facts stays unattributed. This is the property that keeps the measure
+    // about packaging: were these counted, a CRLF work would start with
+    // several percent of attribution for free and the number would move when
+    // line endings changed rather than when packaging became understood.
+    let lf_root = temp("lf");
+    let lf = analyze(LEGEND_FENCED, &lf_root).record;
+    let lf_metadata = lf.metadata.as_ref().unwrap();
+    assert_eq!(
+        metadata.attributed_bytes, lf_metadata.attributed_bytes,
+        "line endings changed metadata attribution"
+    );
+    assert!(metadata.attributed_bytes > 0, "the colophon is attributed");
+    for interval in &metadata.attributed {
         assert!(
             interval.end <= regions.header.end || interval.start >= regions.tail.start,
             "metadata facts lie in the metadata regions: {interval:?}"
         );
     }
-
-    // The same source with LF endings has no line-ending facts in its
-    // metadata regions -- the sanitizer rewrites nothing -- so its metadata
-    // attribution comes entirely from the colophon field producer and is
-    // strictly smaller. Both are nonzero, and neither region is fully
-    // attributed: the editorial legend block has no classification yet, which
-    // is what keeps this measure from being satisfiable by construction.
-    let lf_root = temp("lf");
-    let lf = analyze(LEGEND_FENCED, &lf_root).record;
-    let lf_metadata = lf.metadata.as_ref().unwrap();
-    assert!(lf_metadata.accounted_bytes > 0);
-    assert!(lf_metadata.accounted_bytes < metadata.accounted_bytes);
     assert!(
-        lf_metadata.unaccounted_bytes > 0,
+        lf_metadata.unattributed_bytes > 0,
         "metadata attribution must not be satisfiable by construction"
     );
     fs::remove_dir_all(root).unwrap();

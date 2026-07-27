@@ -36,7 +36,7 @@
 (def recognition-identity
   (assoc-in qualification-identity
             [:instrument_versions :source_span_coverage]
-            "parser-rq-source-recognition-v1"))
+            "parser-rq-source-recognition-v2"))
 
 (def recognition-identity-ref
   (qualification/qualification-identity-ref recognition-identity))
@@ -45,6 +45,36 @@
   (let [production-identity
         (update recognition-identity :instrument_versions dissoc :source_accountability)]
     (is (#'rq-source/recognition-identity-valid? production-identity))))
+
+(deftest an-identity-naming-a-different-instrument-cannot-produce-an-observation
+  ;; The seam that makes a semantic instrument change fail closed.
+  ;;
+  ;; `instrument_versions.source_span_coverage` is taken from the predicate
+  ;; set's declared `:instrument`, and the committed instrument is this
+  ;; namespace's constant. When the measure changes, the constant moves and the
+  ;; predicate set does not, so the two disagree until the predicate's owner
+  ;; declares a contract for what is now measured. Disagreement must yield
+  ;; `:unavailable`, never a value scored against the old threshold.
+  ;;
+  ;; The live predicate set still names `parser-rq-source-recognition-v1` while
+  ;; the instrument is at v2, so this is the branch currently taken in
+  ;; production, not a hypothetical one.
+  (is (not (#'rq-source/recognition-identity-valid?
+            (assoc-in recognition-identity
+                      [:instrument_versions :source_span_coverage]
+                      "parser-rq-source-recognition-v1"))))
+  (is (= "parser-rq-source-recognition-v2"
+         rq-source/source-recognition-instrument-version))
+  (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
+        declared (->> (:predicates predicates)
+                      (filter #(= :source_span_coverage (:observed_key %)))
+                      first)]
+    (is (some? declared))
+    (is (not= rq-source/source-recognition-instrument-version (:instrument declared))
+        "the predicate set now names the committed instrument; if that is
+         intended, the threshold must have been redeclared for the body
+         denominator and this quarantine test should be replaced rather than
+         updated")))
 
 (def production-recognition-fixture-root
   (io/file "test/fixtures/parser-rq/source-recognition-capture"))
@@ -301,8 +331,11 @@
            ["record qualification identity"
             {:record #(assoc % :qualification_identity_ref
                              (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ;; A DIFFERENT instrument, not merely a different version number.
+           ;; This case named the next version, which stopped testing anything
+           ;; the moment that version became the live one.
            ["record parser instrument"
-            {:record #(assoc % :instrument_version "parser-rq-source-recognition-v2")}]
+            {:record #(assoc % :instrument_version "parser-rq-some-other-instrument-v1")}]
            ["record coordinate"
             {:record #(assoc % :coordinate_system "body_relative_utf8")}]
            ["record work identity"
@@ -313,6 +346,41 @@
            ["record ledger identity"
             {:record #(assoc-in % [:ledger :sha256]
                                 (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ;; Region shapes that three adjacency equalities admit. An inverted
+           ;; body satisfies both `header.end = body.start` and
+           ;; `body.end = tail.start` while running backwards.
+           ;;
+           ;; These are regression cases, not a demonstration that the
+           ;; ordering clause in the validator is what stops them: this side
+           ;; computes in bignums and the schema floors every byte count at
+           ;; zero, so an inverted region can never satisfy
+           ;; `eligible_bytes = body.end - body.start` and is refused whether
+           ;; or not the ordering is stated. The clause earns its keep in the
+           ;; Rust validator, where the same subtraction runs in u64 and
+           ;; wraps. It is stated on both sides so the two validators declare
+           ;; one contract rather than two that happen to agree.
+           ["record inverted body region"
+            {:record #(assoc % :regions {:header {:start 0 :end 10}
+                                         :body {:start 10 :end 5}
+                                         :tail {:start 5 :end 5}})}]
+           ["record inverted tail region"
+            {:record #(assoc % :regions {:header {:start 0 :end 0}
+                                         :body {:start 0 :end 10}
+                                         :tail {:start 10 :end 5}})}]
+           ["record header not anchored at zero"
+            {:record #(assoc % :regions {:header {:start 4 :end 10}
+                                         :body {:start 10 :end 20}
+                                         :tail {:start 20 :end 20}})}]
+           ["record regions leave a gap"
+            {:record #(assoc % :regions {:header {:start 0 :end 4}
+                                         :body {:start 10 :end 20}
+                                         :tail {:start 20 :end 20}})}]
+           ["record regions beyond the safe-integer domain"
+            {:record #(assoc % :regions
+                             {:header {:start 0 :end 0}
+                              :body {:start 0 :end 9007199254740992}
+                              :tail {:start 9007199254740992
+                                     :end 9007199254740992}})}]
            ["record locator"
             {:entry #(assoc % :locator
                             "sha256/88/8888888888888888888888888888888888888888888888888888888888888888.json")}]
@@ -1091,3 +1159,36 @@
       (is (string/starts-with? (get schema "description") "Frozen.") path)
       (is (every? (set (get schema "required")) required)
           (str path " no longer requires the fields it was frozen to validate")))))
+
+(deftest every-region-and-metadata-number-stays-in-the-safe-integer-domain
+  ;; Every published number crosses JSON, so an offset past 2^53-1 is one a
+  ;; conforming consumer would silently round to a different offset. The rest
+  ;; of this protocol caps its integers there; the regions and the metadata
+  ;; totals were added without the cap, which made them the one place a record
+  ;; could name a byte no reader could address.
+  (let [beyond 9007199254740992
+        work-schema (files/read-json "schemas/parser-rq-source-recognition-work.schema.json")
+        aggregate-schema (files/read-json
+                          "schemas/parser-rq-source-recognition-aggregate.schema.json")
+        work (json/read-json-file
+              (io/file "test/fixtures/parser-rq/source-recognition/work-ok.json"))
+        aggregate (json/read-json-file
+                   (io/file "test/fixtures/parser-rq/source-recognition/aggregate-ok.json"))]
+    ;; Both fixtures must validate unmutated. Without this a mutation that is
+    ;; rejected for an unrelated reason reads as a passing bound check.
+    (is (nil? (schema/validation-errors work-schema work))
+        "the unmutated work fixture must validate, or the mutations prove nothing")
+    (is (nil? (schema/validation-errors aggregate-schema aggregate))
+        "the unmutated aggregate fixture must validate, or the mutations prove nothing")
+    (doseq [path [["regions" "header" "start"] ["regions" "header" "end"]
+                  ["regions" "body" "start"] ["regions" "body" "end"]
+                  ["regions" "tail" "start"] ["regions" "tail" "end"]
+                  ["metadata" "eligible_bytes"] ["metadata" "accounted_bytes"]
+                  ["metadata" "unaccounted_bytes"]]]
+      (is (some? (schema/validation-errors work-schema (assoc-in work path beyond)))
+          (str "work record accepts an unaddressable " (string/join "." path))))
+    (doseq [field ["metadata_eligible_bytes" "metadata_attributed_bytes"
+                   "metadata_unattributed_bytes"]]
+      (is (some? (schema/validation-errors aggregate-schema
+                                           (assoc aggregate field beyond)))
+          (str "aggregate accepts an unaddressable " field)))))

@@ -1,7 +1,7 @@
 {
   "schema_version": "abc/parser-rq-classified-source-policy/v1",
   "policy_id": "parser-rq-ab-aozora-classified-source-v1",
-  "policy_hash": "sha256:ac748c5434e8ca0838571be875f212eeda149d978a76dc2412a9c611e1806f4f",
+  "policy_hash": "sha256:2e63e45ed9b366c458e35cd1e3625e88e2ff61c525c4ac06c7b1461e5115bf75",
   "parser": "ab-aozora",
   "coordinate_system": "decoded_utf8",
   "roles": [
@@ -21,6 +21,7 @@
     "publication_metadata",
     "editorial_legend",
     "bibliographic",
+    "distribution_notice",
     "unrecognized_source_form"
   ],
   "dispositions": [
@@ -33,7 +34,8 @@
   "metadata_attributing_roles": [
     "publication_metadata",
     "editorial_legend",
-    "bibliographic"
+    "bibliographic",
+    "distribution_notice"
   ],
   "accent_mappings": [
     {
@@ -766,6 +768,13 @@
       "disposition": "structural_control",
       "evidence_class": "structural_token",
       "witness_kind": "bibliographic_header_line"
+    },
+    {
+      "construct_id": "distribution_notice_line",
+      "source_role": "distribution_notice",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "distribution_notice_line"
     }
   ]
 }

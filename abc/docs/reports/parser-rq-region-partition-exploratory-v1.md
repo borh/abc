@@ -32,7 +32,7 @@ when the disposition is `preserved_opaque`. See
 
 | | |
 |---|---|
-| repository revision | `6c988cbe` plus the bibliographic classifier of this commit |
+| repository revision | `21e4422f` plus the distribution-notice classifier of this commit |
 | corpus | `aozorabunko` at `0e9ea3e586eb0aa34039fabfc85a407d2f98b165`, resolved through the flake input |
 | toolchain | `rustc 1.96.1 (31fca3adb 2026-06-26)` |
 | instrument | `parser-rq-source-recognition-v2` |
@@ -42,8 +42,8 @@ Governed documents, by raw file bytes:
 
 | document | sha256 |
 |---|---|
-| `data/parser-rq-ab-aozora-classified-source-v1.json` | `4438e056dcc7542a5f37c7fb7f69db5a16d5c67640e6bd8b42c037a0d96bdac6` |
-| `schemas/parser-rq-classified-source-ledger.schema.json` | `168110a21dd23c089532e3af7b4b5dda4518eddcd7f48b991588eb3a77e6876e` |
+| `data/parser-rq-ab-aozora-classified-source-v1.json` | `73d8a6ec5eb239201621d39e52eb1360aac45cbc6f5e92b147edd7931c30677c` |
+| `schemas/parser-rq-classified-source-ledger.schema.json` | `2da2384cf836d73cf1d3c90f498a4513dc6c6e085f02fdb79523e92dc482d3dc` |
 | `schemas/parser-rq-source-recognition-work.schema.json` | `600f7c195e99c8bac5b6102eaadf59d9ff334759dbdaeb7ad1148d4a031c9474` |
 | `schemas/parser-rq-source-recognition-aggregate.schema.json` | `b1c43492208185989fe9e028fc2710ce64f2a4a90952072efc847a101209d1f8` |
 
@@ -51,7 +51,7 @@ Run identities, as the instrument emitted them:
 
 | | |
 |---|---|
-| `policy_hash` | `sha256:ac748c54…e1806f4f` |
+| `policy_hash` | `sha256:2e63e45e…5115bf75` |
 | `qualification_identity_ref` | `sha256:228669fe…1eae1365` (**synthesized**) |
 | `membership_ref` | `sha256:e5268dea…ccb0962c` |
 | `corpus_generation_ref` | `sha256:2d3e7eff…53be1914` |
@@ -104,21 +104,23 @@ packaging never being lexed.
 
 | work | metadata | attributed | fold |
 |---|---|---|---|
-| `hashire_merosu` | 1,163 | 817 | 0.702494 |
-| `hatsukoi` | 1,243 | 696 | 0.559936 |
-| `kokoro` | 1,412 | 842 | 0.596317 |
-| **fold** | **3,818** | **2,355** | **0.616815** |
+| `hashire_merosu` | 1,163 | 1,030 | 0.885641 |
+| `hatsukoi` | 1,243 | 909 | 0.731295 |
+| `kokoro` | 1,412 | 1,055 | 0.747167 |
+| **fold** | **3,818** | **2,994** | **0.784180** |
 
-Three producers contribute: the colophon in the tail, the fenced editorial
-legend block in the header, and the bibliographic block above it. The measure
-has moved three times, and the moves are different in kind.
+Four producers contribute: the colophon in the tail, the fenced editorial
+legend block in the header, the bibliographic block above it, and the archive's
+own distribution notice. The measure has moved four times, and the moves are
+different in kind.
 
 | | metadata fold | |
 |---|---|---|
 | colophon producer, first draft | 0.3002 | **superseded, wrong** |
 | after the attribution contract | 0.126768 | correction |
 | after the legend classifier | 0.500786 | new coverage |
-| after the bibliographic classifier | **0.616815** | new coverage |
+| after the bibliographic classifier | 0.616815 | new coverage |
+| after the distribution notice | **0.784180** | new coverage |
 
 The **0.3002** figure counted two things that are not attribution: the
 line-ending normalizations the sanitizer emits across the whole file, which are
@@ -129,13 +131,13 @@ which is a `key：value` line by shape and is not publication metadata. Confinin
 attribution to the tail and to policy-named roles put the colophon's real
 contribution at 0.126768.
 
-The move from 0.126768 to 0.500786 is the legend classifier and the move to
-**0.616815** is the bibliographic one. Both are coverage the instrument did not
-have before, rather than corrections to numbers it already reported.
+The moves to 0.500786, 0.616815 and **0.784180** are the legend, bibliographic
+and distribution-notice classifiers. All three are coverage the instrument did
+not have before, rather than corrections to numbers it already reported.
 
-Body recognition is unchanged at 0.991129 across all three moves. That is the
-check that the metadata producers stayed inside their own population; it is the
-one number that must not move when a metadata producer is added.
+Body recognition is unchanged at 0.991129 across every move. That is the check
+that the metadata producers stayed inside their own population; it is the one
+number that must not move when a metadata producer is added.
 
 ## Conservation
 
@@ -148,7 +150,7 @@ where this fails.
 Three works cannot support a claim about the corpus. This section can, within
 the limits stated at the end of it.
 
-**Population.** Every `.zip` under the pinned checkout, path-sorted (17,887 of
+**Population.** Every `.zip` under the pinned checkout, path-sorted (17,913 of
 them), sampled with Python's `random.sample(zips, 600)` under `random.seed(20260727)`.
 Three of the 600 are index archives carrying no `.txt` member and are recorded
 as skipped rather than silently dropped, leaving **597 works, 25,080,140 decoded
@@ -168,11 +170,12 @@ unavailable record, no conservation rejection across 25 MB.
 | | bytes | fold |
 |---|---|---|
 | body recognized / eligible | 24,088,179 / 24,382,817 | **0.987916** |
-| metadata attributed / eligible | 439,675 / 697,323 | **0.630518** |
+| metadata attributed / eligible | 565,287 / 697,323 | **0.810653** |
 | body + metadata | 25,080,140 | = decoded, exactly |
 
-Metadata attribution was **0.512965** before the bibliographic classifier; body
-recognition is byte-identical across that change.
+Metadata attribution was 0.512965 before the bibliographic classifier and
+0.630518 before the distribution notice; body recognition is byte-identical
+across both changes.
 
 ### The distribution, which is what a per-work predicate needs
 
@@ -182,14 +185,15 @@ threshold would be tested against. The distributions are:
 | | min | p05 | median | p95 | max | at 1.0 |
 |---|---|---|---|---|---|---|
 | body recognition | 0.6588 | 0.9689 | 0.9934 | 1.0000 | 1.0000 | **105 / 597** |
-| metadata attribution | 0.1690 | 0.4667 | 0.6564 | 0.7298 | 0.9494 | **0 / 597** |
+| metadata attribution | 0.2114 | 0.6589 | 0.8757 | 0.9085 | 0.9494 | **0 / 597** |
 
 **No work reaches 1.0 on metadata attribution.** The best is 0.9494. A `:= 1.0`
 metadata threshold would fail every work in the sample, and it would do so for
-reasons that are mostly not defects — see the residue below. Three classifiers
-have now moved the median from 0.5384 to 0.6564 and the maximum from 0.8449 to
-0.9494 without moving a single work to 1.0, which is the shape of a measure
-approaching a ceiling rather than a target.
+reasons that are mostly not defects — see the residue below. Four classifiers
+have now moved the median from 0.5384 to 0.8757 and the maximum from 0.8449 to
+0.9494 **without moving a single work to 1.0**, and the maximum has not moved at
+all since the bibliographic classifier. That is the shape of a measure
+approaching a ceiling rather than a target, and the ceiling is computed below.
 
 **105 of 597 works reach 1.0 on body recognition**, and the median is 0.9934. A
 `:= 1.0` body threshold — the literal currently in the predicate set, declared
@@ -199,6 +203,7 @@ for the old whole-file denominator — would fail 492 of 597 works, 82% of them.
 
 | construct | lines | bytes | works |
 |---|---|---|---|
+| `distribution_notice_line` | 590 | 125,612 | 590 |
 | `publication_metadata_line` | 2,969 | 115,971 | 591 |
 | `editorial_legend_entry` | 1,404 | 75,493 | 557 |
 | `publication_metadata_continuation` | 1,622 | 61,451 | 589 |
@@ -220,6 +225,12 @@ than assumed:
 - The **6 works with no colophon** have a tail region of exactly 0 bytes.
 - The **8 works with no continuation run** either have no colophon at all or a
   colophon whose fields are each complete on their own line.
+- The **7 works with no distribution notice** are those same 6 plus one, and
+  every one was opened. The 6 have no `底本：` line at all, so their tail is
+  empty and their notice sits in the body region, where the parser lexes it and
+  body recognition counts it. The seventh writes the notice as the value of a
+  `青空文庫作成ファイル：` field on one line, so it is attributed — as a
+  colophon field, which is what that line is.
 
 The bibliographic block is 1 to 6 lines, 437 works carrying exactly the two of
 title and author. No sampled header holds a further non-blank line between that
@@ -245,20 +256,57 @@ this section are post-fix. A single unexplained one-line discrepancy is exactly
 the shape every earlier defect in this area took, which is the argument for
 chasing it rather than rounding it away.
 
-### What the unattributed 257,648 bytes are
+### The distribution notice, measured over the whole corpus
+
+The notice is the one sentence this instrument recognizes, so how it is
+recognized was settled against all 17,913 works of the pinned checkout rather
+than against the sample. **A closed set of literals was measured and rejected.**
+The notice appears in **29 distinct forms**, and the variation is not only the
+URL scheme:
+
+| | works |
+|---|---|
+| `…（http://www.aozora.gr.jp/）で作られました。…` | 14,159 |
+| the same with `https` | 3,178 |
+| the same with no trailing slash | 118 |
+| `…著作権者自らの意思により…に収録されています。` | 107 |
+| the remaining 25 forms | 236 |
+
+The tail of that distribution is transcription noise: `インターネツト` for
+`インターネット`, `あたつた` for `あたった`, `みんなさん` for `皆さん`,
+`www.aozora.gr.p` for `.jp`, halfwidth `()` for `（）`, a fullwidth `：` inside
+the URL scheme, and truncations that drop the closing `。`. Enumerating those
+would be enumerating typos, and the thirtieth arrives with the next corpus
+revision.
+
+So the test is the two fixed anchors the sentence opens with and names: it
+begins `このファイルは、` and it names `青空文庫`. Measured corpus-wide,
+**every one of the 17,680 tail lines beginning `このファイルは、` is this
+notice**, and not one of them lacks `青空文庫` — so the second anchor rejects
+nothing that exists today and is kept as a guard, with a test, against a
+transcriber remark that opens the same way.
+
+**One ordering defect was found by this and is fixed.** The variant writing
+`http：//` with a fullwidth colon makes the whole sentence a non-empty key, a
+fullwidth colon and a value — a colophon field by `is_colophon_field` — and it
+was classified as `publication_metadata_line`. The notice is now tested before
+the field, because the construct a sentence gets must not turn on a typo inside
+it.
+
+### What the unattributed 132,036 bytes are
 
 Every interval split at line boundaries and categorized, so the table is
 exhaustive and sums to the residue exactly:
 
 | | bytes | share |
 |---|---|---|
-| Aozora distribution notice | 126,228 | 49.0% |
-| transcriber remarks (`※…`, `＊…`, `●…`) | 56,532 | 21.9% |
-| line terminators | 34,464 | 13.4% |
-| layout whitespace | 16,469 | 6.4% |
-| the file's own dating lines (`2007年4月2日作成`) | 16,125 | 6.3% |
-| other prose and unclassified lines | 7,554 | 2.9% |
-| bare URLs | 276 | 0.1% |
+| transcriber remarks (`※…`, `＊…`, `●…`) | 56,532 | 42.8% |
+| line terminators | 34,464 | 26.1% |
+| layout whitespace | 16,470 | 12.5% |
+| the file's own dating lines (`2007年4月2日作成`) | 16,125 | 12.2% |
+| other prose and unclassified lines | 7,554 | 5.7% |
+| Creative Commons licence statements | 615 | 0.5% |
+| bare URLs | 276 | 0.2% |
 
 **The previous version of this table was wrong and is corrected here.** It
 claimed a 322,389-byte residue of which 77.7% was "title, author and colophon
@@ -275,19 +323,21 @@ terminators carry `structural_newline` facts, and that role is deliberately
 outside `metadata_attributing_roles` — counting it would make the measure move
 when line endings changed. Layout whitespace is the indentation the producers
 trim off a continuation before claiming it, because a claim should cover content
-and not the space in front of it. Together they are 51,933 bytes, so **the
+and not the space in front of it. Together they are 50,934 bytes, so **the
 attribution contract alone caps this measure at 0.9270** no matter how many
-classifiers are added.
+classifiers are added. At 0.810653 the instrument now sits **0.116 below its own
+ceiling**, not 0.189 below 1.0.
 
-The largest remaining form is the **Aozora distribution notice**: one fixed
-sentence per file, `このファイルは、インターネットの図書館、青空文庫（…）で
-作られました。…`. It is prose in form but a constant in fact, and recognizing a
-known literal is not the same act as parsing a sentence — it is the obvious next
-classifier. With it and the dating lines, attribution would reach 0.8347.
+Of what is left, the file's own dating lines are the only remaining typed form;
+classifying them would reach 0.8338. Everything else is prose — 42.8%
+transcriber remarks and 5.7% other — plus 615 bytes of Creative Commons licence
+statements, which are a different act from the distribution notice (they state
+terms rather than provenance) and are declined for now rather than folded into
+a construct that would then mean two things. Corpus-wide they are 118 lines.
 
-The 21.9% of transcriber remarks is the part that may never be attributable.
 Every classifier so far has moved the measure without moving any work to 1.0,
-and no amount of further classification reaches the literal the predicate set
+and the per-work maximum has been static at 0.9494 for two classifiers running.
+No amount of further classification reaches the literal the predicate set
 currently carries for the body measure.
 
 ## Reproducing
@@ -319,7 +369,9 @@ caps that measure at 0.9270.
 
 **Not a held-out test of the classifiers.** Both the legend classifier's line
 forms and the bibliographic classifier's block bounds were designed against this
-same sample under this same seed. The coverage figures are therefore a
+same sample under this same seed. The distribution-notice anchors are the
+exception: they were measured over all 17,913 works, so their coverage is a
+corpus-wide figure rather than a design-population one. The coverage figures are therefore a
 description of the design population, not a prediction about unseen works. A
 second sample under a different seed would be the honest generalization test and
 has not been run. This matters more for the bibliographic block than for the
@@ -335,7 +387,7 @@ since neither should become a governance input. Reproducing the sample requires
 re-running them, which the *Reproducing* section describes but does not
 automate.
 
-**Not a claim about the corpus.** 597 of 17,887 works is 3.3%, drawn at random
+**Not a claim about the corpus.** 597 of 17,913 works is 3.3%, drawn at random
 but from a single snapshot, and the aozorabunko population is not homogeneous —
 old-orthography works, accent-decomposition works and modern transcriptions
 carry different packaging conventions. Nothing here is stratified.

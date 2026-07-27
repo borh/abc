@@ -421,11 +421,11 @@ newline fact — two producers must not claim the same byte.
 
 ### Measured, 2026-07-27
 
-| | before task 4 | after | corrected | + legend | **+ bibliographic** |
-|---|---|---|---|---|---|
-| body fold | 0.9911 | 0.9911 | 0.991129 | 0.991129 | **0.991129** |
-| metadata fold | 0.0508 | 0.3002 | 0.126768 | 0.500786 | **0.616815** |
-| cross-region | 850,980 | 850,980 | 850,980 | 850,980 | 850,980 |
+| | before task 4 | after | corrected | + legend | + biblio | **+ notice** |
+|---|---|---|---|---|---|---|
+| body fold | 0.9911 | 0.9911 | 0.991129 | 0.991129 | 0.991129 | **0.991129** |
+| metadata fold | 0.0508 | 0.3002 | 0.126768 | 0.500786 | 0.616815 | **0.784180** |
+| cross-region | 850,980 | 850,980 | 850,980 | 850,980 | 850,980 | 850,980 |
 
 The body number not moving is the check that the producer stayed in its own
 population. The metadata number is meaningfully below 1.0, which is the honest
@@ -453,13 +453,21 @@ line's shape, which the sample vindicates twice over: one work's title and one
 work's initial-publication citation both open with `※［＃…］`, and a producer
 that declined `※` lines by shape would have declined them.
 
-Across the 597-work sample, metadata attribution is **0.630518** and the largest
-remaining residue is no longer bibliographic but the Aozora distribution notice
-at 49.0%. Line terminators and layout whitespace are 19.8% of it and are
-structurally unattributable, which **caps this measure at 0.9270** however many
-classifiers are added.
+**The distribution-notice classifier landed 2026-07-27** and takes the fold to
+**0.784180**, 0.810653 across the 597-work sample. It is the one sentence this
+instrument recognizes, and it is recognized as a constant the archive emits
+rather than read as prose: a closed literal set was measured over all 17,913
+works and rejected at 29 forms whose tail is transcription noise, so the test is
+the two fixed anchors `このファイルは、` and `青空文庫`, under which every one
+of the 17,680 such tail lines corpus-wide is the notice. It carries its own role
+so boilerplate can be excluded from attribution without excluding the colophon.
 
-Body recognition is unchanged at 0.991129 across all three moves, which is the
+Line terminators and layout whitespace are 38.6% of what remains and are
+structurally unattributable, which **caps this measure at 0.9270** however many
+classifiers are added — the instrument now sits 0.116 below its own ceiling
+rather than 0.189 below 1.0.
+
+Body recognition is unchanged at 0.991129 across all four moves, which is the
 check that each new metadata producer stayed inside its own population. The
 reproducible measurement is
 `docs/reports/parser-rq-region-partition-exploratory-v1.md`.
@@ -589,12 +597,12 @@ precondition is unmet; see *Task 6: not executed, and why*.
 
 The partition is declared, published and asserted; `source_span_coverage` is
 body-projection coverage; metadata attribution exists and is measured.
-Body fold **0.991129**, metadata fold **0.616815** on the three-work control,
+Body fold **0.991129**, metadata fold **0.784180** on the three-work control,
 cross-region conservation holds. Across a 597-work random sample of the pinned
-corpus: body **0.987916**, metadata **0.630518**, all 597 `ok`, conservation
-exact — and **no work reaches 1.0 on metadata** (max 0.9494, and the attribution
-contract caps the measure at 0.9270) while only 105 of 597 reach it on the
-body. Reproducible measurement:
+corpus: body **0.987916**, metadata **0.810653**, all 597 `ok`, conservation
+exact — and **no work reaches 1.0 on metadata** (max 0.9494, static across the
+last two classifiers, and the attribution contract caps the measure at 0.9270)
+while only 105 of 597 reach it on the body. Reproducible measurement:
 `docs/reports/parser-rq-region-partition-exploratory-v1.md`.
 
 Neither threshold is fixed, and neither should be carried forward from `:= 1.0`.

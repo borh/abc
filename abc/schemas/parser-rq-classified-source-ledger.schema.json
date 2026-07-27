@@ -122,6 +122,7 @@
         "publication_metadata",
         "editorial_legend",
         "bibliographic",
+        "distribution_notice",
         "unrecognized_source_form"
       ]
     },
@@ -221,6 +222,7 @@
             "body_end",
             "container_close",
             "container_open",
+            "distribution_notice_line",
             "editorial_legend_entry",
             "editorial_legend_example",
             "editorial_legend_heading",

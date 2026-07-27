@@ -963,11 +963,11 @@
                (hash/format-sha256 (hash/sha256-json-jcs value))))
         (is (= identity (get-in authority [section "identity_hash"])))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:f816233d43c37ab8a75d5cd69eb890d06be6cb6a99e70e296f8a4a6838e657c4"
+            "sha256:372ca2ddeb86cf48688d70a40140cd4362e86098f50405e05827c7baf037e1d7"
             "schemas/parser-rq-classified-source-authority.schema.json"
             "sha256:cfe47129b725e29c4a5a5922ccbf7e2a17e9e8c5db716a3d1baf083fbb41fe1c"
             "schemas/parser-rq-classified-source-ledger.schema.json"
-            "sha256:a859ba4e2a49bd392d4c499661a9d6d201f5ecaad905fe7cd78af391f8e8c9fa"
+            "sha256:847859c16935ee88aefda2afdf89fb380a299c9e61be0d24f43d1adcb3fc7e13"
             "schemas/parser-rq-capture-generation.schema.json"
             "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"}
            (into {} (map (fn [path]
@@ -982,7 +982,7 @@
             "gaiji" "layout" "break" "heading" "illustration" "kunten"
             "source_annotation" "container_syntax" "terminal_provenance"
             "publication_metadata" "editorial_legend" "bibliographic"
-            "unrecognized_source_form"]
+            "distribution_notice" "unrecognized_source_form"]
            (get policy "roles")))
     (is (every? #(contains? % "construct_id") (get policy "rules")))
     (is (not-any? #(contains? % "case") (get policy "rules")))
@@ -1139,6 +1139,11 @@
                    ;; original title, author, translator -- is not claimed,
                    ;; because position within the block does not reliably say.
                    "bibliographic_header_line" "はつ恋"
+                   ;; The archive's own distribution notice. The one sentence
+                   ;; this instrument recognizes, and it is recognized as a
+                   ;; constant the archive emits rather than read as prose.
+                   "distribution_notice_line"
+                   "このファイルは、インターネットの図書館、青空文庫で作られました。"
                    ;; The header's fenced notation legend. Its entry form is
                    ;; byte-identical in shape to the colophon field above --
                    ;; the region each producer scans is what tells them apart,

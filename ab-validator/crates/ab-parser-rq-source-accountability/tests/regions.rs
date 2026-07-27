@@ -103,6 +103,13 @@ const BIBLIOGRAPHIC_AND_COLOPHON_RUN: &str = concat!(
     "　　　この行は注の続きで、どの項目の続きでもありません。\n",
 );
 
+/// The two notice families, the second with the fullwidth-colon URL typo that
+/// makes the sentence a `key：value` line by shape.
+const NOTICE_FORMS: [&str; 2] = [
+    "このファイルは、インターネットの図書館、青空文庫（https://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。",
+    "このファイルは、インターネットの図書館、青空文庫（http：//www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。",
+];
+
 /// A title whose first character is a gaiji annotation, as one sample work has.
 const GAIJI_TITLE: &str = concat!(
     "※［＃「氓のへん／（虫＋虫）」、第3水準1-91-58］の囁き\n",
@@ -251,7 +258,13 @@ fn classified(source: &str) -> Vec<(String, String, String)> {
         .filter(|entry| entry["construct_witness"].is_object())
         .filter(|entry| {
             let role = entry["source_role"].as_str().unwrap_or_default();
-            role == "publication_metadata" || role == "editorial_legend" || role == "bibliographic"
+            matches!(
+                role,
+                "publication_metadata"
+                    | "editorial_legend"
+                    | "bibliographic"
+                    | "distribution_notice"
+            )
         })
         .map(|entry| {
             (
@@ -524,6 +537,68 @@ fn the_bibliographic_block_ends_at_the_legend_even_with_no_blank_line() {
         assert_eq!(claimed.len(), 2, "{label}: {claimed:?}");
         assert_eq!(claimed[1], expected, "{label}");
     }
+}
+
+/// The distribution notice is claimed, and it is tested before the colophon.
+///
+/// One notice in the corpus writes its URL as `http：//` with a fullwidth
+/// colon. That makes the whole sentence a non-empty key, a fullwidth colon and
+/// a value — a colophon field by `is_colophon_field` — and it was classified
+/// as one until this producer learned the notice. The construct a sentence
+/// gets must not turn on a typo inside it, so both forms must land on
+/// `distribution_notice_line`.
+///
+/// The notice also ends any field run above it: an indented line beneath one
+/// continues nothing.
+#[test]
+fn the_distribution_notice_is_recognized_before_a_colophon_field() {
+    for (index, notice) in NOTICE_FORMS.iter().enumerate() {
+        let source = format!(
+            "はつ恋\n\n本文《ほんぶん》の一行目。\n\n底本：「テスト全集」テスト書房\n{notice}\n　　　この行は何の続きでもありません。\n"
+        );
+        let rows = classified(&source);
+        let notice_rows = rows
+            .iter()
+            .filter(|(form, ..)| form.as_str() == *notice)
+            .collect::<Vec<_>>();
+        assert_eq!(notice_rows.len(), 1, "form {index}: {rows:?}");
+        assert_eq!(
+            (notice_rows[0].1.as_str(), notice_rows[0].2.as_str()),
+            ("distribution_notice_line", "distribution_notice"),
+            "form {index}"
+        );
+        assert!(
+            !rows
+                .iter()
+                .any(|(form, ..)| form.contains("何の続きでもありません")),
+            "form {index}: the notice must end the field run above it"
+        );
+    }
+}
+
+/// A sentence opening the same way but naming no archive is not the notice.
+///
+/// Across all 17,876 works of the pinned corpus, every tail line beginning
+/// `このファイルは、` is the distribution notice and every one names
+/// `青空文庫`, so this second anchor rejects nothing that exists today. It is
+/// kept, and tested, because the first anchor alone is a sentence opener that
+/// a transcriber could reasonably write — and the failure would be silent.
+#[test]
+fn a_sentence_that_merely_opens_like_the_notice_is_not_claimed() {
+    let rows = classified(concat!(
+        "はつ恋\n",
+        "\n",
+        "本文《ほんぶん》の一行目。\n",
+        "\n",
+        "底本：「テスト全集」テスト書房\n",
+        "このファイルは、底本の誤植をそのままにしてあります。\n",
+    ));
+    assert!(
+        !rows
+            .iter()
+            .any(|(form, ..)| form.starts_with("このファイルは、")),
+        "{rows:?}"
+    );
 }
 
 /// A header line is not tested for its shape, and one real title shows why.

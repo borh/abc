@@ -2,9 +2,25 @@
 
 ## Implementation Status
 
-**Task 2 of 6 done** (2026-07-27): the dead Clojure is deleted. The Rust record,
-schemas, and P1 aggregate are untouched, so no wire format or artifact hash has
-moved yet.
+**All six tasks done** (2026-07-27). The dead Clojure is deleted, the v1 schemas
+are frozen, the work record is at
+`abc/parser-rq-source-accountability-work/v2`, the P1 aggregate is withdrawn,
+and the rotation is re-measured on the governed corpus under the promoted
+identity.
+
+Measured, not assumed: `qualification_identity_ref` is **unchanged** at
+`sha256:8c1716f0…d960d366`; `membership_ref` moved from `sha256:746b9989…6d2e78`
+to `sha256:93e9dbd4…39c9f18`; the per-work record went 1,524 → 1,225 bytes; and
+recognition still returns `ok` on all three works across the rotation.
+
+The re-measurement also put a number on what was being published. On the same
+three works the release-authoritative recognition instrument reports 177 of 177
+bytes recognized with a zero semantic gap, while the retired quantity reported
+75 of 177 covered — a disagreement of more than 2×, between two instruments
+whose intervals were both labelled `decoded_utf8`, that nothing ever compared.
+
+The 9.80 ms/work cost saving was **not** re-measured and is therefore **not
+claimed**. See the plan's *Task 6 result*.
 
 Diagnosis and enumeration:
 `docs/superpowers/plans/2026-07-27-q13-node-span-coverage.md`.
@@ -102,7 +118,14 @@ membership index and the parser-IR authentication with it.
 **This is a versioned instrument change, not a deletion.** Changing what the
 membership index contains rotates `membership_ref`, and therefore every
 recognition record. Prior captured evidence becomes protocol-incompatible rather
-than merely stale.
+than merely stale — measured 2026-07-27 as `sha256:746b9989…6d2e78` →
+`sha256:93e9dbd4…39c9f18` on the governed corpus. The wire enums are closed with
+`deny_unknown_fields`, so a v2 reader cannot read a v1 work record and a v1
+reader cannot read a v2 one. There is no reinterpretation path, only re-capture.
+
+**The qualification identity does not rotate.** Traced through the predicate set,
+then observed: the same identity file yields the same `identity_ref` on both
+sides of the change. No capture becomes stale *against the identity*.
 
 **Published artifacts are not rewritten.** Counted 2026-07-27 during
 implementation: **18** artifacts under `docs/reports/parser-rq/runs/` carry a v1
@@ -132,8 +155,12 @@ fails rather than shrinking the validated set to nothing; and
 `the-frozen-v1-schemas-are-frozen-copies-and-not-aliases` asserts each still
 requires the retired fields it was frozen to validate.
 
-**The cost saving is re-measured, not assumed.** 9.80 ms per work is an estimate
-attached to the computation being removed.
+**The cost saving is not claimed.** 9.80 ms per work was an estimate attached to
+the computation being removed, and it was **not** re-measured: the governed
+corpus is 43–76 bytes per work, where process startup dominates, and a
+meaningful figure needs a real work and therefore a regenerated parser-IR
+against the pinned corpus. The retirement stands on the coordinate defect
+alone; the cost argument was always secondary.
 
 **It unblocks the region partition.** Retiring this path removes `analyze.rs`'s
 whole-file eligibility from the set of things
@@ -150,10 +177,30 @@ make the emitter's coordinate determinate. That needs its own owner.
 
 ## Evidence
 
-No claim carries an evidence path: nothing is implemented, and the measurements
-were taken through the built binary under a synthesized qualification identity
-that authenticates nothing. Promotion to Accepted requires evidence for each
-claim.
+Implemented 2026-07-27. Claims c3 and c6 now carry evidence paths. Three claims
+still do not, and the reason differs by claim:
+
+- **c1** (what the quantity measured) rests on probe measurements taken through
+  the built binary under a **synthesized** qualification identity that
+  authenticates nothing. The task 6 re-measurement was taken under the real
+  promoted identity, but it measures the *replacement*, so it evidences c6
+  rather than c1. Re-evidencing c1 would mean rebuilding the retired instrument
+  to measure it again, which is not worth doing to document a defect that no
+  longer ships.
+- **c2** (the coordinate collision) is a source-trace across two crates. Its
+  support is the citations in this record, not an executable check.
+- **c4** and **c5** are the decision and its scope.
+
+The Rust tests that hold most of this — `tests/membership_seam.rs`,
+`tests/analyze_work.rs`, `tests/corpus_index.rs`,
+`tests/fixture_capture.rs` — cannot be cited as evidence paths: the governance
+schema admits only `test/`, `fixtures/`, `nix/` and `docs/evidence/external/`
+prefixes, and those files live under `ab-validator/crates/`. That is a gap in
+what this corpus can reference, not an absence of evidence, and it is worth
+naming rather than working around.
+
+Promotion to Accepted requires evidence for **each** claim, so this record is
+not promotion-ready as it stands.
 
 Plan: `docs/superpowers/plans/2026-07-27-q13-node-span-coverage.md`.
 Design: `docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`.

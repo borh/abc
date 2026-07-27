@@ -185,10 +185,8 @@ Each task is separately reviewable and separately committable.
    them. Freezing is purely additive, so doing it first means published v1
    evidence is validatable at every commit; doing it last would leave a window
    where it was not. See *Task 5 result*.
-6. **Re-measure and record the rotation.** Re-run the governed control, confirm
-   recognition still authenticates against the new membership index, and record
-   the `membership_ref` movement explicitly as a protocol-incompatibility for
-   prior captures.
+6. **Re-measure and record the rotation — DONE 2026-07-27.** See *Task 6
+   result*.
 
 **Task 2 is the one to do first even if the rest stalls.** It is pure deletion
 with no wire consequences, and it removes the two functions that would otherwise
@@ -382,6 +380,54 @@ against `analyze_corpus` directly.
 loses `aggregate.json`; `index.json` and `manifest.json` move because the record
 hashes inside them move. That movement is `membership_ref` rotating in miniature,
 and it is the visible record of the shape change.
+
+### Task 6 result
+
+**Re-measured on the actual governed corpus under the actual promoted
+identity**, not on a synthesized one. The inputs are all in-tree: the three
+sources under `ab-validator/crates/ab-index/tests/fixtures/corpus/cards/`, the
+qualification identity and corpus manifest from the promoted capture
+`e27fa29f…`, and each work's parser-IR recovered from the predicate lane store
+by the `parser_ir.sha256` its published v1 record names. Run through
+`capture-corpus` on the release binary.
+
+| Coordinate | Before (`24d61fc7…`) | After |
+|---|---|---|
+| `qualification_identity_ref` | `sha256:8c1716f0…d960d366` | **unchanged** |
+| `membership_ref` | `sha256:746b9989…6d2e78` | `sha256:93e9dbd4…39c9f18` |
+| work record bytes | 1,524 × 3 | 1,225 × 3 |
+| P1 aggregate | `eligible` 177 / `covered` 75 | **not produced** |
+| recognition | ok | **ok**, 3 records, no errors |
+
+**The identity does not rotate.** That was traced in this plan and is now
+observed: the same identity file yields the same `identity_ref` across the
+change. Nothing becomes stale *against the identity*.
+
+**`membership_ref` does rotate, and that is the migration.** It is recorded into
+every recognition record, so every published recognition artifact from before
+this change names a membership index that no longer exists. Prior captures are
+**protocol-incompatible, not stale**: a v2 reader cannot read a v1 work record
+and vice versa, so there is no reinterpretation available, only re-capture.
+
+**Recognition still authenticates across the rotation** — the property task 1's
+seam test was written to protect, here confirmed on the governed corpus rather
+than a synthetic one.
+
+**One finding worth separating out.** On this corpus the release-authoritative
+recognition instrument reports `eligible_bytes` 177, `recognized_bytes` 177,
+`semantic_gap_bytes` **0**. The retired P1 quantity reported 75 of 177 covered.
+Same three works, same identity, same coordinate *name* — and a disagreement of
+more than 2×, with no guard anywhere that could notice it, because the two
+numbers were never compared. R1 is the one that is right. This is the clearest
+statement available of what was being published.
+
+**The cost saving is not claimed.** The acceptance condition requires the
+9.80 ms/work figure to be re-measured if claimed, and it was not re-measured, so
+it is not claimed. The governed corpus is 43–76 bytes per work, where process
+startup dominates any span-union cost, and a meaningful measurement needs a real
+work — which means regenerating parser-IR against the pinned `aozorabunko`
+checkout. The retirement stands on the coordinate defect on its own; the cost
+argument was always secondary, and an unmeasured saving is worth nothing here.
 
 ### Task 5 result
 

@@ -438,7 +438,7 @@
               (edn/read-string (slurp "data/parser-release-qualification-corpus.edn")))
   (write-edn! (fs/file root "abc/data/parser-release-qualification-predicates.edn")
               (edn/read-string (slurp "data/parser-release-qualification-predicates.edn")))
-  (doseq [relative (vals campaign/instrument-policy-paths)
+  (doseq [relative (mapcat identity (vals campaign/instrument-policy-paths))
           :let [target (fs/file root "abc" relative)]]
     (files/create-parent-dirs! target)
     (fs/copy (fs/file relative) target {:replace-existing true}))
@@ -472,16 +472,76 @@
     ;; exists to close, so the two sets are compared rather than sampled.
     (is (= (into (sorted-set) (map name) (keys campaign/member-observed-keys))
            (into (sorted-set) (keys bound))))
+    ;; A single-document member carries that document's own content hash,
+    ;; byte-for-byte -- widening the map to vectors must not rotate members
+    ;; whose governance did not change.
     (is (= (hash/format-sha256
             (hash/sha256-json-jcs
-             (files/read-json (fs/file root "abc"
-                                       (:resource campaign/instrument-policy-paths)))))
+             (files/read-json
+              (fs/file root "abc"
+                       (first (:resource campaign/instrument-policy-paths))))))
            (get bound "resource")))
+    ;; A multi-document member folds its documents' hashes in declared order.
+    (is (= (hash/format-sha256
+            (hash/sha256-json-jcs
+             (mapv #(hash/format-sha256
+                     (hash/sha256-json-jcs
+                      (files/read-json (fs/file root "abc" %))))
+                   (:source_recognition campaign/instrument-policy-paths))))
+           (get bound "source_recognition")))
     ;; A policy that is named but absent must fail the build rather than
     ;; producing an identity with a hole in it.
-    (fs/delete (fs/file root "abc" (:resource campaign/instrument-policy-paths)))
+    (fs/delete (fs/file root "abc"
+                        (first (:resource campaign/instrument-policy-paths))))
     (is (thrown? clojure.lang.ExceptionInfo
                  (campaign/build-candidate root revision provenance)))))
+
+(deftest classified-source-policy-edits-rotate-the-qualification-identity
+  ;; Q16: the classified-source policy decides which eligible bytes are
+  ;; RECOGNIZED, and so decides `source_span_coverage`. Until 2026-07-27 only
+  ;; the ignored-regions taxonomy was bound for `:source_recognition`, so this
+  ;; policy entered the identity only as a side effect of `parser_git_rev` --
+  ;; the identity rotated on every commit and never named what changed.
+  (let [root (fs/create-temp-dir {:prefix "parser-rq-classified-source"})
+        revision (apply str (repeat 40 "a"))
+        executable {:name "ab-aozora" :nix_output "/nix/store/parser"
+                    :nar_hash sha :sha256 sha :bytes 1 :adapter "ab-aozora"
+                    :adapter_version "v1" :parser_git_rev revision
+                    :argv_template ["{executable}"]}
+        provenance (with-ref
+                     {:status :reproducible
+                      :builds [{:build_id "build-a" :output_ref sha}
+                               {:build_id "build-b" :output_ref sha}]
+                      :executables [executable]}
+                     :provenance_core_ref campaign/provenance-core-ref)
+        _ (write-live-contracts! root)
+        before (campaign/build-candidate root revision provenance)
+        policy-path (fs/file root "abc"
+                             "data/parser-rq-ab-aozora-classified-source-v1.json")
+        policy (walk/keywordize-keys (files/read-json policy-path))
+        ;; Exactly the Q15 amendment in miniature: implement the declared but
+        ;; unimplemented `publication_metadata` role.
+        _ (write-canonical-json!
+           policy-path
+           (update policy :rules conj
+                   {:construct_id "publication_metadata"
+                    :source_role "publication_metadata"
+                    :disposition "emitted_semantic_value"
+                    :evidence_class "accepted_text"
+                    :target_relation "emits"}))
+        after (campaign/build-candidate root revision provenance)]
+    ;; The rotation the decision requires: same commit, same parser, and the
+    ;; identity still moves because the recognition policy moved.
+    (is (not= (get-in before [:qualification_identity :instrument_policy_hashes
+                              "source_recognition"])
+              (get-in after [:qualification_identity :instrument_policy_hashes
+                             "source_recognition"])))
+    (is (not= (:qualification_identity_ref before)
+              (:qualification_identity_ref after)))
+    ;; ... and it moves without touching the predicate contract, which is a
+    ;; separate rotation route.
+    (is (= (get-in before [:qualification_identity :predicate_set_hash])
+           (get-in after [:qualification_identity :predicate_set_hash])))))
 
 (deftest instrument-policy-edits-rotate-identity-without-touching-the-predicate-contract
   (let [root (fs/create-temp-dir {:prefix "parser-rq-instrument-rotation"})
@@ -499,7 +559,8 @@
         _ (write-live-contracts! root)
         before (campaign/build-candidate root revision provenance)
         policy-path (fs/file root "abc"
-                             (:diagnostic_completeness campaign/instrument-policy-paths))
+                             (first (:diagnostic_completeness
+                                     campaign/instrument-policy-paths)))
         _ (write-canonical-json!
            policy-path
            (assoc (walk/keywordize-keys (files/read-json policy-path))

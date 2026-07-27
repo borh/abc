@@ -896,6 +896,36 @@ semantics demonstrably moved would be the one campaign that fails to record it.
 This amends the `parser-release-instrument-bindings` decision, which is among
 this design's declared dependencies.
 
+#### Landed 2026-07-27
+
+`instrument-policy-paths` is now member → vector, and `:source_recognition`
+binds both documents. `instrument-policy-hashes` keeps the wire shape
+`member -> sha256` — so `parser-rq-candidate.schema.json` is untouched — by
+giving a single-document member that document's own content hash **byte-for-byte
+as before**, and a multi-document member a sha256 over the canonical JSON of its
+documents' hashes in declared order. The two cases are deliberate: folding
+uniformly would have rotated all seven members for a change affecting one, and
+an unattributable rotation is the fault this coordinate exists to remove.
+
+Measured over the live tree, exactly one coordinate moved:
+
+| Member | Before | After |
+|---|---|---|
+| `source_recognition` | `sha256:c099072a…` | **`sha256:81547652…`** |
+| the other six | — | unchanged |
+
+Pinned by two tests: the existing membership test now also asserts the
+single-document case is byte-identical and checks the multi-document fold, and
+`classified-source-policy-edits-rotate-the-qualification-identity` applies the
+Q15 amendment in miniature — adding the `publication_metadata` rule — and
+asserts that at the *same* commit and parser revision both
+`instrument_policy_hashes["source_recognition"]` and
+`qualification_identity_ref` move, while `predicate_set_hash` does not.
+
+**This rotates `qualification_identity_ref`.** Existing captured evidence is
+stale against the new identity, which is the intended consequence: it is what
+makes the Q15 amendment attributable.
+
 `decisions.edn` is authored by hand; this section records the decision and its
 evidence, not the governance entry.
 
@@ -1240,7 +1270,7 @@ Stated explicitly, because "blocker" without a scope stalls everything equally.
 | **Q9** (population equality) | Describing tier 2 as a census; the accounted difference against the admission and conversion-audit populations | Accepting that a snapshot tier should exist; tier 2's population definition and name, both now fixed by Q11 |
 | **D8** (repetition protocol) | Tier-relative repetition counts | Everything else; tier 2 can run at the current fixed 3 |
 | **Q15** (execute the Q14 decision) | **The confirmatory tier 2 campaign** — coverage cannot reach its declared `1.0` until the policy covers `publication_metadata`, the absent close-marker rules, and `底本` correction notes; and reading any tier 2 coverage observation as a parser verdict before then | Accepting the architecture; tier 1 and tier 3; the exploratory campaign, whose *purpose* is to measure exactly this |
-| **Q16 execution** (decided; bind the policy) | **Landing Q15's amendment** — bind first, so that amendment's rotation is attributable | Everything else; a policy edit cannot drift silently either way |
+| ~~**Q16**~~ (decided and landed 2026-07-27) | — | — · the classified-source policy is now bound; `source_recognition` and `qualification_identity_ref` rotated, making Q15's amendment attributable |
 | ~~**Q14**~~ (decided 2026-07-27) | — | — · the instrument is incomplete; threshold and ratio both stand. Execution is Q15 |
 | ~~**Q1**~~ (closed 2026-07-27) | — | — · the capture layer is 9.25× all of `ab-check`; it reshapes the budget, not the architecture |
 | ~~**Q2**~~ (closed 2026-07-27) | — | — · closing it *corrected* D6's instrument attribution; see *D6 correction* |
@@ -1303,7 +1333,7 @@ Then:
    instrument, not the threshold) and Part B is diagnosed, so Parts A and B are
    **one policy amendment and one `policy_hash` rotation**:
    `publication_metadata`, `warichu_close`, `framed_close`, and a `底本`
-   correction-note rule. **Land the Q16 binding first**, so that amendment
+   correction-note rule. **The Q16 binding has landed**, so that amendment now
    rotates the identity through a coordinate that names the recognition policy
    rather than only through `parser_git_rev`. Part C —
    predeclaring the residual threshold — is step 5 itself and must not be pulled
@@ -1432,7 +1462,8 @@ Every governance edit to `decisions.edn` is authored by hand.
   decide every recognized byte — while the parallel
   `parser-rq-ab-aozora-diagnostic-gap-v1.json` **is** bound. Bind the policy's
   canonical bytes (not its authority document), widening
-  `instrument-policy-paths` from member → one path to member → set. See
+  `instrument-policy-paths` from member → one path to member → set. **Landed
+  2026-07-27**; rotates `source_recognition` and hence `qualification_identity_ref`. See
   *Q16, settled*.
 - **Q13 — Is `:parser_ir_node_span_coverage` safe to retain?** It is kept as
   supporting evidence beside the ledger-authoritative observation, but on real

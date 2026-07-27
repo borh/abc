@@ -114,11 +114,13 @@ pub struct SpanContext {
 
 impl SpanContext {
     /// Map a body-relative sanitized offset to its DECODED-text offset.
+    #[must_use]
     pub fn to_decoded(&self, body_offset: usize) -> usize {
         self.maps.to_source_offset(body_offset + self.body_offset)
     }
 
     /// Map a body-relative sanitized end offset to its DECODED-text offset.
+    #[must_use]
     pub fn to_decoded_end(&self, body_end: usize) -> usize {
         self.maps.to_source_end(body_end + self.body_offset)
     }

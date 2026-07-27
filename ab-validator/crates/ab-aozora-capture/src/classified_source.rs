@@ -459,11 +459,11 @@ fn normalization_entry(
 /// scan back to `regions.metadata()` would silently reclassify the legend
 /// block as publication metadata.
 ///
-/// Everything else in the header and tail is deliberately left unattributed.
+/// The header's editorial legend block has its own producer,
+/// `legend_entries`. Everything outside both -- the title and author lines, the
+/// transcriber's free-text remarks -- is deliberately left unattributed.
 /// Blanket-claiming every metadata byte would make the metadata measure reach
-/// 1.0 by construction and therefore mean nothing; the editorial legend block
-/// and the separator rules need their own classification before they can be
-/// counted, and until they have one the number should show them missing.
+/// 1.0 by construction and therefore mean nothing.
 ///
 /// The span excludes the line terminator, which already carries its own
 /// normalization or newline fact. Two producers must not claim the same byte.
@@ -523,6 +523,151 @@ fn is_colophon_field(line: &str) -> bool {
         return false;
     };
     !key.is_empty() && !key.contains('：') && key.chars().all(|ch| !ch.is_control())
+}
+
+/// One line of the header, with its absolute span and its indentation stripped.
+struct HeaderLine {
+    start: usize,
+    end: usize,
+    content: String,
+}
+
+/// The header's lines, terminators and indentation excluded from every span.
+fn header_lines(text: &str, region_start: usize) -> Vec<HeaderLine> {
+    let mut lines = Vec::new();
+    let mut offset = region_start;
+    for raw in text.split_inclusive('\n') {
+        let stripped = raw.trim_end_matches(['\n', '\r']);
+        let trimmed = stripped.trim_start();
+        let indent = stripped.len() - trimmed.len();
+        lines.push(HeaderLine {
+            start: offset + indent,
+            end: offset + indent + trimmed.len(),
+            content: trimmed.to_owned(),
+        });
+        offset += raw.len();
+    }
+    lines
+}
+
+/// A separator rule: a run of ASCII hyphens alone on its line.
+///
+/// Measured over a 597-work sample of the pinned corpus: every fence of every
+/// legend block is a run of `-` with no indentation and no other character,
+/// 53 to 55 of them. The bound is deliberately loose on length and strict on
+/// composition, because length is transcriber style and composition is not.
+fn is_separator_rule(line: &str) -> bool {
+    line.len() >= 5 && line.bytes().all(|byte| byte == b'-')
+}
+
+/// Classified facts for the editorial legend block, which is the HEADER only.
+///
+/// Aozora headers carry a fenced block that explains the notation used in the
+/// body: a pair of separator rules around a `【テキスト中に現れる記号について】`
+/// heading, then the legend entries themselves (`《》：ルビ` and the rest),
+/// worked examples, and occasional parenthetical notes.
+///
+/// **The fenced block is what bounds this producer, not the shape of a line.**
+/// A legend entry is a fullwidth-colon `key：value` line and so is a colophon
+/// field; the two are separated by which region and which block they sit in,
+/// never by their own text. This mirrors `metadata_entries`, which is confined
+/// to the tail for the same reason and in the opposite direction.
+///
+/// The block is identified by a closed pair of separator rules enclosing a
+/// `【...】` heading. All three are required. Over a 597-work sample of the
+/// pinned corpus, 557 headers carry such a block, every one of them is fenced
+/// by hyphen runs, every one contains exactly one heading, and no fenced pair
+/// was found without one -- so a fence pair with no heading is a shape this
+/// producer has never seen and declines to interpret.
+///
+/// Lines inside the block that match none of the four forms stay unattributed.
+/// They are the transcriber's free-text remarks -- `＊濁点付きの二倍の踊り字は…`,
+/// bare URLs, `※底本では…` notes -- 70 of 3,631 non-blank block lines in the
+/// sample. They are prose, not a typed form, and claiming them would be
+/// claiming to understand a sentence. Blank lines inside the block are left
+/// alone too: their only bytes are the terminator, which already carries a
+/// line-ending fact.
+fn legend_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value> {
+    let Ok(regions) = decoded.source_regions() else {
+        return Vec::new();
+    };
+    let header = regions.header();
+    let Some(text) = decoded.text.get(header.clone()) else {
+        return Vec::new();
+    };
+    let lines = header_lines(text, header.start);
+    let fences = lines
+        .iter()
+        .enumerate()
+        .filter(|(_, line)| is_separator_rule(&line.content))
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+    let (Some(&open), Some(&close)) = (fences.first(), fences.get(1)) else {
+        return Vec::new();
+    };
+    let inner = &lines[open + 1..close];
+    if !inner.iter().any(|line| is_legend_heading(&line.content)) {
+        return Vec::new();
+    }
+
+    let mut entries = Vec::new();
+    let mut emit = |line: &HeaderLine, construct: &str| {
+        entries.push(json!({
+            "start": line.start,
+            "end": line.end,
+            "construct_id": construct,
+            "source_role": "editorial_legend",
+            "disposition": "structural_control",
+            "evidence_class": "structural_token",
+            "parser_evidence_code": format!("metadata:{construct}"),
+            "construct_witness": {
+                "construct_id": construct,
+                "start": line.start,
+                "end": line.end,
+                "source_form": line.content.clone()
+            }
+        }));
+    };
+    emit(&lines[open], "editorial_separator_rule");
+    emit(&lines[close], "editorial_separator_rule");
+    for line in inner {
+        let content = line.content.as_str();
+        if content.is_empty() {
+            continue;
+        }
+        let construct = if is_legend_heading(content) {
+            "editorial_legend_heading"
+        } else if content.starts_with("（例）") {
+            "editorial_legend_example"
+        } else if content.starts_with('（') && content.ends_with('）') {
+            "editorial_legend_note"
+        } else if is_legend_entry(content) {
+            "editorial_legend_entry"
+        } else {
+            continue;
+        };
+        emit(line, construct);
+    }
+    let _ = parser;
+    entries
+}
+
+/// The legend block's heading: a `【...】` line and nothing else.
+fn is_legend_heading(line: &str) -> bool {
+    line.starts_with('【') && line.ends_with('】') && line.chars().count() > 2
+}
+
+/// A legend entry: a notation symbol, a fullwidth colon, then its explanation.
+///
+/// Shape-identical to `is_colophon_field`, and deliberately a separate
+/// function: the two are the same shape carrying different meanings in
+/// different regions, and collapsing them into one predicate would invite
+/// reusing it where the region no longer distinguishes them.
+fn is_legend_entry(line: &str) -> bool {
+    let Some((symbol, _explanation)) = line.split_once('：') else {
+        return false;
+    };
+    !symbol.is_empty() && !symbol.contains('：') && symbol.chars().all(|ch| !ch.is_control())
 }
 
 fn sanitizer_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Value> {
@@ -675,6 +820,7 @@ fn build_ledger(
         .collect::<Vec<_>>();
     entries.extend(sanitizer_entries(decoded, &parser));
     entries.extend(metadata_entries(decoded, &parser));
+    entries.extend(legend_entries(decoded, &parser));
     entries.sort_unstable_by_key(|entry| {
         let mut canonical = String::new();
         canonical_value(entry, &mut canonical);

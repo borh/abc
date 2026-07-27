@@ -7,7 +7,7 @@
 in `docs/superpowers/plans/2026-07-27-q15-region-partition.md`.
 
 Measured through the built binary on three real works (850,980 decoded bytes):
-body recognition **0.991129**, metadata attribution **0.126768**, cross-region
+body recognition **0.991129**, metadata attribution **0.500786**, cross-region
 conservation exact. Reproducible in
 `docs/reports/parser-rq-region-partition-exploratory-v1.md`, which is
 non-authoritative and says so.
@@ -21,6 +21,10 @@ rests on a 299-work sample — so this does not refute the sampled figure, only
 the qualitative claim that the coordinate mismatch is the whole story. The
 partition is still worth its cost, because it makes the two failure modes
 separable; it is not the fix that reaches the declared threshold.
+
+The editorial legend classifier landed 2026-07-27 and took metadata attribution
+from 0.126768 to 0.500786. That is new coverage, not a correction to a reported
+number; what remains unattributed is enumerated under *Decision*.
 
 Review of the implementation found four defects, all now closed and all of a
 piece with what this record says about invariants that cannot fire: malformed
@@ -116,6 +120,41 @@ The published field names are `attributed`/`unattributed`, distinct from the
 body population's `accounted`/`unaccounted`, so no reader can average a
 recognition ratio and an attribution ratio into a single whole-file number —
 which is the failure this whole record exists to prevent.
+
+### What attributes: the classifiers that exist
+
+Two producers, each bound to a region and never to a line's shape.
+
+| Producer | Region | Constructs |
+|---|---|---|
+| colophon fields | tail | `publication_metadata_line` |
+| editorial legend | header, inside its fence | `editorial_separator_rule`, `editorial_legend_heading`, `editorial_legend_entry`, `editorial_legend_example`, `editorial_legend_note` |
+
+**Region, not shape, is what separates them.** A legend entry `《》：ルビ` and a
+colophon field `底本：…` are the same shape — non-empty key, fullwidth colon,
+value — carrying entirely different meanings. Nothing in either line's text
+distinguishes it. A producer that lost its region bound would relabel one as the
+other and attach the wrong role, which is exactly what the first colophon
+implementation did.
+
+The legend producer is bound twice over: to the header, and within it to a
+closed pair of separator rules enclosing a `【...】` heading. All three are
+required. Measured over a 597-work random sample of the pinned corpus, 557
+headers carry such a block, every fence is a run of ASCII hyphens, and no fenced
+pair was found without a heading — so a fence with no heading is a shape this
+producer has never seen, and it declines the block rather than guessing.
+
+Lines inside the block matching none of the four forms stay unattributed: 70 of
+3,631 non-blank block lines in the sample, all of them transcriber prose
+(`＊濁点付きの…`, bare URLs, `※底本では…`). Claiming them would be claiming to
+understand a sentence.
+
+**What still has no producer**, measured on the three-work corpus: 73.0% of the
+remaining unattributed bytes are title, author and colophon continuation lines —
+a real typed form, and the obvious next classifier — 22.7% are the transcriber
+prose above, and 4.3% are whitespace. If prose is never attributable, this
+instrument's ceiling sits below 1.0 by construction, which the predicate's owner
+must know before fixing a threshold.
 
 ## Consequences
 

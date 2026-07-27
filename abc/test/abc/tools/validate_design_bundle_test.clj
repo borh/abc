@@ -963,11 +963,11 @@
                (hash/format-sha256 (hash/sha256-json-jcs value))))
         (is (= identity (get-in authority [section "identity_hash"])))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:35af4957a8e7c373008b4038f8eed04a8ccf09337201edd30b193528fc1df2c0"
+            "sha256:44015e45625422dc60fec483855e53e519ef35288ce72ca498061d08939dfc06"
             "schemas/parser-rq-classified-source-authority.schema.json"
             "sha256:cfe47129b725e29c4a5a5922ccbf7e2a17e9e8c5db716a3d1baf083fbb41fe1c"
             "schemas/parser-rq-classified-source-ledger.schema.json"
-            "sha256:07197d26a9323220af8cb4b2944d8b67eb70071d5e919dc56acae2c953f00fe5"
+            "sha256:134d1507bb6ca2388a4f42192fa4a33ef8d05dc9f5da0c5587f6d6c8a980d783"
             "schemas/parser-rq-capture-generation.schema.json"
             "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"}
            (into {} (map (fn [path]
@@ -981,7 +981,7 @@
     (is (= ["visible_text" "structural_newline" "ruby" "typography"
             "gaiji" "layout" "break" "heading" "illustration" "kunten"
             "source_annotation" "container_syntax" "terminal_provenance"
-            "publication_metadata" "unrecognized_source_form"]
+            "publication_metadata" "editorial_legend" "unrecognized_source_form"]
            (get policy "roles")))
     (is (every? #(contains? % "construct_id") (get policy "rules")))
     (is (not-any? #(contains? % "case") (get policy "rules")))
@@ -1126,9 +1126,18 @@
                    "forced_break" "［＃改行］"
                    "container_open" "［＃ここから］"
                    "container_close" "［＃ここで終わり］"
-                   ;; The colophon field line, attributed in the header and
-                   ;; tail regions where the parser never lexes.
-                   "publication_metadata_line" "底本：「テスト全集」テスト書房"}
+                   ;; The colophon field line, attributed in the tail region
+                   ;; where the parser never lexes.
+                   "publication_metadata_line" "底本：「テスト全集」テスト書房"
+                   ;; The header's fenced notation legend. Its entry form is
+                   ;; byte-identical in shape to the colophon field above --
+                   ;; the region each producer scans is what tells them apart,
+                   ;; never the text.
+                   "editorial_separator_rule" "-----"
+                   "editorial_legend_heading" "【テキスト中に現れる記号について】"
+                   "editorial_legend_entry" "《》：ルビ"
+                   "editorial_legend_example" "（例）金森《かなもり》"
+                   "editorial_legend_note" "（数字は、JIS X 0213の面区点番号）"}
             structural-rules (filter #(= "structural_control"
                                          (get % "disposition"))
                                      (get policy "rules"))]

@@ -32,7 +32,7 @@ when the disposition is `preserved_opaque`. See
 
 | | |
 |---|---|
-| repository revision | `4d7e5b5c2f437027ab3c75aa98d63da12d6e4c4f` |
+| repository revision | `d81d5409d3085ac7fa7c3e6cee6936c33369edd8` |
 | corpus | `aozorabunko` at `0e9ea3e586eb0aa34039fabfc85a407d2f98b165`, resolved through the flake input |
 | toolchain | `rustc 1.96.1 (31fca3adb 2026-06-26)` |
 | instrument | `parser-rq-source-recognition-v2` |
@@ -42,7 +42,8 @@ Governed documents, by raw file bytes:
 
 | document | sha256 |
 |---|---|
-| `data/parser-rq-ab-aozora-classified-source-v1.json` | `4d7728c8cbdd2822400681e1841d39c548fba84dbad59149c802c19081eb5da0` |
+| `data/parser-rq-ab-aozora-classified-source-v1.json` | `f16e27e11da484bc8b9fb3afa0b199af44c614c9897f8fdc29c6f43d95f90598` |
+| `schemas/parser-rq-classified-source-ledger.schema.json` | `b1139dd9f6dcf11ab998a7ad658c038c5f3a4b3c44deec550bb60564f8ad2731` |
 | `schemas/parser-rq-source-recognition-work.schema.json` | `600f7c195e99c8bac5b6102eaadf59d9ff334759dbdaeb7ad1148d4a031c9474` |
 | `schemas/parser-rq-source-recognition-aggregate.schema.json` | `b1c43492208185989fe9e028fc2710ce64f2a4a90952072efc847a101209d1f8` |
 
@@ -50,10 +51,10 @@ Run identities, as the instrument emitted them:
 
 | | |
 |---|---|
-| `policy_hash` | `sha256:69eefe9f…a227e5b1` |
+| `policy_hash` | `sha256:3805facf…0b7231f1` |
 | `qualification_identity_ref` | `sha256:228669fe…1eae1365` (**synthesized**) |
 | `membership_ref` | `sha256:e5268dea…ccb0962c` |
-| `corpus_generation_ref` | `sha256:26d41797…3fe9d57e` |
+| `corpus_generation_ref` | `sha256:2d3e7eff…53be1914` |
 
 The qualification identity is a probe fixture with placeholder mapping, corpus
 and predicate-set hashes. It is what makes this report exploratory rather than
@@ -103,27 +104,58 @@ packaging never being lexed.
 
 | work | metadata | attributed | fold |
 |---|---|---|---|
-| `hashire_merosu` | 1,163 | 211 | 0.181427 |
-| `hatsukoi` | 1,243 | 123 | 0.098954 |
-| `kokoro` | 1,412 | 150 | 0.106232 |
-| **fold** | **3,818** | **484** | **0.126768** |
+| `hashire_merosu` | 1,163 | 660 | 0.567498 |
+| `hatsukoi` | 1,243 | 545 | 0.438455 |
+| `kokoro` | 1,412 | 707 | 0.500708 |
+| **fold** | **3,818** | **1,912** | **0.500786** |
 
-**This supersedes the 0.3002 recorded during Q15 task 5.** That figure counted
-two things that are not attribution:
+Two producers contribute: the colophon fields in the tail, and the fenced
+editorial legend block in the header. The measure has moved twice, and the two
+moves are different in kind.
 
-- the line-ending normalizations the sanitizer emits across the whole file,
-  which are true of every line whether or not anything understands the
-  packaging, and which made the number depend on whether a work used CRLF; and
-- header lines that matched the colophon field shape, including the standard
-  notation legend `《》：ルビ`, which is a `key：value` line by shape and is not
-  publication metadata.
+| | metadata fold | |
+|---|---|---|
+| colophon producer, first draft | 0.3002 | **superseded, wrong** |
+| after the attribution contract | 0.126768 | correction |
+| after the legend classifier | **0.500786** | new coverage |
 
-Attribution is now confined to the tail and to policy-named roles, so 0.126768
-is what the colophon alone accounts for. The drop is a correction, not a
-regression.
+The **0.3002** figure counted two things that are not attribution: the
+line-ending normalizations the sanitizer emits across the whole file, which are
+true of every line whether or not anything understands the packaging and which
+made the number depend on whether a work used CRLF; and header lines matching
+the colophon field shape, including the standard notation legend `《》：ルビ`,
+which is a `key：value` line by shape and is not publication metadata. Confining
+attribution to the tail and to policy-named roles put the colophon's real
+contribution at 0.126768.
 
-Body recognition is unchanged at 0.991129 across that correction, which is the
-check that the metadata producer stayed inside its own population.
+The move from 0.126768 to **0.500786** is the legend classifier, which is
+coverage the instrument did not have before rather than a correction to a
+number it already reported.
+
+Body recognition is unchanged at 0.991129 across both moves. That is the check
+that the metadata producers stayed inside their own population; it is the one
+number that must not move when a metadata producer is added.
+
+### What the remaining 1,809 bytes are
+
+Measured, not estimated, over the same three works:
+
+| | bytes | share |
+|---|---|---|
+| title, author and colophon continuation lines | 1,320 | 73.0% |
+| free-text transcriber remarks (`※…`, `＊…`, bare URLs) | 411 | 22.7% |
+| whitespace and line terminators | 78 | 4.3% |
+
+The largest share is a real typed form with no producer yet: `走れメロス`,
+`太宰治`, and colophon continuation lines like
+`1988（昭和63）年10月25日初版発行` that sit under a field rather than carrying
+their own `key：`. Bibliographic attribution is the obvious next classifier.
+
+The transcriber remarks are prose. They are not a typed form and arguably
+should never be attributed — claiming them would be claiming to understand a
+sentence. If that judgement holds, this instrument's ceiling is below 1.0 by
+construction, which is itself something the predicate's owner needs to know
+before fixing a threshold.
 
 ## Conservation
 
@@ -152,9 +184,17 @@ from the records the index in `<out>/source-recognition-index.json` addresses.
 ## What this does not establish
 
 No threshold. Three hand-picked works under a synthesized identity cannot
-support one, and the metadata instrument still leaves roughly seven eighths of
-packaging bytes unclassified because the editorial legend block and the
-separator rules have no classifier. A threshold fixed against this instrument
-would encode "colophon fields are classified and nothing else is" as a permanent
-governed allowance. Predeclaration belongs to the predicate's owner, after the
-instrument measures what its predicate would claim.
+support one, and the metadata instrument still leaves half of packaging bytes
+unattributed — most of it a bibliographic form that has no producer yet, and
+some of it free prose that may never have one. A threshold fixed here would
+encode the current classifier inventory as a permanent governed allowance.
+Predeclaration belongs to the predicate's owner, after the instrument measures
+what its predicate would claim.
+
+Nor does it establish that the legend classifier generalizes. Its line forms
+were designed against a 597-work random sample of the pinned corpus, in which
+557 headers carry a fenced legend block and the four classified forms cover
+3,561 of 3,631 non-blank block lines; but the *folds* above are three works, and
+the sampling script is exploratory scratch work that is not committed. Running
+the classifier across that sample and publishing the coverage is the next
+measurement worth taking.

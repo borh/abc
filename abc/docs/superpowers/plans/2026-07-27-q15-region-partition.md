@@ -421,11 +421,11 @@ newline fact — two producers must not claim the same byte.
 
 ### Measured, 2026-07-27
 
-| | before task 4 | after | **corrected** |
-|---|---|---|---|
-| body fold | 0.9911 | 0.9911 (unchanged) | **0.991129** |
-| metadata fold | 0.0508 | 0.3002 (1,146 / 3,818) | **0.126768** (484 / 3,818) |
-| cross-region | 850,980 | 850,980 | 850,980 |
+| | before task 4 | after | corrected | **+ legend** |
+|---|---|---|---|---|
+| body fold | 0.9911 | 0.9911 | 0.991129 | **0.991129** |
+| metadata fold | 0.0508 | 0.3002 | 0.126768 | **0.500786** |
+| cross-region | 850,980 | 850,980 | 850,980 | 850,980 |
 
 The body number not moving is the check that the producer stayed in its own
 population. The metadata number is meaningfully below 1.0, which is the honest
@@ -438,9 +438,19 @@ packaging and which made the number depend on a work's line endings; and header
 lines matching the colophon field shape, including the standard notation legend
 `《》：ルビ`, which is a `key：value` line by shape and is not publication
 metadata. With attribution confined to the tail and to policy-named roles the
-fold is **0.126768**, and roughly seven eighths of packaging bytes have no
-classifier. Body recognition is unchanged across the correction. The reproducible
-measurement is
+fold is **0.126768** for the colophon alone.
+
+**The editorial legend classifier landed 2026-07-27** and takes the fold to
+**0.500786**. That move is new coverage rather than a correction: the fenced
+`【テキスト中に現れる記号について】` block, its separator rules, and its entry,
+example and note lines are now classified under a governed `editorial_legend`
+role. Of the 1,809 bytes still unattributed, 73.0% are title, author and
+colophon continuation lines — a real typed form with no producer yet — 22.7%
+are free-text transcriber remarks, and 4.3% are whitespace.
+
+Body recognition is unchanged at 0.991129 across both moves, which is the check
+that each new metadata producer stayed inside its own population. The
+reproducible measurement is
 `docs/reports/parser-rq-region-partition-exploratory-v1.md`.
 
 ### The identity rotation this cost
@@ -568,7 +578,7 @@ precondition is unmet; see *Task 6: not executed, and why*.
 
 The partition is declared, published and asserted; `source_span_coverage` is
 body-projection coverage; metadata attribution exists and is measured.
-Body fold **0.991129**, metadata fold **0.126768**, cross-region conservation
+Body fold **0.991129**, metadata fold **0.500786**, cross-region conservation
 holds. Reproducible measurement:
 `docs/reports/parser-rq-region-partition-exploratory-v1.md`.
 

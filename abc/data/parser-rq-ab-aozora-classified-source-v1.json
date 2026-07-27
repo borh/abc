@@ -1,7 +1,7 @@
 {
   "schema_version": "abc/parser-rq-classified-source-policy/v1",
   "policy_id": "parser-rq-ab-aozora-classified-source-v1",
-  "policy_hash": "sha256:69eefe9fd7b6f6d65a5a02736b27d75b9f20a901acaa4ffc086fca7aa227e5b1",
+  "policy_hash": "sha256:3805facf1f809155412adb0859b45a3133371db7199924b2375c3c840b7231f1",
   "parser": "ab-aozora",
   "coordinate_system": "decoded_utf8",
   "roles": [
@@ -19,6 +19,7 @@
     "container_syntax",
     "terminal_provenance",
     "publication_metadata",
+    "editorial_legend",
     "unrecognized_source_form"
   ],
   "dispositions": [
@@ -29,7 +30,8 @@
     "preserved_opaque"
   ],
   "metadata_attributing_roles": [
-    "publication_metadata"
+    "publication_metadata",
+    "editorial_legend"
   ],
   "accent_mappings": [
     {
@@ -706,6 +708,41 @@
       "disposition": "structural_control",
       "evidence_class": "typed_container",
       "witness_kind": "container_close"
+    },
+    {
+      "construct_id": "editorial_separator_rule",
+      "source_role": "editorial_legend",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "editorial_separator_rule"
+    },
+    {
+      "construct_id": "editorial_legend_heading",
+      "source_role": "editorial_legend",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "editorial_legend_heading"
+    },
+    {
+      "construct_id": "editorial_legend_entry",
+      "source_role": "editorial_legend",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "editorial_legend_entry"
+    },
+    {
+      "construct_id": "editorial_legend_example",
+      "source_role": "editorial_legend",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "editorial_legend_example"
+    },
+    {
+      "construct_id": "editorial_legend_note",
+      "source_role": "editorial_legend",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "editorial_legend_note"
     },
     {
       "construct_id": "publication_metadata_line",

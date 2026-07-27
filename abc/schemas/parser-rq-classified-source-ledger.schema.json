@@ -120,6 +120,7 @@
         "container_syntax",
         "terminal_provenance",
         "publication_metadata",
+        "editorial_legend",
         "unrecognized_source_form"
       ]
     },
@@ -218,6 +219,11 @@
             "body_end",
             "container_close",
             "container_open",
+            "editorial_legend_entry",
+            "editorial_legend_example",
+            "editorial_legend_heading",
+            "editorial_legend_note",
+            "editorial_separator_rule",
             "forced_break",
             "newline",
             "page_break",

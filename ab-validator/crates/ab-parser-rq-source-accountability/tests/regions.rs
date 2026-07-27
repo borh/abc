@@ -39,6 +39,39 @@ const LEGEND_FENCED: &str = concat!(
     "底本：「テスト全集」テスト書房\n",
 );
 
+/// The same shape carrying every legend line form, plus a free-text remark of
+/// the kind the transcriber writes and this producer must not claim.
+const LEGEND_FENCED_WITH_REMARK: &str = concat!(
+    "はつ恋\n",
+    "ツルゲーネフ\n",
+    "\n",
+    "-------------------------------------------------------\n",
+    "【テキスト中に現れる記号について】\n",
+    "\n",
+    "《》：ルビ\n",
+    "（例）金森《かなもり》\n",
+    "　　　（数字は、JIS X 0213の面区点番号）\n",
+    "＊濁点付きの二倍の踊り字は「／″＼」\n",
+    "-------------------------------------------------------\n",
+    "\n",
+    "本文《ほんぶん》の一行目。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+);
+
+/// A fenced pair with no heading. Nothing inside is claimed.
+const FENCE_WITHOUT_HEADING: &str = concat!(
+    "はつ恋\n",
+    "\n",
+    "-------------------------------------------------------\n",
+    "《》：ルビ\n",
+    "-------------------------------------------------------\n",
+    "\n",
+    "本文《ほんぶん》の一行目。\n",
+    "\n",
+    "底本：「テスト全集」テスト書房\n",
+);
+
 fn identity_ref() -> String {
     format!("sha256:{}", "a".repeat(64))
 }
@@ -117,53 +150,143 @@ fn the_published_regions_partition_the_decoded_source() {
     fs::remove_dir_all(root).unwrap();
 }
 
-/// The colophon is classified; the notation legend is not.
-///
-/// `is_colophon_field` is a shape test, and by shape the header's standard
-/// legend line `《》：ルビ` is indistinguishable from `底本：` -- non-empty key,
-/// fullwidth colon, value. Only the tail-region scope of `metadata_entries`
-/// separates them. `LEGEND_FENCED` has carried that legend line since this
-/// suite was written and nothing asserted what the ledger did with it, so
-/// widening the scan back to the header would have gone unnoticed.
-///
-/// The legend must stay unattributed until it has a classifier of its own.
-/// Counting it as `publication_metadata` would inflate metadata attribution
-/// with a construct nothing understands and label it with the wrong role.
-#[test]
-fn the_colophon_is_classified_as_metadata_and_the_notation_legend_is_not() {
-    let root = temp("legend-unattributed");
+/// Every classified line of the fixture, as `(source_form, construct, role)`.
+fn classified(source: &str) -> Vec<(String, String, String)> {
     let generation = capture_generation_from_bytes_for_identity_and_work(
-        LEGEND_FENCED.as_bytes(),
+        source.as_bytes(),
         &identity_ref(),
         "w",
     )
     .unwrap();
     let ledger: Value = serde_json::from_slice(&generation.classified_source_ledger).unwrap();
-    let metadata_lines = ledger["entries"]
+    let mut rows = ledger["entries"]
         .as_array()
         .unwrap()
         .iter()
-        .filter(|entry| entry["construct_id"] == "publication_metadata_line")
+        .filter(|entry| entry["construct_witness"].is_object())
+        .filter(|entry| {
+            let role = entry["source_role"].as_str().unwrap_or_default();
+            role == "publication_metadata" || role == "editorial_legend"
+        })
         .map(|entry| {
-            entry["construct_witness"]["source_form"]
-                .as_str()
-                .unwrap()
-                .to_owned()
+            (
+                entry["construct_witness"]["source_form"]
+                    .as_str()
+                    .unwrap()
+                    .to_owned(),
+                entry["construct_id"].as_str().unwrap().to_owned(),
+                entry["source_role"].as_str().unwrap().to_owned(),
+                entry["start"].as_u64().unwrap(),
+            )
         })
         .collect::<Vec<_>>();
-    assert_eq!(metadata_lines, ["底本：「テスト全集」テスト書房"]);
+    rows.sort_by_key(|row| row.3);
+    rows.into_iter()
+        .map(|(form, construct, role, _)| (form, construct, role))
+        .collect()
+}
 
-    // Stated as its own assertion rather than left to the equality above, so
-    // the reason this line is absent is on the record.
-    assert!(
-        !ledger["entries"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|entry| entry["construct_witness"]["source_form"] == "《》：ルビ"),
-        "the notation legend was classified; it has no classifier yet"
+/// The two `key：value` forms are told apart by region, never by shape.
+///
+/// `底本：「テスト全集」テスト書房` and `《》：ルビ` are the same shape --
+/// non-empty key, fullwidth colon, value -- and mean entirely different things.
+/// The colophon producer scans the tail; the legend producer scans the fenced
+/// block in the header. Nothing about either line's own text distinguishes it,
+/// so a producer that lost its region bound would silently relabel one as the
+/// other, with the wrong role attached.
+#[test]
+fn the_two_key_value_forms_are_separated_by_region_and_not_by_shape() {
+    let rows = classified(LEGEND_FENCED);
+    let colophon = rows
+        .iter()
+        .find(|(form, ..)| form == "底本：「テスト全集」テスト書房")
+        .expect("the colophon line is classified");
+    assert_eq!(
+        (colophon.1.as_str(), colophon.2.as_str()),
+        ("publication_metadata_line", "publication_metadata")
     );
-    fs::remove_dir_all(root).unwrap();
+
+    let legend = rows
+        .iter()
+        .find(|(form, ..)| form == "《》：ルビ")
+        .expect("the legend entry is classified");
+    assert_eq!(
+        (legend.1.as_str(), legend.2.as_str()),
+        ("editorial_legend_entry", "editorial_legend")
+    );
+}
+
+/// The legend block is classified by its fence, and only inside it.
+///
+/// The block is a closed pair of separator rules enclosing a `【...】` heading.
+/// Each line form inside gets its own construct, and a line matching none of
+/// them stays unattributed -- the transcriber's free-text remarks are prose,
+/// not a typed form, and claiming them would be claiming to understand a
+/// sentence.
+///
+/// The title and author lines sit outside the fence and are not claimed here.
+/// They are bibliographic, not notation, and they need a producer of their own.
+#[test]
+fn the_fenced_legend_block_is_classified_line_form_by_line_form() {
+    assert_eq!(
+        classified(LEGEND_FENCED_WITH_REMARK),
+        [
+            (
+                "-------------------------------------------------------".to_owned(),
+                "editorial_separator_rule".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "【テキスト中に現れる記号について】".to_owned(),
+                "editorial_legend_heading".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "《》：ルビ".to_owned(),
+                "editorial_legend_entry".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "（例）金森《かなもり》".to_owned(),
+                "editorial_legend_example".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "（数字は、JIS X 0213の面区点番号）".to_owned(),
+                "editorial_legend_note".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "-------------------------------------------------------".to_owned(),
+                "editorial_separator_rule".to_owned(),
+                "editorial_legend".to_owned()
+            ),
+            (
+                "底本：「テスト全集」テスト書房".to_owned(),
+                "publication_metadata_line".to_owned(),
+                "publication_metadata".to_owned()
+            ),
+        ]
+    );
+}
+
+/// A fence with no heading is a shape this producer has never seen.
+///
+/// Over a 597-work sample of the pinned corpus, every separator-fenced pair in
+/// a header contained exactly one `【...】` heading; not one lacked it. Rather
+/// than guess at an unfamiliar fenced block, the producer declines it entirely,
+/// so those bytes stay unattributed and show up as a gap rather than as
+/// confident nonsense.
+#[test]
+fn a_fenced_block_without_a_heading_is_declined_rather_than_guessed_at() {
+    assert_eq!(
+        classified(FENCE_WITHOUT_HEADING),
+        [(
+            "底本：「テスト全集」テスト書房".to_owned(),
+            "publication_metadata_line".to_owned(),
+            "publication_metadata".to_owned()
+        )]
+    );
 }
 
 #[test]

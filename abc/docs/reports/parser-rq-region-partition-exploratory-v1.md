@@ -181,7 +181,8 @@ unavailable record, no conservation rejection across 25 MB.
 | | bytes | fold |
 |---|---|---|
 | body recognized / eligible | 24,088,179 / 24,382,817 | **0.987916** |
-| metadata attributed / eligible | 662,859 / 697,323 | **0.950577** |
+| metadata attributed / eligible (region denominator) | 662,859 / 697,323 | 0.950577 |
+| metadata attributed / content (**the ratio**) | 662,859 / 662,859 | **1.000000** |
 | body + metadata | 25,080,140 | = decoded, exactly |
 
 Metadata attribution was 0.512965 before the bibliographic classifier, 0.630518
@@ -196,15 +197,16 @@ threshold would be tested against. The distributions are:
 | | min | p05 | median | p95 | max | at 1.0 |
 |---|---|---|---|---|---|---|
 | body recognition | 0.6588 | 0.9689 | 0.9934 | 1.0000 | 1.0000 | **105 / 597** |
-| metadata attribution | 0.9264 | 0.9421 | 0.9486 | 0.9581 | 0.9833 | **0 / 597** |
+| metadata, region denominator (v2) | 0.9264 | 0.9421 | 0.9486 | 0.9581 | 0.9833 | 0 / 597 |
+| metadata attribution (**v3**) | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | **597 / 597** |
 
-**No work reaches 1.0 on metadata attribution, and none can.** The best is
-0.9833. Five rounds of classifiers have moved the median from 0.5384 to 0.9486
-and the minimum from 0.2114 to 0.9264 **without moving a single work to 1.0**,
-and the reason is no longer that packaging is unclassified. It is that the
-denominator counts bytes no construct is allowed to claim — see *What the
-unattributed bytes are* below, which is now the central finding of this report
-rather than a footnote to it.
+**Both rows are the same numerator over two different denominators**, and the
+distance between them is the whole finding of this report. Five rounds of
+classifiers moved the v2 median from 0.5384 to 0.9486 and its minimum from
+0.2114 to 0.9264 without moving one work to 1.0 — and by the end the reason was
+no longer that packaging was unclassified. It was that the denominator counted
+bytes no construct is allowed to claim. See *What the unattributed bytes are*
+below.
 
 **105 of 597 works reach 1.0 on body recognition**, and the median is 0.9934. A
 `:= 1.0` body threshold — the literal currently in the predicate set, declared
@@ -363,8 +365,7 @@ moving "when line endings changed rather than when packaging becomes
 understood" — but excluding terminators from the numerator while keeping them
 in the denominator does not remove that sensitivity, it inverts it.
 
-Three resolutions are available, and choosing among them is a governance act
-this report does not perform:
+Three resolutions were available:
 
 | | reaches | keeps region conservation | line-ending invariant |
 |---|---|---|---|
@@ -372,16 +373,34 @@ this report does not perform:
 | **B.** a construct's span includes its own line terminator | ~0.9900 | yes | approximately |
 | **C.** terminators leave the attribution denominator | 1.000000 | yes, if published alongside | yes |
 
-**C is the recommendation.** It is the only option that makes the measure
-independent of line-ending convention, and it is the only one under which 1.0
-means something achievable — which matters because `:= 1.0` is the literal the
-predicate set already carries. It does not reduce the accounting: the region
-partition and its `header + body + tail == decoded file` invariant are
-untouched, terminators keep their `structural_newline` facts, and the
-attribution ratio simply reports over a declared content denominator published
-next to the region one, so both remain checkable.
+**C was taken, and the instrument now implements it as
+`parser-rq-source-recognition-v3`.** It is the only option that makes the
+measure independent of line-ending convention, and the only one under which
+1.0 means something achievable — which matters because `:= 1.0` is the literal
+the predicate set already carries.
 
-B is rejected for a subtler reason than its arithmetic. It would attribute a
+It does not reduce the accounting. `metadata.eligible_bytes` is still the
+regions whole, still published, and still the term in
+`eligible + metadata.eligible == decoded`; terminators keep their
+`structural_newline` facts and their place in `metadata.unattributed`. What was
+added beside them is `metadata.content_bytes` — the same regions with line
+terminators and wholly blank lines removed — and the attribution ratio is now
+taken over that. Both denominators are in the record, so a reader can compute
+either and neither is inferred.
+
+A wholly blank line leaves the denominator with the terminators, and a line of
+nothing but layout whitespace leaves with it. Counting one and not the other
+would make the measure depend on whether a transcriber's editor stripped
+trailing spaces, which is the failure this instrument already fixed once in
+`region_lines`.
+
+Three invariants guard the new denominator, and each can fail:
+`attributed <= content <= eligible`, `attributed + unattributed_content ==
+content`, and set containment of the attributed intervals inside the content
+intervals. A producer that ever claimed a terminator or a blank line would
+trip the first or the last, rather than quietly scoring above 1.
+
+B was rejected for a subtler reason than its arithmetic. It would attribute a
 terminator whenever the line above it was understood, which is defensible, but
 it leaves the blank-line terminators — 4,688 bytes of the sample are the
 four-line gap every file puts between its body and its colophon — and reaching
@@ -389,13 +408,22 @@ four-line gap every file puts between its body and its colophon — and reaching
 The number would arrive by widening claims until nothing is left to decline,
 which is the failure mode this instrument was built to avoid.
 
-**Under C the sample reads exactly 1.0 for all 597 works, and that is a warning
-as much as a result.** A saturated measure cannot, by itself, distinguish "the
-instrument covers the archive" from "the instrument was fitted to these 597
-works". The held-out sample below is what separates those two, and it comes out
-on the first side — but a predicate owner adopting C should understand that
-they would be adopting a measure that currently passes everything, whose value
-is entirely in what it will refuse later.
+### Under v3 the measure reads 1.000000, and that is a warning as much as a result
+
+**597 of 597 works, and 0 unattributed content bytes.** A saturated measure
+cannot, by itself, distinguish "the instrument covers the archive" from "the
+instrument was fitted to these 597 works". The held-out sample below is what
+separates those two, and it comes out on the first side.
+
+But the predicate owner should read the number for what it is. Under the v2
+denominator, `:= 1.0` was unreachable by construction and therefore obviously
+the wrong threshold. Under v3 it is met by every work of both samples, which
+makes it *look* right and means something different: **a threshold that
+currently refuses nothing.** Its entire value is in what it will refuse when
+the archive produces packaging these classifiers do not know — a header with no
+fence, a colophon field in a form not in the corpus today, a new boilerplate
+sentence. That is a real and useful property, and it is not the same property
+as "the instrument has been validated at 1.0".
 
 ## The held-out sample
 
@@ -412,17 +440,15 @@ works, none of which any classifier was designed against**.
 | works | 597 | 583 |
 | decoded bytes | 25,080,140 | 31,494,853 |
 | body recognition | 0.987916 | **0.988187** |
-| metadata attribution | 0.950577 | **0.950575** |
-| metadata median | 0.9486 | 0.9492 |
-| metadata min | 0.9264 | 0.8908 |
-| metadata max | 0.9833 | 0.9859 |
-| works at metadata 1.0 | 0 / 597 | 0 / 583 |
+| metadata, region denominator (v2) | 0.950577 | **0.950575** |
+| metadata attribution (**v3**) | 1.000000 | **1.000000** |
+| works at metadata 1.0 (v3) | 597 / 597 | **583 / 583** |
 | content bytes unattributed | **0** | **0** |
 
 **Metadata attribution differs between the two samples in the seventh decimal
-place**, and the residue on unseen works is again 100% line terminators and
-blank layout — 33,807 bytes, not one of which carries a non-whitespace
-character. The corpus-wide anchor measurement did its job: the classifiers
+place under the region denominator, and is exactly 1.000000 under the content
+one**, with the residue on unseen works again 100% line terminators and blank
+layout — 33,807 bytes, not one of which carries a non-whitespace character. The corpus-wide anchor measurement did its job: the classifiers
 describe the archive's packaging conventions rather than 597 works' worth of
 them.
 
@@ -431,22 +457,34 @@ work with an unusually high ratio of blank lines to content in its metadata
 regions, which under the current denominator reads as lower attribution — the
 same denominator artefact described above, seen from the other end.
 
-### One work could not be captured at all
+### The held-out sample found what the design sample could not
 
-`capture_generation_from_bytes_for_identity_and_work` failed closed on one of
-the 584 with `duplicate classified-source entry`, over a
-`recovered_verbatim` fact spanning
-`〔George Innes, 1825―1894.〔Albert Biersta\`dt〕` — an unclosed accent bracket
-containing a closed one, which produces two identical facts at one span.
+**One work still yields no measurement, and a second defect behind it.** One of
+the 584 originally failed capture outright with `duplicate classified-source
+entry` over `〔George Innes, 1825―1894.〔Albert Biersta\`dt〕` — an unclosed
+accent bracket containing a closed one. That was fixed; the work now captures
+and then returns `status: unavailable, errors: ["ledger-evidence-invalid"]`,
+because its accent normalization proof does not round-trip.
 
-**This is pre-existing and is not caused by the classifiers**; the same input
-fails identically at `507fc2e7`. Rejecting a duplicate fact rather than
-silently deduplicating it is the designed behaviour and the right one. But the
-consequence is that this work yields no capture, no record and no measurement,
-and a qualification campaign over the full corpus will meet it. Nested
-accent-decomposition brackets are not in the design sample, which is precisely
-why a held-out sample was worth running. It is recorded here and not fixed
-here.
+Chasing that surfaced the more serious finding. **The accent decomposition is
+applied to whole `〔...〕` spans rather than to the sequences that motivate
+them**, so ordinary punctuation is consumed by the mappings: `Innes, ` becomes
+`Inneş` and `hot,` becomes `hoţ`, because `s,`→`ş` and `t,`→`ţ` ate a comma
+that was sentence punctuation. The proof carries
+`inverse_rule: "accent_decomposition"` under `lossless_normalization` — a claim
+that nothing is lost — and it loses a comma. **The round-trip check cannot
+catch it, because the recognition side reproduces the same mapping**; both
+sides make the identical mistake.
+
+**Zero of the 597 design-sample works do this. Four of the 584 held-out works
+do, and three of those four return `status: ok`** — the corrupting
+normalization is accepted and published. Neither defect is caused by the
+classifier work and neither is fixed here; both are recorded in
+`plans/2026-07-28-pre-existing-defects-handoff.md`.
+
+This is what the held-out sample was for. Both defects sit in packaging shapes
+the design sample does not contain, and no amount of re-measuring the design
+sample would have produced either.
 
 ## Reproducing
 

@@ -56,11 +56,24 @@ claim. It also leaves the measure sensitive to line-ending convention in the
 wrong direction: a CRLF work scores strictly lower than a byte-identical LF work
 whose packaging is understood exactly as well.
 
-**Whether to leave that, to let a construct claim its own terminator, or to
-report attribution over a content denominator, is undecided and is a governance
-act.** The exploratory report states the three options, their arithmetic and a
-recommendation; it does not take the decision. Nothing in this record should be
-read as having taken it either. All figures are in
+**That was resolved by moving the ratio onto a content denominator**, and the
+instrument is now `parser-rq-source-recognition-v3`. `metadata.content_bytes`
+is the header and tail with line terminators and wholly blank lines removed;
+`metadata.eligible_bytes` is still the regions whole and still the term in the
+region-conservation identity, so no byte leaves the accounting and both
+denominators are published. Three invariants guard the new one and each can
+fail: `attributed <= content <= eligible`, `attributed + unattributed_content
+== content`, and containment of the attributed intervals within the content
+intervals.
+
+**Under v3 the measure reads 1.000000 on both samples — 597/597 and 583/583,
+with zero unattributed content bytes.** That is a warning as much as a result.
+`:= 1.0` was unreachable by construction under v2 and so was obviously the
+wrong threshold; under v3 it is met everywhere, which makes it look right and
+means something different — a threshold that currently refuses nothing, whose
+value is entirely in what it will refuse when the archive produces packaging
+these classifiers do not know. Predeclaration remains the predicate owner's
+act, and this record does not perform it. All figures are in
 `docs/reports/parser-rq-region-partition-exploratory-v1.md`.
 
 Review of the implementation found four defects, all now closed and all of a
@@ -256,11 +269,16 @@ again 100% line terminators. The classifiers are not fitted to the works they
 were designed against. What remains is the denominator question recorded under
 *Implementation Status*.
 
-**The held-out sample also found a capture that fails closed**, on an unclosed
-accent bracket containing a closed one, which yields two identical
-`recovered_verbatim` facts at one span. It is pre-existing, it is the designed
-behaviour, and it means a corpus-wide campaign will meet works that produce no
-record at all. Recorded in the report; not fixed here.
+**The held-out sample also found two defects the design sample cannot show.**
+One work fails `ledger-evidence-invalid` after an unclosed accent bracket
+containing a closed one. Behind it: accent decomposition is applied to whole
+`〔...〕` spans rather than to the sequences that motivate them, so `Innes, `
+becomes `Inneş` — a `lossless_normalization` proof that loses a comma, which
+the round-trip check cannot catch because both sides reproduce the same
+mapping. Zero of 597 design-sample works, four of 584 held-out works, three of
+those four published as `ok`. Both are pre-existing, neither is fixed here, and
+both are recorded in
+`plans/2026-07-28-pre-existing-defects-handoff.md`.
 
 ## Consequences
 

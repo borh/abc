@@ -10,23 +10,38 @@ const POLICY_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../abc/schemas/parser-rq-classified-source-policy.schema.json");
 const AUTHORITY_BYTES: &[u8] =
     include_bytes!("../../../../abc/data/parser-rq-classified-source-authority-v1.json");
-/// v2 because the measure changed, not because the wire format did.
+/// v3 because the measure changed again, and the wire format with it.
 ///
-/// `eligible_bytes` moved from the whole decoded file to the body region, and
-/// a metadata attribution measure appeared beside it. A v1 and a v2 record can
-/// carry identical field names and identical-looking numbers and mean
-/// different things, which is exactly what a version string exists to prevent.
+/// At v2, `eligible_bytes` moved from the whole decoded file to the body
+/// region and a metadata attribution measure appeared beside it. At v3 the
+/// metadata attribution ratio moved off the region denominator and onto a
+/// content one: `metadata.content_bytes`, the same regions with line
+/// terminators and wholly blank lines removed. See `RecognitionMetadata` for
+/// why. A v2 and a v3 record can carry identical field names and
+/// identical-looking numbers and mean different things, which is exactly what a
+/// version string exists to prevent — and here the v2 fields are all still
+/// present and still mean what they meant, so nothing but the version string
+/// distinguishes a v2 reader's ratio from a v3 one's.
 ///
 /// The predicate set still binds `source_span_coverage` to
 /// `parser-rq-source-recognition-v1` and still asks for `:= 1.0`, a threshold
-/// declared for the old denominator. Because the qualification identity takes
-/// `instrument_versions` FROM the predicate set and the readers require the
-/// record's `instrument_version` to match it, this mismatch makes the
+/// declared for the original denominator. Because the qualification identity
+/// takes `instrument_versions` FROM the predicate set and the readers require
+/// the record's `instrument_version` to match it, this mismatch makes the
 /// observation `:unavailable` rather than letting new semantics be scored
 /// against an old threshold. That is deliberate: the predicate's owner
 /// supplies a compatible contract, and until then qualification is unavailable
 /// rather than wrong.
-const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v2";
+///
+/// **`:= 1.0` is now reachable on the metadata measure, and that raises the
+/// stakes on the predicate owner's decision rather than settling it.** Under
+/// the v2 denominator the literal was unreachable by construction and so was
+/// obviously wrong. Under v3 it is met by every work of both the design and
+/// the held-out sample, which makes it look right and means something
+/// different: a threshold that currently refuses nothing, whose whole value is
+/// in what it will refuse when the archive produces packaging these classifiers
+/// do not know.
+const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v3";
 
 #[derive(Clone, Debug)]
 pub struct RecognitionInput {
@@ -93,14 +108,52 @@ pub struct RecognitionBlobRef {
 /// is claimed about the bytes -- raise the number, and let the line-ending
 /// normalizations the sanitizer emits across the whole file stand in for
 /// knowledge about the packaging.
+///
+/// ## Two denominators, and which one the ratio is over
+///
+/// `eligible_bytes` is the header and tail regions whole. It is what makes the
+/// partition assertable — `eligible + metadata.eligible == decoded`, disjoint —
+/// and it is published for that reason and kept for it.
+///
+/// `content_bytes` is the same regions with **line terminators and wholly
+/// blank lines removed**, and it is the denominator the attribution ratio is
+/// over. A line terminator is not packaging that can be understood or
+/// misunderstood; it is the delimiter between packaging items, present in
+/// identical quantity whether the instrument recognizes every construct or
+/// none. Leaving it in the denominator had two consequences, both wrong:
+///
+/// - the measure could not reach 1.0 however complete the classifiers were,
+///   because 34,464 bytes of a 597-work sample were delimiters no construct is
+///   permitted to claim; and
+/// - **the measure scored a CRLF work strictly below a byte-identical LF work**
+///   whose packaging is understood exactly as well, because CRLF puts two
+///   bytes per line into the denominator where LF puts one. Keeping
+///   `structural_newline` out of `metadata_attributing_roles` was meant to stop
+///   the measure moving with line endings; excluding terminators from the
+///   numerator while keeping them in the denominator did not remove that
+///   sensitivity, it inverted it.
+///
+/// A wholly blank line is excluded on the same footing, and one step further:
+/// a line of nothing but layout whitespace is a blank line spelled
+/// differently, and counting one but not the other would make the measure
+/// depend on whether a transcriber's editor stripped trailing spaces. That is
+/// the failure this instrument already fixed once, in `region_lines`.
+///
+/// This is not a denominator reduction of the kind Q11 rejected. No byte
+/// leaves the accounting: the region totals are still published, still sum to
+/// the decoded file, and still carry their unattributed intervals. What
+/// changed is which of the two published denominators the ratio is taken over.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct RecognitionMetadata {
     pub eligible_bytes: u64,
+    pub content_bytes: u64,
     pub attributed_bytes: u64,
     pub unattributed_bytes: u64,
+    pub unattributed_content_bytes: u64,
     pub attributed: Vec<RecognitionInterval>,
     pub unattributed: Vec<RecognitionInterval>,
+    pub unattributed_content: Vec<RecognitionInterval>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -265,6 +318,33 @@ fn canonical_json(value: &Value) -> Option<Vec<u8>> {
 
 /// One interval for a non-empty range, none for an empty one. An empty region
 /// is legitimate, and an empty interval is not representable.
+/// The content lines of a metadata region: every line carrying at least one
+/// non-whitespace character, its terminator excluded.
+///
+/// The span kept for such a line is the WHOLE line, layout whitespace
+/// included, because that is the span its fact claims — a colophon
+/// continuation is recognized by its indentation, so a denominator that
+/// excluded the indentation would not contain its own numerator.
+///
+/// A line with no non-whitespace character contributes nothing. That covers
+/// the blank line between the body and the colophon, the blank lines between
+/// legend entries, and the handful of lines written as nothing but spaces,
+/// which are the same thing spelled differently.
+fn content_lines(text: &str, region_start: usize, bound: usize) -> Vec<Interval> {
+    let mut intervals = Vec::new();
+    let mut offset = region_start;
+    for raw in text.split_inclusive('\n') {
+        let stripped = raw.trim_end_matches(['\n', '\r']);
+        if !stripped.trim().is_empty()
+            && let Ok(interval) = Interval::new(offset, offset + stripped.len(), bound)
+        {
+            intervals.push(interval);
+        }
+        offset += raw.len();
+    }
+    intervals
+}
+
 fn interval_list(range: &core::ops::Range<usize>, bound: usize) -> Vec<Interval> {
     Interval::new(range.start, range.end, bound)
         .ok()
@@ -292,7 +372,7 @@ fn wire(intervals: &[Interval]) -> Vec<RecognitionInterval> {
 
 fn base_record() -> RecognitionWorkRecord {
     RecognitionWorkRecord {
-        schema_version: "abc/parser-rq-source-recognition-work/v2".to_owned(),
+        schema_version: "abc/parser-rq-source-recognition-work/v3".to_owned(),
         qualification_identity_ref: None,
         capture_generation_ref: None,
         policy_hash: None,
@@ -637,6 +717,22 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     let accounted_in_body = intersect(&accounted, &body);
     let metadata_attributed = intersect(&attributing, &metadata_regions);
     let metadata_unattributed = subtract(&metadata_regions, &attributing);
+    // The attribution denominator: the metadata regions' content lines. See
+    // `RecognitionMetadata` for why the ratio is over this and not over the
+    // regions whole.
+    let metadata_content = normalize(
+        regions
+            .metadata()
+            .iter()
+            .filter_map(|region| {
+                decoded
+                    .get(region.clone())
+                    .map(|text| content_lines(text, region.start, decoded.len()))
+            })
+            .flatten()
+            .collect(),
+    );
+    let metadata_unattributed_content = subtract(&metadata_content, &attributing);
     let semantic_gaps = subtract(&body, &recognized);
     let unaccounted = subtract(&body, &accounted_in_body);
     let accounted = accounted_in_body;
@@ -649,6 +745,8 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
         Ok(metadata_eligible_bytes),
         Ok(metadata_attributed_bytes),
         Ok(metadata_unattributed_bytes),
+        Ok(metadata_content_bytes),
+        Ok(metadata_unattributed_content_bytes),
     ) = (
         total_len(&body),
         total_len(&recognized),
@@ -658,6 +756,8 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
         total_len(&metadata_regions),
         total_len(&metadata_attributed),
         total_len(&metadata_unattributed),
+        total_len(&metadata_content),
+        total_len(&metadata_unattributed_content),
     )
     else {
         return unavailable(record, "recognition-total-overflow");
@@ -674,6 +774,21 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
         != Some(metadata_eligible_bytes)
     {
         return unavailable(record, "metadata-conservation-failed");
+    }
+    // The content denominator has to sit between the numerator and the region
+    // total, and this is the check that it does. If a producer ever claimed a
+    // byte outside a content line -- a terminator, a blank line -- the ratio
+    // would exceed 1 and the first inequality catches it. If `content_lines`
+    // and `region_lines` ever disagreed about where a line starts, the second
+    // catches that. Both are the kind of invariant this partition exists to
+    // make assertable rather than to hope for.
+    if metadata_attributed_bytes > metadata_content_bytes
+        || metadata_content_bytes > metadata_eligible_bytes
+        || metadata_attributed_bytes.checked_add(metadata_unattributed_content_bytes)
+            != Some(metadata_content_bytes)
+        || !subtract(&metadata_attributed, &metadata_content).is_empty()
+    {
+        return unavailable(record, "metadata-content-conservation-failed");
     }
     // The cross-region identity. Body and metadata partition the decoded file,
     // so no byte is measured twice and none is measured by nothing. This is
@@ -700,10 +815,13 @@ pub fn analyze_recognition(input: RecognitionInput) -> RecognitionAnalysis {
     record.unaccounted = Some(wire(&unaccounted));
     record.metadata = Some(RecognitionMetadata {
         eligible_bytes: metadata_eligible_bytes,
+        content_bytes: metadata_content_bytes,
         attributed_bytes: metadata_attributed_bytes,
         unattributed_bytes: metadata_unattributed_bytes,
+        unattributed_content_bytes: metadata_unattributed_content_bytes,
         attributed: wire(&metadata_attributed),
         unattributed: wire(&metadata_unattributed),
+        unattributed_content: wire(&metadata_unattributed_content),
     });
     RecognitionAnalysis { record }
 }

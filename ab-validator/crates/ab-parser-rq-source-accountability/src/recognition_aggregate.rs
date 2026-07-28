@@ -66,6 +66,13 @@ pub struct RecognitionAggregate {
     /// than to the body bytes alone.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata_eligible_bytes: Option<u64>,
+    /// The attribution denominator: the metadata regions with line terminators
+    /// and wholly blank lines removed. The corpus attribution ratio is
+    /// `metadata_attributed_bytes / metadata_content_bytes`; the eligible
+    /// total above is kept so the region partition still sums to the decoded
+    /// bytes. See `RecognitionMetadata`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_content_bytes: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata_attributed_bytes: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -105,8 +112,8 @@ fn semantic_intervals(intervals: &[RecognitionInterval], bound: u64) -> Result<V
 }
 
 const INDEX_SCHEMA: &str = "abc/parser-rq-source-recognition-index/v1";
-const WORK_SCHEMA: &str = "abc/parser-rq-source-recognition-work/v2";
-const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v2";
+const WORK_SCHEMA: &str = "abc/parser-rq-source-recognition-work/v3";
+const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v3";
 const GENERATION_ALGORITHM: &str = "sha256-rfc8785-safe-integer-domain-abc-v1";
 fn valid_hash(value: &str) -> bool {
     value.strip_prefix("sha256:").is_some_and(|digest| {
@@ -391,6 +398,7 @@ pub fn aggregate_recognition(
     let mut gap_bytes = 0_u64;
     let mut unaccounted_bytes = 0_u64;
     let mut metadata_eligible = 0_u64;
+    let mut metadata_content = 0_u64;
     let mut metadata_attributed = 0_u64;
     let mut metadata_unattributed = 0_u64;
     let mut semantic_gaps = Vec::new();
@@ -444,19 +452,26 @@ pub fn aggregate_recognition(
                     unaccounted_bytes = next;
                     let metadata = record.metadata.clone().unwrap_or(RecognitionMetadata {
                         eligible_bytes: 0,
+                        content_bytes: 0,
                         attributed_bytes: 0,
                         unattributed_bytes: 0,
+                        unattributed_content_bytes: 0,
                         attributed: Vec::new(),
                         unattributed: Vec::new(),
+                        unattributed_content: Vec::new(),
                     });
                     let totals = metadata_eligible
                         .checked_add(metadata.eligible_bytes)
                         .zip(metadata_attributed.checked_add(metadata.attributed_bytes))
-                        .zip(metadata_unattributed.checked_add(metadata.unattributed_bytes));
-                    let Some(((next_eligible, next_attributed), next_unattributed)) = totals else {
+                        .zip(metadata_unattributed.checked_add(metadata.unattributed_bytes))
+                        .zip(metadata_content.checked_add(metadata.content_bytes));
+                    let Some((((next_eligible, next_attributed), next_unattributed), next_content)) =
+                        totals
+                    else {
                         errors.push("aggregate-total-overflow".into());
                         break;
                     };
+                    metadata_content = next_content;
                     metadata_eligible = next_eligible;
                     metadata_attributed = next_attributed;
                     metadata_unattributed = next_unattributed;
@@ -486,6 +501,7 @@ pub fn aggregate_recognition(
         gap_bytes,
         unaccounted_bytes,
         metadata_eligible,
+        metadata_content,
         metadata_attributed,
         metadata_unattributed,
     ]
@@ -522,6 +538,7 @@ pub fn aggregate_recognition(
         semantic_gaps: errors.is_empty().then_some(semantic_gaps),
         unaccounted: errors.is_empty().then_some(unaccounted),
         metadata_eligible_bytes: errors.is_empty().then_some(metadata_eligible),
+        metadata_content_bytes: errors.is_empty().then_some(metadata_content),
         metadata_attributed_bytes: errors.is_empty().then_some(metadata_attributed),
         metadata_unattributed_bytes: errors.is_empty().then_some(metadata_unattributed),
         errors: (!errors.is_empty()).then_some(errors),

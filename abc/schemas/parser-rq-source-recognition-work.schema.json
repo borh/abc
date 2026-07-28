@@ -12,7 +12,7 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "abc/parser-rq-source-recognition-work/v2"
+      "const": "abc/parser-rq-source-recognition-work/v3"
     },
     "qualification_identity_ref": {
       "$ref": "#/$defs/hash"
@@ -285,18 +285,27 @@
       }
     },
     "metadata": {
-      "description": "The metadata population: header and tail folded together. They are distinct regions so a failure localizes to one end of the file, but they qualify under one conjunctive predicate, so their totals are folded here. The measure is ATTRIBUTION and not byte accounting: a byte counts only when covered by a fact whose source_role the classified-source policy lists in metadata_attributing_roles, and a preserved_opaque fact never counts because that disposition is the statement that nothing is claimed about the bytes. A byte may therefore be accounted for by some fact and still be unattributed -- a colophon line ending carries a crlf_normalization fact without making the colophon understood.",
+      "description": "The metadata population: header and tail folded together. They are distinct regions so a failure localizes to one end of the file, but they qualify under one conjunctive predicate, so their totals are folded here. The measure is ATTRIBUTION and not byte accounting: a byte counts only when covered by a fact whose source_role the classified-source policy lists in metadata_attributing_roles, and a preserved_opaque fact never counts because that disposition is the statement that nothing is claimed about the bytes. A byte may therefore be accounted for by some fact and still be unattributed. TWO DENOMINATORS ARE PUBLISHED AND THE RATIO IS OVER content_bytes, NOT eligible_bytes. eligible_bytes is the header and tail regions whole, kept because it is what makes the region partition assertable: eligible_bytes + metadata.eligible_bytes == the decoded file, disjoint. content_bytes is the same regions with line terminators and wholly blank lines removed, and it is the attribution denominator. A line terminator is not packaging that can be understood or misunderstood but the delimiter between packaging items, present in identical quantity however much the instrument recognizes; counting it made the measure unreachable at 1.0 by construction and made a CRLF work score strictly below a byte-identical LF work whose packaging is understood exactly as well. A wholly blank line is excluded on the same footing, and a line of nothing but layout whitespace is excluded with it, because otherwise the measure would move according to whether a transcriber left trailing spaces.",
       "type": "object",
       "required": [
         "eligible_bytes",
+        "content_bytes",
         "attributed_bytes",
         "unattributed_bytes",
+        "unattributed_content_bytes",
         "attributed",
-        "unattributed"
+        "unattributed",
+        "unattributed_content"
       ],
       "additionalProperties": false,
       "properties": {
         "eligible_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "content_bytes": {
+          "description": "The attribution denominator. Never greater than eligible_bytes and never less than attributed_bytes; the instrument refuses to emit a record where either fails.",
           "type": "integer",
           "minimum": 0,
           "maximum": 9007199254740991
@@ -307,6 +316,13 @@
           "maximum": 9007199254740991
         },
         "unattributed_bytes": {
+          "description": "Region bytes carrying no attributing fact, terminators and blank lines included. Kept as the region-denominator complement.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unattributed_content_bytes": {
+          "description": "Content bytes carrying no attributing fact: the complement that the ratio is over, and the one that says what packaging was not understood. attributed_bytes + unattributed_content_bytes == content_bytes.",
           "type": "integer",
           "minimum": 0,
           "maximum": 9007199254740991
@@ -315,6 +331,10 @@
           "$ref": "#/$defs/intervals"
         },
         "unattributed": {
+          "$ref": "#/$defs/intervals"
+        },
+        "unattributed_content": {
+          "description": "Where the unattributed content is. This is the interval set a reader wants when asking what packaging the instrument failed to place; unattributed above is dominated by line terminators.",
           "$ref": "#/$defs/intervals"
         }
       }

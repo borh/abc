@@ -88,6 +88,13 @@
       }
     },
     "metadata_eligible_bytes": {
+      "description": "The metadata regions whole, folded across the corpus. Kept because it is what makes the region partition assertable; it is NOT the attribution denominator.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "metadata_content_bytes": {
+      "description": "The attribution denominator, folded across the corpus: the metadata regions with line terminators and wholly blank lines removed. The corpus attribution ratio is metadata_attributed_bytes / metadata_content_bytes. See the work schema's metadata block for why the terminators are excluded.",
       "type": "integer",
       "minimum": 0,
       "maximum": 9007199254740991

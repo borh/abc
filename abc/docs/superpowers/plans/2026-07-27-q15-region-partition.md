@@ -477,9 +477,13 @@ The earlier 0.9270 ceiling was computed from two causes, and one of them —
 layout whitespace — was a defect rather than a ceiling. The remaining cause is
 that `metadata_eligible_bytes` counts delimiters no construct may claim, which
 also makes the measure score a CRLF work strictly below a byte-identical LF one.
-Whether to leave that, to let a construct claim its own terminator, or to report
-attribution over a content denominator is a governance decision that has NOT
-been taken here; the report states the three options and recommends the third.
+That was resolved by moving the ratio onto a content denominator. The
+instrument is now `parser-rq-source-recognition-v3`, `metadata.content_bytes`
+is published beside `metadata.eligible_bytes`, and the measure reads
+**1.000000** on both the design sample (597/597) and the held-out sample
+(583/583), with zero unattributed content bytes. The region-conservation
+identity is untouched. `:= 1.0` is now reachable, which sharpens rather than
+settles the predeclaration question.
 
 Body recognition is unchanged at 0.991129 across all five moves, which is the
 check that each new metadata producer stayed inside its own population. The
@@ -614,10 +618,9 @@ body-projection coverage; metadata attribution exists and is measured.
 Body fold **0.991129**, metadata fold **0.949188** on the three-work control,
 cross-region conservation holds. Across a 597-work random sample of the pinned
 corpus: body **0.987916**, metadata **0.950577**, all 597 `ok`, conservation
-exact — and **no work reaches 1.0 on metadata** (max 0.9833), while only 105 of
-597 reach it on the body. The metadata residue is now entirely line
-terminators, so 1.0 is unreachable by classification and reaching it at all is
-a denominator decision that has not been taken. Reproducible measurement:
+exact. Under the v3 content denominator **every work reaches 1.0 on metadata**
+(597/597, and 583/583 on a held-out sample), while only 105 of 597 reach it on
+the body. Reproducible measurement:
 `docs/reports/parser-rq-region-partition-exploratory-v1.md`.
 
 Neither threshold is fixed, and neither should be carried forward from `:= 1.0`.

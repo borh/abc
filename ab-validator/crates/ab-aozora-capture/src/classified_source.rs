@@ -1103,19 +1103,26 @@ fn reconcile_accent_edit_facts(
         }
 
         // The unique delimiter pair correlates the classifier stream with
-        // this sanitizer edit. Only the pair's accepted text/newline payload
-        // is folded into its whole-form recovery claim. Typed constructs and
-        // additional recovery observations remain independent evidence.
+        // this sanitizer edit. Its accepted text/newline payload and any
+        // nested tortoise delimiter are folded into the whole-form recovery
+        // claim. Other typed constructs and recovery observations remain
+        // independent evidence.
         facts.retain(|fact| {
             if fact.source_span == open || fact.source_span == close {
                 return fact.construct_id != ConstructId::RecoveredVerbatim;
             }
             let inside = owned.start <= fact.source_span.start && fact.source_span.end <= owned.end;
+            let nested_tortoise_delimiter = fact.construct_id == ConstructId::RecoveredVerbatim
+                && decoded
+                    .span_text
+                    .get(fact.source_span.start as usize..fact.source_span.end as usize)
+                    .is_some_and(|source| matches!(source, "〔" | "〕"));
             !inside
-                || !matches!(
-                    fact.construct_id,
-                    ConstructId::PlainText | ConstructId::Newline
-                )
+                || !(nested_tortoise_delimiter
+                    || matches!(
+                        fact.construct_id,
+                        ConstructId::PlainText | ConstructId::Newline
+                    ))
         });
         facts.push(ClassifiedSourceFact {
             source_span: owned,
@@ -1522,6 +1529,19 @@ mod tests {
                 assert!(entries.iter().any(|entry| entry["construct_id"] == "ruby"));
             }
         }
+    }
+
+    #[test]
+    fn nested_accent_bracket_capture_produces_a_valid_generation() {
+        let source = "〔George Innes, 1825―1894.〔Albert Biersta`dt〕";
+        let generation = capture_generation_from_bytes_for_identity_and_work(
+            source.as_bytes(),
+            &qualification_identity_ref(),
+            "nested-accent-bracket",
+        )
+        .unwrap();
+
+        verify_capture_generation(&generation).unwrap();
     }
 
     #[test]

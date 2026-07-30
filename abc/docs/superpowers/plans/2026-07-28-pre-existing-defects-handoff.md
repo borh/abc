@@ -216,4 +216,10 @@ end at the same owner's decision.
 sweep over the same population shows 17,875 of 17,878 attempted works
 capturing and passing every v4 entry-evidence check, with only the 3
 lossy-decoding refusals remaining, and the prose-eating substitution sites
-no longer fire — see each issue's Resolution.)*
+no longer fire — see each issue's Resolution. What a campaign does with the
+3 works that still yield no record is now declared in the tiering design —
+*No-record works, accounted 2026-07-31* in
+`../specs/2026-07-26-parser-rq-corpus-tiering-design.md`: the denominator
+never shrinks silently; carry the work as `:unavailable` or exclude it by a
+governed corpus-entry decision, and the tier-2 report gains a
+`capture_refusals` class beside Q11's declared denominator.)*

@@ -1244,6 +1244,39 @@ claim about future Aozora works, nor a language-conformance claim. The census
 expires when `aozorabunko-src` is bumped; `upstream-ingest-drift-awareness`
 governs that.
 
+#### No-record works, accounted 2026-07-31
+
+Q11's declared denominator covers selection-time losses; there is a second,
+capture-time class that yields no record at all. After the 2026-07-30 accent
+resolutions (`plans/2026-07-30-accent-exact-accounting.md`), the exploratory
+sweep over the same 17,878-work population leaves exactly one such class:
+**3 works refuse lossless Shift-JIS decoding** — undecodable bytes make the
+capture fail closed by design, so the work produces no capture generation, no
+ledger, and no recognition record. (The 23 duplicate-entry failures and the
+3 round-trip failures measured 2026-07-30 were defects and are fixed; these 3
+are not defects.)
+
+The accounting rule for a campaign that meets them: **the denominator never
+shrinks silently.** The recognition instrument holds closed membership between
+the corpus's `expected_work_ids` and its records, so a corpus work with no
+record makes the whole observation `:unavailable` rather than making the ratio
+smaller — the same fail-closed shape as the instrument quarantine. That leaves
+exactly two governed dispositions for a no-record work, both attributable:
+
+- **carry it**, and the campaign reports `:unavailable` until the work decodes
+  or the refusal is reclassified — the default, because it keeps the failure
+  visible in the report itself;
+- **exclude it by a corpus-entry decision** with a recorded reason, which
+  rotates `corpus_list_hash` and hence the qualification identity, so the
+  exclusion is a governed act rather than a quiet denominator edit.
+
+For the tier-2 report this adds one class to Q11's self-describing
+denominator: beside `candidates_considered`, `derive_failures`, and
+`rejected`, a `capture_refusals` set with reasons (`lossy source decoding`
+being the only member class observed so far). Like the others it is a
+projection of data the pipeline already produces — the refusal is the capture
+entry point's own error — not new machinery.
+
 ## Predicate-to-Tier Assignment
 
 Predicates are assigned to the tier whose population can actually falsify them,

@@ -373,10 +373,12 @@ mod tests {
 
     #[test]
     fn accent_growth_digraph_maps_exactly() {
-        let source = "〔m'a〕"; // m' (2 bytes) → ḿ (3 bytes)
+        // `e~` (2 bytes) → ẽ (3 bytes). (`m'` also grows but is a consonant
+        // acute, which the applicability gate declines everywhere.)
+        let source = "〔e~a〕";
         let map = offset_map(source);
-        // sanitized = "〔ḿa〕": 〔=0..3, ḿ=3..6, a=6..7, 〕=7..10
-        assert_eq!(map.source_offset(3), 3); // ḿ start → m' start
+        // sanitized = "〔ẽa〕": 〔=0..3, ẽ=3..6, a=6..7, 〕=7..10
+        assert_eq!(map.source_offset(3), 3); // ẽ start → e~ start
         assert_eq!(map.source_offset(6), 5); // 'a' → source 'a'
         assert_eq!(map.source_offset(10), 9); // end
         assert_map_invariants(source);

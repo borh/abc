@@ -1,7 +1,6 @@
 # Handoff: two pre-existing defects found on 2026-07-28
 
-**Status 2026-07-30: issues 1 and 2 are fully resolved; issue 3's accounting
-layer is resolved and its text-corruption layer is in progress.** The
+**Status 2026-07-30: all three issues are resolved.** The
 diagnosis that unlocked issue 1 is recorded in
 `2026-07-30-accent-exact-accounting.md`: the sanitize stage's accent rewrite
 recorded ONE whole-span offset-map edit per rewritten `〔…〕`, which collapsed
@@ -151,6 +150,22 @@ question about the recovery rule and the notation it models, not a question
 about the ledger, and it should be answered by whoever owns
 `accent_mappings` — the same call issue 1 needs.
 
+**Resolution (2026-07-30).** The per-sequence call was taken, on the
+repository owner's instruction to resolve, and decided from evidence rather
+than by fiat: the archive's own published XHTML for these works composes
+per-sequence (`Bala'zs` → Balázs while `Films,` keeps its comma, in the same
+span), so per-span was never the reference behaviour. `try_match` now gates
+each digraph occurrence through `digraph_applies` — cedilla composes only
+before an ASCII letter, acute only on a vowel base, everything else as
+before — with the rules derived from and validated against ~2.3k
+oracle-labeled sites (99.31% agreement vs 88.29% for compose-everything;
+every residual is a shape the archive's own rendering also corrupts or
+declines to distinguish). Declining leaves the source bytes verbatim, which
+loses nothing. The proof and recognition layers needed no further change:
+per-digraph proofs (issue 1's fix) verify as mapping rows regardless of
+which sites fire. Full derivation in
+`2026-07-30-accent-exact-accounting.md`, *Step B*.
+
 ## Corpus-wide scope, measured 2026-07-30
 
 The scan both issues asked for was run over every `cards/` archive of the
@@ -196,3 +211,9 @@ For campaign accounting: 26 works (0.15% of 17,878) yield no record at all,
 and 73 works (0.41%) yield a published normalization that loses prose
 characters. Both classes trace to the same per-span accent recovery, and both
 end at the same owner's decision.
+
+*(These were the pre-fix figures. After the resolutions above, the re-run
+sweep over the same population shows 17,875 of 17,878 attempted works
+capturing and passing every v4 entry-evidence check, with only the 3
+lossy-decoding refusals remaining, and the prose-eating substitution sites
+no longer fire — see each issue's Resolution.)*

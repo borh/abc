@@ -72,13 +72,40 @@ corruption is in the reader-visible emitted text, not in invertibility.
 
 ## Step B — guard the decomposition (this changes emitted text)
 
-Per-digraph context guard in `try_match`, derived from and validated against
-the XHTML oracle; fail toward leaving source bytes verbatim. Known from
-site classification: `,` composes only before an ASCII letter; `'` on
-consonant bases collides with élision; `:` collides with prose colons and is
-sometimes locally undecidable (`Hai:kai:` vs `Lotze:`) — the oracle decides
-what rule earns its residual. Recognition needs no further change: per-digraph
-proofs verify against the mapping table regardless of which sites fire.
+Per-digraph applicability gate in `try_match` (`digraph_applies`), derived
+from and validated against the XHTML oracle; fail toward leaving source
+bytes verbatim. Recognition needs no change: per-digraph proofs verify
+against the mapping table regardless of which sites fire.
+
+**The oracle.** Every `cards/` archive with accent proofs was aligned
+against its sibling XHTML files, with accent gaiji images
+(`alt="※(アキュートアクセント付きA小文字)"` …) resolved to their composed
+characters. Of 5,031 substitution sites, 2,331 aligned to an unambiguous
+per-site label after excluding two works whose HTML predates accent images.
+The labels separate cleanly on exactly two axes and collapse on a third:
+
+- Cedilla: 52 composed / 3 literal before an ASCII letter; 4 / 149
+  elsewhere. → **compose only before an ASCII letter.**
+- Acute: 765 composed / 3 literal on vowel bases (all three literals from
+  one internally-inconsistent work); 0 composed / 114 literal on consonant
+  bases — French élision, universally left literal by the archive.
+  → **compose only on a vowel base** (`aeiouy`, either case).
+- Colon: 788 composed / 5 literal, but the composed set *includes the
+  archive's own prose-colon corruptions* (`Lotze:` → `Lotzë` in its
+  published XHTML) beside genuine pre-space diaereses (`de la Boë
+  Sylvius`), inconsistently within a single work. No validatable rule
+  exists, so the colon — like every remaining marker, which shows no
+  collision at all — **composes unconditionally**, and the residual is
+  documented rather than guessed at.
+
+**Result.** The gate agrees with the archive's rendering on 2,315 of 2,331
+labeled sites (99.31%); unguarded compose-everything agreed on 2,058
+(88.29%). The 16 residuals: 5 colon sites (above), 4 cedillas the archive
+itself composed before a space (we stay verbatim), 3 tight prose commas
+(`nicht,ihr` — letter follows, so the gate composes), 3 vowel acutes from
+the one inconsistent work, 1 grave inside a `［＃…］` annotation body. Every
+residual in the corrupting direction is a shape the archive's own rendering
+also corrupts or fails to distinguish.
 
 ## Verification
 

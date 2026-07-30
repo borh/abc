@@ -27,9 +27,12 @@
 //! # Scope of use
 //!
 //! The function is **only safe to call on the body of a `〔...〕` span**:
-//! aozora restricts accent decomposition to that convention to avoid
-//! false-matching English text like `text,` (which would otherwise be
-//! decomposed to `texţ` via the legitimate-in-Polish `t,` = ţ entry).
+//! aozora restricts accent decomposition to that convention. Because
+//! transcribers wrap whole foreign passages in `〔…〕`, prose punctuation
+//! occurs *inside* the convention too, so two marker bytes are additionally
+//! gated per occurrence by `digraph_applies` (cedilla only before a letter,
+//! acute only on a vowel base) — corpus-validated against the archive's own
+//! XHTML rendering. `text,` therefore stays `text,` even inside a span.
 
 use std::borrow::Cow;
 
@@ -438,8 +441,8 @@ pub fn decompose_fragment(fragment: &str) -> Cow<'_, str> {
 /// use ab_aozora_syntax::accent::decompose_fragment_edits;
 /// // `ae&` (3 bytes) → æ (2 bytes): a −1 shift at offset 0.
 /// assert_eq!(decompose_fragment_edits("ae&on"), vec![(0, 3, 2)]);
-/// // `m'` (2 bytes) → ḿ (3 bytes): a +1 shift.
-/// assert_eq!(decompose_fragment_edits("m'a"), vec![(0, 2, 3)]);
+/// // `e~` (2 bytes) → ẽ (3 bytes): a +1 shift.
+/// assert_eq!(decompose_fragment_edits("e~a"), vec![(0, 2, 3)]);
 /// // `s&` (2 bytes) → ß (2 bytes): length-preserving, omitted.
 /// assert!(decompose_fragment_edits("stras&e").is_empty());
 /// ```
@@ -468,7 +471,7 @@ pub fn decompose_fragment_edits(fragment: &str) -> Vec<(usize, usize, usize)> {
 /// // `s&` = ß is length-preserving (2→2) and still a site.
 /// assert_eq!(decompose_fragment_sites("stras&e"), vec![(4, 2, 'ß')]);
 /// // A ligature site and a growing site.
-/// assert_eq!(decompose_fragment_sites("ae&m'"), vec![(0, 3, 'æ'), (3, 2, 'ḿ')]);
+/// assert_eq!(decompose_fragment_sites("ae&e~"), vec![(0, 3, 'æ'), (3, 2, 'ẽ')]);
 /// ```
 #[must_use]
 pub fn decompose_fragment_sites(fragment: &str) -> Vec<(usize, usize, char)> {
@@ -493,7 +496,8 @@ pub fn decompose_fragment_sites(fragment: &str) -> Vec<(usize, usize, char)> {
 }
 
 /// Attempt to match a table entry starting at `bytes[i]`. Longest-first
-/// (the spec rule): try 3-byte ligatures before 2-byte digraphs.
+/// (the spec rule): try 3-byte ligatures before 2-byte digraphs, then gate
+/// the match through [`digraph_applies`].
 ///
 /// - **3-byte path**: a 4-arm `match` against the four ligatures
 ///   (`ae&`, `AE&`, `oe&`, `OE&`). `match_ligature` lowers to a tight
@@ -511,10 +515,53 @@ fn try_match(bytes: &[u8], i: usize) -> Option<(usize, char)> {
     }
     if i + 2 <= bytes.len()
         && let Some(&ch) = ACCENT_DIGRAPHS.get(&bytes[i..i + 2])
+        && digraph_applies(bytes[i], bytes[i + 1], bytes.get(i + 2).copied())
     {
         return Some((2, ch));
     }
     None
+}
+
+/// Whether a table digraph is an accent **in this occurrence**, or prose
+/// punctuation that happens to share its shape.
+///
+/// Transcribers wrap whole foreign passages in `〔…〕`, so the span body mixes
+/// notation with ordinary prose and two marker bytes collide with it. The
+/// rules here were derived from — and validated against — the archive's own
+/// XHTML rendering of every accent span in the pinned corpus (5,031
+/// substitution sites, 2,331 of them alignable to an oracle label; see
+/// `abc/docs/superpowers/plans/2026-07-30-accent-exact-accounting.md`):
+///
+/// - **Cedilla (`,`)** composes only before an ASCII letter. Genuine cedilla
+///   sits word-internally (`Franc,ois`, `garc,on`: 52 composed / 3 literal
+///   before a letter), while a comma before space, line end, or `〕` is
+///   sentence punctuation (4 composed / 149 literal). `Films,` stays
+///   `Films,` instead of becoming `Filmş`.
+/// - **Acute (`'`)** composes only on a vowel base (`aeiouy`, either case).
+///   Vowel-base sites are accents in every context, word-final é included
+///   (765 composed / 3 literal); consonant-base sites are French élision or
+///   an apostrophe (`L'art`, `s'e'prennent`, `c'est`: 0 composed / 114
+///   literal). The consonant acute rows (ć ĺ ḿ ń ŕ ś ź) stay in the table —
+///   the policy's closed mapping vocabulary is unchanged — but no corpus
+///   occurrence is genuinely one of them.
+/// - Every other marker composes unconditionally, as before. The grave,
+///   circumflex, macron, tilde, ring, and stroke markers show no prose
+///   collision in the labeled corpus, and the colon's one collision (prose
+///   colons in bibliographies) is a distinction the archive's own rendering
+///   does not make consistently, so no rule can be validated for it.
+///
+/// Declining composes nothing and loses nothing: the bytes stay verbatim in
+/// the emitted text, which is the fail direction this parser prefers.
+#[inline]
+const fn digraph_applies(base: u8, marker: u8, next: Option<u8>) -> bool {
+    match marker {
+        b',' => matches!(next, Some(b) if b.is_ascii_alphabetic()),
+        b'\'' => matches!(
+            base.to_ascii_lowercase(),
+            b'a' | b'e' | b'i' | b'o' | b'u' | b'y'
+        ),
+        _ => true,
+    }
 }
 
 /// Compose a single Latin `letter` with an accent `mark` into its precomposed
@@ -927,12 +974,36 @@ mod tests {
     }
 
     #[test]
-    fn markers_are_greedy_for_any_valid_preceding_base() {
-        // Even when the user might have intended punctuation, the spec rule is
-        // simple: `<base-letter><marker>` decomposes. Call sites must gate by
-        // the 〔〕 wrapper to avoid false-positives on English text.
+    fn ungated_markers_are_greedy_for_any_valid_preceding_base() {
+        // For markers without a prose collision the rule is the spec's:
+        // `<base-letter><marker>` decomposes, even where the author might
+        // have intended punctuation (`` ` `` as a quote here).
         assert_eq!(decompose_fragment("`hello`"), "`hellò"); // o` → ò
-        assert_eq!(decompose_fragment("text,"), "texţ"); // t, → ţ
+    }
+
+    #[test]
+    fn cedilla_composes_only_before_a_letter() {
+        // Word-internal cedilla is notation; a comma before space, end, or
+        // punctuation is prose. Oracle-validated (52/3 vs 4/149).
+        assert_eq!(decompose_fragment("garc,on"), "garçon");
+        assert_eq!(decompose_fragment("Franc,ois"), "François");
+        assert_eq!(decompose_fragment("text,"), "text,");
+        assert_eq!(decompose_fragment("Films, 1930"), "Films, 1930");
+        assert_eq!(decompose_fragment("hot,\ncold,"), "hot,\ncold,");
+    }
+
+    #[test]
+    fn acute_composes_only_on_a_vowel_base() {
+        // French élision (and the English apostrophe) collide with the
+        // consonant acute rows; vowel acutes are accents in every context,
+        // word-final é included. Oracle-validated (765/3 vs 0/114).
+        assert_eq!(decompose_fragment("ve'rite'"), "vérité");
+        assert_eq!(decompose_fragment("L'art"), "L'art");
+        assert_eq!(decompose_fragment("c'est"), "c'est");
+        assert_eq!(decompose_fragment("s'e'prennent"), "s'éprennent");
+        assert_eq!(decompose_fragment("isn't"), "isn't");
+        // ý keeps its vowel-base entry.
+        assert_eq!(decompose_fragment("Nagy'"), "Nagý");
     }
 
     #[test]
@@ -982,10 +1053,12 @@ mod tests {
 
     #[test]
     fn bmp_above_u1e00_digraphs_may_grow_output() {
-        // `m'` → ḿ U+1E3F is 3 bytes; documented growth path.
-        let out = decompose_fragment("m'a");
-        assert_eq!(out, "ḿa");
-        assert!(out.len() > "m'a".len());
+        // `e~` → ẽ U+1EBD is 3 bytes; documented growth path. (`m'` → ḿ
+        // also grows but is a consonant acute, which the applicability gate
+        // declines everywhere.)
+        let out = decompose_fragment("e~a");
+        assert_eq!(out, "ẽa");
+        assert!(out.len() > "e~a".len());
     }
 
     #[test]
@@ -1019,13 +1092,33 @@ mod tests {
     }
 
     #[test]
-    fn property_all_table_entries_round_trip() {
-        // Every table entry, when wrapped in benign context, decomposes to its
-        // target char and only that char.
+    fn property_all_table_entries_round_trip_in_admissible_context() {
+        // Every table entry decomposes to its target char in a context that
+        // satisfies its applicability gate — except the consonant acute rows,
+        // which no context admits (the corpus shows zero genuine uses and
+        // every occurrence is élision or an apostrophe).
         for (pat, ch) in ACCENT_TABLE {
-            let input = format!("_{pat}_");
+            let bytes = pat.as_bytes();
+            let consonant_acute = bytes[bytes.len() - 1] == b'\''
+                && !matches!(
+                    bytes[0].to_ascii_lowercase(),
+                    b'a' | b'e' | b'i' | b'o' | b'u' | b'y'
+                );
+            if consonant_acute {
+                for context in [format!("_{pat}_"), format!("_{pat}a"), pat.to_string()] {
+                    assert_eq!(
+                        decompose_fragment(&context),
+                        context,
+                        "consonant acute {pat:?} must never compose"
+                    );
+                }
+                continue;
+            }
+            // Cedilla needs a following letter; every other entry is
+            // context-free. `a` satisfies both.
+            let input = format!("_{pat}a");
             let out = decompose_fragment(&input);
-            let expected: String = format!("_{ch}_");
+            let expected: String = format!("_{ch}a");
             assert_eq!(*out, *expected, "pattern {pat:?} failed");
         }
     }

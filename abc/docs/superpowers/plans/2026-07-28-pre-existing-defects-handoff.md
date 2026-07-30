@@ -37,8 +37,8 @@ whether a nested `〔` opens a new recovery or is content of the outer one.
 **Why it matters.** The work yields no capture, no record and no measurement.
 A qualification campaign over the full corpus will meet works that produce
 nothing at all, and the campaign's own accounting has to say what it does with
-them. One work in a 584-work held-out sample; the corpus-wide count is not
-known and would be worth a scan before the campaign is designed.
+them. One work in a 584-work held-out sample; the corpus-wide count is 26 —
+see *Corpus-wide scope* below.
 
 **Resolution, partial.** Accent reconciliation now treats a nested tortoise
 delimiter as content of the sanitizer-owned outer recovery span. The ledger
@@ -127,8 +127,8 @@ check that exists to catch exactly this cannot fire.
 the corrupting normalization is accepted and published. The fourth is issue
 1's work, which fails for the additional nested-bracket reason.
 
-Corpus-wide the count is not known; it is worth a scan, since the design sample
-contains none and the held-out sample contains four.
+Corpus-wide the count is 73 works, a lower bound — see *Corpus-wide scope*
+below.
 
 **What the fix probably is, and why it was not taken here.** The span entered
 accent recovery because it contains one real accent sequence. The mappings are
@@ -137,3 +137,49 @@ Deciding whether accent decomposition applies per-span or per-sequence is a
 question about the recovery rule and the notation it models, not a question
 about the ledger, and it should be answered by whoever owns
 `accent_mappings` — the same call issue 1 needs.
+
+## Corpus-wide scope, measured 2026-07-30
+
+The scan both issues asked for was run over every `cards/` archive of the
+pinned checkout — 17,887 archives, the name-sorted first `.txt` member of
+each, the same approximation and population as
+`docs/reports/parser-rq-region-partition-exploratory-v1.md`. The probe is the
+same scratch binary that produced the 0/597 and 4/584 sample figures, built
+against the tree at `3c929a09` (issue 1's nested-bracket fix included). Five
+archives carry no text member and four are unreadable zips; 17,878 works were
+attempted. Exploratory, not a governance input; the scan scripts live in
+session scratch and are not committed.
+
+**Issue 1 generalizes: 23 works fail capture on a duplicate classified-source
+entry, and every one involves a construct nested inside a `〔…〕` accent
+span.** The inner construct is emitted twice — once by the normal path, once
+under the accent recovery — and the ledger fails closed on the duplicate,
+which remains the right behaviour. By duplicated construct: ruby 9, gaiji 5,
+plain text 2, emphasis 1, tate-chū-yoko 1, plus 5 `recovered_verbatim`
+duplicates where the inner construct is itself ruby or another bracket
+(`〔ve'rite'《ヴェリテ》 vraie《ヴレイ》.〕`). The nested-tortoise fix covered
+exactly the nested-`〔` shape — all 4 such works corpus-wide now capture — but
+the general shape is *any* construct inside the span, and that still fails.
+Separately, 3 works fail `lossy source decoding`, a different and designed
+fail-closed path. **Total: 26 of 17,878 works produce no record.**
+
+**Issue 3: 73 works publish corrupted accent normalizations.** 504 works
+carry `accent_decomposition` proofs; the comma-loss criterion used on the
+held-out sample flags 100 of them, 263 proofs. Aligning each proof's source
+and normalized forms and classifying every lost comma by what follows it
+separates the two populations cleanly: **73 works (203 sites) lose a comma
+that is sentence punctuation** (`Paris, Les Presses` → `Pariş`,
+`Der Geist des Films, 1930` → `Der Geist des Filmş`), and 27 works lose only
+commas that are genuine cedilla notation (`Franc,ois` → `François`,
+`garc,on` → `garçon`) — correct decompositions the criterion cannot tell
+apart without alignment. All 73 capture successfully, so the corrupting
+proofs publish under `lossless_normalization`. 73 is a lower bound: the
+criterion only counts commas, and the flagged proofs show a second shape it
+misses — an élision apostrophe consumed as an acute accent,
+`〔L'art, mes enfents` → `〔Ĺarţ mes enfentş` — which no comma-based count
+reaches.
+
+For campaign accounting: 26 works (0.15% of 17,878) yield no record at all,
+and 73 works (0.41%) yield a published normalization that loses prose
+characters. Both classes trace to the same per-span accent recovery, and both
+end at the same owner's decision.

@@ -486,6 +486,17 @@ This is what the held-out sample was for. Both defects sit in packaging shapes
 the design sample does not contain, and no amount of re-measuring the design
 sample would have produced either.
 
+The corpus-wide scan both defects called for was run on 2026-07-30, over all
+17,887 archives of the same population under the same first-text-member
+approximation: **26 works produce no record at all** (23 duplicate
+classified-source entries, every one a construct nested inside a `〔…〕`
+accent span; 3 `lossy source decoding`), and **73 works publish accent
+normalizations that lose prose characters** — a lower bound, from a
+comma-loss criterion with the genuine cedilla decompositions
+(`Franc,ois` → `François`, 27 works) separated out by aligning each proof's
+source and normalized forms. Figures and method are recorded in
+`plans/2026-07-28-pre-existing-defects-handoff.md`, *Corpus-wide scope*.
+
 ## Reproducing
 
 Stage the three works, their parser-IR documents, a probe qualification identity

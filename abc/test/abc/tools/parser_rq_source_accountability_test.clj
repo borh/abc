@@ -56,25 +56,31 @@
   ;; declares a contract for what is now measured. Disagreement must yield
   ;; `:unavailable`, never a value scored against the old threshold.
   ;;
-  ;; The live predicate set still names `parser-rq-source-recognition-v1` while
-  ;; the instrument is at v2, so this is the branch currently taken in
-  ;; production, not a hypothetical one.
+  ;; The quarantine this test once held open was lifted 2026-07-31: the
+  ;; predicate owner redeclared `:= 1.0` for the v4 body denominator, so the
+  ;; predicate set now names the committed instrument. The seam itself is
+  ;; unchanged -- an identity naming any OTHER version must still be refused.
   (is (not (#'rq-source/recognition-identity-valid?
             (assoc-in recognition-identity
                       [:instrument_versions :source_span_coverage]
                       "parser-rq-source-recognition-v1"))))
   (is (= "parser-rq-source-recognition-v4"
-         rq-source/source-recognition-instrument-version))
+         rq-source/source-recognition-instrument-version)))
+
+(deftest predicate-set-binds-the-committed-instrument-with-a-redeclared-threshold
+  ;; Replaces the quarantine assertion that the predicate set still named v1.
+  ;; The binding and the threshold move together: naming the committed
+  ;; instrument is only valid because `:= 1.0` was consciously redeclared for
+  ;; the body-region denominator (any unrecognized eligible byte fails), so
+  ;; this test pins both halves of that act.
   (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
         declared (->> (:predicates predicates)
                       (filter #(= :source_span_coverage (:observed_key %)))
                       first)]
     (is (some? declared))
-    (is (not= rq-source/source-recognition-instrument-version (:instrument declared))
-        "the predicate set now names the committed instrument; if that is
-         intended, the threshold must have been redeclared for the body
-         denominator and this quarantine test should be replaced rather than
-         updated")))
+    (is (= rq-source/source-recognition-instrument-version (:instrument declared)))
+    (is (= {:comparator := :value 1.0} (:expected declared)))
+    (is (= "ratio" (:unit declared)))))
 
 (def production-recognition-fixture-root
   (io/file "test/fixtures/parser-rq/source-recognition-capture"))

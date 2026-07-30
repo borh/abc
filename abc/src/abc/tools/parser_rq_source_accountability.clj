@@ -67,12 +67,15 @@
 
   `recognition-identity-valid?` requires this to equal the identity's
   `instrument_versions.source_span_coverage`, and that value is taken from the
-  predicate set's declared `:instrument`. The predicate set still names v1 and
-  still asks for `:= 1.0` -- a threshold predeclared for the old denominator --
-  so the two disagree and the observation is `:unavailable`. That is the
-  intended state, not an oversight: qualification is unavailable until the
-  predicate's owner supplies a contract compatible with what is now measured,
-  rather than passing under a threshold that was never declared for it."
+  predicate set's declared `:instrument`. From 2026-07-27 to 2026-07-31 the
+  predicate set deliberately kept naming v1 while the instrument moved, so the
+  two disagreed and the observation was `:unavailable` -- qualification held
+  open rather than passing under a threshold predeclared for a denominator
+  that no longer existed. On 2026-07-31 the predicate owner redeclared the
+  contract: the set names v4 and `:= 1.0` is declared for the body-region
+  denominator, so any eligible byte the ledger cannot account for fails the
+  gate. A future semantic change moves this constant again and reopens the
+  same quarantine until the next redeclaration."
   "parser-rq-source-recognition-v4")
 
 (def ^:private diagnostic-gap-policy-v1-hash

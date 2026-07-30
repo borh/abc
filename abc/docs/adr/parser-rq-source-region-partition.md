@@ -350,6 +350,26 @@ a contract for what is now measured. Bumping the predicate set to v2 without
 redeclaring the threshold would restore exactly the defect this quarantine
 exists to stop.
 
+**Quarantine lifted 2026-07-31.** The instrument moved twice more while the
+quarantine held — v3 moved the metadata ratio onto `metadata.content_bytes`,
+v4 made the `accent_decomposition` proof obligation site-local (one policy
+`accent_mappings` row per proof) — and the predicate set kept naming v1
+throughout, so every intermediate state was refused as designed. On
+2026-07-31 the predicate owner redeclared the contract rather than bumping
+the string: the set binds `parser-rq-source-recognition-v4` and `:= 1.0` is
+declared for the body-region denominator, meaning every eligible body byte
+must be accounted for by the classified-source ledger and any unrecognized
+byte fails the gate. The number is the same as the retired whole-file
+threshold; the declaration is not, and the redeclaration is recorded in the
+predicate set itself (`data/parser-release-qualification-predicates.edn`),
+pinned by
+`test/abc/tools/parser_rq_source_accountability_test.clj`
+(`predicate-set-binds-the-committed-instrument-with-a-redeclared-threshold`),
+and rotates `predicate_set_hash` to
+`sha256:a2bee2fe457d59f16919205c99e94e755ab41aa8b5cb04f9eabecd4dd2d94a49`
+(with the resource policy's binding of that hash updated in step). Prior
+captured evidence remains historical under its former identity.
+
 ## Evidence
 
 The implementation is held by tests in `ab-validator/crates/`, which the

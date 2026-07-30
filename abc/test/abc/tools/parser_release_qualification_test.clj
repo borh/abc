@@ -100,7 +100,7 @@
           :dimension "Works exceeding the per-work timeout policy"
           :observed_key :timeouts :expected {:comparator :<= :value 0} :unit "works"}]
         bindings {:fatal-failures "parser-rq-core-attempt-v1"
-                  :source-span-coverage "parser-rq-source-recognition-v1"
+                  :source-span-coverage "parser-rq-source-recognition-v4"
                   :silent-drops "parser-rq-diagnostic-authorization-v1"
                   :wall-time "parser-rq-core-attempt-v1"
                   :timeout-policy "parser-rq-core-attempt-v1"}]

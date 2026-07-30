@@ -622,7 +622,7 @@
     (is (= (:candidate_ref value) (campaign/candidate-ref value)))
     (is (= (:executable_provenance_ref value)
            (campaign/executable-provenance-ref provenance)))
-    (is (= "sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203"
+    (is (= "sha256:a2bee2fe457d59f16919205c99e94e755ab41aa8b5cb04f9eabecd4dd2d94a49"
            (get-in value [:qualification_identity :predicate_set_hash])))
     (is (= (hash/sha256-json-abc-legacy-v0
             (files/read-json

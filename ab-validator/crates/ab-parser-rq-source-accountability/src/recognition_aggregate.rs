@@ -113,7 +113,7 @@ fn semantic_intervals(intervals: &[RecognitionInterval], bound: u64) -> Result<V
 
 const INDEX_SCHEMA: &str = "abc/parser-rq-source-recognition-index/v1";
 const WORK_SCHEMA: &str = "abc/parser-rq-source-recognition-work/v3";
-const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v3";
+const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v4";
 const GENERATION_ALGORITHM: &str = "sha256-rfc8785-safe-integer-domain-abc-v1";
 fn valid_hash(value: &str) -> bool {
     value.strip_prefix("sha256:").is_some_and(|digest| {

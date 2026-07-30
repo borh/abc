@@ -10,18 +10,24 @@ const POLICY_SCHEMA_BYTES: &[u8] =
     include_bytes!("../../../../abc/schemas/parser-rq-classified-source-policy.schema.json");
 const AUTHORITY_BYTES: &[u8] =
     include_bytes!("../../../../abc/data/parser-rq-classified-source-authority-v1.json");
-/// v3 because the measure changed again, and the wire format with it.
+/// v4 because the accent round-trip rule changed; the wire format did not.
 ///
 /// At v2, `eligible_bytes` moved from the whole decoded file to the body
 /// region and a metadata attribution measure appeared beside it. At v3 the
 /// metadata attribution ratio moved off the region denominator and onto a
 /// content one: `metadata.content_bytes`, the same regions with line
 /// terminators and wholly blank lines removed. See `RecognitionMetadata` for
-/// why. A v2 and a v3 record can carry identical field names and
-/// identical-looking numbers and mean different things, which is exactly what a
-/// version string exists to prevent — and here the v2 fields are all still
-/// present and still mean what they meant, so nothing but the version string
-/// distinguishes a v2 reader's ratio from a v3 one's.
+/// why. At v4 the `accent_decomposition` proof obligation changed from "the
+/// whole `〔…〕` span re-decomposes to the normalized form" to "the proof
+/// pair is exactly one row of the policy's `accent_mappings`" — the capture
+/// adapter now proves each digraph substitution at its own site, which is
+/// what makes the obligation checkable at all (a whole-span form conflated
+/// the accent rewrite with CRLF normalization and failed round-trip on any
+/// multi-line span of a CRLF work). A v3 record and a v4 record can carry
+/// identical field names and mean different things, which is exactly what a
+/// version string exists to prevent — the record shape
+/// (`abc/parser-rq-source-recognition-work/v3`) is unchanged, so nothing but
+/// the instrument string distinguishes which obligation the numbers passed.
 ///
 /// The predicate set still binds `source_span_coverage` to
 /// `parser-rq-source-recognition-v1` and still asks for `:= 1.0`, a threshold
@@ -41,7 +47,7 @@ const AUTHORITY_BYTES: &[u8] =
 /// different: a threshold that currently refuses nothing, whose whole value is
 /// in what it will refuse when the archive produces packaging these classifiers
 /// do not know.
-const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v3";
+const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v4";
 
 #[derive(Clone, Debug)]
 pub struct RecognitionInput {
@@ -220,8 +226,7 @@ struct Policy {
     #[serde(rename = "dispositions")]
     _dispositions: Vec<String>,
     metadata_attributing_roles: Vec<String>,
-    #[serde(rename = "accent_mappings")]
-    _accent_mappings: Vec<Value>,
+    accent_mappings: Vec<Value>,
     rules: Vec<PolicyRule>,
 }
 
@@ -372,6 +377,8 @@ fn wire(intervals: &[Interval]) -> Vec<RecognitionInterval> {
 
 fn base_record() -> RecognitionWorkRecord {
     RecognitionWorkRecord {
+        // Record shape is unchanged at the v4 instrument bump; see the
+        // INSTRUMENT_VERSION note for what changed instead.
         schema_version: "abc/parser-rq-source-recognition-work/v3".to_owned(),
         qualification_identity_ref: None,
         capture_generation_ref: None,
@@ -434,36 +441,21 @@ fn policy_allows(policy: &Policy, entry: &LedgerEntry) -> bool {
     })
 }
 
-fn decompose_accent(source: &str, policy: &Policy) -> Option<String> {
-    let body = source.strip_prefix('〔')?.strip_suffix('〕')?;
-    let mut mappings = policy
-        ._accent_mappings
-        .iter()
-        .map(|mapping| {
-            Some((
-                mapping.get("source")?.as_str()?,
-                mapping.get("normalized")?.as_str()?,
-            ))
-        })
-        .collect::<Option<Vec<_>>>()?;
-    mappings.sort_unstable_by_key(|(source, _)| std::cmp::Reverse(source.len()));
-    let mut normalized = String::from("〔");
-    let mut cursor = 0;
-    while cursor < body.len() {
-        if let Some((source, replacement)) = mappings
-            .iter()
-            .find(|(source, _)| body[cursor..].starts_with(source))
-        {
-            normalized.push_str(replacement);
-            cursor += source.len();
-        } else {
-            let character = body[cursor..].chars().next()?;
-            normalized.push(character);
-            cursor += character.len_utf8();
-        }
-    }
-    normalized.push('〕');
-    Some(normalized)
+/// Whether `(source, normalized)` is exactly one row of the policy's
+/// `accent_mappings`.
+///
+/// Since v4 the capture adapter proves each digraph substitution at its own
+/// site, so the obligation is site-local: the proof pair must be a mapping
+/// row verbatim. This is deliberately stronger than re-running a
+/// decomposition — a row lookup cannot be satisfied by two errors that
+/// cancel, and it is independent of *which* sites the parser chooses to
+/// rewrite, so a parser-side applicability rule can change without touching
+/// this instrument.
+fn is_accent_mapping_row(source: &str, normalized: &str, policy: &Policy) -> bool {
+    policy.accent_mappings.iter().any(|mapping| {
+        mapping.get("source").and_then(Value::as_str) == Some(source)
+            && mapping.get("normalized").and_then(Value::as_str) == Some(normalized)
+    })
 }
 
 fn validate_entry_evidence(
@@ -519,8 +511,7 @@ fn validate_entry_evidence(
             "crlf" => proof.source_form == "\r\n" && proof.normalized_form == "\n",
             "bare_cr" => proof.source_form == "\r" && proof.normalized_form == "\n",
             "accent_decomposition" => {
-                decompose_accent(&proof.source_form, policy).as_deref()
-                    == Some(proof.normalized_form.as_str())
+                is_accent_mapping_row(&proof.source_form, &proof.normalized_form, policy)
                     && proof.source_form != proof.normalized_form
             }
             _ => false,

@@ -5,7 +5,7 @@ use std::path::Path;
 
 use ab_aozora_pipeline::{
     ClassifiedSourceDisposition, ClassifiedSourceEvidenceClass, ClassifiedSourceFact,
-    ClassifiedSourceRole, ConstructId, Span, lex,
+    ClassifiedSourceRole, ConstructId, lex,
 };
 use ab_rq_artifact_store::{PublishedBlob, publish_blob};
 use anyhow::{Context, Result, ensure};
@@ -1057,84 +1057,6 @@ fn sanitizer_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Va
     entries
 }
 
-fn reconcile_accent_edit_facts(
-    mut facts: Vec<ClassifiedSourceFact>,
-    decoded: &DecodedSource,
-) -> Vec<ClassifiedSourceFact> {
-    const DELIMITER_BYTES: u32 = 3;
-
-    for diagnostic in &decoded.sanitize_diagnostics {
-        if diagnostic.code() != "aozora::lex::accent_decomposition_applied" {
-            continue;
-        }
-        let edit = diagnostic.span();
-        let Ok(body_offset) = u32::try_from(decoded.span_ctx.body_offset) else {
-            continue;
-        };
-        let Ok(body_len) = u32::try_from(decoded.span_text.len()) else {
-            continue;
-        };
-        let Some(body_end) = body_offset.checked_add(body_len) else {
-            continue;
-        };
-        if edit.start < body_offset
-            || edit.end > body_end
-            || edit.end - edit.start < DELIMITER_BYTES * 2
-        {
-            continue;
-        }
-        let owned = Span::new(edit.start - body_offset, edit.end - body_offset);
-        let open = Span::new(owned.start, owned.start + DELIMITER_BYTES);
-        let close = Span::new(owned.end - DELIMITER_BYTES, owned.end);
-        let is_recovery =
-            |fact: &&ClassifiedSourceFact| fact.construct_id == ConstructId::RecoveredVerbatim;
-        let open_count = facts
-            .iter()
-            .filter(is_recovery)
-            .filter(|fact| fact.source_span == open)
-            .count();
-        let close_count = facts
-            .iter()
-            .filter(is_recovery)
-            .filter(|fact| fact.source_span == close)
-            .count();
-        if open_count != 1 || close_count != 1 {
-            continue;
-        }
-
-        // The unique delimiter pair correlates the classifier stream with
-        // this sanitizer edit. Its accepted text/newline payload and any
-        // nested tortoise delimiter are folded into the whole-form recovery
-        // claim. Other typed constructs and recovery observations remain
-        // independent evidence.
-        facts.retain(|fact| {
-            if fact.source_span == open || fact.source_span == close {
-                return fact.construct_id != ConstructId::RecoveredVerbatim;
-            }
-            let inside = owned.start <= fact.source_span.start && fact.source_span.end <= owned.end;
-            let nested_tortoise_delimiter = fact.construct_id == ConstructId::RecoveredVerbatim
-                && decoded
-                    .span_text
-                    .get(fact.source_span.start as usize..fact.source_span.end as usize)
-                    .is_some_and(|source| matches!(source, "〔" | "〕"));
-            !inside
-                || !(nested_tortoise_delimiter
-                    || matches!(
-                        fact.construct_id,
-                        ConstructId::PlainText | ConstructId::Newline
-                    ))
-        });
-        facts.push(ClassifiedSourceFact {
-            source_span: owned,
-            construct_id: ConstructId::RecoveredVerbatim,
-            source_role: ClassifiedSourceRole::UnrecognizedSourceForm,
-            disposition: ClassifiedSourceDisposition::PreservedOpaque,
-            evidence_class: ClassifiedSourceEvidenceClass::RecoveredVerbatim,
-        });
-    }
-    facts
-}
-
 fn build_ledger(
     bytes: &[u8],
     decoded: &DecodedSource,
@@ -1147,7 +1069,15 @@ fn build_ledger(
     );
     let parser = member_identity("json", parser_output);
     let output = lex(&decoded.span_text);
-    let mut entries = reconcile_accent_edit_facts(output.classified_source_facts, decoded)
+    // Accent-rewritten `〔…〕` spans need no fact reconciliation: the sanitize
+    // offset map records one edit per digraph site, so every classifier fact
+    // inside a rewritten span rebases to its exact source range — delimiters
+    // stay individual recoveries and interiors stay typed, exactly as in a
+    // span the sanitizer never touched. The whole-span reconciliation this
+    // replaced existed to paper over a whole-span offset edit that collapsed
+    // all interior facts onto the span start.
+    let mut entries = output
+        .classified_source_facts
         .into_iter()
         .filter_map(|fact| fact_entry(fact, decoded, &parser))
         .collect::<Vec<_>>();
@@ -1426,8 +1356,7 @@ mod tests {
     fn live_facts(source: &str) -> (DecodedSource, Vec<ClassifiedSourceFact>) {
         let decoded = decode_source_bytes(source.as_bytes()).unwrap();
         let parsed = lex(&decoded.span_text);
-        let facts = reconcile_accent_edit_facts(parsed.classified_source_facts, &decoded);
-        (decoded, facts)
+        (decoded, parsed.classified_source_facts)
     }
 
     fn live_entries(source: &str) -> Vec<Value> {
@@ -1508,27 +1437,83 @@ mod tests {
     }
 
     #[test]
-    fn live_plain_accent_edit_owns_one_recovery_candidate() {
+    fn rewritten_accent_span_keeps_the_literal_tortoise_shape() {
+        // A span the sanitizer rewrites is ledgered exactly like one it never
+        // touched: two 3-byte delimiter recoveries and a typed interior. The
+        // interior plain-text run covers the source digraph bytes (`cafe'`).
         let source = "〔cafe'〕";
         let entries = live_entries(source);
         let recovered = recovered(&entries);
-        assert_eq!(recovered.len(), 1);
-        assert_eq!(recovered[0]["start"], 0);
-        assert_eq!(recovered[0]["end"], source.len() as u64);
+        assert_eq!(recovered.len(), 2);
+        assert_eq!(
+            (recovered[0]["start"].as_u64(), recovered[0]["end"].as_u64()),
+            (Some(0), Some(3))
+        );
+        assert_eq!(
+            (recovered[1]["start"].as_u64(), recovered[1]["end"].as_u64()),
+            (Some(8), Some(11))
+        );
+        assert!(
+            entries
+                .iter()
+                .any(|entry| entry["construct_id"] == "plain_text"
+                    && entry["start"] == 3
+                    && entry["end"] == 8)
+        );
     }
 
     #[test]
-    fn live_accent_edit_correlates_across_newline_and_nested_child() {
-        for source in ["〔a`\nb〕", "〔a`｜青梅《おうめ》〕"] {
-            let entries = live_entries(source);
-            let recovered = recovered(&entries);
-            assert_eq!(recovered.len(), 1, "{source}");
-            assert_eq!(recovered[0]["start"], 0, "{source}");
-            assert_eq!(recovered[0]["end"], source.len() as u64, "{source}");
-            if source.contains('《') {
-                assert!(entries.iter().any(|entry| entry["construct_id"] == "ruby"));
-            }
-        }
+    fn constructs_inside_a_rewritten_span_keep_their_own_source_spans() {
+        // The duplicate-entry capture failures: every fact inside a rewritten
+        // span once rebased to the whole bracketed range, so two same-typed
+        // constructs became byte-identical entries. Ruby beside a digraph
+        // must map to exactly its own source bytes.
+        let source = "〔a`｜青梅《おうめ》〕";
+        let entries = live_entries(source);
+        let ruby: Vec<&Value> = entries
+            .iter()
+            .filter(|entry| entry["construct_id"] == "ruby")
+            .collect();
+        assert_eq!(ruby.len(), 1);
+        let expected_start = source.find('｜').unwrap() as u64;
+        let expected_end = source.rfind('》').unwrap() as u64 + '》'.len_utf8() as u64;
+        assert_eq!(ruby[0]["start"], expected_start);
+        assert_eq!(ruby[0]["end"], expected_end);
+    }
+
+    #[test]
+    fn two_same_typed_constructs_inside_one_rewritten_span_capture_validly() {
+        // The corpus shape that failed closed: two ruby constructs inside one
+        // accent-rewritten span. Under the whole-span collapse both rebased
+        // to identical entries and the ledger (correctly) refused the
+        // duplicate; with per-site edits each keeps its own span.
+        let source = "〔Henri《アンリイ》 De《ド》 Re'gnier《レニエ》〕";
+        let generation = capture_generation_from_bytes_for_identity_and_work(
+            source.as_bytes(),
+            &qualification_identity_ref(),
+            "ruby-inside-accent-span",
+        )
+        .unwrap();
+        verify_capture_generation(&generation).unwrap();
+
+        let ledger: Value = serde_json::from_slice(&generation.classified_source_ledger).unwrap();
+        let ruby_spans: Vec<(u64, u64)> = ledger["entries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|entry| entry["construct_id"] == "ruby")
+            .map(|entry| {
+                (
+                    entry["start"].as_u64().unwrap(),
+                    entry["end"].as_u64().unwrap(),
+                )
+            })
+            .collect();
+        assert_eq!(ruby_spans.len(), 3);
+        assert!(
+            ruby_spans.windows(2).all(|pair| pair[0].1 <= pair[1].0),
+            "ruby spans must be distinct and ordered: {ruby_spans:?}"
+        );
     }
 
     #[test]
@@ -1546,8 +1531,22 @@ mod tests {
 
     #[test]
     fn unrelated_recovery_inside_accent_edit_survives() {
+        // The lexer coalesces the lone `｜` with the adjacent `〕` into one
+        // recovery run. What matters here is that each recovery keeps its own
+        // exact source span beside the rewrite site — nothing claims the
+        // whole bracketed range.
         let entries = live_entries("〔a`｜〕");
-        assert_eq!(recovered(&entries).len(), 2);
+        let recovered = recovered(&entries);
+        assert_eq!(recovered.len(), 2, "{entries:#?}");
+        assert_eq!(
+            (recovered[0]["start"].as_u64(), recovered[0]["end"].as_u64()),
+            (Some(0), Some(3))
+        );
+        assert_eq!(
+            (recovered[1]["start"].as_u64(), recovered[1]["end"].as_u64()),
+            (Some(5), Some(11))
+        );
+        assert_eq!(recovered[1]["construct_witness"]["source_form"], "｜〕");
     }
 
     #[test]
@@ -1563,23 +1562,5 @@ mod tests {
             (recovered[1]["start"].as_u64(), recovered[1]["end"].as_u64()),
             (Some(10), Some(13))
         );
-    }
-
-    #[test]
-    fn ambiguous_duplicate_boundary_fact_is_not_consolidated() {
-        let source = "〔cafe'〕";
-        let decoded = decode_source_bytes(source.as_bytes()).unwrap();
-        let mut facts = lex(&decoded.span_text).classified_source_facts;
-        facts.push(facts[0]);
-        let reconciled = reconcile_accent_edit_facts(facts, &decoded);
-        assert_eq!(
-            reconciled
-                .iter()
-                .filter(|fact| fact.source_span == Span::new(0, 3))
-                .count(),
-            2
-        );
-        assert!(!reconciled.iter().any(|fact| fact.source_span
-            == Span::new(0, u32::try_from(decoded.span_text.len()).unwrap())));
     }
 }

@@ -1,8 +1,25 @@
 # Handoff: two pre-existing defects found on 2026-07-28
 
-**Defect 2 was resolved on 2026-07-28. Defect 1 was partly resolved — the
-capture no longer fails, but the work still yields no measurement, and chasing
-it surfaced a third and more serious defect recorded below as issue 3.** The investigation notes are kept below as the context the fixes and
+**Status 2026-07-30: issues 1 and 2 are fully resolved; issue 3's accounting
+layer is resolved and its text-corruption layer is in progress.** The
+diagnosis that unlocked issue 1 is recorded in
+`2026-07-30-accent-exact-accounting.md`: the sanitize stage's accent rewrite
+recorded ONE whole-span offset-map edit per rewritten `〔…〕`, which collapsed
+every classifier fact inside the span onto the whole bracketed range — two
+same-typed constructs became byte-identical ledger entries and the ledger
+failed closed, which was the entire duplicate class (23 works corpus-wide).
+The rewrite now records one edit and one diagnostic per digraph substitution
+site, the whole-span reconciliation workaround is deleted, accent
+normalization proofs are per-digraph (`s,` → `ş` at its own offsets, so a
+proof can never span a line ending), and the recognition instrument is
+`parser-rq-source-recognition-v4`: an `accent_decomposition` proof must be
+exactly one row of the policy's `accent_mappings`. Re-run corpus-wide, all
+23 duplicate-failure works and all 3 multi-line-span works capture and
+validate with zero failing entries; only the 3 `lossy source decoding`
+works remain refused, which is the designed fail-closed on undecodable
+bytes.
+
+The investigation notes are kept below as the context the fixes and
 their regression tests were built from; each issue's *Resolution* records what
 was done. Neither defect was caused by the parser-RQ classifier work on this
 branch. Both were found by running that work's verification wider than the
@@ -40,20 +57,16 @@ nothing at all, and the campaign's own accounting has to say what it does with
 them. One work in a 584-work held-out sample; the corpus-wide count is 26 —
 see *Corpus-wide scope* below.
 
-**Resolution, partial.** Accent reconciliation now treats a nested tortoise
-delimiter as content of the sanitizer-owned outer recovery span. The ledger
-continues to reject genuine duplicate facts, and a capture-generation
-regression covers the reported source form. **Capture succeeds; the work is
-still not measurable.** Re-run through the real recognition path it now returns
-
-```
-status: unavailable, errors: ["ledger-evidence-invalid"]
-```
-
-because the accent normalization proof over that span does not round-trip. The
-failure moved one stage later rather than closing. What it exposed is issue 3,
-which is the reason it does not round-trip and is worth more than this work
-is.
+**Resolution (2026-07-30, superseding the partial one).** The root cause was
+not in the recovery rule at all: the sanitize offset map's whole-span accent
+edit collapsed every fact inside a rewritten span onto the span start, and
+"two facts with identical spans" was that collapse, not a double emission.
+With per-site offset-map edits the collapse is gone, the interim
+nested-tortoise reconciliation (`916d422f`) is deleted as moot, and this work
+captures and validates end to end — the `ledger-evidence-invalid` it still
+returned after the interim fix was the whole-span proof conflating the accent
+rewrite with CRLF normalization, which per-digraph proofs end by
+construction. See `2026-07-30-accent-exact-accounting.md`.
 
 **To reproduce.** The work is the sole `.txt` of the archive whose sample
 `work_id` is `9d75d3d65ed3308c`, in the `random.seed(20260728)` draw described

@@ -367,8 +367,9 @@ pub enum Diagnostic {
         ),
         severity(Advice),
         help(
-            "the `〔…〕` accent span was rewritten to its combined Unicode form; \
-             this is expected and round-trips back to the source on serialize"
+            "an accent digraph inside a `〔…〕` span was rewritten to its combined \
+             Unicode form (one note per digraph); this is expected and round-trips \
+             back to the source on serialize"
         )
     )]
     AccentDecompositionApplied {

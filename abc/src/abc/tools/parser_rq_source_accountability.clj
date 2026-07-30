@@ -48,16 +48,22 @@
 (def source-recognition-instrument-version
   "The committed source-recognition instrument.
 
-  v3 because the MEASURE changed twice. At v2, `eligible_bytes` moved from the
-  whole decoded file to the body region and a metadata attribution measure
-  appeared beside it. At v3 the metadata ratio moved off the region denominator
-  onto `metadata.content_bytes` -- the same regions with line terminators and
-  wholly blank lines removed -- because a terminator is a delimiter between
-  packaging items rather than packaging that can be understood, and counting it
-  both capped the measure below 1.0 by construction and scored a CRLF work
-  below a byte-identical LF one. Records at each version carry the same field
-  names and can carry similar-looking numbers while meaning different things,
-  which is what a version string exists to prevent.
+  v4 because the instrument's obligations changed three times. At v2,
+  `eligible_bytes` moved from the whole decoded file to the body region and a
+  metadata attribution measure appeared beside it. At v3 the metadata ratio
+  moved off the region denominator onto `metadata.content_bytes` -- the same
+  regions with line terminators and wholly blank lines removed -- because a
+  terminator is a delimiter between packaging items rather than packaging that
+  can be understood, and counting it both capped the measure below 1.0 by
+  construction and scored a CRLF work below a byte-identical LF one. At v4 the
+  `accent_decomposition` proof obligation became site-local: the proof pair
+  must be exactly one row of the policy's `accent_mappings`, because the
+  capture adapter now proves each digraph substitution at its own site rather
+  than claiming a whole `〔…〕` span (a whole-span form conflated the accent
+  rewrite with CRLF normalization and failed round-trip on any multi-line
+  span of a CRLF work). The record shape is unchanged at v4; records at each
+  version can carry the same field names and similar-looking numbers while
+  meaning different things, which is what a version string exists to prevent.
 
   `recognition-identity-valid?` requires this to equal the identity's
   `instrument_versions.source_span_coverage`, and that value is taken from the
@@ -67,7 +73,7 @@
   intended state, not an oversight: qualification is unavailable until the
   predicate's owner supplies a contract compatible with what is now measured,
   rather than passing under a threshold that was never declared for it."
-  "parser-rq-source-recognition-v3")
+  "parser-rq-source-recognition-v4")
 
 (def ^:private diagnostic-gap-policy-v1-hash
   "sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5")

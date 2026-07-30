@@ -36,7 +36,7 @@
 (def recognition-identity
   (assoc-in qualification-identity
             [:instrument_versions :source_span_coverage]
-            "parser-rq-source-recognition-v3"))
+            "parser-rq-source-recognition-v4"))
 
 (def recognition-identity-ref
   (qualification/qualification-identity-ref recognition-identity))
@@ -63,7 +63,7 @@
             (assoc-in recognition-identity
                       [:instrument_versions :source_span_coverage]
                       "parser-rq-source-recognition-v1"))))
-  (is (= "parser-rq-source-recognition-v3"
+  (is (= "parser-rq-source-recognition-v4"
          rq-source/source-recognition-instrument-version))
   (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
         declared (->> (:predicates predicates)

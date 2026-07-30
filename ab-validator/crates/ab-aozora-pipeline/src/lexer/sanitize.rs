@@ -53,7 +53,7 @@ use std::borrow::Cow;
 use memchr::memmem;
 
 use ab_aozora_syntax::Span;
-use ab_aozora_syntax::accent::decompose_fragment;
+use ab_aozora_syntax::accent::decompose_fragment_sites;
 
 use crate::{BLOCK_CLOSE_SENTINEL, BLOCK_LEAF_SENTINEL, BLOCK_OPEN_SENTINEL, INLINE_SENTINEL};
 use ab_aozora_spec::Diagnostic;
@@ -418,26 +418,30 @@ pub fn rewrite_accent_spans(input: &str) -> String {
 
 /// As [`rewrite_accent_spans`], but additionally pushes one
 /// [`Diagnostic::accent_decomposition_applied`] (a `Note`) for every
-/// `〔…〕` span whose body is actually rewritten — i.e. a digraph was
-/// decomposed (`decompose_fragment` returns a value differing from the
-/// body); a `〔…〕` that contains no accent digraph is silent.
+/// digraph **substitution site** inside a `〔…〕` span; a `〔…〕` that
+/// contains no accent digraph is silent.
 ///
-/// Spans are reported in **output (post-decomposition) coordinates**.
-/// Accent decomposition is *not* byte-length-preserving (unlike the PUA
-/// neutralization pass), so an input-coordinate span would slide once the
-/// first digraph changes width. The downstream stages — and the CLI's
-/// miette renderer — see the rewritten text, so output coordinates put
-/// the caret on the right characters. The span brackets the whole
-/// `〔decomposed〕` run (open through close).
+/// Spans are reported in **output (post-decomposition) coordinates** and
+/// bracket exactly the replacement character. Accent decomposition is
+/// *not* byte-length-preserving (unlike the PUA neutralization pass), so
+/// an input-coordinate span would slide once the first digraph changes
+/// width. The downstream stages — and the CLI's miette renderer — see the
+/// rewritten text, so output coordinates put the caret on the right
+/// character.
 fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic>) -> String {
     rewrite_accent_spans_collecting_core(input, diagnostics, None)
 }
 
 /// Core of [`rewrite_accent_spans_collecting`]; when `edits` is `Some`,
-/// records one [`MapEdit`] per rewritten `〔...〕` span — whole bracketed
-/// run (open through close) in THIS step's input coordinates to the same
-/// run in its output coordinates — since accent decomposition is not
-/// byte-length-preserving inside the span (offset-map groundwork).
+/// records one [`MapEdit`] per digraph substitution — the source digraph
+/// bytes to the replacement character, in THIS step's input/output
+/// coordinates. Length-preserving substitutions (`s&` = ß, `s,` = ş) are
+/// recorded too: an edit marks "these bytes were rewritten", exactly as the
+/// width-equal lone-`\r` → `\n` normalization does. Bytes *between* sites
+/// carry no edit, so every unrewritten byte inside a span keeps its exact
+/// source position — a whole-span edit here once collapsed every interior
+/// fact onto the span start, which manufactured byte-identical
+/// classified-source entries out of distinct constructs.
 fn rewrite_accent_spans_collecting_core(
     input: &str,
     diagnostics: &mut Vec<Diagnostic>,
@@ -466,18 +470,13 @@ fn rewrite_accent_spans_collecting_core(
         let close_abs = after_open + close_rel;
 
         let body = &input[after_open..close_abs];
-        let decomposed = decompose_fragment(body);
-
-        // Capture the output-coordinate span around the three pushes so
-        // the recorded offsets track the rewritten buffer, not the input.
-        let out_open = out.len();
         out.push(TORTOISE_OPEN);
-        out.push_str(&decomposed);
-        out.push(TORTOISE_CLOSE);
-        let out_close = out.len();
-
-        let src_end = close_abs + TORTOISE_CLOSE.len_utf8();
-        if decomposed.as_ref() != body {
+        let mut body_cursor = 0;
+        for (site_off, in_len, replacement) in decompose_fragment_sites(body) {
+            out.push_str(&body[body_cursor..site_off]);
+            let dst_start = out.len();
+            out.push(replacement);
+            let dst_end = out.len();
             // `out.len()` fits u32 by the same sanitize-entry length cap
             // that bounds the PUA scan; accent decomposition only ever
             // adds a bounded handful of combining bytes per digraph.
@@ -486,20 +485,23 @@ fn rewrite_accent_spans_collecting_core(
                 reason = "sanitized text length <= u32::MAX is asserted at sanitize entry"
             )]
             diagnostics.push(Diagnostic::accent_decomposition_applied(Span::new(
-                out_open as u32,
-                out_close as u32,
+                dst_start as u32,
+                dst_end as u32,
             )));
             if let Some(e) = edits.as_deref_mut() {
                 e.push(MapEdit {
-                    src_start: open_abs,
-                    src_end,
-                    dst_start: out_open,
-                    dst_end: out_close,
+                    src_start: after_open + site_off,
+                    src_end: after_open + site_off + in_len,
+                    dst_start,
+                    dst_end,
                 });
             }
+            body_cursor = site_off + in_len;
         }
+        out.push_str(&body[body_cursor..]);
+        out.push(TORTOISE_CLOSE);
 
-        cursor = src_end;
+        cursor = close_abs + TORTOISE_CLOSE.len_utf8();
     }
 
     out
@@ -1277,6 +1279,70 @@ mod tests {
         assert_eq!(m.to_source_offset(3), 6); // \n ← \r\n start
         assert_eq!(m.to_source_end(4), 8); // end of \n ← end of \r\n
         assert_eq!(m.to_source_offset(4), 8); // い
+    }
+
+    #[test]
+    fn bytes_between_accent_sites_keep_exact_source_positions() {
+        // `〔Henri《ア》 Re'gnier《レ》〕`: one digraph site (`e'` → é). Every
+        // byte outside that site — the ruby runs before AND after it — must
+        // translate to its own source position, not to the span start. The
+        // old whole-span edit collapsed all of them onto `〔`, which
+        // manufactured byte-identical ledger entries out of distinct
+        // constructs (the corpus-wide duplicate-entry capture failures).
+        let src = "〔Henri《ア》 Re'gnier《レ》〕";
+        let out = sanitize_mapped(src);
+        let dst = out.text.as_ref();
+        assert_eq!(dst, "〔Henri《ア》 Régnier《レ》〕");
+        for needle in ["《ア》", "《レ》", "Henri", "gnier"] {
+            let d = dst.find(needle).unwrap();
+            let s = src.find(needle).unwrap();
+            assert_eq!(
+                out.maps.to_source_offset(d),
+                s,
+                "{needle:?} start must map to its own source position"
+            );
+            assert_eq!(
+                out.maps.to_source_end(d + needle.len()),
+                s + needle.len(),
+                "{needle:?} end must map to its own source position"
+            );
+            assert!(!out.maps.is_edited(d), "{needle:?} is not a rewrite site");
+        }
+        // The site itself: é maps back to exactly the 2-byte digraph.
+        let site = dst.find('é').unwrap();
+        assert!(out.maps.is_edited(site));
+        assert_eq!(out.maps.to_source_offset(site), src.find("e'").unwrap());
+        assert_eq!(
+            out.maps.to_source_end(site + 'é'.len_utf8()),
+            src.find("e'").unwrap() + 2
+        );
+    }
+
+    #[test]
+    fn each_accent_site_gets_its_own_diagnostic_bracketing_the_replacement() {
+        // Two digraphs in one span → two Notes, each on its replacement
+        // character in output coordinates — not one whole-span Note.
+        let out = sanitize("〔ve'rite'〕");
+        let dst = out.text.as_ref();
+        assert_eq!(dst, "〔vérité〕");
+        let spans: Vec<(usize, usize)> = out
+            .diagnostics
+            .iter()
+            .filter(|d| d.code() == "aozora::lex::accent_decomposition_applied")
+            .map(|d| (d.span().start as usize, d.span().end as usize))
+            .collect();
+        let expected: Vec<(usize, usize)> = dst
+            .match_indices('é')
+            .map(|(i, m)| (i, i + m.len()))
+            .collect();
+        assert_eq!(spans, expected);
+        // A span whose body has no digraph stays silent.
+        assert!(
+            sanitize("〔plain〕")
+                .diagnostics
+                .iter()
+                .all(|d| d.code() != "aozora::lex::accent_decomposition_applied")
+        );
     }
 
     /// Width-equality is not unedited-ness: lone `\r`→`\n` is a

@@ -89,10 +89,12 @@ fn capture_rebases_bom_crlf_accent_and_excludes_inserted_bytes() {
             })
         })
         .collect::<Vec<_>>();
+    // The accent proof brackets exactly the source digraph (`e'`), not the
+    // whole `〔cafe'〕` span: substitutions are proven at their own sites.
     assert_eq!(
         normalization_spans,
         vec![
-            ("accent_decomposition", 35, 46),
+            ("accent_decomposition", 41, 43),
             ("crlf", 1, 3),
             ("crlf", 33, 35)
         ],

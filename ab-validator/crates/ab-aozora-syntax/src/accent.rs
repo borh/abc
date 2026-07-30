@@ -445,18 +445,42 @@ pub fn decompose_fragment(fragment: &str) -> Cow<'_, str> {
 /// ```
 #[must_use]
 pub fn decompose_fragment_edits(fragment: &str) -> Vec<(usize, usize, usize)> {
+    decompose_fragment_sites(fragment)
+        .into_iter()
+        .filter(|&(_, in_len, ch)| in_len != ch.len_utf8())
+        .map(|(off, in_len, ch)| (off, in_len, ch.len_utf8()))
+        .collect()
+}
+
+/// Every substitution [`decompose_fragment`] makes, length-preserving ones
+/// included.
+///
+/// Each entry is `(in_off, in_len, replacement)`: the `in_len` input bytes at
+/// `in_off` become `replacement`. [`decompose_fragment_edits`] is this list
+/// filtered to the length-changing entries. The unfiltered list exists for
+/// callers that need the substitution **sites** rather than the offset
+/// deltas — the sanitize stage records one diagnostic and one offset-map
+/// edit per site so that bytes between sites keep exact source positions (a
+/// whole-span edit would collapse every interior fact onto the span start).
+///
+/// ```
+/// use ab_aozora_syntax::accent::decompose_fragment_sites;
+/// // `s&` = ß is length-preserving (2→2) and still a site.
+/// assert_eq!(decompose_fragment_sites("stras&e"), vec![(4, 2, 'ß')]);
+/// // A ligature site and a growing site.
+/// assert_eq!(decompose_fragment_sites("ae&m'"), vec![(0, 3, 'æ'), (3, 2, 'ḿ')]);
+/// ```
+#[must_use]
+pub fn decompose_fragment_sites(fragment: &str) -> Vec<(usize, usize, char)> {
     let bytes = fragment.as_bytes();
-    let mut edits = Vec::new();
+    let mut sites = Vec::new();
     if !bytes.iter().any(|b| is_accent_marker(*b)) {
-        return edits;
+        return sites;
     }
     let mut i = 0;
     while i < bytes.len() {
         if let Some((pat_len, ch)) = try_match(bytes, i) {
-            let out_len = ch.len_utf8();
-            if pat_len != out_len {
-                edits.push((i, pat_len, out_len));
-            }
+            sites.push((i, pat_len, ch));
             i += pat_len;
         } else {
             let Some(ch) = fragment.get(i..).and_then(|s| s.chars().next()) else {
@@ -465,7 +489,7 @@ pub fn decompose_fragment_edits(fragment: &str) -> Vec<(usize, usize, usize)> {
             i += ch.len_utf8();
         }
     }
-    edits
+    sites
 }
 
 /// Attempt to match a table entry starting at `bytes[i]`. Longest-first
@@ -962,6 +986,36 @@ mod tests {
         let out = decompose_fragment("m'a");
         assert_eq!(out, "ḿa");
         assert!(out.len() > "m'a".len());
+    }
+
+    #[test]
+    fn sites_agree_with_decompose_and_edits_filter_them() {
+        // Sites replay to the same output decompose_fragment produces, and
+        // the edits list is exactly the length-changing subset — the two
+        // functions cannot drift apart without failing here.
+        for input in ["stras&e", "ae&on m'a", "ve'rite'", "text,", "plain", ""] {
+            let sites = decompose_fragment_sites(input);
+            let edits = decompose_fragment_edits(input);
+            assert_eq!(
+                edits,
+                sites
+                    .iter()
+                    .copied()
+                    .filter(|&(_, in_len, ch)| in_len != ch.len_utf8())
+                    .map(|(off, in_len, ch)| (off, in_len, ch.len_utf8()))
+                    .collect::<Vec<_>>(),
+                "edits must be the length-changing sites for {input:?}"
+            );
+            let mut replayed = String::new();
+            let mut cursor = 0;
+            for &(off, in_len, ch) in &sites {
+                replayed.push_str(&input[cursor..off]);
+                replayed.push(ch);
+                cursor = off + in_len;
+            }
+            replayed.push_str(&input[cursor..]);
+            assert_eq!(replayed, decompose_fragment(input), "replay for {input:?}");
+        }
     }
 
     #[test]

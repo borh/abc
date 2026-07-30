@@ -47,10 +47,16 @@ fn accent_decomposition_fires_as_note() {
 }
 
 #[test]
-fn accent_decomposition_one_note_per_decomposed_span() {
-    // Two distinct `〔…〕` digraphs → two notes.
+fn accent_decomposition_one_note_per_substitution_site() {
+    // Two spans with one digraph each → two notes.
     assert_eq!(
         count_code("前〔a`〕中〔e'〕後", codes::ACCENT_DECOMPOSITION_APPLIED),
+        2
+    );
+    // Two digraphs inside ONE span also → two notes: the note is per
+    // substitution site, bracketing the replacement character, not per span.
+    assert_eq!(
+        count_code("前〔ve'rite'〕後", codes::ACCENT_DECOMPOSITION_APPLIED),
         2
     );
 }

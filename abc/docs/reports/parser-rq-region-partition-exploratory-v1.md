@@ -497,6 +497,16 @@ comma-loss criterion with the genuine cedilla decompositions
 source and normalized forms. Figures and method are recorded in
 `plans/2026-07-28-pre-existing-defects-handoff.md`, *Corpus-wide scope*.
 
+Later the same day the duplicate class was resolved at its root — the
+sanitize offset map recorded one whole-span edit per rewritten accent span,
+collapsing every interior fact onto the whole bracketed range — and the
+recognition instrument moved to `parser-rq-source-recognition-v4`, whose
+`accent_decomposition` obligation is one policy mapping row per proof.
+Re-run over the same 17,887 archives, **17,875 of 17,878 attempted works
+capture and pass every entry-evidence check**; the 3 refusals are the
+designed `lossy source decoding` fail-closed. The design details are in
+`plans/2026-07-30-accent-exact-accounting.md`.
+
 ## Reproducing
 
 Stage the three works, their parser-IR documents, a probe qualification identity

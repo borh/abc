@@ -379,6 +379,21 @@ cite, not an absence of evidence, and it is worth naming rather than working
 around. The same gap is recorded in
 [parser-rq-retire-node-span-coverage](parser-rq-retire-node-span-coverage.md).
 
+**Gap closed and evidence attached 2026-07-31.** Evidence paths are now
+monorepo-root-relative and crate integration tests are citable. c1 cites
+`regions.rs` (conservation asserted from the published record) and
+`recognition_corpus.rs` (malformed region sets rejected, fail-closed); c2
+cites `regions.rs` (numerator containment; the two populations still sum to
+the file); c3 additionally cites `regions.rs` (region-not-shape separation of
+the key–value forms; CRLF facts outside the body); c5 cites the
+redeclared-threshold binding test after `source_span_coverage`'s `:= 1.0`
+was consciously redeclared against the body denominator on 2026-07-31 (the
+metadata threshold stays unpredeclared, as the claim requires); c6 cites
+`regions.rs` (the tail slice includes the byte the body end trimmed —
+`[body_end, len)`, not `[tail_start, len)`). c4 remains unevidenced: the
+conjunctive clearance it describes has no implemented predicate yet, and
+citing region tests for it would evidence a different sentence.
+
 `docs/reports/parser-rq-region-partition-exploratory-v1.md` binds the source
 hashes, governed document hashes, code revision and command behind the measured
 folds, but it is explicitly non-authoritative: its qualification identity is

@@ -203,10 +203,17 @@ naming rather than working around.
 one declared coordinate for both trees — and the schema additionally admits
 `ab-validator/crates/<crate>/tests/` (integration tests only; `src/` stays
 implementation, not citable evidence). The governance nix check now stages
-both trees so the paths resolve in-sandbox. c2, c4 and c5 can therefore cite
-their Rust tests when the owner next revisits this record; c1's situation is
-unchanged (its measurements are not worth re-taking), so promotion still
-requires a decision about c1, not more plumbing.
+both trees so the paths resolve in-sandbox. **Evidence attached the same
+day**: c4 now cites `analyze_work.rs` and `corpus_index.rs` (v2 draws no
+measurement or verdict from node spans; the retired aggregate subcommand is
+gone), c5 cites `membership_seam.rs` and `corpus_index.rs` (the retained
+authentication seam, and that the index it rests on is coverage-free), and
+c6 additionally cites `fixture_capture.rs`, the committed-witness replay
+check. c2 gained nothing: no current test pins the historical two-meanings
+collision — the corrected contract is what the tests pin — so its support
+remains the source citations in the claim itself, as the note above already
+says. Promotion therefore still requires a decision about c1 and c2 (trace-
+supported claims), not more plumbing.
 
 Promotion to Accepted requires evidence for **each** claim, so this record is
 not promotion-ready as it stands.

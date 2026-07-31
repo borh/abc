@@ -334,8 +334,9 @@ whole-file eligibility.
    those files live under `ab-validator/crates/`. Promotion needs that gap
    addressed, not worked around. **Gap closed 2026-07-31**: evidence paths are
    now monorepo-root-relative and `ab-validator/crates/<crate>/tests/` is
-   citable; the governance nix check stages both trees. c1's evidence question
-   remains the record's own (see its Evidence section).
+   citable; the governance nix check stages both trees. c4, c5 and c6 now cite
+   their Rust tests; c1 and c2 remain trace-supported (see the record's
+   Evidence section), so promotion is a decision about those two claims.
 
    **One thing went wrong and is worth repeating as a warning.** Task 2 deleted
    `abc/test/fixtures/parser-rq/source-accountability` as orphaned; it was not,
@@ -348,6 +349,13 @@ whole-file eligibility.
    does not stage), so `just validate-migration` only ever *evaluates* it. A
    check that is registered, evaluated, and never built reads exactly like a
    passing check. Use `cargo test --workspace` directly.
+   **Fixed 2026-07-31**: the check's derivation now stages the full abc tree
+   beside the workspace (a minimal file list cannot anticipate every fixture a
+   test reads — this incident is the proof), and the one sandbox-only failure
+   it then surfaced was a real path defect (`qualification_cli.rs` resolved
+   the mapping through the checkout's parent and the literal name
+   `ab-validator`), fixed workspace-relative. The check now builds and passes
+   — 2,125 tests in-sandbox — and belongs in the branch gate below.
 
 2. **D7 prerequisites:** separate record `status` from measured `disposition`,
    then specify closed expected-outcome vocabularies. Initially only `parsed` and
@@ -441,6 +449,7 @@ nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
 nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
 nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
+nix build ./ab-validator#checks.x86_64-linux.cargo-test
 just validate-migration
 ```
 

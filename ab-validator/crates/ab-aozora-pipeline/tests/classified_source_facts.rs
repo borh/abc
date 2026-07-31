@@ -134,7 +134,10 @@ fn projects_typed_editorial_directives_as_recognized_annotations() {
     );
 
     let variant = projection("青［＃「青」は底本では「蒼」］");
-    assert_eq!(variant.last().map(|fact| fact.2), Some(ConstructId::BaseTextVariant));
+    assert_eq!(
+        variant.last().map(|fact| fact.2),
+        Some(ConstructId::BaseTextVariant)
+    );
 
     assert_eq!(
         projection("［＃入力者注(1)］").first().map(|fact| fact.2),

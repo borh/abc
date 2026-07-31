@@ -69,7 +69,18 @@
   ;; (36 was never assigned). New records are slug-only.
   #{1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
     26 27 28 29 30 31 32 33 34 35 37 38 39 40 41 42 43})
-(def evidence-prefixes ["test/" "fixtures/" "nix/" "docs/evidence/external/"])
+;; Evidence paths are monorepo-root-relative: one declared coordinate for
+;; every claim, whichever tree holds the check. The monorepo root is the
+;; parent of the abc artifact root this validator runs against, so the
+;; governance sandbox must stage the full repository (abc/ and ab-validator/
+;; as siblings), not the abc subtree alone.
+(def evidence-prefixes
+  ["abc/test/" "abc/fixtures/" "abc/nix/" "abc/docs/evidence/external/"])
+(def evidence-patterns
+  ;; Executable Rust checks: a crate's integration-test tree. Deliberately
+  ;; excludes src/ — inline #[cfg(test)] units are implementation, not
+  ;; citable evidence; promote them to tests/ or cite the fixture they pin.
+  [#"^ab-validator/crates/[a-z0-9-]+/tests/"])
 
 (def ^:private slug-pattern #"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 (def ^:private date-pattern #"^\d{4}-\d{2}-\d{2}$")
@@ -318,55 +329,80 @@
                "Accepted dependency closure contains a non-Accepted record"
                :slug slug :target dep :target-status (:status target)))))
 
+(defn- evidence-root
+  "The root evidence paths resolve against: the monorepo root, i.e. the
+   parent of the abc artifact root the validator runs against."
+  [repo-root]
+  (fs/parent (fs/normalize (fs/absolutize repo-root))))
+
+(defn- within-evidence-roots? [normalized]
+  (boolean (or (some #(str/starts-with? normalized %) evidence-prefixes)
+               (some #(re-find % normalized) evidence-patterns))))
+
+(defn- executable-check? [normalized]
+  ;; The evidence surfaces that ARE checks (not data): abc test and nix
+  ;; trees, and Rust crate integration tests.
+  (boolean (or (str/starts-with? normalized "abc/test/")
+               (str/starts-with? normalized "abc/nix/")
+               (some #(re-find % normalized) evidence-patterns))))
+
 (defn- evidence-problems [corpus repo-root file]
-  (vec
-   (concat
-    (for [{:keys [slug status claims]} (:decisions corpus)
-          :when (and (= :accepted status) (empty? claims))]
-      (problem :missing-claims file
-               "Accepted records require at least one claim" :slug slug))
-    (for [{:keys [slug claims]} (:decisions corpus)
-          {:keys [id evidence]} claims
-          path evidence
-          :let [{:keys [state] :as contained}
-                (containment/path-state repo-root path)
-                normalized (some-> (:relative contained)
-                                   (str/replace "\\" "/"))
-                kind (case state
-                       :ok (when-not (some #(str/starts-with? normalized %)
-                                           evidence-prefixes)
-                             :evidence-outside-roots)
-                       :missing :missing-evidence-path
-                       :real-path-escape :evidence-real-path-escape
-                       :malformed-path :malformed-evidence-path
-                       :evidence-path-traversal)]
-          :when kind]
-      (problem kind file
-               (case kind
-                 :evidence-outside-roots
-                 "evidence path is outside the evidence roots"
-                 :missing-evidence-path "evidence path does not exist"
-                 :evidence-real-path-escape
-                 "evidence real path escapes the repository"
-                 :malformed-evidence-path "evidence path is malformed"
-                 "evidence path contains lexical traversal")
-               :slug slug :claim id :value path))
-    (for [{:keys [slug claims]} (:decisions corpus)
-          {:keys [id evidence]} claims
-          path evidence
-          :let [contained (containment/path-state repo-root path)]
-          :when (and (= :ok (:state contained))
-                     (files/directory? (:path contained)))
-          :when (not-any?
-                 (fn [companion]
-                   (and (or (str/starts-with? companion "test/")
-                            (str/starts-with? companion "nix/"))
-                        (let [c (containment/path-state repo-root companion)]
-                          (and (= :ok (:state c)) (files/file? (:path c))))))
-                 evidence)]
-      (problem :unverified-evidence-directory file
-               "a directory evidence path requires an existing test/ or nix/ file in the same claim"
-               :slug slug :claim id :value path)))))
+  (let [root (evidence-root repo-root)]
+    (vec
+     (concat
+      (for [{:keys [slug status claims]} (:decisions corpus)
+            :when (and (= :accepted status) (empty? claims))]
+        (problem :missing-claims file
+                 "Accepted records require at least one claim" :slug slug))
+      ;; Fail closed with one readable problem when the layout cannot carry
+      ;; the monorepo coordinate (e.g. an abc-subtree-only sandbox), instead
+      ;; of a wall of :missing-evidence-path.
+      (when (and (some (fn [{:keys [claims]}]
+                         (some (comp seq :evidence) claims))
+                       (:decisions corpus))
+                 (not (fs/directory? (fs/path root "abc"))))
+        [(problem :evidence-root-unstaged file
+                  "evidence paths are monorepo-root-relative; the abc artifact root's parent must contain the full repository (abc/ and ab-validator/)")])
+      (for [{:keys [slug claims]} (:decisions corpus)
+            {:keys [id evidence]} claims
+            path evidence
+            :let [{:keys [state] :as contained}
+                  (containment/path-state root path)
+                  normalized (some-> (:relative contained)
+                                     (str/replace "\\" "/"))
+                  kind (case state
+                         :ok (when-not (within-evidence-roots? normalized)
+                               :evidence-outside-roots)
+                         :missing :missing-evidence-path
+                         :real-path-escape :evidence-real-path-escape
+                         :malformed-path :malformed-evidence-path
+                         :evidence-path-traversal)]
+            :when kind]
+        (problem kind file
+                 (case kind
+                   :evidence-outside-roots
+                   "evidence path is outside the evidence roots"
+                   :missing-evidence-path "evidence path does not exist"
+                   :evidence-real-path-escape
+                   "evidence real path escapes the repository"
+                   :malformed-evidence-path "evidence path is malformed"
+                   "evidence path contains lexical traversal")
+                 :slug slug :claim id :value path))
+      (for [{:keys [slug claims]} (:decisions corpus)
+            {:keys [id evidence]} claims
+            path evidence
+            :let [contained (containment/path-state root path)]
+            :when (and (= :ok (:state contained))
+                       (files/directory? (:path contained)))
+            :when (not-any?
+                   (fn [companion]
+                     (and (executable-check? companion)
+                          (let [c (containment/path-state root companion)]
+                            (and (= :ok (:state c)) (files/file? (:path c))))))
+                   evidence)]
+        (problem :unverified-evidence-directory file
+                 "a directory evidence path requires an existing executable check file (abc/test/, abc/nix/, or a crate tests/ file) in the same claim"
+                 :slug slug :claim id :value path))))))
 
 (defn semantic-problems [corpus repo-root file]
   (vec (concat (relation-problems corpus file)

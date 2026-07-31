@@ -232,6 +232,8 @@ decisions' mouths.
 `:accepted` requires an accepted date, a validation scope, a release authority,
 and **`:kind` plus non-empty `:evidence` on every claim**, with evidence paths
 that exist under `test/`, `fixtures/`, `nix/`, or `docs/evidence/external/`.
+(Since 2026-07-31 those roots are monorepo-root-relative — `abc/test/`, … —
+and `ab-validator/crates/<crate>/tests/` is additionally citable.)
 Q14's and Q15's claims have no such evidence — nothing is implemented, and the
 measurements behind them were taken under a synthesized qualification identity
 that authenticates nothing. Promoting either is rejected by the schema, which is
@@ -330,7 +332,10 @@ whole-file eligibility.
    implementation cannot be cited at all, because the governance schema admits
    only `test/`, `fixtures/`, `nix/` and `docs/evidence/external/` prefixes while
    those files live under `ab-validator/crates/`. Promotion needs that gap
-   addressed, not worked around.
+   addressed, not worked around. **Gap closed 2026-07-31**: evidence paths are
+   now monorepo-root-relative and `ab-validator/crates/<crate>/tests/` is
+   citable; the governance nix check stages both trees. c1's evidence question
+   remains the record's own (see its Evidence section).
 
    **One thing went wrong and is worth repeating as a warning.** Task 2 deleted
    `abc/test/fixtures/parser-rq/source-accountability` as orphaned; it was not,

@@ -199,6 +199,15 @@ prefixes, and those files live under `ab-validator/crates/`. That is a gap in
 what this corpus can reference, not an absence of evidence, and it is worth
 naming rather than working around.
 
+**Gap closed 2026-07-31.** Evidence paths are now monorepo-root-relative —
+one declared coordinate for both trees — and the schema additionally admits
+`ab-validator/crates/<crate>/tests/` (integration tests only; `src/` stays
+implementation, not citable evidence). The governance nix check now stages
+both trees so the paths resolve in-sandbox. c2, c4 and c5 can therefore cite
+their Rust tests when the owner next revisits this record; c1's situation is
+unchanged (its measurements are not worth re-taking), so promotion still
+requires a decision about c1, not more plumbing.
+
 Promotion to Accepted requires evidence for **each** claim, so this record is
 not promotion-ready as it stands.
 

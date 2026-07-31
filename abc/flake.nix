@@ -793,19 +793,11 @@
                 echo "TEI-EAJ comparison reports regenerate against the pinned source." > "$out/result.txt"
               '';
 
-          adr-governance =
-            pkgs.runCommand "abc-adr-governance"
-              {
-                nativeBuildInputs = [ pkgs.clojure ];
-              }
-              ''
-                ${copyWritableSource}
-                ${cljSandboxEnv}
-                clojure -M:abc/adr-governance
-
-                mkdir -p "$out"
-                echo "ADR corpus is strictly valid." > "$out/result.txt"
-              '';
+          # ADR governance is checked by the monorepo flake's
+          # monorepo-adr-governance derivation: claim evidence paths are
+          # monorepo-root-relative (abc/…, ab-validator/crates/…/tests/…),
+          # so the validator needs both trees staged as siblings — this
+          # subtree-only sandbox cannot provide that coordinate.
           swi-prolog-smoke =
             pkgs.runCommand "abc-swi-prolog-smoke" { nativeBuildInputs = [ pkgs.swi-prolog ]; }
               ''

@@ -47,7 +47,7 @@
    :relations []
    :claims [{:id :c1 :kind :structural-invariant
              :statement "Something holds."
-             :evidence ["test/abc/tools/decisions_test.clj"]}]})
+             :evidence ["abc/test/abc/tools/decisions_test.clj"]}]})
 
 (defn- shape-of [record]
   (d/shape-problems {:decisions [record]} "decisions.edn"))
@@ -85,9 +85,9 @@
                        "duplicate claim ids"
                        (assoc valid-record :claims
                               [{:id :c1 :kind :k :statement "a"
-                                :evidence ["test/x"]}
+                                :evidence ["abc/test/x"]}
                                {:id :c1 :kind :k :statement "b"
-                                :evidence ["test/x"]}])}]
+                                :evidence ["abc/test/x"]}])}]
     (is (seq (shape-of bad)) label)
     (is (every? #(= :invalid-shape (:kind %)) (shape-of bad)) label)))
 
@@ -237,7 +237,7 @@
               :validation-scope :structural :release-authority :none
               :claims [{:id :c1 :kind :structural-invariant
                         :statement "s"
-                        :evidence ["test/abc/tools/decisions_test.clj"]}])
+                        :evidence ["abc/test/abc/tools/decisions_test.clj"]}])
          kvs))
 
 (defn- lifecycle [type to & [scope]]
@@ -308,24 +308,58 @@
 (deftest evidence-path-rules
   (is (some #(= :missing-evidence-path (:kind %))
             (sem [(accepted-rec "a" :claims [{:id :c1 :kind :k :statement "s"
-                                              :evidence ["test/no/such/file.clj"]}])])))
+                                              :evidence ["abc/test/no/such/file.clj"]}])])))
   (is (some #(= :evidence-path-traversal (:kind %))
             (sem [(accepted-rec "a" :claims [{:id :c1 :kind :k :statement "s"
-                                              :evidence ["test/../deps.edn"]}])])))
+                                              :evidence ["abc/test/../deps.edn"]}])])))
   (is (some #(= :evidence-outside-roots (:kind %))
             (sem [(accepted-rec "a" :claims [{:id :c1 :kind :k :statement "s"
-                                              :evidence ["src/abc/tools/decisions.clj"]}])]))
+                                              :evidence ["abc/src/abc/tools/decisions.clj"]}])]))
       "existing path outside the evidence roots is rejected")
   (is (some #(= :unverified-evidence-directory (:kind %))
             (sem [(accepted-rec "a" :claims [{:id :c1 :kind :k :statement "s"
-                                              :evidence ["test/abc/tools"]}])]))
-      "directory evidence requires a test/ or nix/ file in the same claim")
+                                              :evidence ["abc/test/abc/tools"]}])]))
+      "directory evidence requires an executable check file in the same claim")
   (is (not-any? #(= :unverified-evidence-directory (:kind %))
                 (sem [(accepted-rec "a" :claims
                                     [{:id :c1 :kind :k :statement "s"
-                                      :evidence ["test/abc/tools"
-                                                 "test/abc/tools/decisions_test.clj"]}])]))
+                                      :evidence ["abc/test/abc/tools"
+                                                 "abc/test/abc/tools/decisions_test.clj"]}])]))
       "a companion test file verifies the directory"))
+
+(deftest cross-tree-evidence-rules
+  (is (empty? (sem [(accepted-rec
+                     "a" :claims
+                     [{:id :c1 :kind :k :statement "s"
+                       :evidence ["ab-validator/crates/ab-aozora-pipeline/tests/classified_source_facts.rs"]}])]))
+      "a crate integration test is citable evidence")
+  (is (some #(= :evidence-outside-roots (:kind %))
+            (sem [(accepted-rec
+                   "a" :claims
+                   [{:id :c1 :kind :k :statement "s"
+                     :evidence ["ab-validator/crates/ab-aozora-pipeline/src/lib.rs"]}])]))
+      "crate src/ is implementation, not citable evidence")
+  (is (not-any? #(= :unverified-evidence-directory (:kind %))
+                (sem [(accepted-rec
+                       "a" :claims
+                       [{:id :c1 :kind :k :statement "s"
+                         :evidence ["abc/test/abc/tools"
+                                    "ab-validator/crates/ab-aozora-pipeline/tests/classified_source_facts.rs"]}])]))
+      "a crate integration test verifies a directory evidence path"))
+
+(deftest evidence-root-must-carry-the-monorepo-coordinate
+  (let [root (str (fs/path (fs/create-temp-dir) "standalone"))]
+    (fs/create-dirs root)
+    (let [problems (d/semantic-problems
+                    {:decisions
+                     [(accepted-rec "a")]}
+                    root "decisions.edn")]
+      (is (some #(= :evidence-root-unstaged (:kind %)) problems)
+          "a layout whose parent lacks abc/ cannot resolve evidence paths"))
+    (is (not-any? #(= :evidence-root-unstaged (:kind %))
+                  (d/semantic-problems
+                   {:decisions [(rec "a")]} root "decisions.edn"))
+        "the guard stays silent when no claim cites evidence")))
 
 (deftest narrative-file-rules
   (let [root (str (fs/create-temp-dir))]

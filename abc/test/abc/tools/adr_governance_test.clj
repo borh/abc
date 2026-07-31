@@ -105,18 +105,22 @@
              (set (map :kind problems)))))))
 
 (deftest nix-governance-check-is-strict-test
-  (let [flake (slurp "flake.nix")]
-    (is (string/includes? flake "clojure -M:abc/adr-governance"))
-    (is (not (string/includes? flake "--mode")))
-    (is (string/includes? flake "ADR corpus is strictly valid."))))
-
-(deftest root-governance-check-is-the-component-check-test
   (let [root-flake (slurp (fs/file "../flake.nix"))]
-    (is (string/includes?
-         root-flake
-         "monorepo-adr-governance = abc.checks.${system}.adr-governance;"))
+    (is (string/includes? root-flake "clojure -M:abc/adr-governance"))
     (is (not (string/includes? root-flake "--mode")))
-    (is (not (string/includes? root-flake "adr-problem-identities")))))
+    (is (string/includes? root-flake "ADR corpus is strictly valid."))))
+
+(deftest root-governance-check-stages-both-trees-test
+  ;; Evidence paths are monorepo-root-relative, so the one canonical
+  ;; governance derivation must stage abc/ and ab-validator/ as siblings
+  ;; — and the abc component flake must not carry a subtree-only copy
+  ;; that would fail that coordinate.
+  (let [root-flake (slurp (fs/file "../flake.nix"))
+        abc-flake (slurp "flake.nix")]
+    (is (string/includes? root-flake "cp -R ${self}/abc abc"))
+    (is (string/includes? root-flake "cp -R ${self}/ab-validator ab-validator"))
+    (is (not (string/includes? root-flake "adr-problem-identities")))
+    (is (not (string/includes? abc-flake "ADR corpus is strictly valid.")))))
 
 (deftest shared-clojure-app-launcher-sets-user-home-quietly-test
   (let [flake (slurp "flake.nix")

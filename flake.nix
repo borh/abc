@@ -226,8 +226,34 @@
               '';
         in
         {
-          # One canonical strict-governance derivation: the abc component check.
-          monorepo-adr-governance = abc.checks.${system}.adr-governance;
+          # One canonical strict-governance derivation. It lives here (not in
+          # the abc component flake) because claim evidence paths are
+          # monorepo-root-relative — abc/test/…, ab-validator/crates/…/tests/…
+          # — so the validator must see both trees staged as siblings, which
+          # abc's subtree-only sandbox cannot provide.
+          monorepo-adr-governance =
+            pkgs.runCommand "soranoha-monorepo-adr-governance"
+              {
+                nativeBuildInputs = [
+                  cljPkgs.clojure
+                  pkgs.coreutils
+                ];
+              }
+              ''
+                cp -R ${self}/abc abc
+                cp -R ${self}/ab-validator ab-validator
+                chmod -R u+w abc ab-validator
+                cd abc
+                export HOME="${cljDepsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+                export GITLIBS="$HOME/.gitlibs"
+                clojure -M:abc/adr-governance
+                mkdir -p "$out"
+                echo "ADR corpus is strictly valid." > "$out/result.txt"
+              '';
 
           # The freshly built release binaries must match the APPROVED identity.
           # Approved hashes are resolved through parser-release-authority/authenticate

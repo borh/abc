@@ -34,9 +34,9 @@
   (qualification/qualification-identity-ref qualification-identity))
 
 (def recognition-identity
-  (assoc-in qualification-identity
-            [:instrument_versions :source_span_coverage]
-            "parser-rq-source-recognition-v4"))
+  (update qualification-identity :instrument_versions assoc
+          :source_span_coverage "parser-rq-source-recognition-v4"
+          :metadata_attribution "parser-rq-source-recognition-v4"))
 
 (def recognition-identity-ref
   (qualification/qualification-identity-ref recognition-identity))
@@ -64,6 +64,17 @@
             (assoc-in recognition-identity
                       [:instrument_versions :source_span_coverage]
                       "parser-rq-source-recognition-v1"))))
+  ;; Both observations ride one instrument, so the seam guards both keys: a
+  ;; predicate set that moved only the metadata instrument string would
+  ;; otherwise score an observation whose declared instrument disagrees with
+  ;; the committed one.
+  (is (not (#'rq-source/recognition-identity-valid?
+            (assoc-in recognition-identity
+                      [:instrument_versions :metadata_attribution]
+                      "parser-rq-source-recognition-v1"))))
+  (is (not (#'rq-source/recognition-identity-valid?
+            (update recognition-identity :instrument_versions
+                    dissoc :metadata_attribution))))
   (is (= "parser-rq-source-recognition-v4"
          rq-source/source-recognition-instrument-version)))
 
@@ -78,6 +89,23 @@
                       (filter #(= :source_span_coverage (:observed_key %)))
                       first)]
     (is (some? declared))
+    (is (= rq-source/source-recognition-instrument-version (:instrument declared)))
+    (is (= {:comparator := :value 1.0} (:expected declared)))
+    (is (= "ratio" (:unit declared)))))
+
+(deftest predicate-set-predeclares-the-metadata-attribution-threshold
+  ;; The other half of the same act, 2026-07-31: `:= 1.0` over the metadata
+  ;; CONTENT denominator, predeclared after the exploratory campaign rather
+  ;; than inherited from anything. The threshold currently refuses nothing --
+  ;; both exploratory samples read 1.0 everywhere -- and that is its designed
+  ;; property: it fails the gate the first time a work carries packaging the
+  ;; classifiers do not understand.
+  (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
+        declared (->> (:predicates predicates)
+                      (filter #(= :metadata_attribution (:observed_key %)))
+                      first)]
+    (is (some? declared))
+    (is (= :metadata-attribution (:predicate_id declared)))
     (is (= rq-source/source-recognition-instrument-version (:instrument declared)))
     (is (= {:comparator := :value 1.0} (:expected declared)))
     (is (= "ratio" (:unit declared)))))
@@ -247,10 +275,16 @@
     (assoc staged :manifest manifest :aggregate aggregate :identity identity)))
 
 (defn- unavailable-recognition?
+  "Both recognition observations must refuse a broken chain: they derive from
+  one authenticated core, and this helper is what holds that to account across
+  every fail-closed case below."
   [{:keys [store manifest aggregate identity]}]
-  (= :unavailable
-     (:status (rq-source/derive-source-recognition-envelope
-               store manifest aggregate identity))))
+  (and (= :unavailable
+          (:status (rq-source/derive-source-recognition-envelope
+                    store manifest aggregate identity)))
+       (= :unavailable
+          (:status (rq-source/derive-metadata-attribution-envelope
+                    store manifest aggregate identity)))))
 
 (deftest qualification-identity-ref-matches-rust-golden
   (is (= "sha256:45b662893c840cdb68647baa9c2af48fdbc7dae14cb064f903d35c939e220088"
@@ -263,13 +297,36 @@
       (let [envelope (rq-source/derive-source-recognition-envelope
                       store manifest aggregate identity)]
         (is (= recognition-identity-ref (:identity_ref envelope)))
-        (is (= 0.461M (:value envelope)))
+        (is (= 0.611M (:value envelope)))
         (is (= :not-qualified
                (qualification/gate-status
                 true
                 [(qualification/evaluate-predicate
                   {:id :source_span_coverage :operator :eq :threshold 1.0}
                   {:source_span_coverage envelope})]))))
+      (finally (delete-tree! root)))))
+
+(deftest production-recognition-fixture-drives-the-metadata-envelope
+  ;; The fixture's packaged work carries a real colophon field (45 attributed
+  ;; bytes) and one bare メモ line no classifier may claim (6 unattributed
+  ;; content bytes), so the committed predicate's `:= 1.0` must refuse this
+  ;; corpus: 45/51 over the content denominator.
+  (let [{:keys [root store manifest identity aggregate]}
+        (staged-production-recognition)]
+    (try
+      (let [predicates (qualification/load-predicates)
+            metadata-predicate (->> (:predicates predicates)
+                                    (filter #(= :metadata_attribution
+                                                (:observed_key %)))
+                                    first)
+            envelope (rq-source/derive-metadata-attribution-envelope
+                      store manifest aggregate identity)
+            verdict (qualification/evaluate-predicate
+                     metadata-predicate {:metadata_attribution envelope})]
+        (is (= recognition-identity-ref (:identity_ref envelope)))
+        (is (= 0.882M (:value envelope)))
+        (is (= :fail (:verdict verdict)))
+        (is (= :not-qualified (qualification/gate-status true [verdict]))))
       (finally (delete-tree! root)))))
 
 (deftest recognition-derivation-rejects-a-symlinked-manifest-destination
@@ -349,6 +406,11 @@
                              (str "sha256:" (apply str (repeat 64 "8"))))}]
            ["record totals"
             {:record #(update % :recognized_bytes inc)}]
+           ;; The attribution denominator has its own conservation, and a
+           ;; record that inflates it must be refused, not scored: content is
+           ;; published with its complement, so the identity can fail.
+           ["record metadata content identity"
+            {:record #(update-in % [:metadata :content_bytes] inc)}]
            ["record ledger identity"
             {:record #(assoc-in % [:ledger :sha256]
                                 (str "sha256:" (apply str (repeat 64 "8"))))}]
@@ -414,6 +476,11 @@
                           (str "sha256:" (apply str (repeat 64 "8"))))}]
            ["aggregate totals"
             {:aggregate-value #(update % :recognized_bytes inc)}]
+           ;; The metadata fold is summed from the records exactly as the body
+           ;; fold is; an aggregate claiming more attribution than its records
+           ;; carry is the inflation the metadata predicate would score.
+           ["aggregate metadata totals"
+            {:aggregate-value #(update % :metadata_attributed_bytes inc)}]
            ["aggregate membership ref"
             {:aggregate-value #(assoc % :membership_ref
                                       (str "sha256:" (apply str (repeat 64 "8"))))}]

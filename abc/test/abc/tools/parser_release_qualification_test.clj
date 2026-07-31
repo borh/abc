@@ -23,8 +23,8 @@
    {:fixture "sha256:0000000000000000000000000000000000000000000000000000000000000000"}})
 
 (def all-pass-values
-  {:fatal_failures 0 :source_span_coverage 1.0 :silent_drops 0
-   :diagnostic_completeness 1.0 :parser_ir_schema_validation 1.0
+  {:fatal_failures 0 :source_span_coverage 1.0 :metadata_attribution 1.0
+   :silent_drops 0 :diagnostic_completeness 1.0 :parser_ir_schema_validation 1.0
    :publication_structure 1.0 :wall_time_seconds 12 :peak_cgroup_memory_bytes 1024
    :timeouts 0})
 
@@ -63,10 +63,10 @@
 
 ;; --- Predicate declaration ----------------------------------------------------
 
-(deftest predicate-set-declares-all-nine-dimensions-test
+(deftest predicate-set-declares-all-ten-dimensions-test
   (let [ids (set (map :predicate_id (:predicates (q/load-predicates))))]
-    (is (= #{:fatal-failures :source-span-coverage :silent-drops
-             :diagnostic-completeness :parser-ir-schema-validation
+    (is (= #{:fatal-failures :source-span-coverage :metadata-attribution
+             :silent-drops :diagnostic-completeness :parser-ir-schema-validation
              :publication-structure :wall-time :memory :timeout-policy}
            ids))
     (doseq [p (:predicates (q/load-predicates))]
@@ -101,6 +101,7 @@
           :observed_key :timeouts :expected {:comparator :<= :value 0} :unit "works"}]
         bindings {:fatal-failures "parser-rq-core-attempt-v1"
                   :source-span-coverage "parser-rq-source-recognition-v4"
+                  :metadata-attribution "parser-rq-source-recognition-v4"
                   :silent-drops "parser-rq-diagnostic-authorization-v1"
                   :wall-time "parser-rq-core-attempt-v1"
                   :timeout-policy "parser-rq-core-attempt-v1"}]
@@ -181,7 +182,8 @@
 
 (deftest predicate-tally-and-adr-status-require-all-pass-test
   (let [preds (q/load-predicates)
-        all-pass {:fatal_failures 0 :source_span_coverage 1.0 :silent_drops 0
+        all-pass {:fatal_failures 0 :source_span_coverage 1.0
+                  :metadata_attribution 1.0 :silent_drops 0
                   :diagnostic_completeness 1.0 :parser_ir_schema_validation 1.0
                   :publication_structure 1.0 :wall_time_seconds 12 :peak_cgroup_memory_bytes 1024
                   :timeouts 0}
@@ -281,10 +283,31 @@
       (is (some #(re-find #"qualification identity values" %)
                 (get-in report [:coherence :errors]))))))
 
-(deftest gate-release-qualified-requires-precondition-and-nine-pass
+(deftest gate-release-qualified-requires-precondition-and-ten-pass
   (let [report (q/build-report
                 (report-input admitted-identity (envelopes admitted-identity all-pass-values)))]
     (is (= :release-qualified (:gate_status report)))))
+
+(deftest clearance-is-conjunctive-across-body-and-metadata
+  ;; parser-rq-source-region-partition c4: header and tail are distinct
+  ;; regions under ONE metadata predicate, and a corpus clears only when
+  ;; body-projection coverage and metadata attribution both clear. Both
+  ;; predicates sit in the same must-pass set, so either number short of its
+  ;; threshold leaves the gate not qualified while the other passes.
+  (let [failing {:metadata_attribution 0.882 :source_span_coverage 0.9911}]
+    (is (= :release-qualified
+           (:gate_status (q/build-report
+                          (report-input admitted-identity
+                                        (envelopes admitted-identity
+                                                   all-pass-values))))))
+    (doseq [[observed-key value] failing]
+      (let [report (q/build-report
+                    (report-input admitted-identity
+                                  (envelopes admitted-identity
+                                             (assoc all-pass-values
+                                                    observed-key value))))]
+        (is (= :not-qualified (:gate_status report)) (name observed-key))
+        (is (= {:pass 9 :fail 1} (:verdict_tally report)) (name observed-key))))))
 
 ;; The release evidence-class boundary itself (assert-release-evidence! /
 ;; entry-release-qualifying?) is exercised directly in
@@ -297,6 +320,7 @@
   (let [corpus (q/load-corpus)
         preds (q/load-predicates)
         values {:fatal_failures 0 :source_span_coverage :instrument-missing
+                :metadata_attribution :instrument-missing
                 :silent_drops :instrument-missing :diagnostic_completeness 1.0
                 :parser_ir_schema_validation 1.0 :publication_structure :instrument-missing
                 :wall_time_seconds 8 :peak_cgroup_memory_bytes :instrument-missing :timeouts 0}
@@ -312,4 +336,4 @@
     (is (= :not-qualified (:gate_status report)))
     (is (= "Proposed" (:adr_0039_status report)))
     (is (= (:list_hash corpus) (get-in report [:identity :corpus_list_hash])))
-    (is (= 9 (count (:predicate_verdicts report))))))
+    (is (= 10 (count (:predicate_verdicts report))))))

@@ -22,7 +22,9 @@
 (defn project-source-recognition
   [{:keys [store manifest aggregate identity]}]
   {:source_span_coverage
-   (source/derive-source-recognition-envelope store manifest aggregate identity)})
+   (source/derive-source-recognition-envelope store manifest aggregate identity)
+   :metadata_attribution
+   (source/derive-metadata-attribution-envelope store manifest aggregate identity)})
 
 (defn project-diagnostic-gap
   [{:keys [store manifest identity]}]
@@ -109,7 +111,7 @@
 
 (def ^:private output-keys
   {:core #{:fatal_failures :wall_time_seconds :timeouts}
-   :source-recognition #{:source_span_coverage}
+   :source-recognition #{:source_span_coverage :metadata_attribution}
    :diagnostic-gap #{:silent_drops}
    :predicate-pair #{:diagnostic_completeness :parser_ir_schema_validation}
    :publication #{:publication_structure}

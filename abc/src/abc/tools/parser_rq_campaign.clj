@@ -20,19 +20,19 @@
            [java.time Instant]))
 
 (def predicate-ids
-  [:fatal-failures :source-span-coverage :silent-drops
+  [:fatal-failures :source-span-coverage :metadata-attribution :silent-drops
    :diagnostic-completeness :parser-ir-schema-validation
    :publication-structure :wall-time :memory :timeout-policy])
 
 (def observed-keys
-  #{:fatal_failures :source_span_coverage :silent_drops
+  #{:fatal_failures :source_span_coverage :metadata_attribution :silent_drops
     :diagnostic_completeness :parser_ir_schema_validation
     :publication_structure :wall_time_seconds :peak_cgroup_memory_bytes
     :timeouts})
 
 (def member-observed-keys
   {:core_attempt #{:fatal_failures :wall_time_seconds :timeouts}
-   :source_recognition #{:source_span_coverage}
+   :source_recognition #{:source_span_coverage :metadata_attribution}
    :diagnostic_gap #{:silent_drops}
    :diagnostic_completeness #{:diagnostic_completeness}
    :parser_ir_conformance #{:parser_ir_schema_validation}
@@ -41,6 +41,38 @@
 
 (def capture-member-keys
   (conj (set (keys member-observed-keys)) :measurements))
+
+(def superseded-capture-contracts
+  "Predicate-set contracts that committed capture generations still bind,
+  keyed by the identity's `predicate_set_hash`.
+
+  The closed literals above are the LIVE contract, and every fresh capture is
+  held to them. The promoted run `24d61fc7…` predates the
+  metadata-attribution predicate: its identity binds the nine-observation
+  contract below, and re-verifying its immutable capture against the live
+  roster would refuse evidence that was exact when it was sealed -- the
+  cross-contract comparison this machinery otherwise exists to prevent. A
+  capture is therefore authenticated against the contract its own
+  content-bound identity names. An identity naming no contract here is held
+  to the live one, so an unknown hash gains nothing by being unknown."
+  {"sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203"
+   {:predicate-ids [:fatal-failures :source-span-coverage :silent-drops
+                    :diagnostic-completeness :parser-ir-schema-validation
+                    :publication-structure :wall-time :memory :timeout-policy]
+    :observed-keys #{:fatal_failures :source_span_coverage :silent_drops
+                     :diagnostic_completeness :parser_ir_schema_validation
+                     :publication_structure :wall_time_seconds
+                     :peak_cgroup_memory_bytes :timeouts}
+    :member-observed-keys (assoc member-observed-keys
+                                 :source_recognition #{:source_span_coverage})}})
+
+(defn- capture-contract
+  [candidate]
+  (get superseded-capture-contracts
+       (get-in candidate [:qualification_identity :predicate_set_hash])
+       {:predicate-ids predicate-ids
+        :observed-keys observed-keys
+        :member-observed-keys member-observed-keys}))
 
 (def instrument-policy-paths
   "The governed authority documents behind each capture member's instrument,
@@ -515,7 +547,10 @@
 
 (defn compose-measurements
   [candidate capture-index members]
-  (let [authentication-errors (capture-errors candidate capture-index members)
+  (let [contract (capture-contract candidate)
+        contract-member-keys (:member-observed-keys contract)
+        contract-observed-keys (:observed-keys contract)
+        authentication-errors (capture-errors candidate capture-index members)
         member-errors
         (reduce-kv
          (fn [errors member expected]
@@ -532,9 +567,9 @@
                      (vals actual))
                (conj (str (name member) " contains a cross-candidate envelope")))))
          (cond-> []
-           (not= (set (keys member-observed-keys)) (set (keys members)))
+           (not= (set (keys contract-member-keys)) (set (keys members)))
            (conj "capture members are missing, extra, or duplicated"))
-         member-observed-keys)
+         contract-member-keys)
         composed (apply merge (vals members))
         measurement-errors (blob-errors "measurements"
                                         (get-in capture-index [:members :measurements])
@@ -542,13 +577,13 @@
     (when (or (seq authentication-errors)
               (seq member-errors)
               (seq measurement-errors)
-              (not= observed-keys (set (keys composed))))
+              (not= contract-observed-keys (set (keys composed))))
       (throw (ex-info "campaign measurement composition failed"
                       {:errors (cond-> (vec (concat authentication-errors
                                                     member-errors
                                                     measurement-errors))
-                                 (not= observed-keys (set (keys composed)))
-                                 (conj "composition does not contain exactly nine observations"))})))
+                                 (not= contract-observed-keys (set (keys composed)))
+                                 (conj "composition does not contain exactly the contract's declared observations"))})))
     composed))
 
 (defn- load-json-blob [root blob]
@@ -855,7 +890,8 @@
            qualification_report evidence_integrity decision_statuses
            capture_count canonical_equal manifest_blobs]}]
   (let [verdicts (:predicate_verdicts qualification_report)
-        ids (mapv :predicate_id verdicts)]
+        ids (mapv :predicate_id verdicts)
+        roster (:predicate-ids (capture-contract candidate))]
     (cond-> []
       (seq (verify-authorization candidate authorization
                                  (:capture_started_at_utc capture)))
@@ -879,11 +915,11 @@
       (not (named= :admitted (get-in qualification_report [:admission :status])))
       (conj "qualification admission is not admitted")
 
-      (or (not= (set (map name predicate-ids))
+      (or (not= (set (map name roster))
                 (set (map #(if (keyword? %) (name %) %) ids)))
-          (not= (count predicate-ids) (count ids))
+          (not= (count roster) (count ids))
           (some #(not (named= :pass (:verdict %))) verdicts))
-      (conj "qualification report does not contain exactly nine passing predicates")
+      (conj "qualification report does not contain exactly the contract's passing predicates")
 
       (seq (evidence-integrity-receipt-errors
             evidence_integrity (:candidate_ref candidate)

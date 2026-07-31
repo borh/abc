@@ -66,16 +66,19 @@
   meaning different things, which is what a version string exists to prevent.
 
   `recognition-identity-valid?` requires this to equal the identity's
-  `instrument_versions.source_span_coverage`, and that value is taken from the
-  predicate set's declared `:instrument`. From 2026-07-27 to 2026-07-31 the
-  predicate set deliberately kept naming v1 while the instrument moved, so the
-  two disagreed and the observation was `:unavailable` -- qualification held
-  open rather than passing under a threshold predeclared for a denominator
-  that no longer existed. On 2026-07-31 the predicate owner redeclared the
-  contract: the set names v4 and `:= 1.0` is declared for the body-region
+  `instrument_versions.source_span_coverage` AND
+  `instrument_versions.metadata_attribution`, both taken from the predicate
+  set's declared `:instrument`. From 2026-07-27 to 2026-07-31 the predicate
+  set deliberately kept naming v1 while the instrument moved, so the two
+  disagreed and the observation was `:unavailable` -- qualification held open
+  rather than passing under a threshold predeclared for a denominator that no
+  longer existed. On 2026-07-31 the predicate owner declared both contracts
+  for what v4 measures: `source_span_coverage` `:= 1.0` over the body-region
   denominator, so any eligible byte the ledger cannot account for fails the
-  gate. A future semantic change moves this constant again and reopens the
-  same quarantine until the next redeclaration."
+  gate, and `metadata_attribution` `:= 1.0` over `metadata.content_bytes`, so
+  any packaging content byte no classifier understands fails it. A future
+  semantic change moves this constant again and reopens the same quarantine
+  for both observations until the next redeclaration."
   "parser-rq-source-recognition-v4")
 
 (def ^:private diagnostic-gap-policy-v1-hash
@@ -384,7 +387,8 @@
   [identity]
   (and (valid-identity? identity)
        (= source-recognition-instrument-version
-          (get-in identity [:instrument_versions :source_span_coverage]))))
+          (get-in identity [:instrument_versions :source_span_coverage])
+          (get-in identity [:instrument_versions :metadata_attribution]))))
 
 (defn- projected-ref
   [value excluded-key]
@@ -509,10 +513,32 @@
          (= decoded-bytes (+ eligible_bytes metadata-bytes))
          (= (:eligible_bytes metadata)
             (+ (:attributed_bytes metadata) (:unattributed_bytes metadata)))
+         ;; The attribution denominator's own conservation: content is the
+         ;; regions minus line structure, so it sits between what is
+         ;; attributed and what is eligible, and its complement is published
+         ;; rather than inferred. A producer that ever claimed a terminator
+         ;; or a blank line breaks the ordering here instead of quietly
+         ;; scoring above 1.
+         (<= (:attributed_bytes metadata)
+             (:content_bytes metadata)
+             (:eligible_bytes metadata))
+         (= (:content_bytes metadata)
+            (+ (:attributed_bytes metadata)
+               (:unattributed_content_bytes metadata)))
+         (= (:attributed_bytes metadata)
+            (decoded-utf8/interval-bytes (:attributed metadata)))
+         (= (:unattributed_bytes metadata)
+            (decoded-utf8/interval-bytes (:unattributed metadata)))
+         (= (:unattributed_content_bytes metadata)
+            (decoded-utf8/interval-bytes (:unattributed_content metadata)))
+         (decoded-utf8/interval-subset? (:unattributed_content metadata)
+                                        (:unattributed metadata))
          (every? (fn [interval]
                    (or (<= (:end interval) header-end)
                        (>= (:start interval) tail-start)))
-                 (concat (:attributed metadata) (:unattributed metadata)))
+                 (concat (:attributed metadata)
+                         (:unattributed metadata)
+                         (:unattributed_content metadata)))
          (valid-ledger-chain? store p0-manifest record index-entry index membership-record)
          (= "ok" (:status record))
          (= source-recognition-instrument-version (:instrument_version record))
@@ -595,15 +621,26 @@
                       (reduce + 0 (map #(get % key) records))))
                  [:eligible_bytes :recognized_bytes :accounted_bytes
                   :semantic_gap_bytes :unaccounted_bytes])
+         (every? (fn [[aggregate-key record-key]]
+                   (= (get aggregate aggregate-key)
+                      (reduce + 0 (map #(get-in % [:metadata record-key])
+                                       records))))
+                 [[:metadata_eligible_bytes :eligible_bytes]
+                  [:metadata_content_bytes :content_bytes]
+                  [:metadata_attributed_bytes :attributed_bytes]
+                  [:metadata_unattributed_bytes :unattributed_bytes]])
          (= (:semantic_gaps aggregate)
             (aggregate-work-intervals records :semantic_gaps))
          (= (:unaccounted aggregate)
             (aggregate-work-intervals records :unaccounted)))))
 
-(defn derive-source-recognition-envelope
-  "Derive ledger-authoritative R1 from one fully authenticated P0 capture.
-  Captures predating recognition remain instrument-missing; partial or
-  incoherent recognition captures fail closed."
+(defn- authenticated-recognition-aggregate
+  "Authenticate one P0 recognition capture end to end and return
+  `{:aggregate aggregate :identity_ref expected}` when every binding holds.
+  Captures predating recognition remain `{:value :instrument-missing}`;
+  partial or incoherent recognition captures fail closed. Both recognition
+  observations derive from this one chain so they cannot disagree about what
+  an authenticated capture is."
   [store manifest aggregate identity]
   (let [expected (qualification/qualification-identity-ref identity)
         recognition-locator-set (set (vals (select-keys recognition-locators
@@ -619,7 +656,8 @@
                                         (authenticated-json-value store))
         authenticated-declares-recognition?
         (= source-recognition-instrument-version
-           (get-in authenticated-identity [:instrument_versions :source_span_coverage]))]
+           (get-in authenticated-identity [:instrument_versions :source_span_coverage])
+           (get-in authenticated-identity [:instrument_versions :metadata_attribution]))]
     (cond
       (not= :ok (:status verified)) verified
       (not (valid-identity? authenticated-identity))
@@ -656,8 +694,33 @@
           (not (valid-recognition-fold? store manifest index aggregate records))
           (unavailable "recognition aggregate is not the authenticated exact corpus fold")
           :else
-          {:value (if (zero? (:eligible_bytes aggregate))
-                    1.0M
-                    (exact-display-ratio (:recognized_bytes aggregate)
-                                         (:eligible_bytes aggregate)))
-           :identity_ref expected})))))
+          {:aggregate aggregate :identity_ref expected})))))
+
+(defn derive-source-recognition-envelope
+  "Derive ledger-authoritative R1 from one fully authenticated P0 capture:
+  recognized bytes over the body-region eligible bytes."
+  [store manifest aggregate identity]
+  (let [result (authenticated-recognition-aggregate store manifest aggregate identity)]
+    (if-let [authenticated (:aggregate result)]
+      {:value (if (zero? (:eligible_bytes authenticated))
+                1.0M
+                (exact-display-ratio (:recognized_bytes authenticated)
+                                     (:eligible_bytes authenticated)))
+       :identity_ref (:identity_ref result)}
+      result)))
+
+(defn derive-metadata-attribution-envelope
+  "Derive the metadata-attribution observation from the same authenticated
+  capture evidence: attributed bytes over the metadata CONTENT denominator,
+  `metadata.content_bytes`. A corpus whose works carry no packaging content
+  has nothing left unattributed, so the empty denominator reads 1.0 exactly
+  as an empty body does for recognition."
+  [store manifest aggregate identity]
+  (let [result (authenticated-recognition-aggregate store manifest aggregate identity)]
+    (if-let [authenticated (:aggregate result)]
+      {:value (if (zero? (:metadata_content_bytes authenticated))
+                1.0M
+                (exact-display-ratio (:metadata_attributed_bytes authenticated)
+                                     (:metadata_content_bytes authenticated)))
+       :identity_ref (:identity_ref result)}
+      result)))

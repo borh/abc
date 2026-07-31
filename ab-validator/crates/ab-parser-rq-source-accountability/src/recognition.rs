@@ -29,24 +29,23 @@ const AUTHORITY_BYTES: &[u8] =
 /// (`abc/parser-rq-source-recognition-work/v3`) is unchanged, so nothing but
 /// the instrument string distinguishes which obligation the numbers passed.
 ///
-/// The predicate set still binds `source_span_coverage` to
-/// `parser-rq-source-recognition-v1` and still asks for `:= 1.0`, a threshold
-/// declared for the original denominator. Because the qualification identity
-/// takes `instrument_versions` FROM the predicate set and the readers require
-/// the record's `instrument_version` to match it, this mismatch makes the
-/// observation `:unavailable` rather than letting new semantics be scored
-/// against an old threshold. That is deliberate: the predicate's owner
-/// supplies a compatible contract, and until then qualification is unavailable
-/// rather than wrong.
+/// The predicate set binds this version since 2026-07-31, when both of its
+/// thresholds were consciously declared for what v4 measures rather than
+/// inherited: `source_span_coverage` `:= 1.0` over the body-region
+/// denominator, and `metadata_attribution` `:= 1.0` over
+/// `metadata.content_bytes`. Because the qualification identity takes
+/// `instrument_versions` FROM the predicate set and the readers require the
+/// record's `instrument_version` to match it, the next semantic change here
+/// reopens the same quarantine: the versions disagree and both observations
+/// are `:unavailable` until the predicate's owner redeclares, never scored
+/// against a threshold declared for different semantics.
 ///
-/// **`:= 1.0` is now reachable on the metadata measure, and that raises the
-/// stakes on the predicate owner's decision rather than settling it.** Under
-/// the v2 denominator the literal was unreachable by construction and so was
-/// obviously wrong. Under v3 it is met by every work of both the design and
-/// the held-out sample, which makes it look right and means something
-/// different: a threshold that currently refuses nothing, whose whole value is
-/// in what it will refuse when the archive produces packaging these classifiers
-/// do not know.
+/// The metadata threshold's `:= 1.0` is met by every work of both the design
+/// and the held-out exploratory sample, so today it refuses nothing. That is
+/// its designed value, not a validation claim: it fails the gate the first
+/// time the archive produces packaging these classifiers do not know — a
+/// header with no fence, a colophon field in an unseen form, a new
+/// boilerplate sentence.
 const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v4";
 
 #[derive(Clone, Debug)]

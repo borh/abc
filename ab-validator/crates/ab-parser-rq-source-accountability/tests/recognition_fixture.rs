@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 const QUALIFICATION_IDENTITY_REF: &str =
-    "sha256:db804ae6162a6dea2b71e04d465c4e8d0ade0ccf5fbf798d4d670b84c9c7ab78";
+    "sha256:6ad6a02c2e9e16e53cfe5cda3786142e58a632a1fc35875334a188721e3bb146";
 
 fn hash(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
@@ -42,7 +42,8 @@ fn identity() -> Value {
         "predicate_set_hash": format!("sha256:{}", "6".repeat(64)),
         "instrument_versions": {
             "source_accountability": "parser-rq-source-accountability-v1",
-            "source_span_coverage": "parser-rq-source-recognition-v4"
+            "source_span_coverage": "parser-rq-source-recognition-v4",
+            "metadata_attribution": "parser-rq-source-recognition-v4"
         },
         "instrument_policy_hashes": {
             "source_recognition": format!("sha256:{}", "7".repeat(64))
@@ -61,6 +62,13 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
         ("clean", "本文\n"),
         ("opaque-unknown", "本文［＃未知］\n"),
         ("recovered-malformed", "［＃tail"),
+        // A work with a real colophon, so the fixture exercises a non-empty
+        // metadata population: the 底本： field attributes, the bare メモ line
+        // opens no construct and stays unattributed content.
+        (
+            "packaged",
+            "本文です。\n\n底本：「青空文庫テスト」試験社\nメモ\n",
+        ),
     ];
     let mut generation_records = Vec::new();
     let mut membership_records = Vec::new();
@@ -120,8 +128,8 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
         "taxonomy_hash": format!("sha256:{}", "7".repeat(64)),
         "coordinate_system": "decoded_utf8",
         "status": "ok",
-        "expected_work_count": 3,
-        "record_count": 3,
+        "expected_work_count": 4,
+        "record_count": 4,
         "records": membership_records,
         "errors": []
     });
@@ -226,13 +234,25 @@ fn manifest_blob(locator: &str, bytes: &[u8]) -> Value {
 fn production_fixture_covers_clean_opaque_and_recovered_semantics() {
     let root = tempfile_root("semantics");
     let (index, aggregate, _) = publish_fixture(&root);
-    assert_eq!(index["record_count"], 3);
+    assert_eq!(index["record_count"], 4);
     assert!(
         aggregate["recognized_bytes"].as_u64().unwrap()
             < aggregate["accounted_bytes"].as_u64().unwrap()
     );
     assert_eq!(aggregate["accounted_bytes"], aggregate["eligible_bytes"]);
     assert!(aggregate["semantic_gap_bytes"].as_u64().unwrap() > 0);
+    assert_eq!(
+        aggregate["metadata_eligible_bytes"], 55,
+        "the packaged work's tail is the fixture's whole metadata population"
+    );
+    assert_eq!(
+        (
+            aggregate["metadata_content_bytes"].as_u64().unwrap(),
+            aggregate["metadata_attributed_bytes"].as_u64().unwrap(),
+        ),
+        (51, 45),
+        "the colophon field attributes and the bare メモ line must not"
+    );
     let projections = index["records"]
         .as_array()
         .unwrap()
@@ -266,6 +286,11 @@ fn production_fixture_covers_clean_opaque_and_recovered_semantics() {
         projections[&hash("［＃tail".as_bytes())],
         (10, 4, 10),
         "recovered malformed input must retain its recovered semantic gap"
+    );
+    assert_eq!(
+        projections[&hash("本文です。\n\n底本：「青空文庫テスト」試験社\nメモ\n".as_bytes())],
+        (15, 15, 15),
+        "the packaged work's body ends where its colophon tail begins"
     );
     fs::remove_dir_all(root).unwrap();
 }

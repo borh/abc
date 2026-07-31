@@ -161,6 +161,7 @@
 (def observed-values
   {:fatal_failures 0.0
    :source_span_coverage 1.0
+   :metadata_attribution 1.0
    :silent_drops 0.0
    :diagnostic_completeness 1.0
    :parser_ir_schema_validation 1.0
@@ -314,10 +315,10 @@
     (is (not (contains? receipt removed)))
     (is (not (contains? authorization removed)))))
 
-(deftest predicate-roster-is-the-closed-nine
+(deftest predicate-roster-is-the-closed-ten
   ;; promotion-errors and the campaign fixtures both derive from this literal,
   ;; so shrinking the roster would otherwise pass every generated-report test.
-  (is (= 9 (count campaign/predicate-ids))))
+  (is (= 10 (count campaign/predicate-ids))))
 
 (deftest evidence-integrity-authenticates-closed-manifest-membership
   (let [blob {:sha256 sha :bytes 10 :media_type "application/json"
@@ -622,7 +623,7 @@
     (is (= (:candidate_ref value) (campaign/candidate-ref value)))
     (is (= (:executable_provenance_ref value)
            (campaign/executable-provenance-ref provenance)))
-    (is (= "sha256:a2bee2fe457d59f16919205c99e94e755ab41aa8b5cb04f9eabecd4dd2d94a49"
+    (is (= "sha256:a79a43375fccbf180408cb3ae900ff8693a1eda5cd147abf8c3897e843f2ac3d"
            (get-in value [:qualification_identity :predicate_set_hash])))
     (is (= (hash/sha256-json-abc-legacy-v0
             (files/read-json
@@ -632,10 +633,10 @@
                value provenance-value graph receipt-value authorization-value
                "2026-07-17T00:30:00Z" true)))))
 
-(deftest composition-installs-exactly-nine-authenticated-envelopes
+(deftest composition-installs-exactly-ten-authenticated-envelopes
   (let [members {:core_attempt (select-keys envelopes
                                             [:fatal_failures :wall_time_seconds :timeouts])
-                 :source_recognition (select-keys envelopes [:source_span_coverage])
+                 :source_recognition (select-keys envelopes [:source_span_coverage :metadata_attribution])
                  :diagnostic_gap (select-keys envelopes [:silent_drops])
                  :diagnostic_completeness (select-keys envelopes [:diagnostic_completeness])
                  :parser_ir_conformance (select-keys envelopes [:parser_ir_schema_validation])
@@ -664,6 +665,54 @@
                  (campaign/compose-measurements
                   candidate (assoc-in capture [:members :measurements :sha256] sha-b) members)))))
 
+(deftest superseded-contract-authenticates-its-own-committed-shape
+  ;; The promoted run 24d61fc7… binds the nine-observation predicate set that
+  ;; predates `metadata_attribution`. Its immutable capture must verify
+  ;; against the contract its identity names, not the live roster -- and a
+  ;; live-contract candidate must not be able to shed the tenth observation.
+  (let [superseded-hash
+        "sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203"
+        superseded-identity (assoc qualification-identity
+                                   :predicate_set_hash superseded-hash)
+        superseded-candidate
+        (with-ref (assoc candidate
+                         :qualification_identity superseded-identity
+                         :qualification_identity_ref
+                         (qualification/qualification-identity-ref
+                          superseded-identity))
+          :candidate_ref campaign/candidate-ref)
+        nine-values (dissoc observed-values :metadata_attribution)
+        nine-envelopes (update-vals nine-values
+                                    #(hash-map :value % :identity_ref
+                                               (:qualification_identity_ref
+                                                superseded-candidate)))
+        members {:core_attempt (select-keys nine-envelopes
+                                            [:fatal_failures :wall_time_seconds
+                                             :timeouts])
+                 :source_recognition (select-keys nine-envelopes
+                                                  [:source_span_coverage])
+                 :diagnostic_gap (select-keys nine-envelopes [:silent_drops])
+                 :diagnostic_completeness (select-keys nine-envelopes
+                                                       [:diagnostic_completeness])
+                 :parser_ir_conformance (select-keys nine-envelopes
+                                                     [:parser_ir_schema_validation])
+                 :publication_structure (select-keys nine-envelopes
+                                                     [:publication_structure])
+                 :resource (select-keys nine-envelopes
+                                        [:peak_cgroup_memory_bytes])}
+        capture (capture-for superseded-candidate authorization members
+                             nine-envelopes)]
+    (is (= nine-envelopes
+           (campaign/compose-measurements superseded-candidate capture members)))
+    (let [live-members (assoc members :source_recognition
+                              (select-keys nine-envelopes
+                                           [:source_span_coverage]))
+          live-capture (capture-for candidate authorization live-members
+                                    nine-envelopes)]
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (campaign/compose-measurements candidate live-capture
+                                                  live-members))))))
+
 (deftest generation-resolution-requires-uniqueness-and-current-registry
   (let [capture {:authorization_ref (:authorization_ref authorization)}
         evaluation {:registry_ref sha}]
@@ -679,7 +728,7 @@
         candidate-dir (fs/file root (subs (:candidate_ref candidate) 7))
         members {:core_attempt (select-keys envelopes
                                             [:fatal_failures :wall_time_seconds :timeouts])
-                 :source_recognition (select-keys envelopes [:source_span_coverage])
+                 :source_recognition (select-keys envelopes [:source_span_coverage :metadata_attribution])
                  :diagnostic_gap (select-keys envelopes [:silent_drops])
                  :diagnostic_completeness (select-keys envelopes [:diagnostic_completeness])
                  :parser_ir_conformance (select-keys envelopes [:parser_ir_schema_validation])
@@ -742,7 +791,7 @@
                                                 (:qualification_identity_ref candidate-value)))
         members {:core_attempt (select-keys envelope-values
                                             [:fatal_failures :wall_time_seconds :timeouts])
-                 :source_recognition (select-keys envelope-values [:source_span_coverage])
+                 :source_recognition (select-keys envelope-values [:source_span_coverage :metadata_attribution])
                  :diagnostic_gap (select-keys envelope-values [:silent_drops])
                  :diagnostic_completeness (select-keys envelope-values [:diagnostic_completeness])
                  :parser_ir_conformance (select-keys envelope-values [:parser_ir_schema_validation])

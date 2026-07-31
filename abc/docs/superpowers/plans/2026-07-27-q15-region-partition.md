@@ -195,11 +195,11 @@ reviewed.
 4. **Build metadata attribution — DONE 2026-07-27, partially by design.**
    See *Tasks 4 and 5 result*.
 5. **Rebuild and re-measure — DONE 2026-07-27.** See *Tasks 4 and 5 result*.
-6. **Exploratory campaign, then predeclare both thresholds.** Own predicate-set
-   identity, explicitly non-authoritative. Only then fix the metadata threshold
-   and re-fix `source_span_coverage`'s. The confirmatory campaign takes a
-   distinct predicate-set identity; a post-hoc threshold must never be presented
-   as preregistered confirmation.
+6. **Exploratory campaign, then predeclare both thresholds — DONE 2026-07-31.**
+   Own predicate-set identity, explicitly non-authoritative. Only then fix the
+   metadata threshold and re-fix `source_span_coverage`'s. The confirmatory
+   campaign takes a distinct predicate-set identity; a post-hoc threshold must
+   never be presented as preregistered confirmation. See *Task 6 result*.
 
 **Separate deliverable, not blocked by any of the above:** map the twelve
 unmapped `DirectiveKind` variants in `ab-aozora-pipeline/src/fold.rs::node_policy`
@@ -516,7 +516,44 @@ testing anything. It now picks any role other than the rule's own. A hard-coded
 negative case silently stops being a test the moment the thing it names becomes
 valid.
 
-## Task 6: not executed, and why
+## Task 6 result — executed 2026-07-31, in two acts
+
+The precondition list below was written when classification stopped at the
+colophon. Every item on it was subsequently met: the legend, bibliographic,
+distribution-notice and residue classifiers landed (item 1); the exploratory
+measurement grew into a design sample of 597 works and a held-out sample of
+583 under a different seed, run under a synthesized identity and recorded as
+explicitly non-authoritative in
+`docs/reports/parser-rq-region-partition-exploratory-v1.md` (item 2); and the
+predicate owner then predeclared both thresholds (item 3).
+
+**Act one, the body threshold** (commit `89391e45`, the quarantine lift): the
+predicate set binds `parser-rq-source-recognition-v4` and `:= 1.0` is
+consciously redeclared for the body-region denominator.
+
+**Act two, the metadata threshold** (this change): `metadata-attribution`
+joins the must-pass set at `:= 1.0` over `metadata.content_bytes`. The
+observation derives from the same authenticated capture chain as
+`source_span_coverage`; the reader re-verifies the per-work content
+identities and the metadata fold sums; the quarantine seam guards both
+`instrument_versions` keys; and the conjunctive clearance of c4 is now a
+property of the gate rather than a sentence in a record. The rotation moved
+`predicate_set_hash` to `a79a4337…`, distinct from anything the exploratory
+data was scored under — a post-hoc threshold never presented as preregistered
+confirmation.
+
+Two consequences worth naming. The recognition fixture gained a `packaged`
+work whose colophon attributes and whose bare `メモ` line does not, so the
+committed gate is exercised against a capture the metadata predicate refuses
+(0.882) rather than only against saturated values. And the promoted run
+`24d61fc7…` binds the superseded nine-observation contract, so the campaign
+verifier now resolves the predicate roster from the candidate's own
+`predicate_set_hash` against a closed table of superseded contracts —
+re-verifying sealed evidence against a contract it never bound was the exact
+cross-contract comparison this plan's partition exists to prevent, one level
+up.
+
+## Task 6: the precondition, as originally recorded
 
 **The precondition this plan sets for itself is not met.** Task 6 predeclares
 both thresholds after an exploratory campaign. The rule it inherits from Q14 —
@@ -612,8 +649,9 @@ source through the built binary, never through a reconstruction.
 
 ## Status
 
-**Tasks 1–5 done, 2026-07-27. Task 6 deliberately not executed** — its own
-precondition is unmet; see *Task 6: not executed, and why*.
+**Tasks 1–5 done, 2026-07-27. Task 6 done, 2026-07-31, in two acts** — the
+body threshold with the quarantine lift, the metadata threshold after it;
+see *Task 6 result*.
 
 The partition is declared, published and asserted; `source_span_coverage` is
 body-projection coverage; metadata attribution exists and is measured.

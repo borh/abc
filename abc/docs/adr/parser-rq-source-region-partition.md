@@ -3,8 +3,11 @@
 ## Implementation Status
 
 **Tasks 1–5 implemented, 2026-07-27, then reviewed and corrected. Task 6
-(predeclare both thresholds) deliberately not executed.** The task sequence is
-in `docs/superpowers/plans/2026-07-27-q15-region-partition.md`.
+(predeclare both thresholds) executed 2026-07-31, in two acts** — the body
+threshold in the morning's quarantine lift, the metadata threshold after it;
+see *Quarantine lifted* and *The metadata threshold, predeclared* below. The
+task sequence is in
+`docs/superpowers/plans/2026-07-27-q15-region-partition.md`.
 
 Measured through the built binary on three real works (850,980 decoded bytes):
 body recognition **0.991129**, metadata attribution **0.784180**, cross-region
@@ -370,6 +373,36 @@ and rotates `predicate_set_hash` to
 (with the resource policy's binding of that hash updated in step). Prior
 captured evidence remains historical under its former identity.
 
+**The metadata threshold, predeclared 2026-07-31.** The second half of task 6,
+taken after the exploratory campaign's design sample (597/597 works at 1.0)
+and held-out sample (583/583 at 1.0) under the v3+ content denominator:
+`metadata-attribution` joins the must-pass predicate set at `:= 1.0` over
+`metadata.content_bytes`, bound to `parser-rq-source-recognition-v4`, and the
+conjunctive clearance c4 describes is now implemented rather than described —
+one roster, two predicates, and a corpus failing either alone is not
+qualified. The observation derives from the same authenticated capture chain
+as `source_span_coverage` (one chain, two ratios, so the two cannot disagree
+about what an authenticated capture is), the per-work content identities
+(`attributed <= content <= eligible`,
+`attributed + unattributed_content == content`) and the metadata fold sums are
+re-verified reader-side, and the quarantine seam now guards both
+`instrument_versions` keys. `:= 1.0` here is not a validation claim — it is
+met by every work of both samples and currently refuses nothing. It is the
+fail-closed declaration that packaging the classifiers do not understand
+fails the gate instead of being averaged away, which is the only reading of
+the number this record permits. The rotation moved `predicate_set_hash` to
+`sha256:a79a43375fccbf180408cb3ae900ff8693a1eda5cd147abf8c3897e843f2ac3d` —
+a predicate-set identity distinct from the synthesized identity the
+exploratory measurements ran under, which is the separation c5 requires.
+
+The rotation also forced the campaign machinery to say what it had only
+assumed: the promoted run `24d61fc7…` binds the nine-observation contract its
+identity names, and re-verifying its immutable capture against the live
+ten-observation roster would refuse evidence that was exact when sealed. The
+verifier now resolves the roster from the candidate's own content-bound
+`predicate_set_hash` against a closed table of superseded contracts, and an
+identity naming no such contract is held to the live one.
+
 ## Evidence
 
 The implementation is held by tests in `ab-validator/crates/`, which the
@@ -387,12 +420,17 @@ cites `regions.rs` (numerator containment; the two populations still sum to
 the file); c3 additionally cites `regions.rs` (region-not-shape separation of
 the key–value forms; CRLF facts outside the body); c5 cites the
 redeclared-threshold binding test after `source_span_coverage`'s `:= 1.0`
-was consciously redeclared against the body denominator on 2026-07-31 (the
-metadata threshold stays unpredeclared, as the claim requires); c6 cites
-`regions.rs` (the tail slice includes the byte the body end trimmed —
-`[body_end, len)`, not `[tail_start, len)`). c4 remains unevidenced: the
-conjunctive clearance it describes has no implemented predicate yet, and
-citing region tests for it would evidence a different sentence.
+was consciously redeclared against the body denominator on 2026-07-31, and —
+since the metadata predeclaration later the same day — the
+`predicate-set-predeclares-the-metadata-attribution-threshold` test that pins
+the other half of the act; c6 cites `regions.rs` (the tail slice includes the
+byte the body end trimmed — `[body_end, len)`, not `[tail_start, len)`). c4,
+unevidenced while the conjunctive clearance it describes had no implemented
+predicate, now cites `clearance-is-conjunctive-across-body-and-metadata`
+(either measure short of threshold leaves the gate not qualified) and
+`production-recognition-fixture-drives-the-metadata-envelope` (the refusal
+exercised against real instrument output). Every claim of this record now
+carries evidence.
 
 `docs/reports/parser-rq-region-partition-exploratory-v1.md` binds the source
 hashes, governed document hashes, code revision and command behind the measured

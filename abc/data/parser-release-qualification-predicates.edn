@@ -6,7 +6,7 @@
 ;; fabricated number). Comparators are exact: `:=` is value equality, so a
 ;; 0.969 observation fails a 1.0 predicate.
 {:predicate_set_id "abc/parser-release-qualification/v1"
- :predicate_set_hash "sha256:a2bee2fe457d59f16919205c99e94e755ab41aa8b5cb04f9eabecd4dd2d94a49"
+ :predicate_set_hash "sha256:a79a43375fccbf180408cb3ae900ff8693a1eda5cd147abf8c3897e843f2ac3d"
  :description
  "ADR 0002 must-pass release predicates over the pinned qualification corpus."
  :predicates
@@ -28,6 +28,25 @@
    "Parsed-source span coverage for parsed bytes, excluding documented ignored regions"
    :instrument "parser-rq-source-recognition-v4"
    :observed_key :source_span_coverage
+   :expected {:comparator := :value 1.0}
+   :unit "ratio"}
+
+  ;; Predeclared 2026-07-31, after the region-partition exploratory campaign
+  ;; (docs/reports/parser-rq-region-partition-exploratory-v1.md, explicitly
+  ;; non-authoritative, run under a synthesized identity distinct from this
+  ;; set's). The measure is metadata attributed bytes over metadata CONTENT
+  ;; bytes -- the header and tail regions with line terminators and wholly
+  ;; blank lines removed -- so `:= 1.0` means every content byte of the
+  ;; packaging is attributed to an understood construct, and a work whose
+  ;; packaging the classifiers do not know fails the gate. On both the design
+  ;; sample (597/597) and the held-out sample (583/583) the measure reads 1.0,
+  ;; so this threshold currently refuses nothing; its value is what it refuses
+  ;; when the archive produces packaging outside the classified conventions.
+  {:predicate_id :metadata-attribution
+   :dimension
+   "Packaging-metadata attribution over the header and tail content bytes"
+   :instrument "parser-rq-source-recognition-v4"
+   :observed_key :metadata_attribution
    :expected {:comparator := :value 1.0}
    :unit "ratio"}
 

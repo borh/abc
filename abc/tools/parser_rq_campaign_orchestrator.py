@@ -971,7 +971,7 @@ def _projection_input(
                     "aggregate": aggregate,
                     "identity": candidate["qualification_identity"],
                 },
-                {"source_recognition": ("source_span_coverage",)},
+                {"source_recognition": ("source_span_coverage", "metadata_attribution")},
             )
         return (
             "diagnostic-gap",

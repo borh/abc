@@ -42,6 +42,11 @@
                   (is (= [:store :manifest :aggregate :identity]
                          [store manifest aggregate identity]))
                   (envelope 1.0))
+                source/derive-metadata-attribution-envelope
+                (fn [store manifest aggregate identity]
+                  (is (= [:store :manifest :aggregate :identity]
+                         [store manifest aggregate identity]))
+                  (envelope 0.882M))
                 source/silent-drops-envelope
                 (fn [store manifest identity]
                   (is (= [:store :manifest :identity] [store manifest identity]))
@@ -83,7 +88,8 @@
                             (is (= {:root :core-store} store))
                             (is (= {:locator "core.json"} blob))
                             {:status :ok :bytes (.getBytes "core" "UTF-8")})})))
-    (is (= {:source_span_coverage (envelope 1.0)}
+    (is (= {:source_span_coverage (envelope 1.0)
+            :metadata_attribution (envelope 0.882M)}
            (member/project-source-recognition
             {:qualification_identity_ref identity-ref
              :store :store :manifest :manifest :aggregate :aggregate
@@ -122,7 +128,9 @@
   (testing "an analyzer cannot emit an envelope for another candidate"
     (with-redefs [source/derive-source-recognition-envelope
                   (fn [& _] {:value 1.0 :identity_ref
-                             (str "sha256:" (apply str (repeat 64 "b")))})]
+                             (str "sha256:" (apply str (repeat 64 "b")))})
+                  source/derive-metadata-attribution-envelope
+                  (fn [& _] {:value 1.0 :identity_ref identity-ref})]
       (is (thrown? clojure.lang.ExceptionInfo
                    (member/project-member
                     :source-recognition
@@ -130,8 +138,14 @@
                      :store {} :manifest {} :aggregate {} :identity {}})))))
   (testing "an authenticated unavailable result remains an identity-bound observation"
     (with-redefs [source/derive-source-recognition-envelope
+                  (fn [& _] {:status :unavailable :reason "identity mismatch"})
+                  source/derive-metadata-attribution-envelope
                   (fn [& _] {:status :unavailable :reason "identity mismatch"})]
       (is (= {:source_span_coverage
+              {:value :unavailable
+               :identity_ref identity-ref
+               :details {:reason "identity mismatch"}}
+              :metadata_attribution
               {:value :unavailable
                :identity_ref identity-ref
                :details {:reason "identity mismatch"}}}

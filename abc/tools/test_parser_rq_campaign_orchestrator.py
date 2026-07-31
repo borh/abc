@@ -441,7 +441,7 @@ def bounded_identity() -> dict[str, object]:
             "parser_ir_conformance": "sha256:062dd8952188e82440de0758b052de9a236175d9c18bf83a27484c21e679bf60",
             "publication_structure": "sha256:1bafc7da20e5f8290dd1c89f6eb6e11ea202629d4a8726a8dfaec6afbe615da0",
             "resource": "sha256:12dcbb7a6b28e12261fa90a6b9c6e57c861981d64bbc27231fa4d9bcdbb845db",
-            "source_recognition": "sha256:c099072a65a5c1fcffe3887805ba17354b25a76ab7cbd12d9c3a4b5c0e75aa42",
+            "source_recognition": "sha256:7210617fb13dd38fa8eeab6eb0726453e93599aa931105e3b96ab6ab88cdf614",
         },
     }
 

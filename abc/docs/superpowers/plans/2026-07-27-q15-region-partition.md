@@ -205,6 +205,8 @@ reviewed.
 unmapped `DirectiveKind` variants in `ab-aozora-pipeline/src/fold.rs::node_policy`
 with their `ConstructId` values and policy rules. That is body-side — annotations
 are part of the work — and it rotates `policy_hash` on its own.
+**Done 2026-07-31** — see the design's *Part B's scope also grows* for the
+classifications and the corpus re-verification.
 
 ## Task 1 result — and a finding that revises the premise
 

@@ -941,6 +941,21 @@ catch-all. `BaseTextVariant` is the `底本` correction note seen in the Part B
 witnesses. So the body-interior fix is twelve `node_policy` arms plus their
 `ConstructId` and policy rules, not the two close-marker rules first proposed.
 
+**Done 2026-07-31.** All twelve arms are mapped with `ConstructId` values,
+policy rules, and witness kinds; `policy_hash` rotated
+(`42949d48…` → `5ccce59c…`) and the ledger-schema witness enum widened with it.
+The visible-marker editorial annotations (`Sic`, `BaseTextVariant`, `Empty`,
+`EditorNote`, `RubyAttached`, `RubyRetarget`, the ruby- and margin-note-pair
+markers) classify as recognized source annotations contributing to the emitted
+value; `WarichuClose` mirrors `WarichuOpen` as a structural token; and
+`InvalidRubySpan` — a declared variant nothing in the lexer constructs yet —
+stays opaque with its own witness kind so a future producer cannot reopen the
+gap. Verified on the pinned corpus: the inline `［＃割り注］` pair and a `底本`
+correction note now carry `warichu_open`/`warichu_close`/`base_text_variant`
+facts, a `はママ］` work carries `sic`, and the full-population sweep is
+unchanged at 17,875 of 17,878 works clean with zero failing entry-evidence
+checks.
+
 ### Q16, settled 2026-07-27 — not silent drift, but a real attribution defect
 
 **Decision: bind `data/parser-rq-ab-aozora-classified-source-v1.json` into
@@ -1627,7 +1642,8 @@ Every governance edit to `decisions.edn` is authored by hand.
   policy rule can fix. See *Q14 mechanism, corrected again*. The corrected work
   is (i) align numerator and denominator on one coordinate, and (ii) map the
   **twelve** unmapped `DirectiveKind` variants in `node_policy`, not the two
-  close markers first proposed. **(i) DECIDED 2026-07-27 — and neither of the two
+  close markers first proposed — **(ii) done 2026-07-31; see "Part B's scope
+  also grows"**. **(i) DECIDED 2026-07-27 — and neither of the two
   candidate denominators was chosen.** Both framed the body and the packaging
   metadata as competing denominators for one ratio; they are **two populations**.
   The body is the work — prose and annotations. The header and `底本：` colophon

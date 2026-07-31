@@ -1,7 +1,7 @@
 {
   "schema_version": "abc/parser-rq-classified-source-policy/v1",
   "policy_id": "parser-rq-ab-aozora-classified-source-v1",
-  "policy_hash": "sha256:42949d485493331f1c20dcd1098477c4a314dd9837057fc094688095e1850bee",
+  "policy_hash": "sha256:5ccce59c54d46f4c0ca75a466edc72f9aa146584cef7b3920014e91bd57d5f53",
   "parser": "ab-aozora",
   "coordinate_system": "decoded_utf8",
   "roles": [
@@ -718,6 +718,90 @@
       "disposition": "structural_control",
       "evidence_class": "typed_container",
       "witness_kind": "container_close"
+    },
+    {
+      "construct_id": "sic",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "base_text_variant",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "invalid_ruby_span",
+      "source_role": "unrecognized_source_form",
+      "disposition": "preserved_opaque",
+      "evidence_class": "typed_node",
+      "witness_kind": "invalid_ruby_span"
+    },
+    {
+      "construct_id": "warichu_close",
+      "source_role": "source_annotation",
+      "disposition": "structural_control",
+      "evidence_class": "structural_token",
+      "witness_kind": "warichu_close"
+    },
+    {
+      "construct_id": "empty_directive",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "editor_note",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "ruby_attached",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "ruby_retarget",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "ruby_pair_open",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "ruby_pair_close",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "margin_note_pair_open",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
+    },
+    {
+      "construct_id": "margin_note_pair_close",
+      "source_role": "source_annotation",
+      "disposition": "emitted_semantic_value",
+      "evidence_class": "typed_node",
+      "target_relation": "emits"
     },
     {
       "construct_id": "editorial_separator_rule",

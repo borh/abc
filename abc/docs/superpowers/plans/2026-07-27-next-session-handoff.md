@@ -373,6 +373,7 @@ sequence that the plan inherits and that are easy to lose:
 - The twelve unmapped `DirectiveKind` variants in
   `ab-validator/crates/ab-aozora-pipeline/src/fold.rs::node_policy` are a
   **separate reviewable deliverable**, body-side, not blocked by the partition.
+  **Done 2026-07-31**; `policy_hash` rotated and the corpus sweep re-verified.
 - Rebuild after any policy change: the classified-source policy is
   `include_bytes!`-embedded and `parser-rq-classified-source-authority-v1.json`
   fails closed on `raw_bytes_hash` and `identity_hash`.

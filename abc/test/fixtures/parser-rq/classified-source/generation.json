@@ -1,6 +1,6 @@
 {
   "schema_version": "abc/parser-rq-capture-generation/v1",
-  "generation_ref": "sha256:1125c1b4e87531c41691f8fb854aa82e070ade93e5e796d039a0544056e851fd",
+  "generation_ref": "sha256:35e2002323e48a8b823a2792382a7dd876123e4250e426cd5bf0a5defa68ff22",
   "qualification_identity_ref": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
   "work_id": "fixture-work",
   "members": {
@@ -18,7 +18,7 @@
     },
     "classified_source_ledger": {
       "artifact_ref": "ledger.json",
-      "value_hash": "sha256:e602eb82465e5cffe2c8853024b1a38fc02d3fe331a80cc62cc7552f4f66cd65"
+      "value_hash": "sha256:e56e912ba8dcc30cfe8354b24babbd2129605bbca7fe22344f34096d06a88ace"
     }
   }
 }

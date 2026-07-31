@@ -963,11 +963,11 @@
                (hash/format-sha256 (hash/sha256-json-jcs value))))
         (is (= identity (get-in authority [section "identity_hash"])))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:0672136dc176e20e866ebebc85cb288d9005d0a8b726278fcbaefa8661ded8a8"
+            "sha256:a0557545dc7b530ccf8d4f089645fa512a0bed6b304f5921e2645745dc23d0ce"
             "schemas/parser-rq-classified-source-authority.schema.json"
             "sha256:cfe47129b725e29c4a5a5922ccbf7e2a17e9e8c5db716a3d1baf083fbb41fe1c"
             "schemas/parser-rq-classified-source-ledger.schema.json"
-            "sha256:041ad940ae06479e0748d4bac04cbd3165a48cf1344621232efc3c55e6203697"
+            "sha256:b87be18e02272f336d688032078bb965534d6b4d36dfb3f4521744d6dd2f2bf2"
             "schemas/parser-rq-capture-generation.schema.json"
             "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"}
            (into {} (map (fn [path]
@@ -1122,6 +1122,7 @@
       (let [structural (files/read-json (str root "/structural-ledger.json"))
             forms {"newline" "\n"
                    "warichu_open" "［＃割り注］"
+                   "warichu_close" "［＃割り注終わり］"
                    "page_break" "［＃改ページ］"
                    "section_break" "［＃改丁］"
                    "body_end" "［＃本文終わり］"

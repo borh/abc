@@ -36,7 +36,7 @@
       "allOf": [
         {"if": {"properties": {"disposition": {"enum": ["emitted_semantic_value", "preserved_sidecar_value", "lossless_normalization"]}}}, "then": {"required": ["target_relation"]}, "else": {"not": {"required": ["target_relation"]}}},
         {"if": {"properties": {"disposition": {"enum": ["structural_control", "preserved_opaque"]}}}, "then": {"required": ["witness_kind"]}, "else": {"not": {"required": ["witness_kind"]}}},
-        {"if": {"properties": {"disposition": {"const": "preserved_opaque"}}}, "then": {"properties": {"source_role": {"const": "unrecognized_source_form"}, "witness_kind": {"enum": ["recovered_verbatim", "unknown_directive"]}}}}
+        {"if": {"properties": {"disposition": {"const": "preserved_opaque"}}}, "then": {"properties": {"source_role": {"const": "unrecognized_source_form"}, "witness_kind": {"enum": ["invalid_ruby_span", "recovered_verbatim", "unknown_directive"]}}}}
       ]
     }
   }

@@ -221,6 +221,83 @@ fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceCl
                 Disposition::StructuralControl,
                 EvidenceClass::StructuralToken,
             ),
+            DirectiveKind::WarichuClose => (
+                ConstructId::WarichuClose,
+                Role::SourceAnnotation,
+                Disposition::StructuralControl,
+                EvidenceClass::StructuralToken,
+            ),
+            // The typed editorial annotations render as visible markers (or,
+            // for sic/variant/empty, as raw text carried in the output), so
+            // their recognized role is source annotation and their source
+            // contributes to the emitted value.
+            DirectiveKind::Sic => (ConstructId::Sic, Role::SourceAnnotation, semantic, typed),
+            DirectiveKind::BaseTextVariant => (
+                ConstructId::BaseTextVariant,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            DirectiveKind::Empty => (
+                ConstructId::EmptyDirective,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            DirectiveKind::EditorNote => (
+                ConstructId::EditorNote,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            DirectiveKind::RubyAttached => (
+                ConstructId::RubyAttached,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            DirectiveKind::RubyRetarget => (
+                ConstructId::RubyRetarget,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            DirectiveKind::RubyPairOpen => (
+                ConstructId::RubyPairOpen,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            DirectiveKind::RubyPairClose => (
+                ConstructId::RubyPairClose,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            DirectiveKind::MarginNotePairOpen => (
+                ConstructId::MarginNotePairOpen,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            DirectiveKind::MarginNotePairClose => (
+                ConstructId::MarginNotePairClose,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            // A ruby span the parser recognised as ruby-shaped but could not
+            // parse: no approved semantic role, so the bytes stay opaque like
+            // the other recovery forms, witnessed by their typed node.
+            DirectiveKind::InvalidRubySpan => (
+                ConstructId::InvalidRubySpan,
+                Role::UnrecognizedSourceForm,
+                Disposition::PreservedOpaque,
+                typed,
+            ),
+            // `DirectiveKind` is non_exhaustive across the crate boundary; a
+            // future parser vocabulary addition produces no fact until the
+            // policy admits it explicitly.
             _ => return None,
         },
         Node::AngleQuote(_) => (

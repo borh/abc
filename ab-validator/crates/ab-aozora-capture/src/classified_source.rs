@@ -270,6 +270,18 @@ fn wire_construct(value: ConstructId) -> &'static str {
         ConstructId::MarginNote => "margin_note",
         ConstructId::ContainerOpen => "container_open",
         ConstructId::ContainerClose => "container_close",
+        ConstructId::Sic => "sic",
+        ConstructId::BaseTextVariant => "base_text_variant",
+        ConstructId::InvalidRubySpan => "invalid_ruby_span",
+        ConstructId::WarichuClose => "warichu_close",
+        ConstructId::EmptyDirective => "empty_directive",
+        ConstructId::EditorNote => "editor_note",
+        ConstructId::RubyAttached => "ruby_attached",
+        ConstructId::RubyRetarget => "ruby_retarget",
+        ConstructId::RubyPairOpen => "ruby_pair_open",
+        ConstructId::RubyPairClose => "ruby_pair_close",
+        ConstructId::MarginNotePairOpen => "margin_note_pair_open",
+        ConstructId::MarginNotePairClose => "margin_note_pair_close",
     }
 }
 
@@ -320,6 +332,8 @@ fn witness_kind(construct: ConstructId) -> Option<&'static str> {
         ConstructId::Newline => Some("newline"),
         ConstructId::UnknownDirective => Some("unknown_directive"),
         ConstructId::WarichuOpen => Some("warichu_open"),
+        ConstructId::WarichuClose => Some("warichu_close"),
+        ConstructId::InvalidRubySpan => Some("invalid_ruby_span"),
         ConstructId::FramedOpen | ConstructId::ContainerOpen => Some("container_open"),
         ConstructId::PageBreak => Some("page_break"),
         ConstructId::SectionBreak => Some("section_break"),

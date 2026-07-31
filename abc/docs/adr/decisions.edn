@@ -2134,7 +2134,8 @@
    "`docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`",
    :title "Bind the Classified-Source Policy into the Qualification Identity",
    :topics [:parser :release :identity],
-   :status :proposed,
+   :status :accepted,
+   :accepted "2026-07-31",
    :validation-scope :structural}
   {:date "2026-07-27",
    :slug "parser-rq-retire-node-span-coverage",
@@ -2181,6 +2182,65 @@
    :source
    "`docs/superpowers/plans/2026-07-27-q13-node-span-coverage.md`",
    :title "Retire Parser-IR Node-Span Coverage",
+   :topics [:parser :release],
+   :status :proposed,
+   :validation-scope :structural}
+  {:date "2026-07-27",
+   :slug "parser-rq-publication-workload-snapshot",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "custom-parser-release-qualification"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "sole-publication-release-identity"}],
+   :claims
+   [{:id :c1,
+     :kind :domain-interpretation,
+     :statement
+     "Tier 2 of the parser-RQ corpus architecture binds to publication's successfully-selected source projection and is named the publication-workload snapshot. The decision was taken on constructibility rather than preference: a corpus entry's identity is `corpus-entry-identity-keys` — `:work_id :source_path :source_sha256 :category :expected_status :expected_diagnostics` — and `corpus-snapshot-hash` is the sha256 over every entry's sorted `:source_sha256`, while the pre-attempt candidate population carries only `{:file :relpath :row}`: no `:source_sha256`, no primary-text member, no content-addressed identity. Every missing field is produced by `source-bundle/inspect-zip` inside `inspect-selected-work!`, which is precisely the fallible step `select-candidate` wraps — a derivation-failed member has no source hash because it failed, and it cannot be hashed into `corpus-snapshot-hash` without inventing an absent-hash representation that weakens the pinning for every other entry. The successful projection is already content-addressed exactly as required: `source-selection-identity-object` is built from `selected` alone, from official Git/catalog/archive/bundle/primary-text/metadata facts and never from parser output."}
+    {:id :c2,
+     :kind :domain-interpretation,
+     :statement
+     "The denominator-shrinkage objection is answered by attestation, not by the downstream release gate. Binding to `selected` alone would leave a qualification report green on a corpus a `continue_on_failure` regression had quietly shrunk, so the tier-2 report must carry its own denominator: `candidates_considered` (the catalog-backed pre-attempt count), the `derive_failures` set and count, and the `rejected` set with reasons — all already computed and emitted by `materialize-selected-sources!`, so this is a projection of data publication already produces rather than new machinery. Extended 2026-07-31 with a fourth class for capture-time losses: works that decode-refuse at capture produce no record at all, and the recognition instrument's closed membership turns a missing record into an `:unavailable` observation rather than a smaller ratio, so a no-record work is either carried as `:unavailable` or excluded by a governed corpus-entry decision that rotates `corpus_list_hash`; the report lists them as `capture_refusals` with reasons. See the tiering design, *No-record works, accounted 2026-07-31*."}
+    {:id :c3,
+     :kind :domain-interpretation,
+     :statement
+     "Scope of the claim once Q9 proves population equality: a census of one snapshot coinciding with an operational claim about the publication workload — never a statistical claim about future Aozora works and never a language-conformance claim. The census expires when `aozorabunko-src` is bumped. The equality half of Q9 reduces to authenticating that the corpus was projected from `source_selection_hash` rather than re-derived, which is near-tautological by construction; the substantive Q9 work is the accounted set difference against the source-bundle admission universe and the conversion-audit population, where the 17,878 / 17,880 / 17,886 spread has to be explained. Q9 remains open, and no canonical join key is predeclared yet."}],
+   :source
+   "`docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`",
+   :title "Bind Tier 2 to the Publication-Workload Snapshot",
+   :topics [:parser :release :corpus],
+   :status :proposed,
+   :validation-scope :structural}
+  {:date "2026-07-27",
+   :slug "parser-rq-unexpected-fatal-failures",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "custom-parser-release-qualification"}
+    {:class :lifecycle,
+     :type :depends-on,
+     :to "parser-release-instrument-bindings"}],
+   :claims
+   [{:id :c1,
+     :kind :structural-invariant,
+     :statement
+     "An adversarial fixture tier is incompatible with the current `fatal-failures <= 0` predicate. The core-attempt aggregate computes `:fatal_failures` by counting records whose disposition is `fatal_error`, with no reference to the corpus member's `:expected_status` — `allowed_dispositions` merely permits the value to travel through the capture protocol. A fixture that deliberately expects fatal rejection therefore increments the count and fails the predicate. `:expected_status` is in `corpus-entry-identity-keys`, so it already moves corpus identity, but no schema validates its vocabulary and nothing compares it against observed dispositions. Evidence boundary for the counting behaviour: `test/abc/tools/parser_rq_core_attempt_test.clj`.",
+     :evidence ["test/abc/tools/parser_rq_core_attempt_test.clj"]}
+    {:id :c2,
+     :kind :domain-interpretation,
+     :statement
+     "Decision (Option 1 of three): redefine the predicate as `unexpected-fatal-failures <= 0`, comparing each observed disposition against a governed expected outcome so that the predicate says what it means. This rotates instrument semantics and `predicate_set_hash`, hence `qualification_identity_ref`; it is sequenced with the wall-time reshape so one identity rotation covers both. The decision unblocks the work, not the tier: until the prerequisites land, the fixture tier still cannot carry adversarial cases. Prerequisites in order: (1) untangle `allowed_dispositions`, which lists the record-status value `protocol_error` inside a disposition vocabulary and conflates the schema's two levels; (2) specify the two-level expected-outcome model with closed, schema-enforced vocabularies including which values are never expectable; (3) adopt the safe initial contract; (4) map corpus expectations to wire values, authenticate exact membership between expectations and observed records, and specify behaviour for a missing or unknown expectation."}
+    {:id :c3,
+     :kind :domain-interpretation,
+     :statement
+     "The safe initial expected-outcome contract restricts expectations to `parsed` and `fatal_error`; `adapter_timeout`, `protocol_error`, and `unavailable` remain unconditional failures. An expected timeout would make the timeout predicate vacuous, and an expected protocol error would let a harness fault masquerade as a governed outcome."}],
+   :source
+   "`docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`",
+   :title "Redefine Fatal Failures Against Governed Expected Outcomes",
    :topics [:parser :release],
    :status :proposed,
    :validation-scope :structural}]}

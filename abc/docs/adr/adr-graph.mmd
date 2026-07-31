@@ -28,10 +28,12 @@ flowchart LR
   parser_ir_publication_rendering["Parser-IR Publication Rendering"]:::accepted
   parser_ir_span_and_ruby_direction["Parser-IR Additive Additions — Span Coordinate Semantics and `ruby.direction`"]:::accepted
   parser_release_instrument_bindings["Bind Final Parser Release Instruments"]:::accepted
-  parser_rq_classified_source_policy_binding["Bind the Classified-Source Policy into the Qualification Identity"]:::proposed
+  parser_rq_classified_source_policy_binding["Bind the Classified-Source Policy into the Qualification Identity"]:::accepted
   parser_rq_instrument_before_threshold["Fix the Instrument Before Setting the Residual Threshold"]:::proposed
+  parser_rq_publication_workload_snapshot["Bind Tier 2 to the Publication-Workload Snapshot"]:::proposed
   parser_rq_retire_node_span_coverage["Retire Parser-IR Node-Span Coverage"]:::proposed
   parser_rq_source_region_partition["Partition the Source into Body and Metadata Populations"]:::proposed
+  parser_rq_unexpected_fatal_failures["Redefine Fatal Failures Against Governed Expected Outcomes"]:::proposed
   person_identity_drift_data_model["Person Identity Drift Data Model"]:::accepted
   person_identity_drift_harness["Person Identity Drift Harness Contract"]:::accepted
   portable_parser_rq_evidence_integrity["Keep Parser-RQ Evidence Portable and Self-Contained"]:::accepted
@@ -122,9 +124,13 @@ flowchart LR
   parser_rq_classified_source_policy_binding -->|"amends — the source_recognition instrument policy closure"| parser_release_instrument_bindings
   parser_rq_instrument_before_threshold -.->|"depends on"| governed_qualification_corpus_location
   parser_rq_instrument_before_threshold -.->|"depends on"| parser_release_instrument_bindings
+  parser_rq_publication_workload_snapshot -.->|"depends on"| custom_parser_release_qualification
+  parser_rq_publication_workload_snapshot -.->|"depends on"| sole_publication_release_identity
   parser_rq_retire_node_span_coverage -.->|"depends on"| parser_release_instrument_bindings
   parser_rq_source_region_partition -.->|"depends on"| custom_parser_release_qualification
   parser_rq_source_region_partition -.->|"depends on"| parser_rq_instrument_before_threshold
+  parser_rq_unexpected_fatal_failures -.->|"depends on"| custom_parser_release_qualification
+  parser_rq_unexpected_fatal_failures -.->|"depends on"| parser_release_instrument_bindings
   person_identity_drift_data_model -.->|"restates hard rule"| manifest_identity
   person_identity_drift_data_model -.->|"schema hash cascade"| predicate_rename_batch_1
   person_identity_drift_harness -.->|"restates hard rule"| manifest_identity

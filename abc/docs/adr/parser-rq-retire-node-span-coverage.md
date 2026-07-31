@@ -204,3 +204,27 @@ not promotion-ready as it stands.
 
 Plan: `docs/superpowers/plans/2026-07-27-q13-node-span-coverage.md`.
 Design: `docs/superpowers/specs/2026-07-26-parser-rq-corpus-tiering-design.md`.
+
+## Note 2026-07-31 — disposition of the c7 emitter question
+
+Claim c7 left the mixed-coordinate parser-IR emitter question to its own
+owner. The owner's disposition, traced before deciding: the parser-IR
+schema's `span.coordinate_system` is `const: "decoded_utf8"` with a
+description that promises decoded-source byte offsets, so *any* truthful
+relabel of the accumulator spans is a `parser_ir_schema_hash` rotation —
+which moves the ADR-0023 admission tuple and the publication chain behind
+it. The two point fixes that avoid the rotation are both rejected: making
+the source-note arm use accumulator coordinates would delete the only spans
+in the document that satisfy the schema's stated semantics to make a false
+label uniform, and re-deriving every node span over genuine source offsets
+was already rejected by c4 on its own motivation.
+
+The resolution is therefore sequenced, not skipped: the coordinate
+vocabulary split — a span coordinate that distinguishes emitted-text offsets
+from decoded-source offsets — rides the next planned parser-IR schema
+rotation rather than a point fix. Until then the divergence is contained:
+Q13's retirement removed the last consumer that unioned across the two
+coordinate systems, the source-note arm keeps its genuine decoded span, and
+no new consumer may read `nodes[*].span` as decoded-source offsets — the
+release-authoritative source measure is the classified-source ledger, not
+parser-IR node spans.

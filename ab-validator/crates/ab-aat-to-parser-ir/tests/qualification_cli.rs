@@ -5,13 +5,17 @@ use serde_json::Value;
 
 const HASH: &str = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-fn monorepo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
+// Workspace-relative, never through the checkout's parent: the workspace
+// directory is not guaranteed to be NAMED `ab-validator` (the nix test
+// sandbox stages it as `source`), only to contain this crate and to have
+// the abc tree as a sibling.
+fn workspace_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
 #[test]
 fn qualify_preserves_convert_parser_ir_bytes() {
-    let root = monorepo_root();
+    let root = workspace_root();
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let temp = tempfile::tempdir().unwrap();
     let policy = temp.path().join("policy.json");
@@ -26,8 +30,8 @@ fn qualify_preserves_convert_parser_ir_bytes() {
     .unwrap();
 
     let aat = crate_root.join("tests/fixtures/nested-sentence-basic.aat.json");
-    let mapping = root.join("ab-validator/data/aat-to-parser-ir-mapping-v1.json");
-    let abc_root = root.join("abc");
+    let mapping = root.join("data/aat-to-parser-ir-mapping-v1.json");
+    let abc_root = root.join("../abc");
     let converted = temp.path().join("converted.json");
     let divergence = temp.path().join("divergence.json");
     let qualified = temp.path().join("qualified.json");

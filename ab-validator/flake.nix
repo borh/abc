@@ -1119,6 +1119,15 @@
               "--features"
               "ab-morph-run/test-analyzer"
             ];
+            # The workspace tests compile ab-aozora-capture's four
+            # `include_bytes!` embeds of sibling-abc files and read committed
+            # witness stores under abc/test/fixtures/, so the full abc tree
+            # must sit beside the staged workspace; a minimal file list cannot
+            # anticipate every fixture a test reads. Without this the check
+            # could not compile and was only ever evaluated, never built.
+            preBuild = ''
+              cp -R ${abcSource} ../abc
+            '';
           };
         };
 

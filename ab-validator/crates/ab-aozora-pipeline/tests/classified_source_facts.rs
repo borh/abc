@@ -121,6 +121,86 @@ fn projects_typed_nodes_and_container_markers() {
 }
 
 #[test]
+fn projects_typed_editorial_directives_as_recognized_annotations() {
+    let sic = projection("青空［＃「青空」はママ］");
+    assert_eq!(
+        sic.last().map(|fact| (fact.2, fact.3, fact.4, fact.5)),
+        Some((
+            ConstructId::Sic,
+            Role::SourceAnnotation,
+            Disposition::EmittedSemanticValue,
+            EvidenceClass::TypedNode,
+        ))
+    );
+
+    let variant = projection("青［＃「青」は底本では「蒼」］");
+    assert_eq!(
+        variant.last().map(|fact| fact.2),
+        Some(ConstructId::BaseTextVariant)
+    );
+
+    assert_eq!(
+        projection("［＃入力者注(1)］").first().map(|fact| fact.2),
+        Some(ConstructId::EditorNote)
+    );
+    assert_eq!(
+        projection("親［＃「親」にルビ］").last().map(|fact| fact.2),
+        Some(ConstructId::RubyAttached)
+    );
+    assert_eq!(
+        projection("親［＃ルビは「親」にかかる］")
+            .last()
+            .map(|fact| fact.2),
+        Some(ConstructId::RubyRetarget)
+    );
+    assert_eq!(
+        projection("［＃］").first().map(|fact| fact.2),
+        Some(ConstructId::EmptyDirective)
+    );
+}
+
+#[test]
+fn projects_annotation_span_pairs_with_structural_closes() {
+    let warichu = projection("［＃割り注］注の本文［＃割り注終わり］");
+    let kinds: Vec<_> = warichu.iter().map(|fact| fact.2).collect();
+    assert_eq!(
+        kinds,
+        vec![
+            ConstructId::WarichuOpen,
+            ConstructId::PlainText,
+            ConstructId::WarichuClose,
+        ]
+    );
+    let close = warichu.last().unwrap();
+    assert_eq!(close.3, Role::SourceAnnotation);
+    assert_eq!(close.4, Disposition::StructuralControl);
+    assert_eq!(close.5, EvidenceClass::StructuralToken);
+
+    assert_eq!(
+        projection("［＃左にルビ付き］大空［＃左に「おほぞら」のルビ付き終わり］")
+            .into_iter()
+            .map(|fact| fact.2)
+            .collect::<Vec<_>>(),
+        vec![
+            ConstructId::RubyPairOpen,
+            ConstructId::PlainText,
+            ConstructId::RubyPairClose,
+        ]
+    );
+    assert_eq!(
+        projection("［＃注記付き］本文［＃「注」の注記付き終わり］")
+            .into_iter()
+            .map(|fact| fact.2)
+            .collect::<Vec<_>>(),
+        vec![
+            ConstructId::MarginNotePairOpen,
+            ConstructId::PlainText,
+            ConstructId::MarginNotePairClose,
+        ]
+    );
+}
+
+#[test]
 fn overlapping_lowering_emits_complete_canonical_value_order() {
     let out = lex("題\n［＃「題」は大見出し］");
     assert_eq!(

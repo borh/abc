@@ -9,14 +9,7 @@
             [abc.tools.parser-rq-diagnostic-gap :as diagnostic-gap]
             [abc.tools.parser-rq-source-recognition :as source-recognition]
             [abc.tools.schema :as schema]
-            [clojure.string :as string]
             [clojure.walk :as walk]))
-
-(def aggregate-schema
-  (delay (files/read-json "schemas/parser-rq-source-accountability-aggregate.schema.json")))
-
-(def taxonomy-schema
-  (delay (files/read-json "schemas/parser-rq-ignored-regions.schema.json")))
 
 (def recognition-aggregate-schema
   (delay (files/read-json "schemas/parser-rq-source-recognition-aggregate.schema.json")))
@@ -52,11 +45,38 @@
   (delay (-> (files/read-json "data/parser-rq-classified-source-authority-v1.json")
              walk/keywordize-keys)))
 
-(def source-accountability-instrument-version
-  "parser-rq-source-accountability-v1")
-
 (def source-recognition-instrument-version
-  "parser-rq-source-recognition-v1")
+  "The committed source-recognition instrument.
+
+  v4 because the instrument's obligations changed three times. At v2,
+  `eligible_bytes` moved from the whole decoded file to the body region and a
+  metadata attribution measure appeared beside it. At v3 the metadata ratio
+  moved off the region denominator onto `metadata.content_bytes` -- the same
+  regions with line terminators and wholly blank lines removed -- because a
+  terminator is a delimiter between packaging items rather than packaging that
+  can be understood, and counting it both capped the measure below 1.0 by
+  construction and scored a CRLF work below a byte-identical LF one. At v4 the
+  `accent_decomposition` proof obligation became site-local: the proof pair
+  must be exactly one row of the policy's `accent_mappings`, because the
+  capture adapter now proves each digraph substitution at its own site rather
+  than claiming a whole `〔…〕` span (a whole-span form conflated the accent
+  rewrite with CRLF normalization and failed round-trip on any multi-line
+  span of a CRLF work). The record shape is unchanged at v4; records at each
+  version can carry the same field names and similar-looking numbers while
+  meaning different things, which is what a version string exists to prevent.
+
+  `recognition-identity-valid?` requires this to equal the identity's
+  `instrument_versions.source_span_coverage`, and that value is taken from the
+  predicate set's declared `:instrument`. From 2026-07-27 to 2026-07-31 the
+  predicate set deliberately kept naming v1 while the instrument moved, so the
+  two disagreed and the observation was `:unavailable` -- qualification held
+  open rather than passing under a threshold predeclared for a denominator
+  that no longer existed. On 2026-07-31 the predicate owner redeclared the
+  contract: the set names v4 and `:= 1.0` is declared for the body-region
+  denominator, so any eligible byte the ledger cannot account for fails the
+  gate. A future semantic change moves this constant again and reopens the
+  same quarantine until the next redeclaration."
+  "parser-rq-source-recognition-v4")
 
 (def ^:private diagnostic-gap-policy-v1-hash
   "sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5")
@@ -93,11 +113,6 @@
             walk/keywordize-keys)))
     (catch Exception _ nil)))
 
-(def expected-locators
-  {:aggregate "aggregate.json"
-   :identity "identity.json"
-   :taxonomy "taxonomy.json"})
-
 (def recognition-locators
   {:aggregate "recognition-aggregate.json"
    :index "recognition-index.json"
@@ -116,28 +131,6 @@
     (let [matches (filterv #(= locator (:locator %)) (:blobs manifest))]
       (when (= 1 (count matches)) (first matches)))))
 
-(defn- valid-uncovered?
-  [uncovered uncovered-bytes eligible-bytes]
-  (let [valid-span? (fn [{:keys [start end]}]
-                      (and (int? start)
-                           (int? end)
-                           (<= 0 start)
-                           (< start end)
-                           (<= end eligible-bytes)))
-        ordered (->> uncovered
-                     (group-by :work_id)
-                     vals
-                     (map #(sort-by (juxt :start :end) %)))
-        disjoint? (fn [spans]
-                    (every? (fn [[left right]]
-                              (<= (:end left) (:start right)))
-                            (partition 2 1 spans)))]
-    (and (vector? uncovered)
-         (every? valid-span? uncovered)
-         (every? disjoint? ordered)
-         (= uncovered-bytes
-            (reduce + 0 (map #(- (:end %) (:start %)) uncovered))))))
-
 (defn- valid-identity?
   "Complete key set plus the gate's own value contract. The value rules live
   in the qualification namespace so this instrument and the gate cannot drift
@@ -145,83 +138,6 @@
   [identity]
   (and (= (set qualification/qualification-identity-keys) (set (keys identity)))
        (qualification/identity-values-valid? identity)))
-
-(defn- source-accountability-identity-valid?
-  [identity]
-  (and (valid-identity? identity)
-       (= source-accountability-instrument-version
-          (get-in identity [:instrument_versions :source_accountability]))))
-
-(defn- valid-aggregate?
-  [aggregate identity-ref]
-  (let [{:keys [eligible_bytes covered_eligible_bytes uncovered_eligible_bytes
-                taxonomy_hash work_completeness uncovered]} aggregate]
-    (and (nil? (schema/validation-errors @aggregate-schema aggregate))
-         (= "ok" (:status aggregate))
-         (= "decoded_utf8" (:coordinate_system aggregate))
-         (= identity-ref (:identity_ref aggregate))
-         (= "parser-rq-ignored-regions-v1" (:taxonomy_version aggregate))
-         (string? taxonomy_hash)
-         (re-matches hash/hash-pattern taxonomy_hash)
-         (true? (:complete work_completeness))
-         (= (:expected work_completeness) (:observed work_completeness))
-         (pos-int? eligible_bytes)
-         (= eligible_bytes (+ covered_eligible_bytes uncovered_eligible_bytes))
-         (valid-uncovered? uncovered uncovered_eligible_bytes eligible_bytes))))
-
-(defn- valid-taxonomy?
-  [taxonomy taxonomy-member aggregate]
-  (and taxonomy
-       (nil? (schema/validation-errors @taxonomy-schema taxonomy))
-       (= (:taxonomy_version aggregate) (:taxonomy_version taxonomy))
-       (= (:coordinate_system aggregate) (:coordinate_system taxonomy))
-       (= (:taxonomy_hash aggregate) (get-in taxonomy-member [:ref :sha256]))))
-
-(defn derive-source-span-envelope
-  "Reverify a P0 capture and derive R1 only from authenticated integer totals."
-  [store manifest aggregate identity]
-  (let [verified (capture/verify-manifest store manifest)
-        store (assoc store :authenticated_blobs (:authenticated_blobs verified))
-        expected (qualification/qualification-identity-ref identity)
-        denominator (:denominator manifest)
-        aggregate-member (selected-member manifest (:aggregate expected-locators))
-        identity-member (selected-member manifest (:identity expected-locators))
-        taxonomy-member (selected-member manifest (:taxonomy expected-locators))
-        authenticated-aggregate (some->> aggregate-member
-                                         (authenticated-json-value store))
-        authenticated-identity (some->> identity-member
-                                        (authenticated-json-value store))
-        taxonomy (some->> taxonomy-member
-                          (authenticated-json-value store))]
-    (cond
-      (not= :ok (:status verified))
-      verified
-
-      (not (source-accountability-identity-valid? identity))
-      (unavailable "qualification identity violates the closed P0 contract")
-
-      (not= identity authenticated-identity)
-      (unavailable "qualification identity is absent from verified manifest evidence")
-
-      (not= aggregate authenticated-aggregate)
-      (unavailable "aggregate argument does not match verified aggregate bytes")
-
-      (not (valid-taxonomy? taxonomy taxonomy-member aggregate))
-      (unavailable "taxonomy is absent, ambiguous, invalid, or inconsistent")
-
-      (not= "decoded_utf8_bytes" (:unit denominator))
-      (unavailable "manifest denominator is not decoded UTF-8 bytes")
-
-      (not= (:eligible_bytes aggregate) (:value denominator))
-      (unavailable "manifest denominator does not equal aggregate eligible bytes")
-
-      (not (valid-aggregate? aggregate expected))
-      (unavailable "aggregate violates schema, identity, taxonomy, or conservation contracts")
-
-      :else
-      {:value (exact-display-ratio (:covered_eligible_bytes aggregate)
-                                   (:eligible_bytes aggregate))
-       :identity_ref expected})))
 
 (defn- unique-member-by-hash
   [manifest expected-hash]
@@ -556,8 +472,47 @@
   [store p0-manifest record index-entry index membership-record]
   (let [{:keys [eligible_bytes recognized_bytes accounted_bytes
                 semantic_gap_bytes unaccounted_bytes recognized accounted
-                semantic_gaps unaccounted]} record]
+                semantic_gaps unaccounted regions metadata]} record
+        ;; Intervals are absolute offsets into the decoded file; eligible
+        ;; bytes is a count. The frame for bounding an interval is the body
+        ;; REGION, not the number of bytes in it. Those coincide only while
+        ;; the body is the whole file starting at zero, which is what this
+        ;; validator previously assumed.
+        body-start (get-in regions [:body :start])
+        body-end (get-in regions [:body :end])
+        header-end (get-in regions [:header :end])
+        tail-start (get-in regions [:tail :start])
+        decoded-bytes (get-in regions [:tail :end])
+        metadata-bytes (and metadata (:eligible_bytes metadata))]
     (and (nil? (schema/validation-errors @recognition-work-schema record))
+         (some? regions) (some? metadata)
+         ;; The whole ordered chain, not three adjacency equalities.
+         ;; Adjacency alone admits an inverted region -- header 0..10,
+         ;; body 10..5, tail 5..5 satisfies both equalities -- and the
+         ;; subtractions below would then run on a region that runs
+         ;; backwards. Clojure gives a negative rather than a wrap, so the
+         ;; totals would merely disagree; stating the ordering makes the
+         ;; rejection a contract instead of an accident of arithmetic.
+         (<= 0
+             (get-in regions [:header :start])
+             header-end
+             body-start
+             body-end
+             tail-start
+             decoded-bytes
+             decoded-utf8/max-safe-integer)
+         (= 0 (get-in regions [:header :start]))
+         (= header-end body-start)
+         (= body-end tail-start)
+         (= eligible_bytes (- body-end body-start))
+         (= metadata-bytes (+ (- header-end 0) (- decoded-bytes tail-start)))
+         (= decoded-bytes (+ eligible_bytes metadata-bytes))
+         (= (:eligible_bytes metadata)
+            (+ (:attributed_bytes metadata) (:unattributed_bytes metadata)))
+         (every? (fn [interval]
+                   (or (<= (:end interval) header-end)
+                       (>= (:start interval) tail-start)))
+                 (concat (:attributed metadata) (:unattributed metadata)))
          (valid-ledger-chain? store p0-manifest record index-entry index membership-record)
          (= "ok" (:status record))
          (= source-recognition-instrument-version (:instrument_version record))
@@ -567,15 +522,17 @@
          (= (:work_id index-entry) (:work_id record))
          (= (:capture_generation_ref index-entry)
             (:capture_generation_ref record))
-         (every? #(decoded-utf8/canonical-intervals? % eligible_bytes)
+         (every? #(decoded-utf8/canonical-intervals? % body-start body-end)
                  [recognized accounted semantic_gaps unaccounted])
          (= recognized_bytes (decoded-utf8/interval-bytes recognized))
          (= accounted_bytes (decoded-utf8/interval-bytes accounted))
          (= semantic_gap_bytes (decoded-utf8/interval-bytes semantic_gaps))
          (= unaccounted_bytes (decoded-utf8/interval-bytes unaccounted))
          (decoded-utf8/interval-subset? recognized accounted)
-         (= semantic_gaps (decoded-utf8/interval-complement recognized eligible_bytes))
-         (= unaccounted (decoded-utf8/interval-complement accounted eligible_bytes))
+         (= semantic_gaps
+            (decoded-utf8/interval-complement recognized body-start body-end))
+         (= unaccounted
+            (decoded-utf8/interval-complement accounted body-start body-end))
          (= eligible_bytes (+ recognized_bytes semantic_gap_bytes))
          (= eligible_bytes (+ accounted_bytes unaccounted_bytes)))))
 

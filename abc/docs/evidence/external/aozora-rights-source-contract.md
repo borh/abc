@@ -196,6 +196,68 @@ have several distinct causes. Which rule governs each, and whether the flag
 means anything comparable across them, is Q3 and Q6. The census asserts only
 that no CE year was extracted.
 
+### F8 — Permission notices on the 337 `あり` works with a text URL
+
+Reproduced by `tools/rights_permission_notice_census.py` against the same pinned
+checkout. S2 names three places a permission may be recorded — the 図書カード,
+the 作品ファイル, or a page about the author linked from the card — so this reads
+the first two directly. None of the three is a catalog column, which is why F5b
+could not settle it.
+
+All **337** cards were read; all **337** display the `＊著作権存続＊` banner. Of
+the work files, **280** are hosted on `www.aozora.gr.jp` and were read from the
+snapshot; **57** are hosted elsewhere and were not inspected at all.
+
+| Where the notice appears | Works |
+|---|---|
+| 図書カード | 12 |
+| 作品ファイル | 46 |
+| union of the two | 46 |
+| card only | 0 |
+| work file only | 34 |
+| both, naming the same license | 12 |
+| both, naming different licenses | 0 |
+
+**The card alone is not sufficient.** Every notice found on a card is also in the
+work file, while 34 works carry one *only* in the file — so for those 34 a
+card-only reading reports no permission where a permission is recorded. This
+extends F5b's conclusion rather than replacing it: the catalog cannot answer Q6,
+and neither can the cards on their own.
+
+License identities over the 46, normalized only for presentation (spacing,
+hyphen forms, a trailing `・ライセンス` segment, and a parenthetical gloss —
+Aozora writes the same license several ways):
+
+| License as written | Works |
+|---|---|
+| 表示-非営利-改変禁止 2.1 日本 | 27 |
+| 表示-非営利-改変禁止 4.0 国際 | 11 |
+| 表示 2.1 日本 | 8 |
+
+Two facts follow lexically and are worth stating separately, because they point
+in opposite directions. **38 of the 46 name 改変禁止** — a no-derivatives term.
+**8 name 表示 alone** — attribution with no non-commercial or no-derivatives
+term. A permission notice existing is therefore not the same fact as a
+permission covering a given use, and the 46 are not one population.
+
+Whether any of these licenses authorizes what Soranoha's pipeline produces from a
+work — parser-IR, plaintext, TEI — is a legal question about derivative works.
+This census does not answer it, and per *Non-Authority* below ABC does not
+answer it either.
+
+**291 `あり` works carry a notice in neither place inspected.** That is not a
+finding that no permission exists: it excludes the 57 off-host texts, the 2
+archives below, and the linked author pages this census does not follow.
+
+Two of the 280 archives cannot be read by Python's stock `zipfile` and are
+reported as unread rather than as carrying no notice:
+`058100` (`Bad magic number for central directory`) and `050710` (`Bad CRC-32
+for file 'fushigino_kunino_alice_musical.txt'`). Both are already known from the
+corpus evidence — the first is the trailing-decoy-EOCD archive that ABC's
+admission path recovers, the second is the `declared_actual_size_mismatch` entry
+in `data/source-bundle/aozorabunko-0e9ea3e-summary.json`. This census does not
+reimplement that recovery, so its residual is an upper bound by at most two.
+
 ## What the census does and does not corroborate
 
 Comparing the flag against a death-year threshold covers **1,155 of 1,334
@@ -300,12 +362,17 @@ depends on it. The parenthetical is the hypothesis to test, not a finding.
   settles which field is maintained versus computed. S2 settles what `あり`
   implies for reuse (private use only, absent a per-work permission notice) and
   where such a permission is recorded (the card, the file, or a linked page —
-  never the catalog). Still open: who assesses a flag, against which
-  jurisdiction, whether the Q1 rule is the one applied, when a flag is
-  re-evaluated, and — for each of the 337 `あり` works with a text URL —
-  whether its card in fact carries a permission notice. **This remains the
-  load-bearing question**: it decides not just how a mapping is built but
-  whether one exists to build. See *What Q6 decides* below.
+  never the catalog). **F8 settles the per-work survey**: of the 337 `あり` works
+  with a text URL, 46 carry a permission notice in the card or the file, 291
+  carry one in neither place inspected, and the notice is in the work file alone
+  for 34 of the 46 — so a card-only reading is unsound. F8 also shows the 46 are
+  not one population: 38 name a no-derivatives term, 8 name attribution only.
+  Still open: who assesses a flag, against which jurisdiction, whether the Q1
+  rule is the one applied, when a flag is re-evaluated, whether any of the
+  licenses in F8 authorizes ABC's derived representations, and what is recorded
+  for the 57 off-host texts and the linked author pages F8 did not inspect.
+  **This remains the load-bearing question**: it decides not just how a mapping
+  is built but whether one exists to build. See *What Q6 decides* below.
 - **Q7 — Is a flag jurisdiction-scoped to Japan?** Any external IRI is read
   globally, so an unscoped assertion overclaims wherever the term differs.
   Asked per documented Q6 cell, not once for the corpus.

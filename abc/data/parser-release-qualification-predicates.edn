@@ -6,7 +6,7 @@
 ;; fabricated number). Comparators are exact: `:=` is value equality, so a
 ;; 0.969 observation fails a 1.0 predicate.
 {:predicate_set_id "abc/parser-release-qualification/v1"
- :predicate_set_hash "sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203"
+ :predicate_set_hash "sha256:a2bee2fe457d59f16919205c99e94e755ab41aa8b5cb04f9eabecd4dd2d94a49"
  :description
  "ADR 0002 must-pass release predicates over the pinned qualification corpus."
  :predicates
@@ -17,10 +17,16 @@
    :expected {:comparator :<= :value 0}
    :unit "works"}
 
+  ;; Redeclared 2026-07-31 for the v4 instrument. The measure is
+  ;; ledger-recognized bytes over the body-region eligible bytes, with accent
+  ;; normalization proven per digraph site. `:= 1.0` is redeclared for that
+  ;; body denominator -- any eligible byte the classified-source ledger cannot
+  ;; account for fails the gate -- not inherited from the retired whole-file
+  ;; measure the same number once thresholded.
   {:predicate_id :source-span-coverage
    :dimension
    "Parsed-source span coverage for parsed bytes, excluding documented ignored regions"
-   :instrument "parser-rq-source-recognition-v1"
+   :instrument "parser-rq-source-recognition-v4"
    :observed_key :source_span_coverage
    :expected {:comparator := :value 1.0}
    :unit "ratio"}

@@ -3,26 +3,14 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::index::qualification_identity_ref;
-use crate::interval::{Interval, normalize, subtract, total_len};
 use crate::model::{
-    BlobRef, CoordinateSystem, CoverageBasis, DecodedBlobRef, DecodedEncoding, DerivedFrom,
-    DiagnosticBlobRef, DiagnosticProfile, InstrumentVersion, JsonMediaType, NodeSpan,
-    ParserIrBlobRef, WireInterval, WorkAnalysis, WorkInput, WorkRecord, WorkSchemaVersion,
-    WorkStatus,
+    BlobRef, CoordinateSystem, DecodedBlobRef, DecodedEncoding, DerivedFrom, DiagnosticBlobRef,
+    DiagnosticProfile, InstrumentVersion, JsonMediaType, ParserIrBlobRef, WorkAnalysis, WorkInput,
+    WorkRecord, WorkSchemaVersion, WorkStatus,
 };
 
 fn hash(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
-}
-
-fn wire(intervals: &[Interval]) -> Vec<WireInterval> {
-    intervals
-        .iter()
-        .map(|i| WireInterval {
-            start: i.start() as u64,
-            end: i.end() as u64,
-        })
-        .collect()
 }
 
 pub fn analyze_work(input: WorkInput) -> WorkAnalysis {
@@ -52,7 +40,6 @@ where
     let identity_ref =
         qualification_identity_ref(&input.qualification_identity).expect("identity serializes");
     let decoded_len = decoded.text.len();
-    let full = Interval::new(0, decoded_len, decoded_len).expect("full decoded interval");
     let mut errors = Vec::new();
 
     if diagnostics_result.is_err() {
@@ -73,7 +60,6 @@ where
         errors.push("parser-ir-schema-identity-mismatch".to_owned());
     }
 
-    let mut claimed = Vec::new();
     if let Some(value) = parser_value.as_ref() {
         let source_hash = value
             .pointer("/source/work_content_hash")
@@ -97,52 +83,22 @@ where
                         == input.qualification_identity.mapping_schema_hash => {}
             _ => errors.push("parser-ir-derived-from-identity-mismatch".to_owned()),
         }
-        match value.get("nodes").and_then(Value::as_array) {
-            Some(nodes) => {
-                for node in nodes {
-                    let Some(span_value) = node.get("span").cloned() else {
-                        errors.push("node-span-missing".to_owned());
-                        continue;
-                    };
-                    match serde_json::from_value::<NodeSpan>(span_value) {
-                        Ok(span) if span.coordinate_system.is_none() => {
-                            errors.push("node-span-coordinate-system-missing".to_owned())
-                        }
-                        Ok(span) if span.coordinate_system.as_deref() != Some("decoded_utf8") => {
-                            errors.push("node-span-coordinate-system-mismatch".to_owned())
-                        }
-                        Ok(span) => match Interval::new(span.start, span.end, decoded_len) {
-                            Ok(interval) => claimed.push(interval),
-                            Err(_) => errors.push("node-span-out-of-bounds".to_owned()),
-                        },
-                        Err(_) => errors.push("node-span-malformed".to_owned()),
-                    }
-                }
-            }
-            None => errors.push("parser-ir-nodes-malformed".to_owned()),
-        }
     } else {
         errors.push("parser-ir-malformed".to_owned());
     }
 
-    let covered = normalize(claimed);
-    let eligible = vec![full];
-    let uncovered = subtract(&eligible, &covered);
-    let eligible_bytes = total_len(&eligible).expect("bounded totals");
-    let covered_bytes = total_len(&covered).expect("bounded totals");
-    let uncovered_bytes = total_len(&uncovered).expect("bounded totals");
-    if eligible_bytes == 0 {
-        errors.push("zero-eligible-bytes".to_owned());
-    }
-    if covered_bytes.checked_add(uncovered_bytes) != Some(eligible_bytes) {
-        errors.push("coverage-conservation-failed".to_owned());
-    }
-    if eligible_bytes != decoded_len as u64 {
-        errors.push("eligibility-conservation-failed".to_owned());
-    }
+    // v1 walked `nodes[*].span` here, bounding each span against the decoded
+    // source and unioning the result into a coverage quantity. The walk went
+    // with the quantity: parser-IR spans are offsets into each node's own
+    // emitted visible text, so bounding them against the decoded file checked
+    // nothing -- emitted text is shorter than its source, so every span passed.
+    // Parser-IR node structure is the conformance instrument's subject
+    // (`parser-rq-parser-ir-conformance-*`), not this one's. What this
+    // instrument authenticates about parser-IR is above: its schema identity
+    // and its `derived_from` coordinates.
 
     let record = WorkRecord {
-        schema_version: WorkSchemaVersion::V1,
+        schema_version: WorkSchemaVersion::V2,
         identity_ref,
         instrument_version: InstrumentVersion::V1,
         work_id: input.corpus_entry.work_id,
@@ -180,21 +136,11 @@ where
         taxonomy_version: input.taxonomy.taxonomy_version,
         taxonomy_hash: input.taxonomy.taxonomy_hash,
         coordinate_system: CoordinateSystem::DecodedUtf8,
-        coverage_basis: CoverageBasis::NodeSpans,
         status: if errors.is_empty() {
             WorkStatus::Ok
         } else {
             WorkStatus::Unavailable
         },
-        ignored: vec![],
-        eligible: wire(&eligible),
-        covered_eligible: wire(&covered),
-        uncovered_eligible: wire(&uncovered),
-        decoded_source_bytes: decoded_len as u64,
-        ignored_bytes: 0,
-        eligible_bytes,
-        covered_eligible_bytes: covered_bytes,
-        uncovered_eligible_bytes: uncovered_bytes,
         errors,
     };
     WorkAnalysis {

@@ -712,6 +712,32 @@
                    aggregate)))
       (is (empty? (source-recognition/coherence-errors
                    index aggregate [work]))))
+    (testing "the frozen v1 contracts still validate their own retired shape"
+      ;; v2 moved `eligible_bytes` from the whole decoded file to the body
+      ;; region, so the same field name carries a different contract on either
+      ;; side. Nothing produces v1 any more, which is exactly why the frozen
+      ;; schemas need evidence: neither version may validate the other's
+      ;; documents, or a v1 artifact could be read as a v2 measurement.
+      (doseq [[frozen sample]
+              [["schemas/parser-rq-source-recognition-work-v1.schema.json"
+                "work-ok-v1"]
+               ["schemas/parser-rq-source-recognition-work-v1.schema.json"
+                "work-unavailable-v1"]
+               ["schemas/parser-rq-source-recognition-aggregate-v1.schema.json"
+                "aggregate-ok-v1"]
+               ["schemas/parser-rq-source-recognition-aggregate-v1.schema.json"
+                "aggregate-unavailable-v1"]]]
+        (is (nil? (schema/validation-errors (files/read-json frozen)
+                                            (files/read-json (str root "/" sample ".json"))))
+            sample))
+      (is (seq (schema/validation-errors
+                (files/read-json "schemas/parser-rq-source-recognition-work-v1.schema.json")
+                work))
+          "the v1 contract rejects a v2 record")
+      (is (seq (schema/validation-errors
+                work-schema
+                (files/read-json (str root "/work-ok-v1.json"))))
+          "the v2 contract rejects a v1 record"))
     (testing "unknown fields and unavailable trusted totals are rejected"
       (is (seq (schema/validation-errors work-schema (assoc work "unknown" true))))
       (is (seq (schema/validation-errors
@@ -815,8 +841,8 @@
                                        "accounted_bytes" 20
                                        "semantic_gap_bytes" 4
                                        "semantic_gaps"
-                                       [{"work_id" "fixture-work" "start" 4 "end" 6}
-                                        {"work_id" "other-work" "start" 4 "end" 6}]))]
+                                       [{"work_id" "fixture-work" "start" 6 "end" 8}
+                                        {"work_id" "other-work" "start" 6 "end" 8}]))]
         (is (not= (get work "capture_generation_ref")
                   (get other-work "capture_generation_ref")))
         (is (empty? (source-recognition/index-errors
@@ -937,11 +963,11 @@
                (hash/format-sha256 (hash/sha256-json-jcs value))))
         (is (= identity (get-in authority [section "identity_hash"])))))
     (is (= {"schemas/parser-rq-classified-source-policy.schema.json"
-            "sha256:c9f68f073afcbdd2fca81e0e926c1428e7fcbb3f00307b5eff016a7c25276e60"
+            "sha256:a0557545dc7b530ccf8d4f089645fa512a0bed6b304f5921e2645745dc23d0ce"
             "schemas/parser-rq-classified-source-authority.schema.json"
             "sha256:cfe47129b725e29c4a5a5922ccbf7e2a17e9e8c5db716a3d1baf083fbb41fe1c"
             "schemas/parser-rq-classified-source-ledger.schema.json"
-            "sha256:f508dfeecb44cebbfb36ede4cfb72cee94cf44e5716041071345dae9c5e1530f"
+            "sha256:b87be18e02272f336d688032078bb965534d6b4d36dfb3f4521744d6dd2f2bf2"
             "schemas/parser-rq-capture-generation.schema.json"
             "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"}
            (into {} (map (fn [path]
@@ -955,7 +981,9 @@
     (is (= ["visible_text" "structural_newline" "ruby" "typography"
             "gaiji" "layout" "break" "heading" "illustration" "kunten"
             "source_annotation" "container_syntax" "terminal_provenance"
-            "publication_metadata" "unrecognized_source_form"]
+            "publication_metadata" "editorial_legend" "bibliographic"
+            "distribution_notice" "editorial_remark" "file_provenance"
+            "licence_terms" "unrecognized_source_form"]
            (get policy "roles")))
     (is (every? #(contains? % "construct_id") (get policy "rules")))
     (is (not-any? #(contains? % "case") (get policy "rules")))
@@ -1094,12 +1122,57 @@
       (let [structural (files/read-json (str root "/structural-ledger.json"))
             forms {"newline" "\n"
                    "warichu_open" "［＃割り注］"
+                   "warichu_close" "［＃割り注終わり］"
                    "page_break" "［＃改ページ］"
                    "section_break" "［＃改丁］"
                    "body_end" "［＃本文終わり］"
                    "forced_break" "［＃改行］"
                    "container_open" "［＃ここから］"
-                   "container_close" "［＃ここで終わり］"}
+                   "container_close" "［＃ここで終わり］"
+                   ;; The colophon field line, attributed in the tail region
+                   ;; where the parser never lexes, and the indented line that
+                   ;; continues it. A continuation is recognized by the run it
+                   ;; sits in -- indented, under a field, no blank between --
+                   ;; and never by what it says.
+                   "publication_metadata_line" "底本：「テスト全集」テスト書房"
+                   "publication_metadata_continuation" "1967（昭和42）年7月10日発行"
+                   ;; The header's opening bibliographic block. One construct
+                   ;; for every line of it: which item a line is -- title,
+                   ;; original title, author, translator -- is not claimed,
+                   ;; because position within the block does not reliably say.
+                   "bibliographic_header_line" "はつ恋"
+                   ;; The archive's own distribution notice. The one sentence
+                   ;; this instrument recognizes, and it is recognized as a
+                   ;; constant the archive emits rather than read as prose.
+                   "distribution_notice_line"
+                   "このファイルは、インターネットの図書館、青空文庫で作られました。"
+                   ;; The header's fenced notation legend. Its entry form is
+                   ;; byte-identical in shape to the colophon field above --
+                   ;; the region each producer scans is what tells them apart,
+                   ;; never the text.
+                   "editorial_separator_rule" "-----"
+                   "editorial_legend_heading" "【テキスト中に現れる記号について】"
+                   "editorial_legend_entry" "《》：ルビ"
+                   "editorial_legend_example" "（例）金森《かなもり》"
+                   "editorial_legend_note" "（数字は、JIS X 0213の面区点番号）"
+                   ;; A line inside the fenced block matching none of the four
+                   ;; forms above. The fence is what makes the claim: block
+                   ;; membership, with nothing claimed about the line's form.
+                   "editorial_legend_line" "＊濁点付きの二倍の踊り字は「／″＼」"
+                   ;; The transcriber's own commentary, and the lines that
+                   ;; continue it. What is claimed is which act the line
+                   ;; performs, not what the sentence says.
+                   "editorial_remark_line" "※底本の表記をあらためました。"
+                   "editorial_remark_continuation" "その際、以下の置き換えをおこないました。"
+                   ;; Provenance of the FILE rather than of the publication,
+                   ;; which is why it carries its own role.
+                   "file_dating_line" "2007年4月2日作成"
+                   ;; The terms the file is offered under -- a different act
+                   ;; from the notice, which says how it came to exist.
+                   "licence_statement_line"
+                   "この作品は、クリエイティブ・コモンズ「表示 2.1 日本」です。"
+                   "licence_statement_continuation"
+                   "上記のライセンスに従って、訳者に断りなく自由に利用できます。"}
             structural-rules (filter #(= "structural_control"
                                          (get % "disposition"))
                                      (get policy "rules"))]
@@ -1121,11 +1194,18 @@
                       ledger-for-rule (assoc structural "entries" [entry])]]
           (is (empty? (classified-source/ledger-errors
                        policy ledger-for-rule source-form)))
-          (is (seq (classified-source/ledger-errors
-                    policy
-                    (assoc-in ledger-for-rule ["entries" 0 "source_role"]
-                              "publication_metadata")
-                    source-form))))
+          ;; Any role other than the rule's own must invalidate the entry:
+          ;; each construct_id has exactly one rule, so the lookup is role-
+          ;; specific. The substituted role is chosen relative to the rule
+          ;; rather than hard-coded, because a hard-coded one silently stops
+          ;; testing anything the moment that role acquires a rule of its own.
+          (let [other-role (first (remove #{(get rule "source_role")}
+                                          (get policy "roles")))]
+            (is (seq (classified-source/ledger-errors
+                      policy
+                      (assoc-in ledger-for-rule ["entries" 0 "source_role"]
+                                other-role)
+                      source-form)))))
         (doseq [invalid [(assoc-in structural ["entries" 0 "construct_witness"
                                                "construct_id"] "page_break")
                          (assoc-in structural ["entries" 0 "construct_witness"
@@ -1165,10 +1245,12 @@
                 "test/fixtures/parser-rq/parser-rq-ignored-regions.schema.json"]
                ["schemas/parser-rq-source-accountability-work.schema.json"
                 "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json"]
+               ["schemas/parser-rq-source-accountability-work-v1.schema.json"
+                "test/fixtures/parser-rq/parser-rq-source-accountability-work-v1.schema.json"]
                ["schemas/parser-rq-source-accountability-index.schema.json"
                 "test/fixtures/parser-rq/parser-rq-source-accountability-index.schema.json"]
-               ["schemas/parser-rq-source-accountability-aggregate.schema.json"
-                "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate.schema.json"]]]
+               ["schemas/parser-rq-source-accountability-aggregate-v1.schema.json"
+                "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate-v1.schema.json"]]]
     (doseq [[path fixture] pairs]
       (let [contract (files/read-json path)]
         (is (= false (get contract "additionalProperties")) path)
@@ -1180,10 +1262,12 @@
                            "test/fixtures/parser-rq/parser-rq-ignored-regions.schema.json"]
                           ["schemas/parser-rq-source-accountability-work.schema.json"
                            "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json"]
+                          ["schemas/parser-rq-source-accountability-work-v1.schema.json"
+                           "test/fixtures/parser-rq/parser-rq-source-accountability-work-v1.schema.json"]
                           ["schemas/parser-rq-source-accountability-index.schema.json"
                            "test/fixtures/parser-rq/parser-rq-source-accountability-index.schema.json"]
-                          ["schemas/parser-rq-source-accountability-aggregate.schema.json"
-                           "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate.schema.json"]]]
+                          ["schemas/parser-rq-source-accountability-aggregate-v1.schema.json"
+                           "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate-v1.schema.json"]]]
     (let [contract (files/read-json path)
           document (assoc (files/read-json fixture) "unexpected" true)]
       (is (seq (schema/validation-errors contract document)) path))))
@@ -1199,8 +1283,13 @@
                               (assoc-in ["decoded_source" "encoding"]
                                         "windows-31j-lossy"))
         unavailable-no-diagnostics (dissoc unavailable-lossy "diagnostics")
-        invalid-documents [(dissoc document "coverage_basis")
-                           (assoc document "coverage_basis" "parser_ir.paragraphs[*].span")
+        invalid-documents [;; v2 publishes no measurement, so a v1-shaped
+                           ;; document must be rejected outright rather than
+                           ;; read as a v2 record with extra fields.
+                           (assoc document "coverage_basis" "parser_ir.nodes[*].span")
+                           (assoc document "eligible_bytes" 3)
+                           (assoc document "schema_version"
+                                  "abc/parser-rq-source-accountability-work/v1")
                            (update document "diagnostics" dissoc "profile")
                            (assoc-in document ["diagnostics" "profile"]
                                      "abc/authorized-parser-diagnostics-schema-v3")
@@ -1214,13 +1303,33 @@
     (doseq [invalid invalid-documents]
       (is (seq (schema/validation-errors contract invalid))))))
 
-(deftest parser-rq-source-accountability-unavailable-aggregate-rejects-numeric-test
-  (let [contract (files/read-json
-                  "schemas/parser-rq-source-accountability-aggregate.schema.json")
-        document (-> (files/read-json
-                      "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate.schema.json")
-                     (assoc "status" "unavailable" "errors" ["record unavailable"]))]
-    (is (seq (schema/validation-errors contract document)))))
+(deftest frozen-v1-source-accountability-contracts-still-hold-their-shape-test
+  ;; The live aggregate schema is gone with the aggregate; only the frozen v1
+  ;; remains, and nothing produces documents for it any more. These are the
+  ;; assertions its retired producer used to be evidence for: an unavailable
+  ;; aggregate may not carry byte totals, and a v1 work record still requires
+  ;; the measurement fields v2 dropped.
+  (let [aggregate-contract (files/read-json
+                            "schemas/parser-rq-source-accountability-aggregate-v1.schema.json")
+        aggregate (files/read-json
+                   "test/fixtures/parser-rq/parser-rq-source-accountability-aggregate-v1.schema.json")
+        work-contract (files/read-json
+                       "schemas/parser-rq-source-accountability-work-v1.schema.json")
+        work (files/read-json
+              "test/fixtures/parser-rq/parser-rq-source-accountability-work-v1.schema.json")]
+    (is (seq (schema/validation-errors
+              aggregate-contract
+              (assoc aggregate "status" "unavailable" "errors" ["record unavailable"]))))
+    (is (nil? (schema/validation-errors work-contract work)))
+    (doseq [dropped ["coverage_basis" "eligible_bytes" "covered_eligible_bytes"
+                     "uncovered_eligible_bytes" "decoded_source_bytes"]]
+      (is (seq (schema/validation-errors work-contract (dissoc work dropped)))
+          dropped))
+    ;; And the two versions must not validate each other.
+    (is (seq (schema/validation-errors
+              work-contract
+              (files/read-json
+               "test/fixtures/parser-rq/parser-rq-source-accountability-work.schema.json"))))))
 
 (deftest parser-rq-v1-taxonomy-is-empty-test
   (let [taxonomy (files/read-json "data/parser-rq-ignored-regions-v1.json")]

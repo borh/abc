@@ -412,7 +412,7 @@ def bounded_identity() -> dict[str, object]:
         "parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
         "corpus_snapshot_hash": "sha256:63d8d53a9a0ef8ec80c921d7fb17d142f231fbc061066fb8056b951ffcfbe47e",
         "corpus_list_hash": "sha256:dbe17138be9eee5f681b91fd2247f72a0dda5f717147e22ad149f0485da08708",
-        "predicate_set_hash": "sha256:bec4fff7ab46003667df6115accf16da88260e02a003a07ab5537e8f5851c203",
+        "predicate_set_hash": "sha256:a2bee2fe457d59f16919205c99e94e755ab41aa8b5cb04f9eabecd4dd2d94a49",
         "instrument_versions": {
             "diagnostic_completeness": "ab-aozora --mode diagnostics envelope entries {code,severity,source,span}",
             "fatal_failures": "parser-rq-core-attempt-v1",
@@ -420,9 +420,28 @@ def bounded_identity() -> dict[str, object]:
             "peak_cgroup_memory_bytes": "parser-rq-resource-v1",
             "publication_structure": "reports/parser-ir/publication-bundle-validate.py against parser-ir-publication-preservation.schema.json",
             "silent_drops": "parser-rq-diagnostic-authorization-v1",
-            "source_span_coverage": "parser-rq-source-recognition-v1",
+            "source_span_coverage": "parser-rq-source-recognition-v4",
             "timeouts": "parser-rq-core-attempt-v1",
             "wall_time_seconds": "parser-rq-core-attempt-v1",
+        },
+        # Required by the Rust identity struct with no serde default, so omitting
+        # it fails deserialization in every candidate binary rather than just
+        # producing a thinner identity. `instrument_versions` above describes how
+        # a measurement is taken in prose; this binds the governed policy document
+        # each instrument actually read.
+        #
+        # These are the live values from abc/src/abc/tools/parser_rq_campaign.clj's
+        # `instrument-policy-hashes`, which hashes the canonical JSON of each
+        # document under `instrument-policy-paths`. Restated here because this is
+        # a fixture, not a recomputation; rotate them with the policy documents.
+        "instrument_policy_hashes": {
+            "core_attempt": "sha256:87ebecc299852b0d378f0963ced57424bcb6d78f038e14b7ee8ef1524a99bc20",
+            "diagnostic_completeness": "sha256:ede249362fcd93bc32a38c65c2d3f95993e6818163286a49ad688751631d80a3",
+            "diagnostic_gap": "sha256:6a82444829b3657e996b5fc81e2d0fac1d08954762b2b6f53aba67b954346d15",
+            "parser_ir_conformance": "sha256:062dd8952188e82440de0758b052de9a236175d9c18bf83a27484c21e679bf60",
+            "publication_structure": "sha256:1bafc7da20e5f8290dd1c89f6eb6e11ea202629d4a8726a8dfaec6afbe615da0",
+            "resource": "sha256:12dcbb7a6b28e12261fa90a6b9c6e57c861981d64bbc27231fa4d9bcdbb845db",
+            "source_recognition": "sha256:7210617fb13dd38fa8eeab6eb0726453e93599aa931105e3b96ab6ab88cdf614",
         },
     }
 

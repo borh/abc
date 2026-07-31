@@ -43,24 +43,36 @@
   (conj (set (keys member-observed-keys)) :measurements))
 
 (def instrument-policy-paths
-  "The governed authority document behind each capture member's instrument,
+  "The governed authority documents behind each capture member's instrument,
   keyed by the member whose observations it governs and resolved against the
-  abc root.
+  abc root. Each value is a vector, because an instrument may be governed by
+  more than one document.
 
   Closed on purpose, and closed over exactly `member-observed-keys`:
   build-candidate binds every entry and fails on a missing file, so an
   instrument cannot enter the qualification identity as an absent key. That
   absence is the fault this coordinate exists to remove -- before it, a change
   to instrument semantics rotated the instrument's own policy_hash and nothing
-  the admission and promotion chain binds."
+  the admission and promotion chain binds.
+
+  `:source_recognition` binds two documents because two govern it: the
+  ignored-regions taxonomy decides which bytes are ELIGIBLE, and the
+  classified-source policy decides which eligible bytes are RECOGNIZED. Only
+  the taxonomy was bound until 2026-07-27, so the 31 rules that decide every
+  recognized byte -- and hence `source_span_coverage` -- entered the identity
+  only as a side effect of `parser_git_rev`. The key was present and pointed at
+  the wrong document: the guarantee above held formally and failed
+  substantively. Note the parallel `parser-rq-ab-aozora-diagnostic-gap-v1.json`
+  was bound from the start."
   (sorted-map
-   :core_attempt "data/parser-rq-core-attempt-policy-v1.json"
-   :diagnostic_completeness "data/parser-rq-diagnostic-completeness-policy-v1.json"
-   :diagnostic_gap "data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
-   :parser_ir_conformance "data/parser-rq-parser-ir-conformance-policy-v1.json"
-   :publication_structure "data/parser-rq-publication-policy-v1.json"
-   :resource "data/parser-rq-resource-policy-v1.json"
-   :source_recognition "data/parser-rq-ignored-regions-v1.json"))
+   :core_attempt ["data/parser-rq-core-attempt-policy-v1.json"]
+   :diagnostic_completeness ["data/parser-rq-diagnostic-completeness-policy-v1.json"]
+   :diagnostic_gap ["data/parser-rq-ab-aozora-diagnostic-gap-v1.json"]
+   :parser_ir_conformance ["data/parser-rq-parser-ir-conformance-policy-v1.json"]
+   :publication_structure ["data/parser-rq-publication-policy-v1.json"]
+   :resource ["data/parser-rq-resource-policy-v1.json"]
+   :source_recognition ["data/parser-rq-ab-aozora-classified-source-v1.json"
+                        "data/parser-rq-ignored-regions-v1.json"]))
 
 (def capture-keys
   #{:schema_id :schema_version :capture_generation_ref :capture_started_at_utc
@@ -195,23 +207,42 @@
 
 (declare provenance-errors verify-provenance-errors)
 
-(defn instrument-policy-hashes
-  "Bind each instrument's governed authority document by content.
+(defn- instrument-policy-document-hash
+  "Content hash of one governed authority document.
 
-  The hash is taken over the document's canonical JSON bytes, not over its
-  self-declared `policy_hash`. One derivation covers every member: the
-  ignored-regions taxonomy declares no hash at all, and where a policy does
-  declare one that declaration is itself among the hashed bytes, so binding
-  the content is strictly stronger than binding the claim about it."
+  Taken over the document's canonical JSON bytes, not over its self-declared
+  `policy_hash`. One derivation covers every document: the ignored-regions
+  taxonomy declares no hash at all, and where a policy does declare one that
+  declaration is itself among the hashed bytes, so binding the content is
+  strictly stronger than binding the claim about it."
+  [abc-root member relative]
+  (let [path (fs/file abc-root relative)]
+    (when-not (fs/regular-file? path)
+      (throw (ex-info "governed instrument policy is missing"
+                      {:member member :path (str path)})))
+    (hash/format-sha256 (hash/sha256-json-jcs (files/read-json path)))))
+
+(defn instrument-policy-hashes
+  "Bind each instrument's governed authority documents by content.
+
+  One member yields one hash, so the wire shape stays `member -> sha256` and
+  `parser-rq-candidate.schema.json` is unchanged.
+
+  A member governed by a single document carries that document's own content
+  hash, byte-for-byte as before. A member governed by several carries a
+  sha256 over the canonical JSON of its documents' hashes in declared order.
+  The two cases are deliberate: folding uniformly would rotate all seven
+  members for a change that affects one, and an unattributable rotation is the
+  exact fault this coordinate exists to remove."
   [abc-root]
   (reduce-kv
-   (fn [hashes member relative]
-     (let [path (fs/file abc-root relative)]
-       (when-not (fs/regular-file? path)
-         (throw (ex-info "governed instrument policy is missing"
-                         {:member member :path (str path)})))
+   (fn [hashes member relatives]
+     (let [digests (mapv #(instrument-policy-document-hash abc-root member %)
+                         relatives)]
        (assoc hashes (name member)
-              (hash/format-sha256 (hash/sha256-json-jcs (files/read-json path))))))
+              (if (= 1 (count digests))
+                (first digests)
+                (hash/format-sha256 (hash/sha256-json-jcs digests))))))
    (sorted-map)
    instrument-policy-paths))
 

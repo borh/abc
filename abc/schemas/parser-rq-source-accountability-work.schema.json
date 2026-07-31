@@ -2,11 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-rq-source-accountability-work.schema.json",
   "title": "Parser release qualification source-accountability work record",
+  "description": "v2. Records which source, decoded how, which parser-IR, which diagnostics, under which taxonomy, authenticated against which qualification identity. It publishes no measurement: v1 also carried a node-span coverage quantity and the whole-file eligibility it was measured against, and both were retired together. Published v1 records are validated by parser-rq-source-accountability-work-v1.schema.json. See docs/adr/parser-rq-retire-node-span-coverage.md.",
   "type": "object",
-  "required": ["schema_version", "identity_ref", "instrument_version", "work_id", "original_source", "decoded_source", "parser_ir", "taxonomy_version", "taxonomy_hash", "coordinate_system", "coverage_basis", "status", "ignored", "eligible", "covered_eligible", "uncovered_eligible", "decoded_source_bytes", "ignored_bytes", "eligible_bytes", "covered_eligible_bytes", "uncovered_eligible_bytes", "errors"],
+  "required": ["schema_version", "identity_ref", "instrument_version", "work_id", "original_source", "decoded_source", "parser_ir", "taxonomy_version", "taxonomy_hash", "coordinate_system", "status", "errors"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"const": "abc/parser-rq-source-accountability-work/v1"},
+    "schema_version": {"const": "abc/parser-rq-source-accountability-work/v2"},
     "identity_ref": {"$ref": "#/$defs/hash"},
     "instrument_version": {"type": "string", "minLength": 1},
     "work_id": {"type": "string", "minLength": 1},
@@ -17,17 +18,7 @@
     "taxonomy_version": {"const": "parser-rq-ignored-regions-v1"},
     "taxonomy_hash": {"$ref": "#/$defs/hash"},
     "coordinate_system": {"const": "decoded_utf8"},
-    "coverage_basis": {"const": "parser_ir.nodes[*].span"},
     "status": {"enum": ["ok", "unavailable"]},
-    "ignored": {"$ref": "#/$defs/intervals"},
-    "eligible": {"$ref": "#/$defs/intervals"},
-    "covered_eligible": {"$ref": "#/$defs/intervals"},
-    "uncovered_eligible": {"$ref": "#/$defs/intervals"},
-    "decoded_source_bytes": {"type": "integer", "minimum": 0},
-    "ignored_bytes": {"type": "integer", "minimum": 0},
-    "eligible_bytes": {"type": "integer", "minimum": 0},
-    "covered_eligible_bytes": {"type": "integer", "minimum": 0},
-    "uncovered_eligible_bytes": {"type": "integer", "minimum": 0},
     "errors": {"type": "array", "items": {"type": "string", "minLength": 1}}
   },
   "allOf": [
@@ -47,16 +38,6 @@
   ],
   "$defs": {
     "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-    "interval": {
-      "type": "object",
-      "required": ["start", "end"],
-      "additionalProperties": false,
-      "properties": {
-        "start": {"type": "integer", "minimum": 0},
-        "end": {"type": "integer", "minimum": 0}
-      }
-    },
-    "intervals": {"type": "array", "items": {"$ref": "#/$defs/interval"}},
     "blob": {
       "type": "object",
       "required": ["sha256", "bytes"],

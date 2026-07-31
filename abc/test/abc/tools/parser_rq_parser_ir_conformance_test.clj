@@ -217,6 +217,47 @@
     (is (= "measured" (:status aggregate)))
     (is (= 1.0 (:value observation)))))
 
+(deftest two-valid-of-three-generated-outputs-is-ieee-division
+  ;; 2/3 is the smallest ratio this instrument can produce where the two division
+  ;; paths disagree: `(double (/ 2 3))` builds an exact Ratio and rounds it
+  ;; through BigDecimal at DECIMAL64, landing on 0.6666666666666667, while IEEE
+  ;; `(/ 2.0 3.0)` gives 0.6666666666666666. Every other language's division --
+  ;; including the Python capture driver that writes this value into
+  ;; content-addressed evidence -- does the IEEE one, so the two must agree
+  ;; exactly. The twin of this guard is in
+  ;; parser_rq_diagnostic_completeness_test.clj.
+  ;;
+  ;; The committed corpus currently measures 1.0, which is exact under either
+  ;; path; that is why the defect was invisible in the report rather than absent.
+  (let [work-ids ["valid" "valid-2" "invalid"]
+        ratio-policy (assoc committed-policy
+                            :expected_work_ids work-ids
+                            :expected_work_set_hash
+                            (hash/format-sha256 (hash/sha256-json-jcs work-ids)))
+        ratio-policy (assoc ratio-policy :policy_hash
+                            (#'conformance/projected-hash ratio-policy :policy_hash))
+        store (fixture-store)
+        records (mapv (fn [[work-id status]]
+                        (conformance/authenticate-record
+                         store ratio-policy identity-ref
+                         (entry! store ratio-policy work-id status)))
+                      [["valid" "schema_valid"]
+                       ["valid-2" "schema_valid"]
+                       ["invalid" "schema_invalid"]])
+        aggregate (conformance/aggregate ratio-policy work-ids records)
+        observation (conformance/derive-observation ratio-policy identity-ref
+                                                    aggregate)]
+    (is (= {:expected_works 3
+            :generated_outputs 3
+            :schema_valid_outputs 2
+            :schema_invalid_outputs 1
+            :no_output_works 0}
+           (select-keys aggregate
+                        [:expected_works :generated_outputs :schema_valid_outputs
+                         :schema_invalid_outputs :no_output_works])))
+    (is (= (/ 2.0 3.0) (:value observation)))
+    (is (not= (double (/ 2 3)) (:value observation)))))
+
 (deftest omission-and-authority-mismatch-are-unavailable
   (let [store (fixture-store)
         valid (entry! store "valid" "schema_valid")

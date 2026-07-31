@@ -12,7 +12,7 @@ macro_rules! wire_enum {
     };
 }
 
-wire_enum!(WorkSchemaVersion { V1 => "abc/parser-rq-source-accountability-work/v1" });
+wire_enum!(WorkSchemaVersion { V2 => "abc/parser-rq-source-accountability-work/v2" });
 wire_enum!(InstrumentVersion { V1 => "parser-rq-source-accountability-v1" });
 wire_enum!(DecodedEncoding {
     Utf8 => "utf-8",
@@ -24,7 +24,6 @@ wire_enum!(DiagnosticProfile { RawSchemaV3 => "abc/raw-parser-diagnostics-schema
 wire_enum!(JsonMediaType { ApplicationJson => "application/json" });
 wire_enum!(TaxonomyVersion { V1 => "parser-rq-ignored-regions-v1" });
 wire_enum!(CoordinateSystem { DecodedUtf8 => "decoded_utf8" });
-wire_enum!(CoverageBasis { NodeSpans => "parser_ir.nodes[*].span" });
 wire_enum!(WorkStatus { Ok => "ok", Unavailable => "unavailable" });
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -118,13 +117,19 @@ pub struct DiagnosticBlobRef {
     pub locator: String,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct WireInterval {
-    pub start: u64,
-    pub end: u64,
-}
-
+/// What the instrument records about one work: which source, decoded how, which
+/// parser-IR, which diagnostics, under which taxonomy, authenticated against
+/// which qualification identity.
+///
+/// v2 publishes no measurement. v1 also carried a node-span coverage quantity
+/// and the whole-file eligibility it was measured against; both were retired
+/// together, because the quantity was computed by unioning parser-IR spans --
+/// which are offsets into emitted visible text -- against decoded source bytes.
+/// See `docs/adr/parser-rq-retire-node-span-coverage.md`.
+///
+/// `coordinate_system` survives the retirement because `decoded_source.bytes`
+/// does: it says which coordinate that count is in. It no longer qualifies any
+/// interval, because the record publishes none.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct WorkRecord {
@@ -140,17 +145,7 @@ pub struct WorkRecord {
     pub taxonomy_version: TaxonomyVersion,
     pub taxonomy_hash: String,
     pub coordinate_system: CoordinateSystem,
-    pub coverage_basis: CoverageBasis,
     pub status: WorkStatus,
-    pub ignored: Vec<WireInterval>,
-    pub eligible: Vec<WireInterval>,
-    pub covered_eligible: Vec<WireInterval>,
-    pub uncovered_eligible: Vec<WireInterval>,
-    pub decoded_source_bytes: u64,
-    pub ignored_bytes: u64,
-    pub eligible_bytes: u64,
-    pub covered_eligible_bytes: u64,
-    pub uncovered_eligible_bytes: u64,
     pub errors: Vec<String>,
 }
 
@@ -174,7 +169,6 @@ pub struct CorpusInput {
 }
 
 wire_enum!(RecordIndexSchemaVersion { V1 => "abc/parser-rq-source-accountability-index/v1" });
-wire_enum!(AggregateSchemaVersion { V1 => "abc/parser-rq-source-accountability-aggregate/v1" });
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -201,52 +195,6 @@ pub struct RecordIndex {
     pub errors: Vec<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct WorkCompleteness {
-    pub expected: u64,
-    pub observed: u64,
-    pub complete: bool,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct WorkInterval {
-    pub work_id: String,
-    pub start: u64,
-    pub end: u64,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct AggregateRecord {
-    pub schema_version: AggregateSchemaVersion,
-    pub identity_ref: String,
-    pub taxonomy_version: TaxonomyVersion,
-    pub taxonomy_hash: String,
-    pub coordinate_system: CoordinateSystem,
-    pub status: WorkStatus,
-    pub work_completeness: WorkCompleteness,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub eligible_bytes: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub covered_eligible_bytes: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uncovered_eligible_bytes: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uncovered: Option<Vec<WorkInterval>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub errors: Option<Vec<String>>,
-}
-
-impl AggregateRecord {
-    pub fn exactly_covered(&self) -> bool {
-        self.status == WorkStatus::Ok
-            && self.covered_eligible_bytes == self.eligible_bytes
-            && self.eligible_bytes.is_some()
-    }
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct DerivedFrom {
@@ -256,16 +204,4 @@ pub(crate) struct DerivedFrom {
     pub mapping_id: String,
     pub mapping_version: String,
     pub mapping_schema_hash: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct NodeSpan {
-    pub start: usize,
-    pub end: usize,
-    pub coordinate_system: Option<String>,
-    #[serde(rename = "line")]
-    pub _line: Option<u64>,
-    #[serde(rename = "column")]
-    pub _column: Option<u64>,
 }

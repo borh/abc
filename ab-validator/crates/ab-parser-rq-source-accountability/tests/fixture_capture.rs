@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use ab_parser_rq_source_accountability::{
     CorpusEntry, CorpusInput, CorpusSourceEntry, QualificationIdentity, TaxonomyIdentity,
-    TaxonomyVersion, aggregate, analyze_corpus, canonical_json,
+    TaxonomyVersion, analyze_corpus, canonical_json,
 };
 use serde_json::json;
 use sha2::{Digest, Sha256};
@@ -120,7 +120,7 @@ fn capture(root: &Path, mutate_source: bool) -> BTreeMap<String, String> {
     };
     let index_path = store.join("index.json");
     let index = analyze_corpus(CorpusInput {
-        entries: entries.clone(),
+        entries,
         source_root,
         parser_ir_root: ir_root,
         store_root: store.clone(),
@@ -129,20 +129,7 @@ fn capture(root: &Path, mutate_source: bool) -> BTreeMap<String, String> {
         taxonomy: taxonomy.clone(),
     })
     .unwrap();
-    let aggregate = aggregate(
-        &entries
-            .into_iter()
-            .map(|entry| entry.corpus_entry)
-            .collect::<Vec<_>>(),
-        &index,
-        &store,
-        &identity(),
-        &taxonomy,
-    )
-    .unwrap();
     let index_bytes = canonical_json(&index).unwrap();
-    let aggregate_bytes = canonical_json(&aggregate).unwrap();
-    fs::write(store.join("aggregate.json"), &aggregate_bytes).unwrap();
     let identity_bytes = canonical_json(&identity()).unwrap();
     fs::write(store.join("identity.json"), &identity_bytes).unwrap();
     fs::write(store.join("taxonomy.json"), &taxonomy_bytes).unwrap();
@@ -158,7 +145,6 @@ fn capture(root: &Path, mutate_source: bool) -> BTreeMap<String, String> {
     };
     let manifest = canonical_json(&json!({
         "blobs": [
-            blob("aggregate.json", aggregate_bytes.as_bytes()),
             blob("identity.json", identity_bytes.as_bytes()),
             blob("index.json", index_bytes.as_bytes()),
             blob("taxonomy.json", &taxonomy_bytes)
@@ -167,7 +153,6 @@ fn capture(root: &Path, mutate_source: bool) -> BTreeMap<String, String> {
     }))
     .unwrap();
     BTreeMap::from([
-        ("aggregate.json".into(), aggregate_bytes),
         ("identity.json".into(), identity_bytes),
         ("index.json".into(), index_bytes),
         ("manifest.json".into(), manifest),

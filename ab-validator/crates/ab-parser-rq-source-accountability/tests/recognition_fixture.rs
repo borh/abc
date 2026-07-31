@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 const QUALIFICATION_IDENTITY_REF: &str =
-    "sha256:c516f78850fa7119ac7e847793f2544a1ef87ce7ee8f529d1d22b09121ef4169";
+    "sha256:db804ae6162a6dea2b71e04d465c4e8d0ade0ccf5fbf798d4d670b84c9c7ab78";
 
 fn hash(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
@@ -42,7 +42,7 @@ fn identity() -> Value {
         "predicate_set_hash": format!("sha256:{}", "6".repeat(64)),
         "instrument_versions": {
             "source_accountability": "parser-rq-source-accountability-v1",
-            "source_span_coverage": "parser-rq-source-recognition-v1"
+            "source_span_coverage": "parser-rq-source-recognition-v4"
         },
         "instrument_policy_hashes": {
             "source_recognition": format!("sha256:{}", "7".repeat(64))

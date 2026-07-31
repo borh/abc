@@ -1,10 +1,12 @@
 (ns abc.tools.parser-rq-source-accountability-test
-  (:require [abc.tools.hash :as hash]
+  (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.parser-release-qualification :as qualification]
             [abc.tools.parser-rq-capture :as capture]
             [abc.tools.parser-rq-source-accountability :as rq-source]
             [abc.tools.parser-rq-source-recognition :as source-recognition]
+            [abc.tools.schema :as schema]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is]]
@@ -34,7 +36,7 @@
 (def recognition-identity
   (assoc-in qualification-identity
             [:instrument_versions :source_span_coverage]
-            "parser-rq-source-recognition-v1"))
+            "parser-rq-source-recognition-v4"))
 
 (def recognition-identity-ref
   (qualification/qualification-identity-ref recognition-identity))
@@ -43,6 +45,42 @@
   (let [production-identity
         (update recognition-identity :instrument_versions dissoc :source_accountability)]
     (is (#'rq-source/recognition-identity-valid? production-identity))))
+
+(deftest an-identity-naming-a-different-instrument-cannot-produce-an-observation
+  ;; The seam that makes a semantic instrument change fail closed.
+  ;;
+  ;; `instrument_versions.source_span_coverage` is taken from the predicate
+  ;; set's declared `:instrument`, and the committed instrument is this
+  ;; namespace's constant. When the measure changes, the constant moves and the
+  ;; predicate set does not, so the two disagree until the predicate's owner
+  ;; declares a contract for what is now measured. Disagreement must yield
+  ;; `:unavailable`, never a value scored against the old threshold.
+  ;;
+  ;; The quarantine this test once held open was lifted 2026-07-31: the
+  ;; predicate owner redeclared `:= 1.0` for the v4 body denominator, so the
+  ;; predicate set now names the committed instrument. The seam itself is
+  ;; unchanged -- an identity naming any OTHER version must still be refused.
+  (is (not (#'rq-source/recognition-identity-valid?
+            (assoc-in recognition-identity
+                      [:instrument_versions :source_span_coverage]
+                      "parser-rq-source-recognition-v1"))))
+  (is (= "parser-rq-source-recognition-v4"
+         rq-source/source-recognition-instrument-version)))
+
+(deftest predicate-set-binds-the-committed-instrument-with-a-redeclared-threshold
+  ;; Replaces the quarantine assertion that the predicate set still named v1.
+  ;; The binding and the threshold move together: naming the committed
+  ;; instrument is only valid because `:= 1.0` was consciously redeclared for
+  ;; the body-region denominator (any unrecognized eligible byte fails), so
+  ;; this test pins both halves of that act.
+  (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
+        declared (->> (:predicates predicates)
+                      (filter #(= :source_span_coverage (:observed_key %)))
+                      first)]
+    (is (some? declared))
+    (is (= rq-source/source-recognition-instrument-version (:instrument declared)))
+    (is (= {:comparator := :value 1.0} (:expected declared)))
+    (is (= "ratio" (:unit declared)))))
 
 (def production-recognition-fixture-root
   (io/file "test/fixtures/parser-rq/source-recognition-capture"))
@@ -299,8 +337,11 @@
            ["record qualification identity"
             {:record #(assoc % :qualification_identity_ref
                              (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ;; A DIFFERENT instrument, not merely a different version number.
+           ;; This case named the next version, which stopped testing anything
+           ;; the moment that version became the live one.
            ["record parser instrument"
-            {:record #(assoc % :instrument_version "parser-rq-source-recognition-v2")}]
+            {:record #(assoc % :instrument_version "parser-rq-some-other-instrument-v1")}]
            ["record coordinate"
             {:record #(assoc % :coordinate_system "body_relative_utf8")}]
            ["record work identity"
@@ -311,6 +352,41 @@
            ["record ledger identity"
             {:record #(assoc-in % [:ledger :sha256]
                                 (str "sha256:" (apply str (repeat 64 "8"))))}]
+           ;; Region shapes that three adjacency equalities admit. An inverted
+           ;; body satisfies both `header.end = body.start` and
+           ;; `body.end = tail.start` while running backwards.
+           ;;
+           ;; These are regression cases, not a demonstration that the
+           ;; ordering clause in the validator is what stops them: this side
+           ;; computes in bignums and the schema floors every byte count at
+           ;; zero, so an inverted region can never satisfy
+           ;; `eligible_bytes = body.end - body.start` and is refused whether
+           ;; or not the ordering is stated. The clause earns its keep in the
+           ;; Rust validator, where the same subtraction runs in u64 and
+           ;; wraps. It is stated on both sides so the two validators declare
+           ;; one contract rather than two that happen to agree.
+           ["record inverted body region"
+            {:record #(assoc % :regions {:header {:start 0 :end 10}
+                                         :body {:start 10 :end 5}
+                                         :tail {:start 5 :end 5}})}]
+           ["record inverted tail region"
+            {:record #(assoc % :regions {:header {:start 0 :end 0}
+                                         :body {:start 0 :end 10}
+                                         :tail {:start 10 :end 5}})}]
+           ["record header not anchored at zero"
+            {:record #(assoc % :regions {:header {:start 4 :end 10}
+                                         :body {:start 10 :end 20}
+                                         :tail {:start 20 :end 20}})}]
+           ["record regions leave a gap"
+            {:record #(assoc % :regions {:header {:start 0 :end 4}
+                                         :body {:start 10 :end 20}
+                                         :tail {:start 20 :end 20}})}]
+           ["record regions beyond the safe-integer domain"
+            {:record #(assoc % :regions
+                             {:header {:start 0 :end 0}
+                              :body {:start 0 :end 9007199254740992}
+                              :tail {:start 9007199254740992
+                                     :end 9007199254740992}})}]
            ["record locator"
             {:entry #(assoc % :locator
                             "sha256/88/8888888888888888888888888888888888888888888888888888888888888888.json")}]
@@ -405,7 +481,13 @@
 (def taxonomy-hash
   (hash/format-sha256 (hash/sha256-string taxonomy-text)))
 
-(defn- aggregate-value
+(defn- retired-p1-aggregate-value
+  "A P1 aggregate in its retired v1 shape.
+
+  Nothing produces this any more -- the aggregate went with the node-span
+  coverage quantity it totalled. The one test below still needs *some*
+  non-recognition payload to stand in for a P0-only capture, and this remains
+  the historically accurate thing for such a capture to have contained."
   []
   {:schema_version "abc/parser-rq-source-accountability-aggregate/v1"
    :identity_ref identity-ref
@@ -428,29 +510,6 @@
      :ref {:sha256 (hash/format-sha256 (hash/sha256-file file))
            :bytes (hash/byte-length file)
            :media_type "application/json"}}))
-
-(def fixture-root
-  (io/file "test/fixtures/parser-rq/source-accountability"))
-
-(def fixture-names
-  ["aggregate.json" "identity.json" "index.json" "manifest.json" "taxonomy.json"])
-
-(defn- blob-ref
-  [file]
-  {:sha256 (hash/format-sha256 (hash/sha256-file file))
-   :bytes (hash/byte-length file)
-   :media_type "application/json"})
-
-(defn- stage-committed-capture
-  []
-  (let [root (.toFile (java.nio.file.Files/createTempDirectory
-                       "parser-rq-committed"
-                       (make-array java.nio.file.attribute.FileAttribute 0)))]
-    (doseq [name fixture-names]
-      (java.nio.file.Files/copy (.toPath (io/file fixture-root name))
-                                (.toPath (io/file root name))
-                                (into-array java.nio.file.CopyOption [])))
-    root))
 
 (defn- capture
   [aggregate denominator]
@@ -479,174 +538,6 @@
       (finally
         (doseq [file (reverse (file-seq root))]
           (.delete file))))))
-
-(defn- derive-envelope
-  [aggregate denominator]
-  (with-capture aggregate denominator
-    (fn [{:keys [store manifest]}]
-      (rq-source/derive-source-span-envelope
-       store manifest aggregate qualification-identity))))
-
-(deftest byte-denominator-is-required-not-work-count
-  (let [root (.toFile (java.nio.file.Files/createTempDirectory
-                       "parser-rq-source"
-                       (make-array java.nio.file.attribute.FileAttribute 0)))
-        aggregate (aggregate-value)
-        aggregate-file (io/file root "aggregate.json")
-        _ (json/write-deterministic-json-file! aggregate-file aggregate)
-        aggregate-blob {:locator "aggregate.json"
-                        :ref {:sha256 (hash/format-sha256
-                                       (hash/sha256-file aggregate-file))
-                              :bytes (hash/byte-length aggregate-file)
-                              :media_type "application/json"}}
-        store {:root (.getPath root)}
-        manifest {:blobs [aggregate-blob]
-                  :denominator {:value 1 :unit "works"}}]
-    (try
-      (is (= :unavailable
-             (:status (rq-source/derive-source-span-envelope
-                       store manifest aggregate qualification-identity))))
-      (finally
-        (.delete aggregate-file)
-        (.delete root)))))
-
-(deftest exact-byte-ratio-is-derived-from-integer-counters
-  (let [complete (assoc (aggregate-value)
-                        :covered_eligible_bytes 10
-                        :uncovered_eligible_bytes 0
-                        :uncovered [])]
-    (is (= {:value 1.0M :identity_ref identity-ref}
-           (derive-envelope complete {:value 10 :unit "decoded_utf8_bytes"})))
-    (is (= {:value 0.9M :identity_ref identity-ref}
-           (derive-envelope (aggregate-value)
-                            {:value 10 :unit "decoded_utf8_bytes"})))))
-
-(deftest one-byte-deficit-cannot-round-to-a-pass
-  (let [eligible 1000000
-        aggregate (assoc (aggregate-value)
-                         :eligible_bytes eligible
-                         :covered_eligible_bytes (dec eligible)
-                         :uncovered_eligible_bytes 1
-                         :uncovered [{:work_id "fixture"
-                                      :start (dec eligible)
-                                      :end eligible}])
-        envelope (derive-envelope aggregate {:value eligible
-                                             :unit "decoded_utf8_bytes"})]
-    (is (< (:value envelope) 1M))))
-
-(deftest aggregate-must-be-schema-valid-complete-and-conservative
-  (let [denominator {:value 10 :unit "decoded_utf8_bytes"}]
-    (doseq [aggregate [(assoc (aggregate-value) :identity_ref taxonomy-hash)
-                       (assoc (aggregate-value) :taxonomy_version "wrong")
-                       (assoc (aggregate-value) :taxonomy_hash identity-ref)
-                       (assoc (aggregate-value) :covered_eligible_bytes 8)
-                       (assoc (aggregate-value) :uncovered [])
-                       (assoc (aggregate-value)
-                              :uncovered [{:work_id "fixture" :start 10 :end 9}])
-                       (assoc (aggregate-value)
-                              :uncovered [{:work_id "fixture" :start 8 :end 10}])
-                       (assoc-in (aggregate-value) [:work_completeness :complete] false)
-                       (dissoc (aggregate-value) :work_completeness)]]
-      (is (= :unavailable
-             (:status (derive-envelope aggregate denominator)))))))
-
-(deftest aggregate-argument-must-match-reverified-blob-bytes
-  (with-capture (aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
-    (fn [{:keys [store manifest]}]
-      (is (= :unavailable
-             (:status (rq-source/derive-source-span-envelope
-                       store manifest
-                       (assoc (aggregate-value) :covered_eligible_bytes 8)
-                       qualification-identity)))))))
-
-(deftest aggregate-consumption-uses-the-bytes-authenticated-by-manifest-verification
-  (with-capture (aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
-    (fn [{:keys [store manifest]}]
-      (let [verify capture/verify-manifest]
-        (with-redefs [capture/verify-manifest
-                      (fn [actual-store actual-manifest]
-                        (let [result (verify actual-store actual-manifest)]
-                          (spit (io/file (:root actual-store) "aggregate.json")
-                                (json/write-deterministic-json-str
-                                 (aggregate-value)))
-                          result))]
-          (is (= identity-ref
-                 (:identity_ref (rq-source/derive-source-span-envelope
-                                 store manifest (aggregate-value)
-                                 qualification-identity)))))))))
-
-(deftest manifest-blob-mismatch-is-unavailable
-  (with-capture (aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
-    (fn [{:keys [store manifest]}]
-      (spit (io/file (:root store) "aggregate.json") "tampered")
-      (is (= :unavailable
-             (:status (rq-source/derive-source-span-envelope
-                       store manifest (aggregate-value)
-                       qualification-identity)))))))
-
-(deftest committed-capture-derives-and-authenticated-mutation-is-rejected
-  (let [root (stage-committed-capture)
-        store {:root (.getPath root)}
-        manifest (-> (io/file root "manifest.json") json/read-json-file walk/keywordize-keys)
-        aggregate (-> (io/file root "aggregate.json") json/read-json-file walk/keywordize-keys)
-        identity (-> (io/file root "identity.json") json/read-json-file walk/keywordize-keys)]
-    (try
-      (is (= {:value 1.0M :identity_ref identity-ref}
-             (rq-source/derive-source-span-envelope store manifest aggregate identity)))
-      (spit (io/file root "aggregate.json") "\n" :append true)
-      (is (= :unavailable (:status (capture/verify-manifest store manifest))))
-      (is (= :unavailable
-             (:status (rq-source/derive-source-span-envelope
-                       store manifest aggregate identity))))
-      (finally
-        (doseq [file (reverse (file-seq root))] (.delete file))))))
-
-(deftest taxonomy-member-is-schema-validated-and-unambiguous
-  (let [root (stage-committed-capture)
-        store {:root (.getPath root)}
-        manifest (-> (io/file root "manifest.json") json/read-json-file walk/keywordize-keys)
-        aggregate-file (io/file root "aggregate.json")
-        aggregate (-> aggregate-file json/read-json-file walk/keywordize-keys)
-        identity (-> (io/file root "identity.json") json/read-json-file walk/keywordize-keys)
-        taxonomy-file (io/file root "taxonomy.json")]
-    (try
-      (let [taxonomy-blob (first (filter #(= "taxonomy.json" (:locator %))
-                                         (:blobs manifest)))
-            taxonomy-copy (io/file root "taxonomy-copy.json")]
-        (java.nio.file.Files/copy (.toPath taxonomy-file)
-                                  (.toPath taxonomy-copy)
-                                  (into-array java.nio.file.CopyOption []))
-        (doseq [ambiguous-manifest
-                [(update manifest :blobs conj taxonomy-blob)
-                 (update manifest :blobs conj
-                         (-> taxonomy-blob
-                             (assoc :locator "taxonomy-copy.json")
-                             (assoc-in [:ref :media_type]
-                                       "application/vnd.example+json")))]]
-          (is (= :unavailable
-                 (:status (rq-source/derive-source-span-envelope
-                           store ambiguous-manifest aggregate identity))))))
-      (spit taxonomy-file
-            "{\"coordinate_system\":\"decoded_utf8\",\"rules\":[],\"schema_version\":\"abc/parser-rq-ignored-regions/v1\",\"taxonomy_version\":\"parser-rq-ignored-regions-v1\"}")
-      (let [taxonomy-ref (blob-ref taxonomy-file)
-            changed-aggregate (assoc aggregate :taxonomy_hash (:sha256 taxonomy-ref))
-            _ (spit aggregate-file (json/write-deterministic-json-str changed-aggregate))
-            aggregate-ref (blob-ref aggregate-file)
-            changed-manifest
-            (update manifest :blobs
-                    (fn [blobs]
-                      (mapv (fn [blob]
-                              (case (:locator blob)
-                                "aggregate.json" (assoc blob :ref aggregate-ref)
-                                "taxonomy.json" (assoc blob :ref taxonomy-ref)
-                                blob))
-                            blobs)))]
-        (is (= :ok (:status (capture/verify-manifest store changed-manifest))))
-        (is (= :unavailable
-               (:status (rq-source/derive-source-span-envelope
-                         store changed-manifest changed-aggregate identity)))))
-      (finally
-        (doseq [file (reverse (file-seq root))] (.delete file))))))
 
 (defn- recognition-values
   [recognized accounted eligible]
@@ -806,7 +697,7 @@
                  (:status (rq-source/derive-source-recognition-envelope
                            store resealed candidate recognition-identity)))))))))
 
-(deftest malformed-or-missing-recognition-evidence-cannot-fall-back-to-node-spans
+(deftest malformed-or-missing-recognition-evidence-reports-instrument-missing
   (with-recognition-capture 9 10 10
     (fn [{:keys [store manifest aggregate]}]
       (let [malformed (update manifest :blobs
@@ -819,15 +710,17 @@
         (is (= :unavailable
                (:status (rq-source/derive-source-recognition-envelope
                          store malformed aggregate recognition-identity)))))))
-  (let [legacy-envelope (derive-envelope (aggregate-value)
-                                         {:value 10 :unit "decoded_utf8_bytes"})]
-    (with-capture (aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
-      (fn [{:keys [store manifest]}]
-        (is (= {:value :instrument-missing
-                :identity_ref recognition-identity-ref}
-               (rq-source/derive-source-recognition-envelope
-                store manifest nil recognition-identity)))))
-    (is (= 0.9M (:value legacy-envelope)))))
+  ;; A P0-only capture -- one carrying the accountability aggregate but no
+  ;; recognition evidence -- reports `instrument-missing`. It has no other
+  ;; value available to report: the node-span observation this could once have
+  ;; fallen back to was retired, so the fallback is now structurally
+  ;; impossible rather than merely rejected.
+  (with-capture (retired-p1-aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
+    (fn [{:keys [store manifest]}]
+      (is (= {:value :instrument-missing
+              :identity_ref recognition-identity-ref}
+             (rq-source/derive-source-recognition-envelope
+              store manifest nil recognition-identity))))))
 
 (deftest authenticated-recognition-declaration-distinguishes-history-from-deletion
   (with-recognition-capture 9 10 10
@@ -1207,3 +1100,101 @@
       (is (= :unavailable
              (:status (rq-source/silent-drops-envelope store changed-manifest changed-identity)))
           label))))
+
+;; The frozen v1 schemas, and the published evidence that is their whole
+;; reason for existing.
+;;
+;; Retiring node-span coverage moves the work record to a v2 wire version and
+;; deletes the P1 aggregate outright. Nothing emits either v1 shape any more,
+;; so the frozen schemas have no live producer to keep them honest -- which is
+;; exactly how a frozen schema quietly stops matching what it claims to
+;; validate. This test is the check that keeps them load-bearing: it reads the
+;; published run artifacts, which are immutable, and asserts each still
+;; validates against the schema for the wire version it declares.
+;;
+;; The counts are asserted too. Without them a run directory could lose an
+;; artifact and the validation loop would pass over an empty set.
+
+(def ^:private p1-v1-wire-schemas
+  {"abc/parser-rq-source-accountability-work/v1"
+   ["schemas/parser-rq-source-accountability-work-v1.schema.json" 9]
+   "abc/parser-rq-source-accountability-aggregate/v1"
+   ["schemas/parser-rq-source-accountability-aggregate-v1.schema.json" 3]
+   ;; The index shape does not move: `RecordIndex` never carried a coverage
+   ;; quantity, so the live schema still validates both the published v1
+   ;; indexes and everything produced after the retirement.
+   "abc/parser-rq-source-accountability-index/v1"
+   ["schemas/parser-rq-source-accountability-index.schema.json" 6]})
+
+(defn- published-run-json-files []
+  (->> (file-seq (io/file (files/path "docs/reports/parser-rq/runs")))
+       (filter #(.isFile ^java.io.File %))
+       (filter #(string/ends-with? (.getName ^java.io.File %) ".json"))))
+
+(deftest published-v1-evidence-still-validates-against-the-frozen-schemas
+  (let [declared (fn [file]
+                   (try (get (json/read-json-file file) "schema_version")
+                        (catch Exception _ nil)))
+        by-wire (->> (published-run-json-files)
+                     (keep (fn [file]
+                             (when-let [wire (declared file)]
+                               (when (contains? p1-v1-wire-schemas wire)
+                                 [wire file]))))
+                     (group-by first))]
+    (doseq [[wire [schema-path expected-count]] p1-v1-wire-schemas
+            :let [files (mapv second (get by-wire wire))
+                  schema (files/read-json schema-path)]]
+      (is (= expected-count (count files))
+          (str "published artifact count changed for " wire))
+      (doseq [file files]
+        (is (nil? (schema/validation-errors schema (json/read-json-file file)))
+            (str (.getPath ^java.io.File file) " no longer validates against " schema-path))))))
+
+(deftest the-frozen-v1-schemas-are-frozen-copies-and-not-aliases
+  ;; A freeze that is a `$ref` to the live schema is not a freeze -- it tracks
+  ;; whatever the live schema becomes. These must be standalone documents that
+  ;; still require the retired fields.
+  (doseq [[path required]
+          [["schemas/parser-rq-source-accountability-work-v1.schema.json"
+            ["coverage_basis" "covered_eligible_bytes" "uncovered_eligible_bytes"
+             "eligible" "eligible_bytes" "ignored" "ignored_bytes"]]
+           ["schemas/parser-rq-source-accountability-aggregate-v1.schema.json"
+            ["work_completeness"]]]]
+    (let [schema (files/read-json path)]
+      (is (string/ends-with? (get schema "$id") "-v1.schema.json") path)
+      (is (string/starts-with? (get schema "description") "Frozen.") path)
+      (is (every? (set (get schema "required")) required)
+          (str path " no longer requires the fields it was frozen to validate")))))
+
+(deftest every-region-and-metadata-number-stays-in-the-safe-integer-domain
+  ;; Every published number crosses JSON, so an offset past 2^53-1 is one a
+  ;; conforming consumer would silently round to a different offset. The rest
+  ;; of this protocol caps its integers there; the regions and the metadata
+  ;; totals were added without the cap, which made them the one place a record
+  ;; could name a byte no reader could address.
+  (let [beyond 9007199254740992
+        work-schema (files/read-json "schemas/parser-rq-source-recognition-work.schema.json")
+        aggregate-schema (files/read-json
+                          "schemas/parser-rq-source-recognition-aggregate.schema.json")
+        work (json/read-json-file
+              (io/file "test/fixtures/parser-rq/source-recognition/work-ok.json"))
+        aggregate (json/read-json-file
+                   (io/file "test/fixtures/parser-rq/source-recognition/aggregate-ok.json"))]
+    ;; Both fixtures must validate unmutated. Without this a mutation that is
+    ;; rejected for an unrelated reason reads as a passing bound check.
+    (is (nil? (schema/validation-errors work-schema work))
+        "the unmutated work fixture must validate, or the mutations prove nothing")
+    (is (nil? (schema/validation-errors aggregate-schema aggregate))
+        "the unmutated aggregate fixture must validate, or the mutations prove nothing")
+    (doseq [path [["regions" "header" "start"] ["regions" "header" "end"]
+                  ["regions" "body" "start"] ["regions" "body" "end"]
+                  ["regions" "tail" "start"] ["regions" "tail" "end"]
+                  ["metadata" "eligible_bytes"] ["metadata" "accounted_bytes"]
+                  ["metadata" "unaccounted_bytes"]]]
+      (is (some? (schema/validation-errors work-schema (assoc-in work path beyond)))
+          (str "work record accepts an unaddressable " (string/join "." path))))
+    (doseq [field ["metadata_eligible_bytes" "metadata_attributed_bytes"
+                   "metadata_unattributed_bytes"]]
+      (is (some? (schema/validation-errors aggregate-schema
+                                           (assoc aggregate field beyond)))
+          (str "aggregate accepts an unaddressable " field)))))

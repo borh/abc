@@ -1031,6 +1031,7 @@ pub(crate) fn is_whole_document_scoped(diagnostic: &Diagnostic) -> bool {
             | Diagnostic::KaeritenOutsideKanbun { .. }
             | Diagnostic::MismatchedContainerClose { .. }
             | Diagnostic::MismatchedBoutenContainer { .. }
+            | Diagnostic::NestedRuby { .. }
     )
 }
 
@@ -2564,6 +2565,34 @@ mod oracle_proptests {
                 try_safe_edit(&mut state, start, end, repl);
             }
         }
+    }
+
+    #[test]
+    fn pieceseq_stray_ruby_close_edit_matches_full_parse() {
+        let doc = "《ん。｜漢字《かんじ》\n\n※［＃ばける、第3水準1-15-94］\n\n｜漢字《かんじ》》";
+        let cached = output(doc);
+        let san_len = u32::try_from(cached.sanitized.len()).expect("len fits u32");
+        let seq = PieceSeq::from_contiguous(
+            &cached.source_nodes,
+            &cached.pairs,
+            &cached.diagnostics,
+            san_len,
+        );
+        let current = cached.sanitized.clone();
+        let mut state = EditState {
+            seq,
+            current,
+            cached,
+        };
+        let bounds: Vec<usize> = state
+            .current
+            .char_indices()
+            .map(|(i, _)| i)
+            .chain(once(state.current.len()))
+            .collect();
+        let at = bounds[220 % bounds.len()];
+
+        assert!(!try_safe_edit(&mut state, at, at, "も"));
     }
 
     /// A deterministic multi-piece run (proptest may not always reach one):

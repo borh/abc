@@ -29,7 +29,7 @@ fn record(work_id: &str, generation: &str, gaps: &[(u64, u64)]) -> RecognitionWo
         qualification_identity_ref: Some(hash('4')),
         capture_generation_ref: Some(generation.into()),
         policy_hash: Some(hash('5')),
-        instrument_version: "parser-rq-source-recognition-v1".into(),
+        instrument_version: "parser-rq-source-recognition-v3".into(),
         work_id: Some(work_id.to_owned()),
         coordinate_system: "decoded_utf8".into(),
         ledger: Some(RecognitionBlobRef {
@@ -38,6 +38,12 @@ fn record(work_id: &str, generation: &str, gaps: &[(u64, u64)]) -> RecognitionWo
             media_type: "application/json".into(),
             locator: "ledger.json".into(),
         }),
+        // The diagnostic-authorization aggregate reads `semantic_gap_bytes`
+        // and nothing else from this record, so the region partition is
+        // irrelevant here and is left absent rather than fabricated. The same
+        // goes for the metadata population.
+        regions: None,
+        metadata: None,
         status: RecognitionStatus::Ok,
         eligible_bytes: Some(eligible),
         recognized_bytes: Some(eligible - gap_bytes),

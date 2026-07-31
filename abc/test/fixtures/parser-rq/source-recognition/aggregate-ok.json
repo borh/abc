@@ -1,5 +1,5 @@
 {
-  "schema_version": "abc/parser-rq-source-recognition-aggregate/v1",
+  "schema_version": "abc/parser-rq-source-recognition-aggregate/v2",
   "qualification_identity_ref": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
   "corpus_generation_ref": "sha256:826ba280067699af1c867b6849d822579b96073b4e760e39c5cd2bc67e510aac",
   "corpus_generation_algorithm": "sha256-rfc8785-safe-integer-domain-abc-v1",
@@ -7,12 +7,26 @@
   "membership_ref": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
   "coordinate_system": "decoded_utf8",
   "status": "ok",
-  "work_completeness": {"expected": 1, "observed": 1, "complete": true},
+  "work_completeness": {
+    "expected": 1,
+    "observed": 1,
+    "complete": true
+  },
   "eligible_bytes": 10,
   "recognized_bytes": 8,
   "accounted_bytes": 10,
   "semantic_gap_bytes": 2,
   "unaccounted_bytes": 0,
-  "semantic_gaps": [{"work_id": "fixture-work", "start": 4, "end": 6}],
-  "unaccounted": []
+  "semantic_gaps": [
+    {
+      "work_id": "fixture-work",
+      "start": 6,
+      "end": 8
+    }
+  ],
+  "unaccounted": [],
+  "metadata_eligible_bytes": 5,
+  "metadata_content_bytes": 4,
+  "metadata_attributed_bytes": 2,
+  "metadata_unattributed_bytes": 3
 }

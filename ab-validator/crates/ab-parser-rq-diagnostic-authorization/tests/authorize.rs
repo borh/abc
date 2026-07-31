@@ -19,7 +19,7 @@ fn record_for_work(source: &[u8], work_id: &str) -> RecognitionWorkRecord {
       "qualification_identity_ref":format!("sha256:{}", "4".repeat(64)),
       "capture_generation_ref":format!("sha256:{}", "1".repeat(64)),
       "policy_hash":format!("sha256:{}", "5".repeat(64)),
-      "instrument_version":"parser-rq-source-recognition-v1", "work_id":work_id,
+      "instrument_version":"parser-rq-source-recognition-v3", "work_id":work_id,
       "coordinate_system":"decoded_utf8", "ledger":{"sha256":format!("sha256:{}", "6".repeat(64)),"bytes":1,"media_type":"application/json","locator":"x"},
       "status":"ok", "eligible_bytes":source_len,"recognized_bytes":0,"accounted_bytes":source_len,
       "semantic_gap_bytes":source_len,"unaccounted_bytes":0,"recognized":[],"accounted":[{"start":0,"end":source_len}],

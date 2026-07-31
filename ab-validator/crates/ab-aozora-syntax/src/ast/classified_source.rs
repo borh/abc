@@ -83,6 +83,18 @@ pub enum ConstructId {
     MarginNote,
     ContainerOpen,
     ContainerClose,
+    Sic,
+    BaseTextVariant,
+    InvalidRubySpan,
+    WarichuClose,
+    EmptyDirective,
+    EditorNote,
+    RubyAttached,
+    RubyRetarget,
+    RubyPairOpen,
+    RubyPairClose,
+    MarginNotePairOpen,
+    MarginNotePairClose,
 }
 
 /// One source-local policy fact, before decoded-coordinate rebasing and target

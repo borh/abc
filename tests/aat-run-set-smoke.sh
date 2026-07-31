@@ -7,6 +7,29 @@ trap 'rm -rf "$tmp"' EXIT
 
 unset AB_AOZORA_AAT_DIR
 
+# The fixture must name a flake input that is actually locked, and agree with
+# the lock byte-for-byte, or `validate_run_set` reports drift and the positive
+# assertion below fails. Read both coordinates out of the lock instead of
+# restating them: a hand-copied rev turns every routine `nix flake update` into
+# a spurious failure of this test, and a retired input turns it into a failure
+# with no live pin to copy at all -- which is exactly how the previous
+# `upstream-aozora-src` fixture rotted after that input was retired.
+#
+# What this test owns is the validator's behaviour, not the pin. The pin is
+# governed by `scripts/monorepo-flake-input-policy.py`; the negative case below
+# still proves the rev comparison has teeth.
+aozora_input="aozorabunko-src"
+read -r aozora_rev aozora_nar_hash < <(
+  python3 - "$repo_root/flake.lock" "$aozora_input" <<'PY'
+import json
+import sys
+
+lock = json.loads(open(sys.argv[1], encoding="utf-8").read())
+locked = lock["nodes"][sys.argv[2]]["locked"]
+print(locked["rev"], locked["narHash"])
+PY
+)
+
 mkdir -p "$tmp/aozora/aat/aozora-adapter" "$tmp/override/aat/aozora-adapter"
 printf '{"blocks":[]}\n' > "$tmp/aozora/aat/aozora-adapter/000001_1-test.json"
 printf '{"blocks":[]}\n' > "$tmp/override/aat/aozora-adapter/000001_1-test.json"
@@ -18,11 +41,11 @@ cat > "$tmp/aozora/metadata.json" <<JSON
   "adapter_version": "aozora-adapter 0.1.0 aozora 0.4.1",
   "aat_dir": "$tmp/aozora/aat/aozora-adapter",
   "source": {
-    "flake_input": "upstream-aozora-src",
-    "owner": "P4suta",
-    "repo": "aozora",
-    "rev": "1a4f864603970983719655aa4af4525958ac2d38",
-    "narHash": "sha256-XS7BdCpcbfJoTRYcrHWwcCErmQFRfFF7U7FUQU2Ezsg="
+    "flake_input": "$aozora_input",
+    "owner": "aozorabunko",
+    "repo": "aozorabunko",
+    "rev": "$aozora_rev",
+    "narHash": "$aozora_nar_hash"
   }
 }
 JSON
@@ -40,9 +63,9 @@ cat > "$tmp/run-set.json" <<JSON
         "adapter_id": "aozora",
         "adapter_version_contains": "aozora-adapter",
         "source": {
-          "flake_input": "upstream-aozora-src",
-          "rev": "1a4f864603970983719655aa4af4525958ac2d38",
-          "narHash": "sha256-XS7BdCpcbfJoTRYcrHWwcCErmQFRfFF7U7FUQU2Ezsg="
+          "flake_input": "$aozora_input",
+          "rev": "$aozora_rev",
+          "narHash": "$aozora_nar_hash"
         }
       }
     }
@@ -51,7 +74,7 @@ cat > "$tmp/run-set.json" <<JSON
 JSON
 
 PYTHONPATH="$repo_root/ab-validator/reports/lib" \
-python - "$repo_root" "$tmp/run-set.json" "$tmp/override/aat/aozora-adapter" <<'PY'
+python3 - "$repo_root" "$tmp/run-set.json" "$tmp/override/aat/aozora-adapter" <<'PY'
 import json
 import os
 import pathlib
@@ -65,11 +88,8 @@ override_dir = pathlib.Path(sys.argv[3])
 
 run_set = load_run_set(run_set_path)
 assert adapter_aat_globs(run_set)["aozora"].endswith("/aozora/aat/aozora-adapter/*.json")
-assert validate_run_set(
-    run_set,
-    repo_root=repo_root,
-    require_paths=True,
-) == []
+clean_errors = validate_run_set(run_set, repo_root=repo_root, require_paths=True)
+assert clean_errors == [], clean_errors
 
 # The manifest is authoritative: a stale ambient AB_AOZORA_AAT_DIR must NOT swap
 # the dump, even though the entry still carries the legacy aat_dir_env field
@@ -84,13 +104,13 @@ assert any("flake.lock" in error and "deadbeef" in error for error in errors), e
 PY
 
 PYTHONPATH="$repo_root/ab-validator/reports/lib" \
-python "$repo_root/ab-validator/reports/aat-fidelity/validate-aat-run-set.py" \
+python3 "$repo_root/ab-validator/reports/aat-fidelity/validate-aat-run-set.py" \
   "$tmp/run-set.json" \
   --repo-root "$repo_root" \
   --require-paths \
   > "$tmp/validation.json"
 
-python - "$tmp/validation.json" <<'PY'
+python3 - "$tmp/validation.json" <<'PY'
 import json
 import sys
 

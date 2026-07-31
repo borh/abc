@@ -1,24 +1,26 @@
 {
-  "schema_version": "abc/parser-rq-classified-source-authority/v1",
-  "generation_ref_contract": {
-    "algorithm_id": "sha256-rfc8785-string-domain-v1",
-    "canonicalization": "RFC 8785 JCS",
-    "hash": "SHA-256",
-    "projection": "closed-manifest-minus-generation_ref",
-    "excluded_fields": ["generation_ref"],
-    "value_domain": "objects-arrays-strings-only",
-    "object_key_domain": "schema-fixed-ascii"
-  },
-  "policy": {
-    "raw_bytes_hash": "sha256:4700e0eef5718c123e94e2226add57d6217e65f4ff8feefacd6e29be7ebb294f",
-    "identity_hash": "sha256:defc1c9bd3ac7a3a3ce63ea4aae6948698b37d4de8071d6b3ac66176984b980a"
-  },
-  "ledger_schema": {
-    "raw_bytes_hash": "sha256:90aa461e93293d0973ad9226a901e9a2121fcf900c61dd2c6fff6f5f510c8d81",
-    "identity_hash": "sha256:f508dfeecb44cebbfb36ede4cfb72cee94cf44e5716041071345dae9c5e1530f"
-  },
-  "generation_schema": {
-    "raw_bytes_hash": "sha256:d41410f21b43981e6b6c79d4e251dd96c2eb13415b1cb26648022f61452a6b86",
-    "identity_hash": "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"
-  }
+ "schema_version": "abc/parser-rq-classified-source-authority/v1",
+ "generation_ref_contract": {
+  "algorithm_id": "sha256-rfc8785-string-domain-v1",
+  "canonicalization": "RFC 8785 JCS",
+  "hash": "SHA-256",
+  "projection": "closed-manifest-minus-generation_ref",
+  "excluded_fields": [
+   "generation_ref"
+  ],
+  "value_domain": "objects-arrays-strings-only",
+  "object_key_domain": "schema-fixed-ascii"
+ },
+ "policy": {
+  "raw_bytes_hash": "sha256:9c5e919d7d523c13f33d40b8afad2fbe814188840d9f6b786099da53f09d8156",
+  "identity_hash": "sha256:5ccce59c54d46f4c0ca75a466edc72f9aa146584cef7b3920014e91bd57d5f53"
+ },
+ "ledger_schema": {
+  "raw_bytes_hash": "sha256:a8e451e097c123d73dbf2ffacfac6811bd6e2c10fedf17fcdd88adaf86f09811",
+  "identity_hash": "sha256:b87be18e02272f336d688032078bb965534d6b4d36dfb3f4521744d6dd2f2bf2"
+ },
+ "generation_schema": {
+  "raw_bytes_hash": "sha256:d41410f21b43981e6b6c79d4e251dd96c2eb13415b1cb26648022f61452a6b86",
+  "identity_hash": "sha256:02a933e45f65f2bb1f1af08103de10c611fce2232addbaf754147bb9bf4dbcf5"
+ }
 }

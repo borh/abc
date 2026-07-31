@@ -312,6 +312,7 @@
                 pkgs.bash
                 pkgs.coreutils
                 pkgs.findutils
+                pkgs.python3
                 pkgs.ripgrep
               ]
               ''

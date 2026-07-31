@@ -243,9 +243,9 @@ if __name__ == "__main__":
     sys.exit(main())
 PY
 
-python "$classifier" --self-test
+python3 "$classifier" --self-test
 
-if ! python "$classifier" \
+if ! python3 "$classifier" \
   --repo "$repo_root" "${active_files[@]}"; then
   echo "active code must not escape into a sibling abc/ab-validator checkout" >&2
   exit 1

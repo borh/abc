@@ -38,10 +38,6 @@ name = "ab-coverage-merge"
 path = "src/bin/merge.rs"
 
 [[bin]]
-name = "ab-coverage"
-path = "src/bin/coverage.rs"
-
-[[bin]]
 name = "ab-source-inventory"
 path = "src/bin/source_inventory.rs"
 

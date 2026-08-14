@@ -261,4 +261,4 @@ Rows where the three parsers do not agree on `recognition`.
 
 ---
 
-_Regenerate: re-run `AB_COV_OUT=scratch/ab-coverage-tuned AB_COV_MERGE=1 bash benchmarks/run-coverage.sh`, then run this script._
+_Frozen: the multi-parser prevalence pipeline (`benchmarks/run-coverage.sh`) was retired under ADR `third-party-comparison-retirement`; the numbers above are the final recorded run and are recoverable from git history._

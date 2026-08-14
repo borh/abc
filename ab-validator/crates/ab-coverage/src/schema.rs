@@ -21,14 +21,6 @@ impl ValidationOptions {
             required_keys: &[],
         }
     }
-
-    #[must_use]
-    pub const fn strict() -> Self {
-        Self {
-            allow_unknown: false,
-            required_keys: &["aozora2", "aozora-rs", "aozora2html"],
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

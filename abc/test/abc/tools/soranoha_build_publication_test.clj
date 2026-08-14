@@ -99,18 +99,19 @@
       (is (= "0.2.0" (get config "config_schema_version")))
       (is (= "official-git" (get config "source_trust_mode")))
       (is (= record-path (get config "release_parser_identity")))))
-  (testing "the diagnostic aozora2html full-corpus config declares no release parser identity"
+  (testing "the diagnostic full-corpus config runs the project parser unauthenticated"
     (let [config (#'build-publication/read-config
                   "config/full-corpus-publication-basic-ja.json")]
       (is (= "0.2.0" (get config "config_schema_version")))
       (is (= "official-git" (get config "source_trust_mode")))
       (is (nil? (get config "release_parser_identity")))
-      (is (= "aozora2html" (get config "parser_profile")))))
+      (is (= "ab-aozora" (get config "parser_profile")))))
   (testing "the fixture diagnostic config is an explicit non-release source-trust value"
     (let [config (#'build-publication/read-config
                   "config/publication-basic-ja.json")]
       (is (= "0.2.0" (get config "config_schema_version")))
       (is (= "fixture" (get config "source_trust_mode")))
+      (is (= "ab-aozora" (get config "parser_profile")))
       (is (nil? (get config "release_parser_identity"))))))
 
 (defn- read-config-error [config-value]

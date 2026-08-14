@@ -14,7 +14,6 @@ import importlib.util
 import json
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -167,56 +166,6 @@ class ContentVerification(unittest.TestCase):
             rs, repo_root=tmp, verify_dirs=True, verify_content=True
         )
         self.assertEqual(lock["adapters"]["aozora"]["content_hash"], good)
-
-
-class ComputeIsClosed(unittest.TestCase):
-    """Move C proof: a compute tool runs under an EMPTY environment given only the lock.
-
-    If compute read any ambient config (AB_DB_ROOT / AB_AAT_RUN_SET / CWD discovery),
-    `env -i` would break it. It doesn't — the lock is a closed value.
-    """
-
-    def test_normalized_coverage_runs_under_empty_env(self) -> None:
-        tmp = tempfile.mkdtemp()
-        self.addCleanup(lambda: shutil.rmtree(tmp, ignore_errors=True))
-        aat = Path(tmp) / "aat" / "aozora-adapter"
-        aat.mkdir(parents=True)
-        (aat / "000001_1.json").write_text('{"blocks":[]}', encoding="utf-8")
-        order = ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3"]
-        lock = Path(tmp) / "l.json"
-        lock.write_text(
-            json.dumps(
-                {
-                    "lock_format": "fidelity-lock/v1",
-                    "run_set_id": "envi",
-                    "adapters": {a: {"aat_dir": str(aat)} for a in order},
-                }
-            ),
-            encoding="utf-8",
-        )
-        summary = Path(tmp) / "s.json"
-        summary.write_text(
-            json.dumps({"classified": [{"construct": "ruby.basic", "denominator": 1}]}),
-            encoding="utf-8",
-        )
-        tool = _LIB.parent / "aat-fidelity" / "normalized-corpus-coverage.py"
-        # empty env except PATH (so python3 resolves); NO AB_* vars, no CWD dependence.
-        r = subprocess.run(
-            [
-                "env",
-                "-i",
-                "PATH=" + os.environ["PATH"],
-                sys.executable,
-                str(tool),
-                str(summary),
-                "--lock",
-                str(lock),
-            ],
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(json.loads(r.stdout)["aat_run_set_id"], "envi")
 
 
 if __name__ == "__main__":

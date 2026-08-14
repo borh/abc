@@ -39,16 +39,14 @@ the contract and should not be treated as version-stable adapter APIs.
 | --- | --- |
 | `ab-check` | CLI and backend for AAT schema validity, source projection, encoding, and parser invariant checks. |
 | `ab-aat-to-parser-ir` | CLI and library for converting measured AAT v1 JSON into ABC parser-IR plus divergence evidence authorized by `data/aat-to-parser-ir-mapping-v1.json`. |
-| `ab-compare` | CLI for comparing two `ab-check` report directories; uses shared diff utilities. |
 | `ab-coverage` | Coverage matrix tooling and merge CLI for Aozora syntax coverage data. |
-| `ab-oracle` | Oracle correctness evaluation, audits, reports, and review-state handling. |
 
 ## Indexing and shared utilities
 
 | Crate | Purpose |
 | --- | --- |
 | `ab-index` | Standalone feature-index builder and query CLI. |
-| `ab-diff-utils` | Shared first-difference, frequency-table, and hash helpers, currently used by comparison tooling. |
+| `ab-diff-utils` | Shared first-difference, frequency-table, and hash helpers. |
 
 ## Notes
 

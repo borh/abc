@@ -1,5 +1,13 @@
 # Adapter Fidelity Matrix
 
+> **Retired.** The third-party adapters and the comparison tooling this
+> document describes were removed under ADR
+> `third-party-comparison-retirement` (abc/docs/adr/decisions.edn). The
+> document is kept as the provenance record for the frozen fidelity data
+> (`data/adapter-fidelity-notes.toml` and the pinned study evidence); the
+> referenced `reports/aat-fidelity/` scripts are recoverable from git history
+> but no longer present.
+
 This document tracks whether each adapter is faithful to the upstream parser it
 wraps. It does not define linguistic correctness. Correct Aozora gaiji
 resolution and similar truth-data checks belong in an oracle layer that can be

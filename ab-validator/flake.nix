@@ -993,52 +993,6 @@
               touch "$out"
             '';
 
-        aatOracleDataSchemaSmokeShell = pkgs.writeShellApplication {
-          name = "aat-oracle-data-schema-smoke";
-          runtimeInputs = [
-            pythonWithAatSchemaDeps
-          ];
-          text = ''
-            export AB_VALIDATOR_DIRECT_PYTHON=1
-            bash "${source}/tests/aat-oracle-data-schema-smoke.sh"
-          '';
-        };
-
-        aatOracleDataSchemaSmokeCheck = mkSmokeCheck {
-          name = "aat-oracle-data-schema-smoke-check";
-          testScript = "tests/aat-oracle-data-schema-smoke.sh";
-          nativeBuildInputs = [ pythonWithAatSchemaDeps ];
-          extraEnv = {
-            AB_VALIDATOR_DIRECT_PYTHON = "1";
-          };
-          extraPreScript = ''
-            export AB_DB_ROOT="$TMPDIR/ab-validator"
-          '';
-        };
-
-        adapterFidelityNotesSchemaSmokeShell = pkgs.writeShellApplication {
-          name = "adapter-fidelity-notes-schema-smoke";
-          runtimeInputs = [
-            pythonWithAatSchemaDeps
-          ];
-          text = ''
-            export AB_VALIDATOR_DIRECT_PYTHON=1
-            bash "${source}/tests/adapter-fidelity-notes-schema-smoke.sh"
-          '';
-        };
-
-        adapterFidelityNotesSchemaSmokeCheck = mkSmokeCheck {
-          name = "adapter-fidelity-notes-schema-smoke-check";
-          testScript = "tests/adapter-fidelity-notes-schema-smoke.sh";
-          nativeBuildInputs = [ pythonWithAatSchemaDeps ];
-          extraEnv = {
-            AB_VALIDATOR_DIRECT_PYTHON = "1";
-          };
-          extraPreScript = ''
-            export AB_DB_ROOT="$TMPDIR/ab-validator"
-          '';
-        };
-
         taxonomyGenerator = mkRustBin {
           pname = "ab-taxonomy-generator";
           nativeBuildInputs = [ ];
@@ -1059,16 +1013,6 @@
             "ab-coverage"
             "--bin"
             "ab-source-inventory"
-          ];
-          gated = false;
-        };
-
-        abOracleBin = mkRustBin {
-          pname = "ab-oracle";
-          nativeBuildInputs = [ ];
-          cargoBuildFlags = [
-            "--package"
-            "ab-oracle"
           ];
           gated = false;
         };
@@ -1110,21 +1054,6 @@
           extraEnv = {
             AB_AAT_TRIAGE_PYTHON = "${pythonWithAatDuckdb}/bin/python3";
             AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
-          };
-          extraPreScript = ''
-            export AB_DB_ROOT="$TMPDIR/ab-validator"
-          '';
-        };
-
-        aatOracleAuditSmokeCheck = mkSmokeCheck {
-          name = "aat-oracle-audit-smoke-check";
-          testScript = "tests/aat-oracle-audit-smoke.sh";
-          nativeBuildInputs = [
-            abOracleBin
-            pkgs.ripgrep
-          ];
-          extraEnv = {
-            AB_ORACLE_BIN = "${abOracleBin}/bin/ab-oracle";
           };
           extraPreScript = ''
             export AB_DB_ROOT="$TMPDIR/ab-validator"
@@ -1404,7 +1333,6 @@
           ab-aozora = abAozora;
           aat-triage-python = pythonWithAatDuckdb;
           ab-source-inventory = sourceInventoryBin;
-          ab-oracle = abOracleBin;
           aozorabunko-corpus = aozorabunkoCorpus;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
           upstream-tool-aozorabunko-extractor = upstreamToolAozorabunkoExtractor;
@@ -1432,36 +1360,12 @@
             meta.description = "Run the ab-validator CLI";
           };
 
-        apps.aat-oracle-data-schema-smoke =
-          flake-utils.lib.mkApp {
-            drv = aatOracleDataSchemaSmokeShell;
-          }
-          // {
-            meta.description = "Run the AAT oracle data schema smoke test";
-          };
-
         apps.ab-aat-to-parser-ir =
           flake-utils.lib.mkApp {
             drv = abAatToParserIr;
           }
           // {
             meta.description = "Run the AAT to parser-IR conversion CLI";
-          };
-
-        apps.ab-oracle =
-          flake-utils.lib.mkApp {
-            drv = abOracleBin;
-          }
-          // {
-            meta.description = "Run the ab-oracle cross-adapter fidelity oracle";
-          };
-
-        apps.adapter-fidelity-notes-schema-smoke =
-          flake-utils.lib.mkApp {
-            drv = adapterFidelityNotesSchemaSmokeShell;
-          }
-          // {
-            meta.description = "Run the adapter fidelity notes schema smoke test";
           };
 
         apps.parser-rq-resource-cgroup-smoke =
@@ -1497,9 +1401,7 @@
           cargo-deny = cargoDenyCheck;
           cargo-test = workspaceCheck;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
-          aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
           aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
-          adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
           abc-schema-contract-drift = abcSchemaContractDriftCheck;
           abc-schema-contract-compare-smoke = abcSchemaContractCompareSmokeCheck;
@@ -1515,7 +1417,6 @@
           source-inventory-smoke = sourceInventorySmokeCheck;
           source-representability-gate = sourceRepresentabilityGateCheck;
           aat-fidelity-duckdb-smoke = aatFidelityDuckdbSmokeCheck;
-          aat-oracle-audit-smoke = aatOracleAuditSmokeCheck;
           reports-pytest = reportsPytestCheck;
           parser-rq-publication-pytest = parserRqPublicationPytestCheck;
           parser-rq-core-attempt-python-tests = parserRqCoreAttemptPythonTests;

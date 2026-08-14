@@ -451,8 +451,7 @@ def build_summary(corpus_root: pathlib.Path, jobs: int) -> dict[str, Any]:
         # classified) tail, so each is scanned and counted on its own; this
         # also keeps `works_scanned` in the same unit as every other
         # `works_scanned`/`files_scanned` figure in this codebase (a corpus
-        # TEXT ENTRY count, e.g. denominator-attribution.py's
-        # `files_scanned`), not a deduped work-identity count.
+        # TEXT ENTRY count), not a deduped work-identity count.
         works_scanned += 1
         if status == "no_tail":
             works_without_tail += 1

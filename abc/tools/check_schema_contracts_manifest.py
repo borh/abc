@@ -37,17 +37,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from legacy_json_c14n import canonical_json  # noqa: E402
+
 MANIFEST_PATH = Path("schemas/schema-contracts.json")
-
-
-def canonical_json(value: Any) -> str:
-    """Match ABC's existing schema hash canonicalization."""
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).replace("/", r"\/")
 
 
 def schema_hash(value: Any) -> str:

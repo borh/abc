@@ -15,6 +15,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable, Collection, Protocol
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from legacy_json_c14n import canonical_json  # noqa: E402
+
 
 LEGACY_LANE_ENVIRONMENT = (
     "PARSER_RQ_CORE_CAPTURE",
@@ -207,8 +210,7 @@ def _verify_wiring(campaign: AuthenticatedCampaign, runner: Runner, cwd: Path) -
 
 
 def _canonical_bytes(value: object) -> bytes:
-    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    return encoded.replace("/", "\\/").encode()
+    return canonical_json(value).encode()
 
 
 def content_ref(value: dict[str, object], *, excluding: str | None = None) -> str:

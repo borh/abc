@@ -1,5 +1,6 @@
 (ns abc.tools.hash-test
-  (:require [abc.tools.hash :as hash]
+  (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [clojure.test :refer [deftest is testing]]))
 
 (deftest sha256-helpers-test
@@ -27,3 +28,16 @@
     (is (thrown-with-msg? clojure.lang.ExceptionInfo
                           #"Invalid sha256 hash"
                           (hash/parse-sha256 "nope")))))
+
+(deftest abc-legacy-c14n-cross-language-vectors-test
+  ;; Shared fixture also pinned by the Python implementations in
+  ;; abc/tools/legacy_json_c14n.py and
+  ;; ab-validator/reports/lib/legacy_json_c14n.py.
+  (let [fixture (files/read-json
+                 "test/fixtures/canonicalization/abc-legacy-json-c14n-v0-vectors.json")]
+    (is (= "abc-legacy-json-c14n-v0" (get fixture "algorithm_id")))
+    (is (seq (get fixture "vectors")))
+    (doseq [{:strs [input canonical_json sha256]} (get fixture "vectors")]
+      (is (= canonical_json (hash/abc-legacy-json-c14n-v0 input)))
+      (is (= (str "sha256:" sha256)
+             (hash/sha256-json-abc-legacy-v0 input))))))

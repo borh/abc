@@ -12,6 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "abc" / "tools"))
+from legacy_json_c14n import canonical_json  # noqa: E402
+
 CONTRACT_VERSION = "abc-schema-contracts-v1"
 CANONICALIZATION = "abc-legacy-json-c14n-v0"
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
@@ -59,16 +62,6 @@ PROFILE_DEFAULTS = {
         rerun_hint="Run scripts/schema_contracts.py --write",
     ),
 }
-
-
-def canonical_json(value: Any) -> str:
-    """Match ABC's existing schema hash canonicalization."""
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).replace("/", r"\/")
 
 
 def schema_hash(value: Any) -> str:

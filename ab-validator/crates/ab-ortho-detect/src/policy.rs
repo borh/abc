@@ -173,7 +173,10 @@ impl NormalizationPolicy {
 
 /// RFC 8785 (JCS) canonicalization for the value shapes used by policy
 /// descriptors: objects (keys sorted), arrays (order preserved), strings,
-/// numbers, booleans, null. Mirrors `abc.tools.jcs/canonical-json-string`.
+/// numbers, booleans, null. NOT byte-compatible with
+/// `abc.tools.jcs/canonical-json-string`, which escapes `/` and non-ASCII
+/// (Charred defaults); recorded `policy_hash` values pin THIS dialect, so the
+/// divergence is frozen — do not "align" it.
 fn canonical_json_string(value: &serde_json::Value) -> String {
     match value {
         serde_json::Value::Null => "null".to_owned(),

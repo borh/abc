@@ -17,6 +17,9 @@ import sys
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple, Protocol
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
+from legacy_json_c14n import canonical_json  # noqa: E402
+
 
 CHUNK_BYTES = 1024 * 1024
 EXECUTABLE_FIELDS = (
@@ -79,8 +82,7 @@ def sha256_bytes(payload: bytes) -> str:
 
 
 def _canonical_bytes(value: object) -> bytes:
-    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    return encoded.replace("/", "\\/").encode()
+    return canonical_json(value).encode()
 
 
 def _atomic_json(path: Path, value: object) -> None:

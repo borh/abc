@@ -856,6 +856,9 @@
               cd "$work_dir/source"
               rm data/abc-schemas/schemas
               cp -R "${abcSource}/schemas" data/abc-schemas/schemas
+              rm data/abc-fixtures/canonicalization
+              cp -R "${abcSource}/test/fixtures/canonicalization" \
+                data/abc-fixtures/canonicalization
               python -m pytest \
                 reports/aat-fidelity/tests \
                 reports/lib/tests \

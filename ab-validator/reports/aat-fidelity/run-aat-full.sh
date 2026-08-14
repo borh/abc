@@ -25,7 +25,7 @@ usage: run-aat-full.sh --adapter ADAPTER [--corpus DIR] [--out-dir DIR]
                        [--work-ids IDS] [--features TAGS] [--force]
                        [--print-plan] [--adapter-bin PATH]
 
-ADAPTER: ab-aozora | aozora2html | aozora-epub3
+ADAPTER: ab-aozora
 
 --adapter-bin PATH: only valid with --adapter ab-aozora. Overrides the
   pinned nix-store `ab-aozora` adapter binary with an explicit binary: it is
@@ -107,27 +107,7 @@ if [[ -n "$adapter_bin_override" && "$adapter_id" != "ab-aozora" ]]; then
   exit 2
 fi
 
-# Every adapter's dump identity now fully captures the code that produces its
-# output, so the active skip fires for all three. The wrapper adapters shell
-# out to an external parser/renderer that is pinned by content: the Ruby
-# aozora2html gem / AozoraEpub3.jar. renderer_attr names the nix package whose
-# store dir is resolved, exported under the adapter's env var, and hashed into
-# identity (see below).
 case "$adapter_id" in
-  aozora2html)
-    default_out_dir="${AB_AOZORA2HTML_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-full-$(date -u +%Y%m%dT%H%M%SZ)}"
-    default_jobs="${AB_AOZORA2HTML_AAT_FULL_JOBS:-$(nproc)}"
-    default_timeout="${AB_AOZORA2HTML_AAT_FULL_TIMEOUT:-300s}"
-    default_report_id="${AB_AOZORA2HTML_AAT_FULL_REPORT_ID:-aozora2html-full-$(date -u +%F)}"
-    # Wrapper-pipeline adapter: ab-check invokes this bash wrapper (Ruby
-    # aozora2html renderer + Rust mapper), not a self-contained binary. The
-    # Rust mapper is resolved from nix past the --print-plan early-exit
-    # (mapper_attr below); identity pins that nix mapper binary — the code that
-    # actually changes — not the wrapper script.
-    adapter="$repo_root/adapters/aozora2html/aozora2html-adapter"
-    mapper_attr="aozora2html-adapter"
-    renderer_attr="upstream-parser-aozora2html"
-    ;;
   ab-aozora)
     default_out_dir="${AB_AB_AOZORA_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/ab-aozora-full-$(date -u +%Y%m%dT%H%M%SZ)}"
     default_jobs="${AB_AB_AOZORA_AAT_FULL_JOBS:-$(nproc)}"
@@ -140,20 +120,6 @@ case "$adapter_id" in
     # aozora branch) resolves the real binary from nix, or from an explicit
     # --adapter-bin override, past the --print-plan early-exit.
     adapter="ab-aozora"
-    mapper_attr=""
-    renderer_attr=""
-    ;;
-  aozora-epub3)
-    default_out_dir="${AB_AOZORA_EPUB3_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-epub3-full-$(date -u +%Y%m%dT%H%M%SZ)}"
-    default_jobs="${AB_AOZORA_EPUB3_AAT_FULL_JOBS:-$(nproc)}"
-    default_timeout="${AB_AOZORA_EPUB3_AAT_FULL_TIMEOUT:-300s}"
-    default_report_id="${AB_AOZORA_EPUB3_AAT_FULL_REPORT_ID:-aozora-epub3-full-$(date -u +%F)}"
-    # Wrapper-pipeline adapter (AozoraEpub3.jar + Rust mapper): same rationale
-    # as aozora2html above. Identity pins the nix-built Rust mapper binary
-    # (mapper_attr below).
-    adapter="$repo_root/adapters/aozora-epub3/aozora-epub3-adapter"
-    mapper_attr="aozora-epub3-adapter"
-    renderer_attr="upstream-parser-aozora-epub3"
     ;;
   *)
     printf 'unknown AAT adapter: %s\n' "$adapter_id" >&2
@@ -235,11 +201,10 @@ if [[ "$print_plan" == "1" ]]; then
 fi
 
 # Resolve the shared engine binaries (ab-index, ab-check) from the flake's
-# store paths for ALL adapters — never cargo/just against the live source
-# tree. Refs are repo-anchored ("$repo_root#...") so they resolve against the
-# repo regardless of the caller's $PWD (matching the epub3-JAR line below).
-# This runs only past the --print-plan early-exit above, so a plan stays
-# build-free.
+# store paths — never cargo/just against the live source tree. Refs are
+# repo-anchored ("$repo_root#...") so they resolve against the repo
+# regardless of the caller's $PWD. This runs only past the --print-plan
+# early-exit above, so a plan stays build-free.
 ab_index_bin="$(nix build "$repo_root#ab-index" --no-link --print-out-paths)/bin/ab-index"
 ab_check_bin="$(nix build "$repo_root#ab-check" --no-link --print-out-paths)/bin/ab-check"
 triage_python="$(nix build "$repo_root#aat-triage-python" --no-link --print-out-paths)/bin/python3"
@@ -274,48 +239,18 @@ if [[ "$adapter_id" == "ab-aozora" ]]; then
   adapter_hash_target="$adapter"
 fi
 
-# Wrapper adapters resolve their Rust mapper from nix (the flake packages the
-# identical mapper crate). adapter_hash_target — the binary hashed into identity
-# — becomes that nix store binary, and the matching wrapper override is exported
-# so ab-check's wrapper execs the SAME binary (recorded == checked). Both must be
-# set before the skip gate, which runs "$adapter" --version (the wrapper, which
-# execs the exported mapper) and hashes adapter_hash_target.
-if [[ -n "$mapper_attr" ]]; then
-  mapper_bin="$(nix build "$repo_root#$mapper_attr" --no-link --print-out-paths)/bin/$mapper_attr"
-  adapter_hash_target="$mapper_bin"
-  if [[ "$adapter_id" == "aozora2html" ]]; then
-    export AB_AOZORA2HTML_MAPPER_BIN="$mapper_bin"
-  elif [[ "$adapter_id" == "aozora-epub3" ]]; then
-    export AB_AOZORAEPUB3_MAPPER_BIN="$mapper_bin"
-  fi
-fi
-
-# Resolve each wrapper adapter's external parser/renderer from its nix store
-# dir so it is pinned by content (the Rust mapper was already resolved from
-# nix above): the aozora2html Ruby gem, or the AozoraEpub3.jar. Each is
-# exported under the env var its adapter reads, so ab-check runs the SAME
-# store binary that identity pins.
-#
-# --adapter-bin PATH (ab-aozora only) overrides resolution entirely: no nix
-# build happens; the override's containing directory stands in for
-# renderer_dir below so the existing tree_hash-based identity/staleness
-# plumbing picks up its content unchanged (a differing override binary is a
-# differing renderer_content_hash, so a stale dump against a NEW override is
-# never served as fresh).
+# --adapter-bin PATH overrides resolution entirely: no nix build happens; the
+# override's containing directory stands in for renderer_dir below so the
+# existing tree_hash-based identity/staleness plumbing picks up its content
+# unchanged (a differing override binary is a differing renderer_content_hash,
+# so a stale dump against a NEW override is never served as fresh).
 renderer_dir=""
-if [[ "$adapter_id" == "ab-aozora" && -n "$adapter_bin_override" ]]; then
+if [[ -n "$adapter_bin_override" ]]; then
   renderer_dir="$(dirname "$adapter_bin_override")"
-elif [[ "$adapter_id" == "ab-aozora" ]]; then
+else
   # nix-resolved: renderer_dir = the nix output dir (content-addressed), i.e.
   # the store path containing bin/ab-aozora.
   renderer_dir="$(dirname "$(dirname "$adapter")")"
-elif [[ -n "$renderer_attr" ]]; then
-  renderer_dir="$(nix build "$repo_root#$renderer_attr" --no-link --print-out-paths)"
-fi
-if [[ "$adapter_id" == "aozora2html" ]]; then
-  export AB_AOZORA2HTML_BIN="$renderer_dir/bin/aozora2html"
-elif [[ "$adapter_id" == "aozora-epub3" ]]; then
-  export AB_AOZORAEPUB3_JAR="$renderer_dir/lib/AozoraEpub3.jar"
 fi
 if [[ ! "$jobs" =~ ^[0-9]+$ || "$jobs" == "0" ]]; then
   echo "--jobs must be a positive integer" >&2

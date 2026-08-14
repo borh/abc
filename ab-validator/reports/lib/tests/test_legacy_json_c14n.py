@@ -8,7 +8,9 @@ values to match new output -- investigate the canonicalization change instead.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -44,6 +46,28 @@ class LegacyJsonC14n(unittest.TestCase):
     def test_canonical_json_matches_golden(self) -> None:
         for value, expected in GOLDEN:
             self.assertEqual(legacy_json_c14n.canonical_json(value), expected)
+
+    def test_matches_every_shared_cross_language_vector(self) -> None:
+        # abc/test/fixtures/canonicalization/abc-legacy-json-c14n-v0-vectors.json,
+        # mirrored into this tree at data/abc-fixtures/canonicalization (symlink
+        # in a checkout; copied from the abc flake input in the sandbox). Also
+        # pinned by abc/tools/test_legacy_json_c14n.py (Python) and
+        # abc hash_test.clj (Clojure) — a mismatch means the trees drifted.
+        fixture_path = (
+            Path(__file__).resolve().parents[3]
+            / "data/abc-fixtures/canonicalization/abc-legacy-json-c14n-v0-vectors.json"
+        )
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        self.assertEqual(fixture["algorithm_id"], "abc-legacy-json-c14n-v0")
+        self.assertTrue(fixture["vectors"])
+        for vector in fixture["vectors"]:
+            with self.subTest(vector["name"]):
+                canon = legacy_json_c14n.canonical_json(vector["input"])
+                self.assertEqual(canon, vector["canonical_json"])
+                self.assertEqual(
+                    hashlib.sha256(canon.encode("utf-8")).hexdigest(),
+                    vector["sha256"],
+                )
 
     def test_shared_matches_remaining_legacy_copy(self) -> None:
         # Import the surviving legacy site's implementation and assert

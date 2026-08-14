@@ -8,8 +8,12 @@ import hashlib
 import json
 import pathlib
 import re
+import sys
 import tomllib
 from typing import Any
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "lib"))
+from legacy_json_c14n import canonical_json  # noqa: E402
 
 
 class Instrument:
@@ -203,14 +207,11 @@ def _sha256(data: bytes) -> str:
 
 
 def _canonical(value: Any) -> bytes:
-    # Match ABC's frozen historical canonicalization, including Charred's
-    # escaped solidus behavior. Existing ABC identities deliberately retain
-    # this representation rather than silently switching to RFC 8785.
-    return (
-        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        .replace("/", "\\/")
-        .encode("utf-8")
-    )
+    # abc-legacy-json-c14n-v0: ABC's frozen historical canonicalization,
+    # including Charred's escaped solidus behavior. Existing ABC identities
+    # deliberately retain this representation rather than silently switching
+    # to RFC 8785.
+    return canonical_json(value).encode("utf-8")
 
 
 def projected_hash(value: dict[str, Any], field: str) -> str:

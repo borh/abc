@@ -97,8 +97,10 @@ def readiness(tmp_path: Path) -> tuple[dict[str, object], dict[str, object]]:
 
 def test_canonical_bytes_preserves_non_ascii() -> None:
     # abc-legacy-json-c14n-v0: UTF-8 output, not \uXXXX escapes. Divergence here
-    # silently forks content_ref from the Clojure/Rust/lib implementations on
-    # any Japanese payload.
+    # silently forks content_ref from abc.tools.hash/abc-legacy-json-c14n-v0
+    # (Clojure) and reports/lib/legacy_json_c14n.py (ab-validator) on any
+    # Japanese payload. (The P0/Charred dialect used by jcs/canonical-json-string
+    # DOES \uXXXX-escape; it is a different frozen contract, not this one.)
     assert site._canonical_bytes({"題": "羅生門/序"}) == '{"題":"羅生門\\/序"}'.encode()
 
 

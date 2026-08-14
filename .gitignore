@@ -21,3 +21,5 @@ result-*
 # intended cache lives in ab-validator/dictionary/ (see ab-validator/.gitignore);
 # this anchors the root duplicate so it never shows as untracked churn.
 /dictionary/
+__pycache__/
+*.pyc

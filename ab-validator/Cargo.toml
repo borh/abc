@@ -30,17 +30,12 @@ members = [
     "crates/ab-aozora-aat",
     "crates/ab-aozora-capture",
     "crates/ab-aozora",
-    "crates/ab-parser-study-report",
     "crates/ab-parser-rq-source-accountability",
     "crates/ab-parser-rq-diagnostic-authorization",
     "crates/ab-rq-artifact-store",
 ]
 resolver = "2"
 exclude = [
-    "adapters/aozora2",
-    "adapters/aozora2html",
-    "adapters/aozora-rs",
-    "adapters/aozora-epub3",
     "references",
     # excluded: enables serde_json/preserve_order deliberately, to prove
     # converter canonicalization; must never join the root workspace. This is

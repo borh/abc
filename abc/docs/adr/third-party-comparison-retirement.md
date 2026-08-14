@@ -47,3 +47,14 @@ for the JADH 2026 paper. That record was landed before any deletion:
 
 Q13 pattern (decide → plan → delete), one kind of change per commit; each
 deletion commit names this record as its licence.
+
+One measurement, one pre-existing finding. Deleting the
+`ab-parser-study-report` workspace member was verified hash-neutral for the
+release binary (same `ab-aozora` bytes with and without the member), so the
+crate is removed with the rest of the study tooling. Separately, the
+measurement exposed that `release-parser-build-matches-approved-identity` was
+already red at the pre-retirement HEAD: parser commits after the last
+approval changed the binary (fresh build `sha256:35d8a9df…`) while the
+approved identity still pins `sha256:7f75b8f9…`. Re-qualification and
+re-approval of the release identity is a separate governed operator action,
+out of this record's scope.

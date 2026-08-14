@@ -57,21 +57,19 @@
       (is (some? ex))
       (is (= "AB_AAT_TO_PARSER_IR_MAPPING_V2" (:env_var (ex-data ex)))))))
 
-(deftest resolve-adapter-aozora2html-pins-v1-mapping-test
-  (binding [build-publication/*env*
-            (env-stub {"AB_AOZORA2HTML_ADAPTER" "/a/wrapper"
-                       "AB_AOZORA2HTML_BIN" "/a/aozora2html"
-                       "AB_AOZORA2HTML_MAPPER_BIN" "/a/mapper"
-                       "AB_AAT_TO_PARSER_IR_MAPPING" "/m/v1.json"})]
-    (let [adapter (#'build-publication/resolve-adapter "aozora2html")]
-      (is (= "aozora2html" (:adapter-id adapter)))
-      (is (= "/a/wrapper" (:wrapper adapter)))
-      (is (= {"AB_AOZORA2HTML_BIN" "/a/aozora2html"
-              "AB_AOZORA2HTML_MAPPER_BIN" "/a/mapper"}
-             (:extra-env adapter)))
-      (is (= "/m/v1.json" (:mapping adapter))))))
+(deftest resolve-adapter-retired-aozora2html-profile-is-rejected-test
+  ;; The aozora2html comparison lane is retired (ADR
+  ;; third-party-comparison-retirement); its profile must fail loudly, not
+  ;; silently fall back.
+  (binding [build-publication/*env* (env-stub {})]
+    (let [ex (try
+               (#'build-publication/resolve-adapter "aozora2html")
+               nil
+               (catch clojure.lang.ExceptionInfo ex ex))]
+      (is (some? ex))
+      (is (= "aozora2html" (:parser_profile (ex-data ex)))))))
 
-(deftest resolve-adapter-unknown-profile-lists-both-supported-test
+(deftest resolve-adapter-unknown-profile-lists-supported-test
   (binding [build-publication/*env* (env-stub {})]
     (let [ex (try
                (#'build-publication/resolve-adapter "mystery-parser")
@@ -79,7 +77,7 @@
                (catch clojure.lang.ExceptionInfo ex ex))]
       (is (some? ex))
       (is (= "mystery-parser" (:parser_profile (ex-data ex))))
-      (is (= ["aozora2html" "ab-aozora"] (:supported (ex-data ex)))))))
+      (is (= ["ab-aozora"] (:supported (ex-data ex)))))))
 
 (deftest custom-parser-config-selects-ab-aozora-profile-test
   (let [config (#'build-publication/read-config
@@ -127,7 +125,7 @@
   {"config_schema_id" "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json"
    "config_schema_version" "0.2.0"
    "source_trust_mode" "fixture"
-   "parser_profile" "aozora2html"
+   "parser_profile" "ab-aozora"
    "publication_profile" "tei-publication-basic-ja-v1"
    "continue_on_failure" true
    "materialization_scope" "smoke"})
@@ -139,7 +137,7 @@
     (let [legacy {"config_schema_id" "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json"
                   "request_set_label" "full-corpus-publication-basic-ja"
                   "snapshot_scope" "full-corpus"
-                  "parser_profile" "aozora2html"
+                  "parser_profile" "ab-aozora"
                   "publication_profile" "tei-profile-v0"
                   "continue_on_failure" true
                   "materialization_scope" "full-corpus"}]
@@ -281,9 +279,9 @@
                         (= "parser_ir_schema_hash" (:coordinate %)))
                   problems))))))
 
-(deftest aozora2html-without-candidate-records-absent-candidate-problem-test
+(deftest diagnostic-profile-without-candidate-records-absent-candidate-problem-test
   (let [result (#'build-publication/authenticate-runtime
-                "aozora2html" {"adapter_id" "aozora2html"} nil)]
+                "ab-aozora" {"adapter_id" "ab-aozora"} nil)]
     (is (= 1 (count (:problems result))))
     (is (= :absent-parser-candidate (:kind (first (:problems result)))))
     (is (nil? (:candidate-ref result)))))

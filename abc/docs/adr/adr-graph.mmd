@@ -51,6 +51,7 @@ flowchart LR
   tei_odd_schematron_validation["TEI ODD, Relax NG, and Schematron Validation"]:::accepted
   temporal_modeling["Temporal Modeling for Bibliographic Dates"]:::accepted
   terminal_provenance_colophon_split["Terminal Provenance / Colophon Split"]:::proposed
+  third_party_comparison_retirement["Retire the Third-Party Parser-Comparison Machinery"]:::accepted
   typed_evidence_and_lifecycle_closure["Typed Evidence and Lifecycle Closure"]:::superseded
   upstream_ingest_drift_awareness["Upstream Ingest Drift Awareness"]:::accepted
   v0_design_bundle_validation["v0 Design Bundle Validation CLI"]:::accepted
@@ -162,6 +163,8 @@ flowchart LR
   subtractive_evidence_simplification ==>|"supersedes"| typed_evidence_and_lifecycle_closure
   tei_odd_schematron_validation ==>|"supersedes — TEI stub language"| v0_design_bundle_validation
   temporal_modeling -.->|"restates hard rule"| manifest_identity
+  third_party_comparison_retirement -.->|"depends on"| custom_parser_ownership_and_neutral_comparison
+  third_party_comparison_retirement -->|"amends — comparison metrics and candidate-adapter code leave the ab-validator boundary; the imported file bundle's comparison report becomes optional"| external_parser_validation_boundary
   typed_evidence_and_lifecycle_closure -.->|"depends on"| adr_governance_validation
   upstream_ingest_drift_awareness -.->|"extends"| person_identity_drift_data_model
   vocabulary_review -.->|"schema hash cascade"| edtf_level1_decade_century

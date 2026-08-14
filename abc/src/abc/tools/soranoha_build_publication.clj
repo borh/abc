@@ -185,19 +185,11 @@
   an explicit, loud error so a build never silently falls back to a stub."
   [parser-profile]
   (case parser-profile
-    "aozora2html"
-    {:adapter-id "aozora2html"
-     :wrapper (require-env "AB_AOZORA2HTML_ADAPTER" "aozora2html adapter wrapper")
-     :extra-env {"AB_AOZORA2HTML_BIN"
-                 (require-env "AB_AOZORA2HTML_BIN" "aozora2html parser")
-                 "AB_AOZORA2HTML_MAPPER_BIN"
-                 (require-env "AB_AOZORA2HTML_MAPPER_BIN" "aozora2html rust mapper")}
-     :mapping (require-env "AB_AAT_TO_PARSER_IR_MAPPING"
-                           "aat→parser-IR mapping document")}
-
     ;; The project-owned parser (ADR 0038/0039): one native stdin→AAT binary,
     ;; no external renderer and no separate mapper — the binary is the whole
-    ;; adapter identity, paired with the v2 mapping (AAT schema 2).
+    ;; adapter identity, paired with the v2 mapping (AAT schema 2). The
+    ;; third-party comparison lanes (aozora2html et al.) are retired — ADR
+    ;; third-party-comparison-retirement.
     "ab-aozora"
     {:adapter-id "ab-aozora"
      :wrapper (require-env "AB_AOZORA_BIN" "ab-aozora parser")
@@ -207,7 +199,7 @@
 
     (throw (ex-info "unsupported parser_profile for real materialization"
                     {:parser_profile parser-profile
-                     :supported ["aozora2html" "ab-aozora"]}))))
+                     :supported ["ab-aozora"]}))))
 
 (defn- run-process!
   "Run a subprocess inheriting the current environment plus extra-env, feeding

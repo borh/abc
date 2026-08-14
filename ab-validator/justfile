@@ -16,7 +16,6 @@ morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", ab_d
 # aozora and aozora-rs).
 aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
 tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", abc_repo_root + "/out/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json")
-aozora2html_flake := repo_root + "#aozora2html"
 vibrato_dictionary_root := repo_root + "/dictionary"
 vibrato_unidic_sources := vibrato_dictionary_root + "/unidic-sources"
 vibrato_compiled_dir := vibrato_dictionary_root + "/compiled"
@@ -63,25 +62,10 @@ flake-cargo *ARGS:
 flake-python *ARGS:
 	@nix develop "{{repo_root}}#default" --command python {{ARGS}}
 
-flake-aozora2html-python *ARGS:
-	@nix develop "{{repo_root}}#aozora2html" --command python {{ARGS}}
-
 quality-fix:
 	@just fmt
 	@just workspace-check
 	@just clippy
-
-aozora2html-rust-build PROFILE="release":
-	@cargo build --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml" --{{PROFILE}}
-
-aozora2html-rust-clean:
-	@rm -rf "{{repo_root}}/adapters/aozora2html/target"
-
-aozora2html-rust-test:
-	@cargo test --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml"
-
-aozora2html-rust-parity:
-	@nix run "{{repo_root}}#aozora2html-rust-parity"
 
 aozora-notation-spec-comparator-smoke:
 	@bash "{{repo_root}}/tests/aozora-notation-spec-comparator-smoke.sh"
@@ -89,36 +73,6 @@ aozora-notation-spec-comparator-smoke:
 aozora-notation-spec-comparator-flake-smoke:
 	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
 	nix build "{{repo_root}}#checks.$system.aozora-notation-spec-comparator-smoke" --print-build-logs
-
-aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.summary.json":
-	@vectors="{{VECTORS}}"; \
-	manifest_args=(); \
-	if [ -z "$vectors" ]; then manifest_args=(--span-deviation-manifest "{{repo_root}}/reports/parser-conformance/span-deviation-manifest.json"); fi; \
-	if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-aozora-notation-spec')/conformance/vectors"; fi; \
-	aozora2html_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora2html')"; \
-	epub3_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; \
-	epub3_jar="${AB_AOZORAEPUB3_JAR:-$epub3_pkg/lib/AozoraEpub3.jar}"; \
-	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; exit 2; }; \
-	q() { python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$1"; }; \
-	epub3_jar_q="$(q "$epub3_jar")"; \
-	a2h_bin_q="$(q "$aozora2html_pkg/bin/aozora2html")"; \
-	a2h_gem_q="$(q "$aozora2html_pkg/lib/ruby/gems")"; \
-	for a in aozora2 aozora-rs aozora2html aozora-epub3; do \
-		cargo build --manifest-path "{{repo_root}}/adapters/$a/Cargo.toml" --release; \
-	done; \
-	export RUSTC_WRAPPER= SCCACHE_DISABLE=1; \
-	cargo build --manifest-path "{{repo_root}}/Cargo.toml" --package ab-aozora --release; \
-	python "{{repo_root}}/reports/parser-conformance/run-aozora-notation-spec.py" \
-		--vectors-dir "$vectors" \
-		--adapter "ab-aozora=aat:{{repo_root}}/target/release/ab-aozora --mode aat" \
-		--adapter-diagnostics "ab-aozora={{repo_root}}/target/release/ab-aozora --mode diagnostics" \
-		"${manifest_args[@]}" \
-		--adapter "aozora2=aat:{{repo_root}}/adapters/aozora2/target/release/aozora2-adapter --mode aat" \
-		--adapter "aozora2html=aat:env AB_AOZORA2HTML_BIN=$a2h_bin_q AB_VALIDATOR_GEM_HOME=$a2h_gem_q {{repo_root}}/adapters/aozora2html/aozora2html-adapter --mode aat" \
-		--adapter "aozora-rs=aat:{{repo_root}}/adapters/aozora-rs/target/release/aozora-rs-adapter --mode aat" \
-		--adapter "aozora-epub3=aat:env AB_AOZORAEPUB3_JAR=$epub3_jar_q {{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter --mode aat" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}"
 
 aat-schema-smoke-suite:
 	@nix run "{{repo_root}}#aat-oracle-data-schema-smoke"
@@ -155,9 +109,6 @@ clean-db-dry-run:
 	  if [ -e "$d" ]; then echo "$d"; fi; \
 	done
 
-fidelity-cross-summary-smoke:
-	@bash tests/aat-fidelity-cross-summary-xhtml-smoke.sh
-
 aat-batch-triage-smoke:
 	@bash tests/aat-batch-triage-smoke.sh
 
@@ -170,45 +121,6 @@ aat-to-parser-ir-flake-smoke:
 
 parser-performance-smoke:
 	@bash tests/parser-performance-measure-smoke.sh
-
-parser-performance-all-parsers:
-	@index="${INDEX:-}"; \
-	corpus="${CORPUS:-${AB_AOZORA_CORPUS:-}}"; \
-	if [ -z "$corpus" ]; then corpus="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#aozorabunko-corpus')"; fi; \
-	out_dir="${OUT_DIR:-{{ab_db_root}}/parser-performance/all-parsers-$(date -u +%Y%m%dT%H%M%SZ)}"; \
-	work_ids="${WORK_IDS:-}"; \
-	sample="${SAMPLE:-20}"; \
-	limit_s="${LIMIT_S:-300}"; \
-	stage_split_sample="${STAGE_SPLIT_SAMPLE:-5}"; \
-	jobs="${JOBS:-24}"; \
-	test -n "$index" || { echo "INDEX=/path/to/index.json is required" >&2; exit 2; }; \
-	aozora2html_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora2html')"; \
-	epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; \
-	epub3_jar="${AB_AOZORAEPUB3_JAR:-$epub3_pkg/lib/AozoraEpub3.jar}"; \
-	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; echo "set AB_AOZORAEPUB3_JAR or rebuild {{repo_root}}#upstream-parser-aozora-epub3" >&2; exit 2; }; \
-	epub3_jar_q="$(python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$epub3_jar")"; \
-	cargo build --manifest-path "{{repo_root}}/adapters/aozora2/Cargo.toml" --release --jobs "$jobs"; \
-	cargo build --manifest-path "{{repo_root}}/adapters/aozora-rs/Cargo.toml" --release --jobs "$jobs"; \
-	cargo build --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml" --release --jobs "$jobs"; \
-	cargo build --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml" --release --jobs "$jobs"; \
-	work_args=(); if [ -n "$work_ids" ]; then work_args=(--work-ids "$work_ids"); fi; \
-	python "{{repo_root}}/reports/aat-fidelity/measure-parser-performance.py" \
-		--index "$index" \
-		--corpus "$corpus" \
-		--out-dir "$out_dir" \
-		"${work_args[@]}" \
-		--sample "$sample" \
-		--limit-s "$limit_s" \
-		--adapter "aozora2={{repo_root}}/adapters/aozora2/target/release/aozora2-adapter --mode aat" \
-		--adapter "aozora-rs={{repo_root}}/adapters/aozora-rs/target/release/aozora-rs-adapter --mode aat" \
-		--adapter "aozora2html={{repo_root}}/adapters/aozora2html/aozora2html-adapter --mode aat" \
-		--adapter "aozora-epub3=env AB_AOZORAEPUB3_JAR=$epub3_jar_q {{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter --mode aat" \
-		--aozora2html-label aozora2html \
-		--aozora2html-bin "$aozora2html_pkg/bin/aozora2html" \
-		--aozora2html-gem-home "$aozora2html_pkg/lib/ruby/gems" \
-		--mapper-bin "{{repo_root}}/adapters/aozora2html/target/release/aozora2html-adapter" \
-		--stage-split-sample "$stage_split_sample"; \
-	echo "parser performance measurement: $out_dir/results.json"
 
 source-inventory-smoke:
 	@bash "{{repo_root}}/tests/source-inventory-smoke.sh"
@@ -254,51 +166,6 @@ source-inventory-full JOBS="24" INDEX="" CORPUS="":
 # These are a stopgap — the target is to remove the env dance entirely, not wrap it;
 # see docs/superpowers/specs/2026-07-09-fidelity-run-idempotency-design.md (Phase 1
 # supersedes the env-neutralization glue).
-
-# Resolve the pinned run-set manifest into a fidelity lock: the single impure step that
-# validates run-set coherence, hashes each pinned dump against its expected content_hash,
-# and fails closed on any mismatch/empty dir (aat_runs ignores ambient AB_*_AAT_DIR). This
-# is the same resolve that `fidelity-denominator-recompute` and `run-coverage-report.sh`
-# perform internally; exposed here as a thin wrapper for ad-hoc inspection. Writes the lock
-# to OUT (default: gitignored scratch/). See resolve-run-set.py.
-fidelity-resolve OUT="scratch/fidelity.lock.json":
-	@out="{{OUT}}"; case "$out" in /*) ;; *) out="{{repo_root}}/$out";; esac; \
-	mkdir -p "$(dirname "$out")"; \
-	python3 "{{repo_root}}/reports/aat-fidelity/resolve-run-set.py" --repo-root "{{repo_root}}" --out "$out"; \
-	echo "wrote fidelity lock to $out" >&2
-
-# Recompute the corpus-adapter fidelity DENOMINATORS (source-authority `occ`) on the
-# PINNED corpus via ab-source-inventory, then rebuild the fidelity summary so numerators
-# (run-set AAT dumps) and denominators share one corpus (study §1). Emits OUT_SUMMARY,
-# which `fidelity-coverage-report` consumes. INDEX defaults to the pinned-corpus index;
-# CORPUS resolves via nix when empty.
-fidelity-denominator-recompute JOBS="24" INDEX="" CORPUS="" PRIOR_SUMMARY="docs/superpowers/reports/2026-07-08-corpus-adapter-fidelity.summary.json" OUT_SUMMARY="docs/superpowers/reports/2026-07-09-corpus-adapter-fidelity.summary.json":
-	@index="{{INDEX}}"; if [ -z "$index" ]; then index="{{ab_db_root}}/aat-corpus/index.json"; fi; \
-	test -f "$index" || { echo "index not found: $index (pass INDEX=...)" >&2; exit 2; }; \
-	corpus="{{CORPUS}}"; if [ -z "$corpus" ]; then corpus="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#aozorabunko-corpus')"; fi; \
-	cargo build -p ab-coverage --bin ab-source-inventory --release --jobs "{{JOBS}}"; \
-	inv_dir="{{ab_db_root}}/source-inventory/pinned-$(date -u +%Y%m%dT%H%M%SZ)"; mkdir -p "$inv_dir"; \
-	"{{repo_root}}/target/release/ab-source-inventory" \
-		--matrix "{{repo_root}}/data/aozora-syntax-coverage.toml" \
-		--index "$index" --corpus "$corpus" --jobs "{{JOBS}}" \
-		--output-json "$inv_dir/inventory.json" --report-md "$inv_dir/inventory.md"; \
-	lock="$inv_dir/fidelity.lock.json"; \
-	python3 "{{repo_root}}/reports/aat-fidelity/resolve-run-set.py" --repo-root "{{repo_root}}" --out "$lock"; \
-	python3 "{{repo_root}}/reports/aat-fidelity/rebuild-fidelity-summary.py" \
-		"$inv_dir/inventory.json" "{{repo_root}}/{{PRIOR_SUMMARY}}" --lock "$lock" > "{{repo_root}}/{{OUT_SUMMARY}}"; \
-	echo "wrote {{OUT_SUMMARY}} (pinned-corpus denominators; inventory: $inv_dir; lock: $lock)"
-
-# Run the §4.7/§4.8/§4.9 coverage reports from a fidelity summary. The AAT run-set is the
-# SOLE dump-selection authority (aat_runs ignores ambient AB_*_AAT_DIR); this validates +
-# runs normalized-corpus-coverage / parity-support-audit / fidelity-robustness-split.
-# See run-coverage-report.sh.
-fidelity-coverage-report SUMMARY="docs/superpowers/reports/2026-07-09-corpus-adapter-fidelity.summary.json" OUT_DIR="":
-	@bash "{{repo_root}}/reports/aat-fidelity/run-coverage-report.sh" "{{repo_root}}/{{SUMMARY}}" {{OUT_DIR}}
-
-# One-shot §1 refresh: pinned-corpus denominators -> coverage reports.
-fidelity-coverage-refresh JOBS="24" INDEX="" CORPUS="":
-	@just fidelity-denominator-recompute JOBS="{{JOBS}}" INDEX="{{INDEX}}" CORPUS="{{CORPUS}}"
-	@just fidelity-coverage-report
 
 # Score the expanded official-docs seed (§4.5/§5) through the shared notation-spec
 # harness (all five adapters, auto-built) — a thin, discoverable wrapper over
@@ -536,117 +403,6 @@ tei-eaj-structural-expansion JOBS="24" LOCK="" REPORT_MD="docs/superpowers/repor
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \
 		--abc-root "{{repo_root}}/data/abc-schemas"
-
-upstream-xhtml-full-smoke:
-	@bash tests/aat-fidelity-upstream-xhtml-full-run-smoke.sh
-
-fidelity-smoke-suite:
-	@just aat-batch-triage-smoke
-	@just fidelity-cross-summary-smoke
-	@just upstream-xhtml-full-smoke
-
-fidelity-cross-adapter-full:
-	@rm -rf "{{ab_db_root}}/aat-fidelity/cross-adapter-full"
-	@AB_AAT_FIDELITY_OUT_DIR="{{ab_db_root}}/aat-fidelity/cross-adapter-full" \
-	 AB_AAT_FIDELITY_SUMMARY="{{ab_db_root}}/aat-fidelity/cross-adapter-full/summary.md" \
-	 AB_AAT_FIDELITY_DB="{{ab_db_root}}/aat-fidelity/cross-adapter-full/fidelity.duckdb" \
-	 "{{repo_root}}/reports/aat-fidelity/run-cross-adapter-report.sh"
-
-fidelity-cross-adapter-full-for-case CASE_ID:
-	@rm -rf "{{ab_db_root}}/aat-fidelity/cross-adapter-full"
-	@AB_AAT_FIDELITY_CASE_ID="{{CASE_ID}}" \
-	 AB_AAT_FIDELITY_OUT_DIR="{{ab_db_root}}/aat-fidelity/cross-adapter-full" \
-	 AB_AAT_FIDELITY_SUMMARY="{{ab_db_root}}/aat-fidelity/cross-adapter-full/summary.md" \
-	 AB_AAT_FIDELITY_DB="{{ab_db_root}}/aat-fidelity/cross-adapter-full/fidelity.duckdb" \
-	 "{{repo_root}}/reports/aat-fidelity/run-cross-adapter-report.sh"
-
-upstream-xhtml-full JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
-	@jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
-	"{{repo_root}}/reports/aat-fidelity/run-upstream-xhtml-full.sh" --out-dir "{{ab_db_root}}/aat-fidelity/upstream-xhtml-full" --db "{{ab_db_root}}/aat-fidelity/cross-adapter/fidelity.duckdb" --report-id upstream-xhtml-full --jobs "$jobs" --max-cards "{{MAX_CARDS}}" --triage-limit "{{TRIAGE_LIMIT}}"
-
-aozora2html-aat-full DIR="" JOBS="0" TIMEOUT="180s" REPORT_ID="" WORK_IDS="" FEATURES="" FORCE="":
-	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora2html-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
-	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
-	report_id="{{REPORT_ID}}"; if [ -z "$report_id" ]; then report_id="aozora2html-full-$(date -u +%F)"; fi; \
-	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id"); \
-	if [ -n "{{FORCE}}" ]; then args+=(--force); fi; \
-	if [ -n "{{WORK_IDS}}" ]; then args+=(--work-ids "{{WORK_IDS}}"); fi; \
-	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
-	"{{repo_root}}/reports/aat-fidelity/run-aozora2html-aat-full.sh" "${args[@]}"
-
-aozora-aat-full DIR="" JOBS="0" TIMEOUT="300s" REPORT_ID="" WORK_IDS="" FEATURES="" FORCE="":
-	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
-	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
-	report_id="{{REPORT_ID}}"; if [ -z "$report_id" ]; then report_id="aozora-full-$(date -u +%F)"; fi; \
-	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id"); \
-	if [ -n "{{FORCE}}" ]; then args+=(--force); fi; \
-	if [ -n "{{WORK_IDS}}" ]; then args+=(--work-ids "{{WORK_IDS}}"); fi; \
-	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
-	"{{repo_root}}/reports/aat-fidelity/run-aozora-aat-full.sh" "${args[@]}"
-
-aozora-epub3-aat-full DIR="" JOBS="0" TIMEOUT="300s" REPORT_ID="" WORK_IDS="" FEATURES="" FORCE="":
-	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora-epub3-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
-	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
-	report_id="{{REPORT_ID}}"; if [ -z "$report_id" ]; then report_id="aozora-epub3-full-$(date -u +%F)"; fi; \
-	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id"); \
-	if [ -n "{{FORCE}}" ]; then args+=(--force); fi; \
-	if [ -n "{{WORK_IDS}}" ]; then args+=(--work-ids "{{WORK_IDS}}"); fi; \
-	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
-	"{{repo_root}}/reports/aat-fidelity/run-aozora-epub3-aat-full.sh" "${args[@]}"
-
-aozora-epub3-aat-full-smoke:
-	@bash "{{repo_root}}/tests/aozora-epub3-aat-full-smoke.sh"
-
-fidelity-full-run DIR="" JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
-	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-fidelity/run-$(date -u +%F_%H%M%S)"; fi; \
-	mkdir -p "$run_dir/cross-adapter" "$run_dir/upstream-xhtml-full" "$run_dir/aat-fidelity"; \
-	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
-	AB_AAT_FIDELITY_OUT_DIR="$run_dir/cross-adapter" \
-	AB_AAT_FIDELITY_SUMMARY="$run_dir/cross-adapter/summary.md" \
-	AB_AAT_FIDELITY_DB="$run_dir/cross-adapter/fidelity.duckdb" \
-	"{{repo_root}}/reports/aat-fidelity/run-cross-adapter-report.sh"; \
-	"{{repo_root}}/reports/aat-fidelity/run-upstream-xhtml-full.sh" \
-		--out-dir "$run_dir/upstream-xhtml-full" \
-		--db "$run_dir/cross-adapter/fidelity.duckdb" \
-		--report-id upstream-xhtml-full \
-		--jobs "$jobs" \
-		--max-cards "{{MAX_CARDS}}" \
-		--triage-limit "{{TRIAGE_LIMIT}}"; \
-	AB_DB_ROOT="$run_dir" bash tests/aat-batch-triage-smoke.sh; \
-	AB_DB_ROOT="$run_dir" bash tests/aat-fidelity-cross-summary-xhtml-smoke.sh; \
-	AB_DB_ROOT="$run_dir" bash tests/aat-fidelity-upstream-xhtml-full-run-smoke.sh; \
-	echo "run complete: $run_dir"
-
-full-fidelity-suite:
-	@just clean-db
-	@just fidelity-cross-adapter-full
-	@just upstream-xhtml-full
-	@just fidelity-smoke-suite
-
-fresh-full-fidelity-suite JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
-	@just clean-db-full
-	@just fidelity-cross-adapter-full
-	@just upstream-xhtml-full jobs={{JOBS}} max_cards={{MAX_CARDS}} triage_limit={{TRIAGE_LIMIT}}
-	@just fidelity-smoke-suite
-
-fresh-fidelity-full-run DIR="" JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
-	@if [ "{{DIR}}" = "" ]; then \
-	  just clean-db-full && just fidelity-full-run "" "{{JOBS}}" "{{MAX_CARDS}}" "{{TRIAGE_LIMIT}}"; \
-	else \
-	  just clean-db-full && just fidelity-full-run "{{DIR}}" "{{JOBS}}" "{{MAX_CARDS}}" "{{TRIAGE_LIMIT}}"; \
-	fi
-
-fidelity-run-list:
-	@mkdir -p "{{ab_db_root}}/aat-fidelity"
-	@find "{{ab_db_root}}/aat-fidelity" -maxdepth 1 -type d -name 'run-*' -print | sort
-
-fidelity-run-clean KEEP_DAYS="30":
-	@if [ "{{KEEP_DAYS}}" = "0" ]; then \
-		echo "KEEP_DAYS must be > 0"; \
-		exit 1; \
-	fi
-	@mkdir -p "{{ab_db_root}}/aat-fidelity"
-	@find "{{ab_db_root}}/aat-fidelity" -maxdepth 1 -type d -name 'run-*' -mtime +{{KEEP_DAYS}} -print -exec rm -rf {} +
 
 morph-warehouse-clean:
 	@echo "cleaning canonical warehouse state under {{morph_warehouse_dir}}"
@@ -1257,20 +1013,3 @@ morph-vaporetto-dictionary-audit:
 		printf '%s,%s,%s,%s,%s,%s\n' "$name" "$source_artifact" "$source_path" "$versioned_compiled" "$optimized" "$notes"; \
 	done | sort
 
-# ---- aozora-epub3 adapter ---------------------------------------------------
-
-aozora-epub3-jar:
-	@out="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; printf '%s/lib/AozoraEpub3.jar\n' "$out"
-
-aozora-epub3-build PROFILE="release":
-	@cargo build --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml" --{{PROFILE}}
-
-aozora-epub3-test:
-	@cargo test --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml"
-
-aozora-epub3-smoke: aozora-epub3-build
-	@epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; \
-	printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
-	  | AB_AOZORAEPUB3_JAR="$epub3_pkg/lib/AozoraEpub3.jar" "{{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
-	  | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
-	@echo "aozora-epub3 smoke ok"

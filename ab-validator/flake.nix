@@ -22,23 +22,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    upstream-aozora2-src = {
-      url = "github:takahashim/aozora2/93420b53c7d52579a0ca3fde466cef8ce6d89879";
-      flake = false;
-    };
-
-    upstream-aozora-rs-src = {
-      url = "github:kinoko0518/aozora-rs/2b2b8f641aee9fd92ed282f03ab060c18542700c";
-      flake = false;
-    };
-
     upstream-aozora-notation-spec-src = {
       url = "github:P4suta/aozora-notation-spec/b60665fd50b596c967254f99b61f418495656fef";
-      flake = false;
-    };
-
-    upstream-aozora-parser-js-src = {
-      url = "github:cognitom/aozora-parser.js/abaf45422051f418905d9d269f1d2db28ebeed05";
       flake = false;
     };
 
@@ -66,9 +51,6 @@
       abc,
       clj-nix,
       upstream-aozora-notation-spec-src,
-      upstream-aozora-parser-js-src,
-      upstream-aozora-rs-src,
-      upstream-aozora2-src,
       upstream-aozorabunko-extractor-src,
       aozorabunko-src,
       mecab-dic-converter-src,
@@ -166,58 +148,6 @@
             ../abc/test/fixtures/parser-rq/diagnostic-gap/
         '';
 
-        buildRustUpstreamParser =
-          {
-            name,
-            src,
-            lockFile,
-            cargoBuildFlags ? [ "--workspace" ],
-            cargoTestFlags ? [ "--workspace" ],
-            doCheck ? true,
-          }:
-          rustPlatform.buildRustPackage {
-            pname = name;
-            version = "0.1.0";
-
-            src = cleanProjectSource src;
-            cargoLock.lockFile = lockFile;
-
-            inherit
-              cargoBuildFlags
-              cargoTestFlags
-              doCheck
-              ;
-          };
-
-        upstreamParserAozora2 = buildRustUpstreamParser {
-          name = "upstream-parser-aozora2";
-          src = upstream-aozora2-src;
-          lockFile = upstream-aozora2-src + "/Cargo.lock";
-        };
-
-        upstreamParserAozoraRs = buildRustUpstreamParser {
-          name = "upstream-parser-aozora-rs";
-          src = upstream-aozora-rs-src;
-          lockFile = upstream-aozora-rs-src + "/Cargo.lock";
-          cargoBuildFlags = [
-            "--package"
-            "aozora-rs-core"
-            "--package"
-            "aozora-rs-xhtml"
-            "--package"
-            "aozora-rs-zip"
-          ];
-          cargoTestFlags = [
-            "--package"
-            "aozora-rs-core"
-            "--package"
-            "aozora-rs-xhtml"
-            "--package"
-            "aozora-rs-zip"
-          ];
-          doCheck = false;
-        };
-
         upstreamAozoraNotationSpec =
           pkgs.runCommand "upstream-aozora-notation-spec"
             {
@@ -231,27 +161,6 @@
               test -f "$out/conformance/RUNNER.md"
               test -f "$out/src/grammar/aozora.abnf"
             '';
-
-        upstreamParserAozoraParserJs = pkgs.stdenvNoCC.mkDerivation {
-          pname = "upstream-parser-aozora-parser-js";
-          version = "0.0.0";
-
-          src = cleanProjectSource upstream-aozora-parser-js-src;
-
-          installPhase = ''
-            runHook preInstall
-            mkdir -p "$out/lib/aozora-parser.js"
-            cp package.json README.md aozora-parser.pegjs gulpfile.js "$out/lib/aozora-parser.js/"
-            for path in dist test; do
-              if [ -e "$path" ]; then
-                cp -R "$path" "$out/lib/aozora-parser.js/"
-              fi
-            done
-            runHook postInstall
-          '';
-
-          passthru.buildNote = "This package installs the vendored JS parser source. Add package-lock.json to enable a reproducible npm build/test derivation.";
-        };
 
         rubyWithExtractorGems = pkgs.ruby.withPackages (gems: [
           gems.rubyzip
@@ -274,54 +183,6 @@
                   --prefix PATH : "$rubyPath"
               done
             '';
-
-        upstreamParserAozoraEpub3Version = "1.3.6-jdk21";
-
-        upstreamParserAozoraEpub3Release = pkgs.fetchurl {
-          url = "https://github.com/AozoraEpub3-JDK21/AozoraEpub3-JDK21/releases/download/v${upstreamParserAozoraEpub3Version}/AozoraEpub3-${upstreamParserAozoraEpub3Version}.tar.gz";
-          hash = "sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=";
-        };
-
-        upstreamParserAozoraEpub3 =
-          pkgs.runCommand "upstream-parser-aozora-epub3-${upstreamParserAozoraEpub3Version}"
-            {
-              nativeBuildInputs = [
-                pkgs.gnutar
-                pkgs.gzip
-              ];
-            }
-            ''
-              mkdir -p "$out/bin" "$out/lib/aozora-epub3" "$out/share/licenses/aozora-epub3"
-              tar -xzf ${upstreamParserAozoraEpub3Release} -C "$out/lib/aozora-epub3"
-
-              ln -s "$out/lib/aozora-epub3/AozoraEpub3.jar" "$out/lib/AozoraEpub3.jar"
-
-              cat > "$out/bin/upstream-parser-aozora-epub3" <<'SH'
-              #!/usr/bin/env bash
-              set -euo pipefail
-              cd "__AOZORA_EPUB3_HOME__"
-              exec "__JAVA__" -jar "__AOZORA_EPUB3_HOME__/AozoraEpub3.jar" "$@"
-              SH
-              substituteInPlace "$out/bin/upstream-parser-aozora-epub3" \
-                --replace-fail "__AOZORA_EPUB3_HOME__" "$out/lib/aozora-epub3" \
-                --replace-fail "__JAVA__" "${pkgs.jdk21}/bin/java"
-              chmod +x "$out/bin/upstream-parser-aozora-epub3"
-
-              cp "$out/lib/aozora-epub3/gpl.txt" "$out/share/licenses/aozora-epub3/"
-              cp "$out/lib/aozora-epub3/LICENSE.txt" "$out/share/licenses/aozora-epub3/"
-              cp "$out/lib/aozora-epub3/THIRD-PARTY-NOTICES.txt" "$out/share/licenses/aozora-epub3/"
-            '';
-
-        upstreamParsers = pkgs.symlinkJoin {
-          name = "upstream-parsers";
-          paths = [
-            upstreamParserAozora2
-            upstreamParserAozoraRs
-            upstreamParserAozoraEpub3
-            upstreamParserAozoraParserJs
-            upstreamToolAozorabunkoExtractor
-          ];
-        };
 
         aozorabunkoCorpus = pkgs.symlinkJoin {
           name = "aozorabunko-corpus";
@@ -471,16 +332,6 @@
           ];
         };
 
-        aozoraRsGaijiMenkuten = pkgs.fetchurl {
-          url = "https://x0213.org/codetable/jisx0213-2004-std.txt";
-          hash = "sha256-OIrngiy/Cuz/CbhGbdYw6jQ2c9AaPH351hlHrRrVst0=";
-        };
-
-        aozoraRsGaijiChukiPdf = pkgs.fetchurl {
-          url = "https://www.aozora.gr.jp/gaiji_chuki/gaiji_chuki.pdf";
-          hash = "sha256-/eC1rOdQWy94f/PsxeTzENGD3f7ubWABN3LyLcniIec=";
-        };
-
         cargoGitOutputHashes = {
           "sudachi-0.6.11-a1" = "sha256-nQiBcAY/NGbyw1/+3ACZ3HtGgc9Ow54+8auyT1Udo0w=";
           "vibrato-rkyv-0.7.7" = "sha256-ZPDiLrA8Losm28tgw/apjFdo07gRTVTZFPM8QLy3MPA=";
@@ -515,20 +366,8 @@
           cp -R ${sudachiRustSource}/resources "$out/resources"
         '';
 
-        # Shared gaiji provisioning for the CLIs/adapters whose build.rs (via
-        # third_party/aozora-rs-gaiji) needs the pinned JIS X 0213 menkuten
-        # table, the Aozora gaiji_chuki PDF, and a pdfium binary. See
-        # aozoraRsAdapter for the full rationale.
-        gaijiEnv = {
-          AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-          AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-          AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-        };
-
-        gaijiBuildInputs = [
-          pkgs.pdfium-binaries
-        ]
-        ++ lib.optionals pkgs.stdenv.isDarwin [
+        # Darwin-only linkage the workspace CLIs need when built on macOS.
+        workspaceExtraBuildInputs = lib.optionals pkgs.stdenv.isDarwin [
           pkgs.libiconv
           pkgs.darwin.apple_sdk.frameworks.Security
           pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
@@ -548,7 +387,7 @@
 
         # Common skeleton for a workspace Rust binary built from `source` against
         # the shared abCargoDeps vendor dir. Each call site passes only its real
-        # differences (package flags, extra deps, gaiji opt-in, doCheck).
+        # differences (package flags, extra deps, doCheck).
         mkRustBin =
           {
             pname,
@@ -697,292 +536,6 @@
           '';
         };
 
-        aozora2htmlCargoDeps = rustPlatform.importCargoLock {
-          lockFile = ./adapters/aozora2html/Cargo.lock;
-        };
-
-        # Vendored crate deps for the excluded aozora-epub3 adapter crate, so
-        # the smoke check can build the mapper fully offline in the Nix store.
-        aozoraEpub3CargoDeps = rustPlatform.importCargoLock {
-          lockFile = ./adapters/aozora-epub3/Cargo.lock;
-        };
-
-        # ── Repo's own Rust adapters, packaged as reproducible derivations ──
-        #
-        # Prior to this the legacy comparison-lane adapters under adapters/
-        # were built only via `cargo build` inside justfile recipes — the
-        # ADR's F5 finding: the adapter *build* itself was not
-        # pinned/reproducible. Each Rust adapter is a crate excluded from the
-        # root workspace (see the `exclude` list in ./Cargo.toml) with its own
-        # Cargo.lock. We package them with `rustPlatform.buildRustPackage`,
-        # reusing the existing importCargoLock cargo-deps where they already
-        # exist (aozora2htmlCargoDeps, aozoraEpub3CargoDeps) and adding new
-        # vendored deps for the two adapters that lacked them. All builds are
-        # fully offline; deps resolve from the importCargoLock vendor dirs.
-        #
-        # doCheck is disabled: F5 is about pinning the *build*, and the adapter
-        # test suites are already exercised by the dedicated smoke/parity checks
-        # (aozora-epub3-smoke, aozora2html-rust-parity, …), several
-        # of which need fixtures/oracles this plain build derivation does not
-        # stage. This mirrors the doCheck = false convention used by the other
-        # single-binary build derivations here (taxonomyGenerator,
-        # sourceInventoryBin).
-
-        # aozora2 has a `path` dependency that reaches outside the adapter dir
-        # (crates/ab-source-syntax). Its vendored deps are keyed to the adapter's
-        # own Cargo.lock, but the build src must be the whole ab-validator tree
-        # so that path dep resolves; buildAndTestSubdir + cargoRoot point cargo
-        # at the adapter's self-contained workspace.
-        aozora2AdapterCargoDeps = rustPlatform.importCargoLock {
-          lockFile = ./adapters/aozora2/Cargo.lock;
-        };
-
-        # aozora-rs, like aozora2, has `path` deps that reach outside the adapter
-        # dir (crates/ab-ir, crates/ab-source-syntax and the third_party/aozora-rs-gaiji
-        # patch), so its build src is the whole ab-validator tree with
-        # buildAndTestSubdir + cargoRoot pointing cargo at the adapter's workspace.
-        # Its only git dependency is aozora-rs-core (aozora-rs-gaiji is [patch]ed to
-        # the vendored third_party path), so importCargoLock needs a single outputHash.
-        # This was previously blocked: crates/ab-ir now transitively requires
-        # ab-ortho-detect → bincode, and the committed Cargo.lock predated that
-        # change, so an offline build failed with `no matching package named bincode`.
-        # The lock has since been regenerated against the current crates/ tree.
-        aozoraRsAdapterCargoDeps = rustPlatform.importCargoLock {
-          lockFile = ./adapters/aozora-rs/Cargo.lock;
-          outputHashes = {
-            "aozora-rs-core-0.1.0" = "sha256-FstLN45x25KjRr9Q7ORJ8W7/lRVlvIld0xAEpKZ9EUE=";
-          };
-        };
-
-        mkAdapterCargoQualityCheck =
-          {
-            name,
-            manifestPath,
-            cargoDeps,
-            extraEnv ? { },
-            checkSuffix ? "cargo-quality-check",
-            cargoCommand ? ''
-              cargo fmt --manifest-path "$manifest" -- --check
-              cargo clippy --manifest-path "$manifest" \
-                --all-targets --offline --locked -- -D warnings
-            '',
-          }:
-          pkgs.runCommand "${name}-${checkSuffix}"
-            (
-              {
-                nativeBuildInputs = [ rustToolchain ];
-              }
-              // extraEnv
-            )
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              export CARGO_HOME="$work_dir/cargo-home"
-              mkdir -p "$CARGO_HOME"
-              cp "${cargoDeps}/.cargo/config.toml" "$CARGO_HOME/config.toml"
-              substituteInPlace "$CARGO_HOME/config.toml" \
-                --replace-fail 'directory = "cargo-vendor-dir"' 'directory = "${cargoDeps}"'
-              manifest="$work_dir/source/${manifestPath}"
-              ${cargoCommand}
-              touch "$out"
-            '';
-
-        adapterCargoQualityChecks = [
-          (mkAdapterCargoQualityCheck {
-            name = "aozora2";
-            manifestPath = "adapters/aozora2/Cargo.toml";
-            cargoDeps = aozora2AdapterCargoDeps;
-          })
-          (mkAdapterCargoQualityCheck {
-            name = "aozora2html";
-            manifestPath = "adapters/aozora2html/Cargo.toml";
-            cargoDeps = aozora2htmlCargoDeps;
-          })
-          (mkAdapterCargoQualityCheck {
-            name = "aozora-rs";
-            manifestPath = "adapters/aozora-rs/Cargo.toml";
-            cargoDeps = aozoraRsAdapterCargoDeps;
-            extraEnv = gaijiEnv;
-          })
-          (mkAdapterCargoQualityCheck {
-            name = "aozora-epub3";
-            manifestPath = "adapters/aozora-epub3/Cargo.toml";
-            cargoDeps = aozoraEpub3CargoDeps;
-          })
-        ];
-
-        adapterCargoQualityCheck = pkgs.runCommand "adapter-cargo-quality-check" { } ''
-          ${pkgs.lib.concatMapStringsSep "\n" (check: "test -e ${check}") adapterCargoQualityChecks}
-          touch "$out"
-        '';
-
-        adapterDecodingContractChecks = [
-          (mkAdapterCargoQualityCheck {
-            name = "aozora2";
-            manifestPath = "adapters/aozora2/Cargo.toml";
-            cargoDeps = aozora2AdapterCargoDeps;
-            checkSuffix = "decoding-contract-check";
-            cargoCommand = ''
-              cargo test --manifest-path "$manifest" \
-                --offline --locked source_decoding_contract
-            '';
-          })
-          (mkAdapterCargoQualityCheck {
-            name = "aozora2html";
-            manifestPath = "adapters/aozora2html/Cargo.toml";
-            cargoDeps = aozora2htmlCargoDeps;
-            checkSuffix = "decoding-contract-check";
-            cargoCommand = ''
-              cargo test --manifest-path "$manifest" \
-                --offline --locked source_decoding_contract
-            '';
-          })
-          (mkAdapterCargoQualityCheck {
-            name = "aozora-rs";
-            manifestPath = "adapters/aozora-rs/Cargo.toml";
-            cargoDeps = aozoraRsAdapterCargoDeps;
-            checkSuffix = "decoding-contract-check";
-            extraEnv = gaijiEnv;
-            cargoCommand = ''
-              cargo test --manifest-path "$manifest" \
-                --offline --locked source_decoding_contract
-            '';
-          })
-          (mkAdapterCargoQualityCheck {
-            name = "aozora-epub3";
-            manifestPath = "adapters/aozora-epub3/Cargo.toml";
-            cargoDeps = aozoraEpub3CargoDeps;
-            checkSuffix = "decoding-contract-check";
-            cargoCommand = ''
-              cargo test --manifest-path "$manifest" \
-                --offline --locked source_decoding_contract
-            '';
-          })
-        ];
-
-        adapterDecodingContractCheck = pkgs.runCommand "adapter-decoding-contract-check" { } ''
-          ${pkgs.lib.concatMapStringsSep "\n" (check: "test -e ${check}") adapterDecodingContractChecks}
-          touch "$out"
-        '';
-
-        aozora2Adapter = rustPlatform.buildRustPackage {
-          pname = "aozora2-adapter";
-          version = "0.1.0";
-
-          src = source;
-          cargoDeps = aozora2AdapterCargoDeps;
-
-          buildAndTestSubdir = "adapters/aozora2";
-          cargoRoot = "adapters/aozora2";
-
-          doCheck = false;
-
-          meta.description = "Repo adapter wrapping the aozora2 (aozora-core) parser into AAT";
-        };
-
-        aozoraRsAdapter = rustPlatform.buildRustPackage {
-          pname = "aozora-rs-adapter";
-          version = "0.1.0";
-
-          src = source;
-          cargoDeps = aozoraRsAdapterCargoDeps;
-
-          buildAndTestSubdir = "adapters/aozora-rs";
-          cargoRoot = "adapters/aozora-rs";
-
-          buildInputs = [
-            pkgs.pdfium-binaries
-          ];
-
-          # third_party/aozora-rs-gaiji's build.rs otherwise downloads the JIS X
-          # 0213 menkuten table, a pdfium binary, and Aozora's gaiji_chuki.pdf
-          # from the live network at build time — impossible in the Nix sandbox
-          # and non-reproducible even outside it (the PDF/table drift upstream).
-          # The vendored fork in third_party/ adds these env-var escape hatches;
-          # we satisfy all three from the pinned inputs already used elsewhere in
-          # this flake (aozoraRsGaijiMenkuten, aozoraRsGaijiChukiPdf,
-          # pdfium-binaries) so the build is fully offline and reproducible.
-          AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-          AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-          AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-
-          doCheck = false;
-
-          meta.description = "Repo adapter wrapping the aozora-rs-core parser into AAT";
-        };
-
-        aozora2htmlAdapter = rustPlatform.buildRustPackage {
-          pname = "aozora2html-adapter";
-          version = "0.1.0";
-
-          src = cleanProjectSource ./adapters/aozora2html;
-          cargoDeps = aozora2htmlCargoDeps;
-
-          doCheck = false;
-
-          meta.description = "Repo adapter mapping aozora2html XHTML output into AAT";
-        };
-
-        aozoraEpub3Adapter = rustPlatform.buildRustPackage {
-          pname = "aozora-epub3-adapter";
-          version = "0.1.0";
-
-          src = cleanProjectSource ./adapters/aozora-epub3;
-          cargoDeps = aozoraEpub3CargoDeps;
-
-          doCheck = false;
-
-          meta.description = "Repo adapter mapping AozoraEpub3 XHTML output into AAT";
-        };
-
-        aozora2htmlGem = pkgs.fetchurl {
-          url = "https://rubygems.org/downloads/aozora2html-3.0.1.gem";
-          hash = "sha256-TcEQby6RGtCW8GG8jDIUB55LUoDSvP3tX95BfW3OuEE=";
-        };
-
-        rubyWithAozora2htmlRuntime = pkgs.ruby.withPackages (gems: [
-          gems.rubyzip
-        ]);
-
-        aozora2htmlParser = pkgs.stdenvNoCC.mkDerivation {
-          pname = "aozora2html-parser";
-          version = "3.0.1";
-
-          nativeBuildInputs = [
-            pkgs.makeWrapper
-            rubyWithAozora2htmlRuntime
-          ];
-
-          dontUnpack = true;
-
-          installPhase = ''
-            runHook preInstall
-
-            export HOME="$TMPDIR"
-            gem install \
-              --local \
-              --ignore-dependencies \
-              --install-dir "$out/lib/ruby/gems" \
-              --bindir "$out/libexec/bin" \
-              --no-document \
-              ${aozora2htmlGem}
-
-            substituteInPlace "$out/libexec/bin/aozora2html" \
-              --replace-fail "#! ruby" "#! ${rubyWithAozora2htmlRuntime}/bin/ruby"
-
-            wrapProgram "$out/libexec/bin/aozora2html" \
-              --prefix PATH : "${lib.makeBinPath [ rubyWithAozora2htmlRuntime ]}" \
-              --set GEM_HOME "$out/lib/ruby/gems" \
-              --prefix GEM_PATH : "$out/lib/ruby/gems"
-
-            mkdir -p "$out/bin"
-            ln -s "$out/libexec/bin/aozora2html" "$out/bin/aozora2html"
-
-            runHook postInstall
-          '';
-        };
-
         vibratoDictionaryPreCheck = ''
           if [ -z "''${AB_VIBRATO_DICT:-}" ]; then
             for dir in "${source}/dictionary/compiled" "${source}/dictionary/optimized"; do
@@ -1023,22 +576,6 @@
           mkdir -p "$XDG_CACHE_HOME"
         '';
 
-        upstreamNonRustMetadata = pkgs.runCommand "upstream-parser-metadata-check" { } ''
-          test -f ${upstream-aozora-parser-js-src}/package.json
-          test -f ${upstreamParserAozoraEpub3}/lib/AozoraEpub3.jar
-          test -f ${upstreamParserAozoraEpub3}/share/licenses/aozora-epub3/gpl.txt
-          test -f ${upstreamParserAozoraEpub3}/share/licenses/aozora-epub3/THIRD-PARTY-NOTICES.txt
-          test -f ${upstream-aozorabunko-extractor-src}/Gemfile.lock
-          touch "$out"
-        '';
-
-        upstreamParserShell = pkgs.mkShell {
-          packages = devTools ++ [
-            rubyWithExtractorGems
-            pkgs.bundler
-          ];
-        };
-
         abValidator = mkRustBin {
           pname = "ab-validator";
           nativeBuildInputs = [
@@ -1046,8 +583,8 @@
             pkgs.python3
             pkgs.zstd
           ];
-          buildInputs = gaijiBuildInputs;
-          env = gaijiEnv // {
+          buildInputs = workspaceExtraBuildInputs;
+          env = {
             AB_ABC_ROOT = "${abcSchemaRootForNix}";
           };
           doCheck = true;
@@ -1072,8 +609,8 @@
         parserRqCandidate = mkRustBin {
           pname = "parser-rq-candidate";
           nativeBuildInputs = [ pkgs.pkg-config ];
-          buildInputs = gaijiBuildInputs;
-          env = gaijiEnv // {
+          buildInputs = workspaceExtraBuildInputs;
+          env = {
             AB_ABC_ROOT = "${abcSchemaRootForNix}";
           };
           cargoBuildFlags = [
@@ -1104,8 +641,8 @@
             pkgs.python3
             pkgs.zstd
           ];
-          buildInputs = gaijiBuildInputs;
-          env = gaijiEnv // {
+          buildInputs = workspaceExtraBuildInputs;
+          env = {
             AB_ABC_ROOT = "${abcSchemaRootForNix}";
           };
           cargoBuildFlags = [ "--workspace" ];
@@ -1139,7 +676,7 @@
             pkgs.zstd
           ];
 
-          buildInputs = gaijiBuildInputs;
+          buildInputs = workspaceExtraBuildInputs;
 
           src = source;
         };
@@ -1153,9 +690,6 @@
           export HOME="$TMPDIR/home"
           export CARGO_HOME="$TMPDIR/cargo-home"
           mkdir -p "$HOME" "$CARGO_HOME"
-          export AB_AOZORA_RS_GAIJI_MENKUTEN_PATH="${aozoraRsGaijiMenkuten}"
-          export AB_AOZORA_RS_GAIJI_CHUKI_PDF="${aozoraRsGaijiChukiPdf}"
-          export AB_AOZORA_RS_GAIJI_PDFIUM_DIR="${pkgs.pdfium-binaries}/lib"
           export AB_ABC_ROOT="${abcSchemaRootForNix}"
           mkdir -p .cargo
           cat > .cargo/config.toml <<EOF
@@ -1186,12 +720,6 @@
         cargoCheck = pkgs.runCommand "ab-validator-cargo-check" cargoQualityEnv ''
           ${cargoQualityPrelude}
           cargo check --workspace --all-targets --offline --locked
-          touch "$out"
-        '';
-
-        parserStudyReportCheck = pkgs.runCommand "parser-study-report-check" cargoQualityEnv ''
-          ${cargoQualityPrelude}
-          cargo test --package ab-parser-study-report --offline --locked
           touch "$out"
         '';
 
@@ -1240,15 +768,6 @@
           pkgs.nodejs_22
           pkgs.jdk21
           pkgs.gradle
-        ];
-
-        aozora2htmlTools = [
-          pkgs.ruby
-          pkgs.bundler
-          pkgs.python3
-          pkgs.python3.pkgs.lxml
-          pkgs.python3.pkgs.jsonschema
-          pkgs.python3.pkgs.pytest
         ];
 
         pythonWithAatSchemaDeps = pkgs.python3.withPackages (ps: [
@@ -1320,59 +839,8 @@
               touch "$out"
             '';
 
-        # Shared body for the aozora2html Rust-mapper parity smoke: build the
-        # mapper offline from the vendored deps, then run the pytest oracle.
-        # `root` is the shell expression naming the checked-out repo root.
-        aozora2htmlParityText = root: ''
-          export AB_AOZORA2HTML_BIN="${aozora2htmlParser}/bin/aozora2html"
-          cargo \
-            --config "source.crates-io.replace-with='vendored-sources'" \
-            --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
-            build --manifest-path "${root}/adapters/aozora2html/Cargo.toml" --release --offline
-          python -m pytest "${root}/adapters/aozora2html/tests/test_mapper.py" -vv
-        '';
-
-        aozora2htmlRustParityShell = pkgs.writeShellApplication {
-          name = "aozora2html-rust-parity";
-          runtimeInputs = [
-            pkgs.perl
-            rustToolchain
-            pythonWithAatSchemaDeps
-          ];
-          text = ''
-            repo_root="$PWD"
-            if [ ! -d "$repo_root/adapters/aozora2html" ]; then
-              repo_root="${source}"
-            fi
-          ''
-          + aozora2htmlParityText "$repo_root";
-        };
-
-        aozora2htmlRustParityCheck =
-          pkgs.runCommand "aozora2html-rust-parity-check"
-            {
-              nativeBuildInputs = [
-                pkgs.perl
-                rustToolchain
-                pythonWithAatSchemaDeps
-              ];
-            }
-            (
-              ''
-                work_dir="$(mktemp -d)"
-                cp -R "${source}" "$work_dir/source"
-                chmod -R +w "$work_dir/source"
-                cd "$work_dir/source"
-              ''
-              + aozora2htmlParityText "$work_dir/source"
-              + ''
-                touch "$out"
-              ''
-            );
-
         # `reports/**` pytest (aat-fidelity dump comparator + lib helpers)
-        # wired into the sandbox: same copy-source-then-run idiom as the
-        # aozora2html Rust-mapper parity check above.
+        # wired into the sandbox: copy-source-then-run idiom.
         reportsPytestCheck =
           pkgs.runCommand "reports-pytest-check"
             {
@@ -1392,33 +860,10 @@
                 reports/aat-fidelity/tests \
                 reports/lib/tests \
                 reports/parser-conformance/tests \
-                reports/parser-study/tests \
                 reports/source-regions/tests \
                 -q
               touch "$out"
             '';
-
-        parserStudyDiagnosticCapturePythonTests =
-          pkgs.runCommand "parser-study-diagnostic-capture-python-tests"
-            {
-              nativeBuildInputs = [ pythonWithAatSchemaDeps ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-              python -m pytest reports/parser-study/tests/test_diagnostic_capture.py -q
-              touch "$out"
-            '';
-
-        parserStudyDiagnosticCaptureApp = pkgs.writeShellApplication {
-          name = "parser-study-diagnostic-capture";
-          runtimeInputs = [ pythonWithAatSchemaDeps ];
-          text = ''
-            exec python "${source}/reports/parser-study/diagnostic_capture.py" "$@"
-          '';
-        };
 
         parserRqPublicationPytestCheck =
           pkgs.runCommand "parser-rq-publication-pytest-check"
@@ -1845,8 +1290,8 @@
             pkgs.pkg-config
             pkgs.zstd
           ];
-          buildInputs = gaijiBuildInputs;
-          env = gaijiEnv // {
+          buildInputs = workspaceExtraBuildInputs;
+          env = {
             AB_ABC_ROOT = "${abcSchemaRootForNix}";
           };
           cargoBuildFlags = [
@@ -1865,8 +1310,8 @@
             pkgs.pkg-config
             pkgs.zstd
           ];
-          buildInputs = gaijiBuildInputs;
-          env = gaijiEnv // {
+          buildInputs = workspaceExtraBuildInputs;
+          env = {
             AB_ABC_ROOT = "${abcSchemaRootForNix}";
           };
           cargoBuildFlags = [
@@ -1985,59 +1430,6 @@
           ];
         };
 
-        # Reproducible adapter check: build the mapper fully offline from the
-        # vendored cargo deps, validate fixture-driven AAT against
-        # data/aat-schema.json, and smoke the full wrapper+JAR path against
-        # the pinned AozoraEpub3 release JAR exposed by upstreamParserAozoraEpub3.
-        aozoraEpub3SmokeCheck =
-          pkgs.runCommand "aozora-epub3-smoke-check"
-            {
-              nativeBuildInputs = [
-                rustToolchain
-                pythonWithAatSchemaDeps
-                pkgs.jdk21
-                pkgs.jq
-                pkgs.unzip
-              ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-
-              cargo \
-                --config "source.crates-io.replace-with='vendored-sources'" \
-                --config "source.vendored-sources.directory='${aozoraEpub3CargoDeps}'" \
-                build --manifest-path "$work_dir/source/adapters/aozora-epub3/Cargo.toml" --release --offline
-
-              bin="$work_dir/source/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
-              printf 'test' > "$work_dir/src.txt"
-              python - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
-              import json, subprocess, sys, glob
-              from pathlib import Path
-              bin_p, src, schema_p, fx_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-              schema = json.loads(Path(schema_p).read_text())
-              import jsonschema
-              fixtures = sorted(glob.glob(str(fx_dir) + "/*.xhtml"))
-              assert fixtures, "no fixtures found at " + fx_dir
-              for fx in fixtures:
-                  out = subprocess.run(
-                      [bin_p, "--mode", "aat", "--source", src, "--xhtml", fx],
-                      capture_output=True,
-                  )
-                  assert out.returncode in (0, 2), f"{fx}: rc={out.returncode} {out.stderr.decode()[:200]}"
-                  aat = json.loads(out.stdout)
-                  jsonschema.validate(aat, schema)
-              print(f"aozora-epub3 smoke: {len(fixtures)} fixtures schema-valid")
-              PY
-
-              export AB_AOZORAEPUB3_JAR="${upstreamParserAozoraEpub3}/lib/AozoraEpub3.jar"
-              printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
-                | ${pkgs.bash}/bin/bash "$work_dir/source/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
-                | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
-              touch "$out"
-            '';
       in
       {
         packages = {
@@ -2052,19 +1444,9 @@
           aat-triage-python = pythonWithAatDuckdb;
           ab-source-inventory = sourceInventoryBin;
           ab-oracle = abOracleBin;
-          aozora2-adapter = aozora2Adapter;
-          aozora2html-adapter = aozora2htmlAdapter;
-          aozora-epub3-adapter = aozoraEpub3Adapter;
-          aozora-rs-adapter = aozoraRsAdapter;
           aozorabunko-corpus = aozorabunkoCorpus;
-          upstream-parser-aozora2 = upstreamParserAozora2;
-          upstream-parser-aozora-rs = upstreamParserAozoraRs;
-          upstream-parser-aozora2html = aozora2htmlParser;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
-          upstream-parser-aozora-parser-js = upstreamParserAozoraParserJs;
           upstream-tool-aozorabunko-extractor = upstreamToolAozorabunkoExtractor;
-          upstream-parser-aozora-epub3 = upstreamParserAozoraEpub3;
-          upstream-parsers = upstreamParsers;
           sudachi-dictionary-full = sudachiDictionaryFull;
           mecab-dic-converter = mecabDicConverter;
           vibrato-dict-cwj = vibratoDictCwj;
@@ -2095,14 +1477,6 @@
           }
           // {
             meta.description = "Run the AAT oracle data schema smoke test";
-          };
-
-        apps.aozora2html-rust-parity =
-          flake-utils.lib.mkApp {
-            drv = aozora2htmlRustParityShell;
-          }
-          // {
-            meta.description = "Run the aozora2html Rust mapper parity smoke test";
           };
 
         apps.ab-aat-to-parser-ir =
@@ -2137,14 +1511,6 @@
             meta.description = "Run the host-controlled cgroup-v2 resource smoke";
           };
 
-        apps.parser-study-diagnostic-capture =
-          flake-utils.lib.mkApp {
-            drv = parserStudyDiagnosticCaptureApp;
-          }
-          // {
-            meta.description = "Capture and verify the bounded parser-study diagnostic lanes";
-          };
-
         apps.vibrato-tokenize =
           flake-utils.lib.mkApp {
             drv = vibratoTokenizeApp;
@@ -2169,21 +1535,9 @@
           cargo-clippy = cargoClippyCheck;
           cargo-deny = cargoDenyCheck;
           cargo-test = workspaceCheck;
-          parser-study-report = parserStudyReportCheck;
-          upstream-parser-aozora2 = upstreamParserAozora2;
-          upstream-parser-aozora-rs = upstreamParserAozoraRs;
-          aozora2-adapter = aozora2Adapter;
-          aozora2html-adapter = aozora2htmlAdapter;
-          aozora-epub3-adapter = aozoraEpub3Adapter;
-          aozora-rs-adapter = aozoraRsAdapter;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
-          upstream-parser-metadata = upstreamNonRustMetadata;
           aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
-          aozora2html-rust-parity = aozora2htmlRustParityCheck;
-          adapters-cargo-quality = adapterCargoQualityCheck;
-          adapter-decoding-contract = adapterDecodingContractCheck;
           aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
-          aozora-epub3-smoke = aozoraEpub3SmokeCheck;
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
           abc-schema-contract-drift = abcSchemaContractDriftCheck;
@@ -2204,7 +1558,6 @@
           aat-fidelity-duckdb-smoke = aatFidelityDuckdbSmokeCheck;
           aat-oracle-audit-smoke = aatOracleAuditSmokeCheck;
           reports-pytest = reportsPytestCheck;
-          parser-study-diagnostic-capture-python-tests = parserStudyDiagnosticCapturePythonTests;
           parser-rq-publication-pytest = parserRqPublicationPytestCheck;
           parser-rq-core-attempt-python-tests = parserRqCoreAttemptPythonTests;
           parser-rq-campaign-provenance-python-tests = parserRqCampaignProvenancePythonTests;
@@ -2220,9 +1573,6 @@
 
             RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
             AB_SUDACHI_DICT = "${sudachiDictionaryFull}/share/sudachi/system.dic";
-            AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-            AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-            AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
             AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
 
             shellHook = ''
@@ -2288,25 +1638,6 @@
             '';
           };
 
-          aozora2html = pkgs.mkShell {
-            packages = aozora2htmlTools;
-          };
-
-          # Provides the toolchain to run the pinned AozoraEpub3 release JAR
-          # and the full wrapper smoke. Set AB_AOZORAEPUB3_JAR to override the
-          # JAR path for local experiments.
-          aozora-epub3 = pkgs.mkShell {
-            packages = [
-              rustToolchain
-              pkgs.jdk21
-              pkgs.jq
-              pkgs.unzip
-              pkgs.python3
-            ];
-            RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
-          };
-
-          upstream-parsers = upstreamParserShell;
         };
 
         formatter = pkgs.nixfmt;

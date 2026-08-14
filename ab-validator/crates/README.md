@@ -1,8 +1,7 @@
 # ab-validator workspace crates
 
-This directory contains the 15 Rust crates listed in the root `Cargo.toml`.
-Adapter checkouts under `adapters/` are separate vendored crates and are not
-workspace members.
+This directory contains the workspace crates listed in the root `Cargo.toml`
+(the member list there is authoritative).
 
 ## Adapter contract
 

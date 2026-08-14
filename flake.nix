@@ -67,10 +67,10 @@
         flake: outputName: system:
         lib.attrByPath [ outputName system ] { } flake;
 
-      # build-publication materializes real TEI by shelling out to validator-
-      # owned adapters. Inject those private dependencies (and the shell tools
-      # the aozora2html wrapper needs) without re-exporting them from the root,
-      # so `nix run .#soranoha` is hermetic and never falls back to a stub.
+      # build-publication materializes real TEI by shelling out to the
+      # validator-owned parser binaries. Inject those private dependencies
+      # without re-exporting them from the root, so `nix run .#soranoha` is
+      # hermetic and never falls back to a stub.
       # Lifted out of `apps` so `apps.<system>.soranoha` and
       # `checks.<system>.publication-build-real-wiring` share the exact SAME
       # wrapped derivation instead of two independently-built copies.
@@ -94,11 +94,6 @@
           # 7zz recovers work ZIPs java.util.zip can't parse (damaged central
           # directories); build-publication falls back to it per work.
           export AB_SEVENZIP_BIN="${pkgs._7zz}/bin/7zz"
-          export AB_AOZORA2HTML_ADAPTER="${ab-validator}/adapters/aozora2html/aozora2html-adapter"
-          export AB_AOZORA2HTML_BIN="${abValidatorPackages."upstream-parser-aozora2html"}/bin/aozora2html"
-          export AB_AOZORA2HTML_MAPPER_BIN="${
-            abValidatorPackages."aozora2html-adapter"
-          }/bin/aozora2html-adapter"
           export AB_AAT_TO_PARSER_IR_BIN="${
             abValidatorPackages."ab-aat-to-parser-ir"
           }/bin/ab-aat-to-parser-ir"

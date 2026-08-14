@@ -198,6 +198,13 @@ def fixture(tmp_path: Path) -> Any:
     )
 
 
+def test_canonical_bytes_preserves_non_ascii() -> None:
+    # abc-legacy-json-c14n-v0: UTF-8 output, not \uXXXX escapes. Divergence here
+    # silently forks content_ref from the Clojure/Rust/lib implementations on
+    # any Japanese payload.
+    assert orchestrator._canonical_bytes({"題": "羅生門/序"}) == '{"題":"羅生門\\/序"}'.encode()
+
+
 def test_authentication_closes_graph_provenance_and_detached_paths(tmp_path: Path) -> None:
     campaign = orchestrator.authenticate_inputs(fixture(tmp_path))
     assert campaign.operations == OPERATIONS

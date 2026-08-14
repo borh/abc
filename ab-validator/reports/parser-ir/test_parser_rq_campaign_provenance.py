@@ -29,6 +29,13 @@ def result(returncode: int = 0, stdout: bytes = b"", stderr: bytes = b""):
     return module.CommandResult(returncode, stdout, stderr)
 
 
+def test_canonical_bytes_preserves_non_ascii() -> None:
+    # abc-legacy-json-c14n-v0: UTF-8 output, not \uXXXX escapes. Divergence here
+    # silently forks content refs from the Clojure/Rust/lib implementations on
+    # any Japanese payload.
+    assert module._canonical_bytes({"題": "羅生門/序"}) == '{"題":"羅生門\\/序"}'.encode()
+
+
 def test_direct_seed_paths_are_closed_and_sorted() -> None:
     derivation = {
         "inputSrcs": ["/nix/store/cccc-source", "/nix/store/aaaa-source"],

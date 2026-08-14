@@ -34,7 +34,7 @@ class SiteUnavailable(ValueError):
 
 
 def _canonical_bytes(value: object) -> bytes:
-    encoded = json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return encoded.replace("/", "\\/").encode()
 
 

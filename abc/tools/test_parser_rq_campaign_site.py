@@ -95,6 +95,13 @@ def readiness(tmp_path: Path) -> tuple[dict[str, object], dict[str, object]]:
     return value, receipt
 
 
+def test_canonical_bytes_preserves_non_ascii() -> None:
+    # abc-legacy-json-c14n-v0: UTF-8 output, not \uXXXX escapes. Divergence here
+    # silently forks content_ref from the Clojure/Rust/lib implementations on
+    # any Japanese payload.
+    assert site._canonical_bytes({"題": "羅生門/序"}) == '{"題":"羅生門\\/序"}'.encode()
+
+
 def test_content_ref_matches_committed_graph_hash() -> None:
     graph = site._read_json(MODULE_PATH.parents[1] / "data/parser-rq-production-graph-v1.json")
     assert site.content_ref(graph, excluding="policy_hash") == graph["policy_hash"]

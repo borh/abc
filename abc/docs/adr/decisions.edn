@@ -2263,4 +2263,43 @@
    :title "Redefine Fatal Failures Against Governed Expected Outcomes",
    :topics [:parser :release],
    :status :proposed,
+   :validation-scope :structural}
+  {:date "2026-08-14",
+   :slug "third-party-comparison-retirement",
+   :release-authority :development,
+   :relations
+   [{:class :lifecycle,
+     :type :depends-on,
+     :to "custom-parser-ownership-and-neutral-comparison"}
+    {:class :lifecycle,
+     :type :amends,
+     :to "external-parser-validation-boundary",
+     :scope
+     "comparison metrics and candidate-adapter code leave the ab-validator boundary; the imported file bundle's comparison report becomes optional"}],
+   :claims
+   [{:id :c1,
+     :kind :domain-interpretation,
+     :statement
+     "The repository owner withdrew the standing third-party parser-comparison requirement on 2026-08-14. The retained requirement is one comprehensive, citable, frozen comparison record for the JADH 2026 paper, not a live comparison capability. That record already exists and is committed outside the retired trees: the neutral-comparison study (report, raw run manifests, diagnostics) under `ab-validator/docs/studies/aozora-parser-neutral-comparison-2026-07/`, the selection/oracle reports under `ab-validator/docs/`, and the paper demo bundle under `abc/docs/evidence/paper-demo/`. Comparison evidence was already structurally non-release before this decision: `abc.tools.parser-evidence` excludes the `:parser-selection` and `:neutral-comparison` classes from admission and release evidence by construction, so retiring the machinery removes no admission or release capability.",
+     :evidence ["abc/test/abc/tools/parser_evidence_test.clj"]}
+    {:id :c2,
+     :kind :operational-behavior,
+     :statement
+     "Publication runs on the project-owned parser. No shipped build-publication config selects the `aozora2html` profile: the release config binds `ab-aozora` through `data/release-parser-identity-v1.edn`, and the diagnostic configs select `ab-aozora` unauthenticated. The `aozora2html` publication profile is retired with the adapter that implemented it.",
+     :evidence ["abc/test/abc/tools/soranoha_build_publication_test.clj"]}
+    {:id :c3,
+     :kind :structural-invariant,
+     :statement
+     "Retirement scope, decided rather than discovered later: the four vendored adapter crates (`ab-validator/adapters/`), their upstream parser packaging and flake inputs, the `ab-compare` and `ab-oracle` crates, the `ab-parser-study-report` crate and the parser-study executor tooling, the five-parser evidence gates (`phase5-checkpoint`, `FIVE_PARSER_EVIDENCE_COMPLETE`, five-lane audit recipes), the aozora2html/XHTML triage scripts under `ab-validator/reports/aat-fidelity/`, and the `aozora2html` branch of the publication adapter resolver. Retained: the frozen study and reports named in c1, the source-authority and coverage machinery that measures the corpus itself, the `ab-aat-to-parser-ir` converter, and every append-only registry row naming a third-party adapter — historical rows are immutable data, not machinery.",
+     :evidence ["abc/test/abc/tools/parser_evidence_test.clj"]}
+    {:id :c4,
+     :kind :structural-invariant,
+     :statement
+     "Carried consequences. `manifest_inputs.comparison_report_hash` becomes optional: the field described an artifact only the retired lanes produced, and the design-bundle fixtures move with the schema. The comparison-class rows in `abc/data/parser-evidence-citations.edn` remain citable with their hashes; their narrative Reproduce sections reference retired scripts and are historical provenance, not runnable instructions. The retired lanes' AAT dumps were already absent from the operator database, so no capability that presently executes is lost — the gates that asserted five-parser completeness could only ever pass against frozen summaries.",
+     :evidence ["abc/test/abc/tools/validate_design_bundle_test.clj"]}],
+   :source "Owner decision, session of 2026-08-14; execution follows the parser-rq-retire-node-span-coverage (Q13) decide-plan-delete pattern.",
+   :title "Retire the Third-Party Parser-Comparison Machinery",
+   :topics [:parser :governance],
+   :status :accepted,
+   :accepted "2026-08-14",
    :validation-scope :structural}]}

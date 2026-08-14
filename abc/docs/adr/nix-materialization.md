@@ -2,7 +2,17 @@
 
 ## Implementation Status
 
-Still Draft. ABC exposes Nix apps and checks for the v0 toolchain, but the
+**Withdrawn 2026-08-14** under the `adr-scope-and-narrative-diet` scope
+policy. The cost-envelope acceptance criteria (c2, c5) went unmeasured for
+four months while the materialization boundaries this draft anticipated were
+decided elsewhere: `imported-output-materialization` governs how ab-validator
+outputs enter ABC, `source-bundle-identity` binds the content-addressed
+source snapshots, and the release-parser identity records bind the parser
+build. A future bounded-workset cost policy, if needed, starts as a new
+record with a measured envelope rather than reviving this one. The text
+below is retained as history.
+
+Previously: still Draft. ABC exposes Nix apps and checks for the v0 toolchain, but the
 bounded-workset policy and cost-envelope acceptance criteria have not been
 measured and accepted for smoke-corpus materialization.
 

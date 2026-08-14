@@ -80,7 +80,15 @@
    :validation-scope :smoke-corpus}
   {:date "2026-04-26",
    :slug "nix-materialization",
-   :relations [],
+   :relations
+   [{:class :annotation,
+     :type :superseded-in-practice-by,
+     :to "imported-output-materialization",
+     :note
+     "Withdrawn 2026-08-14 under the adr-scope-and-narrative-diet policy: the cost-envelope claims (c2, c5) were never measured in four months, and the materialization boundaries this draft anticipated are governed today by imported-output-materialization, source-bundle-identity, and the release-parser identity binding."}
+    {:class :annotation,
+     :type :superseded-in-practice-by,
+     :to "source-bundle-identity"}],
    :claims
    [{:id :c1,
      :statement
@@ -101,7 +109,7 @@
    :source "`docs/high-level-architecture-note.md` v0.5",
    :title "Nix Materialization Policy",
    :topics [:nix :materialization],
-   :status :draft}
+   :status :withdrawn}
   {:date "2026-04-26",
    :slug "supply-chain-release-security",
    :relations [],

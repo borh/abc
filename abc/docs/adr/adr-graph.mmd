@@ -20,7 +20,7 @@ flowchart LR
   imported_output_materialization["Imported Parser Output Materialization"]:::accepted
   manifest_identity["Manifest Identity"]:::accepted
   manifest_identity_hardening["Manifest Identity Hardening"]:::accepted
-  nix_materialization["Nix Materialization Policy"]:::draft
+  nix_materialization["Nix Materialization Policy"]:::withdrawn
   operational_runtime["Operational Runtime, API, and Retention"]:::draft
   owned_aat_parser_ir_mapping["Owned AAT to Parser-IR Mapping and Compatibility Registry"]:::accepted
   package_scoped_instrument_dependency_identity["Scope Instrument Dependency Identity to the Package, Not the Workspace"]:::accepted
@@ -109,6 +109,8 @@ flowchart LR
   iiif_applicability -.->|"restates hard rule"| manifest_identity
   manifest_identity_hardening -->|"amends"| imported_output_materialization
   manifest_identity_hardening -->|"amends"| manifest_identity
+  nix_materialization -.->|"superseded in practice by"| imported_output_materialization
+  nix_materialization -.->|"superseded in practice by"| source_bundle_identity
   owned_aat_parser_ir_mapping -.->|"depends on"| external_parser_validation_boundary
   owned_aat_parser_ir_mapping -.->|"depends on"| imported_output_materialization
   owned_aat_parser_ir_mapping -->|"amends"| manifest_identity

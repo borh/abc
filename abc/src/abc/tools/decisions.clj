@@ -412,7 +412,12 @@
                (dependency-problems corpus file)
                (evidence-problems corpus repo-root file))))
 
-(defn narrative-problems [corpus repo-root adr-dir]
+(defn narrative-problems
+  "Narratives are optional per record: decisions.edn is the decision, and a
+   narrative .md exists only where prose earns its keep. The one invariant is
+   drift — an .md in the ADR directory that no record owns reads as a decision
+   but gates nothing."
+  [corpus repo-root adr-dir]
   (let [dir (fs/path repo-root adr-dir)
         expected (set (map #(str (:slug %) ".md") (:decisions corpus)))
         generated #{"README.md" "INDEX.md"}
@@ -422,15 +427,11 @@
                                      (str/ends-with? n ".md"))]
                       n))]
     (vec
-     (concat
-      (for [n (sort expected) :when (not (contains? actual n))]
-        (problem :missing-narrative (str adr-dir "/" n)
-                 "decision record has no narrative file"))
-      (for [n (sort actual)
-            :when (and (not (contains? expected n))
-                       (not (contains? generated n)))]
-        (problem :orphan-narrative (str adr-dir "/" n)
-                 "narrative file has no decision record"))))))
+     (for [n (sort actual)
+           :when (and (not (contains? expected n))
+                      (not (contains? generated n)))]
+       (problem :orphan-narrative (str adr-dir "/" n)
+                "narrative file has no decision record")))))
 
 (defn validate-repository
   "Strictly validate the decisions corpus under repo-root. Shape problems

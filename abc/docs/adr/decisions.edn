@@ -2302,4 +2302,33 @@
    :topics [:parser :governance],
    :status :accepted,
    :accepted "2026-08-14",
-   :validation-scope :structural}]}
+   :validation-scope :structural}
+  {:slug "adr-scope-and-narrative-diet",
+   :title "ADRs Are for Decisions That Gate; Narratives Become Optional",
+   :status :accepted,
+   :date "2026-08-14",
+   :accepted "2026-08-14",
+   :validation-scope :structural,
+   :release-authority :development,
+   :topics [:governance],
+   :relations
+   [{:class :lifecycle,
+     :type :amends,
+     :to "data-driven-decision-records",
+     :scope "the 1:1 record-to-narrative pairing requirement"}
+    {:class :lifecycle,
+     :type :amends,
+     :to "adr-governance-validation",
+     :scope "the :missing-narrative check"}],
+   :claims
+   [{:id :c1,
+     :kind :policy,
+     :statement
+     "Scope policy: a decision earns a record here when it gates — when its claims bind executable evidence that a check or release path enforces. Process notes, plans, and status narration do not get records; they live in docs/superpowers/ or commit messages. This is the corpus's admission criterion going forward, adopted as a reversible default: this record's own amendment mechanism is the way to widen it again. Basis: twice in this repository's history the ADR machinery expanded until it was burned down; the two elements that survived both fires — the machine-validated decisions.edn corpus and the release-authority binding — are exactly the elements that gate.",
+     :evidence ["abc/test/abc/tools/decisions_test.clj"]}
+    {:id :c2,
+     :kind :structural-invariant,
+     :statement
+     "Narrative .md files are optional per record. `narrative-problems` no longer emits :missing-narrative; a record whose decision is fully carried by its claims needs no prose twin. The retained invariant is drift detection: an .md in docs/adr/ that no record owns still fails governance as :orphan-narrative, because a file that reads as a decision but gates nothing is exactly the vestige this corpus exists to prevent. Existing narratives are kept; none were deleted by this change.",
+     :evidence ["abc/test/abc/tools/decisions_test.clj"]}],
+   :source "Owner re-evaluation, session of 2026-08-14: the ADR-to-code connection was too weak because the corpus optimized for evidentiary completeness over evolvability."}]}

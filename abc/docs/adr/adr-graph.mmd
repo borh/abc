@@ -2,6 +2,7 @@
 flowchart LR
   abc_tools_runtime["ABC Tools Runtime"]:::accepted
   adr_governance_validation["Uniform ADR Governance Validation"]:::accepted
+  adr_scope_and_narrative_diet["ADRs Are for Decisions That Gate; Narratives Become Optional"]:::accepted
   analysis_artifact_identity["Analysis Artifact Identity"]:::proposed
   analysis_packs_and_tokenizer_profiles["Analysis Packs and Tokenizer Profiles"]:::proposed
   aozora_parser_selection["Aozora Parser Selection and Fork Base"]:::accepted
@@ -59,6 +60,8 @@ flowchart LR
   abc_tools_runtime -->|"amends"| v0_design_bundle_validation
   adr_governance_validation -->|"amends — ADR header and decision-graph source validation"| diagrams_as_gated_derived_views
   adr_governance_validation -.->|"depends on — generated decision graph contract"| diagrams_as_gated_derived_views
+  adr_scope_and_narrative_diet -->|"amends — the :missing-narrative check"| adr_governance_validation
+  adr_scope_and_narrative_diet -->|"amends — the 1:1 record-to-narrative pairing requirement"| data_driven_decision_records
   analysis_artifact_identity -.->|"depends on"| manifest_identity
   analysis_artifact_identity -.->|"depends on"| manifest_identity_hardening
   analysis_artifact_identity -.->|"depends on"| nix_materialization

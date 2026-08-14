@@ -370,7 +370,9 @@
     (spit (str (fs/path root "docs/adr/INDEX.md")) "# generated\n")
     (let [problems (d/narrative-problems
                     {:decisions [(rec "a") (rec "b")]} root "docs/adr")]
-      (is (= #{:missing-narrative :orphan-narrative}
-             (set (map :kind problems))))
-      (is (= 2 (count problems))
+      (is (= #{:orphan-narrative}
+             (set (map :kind problems)))
+          "narratives are optional per record; only drift (an .md with no
+           record) is a problem")
+      (is (= 1 (count problems))
           "README.md and INDEX.md are not orphans"))))

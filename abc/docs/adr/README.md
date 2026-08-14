@@ -5,6 +5,14 @@ This directory holds the ABC-side decision records for the Soranoha monorepo.
 owns publication schemas, TEI profile policy, manifest identity, and
 registry admission (see the root `AGENTS.md` design boundaries).
 
+## Scope: ADRs are for decisions that gate
+
+A decision earns a record here when its claims bind executable evidence
+that a check or release path enforces (ADR
+`adr-scope-and-narrative-diet`). Process notes, plans, and status
+narration do not get records — they live in `docs/superpowers/` or commit
+messages.
+
 ## Representation
 
 Machine-facing decision facts live in `decisions.edn` — one record per
@@ -14,9 +22,11 @@ one-directional `:relations`, and `:claims` (acceptance criteria with
 `:statement`, `:kind`, and `:evidence` paths). The Malli schema in
 `src/abc/tools/decisions.clj` is the authoritative shape;
 `clojure -M:abc/adr-governance` validates shape, graph semantics, evidence
-paths, narrative pairing, and INDEX byte currency.
+paths, narrative drift, and INDEX byte currency.
 
-`<slug>.md` files are pure narrative — no tool parses them. `INDEX.md` and
+`<slug>.md` files are pure narrative — no tool parses them, and they are
+optional per record: write one only where prose earns its keep. An `.md`
+in this directory that no record owns fails governance as an orphan. `INDEX.md` and
 `adr-graph.mmd` are generated views (`clojure -M:abc/adr-governance
 --write-index` and `clojure -M:abc/diagrams`).
 

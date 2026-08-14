@@ -1,0 +1,54 @@
+{
+  "artifact_id": "sha256:0d10d2567aefbd874ccea6a7321740f5d6d4122e29acdb2b2e2083f65c857016",
+  "artifact_kind": "source",
+  "content": 
+  {
+    "content_hash": "sha256:03def0d5f4322d1cf1bb812a7cca4e490464cb95090182a34a6e2665dde22ba7",
+    "media_type": "text\/plain; charset=Shift_JIS",
+    "path_hint": "source.txt"
+  },
+  "invalidated_at": null,
+  "license": 
+  {
+    "label": "Aozora Bunko",
+    "source_url": "https:\/\/www.aozora.gr.jp\/cards\/000035\/card1567.html"
+  },
+  "manifest_identity_object": 
+  {
+    "aat_parser_ir_mapping_hash": null,
+    "analysis_recipe_hash": null,
+    "corpus_snapshot_hash": "sha256:537736a73abf100317a371791533cdb2dc0ed5c8fc4d4f23a8a822174a929586",
+    "manifest_schema_hash": "sha256:c8492e91c2fe3af48e3efe92b8a83b1f0a51775186805764877bbec8835b510e",
+    "metadata_record_hash": "sha256:2c280415e626b6a87ae7150631257b89162c4b80d37aa787487e47e345469033",
+    "output_format_spec_hash": "sha256:c8492e91c2fe3af48e3efe92b8a83b1f0a51775186805764877bbec8835b510e",
+    "parser_build_hash": null,
+    "parser_config_hash": null,
+    "parser_ir_schema_hash": null,
+    "tei_profile_hash": null,
+    "tokenizer_build_hash": null,
+    "tokenizer_dictionary_hash": null,
+    "work_content_hash": "sha256:03def0d5f4322d1cf1bb812a7cca4e490464cb95090182a34a6e2665dde22ba7"
+  },
+  "manifest_schema_id": "https:\/\/w3id.org\/abc\/schemas\/manifest.schema.json",
+  "notes": "Source manifest for \u8d70\u308c\u30e1\u30ed\u30b9. corpus_snapshot_hash points to the source corpus snapshot descriptor.",
+  "provenance": 
+  {
+    "activity_id": "https:\/\/w3id.org\/abc\/activity\/source-ingest-snapshot",
+    "agent": "abc.tools.materialize-source-snapshot",
+    "generated_at": "2026-07-04T00:00:00Z",
+    "plan_hash": null,
+    "used": ["sha256:03def0d5f4322d1cf1bb812a7cca4e490464cb95090182a34a6e2665dde22ba7","sha256:2c280415e626b6a87ae7150631257b89162c4b80d37aa787487e47e345469033","sha256:537736a73abf100317a371791533cdb2dc0ed5c8fc4d4f23a8a822174a929586","sha256:66a91addc466323330809c760c7f036ad54d3ac25dbf1294d75da5bfffc10113"],
+    "was_derived_from": ["sha256:03def0d5f4322d1cf1bb812a7cca4e490464cb95090182a34a6e2665dde22ba7","sha256:537736a73abf100317a371791533cdb2dc0ed5c8fc4d4f23a8a822174a929586"]
+  },
+  "replacement_reason": null,
+  "sidecars": [
+    {
+      "hash": "sha256:66a91addc466323330809c760c7f036ad54d3ac25dbf1294d75da5bfffc10113",
+      "media_type": "application\/json",
+      "path_hint": "..\/demo-source-corpus-snapshot.json",
+      "role": "index-entry"
+    }],
+  "signatures": [],
+  "superseded_by": null,
+  "validation_status": "passed"
+}

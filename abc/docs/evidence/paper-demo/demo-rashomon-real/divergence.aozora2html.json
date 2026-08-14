@@ -1,0 +1,1442 @@
+{
+  "aat": {
+    "adapter": "aozora2html",
+    "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1",
+    "parse_complete": true,
+    "source_hash": "sha256:18fd203e4e805fa8cf05d8ee18db05a29f541e83f4043b67091191ce1db4a319",
+    "version": 1
+  },
+  "mapping": {
+    "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+    "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+    "mapping_version": "0.2.1"
+  },
+  "preserved_aat_meta": {
+    "metrics": null,
+    "semantic_summary": {
+      "syntax": {
+        "gaiji.marker": [
+          {
+            "kind": "gaiji",
+            "provenance": "parser",
+            "value": {
+              "description": "※(「てへん＋丑」、第4水準2-12-93)",
+              "description_format": null,
+              "kind": "Image",
+              "resolved": null,
+              "ruby_reading": "ね",
+              "source": ""
+            }
+          },
+          {
+            "kind": "gaiji",
+            "provenance": "parser",
+            "value": {
+              "description": "※(「目＋匡」、第3水準1-88-81)",
+              "description_format": null,
+              "kind": "Image",
+              "resolved": null,
+              "ruby_reading": "まぶた",
+              "source": ""
+            }
+          },
+          {
+            "kind": "gaiji",
+            "provenance": "parser",
+            "value": {
+              "description": "※(「目＋匡」、第3水準1-88-81)",
+              "description_format": null,
+              "kind": "Image",
+              "resolved": null,
+              "ruby_reading": "まぶた",
+              "source": ""
+            }
+          }
+        ],
+        "gaiji_ruby.inline_base": [
+          {
+            "kind": "gaiji_ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "",
+              "placement": "right",
+              "reading": "ね"
+            }
+          },
+          {
+            "kind": "gaiji_ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "",
+              "placement": "right",
+              "reading": "まぶた"
+            }
+          },
+          {
+            "kind": "gaiji_ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "",
+              "placement": "right",
+              "reading": "まぶた"
+            }
+          }
+        ],
+        "projection.warning": [
+          {
+            "kind": "projection_warning",
+            "provenance": "projection",
+            "value": {
+              "message": "unmapped XHTML element <div>",
+              "syntax_id": "aozora2html.unmapped"
+            }
+          }
+        ],
+        "ruby.basic": [
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "下人",
+              "placement": "right",
+              "reading": "げにん"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "羅生門",
+              "placement": "right",
+              "reading": "らしょうもん"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "丹塗",
+              "placement": "right",
+              "reading": "にぬり"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "剥",
+              "placement": "right",
+              "reading": "は"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "円柱",
+              "placement": "right",
+              "reading": "まるばしら"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "蟋蟀",
+              "placement": "right",
+              "reading": "きりぎりす"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "朱雀大路",
+              "placement": "right",
+              "reading": "すざくおおじ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "市女笠",
+              "placement": "right",
+              "reading": "いちめがさ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "揉烏帽子",
+              "placement": "right",
+              "reading": "もみえぼし"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "辻風",
+              "placement": "right",
+              "reading": "つじかぜ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "災",
+              "placement": "right",
+              "reading": "わざわい"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "洛中",
+              "placement": "right",
+              "reading": "らくちゅう"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "丹",
+              "placement": "right",
+              "reading": "に"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "箔",
+              "placement": "right",
+              "reading": "はく"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "薪",
+              "placement": "right",
+              "reading": "たきぎ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "料",
+              "placement": "right",
+              "reading": "しろ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "狐狸",
+              "placement": "right",
+              "reading": "こり"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "棲",
+              "placement": "right",
+              "reading": "す"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "盗人",
+              "placement": "right",
+              "reading": "ぬすびと"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "鴉",
+              "placement": "right",
+              "reading": "からす"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "鴟尾",
+              "placement": "right",
+              "reading": "しび"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "胡麻",
+              "placement": "right",
+              "reading": "ごま"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "啄",
+              "placement": "right",
+              "reading": "ついば"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "刻限",
+              "placement": "right",
+              "reading": "こくげん"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "糞",
+              "placement": "right",
+              "reading": "ふん"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "襖",
+              "placement": "right",
+              "reading": "あお"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "面皰",
+              "placement": "right",
+              "reading": "にきび"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "衰微",
+              "placement": "right",
+              "reading": "すいび"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "申",
+              "placement": "right",
+              "reading": "さる"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "刻",
+              "placement": "right",
+              "reading": "こく"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "下",
+              "placement": "right",
+              "reading": "さが"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "明日",
+              "placement": "right",
+              "reading": "あす"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "甍",
+              "placement": "right",
+              "reading": "いらか"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "遑",
+              "placement": "right",
+              "reading": "いとま"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "築土",
+              "placement": "right",
+              "reading": "ついじ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "饑死",
+              "placement": "right",
+              "reading": "うえじに"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "低徊",
+              "placement": "right",
+              "reading": "ていかい"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "揚句",
+              "placement": "right",
+              "reading": "あげく"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "逢着",
+              "placement": "right",
+              "reading": "ほうちゃく"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "盗人",
+              "placement": "right",
+              "reading": "ぬすびと"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "嚔",
+              "placement": "right",
+              "reading": "くさめ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "大儀",
+              "placement": "right",
+              "reading": "たいぎ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "火桶",
+              "placement": "right",
+              "reading": "ひおけ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "丹塗",
+              "placement": "right",
+              "reading": "にぬり"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "蟋蟀",
+              "placement": "right",
+              "reading": "きりぎりす"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "頸",
+              "placement": "right",
+              "reading": "くび"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "山吹",
+              "placement": "right",
+              "reading": "やまぶき"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "汗袗",
+              "placement": "right",
+              "reading": "かざみ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "襖",
+              "placement": "right",
+              "reading": "あお"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "患",
+              "placement": "right",
+              "reading": "うれえ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "惧",
+              "placement": "right",
+              "reading": "おそれ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "梯子",
+              "placement": "right",
+              "reading": "はしご"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "聖柄",
+              "placement": "right",
+              "reading": "ひじりづか"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "太刀",
+              "placement": "right",
+              "reading": "たち"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "鞘走",
+              "placement": "right",
+              "reading": "さやばし"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "藁草履",
+              "placement": "right",
+              "reading": "わらぞうり"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "容子",
+              "placement": "right",
+              "reading": "ようす"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "膿",
+              "placement": "right",
+              "reading": "うみ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "面皰",
+              "placement": "right",
+              "reading": "にきび"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "括",
+              "placement": "right",
+              "reading": "くく"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "蜘蛛",
+              "placement": "right",
+              "reading": "くも"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "守宮",
+              "placement": "right",
+              "reading": "やもり"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "平",
+              "placement": "right",
+              "reading": "たいら"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "覗",
+              "placement": "right",
+              "reading": "のぞ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "死骸",
+              "placement": "right",
+              "reading": "しがい"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "捏",
+              "placement": "right",
+              "reading": "こ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "開",
+              "placement": "right",
+              "reading": "あ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "唖",
+              "placement": "right",
+              "reading": "おし"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "下人",
+              "placement": "right",
+              "reading": "げにん"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "腐爛",
+              "placement": "right",
+              "reading": "ふらん"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "掩",
+              "placement": "right",
+              "reading": "おお"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "蹲",
+              "placement": "right",
+              "reading": "うずくま"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "檜皮色",
+              "placement": "right",
+              "reading": "ひわだいろ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "痩",
+              "placement": "right",
+              "reading": "や"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "白髪頭",
+              "placement": "right",
+              "reading": "しらがあたま"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "木片",
+              "placement": "right",
+              "reading": "きぎれ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "暫時",
+              "placement": "right",
+              "reading": "ざんじ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "呼吸",
+              "placement": "right",
+              "reading": "いき"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "頭身",
+              "placement": "right",
+              "reading": "とうしん"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "虱",
+              "placement": "right",
+              "reading": "しらみ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "語弊",
+              "placement": "right",
+              "reading": "ごへい"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "饑死",
+              "placement": "right",
+              "reading": "うえじに"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "盗人",
+              "placement": "right",
+              "reading": "ぬすびと"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "木片",
+              "placement": "right",
+              "reading": "きぎれ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "聖柄",
+              "placement": "right",
+              "reading": "ひじりづか"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "弩",
+              "placement": "right",
+              "reading": "いしゆみ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "弾",
+              "placement": "right",
+              "reading": "はじ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "塞",
+              "placement": "right",
+              "reading": "ふさ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "罵",
+              "placement": "right",
+              "reading": "ののし"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "",
+              "placement": "right",
+              "reading": "ね"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "鶏",
+              "placement": "right",
+              "reading": "にわとり"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "鞘",
+              "placement": "right",
+              "reading": "さや"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "鋼",
+              "placement": "right",
+              "reading": "はがね"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "眼球",
+              "placement": "right",
+              "reading": "めだま"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "",
+              "placement": "right",
+              "reading": "まぶた"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "執拗",
+              "placement": "right",
+              "reading": "しゅうね"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "後",
+              "placement": "right",
+              "reading": "あと"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "己",
+              "placement": "right",
+              "reading": "おれ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "検非違使",
+              "placement": "right",
+              "reading": "けびいし"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "縄",
+              "placement": "right",
+              "reading": "なわ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "",
+              "placement": "right",
+              "reading": "まぶた"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "喉仏",
+              "placement": "right",
+              "reading": "のどぼとけ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "鴉",
+              "placement": "right",
+              "reading": "からす"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "喘",
+              "placement": "right",
+              "reading": "あえ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "鬘",
+              "placement": "right",
+              "reading": "かずら"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "侮蔑",
+              "placement": "right",
+              "reading": "ぶべつ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "気色",
+              "placement": "right",
+              "reading": "けしき"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "蟇",
+              "placement": "right",
+              "reading": "ひき"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "死人",
+              "placement": "right",
+              "reading": "しびと"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "四寸",
+              "placement": "right",
+              "reading": "しすん"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "干魚",
+              "placement": "right",
+              "reading": "ほしうお"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "太刀帯",
+              "placement": "right",
+              "reading": "たてわき"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "往",
+              "placement": "right",
+              "reading": "い"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "疫病",
+              "placement": "right",
+              "reading": "えやみ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "菜料",
+              "placement": "right",
+              "reading": "さいりよう"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "鞘",
+              "placement": "right",
+              "reading": "さや"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "柄",
+              "placement": "right",
+              "reading": "つか"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "面皰",
+              "placement": "right",
+              "reading": "にきび"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "完",
+              "placement": "right",
+              "reading": "おわ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "嘲",
+              "placement": "right",
+              "reading": "あざけ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "面皰",
+              "placement": "right",
+              "reading": "にきび"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "襟上",
+              "placement": "right",
+              "reading": "えりがみ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "己",
+              "placement": "right",
+              "reading": "おれ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "引剥",
+              "placement": "right",
+              "reading": "ひはぎ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "檜皮色",
+              "placement": "right",
+              "reading": "ひわだいろ"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "白髪",
+              "placement": "right",
+              "reading": "しらが"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "倒",
+              "placement": "right",
+              "reading": "さかさま"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "黒洞々",
+              "placement": "right",
+              "reading": "こくとうとう"
+            }
+          },
+          {
+            "kind": "ruby",
+            "provenance": "parser",
+            "value": {
+              "base_projection": "行方",
+              "placement": "right",
+              "reading": "ゆくえ"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "records": [
+    {
+      "aat_pointer": "blocks[].content[].span",
+      "category": "AMBIGUITY",
+      "count": 296,
+      "first_path": "blocks[0].content[0].span",
+      "message": "AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized",
+      "parser_ir_pointer": "span",
+      "rule_id": "A-20",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].content[].style",
+      "category": "AMBIGUITY",
+      "count": 1,
+      "first_path": "blocks[36].content[1].style",
+      "message": "style inline_container mapped to emphasis; parser-IR does not preserve nested inline container identity",
+      "parser_ir_pointer": "emphasis",
+      "rule_id": "A-21",
+      "source_value": "unmapped-div",
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].span",
+      "category": "AMBIGUITY",
+      "count": 37,
+      "first_path": "blocks[0].span",
+      "message": "AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized",
+      "parser_ir_pointer": "span",
+      "rule_id": "A-26",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "meta.source_hash",
+      "category": "AMBIGUITY",
+      "count": 1,
+      "first_path": "meta.source_hash",
+      "message": "AAT hashes raw source bytes; parser-IR work_content_hash is content hash; identifier semantics differ",
+      "parser_ir_pointer": "source.work_content_hash",
+      "rule_id": "A-28",
+      "source_value": "sha256:18fd203e4e805fa8cf05d8ee18db05a29f541e83f4043b67091191ce1db4a319",
+      "target_value": "sha256:18fd203e4e805fa8cf05d8ee18db05a29f541e83f4043b67091191ce1db4a319"
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
+      "message": "parser-IR requires errors[]; AAT has no errors concept -> defaulted empty",
+      "parser_ir_pointer": "errors[]",
+      "rule_id": "I-01",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 129,
+      "first_path": null,
+      "message": "AAT has no scope field; defaulted to 'explicit'",
+      "parser_ir_pointer": "ruby.scope",
+      "rule_id": "I-02",
+      "source_value": null,
+      "target_value": "explicit"
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
+      "message": "parser-IR requires normalization enum; AAT has none -> defaulted 'source'",
+      "parser_ir_pointer": "source.normalization",
+      "rule_id": "I-03",
+      "source_value": null,
+      "target_value": "source"
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
+      "message": "parser-IR source_path optional; AAT has none -> null",
+      "parser_ir_pointer": "source.source_path",
+      "rule_id": "I-04",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
+      "message": "AAT warning has no code -> defaulted 'AAT_WARNING'",
+      "parser_ir_pointer": "warnings[].code",
+      "rule_id": "I-05",
+      "source_value": null,
+      "target_value": "AAT_WARNING"
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
+      "message": "AAT warning has no severity -> defaulted 'warning'",
+      "parser_ir_pointer": "warnings[].severity",
+      "rule_id": "I-06",
+      "source_value": null,
+      "target_value": "warning"
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
+      "message": "parser-IR requires schema_id+schema_hash; AAT supplies only version=1",
+      "parser_ir_pointer": "schema_id/schema_hash",
+      "rule_id": "I-07",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].content[].ruby.base_content",
+      "category": "LOSS",
+      "count": 3,
+      "first_path": "blocks[20].content[5].ruby.base_content",
+      "message": "nested ruby base_content substructure flattened away",
+      "parser_ir_pointer": null,
+      "rule_id": "L-45",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "meta.parse_complete",
+      "category": "LOSS",
+      "count": 1,
+      "first_path": "meta.parse_complete",
+      "message": "parse_complete=True preserved in divergence bundle; parser-IR derived_from does not model parse completeness",
+      "parser_ir_pointer": null,
+      "rule_id": "L-55",
+      "source_value": true,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "meta.semantic_summary",
+      "category": "LOSS",
+      "count": 1,
+      "first_path": "meta.semantic_summary",
+      "message": "semantic_summary provenance dropped; adapter-fidelity concern not representable",
+      "parser_ir_pointer": null,
+      "rule_id": "L-56",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].paragraph",
+      "category": "STRUCTURAL",
+      "count": 37,
+      "first_path": "blocks[0].paragraph",
+      "message": "block container of kind 'paragraph' has no parser-IR node; boundary + span + style lost, only inlines emitted",
+      "parser_ir_pointer": null,
+      "rule_id": "S-10",
+      "source_value": null,
+      "target_value": null
+    }
+  ],
+  "schema_id": "https://abc.local/schemas/aat-parser-ir-divergence-bundle-v1.json",
+  "schema_version": "0.1.0",
+  "summary": {
+    "AMBIGUITY": 335,
+    "INVENTION": 135,
+    "LOSS": 5,
+    "STRUCTURAL": 37,
+    "UNSUPPORTED": 0
+  },
+  "target": {
+    "parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+    "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json"
+  },
+  "work_id": "000879_127"
+}

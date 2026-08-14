@@ -510,7 +510,12 @@ DEMO BUDGET: 5:00; never run corpus-scale work live.
 Preflight tracked demo artifacts:
   rg --files abc | rg 'demo-(rashomon|melos)-real/(parser-ir|divergence|tei|plain)'
 
-Update this comment with actual tracked monorepo paths after the demo artifacts land.
+Tracked demo artifacts (landed 2026-08-14):
+  abc/docs/evidence/paper-demo/demo-rashomon-real/   (parser-ir, divergence, tei, plain + manifests)
+  abc/docs/evidence/paper-demo/demo-melos-real/      (same layout)
+  abc/docs/evidence/paper-demo/demo-trace.md
+  abc/docs/evidence/paper-demo/demo-source-corpus-snapshot.json
+  abc/docs/evidence/paper-demo/tokenizer-comparison-view.md
 Never use machine-local database paths or an untracked references/ directory.
 Each live read-only jq/rg/display command must complete in under five seconds.
 

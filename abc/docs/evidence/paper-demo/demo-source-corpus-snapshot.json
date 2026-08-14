@@ -1,0 +1,52 @@
+{
+  "notes": "Source corpus snapshot over selected AAT JSON files. The hash is SHA-256 over the RFC8785\/JCS canonical snapshot_identity_object.",
+  "snapshot_hash": "sha256:537736a73abf100317a371791533cdb2dc0ed5c8fc4d4f23a8a822174a929586",
+  "snapshot_hash_algorithm": "sha256-rfc8785-jcs-v0",
+  "snapshot_identity_object": 
+  {
+    "snapshot_date": "2026-07-04",
+    "snapshot_inputs": [
+      {
+        "aat_adapter": "aozora2html",
+        "aat_adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1",
+        "aat_file_hash": "sha256:70947b8a74a37f1d60ae401c83a29ee531fccf75bac08c6423ec9a5840d59bad",
+        "aat_path": "\/db\/ab-validator\/aat-corpus\/aozora2html-aat\/aozora2html-adapter\/000879_127-13290a9f54a1.json",
+        "aat_version": 1,
+        "card_url": "https:\/\/www.aozora.gr.jp\/cards\/000879\/card127.html",
+        "mapping_id": "https:\/\/w3id.org\/abc\/mappings\/aat-v1-to-parser-ir-v1\/generated-probe",
+        "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+        "mapping_version": "0.2.1",
+        "metadata_record_hash": "sha256:9771a47f4f1e7c3e186044078872a5f5e2c316e0c0c8ebc3d66bdea470fd4ef5",
+        "parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+        "person_id": "000879",
+        "slug": "rashomon",
+        "source_encoding": "Shift_JIS",
+        "source_normalization": "source",
+        "title": "\u7f85\u751f\u9580",
+        "work_content_hash": "sha256:18fd203e4e805fa8cf05d8ee18db05a29f541e83f4043b67091191ce1db4a319",
+        "work_id": "000127"
+      },
+      {
+        "aat_adapter": "aozora2html",
+        "aat_adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1",
+        "aat_file_hash": "sha256:68c69aef0269123197ddaa211d21e412f746f1d3b5cc45ecb075fac8a8657e35",
+        "aat_path": "\/db\/ab-validator\/aat-corpus\/aozora2html-aat\/aozora2html-adapter\/000035_1567-32ff5a089d67.json",
+        "aat_version": 1,
+        "card_url": "https:\/\/www.aozora.gr.jp\/cards\/000035\/card1567.html",
+        "mapping_id": "https:\/\/w3id.org\/abc\/mappings\/aat-v1-to-parser-ir-v1\/generated-probe",
+        "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+        "mapping_version": "0.2.1",
+        "metadata_record_hash": "sha256:2c280415e626b6a87ae7150631257b89162c4b80d37aa787487e47e345469033",
+        "parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+        "person_id": "000035",
+        "slug": "melos",
+        "source_encoding": "Shift_JIS",
+        "source_normalization": "source",
+        "title": "\u8d70\u308c\u30e1\u30ed\u30b9",
+        "work_content_hash": "sha256:03def0d5f4322d1cf1bb812a7cca4e490464cb95090182a34a6e2665dde22ba7",
+        "work_id": "001567"
+      }],
+    "snapshot_scope": "paper-demo-selected-aozora2html-works"
+  },
+  "snapshot_schema_id": "https:\/\/w3id.org\/abc\/source-corpus-snapshot-v0.json"
+}

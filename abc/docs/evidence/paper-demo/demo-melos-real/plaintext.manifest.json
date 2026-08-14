@@ -1,0 +1,45 @@
+{
+  "artifact_id": "sha256:7c2eca3205f7139560fad613319f68f0fa8620e1c0031e890ac27494dfde4df5",
+  "artifact_kind": "plaintext",
+  "content": 
+  {
+    "byte_length": 29596,
+    "content_hash": "sha256:82d69594541117b0eb0ac1cb6b2e575e122dadbbedce673788a2523c879cba38",
+    "media_type": "text\/plain; charset=UTF-8",
+    "path_hint": "plain.txt"
+  },
+  "invalidated_at": null,
+  "license": null,
+  "manifest_identity_object": 
+  {
+    "aat_parser_ir_mapping_hash": null,
+    "analysis_recipe_hash": null,
+    "corpus_snapshot_hash": "sha256:537736a73abf100317a371791533cdb2dc0ed5c8fc4d4f23a8a822174a929586",
+    "manifest_schema_hash": "sha256:c8492e91c2fe3af48e3efe92b8a83b1f0a51775186805764877bbec8835b510e",
+    "metadata_record_hash": "sha256:2c280415e626b6a87ae7150631257b89162c4b80d37aa787487e47e345469033",
+    "output_format_spec_hash": "sha256:a246ec4160f3b96e2bf68e7ad041c89926989e50c92cafab37706facad164471",
+    "parser_build_hash": null,
+    "parser_config_hash": null,
+    "parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+    "tei_profile_hash": null,
+    "tokenizer_build_hash": null,
+    "tokenizer_dictionary_hash": null,
+    "work_content_hash": "sha256:03def0d5f4322d1cf1bb812a7cca4e490464cb95090182a34a6e2665dde22ba7"
+  },
+  "manifest_schema_id": "https:\/\/w3id.org\/abc\/schemas\/manifest.schema.json",
+  "notes": "Generated from parser-IR by ABC plaintext publication renderer.",
+  "provenance": 
+  {
+    "activity_id": "https:\/\/w3id.org\/abc\/activity\/materialize-parser-ir-plaintext",
+    "agent": "abc.tools.materialize-publication",
+    "generated_at": "2026-07-04T00:00:00Z",
+    "plan_hash": null,
+    "used": ["sha256:03def0d5f4322d1cf1bb812a7cca4e490464cb95090182a34a6e2665dde22ba7","sha256:2c280415e626b6a87ae7150631257b89162c4b80d37aa787487e47e345469033","sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396","sha256:537736a73abf100317a371791533cdb2dc0ed5c8fc4d4f23a8a822174a929586","sha256:a246ec4160f3b96e2bf68e7ad041c89926989e50c92cafab37706facad164471"],
+    "was_derived_from": ["sha256:03def0d5f4322d1cf1bb812a7cca4e490464cb95090182a34a6e2665dde22ba7","sha256:537736a73abf100317a371791533cdb2dc0ed5c8fc4d4f23a8a822174a929586"]
+  },
+  "replacement_reason": null,
+  "sidecars": [],
+  "signatures": [],
+  "superseded_by": null,
+  "validation_status": "passed"
+}

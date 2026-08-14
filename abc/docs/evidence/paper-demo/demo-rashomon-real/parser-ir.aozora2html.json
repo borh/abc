@@ -1,0 +1,3933 @@
+{
+  "derived_from": {
+    "aat_adapter": "aozora2html",
+    "aat_adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1",
+    "aat_version": 1,
+    "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+    "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+    "mapping_version": "0.2.1"
+  },
+  "errors": [],
+  "nodes": [
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 49,
+        "line": null,
+        "start": 0
+      },
+      "text": "\n　ある日の暮方の事である。一人の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "下人",
+        "direction": "right",
+        "reading": "げにん",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 55,
+        "line": null,
+        "start": 49
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 61,
+        "line": null,
+        "start": 55
+      },
+      "text": "が、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "羅生門",
+        "direction": "right",
+        "reading": "らしょうもん",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 70,
+        "line": null,
+        "start": 61
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 109,
+        "line": null,
+        "start": 70
+      },
+      "text": "の下で雨やみを待っていた。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 191,
+        "line": null,
+        "start": 109
+      },
+      "text": "\n　広い門の下には、この男のほかに誰もいない。ただ、所々",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "丹塗",
+        "direction": "right",
+        "reading": "にぬり",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 197,
+        "line": null,
+        "start": 191
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 200,
+        "line": null,
+        "start": 197
+      },
+      "text": "の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "剥",
+        "direction": "right",
+        "reading": "は",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 203,
+        "line": null,
+        "start": 200
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 221,
+        "line": null,
+        "start": 203
+      },
+      "text": "げた、大きな",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "円柱",
+        "direction": "right",
+        "reading": "まるばしら",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 227,
+        "line": null,
+        "start": 221
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 233,
+        "line": null,
+        "start": 227
+      },
+      "text": "に、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "蟋蟀",
+        "direction": "right",
+        "reading": "きりぎりす",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 239,
+        "line": null,
+        "start": 233
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 284,
+        "line": null,
+        "start": 239
+      },
+      "text": "が一匹とまっている。羅生門が、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "朱雀大路",
+        "direction": "right",
+        "reading": "すざくおおじ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 296,
+        "line": null,
+        "start": 284
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 362,
+        "line": null,
+        "start": 296
+      },
+      "text": "にある以上は、この男のほかにも、雨やみをする",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "市女笠",
+        "direction": "right",
+        "reading": "いちめがさ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 371,
+        "line": null,
+        "start": 362
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 374,
+        "line": null,
+        "start": 371
+      },
+      "text": "や",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "揉烏帽子",
+        "direction": "right",
+        "reading": "もみえぼし",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 386,
+        "line": null,
+        "start": 374
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 497,
+        "line": null,
+        "start": 386
+      },
+      "text": "が、もう二三人はありそうなものである。それが、この男のほかには誰もいない。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 570,
+        "line": null,
+        "start": 497
+      },
+      "text": "\n　何故かと云うと、この二三年、京都には、地震とか",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "辻風",
+        "direction": "right",
+        "reading": "つじかぜ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 576,
+        "line": null,
+        "start": 570
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 612,
+        "line": null,
+        "start": 576
+      },
+      "text": "とか火事とか饑饉とか云う",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "災",
+        "direction": "right",
+        "reading": "わざわい",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 615,
+        "line": null,
+        "start": 612
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 651,
+        "line": null,
+        "start": 615
+      },
+      "text": "がつづいて起った。そこで",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "洛中",
+        "direction": "right",
+        "reading": "らくちゅう",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 657,
+        "line": null,
+        "start": 651
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 759,
+        "line": null,
+        "start": 657
+      },
+      "text": "のさびれ方は一通りではない。旧記によると、仏像や仏具を打砕いて、その",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "丹",
+        "direction": "right",
+        "reading": "に",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 762,
+        "line": null,
+        "start": 759
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 789,
+        "line": null,
+        "start": 762
+      },
+      "text": "がついたり、金銀の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "箔",
+        "direction": "right",
+        "reading": "はく",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 792,
+        "line": null,
+        "start": 789
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 852,
+        "line": null,
+        "start": 792
+      },
+      "text": "がついたりした木を、路ばたにつみ重ねて、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "薪",
+        "direction": "right",
+        "reading": "たきぎ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 855,
+        "line": null,
+        "start": 852
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 858,
+        "line": null,
+        "start": 855
+      },
+      "text": "の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "料",
+        "direction": "right",
+        "reading": "しろ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 861,
+        "line": null,
+        "start": 858
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1080,
+        "line": null,
+        "start": 861
+      },
+      "text": "に売っていたと云う事である。洛中がその始末であるから、羅生門の修理などは、元より誰も捨てて顧る者がなかった。するとその荒れ果てたのをよい事にして、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "狐狸",
+        "direction": "right",
+        "reading": "こり",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1086,
+        "line": null,
+        "start": 1080
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1089,
+        "line": null,
+        "start": 1086
+      },
+      "text": "が",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "棲",
+        "direction": "right",
+        "reading": "す",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1092,
+        "line": null,
+        "start": 1089
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1098,
+        "line": null,
+        "start": 1092
+      },
+      "text": "む。",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "盗人",
+        "direction": "right",
+        "reading": "ぬすびと",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1104,
+        "line": null,
+        "start": 1098
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1428,
+        "line": null,
+        "start": 1104
+      },
+      "text": "が棲む。とうとうしまいには、引取り手のない死人を、この門へ持って来て、棄てて行くと云う習慣さえ出来た。そこで、日の目が見えなくなると、誰でも気味を悪るがって、この門の近所へは足ぶみをしない事になってしまったのである。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1450,
+        "line": null,
+        "start": 1428
+      },
+      "text": "\n　その代りまた",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "鴉",
+        "direction": "right",
+        "reading": "からす",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1453,
+        "line": null,
+        "start": 1450
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1573,
+        "line": null,
+        "start": 1453
+      },
+      "text": "がどこからか、たくさん集って来た。昼間見ると、その鴉が何羽となく輪を描いて、高い",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "鴟尾",
+        "direction": "right",
+        "reading": "しび",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1579,
+        "line": null,
+        "start": 1573
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1717,
+        "line": null,
+        "start": 1579
+      },
+      "text": "のまわりを啼きながら、飛びまわっている。ことに門の上の空が、夕焼けであかくなる時には、それが",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "胡麻",
+        "direction": "right",
+        "reading": "ごま",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1723,
+        "line": null,
+        "start": 1717
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1822,
+        "line": null,
+        "start": 1723
+      },
+      "text": "をまいたようにはっきり見えた。鴉は、勿論、門の上にある死人の肉を、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "啄",
+        "direction": "right",
+        "reading": "ついば",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1825,
+        "line": null,
+        "start": 1822
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1882,
+        "line": null,
+        "start": 1825
+      },
+      "text": "みに来るのである。――もっとも今日は、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "刻限",
+        "direction": "right",
+        "reading": "こくげん",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 1888,
+        "line": null,
+        "start": 1882
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 2047,
+        "line": null,
+        "start": 1888
+      },
+      "text": "が遅いせいか、一羽も見えない。ただ、所々、崩れかかった、そうしてその崩れ目に長い草のはえた石段の上に、鴉の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "糞",
+        "direction": "right",
+        "reading": "ふん",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 2050,
+        "line": null,
+        "start": 2047
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 2188,
+        "line": null,
+        "start": 2050
+      },
+      "text": "が、点々と白くこびりついているのが見える。下人は七段ある石段の一番上の段に、洗いざらした紺の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "襖",
+        "direction": "right",
+        "reading": "あお",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 2191,
+        "line": null,
+        "start": 2188
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 2245,
+        "line": null,
+        "start": 2191
+      },
+      "text": "の尻を据えて、右の頬に出来た、大きな",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "面皰",
+        "direction": "right",
+        "reading": "にきび",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 2251,
+        "line": null,
+        "start": 2245
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 2326,
+        "line": null,
+        "start": 2251
+      },
+      "text": "を気にしながら、ぼんやり、雨のふるのを眺めていた。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 2702,
+        "line": null,
+        "start": 2326
+      },
+      "text": "\n　作者はさっき、「下人が雨やみを待っていた」と書いた。しかし、下人は雨がやんでも、格別どうしようと云う当てはない。ふだんなら、勿論、主人の家へ帰る可き筈である。所がその主人からは、四五日前に暇を出された。前にも書いたように、当時京都の町は一通りならず",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "衰微",
+        "direction": "right",
+        "reading": "すいび",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 2708,
+        "line": null,
+        "start": 2702
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3181,
+        "line": null,
+        "start": 2708
+      },
+      "text": "していた。今この下人が、永年、使われていた主人から、暇を出されたのも、実はこの衰微の小さな余波にほかならない。だから「下人が雨やみを待っていた」と云うよりも「雨にふりこめられた下人が、行き所がなくて、途方にくれていた」と云う方が、適当である。その上、今日の空模様も少からず、この平安朝の下人の Sentimentalisme に影響した。",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "申",
+        "direction": "right",
+        "reading": "さる",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3184,
+        "line": null,
+        "start": 3181
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3187,
+        "line": null,
+        "start": 3184
+      },
+      "text": "の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "刻",
+        "direction": "right",
+        "reading": "こく",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3190,
+        "line": null,
+        "start": 3187
+      },
+      "type": "ruby"
+    },
+    {
+      "ruby": {
+        "base": "下",
+        "direction": "right",
+        "reading": "さが",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3193,
+        "line": null,
+        "start": 3190
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3316,
+        "line": null,
+        "start": 3193
+      },
+      "text": "りからふり出した雨は、いまだに上るけしきがない。そこで、下人は、何をおいても差当り",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "明日",
+        "direction": "right",
+        "reading": "あす",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3322,
+        "line": null,
+        "start": 3316
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3595,
+        "line": null,
+        "start": 3322
+      },
+      "text": "の暮しをどうにかしようとして――云わばどうにもならない事を、どうにかしようとして、とりとめもない考えをたどりながら、さっきから朱雀大路にふる雨の音を、聞くともなく聞いていたのである。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3791,
+        "line": null,
+        "start": 3595
+      },
+      "text": "\n　雨は、羅生門をつつんで、遠くから、ざあっと云う音をあつめて来る。夕闇は次第に空を低くして、見上げると、門の屋根が、斜につき出した",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "甍",
+        "direction": "right",
+        "reading": "いらか",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3794,
+        "line": null,
+        "start": 3791
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3851,
+        "line": null,
+        "start": 3794
+      },
+      "text": "の先に、重たくうす暗い雲を支えている。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3945,
+        "line": null,
+        "start": 3851
+      },
+      "text": "\n　どうにもならない事を、どうにかするためには、手段を選んでいる",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "遑",
+        "direction": "right",
+        "reading": "いとま",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3948,
+        "line": null,
+        "start": 3945
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3981,
+        "line": null,
+        "start": 3948
+      },
+      "text": "はない。選んでいれば、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "築土",
+        "direction": "right",
+        "reading": "ついじ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 3987,
+        "line": null,
+        "start": 3981
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4026,
+        "line": null,
+        "start": 3987
+      },
+      "text": "の下か、道ばたの土の上で、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "饑死",
+        "direction": "right",
+        "reading": "うえじに",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4032,
+        "line": null,
+        "start": 4026
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4245,
+        "line": null,
+        "start": 4032
+      },
+      "text": "をするばかりである。そうして、この門の上へ持って来て、犬のように棄てられてしまうばかりである。選ばないとすれば――下人の考えは、何度も同じ道を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "低徊",
+        "direction": "right",
+        "reading": "ていかい",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4251,
+        "line": null,
+        "start": 4245
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4257,
+        "line": null,
+        "start": 4251
+      },
+      "text": "した",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "揚句",
+        "direction": "right",
+        "reading": "あげく",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4263,
+        "line": null,
+        "start": 4257
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4293,
+        "line": null,
+        "start": 4263
+      },
+      "text": "に、やっとこの局所へ",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "逢着",
+        "direction": "right",
+        "reading": "ほうちゃく",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4299,
+        "line": null,
+        "start": 4293
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4569,
+        "line": null,
+        "start": 4299
+      },
+      "text": "した。しかしこの「すれば」は、いつまでたっても、結局「すれば」であった。下人は、手段を選ばないという事を肯定しながらも、この「すれば」のかたをつけるために、当然、その後に来る可き「",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "盗人",
+        "direction": "right",
+        "reading": "ぬすびと",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4575,
+        "line": null,
+        "start": 4569
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4710,
+        "line": null,
+        "start": 4575
+      },
+      "text": "になるよりほかに仕方がない」と云う事を、積極的に肯定するだけの、勇気が出ずにいたのである。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4735,
+        "line": null,
+        "start": 4710
+      },
+      "text": "\n　下人は、大きな",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "嚔",
+        "direction": "right",
+        "reading": "くさめ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4738,
+        "line": null,
+        "start": 4735
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4765,
+        "line": null,
+        "start": 4738
+      },
+      "text": "をして、それから、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "大儀",
+        "direction": "right",
+        "reading": "たいぎ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4771,
+        "line": null,
+        "start": 4765
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4831,
+        "line": null,
+        "start": 4771
+      },
+      "text": "そうに立上った。夕冷えのする京都は、もう",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "火桶",
+        "direction": "right",
+        "reading": "ひおけ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4837,
+        "line": null,
+        "start": 4831
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4960,
+        "line": null,
+        "start": 4837
+      },
+      "text": "が欲しいほどの寒さである。風は門の柱と柱との間を、夕闇と共に遠慮なく、吹きぬける。",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "丹塗",
+        "direction": "right",
+        "reading": "にぬり",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4966,
+        "line": null,
+        "start": 4960
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4993,
+        "line": null,
+        "start": 4966
+      },
+      "text": "の柱にとまっていた",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "蟋蟀",
+        "direction": "right",
+        "reading": "きりぎりす",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 4999,
+        "line": null,
+        "start": 4993
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5047,
+        "line": null,
+        "start": 4999
+      },
+      "text": "も、もうどこかへ行ってしまった。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5063,
+        "line": null,
+        "start": 5047
+      },
+      "text": "\n　下人は、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "頸",
+        "direction": "right",
+        "reading": "くび",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5066,
+        "line": null,
+        "start": 5063
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5090,
+        "line": null,
+        "start": 5066
+      },
+      "text": "をちぢめながら、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "山吹",
+        "direction": "right",
+        "reading": "やまぶき",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5096,
+        "line": null,
+        "start": 5090
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5099,
+        "line": null,
+        "start": 5096
+      },
+      "text": "の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "汗袗",
+        "direction": "right",
+        "reading": "かざみ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5105,
+        "line": null,
+        "start": 5099
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5126,
+        "line": null,
+        "start": 5105
+      },
+      "text": "に重ねた、紺の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "襖",
+        "direction": "right",
+        "reading": "あお",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5129,
+        "line": null,
+        "start": 5126
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5195,
+        "line": null,
+        "start": 5129
+      },
+      "text": "の肩を高くして門のまわりを見まわした。雨風の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "患",
+        "direction": "right",
+        "reading": "うれえ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5198,
+        "line": null,
+        "start": 5195
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5228,
+        "line": null,
+        "start": 5198
+      },
+      "text": "のない、人目にかかる",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "惧",
+        "direction": "right",
+        "reading": "おそれ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5231,
+        "line": null,
+        "start": 5228
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5450,
+        "line": null,
+        "start": 5231
+      },
+      "text": "のない、一晩楽にねられそうな所があれば、そこでともかくも、夜を明かそうと思ったからである。すると、幸い門の上の楼へ上る、幅の広い、これも丹を塗った",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "梯子",
+        "direction": "right",
+        "reading": "はしご",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5456,
+        "line": null,
+        "start": 5450
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5588,
+        "line": null,
+        "start": 5456
+      },
+      "text": "が眼についた。上なら、人がいたにしても、どうせ死人ばかりである。下人はそこで、腰にさげた",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "聖柄",
+        "direction": "right",
+        "reading": "ひじりづか",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5594,
+        "line": null,
+        "start": 5588
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5597,
+        "line": null,
+        "start": 5594
+      },
+      "text": "の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "太刀",
+        "direction": "right",
+        "reading": "たち",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5603,
+        "line": null,
+        "start": 5597
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5606,
+        "line": null,
+        "start": 5603
+      },
+      "text": "が",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "鞘走",
+        "direction": "right",
+        "reading": "さやばし",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5612,
+        "line": null,
+        "start": 5606
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5654,
+        "line": null,
+        "start": 5612
+      },
+      "text": "らないように気をつけながら、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "藁草履",
+        "direction": "right",
+        "reading": "わらぞうり",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5663,
+        "line": null,
+        "start": 5654
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5735,
+        "line": null,
+        "start": 5663
+      },
+      "text": "をはいた足を、その梯子の一番下の段へふみかけた。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5931,
+        "line": null,
+        "start": 5735
+      },
+      "text": "\n　それから、何分かの後である。羅生門の楼の上へ出る、幅の広い梯子の中段に、一人の男が、猫のように身をちぢめて、息を殺しながら、上の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "容子",
+        "direction": "right",
+        "reading": "ようす",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 5937,
+        "line": null,
+        "start": 5931
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6081,
+        "line": null,
+        "start": 5937
+      },
+      "text": "を窺っていた。楼の上からさす火の光が、かすかに、その男の右の頬をぬらしている。短い鬚の中に、赤く",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "膿",
+        "direction": "right",
+        "reading": "うみ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6084,
+        "line": null,
+        "start": 6081
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6096,
+        "line": null,
+        "start": 6084
+      },
+      "text": "を持った",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "面皰",
+        "direction": "right",
+        "reading": "にきび",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6102,
+        "line": null,
+        "start": 6096
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6207,
+        "line": null,
+        "start": 6102
+      },
+      "text": "のある頬である。下人は、始めから、この上にいる者は、死人ばかりだと高を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "括",
+        "direction": "right",
+        "reading": "くく",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6210,
+        "line": null,
+        "start": 6207
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6438,
+        "line": null,
+        "start": 6210
+      },
+      "text": "っていた。それが、梯子を二三段上って見ると、上では誰か火をとぼして、しかもその火をそこここと動かしているらしい。これは、その濁った、黄いろい光が、隅々に",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "蜘蛛",
+        "direction": "right",
+        "reading": "くも",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6444,
+        "line": null,
+        "start": 6438
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6672,
+        "line": null,
+        "start": 6444
+      },
+      "text": "の巣をかけた天井裏に、揺れながら映ったので、すぐにそれと知れたのである。この雨の夜に、この羅生門の上で、火をともしているからは、どうせただの者ではない。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6688,
+        "line": null,
+        "start": 6672
+      },
+      "text": "\n　下人は、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "守宮",
+        "direction": "right",
+        "reading": "やもり",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6694,
+        "line": null,
+        "start": 6688
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6853,
+        "line": null,
+        "start": 6694
+      },
+      "text": "のように足音をぬすんで、やっと急な梯子を、一番上の段まで這うようにして上りつめた。そうして体を出来るだけ、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "平",
+        "direction": "right",
+        "reading": "たいら",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6856,
+        "line": null,
+        "start": 6853
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6943,
+        "line": null,
+        "start": 6856
+      },
+      "text": "にしながら、頸を出来るだけ、前へ出して、恐る恐る、楼の内を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "覗",
+        "direction": "right",
+        "reading": "のぞ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6946,
+        "line": null,
+        "start": 6943
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 6961,
+        "line": null,
+        "start": 6946
+      },
+      "text": "いて見た。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7031,
+        "line": null,
+        "start": 6961
+      },
+      "text": "\n　見ると、楼の内には、噂に聞いた通り、幾つかの",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "死骸",
+        "direction": "right",
+        "reading": "しがい",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7037,
+        "line": null,
+        "start": 7031
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7502,
+        "line": null,
+        "start": 7037
+      },
+      "text": "が、無造作に棄ててあるが、火の光の及ぶ範囲が、思ったより狭いので、数は幾つともわからない。ただ、おぼろげながら、知れるのは、その中に裸の死骸と、着物を着た死骸とがあるという事である。勿論、中には女も男もまじっているらしい。そうして、その死骸は皆、それが、かつて、生きていた人間だと云う事実さえ疑われるほど、土を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "捏",
+        "direction": "right",
+        "reading": "こ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7505,
+        "line": null,
+        "start": 7502
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7547,
+        "line": null,
+        "start": 7505
+      },
+      "text": "ねて造った人形のように、口を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "開",
+        "direction": "right",
+        "reading": "あ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7550,
+        "line": null,
+        "start": 7547
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7817,
+        "line": null,
+        "start": 7550
+      },
+      "text": "いたり手を延ばしたりして、ごろごろ床の上にころがっていた。しかも、肩とか胸とかの高くなっている部分に、ぼんやりした火の光をうけて、低くなっている部分の影を一層暗くしながら、永久に",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "唖",
+        "direction": "right",
+        "reading": "おし",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7820,
+        "line": null,
+        "start": 7817
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7847,
+        "line": null,
+        "start": 7820
+      },
+      "text": "の如く黙っていた。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7851,
+        "line": null,
+        "start": 7847
+      },
+      "text": "\n　",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "下人",
+        "direction": "right",
+        "reading": "げにん",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7857,
+        "line": null,
+        "start": 7851
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7884,
+        "line": null,
+        "start": 7857
+      },
+      "text": "は、それらの死骸の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "腐爛",
+        "direction": "right",
+        "reading": "ふらん",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7890,
+        "line": null,
+        "start": 7884
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7923,
+        "line": null,
+        "start": 7890
+      },
+      "text": "した臭気に思わず、鼻を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "掩",
+        "direction": "right",
+        "reading": "おお",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 7926,
+        "line": null,
+        "start": 7923
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8130,
+        "line": null,
+        "start": 7926
+      },
+      "text": "った。しかし、その手は、次の瞬間には、もう鼻を掩う事を忘れていた。ある強い感情が、ほとんどことごとくこの男の嗅覚を奪ってしまったからだ。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8197,
+        "line": null,
+        "start": 8130
+      },
+      "text": "\n　下人の眼は、その時、はじめてその死骸の中に",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "蹲",
+        "direction": "right",
+        "reading": "うずくま",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8200,
+        "line": null,
+        "start": 8197
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8230,
+        "line": null,
+        "start": 8200
+      },
+      "text": "っている人間を見た。",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "檜皮色",
+        "direction": "right",
+        "reading": "ひわだいろ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8239,
+        "line": null,
+        "start": 8230
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8275,
+        "line": null,
+        "start": 8239
+      },
+      "text": "の着物を着た、背の低い、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "痩",
+        "direction": "right",
+        "reading": "や",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8278,
+        "line": null,
+        "start": 8275
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8287,
+        "line": null,
+        "start": 8278
+      },
+      "text": "せた、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "白髪頭",
+        "direction": "right",
+        "reading": "しらがあたま",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8296,
+        "line": null,
+        "start": 8287
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8389,
+        "line": null,
+        "start": 8296
+      },
+      "text": "の、猿のような老婆である。その老婆は、右の手に火をともした松の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "木片",
+        "direction": "right",
+        "reading": "きぎれ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8395,
+        "line": null,
+        "start": 8389
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8548,
+        "line": null,
+        "start": 8395
+      },
+      "text": "を持って、その死骸の一つの顔を覗きこむように眺めていた。髪の毛の長い所を見ると、多分女の死骸であろう。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8624,
+        "line": null,
+        "start": 8548
+      },
+      "text": "\n　下人は、六分の恐怖と四分の好奇心とに動かされて、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "暫時",
+        "direction": "right",
+        "reading": "ざんじ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8630,
+        "line": null,
+        "start": 8624
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8633,
+        "line": null,
+        "start": 8630
+      },
+      "text": "は",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "呼吸",
+        "direction": "right",
+        "reading": "いき",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8639,
+        "line": null,
+        "start": 8633
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8717,
+        "line": null,
+        "start": 8639
+      },
+      "text": "をするのさえ忘れていた。旧記の記者の語を借りれば、「",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "頭身",
+        "direction": "right",
+        "reading": "とうしん",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8723,
+        "line": null,
+        "start": 8717
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8951,
+        "line": null,
+        "start": 8723
+      },
+      "text": "の毛も太る」ように感じたのである。すると老婆は、松の木片を、床板の間に挿して、それから、今まで眺めていた死骸の首に両手をかけると、丁度、猿の親が猿の子の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "虱",
+        "direction": "right",
+        "reading": "しらみ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 8954,
+        "line": null,
+        "start": 8951
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9074,
+        "line": null,
+        "start": 8954
+      },
+      "text": "をとるように、その長い髪の毛を一本ずつ抜きはじめた。髪は手に従って抜けるらしい。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9375,
+        "line": null,
+        "start": 9074
+      },
+      "text": "\n　その髪の毛が、一本ずつ抜けるのに従って、下人の心からは、恐怖が少しずつ消えて行った。そうして、それと同時に、この老婆に対するはげしい憎悪が、少しずつ動いて来た。――いや、この老婆に対すると云っては、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "語弊",
+        "direction": "right",
+        "reading": "ごへい",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9381,
+        "line": null,
+        "start": 9375
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9603,
+        "line": null,
+        "start": 9381
+      },
+      "text": "があるかも知れない。むしろ、あらゆる悪に対する反感が、一分毎に強さを増して来たのである。この時、誰かがこの下人に、さっき門の下でこの男が考えていた、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "饑死",
+        "direction": "right",
+        "reading": "うえじに",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9609,
+        "line": null,
+        "start": 9603
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9621,
+        "line": null,
+        "start": 9609
+      },
+      "text": "をするか",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "盗人",
+        "direction": "right",
+        "reading": "ぬすびと",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9627,
+        "line": null,
+        "start": 9621
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9846,
+        "line": null,
+        "start": 9627
+      },
+      "text": "になるかと云う問題を、改めて持出したら、恐らく下人は、何の未練もなく、饑死を選んだ事であろう。それほど、この男の悪を憎む心は、老婆の床に挿した松の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "木片",
+        "direction": "right",
+        "reading": "きぎれ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9852,
+        "line": null,
+        "start": 9846
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 9921,
+        "line": null,
+        "start": 9852
+      },
+      "text": "のように、勢いよく燃え上り出していたのである。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10435,
+        "line": null,
+        "start": 9921
+      },
+      "text": "\n　下人には、勿論、何故老婆が死人の髪の毛を抜くかわからなかった。従って、合理的には、それを善悪のいずれに片づけてよいか知らなかった。しかし下人にとっては、この雨の夜に、この羅生門の上で、死人の髪の毛を抜くと云う事が、それだけで既に許すべからざる悪であった。勿論、下人は、さっきまで自分が、盗人になる気でいた事なぞは、とうに忘れていたのである。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10553,
+        "line": null,
+        "start": 10435
+      },
+      "text": "\n　そこで、下人は、両足に力を入れて、いきなり、梯子から上へ飛び上った。そうして",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "聖柄",
+        "direction": "right",
+        "reading": "ひじりづか",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10559,
+        "line": null,
+        "start": 10553
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10685,
+        "line": null,
+        "start": 10559
+      },
+      "text": "の太刀に手をかけながら、大股に老婆の前へ歩みよった。老婆が驚いたのは云うまでもない。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10737,
+        "line": null,
+        "start": 10685
+      },
+      "text": "\n　老婆は、一目下人を見ると、まるで",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "弩",
+        "direction": "right",
+        "reading": "いしゆみ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10740,
+        "line": null,
+        "start": 10737
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10749,
+        "line": null,
+        "start": 10740
+      },
+      "text": "にでも",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "弾",
+        "direction": "right",
+        "reading": "はじ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10752,
+        "line": null,
+        "start": 10749
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10791,
+        "line": null,
+        "start": 10752
+      },
+      "text": "かれたように、飛び上った。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10828,
+        "line": null,
+        "start": 10791
+      },
+      "text": "\n「おのれ、どこへ行く。」",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10937,
+        "line": null,
+        "start": 10828
+      },
+      "text": "\n　下人は、老婆が死骸につまずきながら、慌てふためいて逃げようとする行手を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "塞",
+        "direction": "right",
+        "reading": "ふさ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10940,
+        "line": null,
+        "start": 10937
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10955,
+        "line": null,
+        "start": 10940
+      },
+      "text": "いで、こう",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "罵",
+        "direction": "right",
+        "reading": "ののし",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 10958,
+        "line": null,
+        "start": 10955
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11318,
+        "line": null,
+        "start": 10958
+      },
+      "text": "った。老婆は、それでも下人をつきのけて行こうとする。下人はまた、それを行かすまいとして、押しもどす。二人は死骸の中で、しばらく、無言のまま、つかみ合った。しかし勝敗は、はじめからわかっている。下人はとうとう、老婆の腕をつかんで、無理にそこへ",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "",
+        "direction": "right",
+        "reading": "ね",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11318,
+        "line": null,
+        "start": 11318
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11342,
+        "line": null,
+        "start": 11318
+      },
+      "text": "じ倒した。丁度、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "鶏",
+        "direction": "right",
+        "reading": "にわとり",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11345,
+        "line": null,
+        "start": 11342
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11402,
+        "line": null,
+        "start": 11345
+      },
+      "text": "の脚のような、骨と皮ばかりの腕である。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11472,
+        "line": null,
+        "start": 11402
+      },
+      "text": "\n「何をしていた。云え。云わぬと、これだぞよ。」",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11539,
+        "line": null,
+        "start": 11472
+      },
+      "text": "\n　下人は、老婆をつき放すと、いきなり、太刀の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "鞘",
+        "direction": "right",
+        "reading": "さや",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11542,
+        "line": null,
+        "start": 11539
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11563,
+        "line": null,
+        "start": 11542
+      },
+      "text": "を払って、白い",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "鋼",
+        "direction": "right",
+        "reading": "はがね",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11566,
+        "line": null,
+        "start": 11563
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11731,
+        "line": null,
+        "start": 11566
+      },
+      "text": "の色をその眼の前へつきつけた。けれども、老婆は黙っている。両手をわなわなふるわせて、肩で息を切りながら、眼を、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "眼球",
+        "direction": "right",
+        "reading": "めだま",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11737,
+        "line": null,
+        "start": 11731
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11740,
+        "line": null,
+        "start": 11737
+      },
+      "text": "が",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "",
+        "direction": "right",
+        "reading": "まぶた",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11740,
+        "line": null,
+        "start": 11740
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11806,
+        "line": null,
+        "start": 11740
+      },
+      "text": "の外へ出そうになるほど、見開いて、唖のように",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "執拗",
+        "direction": "right",
+        "reading": "しゅうね",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 11812,
+        "line": null,
+        "start": 11806
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12115,
+        "line": null,
+        "start": 11812
+      },
+      "text": "く黙っている。これを見ると、下人は始めて明白にこの老婆の生死が、全然、自分の意志に支配されていると云う事を意識した。そうしてこの意識は、今までけわしく燃えていた憎悪の心を、いつの間にか冷ましてしまった。",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "後",
+        "direction": "right",
+        "reading": "あと",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12118,
+        "line": null,
+        "start": 12115
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12367,
+        "line": null,
+        "start": 12118
+      },
+      "text": "に残ったのは、ただ、ある仕事をして、それが円満に成就した時の、安らかな得意と満足とがあるばかりである。そこで、下人は、老婆を見下しながら、少し声を柔らげてこう云った。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12371,
+        "line": null,
+        "start": 12367
+      },
+      "text": "\n「",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "己",
+        "direction": "right",
+        "reading": "おれ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12374,
+        "line": null,
+        "start": 12371
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12377,
+        "line": null,
+        "start": 12374
+      },
+      "text": "は",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "検非違使",
+        "direction": "right",
+        "reading": "けびいし",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12389,
+        "line": null,
+        "start": 12377
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12503,
+        "line": null,
+        "start": 12389
+      },
+      "text": "の庁の役人などではない。今し方この門の下を通りかかった旅の者だ。だからお前に",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "縄",
+        "direction": "right",
+        "reading": "なわ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12506,
+        "line": null,
+        "start": 12503
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12692,
+        "line": null,
+        "start": 12506
+      },
+      "text": "をかけて、どうしようと云うような事はない。ただ、今時分この門の上で、何をして居たのだか、それを己に話しさえすればいいのだ。」",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12816,
+        "line": null,
+        "start": 12692
+      },
+      "text": "\n　すると、老婆は、見開いていた眼を、一層大きくして、じっとその下人の顔を見守った。",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "",
+        "direction": "right",
+        "reading": "まぶた",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 12816,
+        "line": null,
+        "start": 12816
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13044,
+        "line": null,
+        "start": 12816
+      },
+      "text": "の赤くなった、肉食鳥のような、鋭い眼で見たのである。それから、皺で、ほとんど、鼻と一つになった唇を、何か物でも噛んでいるように動かした。細い喉で、尖った",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "喉仏",
+        "direction": "right",
+        "reading": "のどぼとけ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13050,
+        "line": null,
+        "start": 13044
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13116,
+        "line": null,
+        "start": 13050
+      },
+      "text": "の動いているのが見える。その時、その喉から、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "鴉",
+        "direction": "right",
+        "reading": "からす",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13119,
+        "line": null,
+        "start": 13116
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13146,
+        "line": null,
+        "start": 13119
+      },
+      "text": "の啼くような声が、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "喘",
+        "direction": "right",
+        "reading": "あえ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13149,
+        "line": null,
+        "start": 13146
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13197,
+        "line": null,
+        "start": 13149
+      },
+      "text": "ぎ喘ぎ、下人の耳へ伝わって来た。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13255,
+        "line": null,
+        "start": 13197
+      },
+      "text": "\n「この髪を抜いてな、この髪を抜いてな、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "鬘",
+        "direction": "right",
+        "reading": "かずら",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13258,
+        "line": null,
+        "start": 13255
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13297,
+        "line": null,
+        "start": 13258
+      },
+      "text": "にしようと思うたのじゃ。」",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13442,
+        "line": null,
+        "start": 13297
+      },
+      "text": "\n　下人は、老婆の答が存外、平凡なのに失望した。そうして失望すると同時に、また前の憎悪が、冷やかな",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "侮蔑",
+        "direction": "right",
+        "reading": "ぶべつ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13448,
+        "line": null,
+        "start": 13442
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13517,
+        "line": null,
+        "start": 13448
+      },
+      "text": "と一しょに、心の中へはいって来た。すると、その",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "気色",
+        "direction": "right",
+        "reading": "けしき",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13523,
+        "line": null,
+        "start": 13517
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13661,
+        "line": null,
+        "start": 13523
+      },
+      "text": "が、先方へも通じたのであろう。老婆は、片手に、まだ死骸の頭から奪った長い抜け毛を持ったなり、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "蟇",
+        "direction": "right",
+        "reading": "ひき",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13664,
+        "line": null,
+        "start": 13661
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13748,
+        "line": null,
+        "start": 13664
+      },
+      "text": "のつぶやくような声で、口ごもりながら、こんな事を云った。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13764,
+        "line": null,
+        "start": 13748
+      },
+      "text": "\n「成程な、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "死人",
+        "direction": "right",
+        "reading": "しびと",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 13770,
+        "line": null,
+        "start": 13764
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14031,
+        "line": null,
+        "start": 13770
+      },
+      "text": "の髪の毛を抜くと云う事は、何ぼう悪い事かも知れぬ。じゃが、ここにいる死人どもは、皆、そのくらいな事を、されてもいい人間ばかりだぞよ。現在、わしが今、髪を抜いた女などはな、蛇を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "四寸",
+        "direction": "right",
+        "reading": "しすん",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14037,
+        "line": null,
+        "start": 14031
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14082,
+        "line": null,
+        "start": 14037
+      },
+      "text": "ばかりずつに切って干したのを、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "干魚",
+        "direction": "right",
+        "reading": "ほしうお",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14088,
+        "line": null,
+        "start": 14082
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14106,
+        "line": null,
+        "start": 14088
+      },
+      "text": "だと云うて、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "太刀帯",
+        "direction": "right",
+        "reading": "たてわき",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14115,
+        "line": null,
+        "start": 14106
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14133,
+        "line": null,
+        "start": 14115
+      },
+      "text": "の陣へ売りに",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "往",
+        "direction": "right",
+        "reading": "い",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14136,
+        "line": null,
+        "start": 14133
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14148,
+        "line": null,
+        "start": 14136
+      },
+      "text": "んだわ。",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "疫病",
+        "direction": "right",
+        "reading": "えやみ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14154,
+        "line": null,
+        "start": 14148
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14343,
+        "line": null,
+        "start": 14154
+      },
+      "text": "にかかって死ななんだら、今でも売りに往んでいた事であろ。それもよ、この女の売る干魚は、味がよいと云うて、太刀帯どもが、欠かさず",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "菜料",
+        "direction": "right",
+        "reading": "さいりよう",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14349,
+        "line": null,
+        "start": 14343
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14856,
+        "line": null,
+        "start": 14349
+      },
+      "text": "に買っていたそうな。わしは、この女のした事が悪いとは思うていぬ。せねば、饑死をするのじゃて、仕方がなくした事であろ。されば、今また、わしのしていた事も悪い事とは思わぬぞよ。これとてもやはりせねば、饑死をするじゃて、仕方がなくする事じゃわいの。じゃて、その仕方がない事を、よく知っていたこの女は、大方わしのする事も大目に見てくれるであろ。」",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14914,
+        "line": null,
+        "start": 14856
+      },
+      "text": "\n　老婆は、大体こんな意味の事を云った。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14939,
+        "line": null,
+        "start": 14914
+      },
+      "text": "\n　下人は、太刀を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "鞘",
+        "direction": "right",
+        "reading": "さや",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14942,
+        "line": null,
+        "start": 14939
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14975,
+        "line": null,
+        "start": 14942
+      },
+      "text": "におさめて、その太刀の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "柄",
+        "direction": "right",
+        "reading": "つか",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 14978,
+        "line": null,
+        "start": 14975
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15125,
+        "line": null,
+        "start": 14978
+      },
+      "text": "を左の手でおさえながら、冷然として、この話を聞いていた。勿論、右の手では、赤く頬に膿を持った大きな",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "面皰",
+        "direction": "right",
+        "reading": "にきび",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15131,
+        "line": null,
+        "start": 15125
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15812,
+        "line": null,
+        "start": 15131
+      },
+      "text": "を気にしながら、聞いているのである。しかし、これを聞いている中に、下人の心には、ある勇気が生まれて来た。それは、さっき門の下で、この男には欠けていた勇気である。そうして、またさっきこの門の上へ上って、この老婆を捕えた時の勇気とは、全然、反対な方向に動こうとする勇気である。下人は、饑死をするか盗人になるかに、迷わなかったばかりではない。その時のこの男の心もちから云えば、饑死などと云う事は、ほとんど、考える事さえ出来ないほど、意識の外に追い出されていた。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15843,
+        "line": null,
+        "start": 15812
+      },
+      "text": "\n「きっと、そうか。」",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15862,
+        "line": null,
+        "start": 15843
+      },
+      "text": "\n　老婆の話が",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "完",
+        "direction": "right",
+        "reading": "おわ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15865,
+        "line": null,
+        "start": 15862
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15883,
+        "line": null,
+        "start": 15865
+      },
+      "text": "ると、下人は",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "嘲",
+        "direction": "right",
+        "reading": "あざけ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15886,
+        "line": null,
+        "start": 15883
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15982,
+        "line": null,
+        "start": 15886
+      },
+      "text": "るような声で念を押した。そうして、一足前へ出ると、不意に右の手を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "面皰",
+        "direction": "right",
+        "reading": "にきび",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 15988,
+        "line": null,
+        "start": 15982
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16015,
+        "line": null,
+        "start": 15988
+      },
+      "text": "から離して、老婆の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "襟上",
+        "direction": "right",
+        "reading": "えりがみ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16021,
+        "line": null,
+        "start": 16015
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16084,
+        "line": null,
+        "start": 16021
+      },
+      "text": "をつかみながら、噛みつくようにこう云った。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16097,
+        "line": null,
+        "start": 16084
+      },
+      "text": "\n「では、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "己",
+        "direction": "right",
+        "reading": "おれ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16100,
+        "line": null,
+        "start": 16097
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16103,
+        "line": null,
+        "start": 16100
+      },
+      "text": "が",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "引剥",
+        "direction": "right",
+        "reading": "ひはぎ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16109,
+        "line": null,
+        "start": 16103
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16205,
+        "line": null,
+        "start": 16109
+      },
+      "text": "をしようと恨むまいな。己もそうしなければ、饑死をする体なのだ。」",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16467,
+        "line": null,
+        "start": 16205
+      },
+      "text": "\n　下人は、すばやく、老婆の着物を剥ぎとった。それから、足にしがみつこうとする老婆を、手荒く死骸の上へ蹴倒した。梯子の口までは、僅に五歩を数えるばかりである。下人は、剥ぎとった",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "檜皮色",
+        "direction": "right",
+        "reading": "ひわだいろ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16476,
+        "line": null,
+        "start": 16467
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16575,
+        "line": null,
+        "start": 16476
+      },
+      "text": "の着物をわきにかかえて、またたく間に急な梯子を夜の底へかけ下りた。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16939,
+        "line": null,
+        "start": 16575
+      },
+      "text": "\n　しばらく、死んだように倒れていた老婆が、死骸の中から、その裸の体を起したのは、それから間もなくの事である。老婆はつぶやくような、うめくような声を立てながら、まだ燃えている火の光をたよりに、梯子の口まで、這って行った。そうして、そこから、短い",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "白髪",
+        "direction": "right",
+        "reading": "しらが",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16945,
+        "line": null,
+        "start": 16939
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16948,
+        "line": null,
+        "start": 16945
+      },
+      "text": "を",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "倒",
+        "direction": "right",
+        "reading": "さかさま",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 16951,
+        "line": null,
+        "start": 16948
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17014,
+        "line": null,
+        "start": 16951
+      },
+      "text": "にして、門の下を覗きこんだ。外には、ただ、",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "黒洞々",
+        "direction": "right",
+        "reading": "こくとうとう",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17023,
+        "line": null,
+        "start": 17014
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17062,
+        "line": null,
+        "start": 17023
+      },
+      "text": "たる夜があるばかりである。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17075,
+        "line": null,
+        "start": 17062
+      },
+      "text": "\n　下人の",
+      "type": "text"
+    },
+    {
+      "ruby": {
+        "base": "行方",
+        "direction": "right",
+        "reading": "ゆくえ",
+        "scope": "explicit"
+      },
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17081,
+        "line": null,
+        "start": 17075
+      },
+      "type": "ruby"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17108,
+        "line": null,
+        "start": 17081
+      },
+      "text": "は、誰も知らない。",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17109,
+        "line": null,
+        "start": 17108
+      },
+      "text": "\n",
+      "type": "text"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17133,
+        "line": null,
+        "start": 17109
+      },
+      "style": "unmapped-div",
+      "text": "（大正四年九月）",
+      "type": "emphasis"
+    },
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17134,
+        "line": null,
+        "start": 17133
+      },
+      "text": "\n",
+      "type": "text"
+    }
+  ],
+  "schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+  "schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+  "source": {
+    "encoding": "Shift_JIS",
+    "normalization": "source",
+    "source_path": null,
+    "work_content_hash": "sha256:18fd203e4e805fa8cf05d8ee18db05a29f541e83f4043b67091191ce1db4a319"
+  },
+  "warnings": [
+    {
+      "code": "AAT_WARNING",
+      "construct": "/blocks/.../div",
+      "message": "unmapped XHTML element <div>",
+      "recovery": null,
+      "severity": "warning",
+      "span": null
+    }
+  ]
+}

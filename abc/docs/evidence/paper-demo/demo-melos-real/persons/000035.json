@@ -1,0 +1,23 @@
+{
+  "date_of_birth": "1909-06-19",
+  "date_of_death": "1948-06-13",
+  "external_links": [],
+  "family_name": "\u592a\u5bb0",
+  "family_name_reading": "\u3060\u3056\u3044",
+  "family_name_romaji": "Dazai",
+  "family_name_sort": "\u305f\u3055\u3044",
+  "given_name": "\u6cbb",
+  "given_name_reading": "\u304a\u3055\u3080",
+  "given_name_romaji": "Osamu",
+  "given_name_sort": "\u304a\u3055\u3080",
+  "person_copyright_expired": true,
+  "person_id": "000035",
+  "person_record_schema_hash": "sha256:32315e9c3e1026b53869e3dcca9d05cc40448330366cefb5e0d059479aa90281",
+  "person_record_schema_id": "https:\/\/w3id.org\/abc\/schemas\/person-record.schema.json",
+  "source_csv_provenance": 
+  {
+    "original_file_hash": "sha256:c0ace54c7ac037e5aebd045922c7879b9f7dc01f85b8f7483c8d4ecc29569ef4",
+    "retrieved_at": "2026-04-24T17:51:12Z",
+    "source_url": null
+  }
+}

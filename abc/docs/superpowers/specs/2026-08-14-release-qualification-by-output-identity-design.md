@@ -2,30 +2,34 @@
 
 Date: 2026-08-14 (revised three times on 2026-08-14: after review, after
 measurement, after second review)
-Status: **Proposed and explicitly provisional.** The original five questions are
-closed, but revision 3 review found six contract gaps and the premises they rest
-on are **not** discharged. Claiming "what remains is governance" in revision 2
-was premature and is withdrawn.
+Status: **Proposed and still provisional.** Revision 3 review found six contract
+gaps; those are respecified here, and three of the four premises they rested on
+are now discharged by measurement. One design premise and one instrument gate
+remain. Revision 2's claim that "what remains is governance" stays withdrawn.
 
-Undischarged premises, each blocking implementation:
+**Three of the four premises are now discharged by measurement** (2026-08-14,
+after the second review):
 
-- converter determinism is unmeasured (only the parser was run twice);
-- no run has been made over the **correct 17,602-work** population;
-- projected-digest cost is measured for AAT and parser-IR but **not** divergence,
-  and is excluded from the headline end-to-end figure;
-- release-root recomputation is unresolved, because two of the three qualified
-  outputs are not retained where the release scan can see them (E14).
+- converter determinism — **measured**: two full passes over the qualified
+  population agree exactly on parser-IR and divergence (E6);
+- the correct population — **run end to end**: 17,601 works, zero failures, and
+  the count refined by one corrupt archive (E19);
+- projected-digest cost — **measured for all three** outputs, and folded into a
+  qualification-runtime headline of ~5.8 min at 32 jobs (E5).
+
+**One premise remains undischarged, and it blocks implementation:** release-root
+recomputation, because two of the three qualified outputs are not retained where
+the release scan can see them (E14). That is a code change to publication, not a
+measurement.
+
+A second gate on adoption: every digest recorded so far comes from a Python
+canonicalization instrument, **not** `rfc8785-safe-integer-json-string-v1`. No
+value in this document may be approved until it is regenerated with the
+specified canonicalizer (E17).
 
 Governance is also wider than previously stated: this requires superseding
 `release-parser-identity-approval` and the **c3 and c4** claims of
 `sole-publication-release-identity`.
-
-**Measurement status: every cost figure is now measured, not extrapolated.**
-Q1 and Q4 were closed on 2026-08-14 by a full run over all 17,887 corpus zips —
-17,872 works parsed and converted with zero failures. The whole-corpus direction
-holds, with one condition it did not previously carry: **the converter costs 17×
-the parser and dominates the budget**, so whole-corpus qualification is viable
-at 32 jobs (~3.8 min) and marginal single-threaded (~55 min). See E5.
 
 **What the gate asks today.** `flake.nix:285-288` compares the sha256 of two
 built binaries against approved values. At HEAD it is red, while the AAT output
@@ -107,42 +111,52 @@ revs did not move; `flake.lock` changed by deletion only.
 The built binary reports exactly the `adapter_version` the record asserts:
 `ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)`.
 
-### E5 — whole-corpus cost (closes Q4; Q1 only partially)
+### E5 — whole-corpus cost (closes Q1, Q4, Q8)
 
-Full run over the pinned corpus, 2026-08-14, 32 jobs, this machine. Extract →
-`ab-aozora --mode aat` → `ab-aat-to-parser-ir convert` with the **v2** mapping
-(`aat-to-parser-ir-mapping-v2.json`; the v1 mapping rejects AAT v2 by design —
-`soranoha_build_publication.clj:183`).
+Extract → `ab-aozora --mode aat` → `ab-aat-to-parser-ir convert` with the **v2**
+mapping (`aat-to-parser-ir-mapping-v2.json`; the v1 mapping rejects AAT v2 by
+design — `soranoha_build_publication.clj:183`), over the **correct
+catalog-joined population** (17,601 works — E19), 32 jobs, both converter
+passes:
 
-| Phase | 32-job wall (measured) | single-threaded (**derived**: measured rate × N) |
+| Phase | 32-job wall (measured) | single-threaded (**derived**: rate × N) |
 |---|---:|---:|
-| extract 17,887 zips | 14.4 s | — |
-| parser, 17,872 works | **11.2 s** | ~180 s @ 10 ms/work |
-| converter, 17,872 works | **199.3 s** | ~2,931 s @ 164 ms/work |
-| projected digest, AAT (Python) | not run in parallel | ~27 s @ 1.5 ms/work |
-| projected digest, parser-IR (Python) | not run in parallel | ~107 s @ 6.0 ms/work |
-| projected digest, divergence | — | **unmeasured** |
-| **pipeline only (excludes digests)** | **~225 s** | ~52 min |
-| **qualification runtime (all three digests)** | **not yet measured** | **not yet measurable** |
+| extract | **6.1 s** | — |
+| parser | **10.7 s** | ~180 s @ 10 ms/work |
+| converter, pass 1 | **200.2 s** | ~2,886 s @ 164 ms/work |
+| converter, pass 2 | **202.1 s** | — |
+| projected digest, AAT | not parallelized | **28.5 s** @ 1.62 ms/work |
+| projected digest, parser-IR | not parallelized | **110.5 s** @ 6.28 ms/work |
+| projected digest, divergence | not parallelized | **1.1 s** @ 0.06 ms/work |
+| **qualification runtime** | **~345 s (5.8 min)** | ~53 min |
 
-The single-threaded column is **derived** (rate × population), not directly
-measured; revision 2's blanket claim that "every cost figure is measured" was
-wrong. The 3.8-minute headline covered extract+parse+convert only and excluded
-the projection work it listed one row below, so it understated the gate. A
-divergence projection cost is still missing entirely, which is why the
-qualification runtime row is blank rather than estimated.
+Failures: **zero**, in both converter passes. Outputs: AAT 2.1 GB, parser-IR
+9.0 GB, divergence 151 MB.
 
-Outputs: source 578 MB, AAT 2.2 GB, parser-IR 9.2 GB, divergence 153 MB.
-**Failures: zero** — 17,872/17,872 parsed, 17,872/17,872 converted.
+The headline is now the *qualification runtime* — pipeline **plus** all three
+projected digests — because the gate cannot finish without them. Revision 2's
+3.8-minute figure excluded the digest work it listed one row below and so
+understated the gate by roughly 2 minutes. Divergence projection turns out to be
+nearly free (0.06 ms/work); parser-IR dominates the digest cost at 100× that.
+The single-threaded column remains **derived**, not measured.
 
-The converter costs **17× the parser** and dominates every budget. The
-single-threaded converter rate is from a 200-work stride over the full
-population, not the earlier ruby-only sample.
+The converter costs **17× the parser** and dominates every budget; its
+single-threaded rate comes from a 200-work stride over the full population.
 
-**Population caveat.** This run keyed outputs by zip basename, so it covered
-17,872 works rather than the 17,602 the catalog join defines (E13). The per-work
-*rates* are unaffected and the totals move by under 2%; only the population is
-wrong, and E12 is the measurement of that wrongness.
+**Canonicalization caveat — the aggregate digests below are not approvable.**
+They were computed with a Python `json.dumps(sort_keys=True)` instrument, not
+`rfc8785-safe-integer-json-string-v1` (E17). They are valid evidence for *cost*
+and *determinism*, and invalid as approved values. The recorded digests must be
+regenerated with the specified canonicalizer:
+
+```
+AAT         sha256:9116ff1258bd0fd0f87d26ec2c9444484aeb5f237ff1dd9be98f72b23db6010d
+parser-IR   sha256:93069ae6d83b19653b19a43cf2a9c5d448af337a6700f757ac4a85d12b7e7686
+divergence  sha256:0e4f0e4845132e937ff608b89b7ff8dcbada772f9e9cccabea2a52340ebb123b
+```
+
+An earlier run over 17,872 basename-keyed works (superseded by this one) gave
+the same per-work rates, so the population correction moved totals by under 2%.
 
 ### E6 — determinism, **measured at corpus scale**
 
@@ -153,8 +167,18 @@ run1: sha256:2f8318868eae04d502cba1ed4436dbc6cad6ab55f8f9812a109249e36e132b20
 run2: sha256:2f8318868eae04d502cba1ed4436dbc6cad6ab55f8f9812a109249e36e132b20
 ```
 
-No timestamp, path, host, or RNG-derived field appears in the output. Digesting
-2.2 GB costs 3.6 s, so the digest itself is never the bottleneck.
+No timestamp, path, host, or RNG-derived field appears in the output.
+
+**Converter determinism, measured (closes Q6).** Two full converter passes over
+all 17,601 works, each producing parser-IR and divergence:
+
+| Comparison | Result |
+|---|---|
+| parser-IR projected digests, pass 1 vs pass 2 | **identical — 0 differing works** |
+| divergence projected digests, pass 1 vs pass 2 | **identical — 0 differing works** |
+
+Both stages of the pipeline are therefore reproducible run-to-run at corpus
+scale, which is the premise the whole design rests on.
 
 ### E7 — which primitives exist, and which do not
 
@@ -233,8 +257,8 @@ The join publication actually performs, run against the pinned corpus on
 4. **Identity** — `slug = 作品ID_人物ID_<card-dir>_<zip-stem>`: **17,602 slugs,
    zero collisions.**
 
-**The qualification population is 17,602 works.** It equals none of the numbers
-previously in circulation.
+**The join selects 17,602 works; 17,601 are qualifiable** (one archive is
+corrupt — E19). Neither equals any number previously in circulation.
 
 | Count | What it actually is | Verdict |
 |---:|---|---|
@@ -243,7 +267,8 @@ previously in circulation.
 | 17,887 | zips under `cards/*/files` | candidate set, pre-join |
 | 17,881 | `.txt` members in those zips | 5 zips hold none, 2 hold two, 3 are unreadable |
 | 17,872 | naive basename-keyed run (E5/E12) | **wrong** — loses 7 to collision, 8 to no-`.txt` |
-| **17,602** | **catalog-joined selection** | **the population** |
+| **17,602** | **catalog-joined selection** | join result |
+| **17,601** | **qualified population** | **the population** (E19) |
 | 17,886 | parser-comparison union | unreconciled, sits between join and candidates |
 | 17,894 | inventory `works_scanned` | **unreproducible — see below** |
 | 14,049 | `*_ruby_*.zip` | irrelevant subset |
@@ -331,6 +356,29 @@ identities: the archive hash, the bundle `work_content_hash` passed to the
 converter, and the `primary_text_member` plus `primary_text_hash` that identify
 the parser's actual input. Collapsing these into a single `input_hash` loses the
 ability to say which one moved.
+
+### E19 — the population is 17,601, and the missing one is a corrupt archive
+
+Running the join end to end refines E13 by one work. Of the 17,602 selected
+zips, **one cannot be opened at all**:
+
+```
+cards/001505/files/58100_txt_60357.zip  ->  BadZipFile
+```
+
+None of the other 17,601 is affected, and **no selected zip carries more than
+one `.txt` member** — both multi-member zips fall in the 285 rejected by the
+catalog join, so the primary-member choice is unambiguous across the entire
+qualified population.
+
+This one archive collides with release policy. `soranoha_build_publication.clj`
+anticipates the class ("a zip Java's reader rejects with `invalid CEN header`
+must not abort a whole-corpus selection… record and skip it"), but a *recorded*
+skip is a failure, and `release-failure-policy` forbids failures outright
+(E16). So it must be excluded **when the population is defined**, not caught at
+runtime: the qualification manifest declares 17,601 rows and the corrupt archive
+is a declared non-member with a stated reason. If it were left to runtime, the
+zero-failure policy would make the corpus unreleasable.
 
 ## Diagnosis
 
@@ -596,9 +644,9 @@ in a real publication run.
    invoked binary.
 5. Re-point the decision at a different `candidate_ref`: rejected.
 6. Corpus-scale determinism: two full runs, identical per-work digests.
-   **Partially discharged** — E6 shows two full parser passes over 17,872 works
-   agreeing on the aggregate digest. Still owed at the per-work level and for
-   the converter.
+   **Discharged** — E6: two full parser passes and two full converter passes
+   over the qualified population agree at the **per-work** level, 0 differing
+   works for parser-IR and divergence alike.
 
 ### Test-strategy additions (from review)
 
@@ -619,18 +667,18 @@ in a real publication run.
 
 ## Open questions
 
-- **Q1 — partially closed. Whole corpus is affordable; the runner needs
-  capacity, not a bound job count.** The pipeline costs ~225 s at 32 jobs and
-  ~52 min single-threaded (E5). No sampled vector set is needed given
-  parallelism, but parallelism is a **runner capacity requirement plus a
-  timeout**, not part of the bound invocation contract (D9) — binding it would
-  let an operational change rotate approval. Still open: the qualification
-  runtime including all three projected digests, one of which is unmeasured.
+- **Q1 — closed. Whole corpus is affordable; the runner needs
+  capacity, not a bound job count.** Qualification runtime — pipeline plus all
+  three projected digests — is **~5.8 min at 32 jobs**, ~53 min single-threaded
+  (E5). No sampled vector set is needed given parallelism, but parallelism is a
+  **runner capacity requirement plus a timeout**, not part of the bound
+  invocation contract (D9): binding it would let an operational change rotate
+  approval.
 - **Q2 — closed with Q3.** stdin yields `work_id: "stdin"` and basename keying
   drops 7 works (E12), so the runner takes identity from the join: the manifest
   row carries the publication `slug` (`作品ID_人物ID_<card-dir>_<zip-stem>`),
   proven injective over all 17,602 works (E13).
-- **Q3 — closed by execution: the population is 17,602.** The join is
+- **Q3 — closed by execution: the join selects 17,602; 17,601 qualify.** The join is
   candidates (`cards/[0-9]{6}/files/*.zip`) ∩ catalog text-URL basenames, with
   identity `作品ID_人物ID_<card-dir>_<zip-stem>`, verified injective over the
   whole corpus (E13). The manifest pins **both** the corpus revision and
@@ -641,8 +689,8 @@ in a real publication run.
   count the pinned corpus can produce. The 17,886 comparison union remains
   unreconciled but is not load-bearing for this design.
 - **Q4 — closed by measurement: the converter dominates.** 164 ms/work
-  single-threaded, 199.3 s at 32 jobs for 17,872 works, producing 9.2 GB of
-  parser-IR and 153 MB of divergence with zero failures. Any budget that
+  single-threaded, ~200 s at 32 jobs for 17,601 works, producing 9.0 GB of
+  parser-IR and 151 MB of divergence with zero failures across two passes. Any budget that
   reasons from the parser's 10 ms/work is wrong by a factor of 17.
 - **Q5 — resolved, and wider than stated.** c4 requires both record refs to
   recompute **and** the decision to bind the exact candidate_ref, so changing
@@ -650,15 +698,20 @@ in a real publication run.
   its "recomputable, carries no receipt" guarantee is what rules out the
   attestation revision 2 proposed, and what forces release-root recomputation
   (E14). Both claims move with `release-parser-identity-approval`.
-- **Q6 — converter determinism, unmeasured.** Only the parser has been run
-  twice (E6). Two full converter passes are required before the digest can be
-  treated as stable.
-- **Q7 — no run over the correct population.** Every timing and determinism
-  figure comes from the 17,872-work basename keying, not the 17,602-work catalog
-  join (E13). The join must be run end to end before any digest is recorded as
-  an approved value.
-- **Q8 — divergence projection cost, unmeasured**, and therefore no honest
-  qualification-runtime total exists (E5).
+- **Q6 — closed: the converter is deterministic at corpus scale.** Two full
+  passes over 17,601 works agree exactly on both parser-IR and divergence
+  projected digests, 0 differing works (E6).
+- **Q7 — closed: the correct population has been run end to end.** 17,601 works
+  via the catalog join, zero failures in either pass. The count refines E13's
+  17,602 by one corrupt archive, and no qualified zip has an ambiguous primary
+  member (E19).
+- **Q8 — closed: divergence projection is nearly free** at 0.06 ms/work (1.1 s
+  corpus-wide), 100× cheaper than parser-IR's 6.28 ms/work. Qualification
+  runtime including all three digests is ~5.8 min at 32 jobs (E5).
+- **Q10 — new: the recorded digests are not yet approvable.** All aggregate
+  values were produced by a Python canonicalization instrument rather than
+  `rfc8785-safe-integer-json-string-v1`; they must be regenerated before any is
+  bound (E17).
 - **Q9 — release-root recomputation is unresolved.** It depends on retaining AAT
   and divergence in the release-scanned tree (E14); until that lands, the third
   enforcement site cannot verify two of the three qualified outputs.

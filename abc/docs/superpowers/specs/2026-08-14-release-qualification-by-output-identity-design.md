@@ -1,39 +1,50 @@
 # Release Qualification by Output Identity Design
 
-Date: 2026-08-14 (revised three times on 2026-08-14: after review, after
-measurement, after second review)
-Status: **Proposed and still provisional.** Revision 3 review found six contract
-gaps; those are respecified here, and three of the four premises they rested on
-are now discharged by measurement. One design premise and one instrument gate
-remain. Revision 2's claim that "what remains is governance" stays withdrawn.
+Date: 2026-08-14 (revised four times on 2026-08-14: after review, after
+measurement, after second review, after regenerating the digests under the
+canonicalizer the spec names)
+Status: **Proposed and still provisional.** Every premise the reviews raised is
+now discharged by measurement, and the instrument gate is closed — but closing
+it cost 35× what the stand-in instrument suggested and fired one of this spec's
+own triggers (Q11). Revision 2's claim that "what remains is governance" stays
+withdrawn, now for a second, independent reason: the ADR supersession is not
+landable ahead of Phase 1 (E23).
 
-**Three of the four premises are now discharged by measurement** (2026-08-14,
-after the second review):
+**All four premises are discharged by measurement** (2026-08-14):
 
 - converter determinism — **measured**: two full passes over all 17,602 works
-   agree per work on parser-IR and divergence, 0 differing (E6);
+   agree per work on parser-IR and divergence, 0 differing; and a third,
+   fresh-process regeneration hours later reproduced the divergence tree
+   byte-for-byte (E6);
 - the correct population — **run end to end**: **17,602** works, zero failures
    (E19). A prior revision said 17,601; that was the measurement instrument
    dropping a work ABC admits, now corrected;
-- projected-digest cost — **measured for all three** outputs; qualification
-   runtime is ≈4.4 min at 32 jobs (E5).
+- projected-digest cost — **measured for all three** outputs under the named
+   canonicalizer; qualification runtime is **≈11.1 min** at 32 jobs (E22),
+   not the ≈4.4 min the Python stand-in implied (E5);
+- release-root recomputation — **resolved in design, not in code**. AAT and
+   divergence become `sidecars` of the existing parser-IR manifest, which the
+   closure verifier already treats as referenced and already hash-checks;
+   `mapping-divergence` is an existing role in active use, and AAT needs one
+   new enum value (E21, Q9). No new artifact kinds are required.
 
-Evidence, harness, and machine-readable summary:
-`docs/superpowers/reports/2026-08-14-release-qualification-measurement.{md,py,summary.json}`.
+Evidence, harnesses, and machine-readable summary:
+`docs/superpowers/reports/2026-08-14-release-qualification-measurement.{md,py,summary.json}`
+and `-projected-digest.clj`.
 
-**The fourth premise — release-root recomputation — is now resolved in design
-but not in code.** AAT and divergence become `sidecars` of the existing
-parser-IR manifest, which the closure verifier already treats as referenced and
-already hash-checks; `mapping-divergence` is an existing role in active use, and
-AAT needs one new enum value (E21, Q9). No new artifact kinds are required.
+**The instrument gate is closed.** The three aggregates are regenerated with
+`rfc8785-safe-integer-json-string-v1` over all 17,602 works of each family, with
+the projection verified to have fired on every document, and they are approvable
+(E22). The Python values are retired to cost-and-determinism evidence.
 
-Two gates remain before adoption, both mechanical:
-- every digest here comes from a Python canonicalization instrument, **not**
-  `rfc8785-safe-integer-json-string-v1`, so no value may be approved until
-  regenerated (E17). The scalar domain that canonicalizer demands is satisfied
-  across all three output families, 0 violations over 17,602 works each (E20),
-  so this is transcription rather than redesign;
-- the ADR supersession has to land.
+**What is not closed, and what changed:**
+- **Q11 (new).** Regeneration cost 413.9 s against the stand-in's 11.7 s, taking
+  qualification runtime to 11.1 min. That **meets** the >10-minute trigger this
+  spec attached to its "no sampled vector set" omission, so Phase 1 must either
+  measure an optimized projection op under the threshold or revisit the
+  omission.
+- **The ADR supersession cannot land before Phase 1** — measured, not assumed
+  (E23). It is a sequencing constraint, not a piece of paperwork.
 
 Governance is also wider than previously stated: this requires superseding
 `release-parser-identity-approval` and the **c3 and c4** claims of
@@ -134,31 +145,37 @@ passes:
 | parse | 12.7 s |
 | converter, pass 1 | **233.0 s** |
 | converter, pass 2 | 239.5 s |
-| projected digest — AAT | 2.5 s |
-| projected digest — parser-IR | 9.0 s |
-| projected digest — divergence | 0.2 s |
-| **qualification runtime (one pass, all three digests)** | **≈264 s (4.4 min)** |
+| projected digest — AAT (Python stand-in) | 2.5 s |
+| projected digest — parser-IR (Python stand-in) | 9.0 s |
+| projected digest — divergence (Python stand-in) | 0.2 s |
+| ~~qualification runtime~~ (superseded by E22) | ~~≈264 s (4.4 min)~~ |
 
 Failures: **zero** at parse and at both converter passes. Peak disk ≈ 23 GB for
 the two-pass determinism run; a single qualification pass needs ≈12 GB.
 
 The headline is the *qualification runtime* — pipeline **plus** all three
 projected digests — because the gate cannot finish without them. Revision 2's
-3.8-minute figure excluded the digest work it listed one row below. Projection
-is cheap once parallelized (11.7 s for all three); the converter dominates by
-roughly 20×.
+3.8-minute figure excluded the digest work it listed one row below.
 
-**Canonicalization caveat — the aggregate digests below are not approvable.**
-They were computed with a Python `json.dumps(sort_keys=True)` instrument, not
-`rfc8785-safe-integer-json-string-v1` (E17). They are valid evidence for *cost*
-and *determinism*, and invalid as approved values. The recorded digests must be
-regenerated with the specified canonicalizer:
+**The digest rows here are superseded by E22 and the runtime with them.** They
+were computed with a Python `json.dumps(sort_keys=True)` instrument, not
+`rfc8785-safe-integer-json-string-v1` (E17) — valid evidence for *determinism*,
+but not for cost and never for approval, because the stand-in turned out to be
+35× faster than the canonicalizer the design actually names. The conclusion this
+section drew from them — "projection is cheap; the converter dominates by 20×" —
+**is false under the specified canonicalizer**, where projection dominates the
+converter. The aggregate values it recorded are retired:
 
 ```
-AAT         sha256:9106a675f6e4bd4478bf7d1018876f685891b493239819b4c592a0c6b1563aa1
-parser-IR   sha256:ff3bd5ffcc04964db2d5901c3322d616fa5edd3f9308f680d76a2e6177c711de
-divergence  sha256:6a8714d3963fa2c4077eb35373a4a0d1dd2428ef6c63eb54b53f94a0361e7170
+AAT         sha256:9106a675f6e4bd4478bf7d1018876f685891b493239819b4c592a0c6b1563aa1  (retired)
+parser-IR   sha256:ff3bd5ffcc04964db2d5901c3322d616fa5edd3f9308f680d76a2e6177c711de  (retired)
+divergence  sha256:6a8714d3963fa2c4077eb35373a4a0d1dd2428ef6c63eb54b53f94a0361e7170  (retired)
 ```
+
+That a *measurement instrument's* convenient shortcut silently changed a
+headline number by 2.5× is the same class of error as E19's population drop.
+Both are why the design binds the canonicalization identifier in the governed
+record rather than leaving it to whoever writes the runner.
 
 ### E6 — determinism, **measured at corpus scale**
 
@@ -408,8 +425,9 @@ across the whole qualified population:
 | divergence | 17,602 | **0** | **0** | **0** | **0** |
 
 The canonicalizer the spec names is therefore usable as-is; no fallback
-canonicalization decision is needed. This discharges the precondition, not Q10
-itself — the digests still have to be regenerated with it.
+canonicalization decision is needed. Q10's regeneration confirmed it in the
+strongest form: the canonicalizer ran over all three families, 17,602 documents
+each, without a single fail-closed rejection (E22).
 
 ### E21 — the sidecar mechanism Q9 needs already exists and is already exercised
 
@@ -428,6 +446,90 @@ first-class references:
 Crucially, `manifest.schema.json`'s sidecar `role` enum **already contains
 `mapping-divergence`**, and `materialize_import.clj:37` already emits exactly
 that sidecar, with tests at `materialize_import_test.clj:112,204,270`.
+
+### E22 — the three aggregates regenerated under the named canonicalizer (closes Q10, opens Q11)
+
+Instrument:
+`docs/superpowers/reports/2026-08-14-release-qualification-projected-digest.clj`,
+which calls `abc.tools.hash/sha256-json-rfc8785-safe-integer-v1` rather than
+reimplementing it. Both levels use that one canonicalizer:
+
+```
+per-work  = sha256(rfc8785-safe-integer-json-string-v1(projected document))
+aggregate = sha256(rfc8785-safe-integer-json-string-v1({slug -> per-work}))
+```
+
+| Family | Works | Projected | Aggregate |
+|---|---:|---:|---|
+| AAT | 17,602 | 17,602 | `sha256:328bbb4fcd0bac2a…` |
+| parser-IR | 17,602 | 17,602 | `sha256:e5e6505156aa2f76…` |
+| divergence | 17,602 | 17,602 | `sha256:3478a12a740da006…` |
+
+Two properties fall out of that shape rather than being asserted:
+
+- **Row order cannot enter the value.** The aggregate canonicalizes a map, so
+  a permutation is a no-op by construction — verified by reshuffling the
+  population and re-running to byte-identical aggregates. **D10 discharged.**
+- **A dead projection fails closed.** The instrument counts documents the
+  projection actually fired on and aborts at zero; a silently-misspelled path
+  would otherwise digest the excluded field everywhere and defeat the design.
+  All three fired on all 17,602.
+
+Incidentally corroborating D8's slug design: 17,597 of the 17,602 per-work
+digests are distinct — five pairs of works have byte-identical projected output,
+and **the five groups are identical in all three families**. Three pairs are one
+作品ID under two card directories (E13's cross-card duplication, the reason the
+card directory is in the slug); two pairs are different 作品IDs with identical
+text. Work identity stays injective where content is not, so duplicates remain
+distinct manifest rows instead of colliding — which is exactly what naive
+basename keying got wrong (E12).
+
+**The cost, however, is 35× the Python stand-in**, on the same machine at the
+same 32-way parallelism:
+
+| Family | Python instrument | named canonicalizer |
+|---|---:|---:|
+| AAT | 2.5 s | 93.9 s |
+| parser-IR | 9.0 s | 317.1 s |
+| divergence | 0.2 s | 2.9 s |
+| **all three** | **11.7 s** | **413.9 s** |
+
+Qualification runtime is therefore **≈666 s (11.1 min)**, not the ≈264 s that E5
+records: projection goes from 4% of the run to 62% of it, and overtakes the
+converter. E5's 4.4-minute headline is superseded, and with it Q1's conclusion
+— see Q11.
+
+### E23 — the ADR supersession cannot land before Phase 1 (measured)
+
+Written as specified — a new `release-qualification-by-output-identity` record
+carrying an unscoped `:supersedes` → `release-parser-identity-approval` plus two
+scoped `:supersedes` edges onto c3 and c4 of
+`sole-publication-release-identity` — and validated. It fails, three times, each
+failure a level deeper:
+
+| Step | Result |
+|---|---|
+| add the successor record, leave the target `:accepted` | `ADR-LINT unscoped-supersession-target-not-superseded` |
+| flip `release-parser-identity-approval` to `:superseded` | `ADR-LINT noncanonical-dependency-path` — `sole-publication-release-identity` is Accepted and depends on it (`decisions.clj` `dependency-problems`) |
+| ignore the corpus and run the code | `parser release authority authentication failed {:kind :decision-not-accepted, :status :superseded}` — `parser_release_authority_test` errors |
+
+The third is the substantive one. `parser_release_authority.clj:139` requires
+the release-authority decision to be exactly `{:status :accepted,
+:release-authority :publication}`, so marking the target superseded makes
+**every publication release inadmissible**. The governance corpus is not being
+pedantic; it is refusing to let a live authority be retired before its
+replacement exists.
+
+This is a **sequencing constraint, not paperwork**: the supersession is a Phase 1
+deliverable and cannot precede it. A successor record can only carry the
+unscoped edge once it is itself Accepted with the replacement authority wired —
+which is Phase 1's definition. Scoped-superseding c3/c4 alone would validate,
+but it would assert that claims still enforced by running code have been
+replaced, which is worse than leaving the corpus untouched.
+
+Corollary for Phase 1's ordering: implementation, corpus edit, and the
+`release-parser-identity-v1.edn` record change land in **one** commit, because
+the intermediate states are all invalid.
 
 ## Diagnosis
 
@@ -492,6 +594,12 @@ For the same reason, manifest row order must be semantically irrelevant.
 Revision 2 promised to distinguish "reordered" works and tested reordering as an
 error, which would make a serialization detail an approval trigger. Rows are
 canonicalized by work key; a permutation must be a no-op.
+
+**Discharged (E22).** Defining the aggregate as
+`sha256(rfc8785-safe-integer-json-string-v1({slug -> per-work digest}))` makes
+this true by construction rather than by discipline — the canonicalizer sorts
+keys, so no ordering survives into the value. Verified by reshuffling the
+population and re-running to byte-identical aggregates.
 
 ## Design
 
@@ -576,7 +684,15 @@ here.
 must produce an identical `qualification_manifest_ref` (D10).
 
 The aggregate digest is **derived** from the manifest, never the primary
-artifact. This yields the diagnostics revision 1 promised but could not deliver:
+artifact, and both levels use the one bound canonicalizer:
+
+```
+per-work  = sha256(rfc8785-safe-integer-json-string-v1(projected document))
+aggregate = sha256(rfc8785-safe-integer-json-string-v1({slug -> per-work}))
+```
+
+Folding a map rather than concatenating bytes is what makes row order
+unrepresentable in the value (D10). This yields the diagnostics revision 1 promised but could not deliver:
 missing, extra, renamed, and changed works are all distinguishable (a reorder
 is a no-op — D10)
 (F3), and the population is declared once and consumed by both enforcement
@@ -662,11 +778,14 @@ justification (E11).
 | gate check | 4 — implement | modify the existing check |
 | `just` recipe wiring | 4 — implement | consumer: the operator (E8/D5) |
 
-Deliberate omissions with triggers: **no sampled vector set** — the trigger
-(qualification runtime over 10 minutes) is not met with runner capacity, so the
-runner declares a timeout and required capacity instead of binding job count;
-no per-construct behavioral report (trigger: first red whose differing-work list
-is unreadable); no artifact-identity change (Phase 2).
+Deliberate omissions with triggers: **no sampled vector set** — trigger
+(qualification runtime over 10 minutes) **has fired**: 11.1 min under the named
+canonicalizer (E22), so this omission is no longer earned and Phase 1 must
+discharge Q11 before it ships; no per-construct behavioral report (trigger:
+first red whose differing-work list is unreadable); no artifact-identity change
+(Phase 2). Parallelism stays out of the bound invocation contract either way —
+the runner declares a timeout and required capacity rather than binding job
+count (D9).
 
 ## Phasing
 
@@ -680,6 +799,21 @@ and of c3 **and** c4 of `sole-publication-release-identity`.
 Phase 1's retention step is now specific: declare AAT and divergence as
 parser-IR manifest sidecars (`mapping-divergence` exists; AAT needs one enum
 value), rather than inventing artifact kinds (E21).
+
+**"Ships as one unit" is now enforced by governance, not just preference.** The
+ADR supersession cannot precede the implementation: the corpus rejects the
+supersession edge while the target is Accepted, rejects the Accepted dependency
+closure once the target is `:superseded`, and the code rejects every publication
+release in that state (E23). So the implementation, the corpus edit, and the
+`release-parser-identity-v1.edn` record change are one commit — every
+intermediate state is invalid.
+
+**Phase 1 also has to discharge Q11 first.** Qualification runtime under the
+named canonicalizer is 11.1 min (E22), which fires this spec's own >10-minute
+trigger. Either an optimized projection op measures under it, or the sampled
+vector set comes back onto the table. Shipping Phase 1 on the retired 4.4-minute
+figure would repeat, in the design, exactly the substitution E5 made in the
+instrument.
 
 **Phase 2 (separate decision).** Remove `parser_build_hash` from
 `parser_config_hash` so identical output stops re-identifying artifacts (D3).
@@ -720,16 +854,22 @@ in a real publication run.
   boundaries;
 - a value outside the safe-integer domain failing closed;
 - projection determinism **and idempotence**;
+- **a projection that matches no document fails closed.** A mistyped excluded
+  path is otherwise silent — it digests the excluded field on every work and
+  defeats the design while every test still passes. The E22 instrument counts
+  the documents each projection fired on and aborts at zero; the production op
+  needs the same guard, per projection, per run;
 - nonzero parser/converter exits failing closed (they are an invariant, E16).
 
 ## Open questions
 
-- **Q1 — closed. Whole corpus is affordable; the runner needs
-  capacity, not a bound job count.** Qualification runtime — pipeline plus all
-  three projected digests — is **≈4.4 min at 32 jobs** (E5). No sampled vector set is needed given parallelism, but parallelism is a
-  **runner capacity requirement plus a timeout**, not part of the bound
-  invocation contract (D9): binding it would let an operational change rotate
-  approval.
+- **Q1 — partly reopened as Q11.** Whole corpus is still affordable and
+  parallelism is still a **runner capacity requirement plus a timeout** rather
+  than part of the bound invocation contract (D9) — binding it would let an
+  operational change rotate approval. But the runtime that made "no sampled
+  vector set" an earned omission was the Python stand-in's ≈4.4 min. Under the
+  canonicalizer the design names it is **≈11.1 min at 32 jobs** (E22), over the
+  threshold. See Q11.
 - **Q2 — closed with Q3.** stdin yields `work_id: "stdin"` and basename keying
   drops 7 works (E12), so the runner takes identity from the join: the manifest
   row carries the publication `slug` (`作品ID_人物ID_<card-dir>_<zip-stem>`),
@@ -763,9 +903,12 @@ in a real publication run.
   by ABC, so a qualification runner must read sources through
   `abc.tools.source-bundle/inspect-zip` rather than its own reader (E19). No
   qualified zip has an ambiguous primary member.
-- **Q8 — closed: divergence projection is nearly free** (0.2 s corpus-wide at
-  32 jobs, against 9.0 s for parser-IR). Qualification runtime including all
-  three digests is ≈4.4 min at 32 jobs (E5).
+- **Q8 — closed: divergence projection stays the cheapest of the three, at
+  every scale of instrument.** 0.2 s against parser-IR's 9.0 s under the Python
+  stand-in; 2.9 s against 317.1 s under the named canonicalizer (E22). Its share
+  of the digest cost is under 1% either way, so adding divergence to the
+  qualified tuple (E11, E15) costs essentially nothing. Whole-run figures are in
+  Q1/Q11, not here.
 - **Q9 — resolved in favour of (b): sidecars of the parser-IR manifest.** The
   closed release does reject unreferenced regular files, so a bare copy would be
   inadmissible — but the contract already has the mechanism (E21). Declaring AAT
@@ -788,9 +931,19 @@ in a real publication run.
   This still needs the ADR to land, but it is no longer an open design
   question.
 
-- **Q10 — open, but its precondition is discharged.** All aggregate values were
-  produced by a Python canonicalization instrument and must be regenerated with
-  `rfc8785-safe-integer-json-string-v1` before any is bound (E17). The scalar
-  domain that canonicalizer requires **is** satisfied by all three output
-  families over the whole population — zero violations (E20) — so regeneration
-  is mechanical rather than contingent.
+- **Q10 — closed: the three aggregates are regenerated and approvable** (E22).
+  Computed by calling `abc.tools.hash/sha256-json-rfc8785-safe-integer-v1`
+  itself, over all 17,602 works of each family, with the projection verified to
+  have fired on every document. The regeneration also cost 35× what the Python
+  stand-in did, which reopens Q1 as Q11.
+
+- **Q11 — open, opened by Q10's answer: qualification runtime is ≈11.1 min, and
+  the spec's own trigger for a sampled vector set has fired.** The deliberate
+  omission below reads "no sampled vector set — trigger: qualification runtime
+  over 10 minutes". Measured with the named canonicalizer, it is 11.1 min
+  (E22), so the trigger is met. Two ways out, and Phase 1 must pick one before
+  it ships: measure an optimized (streaming) projection op and show it lands
+  under the threshold, or accept the runtime and revisit the omission. The
+  instrument that produced 11.1 min parses each document with charred and
+  builds the canonical form as a string, so headroom is likely but unmeasured
+  — and "likely" is not what this design is for.

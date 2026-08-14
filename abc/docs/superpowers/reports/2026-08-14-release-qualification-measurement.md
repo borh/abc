@@ -103,3 +103,21 @@ different identity for the same work. `catalog-index` is a last-wins reduce, and
 the harness matches it. This is the 1,508-row basename collapse in E13 made
 concrete: work identity is stable only while the catalog bytes are pinned, which
 is why the design binds `catalog_csv_hash`.
+
+## Scalar-domain scan (spec E20)
+
+Instrument: `2026-08-14-release-qualification-domain-scan.py`.
+
+```sh
+for d in aat ir1 div1; do ./2026-08-14-release-qualification-domain-scan.py "/tmp/qual/$d/*.json"; done
+```
+
+| Output family | Files | Violations |
+|---|---:|---:|
+| AAT | 17,602 | **0** |
+| parser-IR | 17,602 | **0** |
+| divergence | 17,602 | **0** |
+
+A violation is any float, any integer outside ±(2^53−1), any non-string object
+key, or any other JSON type. Zero across the board, so
+`rfc8785-safe-integer-json-string-v1` is usable without a fallback.

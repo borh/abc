@@ -21,15 +21,19 @@ after the second review):
 Evidence, harness, and machine-readable summary:
 `docs/superpowers/reports/2026-08-14-release-qualification-measurement.{md,py,summary.json}`.
 
-**One premise remains undischarged, and it blocks implementation:** release-root
-recomputation, because two of the three qualified outputs are not retained where
-the release scan can see them (E14). That is a code change to publication, not a
-measurement.
+**The fourth premise — release-root recomputation — is now resolved in design
+but not in code.** AAT and divergence become `sidecars` of the existing
+parser-IR manifest, which the closure verifier already treats as referenced and
+already hash-checks; `mapping-divergence` is an existing role in active use, and
+AAT needs one new enum value (E21, Q9). No new artifact kinds are required.
 
-A second gate on adoption: every digest recorded so far comes from a Python
-canonicalization instrument, **not** `rfc8785-safe-integer-json-string-v1`. No
-value in this document may be approved until it is regenerated with the
-specified canonicalizer (E17).
+Two gates remain before adoption, both mechanical:
+- every digest here comes from a Python canonicalization instrument, **not**
+  `rfc8785-safe-integer-json-string-v1`, so no value may be approved until
+  regenerated (E17). The scalar domain that canonicalizer demands is satisfied
+  across all three output families, 0 violations over 17,602 works each (E20),
+  so this is transcription rather than redesign;
+- the ADR supersession has to land.
 
 Governance is also wider than previously stated: this requires superseding
 `release-parser-identity-approval` and the **c3 and c4** claims of
@@ -390,6 +394,41 @@ selected sources; it may not substitute its own reader.
 No work is excluded at population-definition time, so the E16 zero-failure
 policy and the manifest agree without special cases.
 
+### E20 — every qualified output satisfies the safe-integer domain
+
+`rfc8785-safe-integer-json-string-v1` fails closed on any non-integral number
+and on integers outside ±(2^53−1) (E17), so the design's viability depends on
+the outputs staying inside that domain. Scanned every value of every document
+across the whole qualified population:
+
+| Output family | Files | Floats | Ints out of range | Non-string keys | Other types |
+|---|---:|---:|---:|---:|---:|
+| AAT | 17,602 | **0** | **0** | **0** | **0** |
+| parser-IR | 17,602 | **0** | **0** | **0** | **0** |
+| divergence | 17,602 | **0** | **0** | **0** | **0** |
+
+The canonicalizer the spec names is therefore usable as-is; no fallback
+canonicalization decision is needed. This discharges the precondition, not Q10
+itself — the digests still have to be regenerated with it.
+
+### E21 — the sidecar mechanism Q9 needs already exists and is already exercised
+
+Manifests carry `sidecars`, and the closure verifier already treats them as
+first-class references:
+
+- `snapshot_index.clj:426` computes `expected-files` as manifest + content +
+  **every sidecar**, so a declared sidecar is *referenced* and raises no
+  `closure-unreferenced-file` problem;
+- it independently checks each sidecar's existence (`closure-sidecar-missing`)
+  and bytes (`closure-sidecar-hash-mismatch`);
+- `artifact-reference` already carries a `sidecar_role` field (currently `nil`),
+  required by `snapshot-index.schema.json`;
+- pack policy governs shipping through `included_sidecar_roles`.
+
+Crucially, `manifest.schema.json`'s sidecar `role` enum **already contains
+`mapping-divergence`**, and `materialize_import.clj:37` already emits exactly
+that sidecar, with tests at `materialize_import_test.clj:112,204,270`.
+
 ## Diagnosis
 
 ### D1 — the approval predicate sits at the implementation, not the contract
@@ -638,6 +677,10 @@ in `publications/<slug>/`** (E14) + all three enforcement sites +
 `schema_version` bump + ADR supersession of `release-parser-identity-approval`
 and of c3 **and** c4 of `sole-publication-release-identity`.
 
+Phase 1's retention step is now specific: declare AAT and divergence as
+parser-IR manifest sidecars (`mapping-divergence` exists; AAT needs one enum
+value), rather than inventing artifact kinds (E21).
+
 **Phase 2 (separate decision).** Remove `parser_build_hash` from
 `parser_config_hash` so identical output stops re-identifying artifacts (D3).
 Trigger: Phase 1 accepted and a no-op rebuild observed to re-identify artifacts
@@ -723,18 +766,31 @@ in a real publication run.
 - **Q8 — closed: divergence projection is nearly free** (0.2 s corpus-wide at
   32 jobs, against 9.0 s for parser-IR). Qualification runtime including all
   three digests is ≈4.4 min at 32 jobs (E5).
-- **Q10 — new: the recorded digests are not yet approvable.** All aggregate
-  values were produced by a Python canonicalization instrument rather than
-  `rfc8785-safe-integer-json-string-v1`; they must be regenerated before any is
-  bound (E17).
-- **Q9 — release-root recomputation is unresolved, and needs an artifact
-  contract, not a file copy.** The closed release rejects unreferenced regular
-  files, so copying AAT and divergence into `publications/<slug>/` would make
-  the release inadmissible. The decision must choose one of:
-  **(a)** new canonical AAT and divergence artifact kinds — manifests, snapshot
-  references, schemas, and closure checks; or
-  **(b)** AAT and divergence as explicitly *referenced supporting files* under
-  the existing parser-IR artifact contract.
-  It must also settle retention, duplication cost (+2.2 GB and +151 MB against
-  9.0 GB), and how release-root verification locates each row. **Phase 1 cannot
-  be implemented until this lands.**
+- **Q9 — resolved in favour of (b): sidecars of the parser-IR manifest.** The
+  closed release does reject unreferenced regular files, so a bare copy would be
+  inadmissible — but the contract already has the mechanism (E21). Declaring AAT
+  and divergence as `sidecars` of the existing parser-IR manifest makes them
+  referenced, and closure then verifies existence and bytes for free;
+  release-root recomputation locates each file through the manifest entry;
+  `included_sidecar_roles` governs whether they ship. Option (a) — new artifact
+  kinds with their own manifests, snapshot references, schemas, and closure
+  checks — buys no additional guarantee and is not recommended.
+
+  Remaining delta is small and specific:
+  - **divergence — no schema change.** Role `mapping-divergence` is already in
+    the enum and already emitted by `materialize_import.clj`, with tests.
+  - **AAT — one new enum value** (e.g. `adapter-tree`) in
+    `manifest.schema.json`. That moves the manifest schema hash, so it rides the
+    ADR 0001 pairing discipline.
+  - retention cost stays +2.2 GB and +151 MB against 9.0 GB, now a
+    `pack-policy` decision rather than a new mechanism.
+
+  This still needs the ADR to land, but it is no longer an open design
+  question.
+
+- **Q10 — open, but its precondition is discharged.** All aggregate values were
+  produced by a Python canonicalization instrument and must be regenerated with
+  `rfc8785-safe-integer-json-string-v1` before any is bound (E17). The scalar
+  domain that canonicalizer requires **is** satisfied by all three output
+  families over the whole population — zero violations (E20) — so regeneration
+  is mechanical rather than contingent.

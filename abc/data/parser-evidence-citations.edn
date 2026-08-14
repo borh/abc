@@ -118,7 +118,7 @@
   {:evidence_id "ab-validator/aozora-parser-neutral-comparison-result-2026-07"
    :evidence_class :neutral-comparison
    :producer_component "ab-validator"
-   :logical_path "ab-validator/reports/parser-study/reports/aozora-parser-neutral-comparison-2026-07/comparison-result.json"
+   :logical_path "ab-validator/docs/studies/aozora-parser-neutral-comparison-2026-07/report/comparison-result.json"
    :current_external_path nil
    :sha256 "sha256:28395f8fce3379253b84828b0178898e0072452b594fd74fea76d09ab73dd376"
    :study_contract "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe"
@@ -127,7 +127,7 @@
   {:evidence_id "ab-validator/aozora-parser-neutral-comparison-report-2026-07"
    :evidence_class :neutral-comparison
    :producer_component "ab-validator"
-   :logical_path "ab-validator/reports/parser-study/reports/aozora-parser-neutral-comparison-2026-07/comparison-report.md"
+   :logical_path "ab-validator/docs/studies/aozora-parser-neutral-comparison-2026-07/report/comparison-report.md"
    :current_external_path nil
    :sha256 "sha256:d8760c56547d09fe900dda0fe3935caafba286d9081f7a0ebdc0db22e52d1e2f"
    :study_contract "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe"

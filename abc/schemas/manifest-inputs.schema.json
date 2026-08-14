@@ -15,8 +15,7 @@
     "parser_ir_schema_hash",
     "diagnostic_schema_hash",
     "warning_sidecar_hash",
-    "run_summary_hash",
-    "comparison_report_hash"
+    "run_summary_hash"
   ],
   "additionalProperties": false,
   "properties": {

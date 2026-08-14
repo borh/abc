@@ -58,8 +58,7 @@
                 "parser_build_hash" "parser_config_hash"
                 "mapping_hash"
                 "parser_ir_schema_hash" "diagnostic_schema_hash"
-                "warning_sidecar_hash" "run_summary_hash"
-                "comparison_report_hash"]))]
+                "warning_sidecar_hash" "run_summary_hash"]))]
     [:fn {:error/message "every *_hash key must be a sha256: hash"}
      (fn [m]
        (every? (fn [[k v]]

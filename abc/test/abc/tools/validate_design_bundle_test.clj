@@ -1780,6 +1780,11 @@
   (testing "accepts complete manifest inputs"
     (is (= :ok (am/explain-or-throw!
                 ::validate/manifest-inputs complete-manifest-inputs "test" validate/malli-registry))))
+  (testing "accepts manifest inputs without the retired comparison_report_hash"
+    (is (= :ok (am/explain-or-throw!
+                ::validate/manifest-inputs
+                (dissoc complete-manifest-inputs "comparison_report_hash")
+                "test" validate/malli-registry))))
   (testing "rejects missing required keys"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"missing required keys"

@@ -167,33 +167,6 @@ source-inventory-full JOBS="24" INDEX="" CORPUS="":
 # see docs/superpowers/specs/2026-07-09-fidelity-run-idempotency-design.md (Phase 1
 # supersedes the env-neutralization glue).
 
-# Score the expanded official-docs seed (§4.5/§5) through the shared notation-spec
-# harness (all five adapters, auto-built) — a thin, discoverable wrapper over
-# aozora-notation-spec-comparison pinned to the seed vectors.
-official-docs-seed-comparison REPORT_MD="docs/superpowers/reports/2026-07-09-official-docs-seed-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-09-official-docs-seed-comparison.summary.json":
-	@just aozora-notation-spec-comparison "{{repo_root}}/reports/parser-conformance/official-docs-seed" "{{REPORT_MD}}" "{{SUMMARY_JSON}}"
-
-# Full parser-IR conversion audit over all five adapters. Dump selection comes
-# from the fidelity run-set (resolve-run-set -> lock, content-verified, fails
-# closed), NOT from ambient env / drifting justfile defaults — so this audit and
-# the fidelity coverage reports read the SAME pinned dumps. Pass a pre-resolved
-# LOCK (e.g. from `just fidelity-resolve`) to skip the fresh resolve.
-aat-to-parser-ir-full-audit JOBS="24" LOCK="" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" COMPAT_EDN="docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn":
-	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
-	@lock="{{LOCK}}"; \
-	if [ -z "$lock" ]; then lock="$(mktemp)"; trap 'rm -f "$lock"' EXIT; \
-		python3 "{{repo_root}}/reports/aat-fidelity/resolve-run-set.py" --repo-root "{{repo_root}}" --out "$lock"; fi; \
-	dirs_raw="$(python3 "{{repo_root}}/reports/aat-fidelity/lock-aat-dirs.py" "$lock" --order aozora-rs aozora2 aozora2html aozora-epub3 ab-aozora)"; \
-	mapfile -t dirs <<< "$dirs_raw"; \
-	args=(); for d in "${dirs[@]}"; do args+=(--aat-dir "$d"); done; \
-	"{{repo_root}}/target/release/ab-aat-to-parser-ir" audit-corpus "${args[@]}" \
-		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}" \
-		--compat-edn-out "{{repo_root}}/{{COMPAT_EDN}}" \
-		--jobs "{{JOBS}}" \
-		--abc-root "{{repo_root}}/data/abc-schemas"
-
 parser-ir-level3-publication-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-level3-publication-smoke.sh"
 
@@ -205,100 +178,14 @@ parser-ir-level3-melos-eaj-compare-smoke AAT="" TEI_EAJ_FILE="data/complete/tei_
 	@aat="{{AAT}}"; if [ -z "$aat" ]; then aat="{{aozora2html_full_aat_dir}}/000035_1567-32ff5a089d67.json"; fi; \
 	AB_LEVEL3_AAT="$aat" AB_LEVEL3_TEI_EAJ_FILE="{{TEI_EAJ_FILE}}" bash "{{repo_root}}/tests/parser-ir-level3-tei-eaj-compare-smoke.sh"
 
-parser-ir-level3-generated-workset-audit-smoke:
-	@bash "{{repo_root}}/tests/parser-ir-level3-generated-workset-audit-smoke.sh"
-
-parser-ir-level3-tei-eaj-generated-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" JOBS="24":
-	@cargo build -p ab-aat-to-parser-ir --release
-	@out_dir="{{OUT_DIR}}"; if [ -z "$out_dir" ]; then out_dir="{{ab_db_root}}/parser-ir/tei-eaj-generated-comparison"; fi; \
-	python "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
-		--workset "{{tei_eaj_workset}}" \
-		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
-		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
-		--converter-bin "{{repo_root}}/target/release/ab-aat-to-parser-ir" \
-		--abc-root "{{abc_repo_root}}" \
-		--abc-schema-root "{{repo_root}}/data/abc-schemas" \
-		--out-dir "$out_dir" \
-		--jobs "{{JOBS}}" \
-		--max-rows "{{MAX_ROWS}}"
-
-parser-ir-level3-tei-eaj-generated-matrix-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" JOBS="24":
-	@cargo build -p ab-aat-to-parser-ir --release
-	@out_dir="{{OUT_DIR}}"; if [ -z "$out_dir" ]; then out_dir="{{ab_db_root}}/parser-ir/tei-eaj-generated-matrix-comparison"; fi; \
-	python "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
-		--workset "{{tei_eaj_workset}}" \
-		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
-		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
-		--converter-bin "{{repo_root}}/target/release/ab-aat-to-parser-ir" \
-		--abc-root "{{abc_repo_root}}" \
-		--abc-schema-root "{{repo_root}}/data/abc-schemas" \
-		--out-dir "$out_dir" \
-		--candidate-mode all \
-		--jobs "{{JOBS}}" \
-		--max-rows "{{MAX_ROWS}}"
-
-parser-ir-level3-admission-smoke:
-	@bash "{{repo_root}}/tests/parser-ir-level3-admission-smoke.sh"
-
-parser-ir-level3-admission-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json":
-	@python "{{repo_root}}/reports/parser-ir/level3-admission.py" \
-		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
-		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}"
-
-parser-ir-plain-prose-source-delta-smoke:
-	@bash "{{repo_root}}/tests/parser-ir-plain-prose-source-delta-smoke.sh"
-
 parser-ir-ortho-publication-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-ortho-publication-smoke.sh"
-
-parser-ir-plain-prose-source-delta-report ADMISSION_SUMMARY="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" REPORT_MD="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json":
-	@python "{{repo_root}}/reports/parser-ir/plain-prose-source-delta.py" \
-		--admission-summary "{{repo_root}}/{{ADMISSION_SUMMARY}}" \
-		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
-		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
-		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
-		--mapping "{{repo_root}}/{{MAPPING}}" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}" \
-		--allow-missing-parser-evidence
-
-parser-ir-publication-coverage-smoke:
-	@bash "{{repo_root}}/tests/parser-ir-publication-coverage-smoke.sh"
-
-parser-ir-publication-next-work-smoke:
-	@bash "{{repo_root}}/tests/parser-ir-publication-next-work-smoke.sh"
 
 monorepo-path-hygiene-smoke:
 	@bash "{{repo_root}}/tests/monorepo-path-hygiene-smoke.sh"
 
 monorepo-workspace-layout-smoke:
 	@bash "{{repo_root}}/tests/monorepo-workspace-layout-smoke.sh"
-
-parser-ir-publication-next-work-report SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" COVERAGE_SUMMARY="docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" CONVERSION_SUMMARY="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" SOURCE_REFERENCE_SUMMARY="docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json" PERFORMANCE_REPORT="docs/superpowers/reports/2026-07-04-parser-performance-measurement.md" SOURCE_DISPOSITION_SUMMARY="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json" TEXT_POLICY_SUMMARY="docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json" ADAPTER_WORKSETS_SUMMARY="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json" DOSSIER_DIR="docs/superpowers/specs/tei-p5-mapping-dossiers" PARSER_ACCEPTANCE_SPEC="docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md" TEI_P5_ROOT="" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.md":
-	@tei_p5_root="{{TEI_P5_ROOT}}"; \
-	if [ -z "$tei_p5_root" ] && [ -n "${AB_TEI_P5_ROOT:-}" ]; then \
-		tei_p5_root="$AB_TEI_P5_ROOT"; \
-	fi; \
-	if [ -z "$tei_p5_root" ]; then \
-		tei_p5_root="$(nix build --no-link --print-out-paths "{{workspace_root}}#tei-p5-reference")"; \
-	fi; \
-	python "{{repo_root}}/reports/parser-ir/publication-next-work.py" \
-		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
-		--coverage-summary "{{repo_root}}/{{COVERAGE_SUMMARY}}" \
-		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
-		--conversion-summary "{{repo_root}}/{{CONVERSION_SUMMARY}}" \
-		--source-reference-summary "{{repo_root}}/{{SOURCE_REFERENCE_SUMMARY}}" \
-		--performance-report "{{repo_root}}/{{PERFORMANCE_REPORT}}" \
-		--source-disposition-summary "{{repo_root}}/{{SOURCE_DISPOSITION_SUMMARY}}" \
-		--text-policy-summary "{{repo_root}}/{{TEXT_POLICY_SUMMARY}}" \
-		--adapter-worksets-summary "{{repo_root}}/{{ADAPTER_WORKSETS_SUMMARY}}" \
-		--dossier-dir "{{repo_root}}/{{DOSSIER_DIR}}" \
-		--tei-p5-root "$tei_p5_root" \
-		--parser-acceptance-spec "{{repo_root}}/{{PARSER_ACCEPTANCE_SPEC}}" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}"
 
 source-region-disposition-samples-smoke:
 	@bash "{{repo_root}}/tests/source-region-disposition-samples-smoke.sh"
@@ -310,26 +197,6 @@ source-region-disposition-samples-report SOURCE_SUMMARY="docs/superpowers/report
 		--policy "{{repo_root}}/{{POLICY}}" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}"
-
-parser-ir-text-policy-delta-smoke:
-	@bash "{{repo_root}}/tests/parser-ir-text-policy-delta-smoke.sh"
-
-parser-ir-text-policy-delta-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-text-policy-delta.md" WORKSETS_DIR="docs/superpowers/reports/2026-07-06-text-policy-worksets":
-	@python "{{repo_root}}/reports/parser-ir/text-policy-delta.py" \
-		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}" \
-		--worksets-dir "{{repo_root}}/{{WORKSETS_DIR}}"
-
-parser-ir-adapter-fidelity-worksets-smoke:
-	@bash "{{repo_root}}/tests/parser-ir-adapter-fidelity-worksets-smoke.sh"
-
-parser-ir-adapter-fidelity-worksets-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.md" WORKSETS_DIR="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets":
-	@python "{{repo_root}}/reports/parser-ir/adapter-fidelity-worksets.py" \
-		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}" \
-		--worksets-dir "{{repo_root}}/{{WORKSETS_DIR}}"
 
 parser-ir-publication-bundle-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-publication-bundle-smoke.sh"
@@ -369,40 +236,6 @@ parser-ir-publication-bundle-batch-validation BATCH_ROOT="" SCOPE="representativ
 		--command "clojure -M:abc/materialize-publications-batch {{BATCH_ROOT}}/materialization-batch.json --summary {{BATCH_ROOT}}/materialization-summary.json" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}"
-
-parser-ir-publication-coverage-report PARSER_IR_SCHEMA="data/abc-schemas/schemas/parser-ir.schema.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_DELTA_SUMMARY="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-ir-publication-coverage.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json" CUSTOM_CONTRACT_SCHEMA="" BUNDLE_VALIDATION_SUMMARY="docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json" NEXT_WORK_SUMMARY="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json":
-	@custom_contract="{{CUSTOM_CONTRACT_SCHEMA}}"; if [ -z "$custom_contract" ]; then custom_contract="{{abc_repo_root}}/schemas/parser-ir-publication-preservation.schema.json"; else custom_contract="{{repo_root}}/$custom_contract"; fi; \
-	args=(--custom-contract-schema "$custom_contract"); if [ -n "{{BUNDLE_VALIDATION_SUMMARY}}" ]; then args+=(--bundle-validation-summary "{{repo_root}}/{{BUNDLE_VALIDATION_SUMMARY}}"); fi; if [ -n "{{NEXT_WORK_SUMMARY}}" ]; then args+=(--next-work-summary "{{repo_root}}/{{NEXT_WORK_SUMMARY}}"); fi; \
-	python "{{repo_root}}/reports/parser-ir/publication-coverage.py" \
-		--parser-ir-schema "{{repo_root}}/{{PARSER_IR_SCHEMA}}" \
-		--mapping "{{repo_root}}/{{MAPPING}}" \
-		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
-		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
-		--source-delta-summary "{{repo_root}}/{{SOURCE_DELTA_SUMMARY}}" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}" \
-		"${args[@]}"
-
-# TEI-EAJ structural expansion audit. Like aat-to-parser-ir-full-audit, the
-# per-adapter dumps are sourced from the fidelity run-set lock (content-verified,
-# fails closed) rather than drifting justfile defaults. Pass LOCK to reuse a
-# pre-resolved lock (e.g. from `just fidelity-resolve`).
-tei-eaj-structural-expansion JOBS="24" LOCK="" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
-	@test -f "{{tei_eaj_workset}}" || { echo "missing TEI-EAJ workset export: {{tei_eaj_workset}}" >&2; exit 2; }
-	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
-	@lock="{{LOCK}}"; \
-	if [ -z "$lock" ]; then lock="$(mktemp)"; trap 'rm -f "$lock"' EXIT; \
-		python3 "{{repo_root}}/reports/aat-fidelity/resolve-run-set.py" --repo-root "{{repo_root}}" --out "$lock"; fi; \
-	dirs_raw="$(python3 "{{repo_root}}/reports/aat-fidelity/lock-aat-dirs.py" "$lock" --labeled --order aozora-rs aozora2 aozora2html aozora-epub3 ab-aozora)"; \
-	mapfile -t dirs <<< "$dirs_raw"; \
-	args=(); for d in "${dirs[@]}"; do args+=(--aat-dir "$d"); done; \
-	"{{repo_root}}/target/release/ab-aat-to-parser-ir" tei-eaj-structural-expansion \
-		--workset "{{tei_eaj_workset}}" \
-		"${args[@]}" \
-		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}" \
-		--abc-root "{{repo_root}}/data/abc-schemas"
 
 morph-warehouse-clean:
 	@echo "cleaning canonical warehouse state under {{morph_warehouse_dir}}"

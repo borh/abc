@@ -57,10 +57,6 @@ check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contr
 	@(cd abc && {{nix_eval}} flake check --no-build)
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
 
-phase5-checkpoint:
-	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
-	{{nix_eval}} build "./ab-validator#checks.$system.phase5-checkpoint" --print-build-logs
-
 monorepo-adr-governance:
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
 	{{nix_eval}} build ".#checks.$system.monorepo-adr-governance" --print-build-logs
@@ -98,7 +94,7 @@ parser-rq-instrument-identity:
 	{{nix_eval}} build "./ab-validator#checks.$system.parser-rq-publication-pytest" \
 		--no-link --print-build-logs
 
-validate-migration: check-no-build phase5-checkpoint monorepo-adr-governance evidence-gate parser-rq-instrument-identity release-parser-reproducible
+validate-migration: check-no-build monorepo-adr-governance evidence-gate parser-rq-instrument-identity release-parser-reproducible
 
 # Unseeded simulation soak (15x counts); failures print the seed to replay.
 sim-soak:

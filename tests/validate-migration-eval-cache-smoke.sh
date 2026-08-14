@@ -13,21 +13,20 @@ if [[ "$stable_checks" -ne 3 ]]; then
   exit 1
 fi
 
-# Six uncached builds: phase5-checkpoint, monorepo-adr-governance,
-# evidence-gate (which builds two attrs in one invocation),
-# parser-rq-instrument-identity, and the two --rebuild reproducibility builds
-# in release-parser-reproducible.
-if [[ "$stable_builds" -ne 6 ]]; then
-  printf 'expected six uncached flake builds, found %s\n' "$stable_builds" >&2
+# Five uncached builds: monorepo-adr-governance, evidence-gate (which
+# builds two attrs in one invocation), parser-rq-instrument-identity, and
+# the two --rebuild reproducibility builds in release-parser-reproducible.
+if [[ "$stable_builds" -ne 5 ]]; then
+  printf 'expected five uncached flake builds, found %s\n' "$stable_builds" >&2
   exit 1
 fi
 
-# Four system evaluations: one each for phase5-checkpoint,
-# monorepo-adr-governance, evidence-gate, and parser-rq-instrument-identity.
+# Three system evaluations: one each for monorepo-adr-governance,
+# evidence-gate, and parser-rq-instrument-identity.
 # release-parser-reproducible names its flake attrs directly, so it needs no
 # currentSystem eval.
-if [[ "$stable_evals" -ne 4 ]]; then
-  printf 'expected four uncached system evaluations, found %s\n' "$stable_evals" >&2
+if [[ "$stable_evals" -ne 3 ]]; then
+  printf 'expected three uncached system evaluations, found %s\n' "$stable_evals" >&2
   exit 1
 fi
 

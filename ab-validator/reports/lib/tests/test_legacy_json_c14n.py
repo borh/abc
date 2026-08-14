@@ -45,19 +45,16 @@ class LegacyJsonC14n(unittest.TestCase):
         for value, expected in GOLDEN:
             self.assertEqual(legacy_json_c14n.canonical_json(value), expected)
 
-    def test_shared_matches_all_three_legacy_copies(self) -> None:
-        # Import each legacy site's implementation and assert byte-identical
-        # output to the shared one across the golden inputs, proving the
-        # extraction is behavior-preserving for every current caller.
+    def test_shared_matches_remaining_legacy_copy(self) -> None:
+        # Import the surviving legacy site's implementation and assert
+        # byte-identical output to the shared one across the golden inputs.
+        # (The level3-admission and publication-coverage copies died with the
+        # five-parser gates — ADR third-party-comparison-retirement.)
         reports = Path(__file__).resolve().parents[2]  # ab-validator/reports
         c14n = _load(reports / "aat-fidelity/aat_parser_ir_mapping/c14n.py", "c14n_legacy")
-        level3 = _load(reports / "parser-ir/level3-admission.py", "level3_legacy")
-        pub = _load(reports / "parser-ir/publication-coverage.py", "pub_legacy")
         for value, _ in GOLDEN:
             want = legacy_json_c14n.canonical_json(value)
             self.assertEqual(c14n.canonical_json(value), want)
-            self.assertEqual(level3.canonical_json(value), want)
-            self.assertEqual(pub.canonical_json(value), want)
 
 
 if __name__ == "__main__":

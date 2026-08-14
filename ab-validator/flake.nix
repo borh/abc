@@ -993,25 +993,6 @@
               touch "$out"
             '';
 
-        phase5CheckpointCheck =
-          pkgs.runCommand "phase5-checkpoint-check"
-            {
-              nativeBuildInputs = [
-                pkgs.git
-                pythonWithAatSchemaDeps
-              ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-              python -m pytest \
-                reports/aat-fidelity/tests/test_verify_phase5_checkpoint.py \
-                -q
-              touch "$out"
-            '';
-
         aatOracleDataSchemaSmokeShell = pkgs.writeShellApplication {
           name = "aat-oracle-data-schema-smoke";
           runtimeInputs = [
@@ -1148,26 +1129,6 @@
           extraPreScript = ''
             export AB_DB_ROOT="$TMPDIR/ab-validator"
           '';
-        };
-
-        level3AdmissionSmokeCheck = mkSmokeCheck {
-          name = "parser-ir-level3-admission-smoke-check";
-          testScript = "tests/parser-ir-level3-admission-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.jq
-            pkgs.python3
-            pkgs.ripgrep
-          ];
-        };
-
-        plainProseSourceDeltaSmokeCheck = mkSmokeCheck {
-          name = "parser-ir-plain-prose-source-delta-smoke-check";
-          testScript = "tests/parser-ir-plain-prose-source-delta-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.jq
-            pkgs.python3
-            pkgs.ripgrep
-          ];
         };
 
         publicationBundleSmokeCheck = mkSmokeCheck {
@@ -1544,8 +1505,6 @@
           abc-schema-contract-compare-smoke = abcSchemaContractCompareSmokeCheck;
           monorepo-path-hygiene-smoke = monorepoPathHygieneSmokeCheck;
           monorepo-workspace-layout-smoke = monorepoWorkspaceLayoutSmokeCheck;
-          parser-ir-level3-admission-smoke = level3AdmissionSmokeCheck;
-          parser-ir-plain-prose-source-delta-smoke = plainProseSourceDeltaSmokeCheck;
           parser-ir-ortho-publication-smoke = parserIrOrthoPublicationSmokeCheck;
           parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;
           parser-ir-publication-bundle-batch-smoke = publicationBundleBatchSmokeCheck;
@@ -1564,7 +1523,6 @@
           parser-rq-predicate-hardening-capture-python-tests = parserRqPredicateHardeningCapturePythonTests;
           parser-rq-resource-capture-smoke = parserRqResourceCaptureSmokeCheck;
           parser-rq-predicate-hardening-capture-smoke = parserRqPredicateHardeningCaptureSmokeCheck;
-          phase5-checkpoint = phase5CheckpointCheck;
         };
 
         devShells = {

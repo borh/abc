@@ -1,20 +1,23 @@
 # Publication Rearchitecture — Design Ledger
 
-Status (post review round 4, 2026-08-25):
+Status (post review round 5, 2026-08-25):
 - **Slice 0: READY** (F4 pinned procedure).
-- **Slice 1: BLOCKED** on the D16.1 freeze (round-4 veto: F24 assessment
-  commitment, F25 standalone spec, F26 tombstone invariants — all three now
-  applied below, awaiting reviewer re-review + owner approval) and the D20
-  AGENTS.md ownership transfer (not yet edited). Per F28 the freeze gate is
-  **decoupled from O1/O2** — those block Slice 3 only.
+- **Slice 1: BLOCKED** on the D16.1 freeze (round-5 veto: F29 recovery
+  self-hash — fixed; F30 assessment evidence was bound but not a verifiable
+  retained object — evidence objects now specified; F31 — the spec was
+  silently deciding O3, which is the owner's call). Freeze gate = reviewer
+  re-review + owner O3 choice + owner approval. Plus the D20 AGENTS.md
+  ownership transfer (not yet edited).
 - **Slice 2: BLOCKED** transitively on the D16.1 freeze.
 - **Slice 3: additionally BLOCKED** on O1 (approved conditional on committed
-  assessment evidence — owner ratification pending, wording per round-4
-  sign-off), O2 concrete host (wording approved; no host named or F12-probed
-  yet), O3 (withdrawal permanence — NEW owner decision, F26), and the F12
-  probes. D19 recovery-record spec added (F27) — direction approved.
+  assessment evidence — owner ratification pending, round-4 wording), O2
+  concrete host (wording approved; none named or F12-probed), and the F12
+  probes (extended round 5: recovery-branch advertisement + SWH archival on
+  the chosen origin). The F32 consumer-bootstrap rules and the F33
+  `snh-sig/1` signature envelope are now specified and must be implemented
+  before Slice-3 publication.
 D18.1 approved conditional on F12. Authoritative record: decision log +
-reviews F1–F9, F10–F15, F16–F23, F24–F28 + dev handoff below.
+reviews F1–F9, F10–F15, F16–F23, F24–F28, F29–F33 + dev handoff below.
 Owner: Bor Hodošček
 Process: hammock-driven-design decision interview, session of 2026-08-24
 
@@ -92,12 +95,12 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D13 | Identifiers ratified: artifact id = typed content hash; release name = `r<date>-<manifesthash12>`; snapshot DOIs **quarterly** (Zenodo concept DOI + version DOIs). Prefix harmonized with 2026-07-03 naming spec: **`snh:1:<type>:<sha256>`** (spec already reserves `snh:` + w3id.org/soranoha — matches storage rec). | owner, 2026-08-24 | prefix trivially renameable pre-first-release; frozen after |
 | D14 | Slug scheme kept: `作品ID_人物ID_carddir_zipstem` as stable human-facing work name; qualifier, never identity. | owner ratified rec, 2026-08-24 | frozen after first release |
 | D15 | Naming ratified per 2026-07-03 Model B spec: new top-level `soranoha/` component; namespaces `soranoha.core` (shared types/config/the one canonicalizer), `soranoha.yomi` (source-acquirer+selector), `soranoha.kura` (trace store+CAS+verifier), `soranoha.ori` (stages/renderers/validation), `soranoha.za` (release assembly+publishing). Vocabulary reused, NOT the old spec's scope (no LOD/IIIF/XTDB in v1). `snh:` id prefix per D13. | owner, 2026-08-24 | dir rename trivial pre-first-release |
-| D16 | **Manifest v1 frozen before slice 1** (external review F3): canonicalizer = `rfc8785-safe-integer-json-string-v1` (legacy c14n-v0 excluded from kernel); strict schema `snh-manifest/1`; detached signature; derived release name; type registry {tei,txt,val,manifest}; full spec in F3 section. **VETOED by review round 2 → superseded by D16.1 draft (F13): types renamed (plaintext/tei-validation), visibility field removed (public-only manifest + private index), receipts excluded, admission field added, intent_id added, nested shapes + sort rules specified. Freeze awaits owner O1/O2 + reviewer re-approval.** **Round 3 (F16–F20) applied: intent_id = pre-build operation identity; withdrawn.since removed (self-reference); admission binds inclusion_rule_id+hash.** **Round 4 (F24–F26) applied: admission gains assessment_snapshot_id+hash (in intent_id); D16.1 rewritten as a STANDALONE normative spec (wire version stays `snh-manifest/1`; "v1.1" naming retired); tombstone chain invariants added. Freeze gate = reviewer re-review + owner approval only — decoupled from O1/O2 per F28.** | review rounds 2–4, 2026-08-24/25 | draft — cheap to change until frozen |
+| D16 | **Manifest v1 frozen before slice 1** (external review F3): canonicalizer = `rfc8785-safe-integer-json-string-v1` (legacy c14n-v0 excluded from kernel); strict schema `snh-manifest/1`; detached signature; derived release name; type registry {tei,txt,val,manifest}; full spec in F3 section. **VETOED by review round 2 → superseded by D16.1 draft (F13): types renamed (plaintext/tei-validation), visibility field removed (public-only manifest + private index), receipts excluded, admission field added, intent_id added, nested shapes + sort rules specified. Freeze awaits owner O1/O2 + reviewer re-approval.** **Round 3 (F16–F20) applied: intent_id = pre-build operation identity; withdrawn.since removed (self-reference); admission binds inclusion_rule_id+hash.** **Round 4 (F24–F26) applied: admission gains assessment snapshot commitment (in intent_id); D16.1 rewritten as a STANDALONE normative spec (wire version stays `snh-manifest/1`; "v1.1" naming retired); tombstone chain invariants added. Freeze gate decoupled from O1/O2 per F28.** **Round 5 (F30–F31, F33) applied: admission evidence = two retained PUBLIC artifacts — `snh-assessment-snapshot/1` (facts) + `snh-admission-report/1` (the rule's total partition), both registry types added pre-freeze; tombstone mutability surfaced as O3 options (immutable vs amends-chain) — freeze now ALSO gated on the owner's O3 choice; signature wire format `snh-sig/1` defined.** | review rounds 2–5, 2026-08-24/25 | draft — cheap to change until frozen |
 | D17 | **Publication = atomic compare-and-append transaction** (F1): flock + head re-check + complete-write + atomic HEAD advance; idempotent by manifest_id; CI concurrency is optimization only. **Amended by D17.1 (F10): the remote protected git ref is the authority (fast-forward-only push, re-chain on rejection); idempotency by intent_id, not manifest_id; local flock is a single-host optimization.** | review round 2, 2026-08-24 | internal protocol, revisable |
 | D18 | **Retention/lifecycle** (F2): all published manifests are permanent GC roots; states built→published→archived→citable; public git repo carries published artifact bytes (SWH archives real bytes); archival receipts in subsequent manifests; indefinite promise advertised only when archive-verified. **Reviewer sign-off: conditionally APPROVED; conditions adopted as D18.1 (F11/F12): receipts are separate signed attestations keyed by manifest_id (never in later manifests); states published → archive-verified, citation-eligible is a policy projection; archival latency treated as unbounded until measured; SWH completeness proven by the four F12 checks on a real public origin.** | owner-endorsed principle + review round 2 | promise text frozen at first public release |
-| D19 | **Trust** (F8): offline root key → key-manifest → operational signing keys; revocation procedure; fork/equivocation consumer rule anchored in SWH-archived checkpoint history. **F22: fail-closed freeze rule. F27: signed recovery statement (`snh-recovery/1`) specified — incident record with replay protection (recovery_seq + prev_recovery hash), key revocation/transition, and defined discovery paths; see F8 section.** | review-adopted 2026-08-24; amended round 4 | upgradeable to Tessera log |
+| D19 | **Trust** (F8): offline root key → key-manifest → operational signing keys; revocation procedure; fork/equivocation consumer rule anchored in SWH-archived checkpoint history. **F22: fail-closed freeze rule. F27: signed recovery statement (`snh-recovery/1`) specified — incident record with rollback protection (recovery_seq + prev_recovery chain), key revocation/transition, and defined discovery paths; see F8 section. F29: the incident_id self-hash removed — recovery_id is DERIVED (sha256 of canonical bytes, like manifest_id), signed as `snh-recovery-sig/1:<recovery_id>`. F32: consumer bootstrap rules (chaining = rollback protection for stateful consumers only; full-chain fetch; cross-channel fail-closed); recovery lives on a protected `recovery` BRANCH, not refs/meta. F33: all detached signatures use the `snh-sig/1` envelope.** | review-adopted 2026-08-24; amended rounds 4–5 | upgradeable to Tessera log |
 | D20 | **Ownership** (F6): TEI profile schemas consumed as explicit flake input from abc during migration (no schema copies); AGENTS.md ownership transfer recorded before slice-1 implementation. | review-adopted 2026-08-24 | owner action: AGENTS.md edit |
-| D21 | **Rights/registry admission restored** (F14): kernel ports the fail-closed value-plus-hash rights authority (policy hash recorded in manifest `admission`); per-work inclusion governed by named rule (O1, owner); admission responsibility consumed from abc or transferred in AGENTS.md before Slice 3. Currently `publication-policy.edn` BLOCKS release — the kernel inherits that block until the rights assessment migrates. **F17: admission is assessment-based per O1 (adopted reviewer rule); catalog flags seed, never authorize; private archiving needs its own authorization policy.** **F24: the assessment data itself is cryptographically committed — a versioned assessment snapshot (total accounting of the candidate population) bound in `admission` and included in intent_id, so newly completed assessments change the operation identity.** | review rounds 2–4 | policy content owner-governed; mechanism fixed |
+| D21 | **Rights/registry admission restored** (F14): kernel ports the fail-closed value-plus-hash rights authority (policy hash recorded in manifest `admission`); per-work inclusion governed by named rule (O1, owner); admission responsibility consumed from abc or transferred in AGENTS.md before Slice 3. Currently `publication-policy.edn` BLOCKS release — the kernel inherits that block until the rights assessment migrates. **F17: admission is assessment-based per O1 (adopted reviewer rule); catalog flags seed, never authorize; private archiving needs its own authorization policy.** **F24: the assessment data itself is cryptographically committed — bound in `admission` and included in intent_id, so newly completed assessments change the operation identity. F30: the commitment is two retained public artifacts, separating domain roles — the assessment SNAPSHOT commits facts (public-domain / in-copyright / undetermined per contribution); the admission REPORT records the inclusion rule's total partition (admitted/excluded/quarantined with reasons). Both published, permanently rooted, hash-resolvable.** | review rounds 2–5 | policy content owner-governed; mechanism fixed |
 
 ## Constraints & success metrics
 
@@ -436,20 +439,22 @@ archive-verified checkpoint and accept NEITHER fork until an
 offline-root-signed recovery statement names the canonical continuation;
 the incident is published.
 
-**Recovery statement (F27, round 4 — the implementable record behind the
-F22 policy).** A recovery statement is a canonical-bytes document
-(`rfc8785-safe-integer-json-string-v1`), signed by the OFFLINE ROOT key
-(never an operational key), with required fields:
+**Recovery statement (F27, round 4; corrected F29/F32, round 5 — the
+implementable record behind the F22 policy).** A recovery statement is a
+canonical-bytes document (`rfc8785-safe-integer-json-string-v1`), signed
+by the OFFLINE ROOT key (never an operational key), with required fields:
 
 - `schema`: `"snh-recovery/1"` (closed schema).
-- `incident_id`: sha256 hex over the canonical statement minus signature
-  context; cited in the published incident notice.
+- `incident_label`: OPAQUE owner-assigned string (e.g.
+  `"incident-2026-001"`) cross-referencing the published human-readable
+  incident notice. A naming fact, never a hash of this document — the
+  round-4 `incident_id` (sha256 of the statement containing it) was the
+  same unsolvable self-reference H = sha256(document containing H) that
+  F19 removed from withdrawals (F29).
 - `recovery_seq`: integer ≥ 1, strictly increasing across all recovery
   statements ever issued.
-- `prev_recovery`: sha256 hex of the previous recovery statement's
-  canonical bytes; 64×"0" for the first. Together with `recovery_seq` this
-  chains recoveries and gives **replay protection** — a consumer holding
-  recovery N rejects any statement with seq ≤ N.
+- `prev_recovery`: the previous statement's DERIVED recovery_id (below);
+  64×"0" for the first.
 - `last_uncontested_manifest`: manifest_id of the freeze point (must be
   archive-verified).
 - `accepted_head`: manifest_id of the canonical continuation; MUST be a
@@ -462,16 +467,40 @@ F22 policy).** A recovery statement is a canonical-bytes document
   the operational keys valid AFTER the incident (key transition is part of
   recovery, not a separate step).
 
-**Discovery while frozen:** the statement's authority is the root
-signature, not its channel, so distribution is redundant by design.
-Authoritative path: a dedicated `refs/meta/recovery` ref on the O2 origin
-(outside the contested publication branch), file
-`recovery/<recovery_seq>.json` + `.sig`. Mirrored to the w3id.org/soranoha
-well-known URL (`/recovery/latest`) and submitted to SWH. A frozen consumer
-polls any of these; it accepts a statement iff the root signature verifies,
-`recovery_seq` exceeds its last known, `prev_recovery` matches, and
-`accepted_head` descends from `last_uncontested_manifest`. Then it resumes
-following the accepted branch under the new key-manifest.
+**Identity and signature (F29 — the manifest pattern):** `recovery_id` is
+NOT a member of the document; it is DERIVED as sha256 lowercase hex over
+the statement's canonical bytes. The root key signs the domain-separated
+string `snh-recovery-sig/1:<recovery_id>`, carried in an `snh-sig/1`
+envelope (F33, defined in D16.1) at `recovery/<recovery_seq>.json.sig`
+beside `recovery/<recovery_seq>.json`.
+
+**Discovery (F32):** the statement's authority is the root signature, not
+its channel, so distribution is redundant by design. Authoritative path: a
+**protected `recovery` branch** (`refs/heads/recovery`) on the O2 origin —
+an ordinary branch, chosen over `refs/meta/*` because clones, branch
+protection, the Forgejo UI, and archival tooling already understand it,
+and SWH's git loader preserves advertised refs (its ignore list does not
+cover custom refs, but whether a given origin ADVERTISES one is exactly
+what F12 must test). Mirrored to the w3id.org/soranoha well-known URL and
+submitted to SWH.
+
+**Consumer acceptance and bootstrap (F32):** `recovery_seq` +
+`prev_recovery` chaining is **rollback protection for STATEFUL consumers
+only** — it is NOT proof that any client has discovered the latest
+statement. Rules:
+- A consumer retains the highest recovery_id it has ever accepted, locally
+  and durably.
+- A stateful consumer accepts a statement iff the root signature verifies,
+  `recovery_seq` strictly exceeds its retained sequence, `prev_recovery`
+  matches its retained recovery_id chain, and `accepted_head` descends
+  from `last_uncontested_manifest`; then it resumes following the accepted
+  branch under the new key-manifest.
+- A BOOTSTRAP consumer (no retained state) MUST fetch the complete
+  recovery chain — never merely a "latest" endpoint — verify the chain
+  from genesis (seq 1, prev = 64×"0") with no gaps, compare every
+  available channel (origin branch, w3id mirror, SWH), and FAIL CLOSED on
+  conflicting root-signed statements at the same sequence (that is a
+  root-key incident, not a tie to break).
 
 Tessera/tlog-tiles static log remains the upgrade if external verifiers
 materialize.
@@ -489,6 +518,7 @@ authoritative was an error.
 - Bazel AC/CAS + poisoning: jmmv.dev/2025/09/bazel-remote-caching.html; github.com/bazelbuild/bazel/issues/4276
 - OCFL inventory pathology: github.com/OCFL/spec/issues/367; spec: ocfl.io/1.1/spec/
 - SWH save-code-now API: docs.softwareheritage.org/devel/apidoc/swh.web.save_code_now.api_views.html; SWHID ISO/IEC 18670:2025: iso.org/standard/89985.html
+- SWH git-loader ref filtering (F32): docs.softwareheritage.org/_modules/swh/loader/git/utils.html
 - Transparency: research.swtch.com/tlog; c2sp.org/tlog-tiles; github.com/transparency-dev/tessera
 - Zenodo versioning & limits: zenodo.org/help/versioning; support.zenodo.org (50 GB/100-file caps)
 - Identifier guidance: datatracker.ietf.org/doc/html/draft-kunze-ark-42; w3.org/Provider/Style/URI; w3.org/2001/tag/doc/metaDataInURI-31.html; datacite.org/blog/cool-dois/; McMurry et al. 10.1371/journal.pbio.2001414; RDA dynamic data 10.15497/RDA00016
@@ -554,6 +584,11 @@ bytes match manifest hashes. Latency is **unbounded until measured**
 ("typically hours" was unsupported — retracted). Add a repo-growth probe:
 fetch/clone/repack behavior of a multi-generation artifact repo, before
 committing to a forge/origin (quota limits on public forges are real).
+**Extended round 5 (F32): also verify on the chosen origin that the
+protected `recovery` branch is advertised to clients and appears in the
+SWH snapshot** — SWH's git loader preserves advertised refs (its ignore
+list does not cover the branch), but whether a given Forgejo origin
+advertises and protects it is origin-specific.
 
 ### F13 → D16.1: Manifest `snh-manifest/1` — standalone normative specification
 
@@ -580,8 +615,12 @@ the manifest's canonical bytes. External citation form
    `sha256(canonical {schema: "snh-manifest/1", upstream_origin,
    upstream_rev, toolchain, admission_policy_hash, inclusion_rule_hash,
    assessment_snapshot_hash, selection_params})`, each value drawn from
-   this same manifest (`admission_policy_hash` = `admission.policy_hash`,
-   etc.). Re-derivable by the verifier from the manifest alone.
+   this same manifest (`admission_policy_hash` = `admission.policy_hash`;
+   `assessment_snapshot_hash` = the sha256 hex component of
+   `admission.assessment_snapshot`). Re-derivable by the verifier from the
+   manifest alone. The admission REPORT's hash is deliberately NOT an
+   intent input — the report is derived evidence (rule applied to facts),
+   not a publication coordinate.
 3. `corpus` — `{upstream_origin (URL string), upstream_rev (commit hex)}`.
 4. `snapshot_date` — `"YYYY-MM-DD"` release-event date (naming-event fact;
    provenance dates live here, never in artifact bytes).
@@ -596,14 +635,33 @@ the manifest's canonical bytes. External citation form
 7. `admission` — `{policy_id (string), policy_hash (sha256 hex of the
    rights-policy bytes, value-plus-hash authority per D21),
    inclusion_rule_id (string), inclusion_rule_hash (sha256 hex of the
-   rule's governing bytes), assessment_snapshot_id (string),
-   assessment_snapshot_hash (sha256 hex of the snapshot's canonical
-   bytes)}`. **Assessment snapshot (F24):** a versioned canonical document
-   giving TOTAL ACCOUNTING of the selected candidate population — every
-   candidate work appears exactly once as admitted, excluded(reason), or
-   quarantined(reason). This preserves the anti-silent-loss invariant at
-   the admission boundary and makes newly completed assessments change
-   intent_id.
+   rule's governing bytes), assessment_snapshot (full artifact id
+   `snh:1:assessment-snapshot:<hex>`), admission_report (full artifact id
+   `snh:1:admission-report:<hex>`)}`.
+   **Admission evidence (F24, restructured per F30):** two retained,
+   PUBLIC, content-addressed artifacts, separating domain roles —
+   assessments are FACTS; admitted/excluded/quarantined are the inclusion
+   RULE'S decisions:
+   - **`snh-assessment-snapshot/1`** commits, for every candidate in the
+     selected population, the versioned assessment FACTS per the
+     2026-07-11 assessment model (per rights-relevant contribution:
+     status ∈ {public-domain, in-copyright, undetermined}, jurisdiction,
+     effective date, recorded basis). No admission decisions appear here.
+     Its canonical-bytes hash is the intent_id input (facts are a
+     publication coordinate).
+   - **`snh-admission-report/1`** records the rule's TOTAL PARTITION of
+     the snapshot's candidate population: `{schema, assessment_snapshot
+     (hex), policy_hash, inclusion_rule_id, inclusion_rule_hash, admitted
+     (sorted slugs), excluded ([{slug, reason_code}], sorted), quarantined
+     ([{slug, reason_code}], sorted)}` — every candidate appears exactly
+     once (anti-silent-loss at the admission boundary).
+   Both are published in the release commit as public admission evidence,
+   are permanent GC roots like every manifest-referenced artifact, and
+   resolve via `/blobs/sha256/<hex>`. Verifier obligations: fetch both by
+   hash; the report's embedded snapshot/policy/rule hashes match this
+   `admission` block; admitted ∪ excluded ∪ quarantined partitions the
+   snapshot's candidates exactly; `admitted` equals this manifest's
+   `works[].slug` set exactly.
 8. `works` — array sorted by `slug` as raw UTF-8 bytes ascending; slugs
    ASCII `[0-9a-z_-]`, unique, no normalization. Each element:
    `{slug, source_content_hash (sha256 hex of upstream source bytes),
@@ -625,10 +683,16 @@ the manifest's canonical bytes. External citation form
 11. `prev_manifest` — lowercase sha256 hex of the predecessor manifest's
     canonical bytes; genesis = 64×"0".
 
-**Type registry (closed, permanent names):** `tei`, `plaintext`,
-`tei-validation`, `tombstone`, `release-manifest`. ANY addition or removal
-is a new wire version `snh-manifest/2` — closed-schema consumers of
-`snh-manifest/1` must never meet unknown members. The public manifest
+**Type registry (closed, permanent names):** per-work types `tei`,
+`plaintext`, `tei-validation` (the only types permitted in
+`works[].artifacts`); release-level types `tombstone`, `release-manifest`,
+`assessment-snapshot`, `admission-report` (referenced from `withdrawn`,
+the chain, and `admission` — never from `works[].artifacts`). ANY addition
+or removal is a new wire version `snh-manifest/2` — closed-schema
+consumers of `snh-manifest/1` must never meet unknown members.
+(`assessment-snapshot`/`admission-report` added pre-freeze per F30 — the
+round-4 registry omission would have forced a v2 the moment the evidence
+became retrievable.) The public manifest
 lists public artifacts only; private classes (parser-IR) live in a
 separate private archive index with its own schema, never part of public
 identity. ("archived" exclusively names a release lifecycle state, not a
@@ -638,7 +702,9 @@ separate signed attestations keyed by manifest_id).
 **Tombstone artifact shape (F26):** a tombstone is itself a
 canonical-bytes artifact: `{schema: "snh-tombstone/1", slug (the withdrawn
 slug), reason_code (∈ {"rights", "takedown-request", "data-defect",
-"other"}), statement (string, may be empty)}`. Its id is
+"other"}), statement (string, may be empty)}`; under O3 option (b) only,
+an additional optional `amends` member (the corrected predecessor's full
+tombstone id) — absent on an original tombstone. Its id is
 `snh:1:tombstone:<sha256 of canonical bytes>`. No dates in tombstone bytes
 (withdrawal time is derived from chain position).
 
@@ -646,12 +712,21 @@ slug), reason_code (∈ {"rights", "takedown-request", "data-defect",
 where marked):**
 - `works[].slug` unique; `withdrawn[].slug` unique; the two slug sets are
   DISJOINT.
-- Chain: `withdrawn` is a MONOTONIC extension of the predecessor's
-  `withdrawn` — every `{slug, tombstone}` pair present in manifest N is
-  present verbatim in manifest N+1. An existing slug's tombstone id can
-  never change, and a tombstone can never be silently dropped (silent
-  drop ≠ reinstatement; reinstatement, if the owner ever permits it — O3 —
-  requires an explicit reinstatement event in a future wire version).
+- Chain: the `withdrawn` SLUG SET is a monotonic extension of the
+  predecessor's — a withdrawn slug never leaves the map, and a tombstone
+  can never be silently dropped (silent drop ≠ reinstatement;
+  reinstatement in v1 does not exist — it would require an explicit
+  reinstatement event in a future wire version). **Whether a slug's
+  TOMBSTONE ID may ever change is owner decision O3 (F31 — the round-4
+  text was silently deciding it), to be resolved BEFORE freeze:**
+  - **Option (a) — fully immutable:** the `{slug, tombstone}` pair is
+    carried verbatim forever; correcting a mistaken reason_code or
+    statement requires wire v2.
+  - **Option (b) — amendable but permanent (facilitator's
+    recommendation):** a slug's tombstone id may change ONLY when the new
+    tombstone's `amends` field equals the previous tombstone id (an
+    audited correction chain); withdrawal itself remains permanent.
+  The verifier enforces whichever the owner ratifies.
 - Chain: `intent_id` unique across the accepted chain (D17.1 duplicate
   suppression).
 - `intent_id` re-derives from the manifest's own fields (rule in field 2).
@@ -663,12 +738,28 @@ where marked):**
 - Every artifact `id` hash is 64 lowercase hex chars; `bytes` matches the
   stored blob's length.
 
-**Signature binding and filenames.** The manifest's canonical bytes are
-stored at `releases/<manifest_id>.json`. The signature is DETACHED at
-`releases/<manifest_id>.json.sig`, made by a current operational key (D19)
-over the domain-separated string `snh-manifest-sig/1:<manifest_id>` —
-never over re-serialized JSON, and never inside the hashed bytes. The
-release name `r<YYYYMMDD>-<manifest_id[0:12]>` is DERIVED (date =
+**Signature binding, wire format, and filenames (F33).** The manifest's
+canonical bytes are stored at `releases/<manifest_id>.json`. The signature
+is DETACHED at `releases/<manifest_id>.json.sig`, made by a current
+operational key (D19) over the domain-separated string
+`snh-manifest-sig/1:<manifest_id>` — never over re-serialized JSON, and
+never inside the hashed bytes.
+
+Every `.sig` file in the system (manifest AND recovery) is the
+**`snh-sig/1` envelope**: canonical bytes
+(`rfc8785-safe-integer-json-string-v1`) of `{schema: "snh-sig/1", key_id
+(lowercase sha256 hex fingerprint of the signing PUBLIC key exactly as
+listed in the governing D19 key-manifest — operational key for manifests,
+root key for recovery statements), algorithm ("ed25519" — the only value
+in v1), signed_context (the exact domain-separated string signed),
+signature (128 lowercase hex chars, Ed25519)}`. A verifier resolves
+`key_id` against the key-manifest (checking validity windows and
+revocations), recomputes `signed_context` from the artifact it holds,
+requires equality with the envelope's copy, and verifies. A raw signature
+without this envelope is invalid — with multiple operational keys a bare
+`.sig` cannot name its key.
+
+The release name `r<YYYYMMDD>-<manifest_id[0:12]>` is DERIVED (date =
 `snapshot_date`), never embedded.
 
 **Resolver:** artifact id → `/blobs/sha256/<hex>` (+ type-suffixed
@@ -696,7 +787,7 @@ D3 marked resolved-by-D13; Q6/Q7 marked resolved; R5/R11 marked Superseded
 around remote compare-and-append + verified receipts + admission; "sources
 in agent report" headings redirected to the inlined sources list.
 
-### Owner decisions OPEN (O1/O2 block Slice 3, not Slices 0–2; O3 gates final Slice-2 withdrawal semantics)
+### Owner decisions OPEN (O1/O2 block Slice 3, not Slices 0–2; O3 blocks the D16.1 freeze per F31)
 - **O1 — admission rule.** Round-3 review VETOED the two-flag (なし/なし)
   rule: the in-repo rights-remediation design (abc/docs/superpowers/specs/
   2026-07-11-rights-assessment-remediation-design.md) states the catalog
@@ -730,14 +821,23 @@ in agent report" headings redirected to the inlined sources list.
   prevention, branch-deletion protection, and recovery from a rejected
   concurrent push. **Per F28, O2/F12 gate Slice 3 only — they are removed
   from the D16.1 freeze gate (the host does not affect the wire schema).**
-- **O3 — withdrawal permanence (NEW, F26; blocks nothing before Slice 2
-  fixtures).** Is withdrawal permanent for a slug? Until the owner
-  decides, the D16.1 chain invariant stands: the withdrawn map is strictly
-  monotonic and a tombstone can never be silently dropped. If
-  reinstatement (corrected assessment, restored permission) should be
-  possible, it must be modeled as an EXPLICIT reinstatement event in a
-  future wire version — silent tombstone removal must never mean
-  reinstatement.
+- **O3 — tombstone mutability (F26; PROMOTED by F31 to a D16.1 freeze
+  blocker).** Round 5 caught that the round-4 invariant ("tombstone id can
+  never change") was silently DECIDING this while O3 was recorded as open:
+  freezing that text would ratify permanent, uncorrectable tombstones by
+  accident. Settled either way in v1: withdrawn slugs are monotonic
+  forever, silent tombstone drop never means reinstatement, and
+  reinstatement (corrected assessment, restored permission) requires an
+  explicit event in a future wire version. The OPEN choice, owner's call
+  before freeze:
+  - **(a) Fully immutable tombstones** — simplest invariant; correcting a
+    mistaken reason_code or statement requires wire v2.
+  - **(b) Amendable-but-permanent (facilitator's recommendation)** — a
+    tombstone may be superseded only by a new tombstone whose `amends`
+    field names it (audited correction chain, verifier-enforced);
+    withdrawal itself stays permanent. Recommended because takedown
+    paperwork and rights findings DO get corrected, and a wire-version
+    bump for a typo'd reason_code is disproportionate.
 
 ## External design review round 3 (2026-08-24) — findings F16–F23
 
@@ -796,7 +896,9 @@ Commit 8423938d verified present, ledger-only, clean `git diff --check`.
   input; the snapshot gives total accounting of the candidate population
   (every candidate admitted / excluded / quarantined with reason),
   preserving the anti-silent-loss invariant. Applied in D16.1, D17.1/F18,
-  D21.
+  D21. *(Round 5, F30 restructured this commitment into two retained
+  artifacts — facts snapshot + admission report; the D16.1 section is
+  current.)*
 - **F25 (standalone spec — Blocker)** — D16.1 was an amendment list
   leaning on the explicitly superseded F3 for essential fields. Missing:
   complete required field set, artifact object shapes and hash encodings,
@@ -829,6 +931,67 @@ Commit 8423938d verified present, ledger-only, clean `git diff --check`.
   O2 + F12 now block Slice 3 only; the D16.1 freeze gate is reviewer
   re-review + owner approval. Kernel work no longer waits on a deployment
   choice.
+
+## External design review round 5 (2026-08-25) — findings F29–F33
+
+Reviewer verdicts: F24–F26 amendments substantively accepted; **D16.1
+veto MAINTAINED** (F30, F31); **D19/F27 recovery protocol VETOED pending
+the F29 fixed-point correction**; O1 still conditionally approved; O2
+wording approved (host unreviewed); Slice 0 ready. Commit 67c0c642
+verified present, ledger-only, clean `git diff --check`. Re-approval
+waits on F29–F31; F32–F33 must close before Slice-3 publication.
+
+- **F29 (recovery self-hash — Blocker)** — `incident_id` (sha256 over
+  "the canonical statement minus signature context") reintroduced the
+  exact H = sha256(document containing H) fixed point that F19 removed
+  from withdrawals; "minus signature context" excluded nothing, since the
+  detached signature was never in the canonical bytes. Fix applied (the
+  manifest pattern): no self-hash member; `recovery_id` DERIVED as
+  sha256(canonical statement); root signs
+  `snh-recovery-sig/1:<recovery_id>`; cross-referencing uses an OPAQUE
+  `incident_label` naming fact.
+- **F30 (assessment evidence not retained/verifiable — Blocker)** — the
+  snapshot was bound by hash but had no ID syntax, no publication or
+  resolution path, no GC-root status, no public-evidence stance, no
+  verifier access route — and the closed registry omitted its type, so
+  freezing v1 risked forcing v2 the moment the evidence became real. A
+  domain-model conflict was also latent: a "snapshot" that contains
+  admitted/excluded/quarantined mixes assessment FACTS with inclusion-rule
+  DECISIONS. Fix applied (reviewer's second option): two content-addressed
+  public artifacts — `snh-assessment-snapshot/1` (facts only; its hash is
+  the intent_id input) and `snh-admission-report/1` (the rule's total
+  partition; derived evidence, NOT an intent input) — both published in
+  the release commit, permanent GC roots, resolvable by hash, with
+  verifier cross-checks (partition exactness; admitted == works slugs;
+  embedded hashes match `admission`). Registry types added pre-freeze.
+- **F31 (O3 implicitly decided — Blocker for owner approval)** — the
+  round-4 invariant "tombstone id can never change" silently chose
+  permanent-immutable while O3 was recorded open, and would have made
+  even a mistaken reason_code uncorrectable without v2. Fix applied: the
+  invariant is now explicitly O3-gated with two owner options —
+  (a) fully immutable vs (b) amendable-but-permanent via an `amends`
+  audit chain (facilitator recommends b). O3 promoted into the D16.1
+  freeze gate.
+- **F32 (bootstrap replay protection — Slice-3 Blocker)** — seq/chaining
+  was described as general replay protection, but it only protects
+  STATEFUL consumers; a bootstrap client shown an old-but-valid chain has
+  no trusted fact that a later sequence exists. Fix applied: retained
+  highest-accepted recovery_id; bootstrap = full-chain fetch from genesis
+  (never a "latest" endpoint alone); cross-channel comparison with
+  fail-closed on same-sequence conflicts; freshness language corrected to
+  "rollback protection for stateful consumers". Recovery moved from
+  `refs/meta/recovery` to a **protected `recovery` branch** (ordinary
+  clones, branch protection, forge UI, and archival tools all understand
+  branches); F12 extended: verify the chosen origin advertises the branch
+  and SWH archives it (SWH's git-loader ref ignore list does not cover it,
+  but advertisement is origin-specific).
+- **F33 (signature wire format — Blocker for public signing)** — the
+  signed message and filename were defined but not algorithm, encoding, or
+  key identification; with multiple D19 operational keys a raw `.sig`
+  cannot name its key. Fix applied: the versioned `snh-sig/1` envelope
+  (schema, key_id = key-manifest fingerprint, algorithm ed25519,
+  signed_context, hex signature) is now the only valid signature carrier,
+  for manifests and recovery statements alike.
 
 ## Dev Handoff (2026-08-24; slices 0–2 amended by F4/F5/F7, D16–D18; slice 3 rewritten per round 2; slice gating per F16)
 
@@ -888,8 +1051,11 @@ allowed is the inclusion rule's decision) AND the assessment evidence
 committed as versioned data (F24 snapshot source); O2 host named and
 F12-probed; rights admission consumed-from-abc or transferred (F14c);
 F12 repo-growth probe run against the chosen origin; D19 recovery-record
-machinery (F27) in place: root-signed `snh-recovery/1` verification in
-the published checker + the `refs/meta/recovery` path on the origin.
+machinery (F27/F29/F32) in place: root-signed `snh-recovery/1`
+verification — including bootstrap full-chain verification and
+cross-channel fail-closed — in the published checker, plus the protected
+`recovery` branch on the origin; all signatures emitted as `snh-sig/1`
+envelopes (F33).
 Publication = the D17.1 remote compare-and-append: one complete commit
 (blobs + manifest + sig) fast-forward-pushed to the protected branch;
 rejection → re-chain and retry; intent_id duplicate check enforced.
@@ -932,11 +1098,13 @@ back by citing the previous release tag.
   section — dev, before slice 1, only AFTER the D16.1 freeze is
   re-approved (now a mechanical transcription of a standalone spec, per
   F25).
-- Assessment-snapshot document schema (total-accounting shape, F24) —
-  dev with owner, alongside the rights-assessment migration, before
-  slice 3.
-- O3 (withdrawal permanence vs explicit reinstatement) — owner, before
-  slice 2's withdrawal fixtures are treated as final semantics.
+- `snh-assessment-snapshot/1` FACTS content schema (per-contribution
+  assessment fields per the 2026-07-11 model) — dev with owner, alongside
+  the rights-assessment migration, before slice 3. Its identity,
+  retention, resolution, and verifier semantics are already normative in
+  D16.1 (F30); only the domain field content remains.
+- O3 (tombstone mutability: immutable vs amends-chain) — owner, BEFORE
+  the D16.1 freeze (F31).
 - Tokenizer lane (vibrato-pipe) identity design — owner, post-JADH2026 (D4).
 - Zenodo record metadata + first snapshot timing — owner, slice 4.
 - w3id.org PR — owner, slice 4.

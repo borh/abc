@@ -1,11 +1,14 @@
 # Publication Rearchitecture — Design Ledger
 
-Status: **Direction ratified; Slice 0 ready; release-architecture protocol
-decisions closed by external-review amendments D16–D20 (2026-08-24, pending
-owner veto).** Design is NOT declared complete until the slice-1 double-build
-confirms R4 and the manifest-v1 freeze (D16) is exercised against a real
-build. Authoritative record: decision log + review findings + external
-review F1–F9 + dev handoff below.
+Status: **Direction ratified; Slices 0–2 ready. Release architecture open
+on: manifest freeze (D16 VETOED by review round 2 → D16.1 draft awaiting
+owner + reviewer re-approval), owner decisions O1 (rights inclusion rule)
+and O2 (public archival origin), and the F12 SWH/repo-growth probes —
+all blocking Slice 3 only.** D18 conditionally approved (conditions
+adopted). Design complete only after: slice-1 double-build confirms R4,
+D16.1 re-approved, O1/O2 decided, F12 probes pass. Authoritative record:
+decision log + review findings + external reviews F1–F9, F10–F15 + dev
+handoff below.
 Owner: Bor Hodošček
 Process: hammock-driven-design decision interview, session of 2026-08-24
 
@@ -70,7 +73,7 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 |---|---|---|---|
 | D1 | Consumers: public online release, graduate courses, owner's research, broader linguistics community. Reproducibility guarantee is archival: any cited identifier must resolve to exact bytes indefinitely. | owner | fixed intent |
 | D2 | Distribution: hybrid — archived immutable artifacts are the contract; on-demand regeneration is best-effort bonus. Start archive-first on owner's NixOS servers; lean on outside infra (e.g., Zenodo) later. | owner, 2026-08-24 | revisit at first public release |
-| D3 | Identifier shape: per-artifact content id (machine layer) + human release tags; releases possibly multiple/day. Proposed: cheap tags per release + periodic DOI snapshots for citation — **tag grammar & DOI cadence still open (Q2)**. | owner "recommendation OK probably" | open detail |
+| D3 | Identifier shape: per-artifact content id (machine layer) + human release tags; releases possibly multiple/day. Resolved by D13: `r<date>-<manifesthash12>` tags + quarterly snapshot DOIs. | owner; superseded-into D13 | resolved |
 | D4 | Tokenization = just another renderer lane: consumes parser-IR/plaintext, identity folds in tokenizer+dictionary versions, may lag main release. Not required for first release. vibrato-pipe (rename pending) will supersede current tokenizers later; JADH2026 uses existing. | owner | easy |
 | D5 | Auto-release runs on Forgejo CI (this repo). Unattended ⇒ no human/ADR step on hot path, no machine-local hardcoded paths. | owner | easy |
 | D6 | Non-goals confirmed: parser-RQ is JADH2026 paper support — keep working until conference, then archive, do not migrate. ab-validator measurement/warehouse Python stays as-is outside new architecture (later supplemented by vibrato-pipe). aozora-history-audit stays as-is. | owner | fixed |
@@ -83,11 +86,12 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D13 | Identifiers ratified: artifact id = typed content hash; release name = `r<date>-<manifesthash12>`; snapshot DOIs **quarterly** (Zenodo concept DOI + version DOIs). Prefix harmonized with 2026-07-03 naming spec: **`snh:1:<type>:<sha256>`** (spec already reserves `snh:` + w3id.org/soranoha — matches storage rec). | owner, 2026-08-24 | prefix trivially renameable pre-first-release; frozen after |
 | D14 | Slug scheme kept: `作品ID_人物ID_carddir_zipstem` as stable human-facing work name; qualifier, never identity. | owner ratified rec, 2026-08-24 | frozen after first release |
 | D15 | Naming ratified per 2026-07-03 Model B spec: new top-level `soranoha/` component; namespaces `soranoha.core` (shared types/config/the one canonicalizer), `soranoha.yomi` (source-acquirer+selector), `soranoha.kura` (trace store+CAS+verifier), `soranoha.ori` (stages/renderers/validation), `soranoha.za` (release assembly+publishing). Vocabulary reused, NOT the old spec's scope (no LOD/IIIF/XTDB in v1). `snh:` id prefix per D13. | owner, 2026-08-24 | dir rename trivial pre-first-release |
-| D16 | **Manifest v1 frozen before slice 1** (external review F3): canonicalizer = `rfc8785-safe-integer-json-string-v1` (legacy c14n-v0 excluded from kernel); strict schema `snh-manifest/1`; detached signature; derived release name; type registry {tei,txt,val,manifest}; full spec in F3 section. | review-adopted 2026-08-24, pending owner veto | schema rev possible pre-first-release; frozen after |
-| D17 | **Publication = atomic compare-and-append transaction** (F1): flock + head re-check + complete-write + atomic HEAD advance; idempotent by manifest_id; CI concurrency is optimization only. | review-adopted 2026-08-24 | internal protocol, revisable |
-| D18 | **Retention/lifecycle** (F2): all published manifests are permanent GC roots; states built→published→archived→citable; public git repo carries published artifact bytes (SWH archives real bytes); archival receipts in subsequent manifests; indefinite promise advertised only at ≥ archived. | review-adopted 2026-08-24, citable-lag is product intent — owner may veto | promise text frozen at first public release |
+| D16 | **Manifest v1 frozen before slice 1** (external review F3): canonicalizer = `rfc8785-safe-integer-json-string-v1` (legacy c14n-v0 excluded from kernel); strict schema `snh-manifest/1`; detached signature; derived release name; type registry {tei,txt,val,manifest}; full spec in F3 section. **VETOED by review round 2 → superseded by D16.1 draft (F13): types renamed (plaintext/tei-validation), visibility field removed (public-only manifest + private index), receipts excluded, admission field added, intent_id added, nested shapes + sort rules specified. Freeze awaits owner O1/O2 + reviewer re-approval.** | review round 2, 2026-08-24 | draft — cheap to change until frozen |
+| D17 | **Publication = atomic compare-and-append transaction** (F1): flock + head re-check + complete-write + atomic HEAD advance; idempotent by manifest_id; CI concurrency is optimization only. **Amended by D17.1 (F10): the remote protected git ref is the authority (fast-forward-only push, re-chain on rejection); idempotency by intent_id, not manifest_id; local flock is a single-host optimization.** | review round 2, 2026-08-24 | internal protocol, revisable |
+| D18 | **Retention/lifecycle** (F2): all published manifests are permanent GC roots; states built→published→archived→citable; public git repo carries published artifact bytes (SWH archives real bytes); archival receipts in subsequent manifests; indefinite promise advertised only when archive-verified. **Reviewer sign-off: conditionally APPROVED; conditions adopted as D18.1 (F11/F12): receipts are separate signed attestations keyed by manifest_id (never in later manifests); states published → archive-verified, citation-eligible is a policy projection; archival latency treated as unbounded until measured; SWH completeness proven by the four F12 checks on a real public origin.** | owner-endorsed principle + review round 2 | promise text frozen at first public release |
 | D19 | **Trust** (F8): offline root key → key-manifest → operational signing keys; revocation procedure; fork/equivocation consumer rule anchored in SWH-archived checkpoint history. | review-adopted 2026-08-24 | upgradeable to Tessera log |
 | D20 | **Ownership** (F6): TEI profile schemas consumed as explicit flake input from abc during migration (no schema copies); AGENTS.md ownership transfer recorded before slice-1 implementation. | review-adopted 2026-08-24 | owner action: AGENTS.md edit |
+| D21 | **Rights/registry admission restored** (F14): kernel ports the fail-closed value-plus-hash rights authority (policy hash recorded in manifest `admission`); per-work inclusion governed by named rule (O1, owner); admission responsibility consumed from abc or transferred in AGENTS.md before Slice 3. Currently `publication-policy.edn` BLOCKS release — the kernel inherits that block until the rights assessment migrates. | review round 2, 2026-08-24 | policy content owner-governed; mechanism fixed |
 
 ## Constraints & success metrics
 
@@ -133,12 +137,12 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
   external-review section F3.
 - Q5 Migration path: which existing namespaces become the new kernel vs are
   retired; how the JADH2026-frozen machinery is quarantined meanwhile.
-- Q6 Where TEI-profile/schema versions sit in the derivation key (a profile
-  change invalidates all TEI artifacts — acceptable? presumably yes, few min).
-- Q7 On-demand regeneration guarantees: how long are old toolchains kept
-  runnable (Nix closure rot), and is that promise ever made publicly?
+- Q6 **RESOLVED by R6**: TEI profile hash sits in the render/validate stage
+  keys; a profile change recomputes all TEI (~minutes, accepted).
+- Q7 **RESOLVED by D2**: the archive is the contract; regeneration stays
+  best-effort and is never publicly promised (reaffirmed in Dev Handoff).
 
-### Identifier side (researched; sources in agent report)
+### Identifier side (researched; load-bearing sources inlined under F9)
 
 - **SOTA consensus across ARK/Crossref/DataCite/W3C-TAG/McMurry-2017**: never
   encode a *mutable* fact in an identifier; immutable facts of the *naming
@@ -247,10 +251,10 @@ Correctness / determinism:
   (provenance dates in manifests, never artifact bytes). Residual risk =
   map-ordering in JSON artifacts → covered by the single canonicalizer.
   Slice-1 double-build is the confirming check.
-- R5 **Mitigated (rule)** — concurrent CI runs could fork the manifest hash
-  chain. Rule: release assembly+publish serialized (Forgejo concurrency
-  group); build stages may run concurrently (SQLite WAL + atomic blob
-  writes are safe under concurrency).
+- R5 **SUPERSEDED by D17/D17.1 (F1, F10)** — Forgejo concurrency groups are
+  best-effort and a local flock does not span runners; the remote protected
+  git ref is the compare-and-append boundary. Build stages may still run
+  concurrently (SQLite WAL + atomic blob writes).
 - R6 **Accepted** — toolchain-id = Nix closure hash over-invalidates on
   nixpkgs bumps; costs minutes of compute only, artifact ids unaffected
   (early cutoff). Q6 resolved the same way: TEI profile hash sits in the
@@ -268,14 +272,16 @@ Correctness / determinism:
   exception stated.
 
 Operability:
-- R9 **Mitigated** — upstream malformed revision → fail closed, no release,
-  CI alert; SWH/Zenodo pushes non-blocking (retry next run; release
-  validity never depends on them); disk/fixity health via verifier sweep.
-  Observability = CI logs + release chain + verifier reports.
+- R9 **Amended by D18.1 (F11/F12)** — upstream malformed revision → fail
+  closed, no release, CI alert; archival pushes remain non-blocking for
+  *publication*, but archive-verified status requires a separate signed
+  receipt proven per the F12 acceptance checks; disk/fixity health via
+  verifier sweep. Observability = CI logs + release chain + receipts +
+  verifier reports.
 - R10 **Accepted** — single-operator bus factor; structurally mitigated by
   public git manifests, mirrors, SWH (corpus survives the operator).
-- R11 **Mitigated** — signing keys in Forgejo secrets; fingerprint published;
-  rotation = new key signed by old, recorded in manifest chain.
+- R11 **SUPERSEDED by D19 (F8)** — offline root key → key-manifest →
+  operational keys, revocation procedure, checkpoint-anchored fork rule.
 
 Migration / acceptance:
 - R12 **Mitigated (important)** — the July rehearsal tree is NOT a valid
@@ -431,7 +437,118 @@ authoritative was an error.
 - Forgejo concurrency best-effort: forgejo.org/docs/v15.0/user/actions/reference/
 - w3id redirect-only: github.com/perma-id/w3id.org
 
-## Dev Handoff (2026-08-24; slices 0–2 amended by F4/F5/F7, D16–D18)
+## External design review round 2 (2026-08-24) — findings F10–F15
+
+Reviewer sign-offs: **D18 conditionally approved** (conditions adopted
+below); **D16 vetoed** — revised as D16.1 draft, requiring owner + reviewer
+re-approval before freeze.
+
+### F10 → D17.1: The remote git ref is the compare-and-append boundary
+flock coordinates only one filesystem; Forgejo runners don't share it.
+Amended protocol: the **protected branch of the public repository is the
+authority**. Publish = fetch expected head → create one complete commit
+(blobs + manifest + detached sig) → **fast-forward-only push**; rejection →
+fetch, re-chain (`prev_manifest` := new head, recompute manifest_id),
+retry. The local flock survives only as a single-host optimization.
+**Operation identity = `intent_id`**, not manifest_id (rebasing changes
+manifest_id): `intent_id = sha256(canonical {upstream_rev,
+admission_policy_hash, sorted artifact ids})`, recorded in the manifest;
+a publisher MUST abort if intent_id already appears on the chain — a lost
+push response cannot publish the same content twice.
+
+### F11 → D18.1: Archival receipts are separate signed attestations
+Receipts leave the release manifest entirely (a later release must never be
+required for an earlier one to become verifiable, and archival timing must
+not perturb release identity). Receipt = immutable signed record keyed by
+manifest_id (`receipts/<manifest_id>.<venue>.json` + sig) containing venue,
+venue-side identifiers (SWH snapshot id / DOI), verification method, and
+result. Derived states: **published** (on accepted chain) →
+**archive-verified** (complete independent-copy receipt exists);
+**citation-eligible** is a policy *projection* of archive-verified, not a
+stored state (no owner-controlled transition exists to justify one).
+
+### F12 → D18.1: SWH completeness/latency are unproved — probe required
+SWH docs: large repos fail more often; >100 MB objects not archived; visits
+may be full/partial/failed (docs.softwareheritage.org/user/using_data/;
+save_code_now API). Current repo origin is SSH on a .ts.net host — **no
+publicly reachable archival origin exists yet** (owner decision O2 below).
+Receipt acceptance for SWH must prove, on the real public repository:
+(1) HTTPS origin reachable and request accepted; (2) visit status **full**
+(not partial) naming the expected commit/snapshot; (3) every public
+artifact referenced by the manifest present as SWH content (checked via
+content-by-hash lookups, all new artifacts of the release); (4) retrieved
+bytes match manifest hashes. Latency is **unbounded until measured**
+("typically hours" was unsupported — retracted). Add a repo-growth probe:
+fetch/clone/repack behavior of a multi-generation artifact repo, before
+committing to a forge/origin (quota limits on public forges are real).
+
+### F13 → D16.1: Manifest v1.1 draft (replaces vetoed F3 freeze)
+- **Type registry (permanent names, closed):** `tei`, `plaintext`,
+  `tei-validation`, `tombstone`, `release-manifest`. Any addition is a
+  **manifest v2** (major revision) — closed-schema v1 consumers must never
+  meet unknown members. (`txt`/`val` retired as underspecified.)
+- **Visibility field removed; term split.** The public manifest lists
+  public artifacts ONLY. Private classes (parser-IR) live in a separate
+  private archive index (own schema, never part of public identity).
+  "archived" now exclusively names the release lifecycle state.
+- **manifest_id representation:** raw lowercase sha256 hex over canonical
+  bytes. External citation form `snh:1:release-manifest:<hex>`.
+  `prev_manifest` carries raw hex (genesis = 64×"0").
+- **works:** sorted by slug as raw UTF-8 bytes ascending (slugs enforced
+  ASCII `[0-9a-z_-]`, no normalization); each `{slug, source_content_hash,
+  artifacts}` with artifacts sorted bytewise by type name; every work has
+  exactly one artifact per registry type applicable to it (tei, plaintext,
+  tei-validation).
+- **withdrawn:** `[{slug, since: <manifest_id>, tombstone:
+  snh:1:tombstone:<hex>}]`, sorted by slug.
+- **validation_summary invariants (checked by verifier):** `invalid_count
+  == count(invalid_slugs)`; invalid_slugs ⊆ works' slugs, sorted; summary
+  must be re-derivable from the per-work tei-validation artifacts.
+- **admission (new, per F14):** `{policy_id, policy_hash, inclusion_rule}`
+  — the rights/admission authority evidence under which the release was
+  built (see D21).
+- **intent_id** per F10. **No receipt fields** per F11. No floats;
+  safe-range integers; canonicalizer unchanged
+  (`rfc8785-safe-integer-json-string-v1`).
+- Status: **draft — freeze only after owner ratifies O1/O2 and reviewer
+  re-approves.**
+
+### F14 → D21: Rights/registry admission restored to the boundary
+abc's fail-closed rights authority exists and currently blocks release
+(`abc/data/publication-policy.edn` = `:blocked-pending-assessment-migration`;
+only `:assessment-required` authorizes — `abc/src/abc/tools/
+publication_policy.clj`). The catalog carries per-work copyright flags
+(作品著作権フラグ; `aozora_csv.clj:258`) — Aozora includes in-copyright
+works under rights-holder conditions. Resolution: (a) the kernel ports the
+value-plus-hash rights-authority pattern (`load-rights-authority!`) —
+release-level admission is a fail-closed input, its policy hash recorded in
+the manifest `admission` field; (b) per-work inclusion is governed by a
+named inclusion rule (owner decision O1); (c) before Slice 3 the admission
+responsibility is either consumed from abc or explicitly transferred in
+AGENTS.md alongside D20's schema transfer. Moving ADR governance off the
+hot path does NOT bypass rights admission — admission is data-driven and
+fail-closed, not interactive.
+
+### F15: Ledger reconciliation round 2
+D3 marked resolved-by-D13; Q6/Q7 marked resolved; R5/R11 marked Superseded
+(D17.1/D19); R9 amended (receipt separation per D18.1); Slice 3 rewritten
+around remote compare-and-append + verified receipts + admission; "sources
+in agent report" headings redirected to the inlined sources list.
+
+### Owner decisions OPEN (blocking Slice 3, not Slices 0–2)
+- **O1 — per-work rights inclusion rule.** Recommendation: v1 public
+  releases include only copyright-expired works (作品著作権フラグ なし,
+  both work and person flags); in-copyright works excluded from public
+  artifacts pending a rights assessment (they may still be built/archived
+  privately). Whatever the rule, it gets a name + hash in `admission`.
+- **O2 — public archival origin.** A publicly reachable HTTPS git origin
+  for the artifact+manifest repository (SWH target). Recommendation:
+  public read-only mirror on owner-controlled infrastructure (public
+  Forgejo/smart-HTTP on own domain; free-forge quotas likely too small for
+  a multi-GB artifact repo — verify via the F12 growth probe); Codeberg or
+  similar as a manifests-only secondary mirror.
+
+## Dev Handoff (2026-08-24; slices 0–2 amended by F4/F5/F7, D16–D18; slice 3 rewritten per round 2)
 
 ### Slice 0 — prerequisite probe (existing machinery, disposable)
 Regenerate the acceptance reference with the CURRENT abc pipeline at the
@@ -479,12 +596,23 @@ stage explained by a changed declared input). Fixture tests: addition,
 deletion, withdrawal (R8 path), output-preserving source edit, and the R7
 include-and-flag path with an invalid work.
 
-### Slice 3 — za publishing + CI
-Static tree (blobs/, releases/, per-work history.json), signed tags,
-Forgejo auto-release (serialized publish per R5; poll upstream), SWH
-save-code-now (non-blocking per R9). Acceptance: two consecutive automated
-releases from real upstream movement, chain verifies end-to-end with the
-published checker script.
+### Slice 3 — za publishing + CI (rewritten per D17.1/D18.1/D21)
+Preconditions: O1 (inclusion rule) and O2 (public origin) decided; rights
+admission consumed-from-abc or transferred (F14c); F12 repo-growth probe
+run against the chosen origin.
+Publication = the D17.1 remote compare-and-append: one complete commit
+(blobs + manifest + sig) fast-forward-pushed to the protected branch;
+rejection → re-chain and retry; intent_id duplicate check enforced.
+Forgejo auto-release polls upstream; admission is a fail-closed input
+(policy hash in manifest). Serving tree (blobs/, releases/, history.json)
+derives from the repo. Archival: SWH save-code-now per release,
+non-blocking; receipts written only after the F12 four-point verification
+passes. Acceptance: (1) two consecutive automated releases from real
+upstream movement, chain verified end-to-end by the published checker;
+(2) a forced concurrent-publish attempt loses the push race and correctly
+re-chains without duplicate intent; (3) at least one release reaches
+archive-verified via a receipt passing all four F12 checks, with measured
+(not assumed) archival latency recorded in the ledger.
 
 ### Slice 4 — citability layer
 Quarterly Zenodo snapshot (concept DOI + first version DOI), w3id.org/
@@ -521,7 +649,7 @@ back by citing the previous release tag.
 
 ## Prior art findings (2026-08-24)
 
-### Build-system side (researched; sources in agent report)
+### Build-system side (researched; load-bearing sources inlined under F9)
 
 - In Build-Systems-à-la-Carte taxonomy, the chosen principle = **constructive
   traces**: a trace table `(stage-id, stage-code-version, toolchain-id, params,
@@ -551,7 +679,7 @@ back by citing the previous release tag.
   Nix-style deep traces it breaks correctness (frankenbuilds) — another reason
   the app-layer ledger is the right home for per-work incrementality.
 
-### Archival storage & verification side (researched; sources in agent report)
+### Archival storage & verification side (researched; load-bearing sources inlined under F9)
 
 - **OCFL: export target, not live layout.** Its versioned-object model
   mismatches a CAS+manifests design; corpus-as-one-object is quantifiably

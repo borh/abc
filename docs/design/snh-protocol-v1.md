@@ -193,7 +193,13 @@ Key distribution (F116): pinned key BYTES and fingerprints live ONLY
 in the independent trust anchor and the verifier's pinned
 configuration, obtained via the owner-named pre-release discovery
 channel (which carries the Zenodo concept DOI and every pinned
-fingerprint before the first signed release). v1 publishes NO
+fingerprint before the first signed release). The anchor
+authenticates the ROLE ASSIGNMENT, never a flat key list (F126):
+RELEASE = {K_release}; GOVERNANCE = {K_governance_1,
+K_governance_2}. `pinned_keys` PRESERVES that partition; the role
+sets MUST be disjoint, and an un-roled/overlapping configuration is
+INVALID — otherwise an accidental flat configuration could authorize
+the online release key for governance. v1 publishes NO
 repository key copies (F116/F122 — a repo-hosted copy cannot
 authenticate itself and has no consumer; even an "optional
 non-normative" copy invites synchronization questions).
@@ -424,8 +430,13 @@ determinism defect.
   predicate-shaped `archive_verified(C)` is RETIRED; its result was
   never a function of C alone):
   `archive_verification(archived_view, C, pinned_keys) → report`.
-  The result contract is TOTAL (F121 — no implementation choice
-  between failure reports and raised errors): `report.result` =
+  The result contract is TOTAL over READABLE views (F121/F128 —
+  bounded so acquisition failures and programmer defects are never
+  turned into claims about archival validity): acquiring or
+  materializing `archived_view` may fail OPERATIONALLY, and that is a
+  failure to PERFORM the observation, not an observation. Given a
+  readable view, verification ALWAYS returns a report:
+  `report.result` =
   SUCCESS iff C is present in the archived view, C is a PUBLICATION
   COMMIT (§8, F106), and
   `verify_repository_at(archived_view, C, pinned_keys)` succeeds with
@@ -466,8 +477,11 @@ approves — authored BEFORE that review, not transcribed after it.
 3. A governance event (each kind) → canonical bytes → id.
 4. Signature: key bytes, message bytes, 64-byte signature for one
    manifest and one event; a governance signature from the SECOND
-   pinned member that VERIFIES; a signature from a non-member key
-   that FAILS. All vectors use FIXTURE keys (F123): the F117 hardware
+   pinned member that VERIFIES; and the F126 table-driven CROSS-ROLE
+   tests — the release key signing a governance event FAILS, a
+   governance key signing a manifest FAILS, a non-member key FAILS,
+   and an overlapping/un-roled `pinned_keys` configuration is
+   REJECTED. All vectors use FIXTURE keys (F123): the F117 hardware
    ceremony's smoke signing with the ACTUAL governance devices is
    pre-release DISPOSABLE evidence, never a frozen fixture or schema.
 5. `.pub` and `releases/HEAD` byte-exact fixtures (65 bytes each),

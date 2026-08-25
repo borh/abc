@@ -28,9 +28,9 @@ numbers live in the findings sections and Git history, not here):
   fixity-checked); all F7 bounds met at the pinned config (-Xmx4g,
   concurrency 16): cold 465.5 s, peak RSS 6.22 GiB, warm no-op 6.1 s.
   The kernel is policy-blind (F52/F60).
-- **Slice 2 STARTED 2026-08-25; freeze package AUTHORED and revised
-  per freeze-review round 1 (F147–F154, all applied), awaiting
-  re-review**: the four hand-written JSON Schemas
+- **Slice 2 STARTED 2026-08-25; D16.1 FREEZE APPROVED 2026-08-25 at
+  commit 22551310** (freeze-review rounds 1–2, F147–F156, all
+  applied). Frozen objects: the four hand-written JSON Schemas
   (`soranoha/resources/snh/schemas/`) + table-driven conformance
   vectors (`soranoha/resources/snh/vectors/`, exercised by
   `soranoha.snh.conformance-test` — spec §11 items 1–5; item 6's
@@ -138,7 +138,7 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D13 | Identifiers: artifact id = typed content hash `snh:1:<type>:<sha256>` (prefix per the 2026-07-03 naming spec); release identity is DATELESS — the full typed manifest id is the citable name; dates are presentation/citation metadata (F83, owner-ratified 2026-08-25; supersedes the original dated release name — history in F76/F83). Snapshot DOIs quarterly (Zenodo concept + version DOIs). | owner 2026-08-24; F83 ratified 2026-08-25 | frozen at first release |
 | D14 | Slug scheme kept: `作品ID_人物ID_carddir_zipstem` as stable human-facing work name; qualifier, never identity. | owner ratified rec, 2026-08-24 | frozen after first release |
 | D15 | Naming ratified per 2026-07-03 Model B spec: new top-level `soranoha/` component; namespaces `soranoha.core` (shared types/config/the one canonicalizer), `soranoha.yomi` (source-acquirer+selector), `soranoha.kura` (trace store+CAS+verifier), `soranoha.ori` (stages/renderers/validation), `soranoha.za` (release assembly+publishing). Vocabulary reused, NOT the old spec's scope (no LOD/IIIF/XTDB in v1). `snh:` id prefix per D13. | owner, 2026-08-24 | dir rename trivial pre-first-release |
-| D16 | Wire formats: normative v1 = the protocol spec's FOUR canonical JSON schemas (manifest, assessment-snapshot, admission-report, governance-event) + fixed raw signature/key/`releases/HEAD` encodings; canonicalizer `rfc8785-safe-integer-json-string-v1`; closed type registry. FREEZE at the pre-Slice-2 review, whose approved objects are the executable JSON Schemas + conformance vectors (F80/F88). Full semantics: `snh-protocol-v1.md` (sole normative source). Amendment history: F3→F13 (D16.1) and rounds 3–19 (F16–F104) in the findings sections. | review rounds 2–19 | draft — cheap to change until the pre-Slice-2 freeze |
+| D16 | Wire formats: normative v1 = the protocol spec's FOUR canonical JSON schemas (manifest, assessment-snapshot, admission-report, governance-event) + fixed raw signature/key/`releases/HEAD` encodings; canonicalizer `rfc8785-safe-integer-json-string-v1`; closed type registry. FREEZE at the pre-Slice-2 review, whose approved objects are the executable JSON Schemas + conformance vectors (F80/F88). Full semantics: `snh-protocol-v1.md` (sole normative source). Amendment history: F3→F13 (D16.1) and rounds 3–19 (F16–F104) in the findings sections. | review rounds 2–19 | **FROZEN 2026-08-25 at commit 22551310 (D16.1 approved; freeze-review F147–F156)** — changes only via decision-log entry |
 | D17 | Publication = the spec §9 transaction: single-parent commit fast-forward-pushed to the protected branch (the remote ref is the CAS, D17.1/F10); rejection/unknown result → CURRENT-STATE reconciliation (discard the assembled manifest, refetch, recompute; F86); scheduled-build no-op on the F67 projection; nondeterminism halts. Amendment history: F1→F10→F61→F66/F67→F73/F79→F86 in the findings sections. | review rounds 2–16 | internal protocol, revisable |
 | D18 | Retention/archival: all published manifests + referenced blobs are permanent GC roots; the publication repo carries the published artifact bytes (bytes-in-git so SWH archives real bytes; accepted subject to the F12 growth probe, F93); stored lifecycle state = `published` only; archival status = a successful `archive_verification(view, C, keys)` observation report (spec §10, F97/F101/F113); citation eligibility requires a successful observation satisfying the current citation policy; independent authorship checkpoints = credential-separated Zenodo deposits (F70). Amendment history: F2→F11/F12→F63/F71→F93/F97/F101. | owner-endorsed + review rounds 2–19 | promise text frozen at first public release |
 | D19 | Trust: v1 = two disjoint ROLES with FIXED directly pinned Ed25519 key sets — RELEASE: one online CI key (manifests); GOVERNANCE: ONE offline owner-held SOFTWARE Ed25519 key, generated offline, held as TWO authorized custody copies on separately controlled encrypted offline media under the ceremony-declared complete persistent-copy inventory (withdrawal/amendment) — **O5a-as-amended, owner-RATIFIED 2026-08-25; key medium amended by owner 2026-08-25 (software, after the 5.4.3 firmware finding); composition collapsed per round-27 F143, owner-CONFIRMED 2026-08-25 (two non-threshold software keys add nothing over a second inventoried copy)**. For a given publication chain the pinned sets are established at genesis and never change; changing them ends that chain; successor continuity is outside v1 (F112/F120). The anchor authenticates the role assignment, never a flat key list (F126). Raw detached signatures over domain-separated messages; fingerprints over decoded raw key bytes; key bytes/fingerprints live in the independent anchor + pinned verifier config only (F116). One inventoried medium verifiably destroyed → continue on the remaining copy; an unexplained copy, lost custody of any medium, or possible disclosure → suspected compromise → HALT (F115/F144); compromise of any member → HALT; chain freezes at the last credential-separated Zenodo checkpoint (F55/F59/F70); freshness deferred. Key-manifest/recovery designs stay in the non-frozen contingency appendix; activation trigger: BEFORE any set change, continuity promise, or freshness consumer — never mid-incident. Amendment history: F8→F22–F47→O5a/F48–F55→F112–F117. | review-adopted; O5a staging round 9; owner-directed set-of-2 + round-22 corrections | contingency activates per O5a trigger |
@@ -2406,7 +2406,15 @@ findings applied same day; suite green locally and hermetically
   their own — no plan/finding references (ADR links only) and no
   all-caps emphasis; soranoha sources swept accordingly.
 
-## Freeze review round 2 (2026-08-25) — findings F155–F156; NOT APPROVED at dec984f8; both applied
+## Freeze review round 2 (2026-08-25) — findings F155–F156; both applied; **D16.1 FREEZE APPROVED at 22551310**
+
+Approval note: owner/reviewer confirmed the evidence independently
+(local 27/149 green; hermetic Nix green; both semantic negatives fail
+through decode with the specified reasons; meta-schema control fails,
+all four schemas pass; whitespace/format gates pass; valid-vector ids
+unchanged; one authoritative validation boundary). The §8 verifier,
+§9 transaction, and §11 item 6's state/transaction fixtures require
+their own review — not implicitly approved by this format freeze.
 
 Verdict: F147–F154 substantively resolved; two narrow blockers, no
 further architectural review needed.

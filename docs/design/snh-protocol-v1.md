@@ -1,13 +1,14 @@
 # snh protocol v1 — live specification
 
-Status: **NORMATIVE DRAFT — the sole normative source, effective now
-(F84).** The D16.1 freeze changes stability (no further changes without
-a decision-log entry), not precedence. No open items remain: the
-assessment-snapshot content fields were fixed 2026-08-25 at the
-pre-Slice-2 freeze (§5); F83, O5a, O3(b), and O1 are owner-ratified.
-The freeze package (four schemas + conformance vectors, §11) is
-AUTHORED, revised per freeze-review round 1 (F147–F154), and awaits
-re-review. Per F80, the FROZEN objects are the executable
+Status: **NORMATIVE, D16.1-FROZEN — the sole normative source (F84).
+Freeze approved 2026-08-25 at commit 22551310** after freeze-review
+rounds 1–2 (F147–F156, all applied). The frozen objects are the four
+executable JSON Schemas and the conformance vectors (§11 items 1–5,
+at the locations named in §11); no further changes to them or to this
+document without a decision-log entry. §11 item 6's state/transaction
+fixtures land with the §8 verifier and §9 transaction implementations
+and require their own review — they are not covered by this freeze.
+No open items remain; F83, O5a, O3(b), and O1 are owner-ratified. Per F80, the FROZEN objects are the executable
 JSON Schemas plus the conformance vectors (§11). Authority split
 (F88): the JSON Schemas govern STRUCTURE; this document governs
 SEMANTIC and STATE invariants; the conformance vectors demonstrate
@@ -564,8 +565,8 @@ determinism defect.
 The four JSON Schemas and these vectors are what the freeze review
 approves — authored BEFORE that review, not transcribed after it.
 
-Frozen artifact locations (authored 2026-08-25, awaiting the freeze
-review): schemas at `soranoha/resources/snh/schemas/*.schema.json`
+Frozen artifact locations (D16.1 freeze approved 2026-08-25 at commit
+22551310): schemas at `soranoha/resources/snh/schemas/*.schema.json`
 (one per §2 release-level type); vectors at
 `soranoha/resources/snh/vectors/` with `expected.json` as the
 table-driven index (accept vectors carry the exact stored canonical

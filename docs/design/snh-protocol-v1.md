@@ -28,8 +28,9 @@ appendix for their activation triggers.
   bytes are unique for a given value.
 - Every content id is `sha256` lowercase hex over canonical bytes (for
   JSON objects) or exact published bytes (for artifacts).
-- BOUNDARY DECODE (F137 — ONE reusable operation applied to ALL FOUR
-  JSON wire formats, on both the assembler and verifier sides):
+- BOUNDARY DECODE (F137/F142 — ONE reusable operation applied to EACH
+  OF THE FOUR PROTOCOL JSON OBJECTS (the §2 registry) and to NOTHING
+  ELSE, on both the assembler and verifier sides):
   reject duplicate object keys; parse WITHOUT coercion; validate the
   parsed value against its frozen JSON Schema; canonicalize that same
   value; require the STORED bytes to EQUAL the canonical bytes;
@@ -164,8 +165,12 @@ the ASSEMBLER against the rule bytes it holds.
 
 (Implements O5a — owner-RATIFIED 2026-08-25, exact corrected text
 including F125's incident condition; governance key MEDIUM amended by
-owner 2026-08-25 after the firmware finding: SOFTWARE Ed25519
-keypairs, not hardware tokens. All other clauses unchanged.)
+owner 2026-08-25 after the firmware finding — SOFTWARE Ed25519, not
+hardware tokens — and COMPOSITION collapsed per round-27 review F143:
+ONE governance key with TWO separately controlled custody copies,
+since two non-threshold software keys where either signs and either's
+compromise halts add no property beyond a second inventoried copy.
+All other clauses unchanged.)
 
 Two disjoint ROLES, each a FIXED, directly pinned, non-empty SET of
 Ed25519 keys. FOR A GIVEN PUBLICATION CHAIN, the pinned sets are
@@ -178,40 +183,47 @@ cases). No key-manifest, no in-band rotation, no envelope in v1:
 
 - **RELEASE role** (online, held by CI; v1 set size 1): signs release
   manifests — authenticates that Soranoha issued the release.
-- **GOVERNANCE role** (offline, owner-held; v1 set size 2 — each key
-  a SOFTWARE Ed25519 keypair generated offline, held on its own
-  separate offline medium under a ceremony-declared copy inventory,
-  media stored separately): signs governance events — authenticates
-  withdrawal/amendment authority. A compromised release key cannot
-  withdraw works.
+- **GOVERNANCE role** (offline, owner-held; v1 set size 1 — one
+  SOFTWARE Ed25519 keypair generated offline, held as TWO authorized
+  persistent copies on separately controlled encrypted offline media
+  under the ceremony-declared copy inventory): signs governance
+  events — authenticates withdrawal/amendment authority. A
+  compromised release key cannot withdraw works.
 
 The verifier selects the ROLE from the signed object's kind,
 constructs the domain-separated message from the artifact it holds,
 and accepts the raw signature iff it verifies against SOME member of
 that role's pinned set.
 
-Degradation and halt (F115 — "lost without compromise" is not
+Degradation and halt (F115/F144 — "lost without compromise" is not
 normally observable; for SOFTWARE keys accountability attaches to the
 DECLARED COPY INVENTORY, not a physical token): the ceremony declares
-each governance key's complete copy inventory — v1: EXACTLY ONE
-offline medium per key, no other copies ever made. A governance key
-KNOWN destroyed (its sole declared medium verifiably destroyed or
-failed) leaves governance operating in DEGRADED one-key mode — the
-pinned set itself never changes; the destroyed key simply signs
-nothing further in this epoch. A key medium UNACCOUNTED-FOR, or
-possibly READ by another party, is SUSPECTED COMPROMISE and triggers
+the governance key's COMPLETE AUTHORIZED PERSISTENT-COPY INVENTORY —
+v1: exactly two encrypted offline media, separately controlled; the
+copy operation itself is recorded in the inventory. Governance
+operation continues only while EVERY surviving inventoried medium
+remains accounted for and controlled. One medium verifiably destroyed
+or failed leaves governance operating on the remaining copy — the
+pinned set never changes. An UNEXPLAINED COPY, LOST CUSTODY of any
+medium, or POSSIBLE DISCLOSURE is SUSPECTED COMPROMISE and triggers
 the halt rule — a copyable file has no "lost but unread" state.
-COMPROMISE of any member halts the role's operations (fail-closed — a
-valid signature no longer proves authority).
+COMPROMISE of any role member halts the role's operations
+(fail-closed — a valid signature no longer proves authority).
+Custody of the media's encryption secrets is an operational ceremony
+matter, OUTSIDE the wire protocol.
 
 Key distribution (F116): pinned key BYTES and fingerprints live ONLY
 in the independent trust anchor and the verifier's pinned
 configuration, obtained via the owner-named pre-release discovery
-channel (which carries the Zenodo concept DOI and every pinned
-fingerprint before the first signed release). The anchor
+channel — the owner's ORCID record, which lists the FIRST anchor
+deposit's specific Zenodo VERSION DOI as a work before the first
+signed release (F145: ONE pointer to the ONE immutable role-bound
+anchor; a version DOI's files are fixed, unlike the concept DOI's;
+no fingerprints are duplicated outside the anchor, so no counts can
+drift). The anchor
 authenticates the ROLE ASSIGNMENT, never a flat key list (F126):
-RELEASE = {K_release}; GOVERNANCE = {K_governance_1,
-K_governance_2}. `pinned_keys` PRESERVES that partition; the role
+RELEASE = {K_release}; GOVERNANCE = {K_governance}. `pinned_keys`
+PRESERVES that partition; the role
 sets MUST be disjoint, and an un-roled/overlapping configuration is
 INVALID — otherwise an accidental flat configuration could authorize
 the online release key for governance. v1 publishes NO
@@ -220,13 +232,14 @@ authenticate itself and has no consumer; even an "optional
 non-normative" copy invites synchronization questions).
 
 Signer note (non-normative): any signer producing plain Ed25519 over
-the §6 message satisfies this section. v1 governance keys (owner
-amendment 2026-08-25) are software keypairs: the ceremony generates
-each offline, writes it to exactly one encrypted offline medium (the
-declared copy inventory above), and has BOTH keys sign a fixed
-protocol conformance vector as disposable ceremony evidence (F117
-analog). Governance signing happens on an offline machine; the key
-material never resides on a network-connected host. The owner's
+the §6 message satisfies this section. The v1 governance key (owner
+amendment 2026-08-25; F143) is a software keypair: the ceremony
+generates it offline, writes the TWO authorized copies to their
+separately controlled encrypted offline media — the deliberate copy
+operation recorded in the custody inventory — and has the key sign a
+fixed protocol conformance vector as disposable ceremony evidence
+(F117 analog). Governance signing happens on an offline machine; the
+key material never resides on a network-connected host. The owner's
 existing YubiKeys (firmware 5.4.3) cannot serve: PIV Ed25519 requires
 firmware ≥ 5.7.0, and FIDO2 resident keys do NOT satisfy §6 — CTAP2
 assertions sign authenticator data + a counter, never the raw
@@ -275,9 +288,12 @@ Structural:
   `assessment-snapshot`/`admission-report`; `works[].artifacts[].id`
   type equals its `type` member); for every artifact the verifier
   FETCHES, it recomputes sha256 over the bytes and requires equality
-  with the id's hash component; every JSON-format artifact
-  additionally passes the §1 BOUNDARY DECODE (F137 — stored bytes
-  must equal the canonical bytes of the validated value).
+  with the id's hash component; each of the FOUR PROTOCOL JSON
+  objects additionally passes the §1 BOUNDARY DECODE (F137/F142 —
+  stored bytes must equal the canonical bytes of the validated
+  value). All other artifacts — e.g. `tei-validation` JSON bytes —
+  are exact published bytes checked by hash alone; they have no
+  frozen schema and no canonical form.
 - `invalid_count == count(invalid_slugs)`; `invalid_slugs` ⊆ works'
   slugs, sorted; summary re-derivable from the per-work `tei-validation`
   artifacts.
@@ -483,11 +499,11 @@ determinism defect.
   ACTUAL canonical manifest bytes + signature, made with credentials
   unavailable to release CI. Compromise semantics: chain freezes at the
   last checkpoint; later signatures contested until an out-of-band
-  cutoff notice; release-key compromise halts publication. Governance
-  keys, exactly per §7/F115: KNOWN destroyed (sole declared medium) →
-  degraded one-key operation; medium UNACCOUNTED-FOR or possibly
-  read → suspected compromise → HALT; compromise of any member →
-  HALT.
+  cutoff notice; release-key compromise halts publication. The
+  governance key, exactly per §7/F115/F144: one inventoried medium
+  verifiably destroyed → continue on the remaining copy; an
+  unexplained copy, lost custody, or possible disclosure → suspected
+  compromise → HALT; compromise of any role member → HALT.
 
 ## 11. Executable schemas and conformance vectors (the FROZEN objects, F80)
 
@@ -495,19 +511,21 @@ The four JSON Schemas and these vectors are what the freeze review
 approves — authored BEFORE that review, not transcribed after it.
 
 1. Canonicalization: existing shared vectors (§1).
-2. A complete valid manifest → canonical bytes → manifest_id; and the
+2. A complete valid manifest → canonical bytes → manifest_id; the
    F137 boundary-decode NEGATIVE vector — EQUIVALENT but NONCANONICAL
    JSON (same value; reordered keys or altered whitespace) must be
-   REJECTED.
+   REJECTED; and the F142 DUPLICATE-KEY negative vector — JSON
+   carrying a repeated object key must be REJECTED at parse, BEFORE
+   schema validation (canonicality vectors cannot exercise this
+   parser behavior).
 3. A governance event (each kind) → canonical bytes → id.
 4. Signature: key bytes, message bytes, 64-byte signature for one
-   manifest and one event; a governance signature from the SECOND
-   pinned member that VERIFIES; and the F126 table-driven CROSS-ROLE
+   manifest and one event; and the F126 table-driven CROSS-ROLE
    tests — the release key signing a governance event FAILS, a
    governance key signing a manifest FAILS, a non-member key FAILS,
    and an overlapping/un-roled `pinned_keys` configuration is
    REJECTED. All vectors use FIXTURE keys (F123): the F117 key
-   ceremony's smoke signing with the ACTUAL governance keys is
+   ceremony's smoke signing with the ACTUAL governance key is
    pre-release DISPOSABLE evidence, never a frozen fixture or schema.
 5. `.pub` and `releases/HEAD` byte-exact fixtures (65 bytes each),
    including the pre-genesis zero HEAD.

@@ -15,7 +15,8 @@
   com.networknt/json-schema-validator {:mvn/version "3.0.6"}
   org.relaxng/jing                  {:mvn/version "20241231"}
   com.helger.schematron/ph-schematron-xslt {:mvn/version "9.2.0"}
-  com.helger.schematron/ph-schematron-pure {:mvn/version "9.2.0"}}
+  com.helger.schematron/ph-schematron-pure {:mvn/version "9.2.0"}
+  org.glassfish.jaxb/jaxb-runtime   {:mvn/version "4.0.6"}}
 
  :aliases
  {:test

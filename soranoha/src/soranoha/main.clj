@@ -188,7 +188,7 @@
                                 (cond
                                   (not (fs/exists? ref-file)) "missing-reference"
                                   (nil? hex) "missing-kernel-artifact"
-                                  (= (core-hash/sha256-file ref-file) hex)
+                                  (= (core-hash/sha256-file (fs/file ref-file)) hex)
                                   "equal"
                                   :else "different")))]
                   {:slug slug

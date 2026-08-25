@@ -183,6 +183,16 @@ repository; archive verification supplies ONLY the SWH snapshot;
 mirrors and local clones supply themselves. The invariants below are
 what the primitive checks, with C:`releases/HEAD` as the target head.
 
+The view's contract is COMMIT-SCOPED (F110): it exposes reads of the
+form `read_at(C, required_path)` and `parent_of(C)`. Every manifest,
+signature, event, and artifact must be REACHABLE AT ITS PRESCRIBED
+PATH from C's tree; presence anywhere else in the same object graph —
+another branch, a later commit, a dangling object — is INSUFFICIENT
+(the co-presence error one level lower). Pre-genesis base case: the
+initial commit with the zero `releases/HEAD` is a valid EMPTY
+repository state; every later valid target C must be a publication
+commit (F106).
+
 PUBLICATION COMMIT (F106 — a LOCAL definition; uniqueness is a
 consequence of the linear-history invariants below, not a separate
 search): C is a publication commit iff
@@ -382,11 +392,18 @@ determinism defect.
   linear-history invariants, no search required), AND
   `verify_repository_at(archived_view, C, pinned_keys)` (§8, F105)
   succeeds — the archived SWH snapshot is the SOLE repository view;
-  nothing is read from the live origin or resolver.
-  Archive verification claims repository-closure completeness
-  plus the public §7–§8 invariants — nothing more (F102). Latest
-  result stored as a disposable report/CI status; citation
-  eligibility is computed from it.
+  nothing is read from the live origin or resolver. The OBSERVATION
+  is explicit (F109 — the result is a function of the view, keys, and
+  verifier, not of C alone: the same C can fail before SWH completes
+  ingestion and pass afterward):
+  `archive_verification(archived_view, C, pinned_keys) → report`,
+  where the DISPOSABLE report records the SWH snapshot identifier, C,
+  the pinned key fingerprints, and the verifier version + result — no
+  signed receipt, no frozen schema; it makes the reproducible
+  observation reproducible. Archive verification claims
+  repository-closure completeness plus the public §7–§8 invariants —
+  nothing more (F102). Citation eligibility is computed from the
+  latest report.
 - Archive resolution recipe (F94 — a documented recipe, no new wire
   format): the published promise documents how to map a manifest id +
   artifact id to the archived publication commit and the sharded
@@ -427,7 +444,10 @@ approves — authored BEFORE that review, not transcribed after it.
    archive-binding NEGATIVE fixture — an archived snapshot whose
    current head verifies but whose expected commit C is invalid (or
    is not a publication commit per F106) must FAIL
-   `archive_verified(C)`; and the F105 view-isolation NEGATIVE
-   fixture — an archived view lacking a required signature/blob that
-   the live origin still has must FAIL archive verification (no
-   fallback reads).
+   `archive_verified(C)`; the F105 view-isolation NEGATIVE fixture —
+   an archived view lacking a required signature/blob that the live
+   origin still has must FAIL archive verification (no fallback
+   reads); and the F110 tree-reachability NEGATIVE fixture — a
+   required blob present ELSEWHERE in the same archived object graph
+   (another branch, a later commit, or dangling) but absent at its
+   prescribed path under C's tree must FAIL.

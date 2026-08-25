@@ -27,7 +27,8 @@ here):
   review; the AGENTS.md manifest-ownership update (D20 as amended).
 - Before Slice 3: O1 + full-corpus assessment data; the deployment
   prerequisites below; the F75 pre-release discovery channel named.
-- Owner decisions OPEN: O1, O3 (recommendation: b), O5a, F75 channel.
+- Owner decisions OPEN: O1, O3 (recommendation: b), O5a (reduced to a
+  one-paragraph ratifiable proposition, F111), F75 channel.
   Most recently ratified: O2a (2026-08-25 — Forgejo is the
   authoritative protected HTTPS origin with conditional ref updates;
   all other locations are downstream byte distribution), F83
@@ -867,48 +868,24 @@ in agent report" headings redirected to the inlined sources list.
     a wire-version event" — round 6). Amendments produce distinct
     manifests by content (F61), so no operation-identity machinery is
     needed. Owner ratification remains the freeze gate.
-- **O5a — v1 trust boundary (PROPOSED, reviewer-drafted round 9;
-  supersedes O5, whose freeze-all-formats clause F48 rejected as
-  contradicting the ratchet; amended round 10 per F52–F55).**
-  (1) STAGED freezes; the durable rule is **freeze at first consumer**
-  (F53/F58; pruned round 12 per F61–F65). **Normative v1 is FOUR
-  formats, all frozen BEFORE SLICE 2: `snh-manifest/1`,
-  `snh-assessment-snapshot/1` (minimal content schema, exercised on the
-  fixture), `snh-admission-report/1`, `snh-governance-event/1`.**
-  Deleted round 12: intent_id (F61 — retained-manifest retry protocol),
-  `snh-tombstone/1` + `release_intent` (F62 — collapsed into the
-  governance event), `snh-archive-receipt/1` (F63 — reproducible
-  predicate + disposable report), `snh-sig/1` (F64 — raw detached
-  Ed25519, key selected by object kind), the private archive index
-  (F65 — CAS/trace state only). No ADDITIONAL format freezes exist
-  between Slice 2 and Slice 3 (F84 drift fix — all four formats freeze
-  before Slice 2; nothing further ever freezes for Slice 3);
-  full-corpus assessment MIGRATION (data, not schema) stays a Slice-3
-  prerequisite. **Round 13: the honest inventory is "four canonical
-  JSON object schemas PLUS fixed raw signature and key encodings" (F69
-  — encodings are wire contracts too; conformance vectors before
-  Slice 2); snapshot_date deleted from manifest identity (F72); Zenodo
-  checkpoint deposits require F70 credential separation (unavailable to
-  release CI) — a blocker before the first signed release, not before
-  Slice 2.** (2) Two directly pinned disjoint keys: online CI
-  RELEASE key; offline GOVERNANCE key — with the F54 trust anchor
-  (public-key bytes + fingerprints on an independent immutable channel,
-  loaded as pinned verifier config) published BEFORE the first signed
-  release; the Slice-4 promise document is not the first pin. (3)
-  Implement the complete data verifier, a governance-withdrawal fixture,
-  atomic publication, and archive verification. (4) `snh-key-manifest/1`,
-  `snh-recovery/1`, the trust branch, root ceremony, and cross-channel
-  recovery are REMOVED from normative v1 — retained as an explicitly
-  non-frozen contingency note. (5) Activation trigger: BEFORE adding a
-  second release key, promising cryptographic continuity, or serving an
-  external consumer requiring authenticated freshness — never after an
-  incident begins (F49). (6) Compromise semantics per F55: artifact ids
-  always identify exact bytes; the official chain freezes at the last
-  uncontested independently recorded checkpoint; post-compromise release
-  signatures are CONTESTED until an out-of-band notice names the
-  accepted cutoff; release-key compromise halts publication;
-  governance-key compromise or loss halts governance operations and any
-  publication requiring them.
+- **O5a — v1 trust boundary (REWRITTEN per F111, round 21 — the prior
+  entry mixed the owner's trust-policy choice with D16 format-freeze
+  mechanics, implementation obligations, and deleted design history;
+  formats belong to D16, implementation to the dev handoff, history to
+  findings F48–F55 and F61–F72). The RATIFIABLE PROPOSITION:**
+  **"v1 uses exactly one directly pinned Ed25519 key per role
+  (RELEASE: online, held by CI, signs manifests; GOVERNANCE: offline,
+  owner-held, signs withdrawal/amendment events); it provides no
+  authenticated freshness and no in-band rotation or recovery; it
+  HALTS the affected operation on key compromise or loss; and it
+  treats releases after the last independent checkpoint as CONTESTED
+  until an out-of-band notice names the accepted cutoff. Before adding
+  another key, promising cryptographic continuity, or serving a
+  consumer requiring authenticated freshness, a successor trust
+  protocol must be designed and exercised — never improvised
+  mid-incident."**
+  Facilitator and reviewer both recommend ratifying. Owner yes/no
+  pending.
 
 ## External design review round 3 (2026-08-24) — findings F16–F23
 
@@ -1947,6 +1924,43 @@ owner 2026-08-25.**
   PREREQUISITES (O2b hostname/config + F12 probes; keys + the
   credential-separated Zenodo deposit).
 
+## External design review round 21 (2026-08-25) — findings F109–F111
+
+Reviewer verdicts: round 20 closes F105–F108; O2a soundly ratified; O2
+closed correctly; O3(b) remains the sensible choice; Slices 0–1
+unblocked.
+
+- **F109 (archive_verified(C) hid its observation inputs — Blocker
+  before archival implementation)** — the result depends on the SWH
+  view, the pinned keys, and the verifier version, not on C alone (the
+  same C fails before SWH completes ingestion and passes after). Fix
+  (spec §10): the explicit observation
+  `archive_verification(archived_view, C, pinned_keys) → report`; the
+  disposable report records the SWH snapshot identifier, C, the key
+  fingerprints, and the verifier version + result. No signed receipt,
+  no frozen schema — the reproducible observation is now actually
+  reproducible.
+- **F110 (view isolation ≠ target-tree reachability — Blocker)** — a
+  required blob/signature could exist elsewhere in the SAME archived
+  object graph (another branch, a later commit, a dangling object)
+  while absent from C's tree — the co-presence error one level lower.
+  Fix (spec §8): the view contract is COMMIT-SCOPED
+  (`read_at(C, required_path)`, `parent_of(C)`); required material
+  must be reachable at its prescribed path from C's tree; global
+  object-store presence is insufficient. Tree-reachability negative
+  fixture added (§11). Pre-genesis base case stated: the initial
+  commit with the zero `releases/HEAD` is a valid empty state; every
+  later valid target is a publication commit.
+- **F111 (O5a ratification text was amendment archaeology — Blocker to
+  O5a ratification)** — the entry mixed the owner's trust-policy
+  choice with D16 format mechanics, implementation obligations, and
+  deleted design history. REPLACED with the one-paragraph ratifiable
+  proposition (one pinned key per role; no freshness, rotation, or
+  recovery; halt on compromise; post-checkpoint releases contested;
+  successor protocol designed and exercised BEFORE any expansion
+  trigger). D16 owns formats; the handoff owns implementation; the
+  findings own history. O5a is now a meaningful owner yes/no.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;
@@ -2095,8 +2109,9 @@ non-blocking; **archive-verified per F97/F101/F105: `archive_verified(C)`
 = C present in the archived view + C a publication commit (F106) +
 `verify_repository_at(archived_view, C, pinned_keys)` succeeds with
 the SWH snapshot as the sole repository view (spec §8/§10) — no
-fallback reads from the live origin; stored as a disposable verifier
-report/Forgejo status — no receipt artifact**. Acceptance: (1) two consecutive automated releases
+fallback reads from the live origin; the disposable F109 report
+records the SWH snapshot id, C, key fingerprints, and verifier
+version + result — no receipt artifact**. Acceptance: (1) two consecutive automated releases
 from real upstream movement, chain verified end-to-end by the published
 checker; (2) a forced concurrent-publish attempt loses the push race and
 reconciles per spec §9 current-state rules — discards its manifest,

@@ -1,12 +1,28 @@
 # Publication Rearchitecture — Design Ledger
 
-Status (post review round 15, 2026-08-25):
+Status (post review round 16, 2026-08-25):
 - **`docs/design/snh-protocol-v1.md` is the SOLE NORMATIVE source,
   effective now (F84)** — the freeze will change stability, not
   precedence; this ledger is the decision/rationale record and nothing
   in it overrides the protocol spec. Per F80 the FROZEN objects are the
   executable JSON Schemas + conformance vectors, authored BEFORE the
-  freeze review.
+  freeze review; per F88 the schemas govern structure, the spec governs
+  semantic/state invariants, the vectors demonstrate both, and any
+  disagreement blocks the freeze.
+- Round-16 fixes applied in the protocol: F85 (publication commits
+  have exactly ONE parent — the previously accepted head; merges
+  rejected, closing the second-parent bypass of F78; genesis state
+  made explicit), F86 (current-state reconciliation replaces the
+  pairwise race taxonomy — the loser consults only the current head,
+  handling any number of intervening operations; build-vs-governance
+  reassembly subsumed by requeue), F87 (totality is an ASSEMBLER
+  invariant against the transactionally consistent selection; the
+  public-recomputation claim was circular and non-executable and is
+  withdrawn; upgrade path recorded), F88 (authority split defined;
+  this ledger's D16.1 body replaced by decision summaries — Git
+  history holds the archaeology), F89 (report-field binding corrected
+  — the report carries no `policy_id`). Reviewer RECOMMENDS ratifying
+  F83; the `r<hash12>` display alias moved out of the protocol.
 - Round-15 fixes applied in the protocol: F78 (first-parent HEAD
   transitions must satisfy `M.prev_manifest == H` — closes silent
   chain replacement), F79 (complete build/build reconciliation:
@@ -66,8 +82,8 @@ Superseded status detail (round 13):
   applied).**
 D18.1 approved conditional on F12. Authoritative record: decision log +
 reviews F1–F9, F10–F15, F16–F23, F24–F28, F29–F33, F34–F37, F38–F42,
-F43–F47, F48–F51, F52–F55, F56–F59, F60–F65, F66–F72 + dev handoff
-below.
+F43–F47, F48–F51, F52–F55, F56–F59, F60–F65, F66–F72, F73–F77,
+F78–F84, F85–F89 + dev handoff below.
 Owner: Bor Hodošček
 Process: hammock-driven-design decision interview, session of 2026-08-24
 
@@ -729,373 +745,46 @@ advertises and protects it is origin-specific. Not a v1 probe.
 
 ### F13 → D16.1: Manifest `snh-manifest/1` — standalone normative specification
 
-**[EXTRACTED per round 14; per F84 (round 15) the protocol spec
-`docs/design/snh-protocol-v1.md` is the SOLE NORMATIVE source effective
-IMMEDIATELY — not at freeze. Everything below in this section is
-NON-NORMATIVE rationale and history; on any discrepancy the protocol
-spec wins, today. The amendment-history banners below are archaeology,
-not contract.]**
+**[EXTRACTED per round 14 (F84): `docs/design/snh-protocol-v1.md` is
+the SOLE NORMATIVE source. Body REPLACED per F88 (round 16): this
+section previously carried a full, exact-looking copy of the wire
+protocol that had drifted from the extracted spec — including
+governance fields removed by F82 — under a heading still reading
+"standalone normative specification". Git history preserves every
+superseded revision; what remains here is the decision trail.]**
 
-**(Rewritten in full per F25, round 4. This section is self-contained: it
-depends on NO superseded section. There is exactly ONE wire version:
-`schema: "snh-manifest/1"`. "D16.1" names the decision amendment, not a
-wire version — the "v1.1" label is retired. Status: draft awaiting
-reviewer re-review + owner approval; per F28 the freeze is NOT gated on
-O1/O2, which block Slice 3 only.)**
-
-**Canonical form.** Canonicalizer = `rfc8785-safe-integer-json-string-v1`
-(test vectors:
-`abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json`).
-No floats anywhere; all integers within the safe range; all arrays sorted
-as specified per field; object keys sorted per RFC 8785. Canonical bytes
-are unique for a given value. `manifest_id` = lowercase sha256 hex over
-the manifest's canonical bytes. External citation form
-`snh:1:release-manifest:<hex>`.
-
-**Required top-level fields (closed schema — no other members permitted):**
-
-1. `schema` — the literal string `"snh-manifest/1"`.
-2. `governance_event` — `null`, or the full artifact id
-   `snh:1:governance-event:<hex>` of the signed event this manifest
-   executes (F62). Non-null exactly when the manifest performs a
-   withdrawal or event-amendment; the event's own `kind` distinguishes
-   them — no separate `release_intent` field exists.
-   **[intent_id DELETED per F61 (round 12): it was compensation for the
-   retry algorithm — a large semantic-coordinate definition, assessment
-   coupling, uniqueness rules, and release_intent existed solely because
-   re-chaining changes manifest_id. The D17.1 retry protocol now uses
-   existing facts (retain the assembled manifest while pushing; after an
-   unknown push result, check reachability on the authoritative ref;
-   no-op a scheduled build when desired state matches the head).
-   Withdrawals and amendments change manifest CONTENT, so their
-   manifest_ids are already distinct. Nondeterministic output under
-   identical coordinates HALTS as a determinism defect — it is never
-   normalized into an "intent".]**
-3. `corpus` — `{upstream_origin (URL string), upstream_rev (commit hex)}`.
-4. **[`snapshot_date` DELETED per F72 (round-13 simplification,
-   adopted): a push retried across midnight either carried an inaccurate
-   publication date or changed identity for a non-content reason. The
-   publication date is now DERIVED from the accepted publication commit
-   (and the Zenodo record), entirely outside manifest identity —
-   separating content state from publication time and simplifying the
-   F67 no-op projection. No date of any kind remains inside manifest
-   bytes.]**
-5. `toolchain` — object mapping stage-id (ASCII `[0-9a-z-]` string) →
-   `{nix_closure_hash (string), stage_code_version (string)}`. Keys
-   sorted. Provenance and derivation-key input ONLY — never an input to
-   artifact identity.
-6. `selection_params` — object (string keys sorted; values strings or
-   safe-range integers only; `{}` when the inclusion rule takes no
-   parameters).
-7. `admission` — `{policy_id (string), policy_hash (sha256 hex of the
-   rights-policy bytes, value-plus-hash authority per D21),
-   inclusion_rule_id (string), inclusion_rule_hash (sha256 hex of the
-   rule's governing bytes), assessment_snapshot (full artifact id
-   `snh:1:assessment-snapshot:<hex>`), admission_report (full artifact id
-   `snh:1:admission-report:<hex>`)}`.
-   **Admission evidence (F24, restructured per F30):** two retained,
-   PUBLIC, content-addressed artifacts, separating domain roles —
-   assessments are FACTS; admitted/excluded/quarantined are the inclusion
-   RULE'S decisions:
-   - **`snh-assessment-snapshot/1`** commits, for every candidate in the
-     selected population, the versioned assessment FACTS per the
-     2026-07-11 assessment model (per rights-relevant contribution:
-     status ∈ {public-domain, in-copyright, undetermined,
-     **not-evaluated**}, jurisdiction, effective date, recorded basis;
-     the model's source_knowledge_state distinction retained where
-     applicable). **F35: `not-evaluated` (no completed assessment exists)
-     and `undetermined` (an assessment was performed and could not reach
-     a conclusion) are distinct knowledge states and must never be
-     collapsed. For every required contribution, the ABSENCE of a
-     completed assessment appears as an explicit `not-evaluated` fact —
-     never as an omitted contribution — so the admission report can prove
-     totality.** No admission decisions appear here.
-   - **`snh-admission-report/1`** records the rule's TOTAL PARTITION of
-     the snapshot's candidate population: `{schema, assessment_snapshot
-     (hex), policy_hash, inclusion_rule_id, inclusion_rule_hash, admitted
-     (sorted slugs), excluded ([{slug, reason_code}], sorted), quarantined
-     ([{slug, reason_code}], sorted)}` — every candidate appears exactly
-     once (anti-silent-loss at the admission boundary).
-   Both are published in the release commit as public admission evidence,
-   are permanent GC roots like every manifest-referenced artifact, and
-   resolve via `/blobs/sha256/<hex>`. Verifier obligations: fetch both by
-   hash; the report's embedded snapshot/policy/rule hashes match this
-   `admission` block; admitted ∪ excluded ∪ quarantined partitions the
-   snapshot's candidates exactly; and **(F38) `works[].slug` set =
-   admitted − withdrawn slugs** — NOT plain equality with admitted, since
-   withdrawal is a governance act, not an inclusion-rule decision: an
-   unchanged assessment/rule still ADMITS a withdrawn work, while the
-   work must leave `works`. Excluded and quarantined slugs must NEVER
-   appear in `works`. This keeps rights eligibility (admission evidence)
-   and governance withdrawal (`governance_event`) separate and both
-   verifiable.
-8. `works` — array sorted by `slug` as raw UTF-8 bytes ascending; slugs
-   ASCII `[0-9a-z_-]`, unique, no normalization. Each element:
-   `{slug, source_content_hash (sha256 hex of upstream source bytes),
-   artifacts}`. `artifacts` is an array sorted bytewise by `type`; each
-   element `{type, id, bytes}` where `type` ∈ the registry below, `id` is
-   the full artifact id string `snh:1:<type>:<sha256hex>` (lowercase hex;
-   the hash is over the artifact's exact published bytes), and `bytes` is
-   the artifact's exact byte length (non-negative safe integer). Every
-   work has exactly one artifact per applicable registry type — for
-   `snh-manifest/1` that is exactly `tei`, `plaintext`, `tei-validation`.
-9. `withdrawn` — array sorted by `slug` (same ordering rule), each
-   `{slug, event}` with `event` the full id
-   `snh:1:governance-event:<hex>` of the GOVERNING event (F62 — the
-   standalone tombstone artifact is DELETED: the event already carries
-   the public reason and statement, so a separate tombstone was one fact
-   represented twice — two hashes, two schemas, two resolution paths,
-   and cross-object equality rules for one withdrawal decision). No
-   `since` field (F19: `since = current manifest_id` is the unsolvable
-   self-reference; consumers derive "since" as the first chain manifest
-   whose withdrawn entry names the slug). Chain rules per the invariants
-   below.
-10. `validation_summary` — `{invalid_count (integer), invalid_slugs
-    (array of slugs, sorted)}`.
-11. `prev_manifest` — lowercase sha256 hex of the predecessor manifest's
-    canonical bytes; genesis = 64×"0".
-**Governance-event object (`snh-governance-event/1`, F40; collapsed with
-the tombstone per F62):** a PUBLIC, sanitized, canonical-bytes artifact
-(registry type `governance-event`, published in the release commit,
-GC-rooted, resolvable via `/blobs/sha256/<hex>`):
-`{schema: "snh-governance-event/1", kind (∈ {"withdrawal",
-"event-amendment"}), entries (array sorted by slug of `{slug,
-reason_code (∈ {"rights", "takedown-request", "data-defect", "other"}),
-statement (string, may be empty), amends (present only when kind =
-"event-amendment": the full id of the superseded governance event)}`),
-authority (the deciding role, e.g. "owner"), evidence_hash (sha256 hex
-of the private request/evidence record, or 64×"0" when none)}`.
-The event IS the public withdrawal record — reason and statement live
-here directly; there is no separate tombstone artifact. No dates in
-event bytes (withdrawal time derives from chain position). Affected
-slugs are DERIVED from `entries` (F45's principle survives the
-collapse: the offline governance signature authorizes the exact public
-RESULT — a compromised release key cannot substitute a false
-reason_code or statement, because the manifest merely POINTS at the
-signed event). Ordinary builds carry `governance_event: null` (upstream
-file deletions are builds — a work simply leaves `works`; withdrawal is
-a governance act, not a source event). Withdrawal governance is NOT an
-inclusion-rule parameter — never smuggled into `selection_params`.
-It is signed by the **directly pinned offline GOVERNANCE key** (O5a;
-F44's role separation kept): a compromised unattended-CI release key
-cannot withdraw works. (Revisit trigger: the owner may instead ratify
-release-key withdrawal authority explicitly; the distinct role is the
-fail-closed default, reviewer-ratified round 8.) The private
-request/evidence (which may contain personal data) stays
-access-controlled, bound by `evidence_hash`.
-**Signature filename/resolution:** the event's detached signature (raw,
-per F64) is stored in the release commit at `governance/<hex>.sig`
-beside a convenience copy at `governance/<hex>.json` (authoritative
-bytes remain the CAS blob; the verifier resolves
-`governance_event` → blob → signature at that fixed path).
-**O3 under the collapse (F62): option (b) becomes the event-amendment
-rule above — a slug's governing event id may change only via an event
-whose entry's `amends` names the superseded event; withdrawal
-permanence is unchanged. Option (a) remains "no amendment kind exists".
-The owner's O3 choice is still pending and still gates the freeze.**
-
-**Type registry (closed, permanent names; pruned round 12):** per-work
-types `tei`, `plaintext`, `tei-validation` (the only types permitted in
-`works[].artifacts`); release-level types `release-manifest`,
-`assessment-snapshot`, `admission-report`, `governance-event`
-(referenced from `withdrawn`, the chain, `admission`, and
-`governance_event` — never from `works[].artifacts`). **`tombstone` is
-DELETED (F62 — collapsed into the governance event); there is no receipt
-type (F63) and no signature-envelope schema (F64).** Key-manifests and
-recovery statements are contingency designs outside v1 entirely
-(O5a/F48) and are not registry artifacts. ANY addition or removal is a
-new wire version `snh-manifest/2` — closed-schema consumers of
-`snh-manifest/1` must never meet unknown members. The public manifest
-lists public artifacts only. **Private classes (parser-IR) stay in
-CAS/trace state with NO index schema (F65 — a "private archive index
-with its own schema" repeated the F57 shadow-manifest problem; there is
-no authorized private-archive consumer or settled access policy; derive
-an export only when an authorized archival destination exists).**
-(Per F71/F77 there is no "archived" lifecycle state — `published` is
-the only stored state; archival is an observed predicate. "archived"
-survives only as informal prose, never as a schema or state value.) No
-receipt fields exist in the manifest (F11).
-
-**Uniqueness and cross-field invariants (verifier-enforced, chain-level
-where marked):**
-- `works[].slug` unique; `withdrawn[].slug` unique; the two slug sets are
-  DISJOINT.
-- Chain: the `withdrawn` SLUG SET is a monotonic extension of the
-  predecessor's — a withdrawn slug never leaves the map, and an entry
-  can never be silently dropped (silent drop ≠ reinstatement;
-  reinstatement in v1 does not exist — it would require an explicit
-  reinstatement event in a future wire version). **Whether a slug's
-  governing EVENT ID may ever change is owner decision O3 (F31), recast
-  by the F62 collapse, to be resolved BEFORE freeze:**
-  - **Option (a) — fully immutable:** the `{slug, event}` pair is
-    carried verbatim forever; correcting a mistaken reason_code or
-    statement requires wire v2 (no "event-amendment" kind exists).
-  - **Option (b) — amendable but permanent (facilitator's and
-    reviewer's recommendation):** a slug's governing event id may change
-    ONLY via an event-amendment whose entry's `amends` names the
-    superseded event (an audited correction chain); withdrawal itself
-    remains permanent.
-  The verifier enforces whichever the owner ratifies.
-- Governance transition invariants (F34/F39, recast per F61/F62;
-  amendment binding FROZEN per F68, round 13 — "each amends chain
-  valid" was underspecified and never required the changed entry to
-  point at the CURRENT manifest's event):
-  - Event structure: `entries` is NON-EMPTY with unique slugs; in a
-    `"withdrawal"` event NO entry has `amends`; in an
-    `"event-amendment"` event EVERY entry has `amends`.
-  - `governance_event = null` ⇔ an ordinary build; `withdrawn` equals
-    the predecessor's verbatim.
-  - Event kind `"withdrawal"` ⇒ the ADDED `withdrawn` entries' slugs
-    equal EXACTLY the event's `entries` slugs; **each added
-    `withdrawn[slug].event == this manifest's `governance_event`**;
-    every unaffected work's entry is verbatim-unchanged; all publication
-    coordinates (corpus, toolchain, admission, selection_params) equal
-    the predecessor's; the only `works` changes are the removals of the
-    affected slugs.
-  - Event kind `"event-amendment"` (O3(b) only) ⇒ the CHANGED
-    `withdrawn` entries' slugs equal exactly the event's `entries`
-    slugs; for each amended slug, **`amends` ==
-    `predecessor.withdrawn[slug].event`** (an amendment can neither skip
-    nor overwrite an intervening correction — the chain is linear by
-    construction); the referenced superseded event contains EXACTLY ONE
-    entry for that same slug; **each changed `withdrawn[slug].event ==
-    this manifest's `governance_event`**; the withdrawn slug set, all of
-    `works`, and all publication coordinates are verbatim-unchanged.
-  - Mixed build/governance changes are PROHIBITED in one manifest —
-    consecutive manifests, in any order (D17.1's single chain already
-    serializes).
-- Each `withdrawn` entry's slug appears in its governing event's
-  `entries`.
-- `invalid_count == count(invalid_slugs)`; `invalid_slugs` ⊆ works'
-  slugs, sorted; the summary re-derivable from the per-work
-  `tei-validation` artifacts.
-- Every artifact `id` hash is 64 lowercase hex chars; `bytes` matches the
-  stored blob's length.
-
-**Signature binding, wire format, and filenames (F33; simplified per
-F64, round 12 — the `snh-sig/1` envelope is DELETED: with exactly one
-pinned key per role and one algorithm, its key_id, algorithm, and copied
-signed_context were all determined by object type and pinned
-configuration).** The manifest's canonical bytes are stored at
-`releases/<manifest_id>.json`; its signature is DETACHED at
-`releases/<manifest_id>.json.sig`. A `.sig` file is the **raw 64-byte
-Ed25519 signature** over the domain-separated message — for manifests
-`snh-manifest-sig/1:<manifest_id>`, for governance events
-`snh-governance-event-sig/1:<event hex>` — never over re-serialized
-JSON, never inside the hashed bytes.
-**Exact encodings (F69, round 13 — deleting the envelope removed a JSON
-schema, NOT the signature protocol; these bytes are normative and get
-conformance vectors before Slice 2):**
-- The signed MESSAGE is the exact ASCII bytes of the domain-separated
-  string (all characters are ASCII; UTF-8 coincides). NO trailing
-  newline, no BOM, no other framing.
-- A `.sig` file is EXACTLY 64 raw bytes — no encoding, no newline.
-- A `.pub` file is EXACTLY 65 bytes: 64 lowercase ASCII hex characters
-  (encoding the 32 raw Ed25519 public-key bytes) followed by one LF.
-- A key FINGERPRINT is the lowercase sha256 hex over the DECODED 32 raw
-  key bytes — never over `.pub` file bytes.
-- The term `key_id` is RETIRED from normative v1 (it has no consumer;
-  "fingerprint" as defined above is the only key-identity term). It
-  returns with the envelope at the rotation trigger.
-Honest inventory (F69): v1 = **four canonical JSON object schemas PLUS
-fixed raw signature and key encodings** — the encodings are wire
-contracts too, merely not JSON ones. A versioned envelope is
-reintroduced only when O5a's second-key/rotation trigger fires (see the
-contingency appendix).
-
-**v1 verification rules (O5a — two DIRECTLY PINNED disjoint keys; the
-verifier selects the key from the signed object's KIND):**
-- **Manifest signature:** verifies against the pinned **RELEASE key**
-  (online, held by CI — authenticates that Soranoha issued the release).
-- **Governance-event signature:** verifies against the pinned
-  **GOVERNANCE key** (offline, owner-held — authenticates
-  withdrawal/amendment authority; disjoint per F44's ratified
-  separation, so a compromised CI key cannot withdraw works).
-Both keys are pinned in the published promise document AND in a
-machine-readable key list in the repository; there is no in-band key
-rotation in v1 (see F49 below).
-
-**Key bootstrap material (F46, restated for O5a; encodings per F69 — a
-fingerprint alone cannot verify anything; the verifier needs public-key
-BYTES):** the public keys are published at the fixed paths
-**`keys/release.pub`** and **`keys/governance.pub`** in the publication
-repository (file format per F69: 64 lowercase hex chars + LF), with
-their fingerprints (sha256 over the decoded 32 raw bytes) stated
-out-of-band. A verifier decodes the file, and accepts the key ONLY when
-its fingerprint equals the corresponding out-of-band pin — the files
-are convenience copies; the fingerprints are the trust anchor.
-
-**Key-compromise rule (F49; failure semantics made precise by F55 —
-"archived releases remain valid" conflated BYTE IDENTITY with
-AUTHORSHIP: during an unknown-duration compromise an attacker may have
-signed and archived releases before detection; their bytes and artifact
-ids verify, but their status as AUTHORIZED Soranoha releases is
-contested):**
-- Content-addressed artifact identifiers ALWAYS continue to identify
-  exact bytes — that guarantee never depends on any key.
-- The official release chain FREEZES at the last INDEPENDENT
-  pre-incident checkpoint. **F59: an archive-verified release is NOT
-  automatically such a checkpoint — archive verification is reported by
-  the very release key under investigation, and SWH proves preservation
-  of bytes, not Soranoha's independent authorization of them.
-  Independent checkpoints are the Zenodo deposits: the initial F54
-  trust-anchor deposit and each quarterly deposit (Slice 4 cadence, D13)
-  **contain the actual canonical manifest bytes + signature (or a
-  repository snapshot) — never a record that merely "names" a head
-  (F63)**. **F70: a separate domain is independent only if its CONTROL
-  PLANE is — if release CI also holds the Zenodo credential, CI + key
-  compromise can publish a malicious release AND its matching
-  "independent" checkpoint. Checkpoint deposits MUST use credentials
-  unavailable to release CI: a manual owner action, or a separately
-  controlled MFA workflow. **F75 (round 14): the "published paper/docs"
-  channel was circular — the promise document is a Slice-4 deliverable,
-  AFTER the first signed release. A concrete, ALREADY-TRUSTED
-  pre-release discovery channel must carry the Zenodo concept DOI + both
-  fingerprints BEFORE publication (candidates: the owner's institutional
-  researcher page, an ORCID-linked publication record, or manually
-  distributed verifier configuration — owner names one). Credential
-  separation protects checkpoint CREATION; trusted discovery protects
-  checkpoint SELECTION; both are required.** The Slice-4 promise
-  document restates them.** If compromise
-  occurs before the first post-genesis checkpoint, everything after
-  genesis may remain authorship-contested — that is the honest v1
-  exposure.**
-- Release signatures after that checkpoint are CONTESTED until an
-  out-of-band notice names the accepted cutoff.
-- Release-key compromise HALTS publication.
-- Governance-key compromise or loss HALTS governance operations and any
-  publication requiring them.
-No recovery wire protocol is needed for any of this — only these
-semantics. An out-of-band incident notice is published, and the next
-trust epoch is designed deliberately — never improvised mid-incident.
-"First incident" is NOT a tooling trigger: recovery machinery, if ever
-wanted, is built and drilled BEFORE any promise that requires it (see
-the contingency appendix triggers).
-
-**[MOVED TO CONTINGENCY per O5a/F48.]** Key-manifest histories,
-chain-ancestry validity windows (F43), root-of-trust bootstrap, and
-recovery statements are NOT part of normative v1 — v1 has exactly two
-directly pinned static keys and no in-band rotation, so there is nothing
-for windows to govern. The full designs (F27–F46) are preserved,
-explicitly NON-FROZEN, in the contingency appendix with their activation
-triggers.
-
-In all cases the verifier CONSTRUCTS the domain-separated message from
-the artifact it holds and verifies the raw signature against the pinned
-key selected by object kind (F64).
-
-The release name `r<YYYYMMDD>-<manifest_id[0:12]>` is DERIVED, never
-embedded in manifest bytes. **F76 (round 14) removes the ambiguity:
-the date is the UTC calendar date of the COMMITTER timestamp on the
-unique commit that advances `releases/HEAD` to that manifest.** (The
-reviewer's alternative — `r<manifesthash12>` with dates displayed only
-as separate metadata — is recorded as an owner option before first
-release; the dated form is kept because the owner's D3/D13 intent was
-an identifier from which the date is inferable. Zenodo's deposit date
-stays citation metadata, never an alternative derivation of the name.)
-
-**Resolver:** artifact id → `/blobs/sha256/<hex>` (+ type-suffixed
-convenience path).
+Decision trail (normative text: the spec section cited):
+- **Canonical form, manifest field table, type registry** — spec
+  §1–§3. Deletions on the way: `intent_id` (F61 — the retry protocol
+  uses existing facts), `snapshot_date` (F72 — no dates in manifest
+  bytes), the standalone tombstone artifact (F62 — one fact, one
+  representation), `since` (F19 — unsolvable self-reference), the
+  private archive index (F65).
+- **Governance event `{schema, kind, entries}`** — spec §4. Origin
+  F40; F62 collapsed event+tombstone; F82 removed
+  `authority`/`evidence_hash`; F68 froze the linear amendment binding;
+  O3 (a: immutable / b: event-amendment) still pending — facilitator
+  and reviewer recommend (b).
+- **Admission evidence pair** — spec §5. F24/F30 facts-vs-decisions
+  separation; F35 `not-evaluated` ≠ `undetermined`; F38 `works` =
+  admitted − withdrawn; F81→F87 totality as an assembler invariant.
+- **Raw signature/key/HEAD encodings** — spec §6. F33 origin; F64
+  deleted the `snh-sig/1` envelope; F69 exact byte contracts;
+  `key_id` retired.
+- **Two directly pinned disjoint keys** — spec §7. O5a; F44 role
+  disjointness; F46 bootstrap bytes; F54 pinning sequence.
+  Key-manifest/rotation/recovery designs live in the contingency
+  appendix, non-frozen.
+- **Verifier invariants and chain rules** — spec §8. F34/F39/F68
+  governance transitions; F78 append-onlyness; F85 single-parent
+  linearity + explicit genesis; F89 report-field binding.
+- **Publication transaction** — spec §9. D17.1/F10 CAS boundary; F66
+  git-head/manifest-head separation; F73/F79 superseded by F86
+  current-state reconciliation.
+- **Naming, compromise semantics, checkpoints** — spec §10.
+  F49/F55/F59/F70 compromise semantics; F75 pre-release discovery
+  channel; F76 dated name superseded by F83 dateless canonical id
+  (owner ratification pending).
 
 ### F14 → D21: Rights/registry admission restored to the boundary
 abc's fail-closed rights authority exists and currently blocks release
@@ -1980,6 +1669,67 @@ plus both simplifications and the cleanup.
   drifted phrasing corrected to "no additional freezes between Slice 2
   and Slice 3".
 
+## External design review round 16 (2026-08-25) — findings F85–F89
+
+Reviewer verdicts: round 15 substantially cleaner but F78/F79/F81 not
+fully closed; Slices 0–1 remain ready; the protocol should not freeze
+yet. Reviewer RECOMMENDS ratifying F83 (the signed typed manifest id is
+the authentic identity; dates stay citation metadata) and moving the
+optional `r<hash12>` display convention out of the protocol — both
+applied/recorded.
+
+- **F85 (merge commits bypass F78 — Blocker)** — F78 checked only
+  FIRST-PARENT transitions: a fast-forwarded MERGE places the old
+  authoritative head on its second parent while its first-parent
+  history carries a replacement chain from zero — every round-15 check
+  passes, yet history is replaced. Fix: publication commits have
+  exactly ONE parent (the fetched expected commit); merges on the
+  publication branch are invalid and rejected. Genesis also made
+  explicit (`prev_manifest` = 0, `governance_event` = null,
+  `withdrawn` = []) — the ordinary-build predecessor rule was
+  undefined at genesis.
+- **F86 (reconciliation assumed ONE intervening operation — Blocker)**
+  — the round-15 pairwise cases overlap once several publications land
+  before the loser refetches (identical build wins, THEN a withdrawal
+  lands: same projection + different state matches both "determinism
+  failure" and "build vs governance"), and "derived state" was
+  undefined (it cannot mean manifest bytes — `prev_manifest` changes).
+  Fix: CURRENT-STATE reconciliation. Build: recompute the desired
+  projection and expected derived content under the current head's
+  `withdrawn`; equal → success; equal coordinates with unexplained
+  content differences → determinism failure; otherwise requeue.
+  Governance: exact event already applied → success; else validate the
+  unchanged event against the current head and append, or halt on
+  conflict. Handles any number/ordering of intervening commits;
+  build-vs-governance reassembly is subsumed by requeue; the pairwise
+  race taxonomy leaves production logic.
+- **F87 (F81 circular and non-executable — Blocker)** — candidate
+  selection was said to run "under the inclusion rule's selection
+  semantics", but the rule CONSUMES the snapshot's assessment facts —
+  selection must precede the snapshot; and a hash binds rule bytes
+  without resolving them ("the vocabulary travels with its hash" is
+  false without a resolver). Resolution (facilitator's choice, per the
+  F51 ratchet — public recomputation has no current consumer and would
+  require new resolver machinery): the SIMPLER v1 — candidate-set
+  equality is an ASSEMBLER invariant against the transactionally
+  consistent selection; no public-recomputation claim. The stronger
+  option (selection defined independently of rights inclusion +
+  hash-resolvable selector/policy/rule bytes) is recorded as the
+  upgrade path.
+- **F88 (finish the authority cleanup — adopted)** — the spec claimed
+  sole authority while F80 called future schemas+vectors "the frozen
+  objects". Split defined: JSON Schemas govern STRUCTURE; the protocol
+  governs SEMANTIC/STATE invariants; vectors demonstrate both;
+  disagreement blocks freezing. This ledger's D16.1 body — hundreds of
+  stale, exact-looking protocol lines including F82-removed governance
+  fields, under a "standalone normative specification" heading — is
+  replaced by a decision trail with spec links; Git history preserves
+  the archaeology (−327 lines net).
+- **F89 (report-field mismatch — mechanical)** — the verifier required
+  the report's "snapshot/policy/rule ids and hashes" to match
+  `admission`, but the report has no `policy_id`. Invariant corrected
+  to the fields actually present.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;
@@ -2165,7 +1915,7 @@ back by citing the previous release tag.
   facts per the 2026-07-11 model) — dev with owner, **frozen before
   Slice 2 and exercised on the assessed fixture (F58)**. Its identity,
   retention, resolution, and verifier semantics are already normative in
-  D16.1 (F30). Full-corpus assessment DATA migration remains a Slice-3
+  the protocol spec §5 (F30). Full-corpus assessment DATA migration remains a Slice-3
   prerequisite — schema and migration are separate obligations.
 - O3 (governing-event mutability: immutable vs event-amendment, recast
   by F62) — owner, BEFORE the D16.1 freeze (F31). Facilitator and

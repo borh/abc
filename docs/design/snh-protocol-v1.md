@@ -5,8 +5,12 @@ Status: **NORMATIVE DRAFT — the sole normative source, effective now
 a decision-log entry), not precedence. Open items marked inline: the
 owner's O3 choice, the assessment-snapshot content fields, and the F83
 naming ratification. Per F80, the FROZEN objects are the executable
-JSON Schemas plus the conformance vectors (§11) — this prose binds
-their meaning; the schemas eliminate interpretation.
+JSON Schemas plus the conformance vectors (§11). Authority split
+(F88): the JSON Schemas govern STRUCTURE; this document governs
+SEMANTIC and STATE invariants; the conformance vectors demonstrate
+both. Any disagreement among the three BLOCKS the freeze — and after
+it, is a defect resolved by a decision-log entry, never by silently
+preferring one artifact.
 
 This document contains only the live protocol. Rationale, decision
 history, and superseded designs live in the design ledger
@@ -119,8 +123,10 @@ minimal content schema, exercised on the Slice-2 fixture.]**
 Every candidate appears exactly once across the three sets. Report
 `reason_code` values match `^[0-9a-z-]+$`; their DOMAIN is defined by
 the content-addressed inclusion rule (`inclusion_rule_id` +
-`inclusion_rule_hash`) — the schema constrains syntax, the rule's
-vocabulary travels with its hash (F80).
+`inclusion_rule_hash`). The hash BINDS that vocabulary but does not
+resolve it (F87 — v1 publishes no resolver for rule bytes): the
+schema constrains syntax publicly; the semantic domain is checked by
+the ASSEMBLER against the rule bytes it holds.
 
 ## 6. Encodings (wire contracts; conformance vectors required)
 
@@ -175,30 +181,50 @@ Structural:
   artifacts.
 
 Admission (fetch both evidence artifacts by hash):
-- The report's embedded snapshot/policy/rule ids and hashes match
-  `admission`.
+- The report's fields match `admission` field-for-field over the
+  fields the report actually carries (F89 — the report has NO
+  `policy_id`): report `assessment_snapshot` ==
+  `admission.assessment_snapshot`; report `policy_hash`,
+  `inclusion_rule_id`, `inclusion_rule_hash` equal the corresponding
+  `admission` values.
 - admitted ∪ excluded ∪ quarantined partitions the snapshot's
   candidates exactly.
-- **Totality binding (F81 — snapshot and report could otherwise omit
-  the same work undetected):** the snapshot's candidate set must equal
-  the SELECTED CANDIDATE POPULATION derived from `corpus` +
-  `selection_params` — the verifier recomputes the selection from the
-  content-addressed catalog at `upstream_rev` under the bound inclusion
-  rule's selection semantics and requires set equality. An invariant,
-  not a wire field.
+- **Totality binding (F81/F87 — snapshot and report could otherwise
+  omit the same work undetected):** the snapshot's candidate set must
+  equal the selected candidate population derived from `corpus` +
+  `selection_params`. In v1 this is an ASSEMBLER invariant: candidate
+  selection PRECEDES assessment (it cannot run "under the inclusion
+  rule", which consumes the snapshot's facts — the round-15 wording
+  was circular), and the assembler checks set equality against the
+  transactionally consistent selection it derived before emitting the
+  manifest. v1 makes NO public-recomputation claim — rule and policy
+  bytes are not publicly resolvable. Public verifiers still check the
+  partition and field-binding invariants above. Upgrade path, if
+  independent totality verification is ever wanted: a
+  candidate-selection definition independent of rights inclusion plus
+  hash-resolvable selector/policy/rule bytes.
 - `works[].slug` set = admitted − withdrawn slugs. Excluded and
   quarantined slugs never appear in `works`.
 
 Chain (walk `prev_manifest` from `releases/HEAD` to the zero genesis;
 reject a HEAD not matching a valid chain head):
-- **Append-onlyness (F78 — a fast-forward commit could otherwise point
-  HEAD at a fresh manifest with `prev_manifest` = 0, silently replacing
-  the logical chain while preserving Git ancestry):** for EVERY
-  first-parent commit transition on the publication branch where
+- **Linear history (F85 — a merge could otherwise bypass the
+  round-15 first-parent rule: the old authoritative head rides the
+  MERGE's second parent while its first-parent line carries a
+  replacement chain from zero, and every round-15 check passes):**
+  every commit on the publication branch except the initial one has
+  EXACTLY ONE parent — the previously accepted head. Merge commits on
+  the publication branch are INVALID; the verifier rejects them.
+- **Append-onlyness (F78):** for every commit transition where
   `releases/HEAD` changes from H to M, `M.prev_manifest == H` MUST
   hold. Only the branch's initial commit may contain the zero HEAD.
-  This also makes "the unique HEAD-advancing commit" (§10)
-  demonstrable.
+  With F85's linearity this makes "the unique HEAD-advancing commit"
+  (§10) demonstrable.
+- **Genesis (F85 — the predecessor-relative rules below are otherwise
+  undefined without a predecessor):** the genesis manifest has
+  `prev_manifest` = 64×"0", `governance_event` = `null`, and
+  `withdrawn` = `[]` — explicit values replacing the ordinary-build
+  predecessor rules at the chain's start.
 - The `withdrawn` slug set is a monotonic extension of the
   predecessor's; entries are never silently dropped; reinstatement does
   not exist in v1.
@@ -229,29 +255,41 @@ origin; fast-forward-only push is the compare-and-swap.
 1. Fetch Git commit C (branch head).
 2. Read manifest head H = C:`releases/HEAD`.
 3. Assemble manifest M with `prev_manifest` = H.
-4. Create commit C′: M's blobs, `releases/<manifest_id>.json` + `.sig`,
+4. Create commit C′ with EXACTLY ONE parent, C (F85 — never a merge):
+   M's blobs, `releases/<manifest_id>.json` + `.sig`,
    `releases/HEAD` = M's manifest_id.
 5. Push with C as the expected ref value.
 6. UNKNOWN result: if M is on the accepted manifest chain (walked from
    the current `releases/HEAD`) — success. If M is ABSENT, proceed
    exactly as for REJECTION (step 7); the two cases converge (F79).
-7. REJECTION — operation-specific reconciliation (build/build rules per
-   F79):
-   - Fetch and FULLY VERIFY the new accepted head.
-   - **Build vs build:** same F67 projection AND same derived state
-     (identical manifest content ⇒ identical manifest_id) → SUCCESS
-     (already satisfied). Same projection but DIFFERENT derived state →
-     DETERMINISM FAILURE — halt (consistent with the halt rule below).
-     DIFFERENT projections → HALT/REQUEUE from the new head — never
-     blindly publish the loser, which could regress upstream state.
-   - **Build vs governance** (the only automatic reassembly) →
-     reassemble against the new governance state (inherit `withdrawn`;
-     recompute `works`, `validation_summary`); retry.
-   - **Governance event vs build/disjoint governance** → revalidate the
-     UNCHANGED signed event against the new predecessor; re-chain;
-     retry.
-   - **Slug conflict or stale `amends`** → HALT for fresh offline
-     governance authorization. Never rewrite or re-sign an event.
+7. REJECTION — CURRENT-STATE reconciliation (F86 — the round-15
+   pairwise race taxonomy assumed exactly one intervening operation
+   and left "derived state" undefined; the loser now consults only
+   the CURRENT head, so any number and ordering of intervening
+   commits reconciles identically):
+   - Fetch and FULLY VERIFY the new accepted head; DISCARD the
+     assembled M.
+   - **Build:** recompute the desired projection `{corpus, toolchain,
+     selection_params, admission}`.
+     - Projection DIFFERS from the head's → REQUEUE an ordinary build
+       from the head. (This subsumes round-15's build-vs-governance
+       reassembly: the fresh build inherits the head's `withdrawn` by
+       construction; a stale loser is never blindly published.)
+     - Projection EQUAL → recompute the expected derived content
+       under that projection and the head's `withdrawn` (`works` =
+       admitted − withdrawn, artifact ids, `validation_summary`).
+       Equal to the head's → SUCCESS (the desired state is already
+       published, whoever published it). Different → DETERMINISM
+       FAILURE — halt (same coordinates, different output; consistent
+       with the halt rule below).
+   - **Governance:** the event's artifact id already appears as some
+     chain manifest's `governance_event` → SUCCESS (already applied).
+     Otherwise validate the UNCHANGED signed event against the current
+     head under the §8 transition invariants and append; if it no
+     longer validates (a slug already withdrawn by another event, or
+     `amends` no longer naming the head's governing event) → HALT for
+     fresh offline governance authorization. Never rewrite or re-sign
+     an event.
 
 Scheduled-build no-op: build iff the projection
 `{corpus, toolchain, selection_params, admission}` differs from the
@@ -264,13 +302,14 @@ determinism defect.
 
 - Naming (F83, **[OWNER-RATIFICATION PENDING — amends D13's dated
   form]**): the canonical, citable identity is the full typed manifest
-  id `snh:1:release-manifest:<hex>`; an optional DISPLAY alias
-  `r<manifest_id[0:12]>` may be shown. Publication dates are
+  id `snh:1:release-manifest:<hex>`. Publication dates are
   presentation/citation metadata only (from the accepted commit and the
   Zenodo record) — never part of the name, because a Git committer
   timestamp is unsigned: the same signed manifest would otherwise
   acquire a different derived name when repackaged in another commit
-  history.
+  history. Display conventions (e.g. a short hash prefix such as
+  `r<manifest_id[0:12]>`) are presentation concerns OUTSIDE this
+  protocol (round 16) — they carry no identity semantics.
 - Stored lifecycle state: `published` only.
 - archive-verified is an OBSERVED reproducible predicate: SWH full
   visit + expected publication commit + all referenced blobs present +
@@ -296,10 +335,15 @@ approves — authored BEFORE that review, not transcribed after it.
 5. `.pub` and `releases/HEAD` byte-exact fixtures (65 bytes each),
    including the pre-genesis zero HEAD.
 6. Invariant fixtures: each §8 rule with one passing and one failing
-   case — including the F78 first-parent HEAD-transition rule (a
-   chain-replacement attempt with `prev_manifest` = 0 must FAIL) and
-   the F81 totality binding; the §9 reconciliation matrix (build/build
-   same-projection-same-state, same-projection-different-state
-   [determinism failure], different-projections [requeue],
-   build/governance, disjoint withdrawals, same-slug withdrawal race,
-   competing amendments).
+   case — including the F85 linearity rule (a MERGE commit carrying
+   the old head on its second parent must FAIL), the F78
+   HEAD-transition rule (a chain-replacement attempt with
+   `prev_manifest` = 0 must FAIL), an explicit genesis fixture (zero
+   `prev_manifest`, null `governance_event`, empty `withdrawn`), and
+   the F87 assembler-side totality check; the §9 current-state
+   reconciliation cases — build: state-already-published success,
+   same-projection-different-content determinism failure,
+   changed-projection requeue (including after an intervening
+   withdrawal, and after MULTIPLE intervening commits per F86);
+   governance: already-applied success, revalidate-and-append,
+   conflicting-withdrawal halt, stale-`amends` halt.

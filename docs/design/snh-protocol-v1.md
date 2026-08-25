@@ -6,7 +6,8 @@ a decision-log entry), not precedence. No open items remain: the
 assessment-snapshot content fields were fixed 2026-08-25 at the
 pre-Slice-2 freeze (§5); F83, O5a, O3(b), and O1 are owner-ratified.
 The freeze package (four schemas + conformance vectors, §11) is
-AUTHORED and awaits the freeze review. Per F80, the FROZEN objects are the executable
+AUTHORED, revised per freeze-review round 1 (F147–F154), and awaits
+re-review. Per F80, the FROZEN objects are the executable
 JSON Schemas plus the conformance vectors (§11). Authority split
 (F88): the JSON Schemas govern STRUCTURE; this document governs
 SEMANTIC and STATE invariants; the conformance vectors demonstrate
@@ -96,7 +97,10 @@ evidence commitment returns only with a concrete audit consumer and
 encoding.)
 
 - `reason_code` ∈ {"rights", "takedown-request", "data-defect", "other"}.
-- `statement`: string, may be empty. No dates in event bytes.
+- `statement`: string, may be empty. No dedicated date or timestamp
+  FIELD exists in event bytes (F150); substantive dates may appear
+  inside the free-form `statement` text — the enforceable rule is
+  structural, not a prohibition on prose content.
 - `entries` is non-empty with unique slugs. In a `withdrawal` event NO
   entry has `amends`; in an `event-amendment` event EVERY entry has
   `amends` (the superseded event's artifact id).
@@ -122,12 +126,16 @@ inconclusive) are distinct and never collapsed; absence of a completed
 assessment is an explicit `not-evaluated` fact, never an omitted
 contribution. No admission decisions appear here.
 
-Content shape (fixed 2026-08-25 at the pre-Slice-2 freeze; the frozen
-schema is authoritative for structure per F88):
+Content shape (fixed 2026-08-25 at the pre-Slice-2 freeze; amended per
+freeze-review F149 — the O1 rule assesses BOTH the exact work/edition
+and every rights-relevant contribution, so both fact levels are
+required. The schema is authoritative for structure per F88):
 
 ```
 {schema: "snh-assessment-snapshot/1",
  candidates: [{slug,
+               work_assessment: {status, jurisdiction,
+                                 effective_date, basis},
                contributions: [{contribution_id, status,
                                 jurisdiction, effective_date,
                                 basis}]}]}   // candidates sorted by slug;
@@ -135,17 +143,29 @@ schema is authoritative for structure per F88):
                                              // contribution_id; both unique
 ```
 
+- `work_assessment` (F149): the assessment fact for the exact
+  work/edition itself, same shape as a contribution fact minus
+  `contribution_id`; required for every candidate.
 - `contribution_id`: string matching `^[0-9a-z][0-9a-z:_-]*$`, naming
   the rights-relevant contribution (e.g. `author:000035`,
   `annotator:001357`); unique within its candidate; every candidate has
   at least one contribution.
-- status `not-evaluated` ⇔ `jurisdiction`, `effective_date`, and
-  `basis` are all `null`. Every other status (including
-  `undetermined` — the assessment was performed) carries all three
-  non-null: `jurisdiction` lowercase (`^[a-z][a-z0-9-]+$`, e.g. `jp`),
-  `effective_date` = the as-of date of the recorded facts
-  (`YYYY-MM-DD`; dates are permitted here — the no-dates rule binds
+- Fact rule (both levels): status `not-evaluated` ⇔ `jurisdiction`,
+  `effective_date`, and `basis` are all `null`. Every other status
+  (including `undetermined` — the assessment was performed) carries all
+  three non-null: `jurisdiction` lowercase (`^[a-z][a-z0-9-]+$`, e.g.
+  `jp`), `effective_date` = the as-of date of the recorded facts
+  (`YYYY-MM-DD`; a REAL calendar date per the F154 semantic rule below;
+  dates are permitted here — the structural no-date-field rule binds
   manifest and event bytes), `basis` a non-empty recorded-basis string.
+
+Semantic boundary rules (F154 — enforced by assembler/verifier code,
+never by JSON Schema `format`, whose enforcement is inconsistent
+across validators):
+- every non-null `effective_date` must be a real proleptic-Gregorian
+  calendar date (schema syntax alone admits e.g. `2026-99-99`);
+- `corpus.upstream_origin` (§3) must be an absolute URI with a scheme
+  and a non-empty host.
 
 **`snh-admission-report/1`** — the inclusion rule's TOTAL PARTITION:
 
@@ -322,6 +342,10 @@ Structural:
 - `invalid_count == count(invalid_slugs)`; `invalid_slugs` ⊆ works'
   slugs, sorted; summary re-derivable from the per-work `tei-validation`
   artifacts.
+- Semantic boundary rules (F154, checked in code — never via JSON
+  Schema `format`): `corpus.upstream_origin` is an absolute URI with a
+  scheme and non-empty host; every non-null `effective_date` in the
+  assessment snapshot is a real proleptic-Gregorian calendar date.
 
 Admission (fetch both evidence artifacts by hash):
 - The report's fields match `admission` field-for-field over the

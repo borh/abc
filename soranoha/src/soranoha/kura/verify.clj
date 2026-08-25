@@ -1,6 +1,6 @@
-;; Separate verifier entry point (R1): runs in CI, never on the build path.
-;; Slice-1 scope: the ledger determinism (uniqueness) query and a fixity
-;; sweep over CAS blobs referenced by traces.
+;; Separate verifier entry point: runs in CI, never on the build path.
+;; Covers the ledger determinism (uniqueness) query and a fixity sweep over
+;; CAS blobs referenced by traces.
 (ns soranoha.kura.verify
   (:require [babashka.fs :as fs]
             [soranoha.core.hash :as hash]
@@ -10,7 +10,7 @@
 (defn fixity-sweep
   "Rehash every trace-referenced blob present in the CAS. Returns
   {:checked n :missing [hex...] :corrupt [hex...]}. Missing blobs are cache
-  misses (F99), reported but not corruption; a hash mismatch is corruption."
+  misses, reported but not corruption; a hash mismatch is corruption."
   [{:keys [cas-dir trace]}]
   (reduce
    (fn [acc hex]

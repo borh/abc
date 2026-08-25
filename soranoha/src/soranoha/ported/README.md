@@ -1,9 +1,9 @@
-# soranoha.ported — the abc copy lane (D12/R2)
+# soranoha.ported — the abc copy lane
 
 Verbatim copies of abc's per-work pipeline code, `abc.tools.*` →
-`soranoha.ported.*`. Divergence is prevented by the Slice-1
+`soranoha.ported.*`. Divergence is prevented by the kernel's
 byte-equivalence acceptance test, not by review of these files; do not
-"improve" them here. This lane retires with abc (post-JADH2026, D6/D7).
+"improve" them here. This lane retires together with abc.
 
 Deliberate deviations from the abc originals, each with no
 artifact-byte consequence:

@@ -4,7 +4,7 @@
 ;; map and returns {output-name -> ^bytes}. The engine hashes inputs into the
 ;; derivation key, returns cached output hashes on a hit (skipping `f`
 ;; entirely), and on a miss executes, writes every output blob to the CAS
-;; FIRST, then commits the trace row (blob-before-trace: a crash between the
+;; first, then commits the trace row (blob-before-trace: a crash between the
 ;; two leaves orphan blobs, never a trace pointing at missing bytes).
 (ns soranoha.kura.engine
   (:require [babashka.fs]
@@ -41,7 +41,7 @@
   Returns {:outputs {name hex} :trace-key k :cached? bool}.
 
   A trace hit whose output blobs are missing from the CAS is treated as a
-  MISS (F99: missing blobs are recoverable cache misses) and re-executed."
+  miss (missing blobs are recoverable cache misses) and re-executed."
   [{:keys [cas-dir trace] :as store} stage inputs]
   (validate-stage! stage)
   (let [trace-key (trace/derivation-key stage inputs)

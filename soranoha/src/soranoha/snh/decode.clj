@@ -1,14 +1,14 @@
 (ns soranoha.snh.decode
-  "BOUNDARY DECODE (spec section 1, F137/F142): ONE reusable operation applied
-  to each of the four protocol JSON objects (the section 2 release-level
-  registry) and to NOTHING ELSE, on both the assembler and verifier sides:
+  "Boundary decode: the one reusable operation applied to each of the four
+  release-level protocol JSON objects and to nothing else, on both the
+  assembler and verifier sides:
 
-    1. reject duplicate object keys AT PARSE, before schema validation;
+    1. reject duplicate object keys at parse, before schema validation;
     2. parse without coercion (integral JSON numbers only — any float or
        lexically non-integral number fails);
-    3. validate the parsed value against the type's frozen JSON Schema;
-    4. canonicalize the same value and require the STORED bytes to EQUAL the
-       canonical bytes — equivalent-but-noncanonical JSON is INVALID;
+    3. validate the parsed value against the type's JSON Schema;
+    4. canonicalize the same value and require the stored bytes to equal the
+       canonical bytes — equivalent-but-noncanonical JSON is invalid;
     5. recompute the id from the stored bytes: snh:1:<type>:<sha256hex>.
 
   All other artifacts (e.g. tei-validation JSON) are exact published bytes

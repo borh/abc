@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:snh:schema:governance-event:1",
   "title": "snh-governance-event/1",
-  "description": "Structure of a governance event (spec section 4). Kind-conditional shape: in a withdrawal NO entry has `amends`; in an event-amendment EVERY entry has `amends` (O3(b)). Entry ordering (sorted by slug) and slug uniqueness are semantic rules checked by the verifier. No dates in event bytes; no `authority`/`evidence_hash` (F82).",
+  "description": "Governance event structure. Kind-conditional shape: in a withdrawal no entry has `amends`; in an event-amendment every entry has `amends`. Entry ordering (sorted by slug) and slug uniqueness are semantic rules checked by the verifier. No dedicated date or timestamp field exists; substantive dates may appear inside the free-form statement text.",
   "oneOf": [
     {
       "type": "object",

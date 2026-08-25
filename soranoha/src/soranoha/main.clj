@@ -1,11 +1,11 @@
 ;; Kernel CLI. `build` runs the full per-work stage graph at an aozorabunko
 ;; checkout revision into the kura store; output is CAS + trace results plus
-;; a DISPOSABLE run report (F57: a query/export over the trace store — no
-;; independent identity, no schema, no retention promise). No manifest, no
-;; signing, no publishing here (F52: those enter at Slice 2+ on admission
-;; evidence this kernel never sees). `compare` checks per-work TEI/plaintext
-;; bytes against a reference tree THROUGH the trace store; `verify` runs the
-;; kura determinism + fixity report.
+;; a disposable run report (a query/export over the trace store — no
+;; independent identity, no schema, no retention promise). No manifest,
+;; signing, or publishing here: those operate on admission evidence this
+;; kernel never sees. `compare` checks per-work TEI/plaintext bytes against
+;; a reference tree through the trace store; `verify` runs the kura
+;; determinism + fixity report.
 (ns soranoha.main
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
@@ -173,7 +173,7 @@
 
 (defn compare!
   "Acceptance: per-work byte equality of TEI + plaintext against a
-  reference tree, COUNTED THROUGH THE TRACE STORE — artifact hashes come
+  reference tree, counted through the trace store — artifact hashes come
   from the run report (a trace-store export) and bytes from the CAS."
   [{:keys [root reference report]}]
   (let [_ (config/root root)
@@ -225,8 +225,8 @@
    :assets-root {:coerce :string}
    :reference {:coerce :string}
    :report {:coerce :string}
-   ;; default pinned to the measured F7 envelope (peak RSS < 8 GiB with -Xmx4g);
-   ;; 0 = one worker per available processor
+   ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
+   ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}
    :limit {:coerce :long}
    :clj-toolchain-id {:coerce :string :default default-clj-toolchain-id}})

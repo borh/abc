@@ -1,4 +1,4 @@
-;; The one canonicalizer (design ledger D15/D16; protocol spec section 1):
+;; The one canonicalizer of this component:
 ;; `rfc8785-safe-integer-json-string-v1`. Ported byte-for-byte from
 ;; abc.tools.jcs (the safe-integer path only — abc's legacy canonical-json-*
 ;; paths are frozen there and have no consumer in this component). The shared

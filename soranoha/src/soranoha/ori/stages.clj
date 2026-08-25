@@ -5,7 +5,7 @@
 ;; nothing but their function. Toolchain identity: subprocess stages hash the
 ;; actual binary (+ mapping) bytes; validate-tei hashes the TEI profile trio;
 ;; pure Clojure stages carry the run-supplied clj toolchain id (over- rather
-;; than under-invalidation, R6).
+;; than under-invalidation).
 (ns soranoha.ori.stages
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
@@ -31,7 +31,7 @@
       (throw (ex-info (str what " unavailable; set " k) {:env_var k}))))
 
 (defn resolve-adapter
-  "Resolve the ab-aozora adapter, converter, and v2 mapping ONCE from the
+  "Resolve the ab-aozora adapter, converter, and v2 mapping once from the
   environment the flake wrapper supplies (never per work)."
   []
   {:aozora-bin (require-env "AB_AOZORA_BIN" "ab-aozora parser")
@@ -163,7 +163,7 @@
            "plaintext" (utf8 (:plaintext rendered))}))})
 
 (defn validate-tei-stage
-  "TEI bytes -> validation record. Include-and-flag (R7): a failed
+  "TEI bytes -> validation record. Include-and-flag: a failed
   validation is an artifact, never an exclusion."
   [profile]
   {:stage-id "validate-tei"

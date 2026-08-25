@@ -1,34 +1,34 @@
 {
-  "keys": 
+  "keys":
   {
-    "release": 
+    "release":
     {
       "seed": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
       "pub": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
       "fingerprint": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9"
     },
-    "governance": 
+    "governance":
     {
       "seed": "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb",
       "pub": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
       "fingerprint": "39f713d0a644253f04529421b9f51b9b08979d08295959c4f3990ee617f5139f"
     },
-    "nonmember": 
+    "nonmember":
     {
       "seed": "c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7",
       "pub": "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025",
       "fingerprint": "dac073e0123bdea59dd9b3bda9cf6037f63aca82627d7abcd5c4ac29dd74003e"
     }
   },
-  "manifest": 
+  "manifest":
   {
     "artifact": "release-manifest-valid.json",
-    "manifest_id": "b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
-    "message": "snh-manifest-sig\/1:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
+    "manifest_id": "84b03a3bb73fc505e7d990a51972be9ad0c557a52ad0f646297cef6b980eee61",
+    "message": "snh-manifest-sig\/1:84b03a3bb73fc505e7d990a51972be9ad0c557a52ad0f646297cef6b980eee61",
     "signer": "release",
-    "sig": "b3a6f92500be9c673136ca5d9d834588799da87e3f7147e38a9e27d127bfe1c9bc4f5f864d298ff6d950be40968d59edee0dcf3a2ac45638863965dd1ba95b0d"
+    "sig": "749089edd0a5e2a62c585e344032fcc1d6afcd946a11dafaa2dc99369e84cf3d6e8191034bef190035702636504333cc29d73d0669aa6219e1b501db5aae6d04"
   },
-  "event": 
+  "event":
   {
     "artifact": "governance-event-withdrawal-valid.json",
     "event_hex": "bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
@@ -36,47 +36,75 @@
     "signer": "governance",
     "sig": "d43c26f20175cdbac2d7761f586581512d6914be0f90ab8e9f8c3bca8b812d5389b73ef2639d19492e5e740932bfe8a3651b96666c83e73101d29152bfdfec0b"
   },
-  "cross_role": [
+  "verification_cases": [
     {
-      "case": "release key signing a governance event",
+      "case": "release key over the manifest's own message",
+      "type": "release-manifest",
+      "subject": "84b03a3bb73fc505e7d990a51972be9ad0c557a52ad0f646297cef6b980eee61",
+      "sig": "749089edd0a5e2a62c585e344032fcc1d6afcd946a11dafaa2dc99369e84cf3d6e8191034bef190035702636504333cc29d73d0669aa6219e1b501db5aae6d04",
+      "expect": true
+    },
+    {
+      "case": "governance key over the event's own message",
       "type": "governance-event",
-      "message": "snh-governance-event-sig\/1:bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+      "subject": "bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+      "sig": "d43c26f20175cdbac2d7761f586581512d6914be0f90ab8e9f8c3bca8b812d5389b73ef2639d19492e5e740932bfe8a3651b96666c83e73101d29152bfdfec0b",
+      "expect": true
+    },
+    {
+      "case": "cross-role: governance key signed the manifest message",
+      "type": "release-manifest",
+      "subject": "84b03a3bb73fc505e7d990a51972be9ad0c557a52ad0f646297cef6b980eee61",
+      "sig": "ef8fd83723915450ec2f5147410bd2142c60113e4b96ed1e5f98089928883fb650600a9cc1ec794b1afec1ece3e0871863fe7ad819a25134516ecc9035dc5103",
+      "expect": false
+    },
+    {
+      "case": "cross-role: release key signed the event message",
+      "type": "governance-event",
+      "subject": "bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
       "sig": "abb6e1d5b5c8e5d40febec06eb9229d7fd8334f130f246c30b7e760a475b414e887e827d7c4170a5931188a8ca6a114f9d3afdb600c9e6fdff8c47fb4b0d630a",
       "expect": false
     },
     {
-      "case": "governance key signing a manifest",
+      "case": "non-member key signed the manifest message",
       "type": "release-manifest",
-      "message": "snh-manifest-sig\/1:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
-      "sig": "95a1c8a00d61a527bb40b1bf8d109baf6a4861f5e49ace496c9f82141880a4ce9de3247d0f5464702adf142664bdec3c83c808b9a35e0728e6af8ca2bed64e0b",
+      "subject": "84b03a3bb73fc505e7d990a51972be9ad0c557a52ad0f646297cef6b980eee61",
+      "sig": "092a7da7bebdbf5883f6207f082a65555d47ae6ed953457eee49dec06281fa53ce77d0c67dc6b3d65c4d48340bac398a9db3aa0a3f7dc92845de1b11db203709",
       "expect": false
     },
     {
-      "case": "non-member key signing a manifest",
-      "type": "release-manifest",
-      "message": "snh-manifest-sig\/1:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
-      "sig": "720d1216bd790e0713abdfd112a94f12f653572b690ade7e8c2e6e1b260dec10dd4f782b8323a022530a7c494ff6ba68bdebb62b8253102eeff2d2f5fee33500",
-      "expect": false
-    },
-    {
-      "case": "non-member key signing a governance event",
+      "case": "non-member key signed the event message",
       "type": "governance-event",
-      "message": "snh-governance-event-sig\/1:bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+      "subject": "bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
       "sig": "862b2908d8c7b4b71d977191f3f3b6cdccf82b552709874940feec077b0792c32439b36198aabdc77b6370ae9d20577442e09242c5a4ac5d5bc5c37d020fda02",
       "expect": false
     },
     {
-      "case": "role member signing its own kind (manifest)",
+      "case": "wrong domain: release key signed the event-domain message over the manifest hex",
       "type": "release-manifest",
-      "message": "snh-manifest-sig\/1:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
-      "sig": "b3a6f92500be9c673136ca5d9d834588799da87e3f7147e38a9e27d127bfe1c9bc4f5f864d298ff6d950be40968d59edee0dcf3a2ac45638863965dd1ba95b0d",
-      "expect": true
+      "subject": "84b03a3bb73fc505e7d990a51972be9ad0c557a52ad0f646297cef6b980eee61",
+      "sig": "7bc977522284e4d298a86ef4d25372279c3d665bae96ca02072c976d1699d2ae6604df804c464f1b31b8f097efa25f9199cc13688ad6c246ae4e61bd88a9e601",
+      "expect": false
     },
     {
-      "case": "role member signing its own kind (event)",
+      "case": "wrong domain: governance key signed the manifest-domain message over the event hex",
       "type": "governance-event",
-      "message": "snh-governance-event-sig\/1:bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
-      "sig": "d43c26f20175cdbac2d7761f586581512d6914be0f90ab8e9f8c3bca8b812d5389b73ef2639d19492e5e740932bfe8a3651b96666c83e73101d29152bfdfec0b",
-      "expect": true
+      "subject": "bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+      "sig": "2b703805d8db9835f6ccf0ddfc61124f8077bd0bf4562a6b6d098b45dad5cb4f2c61418dbb028f120f1c48669fa6de0b0b6177c4ca1b6d9a3168dbf2b7a57309",
+      "expect": false
+    },
+    {
+      "case": "wrong subject: release key signed the manifest message for a different hex",
+      "type": "release-manifest",
+      "subject": "84b03a3bb73fc505e7d990a51972be9ad0c557a52ad0f646297cef6b980eee61",
+      "sig": "ce05f25042eab388062dadb1012fde9f62d19a0e09b6b923468675f626ef8a69d4cd2f92d859f9be6ae39f4696bed7eb5aaadf8dbb96e5d1bb9e7a12cb98e70d",
+      "expect": false
+    },
+    {
+      "case": "wrong subject: governance key signed the event message for a different hex",
+      "type": "governance-event",
+      "subject": "bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+      "sig": "48b03015730c432c689355fae9afb881fef1886657f76fbb47e9d6b68c3e5537be98b5c24cdd7d3b74aca4912ad7e5b6e04a6df1dbf2da9dd7d253d5b1050609",
+      "expect": false
     }]
 }

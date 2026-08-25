@@ -8,8 +8,9 @@ This repository is the Soranoha monorepo. It contains three main components:
   implementation (Slices 1–2 of
   `docs/design/2026-08-24-publication-rearchitecture.md`): content-addressed
   store + constructive-trace engine + copied per-work pipeline, plus the
-  frozen snh-protocol-v1 schemas, conformance vectors, boundary decode, and
-  wire/signature encodings (`src/soranoha/snh/`, `resources/snh/`). Zero
+  snh-protocol-v1 freeze-candidate schemas, conformance vectors, boundary
+  decode, and wire/signature encodings (`src/soranoha/snh/`,
+  `resources/snh/`). Zero
   requires into abc namespaces; abc-owned assets (record schemas, TEI
   profile) are consumed via an explicit assets root.
 
@@ -59,10 +60,11 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 - `soranoha/` owns the build kernel (CAS, trace store, copied renderers)
   AND — transferred 2026-08-25 with the first Slice-2 manifest work (design
   ledger D20-as-amended/F56) — snh publication-schema and manifest-identity
-  ownership: the frozen protocol schemas (`soranoha/resources/snh/schemas/`),
-  the conformance vectors (`soranoha/resources/snh/vectors/`), boundary
-  decode, wire encodings, and admission-evidence formats. After the D16.1
-  freeze these change only via a decision-log entry in the design ledger.
+  ownership: the freeze-candidate protocol schemas
+  (`soranoha/resources/snh/schemas/`), the conformance vectors
+  (`soranoha/resources/snh/vectors/`), boundary decode, wire encodings, and
+  admission-evidence formats. After the D16.1 freeze these change only via a
+  decision-log entry in the design ledger.
 - ab-validator owns parser/adaptor measurement, AAT evidence, parser-IR conversion evidence, and corpus reports.
 - Parser outputs are supporting evidence; source-authority measurements are the authority for Aozora markup coverage.
 - Plaintext output should remain visible body text only; ruby, source apparatus, provenance, and other metadata belong in TEI/custom sidecars.

@@ -1,6 +1,6 @@
 ;; SQLite (WAL) constructive-trace store. One trace row per derivation key
 ;; (stage-id, stage-version, toolchain-id, input-hashes) -> output-hashes,
-;; plus an append-only history ledger recording every actual EXECUTION as the
+;; plus an append-only history ledger recording every actual execution as the
 ;; determinism monitor: two history rows for the same key with different
 ;; outputs is the violation the verifier queries for.
 (ns soranoha.kura.trace
@@ -103,7 +103,7 @@
           (jdbc/execute! conn ["SELECT outputs_json FROM trace"]))))
 
 (defn trace-rows
-  "All trace rows as maps (build-index queries; disposable views only, F57)."
+  "All trace rows as maps (build-index queries; disposable views only)."
   [{:keys [conn] :as store}]
   (locking store
     (mapv (fn [row]

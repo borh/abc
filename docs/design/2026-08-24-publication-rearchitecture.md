@@ -28,8 +28,9 @@ numbers live in the findings sections and Git history, not here):
   fixity-checked); all F7 bounds met at the pinned config (-Xmx4g,
   concurrency 16): cold 465.5 s, peak RSS 6.22 GiB, warm no-op 6.1 s.
   The kernel is policy-blind (F52/F60).
-- **Slice 2 STARTED 2026-08-25; freeze package AUTHORED, awaiting
-  the freeze review**: the four hand-written JSON Schemas
+- **Slice 2 STARTED 2026-08-25; freeze package AUTHORED and revised
+  per freeze-review round 1 (F147–F154, all applied), awaiting
+  re-review**: the four hand-written JSON Schemas
   (`soranoha/resources/snh/schemas/`) + table-driven conformance
   vectors (`soranoha/resources/snh/vectors/`, exercised by
   `soranoha.snh.conformance-test` — spec §11 items 1–5; item 6's
@@ -2355,6 +2356,55 @@ Slices 0–1 unaffected.
   recorded in the O5a amendment history) and a duplicate of the
   Slice-3 F12 gate (real-bytes/predetermined-budgets detail folded
   into the Slice-3 preconditions).
+
+## Freeze review round 1 (2026-08-25) — findings F147–F154; NOT APPROVED at 1c9dcfd2; all findings applied
+
+Verdict: package close; four contract defects block D16.1. All eight
+findings applied same day; suite green locally and hermetically
+(28 tests, 149 assertions).
+
+- **F147 (signature not bound to artifact — Blocker, applied)** — the
+  public verify operation accepted a caller-supplied message, so a
+  signature over one domain could be presented under another label.
+  Fix: `verify-artifact-signature?` takes (type, artifact hex) and
+  constructs the domain-separated message internally; arbitrary-message
+  verification is private. Vector table extended with wrong-domain and
+  wrong-subject rejection rows (10 cases total).
+- **F148 (v1 key cardinality unenforced — Blocker, applied)** — role
+  sets accepted any non-empty size, permitting unsupported in-chain key
+  addition. Fix: pinned-keys configuration is scalar
+  `{:release hex :governance hex}` — invalid cardinality is
+  unrepresentable; set-shaped values rejected.
+- **F149 (snapshot cannot express O1 — Blocker, applied)** — the
+  ratified rule assesses the exact work/edition AND every contribution;
+  the schema had only contribution facts. Fix: required candidate-level
+  `work_assessment` (same fact shape, no contribution_id); spec §5 and
+  fixtures updated; missing-work-assessment negative vector added.
+- **F150 (valid vector contradicted "no dates in event bytes" —
+  Blocker, applied)** — rule clarified to the enforceable structural
+  form: no dedicated date/timestamp field; substantive dates may appear
+  in the free-form statement.
+- **F151 (schema-validity test vacuous — applied)** — replaced the
+  map?/string? assertions with `ported-schema/schema-valid!` over all
+  four schemas.
+- **F152 (suite outside the Nix/check path — applied, D12 fulfilled
+  rather than amended)** — `soranoha/flake.nix` (clj-nix deps cache,
+  `checks.<system>.clj-nix-tests` runs the full kaocha suite
+  hermetically with the shared canonicalization fixture); wired into
+  root `check-no-build` (flake check --no-build) and `evidence-gate`
+  (actual run), plus a focused `just soranoha-tests` recipe.
+- **F153 (unused schema-file hash — applied)** — deleted; git + $id +
+  schemas + vectors establish freeze identity.
+- **F154 (semantic boundary rules undefined — applied)** — spec §5/§8
+  now require real proleptic-Gregorian `effective_date` values and an
+  absolute-URI-with-host `upstream_origin`, enforced in
+  `soranoha.snh.semantic` (never JSON Schema `format`); tested
+  including 2026-99-99 / 2027-02-29 rejections.
+- Cleanup: trailing whitespace in generated vector JSON eliminated;
+  "frozen" wording replaced with freeze-candidate in AGENTS.md.
+  Owner rule adopted same session: code comments and names stand on
+  their own — no plan/finding references (ADR links only) and no
+  all-caps emphasis; soranoha sources swept accordingly.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

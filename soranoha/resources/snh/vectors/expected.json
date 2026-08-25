@@ -3,17 +3,17 @@
     {
       "file": "release-manifest-valid.json",
       "type": "release-manifest",
-      "id": "snh:1:release-manifest:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7"
+      "id": "snh:1:release-manifest:84b03a3bb73fc505e7d990a51972be9ad0c557a52ad0f646297cef6b980eee61"
     },
     {
       "file": "assessment-snapshot-valid.json",
       "type": "assessment-snapshot",
-      "id": "snh:1:assessment-snapshot:fd2e0273f634dc7d0d2b286d65ef5508cb0401a300d461593ae2710993ee5aad"
+      "id": "snh:1:assessment-snapshot:f16ccdff762ff998d61f6aef4b6ad641b229562a2deb226498d7794a50b93217"
     },
     {
       "file": "admission-report-valid.json",
       "type": "admission-report",
-      "id": "snh:1:admission-report:cc8f8fa4e435779fd89b6c048c23a50cc75b6012c5a7e5ec13acbcad7b828579"
+      "id": "snh:1:admission-report:2088a628c47f28ab038b22014ecad89d354096b2cf863b491d4f005253ea3907"
     },
     {
       "file": "governance-event-withdrawal-valid.json",
@@ -53,6 +53,11 @@
     },
     {
       "file": "assessment-snapshot-invalid-not-evaluated-basis.json",
+      "type": "assessment-snapshot",
+      "reason": "schema-invalid"
+    },
+    {
+      "file": "assessment-snapshot-invalid-missing-work-assessment.json",
       "type": "assessment-snapshot",
       "reason": "schema-invalid"
     },

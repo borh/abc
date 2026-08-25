@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:snh:schema:release-manifest:1",
   "title": "snh-manifest/1",
-  "description": "Structure of a release manifest (spec section 3). This schema governs STRUCTURE only (F88); ordering, uniqueness, and cross-object invariants are semantic rules in the protocol spec, checked by the verifier. Closed schema: no members beyond those listed. No dates of any kind appear in manifest bytes.",
+  "description": "Release manifest structure. This schema governs structure only; ordering, uniqueness, and cross-object invariants are semantic rules checked by the verifier. Closed schema: no members beyond those listed. No dates of any kind appear in manifest bytes.",
   "type": "object",
   "additionalProperties": false,
   "required": [

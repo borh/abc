@@ -56,6 +56,7 @@ validate-migration-eval-cache-smoke:
 check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check validate-migration-eval-cache-smoke root-flake-check-no-build
 	@(cd abc && {{nix_eval}} flake check --no-build)
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
+	@(cd soranoha && {{nix_eval}} flake check --no-build)
 
 monorepo-adr-governance:
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
@@ -71,6 +72,13 @@ evidence-gate:
 	{{nix_eval}} build "./abc#checks.$system.clj-nix-focused-tests" \
 		"./abc#checks.$system.tei-profile-drift" --print-build-logs
 	@{{nix_eval}} run ./abc#validate-design-bundle
+	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
+	{{nix_eval}} build "./soranoha#checks.$system.clj-nix-tests" --print-build-logs
+
+# Soranoha kernel + snh conformance suite, hermetic via the clj-nix deps cache.
+soranoha-tests:
+	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
+	{{nix_eval}} build "./soranoha#checks.$system.clj-nix-tests" --print-build-logs
 
 # release-parser-reproducible: the two release binaries must rebuild
 # byte-identically. `nix build --rebuild` re-realizes each derivation and fails

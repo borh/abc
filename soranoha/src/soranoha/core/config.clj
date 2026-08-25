@@ -1,6 +1,5 @@
-;; The kernel reads exactly ONE root (design review R3: config sprawl must not
-;; recur — a second environment variable is a design smell). Every other path
-;; is derived here and nowhere else.
+;; The kernel reads exactly one root; a second environment variable is a
+;; design smell. Every other path is derived here and nowhere else.
 (ns soranoha.core.config
   (:require [babashka.fs :as fs]))
 

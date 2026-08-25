@@ -1,5 +1,5 @@
-;; Content-addressed store: objects/sha256/<hex[0:2]>/<hex>, APPEND-ONLY.
-;; No GC exists in this kernel (F99): a missing blob is a recoverable cache
+;; Content-addressed store: objects/sha256/<hex[0:2]>/<hex>, append-only.
+;; No GC exists in this kernel: a missing blob is a recoverable cache
 ;; miss, never corruption. Writes are atomic (temp file + ATOMIC_MOVE) so a
 ;; concurrent duplicate put is harmless.
 (ns soranoha.kura.cas

@@ -19,8 +19,15 @@ numbers live in the findings sections and Git history, not here):
   repository + operational current-tip authority / resolver + mirrors
   (Radicle optional) — replaceable byte distribution / SWH —
   preservation / Zenodo — independent authorship checkpoint.
-- **Slices 0–1: READY NOW** — no owner action, no freeze dependency;
-  the kernel is policy-blind (F52/F60).
+- **Slices 0–1: DONE (accepted 2026-08-25)** — see
+  `soranoha/docs/slice-1-acceptance.md`. Golden reference regenerated
+  and F4-verified (two builds, 0 artifact diffs, 17,602 works); kernel
+  reproduces 17,602/17,602 works byte-equal through the trace store;
+  double build = identical output with 0 executed stages (**R4
+  CLOSED**); verifier clean (0 determinism violations, 159,538 blobs
+  fixity-checked); all F7 bounds met at the pinned config (-Xmx4g,
+  concurrency 16): cold 465.5 s, peak RSS 6.22 GiB, warm no-op 6.1 s.
+  The kernel is policy-blind (F52/F60).
 - Before Slice 2 (dev work only — no owner decision remains): the
   four hand-written JSON Schemas + table-driven conformance vectors
   for the freeze review (including the minimal assessment-snapshot
@@ -282,7 +289,9 @@ Simplicity:
   every other path derives from it. A second env var is a design smell.
 
 Correctness / determinism:
-- R4 **Mitigated (probed 2026-08-24; confirm in slice 1)** — grep of
+- R4 **CLOSED (confirmed 2026-08-25)** — Slice-1 double-build produced an
+  identical works map with 0 executed stages; verifier found 0 determinism
+  violations across 159,538 blobs. Original probe: grep of
   tei_header/parser_ir_tei/parser_ir_plaintext/materialize_publication found
   NO wall-clock usage; all TEI dates derive from upstream metadata
   (`aozora_modified`, `first_edition_year`) — compliant with the rule
@@ -333,8 +342,8 @@ trivial (Q1). Security/privacy: **Mitigated** — public-domain data, no PII
 beyond public author metadata; threats = cache poisoning (only CI writes,
 R5), key compromise (R11), equivocation (hash chain + SWH).
 
-R7/R8 decided by owner 2026-08-24. R4 remains OPEN (probed clean; closes only
-on slice-1 double-build). R5 and R9-GC were superseded by the external review
+R7/R8 decided by owner 2026-08-24. R4 CLOSED 2026-08-25 (slice-1 double-build
+identical with 0 executed stages). R5 and R9-GC were superseded by the external review
 (see F1/F2 → D17/D18). No other Blocking findings from this pass.
 
 ## External design review (2026-08-24) — findings F1–F9 and resolutions

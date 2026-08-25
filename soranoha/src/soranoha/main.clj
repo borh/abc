@@ -225,7 +225,9 @@
    :assets-root {:coerce :string}
    :reference {:coerce :string}
    :report {:coerce :string}
-   :concurrency {:coerce :long :default 0}
+   ;; default pinned to the measured F7 envelope (peak RSS < 8 GiB with -Xmx4g);
+   ;; 0 = one worker per available processor
+   :concurrency {:coerce :long :default 16}
    :limit {:coerce :long}
    :clj-toolchain-id {:coerce :string :default default-clj-toolchain-id}})
 

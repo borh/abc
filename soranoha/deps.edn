@@ -25,4 +25,5 @@
    :main-opts ["-m" "kaocha.runner"]}
 
   :soranoha/build
-  {:main-opts ["-m" "soranoha.main"]}}}
+  {:jvm-opts ["-Xmx4g"]
+   :main-opts ["-m" "soranoha.main"]}}}

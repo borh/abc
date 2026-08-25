@@ -170,6 +170,27 @@ both fingerprints before the first signed release.
 
 ## 8. Verifier invariants
 
+THE verifier primitive (F105):
+`verify_repository_at(repository_view, C, pinned_keys)`. Every read —
+commits, trees, manifests, signatures, events, artifacts,
+`releases/HEAD` — goes through the single NON-FALLBACK
+`repository_view`; there is no secondary data source, so an incomplete
+view FAILS instead of silently completing from elsewhere (an
+implementation must not be able to fetch a missing signature or blob
+from the live resolver and declare an incomplete archive complete).
+Instantiations: live verification supplies the fetched authoritative
+repository; archive verification supplies ONLY the SWH snapshot;
+mirrors and local clones supply themselves. The invariants below are
+what the primitive checks, with C:`releases/HEAD` as the target head.
+
+PUBLICATION COMMIT (F106 — a LOCAL definition; uniqueness is a
+consequence of the linear-history invariants below, not a separate
+search): C is a publication commit iff
+- C has exactly one parent P;
+- P:`releases/HEAD` = H and C:`releases/HEAD` = M with M ≠ H;
+- M.prev_manifest = H;
+- C contains M and its required verification closure.
+
 Structural:
 - `works[].slug` unique; `withdrawn[].slug` unique; the sets DISJOINT.
 - Every artifact id hash is 64 lowercase hex; `bytes` matches the
@@ -355,14 +376,14 @@ determinism defect.
   co-presence does not join the two facts: a later archive snapshot
   can contain expected commit C while its branch head points to a
   different manifest, and verifying "the repository" could then
-  validate that other release while C is invalid). ONE operation:
-  `verify_repository_at(C, pinned_keys)` — treats C:`releases/HEAD`
-  as the target head, verifies the chain and all §7–§8 invariants
-  from THAT head, and requires that C is the unique transition that
-  advanced its parent's manifest head to that value. Then
-  `archive_verified(C)` := C is present in the archive AND
-  `verify_repository_at(C, pinned_keys)` succeeds using archived data
-  only. Archive verification claims repository-closure completeness
+  validate that other release while C is invalid). Definition:
+  `archive_verified(C)` := C is present in the archived view, C is a
+  PUBLICATION COMMIT (§8, F106 — uniqueness follows from the
+  linear-history invariants, no search required), AND
+  `verify_repository_at(archived_view, C, pinned_keys)` (§8, F105)
+  succeeds — the archived SWH snapshot is the SOLE repository view;
+  nothing is read from the live origin or resolver.
+  Archive verification claims repository-closure completeness
   plus the public §7–§8 invariants — nothing more (F102). Latest
   result stored as a disposable report/CI status; citation
   eligibility is computed from it.
@@ -405,5 +426,8 @@ approves — authored BEFORE that review, not transcribed after it.
    conflicting-withdrawal halt, stale-`amends` halt; and the F101
    archive-binding NEGATIVE fixture — an archived snapshot whose
    current head verifies but whose expected commit C is invalid (or
-   is not the unique head-advancing transition) must FAIL
-   `archive_verified(C)`.
+   is not a publication commit per F106) must FAIL
+   `archive_verified(C)`; and the F105 view-isolation NEGATIVE
+   fixture — an archived view lacking a required signature/blob that
+   the live origin still has must FAIL archive verification (no
+   fallback reads).

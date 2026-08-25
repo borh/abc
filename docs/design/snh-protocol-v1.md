@@ -3,9 +3,8 @@
 Status: **NORMATIVE DRAFT — the sole normative source, effective now
 (F84).** The D16.1 freeze changes stability (no further changes without
 a decision-log entry), not precedence. Open items marked inline: the
-owner's O3 choice, the O5a ratification (§7, F114), and the
-assessment-snapshot content fields (F83 naming was owner-ratified
-2026-08-25). Per F80, the FROZEN objects are the executable
+owner's O3 choice and the assessment-snapshot content fields (F83 and
+O5a are owner-ratified). Per F80, the FROZEN objects are the executable
 JSON Schemas plus the conformance vectors (§11). Authority split
 (F88): the JSON Schemas govern STRUCTURE; this document governs
 SEMANTIC and STATE invariants; the conformance vectors demonstrate
@@ -29,6 +28,13 @@ appendix for their activation triggers.
   bytes are unique for a given value.
 - Every content id is `sha256` lowercase hex over canonical bytes (for
   JSON objects) or exact published bytes (for artifacts).
+- BOUNDARY DECODE (F137 — ONE reusable operation applied to ALL FOUR
+  JSON wire formats, on both the assembler and verifier sides):
+  reject duplicate object keys; parse WITHOUT coercion; validate the
+  parsed value against its frozen JSON Schema; canonicalize that same
+  value; require the STORED bytes to EQUAL the canonical bytes;
+  recompute the id from those bytes. Equivalent-but-noncanonical
+  stored JSON (same value, different bytes) is INVALID.
 - Artifact id string form: `snh:1:<type>:<sha256hex>`.
 - `manifest_id` = sha256 hex over the manifest's canonical bytes.
   External citation form: `snh:1:release-manifest:<hex>`.
@@ -155,8 +161,8 @@ the ASSEMBLER against the rule bytes it holds.
 
 ## 7. Keys and verification
 
-**[O5a-PENDING (F114) — this section implements the amended O5a
-proposition; owner ratification outstanding.]**
+(Implements O5a — owner-RATIFIED 2026-08-25, exact corrected text
+including F125's incident condition.)
 
 Two disjoint ROLES, each a FIXED, directly pinned, non-empty SET of
 Ed25519 keys. FOR A GIVEN PUBLICATION CHAIN, the pinned sets are
@@ -256,7 +262,9 @@ Structural:
   `assessment-snapshot`/`admission-report`; `works[].artifacts[].id`
   type equals its `type` member); for every artifact the verifier
   FETCHES, it recomputes sha256 over the bytes and requires equality
-  with the id's hash component.
+  with the id's hash component; every JSON-format artifact
+  additionally passes the §1 BOUNDARY DECODE (F137 — stored bytes
+  must equal the canonical bytes of the validated value).
 - `invalid_count == count(invalid_slugs)`; `invalid_slugs` ⊆ works'
   slugs, sorted; summary re-derivable from the per-work `tei-validation`
   artifacts.
@@ -473,7 +481,10 @@ The four JSON Schemas and these vectors are what the freeze review
 approves — authored BEFORE that review, not transcribed after it.
 
 1. Canonicalization: existing shared vectors (§1).
-2. A complete valid manifest → canonical bytes → manifest_id.
+2. A complete valid manifest → canonical bytes → manifest_id; and the
+   F137 boundary-decode NEGATIVE vector — EQUIVALENT but NONCANONICAL
+   JSON (same value; reordered keys or altered whitespace) must be
+   REJECTED.
 3. A governance event (each kind) → canonical bytes → id.
 4. Signature: key bytes, message bytes, 64-byte signature for one
    manifest and one event; a governance signature from the SECOND

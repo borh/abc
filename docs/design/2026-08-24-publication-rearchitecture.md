@@ -21,17 +21,16 @@ numbers live in the findings sections and Git history, not here):
   preservation / Zenodo — independent authorship checkpoint.
 - **Slices 0–1: READY NOW** — no owner action, no freeze dependency;
   the kernel is policy-blind (F52/F60).
-- Before Slice 2: owner ratifies O3 (recommendation: b) + O5a; dev
-  authors the four JSON Schemas + conformance vectors for the freeze
-  review; the AGENTS.md manifest-ownership update (D20 as amended).
+- Before Slice 2: owner ratifies O3 (recommendation: b); dev authors
+  the four hand-written JSON Schemas + table-driven conformance
+  vectors for the freeze review; the AGENTS.md manifest-ownership
+  update (D20 as amended).
 - Before Slice 3: O1 + full-corpus assessment data; the deployment
   prerequisites below; the F75 pre-release discovery channel named.
-- Owner decisions OPEN: O1, O3 (recommendation: b), O5a (one-paragraph
-  proposition per F111, corrected per F112/F115 round 22; spec §7
-  marked [O5a-PENDING]), F75 channel.
-  Most recently ratified: O2a (2026-08-25 — Forgejo is the
-  authoritative protected HTTPS origin with conditional ref updates;
-  all other locations are downstream byte distribution), F83
+- Owner decisions OPEN: O1, O3 (recommendation: b), F75 channel.
+  Recently ratified: O5a (2026-08-25 — fixed pinned key sets per
+  chain, two governance hardware keys, degraded/halt semantics), O2a
+  (2026-08-25 — Forgejo authoritative origin architecture), F83
   (dateless naming).
 - Deployment prerequisites (operational tasks, NOT owner decisions —
   F108): O2b hostname/configuration + the F12 growth/SWH probes on
@@ -117,7 +116,7 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D16 | Wire formats: normative v1 = the protocol spec's FOUR canonical JSON schemas (manifest, assessment-snapshot, admission-report, governance-event) + fixed raw signature/key/`releases/HEAD` encodings; canonicalizer `rfc8785-safe-integer-json-string-v1`; closed type registry. FREEZE at the pre-Slice-2 review, whose approved objects are the executable JSON Schemas + conformance vectors (F80/F88). Full semantics: `snh-protocol-v1.md` (sole normative source). Amendment history: F3→F13 (D16.1) and rounds 3–19 (F16–F104) in the findings sections. | review rounds 2–19 | draft — cheap to change until the pre-Slice-2 freeze |
 | D17 | Publication = the spec §9 transaction: single-parent commit fast-forward-pushed to the protected branch (the remote ref is the CAS, D17.1/F10); rejection/unknown result → CURRENT-STATE reconciliation (discard the assembled manifest, refetch, recompute; F86); scheduled-build no-op on the F67 projection; nondeterminism halts. Amendment history: F1→F10→F61→F66/F67→F73/F79→F86 in the findings sections. | review rounds 2–16 | internal protocol, revisable |
 | D18 | Retention/archival: all published manifests + referenced blobs are permanent GC roots; the publication repo carries the published artifact bytes (bytes-in-git so SWH archives real bytes; accepted subject to the F12 growth probe, F93); stored lifecycle state = `published` only; archival status = a successful `archive_verification(view, C, keys)` observation report (spec §10, F97/F101/F113); citation eligibility requires a successful observation satisfying the current citation policy; independent authorship checkpoints = credential-separated Zenodo deposits (F70). Amendment history: F2→F11/F12→F63/F71→F93/F97/F101. | owner-endorsed + review rounds 2–19 | promise text frozen at first public release |
-| D19 | Trust: v1 = two disjoint ROLES with FIXED directly pinned Ed25519 key sets — RELEASE: one online CI key (manifests); GOVERNANCE: two offline owner-held hardware keys, generated on-device, stored separately (withdrawal/amendment; a signature verifies against any member) — **O5a-as-amended, owner ratification PENDING (F114)**. For a given publication chain the pinned sets are established at genesis and never change; changing them ends that chain; successor continuity is outside v1 (F112/F120). The anchor authenticates the role assignment, never a flat key list (F126). Raw detached signatures over domain-separated messages; fingerprints over decoded raw key bytes; key bytes/fingerprints live in the independent anchor + pinned verifier config only (F116). Known-destroyed governance device → DEGRADED one-key mode; unaccounted-for token → suspected compromise → HALT (F115); compromise of any member → HALT; chain freezes at the last credential-separated Zenodo checkpoint (F55/F59/F70); freshness deferred. Key-manifest/recovery designs stay in the non-frozen contingency appendix; activation trigger: BEFORE any set change, continuity promise, or freshness consumer — never mid-incident. Amendment history: F8→F22–F47→O5a/F48–F55→F112–F117. | review-adopted; O5a staging round 9; owner-directed set-of-2 + round-22 corrections | contingency activates per O5a trigger |
+| D19 | Trust: v1 = two disjoint ROLES with FIXED directly pinned Ed25519 key sets — RELEASE: one online CI key (manifests); GOVERNANCE: two offline owner-held hardware keys, generated on-device, stored separately (withdrawal/amendment; a signature verifies against any member) — **O5a-as-amended, owner-RATIFIED 2026-08-25**. For a given publication chain the pinned sets are established at genesis and never change; changing them ends that chain; successor continuity is outside v1 (F112/F120). The anchor authenticates the role assignment, never a flat key list (F126). Raw detached signatures over domain-separated messages; fingerprints over decoded raw key bytes; key bytes/fingerprints live in the independent anchor + pinned verifier config only (F116). Known-destroyed governance device → DEGRADED one-key mode; unaccounted-for token → suspected compromise → HALT (F115); compromise of any member → HALT; chain freezes at the last credential-separated Zenodo checkpoint (F55/F59/F70); freshness deferred. Key-manifest/recovery designs stay in the non-frozen contingency appendix; activation trigger: BEFORE any set change, continuity promise, or freshness consumer — never mid-incident. Amendment history: F8→F22–F47→O5a/F48–F55→F112–F117. | review-adopted; O5a staging round 9; owner-directed set-of-2 + round-22 corrections | contingency activates per O5a trigger |
 | D20 | **Ownership** (F6): TEI profile schemas consumed as explicit flake input from abc during migration (no schema copies). **Amended F56 (round 11): the publication-schema/manifest-identity transfer has NO Slice-1 consumer after F52 — ABC keeps that ownership during Slice 1; soranoha/ owns only kernel/CAS/trace-store/copied renderers; the AGENTS.md transfer moves to the first Slice-2 work that assembles manifests. Slice 1 waits on nothing administrative.** | review-adopted 2026-08-24; amended round 11 | owner action: AGENTS.md edit, before Slice 2 |
 | D21 | **Rights/registry admission restored** (F14): the fail-closed value-plus-hash rights authority (policy hash recorded in manifest `admission`); per-work inclusion governed by named rule (O1, owner); admission responsibility consumed from abc or transferred in AGENTS.md before Slice 3. Currently `publication-policy.edn` BLOCKS release. **F60 (round 12): admission lives ENTIRELY in soranoha.za — `load-rights-authority!`, inclusion rules, and the fail-closed block are RELEASE-ASSEMBLER concerns, never kernel concerns. The kernel builds any selected inputs, policy-blind (F52); Slice 2 uses fixture admission inputs; Slice 3 connects the production authority. The earlier "kernel ports/inherits" wording was a leak that could have reintroduced the build/publication coupling F52 removed.** **F17: admission is assessment-based per O1 (adopted reviewer rule); catalog flags seed, never authorize; private archiving needs its own authorization policy.** **F24 (as amended by F61/F71 — intent_id no longer exists): the assessment data itself is cryptographically committed — bound in `admission` and part of the F67 build projection, so newly completed assessments change the manifest and are never no-op'd as duplicates. F30: the commitment is two retained public artifacts, separating domain roles — the assessment SNAPSHOT commits facts (public-domain / in-copyright / undetermined / not-evaluated per contribution, F35/F47); the admission REPORT records the inclusion rule's total partition (admitted/excluded/quarantined with reasons). Both published, permanently rooted, hash-resolvable. F38: works = admitted − withdrawn.** | review rounds 2–8 | policy content owner-governed; mechanism fixed |
 
@@ -890,10 +889,9 @@ in agent report" headings redirected to the inlined sources list.
   incident condition, every ordinary release between quarterly
   checkpoints would read as contested)."**
   (Amended by owner direction 2026-08-25 — governance-set size 2 —
-  and corrected by F112/F115, round 22: sets fixed forever; the
-  degraded-mode/halt distinction replaces "loss does not halt".)
-  Facilitator and reviewer recommend ratifying. Owner yes/no pending
-  on the corrected text.
+  and corrected by F112/F115 round 22, F120/F125 rounds 23–24.)
+  **RATIFIED by owner 2026-08-25 on the exact corrected text.
+  Architecture review closed (rounds 24–25).**
 
 ## External design review round 3 (2026-08-24) — findings F16–F23
 
@@ -2155,65 +2153,42 @@ warranted; O3(b) not reopened; Slices 0–1 ready.
   with failure to perform the observation.
 - **F129 (dateless evergreen header — adopted).**
 
-## Pre-implementation probes (REDUCED per round 25; disposable)
+## Pre-implementation checks (REDUCED AGAIN per round 26 — no separate probe projects; surviving checks fold into existing slice acceptance)
 
-1. **Hardware-boundary smoke (owner, ~minutes; RUN NOW; settles: can
-   the planned ceremony work).** `ykman info` on both YubiKeys
-   (firmware ≥ 5.7.0?); generate a THROWAWAY PIV Ed25519 key in an
-   EXPLICITLY UNUSED PIV slot on each device (F136 — the test must
-   never overwrite an existing credential), with explicit PIN + touch
-   policy; sign a test message; verify it as raw Ed25519 against the
-   extracted public key. Pass ⇒ the F54 ceremony plan stands; fail ⇒
-   device replacement enters the deployment prerequisites now.
-2. **F12 growth probe — TARGET-DRIVEN (dev; settles: bytes-in-git
-   acceptance, F93/F134).** BEFORE running, define the decision
-   budget: modeled release horizon; maximum acceptable packed size,
-   clone/fetch bytes, repack time, and peak RSS at that horizon; and
-   a delta distribution SAMPLED from real upstream history, never
-   invented rates. Then run the smallest number of synthetic releases
-   that can decide against the budget. Measurements without
-   thresholds cannot settle acceptance.
+- **Early hardware check (owner; READ-ONLY):** `ykman info` on both
+  YubiKeys — firmware ≥ 5.7.0 confirms PIV Ed25519 capability;
+  nothing is written, no slot is touched. The standalone signing
+  smoke is DELETED (F139 — it duplicated the F117 ceremony, where
+  both REAL governance keys sign the fixed vector; throwaway key
+  creation and PIV-slot mutation avoided).
+- **F12 growth probe stays the existing Slice-3 gate, run on REAL
+  bytes (F140):** no synthetic harness — git packing depends on
+  actual byte similarity, not historically sampled change rates.
+  After Slices 1/2 produce real adjacent-revision artifacts, test the
+  smallest representative sequence against PREDETERMINED budgets
+  (release horizon; packed size, clone/fetch bytes, repack time,
+  peak RSS); add samples only if the result is near a threshold.
 
-Deleted per round 25 (F131/F135): the adversarial chain simulator and
-the reconciliation interleaving simulation — maintained test systems,
-not disposable probes ("seeds the conformance suite" contradicted
-"disposable"; Malli generates shape-valid objects, not valid signed
-hash-chained histories; a disagreement may be a generator, model, or
-implementation defect rather than a spec defect; property testing
-finds counterexamples but cannot establish completeness). The
-pre-freeze qualification object is the already-required TABLE-DRIVEN
-conformance corpus; model-based testing enters only if ordinary
-transition tests expose a gap during implementation; race testing
-exercises the REAL publisher when it exists, never a separately
-invented publisher model. Also deleted: the SWH pre-probe — a
-different origin predicts nothing about the actual one's moderation,
-pack handling, or latency, and the mandatory F12/F94 probe on the
-named origin remains the single test.
-
-## Code-architecture direction (REDUCED per round 25 — F130/F132/F133)
+## Code-architecture: the v1 choice (REDUCED per rounds 25–26)
 
 The owner's Malli/Rust preference is honored OUTSIDE the wire/verifier
 boundary (internal kura/za data shapes; the post-JADH2026 vibrato-pipe
-tokenizer lane stays Rust). At the boundary, one-of-each rules:
+tokenizer lane stays Rust). At the boundary, v1 states ONLY the v1
+choice (F141 — no speculative migration policy for consumers that do
+not exist; a real JVM-free consumer triggers a FRESH replacement
+decision then):
 
 - **ONE verifier, in Clojure**, sharing soranoha.core's single
-  canonicalizer (D15 preserved — a Rust verifier would need an
-  independent JSON canonicalizer, recreating the original system's
-  Clojure/Rust duplication disease), published through the existing
-  Nix entry point as Slice 3's "published checker". Rust enters ONLY
-  when a real JVM-free external-verifier consumer exists — and then
-  Rust becomes the ONLY full repository verifier (the publisher
-  invokes it); never two full verifiers.
-- **JSON Schema is the single structural source (F80/F133):** the
-  four normative schemas are HAND-AUTHORED and validated with the
-  repository's existing JSON Schema machinery. No Malli authoring
-  layer, no generated-schema drift-check workflow — Malli wire
-  schemas enter only if repeated Clojure construction errors
-  demonstrate a present need.
-- **No coercion of signed wire values (F132):** manifest values are
-  CONSTRUCTED in-domain, validated EXACTLY against the frozen schema,
-  then canonicalized. Coercion (e.g. "42" → 42) is limited to local
-  CLI/config input and never touches signed or hashed data.
+  canonicalizer (D15), published through the existing Nix entry point
+  as Slice 3's "published checker".
+- **Hand-authored JSON Schemas** as the single structural source
+  (F80/F133), validated with the repository's existing JSON Schema
+  machinery.
+- **ONE reusable BOUNDARY DECODE for all four wire formats
+  (F132/F137, spec §1):** duplicate keys rejected; no coercion; exact
+  schema validation; canonicalization; stored bytes == canonical
+  bytes; id recomputed. Coercion is confined to local CLI/config
+  input and never touches signed or hashed data.
 
 ## External design review round 25 (2026-08-25) — findings F130–F136
 
@@ -2244,6 +2219,42 @@ SWH pre-testing until each has a concrete consumer or observed gap.
 - **F135 (SWH pre-probe deleted — adopted)** — changes no decision.
 - **F136 (hardware smoke kept — adopted)** — with an explicitly
   unused PIV slot so the test cannot overwrite existing credentials.
+
+## External design review round 26 (2026-08-25) — findings F137–F141
+
+Reviewer verdicts: round 25 corrects the architectural duplication;
+O5a ratifiable (owner RATIFIED 2026-08-25 — all pending markers
+removed); after these surgical corrections, STOP architectural review:
+resolve O3, implement Slices 0–1, let the executable schemas and
+vectors drive the freeze review; integrate surviving checks into
+existing slice acceptance rather than creating probe projects.
+
+- **F137 (exact wire decoding underspecified — Blocker)** — F132
+  covered only manifest construction, while governance events are
+  signed and admission objects hashed, and the verifier recomputed
+  hashes without requiring canonical stored bytes. Fix (spec §1, one
+  reusable BOUNDARY DECODE for all four formats): reject duplicate
+  keys; parse without coercion; validate against the frozen schema;
+  canonicalize; stored bytes == canonical bytes; recompute the id.
+  Equivalent-but-noncanonical negative vector added (§11); §8 hash
+  checks now require the decode.
+- **F138 (stale key-copy allowance — High)** — the remaining-unknowns
+  F54 entry still permitted optional repo `keys/` copies,
+  contradicting the protocol and Slice 3. Deleted.
+- **F139 (standalone hardware smoke deleted — adopted)** — it
+  duplicated the F117 ceremony and mutated PIV slots for a throwaway
+  key. Early check reduced to READ-ONLY `ykman info`; signing happens
+  once, at the real ceremony.
+- **F140 (no synthetic F12 harness — adopted)** — git packing depends
+  on actual byte similarity, not sampled change rates; the probe runs
+  on real adjacent-revision artifacts from Slices 1/2, smallest
+  representative sequence against predetermined budgets, as the
+  existing Slice-3 gate.
+- **F141 (speculative future implementation policy deleted —
+  adopted)** — "Rust becomes the sole verifier" and "Malli enters
+  after repeated errors" decided migrations for nonexistent
+  consumers. v1 states only the v1 choice; a real JVM-free consumer
+  triggers a fresh decision.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
@@ -2480,9 +2491,8 @@ back by citing the previous release tag.
   EXPLICITLY configures PIN + touch policy (touch defaults can be
   Never) and has BOTH governance devices sign a fixed protocol
   conformance vector (F117). Key bytes + fingerprints go in the
-  independent anchor + pinned verifier configuration ONLY; repo
-  `keys/` copies are optional, non-normative, and ignored by
-  verifiers (F116). Publish the minimal
+  independent anchor + pinned verifier configuration ONLY; v1
+  publishes NO repository key copies (F122/F138). Publish the minimal
   trust anchor on Zenodo (F59/F63: the deposit carries key bytes +
   fingerprints + the ACTUAL genesis manifest bytes and signature — never
   a record that merely names a head — making it both the first pin

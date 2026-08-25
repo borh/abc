@@ -5,7 +5,8 @@
   self-consistency before writing. Optionally refreshes a manifest
   ."
   (:refer-clojure :exclude [run!])
-  (:require [soranoha.ported.aozora-csv :as ac]
+  (:require [soranoha.ported.assets]
+            [soranoha.ported.aozora-csv :as ac]
             [soranoha.ported.files :as files]
             [soranoha.ported.hash :as hash]
             [soranoha.ported.json :as json]
@@ -19,9 +20,11 @@
             [clojure.tools.cli :as cli])
   (:import [java.util.zip ZipFile ZipEntry]))
 
-(def schema-path "schemas/metadata-record.schema.json")
+(defn- schema-path []
+  (soranoha.ported.assets/resolve-path "schemas/metadata-record.schema.json"))
 (def schema-id "https://w3id.org/abc/schemas/metadata-record.schema.json")
-(def person-schema-path "schemas/person-record.schema.json")
+(defn- person-schema-path []
+  (soranoha.ported.assets/resolve-path "schemas/person-record.schema.json"))
 (def person-schema-id "https://w3id.org/abc/schemas/person-record.schema.json")
 
 (defn- open-zip
@@ -90,7 +93,7 @@
   [body corrections provenance-base]
   (let [base (merge (zipmap person-body-keys (map #(get body %) person-body-keys))
                     {"person_record_schema_id" person-schema-id
-                     "person_record_schema_hash" (schema/cached-schema-hash person-schema-path)
+                     "person_record_schema_hash" (schema/cached-schema-hash (person-schema-path))
                      "external_links" (or (get body "external_links") [])})]
     (cond-> base
       provenance-base
@@ -148,12 +151,12 @@
     new-hash))
 
 (defn- self-consistency-check! [record]
-  (let [errors (schema/validation-errors (schema/cached-schema schema-path) record)]
+  (let [errors (schema/validation-errors (schema/cached-schema (schema-path)) record)]
     (when (seq errors)
       (throw (ex-info "generated metadata-record fails schema validation"
                       {:errors errors}))))
   (let [embedded (get record "metadata_record_schema_hash")
-        live (schema/cached-schema-hash schema-path)]
+        live (schema/cached-schema-hash (schema-path))]
     (when-not (= embedded live)
       (throw (ex-info "self-consistency: embedded schema hash differs from live"
                       {:embedded embedded :live live}))))
@@ -197,7 +200,7 @@
                                         (get person-records pid))
                   "relation_to_work" (get c "relation_to_work")}))
           metadata-rec {"metadata_record_schema_id" schema-id
-                        "metadata_record_schema_hash" (schema/cached-schema-hash schema-path)
+                        "metadata_record_schema_hash" (schema/cached-schema-hash (schema-path))
                         "work" work
                         "contributors" (vec (sort-by #(get % "person_id")
                                                      contributor-entries))}]

@@ -1,0 +1,123 @@
+;; TEI validation (Jing RELAX NG + project Schematron), extracted from
+;; abc.tools.materialize-publication with the profile paths made explicit
+;; arguments: the kernel consumes the TEI profile trio from abc as an
+;; external asset (D20 — one source of truth), so nothing here resolves
+;; against a working directory. The recorded toolchain paths stay the fixed
+;; logical names so validation-record bytes are machine-independent.
+(ns soranoha.ori.validate
+  (:require [clojure.string :as string]
+            [soranoha.ported.files :as files]
+            [soranoha.ported.schematron :as schematron]
+            [soranoha.ported.tei :as tei]))
+
+(def logical-odd-path "schemas/tei-profile.odd")
+(def logical-rng-path "schemas/tei-profile.rng")
+(def logical-schematron-path "schemas/tei-profile.sch")
+
+(defn profile-paths
+  "The TEI profile trio under an assets root (the abc checkout or a flake
+  input carrying schemas/tei-profile.{odd,rng,sch})."
+  [assets-root]
+  {:odd (str assets-root "/" logical-odd-path)
+   :rng (str assets-root "/" logical-rng-path)
+   :sch (str assets-root "/" logical-schematron-path)})
+
+(defn- file-hash [path]
+  (str "sha256:" (files/sha256-file path)))
+
+(defn- validation-layer [status validator message]
+  {"status" status
+   "validator" validator
+   "message" message})
+
+(defn- finding-severity [severity]
+  (case severity
+    :fatal "error"
+    :error "error"
+    :warning "warning"
+    :info "info"
+    (name severity)))
+
+(defn- rng-validation [rng-path tei-file]
+  (let [{:keys [violations]} (tei/validate! {:schema-path rng-path
+                                             :xml-path (str tei-file)
+                                             :label (str tei-file)})
+        failures (filter #(#{:error :fatal} (:severity %)) violations)]
+    (if (seq failures)
+      {:status "failed"
+       :layer (validation-layer "failed" "jing"
+                                (string/join "\n" (map :message failures)))
+       :findings (mapv (fn [violation]
+                         {"rule_id" "relax-ng"
+                          "severity" (finding-severity (:severity violation))
+                          "layer" "relax_ng"
+                          "message" (:message violation)
+                          "location" (when-let [line (:line violation)]
+                                       (str line))
+                          "allowed" false})
+                       failures)}
+      {:status "passed"
+       :layer (validation-layer "passed" "jing"
+                                "Validated against ODD-derived project Relax NG target.")
+       :findings []})))
+
+(defn- schematron-validation [sch-path tei-file]
+  (let [{:keys [findings]} (schematron/validate! {:schema-path sch-path
+                                                  :xml-path (str tei-file)
+                                                  :label (str tei-file)})
+        errors (filter #(= :error (:severity %)) findings)
+        warnings (filter #(= :warning (:severity %)) findings)
+        status (cond
+                 (seq errors) "failed"
+                 (seq warnings) "warning"
+                 :else "passed")]
+    {:status status
+     :layer (validation-layer status "soranoha.ported.schematron"
+                              (case status
+                                "passed" "No project Schematron findings."
+                                "warning" "Only project Schematron warnings were reported."
+                                "failed" "Project Schematron errors were reported."))
+     :findings (mapv (fn [finding]
+                       {"rule_id" (:rule-id finding)
+                        "severity" (name (:severity finding))
+                        "layer" "schematron"
+                        "message" (:message finding)
+                        "location" (:location finding)
+                        "allowed" (not= :error (:severity finding))})
+                     findings)}))
+
+(defn tei-validation-result
+  "Validate a TEI file against the profile trio. Include-and-flag (R7): the
+  result records failure, it never excludes a work."
+  [{:keys [odd rng sch]} tei-file]
+  (let [tei-profile-hash (file-hash odd)
+        rng-result (rng-validation rng tei-file)
+        schematron-result (schematron-validation sch tei-file)
+        status (cond
+                 (some #{"failed"} [(:status rng-result)
+                                    (:status schematron-result)])
+                 "failed"
+
+                 (some #{"warning"} [(:status rng-result)
+                                     (:status schematron-result)])
+                 "warning"
+
+                 :else "passed")]
+    {"validated_artifact" (file-hash tei-file)
+     "tei_profile_hash" tei-profile-hash
+     "status" status
+     "layers" {"well_formed_xml" (validation-layer
+                                  "passed" "clojure.data.xml"
+                                  "Generated by clojure.data.xml.")
+               "relax_ng" (:layer rng-result)
+               "schematron" (:layer schematron-result)}
+     "toolchain" {"odd_path" logical-odd-path
+                  "rng_path" logical-rng-path
+                  "schematron_path" logical-schematron-path
+                  "odd_hash" tei-profile-hash
+                  "rng_hash" (file-hash rng)
+                  "schematron_hash" (file-hash sch)
+                  "generator" nil
+                  "generator_build_hash" nil}
+     "findings" (vec (concat (:findings rng-result)
+                             (:findings schematron-result)))}))

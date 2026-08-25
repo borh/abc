@@ -5,11 +5,13 @@
   fields explicit as JSON null. Copied from abc.tools.metadata-record with
   the RDF/Turtle mapping stripped: the kernel never renders RDF, and the
   stripped functions were the only consumers of the Jena stack."
-  (:require [soranoha.ported.hash :as hash]
+  (:require [soranoha.ported.assets :as assets]
+            [soranoha.ported.hash :as hash]
             [soranoha.ported.manifest :as manifest]
             [soranoha.ported.schema :as schema]))
 
-(def schema-path "schemas/metadata-record.schema.json")
+(defn- schema-path []
+  (assets/resolve-path "schemas/metadata-record.schema.json"))
 (def schema-id "https://w3id.org/abc/schemas/metadata-record.schema.json")
 
 (defn validate!
@@ -18,7 +20,7 @@
   (raw m3 vector) and :errors-humanized (readable strings)."
   [record]
   (let [[errors humanized] (schema/validation-errors-humanized
-                            (schema/cached-schema schema-path) record)]
+                            (schema/cached-schema (schema-path)) record)]
     (if (seq errors)
       (throw (ex-info "metadata-record validation failed"
                       {:errors errors
@@ -48,6 +50,6 @@
   hashing or shipping."
   [{:keys [work contributors]}]
   {"metadata_record_schema_id" schema-id
-   "metadata_record_schema_hash" (manifest/schema-hash schema-path)
+   "metadata_record_schema_hash" (manifest/schema-hash (schema-path))
    "work" work
    "contributors" (vec (sort-by #(get % "person_id") contributors))})

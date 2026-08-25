@@ -5,11 +5,13 @@
   Copied from abc.tools.person-record with the RDF/Turtle mapping stripped
   (the kernel never renders RDF; the stripped functions were the only
   consumers of the Jena stack)."
-  (:require [soranoha.ported.hash :as hash]
+  (:require [soranoha.ported.assets :as assets]
+            [soranoha.ported.hash :as hash]
             [soranoha.ported.schema :as schema])
   (:import [java.time DateTimeException LocalDate]))
 
-(def schema-path "schemas/person-record.schema.json")
+(defn- schema-path []
+  (assets/resolve-path "schemas/person-record.schema.json"))
 (def schema-id "https://w3id.org/abc/schemas/person-record.schema.json")
 
 (def ^:private full-date-shape-pattern #"^-?\d{4}-\d{2}-\d{2}$")
@@ -39,7 +41,7 @@
   :field/:value for calendar-validity failures."
   [record]
   (let [[errors humanized] (schema/validation-errors-humanized
-                            (schema/cached-schema schema-path) record)]
+                            (schema/cached-schema (schema-path)) record)]
     (when (seq errors)
       (throw (ex-info "person-record validation failed"
                       {:errors errors

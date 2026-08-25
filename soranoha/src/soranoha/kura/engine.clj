@@ -7,7 +7,8 @@
 ;; FIRST, then commits the trace row (blob-before-trace: a crash between the
 ;; two leaves orphan blobs, never a trace pointing at missing bytes).
 (ns soranoha.kura.engine
-  (:require [soranoha.kura.cas :as cas]
+  (:require [babashka.fs]
+            [soranoha.kura.cas :as cas]
             [soranoha.kura.trace :as trace]))
 
 (defn open-store!
@@ -51,7 +52,16 @@
                              (or (cas/get-bytes cas-dir hex)
                                  (throw (ex-info "Input blob missing from CAS"
                                                  {:reason :missing-input-blob
-                                                  :hex hex}))))}
+                                                  :hex hex}))))
+                     ;; Read-only path into the CAS for stages whose tools
+                     ;; need a file (zip readers, subprocess --flags).
+                     :blob-path (fn [hex]
+                                  (let [path (cas/blob-path cas-dir hex)]
+                                    (when-not (babashka.fs/exists? path)
+                                      (throw (ex-info "Input blob missing from CAS"
+                                                      {:reason :missing-input-blob
+                                                       :hex hex})))
+                                    path))}
             produced ((:f stage) resolve inputs)
             _ (when-not (and (map? produced) (seq produced))
                 (throw (ex-info "Stage produced no outputs"

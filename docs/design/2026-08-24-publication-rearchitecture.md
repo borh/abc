@@ -38,6 +38,23 @@ Status (post review round 16, 2026-08-25):
   rule; non-blocking for Slice 1). New blockers attach to O2, public
   withdrawal wording, and the archival promise — NOT the kernel;
   Slices 0–1 unaffected.
+- Round-18 fixes applied: F96 (§9 no longer says the origin "attests"
+  — narrower decomposition: signature→issuance, links→ordering,
+  hashes→bytes, ref→operationally designated tip + CAS,
+  checkpoint→historical cutoff; completeness is a verifier result,
+  prefix-ness decidable only against an independent head/checkpoint),
+  F97 (archive-verified = expected commit present + the ORDINARY
+  verifier succeeds on the archived snapshot alone — one closure),
+  F98 (protocol withdrawal ≠ service withdrawal: serving/discovery
+  removal moved to the za service contract + Slice-3 acceptance test
+  (4); non-erasure kept in both), F99 (Slice-1 CAS APPEND-ONLY, no GC;
+  threshold-triggered writer/collector serialization later —
+  supersedes F95), F100 (no Radicle RID pin in F75; mirrors are
+  ordinary discovery metadata). **O2 SPLIT proposed: O2a ratify the
+  architecture now (protected HTTPS Git + conditional ref updates,
+  implemented by Forgejo); O2b hostname = Slice-3 deployment config
+  under F12.** Storage/trust recorded as two axes (kura / Forgejo /
+  resolver+Radicle / SWH / Zenodo).
 - Round-15 fixes applied in the protocol: F78 (first-parent HEAD
   transitions must satisfy `M.prev_manifest == H` — closes silent
   chain replacement), F79 (complete build/build reconciliation:
@@ -876,8 +893,13 @@ in agent report" headings redirected to the inlined sources list.
   assume (the facilitator's earlier claim here that it did is
   RETRACTED). **Recommendation: Forgejo is the authoritative protected
   HTTPS origin; Radicle is an optional downstream distribution
-  mirror** (its self-certifying RID may still ride the F75 discovery
-  channel as a mirror pin; every seeder is a byte replica). Making
+  mirror** (F100, round 18: NO RID pin in the F75 trust channel — a
+  mirror has no current-state authority and hashes already
+  authenticate its bytes, so a pinned RID would be permanent trusted
+  metadata without a trust function or required consumer; mirror
+  locations are ordinary discovery metadata, and a pinned RID returns
+  only with an actual Radicle-based consumer requiring stable
+  repository identity; every seeder is a byte replica). Making
   Radicle authoritative would reopen D17/O2 and require an external
   single-writer/CAS mechanism. F12 on the named origin must MEASURE
   (F93/F94): packed repository size after many incremental releases,
@@ -889,6 +911,12 @@ in agent report" headings redirected to the inlined sources list.
   parallel identity scheme, no SWH path, transport-key trust,
   explicitly early-stage (fails the F51 ratchet); revisit as an
   optional additional distribution location only.
+  **Round-18 SPLIT proposal (owner may ratify): O2a — the
+  ARCHITECTURAL requirement: an owner-controlled protected HTTPS Git
+  origin with conditional (fast-forward-only) ref updates, implemented
+  by Forgejo; other forges downstream mirrors — ratifiable NOW. O2b —
+  the concrete hostname is Slice-3 DEPLOYMENT CONFIGURATION subject to
+  the F12 probes, not a design decision.**
 - **O3 — withdrawal-record mutability (F26/F31; recast by the F62
   collapse, round 12 — "tombstone" no longer exists; the question now
   concerns a slug's GOVERNING EVENT id in `withdrawn`).** Settled either
@@ -1843,6 +1871,66 @@ of current state; withdrawal = removal from the current official
 corpus and work-facing service, not erasure; SWH is the intended
 archive SUBJECT TO successful ingestion + the documented recipe.
 
+## External design review round 18 (2026-08-25) — findings F96–F100
+
+Reviewer verdicts: round 17 fixes the reported defects; F83 remains
+sound; two boundary problems remained — §9 overstated what the origin
+proves, and §10 put service behavior inside the wire protocol. Slices
+0–1 unaffected.
+
+- **F96 (the origin does not "attest" — Blocker before freeze)** — the
+  Forgejo ref is UNSIGNED and authenticated freshness is deferred: the
+  origin operationally DESIGNATES the tip and serializes updates but
+  cannot prove non-staleness/non-equivocation; a carrier cannot prove
+  its chain is a prefix of the authoritative one without an
+  independently obtained head/checkpoint. Spec §9 now carries the
+  narrower decomposition (signature → issuance; links → ordering;
+  hashes → bytes; ref → designated tip + CAS; checkpoint → historical
+  cutoff); completeness is a verifier result.
+- **F97 (reuse the verifier for archival — Blocker before advertising
+  archival completeness)** — the bespoke predicate wording omitted
+  manifest/governance signatures, `releases/HEAD`, and
+  chain-transition evidence, and would drift from §7–§8. New
+  definition: archive-verified ⇔ expected publication commit present
+  AND the ordinary repository verifier succeeds using only the
+  archived snapshot + independently pinned keys. One verification
+  closure; Slice-3 wording updated.
+- **F98 (protocol withdrawal ≠ service withdrawal — Strong, adopted)**
+  — the protocol guarantees exactly: slug absent from current `works`,
+  present in `withdrawn`, transition authorized by its governance
+  event. "Removed from discovery and work-facing serving routes" is a
+  soranoha.za SERVICE obligation — moved to the promise/service
+  contract with a new Slice-3 acceptance test (4); the non-erasure
+  statement is retained in BOTH places as essential product policy.
+- **F99 (omit GC from Slice 1 — Strong simplification, adopted)** —
+  F95 documented two possible solutions to a problem the kernel need
+  not have: Slice-1 CAS is APPEND-ONLY, no GC; activation only when
+  measured disk growth crosses a recorded threshold, then with the
+  simpler writer/collector serialization. Supersedes F95's
+  either/or.
+- **F100 (no Radicle RID pin in F75 — Strong simplification,
+  adopted)** — a mirror has no current-state authority and hashes
+  already authenticate its bytes; a pinned RID would be permanent
+  trusted metadata without a trust function or required consumer.
+  Mirror locations are ordinary discovery metadata; a pinned RID
+  returns only with an actual Radicle-based consumer.
+
+Simplified decision state (recorded): storage and trust are TWO AXES,
+not five layers —
+
+| Place | Role |
+|---|---|
+| kura | disposable private build state |
+| Forgejo | publication repository + operational current-tip authority |
+| resolver / Radicle | replaceable byte distribution |
+| SWH | preservation |
+| Zenodo | independent authorship checkpoint |
+
+O2 split proposed (recorded in the O2 entry): **O2a** ratify the
+architectural requirement now (protected HTTPS Git, conditional ref
+updates, implemented by Forgejo; other forges mirrors); **O2b** the
+hostname is Slice-3 deployment configuration under F12.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;
@@ -1879,7 +1967,12 @@ be excluded. Keep the tree; it is the golden reference.
 Build `soranoha/` (own flake, D12/D15 layout): `core` (config: one
 SORANOHA_ROOT; the one canonicalizer, reusing existing shared test vectors),
 `kura` (SQLite WAL trace table + sharded CAS, blob-before-trace commit,
-append-only history ledger), `yomi` (clone management + catalog/selector
+append-only history ledger; **the Slice-1 CAS is APPEND-ONLY — NO GC
+exists in the initial kernel (F99, round 18: missing blobs are already
+recoverable cache misses; GC activates only when measured disk growth
+crosses a recorded threshold, and then with the simpler
+writer/collector serialization — the concurrency problem is deleted,
+not documented)**), `yomi` (clone management + catalog/selector
 port with injectivity assert), `ori` (stages: parse, convert, render-tei,
 render-plaintext, validate-tei; renderers copied from abc). **Output
 (F52, round 10): CAS + trace-store results — NOT a public
@@ -1977,9 +2070,11 @@ reachability check on unknown results, scheduled-build no-op).
 Forgejo auto-release polls upstream; admission is a fail-closed input
 (policy hash in manifest). Serving tree (blobs/, releases/, history.json)
 derives from the repo. Archival: SWH save-code-now per release,
-non-blocking; **archive-verified is the F63 reproducible predicate (SWH
-full visit + expected commit + all referenced blobs present + hashes
-equal), stored as a disposable verifier report/Forgejo status — no
+non-blocking; **archive-verified per F97 (round 18, superseding the F63
+checklist wording): the expected publication commit is present AND the
+ordinary repository verifier (spec §7–§8) succeeds using only the
+archived snapshot plus independently pinned keys — one verification
+closure; stored as a disposable verifier report/Forgejo status — no
 receipt artifact**. Acceptance: (1) two consecutive automated releases
 from real upstream movement, chain verified end-to-end by the published
 checker; (2) a forced concurrent-publish attempt loses the push race and
@@ -1988,7 +2083,11 @@ F61 reachability check without double publication; (3) at least one
 release has the archival predicate SUCCEED (F77 wording — no
 "archive-verified" state is reached or stored) with all four F12
 checks, with measured (not assumed) archival latency recorded in the
-ledger.
+ledger; (4) **F98 service-withdrawal acceptance: after the
+governance-withdrawal fixture, the za serving layer exposes no
+work-facing routes or discovery entries for the withdrawn slug — this
+tests the SERVICE promise; the protocol-level absence from `works` is
+already checked by the §8 verifier.**
 
 ### Slice 4 — citability layer
 Quarterly Zenodo snapshot (concept DOI + first version DOI) — **each
@@ -2066,10 +2165,13 @@ back by citing the previous release tag.
   artifact id → archived publication commit + sharded in-repo path →
   SWHID (spec §10; no wire format) — dev/owner, Slice 4, before the
   archival promise is advertised.
-- **F95 private-CAS GC concurrency rule** — initial GC serializes with
-  writers OR uses an age grace period + recheck (blob-before-trace
-  window; missing blob = cache miss keeps it recoverable) — dev,
-  Slice 1 implementation note; non-blocking.
+- **F95→F99 private-CAS GC** — SUPERSEDED (round 18): the Slice-1 CAS
+  is APPEND-ONLY; no GC is implemented or specified in the initial
+  kernel (missing blobs are already recoverable cache misses). GC
+  activates only when measured disk growth crosses a recorded
+  threshold; at that trigger, implement writer/collector
+  SERIALIZATION. Dev; the threshold is recorded in the ledger when
+  set.
 - Tokenizer lane (vibrato-pipe) identity design — owner, post-JADH2026 (D4).
 - Zenodo record metadata + first snapshot timing — owner, slice 4.
 - w3id.org PR — owner, slice 4.

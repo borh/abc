@@ -255,12 +255,22 @@ reject a HEAD not matching a valid chain head):
 ## 9. Publication transaction
 
 Authority: the protected publication branch of the authoritative public
-origin; fast-forward-only push is the compare-and-swap. Only this
-origin attests CURRENT state — the latest accepted head, publication
-ordering, completeness, and whether a withdrawal has been observed.
-Every other carrier (mirror, archive, clone) authenticates BYTES for
-known ids and can prove a valid chain PREFIX, but staleness is
-undetectable from content alone (F91).
+origin; fast-forward-only push is the compare-and-swap. What each
+mechanism establishes (F96 — the ref is UNSIGNED and authenticated
+freshness is explicitly deferred, so the origin DESIGNATES the tip
+operationally; it cannot cryptographically prove it is not serving a
+stale or equivocated head):
+- release signature → Soranoha issuance;
+- manifest `prev_manifest` links → logical ordering;
+- content hashes → byte integrity;
+- the authoritative ref → the operationally designated current tip
+  and the compare-and-swap serialization point;
+- Zenodo checkpoints → independently recorded historical cutoffs.
+Completeness is a VERIFIER RESULT, never an origin property. A
+non-authoritative carrier (mirror, archive, clone) can present an
+internally valid chain from genesis; whether that chain is a prefix
+of the authoritative one is decidable only by comparison against an
+independently obtained head or checkpoint (F91/F96).
 
 1. Fetch Git commit C (branch head).
 2. Read manifest head H = C:`releases/HEAD`.
@@ -321,18 +331,29 @@ determinism defect.
   `r<manifest_id[0:12]>`) are presentation concerns OUTSIDE this
   protocol (round 16) — they carry no identity semantics.
 - Stored lifecycle state: `published` only.
-- Withdrawal semantics (F92 — the promise, stated honestly): a
-  withdrawal removes the work from the current manifest's `works`,
-  from discovery, and from work-facing serving routes. It does NOT
-  promise byte erasure or hash-level suppression: the bytes remain in
-  chain history, clones, mirrors, and archives, and identical bytes
-  may be shared by another admitted work. Hash-level suppression, if
-  legal policy ever requires it, is an explicit operational denylist
-  plus a shared-blob policy OUTSIDE this protocol.
-- archive-verified is an OBSERVED reproducible predicate: SWH full
-  visit + expected publication commit + all referenced blobs present +
-  byte hashes equal. Latest result stored as a disposable report/CI
-  status; citation eligibility is computed from it.
+- Withdrawal semantics (F92/F98 — the PROTOCOL guarantees exactly
+  three things): after a withdrawal manifest, the slug is ABSENT from
+  current `works`, PRESENT in `withdrawn`, and the transition is
+  authorized by its governance event (§8). Removal from discovery and
+  work-facing serving routes is a SERVICE obligation of soranoha.za —
+  it belongs to the public promise/service contract with a Slice-3
+  acceptance test, because this protocol defines no routes and cannot
+  test that obligation. NEITHER layer promises byte erasure or
+  hash-level suppression: bytes remain in chain history, clones,
+  mirrors, and archives, and identical bytes may be shared by another
+  admitted work. Hash-level suppression, if legal policy ever
+  requires it, is an explicit operational denylist plus a shared-blob
+  policy OUTSIDE this protocol.
+- archive-verified is an OBSERVED reproducible predicate defined by
+  REUSING the verifier (F97 — the earlier checklist named commit +
+  blobs + hashes but omitted manifest/governance signatures,
+  `releases/HEAD`, and chain-transition evidence, and would drift
+  from §7–§8): a release is archive-verified when its expected
+  publication commit is present in the archive AND the ordinary
+  repository verifier (§7–§8) succeeds using ONLY the archived
+  snapshot plus the independently pinned keys. One verification
+  closure. Latest result stored as a disposable report/CI status;
+  citation eligibility is computed from it.
 - Archive resolution recipe (F94 — a documented recipe, no new wire
   format): the published promise documents how to map a manifest id +
   artifact id to the archived publication commit and the sharded

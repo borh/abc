@@ -7,15 +7,19 @@
     2. parse without coercion (integral JSON numbers only — any float or
        lexically non-integral number fails);
     3. validate the parsed value against the type's JSON Schema;
-    4. canonicalize the same value and require the stored bytes to equal the
+    4. apply the type's single-object semantic boundary rules (real calendar
+       dates, absolute origin) — cross-object and transition invariants stay
+       with the chain verifier;
+    5. canonicalize the same value and require the stored bytes to equal the
        canonical bytes — equivalent-but-noncanonical JSON is invalid;
-    5. recompute the id from the stored bytes: snh:1:<type>:<sha256hex>.
+    6. recompute the id from the stored bytes: snh:1:<type>:<sha256hex>.
 
   All other artifacts (e.g. tei-validation JSON) are exact published bytes
   checked by hash alone; they never pass through here."
   (:require [soranoha.core.canonical :as canonical]
             [soranoha.core.hash :as hash]
-            [soranoha.snh.schema :as schema])
+            [soranoha.snh.schema :as schema]
+            [soranoha.snh.semantic :as semantic])
   (:import (java.nio.charset StandardCharsets)
            (java.util Arrays)
            (tools.jackson.core StreamReadFeature)
@@ -57,7 +61,7 @@
   Throws ex-info with :reason on any rejection:
   :parse-invalid (malformed JSON or duplicate object key — detected at parse,
   before schema validation), :non-integral-number, :schema-invalid,
-  :noncanonical."
+  :invalid-upstream-origin, :invalid-effective-date, :noncanonical."
   [type ^bytes stored-bytes]
   (when-not (contains? schema/schema-resources type)
     (throw (ex-info "boundary decode applies only to the four protocol JSON objects"
@@ -68,6 +72,10 @@
         value (node->value node type)]
     (when-let [errors (schema/validation-errors type value)]
       (reject! :schema-invalid type {:errors errors}))
+    (case type
+      "release-manifest" (semantic/check-manifest-origin! value)
+      "assessment-snapshot" (semantic/check-snapshot-dates! value)
+      nil)
     (let [canonical-bytes (canonical/rfc8785-safe-integer-json-bytes-v1 value)]
       (when-not (Arrays/equals canonical-bytes stored-bytes)
         (reject! :noncanonical type

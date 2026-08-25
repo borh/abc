@@ -38,31 +38,11 @@
       (is (= expect (semantic/absolute-origin? origin))))))
 
 (deftest valid-fixture-vectors-satisfy-the-semantic-rules
+  ;; decode already applies these on every accept vector; this pins the
+  ;; helpers directly. Rejection coverage lives in the full-boundary reject
+  ;; vectors (relative origin, impossible date) exercised by the conformance
+  ;; suite.
   (let [manifest (vector-value "release-manifest-valid.json" "release-manifest")
         snapshot (vector-value "assessment-snapshot-valid.json" "assessment-snapshot")]
     (is (= manifest (semantic/check-manifest-origin! manifest)))
     (is (= snapshot (semantic/check-snapshot-dates! snapshot)))))
-
-(deftest semantic-checks-throw-with-reasons
-  (let [manifest (vector-value "release-manifest-valid.json" "release-manifest")
-        snapshot (vector-value "assessment-snapshot-valid.json" "assessment-snapshot")]
-    (testing "relative origin"
-      (is (thrown? clojure.lang.ExceptionInfo
-                   (semantic/check-manifest-origin!
-                    (assoc-in manifest ["corpus" "upstream_origin"] "aozorabunko")))))
-    (testing "impossible date deep in a contribution fact"
-      (is (thrown? clojure.lang.ExceptionInfo
-                   (semantic/check-snapshot-dates!
-                    (update snapshot "candidates"
-                            (fn [cs]
-                              (update-in (vec cs)
-                                         [0 "contributions" 0 "effective_date"]
-                                         (constantly "2026-99-99"))))))))
-    (testing "impossible date in a work assessment"
-      (is (thrown? clojure.lang.ExceptionInfo
-                   (semantic/check-snapshot-dates!
-                    (update snapshot "candidates"
-                            (fn [cs]
-                              (update-in (vec cs)
-                                         [0 "work_assessment" "effective_date"]
-                                         (constantly "2027-02-29"))))))))))

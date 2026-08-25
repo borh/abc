@@ -1,8 +1,10 @@
 (ns soranoha.snh.semantic
   "Semantic boundary rules — checks the JSON Schemas deliberately do not
   carry because JSON Schema `format` enforcement is inconsistent across
-  validators. Assembler and verifier both call these; boundary decode does
-  not (it is structure + canonicality only)."
+  validators. Boundary decode applies these single-object rules after
+  structural validation, so assembler and verifier inherit them from the one
+  shared operation; cross-object and transition invariants stay with the
+  chain verifier."
   (:import (java.time LocalDate)
            (java.time.format DateTimeFormatter ResolverStyle)))
 

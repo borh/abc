@@ -2406,6 +2406,37 @@ findings applied same day; suite green locally and hermetically
   their own — no plan/finding references (ADR links only) and no
   all-caps emphasis; soranoha sources swept accordingly.
 
+## Freeze review round 2 (2026-08-25) — findings F155–F156; NOT APPROVED at dec984f8; both applied
+
+Verdict: F147–F154 substantively resolved; two narrow blockers, no
+further architectural review needed.
+
+- **F155 (schema-validity test still ineffective — applied)** — the
+  round-1 fix delegated to a helper whose validating schema was a bare
+  `{"$schema": …}` (declares a dialect, constrains nothing); the
+  reviewer's control instance passed. Fix: the conformance test
+  validates each schema against
+  `{"$ref": "https://json-schema.org/draft/2020-12/schema"}` (the
+  meta-schema) with an invalid-schema control proving the check can
+  fail; the byte-faithful ported helper is untouched. Reviewer
+  independently confirmed all four candidates pass the correct
+  meta-schema.
+- **F156 (semantic rules were optional helpers — applied)** — decode
+  never called them, so encode accepted `upstream_origin` "not-a-uri"
+  and `effective_date` "2026-99-99", leaving duplicate
+  remember-to-call obligations. Fix: boundary decode applies the
+  type-dispatched single-object semantic checks after structural
+  validation (spec §1/§5/§8 updated — F154 rules now live inside the
+  decode step; cross-object/transition invariants remain §8); encode
+  inherits via its round trip; helper-only rejection assertions
+  replaced with two full-boundary reject vectors
+  (`release-manifest-invalid-relative-origin`,
+  `assessment-snapshot-invalid-impossible-date`). Vector ids of valid
+  fixtures unchanged.
+
+Suites after both fixes: local 27 tests / 149 assertions green;
+hermetic Nix check green.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;

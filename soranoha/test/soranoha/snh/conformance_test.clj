@@ -205,7 +205,17 @@
 
 ;; --- the schemas themselves are valid 2020-12 schemas ----------------------
 
+(def ^:private meta-schema-ref
+  ;; $ref to the meta-schema validates a schema document; a bare $schema
+  ;; member only declares a dialect and constrains nothing.
+  {"$ref" "https://json-schema.org/draft/2020-12/schema"})
+
 (deftest protocol-schemas-are-valid-json-schemas
-  (doseq [[type resource] schema/schema-resources]
+  (doseq [[type _] schema/schema-resources]
     (testing type
-      (is (nil? (ported-schema/schema-valid! (schema/schema-for type) resource))))))
+      (is (nil? (ported-schema/validation-errors meta-schema-ref
+                                                 (schema/schema-for type))))))
+  (testing "control: the check can fail"
+    (is (seq (ported-schema/validation-errors
+              meta-schema-ref
+              {"type" "definitely-not-a-json-schema-type"})))))

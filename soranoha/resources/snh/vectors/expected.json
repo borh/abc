@@ -62,6 +62,16 @@
       "reason": "schema-invalid"
     },
     {
+      "file": "release-manifest-invalid-relative-origin.json",
+      "type": "release-manifest",
+      "reason": "invalid-upstream-origin"
+    },
+    {
+      "file": "assessment-snapshot-invalid-impossible-date.json",
+      "type": "assessment-snapshot",
+      "reason": "invalid-effective-date"
+    },
+    {
       "file": "admission-report-invalid-policy-id-member.json",
       "type": "admission-report",
       "reason": "schema-invalid"

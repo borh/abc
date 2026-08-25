@@ -35,10 +35,13 @@ appendix for their activation triggers.
   OF THE FOUR PROTOCOL JSON OBJECTS (the §2 registry) and to NOTHING
   ELSE, on both the assembler and verifier sides):
   reject duplicate object keys; parse WITHOUT coercion; validate the
-  parsed value against its frozen JSON Schema; canonicalize that same
-  value; require the STORED bytes to EQUAL the canonical bytes;
-  recompute the id from those bytes. Equivalent-but-noncanonical
-  stored JSON (same value, different bytes) is INVALID.
+  parsed value against its frozen JSON Schema; apply the type's
+  SINGLE-OBJECT semantic boundary rules (F154/F156 — real calendar
+  dates, absolute origin; cross-object and transition invariants stay
+  in §8); canonicalize that same value; require the STORED bytes to
+  EQUAL the canonical bytes; recompute the id from those bytes.
+  Equivalent-but-noncanonical stored JSON (same value, different
+  bytes) is INVALID.
 - Artifact id string form: `snh:1:<type>:<sha256hex>`.
 - `manifest_id` = sha256 hex over the manifest's canonical bytes.
   External citation form: `snh:1:release-manifest:<hex>`.
@@ -159,9 +162,10 @@ required. The schema is authoritative for structure per F88):
   dates are permitted here — the structural no-date-field rule binds
   manifest and event bytes), `basis` a non-empty recorded-basis string.
 
-Semantic boundary rules (F154 — enforced by assembler/verifier code,
-never by JSON Schema `format`, whose enforcement is inconsistent
-across validators):
+Semantic boundary rules (F154 — enforced inside the §1 boundary
+decode after structural validation (F156), so assembler and verifier
+inherit them from the one shared operation; never JSON Schema
+`format`, whose enforcement is inconsistent across validators):
 - every non-null `effective_date` must be a real proleptic-Gregorian
   calendar date (schema syntax alone admits e.g. `2026-99-99`);
 - `corpus.upstream_origin` (§3) must be an absolute URI with a scheme
@@ -342,10 +346,11 @@ Structural:
 - `invalid_count == count(invalid_slugs)`; `invalid_slugs` ⊆ works'
   slugs, sorted; summary re-derivable from the per-work `tei-validation`
   artifacts.
-- Semantic boundary rules (F154, checked in code — never via JSON
-  Schema `format`): `corpus.upstream_origin` is an absolute URI with a
-  scheme and non-empty host; every non-null `effective_date` in the
-  assessment snapshot is a real proleptic-Gregorian calendar date.
+- Semantic boundary rules (F154/F156, applied inside the §1 boundary
+  decode — never via JSON Schema `format`): `corpus.upstream_origin`
+  is an absolute URI with a scheme and non-empty host; every non-null
+  `effective_date` in the assessment snapshot is a real
+  proleptic-Gregorian calendar date.
 
 Admission (fetch both evidence artifacts by hash):
 - The report's fields match `admission` field-for-field over the

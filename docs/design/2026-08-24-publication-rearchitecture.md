@@ -27,8 +27,9 @@ here):
   review; the AGENTS.md manifest-ownership update (D20 as amended).
 - Before Slice 3: O1 + full-corpus assessment data; the deployment
   prerequisites below; the F75 pre-release discovery channel named.
-- Owner decisions OPEN: O1, O3 (recommendation: b), O5a (reduced to a
-  one-paragraph ratifiable proposition, F111), F75 channel.
+- Owner decisions OPEN: O1, O3 (recommendation: b), O5a (one-paragraph
+  proposition per F111, corrected per F112/F115 round 22; spec §7
+  marked [O5a-PENDING]), F75 channel.
   Most recently ratified: O2a (2026-08-25 — Forgejo is the
   authoritative protected HTTPS origin with conditional ref updates;
   all other locations are downstream byte distribution), F83
@@ -116,8 +117,8 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D15 | Naming ratified per 2026-07-03 Model B spec: new top-level `soranoha/` component; namespaces `soranoha.core` (shared types/config/the one canonicalizer), `soranoha.yomi` (source-acquirer+selector), `soranoha.kura` (trace store+CAS+verifier), `soranoha.ori` (stages/renderers/validation), `soranoha.za` (release assembly+publishing). Vocabulary reused, NOT the old spec's scope (no LOD/IIIF/XTDB in v1). `snh:` id prefix per D13. | owner, 2026-08-24 | dir rename trivial pre-first-release |
 | D16 | Wire formats: normative v1 = the protocol spec's FOUR canonical JSON schemas (manifest, assessment-snapshot, admission-report, governance-event) + fixed raw signature/key/`releases/HEAD` encodings; canonicalizer `rfc8785-safe-integer-json-string-v1`; closed type registry. FREEZE at the pre-Slice-2 review, whose approved objects are the executable JSON Schemas + conformance vectors (F80/F88). Full semantics: `snh-protocol-v1.md` (sole normative source). Amendment history: F3→F13 (D16.1) and rounds 3–19 (F16–F104) in the findings sections. | review rounds 2–19 | draft — cheap to change until the pre-Slice-2 freeze |
 | D17 | Publication = the spec §9 transaction: single-parent commit fast-forward-pushed to the protected branch (the remote ref is the CAS, D17.1/F10); rejection/unknown result → CURRENT-STATE reconciliation (discard the assembled manifest, refetch, recompute; F86); scheduled-build no-op on the F67 projection; nondeterminism halts. Amendment history: F1→F10→F61→F66/F67→F73/F79→F86 in the findings sections. | review rounds 2–16 | internal protocol, revisable |
-| D18 | Retention/archival: all published manifests + referenced blobs are permanent GC roots; the publication repo carries the published artifact bytes (bytes-in-git so SWH archives real bytes; accepted subject to the F12 growth probe, F93); stored lifecycle state = `published` only; archive-verified = the observed predicate `archive_verified(C)` (spec §10, F97/F101); citation eligibility computed from it; independent authorship checkpoints = credential-separated Zenodo deposits (F70). Amendment history: F2→F11/F12→F63/F71→F93/F97/F101. | owner-endorsed + review rounds 2–19 | promise text frozen at first public release |
-| D19 | Trust: v1 = TWO directly pinned disjoint Ed25519 keys — online CI RELEASE key (manifests) and offline owner GOVERNANCE key (withdrawal/amendment); raw detached signatures over domain-separated messages; fingerprints over decoded raw key bytes (spec §6–§7). On compromise: publication/governance HALTS; the chain freezes at the last credential-separated Zenodo checkpoint (F55/F59/F70); authenticated freshness deferred. The root-key/key-manifest/recovery protocol (F8–F47) is DEMOTED to the non-frozen contingency appendix with O5a activation triggers (before a second key, a continuity promise, or a freshness consumer — never mid-incident). Amendment history: F8→F22–F47→O5a/F48–F55 in the findings sections. | review-adopted; O5a staging round 9 | contingency activates per O5a trigger |
+| D18 | Retention/archival: all published manifests + referenced blobs are permanent GC roots; the publication repo carries the published artifact bytes (bytes-in-git so SWH archives real bytes; accepted subject to the F12 growth probe, F93); stored lifecycle state = `published` only; archival status = a successful `archive_verification(view, C, keys)` observation report (spec §10, F97/F101/F113); citation eligibility requires a successful observation satisfying the current citation policy; independent authorship checkpoints = credential-separated Zenodo deposits (F70). Amendment history: F2→F11/F12→F63/F71→F93/F97/F101. | owner-endorsed + review rounds 2–19 | promise text frozen at first public release |
+| D19 | Trust: v1 = two disjoint ROLES with FIXED directly pinned Ed25519 key sets — RELEASE: one online CI key (manifests); GOVERNANCE: two offline owner-held hardware keys, generated on-device, stored separately (withdrawal/amendment; a signature verifies against any member) — **O5a-as-amended, owner ratification PENDING (F114)**. Sets never change after genesis within v1 (F112: any change = a new separately verified trust epoch, or successor-protocol activation BEFORE the change). Raw detached signatures over domain-separated messages; fingerprints over decoded raw key bytes; key bytes/fingerprints live in the independent anchor + pinned verifier config only (F116). Known-destroyed governance device → DEGRADED one-key mode; unaccounted-for token → suspected compromise → HALT (F115); compromise of any member → HALT; chain freezes at the last credential-separated Zenodo checkpoint (F55/F59/F70); freshness deferred. Key-manifest/recovery designs stay in the non-frozen contingency appendix; activation trigger: BEFORE any set change, continuity promise, or freshness consumer — never mid-incident. Amendment history: F8→F22–F47→O5a/F48–F55→F112–F117. | review-adopted; O5a staging round 9; owner-directed set-of-2 + round-22 corrections | contingency activates per O5a trigger |
 | D20 | **Ownership** (F6): TEI profile schemas consumed as explicit flake input from abc during migration (no schema copies). **Amended F56 (round 11): the publication-schema/manifest-identity transfer has NO Slice-1 consumer after F52 — ABC keeps that ownership during Slice 1; soranoha/ owns only kernel/CAS/trace-store/copied renderers; the AGENTS.md transfer moves to the first Slice-2 work that assembles manifests. Slice 1 waits on nothing administrative.** | review-adopted 2026-08-24; amended round 11 | owner action: AGENTS.md edit, before Slice 2 |
 | D21 | **Rights/registry admission restored** (F14): the fail-closed value-plus-hash rights authority (policy hash recorded in manifest `admission`); per-work inclusion governed by named rule (O1, owner); admission responsibility consumed from abc or transferred in AGENTS.md before Slice 3. Currently `publication-policy.edn` BLOCKS release. **F60 (round 12): admission lives ENTIRELY in soranoha.za — `load-rights-authority!`, inclusion rules, and the fail-closed block are RELEASE-ASSEMBLER concerns, never kernel concerns. The kernel builds any selected inputs, policy-blind (F52); Slice 2 uses fixture admission inputs; Slice 3 connects the production authority. The earlier "kernel ports/inherits" wording was a leak that could have reintroduced the build/publication coupling F52 removed.** **F17: admission is assessment-based per O1 (adopted reviewer rule); catalog flags seed, never authorize; private archiving needs its own authorization policy.** **F24 (as amended by F61/F71 — intent_id no longer exists): the assessment data itself is cryptographically committed — bound in `admission` and part of the F67 build projection, so newly completed assessments change the manifest and are never no-op'd as duplicates. F30: the commitment is two retained public artifacts, separating domain roles — the assessment SNAPSHOT commits facts (public-domain / in-copyright / undetermined / not-evaluated per contribution, F35/F47); the admission REPORT records the inclusion rule's total partition (admitted/excluded/quarantined with reasons). Both published, permanently rooted, hash-resolvable. F38: works = admitted − withdrawn.** | review rounds 2–8 | policy content owner-governed; mechanism fixed |
 
@@ -877,20 +878,21 @@ in agent report" headings redirected to the inlined sources list.
   RELEASE: one online CI key, signs manifests; GOVERNANCE: two
   offline owner-held hardware keys, each generated on its own token,
   stored separately, signing withdrawal/amendment events (a signature
-  verifies against any set member). It provides no authenticated
-  freshness and no in-band rotation or recovery; it HALTS the
-  affected operation on COMPROMISE of any set member or LOSS of a
-  role's last remaining key (loss of one governance device while
-  another remains does not halt); and it treats releases after the
-  last independent checkpoint as CONTESTED until an out-of-band
-  notice names the accepted cutoff. Before enlarging a pinned set,
-  promising cryptographic continuity, or serving a consumer requiring
-  authenticated freshness, a successor trust protocol must be
-  designed and exercised — never improvised mid-incident."**
-  (Amended from "exactly one key per role" by OWNER DIRECTION
-  2026-08-25 — governance-set size 2; see the owner-direction note
-  after round 21.) Facilitator and reviewer recommend ratifying.
-  Owner yes/no pending on the amended text.
+  verifies against any set member). The sets are FIXED FOREVER within
+  v1 — any change is a new trust epoch verified separately, or the
+  separately designed successor protocol activated BEFORE the change.
+  It provides no authenticated freshness and no in-band rotation or
+  recovery. A governance device KNOWN destroyed or failed leaves
+  governance in DEGRADED one-key operation; an UNACCOUNTED-FOR token
+  is suspected compromise and HALTS; COMPROMISE of any member HALTS
+  the affected role. Releases after the last independent checkpoint
+  are CONTESTED until an out-of-band notice names the accepted
+  cutoff."**
+  (Amended by owner direction 2026-08-25 — governance-set size 2 —
+  and corrected by F112/F115, round 22: sets fixed forever; the
+  degraded-mode/halt distinction replaces "loss does not halt".)
+  Facilitator and reviewer recommend ratifying. Owner yes/no pending
+  on the corrected text.
 
 ## External design review round 3 (2026-08-24) — findings F16–F23
 
@@ -2003,19 +2005,23 @@ mechanism):
 - BEFORE the first signed release: composition is free — nothing is
   pinned until the trust-anchor deposit + discovery-channel
   publication.
-- PLANNED change after release (add a member, retire a device): a new
-  TRUST EPOCH executed out-of-band — publish the new fingerprint set
-  via the F75 discovery channel + a new Zenodo deposit under the SAME
-  concept DOI, update `keys/`, verifiers re-pin. The channel and the
-  concept DOI are the durable roots that survive epochs. Honest
-  limit: cross-epoch verification of old signatures is DOCUMENTARY
-  (the checkpoint chain records each epoch's fingerprints), not
-  cryptographic — acceptable for rare deliberate epochs only.
+- AFTER the first signed release: the pinned sets NEVER change within
+  v1 (F112, round 22 — the round-21 "planned re-pin epoch continuing
+  the chain" is RETRACTED: the verifier checks the FULL chain under
+  one `pinned_keys` argument, so removing a member fails historical
+  signatures, retaining it authorizes future events, and v1 has no
+  epoch/window machinery to distinguish the cases). Any change is
+  either a NEW trust epoch — a separate chain verified independently
+  under new pins — or activation of the successor key protocol
+  BEFORE the change.
 - Distrusted key: not "removal" but COMPROMISE — halt, freeze at the
   last checkpoint, out-of-band notice, successor epoch designed
   deliberately (F49/F55).
-- Loss of ONE governance device: no protocol action; the other member
-  continues; restore redundancy via a planned epoch at leisure.
+- One governance device KNOWN destroyed or failed: governance
+  continues in DEGRADED one-key mode; the set does not change (F115).
+  An UNACCOUNTED-FOR token is SUSPECTED COMPROMISE → halt ("loss
+  without compromise" is not normally observable; "losing one
+  requires no action" was unsafe wording and is retracted).
 - "Old key signs new key" is the key-manifest protocol (rollback
   protection, validity windows, history root — F27–F46), parked
   NON-FROZEN in the contingency appendix. Wanting routine add/remove
@@ -2030,6 +2036,49 @@ checkpoint deposit (an upload of already-signed manifest bytes — no
 governance signature involved). ONE-TIME: the key ceremony + trust
 anchor before the first signed release. Daily releases involve only
 the CI release key.
+
+## External design review round 22 (2026-08-25) — findings F112–F117
+
+Reviewer verdicts: F110/F111 sound; F109's model right but partially
+applied; O5a NOT yet ratifiable as then worded; the two-key fixed set
+itself reasonable; Slices 0–1 unaffected and ready.
+
+- **F112 (post-release re-pinning cannot verify the existing chain —
+  Blocker)** — the verifier checks the FULL chain under one
+  `pinned_keys` argument: removing an old key fails historical
+  signatures; retaining it authorizes future events; no epoch/window
+  machinery distinguishes the cases. The facilitator's round-21
+  "planned re-pin epoch continuing the chain" was incompatible with
+  v1, not merely weaker — RETRACTED. v1 rule (spec §7): the pinned
+  sets NEVER change after genesis; any change is a new separately
+  verified trust epoch, or successor-protocol activation BEFORE the
+  change.
+- **F113 (F109 left the defective API in place — Blocker)** — the
+  predicate-shaped `archive_verified(C)` is RETIRED everywhere (spec
+  §10/§11, D18, Slice 3): archive verification is ONE operation,
+  `archive_verification(archived_view, C, pinned_keys) → report`.
+  "Citation eligibility from the latest report" was undefined
+  (disposable reports have no ordering contract; a later failure need
+  not invalidate an earlier success) — eligibility now requires a
+  SUCCESSFUL observation satisfying the CURRENT citation policy.
+- **F114 (pending decision already normative — High)** — spec §7 is
+  marked [O5a-PENDING], the spec header lists O5a among open items,
+  and D19 is reconciled to the two-role fixed-set text with the
+  pending marker.
+- **F115 ("lost without compromise" not observable — High)** — a
+  device KNOWN destroyed/failed → DEGRADED one-key governance (set
+  unchanged); an UNACCOUNTED-FOR token → suspected compromise → HALT.
+  "Losing one requires no action" retracted as unsafe wording.
+- **F116 (remove `keys/*.pub` from the normative protocol —
+  Simplification, adopted)** — verification receives independently
+  pinned keys and cannot trust repo-hosted copies; key bytes +
+  fingerprints live in the anchor + pinned verifier config ONLY; repo
+  copies (if kept for humans) are non-normative and MUST be ignored
+  by verifiers.
+- **F117 (exercise the hardware boundary — adopted)** — the key
+  ceremony EXPLICITLY configures PIN + touch policy (YubiKey touch
+  defaults can be Never) and has BOTH governance devices sign a fixed
+  protocol conformance vector before deployment.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
@@ -2175,13 +2224,14 @@ check; scheduled-build no-op per the F67 projection.
 Forgejo auto-release polls upstream; admission is a fail-closed input
 (policy hash in manifest). Serving tree (blobs/, releases/, history.json)
 derives from the repo. Archival: SWH save-code-now per release,
-non-blocking; **archive-verified per F97/F101/F105: `archive_verified(C)`
-= C present in the archived view + C a publication commit (F106) +
-`verify_repository_at(archived_view, C, pinned_keys)` succeeds with
-the SWH snapshot as the sole repository view (spec §8/§10) — no
-fallback reads from the live origin; the disposable F109 report
-records the SWH snapshot id, C, key fingerprints, and verifier
-version + result — no receipt artifact**. Acceptance: (1) two consecutive automated releases
+non-blocking; **archival status per F113 (one operation, one name):
+`archive_verification(archived_view, C, pinned_keys) → report` — C
+present + a publication commit (F106) + the §8 primitive succeeding
+with the SWH snapshot as the sole repository view (no fallback
+reads); the disposable report records the SWH snapshot id, C, key
+fingerprints, and verifier version + result — no receipt artifact;
+citation eligibility = a successful observation under the current
+citation policy**. Acceptance: (1) two consecutive automated releases
 from real upstream movement, chain verified end-to-end by the published
 checker; (2) a forced concurrent-publish attempt loses the push race and
 reconciles per spec §9 current-state rules — discards its manifest,
@@ -2251,13 +2301,17 @@ back by citing the previous release tag.
   the first real withdrawal. (Per F82 the public `evidence_hash`
   commitment is removed from v1; the record is purely operational until
   a concrete audit consumer and encoding exist.)
-- Pinned-key setup (O5a/F54; governance-set amendment 2026-08-25):
-  generate the RELEASE key (online, CI) and TWO GOVERNANCE keys — each
-  generated ON its own YubiKey (PIV Ed25519, firmware ≥ 5.7.0, PIN +
-  touch policy; FIDO2 resident keys CANNOT satisfy the raw-Ed25519
-  wire contract), devices stored separately; publish
-  `keys/release.pub` + `keys/governance-1.pub` +
-  `keys/governance-2.pub`, AND publish the minimal
+- Pinned-key setup (O5a/F54; governance-set amendment 2026-08-25;
+  F116/F117 round 22): generate the RELEASE key (online, CI) and TWO
+  GOVERNANCE keys — each generated ON its own YubiKey (PIV Ed25519,
+  firmware ≥ 5.7.0; FIDO2 resident keys CANNOT satisfy the
+  raw-Ed25519 wire contract), devices stored separately. The ceremony
+  EXPLICITLY configures PIN + touch policy (touch defaults can be
+  Never) and has BOTH governance devices sign a fixed protocol
+  conformance vector (F117). Key bytes + fingerprints go in the
+  independent anchor + pinned verifier configuration ONLY; repo
+  `keys/` copies are optional, non-normative, and ignored by
+  verifiers (F116). Publish the minimal
   trust anchor on Zenodo (F59/F63: the deposit carries key bytes +
   fingerprints + the ACTUAL genesis manifest bytes and signature — never
   a record that merely names a head — making it both the first pin

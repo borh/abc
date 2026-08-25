@@ -3,8 +3,9 @@
 Status: **NORMATIVE DRAFT — the sole normative source, effective now
 (F84).** The D16.1 freeze changes stability (no further changes without
 a decision-log entry), not precedence. Open items marked inline: the
-owner's O3 choice and the assessment-snapshot content fields (F83
-naming was owner-ratified 2026-08-25). Per F80, the FROZEN objects are the executable
+owner's O3 choice, the O5a ratification (§7, F114), and the
+assessment-snapshot content fields (F83 naming was owner-ratified
+2026-08-25). Per F80, the FROZEN objects are the executable
 JSON Schemas plus the conformance vectors (§11). Authority split
 (F88): the JSON Schemas govern STRUCTURE; this document governs
 SEMANTIC and STATE invariants; the conformance vectors demonstrate
@@ -140,8 +141,11 @@ the ASSEMBLER against the rule bytes it holds.
   - manifests: `snh-manifest-sig/1:<manifest_id>`
   - governance events: `snh-governance-event-sig/1:<event hex>`
 - `.sig` file: EXACTLY 64 raw Ed25519 signature bytes.
-- `.pub` file: EXACTLY 65 bytes — 64 lowercase ASCII hex characters
-  (the 32 raw Ed25519 public-key bytes) + one LF.
+- Key-bytes file (`.pub`; the encoding for key bytes in the
+  trust-anchor deposit and pinned verifier configuration — any
+  repository copy is non-normative and ignored by verifiers, F116):
+  EXACTLY 65 bytes — 64 lowercase ASCII hex characters (the 32 raw
+  Ed25519 public-key bytes) + one LF.
 - Key FINGERPRINT: lowercase sha256 hex over the DECODED 32 raw key
   bytes (never over `.pub` file bytes).
 - `releases/HEAD` file: EXACTLY 65 bytes — 64 lowercase ASCII hex + one
@@ -151,10 +155,18 @@ the ASSEMBLER against the rule bytes it holds.
 
 ## 7. Keys and verification
 
+**[O5a-PENDING (F114) — this section implements the amended O5a
+proposition; owner ratification outstanding.]**
+
 Two disjoint ROLES, each a FIXED, directly pinned, non-empty SET of
-Ed25519 keys (owner-directed, 2026-08-25: sets, not singletons — for a
-solo owner, loss of the only governance device was the dominant real
-risk); no key-manifest, no in-band rotation, no envelope in v1:
+Ed25519 keys. The sets NEVER CHANGE after genesis within v1 (F112 —
+the verifier takes ONE `pinned_keys` argument over the FULL chain:
+removing a member fails historical signatures, retaining it
+authorizes future events, and no epoch/window machinery exists to
+distinguish the cases. Any change is either a NEW trust epoch — a
+separate chain verified under new pins — or activation of the
+successor key protocol BEFORE the change). No key-manifest, no
+in-band rotation, no envelope in v1:
 
 - **RELEASE role** (online, held by CI; v1 set size 1): signs release
   manifests — authenticates that Soranoha issued the release.
@@ -162,27 +174,40 @@ risk); no key-manifest, no in-band rotation, no envelope in v1:
   GENERATED ON its own hardware token, non-exportable, devices stored
   separately): signs governance events — authenticates
   withdrawal/amendment authority. A compromised release key cannot
-  withdraw works; LOSS of one governance device does not halt
-  governance while another pinned member remains.
+  withdraw works.
 
 The verifier selects the ROLE from the signed object's kind,
 constructs the domain-separated message from the artifact it holds,
 and accepts the raw signature iff it verifies against SOME member of
-that role's pinned set. COMPROMISE of ANY member halts the role's
-operations (fail-closed — a valid signature no longer proves
-authority); loss WITHOUT compromise does not, while a member remains.
-Public keys at fixed paths: `keys/release.pub` and
-`keys/governance-<n>.pub` (n = 1..N ascending, v1 N = 2; encoding §6)
-— convenience copies; the trust anchor is the out-of-band fingerprints
-of EVERY member, obtained from the owner-named pre-release discovery
-channel, which carries the Zenodo concept DOI and all pinned
-fingerprints before the first signed release.
+that role's pinned set.
+
+Degradation and halt (F115 — "lost without compromise" is not
+normally observable): a governance device KNOWN to be destroyed or
+failed leaves governance operating in DEGRADED one-key mode — the
+pinned set itself never changes; the destroyed key simply signs
+nothing further in this epoch. An UNACCOUNTED-FOR token is SUSPECTED
+COMPROMISE and triggers the halt rule. COMPROMISE of any member halts
+the role's operations (fail-closed — a valid signature no longer
+proves authority).
+
+Key distribution (F116): pinned key BYTES and fingerprints live ONLY
+in the independent trust anchor and the verifier's pinned
+configuration, obtained via the owner-named pre-release discovery
+channel (which carries the Zenodo concept DOI and every pinned
+fingerprint before the first signed release). Repository copies of
+public keys, if kept for humans, are NON-NORMATIVE; verifiers MUST
+ignore them — a repo-hosted copy cannot authenticate itself and adds
+path/synchronization/completeness questions with no verifier
+consumer.
 
 Signer hardware note (non-normative): any signer producing plain
 Ed25519 over the §6 message satisfies this section — e.g. a YubiKey
-PIV Ed25519 slot (firmware ≥ 5.7.0, PIN + touch policy). FIDO2
-resident keys do NOT: CTAP2 assertions sign authenticator data + a
-counter, never the raw message, and cannot verify under §6.
+PIV Ed25519 slot (firmware ≥ 5.7.0). PIN and TOUCH policy are
+EXPLICITLY configured at ceremony time — touch defaults can be Never
+(F117) — and the ceremony has BOTH governance devices sign a fixed
+protocol conformance vector. FIDO2 resident keys do NOT satisfy §6:
+CTAP2 assertions sign authenticator data + a counter, never the raw
+message.
 
 ## 8. Verifier invariants
 
@@ -397,29 +422,25 @@ determinism defect.
   admitted work. Hash-level suppression, if legal policy ever
   requires it, is an explicit operational denylist plus a shared-blob
   policy OUTSIDE this protocol.
-- archive-verified is an OBSERVED reproducible predicate defined by
-  REUSING the verifier, BOUND to the expected commit (F97/F101 —
-  co-presence does not join the two facts: a later archive snapshot
-  can contain expected commit C while its branch head points to a
-  different manifest, and verifying "the repository" could then
-  validate that other release while C is invalid). Definition:
-  `archive_verified(C)` := C is present in the archived view, C is a
-  PUBLICATION COMMIT (§8, F106 — uniqueness follows from the
-  linear-history invariants, no search required), AND
-  `verify_repository_at(archived_view, C, pinned_keys)` (§8, F105)
-  succeeds — the archived SWH snapshot is the SOLE repository view;
-  nothing is read from the live origin or resolver. The OBSERVATION
-  is explicit (F109 — the result is a function of the view, keys, and
-  verifier, not of C alone: the same C can fail before SWH completes
-  ingestion and pass afterward):
-  `archive_verification(archived_view, C, pinned_keys) → report`,
-  where the DISPOSABLE report records the SWH snapshot identifier, C,
-  the pinned key fingerprints, and the verifier version + result — no
-  signed receipt, no frozen schema; it makes the reproducible
-  observation reproducible. Archive verification claims
-  repository-closure completeness plus the public §7–§8 invariants —
-  nothing more (F102). Citation eligibility is computed from the
-  latest report.
+- Archive verification is ONE operation and ONE name (F109/F113 — the
+  predicate-shaped `archive_verified(C)` is RETIRED; its result was
+  never a function of C alone):
+  `archive_verification(archived_view, C, pinned_keys) → report`.
+  Requirements: C is present in the archived view; C is a PUBLICATION
+  COMMIT (§8, F106); the §8 primitive
+  `verify_repository_at(archived_view, C, pinned_keys)` succeeds with
+  the archived SWH snapshot as the SOLE repository view (F97/F101/
+  F105 — nothing is read from the live origin or resolver;
+  co-presence of C and a valid head is not binding). The DISPOSABLE
+  report records the SWH snapshot identifier, C, the pinned key
+  fingerprints, and the verifier version + result — no signed
+  receipt, no frozen schema. The claim is repository-closure
+  completeness plus the public §7–§8 invariants — nothing more
+  (F102). CITATION ELIGIBILITY requires a SUCCESSFUL observation
+  satisfying the CURRENT citation policy (F113 — disposable reports
+  have no ordering contract, so "the latest report" is undefined, and
+  a later failed observation does not necessarily invalidate an
+  earlier successful one).
 - Archive resolution recipe (F94 — a documented recipe, no new wire
   format): the published promise documents how to map a manifest id +
   artifact id to the archived publication commit and the sharded
@@ -463,11 +484,11 @@ approves — authored BEFORE that review, not transcribed after it.
    conflicting-withdrawal halt, stale-`amends` halt; and the F101
    archive-binding NEGATIVE fixture — an archived snapshot whose
    current head verifies but whose expected commit C is invalid (or
-   is not a publication commit per F106) must FAIL
-   `archive_verified(C)`; the F105 view-isolation NEGATIVE fixture —
-   an archived view lacking a required signature/blob that the live
-   origin still has must FAIL archive verification (no fallback
-   reads); and the F110 tree-reachability NEGATIVE fixture — a
+   is not a publication commit per F106) must produce a FAILED
+   `archive_verification` report; the F105 view-isolation NEGATIVE
+   fixture — an archived view lacking a required signature/blob that
+   the live origin still has must FAIL (no fallback reads); and the
+   F110 tree-reachability NEGATIVE fixture — a
    required blob present ELSEWHERE in the same archived object graph
    (another branch, a later commit, or dangling) but absent at its
    prescribed path under C's tree must FAIL.

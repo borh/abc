@@ -25,6 +25,19 @@ Status (post review round 16, 2026-08-25):
   F83; the `r<hash12>` display alias moved out of the protocol.
   **F83 RATIFIED by owner 2026-08-25** — dateless canonical naming is
   settled; D13 amended.
+- Round-17 (storage) fixes applied: F90 (Radicle cannot be the D17.1
+  serialization authority — recommendation: Forgejo authoritative,
+  Radicle optional downstream mirror), F91 (carriers interchangeable
+  for BYTES only; the origin alone attests current state — spec §9;
+  five-layer terminology adopted), F92 (honest withdrawal promise in
+  spec §10: removal from current corpus and work-facing service, never
+  byte erasure or hash suppression), F93 (sharded blob layout in spec
+  §1; 2.4 GB is raw size — F12 must measure packed growth), F94 (SWH
+  acceptance + ~4 GiB pack threshold unproven; archive resolution
+  recipe added to spec §10), F95 (private-CAS GC grace-period/serialize
+  rule; non-blocking for Slice 1). New blockers attach to O2, public
+  withdrawal wording, and the archival promise — NOT the kernel;
+  Slices 0–1 unaffected.
 - Round-15 fixes applied in the protocol: F78 (first-parent HEAD
   transitions must satisfy `M.prev_manifest == H` — closes silent
   chain replacement), F79 (complete build/build reconciliation:
@@ -413,7 +426,11 @@ roots, lifecycle direction, and bytes-in-git decision below remain live.]**
 - SWH archives *submitted repositories*, not our CAS (SWH save-code-now API
   docs); w3id is redirect-only. Therefore the **public git repo contains the
   published artifact bytes themselves** (git packs dedup content-addressed
-  small files well; ~2.4 GB raw/generation is in-budget), and SWH ingestion
+  small files well; ~2.4 GB raw/generation is in-budget **[F93, round 17:
+  that figure is RAW corpus size, not measured packed-repository growth —
+  bytes-in-git is accepted only after the F12 growth probe measures packed
+  size across incremental releases, clone/fetch sizes, and repack cost;
+  blob paths are sharded per spec §1]**), and SWH ingestion
   of that repo archives actual bytes, not just manifests.
 - **Archival receipts** (SWH snapshot id; Zenodo DOI for quarterly bundles)
   are recorded in a *subsequent* manifest (no self-reference). The
@@ -849,24 +866,29 @@ in agent report" headings redirected to the inlined sources list.
   prevention, branch-deletion protection, and recovery from a rejected
   concurrent push. **Per F28, O2/F12 gate Slice 3 only — they are removed
   from the D16.1 freeze gate (the host does not affect the wire schema).**
-  **Candidate shape recorded 2026-08-25 (owner is considering Radicle
-  for development, Forgejo/GitHub as mirrors):** (i) Radicle as the
-  authoritative origin — the RID is self-certifying (pins the repo
-  identity in the F75 discovery channel), the publication repo's sole
-  publishing delegate is the CI node key, and D17.1's serialization is
-  the publisher's local lock + delegate-signed ref; every seeder is a
-  full byte replica. SWH would ingest a FORGEJO/GITHUB MIRROR (commit
-  hashes identical; the archive-verified predicate checks commit +
-  blobs + hashes, which any mirror satisfies byte-for-byte) — SWH has
-  no Radicle loader. (ii) Forgejo as the authoritative CAS origin
-  (server-side fast-forward-only protected branch) with Radicle +
-  GitHub as mirrors. Probes before approval, per F12 ON the named
-  origin: SWH save-code-now against the ingestion URL; seed/mirror
-  behavior at ~2.4 GB/generation growing packfiles; rejected-push
-  recovery. `radicle-artifact` (iroh-blobs/BLAKE3 release COBs) is NOT
-  the v1 storage of record — parallel identity scheme, no SWH path,
-  transport-key trust, explicitly early-stage (fails the F51 ratchet);
-  revisit as an optional additional distribution location only.
+  **Candidate shape recorded 2026-08-25; CORRECTED by round 17
+  (F90):** the owner is considering Radicle for development, with
+  Forgejo/GitHub mirrors. Radicle CANNOT currently be the D17.1
+  serialization authority: pushes are local, authority derives from
+  delegate-signed refs, and the remote helper's fast-forward check was
+  removed (Radicle 1.4.0 release notes) — a sole delegate plus a local
+  lock does NOT provide the cross-host conditional update that F78/F85
+  assume (the facilitator's earlier claim here that it did is
+  RETRACTED). **Recommendation: Forgejo is the authoritative protected
+  HTTPS origin; Radicle is an optional downstream distribution
+  mirror** (its self-certifying RID may still ride the F75 discovery
+  channel as a mirror pin; every seeder is a byte replica). Making
+  Radicle authoritative would reopen D17/O2 and require an external
+  single-writer/CAS mechanism. F12 on the named origin must MEASURE
+  (F93/F94): packed repository size after many incremental releases,
+  clone/fetch sizes, repack time and peak RSS, loose-object growth
+  before maintenance; SWH save-code-now acceptance of the ingestion
+  URL (moderation possible for unfamiliar origins; git loader's
+  default pack-size threshold ≈ 4 GiB). `radicle-artifact`
+  (iroh-blobs/BLAKE3 release COBs) is NOT the v1 storage of record —
+  parallel identity scheme, no SWH path, transport-key trust,
+  explicitly early-stage (fails the F51 ratchet); revisit as an
+  optional additional distribution location only.
 - **O3 — withdrawal-record mutability (F26/F31; recast by the F62
   collapse, round 12 — "tombstone" no longer exists; the question now
   concerns a slug's GOVERNING EVENT id in `withdrawn`).** Settled either
@@ -1750,6 +1772,77 @@ applied/recorded. **Owner RATIFIED F83 on 2026-08-25.**
   `admission`, but the report has no `policy_id`. Invariant corrected
   to the fields actually present.
 
+## External design review round 17 (2026-08-25) — findings F90–F95 (storage)
+
+Reviewer verdicts: F83 sound and materially simplifying; the
+four-layer storage model close, but three of the facilitator's claims
+overreached (Radicle transaction compatibility; carrier
+interchangeability; withdrawal's effect on the blob resolver). Slices
+0–1 unaffected — the new blockers attach to O2, public withdrawal
+WORDING, and the archival promise, not the kernel.
+
+- **F90 (Radicle authority conflicts with the publication transaction
+  — Blocker to O2)** — O2 requires an authoritative HTTPS origin with
+  protected fast-forward-only semantics; Radicle pushes are LOCAL,
+  authority derives from delegate-signed refs, and the remote helper's
+  fast-forward check was removed (Radicle 1.4.0 notes). A sole
+  delegate + local lock does not provide the cross-host conditional
+  update F78/F85 assume — the facilitator's prior-day claim is
+  retracted in the O2 entry. Resolution: **Forgejo authoritative;
+  Radicle an optional downstream distribution mirror.** Radicle-
+  authoritative would reopen D17/O2 with an external single-writer/CAS
+  mechanism.
+- **F91 ("no storage location is trusted" conflates byte integrity
+  with state authority — Strong, adopted)** — given a KNOWN artifact
+  id any carrier authenticates bytes; no carrier but the authoritative
+  origin attests the latest head, ordering, completeness, observed
+  withdrawals, or current-vs-stale-valid-prefix. Spec §9 now states
+  this; O2 is low-stakes for byte authenticity, HIGH-stakes for
+  ordering, protection, availability, progress. Terminology adopted:
+  **build store / authoritative publication repository / serving
+  replica / preservation archive / independent checkpoint.**
+- **F92 (withdrawal cannot reliably stop a global content-addressed
+  URL — Blocker before promising withdrawal semantics)** — `withdrawn`
+  acts on slugs; `/blobs/sha256/<hex>` identifies bytes globally;
+  blobs may be shared by other admitted works; old commits, clones,
+  archives remain regardless. The honest minimal promise (now spec
+  §10): withdrawal removes the work from current official manifests,
+  discovery, and work-facing serving routes; immutable bytes may
+  remain retrievable by hash. Hash-level suppression, if ever legally
+  required, is an explicit denylist + shared-blob policy outside the
+  protocol.
+- **F93 ("zero new storage" / 2.4 GB not yet Git measurements —
+  Strong, adopted)** — dedup covers blob contents only; each release
+  adds manifest, signature, commit, and NEW TREE objects; delta
+  compression is an implementation outcome, not "free". The 2.4 GB
+  figure is raw corpus size. Blob layout SHARDED
+  (`blobs/sha256/<hex[0:2]>/<hex>`, spec §1); F12 must measure packed
+  growth over many incremental releases, clone/fetch sizes, repack
+  time/peak RSS, loose-object growth.
+- **F94 (SWH acceptance and archive resolution unproven — Blocker
+  before the archival promise)** — Save Code Now is described for
+  public code repositories; unfamiliar origins may be moderated; the
+  git loader has a ~4 GiB default pack-size threshold — the F12 probe
+  is substantive. Locator gap closed by a DOCUMENTED RESOLUTION RECIPE
+  (spec §10, Slice-4 doc obligation, no wire format): manifest id +
+  artifact id → archived publication commit + sharded in-repo path →
+  SWHID.
+- **F95 (private-CAS GC writer/collector concurrency — Follow-up)** —
+  blob-before-trace leaves a window where a new blob is unrooted;
+  concurrent mark-and-sweep could collect it before the trace commits.
+  Missing-blob-as-cache-miss makes it recoverable, so it does NOT
+  block Slice 1; initial GC must either serialize with writers or use
+  an age grace period + recheck. Dev note added to unknowns.
+
+Recommended simplified storage decision (recorded; O2 host naming
+remains the owner's): keep F83 and the four layers with NARROWER
+claims — Forgejo authoritative, Radicle optional mirror; sharded
+paths, bytes-in-git accepted only after the real F12 growth probe;
+hashes make locations interchangeable as byte carriers, not as sources
+of current state; withdrawal = removal from the current official
+corpus and work-facing service, not erasure; SWH is the intended
+archive SUBJECT TO successful ingestion + the documented recipe.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;
@@ -1969,6 +2062,14 @@ back by citing the previous release tag.
 - ~~`snh-archive-receipt/1` field schema~~ DELETED round 12 (F63):
   archive-verified is a reproducible predicate with a disposable report;
   no receipt format exists.
+- **F94 archive resolution recipe** — documented mapping manifest id +
+  artifact id → archived publication commit + sharded in-repo path →
+  SWHID (spec §10; no wire format) — dev/owner, Slice 4, before the
+  archival promise is advertised.
+- **F95 private-CAS GC concurrency rule** — initial GC serializes with
+  writers OR uses an age grace period + recheck (blob-before-trace
+  window; missing blob = cache miss keeps it recoverable) — dev,
+  Slice 1 implementation note; non-blocking.
 - Tokenizer lane (vibrato-pipe) identity design — owner, post-JADH2026 (D4).
 - Zenodo record metadata + first snapshot timing — owner, slice 4.
 - w3id.org PR — owner, slice 4.

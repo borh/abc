@@ -31,8 +31,13 @@ appendix for their activation triggers.
 - Artifact id string form: `snh:1:<type>:<sha256hex>`.
 - `manifest_id` = sha256 hex over the manifest's canonical bytes.
   External citation form: `snh:1:release-manifest:<hex>`.
-- Resolver: artifact id → `/blobs/sha256/<hex>` (+ type-suffixed
-  convenience path).
+- Resolver route: artifact id → `/blobs/sha256/<hex>` (+ type-suffixed
+  convenience path) — a SERVING path, independent of storage layout.
+- In-repo blob layout (F93): `blobs/sha256/<hex[0:2]>/<hex>` —
+  SHARDED; a flat directory of tens of thousands of entries would
+  rewrite one giant tree object per release. Fixed here so verifiers
+  and the archival predicate can locate any blob in any commit or
+  archive by hash alone.
 
 ## 2. Type registry (closed)
 
@@ -250,7 +255,12 @@ reject a HEAD not matching a valid chain head):
 ## 9. Publication transaction
 
 Authority: the protected publication branch of the authoritative public
-origin; fast-forward-only push is the compare-and-swap.
+origin; fast-forward-only push is the compare-and-swap. Only this
+origin attests CURRENT state — the latest accepted head, publication
+ordering, completeness, and whether a withdrawal has been observed.
+Every other carrier (mirror, archive, clone) authenticates BYTES for
+known ids and can prove a valid chain PREFIX, but staleness is
+undetectable from content alone (F91).
 
 1. Fetch Git commit C (branch head).
 2. Read manifest head H = C:`releases/HEAD`.
@@ -311,10 +321,23 @@ determinism defect.
   `r<manifest_id[0:12]>`) are presentation concerns OUTSIDE this
   protocol (round 16) — they carry no identity semantics.
 - Stored lifecycle state: `published` only.
+- Withdrawal semantics (F92 — the promise, stated honestly): a
+  withdrawal removes the work from the current manifest's `works`,
+  from discovery, and from work-facing serving routes. It does NOT
+  promise byte erasure or hash-level suppression: the bytes remain in
+  chain history, clones, mirrors, and archives, and identical bytes
+  may be shared by another admitted work. Hash-level suppression, if
+  legal policy ever requires it, is an explicit operational denylist
+  plus a shared-blob policy OUTSIDE this protocol.
 - archive-verified is an OBSERVED reproducible predicate: SWH full
   visit + expected publication commit + all referenced blobs present +
   byte hashes equal. Latest result stored as a disposable report/CI
   status; citation eligibility is computed from it.
+- Archive resolution recipe (F94 — a documented recipe, no new wire
+  format): the published promise documents how to map a manifest id +
+  artifact id to the archived publication commit and the sharded
+  in-repo path (§1), hence to an SWHID — so a citation stays
+  resolvable if the live resolver disappears.
 - Independent authorship checkpoints: Zenodo deposits containing the
   ACTUAL canonical manifest bytes + signature, made with credentials
   unavailable to release CI. Compromise semantics: chain freezes at the

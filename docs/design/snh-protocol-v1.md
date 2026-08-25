@@ -266,11 +266,17 @@ stale or equivocated head):
 - the authoritative ref → the operationally designated current tip
   and the compare-and-swap serialization point;
 - Zenodo checkpoints → independently recorded historical cutoffs.
-Completeness is a VERIFIER RESULT, never an origin property. A
-non-authoritative carrier (mirror, archive, clone) can present an
-internally valid chain from genesis; whether that chain is a prefix
-of the authoritative one is decidable only by comparison against an
-independently obtained head or checkpoint (F91/F96).
+"Completeness" names THREE distinct claims (F102), none an origin
+property: REPOSITORY-CLOSURE completeness — every manifest, signature,
+event, and blob required for verification is present (a verifier
+result); ADMISSION-PARTITION completeness — the published
+snapshot/report partition checks internally (§8, a verifier result);
+CANDIDATE-SELECTION totality — assembler-only in v1 (§8/F87, not
+publicly recomputable). A non-authoritative carrier (mirror, archive,
+clone) can present an internally valid chain from genesis; whether
+that chain is a prefix of the authoritative one is decidable only by
+comparison against an independently obtained head or checkpoint
+(F91/F96).
 
 1. Fetch Git commit C (branch head).
 2. Read manifest head H = C:`releases/HEAD`.
@@ -345,15 +351,21 @@ determinism defect.
   requires it, is an explicit operational denylist plus a shared-blob
   policy OUTSIDE this protocol.
 - archive-verified is an OBSERVED reproducible predicate defined by
-  REUSING the verifier (F97 — the earlier checklist named commit +
-  blobs + hashes but omitted manifest/governance signatures,
-  `releases/HEAD`, and chain-transition evidence, and would drift
-  from §7–§8): a release is archive-verified when its expected
-  publication commit is present in the archive AND the ordinary
-  repository verifier (§7–§8) succeeds using ONLY the archived
-  snapshot plus the independently pinned keys. One verification
-  closure. Latest result stored as a disposable report/CI status;
-  citation eligibility is computed from it.
+  REUSING the verifier, BOUND to the expected commit (F97/F101 —
+  co-presence does not join the two facts: a later archive snapshot
+  can contain expected commit C while its branch head points to a
+  different manifest, and verifying "the repository" could then
+  validate that other release while C is invalid). ONE operation:
+  `verify_repository_at(C, pinned_keys)` — treats C:`releases/HEAD`
+  as the target head, verifies the chain and all §7–§8 invariants
+  from THAT head, and requires that C is the unique transition that
+  advanced its parent's manifest head to that value. Then
+  `archive_verified(C)` := C is present in the archive AND
+  `verify_repository_at(C, pinned_keys)` succeeds using archived data
+  only. Archive verification claims repository-closure completeness
+  plus the public §7–§8 invariants — nothing more (F102). Latest
+  result stored as a disposable report/CI status; citation
+  eligibility is computed from it.
 - Archive resolution recipe (F94 — a documented recipe, no new wire
   format): the published promise documents how to map a manifest id +
   artifact id to the archived publication commit and the sharded
@@ -390,4 +402,8 @@ approves — authored BEFORE that review, not transcribed after it.
    changed-projection requeue (including after an intervening
    withdrawal, and after MULTIPLE intervening commits per F86);
    governance: already-applied success, revalidate-and-append,
-   conflicting-withdrawal halt, stale-`amends` halt.
+   conflicting-withdrawal halt, stale-`amends` halt; and the F101
+   archive-binding NEGATIVE fixture — an archived snapshot whose
+   current head verifies but whose expected commit C is invalid (or
+   is not the unique head-advancing transition) must FAIL
+   `archive_verified(C)`.

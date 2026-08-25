@@ -1,123 +1,39 @@
 # Publication Rearchitecture — Design Ledger
 
-Status (post review round 16, 2026-08-25):
-- **`docs/design/snh-protocol-v1.md` is the SOLE NORMATIVE source,
-  effective now (F84)** — the freeze will change stability, not
-  precedence; this ledger is the decision/rationale record and nothing
-  in it overrides the protocol spec. Per F80 the FROZEN objects are the
-  executable JSON Schemas + conformance vectors, authored BEFORE the
-  freeze review; per F88 the schemas govern structure, the spec governs
-  semantic/state invariants, the vectors demonstrate both, and any
-  disagreement blocks the freeze.
-- Round-16 fixes applied in the protocol: F85 (publication commits
-  have exactly ONE parent — the previously accepted head; merges
-  rejected, closing the second-parent bypass of F78; genesis state
-  made explicit), F86 (current-state reconciliation replaces the
-  pairwise race taxonomy — the loser consults only the current head,
-  handling any number of intervening operations; build-vs-governance
-  reassembly subsumed by requeue), F87 (totality is an ASSEMBLER
-  invariant against the transactionally consistent selection; the
-  public-recomputation claim was circular and non-executable and is
-  withdrawn; upgrade path recorded), F88 (authority split defined;
-  this ledger's D16.1 body replaced by decision summaries — Git
-  history holds the archaeology), F89 (report-field binding corrected
-  — the report carries no `policy_id`). Reviewer RECOMMENDS ratifying
-  F83; the `r<hash12>` display alias moved out of the protocol.
-  **F83 RATIFIED by owner 2026-08-25** — dateless canonical naming is
-  settled; D13 amended.
-- Round-17 (storage) fixes applied: F90 (Radicle cannot be the D17.1
-  serialization authority — recommendation: Forgejo authoritative,
-  Radicle optional downstream mirror), F91 (carriers interchangeable
-  for BYTES only; the origin alone attests current state — spec §9;
-  five-layer terminology adopted), F92 (honest withdrawal promise in
-  spec §10: removal from current corpus and work-facing service, never
-  byte erasure or hash suppression), F93 (sharded blob layout in spec
-  §1; 2.4 GB is raw size — F12 must measure packed growth), F94 (SWH
-  acceptance + ~4 GiB pack threshold unproven; archive resolution
-  recipe added to spec §10), F95 (private-CAS GC grace-period/serialize
-  rule; non-blocking for Slice 1). New blockers attach to O2, public
-  withdrawal wording, and the archival promise — NOT the kernel;
-  Slices 0–1 unaffected.
-- Round-18 fixes applied: F96 (§9 no longer says the origin "attests"
-  — narrower decomposition: signature→issuance, links→ordering,
-  hashes→bytes, ref→operationally designated tip + CAS,
-  checkpoint→historical cutoff; completeness is a verifier result,
-  prefix-ness decidable only against an independent head/checkpoint),
-  F97 (archive-verified = expected commit present + the ORDINARY
-  verifier succeeds on the archived snapshot alone — one closure),
-  F98 (protocol withdrawal ≠ service withdrawal: serving/discovery
-  removal moved to the za service contract + Slice-3 acceptance test
-  (4); non-erasure kept in both), F99 (Slice-1 CAS APPEND-ONLY, no GC;
-  threshold-triggered writer/collector serialization later —
-  supersedes F95), F100 (no Radicle RID pin in F75; mirrors are
-  ordinary discovery metadata). **O2 SPLIT proposed: O2a ratify the
-  architecture now (protected HTTPS Git + conditional ref updates,
-  implemented by Forgejo); O2b hostname = Slice-3 deployment config
-  under F12.** Storage/trust recorded as two axes (kura / Forgejo /
-  resolver+Radicle / SWH / Zenodo).
-- Round-15 fixes applied in the protocol: F78 (first-parent HEAD
-  transitions must satisfy `M.prev_manifest == H` — closes silent
-  chain replacement), F79 (complete build/build reconciliation:
-  same-projection-same-state succeeds; same-projection-different-state
-  is a determinism failure; different projections requeue; unknown+absent
-  = rejection path), F80 (regex quantifiers, reason_code domains, typed
-  ids, explicit type/hash checks), F81 (snapshot candidate set bound to
-  the recomputed selection — totality independently checkable), F82
-  (`authority`/`evidence_hash` removed from the governance event), F83
-  (dateless canonical naming — OWNER ratification pending, amends D13),
-  F84 (normative-now).
-- Round-14 fixes applied: F73 (operation-specific rejection
-  reconciliation — never blind re-chain; stale `amends`/slug conflicts
-  HALT for fresh governance authorization), F74 (`releases/HEAD`
-  protocol: always present, 64 hex + LF, zero genesis, full-chain
-  verification), F75 (concrete PRE-RELEASE discovery channel required —
-  the Slice-4 paper postdates the first release and cannot be the first
-  pin), F76 (release-name date = UTC committer date of the
-  HEAD-advancing commit; reviewer's dateless alternative recorded as an
-  owner option), F77 (D11/registry/Slice-3 stale-state reconciliation).
-
-Superseded status detail (round 13):
-- **Slice 0: READY**; **Slice 1: READY NOW** (F56; kernel is
-  policy-blind per F52/F60 — rights admission lives entirely in
-  soranoha.za).
-- **Normative v1 (honest inventory per F69): four canonical JSON object
-  schemas** — `snh-manifest/1`, `snh-assessment-snapshot/1`,
-  `snh-admission-report/1`, `snh-governance-event/1` — **plus fixed raw
-  signature and key encodings** (exact bytes specified; conformance
-  vectors before Slice 2). Round-13 corrections applied: F66 (git head
-  vs manifest head — `releases/HEAD`, explicit transaction), F67 (no-op
-  projection = {corpus, toolchain, selection_params, admission}), F68
-  (frozen linear event-amendment invariants), F72 (snapshot_date
-  deleted — publication date derives from the accepted commit; no dates
-  in manifest bytes).
-- **Before Slice 2:** owner O3(b) + O5a-as-amended ratification with
-  reviewer boundary validation; the D16.1 freeze (four formats + F69
-  encoding vectors); the AGENTS.md manifest-ownership update (D20 as
-  amended, F56).
-- **Before Slice 3:** O1 + full-corpus assessment data; O2 concrete
-  host + F12 probes. **Before the first signed release (F70):** the
-  Zenodo trust-anchor deposit (key bytes + fingerprints + actual genesis
-  manifest bytes and signature) under CREDENTIAL SEPARATION — deposit
-  credentials unavailable to release CI (manual owner action or MFA
-  workflow).
-- **Lifecycle (F71):** stored state is `published` only;
-  archive-verified is an observed reproducible predicate; citation
-  eligibility is computed from a successful archival observation.
-- **Compromise semantics (F55/F59/F70):** artifact ids always identify
-  exact bytes; the chain freezes at the last credential-separated Zenodo
-  checkpoint; post-checkpoint signatures contested until an out-of-band
-  cutoff notice; release-key compromise halts publication;
-  governance-key compromise/loss halts governance operations.
-- **O3 (event-amendment form): facilitator and reviewer both recommend
-  (b)**; owner ratification pending. **O5a-as-amended: owner
-  ratification pending (reviewer: wait for F66–F69 — all four now
-  applied).**
-D18.1 approved conditional on F12. Authoritative record: decision log +
-reviews F1–F9, F10–F15, F16–F23, F24–F28, F29–F33, F34–F37, F38–F42,
-F43–F47, F48–F51, F52–F55, F56–F59, F60–F65, F66–F72, F73–F77,
-F78–F84, F85–F89 + dev handoff below.
+Status (post review round 19, 2026-08-25) — CURRENT STATE ONLY
+(F103: history lives in the findings sections and Git history, not
+here):
+- **`docs/design/snh-protocol-v1.md` is the SOLE NORMATIVE source.**
+  This ledger is the decision/rationale record and dev handoff;
+  nothing here overrides the spec. At the pre-Slice-2 freeze review
+  the FROZEN objects are the executable JSON Schemas + conformance
+  vectors (F80); schemas govern structure, the spec governs
+  semantic/state invariants, vectors demonstrate both; any
+  disagreement blocks the freeze (F88).
+- Normative v1 = FOUR canonical JSON schemas (`snh-manifest/1`,
+  `snh-assessment-snapshot/1`, `snh-admission-report/1`,
+  `snh-governance-event/1`) + fixed raw signature/key/`releases/HEAD`
+  encodings. Naming is DATELESS (F83, owner-ratified 2026-08-25):
+  citable identity = the full typed manifest id.
+- Storage/trust axes (round 18): kura — disposable private build
+  state (Slice-1 CAS append-only, NO GC, F99) / Forgejo — publication
+  repository + operational current-tip authority / resolver + mirrors
+  (Radicle optional) — replaceable byte distribution / SWH —
+  preservation / Zenodo — independent authorship checkpoint.
+- **Slices 0–1: READY NOW** — no owner action, no freeze dependency;
+  the kernel is policy-blind (F52/F60).
+- Before Slice 2: owner ratifies O3 (recommendation: b) + O5a; dev
+  authors the four JSON Schemas + conformance vectors for the freeze
+  review; the AGENTS.md manifest-ownership update (D20 as amended).
+- Before Slice 3: O1 + full-corpus assessment data; O2a/O2b (split
+  proposed round 18, reviewer-validated round 19, owner ratification
+  pending) + F12 growth/SWH probes on the named origin; the F54/F70
+  credential-separated Zenodo trust anchor BEFORE the first signed
+  release; the F75 pre-release discovery channel named.
+- Owner decisions OPEN: O1, O2a/O2b, O3, O5a, F75 channel. Most
+  recently ratified: F83 (dateless naming).
 Owner: Bor Hodošček
-Process: hammock-driven-design decision interview, session of 2026-08-24
+Process: hammock-driven-design decision interview, 2026-08-24/25
 
 ## Problem statement
 
@@ -916,7 +832,11 @@ in agent report" headings redirected to the inlined sources list.
   origin with conditional (fast-forward-only) ref updates, implemented
   by Forgejo; other forges downstream mirrors — ratifiable NOW. O2b —
   the concrete hostname is Slice-3 DEPLOYMENT CONFIGURATION subject to
-  the F12 probes, not a design decision.**
+  the F12 probes, not a design decision.** **Reviewer (round 19): O2a
+  is READY TO RATIFY — Forgejo provides the authoritative protected
+  HTTPS ref and conditional-update boundary; mirrors remain ordinary
+  byte distribution; O2b correctly reduced to deployment config + F12
+  evidence. Owner ratification pending.**
 - **O3 — withdrawal-record mutability (F26/F31; recast by the F62
   collapse, round 12 — "tombstone" no longer exists; the question now
   concerns a slug's GOVERNING EVENT id in `withdrawn`).** Settled either
@@ -1931,6 +1851,52 @@ architectural requirement now (protected HTTPS Git, conditional ref
 updates, implemented by Forgejo; other forges mirrors); **O2b** the
 hostname is Slice-3 deployment configuration under F12.
 
+## External design review round 19 (2026-08-25) — findings F101–F104
+
+Reviewer verdicts: round 18 improves the design and deletes real
+complexity; O2a technically ratifiable (validated: Forgejo provides
+the authoritative protected HTTPS ref + conditional-update boundary;
+O2b correctly reduced to deployment config + F12 evidence); F98–F100
+hold; Slices 0–1 ready.
+
+- **F101 (archive verification not bound to the expected commit —
+  Blocker)** — "expected commit present AND ordinary verifier
+  succeeds" joined two facts by co-presence only: a later snapshot can
+  contain commit C while its branch head points to M₂; the verifier
+  may validate M₂ while C's release is invalid. Fix (spec §10): one
+  operation `verify_repository_at(C, pinned_keys)` — C:`releases/HEAD`
+  is the target head, the chain and §7–§8 invariants verify from THAT
+  head, and C must be the unique transition that advanced its parent's
+  manifest head to that value; `archive_verified(C)` := C present AND
+  the operation succeeds on archived data only. Negative fixture added
+  to spec §11 (valid latest head + invalid expected commit must FAIL).
+- **F102 ("completeness" overloaded — Blocker before freeze)** — §9
+  called completeness a verifier result while §8 made
+  candidate-selection totality assembler-only. Named apart (spec §9):
+  REPOSITORY-CLOSURE completeness (all verification material present;
+  verifier result), ADMISSION-PARTITION completeness (snapshot/report
+  partition checks internally; verifier result), CANDIDATE-SELECTION
+  totality (assembler-only in v1). Archive verification claims only
+  repository-closure + the public §7–§8 invariants.
+- **F103 (live slice text instructed superseded behavior — Blocker to
+  the dev handoff)** — REPLACED rather than annotated: Slice 2's "D18
+  GC roots + lifecycle states" → append-only CAS, `published` the only
+  stored state; Slice 3's "re-chain and retry (retained manifest)" and
+  the "correctly re-chains" acceptance → spec §9 current-state
+  reconciliation (discard + recompute); the status header rewritten as
+  CURRENT STATE ONLY (−84 lines) — the per-round fix inventories,
+  "origin attests", five-layer wording, and F83-pending markers all
+  removed from the top; history lives in the findings sections and
+  Git.
+- **F104 (bounded negative service test — Strong, adopted)** — "no
+  work-facing routes" was unbounded and would wrongly suppress the
+  public withdrawal history. The za service contract distinguishes
+  current-corpus surfaces (must exclude the work), historical/
+  governance surfaces (withdrawal statement + release history remain
+  accessible), and the hash resolver (remains accessible under
+  non-erasure); Slice-3 acceptance (4) is one table-driven integration
+  test over the DECLARED route inventory.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;
@@ -2019,9 +1985,10 @@ the frozen D16.1 spec, with real admission evidence
 Slice 1's former criterion 5: manifest round-trip — canonical bytes →
 manifest_id stable across re-serialization; validates against the strict
 schema. (intent_id no longer exists — F61.)
-Chain mechanics on that manifest: prev-manifest hash chain, the D17
-compare-and-append publication transaction, D18 GC roots + lifecycle
-states. Build at a SECOND (newer) upstream revision; acceptance = the F5
+Chain mechanics on that manifest: prev-manifest hash chain and the
+spec §9 publication transaction exercised against a local fixture
+origin. Storage stays the append-only CAS (F99 — no GC); `published`
+is the ONLY stored lifecycle state (F71). Build at a SECOND (newer) upstream revision; acceptance = the F5
 three-set oracle: (a) source/selection delta, (b) stages
 invalidated/executed, (c) artifact-byte/manifest delta, with invariants
 (artifact change ⇔ byte change; unchanged bytes retain ids; every executed
@@ -2065,29 +2032,41 @@ end-to-end (event signed by the governance key; F39/F62 transition
 invariants verified by the published checker).
 Publication = the D17.1 remote compare-and-append: one complete commit
 (blobs + manifest + sig) fast-forward-pushed to the protected branch;
-rejection → re-chain and retry per the F61 protocol (retained manifest,
-reachability check on unknown results, scheduled-build no-op).
+rejection → CURRENT-STATE reconciliation per spec §9 (F86: DISCARD the
+assembled manifest; fully verify the new head; recompute the desired
+projection and expected content against it → success when the desired
+state is already published / determinism-halt / requeue); an unknown
+push result converges on the same reconciliation via the reachability
+check; scheduled-build no-op per the F67 projection.
 Forgejo auto-release polls upstream; admission is a fail-closed input
 (policy hash in manifest). Serving tree (blobs/, releases/, history.json)
 derives from the repo. Archival: SWH save-code-now per release,
-non-blocking; **archive-verified per F97 (round 18, superseding the F63
-checklist wording): the expected publication commit is present AND the
-ordinary repository verifier (spec §7–§8) succeeds using only the
-archived snapshot plus independently pinned keys — one verification
-closure; stored as a disposable verifier report/Forgejo status — no
-receipt artifact**. Acceptance: (1) two consecutive automated releases
+non-blocking; **archive-verified per F97/F101: `archive_verified(C)` =
+C present in the archive AND `verify_repository_at(C, pinned_keys)`
+succeeds using archived data only (spec §10) — one verification
+closure BOUND to the expected commit, treating C:`releases/HEAD` as
+the target head; stored as a disposable verifier report/Forgejo status
+— no receipt artifact**. Acceptance: (1) two consecutive automated releases
 from real upstream movement, chain verified end-to-end by the published
 checker; (2) a forced concurrent-publish attempt loses the push race and
-correctly re-chains, and a simulated lost push response resolves via the
-F61 reachability check without double publication; (3) at least one
+reconciles per spec §9 current-state rules — discards its manifest,
+recomputes against the new head, and publishes NOTHING when the
+desired state is already published — and a simulated lost push
+response resolves via the reachability check plus the same
+reconciliation without double publication; (3) at least one
 release has the archival predicate SUCCEED (F77 wording — no
 "archive-verified" state is reached or stored) with all four F12
 checks, with measured (not assumed) archival latency recorded in the
-ledger; (4) **F98 service-withdrawal acceptance: after the
-governance-withdrawal fixture, the za serving layer exposes no
-work-facing routes or discovery entries for the withdrawn slug — this
-tests the SERVICE promise; the protocol-level absence from `works` is
-already checked by the §8 verifier.**
+ledger; (4) **F98/F104 service-withdrawal acceptance — ONE table-driven
+integration test over the za service contract's DECLARED route
+inventory** (an unbounded "no work-facing routes" assertion is not
+testable and would wrongly suppress the public withdrawal history):
+current-corpus surfaces (catalog, search, slug content, downloads)
+EXCLUDE the withdrawn work; historical/governance surfaces (the
+withdrawal statement, release history) REMAIN accessible;
+the hash resolver REMAINS accessible under the explicit non-erasure
+policy. The protocol-level absence from `works` is already checked by
+the §8 verifier.
 
 ### Slice 4 — citability layer
 Quarterly Zenodo snapshot (concept DOI + first version DOI) — **each

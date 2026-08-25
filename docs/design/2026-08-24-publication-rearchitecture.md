@@ -25,12 +25,13 @@ here):
 - Before Slice 2: owner ratifies O3 (recommendation: b) + O5a; dev
   authors the four JSON Schemas + conformance vectors for the freeze
   review; the AGENTS.md manifest-ownership update (D20 as amended).
-- Before Slice 3: O1 + full-corpus assessment data; O2a ratification;
-  the deployment prerequisites below; the F75 pre-release discovery
-  channel named.
-- Owner decisions OPEN: O2a (reviewer round 19/20: ready to ratify),
-  O1, O3 (recommendation: b), O5a, F75 channel. Most recently
-  ratified: F83 (dateless naming).
+- Before Slice 3: O1 + full-corpus assessment data; the deployment
+  prerequisites below; the F75 pre-release discovery channel named.
+- Owner decisions OPEN: O1, O3 (recommendation: b), O5a, F75 channel.
+  Most recently ratified: O2a (2026-08-25 — Forgejo is the
+  authoritative protected HTTPS origin with conditional ref updates;
+  all other locations are downstream byte distribution), F83
+  (dateless naming).
 - Deployment prerequisites (operational tasks, NOT owner decisions —
   F108): O2b hostname/configuration + the F12 growth/SWH probes on
   the named origin; key generation + the F54/F70 credential-separated
@@ -839,7 +840,13 @@ in agent report" headings redirected to the inlined sources list.
   is READY TO RATIFY — Forgejo provides the authoritative protected
   HTTPS ref and conditional-update boundary; mirrors remain ordinary
   byte distribution; O2b correctly reduced to deployment config + F12
-  evidence. Owner ratification pending.**
+  evidence. Owner ratification pending.** **O2a RATIFIED by owner
+  2026-08-25: an owner-controlled protected HTTPS Git origin with
+  conditional (fast-forward-only) ref updates, implemented by FORGEJO,
+  is the authoritative publication origin; every other forge/location
+  is downstream byte distribution. O2b (hostname/configuration + F12
+  evidence) proceeds as a Slice-3 deployment prerequisite (F108) — no
+  owner decision remains in O2.**
 - **O3 — withdrawal-record mutability (F26/F31; recast by the F62
   collapse, round 12 — "tombstone" no longer exists; the question now
   concerns a slug's GOVERNING EVENT id in `withdrawn`).** Settled either
@@ -1905,7 +1912,8 @@ hold; Slices 0–1 ready.
 Reviewer verdicts: round 19 closes F101–F104 correctly; O2a ready to
 ratify; F101–F104 hold; Slices 0–1 ready; the route-inventory test is
 appropriately bounded (implementation note adopted: exercise the real
-router table, never a parallel route registry).
+router table, never a parallel route registry). **O2a RATIFIED by
+owner 2026-08-25.**
 
 - **F105 (repository data source implicit — Blocker before verifier
   implementation)** — `verify_repository_at(C, pinned_keys)` did not

@@ -2155,62 +2155,95 @@ warranted; O3(b) not reopened; Slices 0–1 ready.
   with failure to perform the observation.
 - **F129 (dateless evergreen header — adopted).**
 
-## Pre-implementation probes (proposed 2026-08-25; all DISPOSABLE per the experiment discipline)
+## Pre-implementation probes (REDUCED per round 25; disposable)
 
-Each probe names the decision it settles; none is production code.
+1. **Hardware-boundary smoke (owner, ~minutes; RUN NOW; settles: can
+   the planned ceremony work).** `ykman info` on both YubiKeys
+   (firmware ≥ 5.7.0?); generate a THROWAWAY PIV Ed25519 key in an
+   EXPLICITLY UNUSED PIV slot on each device (F136 — the test must
+   never overwrite an existing credential), with explicit PIN + touch
+   policy; sign a test message; verify it as raw Ed25519 against the
+   extracted public key. Pass ⇒ the F54 ceremony plan stands; fail ⇒
+   device replacement enters the deployment prerequisites now.
+2. **F12 growth probe — TARGET-DRIVEN (dev; settles: bytes-in-git
+   acceptance, F93/F134).** BEFORE running, define the decision
+   budget: modeled release horizon; maximum acceptable packed size,
+   clone/fetch bytes, repack time, and peak RSS at that horizon; and
+   a delta distribution SAMPLED from real upstream history, never
+   invented rates. Then run the smallest number of synthetic releases
+   that can decide against the budget. Measurements without
+   thresholds cannot settle acceptance.
 
-1. **Hardware-boundary smoke (owner, ~minutes; settles: can the
-   planned ceremony work at all).** `ykman info` on both YubiKeys
-   (firmware ≥ 5.7.0?); generate a THROWAWAY PIV Ed25519 key with
-   explicit PIN+touch policy; sign a test message; verify as raw
-   Ed25519 with the extracted public key. Pass ⇒ the F54 ceremony
-   plan stands; fail ⇒ device replacement enters the deployment
-   prerequisites NOW, not at Slice 3.
-2. **F12 synthetic growth probe (dev; settles: bytes-in-git
-   acceptance, F93).** Script (disposable) writes N≈100 synthetic
-   incremental releases of the real corpus bytes (realistic per-release
-   delta rates) into a fresh git repo with the sharded layout;
-   measure packed size growth, clone/fetch bytes, repack time + peak
-   RSS, loose-object accumulation. Runs against existing corpus data;
-   needs nothing from Slices 0–2.
-3. **Adversarial chain simulator + property-based verifier (dev;
-   settles: spec §8/§9 completeness BEFORE the freeze — the strongest
-   blind-spot finder available).** Generators produce (a) random VALID
-   histories (builds, withdrawals, amendments, races) and (b) MUTATED
-   attacks: chain replacement, merge bypass, cross-role signatures,
-   withdrawn-set shrink, amendment skip/overwrite, dangling-object
-   co-presence, stale-HEAD mirrors. The verifier must accept all of
-   (a) and reject all of (b); any disagreement is a spec defect found
-   before freezing. Seeds the conformance suite (dual-use is
-   acceptable: it starts disposable).
-4. **Reconciliation interleaving simulation (dev; settles: §9
-   convergence).** A deterministic scheduler drives 2–3 publishers +
-   governance operations against a fake CAS origin across
-   interleavings; assert: no double publication, no lost withdrawal,
-   determinism-halt only on genuine nondeterminism, convergence to an
-   invariant-satisfying chain.
-5. **SWH latency/acceptance pre-probe (owner+dev; de-risks F94 early).**
-   save-code-now an EXISTING public repo of comparable size; measure
-   acceptance behavior and visit latency. The real F12/F94 probe on
-   the named origin remains a Slice-3 gate; this merely prices it.
+Deleted per round 25 (F131/F135): the adversarial chain simulator and
+the reconciliation interleaving simulation — maintained test systems,
+not disposable probes ("seeds the conformance suite" contradicted
+"disposable"; Malli generates shape-valid objects, not valid signed
+hash-chained histories; a disagreement may be a generator, model, or
+implementation defect rather than a spec defect; property testing
+finds counterexamples but cannot establish completeness). The
+pre-freeze qualification object is the already-required TABLE-DRIVEN
+conformance corpus; model-based testing enters only if ordinary
+transition tests expose a gap during implementation; race testing
+exercises the REAL publisher when it exists, never a separately
+invented publisher model. Also deleted: the SWH pre-probe — a
+different origin predicts nothing about the actual one's moderation,
+pack handling, or latency, and the mandatory F12/F94 probe on the
+named origin remains the single test.
 
-## Code-architecture direction (owner, 2026-08-25): Malli + Rust types
+## Code-architecture direction (REDUCED per round 25 — F130/F132/F133)
 
-- **Malli is the AUTHORING source for the four schemas** (soranoha.core):
-  each wire schema is a closed Malli schema; the FROZEN artifact
-  remains the GENERATED JSON Schema + vectors (F80 unchanged — the
-  freeze review approves the generated output; CI fails on drift
-  between Malli source and committed JSON Schema). `malli.generator`
-  powers probe 3's generators; Malli coercion/validation guards the
-  assembler boundary (parse, don't validate).
-- **Rust hosts the INDEPENDENT verifier** (strong newtypes:
-  `Sha256Hex`, typed artifact ids by kind, role-partitioned
-  `PinnedKeys`; closed structs via `deny_unknown_fields`). A second
-  independent implementation is itself a blind-spot detector:
-  differential-test the Clojure assembler/verifier against the Rust
-  verifier on probe-3 corpora — every disagreement is a spec
-  ambiguity surfaced before external consumers exist. The published
-  standalone checker (Slice 3 acceptance) ships as the Rust binary.
+The owner's Malli/Rust preference is honored OUTSIDE the wire/verifier
+boundary (internal kura/za data shapes; the post-JADH2026 vibrato-pipe
+tokenizer lane stays Rust). At the boundary, one-of-each rules:
+
+- **ONE verifier, in Clojure**, sharing soranoha.core's single
+  canonicalizer (D15 preserved — a Rust verifier would need an
+  independent JSON canonicalizer, recreating the original system's
+  Clojure/Rust duplication disease), published through the existing
+  Nix entry point as Slice 3's "published checker". Rust enters ONLY
+  when a real JVM-free external-verifier consumer exists — and then
+  Rust becomes the ONLY full repository verifier (the publisher
+  invokes it); never two full verifiers.
+- **JSON Schema is the single structural source (F80/F133):** the
+  four normative schemas are HAND-AUTHORED and validated with the
+  repository's existing JSON Schema machinery. No Malli authoring
+  layer, no generated-schema drift-check workflow — Malli wire
+  schemas enter only if repeated Clojure construction errors
+  demonstrate a present need.
+- **No coercion of signed wire values (F132):** manifest values are
+  CONSTRUCTED in-domain, validated EXACTLY against the frozen schema,
+  then canonicalized. Coercion (e.g. "42" → 42) is limited to local
+  CLI/config input and never touches signed or hashed data.
+
+## External design review round 25 (2026-08-25) — findings F130–F136
+
+Reviewer verdicts: F125–F129 correctly applied; O5a's exact text
+ratifiable, architecture review STOPPED; the round-24 probe/Malli/Rust
+section was rebuilding complexity (three schema representations, two
+verifiers, two canonicalizers) and is reduced above. Minimum path:
+ratify O5a; run only the hardware smoke now; make F12 target-driven;
+freeze the four direct JSON Schemas + table-driven vectors; implement
+ONE verifier; defer property/state simulation, Rust independence, and
+SWH pre-testing until each has a concrete consumer or observed gap.
+
+- **F130 (Rust plan contradicted D15's one-canonicalizer and
+  duplicated the verifier — Blocker)** — reduced: one Clojure
+  verifier; Rust only on a real JVM-free consumer, and then as the
+  sole verifier.
+- **F131 (probes 3–4 were maintained test systems — Blocker)** —
+  deleted; table-driven conformance corpus is the pre-freeze object;
+  the facilitator's "nearly for free" and "disagreement = spec
+  defect" claims corrected.
+- **F132 (no coercion of signed wire values — High)** — exact
+  construction + validation; coercion confined to CLI/config.
+- **F133 (JSON Schema the single structural source — adopted)** —
+  hand-authored schemas; no Malli authoring layer.
+- **F134 (growth probe lacked decision thresholds — High)** — budget
+  first (release horizon, packed/clone/repack/RSS budgets, sampled
+  real deltas), then the smallest deciding run.
+- **F135 (SWH pre-probe deleted — adopted)** — changes no decision.
+- **F136 (hardware smoke kept — adopted)** — with an explicitly
+  unused PIV slot so the test cannot overwrite existing credentials.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

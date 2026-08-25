@@ -32,15 +32,16 @@ numbers live in the findings sections and Git history, not here):
   admission with the round-4 wording), O2a (Forgejo authoritative
   origin architecture), O3(b) (amendable-but-permanent governing
   events), O5a (fixed pinned key sets per chain, two governance
-  hardware keys, degraded/halt semantics), F83 (dateless naming),
+  keys — SOFTWARE Ed25519 per owner amendment 2026-08-25 —
+  degraded/halt semantics), F83 (dateless naming),
   F75 channel = ORCID-linked record. Remaining owner item: private
   evidence-record retention policy, before the first real withdrawal.
 - Deployment prerequisites (operational tasks, NOT owner decisions —
   F108): O2b hostname/configuration + the F12 growth/SWH probes on
-  the named origin; procurement of two firmware-5.7+ YubiKeys (the
-  owner's existing devices are 5.4.3 — below the PIV-Ed25519 floor);
-  key generation + the F54/F70 credential-separated Zenodo
-  trust-anchor deposit BEFORE the first signed release.
+  the named origin; the software-key ceremony (offline generation,
+  one encrypted offline medium per governance key, declared copy
+  inventory) + the F54/F70 credential-separated Zenodo trust-anchor
+  deposit BEFORE the first signed release.
 Owner: Bor Hodošček
 Process: hammock-driven-design decision interview, 2026-08-24/25
 
@@ -121,7 +122,7 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D16 | Wire formats: normative v1 = the protocol spec's FOUR canonical JSON schemas (manifest, assessment-snapshot, admission-report, governance-event) + fixed raw signature/key/`releases/HEAD` encodings; canonicalizer `rfc8785-safe-integer-json-string-v1`; closed type registry. FREEZE at the pre-Slice-2 review, whose approved objects are the executable JSON Schemas + conformance vectors (F80/F88). Full semantics: `snh-protocol-v1.md` (sole normative source). Amendment history: F3→F13 (D16.1) and rounds 3–19 (F16–F104) in the findings sections. | review rounds 2–19 | draft — cheap to change until the pre-Slice-2 freeze |
 | D17 | Publication = the spec §9 transaction: single-parent commit fast-forward-pushed to the protected branch (the remote ref is the CAS, D17.1/F10); rejection/unknown result → CURRENT-STATE reconciliation (discard the assembled manifest, refetch, recompute; F86); scheduled-build no-op on the F67 projection; nondeterminism halts. Amendment history: F1→F10→F61→F66/F67→F73/F79→F86 in the findings sections. | review rounds 2–16 | internal protocol, revisable |
 | D18 | Retention/archival: all published manifests + referenced blobs are permanent GC roots; the publication repo carries the published artifact bytes (bytes-in-git so SWH archives real bytes; accepted subject to the F12 growth probe, F93); stored lifecycle state = `published` only; archival status = a successful `archive_verification(view, C, keys)` observation report (spec §10, F97/F101/F113); citation eligibility requires a successful observation satisfying the current citation policy; independent authorship checkpoints = credential-separated Zenodo deposits (F70). Amendment history: F2→F11/F12→F63/F71→F93/F97/F101. | owner-endorsed + review rounds 2–19 | promise text frozen at first public release |
-| D19 | Trust: v1 = two disjoint ROLES with FIXED directly pinned Ed25519 key sets — RELEASE: one online CI key (manifests); GOVERNANCE: two offline owner-held hardware keys, generated on-device, stored separately (withdrawal/amendment; a signature verifies against any member) — **O5a-as-amended, owner-RATIFIED 2026-08-25**. For a given publication chain the pinned sets are established at genesis and never change; changing them ends that chain; successor continuity is outside v1 (F112/F120). The anchor authenticates the role assignment, never a flat key list (F126). Raw detached signatures over domain-separated messages; fingerprints over decoded raw key bytes; key bytes/fingerprints live in the independent anchor + pinned verifier config only (F116). Known-destroyed governance device → DEGRADED one-key mode; unaccounted-for token → suspected compromise → HALT (F115); compromise of any member → HALT; chain freezes at the last credential-separated Zenodo checkpoint (F55/F59/F70); freshness deferred. Key-manifest/recovery designs stay in the non-frozen contingency appendix; activation trigger: BEFORE any set change, continuity promise, or freshness consumer — never mid-incident. Amendment history: F8→F22–F47→O5a/F48–F55→F112–F117. | review-adopted; O5a staging round 9; owner-directed set-of-2 + round-22 corrections | contingency activates per O5a trigger |
+| D19 | Trust: v1 = two disjoint ROLES with FIXED directly pinned Ed25519 key sets — RELEASE: one online CI key (manifests); GOVERNANCE: two offline owner-held SOFTWARE Ed25519 keys, each generated offline onto its own encrypted offline medium under a ceremony-declared single-copy inventory, media stored separately (withdrawal/amendment; a signature verifies against any member) — **O5a-as-amended, owner-RATIFIED 2026-08-25; key medium amended by owner 2026-08-25 (software, after the 5.4.3 firmware finding)**. For a given publication chain the pinned sets are established at genesis and never change; changing them ends that chain; successor continuity is outside v1 (F112/F120). The anchor authenticates the role assignment, never a flat key list (F126). Raw detached signatures over domain-separated messages; fingerprints over decoded raw key bytes; key bytes/fingerprints live in the independent anchor + pinned verifier config only (F116). Known-destroyed governance key (sole declared medium verifiably destroyed) → DEGRADED one-key mode; medium unaccounted-for or possibly read → suspected compromise → HALT (F115); compromise of any member → HALT; chain freezes at the last credential-separated Zenodo checkpoint (F55/F59/F70); freshness deferred. Key-manifest/recovery designs stay in the non-frozen contingency appendix; activation trigger: BEFORE any set change, continuity promise, or freshness consumer — never mid-incident. Amendment history: F8→F22–F47→O5a/F48–F55→F112–F117. | review-adopted; O5a staging round 9; owner-directed set-of-2 + round-22 corrections | contingency activates per O5a trigger |
 | D20 | **Ownership** (F6): TEI profile schemas consumed as explicit flake input from abc during migration (no schema copies). **Amended F56 (round 11): the publication-schema/manifest-identity transfer has NO Slice-1 consumer after F52 — ABC keeps that ownership during Slice 1; soranoha/ owns only kernel/CAS/trace-store/copied renderers; the AGENTS.md transfer moves to the first Slice-2 work that assembles manifests. Slice 1 waits on nothing administrative.** | review-adopted 2026-08-24; amended round 11 | owner action: AGENTS.md edit, before Slice 2 |
 | D21 | **Rights/registry admission restored** (F14): the fail-closed value-plus-hash rights authority (policy hash recorded in manifest `admission`); per-work inclusion governed by named rule (O1, owner); admission responsibility consumed from abc or transferred in AGENTS.md before Slice 3. Currently `publication-policy.edn` BLOCKS release. **F60 (round 12): admission lives ENTIRELY in soranoha.za — `load-rights-authority!`, inclusion rules, and the fail-closed block are RELEASE-ASSEMBLER concerns, never kernel concerns. The kernel builds any selected inputs, policy-blind (F52); Slice 2 uses fixture admission inputs; Slice 3 connects the production authority. The earlier "kernel ports/inherits" wording was a leak that could have reintroduced the build/publication coupling F52 removed.** **F17: admission is assessment-based per O1 (adopted reviewer rule); catalog flags seed, never authorize; private archiving needs its own authorization policy.** **F24 (as amended by F61/F71 — intent_id no longer exists): the assessment data itself is cryptographically committed — bound in `admission` and part of the F67 build projection, so newly completed assessments change the manifest and are never no-op'd as duplicates. F30: the commitment is two retained public artifacts, separating domain roles — the assessment SNAPSHOT commits facts (public-domain / in-copyright / undetermined / not-evaluated per contribution, F35/F47); the admission REPORT records the inclusion rule's total partition (admitted/excluded/quarantined with reasons). Both published, permanently rooted, hash-resolvable. F38: works = admitted − withdrawn.** | review rounds 2–8 | policy content owner-governed; mechanism fixed |
 
@@ -908,6 +909,16 @@ in agent report" headings redirected to the inlined sources list.
   and corrected by F112/F115 round 22, F120/F125 rounds 23–24.)
   **RATIFIED by owner 2026-08-25 on the exact corrected text.
   Architecture review closed (rounds 24–25).**
+  **KEY-MEDIUM AMENDMENT by owner 2026-08-25 (after the firmware
+  finding — existing YubiKeys are 5.4.3, below the PIV-Ed25519 5.7.0
+  floor; procurement declined): the two governance keys are SOFTWARE
+  Ed25519 keypairs, each generated offline onto its own encrypted
+  offline medium under a ceremony-declared SINGLE-COPY inventory,
+  media stored separately. F115 accountability attaches to the
+  declared copy inventory: sole medium verifiably destroyed →
+  degraded one-key mode; medium unaccounted-for or possibly read →
+  suspected compromise → halt (a copyable file has no "lost but
+  unread" state). All other O5a clauses unchanged.**
 
 ## External design review round 3 (2026-08-24) — findings F16–F23
 
@@ -2033,11 +2044,15 @@ mechanism):
 - Distrusted key: not "removal" but COMPROMISE — halt, freeze at the
   last checkpoint, out-of-band notice, successor epoch designed
   deliberately (F49/F55).
-- One governance device KNOWN destroyed or failed: governance
-  continues in DEGRADED one-key mode; the set does not change (F115).
-  An UNACCOUNTED-FOR token is SUSPECTED COMPROMISE → halt ("loss
-  without compromise" is not normally observable; "losing one
-  requires no action" was unsafe wording and is retracted).
+- One governance key KNOWN destroyed (its sole declared medium
+  verifiably destroyed or failed — software-key amendment 2026-08-25:
+  accountability attaches to the ceremony-declared single-copy
+  inventory): governance continues in DEGRADED one-key mode; the set
+  does not change (F115). A medium UNACCOUNTED-FOR or possibly read
+  is SUSPECTED COMPROMISE → halt ("loss without compromise" is not
+  normally observable; a copyable file has no "lost but unread"
+  state; "losing one requires no action" was unsafe wording and is
+  retracted).
 - "Old key signs new key" is the key-manifest protocol (rollback
   protection, validity windows, history root — F27–F46), parked
   NON-FROZEN in the contingency appendix. Wanting routine add/remove
@@ -2171,15 +2186,15 @@ warranted; O3(b) not reopened; Slices 0–1 ready.
 
 ## Pre-implementation checks (REDUCED AGAIN per round 26 — no separate probe projects; surviving checks fold into existing slice acceptance)
 
-- **Early hardware check (owner; READ-ONLY) — RESULT RECORDED
-  2026-08-25:** the owner's existing YubiKeys are firmware 5.4.3,
-  below the 5.7.0 PIV-Ed25519 floor (firmware is not
-  field-upgradeable). Consequence: two current-generation YubiKeys
-  (5.7+) are a Slice-3 procurement prerequisite; the ceremony runs on
-  the NEW devices. The standalone signing smoke remains DELETED
-  (F139 — it duplicated the F117 ceremony, where both REAL governance
-  keys sign the fixed vector; throwaway key creation and PIV-slot
-  mutation avoided).
+- **Early hardware check (owner; READ-ONLY) — RESULT RECORDED and
+  RESOLVED 2026-08-25:** the owner's existing YubiKeys are firmware
+  5.4.3, below the 5.7.0 PIV-Ed25519 floor (firmware is not
+  field-upgradeable). The owner declined procurement and AMENDED the
+  O5a key medium to SOFTWARE Ed25519 keypairs — no hardware check
+  remains; the ceremony is the software-key ceremony (spec §7 signer
+  note). The standalone signing smoke remains DELETED (F139 — the
+  F117-analog ceremony has both REAL governance keys sign the fixed
+  vector as disposable evidence).
 - **F12 growth probe stays the existing Slice-3 gate, run on REAL
   bytes (F140):** no synthetic harness — git packing depends on
   actual byte similarity, not historically sampled change rates.
@@ -2394,17 +2409,18 @@ the assessment evidence committed as versioned data (F24 snapshot
 source) remains outstanding; O2 host named and
 F12-probed; rights admission consumed-from-abc or transferred (F14c);
 F12 repo-growth probe run against the chosen origin; O5a signing in
-place (F119 reconciliation): ONE online CI RELEASE key + TWO offline
-GOVERNANCE keys, each generated on its own hardware token (PIV
-Ed25519, PIN + touch explicitly configured — F117), devices stored
-separately; NO repository key copies (F122); **the F54 minimal trust
+place (F119 reconciliation; key medium amended by owner 2026-08-25):
+ONE online CI RELEASE key + TWO offline GOVERNANCE software Ed25519
+keys, each generated offline onto its own encrypted offline medium
+under a declared single-copy inventory, media stored separately; NO
+repository key copies (F122); **the F54 minimal trust
 anchor published BEFORE the first signed release: the ROLE-BOUND
 assignment — RELEASE = {release key}, GOVERNANCE = {both governance
 keys} — as key bytes + fingerprints on an independent, immutable
 channel (F126: the anchor authenticates roles, never a flat key list) (repo-hosted keys cannot authenticate themselves; the Slice-4
 promise document arrives too late to be the first pin), loaded as
-pinned verifier configuration; hardware smoke signing by both
-governance devices recorded as disposable ceremony evidence (F123)** — the deposit
+pinned verifier configuration; smoke signing by both governance
+keys recorded as disposable ceremony evidence (F123)** — the deposit
 carries the actual genesis manifest bytes + signature (F63); full-corpus
 assessment DATA migrated (the schema froze at Slice 2 — F58/round-12
 cleanup: no schema freezes remain before this slice); signatures are raw
@@ -2504,22 +2520,19 @@ back by citing the previous release tag.
   commitment is removed from v1; the record is purely operational until
   a concrete audit consumer and encoding exist.)
 - Pinned-key setup (O5a/F54; governance-set amendment 2026-08-25;
-  F116/F117 round 22): generate the RELEASE key (online, CI) and TWO
-  GOVERNANCE keys — each generated ON its own YubiKey (PIV Ed25519,
-  firmware ≥ 5.7.0; FIDO2 resident keys CANNOT satisfy the
-  raw-Ed25519 wire contract), devices stored separately. **Owner
-  reported 2026-08-25: the existing YubiKeys are firmware 5.4.3 —
-  below the 5.7.0 PIV-Ed25519 floor, and YubiKey firmware is not
-  field-upgradeable; no applet on 5.4.3 (PIV, FIDO2, or OpenPGP)
-  produces the spec-§6 raw detached Ed25519 over exact message bytes.
-  Consequence: TWO current-generation YubiKeys (firmware 5.7+) must
-  be procured before the ceremony — a Slice-3 deployment
-  prerequisite; the 5.4.3 devices are unaffected for their existing
-  SSH/FIDO2 uses and play no role in v1 signing.** The ceremony
-  EXPLICITLY configures PIN + touch policy (touch defaults can be
-  Never) and has BOTH governance devices sign a fixed protocol
-  conformance vector (F117). Key bytes + fingerprints go in the
-  independent anchor + pinned verifier configuration ONLY; v1
+  key medium AMENDED to software by owner 2026-08-25 — the existing
+  YubiKeys are firmware 5.4.3, below the 5.7.0 PIV-Ed25519 floor; no
+  5.4.3 applet produces the spec-§6 raw detached Ed25519, and
+  procurement was declined; the 5.4.3 devices keep their SSH/FIDO2
+  uses and play no role in v1 signing): generate the RELEASE key
+  (online, CI) and TWO GOVERNANCE software Ed25519 keypairs — each
+  generated OFFLINE and written to exactly ONE encrypted offline
+  medium (the ceremony-declared single-copy inventory; F115
+  accountability attaches to it), media stored separately; governance
+  signing only ever on an offline machine. The ceremony has BOTH
+  governance keys sign a fixed protocol conformance vector as
+  disposable evidence (F117 analog). Key bytes + fingerprints go in
+  the independent anchor + pinned verifier configuration ONLY; v1
   publishes NO repository key copies (F122/F138). Publish the minimal
   trust anchor on Zenodo (F59/F63: the deposit carries key bytes +
   fingerprints + the ACTUAL genesis manifest bytes and signature — never

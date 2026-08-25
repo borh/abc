@@ -163,7 +163,9 @@ the ASSEMBLER against the rule bytes it holds.
 ## 7. Keys and verification
 
 (Implements O5a — owner-RATIFIED 2026-08-25, exact corrected text
-including F125's incident condition.)
+including F125's incident condition; governance key MEDIUM amended by
+owner 2026-08-25 after the firmware finding: SOFTWARE Ed25519
+keypairs, not hardware tokens. All other clauses unchanged.)
 
 Two disjoint ROLES, each a FIXED, directly pinned, non-empty SET of
 Ed25519 keys. FOR A GIVEN PUBLICATION CHAIN, the pinned sets are
@@ -177,8 +179,9 @@ cases). No key-manifest, no in-band rotation, no envelope in v1:
 - **RELEASE role** (online, held by CI; v1 set size 1): signs release
   manifests — authenticates that Soranoha issued the release.
 - **GOVERNANCE role** (offline, owner-held; v1 set size 2 — each key
-  GENERATED ON its own hardware token, non-exportable, devices stored
-  separately): signs governance events — authenticates
+  a SOFTWARE Ed25519 keypair generated offline, held on its own
+  separate offline medium under a ceremony-declared copy inventory,
+  media stored separately): signs governance events — authenticates
   withdrawal/amendment authority. A compromised release key cannot
   withdraw works.
 
@@ -188,13 +191,18 @@ and accepts the raw signature iff it verifies against SOME member of
 that role's pinned set.
 
 Degradation and halt (F115 — "lost without compromise" is not
-normally observable): a governance device KNOWN to be destroyed or
-failed leaves governance operating in DEGRADED one-key mode — the
+normally observable; for SOFTWARE keys accountability attaches to the
+DECLARED COPY INVENTORY, not a physical token): the ceremony declares
+each governance key's complete copy inventory — v1: EXACTLY ONE
+offline medium per key, no other copies ever made. A governance key
+KNOWN destroyed (its sole declared medium verifiably destroyed or
+failed) leaves governance operating in DEGRADED one-key mode — the
 pinned set itself never changes; the destroyed key simply signs
-nothing further in this epoch. An UNACCOUNTED-FOR token is SUSPECTED
-COMPROMISE and triggers the halt rule. COMPROMISE of any member halts
-the role's operations (fail-closed — a valid signature no longer
-proves authority).
+nothing further in this epoch. A key medium UNACCOUNTED-FOR, or
+possibly READ by another party, is SUSPECTED COMPROMISE and triggers
+the halt rule — a copyable file has no "lost but unread" state.
+COMPROMISE of any member halts the role's operations (fail-closed — a
+valid signature no longer proves authority).
 
 Key distribution (F116): pinned key BYTES and fingerprints live ONLY
 in the independent trust anchor and the verifier's pinned
@@ -211,13 +219,17 @@ repository key copies (F116/F122 — a repo-hosted copy cannot
 authenticate itself and has no consumer; even an "optional
 non-normative" copy invites synchronization questions).
 
-Signer hardware note (non-normative): any signer producing plain
-Ed25519 over the §6 message satisfies this section — e.g. a YubiKey
-PIV Ed25519 slot (firmware ≥ 5.7.0). PIN and TOUCH policy are
-EXPLICITLY configured at ceremony time — touch defaults can be Never
-(F117) — and the ceremony has BOTH governance devices sign a fixed
-protocol conformance vector. FIDO2 resident keys do NOT satisfy §6:
-CTAP2 assertions sign authenticator data + a counter, never the raw
+Signer note (non-normative): any signer producing plain Ed25519 over
+the §6 message satisfies this section. v1 governance keys (owner
+amendment 2026-08-25) are software keypairs: the ceremony generates
+each offline, writes it to exactly one encrypted offline medium (the
+declared copy inventory above), and has BOTH keys sign a fixed
+protocol conformance vector as disposable ceremony evidence (F117
+analog). Governance signing happens on an offline machine; the key
+material never resides on a network-connected host. The owner's
+existing YubiKeys (firmware 5.4.3) cannot serve: PIV Ed25519 requires
+firmware ≥ 5.7.0, and FIDO2 resident keys do NOT satisfy §6 — CTAP2
+assertions sign authenticator data + a counter, never the raw
 message.
 
 ## 8. Verifier invariants
@@ -472,9 +484,10 @@ determinism defect.
   unavailable to release CI. Compromise semantics: chain freezes at the
   last checkpoint; later signatures contested until an out-of-band
   cutoff notice; release-key compromise halts publication. Governance
-  devices, exactly per §7/F115: KNOWN destroyed/failed → degraded
-  one-key operation; UNACCOUNTED-FOR → suspected compromise → HALT;
-  compromise of any member → HALT.
+  keys, exactly per §7/F115: KNOWN destroyed (sole declared medium) →
+  degraded one-key operation; medium UNACCOUNTED-FOR or possibly
+  read → suspected compromise → HALT; compromise of any member →
+  HALT.
 
 ## 11. Executable schemas and conformance vectors (the FROZEN objects, F80)
 
@@ -493,8 +506,8 @@ approves — authored BEFORE that review, not transcribed after it.
    tests — the release key signing a governance event FAILS, a
    governance key signing a manifest FAILS, a non-member key FAILS,
    and an overlapping/un-roled `pinned_keys` configuration is
-   REJECTED. All vectors use FIXTURE keys (F123): the F117 hardware
-   ceremony's smoke signing with the ACTUAL governance devices is
+   REJECTED. All vectors use FIXTURE keys (F123): the F117 key
+   ceremony's smoke signing with the ACTUAL governance keys is
    pre-release DISPOSABLE evidence, never a frozen fixture or schema.
 5. `.pub` and `releases/HEAD` byte-exact fixtures (65 bytes each),
    including the pre-genesis zero HEAD.

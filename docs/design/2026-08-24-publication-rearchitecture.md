@@ -40,6 +40,19 @@ numbers live in the findings sections and Git history, not here):
   Ed25519 role-bound verification (F126), and the F123 fixture keys
   (RFC 8032 vectors) are implemented in `soranoha/src/soranoha/snh/`.
   The D20-as-amended AGENTS.md ownership transfer is recorded.
+  Post-freeze progress (2026-08-25, **own review pending — not covered
+  by the D16.1 freeze**): the §8 verifier
+  (`soranoha.snh.verify` — chain walk, publication-commit definition,
+  closure/blob/signature checks, transition rules, §10
+  archive-verification report) and the §9 publication transaction
+  (`soranoha.snh.transact` — pre-genesis init, build + governance
+  publication over a fast-forward-only compare-and-swap push,
+  current-state reconciliation incl. requeue / already-published /
+  determinism-halt / conflicting-withdrawal / stale-amends, F61
+  lost-ack convergence, F87 totality gate) are implemented with the
+  §11-item-6 invariant fixtures (`verify-test`, `transact-test`)
+  against a local fixture origin. Suites: 46 tests / 207 assertions
+  green locally and hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.

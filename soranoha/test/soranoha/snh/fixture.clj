@@ -1,0 +1,183 @@
+(ns soranoha.snh.fixture
+  "Shared machinery for verifier/transaction tests: a throwaway origin +
+  clone pair, the fixture signing keys, a parameterized corpus assembler,
+  and a low-level crafter for deliberately invalid publication commits."
+  (:require [babashka.fs :as fs]
+            [charred.api :as json]
+            [clojure.java.io :as io]
+            [soranoha.core.hash :as hash]
+            [soranoha.snh.decode :as decode]
+            [soranoha.snh.repo :as repo]
+            [soranoha.snh.sign :as sign]
+            [soranoha.snh.transact :as transact]
+            [soranoha.snh.verify :as verify]
+            [soranoha.snh.view :as view]))
+
+(def keys*
+  (delay (get (json/read-json (slurp (io/resource "snh/vectors/signature-vectors.json")))
+              "keys")))
+
+(defn pinned-keys []
+  {:release (get-in @keys* ["release" "pub"])
+   :governance (get-in @keys* ["governance" "pub"])})
+
+(defn- seed [role] (sign/hex->bytes (get-in @keys* [role "seed"])))
+
+(defn sign-release [manifest-hex]
+  (sign/sign (seed "release") (sign/manifest-message manifest-hex)))
+
+(defn sign-event [event-hex]
+  (sign/sign (seed "governance") (sign/event-message event-hex)))
+
+(defn sign-event-with-release-key [event-hex]
+  (sign/sign (seed "release") (sign/event-message event-hex)))
+
+(def branch "main")
+
+(defn make-repos!
+  "Fresh origin + clone under a temp dir with the pre-genesis initial commit
+  pushed. Returns {:dir :origin :clone :init-commit}."
+  []
+  (let [dir (str (fs/create-temp-dir {:prefix "snh-fixture"}))
+        origin (repo/init-origin! (fs/path dir "origin.git"))
+        clone (repo/clone! origin (fs/path dir "clone"))
+        init (transact/init-publication-branch! clone branch)]
+    {:dir dir :origin origin :clone clone :init-commit init}))
+
+(defn second-clone! [{:keys [dir origin]}]
+  (repo/clone! origin (fs/path dir "clone2")))
+
+;; --- fixture corpus ---------------------------------------------------------
+
+(defn- fact [basis]
+  {"status" "public-domain" "jurisdiction" "jp"
+   "effective_date" "2026-08-01" "basis" basis})
+
+(defn- candidate [slug]
+  {"slug" slug
+   "work_assessment" (fact (str "edition:" slug))
+   "contributions" [(assoc (fact (str "author:" slug)) "contribution_id"
+                           (str "author:" slug))]})
+
+(defn work-blob-bytes [kind slug variant]
+  (.getBytes (str "fixture:" kind ":" slug ":" variant) "UTF-8"))
+
+(defn- work-entry [slug variant]
+  (let [artifact (fn [kind]
+                   (let [^bytes bytes (work-blob-bytes kind slug variant)]
+                     {:blob bytes
+                      :entry {"type" kind
+                              "id" (str "snh:1:" kind ":" (hash/sha256-bytes bytes))
+                              "bytes" (alength bytes)}}))
+        parts (mapv artifact ["plaintext" "tei" "tei-validation"])]
+    {:blobs (into {} (map (fn [{:keys [^bytes blob]}]
+                            [(hash/sha256-bytes blob) blob]))
+                  parts)
+     :entry {"slug" slug
+             "source_content_hash" (hash/sha256-string (str "fixture:source:" slug))
+             "artifacts" (mapv :entry parts)}}))
+
+(def policy-hash (hash/sha256-string "fixture:policy"))
+(def rule-hash (hash/sha256-string "fixture:rule"))
+
+(defn make-assemble
+  "Assembler over a parameterized fixture corpus. `admitted`, `excluded`,
+  `quarantined` are slug vectors; `selection-params` a string map; `variant`
+  changes every work's artifact bytes (same projection, different derived
+  content). The returned fn derives works = admitted minus the head's
+  withdrawn set, as the transaction contract requires. `drop-candidate`
+  (test hook) omits one slug from the snapshot to violate totality."
+  [{:keys [admitted excluded quarantined selection-params variant drop-candidate]
+    :or {excluded [] quarantined [] variant "v1" selection-params {"config" "fixture"}}}]
+  (fn [head-manifest]
+    (let [withdrawn (set (map #(get % "slug") (get head-manifest "withdrawn")))
+          live (vec (sort (remove withdrawn admitted)))
+          works (mapv #(work-entry % variant) live)
+          all-candidates (vec (sort (concat admitted excluded quarantined)))
+          snapshot {"schema" "snh-assessment-snapshot/1"
+                    "candidates" (mapv candidate
+                                       (remove #{drop-candidate} all-candidates))}
+          snapshot-enc (decode/encode "assessment-snapshot" snapshot)
+          report {"schema" "snh-admission-report/1"
+                  "assessment_snapshot" (:id snapshot-enc)
+                  "policy_hash" policy-hash
+                  "inclusion_rule_id" "fixture-rule-v1"
+                  "inclusion_rule_hash" rule-hash
+                  "admitted" (vec (sort admitted))
+                  "excluded" (mapv (fn [slug] {"slug" slug "reason_code" "in-copyright"})
+                                   (sort excluded))
+                  "quarantined" (mapv (fn [slug] {"slug" slug "reason_code" "not-evaluated"})
+                                      (sort quarantined))}
+          report-enc (decode/encode "admission-report" report)]
+      {:core {"schema" "snh-manifest/1"
+              "corpus" {"upstream_origin" "https://github.com/aozorabunko/aozorabunko.git"
+                        "upstream_rev" "0e9ea3e586eb0aa34039fabfc85a407d2f98b165"}
+              "toolchain" {"render" {"nix_closure_hash" (hash/sha256-string "fixture:render")
+                                     "stage_code_version" "1"}}
+              "selection_params" selection-params
+              "admission" {"policy_id" "fixture-policy"
+                           "policy_hash" policy-hash
+                           "inclusion_rule_id" "fixture-rule-v1"
+                           "inclusion_rule_hash" rule-hash
+                           "assessment_snapshot" (:id snapshot-enc)
+                           "admission_report" (:id report-enc)}
+              "works" (mapv :entry works)
+              "validation_summary" {"invalid_count" 0 "invalid_slugs" []}}
+       :blobs (into {(:hex snapshot-enc) (:bytes snapshot-enc)
+                     (:hex report-enc) (:bytes report-enc)}
+                    (map :blobs works))
+       :selection (set all-candidates)})))
+
+(defn publish!
+  "Publish one build on `clone` with the fixture keys."
+  [clone assemble-opts]
+  (transact/publish-build! {:clone clone :branch branch
+                            :pinned-keys (pinned-keys)
+                            :assemble (make-assemble assemble-opts)
+                            :sign-release sign-release}))
+
+(defn event-value [kind entries]
+  {"schema" "snh-governance-event/1" "kind" kind "entries" entries})
+
+(defn publish-event!
+  [clone value]
+  (let [{:keys [hex bytes]} (decode/encode "governance-event" value)]
+    (transact/publish-governance! {:clone clone :branch branch
+                                   :pinned-keys (pinned-keys)
+                                   :sign-release sign-release
+                                   :event-bytes bytes
+                                   :event-sig (sign-event hex)})))
+
+;; --- crafting invalid commits ----------------------------------------------
+
+(defn head-of
+  "Current origin head sha as seen from `clone` (after fetch)."
+  [clone]
+  (repo/fetch! clone branch))
+
+(defn craft-release!
+  "Write (without pushing) a commit on `parents` carrying `manifest-value`
+  as the release: manifest json + signature + advanced head + `extra-files`.
+  `sign-fn` defaults to the release key. Returns {:commit :hex}."
+  [clone {:keys [parents base-tree-of manifest-value extra-files sign-fn]
+          :or {sign-fn sign-release}}]
+  (let [{:keys [hex bytes]} (decode/encode "release-manifest" manifest-value)
+        files (merge {(verify/manifest-path hex) bytes
+                      (verify/manifest-sig-path hex) (sign-fn hex)
+                      verify/head-path (sign/hex64-lf-bytes hex)}
+                     extra-files)]
+    {:commit (repo/write-commit! clone {:parents parents
+                                        :base-tree-of base-tree-of
+                                        :files files
+                                        :message (str "crafted " hex)})
+     :hex hex}))
+
+(defn manifest-at
+  "Decoded manifest value + hex at `commit` in `clone`."
+  [clone commit]
+  (let [v (view/git-view clone)
+        head (sign/parse-hex64-lf (view/read-at v commit verify/head-path))]
+    {:hex head
+     :value (:value (decode/decode "release-manifest"
+                                   (view/read-at v commit
+                                                 (verify/manifest-path head))))}))

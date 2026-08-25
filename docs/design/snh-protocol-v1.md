@@ -572,9 +572,12 @@ Frozen artifact locations (D16.1 freeze approved 2026-08-25 at commit
 table-driven index (accept vectors carry the exact stored canonical
 bytes; reject vectors carry the exact bytes that must fail, each with
 its frozen rejection reason); executable check =
-`soranoha.snh.conformance-test`. Items 1–5 below are covered there;
-item 6's §8/§9 invariant fixtures land with the Slice-2 verifier and
-transaction implementations they exercise.
+`soranoha.snh.conformance-test`. Items 1–5 below are covered there.
+Item 6's §8/§9 invariant fixtures are implemented (post-freeze, own
+review pending) in `soranoha.snh.verify-test` and
+`soranoha.snh.transact-test` against a local fixture origin, exercising
+`soranoha.snh.verify` (the §8 primitive + §10 archive report) and
+`soranoha.snh.transact` (the §9 transaction).
 
 1. Canonicalization: existing shared vectors (§1).
 2. A complete valid manifest → canonical bytes → manifest_id; the

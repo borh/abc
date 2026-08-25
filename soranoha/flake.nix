@@ -34,7 +34,12 @@
           clj-nix-tests =
             pkgs.runCommand "soranoha-clj-nix-tests"
               {
-                nativeBuildInputs = [ pkgs.clojure ];
+                # git backs the repository-view and publication-transaction
+                # test fixtures (local origin + clones)
+                nativeBuildInputs = [
+                  pkgs.clojure
+                  pkgs.git
+                ];
               }
               ''
                 cp -R ${./.} source

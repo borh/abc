@@ -20,6 +20,10 @@ Status (post review round 8, 2026-08-25):
   ratification pending. **F40's distinct governance role: reviewer
   RATIFIED (round 8), subject to F44/F45 — both applied.**
 - Protected branch name fixed: **`trust`** (F47).
+- **O5 PROPOSED** (simplicity re-review, owner-triggered): freeze the wire
+  formats, stage the trust OPERATIONS behind named triggers — v1 builds
+  one-ceremony signing + the data verifier; rotation/recovery/bootstrap
+  tooling deferred until their triggers fire.
 D18.1 approved conditional on F12. Authoritative record: decision log +
 reviews F1–F9, F10–F15, F16–F23, F24–F28, F29–F33, F34–F37, F38–F42,
 F43–F47 + dev handoff below.
@@ -1042,11 +1046,18 @@ in agent report" headings redirected to the inlined sources list.
     withdrawal itself stays permanent. Recommended because takedown
     paperwork and rights findings DO get corrected, and a wire-version
     bump for a typo'd reason_code is disproportionate.
-  **Round-6 reviewer sign-off: RECOMMENDS option (b)** — "option (a)
+  **Round-6 reviewer sign-off on O3: RECOMMENDS option (b)** — "option (a)
   makes an ordinary typo a wire-version event" — conditional on F34,
   which is now applied (tombstone amendments have their own operation
   identity via `release_intent`, so O3(b) is executable). Owner
   ratification remains the freeze gate.
+- **O5 — v1 trust-operations staging (PROPOSED; see the simplicity
+  re-review section).** Freeze all wire formats as reviewer-verified; v1
+  implements one-ceremony signing (genesis key-manifest, root.pub,
+  fingerprint) + the full data-invariant verifier; rotation, recovery,
+  and bootstrap cross-channel tooling are documented runbooks activated
+  by named triggers (first rotation / first incident / first external
+  verifier), not v1 build scope.
 
 ## External design review round 3 (2026-08-24) — findings F16–F23
 
@@ -1361,6 +1372,63 @@ verified as HEAD, ledger-only, clean `git diff --check`, clean worktree.
   is definitively named **`trust`** (hosting `recovery/`, `keys/`,
   `root.pub`); the snh-sig/1 scope sentence now names all four signed
   object kinds.
+
+## Simplicity re-review (owner-triggered, 2026-08-25): are we recreating the removed complexity?
+
+Audit against the original diagnosis (interleaving; corpus-wide identity;
+over-defensive qualification):
+
+**Cured — each original symptom checked:**
+- 81 env vars / 7 root variables → 1 (SORANOHA_ROOT).
+- ≥7 identity schemes, canonicalizer ×3 → ONE canonicalizer, ONE hash,
+  ONE id pattern, ONE signature envelope; every derived id uses the same
+  manifest pattern. Uniformity, not proliferation.
+- ADR corpus parsed on every build → governance is data files hashed into
+  manifests; verifier is CI-only. Nothing interactive on the hot path.
+- Corpus-wide identity → per-work derivation keys + artifact ids.
+- The build kernel design (~50 ledger lines + ~900 LOC ported renderers)
+  has attracted ZERO findings in 8 review rounds. Slices 0–2 — the part
+  serving the original goals (arbitrary-revision TEI/plaintext,
+  incremental comparison) — are untouched by rounds 5–8.
+
+**The rhyme with the old disease (flagged honestly):** the accreted
+complexity is entirely in the PUBLICATION TRUST protocol. Measured: trust
+spec ≈ 200 ledger lines (~4× the entire build-kernel design); 5 of 8 wire
+schemas (sig, key-manifest, recovery, governance-event, tombstone) exist
+to defend against compromised signing keys; ~15 of 47 findings — and
+essentially every round-5–8 blocker — were defects in trust machinery WE
+INVENTED (self-hash ×2, window off-by-one, circular root resolution,
+role non-disjointness). Old system: qualification 7× the renderers it
+qualified. New risk: a hand-rolled TUF for a verifier population of
+approximately one. The counterfactual test: the researcher's
+reproducibility guarantee rests on content-addressed ids + independent
+archives (Zenodo DOI, SWH) — signatures protect only the freshness of
+the "latest" pointer, low-stakes for research that cites specific
+releases.
+
+**Proposed O5 (owner decision): freeze the formats, STAGE the
+operations.** All reviewer-verified wire formats stay frozen as specced
+(they are cheap and re-litigating is waste). v1 IMPLEMENTS: hash chain;
+snh-sig/1 with a genesis key-manifest from ONE ceremony (release +
+governance keys, both owner-held); root.pub + out-of-band fingerprint;
+admission evidence; the full data-invariant verifier. DOCUMENTED BUT NOT
+BUILT until a named trigger fires: rotation tooling (trigger: first
+rotation), recovery tooling and bootstrap cross-channel comparison
+(trigger: first incident or first external verifier — the spec is the
+runbook), Tessera upgrade (external verifiers at scale). This mirrors
+D19's existing "upgradeable if external verifiers materialize" logic.
+
+**Ratchet guard (process rule, effective immediately):** 8 review rounds
+each ADDED mechanism; none removed any. Before the D16.1 freeze, every
+mechanism must name (a) the concrete failure it prevents and (b) who
+exercises it in YEAR ONE; no year-one exerciser → contingency appendix,
+not v1 scope. Post-freeze: no new wire schema without deleting one or
+naming a real external consumer.
+
+**Explicitly NOT cut** (load-bearing for the original goals or legally
+required): per-work identity/early cutoff; the manifest chain; one
+canonicalizer/one root; fail-closed admission + assessment evidence
+(rights exposure is real); the F4/F5 acceptance oracles.
 
 ## Dev Handoff (2026-08-24; slices 0–2 amended by F4/F5/F7, D16–D18; slice 3 rewritten per round 2; slice gating per F16)
 

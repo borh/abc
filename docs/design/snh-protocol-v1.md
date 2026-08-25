@@ -151,22 +151,38 @@ the ASSEMBLER against the rule bytes it holds.
 
 ## 7. Keys and verification
 
-Two directly pinned, disjoint Ed25519 keys; no key-manifest, no in-band
-rotation, no envelope in v1:
+Two disjoint ROLES, each a FIXED, directly pinned, non-empty SET of
+Ed25519 keys (owner-directed, 2026-08-25: sets, not singletons — for a
+solo owner, loss of the only governance device was the dominant real
+risk); no key-manifest, no in-band rotation, no envelope in v1:
 
-- **RELEASE key** (online, held by CI): signs release manifests —
-  authenticates that Soranoha issued the release.
-- **GOVERNANCE key** (offline, owner-held): signs governance events —
-  authenticates withdrawal/amendment authority. A compromised release
-  key cannot withdraw works.
+- **RELEASE role** (online, held by CI; v1 set size 1): signs release
+  manifests — authenticates that Soranoha issued the release.
+- **GOVERNANCE role** (offline, owner-held; v1 set size 2 — each key
+  GENERATED ON its own hardware token, non-exportable, devices stored
+  separately): signs governance events — authenticates
+  withdrawal/amendment authority. A compromised release key cannot
+  withdraw works; LOSS of one governance device does not halt
+  governance while another pinned member remains.
 
-The verifier selects the key from the signed object's kind, constructs
-the domain-separated message from the artifact it holds, and verifies
-the raw signature. Public keys: `keys/release.pub`,
-`keys/governance.pub` (encoding §6) — convenience copies; the trust
-anchor is the out-of-band fingerprints, obtained from the owner-named
-pre-release discovery channel, which carries the Zenodo concept DOI and
-both fingerprints before the first signed release.
+The verifier selects the ROLE from the signed object's kind,
+constructs the domain-separated message from the artifact it holds,
+and accepts the raw signature iff it verifies against SOME member of
+that role's pinned set. COMPROMISE of ANY member halts the role's
+operations (fail-closed — a valid signature no longer proves
+authority); loss WITHOUT compromise does not, while a member remains.
+Public keys at fixed paths: `keys/release.pub` and
+`keys/governance-<n>.pub` (n = 1..N ascending, v1 N = 2; encoding §6)
+— convenience copies; the trust anchor is the out-of-band fingerprints
+of EVERY member, obtained from the owner-named pre-release discovery
+channel, which carries the Zenodo concept DOI and all pinned
+fingerprints before the first signed release.
+
+Signer hardware note (non-normative): any signer producing plain
+Ed25519 over the §6 message satisfies this section — e.g. a YubiKey
+PIV Ed25519 slot (firmware ≥ 5.7.0, PIN + touch policy). FIDO2
+resident keys do NOT: CTAP2 assertions sign authenticator data + a
+counter, never the raw message, and cannot verify under §6.
 
 ## 8. Verifier invariants
 
@@ -413,8 +429,10 @@ determinism defect.
   ACTUAL canonical manifest bytes + signature, made with credentials
   unavailable to release CI. Compromise semantics: chain freezes at the
   last checkpoint; later signatures contested until an out-of-band
-  cutoff notice; release-key compromise halts publication;
-  governance-key compromise/loss halts governance operations.
+  cutoff notice; release-key compromise halts publication; compromise
+  of ANY governance-set member halts governance operations; loss of
+  ALL governance devices halts governance (loss of one does not,
+  while a pinned member remains — §7).
 
 ## 11. Executable schemas and conformance vectors (the FROZEN objects, F80)
 
@@ -425,7 +443,9 @@ approves — authored BEFORE that review, not transcribed after it.
 2. A complete valid manifest → canonical bytes → manifest_id.
 3. A governance event (each kind) → canonical bytes → id.
 4. Signature: key bytes, message bytes, 64-byte signature for one
-   manifest and one event.
+   manifest and one event; a governance signature from the SECOND
+   pinned member that VERIFIES; a signature from a non-member key
+   that FAILS.
 5. `.pub` and `releases/HEAD` byte-exact fixtures (65 bytes each),
    including the pre-genesis zero HEAD.
 6. Invariant fixtures: each §8 rule with one passing and one failing

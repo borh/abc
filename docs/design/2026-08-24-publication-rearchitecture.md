@@ -873,19 +873,24 @@ in agent report" headings redirected to the inlined sources list.
   mechanics, implementation obligations, and deleted design history;
   formats belong to D16, implementation to the dev handoff, history to
   findings F48–F55 and F61–F72). The RATIFIABLE PROPOSITION:**
-  **"v1 uses exactly one directly pinned Ed25519 key per role
-  (RELEASE: online, held by CI, signs manifests; GOVERNANCE: offline,
-  owner-held, signs withdrawal/amendment events); it provides no
-  authenticated freshness and no in-band rotation or recovery; it
-  HALTS the affected operation on key compromise or loss; and it
-  treats releases after the last independent checkpoint as CONTESTED
-  until an out-of-band notice names the accepted cutoff. Before adding
-  another key, promising cryptographic continuity, or serving a
-  consumer requiring authenticated freshness, a successor trust
-  protocol must be designed and exercised — never improvised
-  mid-incident."**
-  Facilitator and reviewer both recommend ratifying. Owner yes/no
-  pending.
+  **"v1 uses a FIXED, directly pinned SET of Ed25519 keys per role —
+  RELEASE: one online CI key, signs manifests; GOVERNANCE: two
+  offline owner-held hardware keys, each generated on its own token,
+  stored separately, signing withdrawal/amendment events (a signature
+  verifies against any set member). It provides no authenticated
+  freshness and no in-band rotation or recovery; it HALTS the
+  affected operation on COMPROMISE of any set member or LOSS of a
+  role's last remaining key (loss of one governance device while
+  another remains does not halt); and it treats releases after the
+  last independent checkpoint as CONTESTED until an out-of-band
+  notice names the accepted cutoff. Before enlarging a pinned set,
+  promising cryptographic continuity, or serving a consumer requiring
+  authenticated freshness, a successor trust protocol must be
+  designed and exercised — never improvised mid-incident."**
+  (Amended from "exactly one key per role" by OWNER DIRECTION
+  2026-08-25 — governance-set size 2; see the owner-direction note
+  after round 21.) Facilitator and reviewer recommend ratifying.
+  Owner yes/no pending on the amended text.
 
 ## External design review round 3 (2026-08-24) — findings F16–F23
 
@@ -1961,6 +1966,46 @@ unblocked.
   trigger). D16 owns formats; the handoff owns implementation; the
   findings own history. O5a is now a meaningful owner yes/no.
 
+## Owner direction (2026-08-25, post round 21): governance-key redundancy + signer hardware
+
+Owner raised two points against the F111 O5a proposition before
+ratifying: (1) will YubiKey resident keys satisfy the Ed25519
+requirement; (2) "I would rather not just have one."
+
+Hardware facts (verified; sources: Yubico yubico-piv-tool release
+notes and key-generation docs):
+- The owner's existing keys are `sk-ssh-ed25519@openssh.com` (FIDO2).
+  FIDO2/CTAP2 assertions sign authenticator data (RP-ID hash, flags,
+  SIGNATURE COUNTER) + client-data hash — never the raw message — so
+  they CANNOT verify under the §6 raw-Ed25519 wire contract, and
+  bending the contract would resurrect the F64-deleted envelope plus
+  a stateful counter. Those keys remain fine for SSH/forge
+  authentication (transport, not protocol signing).
+- YubiKey PIV Ed25519 (firmware ≥ 5.7.0) DOES produce plain Ed25519
+  over the exact message — on-device generation, PIN + touch policy.
+  FIDO2 and PIV are independent applets: the SAME physical YubiKey
+  can keep its resident SSH keys AND hold a governance signing key.
+  Owner action: check `ykman info` for firmware ≥ 5.7.0; pre-5.7
+  devices need replacement for the governance role.
+
+Decision (owner: "2 seems fine" — pinned set of two): the GOVERNANCE
+role becomes a fixed pinned SET of two keys, each generated on its
+own token, stored separately; a signature verifies against any
+member; compromise of any member halts governance; loss of one device
+does not, while the other remains. RELEASE stays a single CI key.
+Spec §7/§10/§11 and the O5a proposition amended accordingly; the F54
+setup task now publishes `keys/governance-1.pub` +
+`keys/governance-2.pub` and fingerprints of every member.
+
+Owner-cadence facts (answering "just once per quarter?"): the
+governance keys are used ONLY to sign withdrawal/amendment events —
+event-driven and possibly never in a given year; nothing scheduled.
+The QUARTERLY owner action is the credential-separated Zenodo
+checkpoint deposit (an upload of already-signed manifest bytes — no
+governance signature involved). ONE-TIME: the key ceremony + trust
+anchor before the first signed release. Daily releases involve only
+the CI release key.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;
@@ -2181,9 +2226,13 @@ back by citing the previous release tag.
   the first real withdrawal. (Per F82 the public `evidence_hash`
   commitment is removed from v1; the record is purely operational until
   a concrete audit consumer and encoding exist.)
-- Pinned-key setup (O5a/F54): generate the two disjoint Ed25519 keys
-  (release online for CI; governance offline), publish
-  `keys/release.pub` + `keys/governance.pub`, AND publish the minimal
+- Pinned-key setup (O5a/F54; governance-set amendment 2026-08-25):
+  generate the RELEASE key (online, CI) and TWO GOVERNANCE keys — each
+  generated ON its own YubiKey (PIV Ed25519, firmware ≥ 5.7.0, PIN +
+  touch policy; FIDO2 resident keys CANNOT satisfy the raw-Ed25519
+  wire contract), devices stored separately; publish
+  `keys/release.pub` + `keys/governance-1.pub` +
+  `keys/governance-2.pub`, AND publish the minimal
   trust anchor on Zenodo (F59/F63: the deposit carries key bytes +
   fingerprints + the ACTUAL genesis manifest bytes and signature — never
   a record that merely names a head — making it both the first pin

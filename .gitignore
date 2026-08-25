@@ -23,3 +23,6 @@ result-*
 /dictionary/
 __pycache__/
 *.pyc
+
+# Clojure classpath cache (soranoha kernel)
+.cpcache/

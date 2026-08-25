@@ -49,7 +49,7 @@
             r (fx/publish-event! clone event)]
         (is (= :published (:outcome r)))
         (let [chain (verified-chain clone)
-              head (get (:manifests chain) (:head chain))]
+              head (:head-manifest chain)]
           (is (= 3 (count (:chain chain))))
           (is (= [(first slugs-a)]
                  (mapv #(get % "slug") (get head "works"))))
@@ -67,7 +67,7 @@
                   ra (fx/publish-event! clone amendment)]
               (is (= :published (:outcome ra)))
               (let [chain2 (verified-chain clone)
-                    head2 (get (:manifests chain2) (:head chain2))]
+                    head2 (:head-manifest chain2)]
                 (is (= 4 (count (:chain chain2))))
                 (is (= (get head "works") (get head2 "works")))
                 (is (= [(second slugs-a)]
@@ -103,6 +103,42 @@
               (is (= {:outcome :halt :reason :slug-not-in-works
                       :slugs ["no_such_work_000000_1"]}
                      (fx/publish-event! clone ghost))))))))))
+
+(deftest invalid-candidate-never-reaches-the-origin
+  ;; a zeroed release signature must be caught by the pre-push verification,
+  ;; leaving the origin ref unchanged
+  (let [{:keys [clone]} (fx/make-repos!)
+        _ (fx/publish! clone base)
+        head-before (fx/head-of clone)]
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"signature-invalid"
+         (transact/publish-build! {:clone clone :branch fx/branch
+                                   :pinned-keys (fx/pinned-keys)
+                                   :assemble (fx/make-assemble
+                                              (assoc base :selection-params
+                                                     {"config" "fixture" "round" 2}))
+                                   :sign-release (fn [_hex] (byte-array 64))})))
+    (is (= head-before (fx/head-of clone)))))
+
+(deftest uncontended-duplicate-is-a-no-op
+  ;; the scheduled no-op decision runs before any push: publishing identical
+  ;; state twice yields one release
+  (let [{:keys [clone]} (fx/make-repos!)
+        first-run (fx/publish! clone base)
+        second-run (fx/publish! clone base)]
+    (is (= :published (:outcome first-run)))
+    (is (= {:outcome :already-published :manifest-id (:manifest-id first-run)}
+           second-run))
+    (is (= 1 (count (:chain (verified-chain clone)))))))
+
+(deftest uncontended-same-projection-divergence-halts
+  ;; same coordinates, different derived bytes: a determinism defect halts
+  ;; before any commit is created, even with no competing publisher
+  (let [{:keys [clone]} (fx/make-repos!)
+        _ (fx/publish! clone (assoc base :variant "v1"))
+        r (fx/publish! clone (assoc base :variant "v2"))]
+    (is (= :determinism-halt (:outcome r)))
+    (is (= 1 (count (:chain (verified-chain clone)))))))
 
 (deftest totality-check-blocks-emission
   (let [{:keys [clone]} (fx/make-repos!)]
@@ -171,9 +207,14 @@
     (is (= :requeue (:outcome r)))))
 
 (deftest rejected-push-converges-when-desired-state-already-published
+  ;; the winner lands the identical state between the loser's pre-push check
+  ;; and its push; depending on whether the two byte-identical commits share
+  ;; a timestamp the loser sees an up-to-date push (:published — the same
+  ;; commit) or a rejection reconciled to :already-published; both are the
+  ;; same convergence
   (let [same (assoc base :selection-params {"config" "fixture" "round" 2})
         r (race! same [same])]
-    (is (= :already-published (:outcome r)))))
+    (is (contains? #{:published :already-published} (:outcome r)))))
 
 (deftest rejected-push-halts-on-same-projection-different-content
   ;; the winner publishes the same projection with different artifact bytes;
@@ -221,7 +262,7 @@
       (let [r2 (fx/publish! clone (assoc base :selection-params
                                          {"config" "fixture" "round" 2}))
             chain (verified-chain clone)
-            head (get (:manifests chain) (:head chain))]
+            head (:head-manifest chain)]
         (is (= :published (:outcome r2)))
         (is (= [(first slugs-a)] (mapv #(get % "slug") (get head "works"))))
         (is (= [(second slugs-a)]

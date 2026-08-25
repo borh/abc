@@ -51,8 +51,13 @@ numbers live in the findings sections and Git history, not here):
   determinism-halt / conflicting-withdrawal / stale-amends, F61
   lost-ack convergence, F87 totality gate) are implemented with the
   §11-item-6 invariant fixtures (`verify-test`, `transact-test`)
-  against a local fixture origin. Suites: 46 tests / 207 assertions
-  green locally and hermetically.
+  against a local fixture origin. Implementation review round 1
+  (F157–F163) applied: pre-push candidate verification, pre-push
+  no-op/determinism decision, non-substituting hardened git view,
+  real commit time, all single-object semantics in boundary decode,
+  validation-summary re-derivation, exact-reason mutation tables,
+  streaming verification. Suites: 48 tests / 241 assertions green
+  locally and hermetically. Awaiting re-review.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2457,6 +2462,64 @@ further architectural review needed.
 
 Suites after both fixes: local 27 tests / 149 assertions green;
 hermetic Nix check green.
+
+## Slice-2 implementation review round 1 (2026-08-25) — findings F157–F163; NOT APPROVED at 25830364; all applied
+
+Verdict on the §8/§9 implementation: architecture clean; correctness
+gaps at the publication boundary. All seven findings and the
+streaming simplification applied same day.
+
+- **F157 (candidates pushed before verification — applied)** — a
+  zeroed release signature reached the origin. Fix: both transaction
+  paths verify the candidate commit with the §8 primitive before the
+  CAS push (spec §9 step 5); test asserts a bad signature leaves the
+  origin ref unchanged.
+- **F158 (no-op/determinism decision only ran after losing a race —
+  applied)** — identical state published twice; uncontended
+  same-projection divergence published instead of halting. Fix: the
+  projection/derived-state decision runs before any commit is created
+  (spec §9 step 3) and is shared verbatim with reconciliation; tests
+  cover the uncontended no-op and the uncontended determinism halt.
+- **F159 (git view honored replacement refs / lazy fetch — applied)**
+  — a replacement ref substituted a valid commit for an invalid one.
+  Fix: every view invocation runs with --no-replace-objects and
+  --no-lazy-fetch plus cleared alternates environment; alternate
+  object directories are rejected at view construction; spec §8 view
+  contract now says NON-SUBSTITUTING; replacement-ref negative
+  fixture added.
+- **F160 (manufactured commit timestamps — applied)** — the
+  process-local counter was not cross-process monotonic and stamped
+  production commits in 2023. Deleted; real commit time restored;
+  identical-commit collision is documented as state convergence and
+  the affected race test accepts both convergent outcomes.
+- **F161 (single-object semantics split across callers — applied)** —
+  reverse-sorted governance entries published and verified. Fix: all
+  single-object rules (list sortedness/uniqueness/disjointness for
+  all four types) moved into the boundary-decode semantic dispatch
+  (spec §1/§8 updated); the chain verifier keeps only cross-object
+  and transition rules and inherits the rest through decode.
+- **F162 (validation_summary not re-derived — applied)** — a forged
+  invalid_slugs claim verified. Fix: the verifier consumes the fixed
+  projection {status, validated_artifact} of each tei-validation
+  record, requires validated_artifact to name that work's TEI bytes,
+  and requires invalid_slugs to equal exactly the sorted failed slugs
+  (spec §8; matches the kernel's existing record fields). Fixture
+  validation blobs are representative JSON.
+- **F163 (invariant fixtures not isolating — applied)** — the genesis
+  negative accepted any of three reasons. Fix: table-driven mutation
+  suites with one exact expected reason per row (build-chain table,
+  governance-chain table, genesis table, plus dedicated multi-work
+  withdrawal-works and replacement-ref cases). The
+  superseded-event-single-entry rule is documented as unreachable in
+  a valid chain (subsumed by decode's entry uniqueness) and kept as
+  defense in depth with a positive fixture.
+- **Simplification (applied)** — verification streams: each manifest
+  decoded exactly once, only the head manifest retained; the result
+  carries head, ordered manifest ids, executed governance-event ids,
+  and chain length — all the transaction consumes.
+
+Suites after the round: 48 tests / 241 assertions green locally and
+hermetically. Awaiting re-review.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

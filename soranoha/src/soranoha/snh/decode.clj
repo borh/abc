@@ -72,10 +72,7 @@
         value (node->value node type)]
     (when-let [errors (schema/validation-errors type value)]
       (reject! :schema-invalid type {:errors errors}))
-    (case type
-      "release-manifest" (semantic/check-manifest-origin! value)
-      "assessment-snapshot" (semantic/check-snapshot-dates! value)
-      nil)
+    ((semantic/check-for type) value)
     (let [canonical-bytes (canonical/rfc8785-safe-integer-json-bytes-v1 value)]
       (when-not (Arrays/equals canonical-bytes stored-bytes)
         (reject! :noncanonical type

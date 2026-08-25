@@ -7,18 +7,12 @@
             [babashka.process :as process]
             [clojure.string :as str]))
 
-(def ^:private commit-counter (atom 0))
-
-(defn- ident-env
-  "Commit identity with a per-process monotonic timestamp: two commits with
-  the same tree and parent still get distinct shas, so a compare-and-swap
-  rejection is never masked by an accidental identical-commit collision.
-  Commit identity carries no protocol meaning; manifest identity does."
-  []
+(def ^:private ident-env
+  ;; real commit time: two racers producing byte-identical content in the
+  ;; same second may collide into one commit, and a push of that commit
+  ;; reports up-to-date — which is state convergence, not a failure
   {"GIT_AUTHOR_NAME" "snh" "GIT_AUTHOR_EMAIL" "snh@localhost"
-   "GIT_COMMITTER_NAME" "snh" "GIT_COMMITTER_EMAIL" "snh@localhost"
-   "GIT_AUTHOR_DATE" (str "@" (+ 1700000000 (swap! commit-counter inc)) " +0000")
-   "GIT_COMMITTER_DATE" (str "@" (+ 1700000000 @commit-counter) " +0000")})
+   "GIT_COMMITTER_NAME" "snh" "GIT_COMMITTER_EMAIL" "snh@localhost"})
 
 (defn- git!
   [dir opts & args]
@@ -80,7 +74,7 @@
               args (concat ["commit-tree" tree]
                            (mapcat (fn [p] ["-p" p]) parents)
                            ["-m" message])]
-          (str/trim (:out (apply git! dir {:extra-env (merge env (ident-env))} args)))))
+          (str/trim (:out (apply git! dir {:extra-env (merge env ident-env)} args)))))
       (finally
         (fs/delete-if-exists (fs/path index))))))
 

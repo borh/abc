@@ -1,15 +1,30 @@
 (ns soranoha.snh.semantic
-  "Semantic boundary rules — checks the JSON Schemas deliberately do not
-  carry because JSON Schema `format` enforcement is inconsistent across
-  validators. Boundary decode applies these single-object rules after
-  structural validation, so assembler and verifier inherit them from the one
-  shared operation; cross-object and transition invariants stay with the
-  chain verifier."
+  "Single-object semantic rules for the four protocol JSON objects — every
+  rule a lone object must satisfy that the JSON Schemas deliberately do not
+  carry (ordering, uniqueness, disjointness, real calendar dates, absolute
+  origins; JSON Schema cannot express ordering and its `format` enforcement
+  is inconsistent across validators). Boundary decode applies the matching
+  check after structural validation, so assembler and verifier inherit every
+  rule from the one shared operation. Cross-object and transition rules stay
+  with the chain verifier."
   (:import (java.time LocalDate)
            (java.time.format DateTimeFormatter ResolverStyle)))
 
+(defn- fail! [reason data]
+  (throw (ex-info (str "semantic rule violated: " (name reason))
+                  (assoc data :reason reason))))
+
+(defn- sorted-unique!
+  "Fails unless `xs` is strictly ascending (hence sorted and duplicate-free)."
+  [reason xs data]
+  (when-not (every? neg? (map compare xs (rest xs)))
+    (fail! reason data))
+  xs)
+
+;; --- shared value rules -----------------------------------------------------
+
 (def ^:private strict-iso-date
-  ;; uuuu (not yyyy) so the STRICT resolver accepts unambiguous years, and
+  ;; uuuu (not yyyy) so the strict resolver accepts unambiguous years, and
   ;; real calendar arithmetic rejects impossible dates like 2026-99-99 or
   ;; 2027-02-29 that the schema's digit pattern admits.
   (.withResolverStyle (DateTimeFormatter/ofPattern "uuuu-MM-dd")
@@ -37,28 +52,66 @@
                     (not (.isEmpty (.getHost uri)))))
              (catch java.net.URISyntaxException _ false)))))
 
-(defn check-manifest-origin!
-  "Throws unless the manifest value's corpus.upstream_origin is an absolute
-  URI with a non-empty host."
-  [manifest-value]
-  (let [origin (get-in manifest-value ["corpus" "upstream_origin"])]
-    (when-not (absolute-origin? origin)
-      (throw (ex-info "upstream_origin must be an absolute URI with a host"
-                      {:reason :invalid-upstream-origin :origin origin})))
-    manifest-value))
+;; --- per-type checks --------------------------------------------------------
 
-(defn check-snapshot-dates!
-  "Throws unless every non-null effective_date in the assessment-snapshot
-  value is a real calendar date."
-  [snapshot-value]
-  (doseq [candidate (get snapshot-value "candidates")
-          fact (cons (get candidate "work_assessment")
-                     (get candidate "contributions"))
-          :let [date (get fact "effective_date")]
-          :when (some? date)]
-    (when-not (real-calendar-date? date)
-      (throw (ex-info "effective_date must be a real calendar date"
-                      {:reason :invalid-effective-date
-                       :slug (get candidate "slug")
-                       :effective_date date}))))
-  snapshot-value)
+(defn check-manifest!
+  [manifest]
+  (when-not (absolute-origin? (get-in manifest ["corpus" "upstream_origin"]))
+    (fail! :invalid-upstream-origin
+           {:origin (get-in manifest ["corpus" "upstream_origin"])}))
+  (let [works (mapv #(get % "slug") (get manifest "works"))
+        withdrawn (mapv #(get % "slug") (get manifest "withdrawn"))
+        {:strs [invalid_count invalid_slugs]} (get manifest "validation_summary")]
+    (sorted-unique! :works-not-sorted-unique works {})
+    (sorted-unique! :withdrawn-not-sorted-unique withdrawn {})
+    (when (seq (filter (set withdrawn) works))
+      (fail! :works-withdrawn-overlap {}))
+    (sorted-unique! :invalid-slugs-not-sorted-unique invalid_slugs {})
+    (when-not (= invalid_count (count invalid_slugs))
+      (fail! :invalid-count-mismatch {:declared invalid_count
+                                      :actual (count invalid_slugs)}))
+    (when-not (every? (set works) invalid_slugs)
+      (fail! :invalid-slugs-outside-works
+             {:strays (vec (remove (set works) invalid_slugs))})))
+  manifest)
+
+(defn check-snapshot!
+  [snapshot]
+  (sorted-unique! :candidates-not-sorted-unique
+                  (mapv #(get % "slug") (get snapshot "candidates")) {})
+  (doseq [{:strs [slug work_assessment contributions]} (get snapshot "candidates")]
+    (sorted-unique! :contributions-not-sorted-unique
+                    (mapv #(get % "contribution_id") contributions)
+                    {:slug slug})
+    (doseq [fact (cons work_assessment contributions)
+            :let [date (get fact "effective_date")]
+            :when (some? date)]
+      (when-not (real-calendar-date? date)
+        (fail! :invalid-effective-date {:slug slug :effective_date date}))))
+  snapshot)
+
+(defn check-report!
+  [report]
+  (let [admitted (get report "admitted")
+        excluded (mapv #(get % "slug") (get report "excluded"))
+        quarantined (mapv #(get % "slug") (get report "quarantined"))]
+    (sorted-unique! :admitted-not-sorted-unique admitted {})
+    (sorted-unique! :excluded-not-sorted-unique excluded {})
+    (sorted-unique! :quarantined-not-sorted-unique quarantined {})
+    (let [all (concat admitted excluded quarantined)]
+      (when-not (= (count all) (count (set all)))
+        (fail! :partition-sets-overlap {}))))
+  report)
+
+(defn check-event!
+  [event]
+  (sorted-unique! :entries-not-sorted-unique
+                  (mapv #(get % "slug") (get event "entries")) {})
+  event)
+
+(def check-for
+  "Artifact type -> its single-object semantic check."
+  {"release-manifest" check-manifest!
+   "assessment-snapshot" check-snapshot!
+   "admission-report" check-report!
+   "governance-event" check-event!})

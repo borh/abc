@@ -37,9 +37,12 @@ appendix for their activation triggers.
   ELSE, on both the assembler and verifier sides):
   reject duplicate object keys; parse WITHOUT coercion; validate the
   parsed value against its frozen JSON Schema; apply the type's
-  SINGLE-OBJECT semantic boundary rules (F154/F156 — real calendar
-  dates, absolute origin; cross-object and transition invariants stay
-  in §8); canonicalize that same value; require the STORED bytes to
+  SINGLE-OBJECT semantic boundary rules (F154/F156/F161 — EVERY rule
+  a lone object must satisfy: sortedness/uniqueness of each object's
+  slug- and id-keyed lists, list disjointness within the object, real
+  calendar dates, absolute origin; cross-object and transition
+  invariants stay in §8); canonicalize that same value; require the
+  STORED bytes to
   EQUAL the canonical bytes; recompute the id from those bytes.
   Equivalent-but-noncanonical stored JSON (same value, different
   bytes) is INVALID.
@@ -310,7 +313,12 @@ repository; archive verification supplies ONLY the SWH snapshot;
 mirrors and local clones supply themselves. The invariants below are
 what the primitive checks, with C:`releases/HEAD` as the target head.
 
-The view's contract is COMMIT-SCOPED (F110): it exposes reads of the
+The view's contract is COMMIT-SCOPED (F110) and NON-SUBSTITUTING
+(F159): reads must ignore object-replacement mechanisms and must not
+import objects from outside the view's single object store — for a
+git-backed view, replacement refs are disabled, promisor/lazy fetches
+are disabled, and alternate object directories are rejected outright.
+It exposes reads of the
 form `read_at(C, required_path)` and `parent_of(C)`. Every manifest,
 signature, event, and artifact must be REACHABLE AT ITS PRESCRIBED
 PATH from C's tree; presence anywhere else in the same object graph —
@@ -328,8 +336,12 @@ search): C is a publication commit iff
 - M.prev_manifest = H;
 - C contains M and its required verification closure.
 
-Structural:
-- `works[].slug` unique; `withdrawn[].slug` unique; the sets DISJOINT.
+Structural (single-object rules — works/withdrawn/invalid_slugs
+sortedness, uniqueness, and disjointness; event entries sortedness;
+snapshot candidate/contribution ordering; report list ordering and
+partition-list disjointness — are enforced by the §1 boundary decode
+each manifest/evidence/event fetch passes through, F161; the bullets
+below are the verifier's cross-object additions):
 - Every artifact id hash is 64 lowercase hex; `bytes` matches the
   stored blob's length.
 - Type-prefix and hash checks are EXPLICIT (F80): every artifact id's
@@ -344,9 +356,14 @@ Structural:
   value). All other artifacts — e.g. `tei-validation` JSON bytes —
   are exact published bytes checked by hash alone; they have no
   frozen schema and no canonical form.
-- `invalid_count == count(invalid_slugs)`; `invalid_slugs` ⊆ works'
-  slugs, sorted; summary re-derivable from the per-work `tei-validation`
-  artifacts.
+- Validation-summary RE-DERIVATION (F162): the verifier consumes a
+  fixed projection of each per-work `tei-validation` record — exactly
+  `status` (string) and `validated_artifact` (a hash string whose hex
+  component must equal that work's `tei` artifact hash). It requires
+  `invalid_slugs` to EQUAL the sorted slugs whose `status` is
+  `failed`. No other field is consumed or constrained; tei-validation
+  bytes remain exact published bytes checked by hash, with no frozen
+  schema and no canonical form.
 - Semantic boundary rules (F154/F156, applied inside the §1 boundary
   decode — never via JSON Schema `format`): `corpus.upstream_origin`
   is an absolute URI with a scheme and non-empty host; every non-null
@@ -448,11 +465,20 @@ comparison against an independently obtained head or checkpoint
 
 1. Fetch Git commit C (branch head).
 2. Read manifest head H = C:`releases/HEAD`.
-3. Assemble manifest M with `prev_manifest` = H.
+3. Assemble manifest M with `prev_manifest` = H. BEFORE creating any
+   commit (F158), apply the projection/derived-state decision against
+   the current head: projection equal and derived content equal →
+   SUCCESS without publishing (the scheduled no-op); projection equal
+   and derived content different → DETERMINISM FAILURE — halt (the
+   halt rule applies uncontended, not only after losing a race);
+   projection different → proceed.
 4. Create commit C′ with EXACTLY ONE parent, C (F85 — never a merge):
    M's blobs, `releases/<manifest_id>.json` + `.sig`,
    `releases/HEAD` = M's manifest_id.
-5. Push with C as the expected ref value.
+5. VERIFY C′ with the §8 primitive BEFORE pushing (F157): an invalid
+   candidate — a bad signature, a missing blob, any violated
+   invariant — must never reach the origin ref. Then push with C as
+   the expected ref value.
 6. UNKNOWN result: if M is on the accepted manifest chain (walked from
    the current `releases/HEAD`) — success. If M is ABSENT, proceed
    exactly as for REJECTION (step 7); the two cases converge (F79).

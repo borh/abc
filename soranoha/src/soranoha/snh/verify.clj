@@ -3,16 +3,24 @@
   Every read goes through the single commit-scoped view; each artifact must
   be readable at its prescribed path from the target commit's tree. Checks,
   per publication commit from the head back to genesis: manifest boundary
-  decode and id agreement with releases/HEAD, release/governance signatures,
-  per-work and evidence blob presence with hash and length agreement,
-  admission partition and field bindings, validation summary consistency,
-  and the chain transition rules (single parent, head linkage, monotonic
-  withdrawals, withdrawal/amendment shapes, genesis form).
+  decode (structure + single-object semantics) and id agreement with
+  releases/HEAD, release/governance signatures, per-work and evidence blob
+  presence with hash and length agreement, validation-summary re-derivation
+  from the consumed projection of each tei-validation record, admission
+  partition and field bindings, event closure, and the chain transition
+  rules (single parent, head linkage, monotonic withdrawals,
+  withdrawal/amendment shapes, genesis form).
+
+  Verification streams: each manifest is decoded exactly once and only the
+  head manifest is retained — the result carries the ordered manifest ids,
+  the executed governance-event ids, and the chain length, which is
+  everything the transaction consumes.
 
   archive-verification wraps the primitive into a total report over a
   readable view: acquisition failures throw; a readable view always yields
   {:result :success | :failed}."
-  (:require [clojure.string :as str]
+  (:require [charred.api :as json]
+            [clojure.string :as str]
             [soranoha.core.hash :as hash]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.sign :as sign]
@@ -91,9 +99,6 @@
     (check-signature! v commit pinned-keys "governance-event" hex (event-sig-path hex))
     value))
 
-(defn- sorted-unique? [xs]
-  (and (= xs (vec (sort xs))) (or (empty? xs) (apply distinct? xs))))
-
 (defn- work-slugs [manifest] (mapv #(get % "slug") (get manifest "works")))
 (defn- withdrawn-slugs [manifest] (mapv #(get % "slug") (get manifest "withdrawn")))
 (defn- withdrawn-map [manifest]
@@ -103,33 +108,65 @@
 
 (defn projection [manifest] (select-keys manifest projection-keys))
 
-(defn- check-structure! [commit manifest]
-  (let [ws (work-slugs manifest)
-        wd (withdrawn-slugs manifest)]
-    (when-not (sorted-unique? ws)
-      (fail! :works-not-sorted-unique {:commit commit}))
-    (when-not (sorted-unique? wd)
-      (fail! :withdrawn-not-sorted-unique {:commit commit}))
-    (when (seq (filter (set wd) ws))
-      (fail! :works-withdrawn-overlap {:commit commit}))
-    (let [{:strs [invalid_count invalid_slugs]} (get manifest "validation_summary")]
-      (when-not (= invalid_count (count invalid_slugs))
-        (fail! :invalid-count-mismatch {:commit commit}))
-      (when-not (sorted-unique? invalid_slugs)
-        (fail! :invalid-slugs-not-sorted-unique {:commit commit}))
-      (when-not (every? (set ws) invalid_slugs)
-        (fail! :invalid-slugs-outside-works {:commit commit})))))
+(defn- validation-record
+  "Parse the consumed projection of one tei-validation record: {status,
+  validated_artifact}. tei-validation bytes are exact published bytes
+  checked by hash; only these two fields are consumed, and only they are
+  required."
+  [commit slug ^bytes blob]
+  (let [record (try (json/read-json (String. blob "UTF-8"))
+                    (catch Exception e
+                      (fail! :validation-record-unreadable
+                             {:commit commit :slug slug :cause (ex-message e)})))]
+    (when-not (and (map? record)
+                   (string? (get record "status"))
+                   (string? (get record "validated_artifact")))
+      (fail! :validation-record-unreadable
+             {:commit commit :slug slug}))
+    record))
 
-(defn- check-works-blobs! [v commit manifest]
-  (doseq [{:strs [slug artifacts]} (get manifest "works")
-          {:strs [id bytes]} artifacts]
-    (let [hex (id->hex id)
-          blob (read-required v commit (blob-path hex) :missing-blob)]
-      (when-not (= bytes (alength blob))
-        (fail! :blob-length-mismatch {:commit commit :slug slug :id id
-                                      :declared bytes :actual (alength blob)}))
-      (when-not (= hex (hash/sha256-bytes blob))
-        (fail! :blob-hash-mismatch {:commit commit :slug slug :id id})))))
+(defn- check-works-blobs!
+  "Blob presence/hash/length for every per-work artifact, plus the
+  validation-summary re-derivation: each tei-validation record must name
+  that work's TEI bytes, and invalid_slugs must equal exactly the sorted
+  slugs whose status is failed."
+  [v commit manifest]
+  (let [failed
+        (vec
+         (for [{:strs [slug artifacts]} (get manifest "works")
+               :let [by-type (into {} (map (fn [{:strs [type] :as a}] [type a]))
+                                   artifacts)
+                     blobs (into {}
+                                 (map (fn [[type {:strs [id bytes]}]]
+                                        (let [hex (id->hex id)
+                                              blob (read-required
+                                                    v commit (blob-path hex)
+                                                    :missing-blob)]
+                                          (when-not (= bytes (alength blob))
+                                            (fail! :blob-length-mismatch
+                                                   {:commit commit :slug slug :id id
+                                                    :declared bytes
+                                                    :actual (alength blob)}))
+                                          (when-not (= hex (hash/sha256-bytes blob))
+                                            (fail! :blob-hash-mismatch
+                                                   {:commit commit :slug slug :id id}))
+                                          [type blob])))
+                                 by-type)
+                     record (validation-record commit slug (get blobs "tei-validation"))
+                     tei-hex (id->hex (get-in by-type ["tei" "id"]))]
+               :when (do (when-not (str/ends-with? (get record "validated_artifact")
+                                                   tei-hex)
+                           (fail! :validation-artifact-mismatch
+                                  {:commit commit :slug slug
+                                   :validated (get record "validated_artifact")
+                                   :tei tei-hex}))
+                         (= "failed" (get record "status")))]
+           slug))]
+    (when-not (= (get-in manifest ["validation_summary" "invalid_slugs"]) failed)
+      (fail! :validation-summary-mismatch
+             {:commit commit
+              :declared (get-in manifest ["validation_summary" "invalid_slugs"])
+              :derived failed}))))
 
 (defn- check-admission! [v commit manifest]
   (let [admission (get manifest "admission")
@@ -147,10 +184,7 @@
           excluded (mapv #(get % "slug") (get report "excluded"))
           quarantined (mapv #(get % "slug") (get report "quarantined"))
           partition (concat admitted excluded quarantined)]
-      (when-not (sorted-unique? candidates)
-        (fail! :candidates-not-sorted-unique {:commit commit}))
-      (when-not (and (= (count partition) (count (set partition)))
-                     (= (set candidates) (set partition)))
+      (when-not (= (set candidates) (set partition))
         (fail! :admission-partition-invalid {:commit commit}))
       (when-not (= (work-slugs manifest)
                    (vec (sort (remove (set (withdrawn-slugs manifest)) admitted))))
@@ -223,8 +257,6 @@
                            {:commit commit :slug slug})))))))))))
 
 (defn- check-genesis! [commit manifest]
-  (when-not (= sign/zero-head-hex (get manifest "prev_manifest"))
-    (fail! :genesis-prev-not-zero {:commit commit}))
   (when-not (nil? (get manifest "governance_event"))
     (fail! :genesis-has-governance-event {:commit commit}))
   (when-not (= [] (get manifest "withdrawn"))
@@ -233,8 +265,9 @@
 (defn verify-repository-at
   "Verify the repository state at `commit` through `v`, with `pinned-keys`
   covering the full chain. Returns {:empty true} for the valid pre-genesis
-  initial commit, otherwise {:head <manifest hex> :chain [hex ... genesis]
-  :manifests {hex value}}. Throws ex-info with :reason on any violation."
+  initial commit, otherwise {:head <hex> :head-manifest <value>
+  :chain [hex ... genesis] :governance-events #{event id ...}
+  :chain-length n}. Throws ex-info with :reason on any violation."
   [v commit pinned-keys]
   (sign/validate-pinned-keys! pinned-keys)
   (when-not (view/commit-exists? v commit)
@@ -244,41 +277,47 @@
       (do (when (seq (view/parents-of v commit))
             (fail! :zero-head-after-genesis {:commit commit}))
           {:empty true})
-      (loop [c commit
-             m-hex head
-             chain []
-             manifests {}]
-        (let [parents (view/parents-of v c)]
-          (when-not (= 1 (count parents))
-            (fail! (if (empty? parents) :nonzero-head-at-root :merge-commit)
-                   {:commit c :parents parents}))
-          (let [p (first parents)
-                h (head-at v p)
-                m (decoded-manifest v c m-hex)
-                _ (when (= m-hex h) (fail! :head-not-advanced {:commit c}))
-                _ (when-not (= h (get m "prev_manifest"))
-                    (fail! :prev-manifest-mismatch
-                           {:commit c :head-at-parent h
-                            :prev (get m "prev_manifest")}))
-                _ (check-signature! v c pinned-keys "release-manifest" m-hex
-                                    (manifest-sig-path m-hex))
-                _ (check-structure! c m)
-                _ (check-works-blobs! v c m)
-                _ (check-admission! v c m)
-                events (check-events! v c pinned-keys m)
-                chain (conj chain m-hex)
-                manifests (assoc manifests m-hex m)]
-            (if (= sign/zero-head-hex h)
-              (do (check-genesis! c m)
-                  (when (seq (view/parents-of v p))
-                    (fail! :zero-head-after-genesis {:commit p}))
-                  {:head head :chain chain :manifests manifests})
-              (let [pm (decoded-manifest v p h)
-                    superseded-of (fn [event-id]
-                                    (:value (decoded-artifact
-                                             v c event-id "governance-event")))]
-                (check-transition! c m pm events superseded-of)
-                (recur p h chain manifests)))))))))
+      (let [head-manifest (decoded-manifest v commit head)]
+        (loop [c commit
+               m-hex head
+               m head-manifest
+               chain []
+               gov-ids #{}]
+          (let [parents (view/parents-of v c)]
+            (when-not (= 1 (count parents))
+              (fail! (if (empty? parents) :nonzero-head-at-root :merge-commit)
+                     {:commit c :parents parents}))
+            (let [p (first parents)
+                  h (head-at v p)
+                  genesis? (= sign/zero-head-hex h)]
+              (when (= m-hex h) (fail! :head-not-advanced {:commit c}))
+              (when-not (= h (get m "prev_manifest"))
+                (fail! :prev-manifest-mismatch
+                       {:commit c :head-at-parent h :prev (get m "prev_manifest")}))
+              (when genesis? (check-genesis! c m))
+              (check-signature! v c pinned-keys "release-manifest" m-hex
+                                (manifest-sig-path m-hex))
+              (check-works-blobs! v c m)
+              (check-admission! v c m)
+              (let [events (check-events! v c pinned-keys m)
+                    chain (conj chain m-hex)
+                    gov-ids (cond-> gov-ids
+                              (get m "governance_event")
+                              (conj (get m "governance_event")))]
+                (if genesis?
+                  (do (when (seq (view/parents-of v p))
+                        (fail! :zero-head-after-genesis {:commit p}))
+                      {:head head
+                       :head-manifest head-manifest
+                       :chain chain
+                       :governance-events gov-ids
+                       :chain-length (count chain)})
+                  (let [pm (decoded-manifest v p h)
+                        superseded-of (fn [event-id]
+                                        (:value (decoded-artifact
+                                                 v c event-id "governance-event")))]
+                    (check-transition! c m pm events superseded-of)
+                    (recur p h pm chain gov-ids)))))))))))
 
 (def verifier-version "snh-verify/1")
 
@@ -301,7 +340,7 @@
         (if (:empty result)
           (assoc base :result :failed :reason :not-a-publication-commit)
           (assoc base :result :success :head (:head result)
-                 :chain-length (count (:chain result)))))
+                 :chain-length (:chain-length result))))
       (catch clojure.lang.ExceptionInfo e
         (assoc base :result :failed
                :reason (:reason (ex-data e))

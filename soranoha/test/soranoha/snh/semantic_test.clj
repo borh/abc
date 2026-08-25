@@ -5,6 +5,7 @@
   (:require [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
+            [soranoha.core.canonical :as canonical]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.semantic :as semantic]))
 
@@ -39,10 +40,65 @@
 
 (deftest valid-fixture-vectors-satisfy-the-semantic-rules
   ;; decode already applies these on every accept vector; this pins the
-  ;; helpers directly. Rejection coverage lives in the full-boundary reject
-  ;; vectors (relative origin, impossible date) exercised by the conformance
-  ;; suite.
+  ;; per-type checks directly. Rejection coverage lives in the full-boundary
+  ;; reject vectors and the verifier mutation table.
   (let [manifest (vector-value "release-manifest-valid.json" "release-manifest")
         snapshot (vector-value "assessment-snapshot-valid.json" "assessment-snapshot")]
-    (is (= manifest (semantic/check-manifest-origin! manifest)))
-    (is (= snapshot (semantic/check-snapshot-dates! snapshot)))))
+    (is (= manifest (semantic/check-manifest! manifest)))
+    (is (= snapshot (semantic/check-snapshot! snapshot)))))
+
+(deftest single-object-ordering-rules-reject-through-decode
+  (let [reason-of (fn [type value]
+                    (try (decode/decode-string
+                          type
+                          (String. (canonical/rfc8785-safe-integer-json-bytes-v1 value)
+                                   "UTF-8"))
+                         :accepted
+                         (catch clojure.lang.ExceptionInfo e (:reason (ex-data e)))))
+        manifest (vector-value "release-manifest-valid.json" "release-manifest")
+        snapshot (vector-value "assessment-snapshot-valid.json" "assessment-snapshot")
+        report (vector-value "admission-report-valid.json" "admission-report")
+        event (vector-value "governance-event-withdrawal-valid.json" "governance-event")]
+    (testing "manifest works reversed"
+      (is (= :works-not-sorted-unique
+             (reason-of "release-manifest"
+                        (update manifest "works" (comp vec reverse))))))
+    (testing "manifest summary count mismatch"
+      (is (= :invalid-count-mismatch
+             (reason-of "release-manifest"
+                        (assoc manifest "validation_summary"
+                               {"invalid_count" 1 "invalid_slugs" []})))))
+    (testing "manifest summary naming a non-work slug"
+      (is (= :invalid-slugs-outside-works
+             (reason-of "release-manifest"
+                        (assoc manifest "validation_summary"
+                               {"invalid_count" 1
+                                "invalid_slugs" ["zzz_not_a_work_1_1"]})))))
+    (testing "snapshot candidates reversed"
+      (is (= :candidates-not-sorted-unique
+             (reason-of "assessment-snapshot"
+                        (update snapshot "candidates" (comp vec reverse))))))
+    (testing "snapshot contributions reversed"
+      (is (= :contributions-not-sorted-unique
+             (reason-of "assessment-snapshot"
+                        (update snapshot "candidates"
+                                (fn [cs]
+                                  (update (vec cs) 2 update "contributions"
+                                          (comp vec reverse))))))))
+    (testing "report admitted reversed"
+      (is (= :admitted-not-sorted-unique
+             (reason-of "admission-report"
+                        (update report "admitted" (comp vec reverse))))))
+    (testing "report partition overlap"
+      ;; a full copy of admitted keeps each list sorted and unique, so only
+      ;; the cross-list disjointness rule can reject it
+      (is (= :partition-sets-overlap
+             (reason-of "admission-report"
+                        (assoc report "quarantined"
+                               (mapv (fn [slug] {"slug" slug
+                                                 "reason_code" "duplicated"})
+                                     (get report "admitted")))))))
+    (testing "event entries duplicated"
+      (is (= :entries-not-sorted-unique
+             (reason-of "governance-event"
+                        (update event "entries" #(vec (concat % %)))))))))

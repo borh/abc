@@ -85,6 +85,19 @@
 (defn- derived-content [manifest]
   (select-keys manifest ["works" "validation_summary" "withdrawn"]))
 
+(defn- decide-against-head
+  "Projection/derived-state decision for a desired manifest against the
+  accepted head, applied both before any push and during reconciliation:
+  nil when the projections differ (the caller publishes or requeues), a
+  terminal convergence when the desired state is already published, and a
+  determinism halt when the same projection yields different content."
+  [manifest head]
+  (when (and head
+             (= (verify/projection manifest) (verify/projection (:value head))))
+    (if (= (derived-content manifest) (derived-content (:value head)))
+      {:outcome :already-published :manifest-id (:hex head)}
+      {:outcome :determinism-halt :head (:hex head)})))
+
 (defn publish-build!
   "Run one build publication against the origin. `assemble` is called with
   the current head manifest value (nil at genesis) and returns
@@ -101,46 +114,46 @@
         head (head-manifest-at v c)
         {:keys [core blobs selection]} (assemble (some-> head :value))
         manifest (build-manifest core head (or (:hex head) sign/zero-head-hex))
-        _ (check-totality! blobs manifest selection)
-        {:keys [hex bytes]} (decode/encode "release-manifest" manifest)
-        commit (repo/write-commit!
-                clone {:parents [c]
-                       :base-tree-of c
-                       :files (release-files {:manifest-bytes bytes
-                                              :manifest-hex hex
-                                              :sig (sign-release hex)
-                                              :blobs blobs})
-                       :message (str "snh release " hex)})
-        outcome (push-fn clone branch commit c)
-        reconcile
-        (fn []
-          ;; current-state reconciliation: discard the assembled manifest,
-          ;; fully verify the accepted head, recompute from it alone
-          (let [c2 (repo/fetch! clone branch)
-                _ (verify/verify-repository-at v c2 pinned-keys)
-                head2 (head-manifest-at v c2)
-                desired2 (assemble (some-> head2 :value))
-                manifest2 (build-manifest (:core desired2) head2
-                                          (or (:hex head2) sign/zero-head-hex))]
-            (check-totality! (:blobs desired2) manifest2 (:selection desired2))
-            (cond
-              (not= (verify/projection manifest2)
-                    (verify/projection (:value head2)))
-              {:outcome :requeue :head (:hex head2)}
-
-              (= (derived-content manifest2) (derived-content (:value head2)))
-              {:outcome :already-published :manifest-id (:hex head2)}
-
-              :else
-              {:outcome :determinism-halt :head (:hex head2)})))]
-    (case outcome
-      :ok {:outcome :published :manifest-id hex :commit commit}
-      :unknown (let [c2 (repo/fetch! clone branch)
-                     result (verify/verify-repository-at v c2 pinned-keys)]
-                 (if (some #{hex} (:chain result))
-                   {:outcome :published :manifest-id hex}
-                   (reconcile)))
-      :rejected (reconcile))))
+        _ (check-totality! blobs manifest selection)]
+    (or
+     ;; the scheduled no-op / determinism decision runs before any commit is
+     ;; created — an uncontended duplicate publishes nothing, an uncontended
+     ;; same-projection divergence halts
+     (decide-against-head manifest head)
+     (let [{:keys [hex bytes]} (decode/encode "release-manifest" manifest)
+           commit (repo/write-commit!
+                   clone {:parents [c]
+                          :base-tree-of c
+                          :files (release-files {:manifest-bytes bytes
+                                                 :manifest-hex hex
+                                                 :sig (sign-release hex)
+                                                 :blobs blobs})
+                          :message (str "snh release " hex)})
+           ;; the candidate must verify before it can reach the origin: a bad
+           ;; signature or missing blob throws here and the ref never moves
+           _ (verify/verify-repository-at v commit pinned-keys)
+           outcome (push-fn clone branch commit c)
+           reconcile
+           (fn []
+             ;; current-state reconciliation: discard the assembled manifest,
+             ;; fully verify the accepted head, recompute from it alone
+             (let [c2 (repo/fetch! clone branch)
+                   _ (verify/verify-repository-at v c2 pinned-keys)
+                   head2 (head-manifest-at v c2)
+                   desired2 (assemble (some-> head2 :value))
+                   manifest2 (build-manifest (:core desired2) head2
+                                             (or (:hex head2) sign/zero-head-hex))]
+               (check-totality! (:blobs desired2) manifest2 (:selection desired2))
+               (or (decide-against-head manifest2 head2)
+                   {:outcome :requeue :head (:hex head2)})))]
+       (case outcome
+         :ok {:outcome :published :manifest-id hex :commit commit}
+         :unknown (let [c2 (repo/fetch! clone branch)
+                        result (verify/verify-repository-at v c2 pinned-keys)]
+                    (if (some #{hex} (:chain result))
+                      {:outcome :published :manifest-id hex}
+                      (reconcile)))
+         :rejected (reconcile))))))
 
 (defn- successor-for-event
   "Construct the successor manifest executing `event` on `head-manifest`, or
@@ -218,13 +231,12 @@
           (:empty chain)
           {:outcome :halt :reason :no-published-release}
 
-          (some #(= event-id (get (get (:manifests chain) %) "governance_event"))
-                (:chain chain))
+          (contains? (:governance-events chain) event-id)
           {:outcome :already-applied :event event-id}
 
           :else
           (let [head-hex (:head chain)
-                head-manifest (get (:manifests chain) head-hex)
+                head-manifest (:head-manifest chain)
                 {:keys [halt manifest] :as attempt-result}
                 (successor-for-event head-manifest head-hex event-id event)]
             (if halt
@@ -242,15 +254,14 @@
                                    :base-tree-of c
                                    :files files
                                    :message (str "snh governance " event-hex)})
+                    ;; the candidate must verify before it can reach the origin
+                    _ (verify/verify-repository-at v commit pinned-keys)
                     outcome (push-fn clone branch commit c)]
                 (case outcome
                   :ok {:outcome :published :manifest-id hex :event event-id}
                   :unknown (let [c2 (repo/fetch! clone branch)
                                  r (verify/verify-repository-at v c2 pinned-keys)]
-                             (if (some #(= event-id
-                                           (get (get (:manifests r) %)
-                                                "governance_event"))
-                                       (:chain r))
+                             (if (contains? (:governance-events r) event-id)
                                {:outcome :published :event event-id}
                                (recur (inc attempt))))
                   :rejected (recur (inc attempt)))))))))))

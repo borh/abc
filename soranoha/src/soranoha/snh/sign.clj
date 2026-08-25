@@ -1,0 +1,152 @@
+(ns soranoha.snh.sign
+  "Wire encodings and key/signature operations (spec sections 6-7).
+
+  Encodings (section 6):
+  - signed MESSAGE = exact ASCII bytes of the domain-separated string
+    (no trailing newline, no BOM, no framing);
+  - .sig file = EXACTLY 64 raw Ed25519 signature bytes;
+  - .pub / releases/HEAD files = EXACTLY 65 bytes: 64 lowercase ASCII hex
+    characters + one LF;
+  - key FINGERPRINT = lowercase sha256 hex over the DECODED 32 raw key bytes
+    (never over .pub file bytes).
+
+  Roles (section 7): two disjoint fixed pinned sets (release, governance);
+  the verifier selects the role from the signed object's kind and accepts a
+  signature iff it verifies against SOME member of that role's set. An
+  overlapping or un-roled pinned-keys configuration is INVALID (F126)."
+  (:require [clojure.set :as set]
+            [soranoha.core.hash :as hash])
+  (:import (java.math BigInteger)
+           (java.nio.charset StandardCharsets)
+           (java.security KeyFactory Signature)
+           (java.security.spec EdECPoint EdECPrivateKeySpec EdECPublicKeySpec
+                               NamedParameterSpec)))
+
+;; --- hex helpers -----------------------------------------------------------
+
+(defn hex->bytes ^bytes [^String s]
+  (when-not (and (string? s) (even? (count s)) (re-matches #"^[0-9a-f]*$" s))
+    (throw (ex-info "Expected lowercase hex" {:value s})))
+  (byte-array (map #(unchecked-byte (Integer/parseInt (subs s % (+ % 2)) 16))
+                   (range 0 (count s) 2))))
+
+;; --- 65-byte hex+LF files (.pub and releases/HEAD share the contract) ------
+
+(def zero-head-hex (apply str (repeat 64 "0")))
+
+(defn hex64-lf-bytes
+  "The 65-byte encoding: 64 lowercase hex + one LF."
+  ^bytes [hex]
+  (hash/assert-hex64 hex)
+  (.getBytes (str hex "\n") StandardCharsets/US_ASCII))
+
+(defn parse-hex64-lf
+  "Parse a 65-byte hex+LF file; returns the 64-char hex. Throws unless the
+  bytes are EXACTLY 64 lowercase hex + one LF."
+  [^bytes file-bytes]
+  (when-not (= 65 (alength file-bytes))
+    (throw (ex-info "hex+LF file must be exactly 65 bytes"
+                    {:length (alength file-bytes)})))
+  (let [s (String. file-bytes StandardCharsets/US_ASCII)]
+    (when-not (= \newline (.charAt s 64))
+      (throw (ex-info "hex+LF file must end with one LF" {})))
+    (hash/assert-hex64 (subs s 0 64))))
+
+;; --- Ed25519 ---------------------------------------------------------------
+
+(def ^:private key-factory (KeyFactory/getInstance "Ed25519"))
+
+(defn- raw-pub->public-key
+  "Decode 32 raw Ed25519 public-key bytes (RFC 8032 encoding: little-endian y,
+  high bit of the last byte = x parity) into a java.security PublicKey."
+  [^bytes raw]
+  (when-not (= 32 (alength raw))
+    (throw (ex-info "Ed25519 public key must be 32 raw bytes"
+                    {:length (alength raw)})))
+  (let [le (byte-array (reverse raw))
+        x-odd (pos? (bit-and (aget le 0) 0x80))
+        _ (aset-byte le 0 (unchecked-byte (bit-and (aget le 0) 0x7f)))
+        y (BigInteger. 1 le)]
+    (.generatePublic key-factory
+                     (EdECPublicKeySpec. NamedParameterSpec/ED25519
+                                         (EdECPoint. x-odd y)))))
+
+(defn fingerprint
+  "Lowercase sha256 hex over the DECODED 32 raw key bytes."
+  [pub-hex]
+  (hash/assert-hex64 pub-hex)
+  (hash/sha256-bytes (hex->bytes pub-hex)))
+
+(defn sign
+  "Ed25519 signature (64 raw bytes) over the exact ASCII bytes of `message`
+  with the 32-byte private seed."
+  ^bytes [^bytes seed ^String message]
+  (when-not (= 32 (alength seed))
+    (throw (ex-info "Ed25519 seed must be 32 bytes" {:length (alength seed)})))
+  (let [priv (.generatePrivate key-factory
+                               (EdECPrivateKeySpec. NamedParameterSpec/ED25519 seed))
+        sig (doto (Signature/getInstance "Ed25519") (.initSign priv))]
+    (.update sig (.getBytes message StandardCharsets/US_ASCII))
+    (.sign sig)))
+
+(defn verify?
+  "True iff `sig-bytes` is EXACTLY 64 bytes and verifies over `message`
+  against the public key given as 64 lowercase hex."
+  [pub-hex ^String message ^bytes sig-bytes]
+  (and (= 64 (alength sig-bytes))
+       (let [pub (raw-pub->public-key (hex->bytes (hash/assert-hex64 pub-hex)))
+             ver (doto (Signature/getInstance "Ed25519") (.initVerify pub))]
+         (.update ver (.getBytes message StandardCharsets/US_ASCII))
+         (.verify ver sig-bytes))))
+
+;; --- domain-separated messages (section 6) ---------------------------------
+
+(defn manifest-message [manifest-id-hex]
+  (str "snh-manifest-sig/1:" (hash/assert-hex64 manifest-id-hex)))
+
+(defn event-message [event-hex]
+  (str "snh-governance-event-sig/1:" (hash/assert-hex64 event-hex)))
+
+;; --- pinned roles (section 7, F126) ----------------------------------------
+
+(defn validate-pinned-keys!
+  "Validate a pinned-keys configuration
+  {:release [pub-hex ...] :governance [pub-hex ...]}. The role sets are
+  FIXED, non-empty, and DISJOINT; any other shape — a missing or unknown
+  role, an empty set, a duplicate within a role, or a key present in both
+  roles — is INVALID (an accidental flat configuration could otherwise
+  authorize the online release key for governance)."
+  [pinned-keys]
+  (when-not (= #{:release :governance} (set (keys pinned-keys)))
+    (throw (ex-info "pinned keys must assign exactly the release and governance roles"
+                    {:reason :unroled-configuration
+                     :roles (keys pinned-keys)})))
+  (doseq [[role members] pinned-keys]
+    (when (empty? members)
+      (throw (ex-info "pinned role set must be non-empty"
+                      {:reason :empty-role :role role})))
+    (run! hash/assert-hex64 members)
+    (when-not (apply distinct? members)
+      (throw (ex-info "pinned role set contains a duplicate key"
+                      {:reason :duplicate-member :role role}))))
+  (when (seq (set/intersection (set (:release pinned-keys))
+                               (set (:governance pinned-keys))))
+    (throw (ex-info "pinned role sets must be disjoint"
+                    {:reason :overlapping-roles})))
+  pinned-keys)
+
+(def ^:private type->role
+  {"release-manifest" :release
+   "governance-event" :governance})
+
+(defn verify-signed?
+  "Role-bound verification: select the role from the signed object's type,
+  accept iff the 64-byte signature verifies against SOME member of that
+  role's pinned set. `pinned-keys` is validated on every call — verification
+  never proceeds under an invalid configuration."
+  [pinned-keys type ^String message ^bytes sig-bytes]
+  (validate-pinned-keys! pinned-keys)
+  (let [role (or (type->role type)
+                 (throw (ex-info "no signing role is defined for this artifact type"
+                                 {:type type :signed-types (keys type->role)})))]
+    (boolean (some #(verify? % message sig-bytes) (get pinned-keys role)))))

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snh:schema:assessment-snapshot:1",
+  "title": "snh-assessment-snapshot/1",
+  "description": "Assessment FACTS only, for every candidate in the selected population, per rights-relevant contribution (spec section 5; minimal content schema fixed at the pre-Slice-2 freeze). No admission decisions appear here. A contribution with no completed assessment is an explicit not-evaluated fact whose jurisdiction/effective_date/basis are null; every other status carries all three as non-null (undetermined = assessment performed, inconclusive — it still records where, as-of when, and on what basis). Candidate ordering (sorted by slug), slug uniqueness, contribution ordering (sorted by contribution_id), and contribution_id uniqueness per candidate are semantic rules checked by assembler/verifier.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "candidates"],
+  "properties": {
+    "schema": { "const": "snh-assessment-snapshot/1" },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "contributions"],
+        "properties": {
+          "slug": { "$ref": "#/$defs/slug" },
+          "contributions": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/contribution" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "slug": { "type": "string", "pattern": "^[0-9a-z_-]+$" },
+    "contribution": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contribution_id",
+            "status",
+            "jurisdiction",
+            "effective_date",
+            "basis"
+          ],
+          "properties": {
+            "contribution_id": { "$ref": "#/$defs/contribution-id" },
+            "status": {
+              "enum": ["public-domain", "in-copyright", "undetermined"]
+            },
+            "jurisdiction": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]+$"
+            },
+            "effective_date": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "basis": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contribution_id",
+            "status",
+            "jurisdiction",
+            "effective_date",
+            "basis"
+          ],
+          "properties": {
+            "contribution_id": { "$ref": "#/$defs/contribution-id" },
+            "status": { "const": "not-evaluated" },
+            "jurisdiction": { "type": "null" },
+            "effective_date": { "type": "null" },
+            "basis": { "type": "null" }
+          }
+        }
+      ]
+    },
+    "contribution-id": {
+      "type": "string",
+      "pattern": "^[0-9a-z][0-9a-z:_-]*$"
+    }
+  }
+}

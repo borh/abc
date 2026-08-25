@@ -2,9 +2,11 @@
 
 Status: **NORMATIVE DRAFT — the sole normative source, effective now
 (F84).** The D16.1 freeze changes stability (no further changes without
-a decision-log entry), not precedence. One open item marked inline:
-the assessment-snapshot content fields (F83, O5a, O3(b), and O1 are
-owner-ratified). Per F80, the FROZEN objects are the executable
+a decision-log entry), not precedence. No open items remain: the
+assessment-snapshot content fields were fixed 2026-08-25 at the
+pre-Slice-2 freeze (§5); F83, O5a, O3(b), and O1 are owner-ratified.
+The freeze package (four schemas + conformance vectors, §11) is
+AUTHORED and awaits the freeze review. Per F80, the FROZEN objects are the executable
 JSON Schemas plus the conformance vectors (§11). Authority split
 (F88): the JSON Schemas govern STRUCTURE; this document governs
 SEMANTIC and STATE invariants; the conformance vectors demonstrate
@@ -119,8 +121,31 @@ completed assessment) and `undetermined` (assessment performed,
 inconclusive) are distinct and never collapsed; absence of a completed
 assessment is an explicit `not-evaluated` fact, never an omitted
 contribution. No admission decisions appear here.
-**[OPEN until the pre-Slice-2 freeze: exact field names/shape — the
-minimal content schema, exercised on the Slice-2 fixture.]**
+
+Content shape (fixed 2026-08-25 at the pre-Slice-2 freeze; the frozen
+schema is authoritative for structure per F88):
+
+```
+{schema: "snh-assessment-snapshot/1",
+ candidates: [{slug,
+               contributions: [{contribution_id, status,
+                                jurisdiction, effective_date,
+                                basis}]}]}   // candidates sorted by slug;
+                                             // contributions sorted by
+                                             // contribution_id; both unique
+```
+
+- `contribution_id`: string matching `^[0-9a-z][0-9a-z:_-]*$`, naming
+  the rights-relevant contribution (e.g. `author:000035`,
+  `annotator:001357`); unique within its candidate; every candidate has
+  at least one contribution.
+- status `not-evaluated` ⇔ `jurisdiction`, `effective_date`, and
+  `basis` are all `null`. Every other status (including
+  `undetermined` — the assessment was performed) carries all three
+  non-null: `jurisdiction` lowercase (`^[a-z][a-z0-9-]+$`, e.g. `jp`),
+  `effective_date` = the as-of date of the recorded facts
+  (`YYYY-MM-DD`; dates are permitted here — the no-dates rule binds
+  manifest and event bytes), `basis` a non-empty recorded-basis string.
 
 **`snh-admission-report/1`** — the inclusion rule's TOTAL PARTITION:
 
@@ -509,6 +534,17 @@ determinism defect.
 
 The four JSON Schemas and these vectors are what the freeze review
 approves — authored BEFORE that review, not transcribed after it.
+
+Frozen artifact locations (authored 2026-08-25, awaiting the freeze
+review): schemas at `soranoha/resources/snh/schemas/*.schema.json`
+(one per §2 release-level type); vectors at
+`soranoha/resources/snh/vectors/` with `expected.json` as the
+table-driven index (accept vectors carry the exact stored canonical
+bytes; reject vectors carry the exact bytes that must fail, each with
+its frozen rejection reason); executable check =
+`soranoha.snh.conformance-test`. Items 1–5 below are covered there;
+item 6's §8/§9 invariant fixtures land with the Slice-2 verifier and
+transaction implementations they exercise.
 
 1. Canonicalization: existing shared vectors (§1).
 2. A complete valid manifest → canonical bytes → manifest_id; the

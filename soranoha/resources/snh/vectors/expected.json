@@ -1,0 +1,74 @@
+{
+  "accept": [
+    {
+      "file": "release-manifest-valid.json",
+      "type": "release-manifest",
+      "id": "snh:1:release-manifest:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7"
+    },
+    {
+      "file": "assessment-snapshot-valid.json",
+      "type": "assessment-snapshot",
+      "id": "snh:1:assessment-snapshot:fd2e0273f634dc7d0d2b286d65ef5508cb0401a300d461593ae2710993ee5aad"
+    },
+    {
+      "file": "admission-report-valid.json",
+      "type": "admission-report",
+      "id": "snh:1:admission-report:cc8f8fa4e435779fd89b6c048c23a50cc75b6012c5a7e5ec13acbcad7b828579"
+    },
+    {
+      "file": "governance-event-withdrawal-valid.json",
+      "type": "governance-event",
+      "id": "snh:1:governance-event:bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59"
+    },
+    {
+      "file": "governance-event-amendment-valid.json",
+      "type": "governance-event",
+      "id": "snh:1:governance-event:954a8d6bb72f01cd78bb121afba8c04a46f9ad3efe981ba24cbfbe7224a11973"
+    }],
+  "reject": [
+    {
+      "file": "release-manifest-noncanonical-whitespace.json",
+      "type": "release-manifest",
+      "reason": "noncanonical"
+    },
+    {
+      "file": "release-manifest-noncanonical-reordered.json",
+      "type": "release-manifest",
+      "reason": "noncanonical"
+    },
+    {
+      "file": "release-manifest-duplicate-key.json",
+      "type": "release-manifest",
+      "reason": "parse-invalid"
+    },
+    {
+      "file": "release-manifest-invalid-extra-member.json",
+      "type": "release-manifest",
+      "reason": "schema-invalid"
+    },
+    {
+      "file": "release-manifest-invalid-artifact-type-id-mismatch.json",
+      "type": "release-manifest",
+      "reason": "schema-invalid"
+    },
+    {
+      "file": "assessment-snapshot-invalid-not-evaluated-basis.json",
+      "type": "assessment-snapshot",
+      "reason": "schema-invalid"
+    },
+    {
+      "file": "admission-report-invalid-policy-id-member.json",
+      "type": "admission-report",
+      "reason": "schema-invalid"
+    },
+    {
+      "file": "governance-event-invalid-withdrawal-with-amends.json",
+      "type": "governance-event",
+      "reason": "schema-invalid"
+    },
+    {
+      "file": "governance-event-invalid-amendment-missing-amends.json",
+      "type": "governance-event",
+      "reason": "schema-invalid"
+    }]
+}

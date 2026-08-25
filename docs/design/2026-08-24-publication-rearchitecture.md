@@ -28,11 +28,17 @@ numbers live in the findings sections and Git history, not here):
   fixity-checked); all F7 bounds met at the pinned config (-Xmx4g,
   concurrency 16): cold 465.5 s, peak RSS 6.22 GiB, warm no-op 6.1 s.
   The kernel is policy-blind (F52/F60).
-- Before Slice 2 (dev work only — no owner decision remains): the
-  four hand-written JSON Schemas + table-driven conformance vectors
-  for the freeze review (including the minimal assessment-snapshot
-  content schema, the one open spec item); the AGENTS.md
-  manifest-ownership update (D20 as amended).
+- **Slice 2 STARTED 2026-08-25; freeze package AUTHORED, awaiting
+  the freeze review**: the four hand-written JSON Schemas
+  (`soranoha/resources/snh/schemas/`) + table-driven conformance
+  vectors (`soranoha/resources/snh/vectors/`, exercised by
+  `soranoha.snh.conformance-test` — spec §11 items 1–5; item 6's
+  invariant fixtures land with the Slice-2 verifier). The minimal
+  assessment-snapshot content schema — the spec's last open item —
+  is fixed in spec §5. Boundary decode (F137/F142), wire encodings,
+  Ed25519 role-bound verification (F126), and the F123 fixture keys
+  (RFC 8032 vectors) are implemented in `soranoha/src/soranoha/snh/`.
+  The D20-as-amended AGENTS.md ownership transfer is recorded.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.

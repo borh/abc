@@ -1,0 +1,82 @@
+{
+  "keys": 
+  {
+    "release": 
+    {
+      "seed": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+      "pub": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+      "fingerprint": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9"
+    },
+    "governance": 
+    {
+      "seed": "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb",
+      "pub": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+      "fingerprint": "39f713d0a644253f04529421b9f51b9b08979d08295959c4f3990ee617f5139f"
+    },
+    "nonmember": 
+    {
+      "seed": "c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7",
+      "pub": "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025",
+      "fingerprint": "dac073e0123bdea59dd9b3bda9cf6037f63aca82627d7abcd5c4ac29dd74003e"
+    }
+  },
+  "manifest": 
+  {
+    "artifact": "release-manifest-valid.json",
+    "manifest_id": "b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
+    "message": "snh-manifest-sig\/1:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
+    "signer": "release",
+    "sig": "b3a6f92500be9c673136ca5d9d834588799da87e3f7147e38a9e27d127bfe1c9bc4f5f864d298ff6d950be40968d59edee0dcf3a2ac45638863965dd1ba95b0d"
+  },
+  "event": 
+  {
+    "artifact": "governance-event-withdrawal-valid.json",
+    "event_hex": "bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+    "message": "snh-governance-event-sig\/1:bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+    "signer": "governance",
+    "sig": "d43c26f20175cdbac2d7761f586581512d6914be0f90ab8e9f8c3bca8b812d5389b73ef2639d19492e5e740932bfe8a3651b96666c83e73101d29152bfdfec0b"
+  },
+  "cross_role": [
+    {
+      "case": "release key signing a governance event",
+      "type": "governance-event",
+      "message": "snh-governance-event-sig\/1:bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+      "sig": "abb6e1d5b5c8e5d40febec06eb9229d7fd8334f130f246c30b7e760a475b414e887e827d7c4170a5931188a8ca6a114f9d3afdb600c9e6fdff8c47fb4b0d630a",
+      "expect": false
+    },
+    {
+      "case": "governance key signing a manifest",
+      "type": "release-manifest",
+      "message": "snh-manifest-sig\/1:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
+      "sig": "95a1c8a00d61a527bb40b1bf8d109baf6a4861f5e49ace496c9f82141880a4ce9de3247d0f5464702adf142664bdec3c83c808b9a35e0728e6af8ca2bed64e0b",
+      "expect": false
+    },
+    {
+      "case": "non-member key signing a manifest",
+      "type": "release-manifest",
+      "message": "snh-manifest-sig\/1:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
+      "sig": "720d1216bd790e0713abdfd112a94f12f653572b690ade7e8c2e6e1b260dec10dd4f782b8323a022530a7c494ff6ba68bdebb62b8253102eeff2d2f5fee33500",
+      "expect": false
+    },
+    {
+      "case": "non-member key signing a governance event",
+      "type": "governance-event",
+      "message": "snh-governance-event-sig\/1:bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+      "sig": "862b2908d8c7b4b71d977191f3f3b6cdccf82b552709874940feec077b0792c32439b36198aabdc77b6370ae9d20577442e09242c5a4ac5d5bc5c37d020fda02",
+      "expect": false
+    },
+    {
+      "case": "role member signing its own kind (manifest)",
+      "type": "release-manifest",
+      "message": "snh-manifest-sig\/1:b0e85c55e7a667c11e531d90b2d3a4dd9b1e61bfcd07c76e7b2978fa28c4e6d7",
+      "sig": "b3a6f92500be9c673136ca5d9d834588799da87e3f7147e38a9e27d127bfe1c9bc4f5f864d298ff6d950be40968d59edee0dcf3a2ac45638863965dd1ba95b0d",
+      "expect": true
+    },
+    {
+      "case": "role member signing its own kind (event)",
+      "type": "governance-event",
+      "message": "snh-governance-event-sig\/1:bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59",
+      "sig": "d43c26f20175cdbac2d7761f586581512d6914be0f90ab8e9f8c3bca8b812d5389b73ef2639d19492e5e740932bfe8a3651b96666c83e73101d29152bfdfec0b",
+      "expect": true
+    }]
+}

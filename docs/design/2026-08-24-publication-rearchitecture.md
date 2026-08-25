@@ -2213,6 +2213,20 @@ back by citing the previous release tag.
 
 ### Archival storage & verification side (researched; load-bearing sources inlined under F9)
 
+- **BDASL (dasl.ing/bdasl.html; assessed 2026-08-25): NOT relevant to
+  v1.** BLAKE3-CID streaming verification + trustless HTTP range
+  requests for LARGE payloads — the same BLAKE3-verified-streaming
+  family as radicle-artifact's iroh-blobs, already declined (round 17).
+  Fails the F51 ratchet three ways: no consumer needs range/streaming
+  verification of tens-of-KB text artifacts (whole-file sha256 after
+  fetch is trivially cheap); an editors' draft dated 2026-08-20; and
+  the spec itself recommends against its CIDs in open environments —
+  disqualifying for citation identity. Would also be a second,
+  parallel identity scheme (the F62/F63 anti-pattern). Contingent
+  relevance only: if large full-corpus bundles are ever distributed
+  over untrusted mirrors, BLAKE3/bao-style verified streaming is the
+  transport-verification prior art — a transport detail, never the
+  identity of record.
 - **OCFL: export target, not live layout.** Its versioned-object model
   mismatches a CAS+manifests design; corpus-as-one-object is quantifiably
   pathological (inventory copies exceed corpus bytes at daily cadence, OCFL

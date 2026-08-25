@@ -1,9 +1,14 @@
 # Agent Notes
 
-This repository is the Soranoha monorepo. It contains two main components:
+This repository is the Soranoha monorepo. It contains three main components:
 
 - `abc/`: Clojure/Nix publication, schema, TEI, manifest, and validation tools.
 - `ab-validator/`: Rust adapters, parser/IR validation, corpus measurement, and report tooling.
+- `soranoha/`: the publication-rearchitecture build kernel (Slice 1 of
+  `docs/design/2026-08-24-publication-rearchitecture.md`): content-addressed
+  store + constructive-trace engine + copied per-work pipeline. Zero requires
+  into abc namespaces; abc-owned assets (record schemas, TEI profile) are
+  consumed via an explicit assets root.
 
 ## Working Rules
 
@@ -47,6 +52,10 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 ## Design Boundaries
 
 - ABC owns publication schemas, TEI profile policy, manifest identity, and registry admission.
+- `soranoha/` owns ONLY the build kernel (CAS, trace store, copied renderers)
+  during Slice 1 (design ledger F56/D20-as-amended); the publication-schema
+  and manifest-identity ownership transfer is recorded here before the first
+  Slice-2 work that assembles manifests, not earlier.
 - ab-validator owns parser/adaptor measurement, AAT evidence, parser-IR conversion evidence, and corpus reports.
 - Parser outputs are supporting evidence; source-authority measurements are the authority for Aozora markup coverage.
 - Plaintext output should remain visible body text only; ruby, source apparatus, provenance, and other metadata belong in TEI/custom sidecars.

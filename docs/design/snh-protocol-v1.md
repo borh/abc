@@ -3,8 +3,8 @@
 Status: **NORMATIVE DRAFT — the sole normative source, effective now
 (F84).** The D16.1 freeze changes stability (no further changes without
 a decision-log entry), not precedence. Open items marked inline: the
-owner's O3 choice, the assessment-snapshot content fields, and the F83
-naming ratification. Per F80, the FROZEN objects are the executable
+owner's O3 choice and the assessment-snapshot content fields (F83
+naming was owner-ratified 2026-08-25). Per F80, the FROZEN objects are the executable
 JSON Schemas plus the conformance vectors (§11). Authority split
 (F88): the JSON Schemas govern STRUCTURE; this document governs
 SEMANTIC and STATE invariants; the conformance vectors demonstrate
@@ -300,8 +300,8 @@ determinism defect.
 
 ## 10. Naming, time, and archival
 
-- Naming (F83, **[OWNER-RATIFICATION PENDING — amends D13's dated
-  form]**): the canonical, citable identity is the full typed manifest
+- Naming (F83, **OWNER-RATIFIED 2026-08-25 — amends D13's dated
+  form**): the canonical, citable identity is the full typed manifest
   id `snh:1:release-manifest:<hex>`. Publication dates are
   presentation/citation metadata only (from the accepted commit and the
   Zenodo record) — never part of the name, because a Git committer

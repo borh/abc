@@ -142,10 +142,10 @@ the ASSEMBLER against the rule bytes it holds.
   - governance events: `snh-governance-event-sig/1:<event hex>`
 - `.sig` file: EXACTLY 64 raw Ed25519 signature bytes.
 - Key-bytes file (`.pub`; the encoding for key bytes in the
-  trust-anchor deposit and pinned verifier configuration — any
-  repository copy is non-normative and ignored by verifiers, F116):
-  EXACTLY 65 bytes — 64 lowercase ASCII hex characters (the 32 raw
-  Ed25519 public-key bytes) + one LF.
+  trust-anchor deposit and pinned verifier configuration — v1
+  publishes NO repository key copies, F116/F122): EXACTLY 65 bytes —
+  64 lowercase ASCII hex characters (the 32 raw Ed25519 public-key
+  bytes) + one LF.
 - Key FINGERPRINT: lowercase sha256 hex over the DECODED 32 raw key
   bytes (never over `.pub` file bytes).
 - `releases/HEAD` file: EXACTLY 65 bytes — 64 lowercase ASCII hex + one
@@ -159,14 +159,13 @@ the ASSEMBLER against the rule bytes it holds.
 proposition; owner ratification outstanding.]**
 
 Two disjoint ROLES, each a FIXED, directly pinned, non-empty SET of
-Ed25519 keys. The sets NEVER CHANGE after genesis within v1 (F112 —
-the verifier takes ONE `pinned_keys` argument over the FULL chain:
-removing a member fails historical signatures, retaining it
-authorizes future events, and no epoch/window machinery exists to
-distinguish the cases. Any change is either a NEW trust epoch — a
-separate chain verified under new pins — or activation of the
-successor key protocol BEFORE the change). No key-manifest, no
-in-band rotation, no envelope in v1:
+Ed25519 keys. FOR A GIVEN PUBLICATION CHAIN, the pinned sets are
+established at genesis and NEVER change; changing them ENDS that
+chain; successor continuity is OUTSIDE v1 (F112/F120 — the verifier
+takes ONE `pinned_keys` argument over the FULL chain: removing a
+member fails historical signatures, retaining it authorizes future
+events, and no epoch/window machinery exists to distinguish the
+cases). No key-manifest, no in-band rotation, no envelope in v1:
 
 - **RELEASE role** (online, held by CI; v1 set size 1): signs release
   manifests — authenticates that Soranoha issued the release.
@@ -194,11 +193,10 @@ Key distribution (F116): pinned key BYTES and fingerprints live ONLY
 in the independent trust anchor and the verifier's pinned
 configuration, obtained via the owner-named pre-release discovery
 channel (which carries the Zenodo concept DOI and every pinned
-fingerprint before the first signed release). Repository copies of
-public keys, if kept for humans, are NON-NORMATIVE; verifiers MUST
-ignore them — a repo-hosted copy cannot authenticate itself and adds
-path/synchronization/completeness questions with no verifier
-consumer.
+fingerprint before the first signed release). v1 publishes NO
+repository key copies (F116/F122 — a repo-hosted copy cannot
+authenticate itself and has no consumer; even an "optional
+non-normative" copy invites synchronization questions).
 
 Signer hardware note (non-normative): any signer producing plain
 Ed25519 over the §6 message satisfies this section — e.g. a YubiKey
@@ -426,12 +424,15 @@ determinism defect.
   predicate-shaped `archive_verified(C)` is RETIRED; its result was
   never a function of C alone):
   `archive_verification(archived_view, C, pinned_keys) → report`.
-  Requirements: C is present in the archived view; C is a PUBLICATION
-  COMMIT (§8, F106); the §8 primitive
+  The result contract is TOTAL (F121 — no implementation choice
+  between failure reports and raised errors): `report.result` =
+  SUCCESS iff C is present in the archived view, C is a PUBLICATION
+  COMMIT (§8, F106), and
   `verify_repository_at(archived_view, C, pinned_keys)` succeeds with
   the archived SWH snapshot as the SOLE repository view (F97/F101/
   F105 — nothing is read from the live origin or resolver;
-  co-presence of C and a valid head is not binding). The DISPOSABLE
+  co-presence of C and a valid head is not binding); OTHERWISE a
+  FAILED report recording the reason. The DISPOSABLE
   report records the SWH snapshot identifier, C, the pinned key
   fingerprints, and the verifier version + result — no signed
   receipt, no frozen schema. The claim is repository-closure
@@ -450,10 +451,10 @@ determinism defect.
   ACTUAL canonical manifest bytes + signature, made with credentials
   unavailable to release CI. Compromise semantics: chain freezes at the
   last checkpoint; later signatures contested until an out-of-band
-  cutoff notice; release-key compromise halts publication; compromise
-  of ANY governance-set member halts governance operations; loss of
-  ALL governance devices halts governance (loss of one does not,
-  while a pinned member remains — §7).
+  cutoff notice; release-key compromise halts publication. Governance
+  devices, exactly per §7/F115: KNOWN destroyed/failed → degraded
+  one-key operation; UNACCOUNTED-FOR → suspected compromise → HALT;
+  compromise of any member → HALT.
 
 ## 11. Executable schemas and conformance vectors (the FROZEN objects, F80)
 
@@ -466,7 +467,9 @@ approves — authored BEFORE that review, not transcribed after it.
 4. Signature: key bytes, message bytes, 64-byte signature for one
    manifest and one event; a governance signature from the SECOND
    pinned member that VERIFIES; a signature from a non-member key
-   that FAILS.
+   that FAILS. All vectors use FIXTURE keys (F123): the F117 hardware
+   ceremony's smoke signing with the ACTUAL governance devices is
+   pre-release DISPOSABLE evidence, never a frozen fixture or schema.
 5. `.pub` and `releases/HEAD` byte-exact fixtures (65 bytes each),
    including the pre-genesis zero HEAD.
 6. Invariant fixtures: each §8 rule with one passing and one failing

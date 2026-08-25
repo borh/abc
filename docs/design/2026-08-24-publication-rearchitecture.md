@@ -1,8 +1,7 @@
 # Publication Rearchitecture — Design Ledger
 
-Status (post review round 19, 2026-08-25) — CURRENT STATE ONLY
-(F103: history lives in the findings sections and Git history, not
-here):
+Current state — 2026-08-25 (F103/F124: this header stays evergreen;
+history lives in the findings sections and Git history, not here):
 - **`docs/design/snh-protocol-v1.md` is the SOLE NORMATIVE source.**
   This ledger is the decision/rationale record and dev handoff;
   nothing here overrides the spec. At the pre-Slice-2 freeze review
@@ -878,11 +877,11 @@ in agent report" headings redirected to the inlined sources list.
   RELEASE: one online CI key, signs manifests; GOVERNANCE: two
   offline owner-held hardware keys, each generated on its own token,
   stored separately, signing withdrawal/amendment events (a signature
-  verifies against any set member). The sets are FIXED FOREVER within
-  v1 — any change is a new trust epoch verified separately, or the
-  separately designed successor protocol activated BEFORE the change.
-  It provides no authenticated freshness and no in-band rotation or
-  recovery. A governance device KNOWN destroyed or failed leaves
+  verifies against any set member). For a given publication chain,
+  the pinned sets are established at genesis and NEVER change;
+  changing them ENDS that chain; successor continuity is outside v1
+  (F120). It provides no authenticated freshness and no in-band
+  rotation or recovery. A governance device KNOWN destroyed or failed leaves
   governance in DEGRADED one-key operation; an UNACCOUNTED-FOR token
   is suspected compromise and HALTS; COMPROMISE of any member HALTS
   the affected role. Releases after the last independent checkpoint
@@ -2011,9 +2010,10 @@ mechanism):
   one `pinned_keys` argument, so removing a member fails historical
   signatures, retaining it authorizes future events, and v1 has no
   epoch/window machinery to distinguish the cases). Any change is
-  either a NEW trust epoch — a separate chain verified independently
-  under new pins — or activation of the successor key protocol
-  BEFORE the change.
+  the END of that chain (F120 scoping: per-chain, established at
+  genesis; successor continuity — whether a new chain under new pins,
+  or the contingency key protocol — is designed OUTSIDE v1, before it
+  is needed).
 - Distrusted key: not "removal" but COMPROMISE — halt, freeze at the
   last checkpoint, out-of-band notice, successor epoch designed
   deliberately (F49/F55).
@@ -2080,6 +2080,48 @@ itself reasonable; Slices 0–1 unaffected and ready.
   defaults can be Never) and has BOTH governance devices sign a fixed
   protocol conformance vector before deployment.
 
+## External design review round 23 (2026-08-25) — findings F118–F124
+
+Reviewer verdicts: the corrected O5a is sound in substance ("I would
+ratify its intent"); a reconciliation pass, no new architecture; after
+these edits O5a can close without another architectural review;
+historical findings deliberately NOT swept for old terminology; Slices
+0–1 ready.
+
+- **F118 (§10 contradicted F115 — Blocker)** — "loss of one does not
+  halt" wrongly included an unaccounted-for token. §10 now carries the
+  exact trichotomy: known destroyed/failed → degraded; unaccounted-for
+  → suspected compromise → halt; member compromise → halt.
+- **F119 (Slice-3 handoff implemented the deleted key layout —
+  Blocker)** — it still generated two total keys and required
+  `keys/release.pub` + `keys/governance.pub`. Replaced: one release +
+  two governance hardware keys, no repository key copies, all three
+  key-byte sets + fingerprints in the anchor/pinned config, ceremony
+  smoke evidence disposable.
+- **F120 ("fixed forever" scoped to one chain — adopted)** — spec §7
+  and the O5a proposition now read: for a given publication chain the
+  pinned sets are established at genesis and never change; changing
+  them ends that chain; successor continuity is outside v1. The
+  speculative "new epoch vs successor protocol" choice is deleted from
+  the normative spec.
+- **F121 (total result contract — adopted)** — `report.result` =
+  SUCCESS iff present + publication commit + repository verification
+  succeeds; otherwise a FAILED report with the reason. No
+  report-vs-exception implementation choice.
+- **F122 (finish deleting repo key copies — adopted)** — v1 publishes
+  NO repository key copies (the "optional human copy" allowance
+  removed); the contingency appendix no longer auto-reintroduces a
+  signature envelope at the trigger (the two-key verifier disproves
+  "raw signatures require one key per role") — an envelope returns
+  only with a real consumer for signer identification or key-lookup
+  efficiency.
+- **F123 (ceremony outside frozen vectors — adopted)** — §11 vectors
+  use FIXTURE keys; the F117 hardware smoke signing is pre-release
+  disposable evidence, never a frozen fixture or schema.
+- **F124 (evergreen header — adopted)** — the status header is renamed
+  "Current state — <date>"; review rounds no longer create header
+  maintenance.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;
@@ -2092,12 +2134,14 @@ root-key ceremony. Known open defect recorded by F48: recovery's
 `key_manifest_hash` lacks consistency requirements binding the
 replacement key-manifest (seq, predecessor, effective_after, cumulative
 revocations) to `accepted_head` and the recovery record. **Activation
-trigger (O5a): BEFORE adding a second release key, promising
+trigger (O5a): BEFORE any pinned-set change, promising
 cryptographic continuity, or serving an external consumer that requires
-authenticated freshness — never after an incident begins.** The same
-trigger reintroduces a versioned signature envelope (the round-5
-`snh-sig/1` design, deleted by F64 — raw signatures suffice while
-exactly one pinned key exists per role). Until then, v1's posture is
+authenticated freshness — never after an incident begins.** (F122,
+round 23: the trigger does NOT automatically reintroduce a signature
+envelope — the two-key governance verifier disproves the premise that
+raw signatures require one key per role; an envelope returns only when
+a real consumer needs signer identification or key-lookup efficiency.)
+Until then, v1's posture is
 F49/F55: halt on compromise; the chain freezes at the last independent
 Zenodo checkpoint; archives carry the permanence promise.
 
@@ -2195,13 +2239,16 @@ allowed is the inclusion rule's decision) AND the assessment evidence
 committed as versioned data (F24 snapshot source); O2 host named and
 F12-probed; rights admission consumed-from-abc or transferred (F14c);
 F12 repo-growth probe run against the chosen origin; O5a signing in
-place: two directly pinned disjoint Ed25519 keys generated (online CI
-RELEASE key; offline GOVERNANCE key), public keys at `keys/release.pub`
-+ `keys/governance.pub`; **the F54 minimal trust anchor published BEFORE
-the first signed release: both public-key bytes + fingerprints on an
-independent, immutable channel (repo-hosted keys cannot authenticate
-themselves; the Slice-4 promise document arrives too late to be the
-first pin), loaded as pinned verifier configuration** — the deposit
+place (F119 reconciliation): ONE online CI RELEASE key + TWO offline
+GOVERNANCE keys, each generated on its own hardware token (PIV
+Ed25519, PIN + touch explicitly configured — F117), devices stored
+separately; NO repository key copies (F122); **the F54 minimal trust
+anchor published BEFORE the first signed release: ALL THREE
+public-key byte sets + fingerprints on an independent, immutable
+channel (repo-hosted keys cannot authenticate themselves; the Slice-4
+promise document arrives too late to be the first pin), loaded as
+pinned verifier configuration; hardware smoke signing by both
+governance devices recorded as disposable ceremony evidence (F123)** — the deposit
 carries the actual genesis manifest bytes + signature (F63); full-corpus
 assessment DATA migrated (the schema froze at Slice 2 — F58/round-12
 cleanup: no schema freezes remain before this slice); signatures are raw

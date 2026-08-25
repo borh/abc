@@ -1,6 +1,20 @@
 # Publication Rearchitecture — Design Ledger
 
-Status (post review round 13, 2026-08-25):
+Status (post review round 14, 2026-08-25):
+- **The live protocol is EXTRACTED to `docs/design/snh-protocol-v1.md`**
+  (round-14 simplification) — authoritative for builders/verifiers at
+  the freeze; this ledger remains the decision/rationale record.
+- Round-14 fixes applied: F73 (operation-specific rejection
+  reconciliation — never blind re-chain; stale `amends`/slug conflicts
+  HALT for fresh governance authorization), F74 (`releases/HEAD`
+  protocol: always present, 64 hex + LF, zero genesis, full-chain
+  verification), F75 (concrete PRE-RELEASE discovery channel required —
+  the Slice-4 paper postdates the first release and cannot be the first
+  pin), F76 (release-name date = UTC committer date of the
+  HEAD-advancing commit; reviewer's dateless alternative recorded as an
+  owner option), F77 (D11/registry/Slice-3 stale-state reconciliation).
+
+Superseded status detail (round 13):
 - **Slice 0: READY**; **Slice 1: READY NOW** (F56; kernel is
   policy-blind per F52/F60 — rights admission lives entirely in
   soranoha.za).
@@ -112,12 +126,12 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D8 | Preserve: slug injectivity check, TEI profile validation (Jing+Schematron), fail-closed provenance; leverage schemas/validation where they pay. | owner + repo history (silent-loss bug) | fixed |
 | D9 | **Direction: candidate A — greenfield publication kernel** (constructive-trace table + CAS + static release manifests), lane-by-lane retirement of old machinery. Rejected: B (fix-in-place — would inherit god-namespace coupling and governance-on-hot-path structure; the kernel is small enough that porting the 719-LOC renderers is cheaper than untangling 22k LOC); C (Nix-native — eliminated on evidence, see prior-art findings); D (status quo — cannot meet unattended auto-release or per-work incrementality). | owner, after incubation, 2026-08-24 | Revisit trigger: if the kernel's first slice cannot reproduce the rehearsal build's TEI/plaintext byte-for-byte, reassess before retiring any abc lane. |
 | D10 | Kernel language: **Clojure** — renderers/TEI-header/whitespace policy (~900 LOC) port rather than rewrite. "<1 s incremental" counts work-skipped, not JVM startup; babashka fast path only if CI latency ever warrants. | owner ratified rec, 2026-08-24 | easy |
-| D11 | Artifact classes: **publish** TEI, plaintext, per-work tei-validation-result; **archive privately** parser-IR; **regenerate on demand** AAT + preservation sidecars (14.2 GB class eliminated from storage). | owner ratified rec, 2026-08-24 | easy per class |
+| D11 | Artifact classes: **publish** TEI, plaintext, per-work tei-validation-result; **parser-IR: retain operationally in CAS/trace — private archival EXPORT deferred pending an authorization policy (amended F77/F65, round 14; the original "archive privately" promise had no authorized consumer)**; **regenerate on demand** AAT + preservation sidecars (14.2 GB class eliminated from storage). | owner ratified rec, 2026-08-24; amended round 14 | easy per class |
 | D12 | Placement: new top-level component, sibling of abc/ and ab-validator/, own flake, zero requires into abc namespaces (renderers copied in). abc/ and ab-validator/ frozen until after JADH2026, then retired lane by lane. | owner ratified rec, 2026-08-24 | revisit if kernel needs >renderers from abc |
 | D13 | Identifiers ratified: artifact id = typed content hash; release name = `r<date>-<manifesthash12>`; snapshot DOIs **quarterly** (Zenodo concept DOI + version DOIs). Prefix harmonized with 2026-07-03 naming spec: **`snh:1:<type>:<sha256>`** (spec already reserves `snh:` + w3id.org/soranoha — matches storage rec). | owner, 2026-08-24 | prefix trivially renameable pre-first-release; frozen after |
 | D14 | Slug scheme kept: `作品ID_人物ID_carddir_zipstem` as stable human-facing work name; qualifier, never identity. | owner ratified rec, 2026-08-24 | frozen after first release |
 | D15 | Naming ratified per 2026-07-03 Model B spec: new top-level `soranoha/` component; namespaces `soranoha.core` (shared types/config/the one canonicalizer), `soranoha.yomi` (source-acquirer+selector), `soranoha.kura` (trace store+CAS+verifier), `soranoha.ori` (stages/renderers/validation), `soranoha.za` (release assembly+publishing). Vocabulary reused, NOT the old spec's scope (no LOD/IIIF/XTDB in v1). `snh:` id prefix per D13. | owner, 2026-08-24 | dir rename trivial pre-first-release |
-| D16 | **Manifest v1 frozen before manifest assembly — i.e., before SLICE 2 per F52/F56 (headline updated round 12; the original "before slice 1" predates the F52 build/publish split)** (external review F3): canonicalizer = `rfc8785-safe-integer-json-string-v1` (legacy c14n-v0 excluded from kernel); strict schema `snh-manifest/1`; detached signature; derived release name; type registry {tei,txt,val,manifest}; full spec in F3 section. **VETOED by review round 2 → superseded by D16.1 draft (F13): types renamed (plaintext/tei-validation), visibility field removed (public-only manifest + private index), receipts excluded, admission field added, intent_id added, nested shapes + sort rules specified. Freeze awaits owner O1/O2 + reviewer re-approval.** **Round 3 (F16–F20) applied: intent_id = pre-build operation identity; withdrawn.since removed (self-reference); admission binds inclusion_rule_id+hash.** **Round 4 (F24–F26) applied: admission gains assessment snapshot commitment (in intent_id); D16.1 rewritten as a STANDALONE normative spec (wire version stays `snh-manifest/1`; "v1.1" naming retired); tombstone chain invariants added. Freeze gate decoupled from O1/O2 per F28.** **Round 5 (F30–F31, F33) applied: admission evidence = two retained PUBLIC artifacts — `snh-assessment-snapshot/1` (facts) + `snh-admission-report/1` (the rule's total partition), both registry types added pre-freeze; tombstone mutability surfaced as O3 options (immutable vs amends-chain) — freeze now ALSO gated on the owner's O3 choice; signature wire format `snh-sig/1` defined.** **Round 6 (F34–F36) applied: `release_intent {kind, governance_event_hash}` added as manifest field 12 and intent_id coordinate (withdrawals/amendments are distinct operations); snapshot fact model gains `not-evaluated` (distinct from `undetermined`; absence is an explicit fact); signature verification split — operational keys via key-manifest with chain-position validity windows, root key via out-of-band pinned fingerprint only.** **Round 7 (F38–F40) applied: admission invariant corrected to `works = admitted − withdrawn` (withdrawal is governance, not inclusion); strict predecessor→successor transition invariants (added/changed slugs = the event's affected_slugs exactly; mixed build/governance prohibited per manifest); governance event promoted to a public sanitized `snh-governance-event/1` artifact signed by a governance-role key (registry type added pre-freeze).** **Round 8 (F43–F46) applied: key windows corrected to chain-ancestry semantics (bᵢ, bᵢ₊₁]; key sets disjoint with globally unique key_ids; the governance event authorizes exact `{slug, tombstone}` pairs (`changes`), with a frozen signature filename/resolution rule; root public-key bytes published at `root.pub`, accepted only against the out-of-band fingerprint; Ed25519 encodings fixed (32 bytes / 64 hex; key_id = sha256 of raw bytes).** **Round 9 (F48/O5a) applied: the frozen-v1 schema set is exactly SIX year-one-exercised formats (manifest, assessment-snapshot, admission-report, tombstone, governance-event, sig); key-manifest and recovery are NON-NORMATIVE contingency, not frozen; v1 signing = two directly pinned disjoint keys; reviewer: "manifest core ready for freeze after O3(b) ratification".** **Round 10 (F52–F53) applied: Slice 1 emits NO public manifest (build ≠ admission — kernel depends only on D20); manifest assembly + round-trip move to Slice 2 on a fully assessed fixture; freezes STAGED — five formats at D16.1, assessment-snapshot content schema + `snh-archive-receipt/1` (the restored seventh format, signed by the release key) before Slice 3.** **Round 11 (F57–F58) applied: the build index is a derived trace-store view, never a persisted schema; staging corrected — SIX formats freeze before Slice 2 (the minimal assessment-snapshot schema's first consumer is Slice 2's fixture), only the receipt before Slice 3; "freeze at first consumer" is the rule, the count is incidental.** **Round 12 (F61–F65) applied — normative v1 is FOUR formats (manifest, assessment-snapshot, admission-report, governance-event): intent_id DELETED (retained-manifest retry protocol instead); `snh-tombstone/1` and `release_intent` DELETED (the governance event carries reason/statement directly; `withdrawn` maps slug → event id; manifest field `governance_event: null | id`); `snh-archive-receipt/1` DELETED (archive-verified = reproducible predicate, disposable report); `snh-sig/1` envelope DELETED (raw Ed25519 detached signatures; key selected by object kind); private archive index DELETED (CAS/trace state only).** **Round 13 (F66–F69, F72) applied: retry transaction made explicit (git commit head ≠ manifest head; `releases/HEAD`; success = on the accepted manifest chain); no-op projection = {corpus, toolchain, selection_params, admission} exactly; linear event-amendment invariants frozen (amends == predecessor's current event; changed entries point at THIS manifest's event); exact signature/key byte encodings + conformance vectors (honest inventory: four JSON schemas PLUS raw encodings); snapshot_date DELETED from manifest identity (publication date derives from the accepted commit).** | review rounds 2–13, 2026-08-24/25 | draft — cheap to change until frozen |
+| D16 | **Manifest v1 frozen before manifest assembly — i.e., before SLICE 2 per F52/F56 (headline updated round 12; the original "before slice 1" predates the F52 build/publish split)** (external review F3): canonicalizer = `rfc8785-safe-integer-json-string-v1` (legacy c14n-v0 excluded from kernel); strict schema `snh-manifest/1`; detached signature; derived release name; type registry {tei,txt,val,manifest}; full spec in F3 section. **VETOED by review round 2 → superseded by D16.1 draft (F13): types renamed (plaintext/tei-validation), visibility field removed (public-only manifest + private index), receipts excluded, admission field added, intent_id added, nested shapes + sort rules specified. Freeze awaits owner O1/O2 + reviewer re-approval.** **Round 3 (F16–F20) applied: intent_id = pre-build operation identity; withdrawn.since removed (self-reference); admission binds inclusion_rule_id+hash.** **Round 4 (F24–F26) applied: admission gains assessment snapshot commitment (in intent_id); D16.1 rewritten as a STANDALONE normative spec (wire version stays `snh-manifest/1`; "v1.1" naming retired); tombstone chain invariants added. Freeze gate decoupled from O1/O2 per F28.** **Round 5 (F30–F31, F33) applied: admission evidence = two retained PUBLIC artifacts — `snh-assessment-snapshot/1` (facts) + `snh-admission-report/1` (the rule's total partition), both registry types added pre-freeze; tombstone mutability surfaced as O3 options (immutable vs amends-chain) — freeze now ALSO gated on the owner's O3 choice; signature wire format `snh-sig/1` defined.** **Round 6 (F34–F36) applied: `release_intent {kind, governance_event_hash}` added as manifest field 12 and intent_id coordinate (withdrawals/amendments are distinct operations); snapshot fact model gains `not-evaluated` (distinct from `undetermined`; absence is an explicit fact); signature verification split — operational keys via key-manifest with chain-position validity windows, root key via out-of-band pinned fingerprint only.** **Round 7 (F38–F40) applied: admission invariant corrected to `works = admitted − withdrawn` (withdrawal is governance, not inclusion); strict predecessor→successor transition invariants (added/changed slugs = the event's affected_slugs exactly; mixed build/governance prohibited per manifest); governance event promoted to a public sanitized `snh-governance-event/1` artifact signed by a governance-role key (registry type added pre-freeze).** **Round 8 (F43–F46) applied: key windows corrected to chain-ancestry semantics (bᵢ, bᵢ₊₁]; key sets disjoint with globally unique key_ids; the governance event authorizes exact `{slug, tombstone}` pairs (`changes`), with a frozen signature filename/resolution rule; root public-key bytes published at `root.pub`, accepted only against the out-of-band fingerprint; Ed25519 encodings fixed (32 bytes / 64 hex; key_id = sha256 of raw bytes).** **Round 9 (F48/O5a) applied: the frozen-v1 schema set is exactly SIX year-one-exercised formats (manifest, assessment-snapshot, admission-report, tombstone, governance-event, sig); key-manifest and recovery are NON-NORMATIVE contingency, not frozen; v1 signing = two directly pinned disjoint keys; reviewer: "manifest core ready for freeze after O3(b) ratification".** **Round 10 (F52–F53) applied: Slice 1 emits NO public manifest (build ≠ admission — kernel depends only on D20); manifest assembly + round-trip move to Slice 2 on a fully assessed fixture; freezes STAGED — five formats at D16.1, assessment-snapshot content schema + `snh-archive-receipt/1` (the restored seventh format, signed by the release key) before Slice 3.** **Round 11 (F57–F58) applied: the build index is a derived trace-store view, never a persisted schema; staging corrected — SIX formats freeze before Slice 2 (the minimal assessment-snapshot schema's first consumer is Slice 2's fixture), only the receipt before Slice 3; "freeze at first consumer" is the rule, the count is incidental.** **Round 12 (F61–F65) applied — normative v1 is FOUR formats (manifest, assessment-snapshot, admission-report, governance-event): intent_id DELETED (retained-manifest retry protocol instead); `snh-tombstone/1` and `release_intent` DELETED (the governance event carries reason/statement directly; `withdrawn` maps slug → event id; manifest field `governance_event: null | id`); `snh-archive-receipt/1` DELETED (archive-verified = reproducible predicate, disposable report); `snh-sig/1` envelope DELETED (raw Ed25519 detached signatures; key selected by object kind); private archive index DELETED (CAS/trace state only).** **Round 13 (F66–F69, F72) applied: retry transaction made explicit (git commit head ≠ manifest head; `releases/HEAD`; success = on the accepted manifest chain); no-op projection = {corpus, toolchain, selection_params, admission} exactly; linear event-amendment invariants frozen (amends == predecessor's current event; changed entries point at THIS manifest's event); exact signature/key byte encodings + conformance vectors (honest inventory: four JSON schemas PLUS raw encodings); snapshot_date DELETED from manifest identity (publication date derives from the accepted commit).** **Round 14 (F73–F74 + extraction): rejection handling is operation-specific reconciliation (already-satisfied → succeed; build → reassemble under new governance; governance → revalidate unchanged event; conflict/stale amends → HALT, never re-sign); `releases/HEAD` fully specified (65 bytes, zero genesis, chain-verified); the live protocol extracted to `docs/design/snh-protocol-v1.md` — authoritative at freeze.** | review rounds 2–14, 2026-08-24/25 | draft — cheap to change until frozen |
 | D17 | **Publication = atomic compare-and-append transaction** (F1): flock + head re-check + complete-write + atomic HEAD advance; idempotent by manifest_id; CI concurrency is optimization only. **Amended by D17.1 (F10): the remote protected git ref is the authority (fast-forward-only push, re-chain on rejection); local flock is a single-host optimization. Round 12 (F61): intent_id DELETED — idempotency via the retained-manifest retry protocol. Round 13 (F66/F67): the transaction distinguishes the git commit head (fast-forward CAS token) from the manifest head (`releases/HEAD` → `prev_manifest`); unknown-result success requires M on the ACCEPTED manifest chain; the scheduled-build no-op projection is exactly {corpus, toolchain, selection_params, admission}; nondeterminism halts as a defect.** | review rounds 2–13 | internal protocol, revisable |
 | D18 | **Retention/lifecycle** (F2): all published manifests are permanent GC roots; states built→published→archived→citable; public git repo carries published artifact bytes (SWH archives real bytes); archival receipts in subsequent manifests; indefinite promise advertised only when archive-verified. **Reviewer sign-off: conditionally APPROVED; conditions adopted as D18.1 (F11/F12): receipts are separate signed attestations keyed by manifest_id (never in later manifests); states published → archive-verified, citation-eligible is a policy projection; archival latency treated as unbounded until measured; SWH completeness proven by the four F12 checks on a real public origin.** **Round 13 (F63/F71): receipts DELETED — archive-verified is an OBSERVED reproducible predicate (disposable report), not a stored lifecycle state; the stored lifecycle is `published` only; citation eligibility is COMPUTED from a successful archival observation. Independent authorship checkpoints are the F70 credential-separated Zenodo deposits, not archival status.** | owner-endorsed principle + review rounds 2–13 | promise text frozen at first public release |
 | D19 | **Trust** (F8): offline root key → key-manifest → operational signing keys; revocation procedure; fork/equivocation consumer rule anchored in SWH-archived checkpoint history. **F22: fail-closed freeze rule. F27: signed recovery statement (`snh-recovery/1`) specified — incident record with rollback protection (recovery_seq + prev_recovery chain), key revocation/transition, and defined discovery paths; see F8 section. F29: the incident_id self-hash removed — recovery_id is DERIVED (sha256 of canonical bytes, like manifest_id), signed as `snh-recovery-sig/1:<recovery_id>`. F32: consumer bootstrap rules (chaining = rollback protection for stateful consumers only; full-chain fetch; cross-channel fail-closed); recovery lives on a protected `recovery` BRANCH, not refs/meta. F33: all detached signatures use the `snh-sig/1` envelope. F36: verification split by trust object — recovery signatures verify ONLY against the out-of-band pinned root fingerprint (never through a key-manifest, which recovery itself replaces); operational validity windows are chain-position facts (`effective_after` boundaries), never manifest-declared dates. F37: w3id is a discovery route, not a copy; bootstrap accepts the longest non-conflicting valid chain, tolerating lagging archives with valid prefixes. F40: key ROLES (release vs governance) — withdrawal authority separated from the unattended-CI release key. F41: `snh-key-manifest/1` append-only history specified (derived id, seq + prev chain, effective_after boundary, roles, cumulative revocations, root-only signature, trust-branch publication, same-boundary/gap = fail-closed root incident). F43: windows are chain-ancestry (bᵢ, bᵢ₊₁], boundaries strict descendants validly signed under the predecessor. F44: role sets disjoint, key_ids globally unique; governance signers bound to the successor manifest's window. F46: `root.pub` on the trust branch, accepted only against the pinned fingerprint; Ed25519 encodings fixed. F47: the protected branch is named `trust`.** **Round 9 (O5a/F48/F49): the key-manifest/recovery/trust-branch protocol is DEMOTED to a non-frozen contingency appendix — v1 trust = two directly pinned disjoint keys (online release, offline governance) stated in the published promise; on compromise, publication HALTS (archived releases remain valid; out-of-band notice; next epoch designed deliberately). Activation trigger: BEFORE a second release key, a cryptographic-continuity promise, or an authenticated-freshness consumer — never after an incident begins. F50 decomposition: hashes = content identity; SWH/Zenodo = availability; pinned release key = authorship; pinned governance key = withdrawal authority; freshness deferred. Round 10: F54 — a minimal trust anchor (key bytes + fingerprints, independent immutable channel, pinned verifier config) precedes the first signed release; F55 — compromise semantics: chain freezes at the last uncontested checkpoint, post-compromise signatures contested until an out-of-band cutoff notice, byte identity never conflated with authorship, governance-key loss halts governance operations.** | review-adopted 2026-08-24; amended rounds 4–10 | contingency: activate per O5a trigger; upgradeable to Tessera log |
@@ -602,8 +616,41 @@ invalid chain. The current manifest head lives at the fixed path
 6. After an UNKNOWN push result, succeed ONLY if M is on the current
    ACCEPTED MANIFEST CHAIN (walk `prev_manifest` from the current
    `releases/HEAD`) — not merely somewhere in Git history.
-7. On rejection, fetch C₂, read H₂ = C₂:`releases/HEAD`, and re-chain
-   against H₂.
+7. On rejection: **operation-specific reconciliation (F73, round 14 —
+   blind "re-chain against H₂" is not valid for every operation, since
+   rebasing changes more than `prev_manifest`):**
+   - Fetch AND FULLY VERIFY the new accepted head (chain, signatures,
+     invariants).
+   - If the intended state is ALREADY SATISFIED (a build whose F67
+     projection matches the new head; a withdrawal whose slugs are
+     already withdrawn under the same event), SUCCEED without
+     publishing.
+   - For a BUILD losing to a governance change: REASSEMBLE against the
+     new governance state — inherit the new `withdrawn`, recompute
+     `works` and `validation_summary`, then retry.
+   - For a GOVERNANCE event losing to a build or a disjoint governance
+     change: revalidate the UNCHANGED signed event against the new
+     predecessor's transition invariants, re-chain, retry.
+   - If affected slugs CONFLICT (same-slug withdrawal already applied
+     differently) or an amendment's `amends` is now STALE (an
+     intervening correction changed the slug's governing event): HALT
+     for fresh offline governance authorization. NEVER rewrite or
+     automatically re-sign a governance event.
+   Slice-2 test matrix: build/build, build/governance, disjoint
+   withdrawal/withdrawal, same-slug withdrawal race, competing
+   amendments.
+
+**`releases/HEAD` protocol (F74, round 14 — F66 made it load-bearing
+without specifying it):**
+- ALWAYS present, including in the publication branch's INITIAL commit.
+- Exact bytes: 64 lowercase ASCII hex characters + one LF (in F69's
+  conformance vectors).
+- Before genesis: 64 zeros. After each publication: the current raw
+  manifest_id.
+- A verifier requires the referenced manifest + signature to exist,
+  verifies the ENTIRE `prev_manifest` chain down to the zero genesis,
+  and REJECTS a pointer that does not match a valid chain head. No
+  special missing-file genesis branch exists.
 **Scheduled-build no-op (F67 — the round-12 projection omitted
 upstream_origin and selection_params, so the same commit hash from a
 different origin, or a selection-only change, would be wrongly
@@ -667,6 +714,14 @@ does not cover the branch), but whether a given Forgejo origin
 advertises and protects it is origin-specific. Not a v1 probe.
 
 ### F13 → D16.1: Manifest `snh-manifest/1` — standalone normative specification
+
+**[EXTRACTED per round 14's simplification: the clean live protocol —
+four schemas, encodings, `releases/HEAD`, invariants, reconciliation,
+vector list — now lives in `docs/design/snh-protocol-v1.md`, which is
+AUTHORITATIVE for builders and verifiers once the freeze lands. This
+section remains the decision/rationale record; on any discrepancy after
+the freeze, the protocol spec wins. The ledger's amendment-history
+banners below are archaeology, not contract.]**
 
 **(Rewritten in full per F25, round 4. This section is self-contained: it
 depends on NO superseded section. There is exactly ONE wire version:
@@ -843,8 +898,10 @@ CAS/trace state with NO index schema (F65 — a "private archive index
 with its own schema" repeated the F57 shadow-manifest problem; there is
 no authorized private-archive consumer or settled access policy; derive
 an export only when an authorized archival destination exists).**
-("archived" exclusively names a release lifecycle state, not a
-visibility.) No receipt fields exist in the manifest (F11).
+(Per F71/F77 there is no "archived" lifecycle state — `published` is
+the only stored state; archival is an observed predicate. "archived"
+survives only as informal prose, never as a schema or state value.) No
+receipt fields exist in the manifest (F11).
 
 **Uniqueness and cross-field invariants (verifier-enforced, chain-level
 where marked):**
@@ -977,9 +1034,16 @@ contested):**
   compromise can publish a malicious release AND its matching
   "independent" checkpoint. Checkpoint deposits MUST use credentials
   unavailable to release CI: a manual owner action, or a separately
-  controlled MFA workflow. A verifier obtains the trusted initial
-  DOI + fingerprints out of band from the published paper/docs (the F36
-  out-of-band pin), which cite the Zenodo concept DOI.** If compromise
+  controlled MFA workflow. **F75 (round 14): the "published paper/docs"
+  channel was circular — the promise document is a Slice-4 deliverable,
+  AFTER the first signed release. A concrete, ALREADY-TRUSTED
+  pre-release discovery channel must carry the Zenodo concept DOI + both
+  fingerprints BEFORE publication (candidates: the owner's institutional
+  researcher page, an ORCID-linked publication record, or manually
+  distributed verifier configuration — owner names one). Credential
+  separation protects checkpoint CREATION; trusted discovery protects
+  checkpoint SELECTION; both are required.** The Slice-4 promise
+  document restates them.** If compromise
   occurs before the first post-genesis checkpoint, everything after
   genesis may remain authorship-contested — that is the honest v1
   exposure.**
@@ -1007,9 +1071,15 @@ In all cases the verifier CONSTRUCTS the domain-separated message from
 the artifact it holds and verifies the raw signature against the pinned
 key selected by object kind (F64).
 
-The release name `r<YYYYMMDD>-<manifest_id[0:12]>` is DERIVED — date
-from the ACCEPTED publication commit's date (F72; snapshot_date no
-longer exists), never embedded in manifest bytes.
+The release name `r<YYYYMMDD>-<manifest_id[0:12]>` is DERIVED, never
+embedded in manifest bytes. **F76 (round 14) removes the ambiguity:
+the date is the UTC calendar date of the COMMITTER timestamp on the
+unique commit that advances `releases/HEAD` to that manifest.** (The
+reviewer's alternative — `r<manifesthash12>` with dates displayed only
+as separate metadata — is recorded as an owner option before first
+release; the dated form is kept because the owner's D3/D13 intent was
+an identifier from which the date is inferable. Zenodo's deposit date
+stays citation metadata, never an alternative derivation of the name.)
 
 **Resolver:** artifact id → `/blobs/sha256/<hex>` (+ type-suffixed
 convenience path).
@@ -1778,6 +1848,62 @@ the one recorded.
   manifest bytes; content state and publication time are fully
   separated.
 
+## External design review round 14 (2026-08-25) — findings F73–F77 + extraction
+
+Reviewer verdicts: round 13's F66–F72 fixes correct; boundary
+validation still failing on retry transitions, HEAD bootstrap, and the
+initial trust anchor — "not in the four JSON schemas themselves";
+Slices 0–1 ready; O3(b) reasonable; O5a and the Slice-2 freeze wait for
+F73/F74 + handoff reconciliation. All applied, plus the requested
+extraction of a clean protocol spec.
+
+- **F73 (blind re-chain invalid — Blocker before Slice 2)** — rebasing
+  changes more than `prev_manifest`: a build losing to a withdrawal
+  must inherit the new withdrawn state and recompute
+  works/validation_summary; a duplicate build should no-op; a same-slug
+  withdrawal race is no longer applicable; a losing amendment has a
+  STALE `amends` that cannot be repaired without fresh offline
+  authorization. Fix applied: step 7 is operation-specific
+  reconciliation (verify new head fully; already-satisfied → succeed;
+  build → reassemble; governance → revalidate the unchanged signed
+  event; conflict/stale → HALT — never rewrite or auto-re-sign an
+  event). Slice-2 matrix: build/build, build/governance, disjoint
+  withdrawals, same-slug race, competing amendments.
+- **F74 (releases/HEAD unspecified — Blocker before Slice 2)** — F66
+  made it load-bearing without an encoding or genesis rule. Fix
+  applied: always present (including the initial commit), 64 lowercase
+  hex + LF, 64 zeros before genesis, current raw manifest_id after;
+  verifier requires the referenced manifest + signature, walks the full
+  chain to zero, and rejects a non-head pointer; included in the F69
+  vectors. No missing-file genesis special case.
+- **F75 (discovery channel circular — F70 stays blocked)** — "the
+  published paper/docs" postdates the first signed release. Fix
+  applied: the owner names a concrete already-trusted PRE-RELEASE
+  channel (institutional page / ORCID-linked record / distributed
+  verifier config) carrying the concept DOI + both fingerprints before
+  publication. Credential separation protects checkpoint CREATION;
+  trusted discovery protects checkpoint SELECTION; both required.
+- **F76 (commit date ambiguous — Strong suggestion)** — resolved as the
+  UTC calendar date of the COMMITTER timestamp on the unique
+  HEAD-advancing commit. The reviewer's fuller simplification
+  (`r<manifesthash12>`, dates as separate display metadata) is recorded
+  as an owner option before first release; the dated form is kept
+  because D3/D13's owner intent was date-inferable identifiers. Zenodo
+  deposit dates stay citation metadata only.
+- **F77 (contradicting decisions — Blocker to handoff, mechanical)** —
+  D11's "archive privately" amended to "retain operationally in
+  CAS/trace; private archival export deferred pending authorization"
+  (F65); the registry's "archived is a lifecycle state" line corrected
+  (published is the only stored state); Slice 3's "reaches
+  archive-verified" reworded to "archival predicate succeeds".
+- **Extraction (adopted)** — the ledger passed 2,000 lines with deleted
+  fields and amendment banners inside the "standalone" spec. The live
+  protocol now lives in **`docs/design/snh-protocol-v1.md`**: four
+  schemas, raw signature/key/`releases/HEAD` encodings, invariants,
+  publication reconciliation, and the conformance-vector list —
+  authoritative for builders and verifiers at the freeze; this ledger
+  stays the decision and rationale record.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;
@@ -1920,7 +2046,8 @@ from real upstream movement, chain verified end-to-end by the published
 checker; (2) a forced concurrent-publish attempt loses the push race and
 correctly re-chains, and a simulated lost push response resolves via the
 F61 reachability check without double publication; (3) at least one
-release reaches archive-verified via the predicate passing all four F12
+release has the archival predicate SUCCEED (F77 wording — no
+"archive-verified" state is reached or stored) with all four F12
 checks, with measured (not assumed) archival latency recorded in the
 ledger.
 
@@ -1982,10 +2109,16 @@ back by citing the previous release tag.
   or a separately controlled MFA workflow; only then is the checkpoint
   operationally independent.** Quarterly Zenodo deposits thereafter
   double as the subsequent independent checkpoints; the fuller
-  promise/paper restates the anchor at Slice 4 and cites the concept
-  DOI (the verifier's out-of-band entry point).
+  promise/paper restates the anchor at Slice 4.
   (Replaces the round-7/8 root-ceremony and fingerprint-venue items; no
   root key or key-manifest exists in v1.)
+- **F75 pre-release discovery channel** — owner names a concrete,
+  already-trusted channel carrying the Zenodo concept DOI + both
+  fingerprints BEFORE the first signed release (candidates: Osaka
+  University researcher page, ORCID-linked record, manually distributed
+  verifier config); the Slice-4 promise document restates it. The
+  Slice-4 paper CANNOT be the first pin (it postdates the first
+  release).
 - ~~`snh-archive-receipt/1` field schema~~ DELETED round 12 (F63):
   archive-verified is a reproducible predicate with a disposable report;
   no receipt format exists.

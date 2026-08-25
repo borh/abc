@@ -1,37 +1,41 @@
 # Publication Rearchitecture — Design Ledger
 
-Status (post review round 10, 2026-08-25):
+Status (post review round 11, 2026-08-25):
 - **Slice 0: READY** (F4 pinned procedure).
-- **Slice 1: BLOCKED only on D20** (the AGENTS.md ownership edit). Per
-  F52 (round 10), Slice 1 emits NO public release manifest — it builds
-  and proves 17,602/17,602 through the trace store/CAS. "Can build" is
-  separated from "may publish"; kernel work no longer waits on the
-  publication protocol, O1, or O3.
-- **Slice 2: BLOCKED** on the D16.1 freeze. Freeze is STAGED per F53:
-  freeze NOW (pre-Slice-2): manifest, tombstone, admission-report,
-  governance-event, sig; freeze PRE-SLICE-3: assessment-snapshot content
-  schema (with the rights migration) + the seventh format
-  `snh-archive-receipt/1` (F53 — D18.1's signed receipts were missing
-  from the inventory). Gate = owner O3(b) + O5a-as-amended ratification +
-  reviewer validation.
-- **Slice 3: additionally BLOCKED** on O1 (approved conditional on
-  committed assessment evidence), O2 concrete host + F12 probes, the
-  pre-Slice-3 freezes above, and the F54 trust anchor: both public keys +
-  fingerprints published through an independent immutable channel BEFORE
-  the first signed release (the Slice-4 promise document cannot be the
-  first pin — repo-hosted keys cannot authenticate themselves).
-- **Compromise semantics per F55:** artifact ids always identify exact
-  bytes; the official chain freezes at the last uncontested independently
-  recorded checkpoint; post-compromise signatures are CONTESTED until an
-  out-of-band notice names the accepted cutoff; release-key compromise
-  halts publication; governance-key compromise/loss halts governance
+- **Slice 1: READY NOW** (F56 — the D20 gate was stale: F52 removed
+  manifests/admission from Slice 1, so the publication-schema ownership
+  transfer has no Slice-1 consumer; ABC keeps that ownership during
+  Slice 1; soranoha/ owns only kernel, CAS, trace store, copied
+  renderers; TEI profiles via flake input as already decided). The
+  build index is a derived trace-store view, not a persisted schema
+  (F57).
+- **Before Slice 2:** owner O3(b) + O5a-as-amended ratification with
+  reviewer boundary validation; the D16.1 freeze — six formats at their
+  first consumer (manifest, tombstone, admission-report,
+  governance-event, sig, AND the minimal assessment-snapshot content
+  schema per F58 — Slice 2's assessed fixture is its first consumer);
+  the manifest-related ownership transfer in AGENTS.md (D20 as amended —
+  moved from Slice 1 to Slice 2).
+- **Before Slice 3:** O1 (approved conditional on committed assessment
+  evidence) + full-corpus assessment data; O2 concrete host + F12
+  probes; `snh-archive-receipt/1` schema (the only pre-Slice-3 format);
+  the F54/F59 independent trust-anchor deposit (key bytes + fingerprints
+  + the genesis manifest_id, on Zenodo), whose quarterly successors are
+  the independent authorship checkpoints.
+- **Compromise semantics per F55/F59:** artifact ids always identify
+  exact bytes; the official chain freezes at the last INDEPENDENT
+  pre-incident checkpoint (Zenodo deposits — archive receipts are signed
+  by the very release key under investigation and cannot establish the
+  cutoff); post-checkpoint signatures are CONTESTED until an out-of-band
+  notice names the accepted cutoff; release-key compromise halts
+  publication; governance-key compromise/loss halts governance
   operations and any publication requiring them.
 - **O3: facilitator and reviewer both recommend option (b)**; owner
   ratification pending. **O5a: direction approved; ratification withheld
-  pending F52–F55 — all four now applied; owner ratification pending.**
+  pending F58/F59 — both now applied; owner ratification pending.**
 D18.1 approved conditional on F12. Authoritative record: decision log +
 reviews F1–F9, F10–F15, F16–F23, F24–F28, F29–F33, F34–F37, F38–F42,
-F43–F47, F48–F51, F52–F55 + dev handoff below.
+F43–F47, F48–F51, F52–F55, F56–F59 + dev handoff below.
 Owner: Bor Hodošček
 Process: hammock-driven-design decision interview, session of 2026-08-24
 
@@ -109,11 +113,11 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D13 | Identifiers ratified: artifact id = typed content hash; release name = `r<date>-<manifesthash12>`; snapshot DOIs **quarterly** (Zenodo concept DOI + version DOIs). Prefix harmonized with 2026-07-03 naming spec: **`snh:1:<type>:<sha256>`** (spec already reserves `snh:` + w3id.org/soranoha — matches storage rec). | owner, 2026-08-24 | prefix trivially renameable pre-first-release; frozen after |
 | D14 | Slug scheme kept: `作品ID_人物ID_carddir_zipstem` as stable human-facing work name; qualifier, never identity. | owner ratified rec, 2026-08-24 | frozen after first release |
 | D15 | Naming ratified per 2026-07-03 Model B spec: new top-level `soranoha/` component; namespaces `soranoha.core` (shared types/config/the one canonicalizer), `soranoha.yomi` (source-acquirer+selector), `soranoha.kura` (trace store+CAS+verifier), `soranoha.ori` (stages/renderers/validation), `soranoha.za` (release assembly+publishing). Vocabulary reused, NOT the old spec's scope (no LOD/IIIF/XTDB in v1). `snh:` id prefix per D13. | owner, 2026-08-24 | dir rename trivial pre-first-release |
-| D16 | **Manifest v1 frozen before slice 1** (external review F3): canonicalizer = `rfc8785-safe-integer-json-string-v1` (legacy c14n-v0 excluded from kernel); strict schema `snh-manifest/1`; detached signature; derived release name; type registry {tei,txt,val,manifest}; full spec in F3 section. **VETOED by review round 2 → superseded by D16.1 draft (F13): types renamed (plaintext/tei-validation), visibility field removed (public-only manifest + private index), receipts excluded, admission field added, intent_id added, nested shapes + sort rules specified. Freeze awaits owner O1/O2 + reviewer re-approval.** **Round 3 (F16–F20) applied: intent_id = pre-build operation identity; withdrawn.since removed (self-reference); admission binds inclusion_rule_id+hash.** **Round 4 (F24–F26) applied: admission gains assessment snapshot commitment (in intent_id); D16.1 rewritten as a STANDALONE normative spec (wire version stays `snh-manifest/1`; "v1.1" naming retired); tombstone chain invariants added. Freeze gate decoupled from O1/O2 per F28.** **Round 5 (F30–F31, F33) applied: admission evidence = two retained PUBLIC artifacts — `snh-assessment-snapshot/1` (facts) + `snh-admission-report/1` (the rule's total partition), both registry types added pre-freeze; tombstone mutability surfaced as O3 options (immutable vs amends-chain) — freeze now ALSO gated on the owner's O3 choice; signature wire format `snh-sig/1` defined.** **Round 6 (F34–F36) applied: `release_intent {kind, governance_event_hash}` added as manifest field 12 and intent_id coordinate (withdrawals/amendments are distinct operations); snapshot fact model gains `not-evaluated` (distinct from `undetermined`; absence is an explicit fact); signature verification split — operational keys via key-manifest with chain-position validity windows, root key via out-of-band pinned fingerprint only.** **Round 7 (F38–F40) applied: admission invariant corrected to `works = admitted − withdrawn` (withdrawal is governance, not inclusion); strict predecessor→successor transition invariants (added/changed slugs = the event's affected_slugs exactly; mixed build/governance prohibited per manifest); governance event promoted to a public sanitized `snh-governance-event/1` artifact signed by a governance-role key (registry type added pre-freeze).** **Round 8 (F43–F46) applied: key windows corrected to chain-ancestry semantics (bᵢ, bᵢ₊₁]; key sets disjoint with globally unique key_ids; the governance event authorizes exact `{slug, tombstone}` pairs (`changes`), with a frozen signature filename/resolution rule; root public-key bytes published at `root.pub`, accepted only against the out-of-band fingerprint; Ed25519 encodings fixed (32 bytes / 64 hex; key_id = sha256 of raw bytes).** **Round 9 (F48/O5a) applied: the frozen-v1 schema set is exactly SIX year-one-exercised formats (manifest, assessment-snapshot, admission-report, tombstone, governance-event, sig); key-manifest and recovery are NON-NORMATIVE contingency, not frozen; v1 signing = two directly pinned disjoint keys; reviewer: "manifest core ready for freeze after O3(b) ratification".** **Round 10 (F52–F53) applied: Slice 1 emits NO public manifest (build ≠ admission — kernel depends only on D20); manifest assembly + round-trip move to Slice 2 on a fully assessed fixture; freezes STAGED — five formats at D16.1, assessment-snapshot content schema + `snh-archive-receipt/1` (the restored seventh format, signed by the release key) before Slice 3.** | review rounds 2–10, 2026-08-24/25 | draft — cheap to change until frozen |
+| D16 | **Manifest v1 frozen before slice 1** (external review F3): canonicalizer = `rfc8785-safe-integer-json-string-v1` (legacy c14n-v0 excluded from kernel); strict schema `snh-manifest/1`; detached signature; derived release name; type registry {tei,txt,val,manifest}; full spec in F3 section. **VETOED by review round 2 → superseded by D16.1 draft (F13): types renamed (plaintext/tei-validation), visibility field removed (public-only manifest + private index), receipts excluded, admission field added, intent_id added, nested shapes + sort rules specified. Freeze awaits owner O1/O2 + reviewer re-approval.** **Round 3 (F16–F20) applied: intent_id = pre-build operation identity; withdrawn.since removed (self-reference); admission binds inclusion_rule_id+hash.** **Round 4 (F24–F26) applied: admission gains assessment snapshot commitment (in intent_id); D16.1 rewritten as a STANDALONE normative spec (wire version stays `snh-manifest/1`; "v1.1" naming retired); tombstone chain invariants added. Freeze gate decoupled from O1/O2 per F28.** **Round 5 (F30–F31, F33) applied: admission evidence = two retained PUBLIC artifacts — `snh-assessment-snapshot/1` (facts) + `snh-admission-report/1` (the rule's total partition), both registry types added pre-freeze; tombstone mutability surfaced as O3 options (immutable vs amends-chain) — freeze now ALSO gated on the owner's O3 choice; signature wire format `snh-sig/1` defined.** **Round 6 (F34–F36) applied: `release_intent {kind, governance_event_hash}` added as manifest field 12 and intent_id coordinate (withdrawals/amendments are distinct operations); snapshot fact model gains `not-evaluated` (distinct from `undetermined`; absence is an explicit fact); signature verification split — operational keys via key-manifest with chain-position validity windows, root key via out-of-band pinned fingerprint only.** **Round 7 (F38–F40) applied: admission invariant corrected to `works = admitted − withdrawn` (withdrawal is governance, not inclusion); strict predecessor→successor transition invariants (added/changed slugs = the event's affected_slugs exactly; mixed build/governance prohibited per manifest); governance event promoted to a public sanitized `snh-governance-event/1` artifact signed by a governance-role key (registry type added pre-freeze).** **Round 8 (F43–F46) applied: key windows corrected to chain-ancestry semantics (bᵢ, bᵢ₊₁]; key sets disjoint with globally unique key_ids; the governance event authorizes exact `{slug, tombstone}` pairs (`changes`), with a frozen signature filename/resolution rule; root public-key bytes published at `root.pub`, accepted only against the out-of-band fingerprint; Ed25519 encodings fixed (32 bytes / 64 hex; key_id = sha256 of raw bytes).** **Round 9 (F48/O5a) applied: the frozen-v1 schema set is exactly SIX year-one-exercised formats (manifest, assessment-snapshot, admission-report, tombstone, governance-event, sig); key-manifest and recovery are NON-NORMATIVE contingency, not frozen; v1 signing = two directly pinned disjoint keys; reviewer: "manifest core ready for freeze after O3(b) ratification".** **Round 10 (F52–F53) applied: Slice 1 emits NO public manifest (build ≠ admission — kernel depends only on D20); manifest assembly + round-trip move to Slice 2 on a fully assessed fixture; freezes STAGED — five formats at D16.1, assessment-snapshot content schema + `snh-archive-receipt/1` (the restored seventh format, signed by the release key) before Slice 3.** **Round 11 (F57–F58) applied: the build index is a derived trace-store view, never a persisted schema; staging corrected — SIX formats freeze before Slice 2 (the minimal assessment-snapshot schema's first consumer is Slice 2's fixture), only the receipt before Slice 3; "freeze at first consumer" is the rule, the count is incidental.** | review rounds 2–11, 2026-08-24/25 | draft — cheap to change until frozen |
 | D17 | **Publication = atomic compare-and-append transaction** (F1): flock + head re-check + complete-write + atomic HEAD advance; idempotent by manifest_id; CI concurrency is optimization only. **Amended by D17.1 (F10): the remote protected git ref is the authority (fast-forward-only push, re-chain on rejection); idempotency by intent_id, not manifest_id; local flock is a single-host optimization.** | review round 2, 2026-08-24 | internal protocol, revisable |
 | D18 | **Retention/lifecycle** (F2): all published manifests are permanent GC roots; states built→published→archived→citable; public git repo carries published artifact bytes (SWH archives real bytes); archival receipts in subsequent manifests; indefinite promise advertised only when archive-verified. **Reviewer sign-off: conditionally APPROVED; conditions adopted as D18.1 (F11/F12): receipts are separate signed attestations keyed by manifest_id (never in later manifests); states published → archive-verified, citation-eligible is a policy projection; archival latency treated as unbounded until measured; SWH completeness proven by the four F12 checks on a real public origin.** | owner-endorsed principle + review round 2 | promise text frozen at first public release |
 | D19 | **Trust** (F8): offline root key → key-manifest → operational signing keys; revocation procedure; fork/equivocation consumer rule anchored in SWH-archived checkpoint history. **F22: fail-closed freeze rule. F27: signed recovery statement (`snh-recovery/1`) specified — incident record with rollback protection (recovery_seq + prev_recovery chain), key revocation/transition, and defined discovery paths; see F8 section. F29: the incident_id self-hash removed — recovery_id is DERIVED (sha256 of canonical bytes, like manifest_id), signed as `snh-recovery-sig/1:<recovery_id>`. F32: consumer bootstrap rules (chaining = rollback protection for stateful consumers only; full-chain fetch; cross-channel fail-closed); recovery lives on a protected `recovery` BRANCH, not refs/meta. F33: all detached signatures use the `snh-sig/1` envelope. F36: verification split by trust object — recovery signatures verify ONLY against the out-of-band pinned root fingerprint (never through a key-manifest, which recovery itself replaces); operational validity windows are chain-position facts (`effective_after` boundaries), never manifest-declared dates. F37: w3id is a discovery route, not a copy; bootstrap accepts the longest non-conflicting valid chain, tolerating lagging archives with valid prefixes. F40: key ROLES (release vs governance) — withdrawal authority separated from the unattended-CI release key. F41: `snh-key-manifest/1` append-only history specified (derived id, seq + prev chain, effective_after boundary, roles, cumulative revocations, root-only signature, trust-branch publication, same-boundary/gap = fail-closed root incident). F43: windows are chain-ancestry (bᵢ, bᵢ₊₁], boundaries strict descendants validly signed under the predecessor. F44: role sets disjoint, key_ids globally unique; governance signers bound to the successor manifest's window. F46: `root.pub` on the trust branch, accepted only against the pinned fingerprint; Ed25519 encodings fixed. F47: the protected branch is named `trust`.** **Round 9 (O5a/F48/F49): the key-manifest/recovery/trust-branch protocol is DEMOTED to a non-frozen contingency appendix — v1 trust = two directly pinned disjoint keys (online release, offline governance) stated in the published promise; on compromise, publication HALTS (archived releases remain valid; out-of-band notice; next epoch designed deliberately). Activation trigger: BEFORE a second release key, a cryptographic-continuity promise, or an authenticated-freshness consumer — never after an incident begins. F50 decomposition: hashes = content identity; SWH/Zenodo = availability; pinned release key = authorship; pinned governance key = withdrawal authority; freshness deferred. Round 10: F54 — a minimal trust anchor (key bytes + fingerprints, independent immutable channel, pinned verifier config) precedes the first signed release; F55 — compromise semantics: chain freezes at the last uncontested checkpoint, post-compromise signatures contested until an out-of-band cutoff notice, byte identity never conflated with authorship, governance-key loss halts governance operations.** | review-adopted 2026-08-24; amended rounds 4–10 | contingency: activate per O5a trigger; upgradeable to Tessera log |
-| D20 | **Ownership** (F6): TEI profile schemas consumed as explicit flake input from abc during migration (no schema copies); AGENTS.md ownership transfer recorded before slice-1 implementation. | review-adopted 2026-08-24 | owner action: AGENTS.md edit |
+| D20 | **Ownership** (F6): TEI profile schemas consumed as explicit flake input from abc during migration (no schema copies). **Amended F56 (round 11): the publication-schema/manifest-identity transfer has NO Slice-1 consumer after F52 — ABC keeps that ownership during Slice 1; soranoha/ owns only kernel/CAS/trace-store/copied renderers; the AGENTS.md transfer moves to the first Slice-2 work that assembles manifests. Slice 1 waits on nothing administrative.** | review-adopted 2026-08-24; amended round 11 | owner action: AGENTS.md edit, before Slice 2 |
 | D21 | **Rights/registry admission restored** (F14): kernel ports the fail-closed value-plus-hash rights authority (policy hash recorded in manifest `admission`); per-work inclusion governed by named rule (O1, owner); admission responsibility consumed from abc or transferred in AGENTS.md before Slice 3. Currently `publication-policy.edn` BLOCKS release — the kernel inherits that block until the rights assessment migrates. **F17: admission is assessment-based per O1 (adopted reviewer rule); catalog flags seed, never authorize; private archiving needs its own authorization policy.** **F24: the assessment data itself is cryptographically committed — bound in `admission` and included in intent_id, so newly completed assessments change the operation identity. F30: the commitment is two retained public artifacts, separating domain roles — the assessment SNAPSHOT commits facts (public-domain / in-copyright / undetermined / not-evaluated per contribution, F35/F47); the admission REPORT records the inclusion rule's total partition (admitted/excluded/quarantined with reasons). Both published, permanently rooted, hash-resolvable. F38: works = admitted − withdrawn.** | review rounds 2–8 | policy content owner-governed; mechanism fixed |
 
 ## Constraints & success metrics
@@ -427,10 +431,15 @@ withdrawal, and an output-preserving source edit (fixture).
 During migration the kernel consumes the TEI profile artifacts
 (`tei-profile.rng/.sch/.odd`) as an **explicit flake input from abc/** —
 one source of truth, no copied schemas (renderer *code* copies remain per
-D12/R2). The ownership transfer (publication schemas, manifest identity →
-`soranoha/`) is recorded in AGENTS.md **before slice-1 implementation
-begins**; abc retains ownership of everything not yet migrated. [Owner
-action: AGENTS.md edit.]
+D12/R2). **[Amended F56, round 11: the transfer timing below is stale.]**
+The ownership transfer (publication schemas, manifest identity →
+`soranoha/`) is recorded in AGENTS.md **before the first Slice-2 work
+that assembles manifests** — NOT before Slice 1, whose F52-narrowed scope
+(kernel, CAS, trace store, copied renderers) has no publication-schema
+consumer; abc retains ownership of everything not yet migrated. If
+AGENTS.md acknowledges the new component earlier, it records only that
+narrower kernel ownership. [Owner action: AGENTS.md edit, before
+Slice 2.]
 
 ### F7: Performance acceptance protocol (amends Slice 1 below)
 Fixed corpus = pinned revision; cold = empty trace store + CAS; warm =
@@ -610,7 +619,13 @@ envelope over `snh-archive-receipt-sig/1:<receipt_id>`, signed by the
 pinned RELEASE key. It was missing from the O5a six-format inventory
 while D18.1 required signed receipts — a contradiction. Its exact field
 schema is frozen BEFORE SLICE 3 (staged freeze; its first consumer is
-Slice 3's archive-verification acceptance), per the F51 rule.** Derived states: **published** (on accepted chain) →
+Slice 3's archive-verification acceptance), per the F51 rule. F59
+narrows the receipt's MEANING: SWH + the receipt prove archival
+completeness and that Soranoha's release key REPORTED verifying it —
+they do NOT establish a compromise cutoff, because the receipt is signed
+by the same release key whose compromise would be under investigation;
+the cutoff comes only from independent pre-incident Zenodo checkpoints
+(see the F55/F59 compromise semantics).** Derived states: **published** (on accepted chain) →
 **archive-verified** (complete independent-copy receipt exists);
 **citation-eligible** is a policy *projection* of archive-verified, not a
 stored state (no owner-controlled transition exists to justify one).
@@ -928,8 +943,17 @@ ids verify, but their status as AUTHORIZED Soranoha releases is
 contested):**
 - Content-addressed artifact identifiers ALWAYS continue to identify
   exact bytes — that guarantee never depends on any key.
-- The official release chain FREEZES at the last uncontested,
-  independently recorded checkpoint (archive-verified per D18.1).
+- The official release chain FREEZES at the last INDEPENDENT
+  pre-incident checkpoint. **F59: an archive-verified release is NOT
+  automatically such a checkpoint — the archive receipt is signed by the
+  very release key under investigation, and SWH proves preservation of
+  bytes, not Soranoha's independent authorization of them. Independent
+  checkpoints are the Zenodo deposits: the initial F54 trust-anchor
+  deposit names the genesis manifest_id, and each quarterly deposit
+  (Slice 4 cadence, already decided in D13) names the then-current chain
+  head. If compromise occurs before the first post-genesis checkpoint,
+  everything after genesis may remain authorship-contested — that is the
+  honest v1 exposure.**
 - Release signatures after that checkpoint are CONTESTED until an
   out-of-band notice names the accepted cutoff.
 - Release-key compromise HALTS publication.
@@ -1041,13 +1065,17 @@ in agent report" headings redirected to the inlined sources list.
 - **O5a — v1 trust boundary (PROPOSED, reviewer-drafted round 9;
   supersedes O5, whose freeze-all-formats clause F48 rejected as
   contradicting the ratchet; amended round 10 per F52–F55).**
-  (1) STAGED freezes, not one artificial count (F53): freeze at D16.1
-  (pre-Slice-2): `snh-manifest/1`, tombstone, admission-report,
-  governance-event, `snh-sig/1`; freeze pre-Slice-3: the
-  assessment-snapshot CONTENT schema (with the rights migration — its
-  identity/retention semantics are already normative) and the seventh
-  format `snh-archive-receipt/1` (D18.1's signed receipts were missing
-  from the six). (2) Two directly pinned disjoint keys: online CI
+  (1) STAGED freezes; the durable rule is **freeze at first consumer**
+  (F53, corrected F58 — postponing the assessment-snapshot schema to
+  Slice 3 contradicted Slice 2, which constructs an assessed fixture,
+  hashes the snapshot into intent_id, and exercises an assessment-only
+  delta: an object cannot be normative, hashed, and cross-checked while
+  its content contract is unfrozen). Freeze BEFORE SLICE 2: `snh-
+  manifest/1`, tombstone, admission-report, governance-event,
+  `snh-sig/1`, and the MINIMAL `snh-assessment-snapshot/1` content
+  schema (exercised on the fixture). Freeze BEFORE SLICE 3: only
+  `snh-archive-receipt/1`. Full-corpus assessment MIGRATION (data, not
+  schema) stays a Slice-3 prerequisite. (2) Two directly pinned disjoint keys: online CI
   RELEASE key; offline GOVERNANCE key — with the F54 trust anchor
   (public-key bytes + fingerprints on an independent immutable channel,
   loaded as pinned verifier config) published BEFORE the first signed
@@ -1530,6 +1558,54 @@ ledger-only, clean `git diff --check`, clean worktree.
   release-key compromise halts publication; governance-key compromise or
   loss halts governance operations and any publication requiring them.
 
+## External design review round 11 (2026-08-25) — findings F56–F59
+
+Reviewer verdicts: F52–F55 remain; O5a-as-amended ratification withheld
+pending F58/F59 (both now applied); the largest remaining simplification
+was DELETION, not protocol: drop the obsolete Slice-1 governance gate,
+make the build index a trace-store view, reuse Zenodo as both trust
+anchor and independent checkpoint channel.
+
+- **F56 (stale D20 gate — simplification)** — F52 removed manifests and
+  admission from Slice 1, so the "publication schemas, manifest identity
+  → soranoha before Slice 1" transfer had no Slice-1 consumer and
+  conflicted with AGENTS.md's current boundary. Fix applied: ABC keeps
+  that ownership through Slice 1; soranoha/ owns only kernel, CAS, trace
+  store, copied renderers; the transfer moves to the first Slice-2 work
+  that assembles manifests. **Slice 1 is READY NOW** — the administrative
+  dependency was unnecessary.
+- **F57 (shadow manifest risk — simplification)** — a separately
+  persisted "internal build index" would be a second schema with its own
+  synchronization, lifecycle, and authority questions: a shadow
+  publication format. Fix applied: the build index is a QUERY/disposable
+  export over the trace store (CAS bytes ← trace records → derived
+  view), with no independent identity, retention promise, or canonical
+  schema; Slice 2 consumes a transactionally consistent trace snapshot.
+- **F58 (snapshot freeze timing — correction)** — postponing the
+  assessment-snapshot content schema to pre-Slice-3 contradicted
+  Slice 2, which constructs an assessed fixture, publishes
+  snapshot/report, hashes the snapshot into intent_id, and exercises an
+  assessment-only delta — that IS the schema's first consumer. Fix
+  applied: minimal snapshot schema frozen before Slice 2 and exercised
+  on the fixture; full-corpus assessment MIGRATION (data) stays a
+  Slice-3 prerequisite; only `snh-archive-receipt/1` freezes before
+  Slice 3. Count de-emphasized: "freeze at first consumer" is the
+  durable rule.
+- **F59 (receipt ≠ independent checkpoint — correction)** — F55's
+  parenthetical equated the freeze point with D18.1 archive
+  verification, but the archive receipt is signed by the very release
+  key whose compromise is being investigated: an attacker controlling it
+  could publish, archive, and sign the receipt; SWH proves byte
+  preservation, not Soranoha's independent authorization. Fix applied:
+  the receipt's meaning is narrowed (archival completeness + release-key
+  self-report); the compromise cutoff comes only from independent
+  pre-incident records — the F54 Zenodo trust-anchor deposit (which now
+  also names the genesis manifest_id) and the quarterly Zenodo deposits
+  thereafter, each naming the then-current chain head. No new wire
+  format. Honest v1 exposure recorded: compromise before the first
+  post-genesis checkpoint may leave everything after genesis
+  authorship-contested.
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;
@@ -1566,14 +1642,22 @@ SORANOHA_ROOT; the one canonicalizer, reusing existing shared test vectors),
 append-only history ledger), `yomi` (clone management + catalog/selector
 port with injectivity assert), `ori` (stages: parse, convert, render-tei,
 render-plaintext, validate-tei; renderers copied from abc). **Output
-(F52, round 10): CAS + trace-store results and an INTERNAL build index —
-NOT a public `snh-manifest/1`.** The public manifest is public-only,
-requires admission evidence, and enforces `works = admitted − withdrawn`
-— with the rights policy blocking release and assessments unmigrated,
-Slice 1 emitting one would have to either admit 17,602 unassessed works
+(F52, round 10): CAS + trace-store results — NOT a public
+`snh-manifest/1`.** The public manifest is public-only, requires
+admission evidence, and enforces `works = admitted − withdrawn` — with
+the rights policy blocking release and assessments unmigrated, Slice 1
+emitting one would have to either admit 17,602 unassessed works
 illegally or omit them and fail its own count. "Can build" is hereby
-separated from "may publish": **Slice 1 depends only on D20**, not on
-the D16.1 freeze, O1, or O3. No za (publishing, signing, CI) in this
+separated from "may publish". **The build index is a QUERY/disposable
+export over the trace store (F57): CAS bytes ← trace-store records →
+derived view. It has NO independent identity, no canonical schema, no
+retention promise — a separately persisted index would be a shadow
+publication format with its own synchronization and authority questions.
+Slice 2 consumes a transactionally consistent trace snapshot when
+assembling manifests.** **Slice 1 is READY NOW (F56)** — it depends on
+neither the D16.1 freeze, O1, O3, nor any ownership transfer (D20 as
+amended moves to Slice 2; ABC keeps publication-schema/manifest-identity
+ownership during this slice). No za (publishing, signing, CI) in this
 slice. TEI profile artifacts consumed as flake input from abc per D20.
 
 Acceptance criteria (all measurable):
@@ -1590,6 +1674,10 @@ Acceptance criteria (all measurable):
 F52.)
 
 ### Slice 2 — release semantics
+Preconditions (round 11): O3(b) + O5a ratified with reviewer boundary
+validation; the six pre-Slice-2 formats frozen (incl. the minimal
+assessment-snapshot schema, F58); the D20-as-amended AGENTS.md
+manifest-ownership update (F56).
 **Manifest assembly enters HERE (F52), on a FULLY ASSESSED FIXTURE
 corpus** — not the unassessed full corpus: `snh-manifest/1` emission per
 the frozen D16.1 spec, with real admission evidence
@@ -1652,9 +1740,12 @@ archive-verified via a receipt passing all four F12 checks, with measured
 (not assumed) archival latency recorded in the ledger.
 
 ### Slice 4 — citability layer
-Quarterly Zenodo snapshot (concept DOI + first version DOI), w3id.org/
-soranoha registration, published promise document incl. R8 tombstone
-policy + R7 validation policy + key fingerprint.
+Quarterly Zenodo snapshot (concept DOI + first version DOI) — **each
+deposit names the then-current chain head, doubling as an independent
+authorship checkpoint (F59)**; w3id.org/soranoha registration; published
+promise document incl. R8 tombstone policy + R7 validation policy +
+restated key fingerprints (the FIRST pin is the earlier F54 anchor
+deposit, not this document).
 
 ### Post-JADH2026 — retirement lanes (D6/D7)
 Archive parser-RQ; retire abc build path lane-by-lane (each lane removed
@@ -1679,11 +1770,12 @@ back by citing the previous release tag.
   section — dev, before slice 1, only AFTER the D16.1 freeze is
   re-approved (now a mechanical transcription of a standalone spec, per
   F25).
-- `snh-assessment-snapshot/1` FACTS content schema (per-contribution
-  assessment fields per the 2026-07-11 model) — dev with owner, alongside
-  the rights-assessment migration, before slice 3. Its identity,
+- `snh-assessment-snapshot/1` MINIMAL content schema (per-contribution
+  facts per the 2026-07-11 model) — dev with owner, **frozen before
+  Slice 2 and exercised on the assessed fixture (F58)**. Its identity,
   retention, resolution, and verifier semantics are already normative in
-  D16.1 (F30); only the domain field content remains.
+  D16.1 (F30). Full-corpus assessment DATA migration remains a Slice-3
+  prerequisite — schema and migration are separate obligations.
 - O3 (tombstone mutability: immutable vs amends-chain) — owner, BEFORE
   the D16.1 freeze (F31). Facilitator and round-6 reviewer both recommend
   (b); its F34 precondition is applied.
@@ -1694,10 +1786,12 @@ back by citing the previous release tag.
 - Pinned-key setup (O5a/F54): generate the two disjoint Ed25519 keys
   (release online for CI; governance offline), publish
   `keys/release.pub` + `keys/governance.pub`, AND publish the minimal
-  trust anchor (key bytes + fingerprints) on an independent immutable
-  channel BEFORE the first signed release — owner, before Slice 3.
-  Candidate channel: a small Zenodo deposit (immutable, DOI'd, already
-  in the toolchain); the fuller promise/paper restates it at Slice 4.
+  trust anchor on Zenodo (F59: the deposit carries key bytes +
+  fingerprints + the GENESIS manifest_id, making it both the first pin
+  and the first independent authorship checkpoint) BEFORE the first
+  signed release — owner, before Slice 3. Quarterly Zenodo deposits
+  thereafter double as the subsequent independent checkpoints; the
+  fuller promise/paper restates the anchor at Slice 4.
   (Replaces the round-7/8 root-ceremony and fingerprint-venue items; no
   root key or key-manifest exists in v1.)
 - `snh-archive-receipt/1` field schema (F53, seventh format) — dev,

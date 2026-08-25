@@ -5,41 +5,56 @@
   the view cannot serve is a nil/failure, never completed from any other
   source. Non-fallback is enforced, not assumed: every git invocation runs
   with --no-replace-objects and --no-lazy-fetch (replacement refs and
-  promisor fetches would silently substitute or import objects), alternate
-  object directories are rejected at construction, and the alternates
-  environment override is cleared per invocation. Live verification wraps
-  the fetched authoritative repository; archive verification wraps only the
-  archived snapshot; mirrors and clones wrap themselves."
+  promisor fetches would silently substitute or import objects), under a
+  sanitized environment with every GIT_-prefixed variable removed (inherited
+  GIT_DIR / GIT_OBJECT_DIRECTORY / GIT_ALTERNATE_OBJECT_DIRECTORIES would
+  redirect reads to a foreign object store), and bound explicitly to the git
+  directory resolved at construction; alternate object directories are
+  rejected at construction. Live verification wraps the fetched
+  authoritative repository; archive verification wraps only the archived
+  snapshot; mirrors and clones wrap themselves."
   (:require [babashka.process :as process]
             [clojure.java.io :as io]
             [clojure.string :as str]))
 
 (def ^:private hardening-flags ["--no-replace-objects" "--no-lazy-fetch"])
 
-(def ^:private hardening-env
-  {"GIT_ALTERNATE_OBJECT_DIRECTORIES" ""
-   "GIT_NO_REPLACE_OBJECTS" "1"})
+(defn- sanitized-env
+  "Copy of `base-env` with every GIT_-prefixed variable removed and object
+  replacement disabled. The subprocess environment is replaced wholesale, so
+  no inherited git redirect survives."
+  [base-env]
+  (assoc (into {}
+               (remove (fn [[k _]] (str/starts-with? (str k) "GIT_")))
+               base-env)
+         "GIT_NO_REPLACE_OBJECTS" "1"))
 
 (defn- run-git [view opts args]
   (apply process/sh
-         (merge {:dir (:dir view) :err :string :extra-env hardening-env} opts)
-         "git" (concat hardening-flags args)))
+         (merge {:dir (:dir view) :err :string :env (:env view)} opts)
+         "git" (concat (:bind view) hardening-flags args)))
 
 (defn git-view
   "View over the repository at `dir` (a work tree or a bare/git directory).
-  Throws when the repository declares alternate object directories — an
-  alternates file would make reads span more than one object store."
-  [dir]
-  (let [v {:dir (str dir)}
-        {:keys [exit out err]} (run-git v {:out :string}
-                                        ["rev-parse" "--absolute-git-dir"])]
-    (when-not (zero? exit)
-      (throw (ex-info "not a git repository" {:dir (str dir) :err err})))
-    (let [alternates (io/file (str/trim out) "objects" "info" "alternates")]
-      (when (.exists alternates)
-        (throw (ex-info "repository uses alternate object directories"
-                        {:dir (str dir) :alternates (str alternates)}))))
-    v))
+  Discovery runs under the sanitized environment; the resolved absolute git
+  directory is then bound with --git-dir on every read, so the view can only
+  ever consult that one object store. Throws when the repository declares
+  alternate object directories — an alternates file would make reads span
+  more than one object store. `base-env` defaults to the process environment
+  and is a seam for probing the sanitization."
+  ([dir] (git-view dir (into {} (System/getenv))))
+  ([dir base-env]
+   (let [v {:dir (str dir) :env (sanitized-env base-env) :bind []}
+         {:keys [exit out err]} (run-git v {:out :string}
+                                         ["rev-parse" "--absolute-git-dir"])]
+     (when-not (zero? exit)
+       (throw (ex-info "not a git repository" {:dir (str dir) :err err})))
+     (let [git-dir (str/trim out)
+           alternates (io/file git-dir "objects" "info" "alternates")]
+       (when (.exists alternates)
+         (throw (ex-info "repository uses alternate object directories"
+                         {:dir (str dir) :alternates (str alternates)})))
+       (assoc v :bind ["--git-dir" git-dir])))))
 
 (defn read-at
   "Blob bytes at `path` in `commit`'s tree, or nil when absent. Only the tree

@@ -318,6 +318,12 @@ The view's contract is COMMIT-SCOPED (F110) and NON-SUBSTITUTING
 import objects from outside the view's single object store — for a
 git-backed view, replacement refs are disabled, promisor/lazy fetches
 are disabled, and alternate object directories are rejected outright.
+Discovery and reads run under a SANITIZED environment bound to the
+view's own git directory (F166): every `GIT_`-prefixed variable is
+stripped and the git directory resolved at construction is passed
+explicitly on every invocation, so an inherited `GIT_DIR`,
+`GIT_OBJECT_DIRECTORY`, or alternates override cannot point reads at
+a foreign object store.
 It exposes reads of the
 form `read_at(C, required_path)` and `parent_of(C)`. Every manifest,
 signature, event, and artifact must be REACHABLE AT ITS PRESCRIBED
@@ -356,14 +362,16 @@ below are the verifier's cross-object additions):
   value). All other artifacts — e.g. `tei-validation` JSON bytes —
   are exact published bytes checked by hash alone; they have no
   frozen schema and no canonical form.
-- Validation-summary RE-DERIVATION (F162): the verifier consumes a
-  fixed projection of each per-work `tei-validation` record — exactly
-  `status` (string) and `validated_artifact` (a hash string whose hex
-  component must equal that work's `tei` artifact hash). It requires
-  `invalid_slugs` to EQUAL the sorted slugs whose `status` is
-  `failed`. No other field is consumed or constrained; tei-validation
-  bytes remain exact published bytes checked by hash, with no frozen
-  schema and no canonical form.
+- Validation-summary RE-DERIVATION (F162/F165): the verifier consumes
+  a fixed projection of each per-work `tei-validation` record under a
+  minimal consumed contract — the record parses as strict JSON with
+  duplicate keys rejected, `status` is exactly one of `passed`,
+  `warning`, `failed`, and `validated_artifact` is exactly
+  `sha256:<hex>` with `<hex>` equal to that work's `tei` artifact
+  hash. It requires `invalid_slugs` to EQUAL the sorted slugs whose
+  `status` is `failed`. No other field is consumed or constrained;
+  tei-validation bytes remain exact published bytes checked by hash,
+  with no frozen schema and no canonical form.
 - Semantic boundary rules (F154/F156, applied inside the §1 boundary
   decode — never via JSON Schema `format`): `corpus.upstream_origin`
   is an absolute URI with a scheme and non-empty host; every non-null
@@ -429,10 +437,12 @@ reject a HEAD not matching a valid chain head):
 - kind `event-amendment` (O3(b), owner-ratified) ⇒ changed `withdrawn` slugs equal
   the event's `entries` slugs exactly; for each, `amends ==
   predecessor.withdrawn[slug].event` (linear — no skipped or
-  overwritten corrections); the superseded event has exactly one entry
-  for that slug; each changed `withdrawn[slug].event` equals this
-  manifest's `governance_event`; withdrawn slug set, `works`, and
-  coordinates verbatim-unchanged.
+  overwritten corrections); each changed `withdrawn[slug].event`
+  equals this manifest's `governance_event`; withdrawn slug set,
+  `works`, and coordinates verbatim-unchanged. (A superseded event
+  with more than one entry per slug is unrepresentable: §1 boundary
+  decode rejects duplicate entry slugs, so no such event can enter a
+  valid chain — F167 removed the redundant per-amendment check.)
 - Mixed build/governance changes prohibited in one manifest.
 - Each `withdrawn` entry's slug appears in its governing event's
   `entries`.
@@ -464,7 +474,12 @@ comparison against an independently obtained head or checkpoint
 (F91/F96).
 
 1. Fetch Git commit C (branch head).
-2. Read manifest head H = C:`releases/HEAD`.
+2. FULLY VERIFY C with the §8 primitive and take the manifest head H
+   and the decoded head manifest from its result (F164): the fetched
+   state is trusted only after verification — an accepted-but-invalid
+   tip (e.g. a permitted fast-forward that leaves `releases/HEAD`
+   unchanged) must fail here, never satisfy the no-op decision in
+   step 3. The same rule governs reconciliation (step 7).
 3. Assemble manifest M with `prev_manifest` = H. BEFORE creating any
    commit (F158), apply the projection/derived-state decision against
    the current head: projection equal and derived content equal →

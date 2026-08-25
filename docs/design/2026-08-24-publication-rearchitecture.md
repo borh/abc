@@ -56,8 +56,12 @@ numbers live in the findings sections and Git history, not here):
   no-op/determinism decision, non-substituting hardened git view,
   real commit time, all single-object semantics in boundary decode,
   validation-summary re-derivation, exact-reason mutation tables,
-  streaming verification. Suites: 48 tests / 241 assertions green
-  locally and hermetically. Awaiting re-review.
+  streaming verification. Round 2 (F164–F167) applied: fetched head
+  verified before the no-op decision, strict two-field
+  validation-record contract, sanitized + git-dir-bound view
+  environment, unreachable superseded-entry check deleted. Suites:
+  50 tests / 249 assertions green locally and hermetically. Awaiting
+  re-review.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2520,6 +2524,48 @@ streaming simplification applied same day.
 
 Suites after the round: 48 tests / 241 assertions green locally and
 hermetically. Awaiting re-review.
+
+## Slice-2 implementation review round 2 (2026-08-26) — findings F164–F167; NOT APPROVED at 7f6718fa; all applied
+
+Verdict: the round-1 fixes are real; targeted probes found three
+boundary blockers and one safe deletion. All applied same day, one
+regression test per reproduced failure.
+
+- **F164 (build no-op trusted an unverified head — applied)** — a
+  permitted fast-forward commit that left `releases/HEAD` unchanged
+  made the next identical build return :already-published while
+  direct verification rejected that head. Fix: `publish-build!` fully
+  verifies the fetched commit with the §8 primitive and takes head +
+  decoded head manifest from its result, before the no-op decision
+  and again in reconciliation (spec §9 step 2); `head-manifest-at`
+  deleted, no duplicate decoding remains. Test: the crafted
+  fast-forward tip now fails with :head-not-advanced instead of
+  converging.
+- **F165 (validation-record contract bypassable — applied)** — an
+  unknown status string, a suffix-forged validated_artifact, and a
+  duplicate-key record all verified. Fix: the consumed projection is
+  a minimal contract — strict JSON parse with duplicate-key
+  rejection, status exactly passed | warning | failed
+  (:validation-status-unknown otherwise), validated_artifact exactly
+  `sha256:<tei-hex>` (spec §8 F162 bullet amended). Three exact-reason
+  mutation rows reproduce the probes.
+- **F166 (git view inherited foreign redirects — applied)** — an
+  external GIT_DIR or GIT_OBJECT_DIRECTORY let a view over an empty
+  repository read another repository's commits. Fix: view discovery
+  and every read run under a sanitized environment (all GIT_-prefixed
+  variables stripped, environment replaced wholesale) and are bound
+  to the git directory resolved at construction via --git-dir (spec
+  §8 view contract). Probes cover both inherited variables through
+  the construction seam.
+- **F167 (unreachable superseded-entry check — applied)** — the check,
+  its event-fetch callback, and the §8 sentence are deleted; decode's
+  entry-uniqueness rule makes a duplicate-slug predecessor event
+  unrepresentable in a valid chain (noted in §8). The subsumption
+  test is gone; a compact positive fixture keeps pinning that
+  amending one entry of a multi-entry event is legal.
+
+Suites after the round: 50 tests / 249 assertions green locally and
+hermetically. Awaiting re-review of this boundary.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

@@ -4,7 +4,8 @@
   mutation whose exact rejection reason is asserted — a deleted check turns
   its rows red. Scenario tests cover the archive report contract, the
   deficient-view failure, and git replacement-ref immunity."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.string :as str]
+            [clojure.test :refer [deftest is testing]]
             [babashka.process :as process]
             [soranoha.core.hash :as hash]
             [soranoha.snh.fixture :as fx]
@@ -50,6 +51,28 @@
   (let [{:keys [core]} (assembled {:selection-params {"config" "fixture" "round" round}}
                                   (:value head))]
     (assoc core "prev_manifest" (:hex head) "withdrawn" [] "governance_event" nil)))
+
+(defn- planted-validation-record
+  "Successor manifest + blob files where slug-a's tei-validation blob
+  carries `record-bytes` verbatim, with the manifest artifact entry kept
+  consistent so only the record's content can be rejected."
+  [{:keys [head]} ^bytes record-bytes]
+  (let [{:keys [core blobs]} (assembled {:variant "v3"
+                                         :selection-params
+                                         {"config" "fixture" "round" 3}}
+                                        (:value head))
+        hex (hash/sha256-bytes record-bytes)
+        manifest (-> (assoc core "prev_manifest" (:hex head)
+                            "withdrawn" [] "governance_event" nil)
+                     (update-in ["works" 0 "artifacts" 2]
+                                assoc "id" (str "snh:1:tei-validation:" hex)
+                                "bytes" (alength record-bytes)))]
+    {:manifest manifest :files (blob-files (assoc blobs hex record-bytes))}))
+
+(defn- slug-a-v3-tei-hex []
+  (hash/sha256-bytes (fx/work-blob-bytes "tei" slug-a "v3")))
+
+(defn- record-json ^bytes [s] (.getBytes ^String s "UTF-8"))
 
 (def build-mutations
   [{:name "merge commit carrying the old head on its second parent"
@@ -178,6 +201,46 @@
                          clone {:parents [head-commit]
                                 :base-tree-of head-commit
                                 :manifest-value value}))))}
+
+   {:name "validation record with a status outside the contract"
+    :expect :validation-status-unknown
+    :craft (fn [{:keys [clone head-commit] :as ctx}]
+             (let [bytes (record-json
+                          (str "{\"status\":\"mystery\",\"validated_artifact\":"
+                               "\"sha256:" (slug-a-v3-tei-hex) "\"}"))
+                   {:keys [manifest files]} (planted-validation-record ctx bytes)]
+               (:commit (fx/craft-release!
+                         clone {:parents [head-commit]
+                                :base-tree-of head-commit
+                                :manifest-value manifest
+                                :extra-files files}))))}
+
+   {:name "validated_artifact matching the TEI hash only as a suffix"
+    :expect :validation-artifact-mismatch
+    :craft (fn [{:keys [clone head-commit] :as ctx}]
+             (let [bytes (record-json
+                          (str "{\"status\":\"passed\",\"validated_artifact\":"
+                               "\"forged-sha256:" (slug-a-v3-tei-hex) "\"}"))
+                   {:keys [manifest files]} (planted-validation-record ctx bytes)]
+               (:commit (fx/craft-release!
+                         clone {:parents [head-commit]
+                                :base-tree-of head-commit
+                                :manifest-value manifest
+                                :extra-files files}))))}
+
+   {:name "validation record with duplicate status keys"
+    :expect :validation-record-unreadable
+    :craft (fn [{:keys [clone head-commit] :as ctx}]
+             (let [bytes (record-json
+                          (str "{\"status\":\"failed\",\"status\":\"passed\","
+                               "\"validated_artifact\":\"sha256:"
+                               (slug-a-v3-tei-hex) "\"}"))
+                   {:keys [manifest files]} (planted-validation-record ctx bytes)]
+               (:commit (fx/craft-release!
+                         clone {:parents [head-commit]
+                                :base-tree-of head-commit
+                                :manifest-value manifest
+                                :extra-files files}))))}
 
    {:name "works out of order (single-object rule enforced on the chain path)"
     :expect :works-not-sorted-unique
@@ -485,11 +548,9 @@
                                                      (blob-files blobs))})]
     (is (= :withdrawal-works-mismatch (reason-at clone commit)))))
 
-(deftest superseded-single-entry-rule-is-subsumed-by-entry-uniqueness
-  ;; an event with several distinct slugs still has exactly one entry per
-  ;; slug, so amending one of them is legal; a duplicate-slug event can no
-  ;; longer enter a valid chain because boundary decode rejects it — the
-  ;; verifier's check remains as defense in depth
+(deftest amending-one-entry-of-a-multi-entry-event-is-legal
+  ;; a withdrawal covering several slugs may later be amended for a single
+  ;; slug; the untouched entries keep their original governing event
   (let [{:keys [clone]} (fx/make-repos!)]
     (fx/publish! clone base)
     (is (= :published
@@ -556,6 +617,29 @@
         "a replacement ref must not substitute the commit under verification")
     (process/sh {:dir clone :out :string :err :string}
                 "git" "replace" "-d" bad)))
+
+(deftest inherited-git-redirects-cannot-widen-the-view
+  ;; GIT_DIR / GIT_OBJECT_DIRECTORY in the inherited environment would point
+  ;; reads at a foreign object store; view construction strips every
+  ;; GIT_-prefixed variable and binds the resolved git directory explicitly
+  (let [{:keys [dir clone head-commit]} (build-ctx)
+        foreign-git-dir (str/trim (:out (process/sh {:dir clone :out :string
+                                                     :err :string}
+                                                    "git" "rev-parse"
+                                                    "--absolute-git-dir")))
+        empty-repo (str dir "/empty")
+        _ (process/sh {:out :string :err :string} "git" "init" "-q" empty-repo)
+        poisoned (fn [k v] (assoc (into {} (System/getenv)) k v))]
+    (testing "the view's own store still serves reads"
+      (is (view/commit-exists? (view/git-view clone) head-commit)))
+    (testing "GIT_DIR redirect"
+      (let [v (view/git-view empty-repo (poisoned "GIT_DIR" foreign-git-dir))]
+        (is (not (view/commit-exists? v head-commit)))))
+    (testing "GIT_OBJECT_DIRECTORY redirect"
+      (let [v (view/git-view empty-repo
+                             (poisoned "GIT_OBJECT_DIRECTORY"
+                                       (str foreign-git-dir "/objects")))]
+        (is (not (view/commit-exists? v head-commit)))))))
 
 (deftest archive-verification-is-a-total-report
   (let [{:keys [clone head-commit init-commit]} (build-ctx)

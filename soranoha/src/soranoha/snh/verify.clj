@@ -19,13 +19,14 @@
   archive-verification wraps the primitive into a total report over a
   readable view: acquisition failures throw; a readable view always yields
   {:result :success | :failed}."
-  (:require [charred.api :as json]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [soranoha.core.hash :as hash]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.view :as view])
-  (:import (java.util Arrays)))
+  (:import (java.util Arrays)
+           (tools.jackson.core StreamReadFeature)
+           (tools.jackson.databind.json JsonMapper)))
 
 (def head-path "releases/HEAD")
 
@@ -108,22 +109,35 @@
 
 (defn projection [manifest] (select-keys manifest projection-keys))
 
+(def ^:private ^JsonMapper strict-record-mapper
+  (-> (JsonMapper/builder)
+      (.enable (into-array StreamReadFeature
+                           [StreamReadFeature/STRICT_DUPLICATE_DETECTION]))
+      (.build)))
+
+(def ^:private validation-statuses #{"passed" "warning" "failed"})
+
 (defn- validation-record
-  "Parse the consumed projection of one tei-validation record: {status,
-  validated_artifact}. tei-validation bytes are exact published bytes
-  checked by hash; only these two fields are consumed, and only they are
-  required."
+  "Consumed contract of one tei-validation record: strict JSON (duplicate
+  keys rejected at parse), status exactly passed | warning | failed, and a
+  string validated_artifact. Only these two fields are consumed; the bytes
+  themselves remain exact published bytes checked by hash. Returns
+  {:status <string> :validated-artifact <string>}."
   [commit slug ^bytes blob]
-  (let [record (try (json/read-json (String. blob "UTF-8"))
-                    (catch Exception e
-                      (fail! :validation-record-unreadable
-                             {:commit commit :slug slug :cause (ex-message e)})))]
-    (when-not (and (map? record)
-                   (string? (get record "status"))
-                   (string? (get record "validated_artifact")))
-      (fail! :validation-record-unreadable
-             {:commit commit :slug slug}))
-    record))
+  (let [node (try (.readTree strict-record-mapper blob)
+                  (catch Exception e
+                    (fail! :validation-record-unreadable
+                           {:commit commit :slug slug :cause (ex-message e)})))
+        field (fn [name] (let [f (.get node name)]
+                           (when (and (some? f) (.isTextual f)) (.textValue f))))
+        status (field "status")
+        validated (field "validated_artifact")]
+    (when-not (and (.isObject node) status validated)
+      (fail! :validation-record-unreadable {:commit commit :slug slug}))
+    (when-not (contains? validation-statuses status)
+      (fail! :validation-status-unknown
+             {:commit commit :slug slug :status status}))
+    {:status status :validated-artifact validated}))
 
 (defn- check-works-blobs!
   "Blob presence/hash/length for every per-work artifact, plus the
@@ -154,13 +168,13 @@
                                  by-type)
                      record (validation-record commit slug (get blobs "tei-validation"))
                      tei-hex (id->hex (get-in by-type ["tei" "id"]))]
-               :when (do (when-not (str/ends-with? (get record "validated_artifact")
-                                                   tei-hex)
+               :when (do (when-not (= (:validated-artifact record)
+                                      (str "sha256:" tei-hex))
                            (fail! :validation-artifact-mismatch
                                   {:commit commit :slug slug
-                                   :validated (get record "validated_artifact")
+                                   :validated (:validated-artifact record)
                                    :tei tei-hex}))
-                         (= "failed" (get record "status")))]
+                         (= "failed" (:status record)))]
            slug))]
     (when-not (= (get-in manifest ["validation_summary" "invalid_slugs"]) failed)
       (fail! :validation-summary-mismatch
@@ -203,9 +217,8 @@
 
 (defn- check-transition!
   "Chain rules between a manifest and its predecessor. `events` is the
-  younger manifest's decoded event map (id -> value); `superseded-of` fetches
-  an event value by id for amendment-linearity checks."
-  [commit manifest predecessor events superseded-of]
+  younger manifest's decoded event map (id -> value)."
+  [commit manifest predecessor events]
   (let [wd (withdrawn-map manifest)
         pwd (withdrawn-map predecessor)
         gov (get manifest "governance_event")]
@@ -249,12 +262,8 @@
                 (when-not (= amends (get pwd slug))
                   (fail! :amendment-not-linear {:commit commit :slug slug}))
                 (when-not (= gov (get wd slug))
-                  (fail! :withdrawn-entry-wrong-event {:commit commit :slug slug}))
-                (let [superseded (superseded-of amends)]
-                  (when-not (= 1 (count (filter #(= slug (get % "slug"))
-                                                (get superseded "entries"))))
-                    (fail! :superseded-event-not-single-entry
-                           {:commit commit :slug slug})))))))))))
+                  (fail! :withdrawn-entry-wrong-event
+                         {:commit commit :slug slug}))))))))))
 
 (defn- check-genesis! [commit manifest]
   (when-not (nil? (get manifest "governance_event"))
@@ -312,11 +321,8 @@
                        :chain chain
                        :governance-events gov-ids
                        :chain-length (count chain)})
-                  (let [pm (decoded-manifest v p h)
-                        superseded-of (fn [event-id]
-                                        (:value (decoded-artifact
-                                                 v c event-id "governance-event")))]
-                    (check-transition! c m pm events superseded-of)
+                  (let [pm (decoded-manifest v p h)]
+                    (check-transition! c m pm events)
                     (recur p h pm chain gov-ids)))))))))))
 
 (def verifier-version "snh-verify/1")

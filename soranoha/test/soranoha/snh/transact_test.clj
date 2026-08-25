@@ -131,6 +131,23 @@
            second-run))
     (is (= 1 (count (:chain (verified-chain clone)))))))
 
+(deftest fetched-head-is-verified-before-the-no-op-decision
+  ;; a fast-forward commit that leaves releases/HEAD unchanged is accepted by
+  ;; the origin's receive rules but is not a valid publication commit; the
+  ;; next identical build must reject the fetched state rather than converge
+  ;; on :already-published
+  (let [{:keys [clone]} (fx/make-repos!)
+        _ (fx/publish! clone base)
+        head-commit (fx/head-of clone)
+        stray (repo/write-commit!
+               clone {:parents [head-commit]
+                      :base-tree-of head-commit
+                      :files {"attic/note" (.getBytes "x" "UTF-8")}})]
+    (is (= :ok (repo/push! clone fx/branch stray head-commit)))
+    (is (= :head-not-advanced
+           (try (fx/publish! clone base)
+                (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))))
+
 (deftest uncontended-same-projection-divergence-halts
   ;; same coordinates, different derived bytes: a determinism defect halts
   ;; before any commit is created, even with no competing publisher

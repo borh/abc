@@ -10,8 +10,7 @@
   manifest already executes it, and halts for fresh offline authorization
   when it no longer validates. Assembled manifests are discarded on
   rejection, never rebased; events are never rewritten or re-signed."
-  (:require [soranoha.core.hash :as hash]
-            [soranoha.snh.decode :as decode]
+  (:require [soranoha.snh.decode :as decode]
             [soranoha.snh.repo :as repo]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.verify :as verify]
@@ -44,19 +43,6 @@
          verify/head-path (sign/hex64-lf-bytes manifest-hex)}
         (map (fn [[hex bytes]] [(verify/blob-path hex) bytes]))
         blobs))
-
-(defn- head-manifest-at
-  "Decoded head manifest at commit `c`, or nil when the head is zero."
-  [v c]
-  (let [head (sign/parse-hex64-lf
-              (or (view/read-at v c verify/head-path)
-                  (fail! :missing-head {:commit c})))]
-    (when-not (= sign/zero-head-hex head)
-      {:hex head
-       :value (:value (decode/decode
-                       "release-manifest"
-                       (or (view/read-at v c (verify/manifest-path head))
-                           (fail! :missing-head-manifest {:commit c :head head}))))})))
 
 (defn- check-totality!
   "The assembler-side totality check: the snapshot's candidate set must equal
@@ -110,8 +96,15 @@
   [{:keys [clone branch pinned-keys assemble sign-release push-fn]
     :or {push-fn repo/push!}}]
   (let [v (view/git-view clone)
+        ;; fetched state is trusted only after full verification; the
+        ;; verifier's result already carries the decoded head manifest
+        verified-state (fn [c]
+                         (let [r (verify/verify-repository-at v c pinned-keys)]
+                           (when-not (:empty r)
+                             {:hex (:head r) :value (:head-manifest r)
+                              :chain (:chain r)})))
         c (or (repo/fetch! clone branch) (fail! :no-publication-branch {:branch branch}))
-        head (head-manifest-at v c)
+        head (verified-state c)
         {:keys [core blobs selection]} (assemble (some-> head :value))
         manifest (build-manifest core head (or (:hex head) sign/zero-head-hex))
         _ (check-totality! blobs manifest selection)]
@@ -134,26 +127,23 @@
            _ (verify/verify-repository-at v commit pinned-keys)
            outcome (push-fn clone branch commit c)
            reconcile
-           (fn []
+           (fn [head2]
              ;; current-state reconciliation: discard the assembled manifest,
-             ;; fully verify the accepted head, recompute from it alone
-             (let [c2 (repo/fetch! clone branch)
-                   _ (verify/verify-repository-at v c2 pinned-keys)
-                   head2 (head-manifest-at v c2)
-                   desired2 (assemble (some-> head2 :value))
+             ;; recompute from the verified accepted head alone
+             (let [desired2 (assemble (some-> head2 :value))
                    manifest2 (build-manifest (:core desired2) head2
                                              (or (:hex head2) sign/zero-head-hex))]
                (check-totality! (:blobs desired2) manifest2 (:selection desired2))
                (or (decide-against-head manifest2 head2)
-                   {:outcome :requeue :head (:hex head2)})))]
+                   {:outcome :requeue :head (:hex head2)})))
+           refetched-state (fn [] (verified-state (repo/fetch! clone branch)))]
        (case outcome
          :ok {:outcome :published :manifest-id hex :commit commit}
-         :unknown (let [c2 (repo/fetch! clone branch)
-                        result (verify/verify-repository-at v c2 pinned-keys)]
-                    (if (some #{hex} (:chain result))
+         :unknown (let [head2 (refetched-state)]
+                    (if (some #{hex} (:chain head2))
                       {:outcome :published :manifest-id hex}
-                      (reconcile)))
-         :rejected (reconcile))))))
+                      (reconcile head2)))
+         :rejected (reconcile (refetched-state)))))))
 
 (defn- successor-for-event
   "Construct the successor manifest executing `event` on `head-manifest`, or

@@ -1997,6 +1997,31 @@ Spec §7/§10/§11 and the O5a proposition amended accordingly; the F54
 setup task now publishes `keys/governance-1.pub` +
 `keys/governance-2.pub` and fingerprints of every member.
 
+Key-set lifecycle (answering "how will adding/removing keys work?" —
+operational, NON-NORMATIVE; the spec deliberately defines no in-band
+mechanism):
+- BEFORE the first signed release: composition is free — nothing is
+  pinned until the trust-anchor deposit + discovery-channel
+  publication.
+- PLANNED change after release (add a member, retire a device): a new
+  TRUST EPOCH executed out-of-band — publish the new fingerprint set
+  via the F75 discovery channel + a new Zenodo deposit under the SAME
+  concept DOI, update `keys/`, verifiers re-pin. The channel and the
+  concept DOI are the durable roots that survive epochs. Honest
+  limit: cross-epoch verification of old signatures is DOCUMENTARY
+  (the checkpoint chain records each epoch's fingerprints), not
+  cryptographic — acceptable for rare deliberate epochs only.
+- Distrusted key: not "removal" but COMPROMISE — halt, freeze at the
+  last checkpoint, out-of-band notice, successor epoch designed
+  deliberately (F49/F55).
+- Loss of ONE governance device: no protocol action; the other member
+  continues; restore redundancy via a planned epoch at leisure.
+- "Old key signs new key" is the key-manifest protocol (rollback
+  protection, validity windows, history root — F27–F46), parked
+  NON-FROZEN in the contingency appendix. Wanting routine add/remove
+  IS the O5a activation trigger: design and exercise the successor
+  protocol before promising it, never mid-incident.
+
 Owner-cadence facts (answering "just once per quarter?"): the
 governance keys are used ONLY to sign withdrawal/amendment events —
 event-driven and possibly never in a given year; nothing scheduled.

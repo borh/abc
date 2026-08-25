@@ -21,21 +21,26 @@ numbers live in the findings sections and Git history, not here):
   preservation / Zenodo — independent authorship checkpoint.
 - **Slices 0–1: READY NOW** — no owner action, no freeze dependency;
   the kernel is policy-blind (F52/F60).
-- Before Slice 2: owner ratifies O3 (recommendation: b); dev authors
-  the four hand-written JSON Schemas + table-driven conformance
-  vectors for the freeze review; the AGENTS.md manifest-ownership
-  update (D20 as amended).
-- Before Slice 3: O1 + full-corpus assessment data; the deployment
-  prerequisites below; the F75 pre-release discovery channel named.
-- Owner decisions OPEN: O1, O3 (recommendation: b), F75 channel.
-  Recently ratified: O5a (2026-08-25 — fixed pinned key sets per
-  chain, two governance hardware keys, degraded/halt semantics), O2a
-  (2026-08-25 — Forgejo authoritative origin architecture), F83
-  (dateless naming).
+- Before Slice 2 (dev work only — no owner decision remains): the
+  four hand-written JSON Schemas + table-driven conformance vectors
+  for the freeze review (including the minimal assessment-snapshot
+  content schema, the one open spec item); the AGENTS.md
+  manifest-ownership update (D20 as amended).
+- Before Slice 3: full-corpus assessment data; the deployment
+  prerequisites below; the F75 ORCID-linked record published.
+- Owner decisions: ALL RATIFIED (2026-08-25) — O1 (assessment-based
+  admission with the round-4 wording), O2a (Forgejo authoritative
+  origin architecture), O3(b) (amendable-but-permanent governing
+  events), O5a (fixed pinned key sets per chain, two governance
+  hardware keys, degraded/halt semantics), F83 (dateless naming),
+  F75 channel = ORCID-linked record. Remaining owner item: private
+  evidence-record retention policy, before the first real withdrawal.
 - Deployment prerequisites (operational tasks, NOT owner decisions —
   F108): O2b hostname/configuration + the F12 growth/SWH probes on
-  the named origin; key generation + the F54/F70 credential-separated
-  Zenodo trust-anchor deposit BEFORE the first signed release.
+  the named origin; procurement of two firmware-5.7+ YubiKeys (the
+  owner's existing devices are 5.4.3 — below the PIV-Ed25519 floor);
+  key generation + the F54/F70 credential-separated Zenodo
+  trust-anchor deposit BEFORE the first signed release.
 Owner: Bor Hodošček
 Process: hammock-driven-design decision interview, 2026-08-24/25
 
@@ -719,8 +724,7 @@ Decision trail (normative text: the spec section cited):
 - **Governance event `{schema, kind, entries}`** — spec §4. Origin
   F40; F62 collapsed event+tombstone; F82 removed
   `authority`/`evidence_hash`; F68 froze the linear amendment binding;
-  O3 (a: immutable / b: event-amendment) still pending — facilitator
-  and reviewer recommend (b).
+  O3(b) event-amendment owner-RATIFIED 2026-08-25.
 - **Admission evidence pair** — spec §5. F24/F30 facts-vs-decisions
   separation; F35 `not-evaluated` ≠ `undetermined`; F38 `works` =
   admitted − withdrawn; F81→F87 totality as an assembler invariant.
@@ -739,8 +743,8 @@ Decision trail (normative text: the spec section cited):
   current-state reconciliation.
 - **Naming, compromise semantics, checkpoints** — spec §10.
   F49/F55/F59/F70 compromise semantics; F75 pre-release discovery
-  channel; F76 dated name superseded by F83 dateless canonical id
-  (owner ratification pending).
+  channel (owner named the ORCID-linked record, 2026-08-25); F76
+  dated name superseded by F83 dateless canonical id (owner-ratified).
 
 ### F14 → D21: Rights/registry admission restored to the boundary
 abc's fail-closed rights authority exists and currently blocks release
@@ -768,14 +772,14 @@ D3 marked resolved-by-D13; Q6/Q7 marked resolved; R5/R11 marked Superseded
 around remote compare-and-append + verified receipts + admission; "sources
 in agent report" headings redirected to the inlined sources list.
 
-### Owner decisions OPEN (O1/O2 block Slice 3, not Slices 0–2; O3 blocks the D16.1 freeze per F31)
+### Owner decisions (ALL RATIFIED as of 2026-08-25; O1/O2 gated Slice 3, O3 gated the D16.1 freeze per F31)
 - **O1 — admission rule.** Round-3 review VETOED the two-flag (なし/なし)
   rule: the in-repo rights-remediation design (abc/docs/superpowers/specs/
   2026-07-11-rights-assessment-remediation-design.md) states the catalog
   Boolean is a source assertion that must not be promoted to a legal
   assessment, work and person assessments are independent facts, and
   Aozora itself warns translations can retain independent rights.
-  **Adopted rule (reviewer text, owner ratification pending):** public
+  **Adopted rule (reviewer text; owner ratification recorded below):** public
   admission requires a versioned assessment for the exact work/edition
   and every rights-relevant contribution, yielding public-release-allowed
   for the declared jurisdiction and effective date, with recorded basis;
@@ -793,6 +797,13 @@ in agent report" headings redirected to the inlined sources list.
   assessment model's statuses remain facts (public-domain, in-copyright,
   undetermined, not-evaluated — F35/F42); the rule maps facts to
   admission.**
+  **RATIFIED by owner 2026-08-25 with the required round-4 wording:
+  `public-release-allowed` is the INCLUSION RULE'S decision, not a new
+  assessment_status value; the assessment facts remain {public-domain,
+  in-copyright, undetermined, not-evaluated}. Consequence accepted:
+  the first public release's scope is the set of works with completed
+  assessments — the assessment-data migration is on the Slice-3
+  critical path.**
 - **O2 — authoritative public origin (wording approved round 4; host
   unreviewed).** "An owner-controlled public HTTPS Git origin, anonymously
   readable and writable only by authenticated publishers, hosts the
@@ -866,7 +877,12 @@ in agent report" headings redirected to the inlined sources list.
     reason_code is disproportionate ("option (a) makes an ordinary typo
     a wire-version event" — round 6). Amendments produce distinct
     manifests by content (F61), so no operation-identity machinery is
-    needed. Owner ratification remains the freeze gate.
+    needed.
+  **(b) RATIFIED by owner 2026-08-25. The `event-amendment` kind
+  exists in wire v1 (spec §4); the freeze's decision gate is closed —
+  the freeze review now waits only on the executable schemas +
+  conformance vectors and the minimal assessment-snapshot content
+  schema.**
 - **O5a — v1 trust boundary (REWRITTEN per F111, round 21 — the prior
   entry mixed the owner's trust-policy choice with D16 format-freeze
   mechanics, implementation obligations, and deleted design history;
@@ -2155,12 +2171,15 @@ warranted; O3(b) not reopened; Slices 0–1 ready.
 
 ## Pre-implementation checks (REDUCED AGAIN per round 26 — no separate probe projects; surviving checks fold into existing slice acceptance)
 
-- **Early hardware check (owner; READ-ONLY):** `ykman info` on both
-  YubiKeys — firmware ≥ 5.7.0 confirms PIV Ed25519 capability;
-  nothing is written, no slot is touched. The standalone signing
-  smoke is DELETED (F139 — it duplicated the F117 ceremony, where
-  both REAL governance keys sign the fixed vector; throwaway key
-  creation and PIV-slot mutation avoided).
+- **Early hardware check (owner; READ-ONLY) — RESULT RECORDED
+  2026-08-25:** the owner's existing YubiKeys are firmware 5.4.3,
+  below the 5.7.0 PIV-Ed25519 floor (firmware is not
+  field-upgradeable). Consequence: two current-generation YubiKeys
+  (5.7+) are a Slice-3 procurement prerequisite; the ceremony runs on
+  the NEW devices. The standalone signing smoke remains DELETED
+  (F139 — it duplicated the F117 ceremony, where both REAL governance
+  keys sign the fixed vector; throwaway key creation and PIV-slot
+  mutation avoided).
 - **F12 growth probe stays the existing Slice-3 gate, run on REAL
   bytes (F140):** no synthetic harness — git packing depends on
   actual byte similarity, not historically sampled change rates.
@@ -2335,7 +2354,8 @@ F52.)
 
 ### Slice 2 — release semantics
 Preconditions (round 11): O3(b) + O5a ratified with reviewer boundary
-validation; the FOUR pre-Slice-2 formats frozen (incl. the minimal
+validation (BOTH SATISFIED — owner-ratified 2026-08-25); the FOUR
+pre-Slice-2 formats frozen (incl. the minimal
 assessment-snapshot schema, F58) plus the F69 signature/key encoding
 conformance vectors; the D20-as-amended AGENTS.md manifest-ownership
 update (F56).
@@ -2363,14 +2383,15 @@ assessment snapshot → changed admission evidence, distinct manifest_id,
 scheduled-build comparison does NOT no-op — F24's scenario re-tested
 under the F61 protocol), the F61 lost-ack test (unknown push result →
 reachability check → exactly-once publication), and the governance
-operations: a withdrawal with NO upstream change and — if O3(b) is
-ratified — an event-amendment (amends chain verified; withdrawn set
+operations: a withdrawal with NO upstream change and an
+event-amendment (O3(b) ratified; amends chain verified; withdrawn set
 unchanged); each yields a distinct manifest_id via changed content.
 
 ### Slice 3 — za publishing + CI (rewritten per D17.1/D18.1/D21)
-Preconditions: O1 ratified (with the round-4 wording: public-release-
-allowed is the inclusion rule's decision) AND the assessment evidence
-committed as versioned data (F24 snapshot source); O2 host named and
+Preconditions: O1 RATIFIED (owner, 2026-08-25, with the round-4
+wording: public-release-allowed is the inclusion rule's decision) —
+the assessment evidence committed as versioned data (F24 snapshot
+source) remains outstanding; O2 host named and
 F12-probed; rights admission consumed-from-abc or transferred (F14c);
 F12 repo-growth probe run against the chosen origin; O5a signing in
 place (F119 reconciliation): ONE online CI RELEASE key + TWO offline
@@ -2476,9 +2497,8 @@ back by citing the previous release tag.
   retention, resolution, and verifier semantics are already normative in
   the protocol spec §5 (F30). Full-corpus assessment DATA migration remains a Slice-3
   prerequisite — schema and migration are separate obligations.
-- O3 (governing-event mutability: immutable vs event-amendment, recast
-  by F62) — owner, BEFORE the D16.1 freeze (F31). Facilitator and
-  reviewer both recommend (b).
+- ~~O3~~ RATIFIED (b) by owner 2026-08-25 — the event-amendment kind
+  exists in wire v1; the freeze's decision gate is closed.
 - Private evidence record's handling/retention policy — owner, before
   the first real withdrawal. (Per F82 the public `evidence_hash`
   commitment is removed from v1; the record is purely operational until
@@ -2487,7 +2507,15 @@ back by citing the previous release tag.
   F116/F117 round 22): generate the RELEASE key (online, CI) and TWO
   GOVERNANCE keys — each generated ON its own YubiKey (PIV Ed25519,
   firmware ≥ 5.7.0; FIDO2 resident keys CANNOT satisfy the
-  raw-Ed25519 wire contract), devices stored separately. The ceremony
+  raw-Ed25519 wire contract), devices stored separately. **Owner
+  reported 2026-08-25: the existing YubiKeys are firmware 5.4.3 —
+  below the 5.7.0 PIV-Ed25519 floor, and YubiKey firmware is not
+  field-upgradeable; no applet on 5.4.3 (PIV, FIDO2, or OpenPGP)
+  produces the spec-§6 raw detached Ed25519 over exact message bytes.
+  Consequence: TWO current-generation YubiKeys (firmware 5.7+) must
+  be procured before the ceremony — a Slice-3 deployment
+  prerequisite; the 5.4.3 devices are unaffected for their existing
+  SSH/FIDO2 uses and play no role in v1 signing.** The ceremony
   EXPLICITLY configures PIN + touch policy (touch defaults can be
   Never) and has BOTH governance devices sign a fixed protocol
   conformance vector (F117). Key bytes + fingerprints go in the
@@ -2505,13 +2533,12 @@ back by citing the previous release tag.
   promise/paper restates the anchor at Slice 4.
   (Replaces the round-7/8 root-ceremony and fingerprint-venue items; no
   root key or key-manifest exists in v1.)
-- **F75 pre-release discovery channel** — owner names a concrete,
-  already-trusted channel carrying the Zenodo concept DOI + both
-  fingerprints BEFORE the first signed release (candidates: Osaka
-  University researcher page, ORCID-linked record, manually distributed
-  verifier config); the Slice-4 promise document restates it. The
-  Slice-4 paper CANNOT be the first pin (it postdates the first
-  release).
+- **F75 pre-release discovery channel — NAMED by owner 2026-08-25:
+  the ORCID-linked record.** Remaining obligation (owner, before the
+  first signed release): publish the ORCID-linked record carrying the
+  Zenodo concept DOI + both governance-key fingerprints; the Slice-4
+  promise document restates it. The Slice-4 paper CANNOT be the first
+  pin (it postdates the first release).
 - ~~`snh-archive-receipt/1` field schema~~ DELETED round 12 (F63):
   archive-verified is a reproducible predicate with a disposable report;
   no receipt format exists.

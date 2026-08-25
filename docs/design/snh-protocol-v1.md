@@ -2,9 +2,9 @@
 
 Status: **NORMATIVE DRAFT — the sole normative source, effective now
 (F84).** The D16.1 freeze changes stability (no further changes without
-a decision-log entry), not precedence. Open items marked inline: the
-owner's O3 choice and the assessment-snapshot content fields (F83 and
-O5a are owner-ratified). Per F80, the FROZEN objects are the executable
+a decision-log entry), not precedence. One open item marked inline:
+the assessment-snapshot content fields (F83, O5a, O3(b), and O1 are
+owner-ratified). Per F80, the FROZEN objects are the executable
 JSON Schemas plus the conformance vectors (§11). Authority split
 (F88): the JSON Schemas govern STRUCTURE; this document governs
 SEMANTIC and STATE invariants; the conformance vectors demonstrate
@@ -97,9 +97,10 @@ encoding.)
 - `entries` is non-empty with unique slugs. In a `withdrawal` event NO
   entry has `amends`; in an `event-amendment` event EVERY entry has
   `amends` (the superseded event's artifact id).
-- **[O3-PENDING]** The `event-amendment` kind exists only under owner
-  option (b). Under option (a) it does not exist and corrections
-  require wire v2.
+- The `event-amendment` kind exists per O3(b) — owner-RATIFIED
+  2026-08-25 (amendable-but-permanent: a governing event id changes
+  only via an audited `amends` chain; withdrawal itself never
+  reverses).
 - Signed by the GOVERNANCE key (see §7). Stored in the release commit at
   `governance/<hex>.json` (convenience copy; CAS blob authoritative)
   with detached signature `governance/<hex>.sig`.
@@ -325,7 +326,7 @@ reject a HEAD not matching a valid chain head):
   verbatim; publication coordinates (corpus, toolchain, admission,
   selection_params) equal the predecessor's; the only `works` changes
   are the affected slugs' removals.
-- kind `event-amendment` (O3(b) only) ⇒ changed `withdrawn` slugs equal
+- kind `event-amendment` (O3(b), owner-ratified) ⇒ changed `withdrawn` slugs equal
   the event's `entries` slugs exactly; for each, `amends ==
   predecessor.withdrawn[slug].event` (linear — no skipped or
   overwritten corrections); the superseded event has exactly one entry

@@ -117,27 +117,40 @@
 
 (def ^:private validation-statuses #{"passed" "warning" "failed"})
 
-(defn- validation-record
-  "Consumed contract of one tei-validation record: strict JSON (duplicate
-  keys rejected at parse), status exactly passed | warning | failed, and a
-  string validated_artifact. Only these two fields are consumed; the bytes
-  themselves remain exact published bytes checked by hash. Returns
-  {:status <string> :validated-artifact <string>}."
-  [commit slug ^bytes blob]
+(defn consumed-validation-record
+  "The one consumed contract of a tei-validation record, shared by the
+  assembler (summary derivation) and the verifier (summary re-derivation):
+  strict JSON with duplicate keys rejected at parse, status exactly
+  passed | warning | failed, and a string validated_artifact. Only these
+  two fields are consumed; the bytes themselves remain exact published
+  bytes checked by hash. Returns {:status :validated-artifact}; throws
+  ex-info with :reason :validation-record-unreadable or
+  :validation-status-unknown."
+  [^bytes blob]
   (let [node (try (.readTree strict-record-mapper blob)
                   (catch Exception e
-                    (fail! :validation-record-unreadable
-                           {:commit commit :slug slug :cause (ex-message e)})))
+                    (throw (ex-info "validation record unreadable"
+                                    {:reason :validation-record-unreadable
+                                     :cause (ex-message e)}))))
         field (fn [name] (let [f (.get node name)]
                            (when (and (some? f) (.isTextual f)) (.textValue f))))
         status (field "status")
         validated (field "validated_artifact")]
     (when-not (and (.isObject node) status validated)
-      (fail! :validation-record-unreadable {:commit commit :slug slug}))
+      (throw (ex-info "validation record unreadable"
+                      {:reason :validation-record-unreadable})))
     (when-not (contains? validation-statuses status)
-      (fail! :validation-status-unknown
-             {:commit commit :slug slug :status status}))
+      (throw (ex-info "validation status unknown"
+                      {:reason :validation-status-unknown :status status})))
     {:status status :validated-artifact validated}))
+
+(defn- validation-record
+  [commit slug ^bytes blob]
+  (try (consumed-validation-record blob)
+       (catch clojure.lang.ExceptionInfo e
+         (fail! (:reason (ex-data e))
+                (merge {:commit commit :slug slug}
+                       (dissoc (ex-data e) :reason))))))
 
 (defn- check-works-blobs!
   "Blob presence/hash/length for every per-work artifact, plus the

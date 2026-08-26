@@ -126,7 +126,12 @@
                  (get report "excluded")))
           (is (= [{"slug" (slug-of unevaluated)
                    "reason_code" "not-fully-evaluated"}]
-                 (get report "quarantined")))))
+                 (get report "quarantined")))
+          (testing "inclusion_rule_hash binds the executable rule value"
+            (is (= (hash/sha256-canonical-json za/inclusion-rule)
+                   (get report "inclusion_rule_hash")))
+            (is (= (get za/inclusion-rule "id")
+                   (get report "inclusion_rule_id"))))))
 
       (testing "include-and-flag: the invalid work publishes and is flagged"
         (is (some #(= (slug-of flagged) (get % "slug")) (get head "works")))

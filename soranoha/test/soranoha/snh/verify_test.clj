@@ -660,6 +660,23 @@
       (is (thrown-with-msg? clojure.lang.ExceptionInfo #"linked worktree"
                             (view/git-view worktree))))))
 
+(deftest consumed-validation-record-is-one-shared-contract
+  ;; the pure checker both the assembler's summary derivation and the
+  ;; verifier's re-derivation call
+  (let [rec (fn [^String s] (.getBytes s "UTF-8"))
+        reason (fn [s] (try (verify/consumed-validation-record (rec s))
+                            (catch clojure.lang.ExceptionInfo e
+                              (:reason (ex-data e)))))]
+    (is (= {:status "passed" :validated-artifact "sha256:ab"}
+           (verify/consumed-validation-record
+            (rec "{\"status\":\"passed\",\"validated_artifact\":\"sha256:ab\",\"timing\":1.5}")))
+        "unconsumed fields, including floats, stay unconstrained")
+    (is (= :validation-status-unknown
+           (reason "{\"status\":\"mystery\",\"validated_artifact\":\"x\"}")))
+    (is (= :validation-record-unreadable
+           (reason "{\"status\":\"failed\",\"status\":\"passed\",\"validated_artifact\":\"x\"}")))
+    (is (= :validation-record-unreadable (reason "[]")))))
+
 (deftest archive-verification-is-a-total-report
   (let [{:keys [clone head-commit init-commit]} (build-ctx)
         v (view/git-view clone)

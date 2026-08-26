@@ -64,9 +64,12 @@ numbers live in the findings sections and Git history, not here):
   (common dir must equal git dir). **§8/§9 boundary APPROVED
   2026-08-26 at d7e80a22.** Manifest assembly + F5 delta oracle
   implemented against the real kernel (soranoha.za.assemble +
-  fixture-corpus/oracle acceptance — own review pending; see the
-  Slice-2 manifest-assembly section). Suites: 55 tests / 285
-  assertions green locally and hermetically.
+  fixture-corpus/oracle acceptance); assembly-review round 4
+  (F169–F173) applied — executable inclusion rule, early-cutoff
+  persons value, shared validation-record contract, fail-closed
+  toolchain identity, source-bundle-identity clarification,
+  oracle-complete run report — awaiting re-review. Suites: 56 tests /
+  291 assertions green locally and hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2669,6 +2672,67 @@ Suites after this work: 55 tests / 285 assertions green locally and
 hermetically. The F5 second-upstream-revision acceptance runs on the
 fixture corpus; the production run at a second real aozorabunko
 revision remains a Slice-3-adjacent operation on the same machinery.
+
+## Slice-2 implementation review round 4 (2026-08-26) — findings F169–F173; NOT APPROVED at 8abef9c7; all applied
+
+Verdict on the assembly increment: transaction/verifier integration
+strong; five boundary issues, three of them duplicated semantics the
+redesign exists to eliminate. All applied same day.
+
+- **F169 (inclusion_rule_hash did not bind the executable rule —
+  applied)** — the hash covered an English description while the
+  partition logic lived independently in code. Fix: the rule is now a
+  small executable data value ({admit_when_all, exclude_when_any,
+  exclude_reason, quarantine_reason}) consumed by the evaluator;
+  changing any decision-bearing value changes the hash; no resolver or
+  schema added. Test binds the published report's inclusion_rule_hash
+  to the canonical hash of that value.
+- **F170 (fixture catalog result unrepresentative — applied)** — the
+  production metadata stage embedded the catalog file hash in the
+  renderer-facing persons value via source_csv_provenance, so a real
+  catalog edit re-rendered every work; the harness's "metadata only"
+  expectation was true only of the substitute stage. Fix per the
+  preferred option: the production stage now strips
+  source_csv_provenance (which render ignores) from the persons
+  output, restoring early cutoff and making the oracle's expected
+  result true of the production graph; metadata stage-version bumped
+  to 2 (output bytes change for identical inputs). The harness
+  docstring now states exactly which stages are substituted
+  (metadata, parse, convert, render, validate; extract and all
+  orchestration real).
+- **F171 (validation-record interpretation split again — applied)** —
+  the assembler parsed records permissively while the verifier held
+  the strict contract. Fix: one pure shared checker,
+  verify/consumed-validation-record (strict duplicate-key parse,
+  status domain, string validated_artifact), called by both the
+  assembler's summary derivation and the verifier's re-derivation; a
+  noncontractual kernel record now fails assembly, not just pre-push
+  verification. Pure-contract regression test added.
+- **F172 (toolchain provenance not fail-closed — applied)** — the
+  production default clj-dev-0 let dependency/runtime changes retain
+  stale derivations and an unchanged release projection. Fix: default
+  removed; build! fails closed without a wrapper-supplied
+  --clj-toolchain-id. Reconciliation recorded (spec §2 toolchain row):
+  nix_closure_hash carries the stage's toolchain identity exactly as
+  the derivation keys carry it — the Nix closure hash for
+  nix-provisioned stages, the hashed binary/profile identity for
+  subprocess stages; constant placeholders prohibited.
+- **F173 (source_content_hash semantics disagreed with the frozen
+  prose — applied)** — the spec said "hex of upstream source bytes";
+  the implementation records the canonical source-bundle identity
+  hash (member paths + member content hashes), which is the desirable
+  semantics (identity survives archive-level repackaging). Post-freeze
+  semantic clarification recorded in spec §2; no wire change.
+- **Handoff correction (applied)** — build!'s disposable run report
+  now carries everything the delta oracle consumes: per-work
+  source_zip, source_relpath, source_content_hash, per-stage cache
+  decisions, and the stage coordinate table; run-work! returns
+  zip-hex and source facts. Still a schema-less, retention-free
+  export. Slice 2 is not declared complete until the production F5
+  run at a second real revision has been driven from these exports.
+
+Suites after the round: 56 tests / 291 assertions green locally and
+hermetically.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

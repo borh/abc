@@ -27,8 +27,6 @@
             [soranoha.yomi.select :as select])
   (:gen-class))
 
-(def default-clj-toolchain-id "clj-dev-0")
-
 (defn- git! [aozora-root & args]
   (try
     (let [{:keys [exit out]} (process/sh (into ["git" "-C" (str aozora-root)] args))]
@@ -62,7 +60,8 @@
 
 (defn run-work!
   "Execute (or trace-skip) the full chain for one selected work.
-  Returns {:slug .. :outputs {stage-key {name hex}} :cached {stage-key bool}}."
+  Returns {:slug :zip-hex :source-facts
+  :outputs {stage-key {name hex}} :cached {stage-key bool}}."
   [store {:keys [extract metadata parse convert render validate]}
    {:keys [slug row file]} catalog-hex]
   (let [zip-hex (cas/put-file! (:cas-dir store) file)
@@ -88,6 +87,8 @@
         validate-r (engine/run-stage! store validate
                                       {"tei" (get (:outputs render-r) "tei")})]
     {:slug slug
+     :zip-hex zip-hex
+     :source-facts facts
      :outputs {:extract (:outputs extract-r)
                :metadata (:outputs metadata-r)
                :parse (:outputs parse-r)
@@ -103,6 +104,12 @@
 
 (defn build!
   [{:keys [root aozora-root assets-root concurrency clj-toolchain-id limit]}]
+  (when (string/blank? clj-toolchain-id)
+    ;; fail closed: the toolchain identity keys every pure-Clojure stage's
+    ;; derivations and lands in release provenance; a constant default
+    ;; would let dependency or runtime changes retain stale derivations
+    (throw (ex-info "clj toolchain identity required; the build wrapper must pass --clj-toolchain-id"
+                    {:option "--clj-toolchain-id"})))
   (binding [assets/*root* (str assets-root)]
     (let [root (config/ensure-layout! (config/root root))
           commit (source-provenance! aozora-root)
@@ -144,6 +151,11 @@
                    n
                    (fn [candidate] (run-work! store stage-set candidate catalog-hex))
                    candidates)
+          relpath-of (into {} (map (juxt :slug :relpath)) candidates)
+          ;; the report is a disposable trace-store export, but it must
+          ;; carry everything the second-revision delta oracle consumes:
+          ;; per-work source identity, per-stage cache decisions, the
+          ;; selection join, and the stage coordinates
           report {"aozora_git_commit" commit
                   "catalog_csv_hash" catalog-csv-hash
                   "selected_count" (count candidates)
@@ -152,8 +164,16 @@
                                                         (mapcat (comp vals :cached)
                                                                 results)))
                   "clj_toolchain_id" clj-toolchain-id
+                  "stages" (into (sorted-map)
+                                 (map (fn [[_ {:keys [stage-id stage-version
+                                                      toolchain-id]}]]
+                                        [stage-id
+                                         {"stage_version" stage-version
+                                          "toolchain_id" toolchain-id}]))
+                                 stage-set)
                   "works" (into (sorted-map)
-                                (map (fn [{:keys [slug outputs]}]
+                                (map (fn [{:keys [slug outputs cached zip-hex
+                                                  source-facts]}]
                                        [slug {"tei" (get-in outputs [:render "tei"])
                                               "plaintext" (get-in outputs
                                                                   [:render "plaintext"])
@@ -161,7 +181,16 @@
                                               (get-in outputs
                                                       [:validate "tei-validation"])
                                               "parser-ir" (get-in outputs
-                                                                  [:convert "parser-ir"])}]))
+                                                                  [:convert "parser-ir"])
+                                              "source_zip" zip-hex
+                                              "source_relpath" (get relpath-of slug)
+                                              "source_content_hash"
+                                              (get source-facts "work_content_hash")
+                                              "cached" (into (sorted-map)
+                                                             (map (fn [[stage hit?]]
+                                                                    [(name stage)
+                                                                     hit?]))
+                                                             cached)}]))
                                 results)}
           report-path (str (fs/path root "runs" (str "run-" started ".json")))]
       (fs/create-dirs (fs/parent report-path))
@@ -229,7 +258,8 @@
    ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}
    :limit {:coerce :long}
-   :clj-toolchain-id {:coerce :string :default default-clj-toolchain-id}})
+   ;; no default: build! fails closed without a wrapper-supplied identity
+   :clj-toolchain-id {:coerce :string}})
 
 (defn -main [& args]
   (let [[command & rest-args] args

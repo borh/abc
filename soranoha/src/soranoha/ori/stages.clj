@@ -74,7 +74,7 @@
   parse-once cache; deterministic because it is keyed by content)."
   [clj-toolchain-id rows-for catalog-provenance]
   {:stage-id "metadata"
-   :stage-version "1"
+   :stage-version "2"
    :toolchain-id clj-toolchain-id
    :f (fn [_resolve inputs]
         (let [rows (rows-for (get inputs "catalog"))
@@ -92,14 +92,21 @@
                   :source-csv-provenance catalog-provenance})
                 (let [record-bytes (fs/read-all-bytes record-file)
                       record (json/read-json (String. ^bytes record-bytes "UTF-8"))
+                      ;; the renderer-facing persons value drops
+                      ;; source_csv_provenance (which render ignores): the
+                      ;; catalog file hash inside it would otherwise flow
+                      ;; into these bytes and defeat early cutoff — a
+                      ;; catalog edit would re-render every work
                       persons (into (sorted-map)
                                     (for [contributor (get record "contributors")
                                           :let [pid (get contributor "person_id")]]
-                                      [pid (json/read-json
-                                            (String. ^bytes (fs/read-all-bytes
-                                                             (fs/path persons-dir
-                                                                      (str pid ".json")))
-                                                     "UTF-8"))]))]
+                                      [pid (dissoc
+                                            (json/read-json
+                                             (String. ^bytes (fs/read-all-bytes
+                                                              (fs/path persons-dir
+                                                                       (str pid ".json")))
+                                                      "UTF-8"))
+                                            "source_csv_provenance")]))]
                   {"metadata-record" record-bytes
                    "persons" (json-bytes persons)}))))))})
 

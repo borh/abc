@@ -9,10 +9,10 @@
   derived from the same per-work validation records the chain verifier
   re-derives it from. A failed validation is an artifact and a summary
   entry, never an exclusion."
-  (:require [charred.api :as json]
-            [soranoha.core.hash :as hash]
+  (:require [soranoha.core.hash :as hash]
             [soranoha.kura.cas :as cas]
-            [soranoha.snh.decode :as decode]))
+            [soranoha.snh.decode :as decode]
+            [soranoha.snh.verify :as verify]))
 
 (defn- fail! [reason data]
   (throw (ex-info (str "release assembly failed: " (name reason))
@@ -20,36 +20,42 @@
 
 ;; --- admission --------------------------------------------------------------
 
-(def inclusion-rule-id "za-public-domain-unanimous-v1")
-
 (def inclusion-rule
-  "The rule bytes bound by inclusion_rule_hash: a candidate is admitted iff
-  its work assessment and every contribution assessment are public-domain,
-  excluded iff any assessment is in-copyright, and quarantined otherwise
-  (an undetermined or not-evaluated fact present)."
-  {"id" inclusion-rule-id
-   "admit" "unanimous public-domain across work_assessment and contributions"
-   "exclude" "any in-copyright assessment"
-   "quarantine" "otherwise: any undetermined or not-evaluated assessment"})
+  "The executable rule value whose canonical bytes inclusion_rule_hash
+  binds: the evaluator admits a candidate iff every fact status (the work
+  assessment and each contribution) equals admit_when_all, excludes with
+  exclude_reason iff any status equals exclude_when_any, and quarantines
+  with quarantine_reason otherwise. Changing any decision-bearing value
+  changes the hash."
+  {"id" "za-public-domain-unanimous-v1"
+   "admit_when_all" "public-domain"
+   "exclude_when_any" "in-copyright"
+   "exclude_reason" "in-copyright"
+   "quarantine_reason" "not-fully-evaluated"})
+
+(def inclusion-rule-id (get inclusion-rule "id"))
 
 (def inclusion-rule-hash (hash/sha256-canonical-json inclusion-rule))
 
 (defn partition-candidates
-  "Total partition of snapshot candidates under the inclusion rule."
-  [candidates]
+  "Total partition of snapshot candidates under `rule` (the executable
+  inclusion-rule value)."
+  [rule candidates]
   (reduce
    (fn [acc {:strs [slug work_assessment contributions]}]
      (let [statuses (map #(get % "status") (cons work_assessment contributions))]
        (cond
-         (every? #{"public-domain"} statuses)
+         (every? #{(get rule "admit_when_all")} statuses)
          (update acc :admitted conj slug)
 
-         (some #{"in-copyright"} statuses)
-         (update acc :excluded conj {"slug" slug "reason_code" "in-copyright"})
+         (some #{(get rule "exclude_when_any")} statuses)
+         (update acc :excluded conj {"slug" slug
+                                     "reason_code" (get rule "exclude_reason")})
 
          :else
          (update acc :quarantined conj
-                 {"slug" slug "reason_code" "not-fully-evaluated"}))))
+                 {"slug" slug
+                  "reason_code" (get rule "quarantine_reason")}))))
    {:admitted [] :excluded [] :quarantined []}
    candidates))
 
@@ -111,15 +117,23 @@
                                blobs)}
      :blobs (into {} (map (fn [[_ hex bytes]] [hex bytes])) blobs)}))
 
-(defn- validation-failed? [cas-dir hex]
+(defn- validation-failed?
+  ;; the same consumed contract the chain verifier re-derives the summary
+  ;; under; a noncontractual kernel record fails assembly here rather than
+  ;; at pre-push verification
+  [cas-dir hex]
   (= "failed"
-     (get (json/read-json (String. (cas-blob cas-dir hex) "UTF-8")) "status")))
+     (:status (verify/consumed-validation-record (cas-blob cas-dir hex)))))
 
 ;; --- release ----------------------------------------------------------------
 
 (defn toolchain-value
   "snh-manifest/1 toolchain object from engine-shaped stages: per stage id,
-  the toolchain identity and stage code version its derivation keys carry."
+  the toolchain identity and stage code version exactly as its derivation
+  keys carry them. nix_closure_hash holds that derivation toolchain
+  identity — the wrapper-supplied Nix closure hash for nix-provisioned
+  stages, the hashed binary/profile identity for subprocess stages; it is
+  provenance, never an input to artifact identity."
   [stages]
   (into (sorted-map)
         (map (fn [{:keys [stage-id stage-version toolchain-id]}]
@@ -146,7 +160,8 @@
            candidates works withdrawn-slugs selection]}]
   (let [snapshot-enc (decode/encode "assessment-snapshot"
                                     (snapshot-value candidates))
-        partition (partition-candidates (get (:value snapshot-enc) "candidates"))
+        partition (partition-candidates inclusion-rule
+                                        (get (:value snapshot-enc) "candidates"))
         report-enc (decode/encode "admission-report"
                                   (report-value (:id snapshot-enc) partition
                                                 policy-hash))

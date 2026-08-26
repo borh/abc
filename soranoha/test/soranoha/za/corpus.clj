@@ -2,11 +2,12 @@
   "Fixture corpus for release-assembly acceptance: a miniature aozorabunko
   checkout under git (cards/ work zips + the official catalog zip), driven
   through the real kernel — real provenance gate, catalog read, selection
-  join, extract stage, and engine/trace/CAS — with deterministic in-process
-  stages standing in for the subprocess parser/converter and the schema
-  validator. Stage wiring, output names, and record shapes match the
-  production graph, so main/run-work! executes unchanged and trace
-  invalidation is the real engine's."
+  join, extract stage, and engine/trace/CAS. Every other stage (metadata,
+  parse, convert, render, validate) is a deterministic in-process
+  substitute whose wiring, output names, invalidation-relevant content
+  dependencies, and record shapes match the production graph, so
+  main/run-work! executes unchanged and trace invalidation is the real
+  engine's."
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
             [charred.api :as json]

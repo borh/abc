@@ -64,15 +64,15 @@ numbers live in the findings sections and Git history, not here):
   (common dir must equal git dir). **§8/§9 boundary APPROVED
   2026-08-26 at d7e80a22.** Manifest assembly + F5 delta oracle
   implemented against the real kernel (soranoha.za.assemble +
-  fixture-corpus/oracle acceptance); assembly-review rounds 4–7
-  (F169–F178) applied — executable inclusion rule, early-cutoff
+  fixture-corpus/oracle acceptance); assembly-review rounds 4–8
+  (F169–F179) applied — executable inclusion rule, early-cutoff
   persons value, shared validation-record contract, fail-closed +
   runtime-bound toolchain identity, source-bundle-identity exactness,
-  trace-key export with fail-closed evidence completeness under one
-  shared coordinate projection (trace/stage-coordinates) — awaiting
-  re-review; F172 (content-derived wrapper identity) stays open until
-  the production F5 driver. Suites: 57 tests / 299 assertions green
-  locally and hermetically.
+  trace-key export with fail-closed evidence completeness under the
+  single coordinate encoding (trace/stage-coordinate) — awaiting
+  re-review; F172 (content-derived wrapper identity + external-report
+  boundary decode) stays open until the production F5 driver. Suites:
+  57 tests / 299 assertions green locally and hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2830,6 +2830,35 @@ runs; one fail-closed hole remained, plus a consolidation.
   are deleted — the oracle test mutates captured coordinate evidence
   directly, and trace invalidation under coordinate changes is
   already proven by the engine's derivation-key tests.
+
+Suites after the round: 57 tests / 299 assertions green locally and
+hermetically.
+
+## Slice-2 implementation review round 8 (2026-08-26) — finding F179; NOT APPROVED at a5565d09; applied
+
+Verdict on round 7: F178 refusal cases correct, harness-arity
+deletion good; one consolidation blocker — otherwise ready.
+
+- **F179 (the "one projection" still had three encodings — applied)**
+  — derivation-key built its own string-keyed coordinate object,
+  stage-coordinates built a keyword-keyed equivalent, and the report
+  converted back to string keys, leaving the synchronization trap the
+  consolidation was meant to remove: a future derivation coordinate
+  could be hashed but omitted from the comparison table. Fix, in the
+  net-deleting shape: trace/stage-coordinate is the single
+  constructor of {"stage_id","stage_version","toolchain_id"};
+  derivation-key adds "inputs" to that value and hashes it;
+  stage-coordinates maps logical stage keys to that same value; the
+  report converts only the outer logical keys to strings and passes
+  coordinate values through unchanged. A coordinate added to the
+  constructor is automatically both hashed and compared. No new test
+  or abstraction — the derivation-key and oracle suites already cover
+  the behavior.
+- Recorded under the open F172: malformed-but-present coordinate
+  values and non-hex trace-key strings still pass the oracle; the
+  future external-report boundary decoder rejects them before
+  invoking the oracle — no additional validation layer here, since no
+  current consumer parses external reports.
 
 Suites after the round: 57 tests / 299 assertions green locally and
 hermetically.

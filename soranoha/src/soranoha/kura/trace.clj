@@ -40,28 +40,31 @@
 (defn close! [{:keys [conn]}]
   (.close ^java.sql.Connection conn))
 
+(defn stage-coordinate
+  "The one encoding of a stage's non-input derivation coordinates: the
+  exact object every derivation key hashes (with \"inputs\" added) and the
+  delta oracle compares. A coordinate added here is automatically both
+  hashed and compared — there is no second encoding to keep in sync."
+  [{:keys [stage-id stage-version toolchain-id]}]
+  {"stage_id" stage-id
+   "stage_version" stage-version
+   "toolchain_id" toolchain-id})
+
 (defn derivation-key
   "The trace key: sha256 over the canonical bytes of the full derivation
   coordinates. stage-version and toolchain-id are inside the hash AND stored
   as columns (acceptance criterion 4: the incomplete-key trap)."
-  [{:keys [stage-id stage-version toolchain-id]} inputs]
-  (hash/sha256-canonical-json
-   {"stage_id" stage-id
-    "stage_version" stage-version
-    "toolchain_id" toolchain-id
-    "inputs" inputs}))
+  [stage inputs]
+  (hash/sha256-canonical-json (assoc (stage-coordinate stage)
+                                     "inputs" inputs)))
 
 (defn stage-coordinates
-  "The one coordinate projection of a stage set (logical stage key ->
-  {:stage-id :stage-version :toolchain-id}) — exactly the non-input part of
-  each derivation key. Two runs' trace keys are comparable as
-  input-equality evidence only when their tables from this projection are
-  equal."
+  "Logical stage key -> stage-coordinate for a stage set. Two runs' trace
+  keys are comparable as input-equality evidence only when their tables
+  from this projection are equal."
   [stages]
   (into {}
-        (map (fn [[k stage]]
-               [k (select-keys stage [:stage-id :stage-version
-                                      :toolchain-id])]))
+        (map (fn [[k stage]] [k (stage-coordinate stage)]))
         stages))
 
 (defn lookup

@@ -287,11 +287,11 @@
              (oracle/unexplained-executions run-a executed))))
     (doseq [[label a b]
             [["toolchain id changed"
-              (assoc-in run-a [:stage-coordinates :parse :toolchain-id]
+              (assoc-in run-a [:stage-coordinates :parse "toolchain_id"]
                         "za-fixture-toolchain-2")
               executed]
              ["stage version changed"
-              (assoc-in run-a [:stage-coordinates :render :stage-version] "2")
+              (assoc-in run-a [:stage-coordinates :render "stage_version"] "2")
               executed]
              ["coordinate table absent"
               (dissoc run-a :stage-coordinates)

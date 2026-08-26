@@ -59,9 +59,10 @@ numbers live in the findings sections and Git history, not here):
   streaming verification. Round 2 (F164–F167) applied: fetched head
   verified before the no-op decision, strict two-field
   validation-record contract, sanitized + git-dir-bound view
-  environment, unreachable superseded-entry check deleted. Suites:
-  50 tests / 249 assertions green locally and hermetically. Awaiting
-  re-review.
+  environment, unreachable superseded-entry check deleted. Round 3
+  (F168) applied: linked worktrees rejected at view construction
+  (common dir must equal git dir). Suites: 51 tests / 251 assertions
+  green locally and hermetically. Awaiting re-review.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2566,6 +2567,29 @@ regression test per reproduced failure.
 
 Suites after the round: 50 tests / 249 assertions green locally and
 hermetically. Awaiting re-review of this boundary.
+
+## Slice-2 implementation review round 3 (2026-08-26) — finding F168; NOT APPROVED at 978fc7d9; applied
+
+Verdict on round 2: F164–F167 correctly resolved; one remaining F166
+edge blocked approval.
+
+- **F168 (linked worktrees bypass alternates rejection — applied)** —
+  the alternates check ran beneath --absolute-git-dir, which for a
+  linked worktree is the per-worktree administration directory; the
+  object store and alternates file live under the separate common
+  directory, so a view over a linked worktree of a shared clone read
+  a commit supplied only by the foreign alternate. Fix: construction
+  resolves both directories (--path-format=absolute --git-dir
+  --git-common-dir) and rejects common-dir ≠ git-dir outright —
+  linked worktrees have no v1 consumer (spec §8 view contract). Test:
+  a shared clone plus linked worktree; the clone is rejected for its
+  alternates file, the worktree for the hidden common directory.
+- Reviewer confirmation recorded: keep
+  amending-one-entry-of-a-multi-entry-event-is-legal — it protects
+  distinct supported behavior.
+
+Suites after the round: 51 tests / 251 assertions green locally and
+hermetically. Awaiting the focused recheck of this boundary.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

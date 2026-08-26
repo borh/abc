@@ -641,6 +641,25 @@
                                        (str foreign-git-dir "/objects")))]
         (is (not (view/commit-exists? v head-commit)))))))
 
+(deftest linked-worktrees-are-rejected-at-view-construction
+  ;; a linked worktree's per-worktree git directory hides the common
+  ;; directory's object store and alternates file, so an alternates check
+  ;; under the git directory alone would pass while reads span a foreign
+  ;; store; construction rejects the indirection outright
+  (let [{:keys [dir clone head-commit]} (build-ctx)
+        shared (str dir "/shared")
+        worktree (str dir "/shared-worktree")]
+    (process/sh {:out :string :err :string}
+                "git" "clone" "-q" "--shared" clone shared)
+    (process/sh {:dir shared :out :string :err :string}
+                "git" "worktree" "add" "-q" worktree head-commit)
+    (testing "the shared clone is rejected for its alternates file"
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"alternate object"
+                            (view/git-view shared))))
+    (testing "its linked worktree is rejected for the hidden common directory"
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"linked worktree"
+                            (view/git-view worktree))))))
+
 (deftest archive-verification-is-a-total-report
   (let [{:keys [clone head-commit init-commit]} (build-ctx)
         v (view/git-view clone)

@@ -323,7 +323,11 @@ view's own git directory (F166): every `GIT_`-prefixed variable is
 stripped and the git directory resolved at construction is passed
 explicitly on every invocation, so an inherited `GIT_DIR`,
 `GIT_OBJECT_DIRECTORY`, or alternates override cannot point reads at
-a foreign object store.
+a foreign object store. Linked worktrees are REJECTED at construction
+(F168): a linked worktree's per-worktree git directory hides the
+common directory's object store and alternates file, so the view
+requires the resolved common directory to equal the git directory
+(linked worktrees have no v1 consumer).
 It exposes reads of the
 form `read_at(C, required_path)` and `parent_of(C)`. Every manifest,
 signature, event, and artifact must be REACHABLE AT ITS PRESCRIBED

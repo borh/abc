@@ -9,8 +9,9 @@
   sanitized environment with every GIT_-prefixed variable removed (inherited
   GIT_DIR / GIT_OBJECT_DIRECTORY / GIT_ALTERNATE_OBJECT_DIRECTORIES would
   redirect reads to a foreign object store), and bound explicitly to the git
-  directory resolved at construction; alternate object directories are
-  rejected at construction. Live verification wraps the fetched
+  directory resolved at construction; linked worktrees (whose common
+  directory differs from their git directory) and alternate object
+  directories are rejected at construction. Live verification wraps the fetched
   authoritative repository; archive verification wraps only the archived
   snapshot; mirrors and clones wrap themselves."
   (:require [babashka.process :as process]
@@ -38,23 +39,30 @@
   "View over the repository at `dir` (a work tree or a bare/git directory).
   Discovery runs under the sanitized environment; the resolved absolute git
   directory is then bound with --git-dir on every read, so the view can only
-  ever consult that one object store. Throws when the repository declares
-  alternate object directories — an alternates file would make reads span
-  more than one object store. `base-env` defaults to the process environment
-  and is a seam for probing the sanitization."
+  ever consult that one object store. Throws when the repository is a linked
+  worktree — its per-worktree git directory hides the common directory's
+  object store and alternates file — or declares alternate object
+  directories, either of which would make reads span more than one object
+  store. `base-env` defaults to the process environment and is a seam for
+  probing the sanitization."
   ([dir] (git-view dir (into {} (System/getenv))))
   ([dir base-env]
    (let [v {:dir (str dir) :env (sanitized-env base-env) :bind []}
          {:keys [exit out err]} (run-git v {:out :string}
-                                         ["rev-parse" "--absolute-git-dir"])]
+                                         ["rev-parse" "--path-format=absolute"
+                                          "--git-dir" "--git-common-dir"])]
      (when-not (zero? exit)
        (throw (ex-info "not a git repository" {:dir (str dir) :err err})))
-     (let [git-dir (str/trim out)
-           alternates (io/file git-dir "objects" "info" "alternates")]
-       (when (.exists alternates)
-         (throw (ex-info "repository uses alternate object directories"
-                         {:dir (str dir) :alternates (str alternates)})))
-       (assoc v :bind ["--git-dir" git-dir])))))
+     (let [[git-dir common-dir] (str/split-lines (str/trim out))]
+       (when (not= git-dir common-dir)
+         (throw (ex-info "linked worktree: git and common directories differ"
+                         {:dir (str dir) :git-dir git-dir
+                          :common-dir common-dir})))
+       (let [alternates (io/file git-dir "objects" "info" "alternates")]
+         (when (.exists alternates)
+           (throw (ex-info "repository uses alternate object directories"
+                           {:dir (str dir) :alternates (str alternates)})))
+         (assoc v :bind ["--git-dir" git-dir]))))))
 
 (defn read-at
   "Blob bytes at `path` in `commit`'s tree, or nil when absent. Only the tree

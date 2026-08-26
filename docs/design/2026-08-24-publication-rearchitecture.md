@@ -64,14 +64,15 @@ numbers live in the findings sections and Git history, not here):
   (common dir must equal git dir). **§8/§9 boundary APPROVED
   2026-08-26 at d7e80a22.** Manifest assembly + F5 delta oracle
   implemented against the real kernel (soranoha.za.assemble +
-  fixture-corpus/oracle acceptance); assembly-review rounds 4–6
-  (F169–F177) applied — executable inclusion rule, early-cutoff
+  fixture-corpus/oracle acceptance); assembly-review rounds 4–7
+  (F169–F178) applied — executable inclusion rule, early-cutoff
   persons value, shared validation-record contract, fail-closed +
   runtime-bound toolchain identity, source-bundle-identity exactness,
-  trace-key export with an enforced stage-coordinate comparability
-  precondition — awaiting re-review; F172 (content-derived wrapper
-  identity) stays open until the production F5 driver. Suites: 57
-  tests / 297 assertions green locally and hermetically.
+  trace-key export with fail-closed evidence completeness under one
+  shared coordinate projection (trace/stage-coordinates) — awaiting
+  re-review; F172 (content-derived wrapper identity) stays open until
+  the production F5 driver. Suites: 57 tests / 299 assertions green
+  locally and hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2800,6 +2801,37 @@ blocker.
   under the still-open F172 work.
 
 Suites after the round: 57 tests / 297 assertions green locally and
+hermetically.
+
+## Slice-2 implementation review round 7 (2026-08-26) — finding F178; NOT APPROVED at 829eee04; applied
+
+Verdict on round 6: the F177 fix held for complete fixture-generated
+runs; one fail-closed hole remained, plus a consolidation.
+
+- **F178 (incomplete evidence still passed — applied)** — the
+  precondition checked only that the coordinate tables existed and
+  were equal, not that they covered every analyzed stage or that both
+  runs carried a trace key for every compared execution; equal empty
+  tables with an execution, and complete tables with the earlier
+  run's key missing, both returned []. Fix: unexplained-executions
+  now fails closed with :runs-incomparable when a compared
+  execution's stage is not covered by the coordinate table or when
+  either run lacks a string trace key for it — directly relevant to
+  the F172 JSON normalization, where omission is possible. Both probe
+  cases join the negative table, alongside a positive showing a
+  same-key execution under complete evidence is a reported violation.
+- **Consolidation (applied)** — one coordinate projection,
+  trace/stage-coordinates, owned beside the derivation-key logic
+  (logical stage key -> {stage-id, stage-version, toolchain-id} —
+  exactly the non-input part of each derivation key); the production
+  report's "stages" field and the fixture harness both consume it,
+  deleting the duplicate projection and making coverage checkable.
+  The run-corpus! stage-set arity and the two extra full-corpus runs
+  are deleted — the oracle test mutates captured coordinate evidence
+  directly, and trace invalidation under coordinate changes is
+  already proven by the engine's derivation-key tests.
+
+Suites after the round: 57 tests / 299 assertions green locally and
 hermetically.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)

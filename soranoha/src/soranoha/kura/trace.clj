@@ -51,6 +51,19 @@
     "toolchain_id" toolchain-id
     "inputs" inputs}))
 
+(defn stage-coordinates
+  "The one coordinate projection of a stage set (logical stage key ->
+  {:stage-id :stage-version :toolchain-id}) — exactly the non-input part of
+  each derivation key. Two runs' trace keys are comparable as
+  input-equality evidence only when their tables from this projection are
+  equal."
+  [stages]
+  (into {}
+        (map (fn [[k stage]]
+               [k (select-keys stage [:stage-id :stage-version
+                                      :toolchain-id])]))
+        stages))
+
 (defn lookup
   "Cached outputs map for a trace key, or nil."
   [{:keys [conn] :as store} trace-key]

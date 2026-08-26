@@ -15,6 +15,7 @@
             [soranoha.core.hash :as hash]
             [soranoha.kura.cas :as cas]
             [soranoha.kura.engine :as engine]
+            [soranoha.kura.trace :as trace]
             [soranoha.main :as main]
             [soranoha.ori.stages :as stages]
             [soranoha.ported.json :as abc-json]
@@ -197,50 +198,39 @@
 
 ;; --- kernel run -------------------------------------------------------------
 
-(defn stage-coordinates
-  "The run's {stage-key {:stage-id :stage-version :toolchain-id}} table —
-  the comparability precondition of the trace-key delta oracle."
-  [stages]
-  (into {}
-        (map (fn [[k stage]]
-               [k (select-keys stage [:stage-id :stage-version
-                                      :toolchain-id])]))
-        stages))
-
 (defn run-corpus!
   "One kernel run at the corpus's current commit into the persistent store
   under `store-root` (a second run over the same store exercises real
   trace caching). Returns {:commit :catalog-hex :cas-dir :candidates
   :stage-coordinates :zip-hashes {slug hex} :results {slug {:outputs
   :cached :trace-keys}}}."
-  ([root store-root] (run-corpus! root store-root stage-set))
-  ([root store-root stages]
-   (let [commit (main/source-provenance! root)
-         {:keys [csv-text]} (catalog/read-catalog-zip root)
-         rows (catalog/read-rows-from-string csv-text)
-         {:keys [candidates]} (select/select-candidates root rows)
-         store (engine/open-store! {:cas-dir (str (fs/path store-root "objects"))
-                                    :db-path (str (fs/path store-root
-                                                           "trace.sqlite"))})]
-     (try
-       (let [catalog-hex (cas/put-bytes! (:cas-dir store)
-                                         (.getBytes ^String csv-text "UTF-8"))]
-         {:commit commit
-          :catalog-hex catalog-hex
-          :cas-dir (:cas-dir store)
-          :candidates candidates
-          :stage-coordinates (stage-coordinates stages)
-          :zip-hashes (into {}
-                            (map (fn [{:keys [slug file]}]
-                                   [slug (hash/sha256-file file)]))
-                            candidates)
-          :results (into {}
-                         (map (fn [candidate]
-                                [(:slug candidate)
-                                 (main/run-work! store stages candidate
-                                                 catalog-hex)]))
-                         candidates)})
-       (finally (engine/close-store! store))))))
+  [root store-root]
+  (let [commit (main/source-provenance! root)
+        {:keys [csv-text]} (catalog/read-catalog-zip root)
+        rows (catalog/read-rows-from-string csv-text)
+        {:keys [candidates]} (select/select-candidates root rows)
+        store (engine/open-store! {:cas-dir (str (fs/path store-root "objects"))
+                                   :db-path (str (fs/path store-root
+                                                          "trace.sqlite"))})]
+    (try
+      (let [catalog-hex (cas/put-bytes! (:cas-dir store)
+                                        (.getBytes ^String csv-text "UTF-8"))]
+        {:commit commit
+         :catalog-hex catalog-hex
+         :cas-dir (:cas-dir store)
+         :candidates candidates
+         :stage-coordinates (trace/stage-coordinates stage-set)
+         :zip-hashes (into {}
+                           (map (fn [{:keys [slug file]}]
+                                  [slug (hash/sha256-file file)]))
+                           candidates)
+         :results (into {}
+                        (map (fn [candidate]
+                               [(:slug candidate)
+                                (main/run-work! store stage-set candidate
+                                                catalog-hex)]))
+                        candidates)})
+      (finally (engine/close-store! store)))))
 
 (defn source-facts [run slug]
   (json/read-json

@@ -261,36 +261,49 @@
     (is (not= (get-in manifest-1 ["admission" "assessment_snapshot"])
               (get-in manifest-2 ["admission" "assessment_snapshot"])))))
 
-(deftest oracle-refuses-incomparable-runs
-  ;; a changed trace key only means a changed declared input when both
-  ;; runs used identical stage coordinates; a coordinate-only change (or a
-  ;; run lacking its coordinate table) is refused, never read as an
-  ;; explained execution
+(deftest oracle-refuses-incomparable-evidence
+  ;; a changed trace key means a changed declared input only under
+  ;; complete, identical stage evidence: divergent or absent coordinate
+  ;; tables, an uncovered analyzed stage, and a missing trace key are all
+  ;; refused rather than read as explained executions (trace invalidation
+  ;; under coordinate changes itself is proven by the engine tests)
   (let [root (corpus/init-corpus! [merosu])
         store (temp-store!)
         run-a (corpus/run-corpus! root store)
-        toolchain-bumped (corpus/run-corpus!
-                          root store
-                          (update corpus/stage-set :parse
-                                  assoc :toolchain-id "za-fixture-toolchain-2"))
-        version-bumped (corpus/run-corpus!
-                        root store
-                        (update corpus/stage-set :render
-                                assoc :stage-version "2"))]
-    (is (= #{:parse}
-           ((oracle/executed-stages toolchain-bumped) (slug-of merosu)))
-        "the toolchain bump re-executes exactly the re-keyed stage")
-    (doseq [[label run-b] [["toolchain id changed" toolchain-bumped]
-                           ["stage version changed" version-bumped]
-                           ["coordinates absent"
-                            (dissoc run-a :stage-coordinates)]]]
+        run-b (corpus/run-corpus! root store)
+        slug (slug-of merosu)
+        ;; run-b evidence claiming a :parse execution (its trace key is
+        ;; unchanged, so with complete evidence this is a violation)
+        executed (assoc-in run-b [:results slug :cached :parse] false)
+        refused (fn [a b] (try (oracle/unexplained-executions a b) nil
+                               (catch clojure.lang.ExceptionInfo e
+                                 (:reason (ex-data e)))))]
+    (testing "identical complete evidence is comparable"
+      (is (= #{} ((oracle/executed-stages run-b) slug)))
+      (is (= [] (oracle/unexplained-executions run-a run-b))))
+    (testing "a same-key execution under complete evidence is a violation"
+      (is (= [{:slug slug :stage :parse
+               :trace-key (get-in run-b [:results slug :trace-keys :parse])}]
+             (oracle/unexplained-executions run-a executed))))
+    (doseq [[label a b]
+            [["toolchain id changed"
+              (assoc-in run-a [:stage-coordinates :parse :toolchain-id]
+                        "za-fixture-toolchain-2")
+              executed]
+             ["stage version changed"
+              (assoc-in run-a [:stage-coordinates :render :stage-version] "2")
+              executed]
+             ["coordinate table absent"
+              (dissoc run-a :stage-coordinates)
+              executed]
+             ["equal empty coordinate tables with an execution"
+              (assoc run-a :stage-coordinates {})
+              (assoc executed :stage-coordinates {})]
+             ["trace key missing from the earlier run"
+              (update-in run-a [:results slug :trace-keys] dissoc :parse)
+              executed]]]
       (testing label
-        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"incomparable"
-                              (oracle/unexplained-executions run-a run-b)))))
-    (testing "identical coordinates remain comparable"
-      (let [run-c (corpus/run-corpus! root store)]
-        (is (= #{} ((oracle/executed-stages run-c) (slug-of merosu))))
-        (is (= [] (oracle/unexplained-executions run-a run-c)))))))
+        (is (= :runs-incomparable (refused a b)))))))
 
 (deftest unassessed-selection-blocks-emission
   ;; a selected work missing from the assessment snapshot violates the

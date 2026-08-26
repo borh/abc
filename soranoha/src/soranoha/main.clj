@@ -172,12 +172,14 @@
                                                                 results)))
                   "clj_toolchain_id" clj-toolchain-id
                   "stages" (into (sorted-map)
-                                 (map (fn [[_ {:keys [stage-id stage-version
-                                                      toolchain-id]}]]
-                                        [stage-id
-                                         {"stage_version" stage-version
+                                 (map (fn [[stage {:keys [stage-id
+                                                          stage-version
+                                                          toolchain-id]}]]
+                                        [(name stage)
+                                         {"stage_id" stage-id
+                                          "stage_version" stage-version
                                           "toolchain_id" toolchain-id}]))
-                                 stage-set)
+                                 (trace/stage-coordinates stage-set))
                   "works" (into (sorted-map)
                                 (map (fn [{:keys [slug outputs cached zip-hex
                                                   source-facts trace-keys]}]

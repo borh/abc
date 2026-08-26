@@ -121,9 +121,11 @@
       # clojure invocation remains the path for intentionally custom
       # identities.
       # One private Clojure context for the soranoha kernel — a single
-      # dependency-cache derivation and derived toolchain identity shared by
-      # the wrapper app and the soranoha-tests check, so the hermetic suite
-      # exercises exactly the runtime and tool pins the wrapper ships.
+      # dependency-cache derivation and derived toolchain identity. The
+      # wrapper app consumes both; the soranoha-tests check consumes the
+      # dependency cache and the same nixpkgs Clojure/Git pins, so both
+      # build against identical tool derivations (the check does not run
+      # inside the wrapper's full environment or consume the identity).
       soranohaCljContext =
         system:
         let
@@ -299,8 +301,9 @@
         in
         {
           # The soranoha kernel + snh conformance suite plus its lint and
-          # format gates, hermetic against the shared wrapper context so the
-          # tested runtime is byte-for-byte the shipped one. git backs the
+          # format gates, hermetic against the wrapper's Clojure, Git, and
+          # dependency-cache derivations (the same store paths the wrapper
+          # binds; not the wrapper's complete environment). git backs the
           # repository-view and publication-transaction test fixtures. The
           # ported tree is excluded from lint/format: byte fidelity to the
           # abc originals is intentional there.

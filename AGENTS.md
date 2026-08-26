@@ -35,6 +35,7 @@ Useful focused checks:
 ```sh
 just python-quality
 just nix-format-check
+just soranoha-tests
 nix build ./abc#checks.x86_64-linux.clj-kondo
 nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
@@ -51,7 +52,8 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 - Nix: run `nixfmt` or `just nix-format-check` for Nix changes.
 - Comments: follow `docs/comment-standards.md`; verify with
   `scripts/comment-hygiene-check.sh` (no transient task/plan/spec/issue
-  references in `ab-validator/` or `abc/src/` comments).
+  references in `ab-validator/`, `abc/src/`, or `soranoha/src/` comments;
+  soranoha additionally bans design-ledger F/D tags, ported tree excluded).
 
 ## Design Boundaries
 
@@ -60,7 +62,7 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 - `soranoha/` owns the build kernel (CAS, trace store, copied renderers)
   AND — transferred 2026-08-25 with the first Slice-2 manifest work (design
   ledger D20-as-amended/F56) — snh publication-schema and manifest-identity
-  ownership: the freeze-candidate protocol schemas
+  ownership: the frozen protocol schemas
   (`soranoha/resources/snh/schemas/`), the conformance vectors
   (`soranoha/resources/snh/vectors/`), boundary decode, wire encodings, and
   admission-evidence formats. After the D16.1 freeze these change only via a

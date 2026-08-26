@@ -255,13 +255,17 @@
     {:equal equal :total (count results) :problems (vec problems)}))
 
 (defn delta!
-  "The disposable second-revision acceptance export: the three-set delta
-  oracle over two build run reports (strictly decoded), printed as
-  deterministic JSON. `ok` requires zero unexplained executions; the
-  source and artifact deltas are descriptive (content hashes already
-  establish what changed, and no executed stage is evidence for or
-  against an artifact change — a warm cache can produce changed bytes
-  without executing anything)."
+  "Upstream-revision qualification: the three-set delta oracle over two
+  build run reports (strictly decoded), printed as deterministic JSON.
+  Run against each candidate aozorabunko revision's report and the
+  previous qualified run's; comparison requires matching
+  stage-coordinate tables — differing coordinates fail as incomparable
+  and require a new baseline run. The reports themselves stay
+  disposable. `ok` requires zero unexplained executions; the source and
+  artifact deltas are descriptive (content hashes already establish
+  what changed, and no executed stage is evidence for or against an
+  artifact change — a warm cache can produce changed bytes without
+  executing anything)."
   [{:keys [report-a report-b]}]
   (let [run-a (oracle/decode-run (fs/read-all-bytes (str report-a)))
         run-b (oracle/decode-run (fs/read-all-bytes (str report-b)))

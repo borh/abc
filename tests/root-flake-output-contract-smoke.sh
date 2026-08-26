@@ -30,6 +30,7 @@ expected = {
         "flake-input-policy",
         "schema-drift",
         "soranoha",
+        "soranoha-kernel",
         "tei-version-coherence",
         "validate-migration",
     },

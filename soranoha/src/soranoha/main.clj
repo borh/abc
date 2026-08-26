@@ -4,8 +4,9 @@
 ;; independent identity, no schema, no retention promise). No manifest,
 ;; signing, or publishing here: those operate on admission evidence this
 ;; kernel never sees. `compare` checks per-work TEI/plaintext bytes against
-;; a reference tree through the trace store; `verify` runs the kura
-;; determinism + fixity report.
+;; a reference tree through the trace store; `delta` runs the three-set
+;; delta oracle over two run reports; `verify` runs the kura determinism +
+;; fixity report.
 (ns soranoha.main
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
@@ -24,7 +25,8 @@
             [soranoha.ported.json :as abc-json]
             [soranoha.ported.parallel :as parallel]
             [soranoha.yomi.catalog :as catalog]
-            [soranoha.yomi.select :as select])
+            [soranoha.yomi.select :as select]
+            [soranoha.za.oracle :as oracle])
   (:gen-class))
 
 (defn- git! [aozora-root & args]
@@ -252,6 +254,52 @@
                     " plaintext=" (:plaintext p))))
     {:equal equal :total (count results) :problems (vec problems)}))
 
+(defn delta!
+  "The disposable second-revision acceptance export: the three-set delta
+  oracle over two build run reports (strictly decoded), printed as
+  deterministic JSON. `ok` requires zero unexplained executions and zero
+  artifact changes lacking an executed stage."
+  [{:keys [report-a report-b]}]
+  (let [run-a (oracle/decode-run (fs/read-all-bytes (str report-a)))
+        run-b (oracle/decode-run (fs/read-all-bytes (str report-b)))
+        violations (oracle/unexplained-executions run-a run-b)
+        source (oracle/source-delta run-a run-b)
+        artifacts (oracle/report-artifact-delta run-a run-b)
+        executed (oracle/executed-stages run-b)
+        sorted-slugs (fn [slugs] (vec (sort slugs)))
+        delta-json (fn [d] (into (sorted-map)
+                                 (map (fn [[k v]] [(name k) (sorted-slugs v)]))
+                                 d))
+        stage-counts (into (sorted-map)
+                           (map (fn [[stage runs]]
+                                  [(name stage) (count runs)]))
+                           (group-by identity (mapcat val executed)))
+        touched (into (:added source) (:changed source))
+        unexplained-artifacts (sorted-slugs
+                               (remove #(seq (get executed %))
+                                       (:changed artifacts)))
+        result {"commit_a" (:commit run-a)
+                "commit_b" (:commit run-b)
+                "source_delta" (delta-json source)
+                "artifact_delta" (delta-json artifacts)
+                "executed_stage_counts" stage-counts
+                "executed_for_touched_sources"
+                (into (sorted-map)
+                      (keep (fn [slug]
+                              (when-let [stages (seq (get executed slug))]
+                                [slug (vec (sort (map name stages)))])))
+                      (sorted-slugs touched))
+                "unexplained_executions"
+                (mapv (fn [{:keys [slug stage trace-key]}]
+                        {"slug" slug "stage" (name stage)
+                         "trace_key" trace-key})
+                      violations)
+                "unexplained_artifact_changes" unexplained-artifacts
+                "ok" (and (empty? violations)
+                          (empty? unexplained-artifacts))}]
+    (println (abc-json/write-deterministic-json-str result))
+    result))
+
 (defn verify!
   [{:keys [root]}]
   (let [root (config/root root)
@@ -271,6 +319,8 @@
    :assets-root {:coerce :string}
    :reference {:coerce :string}
    :report {:coerce :string}
+   :report-a {:coerce :string}
+   :report-b {:coerce :string}
    ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
    ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}
@@ -285,10 +335,12 @@
       (case command
         "build" (build! opts)
         "compare" (compare! opts)
+        "delta" (when-not (get (delta! opts) "ok")
+                  (System/exit 1))
         "verify" (do (when-not (:ok? (verify! opts))
                        (System/exit 1)))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|compare|delta|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

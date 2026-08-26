@@ -106,6 +106,48 @@
           exec ${soranohaApp.program} "$@"
         '';
 
+      # The soranoha/ Clojure kernel CLI with the same private adapter
+      # injection. The wrapper supplies the content-derived Clojure
+      # toolchain identity the kernel refuses to run without: a hash over
+      # the pinned Clojure tool closure and the dependency lockfile, so a
+      # runtime or dependency change re-keys every pure-Clojure stage
+      # derivation instead of silently reusing stale traces. An explicit
+      # --clj-toolchain-id on the command line wins.
+      mkKernelSoranohaApp =
+        system:
+        let
+          pkgs = pkgsFor system;
+          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
+          cljToolchainId =
+            "clj-nix-"
+            + builtins.substring 0 32 (
+              builtins.hashString "sha256" "${pkgs.clojure}\n${builtins.hashFile "sha256" ./soranoha/deps-lock.json}"
+            );
+        in
+        pkgs.writeShellScript "soranoha-kernel" ''
+          set -euo pipefail
+          export PATH="${
+            pkgs.lib.makeBinPath [
+              pkgs.bash
+              pkgs.coreutils
+              pkgs.git
+              pkgs.clojure
+            ]
+          }:''${PATH:-}"
+          export AB_AAT_TO_PARSER_IR_BIN="${
+            abValidatorPackages."ab-aat-to-parser-ir"
+          }/bin/ab-aat-to-parser-ir"
+          export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
+          export AB_AAT_TO_PARSER_IR_MAPPING_V2="${ab-validator}/data/aat-to-parser-ir-mapping-v2.json"
+          extra=()
+          case " $* " in
+            *"--clj-toolchain-id"*) ;;
+            *) extra=(--clj-toolchain-id "${cljToolchainId}") ;;
+          esac
+          cd "''${SORANOHA_KERNEL_DIR:-soranoha}"
+          exec clojure -M:soranoha/build "$@" ''${extra[@]+"''${extra[@]}"}
+        '';
+
       monorepoScripts =
         pkgs:
         let
@@ -182,6 +224,7 @@
             { }
         )
         // {
+          soranoha-kernel = mkScriptApp (mkKernelSoranohaApp system) "Soranoha kernel CLI (build/compare/delta/verify) with content-derived Clojure toolchain identity";
           schema-drift = mkScriptApp scripts.schema-drift "Check monorepo ABC schema contract drift";
           tei-version-coherence = mkScriptApp scripts.tei-version-coherence "Check TEI P5 source/profile version coherence";
           flake-input-policy = mkScriptApp scripts.flake-input-policy "Check release-critical flake inputs are explicitly pinned";

@@ -4,9 +4,12 @@
   published checker verifies end-to-end; an unmoved upstream is the
   scheduled no-op; a malformed assessment snapshot publishes nothing."
   (:require [babashka.fs :as fs]
+            [charred.api :as json]
+            [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
             [soranoha.core.hash :as hash]
+            [soranoha.main :as main]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.fixture :as fx]
             [soranoha.snh.verify :as verify]
@@ -50,9 +53,11 @@
 
 (defn- run->report
   "The build run report the driver consumes, projected from a fixture
-  kernel run — the same fields main/build! exports."
+  kernel run — the same fields main/build! exports, including the
+  selected slugs captured from the selection join rather than the works."
   [run]
   {"aozora_git_commit" (:commit run)
+   "selected_slugs" (vec (sort (map :slug (:candidates run))))
    "stages" (into {}
                   (map (fn [[stage coordinate]] [(name stage) coordinate]))
                   (:stage-coordinates run))
@@ -67,12 +72,12 @@
                                     "work_content_hash")}]))
                  (:results run))})
 
-(defn- drive! [clone run snapshot]
+(defn- drive-report! [clone report cas-dir snapshot]
   (release/release!
-   {:report (run->report run)
-    :cas-dir (:cas-dir run)
+   {:report report
+    :cas-dir cas-dir
     :upstream-origin "https://forge.example/za/fixture-corpus.git"
-    :selection-params {"config" "za-fixture"}
+    :selection-params {}
     :policy-id "za-fixture-policy-v1"
     :policy-hash policy-hash
     :snapshot-bytes snapshot
@@ -80,6 +85,9 @@
     :branch fx/branch
     :pinned-keys (fx/pinned-keys)
     :sign-release fx/sign-release}))
+
+(defn- drive! [clone run snapshot]
+  (drive-report! clone (run->report run) (:cas-dir run) snapshot))
 
 (defn- verified-chain [clone]
   (verify/verify-repository-at (view/git-view clone)
@@ -146,3 +154,89 @@
       (is (= head-before (fx/head-of clone))))
     (testing "the same run publishes once the snapshot is contractual"
       (is (= :published (:outcome (drive! clone run good)))))))
+
+(deftest a-work-omitted-from-works-and-snapshot-cannot-pass-totality
+  ;; the co-omission failure: kumo vanishes from the built works AND from
+  ;; the snapshot, but the selected population captured before execution
+  ;; still names it, so the driver refuses before assembly
+  (let [root (corpus/init-corpus! [merosu kumo])
+        run (corpus/run-corpus! root (temp-store!))
+        {:keys [clone]} (fx/make-repos!)
+        head-before (fx/head-of clone)
+        broken (update (run->report run) "works" dissoc (slug-of kumo))
+        outcome (try (drive-report! clone broken (:cas-dir run)
+                                    (snapshot-bytes [(pd merosu)]))
+                     nil
+                     (catch clojure.lang.ExceptionInfo e (ex-data e)))]
+    (is (= :selection-works-mismatch (:reason outcome)))
+    (is (= [(slug-of kumo)] (:selected-only outcome)))
+    (is (= head-before (fx/head-of clone)))))
+
+;; --- CLI boundary ------------------------------------------------------------
+
+(defn- vector-keys []
+  (get (json/read-json (slurp (io/resource "snh/vectors/signature-vectors.json")))
+       "keys"))
+
+(deftest release-input-errors-win-before-the-build-runs
+  ;; every file input is preflighted; the aozora-root sentinel does not
+  ;; exist, so any row that reached the build would fail with the
+  ;; provenance gate's distinct error instead of its own
+  (let [dir (fs/create-temp-dir {:prefix "za-release-cli"})
+        write! (fn [name ^String content]
+                 (let [path (str (fs/path dir name))]
+                   (spit path content)
+                   path))
+        ks (vector-keys)
+        snapshot-file (write! "snapshot.json"
+                              (String. ^bytes (snapshot-bytes [(pd merosu)])
+                                       "UTF-8"))
+        base {:root (str (fs/path dir "store"))
+              :aozora-root (str (fs/path dir "no-such-checkout"))
+              :clj-toolchain-id "za-cli-fixture"
+              :chain-clone (str (fs/path dir "no-such-clone"))
+              :branch "main"
+              :upstream-origin "https://forge.example/za/fixture-corpus.git"
+              :assessment snapshot-file
+              :policy (write! "policy.edn"
+                              "{:rights-publication :assessment-required}")
+              :release-pub (write! "release.pub"
+                                   (str (get-in ks ["release" "pub"]) "\n"))
+              :governance-pub (write! "governance.pub"
+                                      (str (get-in ks ["governance" "pub"]) "\n"))
+              :release-key (write! "release.seed"
+                                   (get-in ks ["release" "seed"]))}
+        error (fn [opts]
+                (try (main/release! opts)
+                     nil
+                     (catch clojure.lang.ExceptionInfo e
+                       (or (:reason (ex-data e)) (:option (ex-data e))
+                           (ex-message e)))))]
+    (testing "the blocking production rights state refuses release"
+      (is (= :rights-blocked
+             (error (assoc base :policy
+                           (write! "blocked.edn"
+                                   "{:rights-publication :blocked-pending-assessment-migration}"))))))
+    (testing "a malformed snapshot dies at decode"
+      (is (= :parse-invalid
+             (error (assoc base :assessment
+                           (write! "dup.json"
+                                   (str/replace (slurp snapshot-file)
+                                                "{\"candidates\""
+                                                "{\"candidates\":[],\"candidates\"")))))))
+    (testing "overlapping role keys are an invalid configuration"
+      (is (= :overlapping-roles
+             (error (assoc base :governance-pub (:release-pub base))))))
+    (testing "a seed for the wrong role fails the correspondence probe"
+      (is (= :seed-key-mismatch
+             (error (assoc base :release-key
+                           (write! "governance.seed"
+                                   (get-in ks ["governance" "seed"])))))))
+    (testing "a relative upstream origin is refused"
+      (is (= :invalid-upstream-origin
+             (error (assoc base :upstream-origin "mirrors/corpus.git")))))
+    (testing "--limit is refused for release"
+      (is (= "--limit" (error (assoc base :limit 5)))))
+    (testing "with every input valid, the first failure is the build's own
+      provenance gate — proof the preflight ran to completion first"
+      (is (= "source git unavailable" (error base))))))

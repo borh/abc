@@ -27,6 +27,8 @@
             [soranoha.ported.assets :as assets]
             [soranoha.ported.json :as abc-json]
             [soranoha.ported.parallel :as parallel]
+            [soranoha.snh.decode :as decode]
+            [soranoha.snh.semantic :as semantic]
             [soranoha.snh.sign :as sign]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
@@ -172,6 +174,11 @@
           ;; selection join, and the stage coordinates
           report {"aozora_git_commit" commit
                   "catalog_csv_hash" catalog-csv-hash
+                  ;; captured from the selection join, before work
+                  ;; execution and independent of the works projection:
+                  ;; the release driver's totality comparison runs
+                  ;; against this set, never against the works keys
+                  "selected_slugs" (vec (sort (map :slug candidates)))
                   "selected_count" (count candidates)
                   "rejected_count" (count rejected)
                   "executed_stage_count" (count (filter false?
@@ -307,48 +314,74 @@
     (println (abc-json/write-deterministic-json-str result))
     result))
 
-(defn release!
-  "One scheduled release invocation: kernel build at the current checkout,
-  then the za driver's release assembly and publication transaction. Every
-  release input is a fail-closed file: the assessment snapshot (protocol
-  bytes, strictly decoded by the driver), the policy value (its bytes are
-  hashed into the manifest admission), the release signing seed, and the
-  pinned verifier keys."
-  [{:keys [root chain-clone branch upstream-origin selection-config
-           assessment policy-id policy pinned-keys release-key]
-    :as opts}]
+(defn release-preflight!
+  "Read and validate every release input before the build runs, returning
+  the already-read values the release consumes. Fail-closed: the
+  assessment snapshot must boundary-decode, the rights policy must
+  authorize (value plus hash from the same bytes; the authority fixes the
+  policy id), the pinned role keys must form a valid two-role
+  configuration, the 32-byte signing seed must correspond to the pinned
+  release key, and the upstream origin must be an absolute URI. --limit
+  is refused: it is a build diagnostic, and a limited selection would
+  claim the same projection as the full one."
+  [{:keys [chain-clone upstream-origin assessment policy
+           release-pub governance-pub release-key limit]}]
   (doseq [[flag value] {"--chain-clone" chain-clone
                         "--upstream-origin" upstream-origin
-                        "--selection-config" selection-config
                         "--assessment" assessment
-                        "--policy-id" policy-id
                         "--policy" policy
-                        "--pinned-keys" pinned-keys
+                        "--release-pub" release-pub
+                        "--governance-pub" governance-pub
                         "--release-key" release-key}]
     (when (string/blank? (str value))
       (throw (ex-info (str flag " is required for release") {:option flag}))))
-  (let [pinned (let [{:strs [release governance]}
-                     (json/read-json (slurp (str pinned-keys)))]
-                 (when (or (string/blank? release) (string/blank? governance))
-                   (throw (ex-info "pinned keys must name release and governance"
-                                   {:file (str pinned-keys)})))
-                 {:release release :governance governance})
-        seed (sign/hex->bytes (string/trim (slurp (str release-key))))
+  (when limit
+    (throw (ex-info "--limit is refused for release; a release covers the full selection"
+                    {:option "--limit"})))
+  (when-not (semantic/absolute-origin? upstream-origin)
+    (throw (ex-info "upstream origin must be an absolute URI"
+                    {:reason :invalid-upstream-origin :origin upstream-origin})))
+  (let [snapshot-bytes (fs/read-all-bytes (str assessment))
+        _ (decode/decode "assessment-snapshot" snapshot-bytes)
+        authority (za-release/rights-authority!
+                   (fs/read-all-bytes (str policy)))
+        pinned (sign/validate-pinned-keys!
+                {:release (sign/parse-hex64-lf
+                           (fs/read-all-bytes (str release-pub)))
+                 :governance (sign/parse-hex64-lf
+                              (fs/read-all-bytes (str governance-pub)))})
+        seed (sign/hex->bytes (string/trim (slurp (str release-key))))]
+    (when-not (sign/seed-signs-for? seed (:release pinned))
+      (throw (ex-info "release signing seed does not correspond to the pinned release key"
+                      {:reason :seed-key-mismatch})))
+    (merge authority
+           {:snapshot-bytes snapshot-bytes
+            :pinned pinned
+            :sign-release (fn [manifest-hex]
+                            (sign/sign seed
+                                       (sign/manifest-message manifest-hex)))})))
+
+(defn release!
+  "One scheduled release invocation: preflight every fail-closed file
+  input, then the kernel build at the current checkout, then the za
+  driver's release assembly and publication transaction."
+  [{:keys [root chain-clone branch upstream-origin] :as opts}]
+  (let [{:keys [snapshot-bytes policy-id policy-hash pinned sign-release]}
+        (release-preflight! opts)
         report (build! opts)
         outcome (za-release/release!
                  {:report report
                   :cas-dir (config/cas-dir (config/root root))
                   :upstream-origin upstream-origin
-                  :selection-params {"config" selection-config}
+                  ;; v1's selector has no production parameters
+                  :selection-params {}
                   :policy-id policy-id
-                  :policy-hash (core-hash/sha256-file (fs/file (str policy)))
-                  :snapshot-bytes (fs/read-all-bytes (str assessment))
+                  :policy-hash policy-hash
+                  :snapshot-bytes snapshot-bytes
                   :clone (str chain-clone)
                   :branch branch
                   :pinned-keys pinned
-                  :sign-release (fn [manifest-hex]
-                                  (sign/sign seed
-                                             (sign/manifest-message manifest-hex)))})]
+                  :sign-release sign-release})]
     (println (abc-json/write-deterministic-json-str
               (into (sorted-map)
                     (keep (fn [[k v]] (when v [k v])))
@@ -382,11 +415,10 @@
    :chain-clone {:coerce :string}
    :branch {:coerce :string :default "main"}
    :upstream-origin {:coerce :string}
-   :selection-config {:coerce :string}
    :assessment {:coerce :string}
-   :policy-id {:coerce :string}
    :policy {:coerce :string}
-   :pinned-keys {:coerce :string}
+   :release-pub {:coerce :string}
+   :governance-pub {:coerce :string}
    :release-key {:coerce :string}
    ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
    ;; with -Xmx4g); 0 = one worker per available processor

@@ -136,6 +136,15 @@
                     {:reason :overlapping-roles})))
   pinned-keys)
 
+(defn seed-signs-for?
+  "True iff signatures produced by `seed` verify against `pub-hex` — the
+  configuration probe that a signing seed corresponds to a pinned public
+  key, checked before any real message is signed. The probe message is
+  domain-separated from every artifact signature domain."
+  [^bytes seed pub-hex]
+  (let [message "snh-key-probe/1"]
+    (verify? pub-hex message (sign seed message))))
+
 (def ^:private type->role
   {"release-manifest" :release
    "governance-event" :governance})

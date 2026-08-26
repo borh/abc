@@ -8,9 +8,55 @@
   are the transaction's — :published, :already-published (the scheduled
   no-op), :requeue (the next scheduled invocation retries against the
   new head), :determinism-halt."
-  (:require [soranoha.snh.decode :as decode]
+  (:require [clojure.edn :as edn]
+            [soranoha.core.hash :as hash]
+            [soranoha.snh.decode :as decode]
             [soranoha.snh.transact :as transact]
-            [soranoha.za.assemble :as assemble]))
+            [soranoha.za.assemble :as assemble])
+  (:import (java.nio ByteBuffer)
+           (java.nio.charset CodingErrorAction StandardCharsets)))
+
+;; --- rights authority -------------------------------------------------------
+
+;; The one rights-publication state that authorizes release publication.
+;; Every other, missing, or malformed state is fail-closed. Moving this
+;; value is a deliberate governance change, not an implementation detail.
+(def ^:private authorizing-rights-state :assessment-required)
+
+(defn- strict-utf8
+  "Decode bytes as UTF-8, failing (rather than substituting) on malformed
+  or unmappable byte sequences."
+  [^bytes bytes]
+  (let [decoder (doto (.newDecoder StandardCharsets/UTF_8)
+                  (.onMalformedInput CodingErrorAction/REPORT)
+                  (.onUnmappableCharacter CodingErrorAction/REPORT))]
+    (str (.decode decoder (ByteBuffer/wrap bytes)))))
+
+(defn rights-authority!
+  "Fail-closed value-plus-hash rights authority over the policy bytes:
+  strict UTF-8 + EDN decode, then only the authorizing rights-publication
+  state releases — the value evaluated and the manifest policy hash
+  derive from the same byte array, so the recorded hash can never
+  disagree with what was evaluated. The policy id is fixed here, by the
+  authority, never supplied by the caller. Returns
+  {:policy-id :policy-hash}; throws on anything else."
+  [^bytes policy-bytes]
+  (let [value (try
+                (edn/read-string (strict-utf8 policy-bytes))
+                (catch Exception e
+                  (throw (ex-info "rights policy unreadable"
+                                  {:reason :policy-unreadable
+                                   :cause (ex-message e)}))))
+        state (when (map? value) (:rights-publication value))]
+    (when-not (= authorizing-rights-state state)
+      (throw (ex-info (str "release publication blocked by rights policy: "
+                           (pr-str (or state :missing-rights-publication-policy)))
+                      {:reason :rights-blocked
+                       :state (or state :missing-rights-publication-policy)})))
+    {:policy-id "rights-publication-policy-v1"
+     :policy-hash (hash/sha256-bytes policy-bytes)}))
+
+;; --- report projection ------------------------------------------------------
 
 (defn- report-works
   "The assembler's works map projected from a build run report."
@@ -52,7 +98,18 @@
            clone branch pinned-keys sign-release push-fn]}]
   (let [candidates (get (:value (decode/decode "assessment-snapshot"
                                                snapshot-bytes))
-                        "candidates")]
+                        "candidates")
+        ;; the selected population is captured from the selection join
+        ;; before work execution; requiring the built works to equal it
+        ;; keeps the assembler's totality comparison independent — a work
+        ;; co-omitted from both the works and the snapshot cannot pass
+        selected (get report "selected_slugs")
+        works (set (keys (get report "works")))]
+    (when-not (and (seq selected) (= (set selected) works))
+      (throw (ex-info "report works do not cover the selected population"
+                      {:reason :selection-works-mismatch
+                       :selected-only (vec (sort (remove works selected)))
+                       :works-only (vec (sort (remove (set selected) works)))})))
     (transact/publish-build!
      (cond-> {:clone clone
               :branch branch
@@ -69,5 +126,5 @@
                           :policy-hash policy-hash
                           :candidates candidates
                           :works (report-works report)
-                          :selection (keys (get report "works"))})}
+                          :selection selected})}
        push-fn (assoc :push-fn push-fn)))))

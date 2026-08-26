@@ -120,7 +120,11 @@
       # supplies that identity and runs the Nix-captured source; direct
       # clojure invocation remains the path for intentionally custom
       # identities.
-      mkKernelSoranohaApp =
+      # One private Clojure context for the soranoha kernel — a single
+      # dependency-cache derivation and derived toolchain identity shared by
+      # the wrapper app and the soranoha-tests check, so the hermetic suite
+      # exercises exactly the runtime and tool pins the wrapper ships.
+      soranohaCljContext =
         system:
         let
           pkgs = pkgsFor system;
@@ -128,11 +132,22 @@
             inherit system;
             overlays = [ clj-nix.overlays.default ];
           };
-          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
-          kernelDepsCache = cljPkgs.mk-deps-cache { lockfile = ./soranoha/deps-lock.json; };
-          cljToolchainId =
+          depsCache = cljPkgs.mk-deps-cache { lockfile = ./soranoha/deps-lock.json; };
+        in
+        {
+          inherit depsCache;
+          toolchainId =
             "clj-nix-"
-            + builtins.hashString "sha256" "${pkgs.clojure}\n${kernelDepsCache}\n${builtins.hashFile "sha256" ./soranoha/deps.edn}";
+            + builtins.hashString "sha256" "${pkgs.clojure}\n${depsCache}\n${builtins.hashFile "sha256" ./soranoha/deps.edn}";
+        };
+
+      mkKernelSoranohaApp =
+        system:
+        let
+          pkgs = pkgsFor system;
+          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
+          kernelDepsCache = (soranohaCljContext system).depsCache;
+          cljToolchainId = (soranohaCljContext system).toolchainId;
         in
         pkgs.writeShellScript "soranoha-kernel" ''
           set -euo pipefail
@@ -261,6 +276,7 @@
           cljDepsCache = cljPkgs.mk-deps-cache {
             lockfile = ./abc/deps-lock.json;
           };
+          soranohaClj = soranohaCljContext system;
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
           abcApps = optionalOutputAttrs abc "apps" system;
           abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
@@ -282,6 +298,51 @@
               '';
         in
         {
+          # The soranoha kernel + snh conformance suite plus its lint and
+          # format gates, hermetic against the shared wrapper context so the
+          # tested runtime is byte-for-byte the shipped one. git backs the
+          # repository-view and publication-transaction test fixtures. The
+          # ported tree is excluded from lint/format: byte fidelity to the
+          # abc originals is intentional there.
+          soranoha-tests =
+            pkgs.runCommand "soranoha-tests"
+              {
+                nativeBuildInputs = [
+                  pkgs.clojure
+                  pkgs.git
+                  pkgs.clj-kondo
+                  pkgs.cljfmt
+                ];
+              }
+              ''
+                cp -R ${self}/soranoha source
+                chmod -R u+w source
+                # The canonicalization suite binds the kernel's canonicalizer
+                # to abc's shared cross-language vectors at this relative path
+                # (the two copies must never diverge byte-wise).
+                mkdir -p abc/test/fixtures/canonicalization
+                cp ${self}/abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json \
+                  abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json
+                cd source
+
+                find src test -name '*.clj' -not -path '*/ported/*' -print0 \
+                  | xargs -0 clj-kondo --fail-level warning --lint
+                find src test -name '*.clj' -not -path '*/ported/*' -print0 \
+                  | xargs -0 cljfmt check
+
+                export HOME="${soranohaClj.depsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${soranohaClj.depsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+                export GITLIBS="$HOME/.gitlibs"
+
+                clojure -M:test
+
+                mkdir -p "$out"
+                echo "soranoha suite, lint, and format checks passed" > "$out/result.txt"
+              '';
+
           # One canonical strict-governance derivation. It lives here (not in
           # the abc component flake) because claim evidence paths are
           # monorepo-root-relative — abc/test/…, ab-validator/crates/…/tests/…

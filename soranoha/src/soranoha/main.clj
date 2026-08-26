@@ -30,6 +30,7 @@
             [soranoha.snh.decode :as decode]
             [soranoha.snh.semantic :as semantic]
             [soranoha.snh.sign :as sign]
+            [soranoha.snh.transact :as transact]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
             [soranoha.za.oracle :as oracle]
@@ -313,6 +314,19 @@
     (println (abc-json/write-deterministic-json-str result))
     result))
 
+(defn- require-flags! [command flags]
+  (doseq [[flag value] flags]
+    (when (string/blank? (str value))
+      (throw (ex-info (str flag " is required for " command) {:option flag})))))
+
+(defn- pinned-keys-from-files
+  "The pinned verifier configuration from the protocol's role-named
+  65-byte hex+LF public-key files."
+  [release-pub governance-pub]
+  (sign/validate-pinned-keys!
+   {:release (sign/parse-hex64-lf (fs/read-all-bytes (str release-pub)))
+    :governance (sign/parse-hex64-lf (fs/read-all-bytes (str governance-pub)))}))
+
 (defn- read-signing-seed
   "Parse a signing-seed file (64 lowercase hex + optional surrounding
   whitespace) into 32 bytes. The file content is a secret: rejection
@@ -337,15 +351,14 @@
   claim the same projection as the full one."
   [{:keys [chain-clone upstream-origin assessment policy
            release-pub governance-pub release-key limit]}]
-  (doseq [[flag value] {"--chain-clone" chain-clone
-                        "--upstream-origin" upstream-origin
-                        "--assessment" assessment
-                        "--policy" policy
-                        "--release-pub" release-pub
-                        "--governance-pub" governance-pub
-                        "--release-key" release-key}]
-    (when (string/blank? (str value))
-      (throw (ex-info (str flag " is required for release") {:option flag}))))
+  (require-flags! "release"
+                  {"--chain-clone" chain-clone
+                   "--upstream-origin" upstream-origin
+                   "--assessment" assessment
+                   "--policy" policy
+                   "--release-pub" release-pub
+                   "--governance-pub" governance-pub
+                   "--release-key" release-key})
   (when limit
     (throw (ex-info "--limit is refused for release; a release covers the full selection"
                     {:option "--limit"})))
@@ -356,11 +369,7 @@
         _ (decode/decode "assessment-snapshot" snapshot-bytes)
         authority (za-release/rights-authority!
                    (fs/read-all-bytes (str policy)))
-        pinned (sign/validate-pinned-keys!
-                {:release (sign/parse-hex64-lf
-                           (fs/read-all-bytes (str release-pub)))
-                 :governance (sign/parse-hex64-lf
-                              (fs/read-all-bytes (str governance-pub)))})
+        pinned (pinned-keys-from-files release-pub governance-pub)
         seed (read-signing-seed release-key)]
     (when-not (sign/seed-signs-for? seed (:release pinned))
       (throw (ex-info "release signing seed does not correspond to the pinned release key"
@@ -402,6 +411,50 @@
                      "commit" (:commit outcome)})))
     outcome))
 
+(defn governance!
+  "Append one offline-signed governance event to the chain. The event and
+  its detached 64-byte signature arrive as files and pass unchanged to the
+  publication transaction, which boundary-decodes the event, verifies the
+  governance signature, and never rewrites or re-signs it; the release
+  seed here signs only the successor manifest. Preflight covers the file
+  inputs and the seed's correspondence with the pinned release key."
+  [{:keys [chain-clone branch event event-sig
+           release-pub governance-pub release-key]}]
+  (require-flags! "governance"
+                  {"--chain-clone" chain-clone
+                   "--event" event
+                   "--event-sig" event-sig
+                   "--release-pub" release-pub
+                   "--governance-pub" governance-pub
+                   "--release-key" release-key})
+  (let [pinned (pinned-keys-from-files release-pub governance-pub)
+        sig-bytes (fs/read-all-bytes (str event-sig))
+        _ (when-not (= 64 (alength ^bytes sig-bytes))
+            (throw (ex-info "event signature file must be exactly 64 raw bytes"
+                            {:reason :malformed-event-signature
+                             :length (alength ^bytes sig-bytes)})))
+        seed (read-signing-seed release-key)
+        _ (when-not (sign/seed-signs-for? seed (:release pinned))
+            (throw (ex-info "release signing seed does not correspond to the pinned release key"
+                            {:reason :seed-key-mismatch})))
+        outcome (transact/publish-governance!
+                 {:clone (str chain-clone)
+                  :branch branch
+                  :pinned-keys pinned
+                  :sign-release (fn [manifest-hex]
+                                  (sign/sign seed
+                                             (sign/manifest-message manifest-hex)))
+                  :event-bytes (fs/read-all-bytes (str event))
+                  :event-sig sig-bytes})]
+    (println (abc-json/write-deterministic-json-str
+              (into (sorted-map)
+                    (keep (fn [[k v]] (when v [k v])))
+                    {"outcome" (name (:outcome outcome))
+                     "event" (:event outcome)
+                     "manifest_id" (:manifest-id outcome)
+                     "reason" (some-> (:reason outcome) name)})))
+    outcome))
+
 (defn verify!
   [{:keys [root]}]
   (let [root (config/root root)
@@ -431,6 +484,8 @@
    :release-pub {:coerce :string}
    :governance-pub {:coerce :string}
    :release-key {:coerce :string}
+   :event {:coerce :string}
+   :event-sig {:coerce :string}
    ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
    ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}
@@ -453,10 +508,13 @@
         "release" (let [{:keys [outcome]} (release! opts)]
                     (when-not (#{:published :already-published} outcome)
                       (System/exit (if (= :requeue outcome) 3 1))))
+        "governance" (let [{:keys [outcome]} (governance! opts)]
+                       (when-not (#{:published :already-applied} outcome)
+                         (System/exit 1)))
         "verify" (when-not (:ok? (verify! opts))
                    (System/exit 1))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|delta|release|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|compare|delta|release|governance|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

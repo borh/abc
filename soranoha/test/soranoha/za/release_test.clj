@@ -12,6 +12,7 @@
             [soranoha.main :as main]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.fixture :as fx]
+            [soranoha.snh.sign :as sign]
             [soranoha.snh.verify :as verify]
             [soranoha.snh.view :as view]
             [soranoha.za.corpus :as corpus]
@@ -88,6 +89,10 @@
 
 (defn- drive! [clone run snapshot]
   (drive-report! clone (run->report run) (:cas-dir run) snapshot))
+
+(defn- vector-keys []
+  (get (json/read-json (slurp (io/resource "snh/vectors/signature-vectors.json")))
+       "keys"))
 
 (defn- verified-chain [clone]
   (verify/verify-repository-at (view/git-view clone)
@@ -172,6 +177,68 @@
     (is (= [(slug-of kumo)] (:selected-only outcome)))
     (is (= head-before (fx/head-of clone)))))
 
+(deftest governance-withdrawal-executes-end-to-end
+  ;; the full production path: a driver-published release, then a
+  ;; withdrawal event signed offline by the governance key, submitted as
+  ;; files through the governance CLI, with the transition invariants
+  ;; verified by the published checker
+  (let [root (corpus/init-corpus! [merosu kumo])
+        run (corpus/run-corpus! root (temp-store!))
+        {:keys [clone]} (fx/make-repos!)
+        release-result (drive! clone run
+                               (snapshot-bytes [(pd merosu) (pd kumo)]))
+        dir (fs/create-temp-dir {:prefix "za-governance-cli"})
+        ks (vector-keys)
+        event-value (fx/event-value "withdrawal"
+                                    [{"slug" (slug-of kumo)
+                                      "reason_code" "takedown-request"
+                                      "statement" "Documented request."}])
+        {event-hex :hex event-bytes :bytes event-id :id}
+        (decode/encode "governance-event" event-value)
+        write-bytes! (fn [name ^bytes bytes]
+                       (let [path (str (fs/path dir name))]
+                         (fs/write-bytes path bytes)
+                         path))
+        base {:chain-clone (str clone)
+              :branch fx/branch
+              :event (write-bytes! "event.json" event-bytes)
+              :event-sig (write-bytes! "event.sig" (fx/sign-event event-hex))
+              :release-pub (write-bytes!
+                            "release.pub"
+                            (sign/hex64-lf-bytes (get-in ks ["release" "pub"])))
+              :governance-pub (write-bytes!
+                               "governance.pub"
+                               (sign/hex64-lf-bytes
+                                (get-in ks ["governance" "pub"])))
+              :release-key (write-bytes!
+                            "release.seed"
+                            (.getBytes ^String (get-in ks ["release" "seed"])
+                                       "UTF-8"))}
+        outcome (main/governance! base)]
+    (is (= :published (:outcome release-result)))
+    (is (= :published (:outcome outcome)))
+    (is (= event-id (:event outcome)))
+    (let [chain (verified-chain clone)
+          head (:head-manifest chain)]
+      (is (= [(:manifest-id outcome) (:manifest-id release-result)]
+             (:chain chain)))
+      (is (= [(slug-of merosu)]
+             (mapv #(get % "slug") (get head "works"))))
+      (is (= [{"slug" (slug-of kumo) "event" event-id}]
+             (get head "withdrawn"))))
+    (testing "replaying the same signed event converges without a release"
+      (is (= :already-applied (:outcome (main/governance! base)))))
+    (testing "an event signed by the release key is refused"
+      (is (= :event-signature-invalid
+             (try (main/governance!
+                   (assoc base :event-sig
+                          (write-bytes! "wrong-role.sig"
+                                        (fx/sign-event-with-release-key
+                                         event-hex))))
+                  nil
+                  (catch clojure.lang.ExceptionInfo e
+                    (:reason (ex-data e)))))))))
+
 (deftest rights-policy-must-be-one-whole-document
   ;; a reader stopping at the first value would authorize — and hash —
   ;; bytes it never evaluated
@@ -195,10 +262,6 @@
                                      "UTF-8"))))))))
 
 ;; --- CLI boundary ------------------------------------------------------------
-
-(defn- vector-keys []
-  (get (json/read-json (slurp (io/resource "snh/vectors/signature-vectors.json")))
-       "keys"))
 
 (deftest release-input-errors-win-before-the-build-runs
   ;; every file input is preflighted; the aozora-root sentinel does not

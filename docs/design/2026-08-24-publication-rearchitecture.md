@@ -28,58 +28,15 @@ numbers live in the findings sections and Git history, not here):
   fixity-checked); all F7 bounds met at the pinned config (-Xmx4g,
   concurrency 16): cold 465.5 s, peak RSS 6.22 GiB, warm no-op 6.1 s.
   The kernel is policy-blind (F52/F60).
-- **Slice 2 STARTED 2026-08-25; D16.1 FREEZE APPROVED 2026-08-25 at
-  commit 22551310** (freeze-review rounds 1–2, F147–F156, all
-  applied). Frozen objects: the four hand-written JSON Schemas
-  (`soranoha/resources/snh/schemas/`) + table-driven conformance
-  vectors (`soranoha/resources/snh/vectors/`, exercised by
-  `soranoha.snh.conformance-test` — spec §11 items 1–5; item 6's
-  invariant fixtures land with the Slice-2 verifier). The minimal
-  assessment-snapshot content schema — the spec's last open item —
-  is fixed in spec §5. Boundary decode (F137/F142), wire encodings,
-  Ed25519 role-bound verification (F126), and the F123 fixture keys
-  (RFC 8032 vectors) are implemented in `soranoha/src/soranoha/snh/`.
-  The D20-as-amended AGENTS.md ownership transfer is recorded.
-  Post-freeze progress (2026-08-25, not covered by the D16.1 freeze;
-  reviewed separately — **§8/§9 APPROVED at d7e80a22**): the §8 verifier
-  (`soranoha.snh.verify` — chain walk, publication-commit definition,
-  closure/blob/signature checks, transition rules, §10
-  archive-verification report) and the §9 publication transaction
-  (`soranoha.snh.transact` — pre-genesis init, build + governance
-  publication over a fast-forward-only compare-and-swap push,
-  current-state reconciliation incl. requeue / already-published /
-  determinism-halt / conflicting-withdrawal / stale-amends, F61
-  lost-ack convergence, F87 totality gate) are implemented with the
-  §11-item-6 invariant fixtures (`verify-test`, `transact-test`)
-  against a local fixture origin. Implementation review round 1
-  (F157–F163) applied: pre-push candidate verification, pre-push
-  no-op/determinism decision, non-substituting hardened git view,
-  real commit time, all single-object semantics in boundary decode,
-  validation-summary re-derivation, exact-reason mutation tables,
-  streaming verification. Round 2 (F164–F167) applied: fetched head
-  verified before the no-op decision, strict two-field
-  validation-record contract, sanitized + git-dir-bound view
-  environment, unreachable superseded-entry check deleted. Round 3
-  (F168) applied: linked worktrees rejected at view construction
-  (common dir must equal git dir). **§8/§9 boundary APPROVED
-  2026-08-26 at d7e80a22.** Manifest assembly + F5 delta oracle
-  implemented against the real kernel (soranoha.za.assemble +
-  fixture-corpus/oracle acceptance); assembly-review rounds 4–8
-  (F169–F179) applied and **APPROVED 2026-08-26 at 379951dc**. F172
-  closed: root-flake `soranoha-kernel` wrapper with content-derived
-  toolchain identity, strict report boundary decode, and the `delta`
-  driver; production F5 run executed at a second real revision
-  (a1da0f5a00 → pinned 0e9ea3e586, 17,602 works, oracle ok = true, 0
-  unexplained executions; see the Slice-2 completion section). Round
-  9 (F180–F183) applied: exact per-work evidence coverage in
-  decode-run, the artifact/execution gate deleted (ok = unexplained
-  executions only), the wrapper hermeticized over the clj-nix
-  dependency cache with a full-hash identity, sorted failure rows —
-  and the production F5 pair rerun through the final wrapper, again
-  ok = true (see round 9). **Slice 2 APPROVED 2026-08-26 at
-  5d9f16b7** (wrapper hermeticity closure verified without a corpus
-  rerun). Suites: 59 tests / 312 assertions green locally and
-  hermetically.
+- **Slice 2: DONE (APPROVED 2026-08-26 at 5d9f16b7).** D16.1 protocol
+  freeze at 22551310 (four schemas + conformance vectors, spec
+  §11); §8 verifier / §9 transaction approved at d7e80a22; manifest
+  assembly + F5 delta oracle approved at 379951dc; production F5
+  qualification at a second real revision (a1da0f5a00 → the pinned
+  0e9ea3e586, oracle ok = true, 0 unexplained executions) through the
+  hermetic `soranoha-kernel` wrapper. Implementation-review rounds
+  1–9 (F157–F183) are recorded in the sections below; suites 59
+  tests / 312 assertions, locally and hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.

@@ -8,7 +8,7 @@ This repository is the Soranoha monorepo. It contains three main components:
   implementation (Slices 1–2 of
   `docs/design/2026-08-24-publication-rearchitecture.md`): content-addressed
   store + constructive-trace engine + copied per-work pipeline, plus the
-  snh-protocol-v1 freeze-candidate schemas, conformance vectors, boundary
+  frozen snh-protocol-v1 schemas (D16.1), conformance vectors, boundary
   decode, and wire/signature encodings (`src/soranoha/snh/`,
   `resources/snh/`). Zero
   requires into abc namespaces; abc-owned assets (record schemas, TEI

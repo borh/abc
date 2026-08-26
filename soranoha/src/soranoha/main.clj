@@ -257,8 +257,11 @@
 (defn delta!
   "The disposable second-revision acceptance export: the three-set delta
   oracle over two build run reports (strictly decoded), printed as
-  deterministic JSON. `ok` requires zero unexplained executions and zero
-  artifact changes lacking an executed stage."
+  deterministic JSON. `ok` requires zero unexplained executions; the
+  source and artifact deltas are descriptive (content hashes already
+  establish what changed, and no executed stage is evidence for or
+  against an artifact change — a warm cache can produce changed bytes
+  without executing anything)."
   [{:keys [report-a report-b]}]
   (let [run-a (oracle/decode-run (fs/read-all-bytes (str report-a)))
         run-b (oracle/decode-run (fs/read-all-bytes (str report-b)))
@@ -275,9 +278,6 @@
                                   [(name stage) (count runs)]))
                            (group-by identity (mapcat val executed)))
         touched (into (:added source) (:changed source))
-        unexplained-artifacts (sorted-slugs
-                               (remove #(seq (get executed %))
-                                       (:changed artifacts)))
         result {"commit_a" (:commit run-a)
                 "commit_b" (:commit run-b)
                 "source_delta" (delta-json source)
@@ -293,10 +293,8 @@
                 (mapv (fn [{:keys [slug stage trace-key]}]
                         {"slug" slug "stage" (name stage)
                          "trace_key" trace-key})
-                      violations)
-                "unexplained_artifact_changes" unexplained-artifacts
-                "ok" (and (empty? violations)
-                          (empty? unexplained-artifacts))}]
+                      (sort-by (juxt :slug #(name (:stage %))) violations))
+                "ok" (empty? violations)}]
     (println (abc-json/write-deterministic-json-str result))
     result))
 

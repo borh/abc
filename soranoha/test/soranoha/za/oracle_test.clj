@@ -72,10 +72,15 @@
     (is (= :malformed-work-evidence
            (reject-reason (report-json :replace-from "\"cached\":{\"parse\":false}"
                                        :replace-to "\"cached\":{\"ghost\":false}")))))
-  (testing "cached and trace_keys stage sets must agree"
-    (is (= :cached-and-trace-keys-diverge
+  (testing "work evidence omitting a declared stage — an execution silently
+    erased from both maps must refuse decoding, not pass as a subset"
+    (is (= :malformed-work-evidence
            (reject-reason (report-json :replace-from "\"cached\":{\"parse\":false}"
-                                       :replace-to "\"cached\":{}")))))
+                                       :replace-to "\"cached\":{}"))))
+    (is (= :malformed-work-evidence
+           (reject-reason (report-json
+                           :replace-from (str "\"trace_keys\":{\"parse\":\"" hex-b "\"}")
+                           :replace-to "\"trace_keys\":{}")))))
   (testing "non-hex artifact hash"
     (is (= :not-a-content-hash
            (reject-reason (report-json :replace-from hex-a

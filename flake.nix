@@ -107,22 +107,30 @@
         '';
 
       # The soranoha/ Clojure kernel CLI with the same private adapter
-      # injection. The wrapper supplies the content-derived Clojure
-      # toolchain identity the kernel refuses to run without: a hash over
-      # the pinned Clojure tool closure and the dependency lockfile, so a
-      # runtime or dependency change re-keys every pure-Clojure stage
-      # derivation instead of silently reusing stale traces. An explicit
+      # injection. The wrapper authenticates the Clojure runtime it names
+      # instead of inheriting the caller's: classpath resolution runs
+      # against the offline clj-nix dependency cache with HOME and the
+      # Clojure/Maven/gitlibs configuration bound to store paths, so
+      # user-level deps.edn merging or mutable caches cannot change what
+      # executes. The toolchain identity the kernel refuses to run without
+      # is derived from exactly that environment — the Clojure tool
+      # closure, the dependency-cache closure, and deps.edn — so a runtime
+      # or dependency change re-keys every pure-Clojure stage derivation
+      # instead of silently reusing stale traces. An explicit
       # --clj-toolchain-id on the command line wins.
       mkKernelSoranohaApp =
         system:
         let
           pkgs = pkgsFor system;
+          cljPkgs = import nixpkgs {
+            inherit system;
+            overlays = [ clj-nix.overlays.default ];
+          };
           abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
+          kernelDepsCache = cljPkgs.mk-deps-cache { lockfile = ./soranoha/deps-lock.json; };
           cljToolchainId =
             "clj-nix-"
-            + builtins.substring 0 32 (
-              builtins.hashString "sha256" "${pkgs.clojure}\n${builtins.hashFile "sha256" ./soranoha/deps-lock.json}"
-            );
+            + builtins.hashString "sha256" "${pkgs.clojure}\n${kernelDepsCache}\n${builtins.hashFile "sha256" ./soranoha/deps.edn}";
         in
         pkgs.writeShellScript "soranoha-kernel" ''
           set -euo pipefail
@@ -133,19 +141,29 @@
               pkgs.git
               pkgs.clojure
             ]
-          }:''${PATH:-}"
+          }"
           export AB_AAT_TO_PARSER_IR_BIN="${
             abValidatorPackages."ab-aat-to-parser-ir"
           }/bin/ab-aat-to-parser-ir"
           export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
           export AB_AAT_TO_PARSER_IR_MAPPING_V2="${ab-validator}/data/aat-to-parser-ir-mapping-v2.json"
+          export HOME="${kernelDepsCache}"
+          export JAVA_TOOL_OPTIONS="-Duser.home=${kernelDepsCache}"
+          export CLJ_CONFIG="$HOME/.clojure"
+          export GITLIBS="$HOME/.gitlibs"
+          # classpath scratch must stay writable; cleaned via trap, so the
+          # final clojure call must not exec-replace this shell
+          scratch="$(mktemp -d)"
+          trap 'rm -rf "$scratch"' EXIT
+          export CLJ_CACHE="$scratch/cp-cache"
+          export XDG_CONFIG_HOME="$scratch/xdg-config"
           extra=()
           case " $* " in
             *"--clj-toolchain-id"*) ;;
             *) extra=(--clj-toolchain-id "${cljToolchainId}") ;;
           esac
           cd "''${SORANOHA_KERNEL_DIR:-soranoha}"
-          exec clojure -M:soranoha/build "$@" ''${extra[@]+"''${extra[@]}"}
+          clojure -M:soranoha/build "$@" ''${extra[@]+"''${extra[@]}"}
         '';
 
       monorepoScripts =

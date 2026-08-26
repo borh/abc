@@ -160,28 +160,28 @@
 (defn- work-evidence! [known-stages slug work]
   (let [stage-map (fn [field valid?]
                     (let [m (get work field)]
+                      ;; exact coverage, not subset: a stage silently absent
+                      ;; from the evidence would erase its execution from the
+                      ;; oracle's comparison
                       (when-not (and (map? m)
-                                     (every? known-stages
-                                             (map keyword (keys m)))
+                                     (= known-stages
+                                        (set (map keyword (keys m))))
                                      (every? valid? (vals m)))
                         (reject! :malformed-work-evidence
                                  {:slug slug :field field :value m}))
-                      (into {} (map (fn [[k v]] [(keyword k) v])) m)))
-        cached (stage-map "cached" boolean?)
-        trace-keys (stage-map "trace_keys"
-                              #(and (string? %)
-                                    (re-matches hex64-pattern %)))]
-    (when-not (= (set (keys cached)) (set (keys trace-keys)))
-      (reject! :cached-and-trace-keys-diverge {:slug slug}))
-    {:cached cached :trace-keys trace-keys}))
+                      (into {} (map (fn [[k v]] [(keyword k) v])) m)))]
+    {:cached (stage-map "cached" boolean?)
+     :trace-keys (stage-map "trace_keys"
+                            #(and (string? %)
+                                  (re-matches hex64-pattern %)))}))
 
 (defn decode-run
   "Strict boundary decode of one disposable build report into the run shape
   the oracle consumes: strict JSON with duplicate keys rejected, stage
   coordinates exactly {stage_id, stage_version, toolchain_id} non-blank
-  strings, per-work cached/trace_keys maps whose stages the coordinate
-  table covers, 64-hex trace keys and artifact/source hashes. Throws
-  ex-info with :reason on any violation."
+  strings, per-work cached/trace_keys maps whose stage sets equal the
+  coordinate table's stages exactly, 64-hex trace keys and artifact/source
+  hashes. Throws ex-info with :reason on any violation."
   [^bytes report-bytes]
   (let [report (node->clj
                 (try (.readTree strict-report-mapper report-bytes)

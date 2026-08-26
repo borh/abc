@@ -135,7 +135,26 @@
       (is (= :destination-exists reason))
       (is (not (fs/exists? (fs/path out verify/head-path))))
       (is (= "not chain content" (String. (fs/read-all-bytes stray) "UTF-8")))
-      (is (not (fs/exists? (str out ".staging")))))))
+      (is (= [(str (fs/file-name out))]
+             (map fs/file-name (fs/list-dir (fs/parent out))))
+          "the refused export leaves no staging residue"))))
+
+(deftest an-export-owns-only-its-own-staging-directory
+  ;; sibling directories — including one that happens to carry a
+  ;; staging-like name — belong to whoever created them, not to the
+  ;; exporter's cleanup
+  (let [{:keys [clone]} (chain-with-withdrawal!)
+        out (tree-out)
+        foreign (fs/path (str out ".staging") "valuable")]
+    (fs/create-dirs (fs/parent foreign))
+    (fs/write-bytes foreign (.getBytes "irreplaceable" "UTF-8"))
+    (let [result (export! clone out)]
+      (is (= 3 (:releases result)))
+      (is (fs/exists? (fs/path out verify/head-path)))
+      (is (= "irreplaceable" (String. (fs/read-all-bytes foreign) "UTF-8")))
+      (is (= #{(str (fs/file-name out)) (str (fs/file-name out) ".staging")}
+             (set (map fs/file-name (fs/list-dir (fs/parent out)))))
+          "the export's own staging directory is gone; the foreign one stays"))))
 
 (deftest an-unverifiable-chain-exports-nothing
   (let [{:keys [clone]} (chain-with-withdrawal!)
@@ -155,4 +174,4 @@
                       (:reason (ex-data e))))]
     (is (= :signature-invalid reason))
     (is (not (fs/exists? out)))
-    (is (not (fs/exists? (str out ".staging"))))))
+    (is (empty? (fs/list-dir (fs/parent out))))))

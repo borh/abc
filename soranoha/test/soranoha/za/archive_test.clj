@@ -42,6 +42,7 @@
         report (observe {})]
     (is (= :success (:result report)))
     (is (= commit (:commit report)))
+    (is (= (str (fs/canonicalize archive)) (:archive-view report)))
     (is (= 1 (:chain-length report)))
     (is (= #{:release :governance} (set (keys (:pinned-fingerprints report)))))
 

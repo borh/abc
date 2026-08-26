@@ -15,7 +15,28 @@
             [soranoha.snh.repo :as repo]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.verify :as verify]
-            [soranoha.snh.view :as view]))
+            [soranoha.snh.view :as view])
+  (:import (java.nio.file CopyOption
+                          DirectoryNotEmptyException
+                          FileAlreadyExistsException
+                          Files
+                          StandardCopyOption)
+           (java.nio.file.attribute FileAttribute)))
+
+(defn- destination-exists! [out-dir]
+  (throw (ex-info "serving-tree destination already exists"
+                  {:reason :destination-exists :out-dir (str out-dir)})))
+
+(defn- install!
+  "Move the staged tree onto the exact destination path in one rename.
+  A destination that appears concurrently refuses the installation —
+  the staged tree is never nested under it or merged into it."
+  [staging out-dir]
+  (try
+    (Files/move (fs/path staging) (fs/path out-dir)
+                (into-array CopyOption [StandardCopyOption/ATOMIC_MOVE]))
+    (catch FileAlreadyExistsException _ (destination-exists! out-dir))
+    (catch DirectoryNotEmptyException _ (destination-exists! out-dir))))
 
 (defn- referenced-ids
   "Every typed artifact id one manifest roots: work artifacts, the two
@@ -33,9 +54,12 @@
   `out-dir`, which must not yet exist. Fetches, fully verifies the head
   with the published checker, then builds the tree — every chain
   manifest + signature, every referenced blob, every governing event +
-  signature, and releases/HEAD — in a sibling staging directory and
-  installs it at `out-dir` with a single atomic rename; a failed export
-  leaves no tree at `out-dir`. Returns {:head :releases :blobs}."
+  signature, and releases/HEAD — in a uniquely named sibling staging
+  directory this invocation alone owns, then installs it at `out-dir`
+  with a single exact-target atomic rename. A failed export leaves no
+  tree at `out-dir`, and cleanup touches only this invocation's own
+  staging directory, so concurrent exporters cannot delete or mix each
+  other's work. Returns {:head :releases :blobs}."
   [{:keys [clone branch pinned-keys out-dir]}]
   (let [v (view/git-view clone)
         commit (or (repo/fetch! clone branch)
@@ -47,9 +71,13 @@
       (throw (ex-info "nothing to serve before the first release"
                       {:reason :no-published-release})))
     (when (fs/exists? out-dir)
-      (throw (ex-info "serving-tree destination already exists"
-                      {:reason :destination-exists :out-dir (str out-dir)})))
-    (let [staging (str out-dir ".staging")
+      (destination-exists! out-dir))
+    (let [out-path (fs/absolutize out-dir)
+          parent (fs/create-dirs (fs/parent out-path))
+          staging (Files/createTempDirectory
+                   (fs/path parent)
+                   (str (fs/file-name out-path) ".staging.")
+                   (make-array FileAttribute 0))
           read! (fn [path]
                   (or (view/read-at v commit path)
                       (throw (ex-info "verified chain path unreadable"
@@ -72,8 +100,6 @@
                             (keep #(some-> (get % "governance_event")
                                            verify/id->hex))
                             manifests)]
-      (when (fs/exists? staging)
-        (fs/delete-tree staging))
       (try
         (doseq [hex chain]
           (write! (verify/manifest-path hex)
@@ -87,7 +113,7 @@
           (write! (verify/event-sig-path hex)
                   (read! (verify/event-sig-path hex))))
         (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
-        (fs/move staging out-dir {:atomic-move true})
+        (install! staging out-path)
         (finally
           (when (fs/exists? staging)
             (fs/delete-tree staging))))

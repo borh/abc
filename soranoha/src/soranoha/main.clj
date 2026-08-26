@@ -479,24 +479,30 @@
 
 (defn archive-verify!
   "One archival observation: run the chain verifier with the archived
-  copy as the sole repository view and print the disposable report. A
-  view that cannot be constructed throws — a failure to perform the
-  observation, never an observation; a readable view always yields a
-  report, success or failed."
+  copy as the sole repository view and print the disposable report,
+  identified by the normalized local path of the observed view plus the
+  commit; a materializer that binds a view to an external identifier
+  replaces that locator with the bound identity. A view that cannot be
+  constructed throws — a failure to perform the observation, never an
+  observation; a readable view always yields a report, success or
+  failed."
   [{:keys [archive commit release-pub governance-pub]}]
   (require-flags! "archive-verify"
                   {"--archive" archive
                    "--commit" commit
                    "--release-pub" release-pub
                    "--governance-pub" governance-pub})
-  (let [v (view/git-view (str archive))
-        report (verify/archive-verification
-                v (str commit)
-                (pinned-keys-from-files release-pub governance-pub))]
+  (let [archive-view (str (fs/canonicalize (str archive)))
+        v (view/git-view archive-view)
+        report (assoc (verify/archive-verification
+                       v (str commit)
+                       (pinned-keys-from-files release-pub governance-pub))
+                      :archive-view archive-view)]
     (println (abc-json/write-deterministic-json-str
               (into (sorted-map)
                     (keep (fn [[k v]] (when v [k v])))
                     {"result" (name (:result report))
+                     "archive_view" (:archive-view report)
                      "commit" (:commit report)
                      "verifier_version" (:verifier-version report)
                      "key_fingerprints"

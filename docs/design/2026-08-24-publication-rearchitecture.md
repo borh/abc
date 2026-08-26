@@ -3085,8 +3085,12 @@ state is already published / determinism-halt / requeue); an unknown
 push result converges on the same reconciliation via the reachability
 check; scheduled-build no-op per the F67 projection.
 Forgejo auto-release polls upstream; admission is a fail-closed input
-(policy hash in manifest). Serving tree (blobs/, releases/, history.json)
-derives from the repo. Archival: SWH save-code-now per release,
+(policy hash in manifest). Serving tree (blobs/, releases/, governance/,
+releases/HEAD) derives from the verified chain, staged and atomically
+installed into a previously absent destination; a derived history
+projection (history.json) is deferred until a router consumer requires
+it — chain history reads from the manifests themselves. Archival: SWH
+save-code-now per release,
 non-blocking; **archival status per F113 (one operation, one name):
 `archive_verification(archived_view, C, pinned_keys) → report` — C
 present + a publication commit (F106) + the §8 primitive succeeding

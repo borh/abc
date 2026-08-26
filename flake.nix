@@ -116,8 +116,10 @@
       # is derived from exactly that environment — the Clojure tool
       # closure, the dependency-cache closure, and deps.edn — so a runtime
       # or dependency change re-keys every pure-Clojure stage derivation
-      # instead of silently reusing stale traces. An explicit
-      # --clj-toolchain-id on the command line wins.
+      # instead of silently reusing stale traces. The wrapper always
+      # supplies that identity and runs the Nix-captured source; direct
+      # clojure invocation remains the path for intentionally custom
+      # identities.
       mkKernelSoranohaApp =
         system:
         let
@@ -151,19 +153,17 @@
           export JAVA_TOOL_OPTIONS="-Duser.home=${kernelDepsCache}"
           export CLJ_CONFIG="$HOME/.clojure"
           export GITLIBS="$HOME/.gitlibs"
+          # inherited launcher variables would alter the JVM or classpath
+          # without changing the reported identity
+          unset JAVA_CMD CLJ_JVM_OPTS JAVA_OPTS JDK_JAVA_OPTIONS _JAVA_OPTIONS
           # classpath scratch must stay writable; cleaned via trap, so the
           # final clojure call must not exec-replace this shell
           scratch="$(mktemp -d)"
           trap 'rm -rf "$scratch"' EXIT
           export CLJ_CACHE="$scratch/cp-cache"
           export XDG_CONFIG_HOME="$scratch/xdg-config"
-          extra=()
-          case " $* " in
-            *"--clj-toolchain-id"*) ;;
-            *) extra=(--clj-toolchain-id "${cljToolchainId}") ;;
-          esac
-          cd "''${SORANOHA_KERNEL_DIR:-soranoha}"
-          clojure -M:soranoha/build "$@" ''${extra[@]+"''${extra[@]}"}
+          cd "${./soranoha}"
+          clojure -M:soranoha/build "$@" --clj-toolchain-id "${cljToolchainId}"
         '';
 
       monorepoScripts =

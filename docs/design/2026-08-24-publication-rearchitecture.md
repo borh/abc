@@ -3006,8 +3006,11 @@ run-1787730983384.json / run-1787731321127.json; logs + verdict under
 f5-delta-hermetic.json).
 
 Verdict **ok = true** under the corrected gate (unexplained
-executions only): 0 unexplained executions; source delta again
-exactly the git delta (10 added zips, 1 modified, 0 removed);
+executions only): 0 unexplained executions; the selected
+cards/*/files/*.zip delta matched Git exactly: 10 added, 1 modified,
+0 removed (the full Git delta is broader — 30 additions and 223
+modifications, including six changed index ZIPs outside the selected
+work-zip population);
 executed: extract 11, render/validate 12, metadata 17,595 (parse and
 convert do not bind the clj identity, so their earlier traces remain
 valid); artifact delta descriptive: 10 added, 2 changed (the

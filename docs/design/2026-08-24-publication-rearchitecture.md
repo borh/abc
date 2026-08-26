@@ -61,8 +61,12 @@ numbers live in the findings sections and Git history, not here):
   validation-record contract, sanitized + git-dir-bound view
   environment, unreachable superseded-entry check deleted. Round 3
   (F168) applied: linked worktrees rejected at view construction
-  (common dir must equal git dir). Suites: 51 tests / 251 assertions
-  green locally and hermetically. Awaiting re-review.
+  (common dir must equal git dir). **§8/§9 boundary APPROVED
+  2026-08-26 at d7e80a22.** Manifest assembly + F5 delta oracle
+  implemented against the real kernel (soranoha.za.assemble +
+  fixture-corpus/oracle acceptance — own review pending; see the
+  Slice-2 manifest-assembly section). Suites: 55 tests / 285
+  assertions green locally and hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2568,7 +2572,7 @@ regression test per reproduced failure.
 Suites after the round: 50 tests / 249 assertions green locally and
 hermetically. Awaiting re-review of this boundary.
 
-## Slice-2 implementation review round 3 (2026-08-26) — finding F168; NOT APPROVED at 978fc7d9; applied
+## Slice-2 implementation review round 3 (2026-08-26) — finding F168; applied; §8/§9 APPROVED at d7e80a22
 
 Verdict on round 2: F164–F167 correctly resolved; one remaining F166
 edge blocked approval.
@@ -2589,7 +2593,82 @@ edge blocked approval.
   distinct supported behavior.
 
 Suites after the round: 51 tests / 251 assertions green locally and
-hermetically. Awaiting the focused recheck of this boundary.
+hermetically.
+
+Reviewer verdict (2026-08-26): APPROVED — no remaining findings in the
+§8 verifier / §9 transaction boundary at d7e80a22. Confirmed: shared
+clones and linked worktrees rejected at construction; ordinary
+worktrees and bare origins usable; F168 adds no speculative mechanism
+(v1 narrowed to repository forms with present consumers); the retained
+partial-amendment fixture is justified. Slice 2 proceeds to manifest
+assembly against the real trace store and the F5 second-revision
+oracle.
+
+## Slice-2 manifest assembly + F5 delta oracle (2026-08-26; own review pending)
+
+The remaining Slice-2 body, implemented against the real kernel:
+
+- `soranoha.za.assemble` — the first za namespace (admission is a
+  release-assembler concern per D21/F60; the D20 AGENTS.md transfer was
+  recorded before this work). `assemble-release` bridges kernel outputs
+  to the §9 transaction's input: the assessment snapshot commits the
+  candidate facts (sorted, contribution-sorted), the inclusion rule
+  `za-public-domain-unanimous-v1` (id + hash over its canonical rule
+  bytes) derives the total admitted/excluded/quarantined partition,
+  both evidence artifacts encode through the boundary decode and
+  publish with the release, works = admitted − withdrawn with every
+  artifact byte read from the kura CAS (fixed [plaintext, tei,
+  tei-validation] artifact order, source_content_hash from the
+  extract stage's bundle identity), and the validation summary is
+  derived from the same per-work records the verifier re-derives it
+  from (include-and-flag: a failed validation is a summary entry,
+  never an exclusion). `release-assembler` adapts to the transaction
+  contract; the F87 totality gate compares the snapshot's slugs
+  against the kernel's selected slug set passed independently.
+- Fixture corpus harness (`soranoha.za.corpus`, test tree): a
+  miniature aozorabunko checkout under git — cards/ work zips, the
+  official catalog zip, the real provenance gate, real catalog read,
+  real selection join, the real extract stage, and the real
+  engine/trace/CAS. Deterministic in-process stages stand in for the
+  subprocess parser/converter and the schema validator with matching
+  wiring, output names, and record shapes, so `main/run-work!`
+  executes unchanged and invalidation semantics are the engine's own.
+- F5 three-set oracle (`soranoha.za.oracle`, test tree): (a)
+  source/selection delta from per-slug zip content, (b) executed
+  stages from the engine's cache decisions, (c) works-entry delta
+  between decoded manifests, plus the explanation invariant — every
+  stage executed in run 2 for a pre-existing work must have a changed
+  declared input (modeled exactly on run-work!'s wiring).
+- Acceptance (`soranoha.za.assemble-test`), all through publish +
+  full §8 verification against a fixture origin:
+  - kernel-backed genesis: works = admitted slugs; the R7 invalid
+    work publishes and is flagged in invalid_slugs; artifact ids
+    equal the kernel's CAS hashes; the published admission report
+    carries the exact excluded/quarantined partition; manifest
+    round-trip re-serializes to the same manifest_id (twice); the
+    identical scheduled build is :already-published.
+  - second revision (addition + deletion + content edit + catalog
+    fan-out + output-preserving rezip): oracle sets exactly as
+    predicted — the rezip re-executes extract only and its manifest
+    entry is retained byte-identical; the catalog edit fans metadata
+    re-execution across every work without touching artifacts; the
+    content edit invalidates the full chain and changes only its own
+    entry; zero unexplained executions; distinct manifest ids.
+  - assessment-only delta (F24 under the F61 protocol): same store,
+    revision, and works; enlarged assessment snapshot → changed
+    admission evidence, distinct manifest_id, published (never
+    no-op'd), works byte-identical.
+  - totality: a selected-but-unassessed work blocks emission.
+- Slice-2 fixture-test coverage mapping: withdrawal (R8 path, F26
+  chain invariants), event-amendment, and the F61 lost-ack test are
+  covered by the §8/§9 suites approved at d7e80a22
+  (verify-test/transact-test); addition, deletion, output-preserving
+  edit, R7 include-and-flag, and the assessment-only delta land here.
+
+Suites after this work: 55 tests / 285 assertions green locally and
+hermetically. The F5 second-upstream-revision acceptance runs on the
+fixture corpus; the production run at a second real aozorabunko
+revision remains a Slice-3-adjacent operation on the same machinery.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

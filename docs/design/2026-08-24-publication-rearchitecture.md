@@ -40,8 +40,8 @@ numbers live in the findings sections and Git history, not here):
   Ed25519 role-bound verification (F126), and the F123 fixture keys
   (RFC 8032 vectors) are implemented in `soranoha/src/soranoha/snh/`.
   The D20-as-amended AGENTS.md ownership transfer is recorded.
-  Post-freeze progress (2026-08-25, **own review pending — not covered
-  by the D16.1 freeze**): the §8 verifier
+  Post-freeze progress (2026-08-25, not covered by the D16.1 freeze;
+  reviewed separately — **§8/§9 APPROVED at d7e80a22**): the §8 verifier
   (`soranoha.snh.verify` — chain walk, publication-commit definition,
   closure/blob/signature checks, transition rules, §10
   archive-verification report) and the §9 publication transaction
@@ -76,8 +76,9 @@ numbers live in the findings sections and Git history, not here):
   executions only), the wrapper hermeticized over the clj-nix
   dependency cache with a full-hash identity, sorted failure rows —
   and the production F5 pair rerun through the final wrapper, again
-  ok = true (see round 9). Slice 2 complete pending review of that
-  increment. Suites: 59 tests / 312 assertions green locally and
+  ok = true (see round 9). **Slice 2 APPROVED 2026-08-26 at
+  5d9f16b7** (wrapper hermeticity closure verified without a corpus
+  rerun). Suites: 59 tests / 312 assertions green locally and
   hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
@@ -2616,7 +2617,7 @@ partial-amendment fixture is justified. Slice 2 proceeds to manifest
 assembly against the real trace store and the F5 second-revision
 oracle.
 
-## Slice-2 manifest assembly + F5 delta oracle (2026-08-26; own review pending)
+## Slice-2 manifest assembly + F5 delta oracle (2026-08-26; APPROVED at 379951dc via rounds 4–8)
 
 The remaining Slice-2 body, implemented against the real kernel:
 
@@ -2876,68 +2877,6 @@ run at a second real aozorabunko revision, driven from the disposable
 run reports, which also lands the F172 work (content-derived wrapper
 toolchain identity; external-report boundary decode).
 
-## Slice-2 completion: F172 closure + production F5 run (2026-08-26; own review pending)
-
-The four remaining items, implemented and executed:
-
-- **Production driver.** soranoha.za.oracle moves to src as the single
-  oracle representation (the fixture tests require the same ns
-  unchanged); the new `delta` CLI subcommand runs the three-set oracle
-  over two disposable run reports and prints a deterministic JSON
-  verdict, exiting nonzero on any unexplained execution or artifact
-  change lacking an executed stage.
-- **Strict report decoding (F172 obligation from round 8).**
-  oracle/decode-run boundary-decodes a report before the oracle can
-  consume it: strict JSON with duplicate keys rejected, coordinate
-  objects exactly {stage_id, stage_version, toolchain_id} non-blank
-  strings, per-work cached/trace_keys maps whose stages the
-  coordinate table covers and whose key sets agree, 64-hex trace keys
-  and artifact/source hashes. Rejection tests cover each contract
-  clause (soranoha.za.oracle-test).
-- **Content-derived wrapper identity (F172 closed).** Root-flake app
-  `soranoha-kernel` wraps the kernel CLI with the same private
-  adapter injection as `.#soranoha` and supplies
-  --clj-toolchain-id = clj-nix-<hash over the pinned Clojure tool
-  closure + soranoha/deps-lock.json> (an explicit flag wins); the
-  root output-contract smoke pins the new app name. The
-  validate-tei runtime binding (F175) composes with it.
-- **Production second-revision F5 run.** Corpus:
-  /home/bor/Dependencies/aozorabunko; revision A = a1da0f5a00
-  (2026-03-23, 17,592 works selected), revision B = the pinned
-  0e9ea3e586 (2026-04-25, 17,602 works); store
-  /db/soranoha/kernel-full; both builds through
-  `nix run .#soranoha-kernel`, logs + delta verdict under
-  /db/soranoha/publication-rearchitecture/slice2/logs/. Run A
-  re-keyed every pure-Clojure stage under the new toolchain identity
-  (70,349 executions); run B executed only the delta. Oracle verdict
-  **ok = true**:
-  - (a) source delta = exactly the git delta: 10 added zips, 1
-    modified zip (004820_000960_000961_4820_ruby_20538), 0 removed;
-  - (b) executed: extract 11 (the 10 additions + 1 modification),
-    render/validate 12, metadata 17,595 (the catalog edit fans out to
-    every work; 7 fewer than the selection because duplicate work-ids
-    share a derivation) — the F170 early-cutoff fix holds at
-    production scale: a full metadata fan-out re-rendered only 12
-    works;
-  - (c) artifact delta: the 11 source-explained works plus ONE
-    catalog-driven change (052211_001540_001529_52211_ruby_46185 —
-    source zip, parser-IR, and plaintext byte-identical; only the TEI
-    header and its validation record changed with its catalog row),
-    17,590 works retained byte-identical;
-  - invariants: 0 unexplained executions, 0 artifact changes lacking
-    an executed stage.
-  The 052211 case is precisely what F5 replaced naive manifest
-  set-difference for: an artifact change with no source-zip change,
-  fully explained by the declared-input chain.
-
-With this, every Slice-2 acceptance item is implemented and
-exercised: manifest assembly with real admission evidence, chain
-mechanics under the frozen protocol, the fixture matrix (addition,
-deletion, output-preserving edit, R7 include-and-flag,
-assessment-only delta, withdrawal, amendment, lost-ack), and the F5
-oracle at a second real upstream revision. Slice 2 is complete
-pending this increment's review.
-
 ## Slice-2 implementation review round 9 (2026-08-26) — findings F180–F183; NOT APPROVED at 64b6ad4a; all applied
 
 Reviewer verdict on the F172-closure increment: production evidence
@@ -3020,6 +2959,18 @@ changed), 17,590 retained byte-identical. The delta JSON is
 byte-identical across CLI reruns. Checkout restored to the pinned
 master. Suites: 59 tests / 312 assertions green locally and
 hermetically.
+
+## Slice-2 completion (2026-08-26) — **APPROVED at 5d9f16b7**
+
+Slice 2 closed after nine implementation-review rounds (F157–F183):
+§8/§9 boundary approved at d7e80a22, assembly/F5 fixture increment at
+379951dc, F172 closure + production F5 evidence + wrapper hermeticity
+at 5d9f16b7 (a1da0f5a00 → the pinned 0e9ea3e586, oracle ok = true, 0
+unexplained executions; reports and verdict under
+/db/soranoha/publication-rearchitecture/slice2/logs/). Suites: 59
+tests / 312 assertions green locally and hermetically. This is the
+ledger's implementation-transcript cutoff; subsequent implementation
+evidence lives in commits and PR review.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

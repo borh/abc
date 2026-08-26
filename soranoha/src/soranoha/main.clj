@@ -34,7 +34,8 @@
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
             [soranoha.za.oracle :as oracle]
-            [soranoha.za.release :as za-release])
+            [soranoha.za.release :as za-release]
+            [soranoha.za.serve :as serve])
   (:gen-class))
 
 (defn- git! [aozora-root & args]
@@ -455,6 +456,27 @@
                      "reason" (some-> (:reason outcome) name)})))
     outcome))
 
+(defn serving-tree!
+  "Export the serving tree (blobs/, releases/, governance/, history.json)
+  from the verified chain into --out."
+  [{:keys [chain-clone branch out release-pub governance-pub]}]
+  (require-flags! "serving-tree"
+                  {"--chain-clone" chain-clone
+                   "--out" out
+                   "--release-pub" release-pub
+                   "--governance-pub" governance-pub})
+  (let [result (serve/export-tree!
+                {:clone (str chain-clone)
+                 :branch branch
+                 :pinned-keys (pinned-keys-from-files release-pub
+                                                      governance-pub)
+                 :out-dir (str out)})]
+    (println (abc-json/write-deterministic-json-str
+              {"head" (:head result)
+               "releases" (:releases result)
+               "blobs" (:blobs result)}))
+    result))
+
 (defn verify!
   [{:keys [root]}]
   (let [root (config/root root)
@@ -486,6 +508,7 @@
    :release-key {:coerce :string}
    :event {:coerce :string}
    :event-sig {:coerce :string}
+   :out {:coerce :string}
    ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
    ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}
@@ -511,10 +534,11 @@
         "governance" (let [{:keys [outcome]} (governance! opts)]
                        (when-not (#{:published :already-applied} outcome)
                          (System/exit 1)))
+        "serving-tree" (serving-tree! opts)
         "verify" (when-not (:ok? (verify! opts))
                    (System/exit 1))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|delta|release|governance|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|compare|delta|release|governance|serving-tree|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

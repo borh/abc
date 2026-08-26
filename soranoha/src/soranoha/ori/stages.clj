@@ -171,12 +171,16 @@
 
 (defn validate-tei-stage
   "TEI bytes -> validation record. Include-and-flag: a failed
-  validation is an artifact, never an exclusion."
-  [profile]
+  validation is an artifact, never an exclusion. The stage runs
+  in-process, so its toolchain identity binds the Clojure runtime
+  identity alongside the TEI profile trio — a JVM validation-dependency
+  change must invalidate its traces."
+  [clj-toolchain-id profile]
   {:stage-id "validate-tei"
    :stage-version "1"
    :toolchain-id (core-hash/sha256-canonical-json
-                  {"odd" (core-hash/sha256-file (:odd profile))
+                  {"clj" clj-toolchain-id
+                   "odd" (core-hash/sha256-file (:odd profile))
                    "rng" (core-hash/sha256-file (:rng profile))
                    "sch" (core-hash/sha256-file (:sch profile))})
    :f (fn [{:keys [blob]} inputs]

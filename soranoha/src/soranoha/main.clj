@@ -53,7 +53,7 @@
    :parse (stages/parse-stage adapter)
    :convert (stages/convert-stage adapter)
    :render (stages/render-stage clj-toolchain-id)
-   :validate (stages/validate-tei-stage profile)})
+   :validate (stages/validate-tei-stage clj-toolchain-id profile)})
 
 (defn- read-cas-json [store hex]
   (json/read-json (String. ^bytes (cas/get-bytes (:cas-dir store) hex) "UTF-8")))
@@ -61,7 +61,8 @@
 (defn run-work!
   "Execute (or trace-skip) the full chain for one selected work.
   Returns {:slug :zip-hex :source-facts
-  :outputs {stage-key {name hex}} :cached {stage-key bool}}."
+  :outputs {stage-key {name hex}} :cached {stage-key bool}
+  :trace-keys {stage-key derivation-key-hex}}."
   [store {:keys [extract metadata parse convert render validate]}
    {:keys [slug row file]} catalog-hex]
   (let [zip-hex (cas/put-file! (:cas-dir store) file)
@@ -100,7 +101,13 @@
               :parse (:cached? parse-r)
               :convert (:cached? convert-r)
               :render (:cached? render-r)
-              :validate (:cached? validate-r)}}))
+              :validate (:cached? validate-r)}
+     :trace-keys {:extract (:trace-key extract-r)
+                  :metadata (:trace-key metadata-r)
+                  :parse (:trace-key parse-r)
+                  :convert (:trace-key convert-r)
+                  :render (:trace-key render-r)
+                  :validate (:trace-key validate-r)}}))
 
 (defn build!
   [{:keys [root aozora-root assets-root concurrency clj-toolchain-id limit]}]
@@ -173,7 +180,7 @@
                                  stage-set)
                   "works" (into (sorted-map)
                                 (map (fn [{:keys [slug outputs cached zip-hex
-                                                  source-facts]}]
+                                                  source-facts trace-keys]}]
                                        [slug {"tei" (get-in outputs [:render "tei"])
                                               "plaintext" (get-in outputs
                                                                   [:render "plaintext"])
@@ -190,7 +197,18 @@
                                                              (map (fn [[stage hit?]]
                                                                     [(name stage)
                                                                      hit?]))
-                                                             cached)}]))
+                                                             cached)
+                                              ;; with equal stage-coordinate
+                                              ;; tables across two runs, an
+                                              ;; executed stage must carry a
+                                              ;; changed derivation key — the
+                                              ;; delta oracle's explanation
+                                              ;; invariant runs on these
+                                              "trace_keys"
+                                              (into (sorted-map)
+                                                    (map (fn [[stage k]]
+                                                           [(name stage) k]))
+                                                    trace-keys)}]))
                                 results)}
           report-path (str (fs/path root "runs" (str "run-" started ".json")))]
       (fs/create-dirs (fs/parent report-path))

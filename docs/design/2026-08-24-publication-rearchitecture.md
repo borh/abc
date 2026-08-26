@@ -64,12 +64,14 @@ numbers live in the findings sections and Git history, not here):
   (common dir must equal git dir). **§8/§9 boundary APPROVED
   2026-08-26 at d7e80a22.** Manifest assembly + F5 delta oracle
   implemented against the real kernel (soranoha.za.assemble +
-  fixture-corpus/oracle acceptance); assembly-review round 4
-  (F169–F173) applied — executable inclusion rule, early-cutoff
-  persons value, shared validation-record contract, fail-closed
-  toolchain identity, source-bundle-identity clarification,
-  oracle-complete run report — awaiting re-review. Suites: 56 tests /
-  291 assertions green locally and hermetically.
+  fixture-corpus/oracle acceptance); assembly-review rounds 4–5
+  (F169–F176) applied — executable inclusion rule, early-cutoff
+  persons value, shared validation-record contract, fail-closed +
+  runtime-bound toolchain identity, source-bundle-identity exactness,
+  trace-key export driving one oracle representation — awaiting
+  re-review; F172 (content-derived wrapper identity) stays open until
+  the production F5 driver. Suites: 56 tests / 291 assertions green
+  locally and hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2712,7 +2714,7 @@ redesign exists to eliminate. All applied same day.
   production default clj-dev-0 let dependency/runtime changes retain
   stale derivations and an unchanged release projection. Fix: default
   removed; build! fails closed without a wrapper-supplied
-  --clj-toolchain-id. Reconciliation recorded (spec §2 toolchain row):
+  --clj-toolchain-id. Reconciliation recorded (spec §3 toolchain row):
   nix_closure_hash carries the stage's toolchain identity exactly as
   the derivation keys carry it — the Nix closure hash for
   nix-provisioned stages, the hashed binary/profile identity for
@@ -2722,7 +2724,7 @@ redesign exists to eliminate. All applied same day.
   the implementation records the canonical source-bundle identity
   hash (member paths + member content hashes), which is the desirable
   semantics (identity survives archive-level repackaging). Post-freeze
-  semantic clarification recorded in spec §2; no wire change.
+  semantic clarification recorded in spec §3; no wire change.
 - **Handoff correction (applied)** — build!'s disposable run report
   now carries everything the delta oracle consumes: per-work
   source_zip, source_relpath, source_content_hash, per-stage cache
@@ -2730,6 +2732,48 @@ redesign exists to eliminate. All applied same day.
   zip-hex and source facts. Still a schema-less, retention-free
   export. Slice 2 is not declared complete until the production F5
   run at a second real revision has been driven from these exports.
+
+Suites after the round: 56 tests / 291 assertions green locally and
+hermetically.
+
+## Slice-2 implementation review round 5 (2026-08-26) — findings F174–F176; NOT APPROVED at 4a6585d8; all applied
+
+Verdict on round 4: F169–F171 cleanly resolved and the F170
+production simplification sound; two blockers and one exactness
+correction remained.
+
+- **F174 (report could not drive the explanation oracle — applied)**
+  — the report carried final artifacts, source facts, cache
+  decisions, and stage coordinates, but not the intermediate input
+  hashes the invariant compares. Fix per the simplest option: the
+  engine's already-computed derivation key is exported per work/stage
+  (run-work! returns :trace-keys; the report carries "trace_keys").
+  With equal stage-coordinate tables across two runs, an executed
+  stage must carry a changed trace key; a same-key execution
+  correctly surfaces missing-blob recovery work. The test oracle's
+  hand-modeled stage-input map is deleted — unexplained-executions
+  now compares the same trace keys the production export carries, so
+  there is exactly one oracle representation.
+- **F175 (F172 only partially implemented — applied; F172 REMAINS
+  OPEN)** — two gaps: no wrapper yet supplies the promised
+  Nix-derived identity (the CLI merely fails without one, and a
+  caller could still pass a permanent placeholder), and
+  validate-tei-stage — in-process Clojure — hashed only the TEI
+  profile trio, so JVM validation-dependency changes could reuse its
+  traces. The stage's toolchain identity now binds clj-toolchain-id
+  alongside the three profile hashes. F172 stays explicitly open
+  until the production F5 driver lands the content-derived wrapper
+  identity; no placeholder wrapper is added in the interim.
+- **F176 (identity abbreviated incorrectly — applied)** — the spec §3
+  works row now states the exact hashed object: sha256 over the
+  canonical bytes of the abc-source-bundle-v1 identity object
+  {construction, members: [{path, member_hash}...],
+  primary_text_member}. The round-4 ledger entries' "spec §2"
+  references corrected to §3.
+
+Per the reviewer, no additional harness: the already-required
+production F5 run proves the real metadata-stage cutoff and the
+wrapper wiring.
 
 Suites after the round: 56 tests / 291 assertions green locally and
 hermetically.

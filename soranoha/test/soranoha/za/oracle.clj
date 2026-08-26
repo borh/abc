@@ -6,9 +6,7 @@
   accounted for by a changed declared input. Manifest set-difference alone
   is not a delta oracle: source edits can preserve output bytes, and a
   catalog edit fans out to every work's metadata stage without touching
-  artifacts."
-  (:require [soranoha.yomi.catalog :as catalog]
-            [soranoha.za.corpus :as corpus]))
+  artifacts.")
 
 (defn source-delta
   "(a) per-slug zip-content delta between two runs."
@@ -49,38 +47,20 @@
                           :when (= entry (a slug))]
                       slug))}))
 
-(defn work-ids [run]
-  (into {}
-        (map (fn [{:keys [slug row]}] [slug (catalog/row-work-id row)]))
-        (:candidates run)))
-
-(defn- stage-inputs
-  "The declared inputs of every stage for `slug` in `run`, mirroring
-  run-work!'s wiring: each entry is the exact derivation-key material a
-  changed value of which must explain a re-execution."
-  [run slug work-id]
-  (let [outputs (get-in run [:results slug :outputs])]
-    {:extract [(get-in run [:zip-hashes slug])]
-     :metadata [(:catalog-hex run) work-id]
-     :parse [(get-in outputs [:extract "primary-text"])]
-     :convert [(get-in outputs [:parse "aat"])
-               (get (corpus/source-facts run slug) "work_content_hash")]
-     :render [(get-in outputs [:convert "parser-ir"])
-              (get-in outputs [:metadata "metadata-record"])
-              (get-in outputs [:metadata "persons"])]
-     :validate [(get-in outputs [:render "tei"])]}))
-
 (defn unexplained-executions
-  "Invariant check: every stage executed in `run-b` for a work already
-  present in `run-a` must have at least one changed declared input (a work
-  new to run-b explains all its executions). Returns violations as
-  [{:slug :stage}]; the oracle passes when this is empty."
+  "Invariant check over the engine's own derivation keys: with equal
+  stage-coordinate tables across the two runs, every stage executed in
+  `run-b` for a work already present in `run-a` must carry a changed trace
+  key — i.e. a changed declared input (a work new to run-b explains all
+  its executions; a same-key execution surfaces missing-blob recovery
+  work, which is exactly what the invariant should expose). Returns
+  violations as [{:slug :stage :trace-key}]; the oracle passes when this
+  is empty."
   [run-a run-b]
-  (let [ids (work-ids run-b)]
-    (vec (for [[slug stages] (executed-stages run-b)
-               :when (contains? (:results run-a) slug)
-               :let [inputs-a (stage-inputs run-a slug (ids slug))
-                     inputs-b (stage-inputs run-b slug (ids slug))]
-               stage stages
-               :when (= (get inputs-a stage) (get inputs-b stage))]
-           {:slug slug :stage stage}))))
+  (vec (for [[slug stages] (executed-stages run-b)
+             :when (contains? (:results run-a) slug)
+             stage stages
+             :let [key-a (get-in run-a [:results slug :trace-keys stage])
+                   key-b (get-in run-b [:results slug :trace-keys stage])]
+             :when (= key-a key-b)]
+         {:slug slug :stage stage :trace-key key-b})))

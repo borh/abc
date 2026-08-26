@@ -70,9 +70,15 @@ numbers live in the findings sections and Git history, not here):
   toolchain identity, strict report boundary decode, and the `delta`
   driver; production F5 run executed at a second real revision
   (a1da0f5a00 → pinned 0e9ea3e586, 17,602 works, oracle ok = true, 0
-  unexplained executions; see the Slice-2 completion section). Slice
-  2 complete pending review of that final increment. Suites: 59
-  tests / 311 assertions green locally and hermetically.
+  unexplained executions; see the Slice-2 completion section). Round
+  9 (F180–F183) applied: exact per-work evidence coverage in
+  decode-run, the artifact/execution gate deleted (ok = unexplained
+  executions only), the wrapper hermeticized over the clj-nix
+  dependency cache with a full-hash identity, sorted failure rows —
+  and the production F5 pair rerun through the final wrapper, again
+  ok = true (see round 9). Slice 2 complete pending review of that
+  increment. Suites: 59 tests / 312 assertions green locally and
+  hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2931,6 +2937,86 @@ deletion, output-preserving edit, R7 include-and-flag,
 assessment-only delta, withdrawal, amendment, lost-ack), and the F5
 oracle at a second real upstream revision. Slice 2 is complete
 pending this increment's review.
+
+## Slice-2 implementation review round 9 (2026-08-26) — findings F180–F183; NOT APPROVED at 64b6ad4a; all applied
+
+Reviewer verdict on the F172-closure increment: production evidence
+credible and internally consistent, but three implementation contracts
+fell short of the claimed clean oracle result. All fixed at cd9ffa69;
+the production F5 pair was then rerun through the final wrapper (see
+below).
+
+- **F180 (blocker) — incomplete execution evidence was accepted.**
+  decode-run required each work's cached/trace_keys stages only to be a
+  *subset* of the declared coordinate table; deleting the same stage
+  from both maps passed decoding (reproduced by the reviewer against
+  the real revision-B report: a five-stage work against a six-stage
+  table), silently erasing an execution from the oracle. Fix: both key
+  sets must equal the declared stage set exactly — which also subsumes
+  the separate cached/trace-keys divergence check (deleted, with its
+  :cached-and-trace-keys-diverge reason). Tests: omitting a declared
+  stage from cached or from trace_keys each refuse decoding.
+- **F181 (blocker + simplification) — unexplained_artifact_changes
+  deleted.** The delta CLI treated *any* executed stage as sufficient
+  explanation for *any* artifact change (reviewer flipped the real
+  052211 report to metadata-only execution with changed TEI bytes; the
+  CLI still said ok), and conversely a valid warm-cache run can obtain
+  changed artifacts entirely from cache while executing nothing. The
+  rule was both too weak and too strong; F5's sound checks already
+  exist (content hashes establish byte changes; trace-key comparison
+  explains executions). Fix: the artifact delta stays descriptive and
+  `ok` depends on unexplained executions only. No
+  artifact-to-producing-stage model added.
+- **F182 (blocker) — wrapper identity did not authenticate its runtime
+  environment.** The wrapper hashed a Clojure derivation label and the
+  lockfile but invoked clojure against the caller's mutable HOME,
+  Clojure configuration, and Maven cache. Fix: reuse the existing
+  hermetic machinery from soranoha/flake.nix — the clj-nix offline
+  dependency cache with HOME, JAVA_TOOL_OPTIONS(-Duser.home),
+  CLJ_CONFIG, GITLIBS bound to store paths and CLJ_CACHE /
+  XDG_CONFIG_HOME on a per-invocation scratch dir — and derive the
+  identity from the actual Clojure closure store path, the
+  dependency-cache closure store path, and deps.edn, retaining the
+  full sha256 (clj-nix-<64 hex>, no truncation). PATH is now bound
+  wholesale rather than prefixed onto the caller's.
+- **F183 (correction) — deterministic failure output.** The CLI
+  serialized unexplained-execution rows from unordered maps/sets
+  without sorting; rows are now sorted by slug then stage, making the
+  deterministic-JSON claim true on failing runs too.
+
+What checked out per the reviewer: both suites at 59/311 (now 59/312
+with the F180 coverage assertions), Nix evaluation/format/hygiene
+gates, matching coordinate tables and complete evidence in the two
+production reports as generated, source delta = git delta, and the
+reproducible execution/artifact counts including the catalog-only
+052211 change.
+
+### Production F5 rerun through the final wrapper (F182 identity)
+
+Same corpus revisions (A = a1da0f5a00, 17,592 selected; B = the pinned
+0e9ea3e586, 17,602 selected), same store /db/soranoha/kernel-full,
+both builds through the hermetic `nix run .#soranoha-kernel`
+(identity clj-nix-6b66028fa5941a0e2d389d7eff295e131aee7d9ae3bdc9bde
+fb4f3f164884147, visible in the reports' stage-coordinate tables).
+Run A re-keyed every pure-Clojure stage under the new identity
+(70,347 executions); run B executed only the delta. Reports
+run-1787730983384.json / run-1787731321127.json; logs + verdict under
+/db/soranoha/publication-rearchitecture/slice2/logs/
+(f5-run-a-hermetic.log, f5-run-b-hermetic.log,
+f5-delta-hermetic.json).
+
+Verdict **ok = true** under the corrected gate (unexplained
+executions only): 0 unexplained executions; source delta again
+exactly the git delta (10 added zips, 1 modified, 0 removed);
+executed: extract 11, render/validate 12, metadata 17,595 (parse and
+convert do not bind the clj identity, so their earlier traces remain
+valid); artifact delta descriptive: 10 added, 2 changed (the
+source-explained 004820 and the catalog-driven 052211 — source zip,
+parser-IR, and plaintext byte-identical, only TEI + validation record
+changed), 17,590 retained byte-identical. The delta JSON is
+byte-identical across CLI reruns. Checkout restored to the pinned
+master. Suites: 59 tests / 312 assertions green locally and
+hermetically.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

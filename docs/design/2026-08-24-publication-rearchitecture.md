@@ -2863,6 +2863,13 @@ deletion good; one consolidation blocker — otherwise ready.
 Suites after the round: 57 tests / 299 assertions green locally and
 hermetically.
 
+Reviewer verdict (2026-08-26): no blocking findings at 379951dc — the
+manifest-assembly / F5-oracle increment (rounds 4–8, F169–F179) is
+approved. Open before Slice 2 is declared complete: the production F5
+run at a second real aozorabunko revision, driven from the disposable
+run reports, which also lands the F172 work (content-derived wrapper
+toolchain identity; external-report boundary decode).
+
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 
 The following designs are preserved for deliberate future activation;

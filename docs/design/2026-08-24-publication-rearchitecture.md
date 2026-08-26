@@ -3087,9 +3087,13 @@ check; scheduled-build no-op per the F67 projection.
 Forgejo auto-release polls upstream; admission is a fail-closed input
 (policy hash in manifest). Serving tree (blobs/, releases/, governance/,
 releases/HEAD) derives from the verified chain, staged and atomically
-installed into a previously absent destination; a derived history
-projection (history.json) is deferred until a router consumer requires
-it — chain history reads from the manifests themselves. Archival: SWH
+installed into a previously absent destination. Deployment
+preconditions: the destination parent is exporter-owned (one
+cooperating exporter; nothing else creates the destination — the rename
+is crash-atomic, not no-clobber), and exporter and resolver run as the
+same OS principal (the installed tree keeps owner-only mode). A derived
+history projection (history.json) is deferred until a router consumer
+requires it — chain history reads from the manifests themselves. Archival: SWH
 save-code-now per release,
 non-blocking; **archival status per F113 (one operation, one name):
 `archive_verification(archived_view, C, pinned_keys) → report` — C

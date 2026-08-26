@@ -4,8 +4,14 @@
   chain verifies, and only what the chain references is exported: the
   destination must not already exist, and the tree is built aside and
   installed in one rename, so a serving path never holds a partial tree
-  or bytes from outside the chain. Pointing routes at the installed tree
-  is the service's own activation step, separate from this export.
+  or bytes from outside the chain. The destination's parent directory
+  is exporter-owned: one cooperating exporter writes into it and
+  nothing else creates the destination — the existence check and the
+  exact-target rename enforce nothing against an uncooperative
+  concurrent writer. The installed tree keeps the staging directory's
+  owner-only mode, so exporter and resolver run as the same OS
+  principal. Pointing routes at the installed tree is the service's own
+  activation step, separate from this export.
   Withdrawn works stay served under their historical manifests (the
   protocol promises absence from current works, never byte erasure);
   removal from work-facing routes is the service's own obligation, on
@@ -16,27 +22,8 @@
             [soranoha.snh.sign :as sign]
             [soranoha.snh.verify :as verify]
             [soranoha.snh.view :as view])
-  (:import (java.nio.file CopyOption
-                          DirectoryNotEmptyException
-                          FileAlreadyExistsException
-                          Files
-                          StandardCopyOption)
+  (:import (java.nio.file CopyOption Files StandardCopyOption)
            (java.nio.file.attribute FileAttribute)))
-
-(defn- destination-exists! [out-dir]
-  (throw (ex-info "serving-tree destination already exists"
-                  {:reason :destination-exists :out-dir (str out-dir)})))
-
-(defn- install!
-  "Move the staged tree onto the exact destination path in one rename.
-  A destination that appears concurrently refuses the installation —
-  the staged tree is never nested under it or merged into it."
-  [staging out-dir]
-  (try
-    (Files/move (fs/path staging) (fs/path out-dir)
-                (into-array CopyOption [StandardCopyOption/ATOMIC_MOVE]))
-    (catch FileAlreadyExistsException _ (destination-exists! out-dir))
-    (catch DirectoryNotEmptyException _ (destination-exists! out-dir))))
 
 (defn- referenced-ids
   "Every typed artifact id one manifest roots: work artifacts, the two
@@ -55,11 +42,11 @@
   with the published checker, then builds the tree — every chain
   manifest + signature, every referenced blob, every governing event +
   signature, and releases/HEAD — in a uniquely named sibling staging
-  directory this invocation alone owns, then installs it at `out-dir`
-  with a single exact-target atomic rename. A failed export leaves no
-  tree at `out-dir`, and cleanup touches only this invocation's own
-  staging directory, so concurrent exporters cannot delete or mix each
-  other's work. Returns {:head :releases :blobs}."
+  directory this invocation alone creates, then installs it at
+  `out-dir` with a single exact-target atomic rename. A failed export
+  leaves no tree at `out-dir`, and cleanup touches only this
+  invocation's own staging directory, never a directory another
+  process made. Returns {:head :releases :blobs}."
   [{:keys [clone branch pinned-keys out-dir]}]
   (let [v (view/git-view clone)
         commit (or (repo/fetch! clone branch)
@@ -71,7 +58,8 @@
       (throw (ex-info "nothing to serve before the first release"
                       {:reason :no-published-release})))
     (when (fs/exists? out-dir)
-      (destination-exists! out-dir))
+      (throw (ex-info "serving-tree destination already exists"
+                      {:reason :destination-exists :out-dir (str out-dir)})))
     (let [out-path (fs/absolutize out-dir)
           parent (fs/create-dirs (fs/parent out-path))
           staging (Files/createTempDirectory
@@ -113,7 +101,12 @@
           (write! (verify/event-sig-path hex)
                   (read! (verify/event-sig-path hex))))
         (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
-        (install! staging out-path)
+        ;; the rename targets the exact destination path, never a
+        ;; directory to nest under; atomicity here is crash-atomicity
+        ;; (complete tree or nothing), not no-clobber — the exporter-owned
+        ;; parent is what keeps the destination from appearing concurrently
+        (Files/move (fs/path staging) out-path
+                    (into-array CopyOption [StandardCopyOption/ATOMIC_MOVE]))
         (finally
           (when (fs/exists? staging)
             (fs/delete-tree staging))))

@@ -261,6 +261,37 @@
     (is (not= (get-in manifest-1 ["admission" "assessment_snapshot"])
               (get-in manifest-2 ["admission" "assessment_snapshot"])))))
 
+(deftest oracle-refuses-incomparable-runs
+  ;; a changed trace key only means a changed declared input when both
+  ;; runs used identical stage coordinates; a coordinate-only change (or a
+  ;; run lacking its coordinate table) is refused, never read as an
+  ;; explained execution
+  (let [root (corpus/init-corpus! [merosu])
+        store (temp-store!)
+        run-a (corpus/run-corpus! root store)
+        toolchain-bumped (corpus/run-corpus!
+                          root store
+                          (update corpus/stage-set :parse
+                                  assoc :toolchain-id "za-fixture-toolchain-2"))
+        version-bumped (corpus/run-corpus!
+                        root store
+                        (update corpus/stage-set :render
+                                assoc :stage-version "2"))]
+    (is (= #{:parse}
+           ((oracle/executed-stages toolchain-bumped) (slug-of merosu)))
+        "the toolchain bump re-executes exactly the re-keyed stage")
+    (doseq [[label run-b] [["toolchain id changed" toolchain-bumped]
+                           ["stage version changed" version-bumped]
+                           ["coordinates absent"
+                            (dissoc run-a :stage-coordinates)]]]
+      (testing label
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"incomparable"
+                              (oracle/unexplained-executions run-a run-b)))))
+    (testing "identical coordinates remain comparable"
+      (let [run-c (corpus/run-corpus! root store)]
+        (is (= #{} ((oracle/executed-stages run-c) (slug-of merosu))))
+        (is (= [] (oracle/unexplained-executions run-a run-c)))))))
+
 (deftest unassessed-selection-blocks-emission
   ;; a selected work missing from the assessment snapshot violates the
   ;; totality gate before anything is emitted

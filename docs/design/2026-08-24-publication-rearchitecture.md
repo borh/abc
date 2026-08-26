@@ -64,14 +64,14 @@ numbers live in the findings sections and Git history, not here):
   (common dir must equal git dir). **§8/§9 boundary APPROVED
   2026-08-26 at d7e80a22.** Manifest assembly + F5 delta oracle
   implemented against the real kernel (soranoha.za.assemble +
-  fixture-corpus/oracle acceptance); assembly-review rounds 4–5
-  (F169–F176) applied — executable inclusion rule, early-cutoff
+  fixture-corpus/oracle acceptance); assembly-review rounds 4–6
+  (F169–F177) applied — executable inclusion rule, early-cutoff
   persons value, shared validation-record contract, fail-closed +
   runtime-bound toolchain identity, source-bundle-identity exactness,
-  trace-key export driving one oracle representation — awaiting
-  re-review; F172 (content-derived wrapper identity) stays open until
-  the production F5 driver. Suites: 56 tests / 291 assertions green
-  locally and hermetically.
+  trace-key export with an enforced stage-coordinate comparability
+  precondition — awaiting re-review; F172 (content-derived wrapper
+  identity) stays open until the production F5 driver. Suites: 57
+  tests / 297 assertions green locally and hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -2776,6 +2776,30 @@ production F5 run proves the real metadata-stage cutoff and the
 wrapper wiring.
 
 Suites after the round: 56 tests / 291 assertions green locally and
+hermetically.
+
+## Slice-2 implementation review round 6 (2026-08-26) — finding F177; NOT APPROVED at 0049cfc6; applied
+
+Verdict on round 5: F175/F176 correct, F172 honestly open; one
+blocker.
+
+- **F177 (oracle precondition unenforced — applied)** — the trace-key
+  invariant assumed equal stage coordinates but neither captured nor
+  checked them, so a stage-version or toolchain change would be
+  misreported as a changed declared input (the reviewer's probe with
+  no coordinate data returned an empty violation list). Fix: each
+  harness run captures its actual {stage-id, stage-version,
+  toolchain-id} table (run-corpus! also takes an explicit stage set);
+  unexplained-executions fails loudly with :runs-incomparable when
+  either table is absent or they differ. Negative test: a
+  toolchain-only bump (which re-executes exactly the re-keyed stage),
+  a stage-version-only bump, and an absent coordinate table are all
+  refused; a genuine same-coordinate cached rerun remains comparable
+  with zero violations. Trace keys stay the sole representation; the
+  production driver normalizes its existing "stages" report field
+  under the still-open F172 work.
+
+Suites after the round: 57 tests / 297 assertions green locally and
 hermetically.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)

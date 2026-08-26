@@ -47,16 +47,33 @@
                           :when (= entry (a slug))]
                       slug))}))
 
-(defn unexplained-executions
-  "Invariant check over the engine's own derivation keys: with equal
-  stage-coordinate tables across the two runs, every stage executed in
-  `run-b` for a work already present in `run-a` must carry a changed trace
-  key — i.e. a changed declared input (a work new to run-b explains all
-  its executions; a same-key execution surfaces missing-blob recovery
-  work, which is exactly what the invariant should expose). Returns
-  violations as [{:slug :stage :trace-key}]; the oracle passes when this
-  is empty."
+(defn- assert-comparable!
+  "The trace-key invariant reads a changed key as a changed declared
+  input, which is only sound when both runs used identical stage
+  coordinates — a stage-version or toolchain change would otherwise be
+  misreported as an input change. Absent or differing coordinate tables
+  make the runs incomparable."
   [run-a run-b]
+  (let [coordinates-a (:stage-coordinates run-a)
+        coordinates-b (:stage-coordinates run-b)]
+    (when (or (nil? coordinates-a) (nil? coordinates-b)
+              (not= coordinates-a coordinates-b))
+      (throw (ex-info "runs incomparable: stage-coordinate tables absent or differing"
+                      {:reason :runs-incomparable
+                       :coordinates-a coordinates-a
+                       :coordinates-b coordinates-b})))))
+
+(defn unexplained-executions
+  "Invariant check over the engine's own derivation keys: given equal
+  stage-coordinate tables (enforced — incomparable runs throw), every
+  stage executed in `run-b` for a work already present in `run-a` must
+  carry a changed trace key — i.e. a changed declared input (a work new
+  to run-b explains all its executions; a same-key execution surfaces
+  missing-blob recovery work, which is exactly what the invariant should
+  expose). Returns violations as [{:slug :stage :trace-key}]; the oracle
+  passes when this is empty."
+  [run-a run-b]
+  (assert-comparable! run-a run-b)
   (vec (for [[slug stages] (executed-stages run-b)
              :when (contains? (:results run-a) slug)
              stage stages

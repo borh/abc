@@ -6,10 +6,13 @@
 ;; evidence the kernel never sees. `release` composes the scheduled release
 ;; pipeline — build, then the za driver's assembly and publication
 ;; transaction, with the assessment snapshot, policy value, signing seed,
-;; and pinned verifier keys as fail-closed file inputs. `compare` checks
-;; per-work TEI/plaintext bytes against a reference tree through the trace
-;; store; `delta` runs the three-set delta oracle over two run reports;
-;; `verify` runs the kura determinism + fixity report.
+;; and pinned verifier keys as fail-closed file inputs. `governance`
+;; appends one offline-signed event; `serving-tree` exports the verified
+;; chain's serving tree; `archive-verify` runs the archival observation
+;; over a sole archived view. `compare` checks per-work TEI/plaintext
+;; bytes against a reference tree through the trace store; `delta` runs
+;; the three-set delta oracle over two run reports; `verify` runs the
+;; kura determinism + fixity report.
 (ns soranoha.main
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
@@ -31,6 +34,8 @@
             [soranoha.snh.semantic :as semantic]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.transact :as transact]
+            [soranoha.snh.verify :as verify]
+            [soranoha.snh.view :as view]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
             [soranoha.za.oracle :as oracle]
@@ -477,6 +482,40 @@
                "blobs" (:blobs result)}))
     result))
 
+(defn archive-verify!
+  "One archival observation: run the chain verifier with the archived
+  copy as the sole repository view and print the disposable report. A
+  view that cannot be constructed throws — a failure to perform the
+  observation, never an observation; a readable view always yields a
+  report, success or failed."
+  [{:keys [archive commit snapshot-id release-pub governance-pub]}]
+  (require-flags! "archive-verify"
+                  {"--archive" archive
+                   "--commit" commit
+                   "--snapshot-id" snapshot-id
+                   "--release-pub" release-pub
+                   "--governance-pub" governance-pub})
+  (let [v (view/git-view (str archive))
+        report (verify/archive-verification
+                v (str commit)
+                (pinned-keys-from-files release-pub governance-pub)
+                {:snapshot-id snapshot-id})]
+    (println (abc-json/write-deterministic-json-str
+              (into (sorted-map)
+                    (keep (fn [[k v]] (when v [k v])))
+                    {"result" (name (:result report))
+                     "commit" (:commit report)
+                     "snapshot_id" (:snapshot-id report)
+                     "verifier_version" (:verifier-version report)
+                     "key_fingerprints"
+                     (into (sorted-map)
+                           (map (fn [[role fp]] [(name role) fp]))
+                           (:pinned-fingerprints report))
+                     "head" (:head report)
+                     "chain_length" (:chain-length report)
+                     "reason" (some-> (:reason report) name)})))
+    report))
+
 (defn verify!
   [{:keys [root]}]
   (let [root (config/root root)
@@ -509,6 +548,9 @@
    :event {:coerce :string}
    :event-sig {:coerce :string}
    :out {:coerce :string}
+   :archive {:coerce :string}
+   :commit {:coerce :string}
+   :snapshot-id {:coerce :string}
    ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
    ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}
@@ -535,10 +577,12 @@
                        (when-not (#{:published :already-applied} outcome)
                          (System/exit 1)))
         "serving-tree" (serving-tree! opts)
+        "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
+                           (System/exit 1))
         "verify" (when-not (:ok? (verify! opts))
                    (System/exit 1))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|delta|release|governance|serving-tree|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|compare|delta|release|governance|serving-tree|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

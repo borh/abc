@@ -81,19 +81,19 @@
       (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
       (write! "history.json"
               (.getBytes ^String
-                         (abc-json/write-deterministic-json-str
-                          {"head" (:head chain-result)
-                           "releases"
-                           (mapv (fn [hex manifest]
-                                   {"manifest_id" hex
-                                    "prev_manifest" (get manifest
-                                                         "prev_manifest")
-                                    "governance_event" (get manifest
-                                                            "governance_event")
-                                    "work_count" (count (get manifest "works"))
-                                    "withdrawn_count"
-                                    (count (get manifest "withdrawn"))})
-                                 chain manifests)})
+               (abc-json/write-deterministic-json-str
+                {"head" (:head chain-result)
+                 "releases"
+                 (mapv (fn [hex manifest]
+                         {"manifest_id" hex
+                          "prev_manifest" (get manifest
+                                               "prev_manifest")
+                          "governance_event" (get manifest
+                                                  "governance_event")
+                          "work_count" (count (get manifest "works"))
+                          "withdrawn_count"
+                          (count (get manifest "withdrawn"))})
+                       chain manifests)})
                          "UTF-8"))
       {:head (:head chain-result)
        :releases (count chain)

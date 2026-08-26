@@ -1,6 +1,6 @@
 ;; Work selection over an aozorabunko checkout: enumerate work ZIPs under
 ;; cards/NNNNNN/files/, join against the catalog by text-file basename, and
-;; assert slug injectivity BEFORE anything slug-addressed happens (the
+;; assert slug injectivity before anything slug-addressed happens (the
 ;; 17,602-vs-17,595 silent-overwrite incident is the reason this assert
 ;; exists and runs first). Ported from abc.tools.soranoha-build-publication;
 ;; the slug function and ordering must not drift.
@@ -49,14 +49,14 @@
 
 (defn slug
   "Publication identity for one source: a function of that source's own
-  coordinates ALONE, so unrelated corpus changes can never move it."
+  coordinates alone, so unrelated corpus changes can never move it."
   [work-id person-id relpath]
   (let [basename (.getName (io/file relpath))
         stem (subs basename 0 (- (count basename) (count ".zip")))]
     (str work-id "_" person-id "_" (card-directory relpath) "_" stem)))
 
 (defn candidate-slug-collisions
-  "PURE. Slugs claimed by more than one candidate, with their sources."
+  "Pure: slugs claimed by more than one candidate, with their sources."
   [candidates]
   (->> candidates
        (map (fn [{:keys [row relpath]}]

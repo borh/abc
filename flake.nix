@@ -106,6 +106,66 @@
           exec ${soranohaApp.program} "$@"
         '';
 
+      # The soranoha/ Clojure kernel CLI with the same private adapter
+      # injection. The wrapper authenticates the Clojure runtime it names
+      # instead of inheriting the caller's: classpath resolution runs
+      # against the offline clj-nix dependency cache with HOME and the
+      # Clojure/Maven/gitlibs configuration bound to store paths, so
+      # user-level deps.edn merging or mutable caches cannot change what
+      # executes. The toolchain identity the kernel refuses to run without
+      # is derived from exactly that environment — the Clojure tool
+      # closure, the dependency-cache closure, and deps.edn — so a runtime
+      # or dependency change re-keys every pure-Clojure stage derivation
+      # instead of silently reusing stale traces. The wrapper always
+      # supplies that identity and runs the Nix-captured source; direct
+      # clojure invocation remains the path for intentionally custom
+      # identities.
+      mkKernelSoranohaApp =
+        system:
+        let
+          pkgs = pkgsFor system;
+          cljPkgs = import nixpkgs {
+            inherit system;
+            overlays = [ clj-nix.overlays.default ];
+          };
+          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
+          kernelDepsCache = cljPkgs.mk-deps-cache { lockfile = ./soranoha/deps-lock.json; };
+          cljToolchainId =
+            "clj-nix-"
+            + builtins.hashString "sha256" "${pkgs.clojure}\n${kernelDepsCache}\n${builtins.hashFile "sha256" ./soranoha/deps.edn}";
+        in
+        pkgs.writeShellScript "soranoha-kernel" ''
+          set -euo pipefail
+          export PATH="${
+            pkgs.lib.makeBinPath [
+              pkgs.bash
+              pkgs.coreutils
+              pkgs.git
+              pkgs.clojure
+            ]
+          }"
+          export AB_AAT_TO_PARSER_IR_BIN="${
+            abValidatorPackages."ab-aat-to-parser-ir"
+          }/bin/ab-aat-to-parser-ir"
+          export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
+          export AB_AAT_TO_PARSER_IR_MAPPING_V2="${ab-validator}/data/aat-to-parser-ir-mapping-v2.json"
+          export HOME="${kernelDepsCache}"
+          export JAVA_TOOL_OPTIONS="-Duser.home=${kernelDepsCache}"
+          export CLJ_CONFIG="$HOME/.clojure"
+          export GITLIBS="$HOME/.gitlibs"
+          # inherited launcher variables would alter the JVM or classpath
+          # without changing the reported identity
+          unset JAVA_CMD CLJ_JVM_OPTS JAVA_OPTS JDK_JAVA_OPTIONS _JAVA_OPTIONS
+          # classpath scratch must stay writable; cleaned via trap, so the
+          # final clojure call must not exec-replace this shell
+          scratch="$(mktemp -d)"
+          trap 'rm -rf "$scratch"' EXIT
+          export CLJ_CACHE="$scratch/cp-cache"
+          export XDG_CONFIG_HOME="$scratch/xdg-config"
+          cd "${./soranoha}"
+          clojure -M:soranoha/build "$@" --clj-toolchain-id "${cljToolchainId}"
+        '';
+
       monorepoScripts =
         pkgs:
         let
@@ -182,6 +242,7 @@
             { }
         )
         // {
+          soranoha-kernel = mkScriptApp (mkKernelSoranohaApp system) "Soranoha kernel CLI (build/compare/delta/verify) with content-derived Clojure toolchain identity";
           schema-drift = mkScriptApp scripts.schema-drift "Check monorepo ABC schema contract drift";
           tei-version-coherence = mkScriptApp scripts.tei-version-coherence "Check TEI P5 source/profile version coherence";
           flake-input-policy = mkScriptApp scripts.flake-input-policy "Check release-critical flake inputs are explicitly pinned";

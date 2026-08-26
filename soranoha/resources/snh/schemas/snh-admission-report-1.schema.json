@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snh:schema:admission-report:1",
+  "title": "snh-admission-report/1",
+  "description": "The inclusion rule's total partition of the assessed candidate population. Carries no policy_id. reason_code syntax is constrained here; its semantic domain is bound by inclusion_rule_id + inclusion_rule_hash and checked by the assembler against the rule bytes it holds. Sorting and exact-partition are semantic rules checked by assembler/verifier.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "assessment_snapshot",
+    "policy_hash",
+    "inclusion_rule_id",
+    "inclusion_rule_hash",
+    "admitted",
+    "excluded",
+    "quarantined"
+  ],
+  "properties": {
+    "schema": { "const": "snh-admission-report/1" },
+    "assessment_snapshot": {
+      "type": "string",
+      "pattern": "^snh:1:assessment-snapshot:[0-9a-f]{64}$"
+    },
+    "policy_hash": { "$ref": "#/$defs/hex64" },
+    "inclusion_rule_id": { "type": "string", "minLength": 1 },
+    "inclusion_rule_hash": { "$ref": "#/$defs/hex64" },
+    "admitted": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/slug" }
+    },
+    "excluded": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/partition-entry" }
+    },
+    "quarantined": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/partition-entry" }
+    }
+  },
+  "$defs": {
+    "hex64": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "slug": { "type": "string", "pattern": "^[0-9a-z_-]+$" },
+    "partition-entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "reason_code"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "reason_code": { "type": "string", "pattern": "^[0-9a-z-]+$" }
+      }
+    }
+  }
+}

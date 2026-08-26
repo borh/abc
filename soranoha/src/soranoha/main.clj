@@ -1,11 +1,12 @@
 ;; Kernel CLI. `build` runs the full per-work stage graph at an aozorabunko
 ;; checkout revision into the kura store; output is CAS + trace results plus
-;; a DISPOSABLE run report (F57: a query/export over the trace store — no
-;; independent identity, no schema, no retention promise). No manifest, no
-;; signing, no publishing here (F52: those enter at Slice 2+ on admission
-;; evidence this kernel never sees). `compare` checks per-work TEI/plaintext
-;; bytes against a reference tree THROUGH the trace store; `verify` runs the
-;; kura determinism + fixity report.
+;; a disposable run report (a query/export over the trace store — no
+;; independent identity, no schema, no retention promise). No manifest,
+;; signing, or publishing here: those operate on admission evidence this
+;; kernel never sees. `compare` checks per-work TEI/plaintext bytes against
+;; a reference tree through the trace store; `delta` runs the three-set
+;; delta oracle over two run reports; `verify` runs the kura determinism +
+;; fixity report.
 (ns soranoha.main
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
@@ -24,10 +25,9 @@
             [soranoha.ported.json :as abc-json]
             [soranoha.ported.parallel :as parallel]
             [soranoha.yomi.catalog :as catalog]
-            [soranoha.yomi.select :as select])
+            [soranoha.yomi.select :as select]
+            [soranoha.za.oracle :as oracle])
   (:gen-class))
-
-(def default-clj-toolchain-id "clj-dev-0")
 
 (defn- git! [aozora-root & args]
   (try
@@ -55,14 +55,16 @@
    :parse (stages/parse-stage adapter)
    :convert (stages/convert-stage adapter)
    :render (stages/render-stage clj-toolchain-id)
-   :validate (stages/validate-tei-stage profile)})
+   :validate (stages/validate-tei-stage clj-toolchain-id profile)})
 
 (defn- read-cas-json [store hex]
   (json/read-json (String. ^bytes (cas/get-bytes (:cas-dir store) hex) "UTF-8")))
 
 (defn run-work!
   "Execute (or trace-skip) the full chain for one selected work.
-  Returns {:slug .. :outputs {stage-key {name hex}} :cached {stage-key bool}}."
+  Returns {:slug :zip-hex :source-facts
+  :outputs {stage-key {name hex}} :cached {stage-key bool}
+  :trace-keys {stage-key derivation-key-hex}}."
   [store {:keys [extract metadata parse convert render validate]}
    {:keys [slug row file]} catalog-hex]
   (let [zip-hex (cas/put-file! (:cas-dir store) file)
@@ -88,6 +90,8 @@
         validate-r (engine/run-stage! store validate
                                       {"tei" (get (:outputs render-r) "tei")})]
     {:slug slug
+     :zip-hex zip-hex
+     :source-facts facts
      :outputs {:extract (:outputs extract-r)
                :metadata (:outputs metadata-r)
                :parse (:outputs parse-r)
@@ -99,10 +103,22 @@
               :parse (:cached? parse-r)
               :convert (:cached? convert-r)
               :render (:cached? render-r)
-              :validate (:cached? validate-r)}}))
+              :validate (:cached? validate-r)}
+     :trace-keys {:extract (:trace-key extract-r)
+                  :metadata (:trace-key metadata-r)
+                  :parse (:trace-key parse-r)
+                  :convert (:trace-key convert-r)
+                  :render (:trace-key render-r)
+                  :validate (:trace-key validate-r)}}))
 
 (defn build!
   [{:keys [root aozora-root assets-root concurrency clj-toolchain-id limit]}]
+  (when (string/blank? clj-toolchain-id)
+    ;; fail closed: the toolchain identity keys every pure-Clojure stage's
+    ;; derivations and lands in release provenance; a constant default
+    ;; would let dependency or runtime changes retain stale derivations
+    (throw (ex-info "clj toolchain identity required; the build wrapper must pass --clj-toolchain-id"
+                    {:option "--clj-toolchain-id"})))
   (binding [assets/*root* (str assets-root)]
     (let [root (config/ensure-layout! (config/root root))
           commit (source-provenance! aozora-root)
@@ -144,6 +160,11 @@
                    n
                    (fn [candidate] (run-work! store stage-set candidate catalog-hex))
                    candidates)
+          relpath-of (into {} (map (juxt :slug :relpath)) candidates)
+          ;; the report is a disposable trace-store export, but it must
+          ;; carry everything the second-revision delta oracle consumes:
+          ;; per-work source identity, per-stage cache decisions, the
+          ;; selection join, and the stage coordinates
           report {"aozora_git_commit" commit
                   "catalog_csv_hash" catalog-csv-hash
                   "selected_count" (count candidates)
@@ -152,8 +173,15 @@
                                                         (mapcat (comp vals :cached)
                                                                 results)))
                   "clj_toolchain_id" clj-toolchain-id
+                  ;; coordinate values pass through unchanged; only the
+                  ;; outer logical stage keys become strings
+                  "stages" (into (sorted-map)
+                                 (map (fn [[stage coordinate]]
+                                        [(name stage) coordinate]))
+                                 (trace/stage-coordinates stage-set))
                   "works" (into (sorted-map)
-                                (map (fn [{:keys [slug outputs]}]
+                                (map (fn [{:keys [slug outputs cached zip-hex
+                                                  source-facts trace-keys]}]
                                        [slug {"tei" (get-in outputs [:render "tei"])
                                               "plaintext" (get-in outputs
                                                                   [:render "plaintext"])
@@ -161,7 +189,27 @@
                                               (get-in outputs
                                                       [:validate "tei-validation"])
                                               "parser-ir" (get-in outputs
-                                                                  [:convert "parser-ir"])}]))
+                                                                  [:convert "parser-ir"])
+                                              "source_zip" zip-hex
+                                              "source_relpath" (get relpath-of slug)
+                                              "source_content_hash"
+                                              (get source-facts "work_content_hash")
+                                              "cached" (into (sorted-map)
+                                                             (map (fn [[stage hit?]]
+                                                                    [(name stage)
+                                                                     hit?]))
+                                                             cached)
+                                              ;; with equal stage-coordinate
+                                              ;; tables across two runs, an
+                                              ;; executed stage must carry a
+                                              ;; changed derivation key — the
+                                              ;; delta oracle's explanation
+                                              ;; invariant runs on these
+                                              "trace_keys"
+                                              (into (sorted-map)
+                                                    (map (fn [[stage k]]
+                                                           [(name stage) k]))
+                                                    trace-keys)}]))
                                 results)}
           report-path (str (fs/path root "runs" (str "run-" started ".json")))]
       (fs/create-dirs (fs/parent report-path))
@@ -173,7 +221,7 @@
 
 (defn compare!
   "Acceptance: per-work byte equality of TEI + plaintext against a
-  reference tree, COUNTED THROUGH THE TRACE STORE — artifact hashes come
+  reference tree, counted through the trace store — artifact hashes come
   from the run report (a trace-store export) and bytes from the CAS."
   [{:keys [root reference report]}]
   (let [_ (config/root root)
@@ -206,6 +254,50 @@
                     " plaintext=" (:plaintext p))))
     {:equal equal :total (count results) :problems (vec problems)}))
 
+(defn delta!
+  "The disposable second-revision acceptance export: the three-set delta
+  oracle over two build run reports (strictly decoded), printed as
+  deterministic JSON. `ok` requires zero unexplained executions; the
+  source and artifact deltas are descriptive (content hashes already
+  establish what changed, and no executed stage is evidence for or
+  against an artifact change — a warm cache can produce changed bytes
+  without executing anything)."
+  [{:keys [report-a report-b]}]
+  (let [run-a (oracle/decode-run (fs/read-all-bytes (str report-a)))
+        run-b (oracle/decode-run (fs/read-all-bytes (str report-b)))
+        violations (oracle/unexplained-executions run-a run-b)
+        source (oracle/source-delta run-a run-b)
+        artifacts (oracle/report-artifact-delta run-a run-b)
+        executed (oracle/executed-stages run-b)
+        sorted-slugs (fn [slugs] (vec (sort slugs)))
+        delta-json (fn [d] (into (sorted-map)
+                                 (map (fn [[k v]] [(name k) (sorted-slugs v)]))
+                                 d))
+        stage-counts (into (sorted-map)
+                           (map (fn [[stage runs]]
+                                  [(name stage) (count runs)]))
+                           (group-by identity (mapcat val executed)))
+        touched (into (:added source) (:changed source))
+        result {"commit_a" (:commit run-a)
+                "commit_b" (:commit run-b)
+                "source_delta" (delta-json source)
+                "artifact_delta" (delta-json artifacts)
+                "executed_stage_counts" stage-counts
+                "executed_for_touched_sources"
+                (into (sorted-map)
+                      (keep (fn [slug]
+                              (when-let [stages (seq (get executed slug))]
+                                [slug (vec (sort (map name stages)))])))
+                      (sorted-slugs touched))
+                "unexplained_executions"
+                (mapv (fn [{:keys [slug stage trace-key]}]
+                        {"slug" slug "stage" (name stage)
+                         "trace_key" trace-key})
+                      (sort-by (juxt :slug #(name (:stage %))) violations))
+                "ok" (empty? violations)}]
+    (println (abc-json/write-deterministic-json-str result))
+    result))
+
 (defn verify!
   [{:keys [root]}]
   (let [root (config/root root)
@@ -225,11 +317,14 @@
    :assets-root {:coerce :string}
    :reference {:coerce :string}
    :report {:coerce :string}
-   ;; default pinned to the measured F7 envelope (peak RSS < 8 GiB with -Xmx4g);
-   ;; 0 = one worker per available processor
+   :report-a {:coerce :string}
+   :report-b {:coerce :string}
+   ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
+   ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}
    :limit {:coerce :long}
-   :clj-toolchain-id {:coerce :string :default default-clj-toolchain-id}})
+   ;; no default: build! fails closed without a wrapper-supplied identity
+   :clj-toolchain-id {:coerce :string}})
 
 (defn -main [& args]
   (let [[command & rest-args] args
@@ -238,10 +333,12 @@
       (case command
         "build" (build! opts)
         "compare" (compare! opts)
+        "delta" (when-not (get (delta! opts) "ok")
+                  (System/exit 1))
         "verify" (do (when-not (:ok? (verify! opts))
                        (System/exit 1)))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|compare|delta|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

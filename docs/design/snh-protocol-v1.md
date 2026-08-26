@@ -1,10 +1,14 @@
 # snh protocol v1 — live specification
 
-Status: **NORMATIVE DRAFT — the sole normative source, effective now
-(F84).** The D16.1 freeze changes stability (no further changes without
-a decision-log entry), not precedence. One open item marked inline:
-the assessment-snapshot content fields (F83, O5a, O3(b), and O1 are
-owner-ratified). Per F80, the FROZEN objects are the executable
+Status: **NORMATIVE, D16.1-FROZEN — the sole normative source (F84).
+Freeze approved 2026-08-25 at commit 22551310** after freeze-review
+rounds 1–2 (F147–F156, all applied). The frozen objects are the four
+executable JSON Schemas and the conformance vectors (§11 items 1–5,
+at the locations named in §11); no further changes to them or to this
+document without a decision-log entry. §11 item 6's state/transaction
+fixtures land with the §8 verifier and §9 transaction implementations
+and require their own review — they are not covered by this freeze.
+No open items remain; F83, O5a, O3(b), and O1 are owner-ratified. Per F80, the FROZEN objects are the executable
 JSON Schemas plus the conformance vectors (§11). Authority split
 (F88): the JSON Schemas govern STRUCTURE; this document governs
 SEMANTIC and STATE invariants; the conformance vectors demonstrate
@@ -32,10 +36,16 @@ appendix for their activation triggers.
   OF THE FOUR PROTOCOL JSON OBJECTS (the §2 registry) and to NOTHING
   ELSE, on both the assembler and verifier sides):
   reject duplicate object keys; parse WITHOUT coercion; validate the
-  parsed value against its frozen JSON Schema; canonicalize that same
-  value; require the STORED bytes to EQUAL the canonical bytes;
-  recompute the id from those bytes. Equivalent-but-noncanonical
-  stored JSON (same value, different bytes) is INVALID.
+  parsed value against its frozen JSON Schema; apply the type's
+  SINGLE-OBJECT semantic boundary rules (F154/F156/F161 — EVERY rule
+  a lone object must satisfy: sortedness/uniqueness of each object's
+  slug- and id-keyed lists, list disjointness within the object, real
+  calendar dates, absolute origin; cross-object and transition
+  invariants stay in §8); canonicalize that same value; require the
+  STORED bytes to
+  EQUAL the canonical bytes; recompute the id from those bytes.
+  Equivalent-but-noncanonical stored JSON (same value, different
+  bytes) is INVALID.
 - Artifact id string form: `snh:1:<type>:<sha256hex>`.
 - `manifest_id` = sha256 hex over the manifest's canonical bytes.
   External citation form: `snh:1:release-manifest:<hex>`.
@@ -65,10 +75,10 @@ of any kind appear in manifest bytes.
 |---|---|
 | `schema` | literal `"snh-manifest/1"` |
 | `corpus` | `{upstream_origin (URL string), upstream_rev (commit hex)}` |
-| `toolchain` | object: stage-id (matches `^[0-9a-z][0-9a-z-]*$`, F80) → `{nix_closure_hash (string), stage_code_version (string)}`; keys sorted. Provenance/derivation-key input only — never an input to artifact identity |
+| `toolchain` | object: stage-id (matches `^[0-9a-z][0-9a-z-]*$`, F80) → `{nix_closure_hash (string), stage_code_version (string)}`; keys sorted. Provenance/derivation-key input only — never an input to artifact identity. `nix_closure_hash` carries the stage's toolchain identity EXACTLY as the build's derivation keys carry it (F172 clarification): the wrapper-supplied Nix closure hash for nix-provisioned stages, the hashed binary/profile identity for subprocess stages; a constant placeholder is prohibited — the build fails closed without a supplied identity |
 | `selection_params` | object; string keys sorted; values strings or safe-range integers; `{}` when the inclusion rule takes no parameters |
 | `admission` | `{policy_id (string), policy_hash (hex), inclusion_rule_id (string), inclusion_rule_hash (hex), assessment_snapshot (artifact id), admission_report (artifact id)}` |
-| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty, F80), unique. Each `{slug, source_content_hash (hex of upstream source bytes), artifacts}`; `artifacts` sorted bytewise by `type`, each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type |
+| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty, F80), unique. Each `{slug, source_content_hash (hex of the CANONICAL SOURCE-BUNDLE IDENTITY, F173/F176 clarification: sha256 over the canonical bytes of the abc-source-bundle-v1 identity object `{construction, members: [{path, member_hash}...], primary_text_member}` — stable across archive-level repackaging that preserves members, unlike a raw archive hash), artifacts}`; `artifacts` sorted bytewise by `type`, each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type |
 | `withdrawn` | array sorted by `slug`; each `{slug, event}` with `event` a `governance-event` artifact id — the GOVERNING event carrying the public reason |
 | `validation_summary` | `{invalid_count (integer), invalid_slugs (sorted array of slugs)}` |
 | `governance_event` | `null`, or the `governance-event` artifact id this manifest executes; non-null exactly when the manifest performs a withdrawal or event-amendment |
@@ -94,7 +104,10 @@ evidence commitment returns only with a concrete audit consumer and
 encoding.)
 
 - `reason_code` ∈ {"rights", "takedown-request", "data-defect", "other"}.
-- `statement`: string, may be empty. No dates in event bytes.
+- `statement`: string, may be empty. No dedicated date or timestamp
+  FIELD exists in event bytes (F150); substantive dates may appear
+  inside the free-form `statement` text — the enforceable rule is
+  structural, not a prohibition on prose content.
 - `entries` is non-empty with unique slugs. In a `withdrawal` event NO
   entry has `amends`; in an `event-amendment` event EVERY entry has
   `amends` (the superseded event's artifact id).
@@ -119,8 +132,48 @@ completed assessment) and `undetermined` (assessment performed,
 inconclusive) are distinct and never collapsed; absence of a completed
 assessment is an explicit `not-evaluated` fact, never an omitted
 contribution. No admission decisions appear here.
-**[OPEN until the pre-Slice-2 freeze: exact field names/shape — the
-minimal content schema, exercised on the Slice-2 fixture.]**
+
+Content shape (fixed 2026-08-25 at the pre-Slice-2 freeze; amended per
+freeze-review F149 — the O1 rule assesses BOTH the exact work/edition
+and every rights-relevant contribution, so both fact levels are
+required. The schema is authoritative for structure per F88):
+
+```
+{schema: "snh-assessment-snapshot/1",
+ candidates: [{slug,
+               work_assessment: {status, jurisdiction,
+                                 effective_date, basis},
+               contributions: [{contribution_id, status,
+                                jurisdiction, effective_date,
+                                basis}]}]}   // candidates sorted by slug;
+                                             // contributions sorted by
+                                             // contribution_id; both unique
+```
+
+- `work_assessment` (F149): the assessment fact for the exact
+  work/edition itself, same shape as a contribution fact minus
+  `contribution_id`; required for every candidate.
+- `contribution_id`: string matching `^[0-9a-z][0-9a-z:_-]*$`, naming
+  the rights-relevant contribution (e.g. `author:000035`,
+  `annotator:001357`); unique within its candidate; every candidate has
+  at least one contribution.
+- Fact rule (both levels): status `not-evaluated` ⇔ `jurisdiction`,
+  `effective_date`, and `basis` are all `null`. Every other status
+  (including `undetermined` — the assessment was performed) carries all
+  three non-null: `jurisdiction` lowercase (`^[a-z][a-z0-9-]+$`, e.g.
+  `jp`), `effective_date` = the as-of date of the recorded facts
+  (`YYYY-MM-DD`; a REAL calendar date per the F154 semantic rule below;
+  dates are permitted here — the structural no-date-field rule binds
+  manifest and event bytes), `basis` a non-empty recorded-basis string.
+
+Semantic boundary rules (F154 — enforced inside the §1 boundary
+decode after structural validation (F156), so assembler and verifier
+inherit them from the one shared operation; never JSON Schema
+`format`, whose enforcement is inconsistent across validators):
+- every non-null `effective_date` must be a real proleptic-Gregorian
+  calendar date (schema syntax alone admits e.g. `2026-99-99`);
+- `corpus.upstream_origin` (§3) must be an absolute URI with a scheme
+  and a non-empty host.
 
 **`snh-admission-report/1`** — the inclusion rule's TOTAL PARTITION:
 
@@ -260,7 +313,22 @@ repository; archive verification supplies ONLY the SWH snapshot;
 mirrors and local clones supply themselves. The invariants below are
 what the primitive checks, with C:`releases/HEAD` as the target head.
 
-The view's contract is COMMIT-SCOPED (F110): it exposes reads of the
+The view's contract is COMMIT-SCOPED (F110) and NON-SUBSTITUTING
+(F159): reads must ignore object-replacement mechanisms and must not
+import objects from outside the view's single object store — for a
+git-backed view, replacement refs are disabled, promisor/lazy fetches
+are disabled, and alternate object directories are rejected outright.
+Discovery and reads run under a SANITIZED environment bound to the
+view's own git directory (F166): every `GIT_`-prefixed variable is
+stripped and the git directory resolved at construction is passed
+explicitly on every invocation, so an inherited `GIT_DIR`,
+`GIT_OBJECT_DIRECTORY`, or alternates override cannot point reads at
+a foreign object store. Linked worktrees are REJECTED at construction
+(F168): a linked worktree's per-worktree git directory hides the
+common directory's object store and alternates file, so the view
+requires the resolved common directory to equal the git directory
+(linked worktrees have no v1 consumer).
+It exposes reads of the
 form `read_at(C, required_path)` and `parent_of(C)`. Every manifest,
 signature, event, and artifact must be REACHABLE AT ITS PRESCRIBED
 PATH from C's tree; presence anywhere else in the same object graph —
@@ -278,8 +346,12 @@ search): C is a publication commit iff
 - M.prev_manifest = H;
 - C contains M and its required verification closure.
 
-Structural:
-- `works[].slug` unique; `withdrawn[].slug` unique; the sets DISJOINT.
+Structural (single-object rules — works/withdrawn/invalid_slugs
+sortedness, uniqueness, and disjointness; event entries sortedness;
+snapshot candidate/contribution ordering; report list ordering and
+partition-list disjointness — are enforced by the §1 boundary decode
+each manifest/evidence/event fetch passes through, F161; the bullets
+below are the verifier's cross-object additions):
 - Every artifact id hash is 64 lowercase hex; `bytes` matches the
   stored blob's length.
 - Type-prefix and hash checks are EXPLICIT (F80): every artifact id's
@@ -294,9 +366,21 @@ Structural:
   value). All other artifacts — e.g. `tei-validation` JSON bytes —
   are exact published bytes checked by hash alone; they have no
   frozen schema and no canonical form.
-- `invalid_count == count(invalid_slugs)`; `invalid_slugs` ⊆ works'
-  slugs, sorted; summary re-derivable from the per-work `tei-validation`
-  artifacts.
+- Validation-summary RE-DERIVATION (F162/F165): the verifier consumes
+  a fixed projection of each per-work `tei-validation` record under a
+  minimal consumed contract — the record parses as strict JSON with
+  duplicate keys rejected, `status` is exactly one of `passed`,
+  `warning`, `failed`, and `validated_artifact` is exactly
+  `sha256:<hex>` with `<hex>` equal to that work's `tei` artifact
+  hash. It requires `invalid_slugs` to EQUAL the sorted slugs whose
+  `status` is `failed`. No other field is consumed or constrained;
+  tei-validation bytes remain exact published bytes checked by hash,
+  with no frozen schema and no canonical form.
+- Semantic boundary rules (F154/F156, applied inside the §1 boundary
+  decode — never via JSON Schema `format`): `corpus.upstream_origin`
+  is an absolute URI with a scheme and non-empty host; every non-null
+  `effective_date` in the assessment snapshot is a real
+  proleptic-Gregorian calendar date.
 
 Admission (fetch both evidence artifacts by hash):
 - The report's fields match `admission` field-for-field over the
@@ -357,10 +441,12 @@ reject a HEAD not matching a valid chain head):
 - kind `event-amendment` (O3(b), owner-ratified) ⇒ changed `withdrawn` slugs equal
   the event's `entries` slugs exactly; for each, `amends ==
   predecessor.withdrawn[slug].event` (linear — no skipped or
-  overwritten corrections); the superseded event has exactly one entry
-  for that slug; each changed `withdrawn[slug].event` equals this
-  manifest's `governance_event`; withdrawn slug set, `works`, and
-  coordinates verbatim-unchanged.
+  overwritten corrections); each changed `withdrawn[slug].event`
+  equals this manifest's `governance_event`; withdrawn slug set,
+  `works`, and coordinates verbatim-unchanged. (A superseded event
+  with more than one entry per slug is unrepresentable: §1 boundary
+  decode rejects duplicate entry slugs, so no such event can enter a
+  valid chain — F167 removed the redundant per-amendment check.)
 - Mixed build/governance changes prohibited in one manifest.
 - Each `withdrawn` entry's slug appears in its governing event's
   `entries`.
@@ -392,12 +478,26 @@ comparison against an independently obtained head or checkpoint
 (F91/F96).
 
 1. Fetch Git commit C (branch head).
-2. Read manifest head H = C:`releases/HEAD`.
-3. Assemble manifest M with `prev_manifest` = H.
+2. FULLY VERIFY C with the §8 primitive and take the manifest head H
+   and the decoded head manifest from its result (F164): the fetched
+   state is trusted only after verification — an accepted-but-invalid
+   tip (e.g. a permitted fast-forward that leaves `releases/HEAD`
+   unchanged) must fail here, never satisfy the no-op decision in
+   step 3. The same rule governs reconciliation (step 7).
+3. Assemble manifest M with `prev_manifest` = H. BEFORE creating any
+   commit (F158), apply the projection/derived-state decision against
+   the current head: projection equal and derived content equal →
+   SUCCESS without publishing (the scheduled no-op); projection equal
+   and derived content different → DETERMINISM FAILURE — halt (the
+   halt rule applies uncontended, not only after losing a race);
+   projection different → proceed.
 4. Create commit C′ with EXACTLY ONE parent, C (F85 — never a merge):
    M's blobs, `releases/<manifest_id>.json` + `.sig`,
    `releases/HEAD` = M's manifest_id.
-5. Push with C as the expected ref value.
+5. VERIFY C′ with the §8 primitive BEFORE pushing (F157): an invalid
+   candidate — a bad signature, a missing blob, any violated
+   invariant — must never reach the origin ref. Then push with C as
+   the expected ref value.
 6. UNKNOWN result: if M is on the accepted manifest chain (walked from
    the current `releases/HEAD`) — success. If M is ABSENT, proceed
    exactly as for REJECTION (step 7); the two cases converge (F79).
@@ -509,6 +609,20 @@ determinism defect.
 
 The four JSON Schemas and these vectors are what the freeze review
 approves — authored BEFORE that review, not transcribed after it.
+
+Frozen artifact locations (D16.1 freeze approved 2026-08-25 at commit
+22551310): schemas at `soranoha/resources/snh/schemas/*.schema.json`
+(one per §2 release-level type); vectors at
+`soranoha/resources/snh/vectors/` with `expected.json` as the
+table-driven index (accept vectors carry the exact stored canonical
+bytes; reject vectors carry the exact bytes that must fail, each with
+its frozen rejection reason); executable check =
+`soranoha.snh.conformance-test`. Items 1–5 below are covered there.
+Item 6's §8/§9 invariant fixtures are implemented (post-freeze, own
+review pending) in `soranoha.snh.verify-test` and
+`soranoha.snh.transact-test` against a local fixture origin, exercising
+`soranoha.snh.verify` (the §8 primitive + §10 archive report) and
+`soranoha.snh.transact` (the §9 transaction).
 
 1. Canonicalization: existing shared vectors (§1).
 2. A complete valid manifest → canonical bytes → manifest_id; the

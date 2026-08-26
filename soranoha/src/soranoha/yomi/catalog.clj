@@ -2,7 +2,7 @@
 ;; index_pages/list_person_all_extended_utf8.zip. Ported from
 ;; abc.tools.soranoha-build-publication (read-catalog-zip, catalog-index) and
 ;; abc.tools.aozora-csv (row parsing incl. BOM strip and the ragged marker) —
-;; selection semantics must match abc byte-for-byte for the Slice-1
+;; selection semantics must match abc byte-for-byte for the kernel's
 ;; equivalence gate.
 (ns soranoha.yomi.catalog
   (:require [charred.api :as charred]

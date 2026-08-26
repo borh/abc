@@ -28,11 +28,58 @@ numbers live in the findings sections and Git history, not here):
   fixity-checked); all F7 bounds met at the pinned config (-Xmx4g,
   concurrency 16): cold 465.5 s, peak RSS 6.22 GiB, warm no-op 6.1 s.
   The kernel is policy-blind (F52/F60).
-- Before Slice 2 (dev work only — no owner decision remains): the
-  four hand-written JSON Schemas + table-driven conformance vectors
-  for the freeze review (including the minimal assessment-snapshot
-  content schema, the one open spec item); the AGENTS.md
-  manifest-ownership update (D20 as amended).
+- **Slice 2 STARTED 2026-08-25; D16.1 FREEZE APPROVED 2026-08-25 at
+  commit 22551310** (freeze-review rounds 1–2, F147–F156, all
+  applied). Frozen objects: the four hand-written JSON Schemas
+  (`soranoha/resources/snh/schemas/`) + table-driven conformance
+  vectors (`soranoha/resources/snh/vectors/`, exercised by
+  `soranoha.snh.conformance-test` — spec §11 items 1–5; item 6's
+  invariant fixtures land with the Slice-2 verifier). The minimal
+  assessment-snapshot content schema — the spec's last open item —
+  is fixed in spec §5. Boundary decode (F137/F142), wire encodings,
+  Ed25519 role-bound verification (F126), and the F123 fixture keys
+  (RFC 8032 vectors) are implemented in `soranoha/src/soranoha/snh/`.
+  The D20-as-amended AGENTS.md ownership transfer is recorded.
+  Post-freeze progress (2026-08-25, not covered by the D16.1 freeze;
+  reviewed separately — **§8/§9 APPROVED at d7e80a22**): the §8 verifier
+  (`soranoha.snh.verify` — chain walk, publication-commit definition,
+  closure/blob/signature checks, transition rules, §10
+  archive-verification report) and the §9 publication transaction
+  (`soranoha.snh.transact` — pre-genesis init, build + governance
+  publication over a fast-forward-only compare-and-swap push,
+  current-state reconciliation incl. requeue / already-published /
+  determinism-halt / conflicting-withdrawal / stale-amends, F61
+  lost-ack convergence, F87 totality gate) are implemented with the
+  §11-item-6 invariant fixtures (`verify-test`, `transact-test`)
+  against a local fixture origin. Implementation review round 1
+  (F157–F163) applied: pre-push candidate verification, pre-push
+  no-op/determinism decision, non-substituting hardened git view,
+  real commit time, all single-object semantics in boundary decode,
+  validation-summary re-derivation, exact-reason mutation tables,
+  streaming verification. Round 2 (F164–F167) applied: fetched head
+  verified before the no-op decision, strict two-field
+  validation-record contract, sanitized + git-dir-bound view
+  environment, unreachable superseded-entry check deleted. Round 3
+  (F168) applied: linked worktrees rejected at view construction
+  (common dir must equal git dir). **§8/§9 boundary APPROVED
+  2026-08-26 at d7e80a22.** Manifest assembly + F5 delta oracle
+  implemented against the real kernel (soranoha.za.assemble +
+  fixture-corpus/oracle acceptance); assembly-review rounds 4–8
+  (F169–F179) applied and **APPROVED 2026-08-26 at 379951dc**. F172
+  closed: root-flake `soranoha-kernel` wrapper with content-derived
+  toolchain identity, strict report boundary decode, and the `delta`
+  driver; production F5 run executed at a second real revision
+  (a1da0f5a00 → pinned 0e9ea3e586, 17,602 works, oracle ok = true, 0
+  unexplained executions; see the Slice-2 completion section). Round
+  9 (F180–F183) applied: exact per-work evidence coverage in
+  decode-run, the artifact/execution gate deleted (ok = unexplained
+  executions only), the wrapper hermeticized over the clj-nix
+  dependency cache with a full-hash identity, sorted failure rows —
+  and the production F5 pair rerun through the final wrapper, again
+  ok = true (see round 9). **Slice 2 APPROVED 2026-08-26 at
+  5d9f16b7** (wrapper hermeticity closure verified without a corpus
+  rerun). Suites: 59 tests / 312 assertions green locally and
+  hermetically.
 - Before Slice 3: full-corpus assessment data; the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -131,7 +178,7 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D13 | Identifiers: artifact id = typed content hash `snh:1:<type>:<sha256>` (prefix per the 2026-07-03 naming spec); release identity is DATELESS — the full typed manifest id is the citable name; dates are presentation/citation metadata (F83, owner-ratified 2026-08-25; supersedes the original dated release name — history in F76/F83). Snapshot DOIs quarterly (Zenodo concept + version DOIs). | owner 2026-08-24; F83 ratified 2026-08-25 | frozen at first release |
 | D14 | Slug scheme kept: `作品ID_人物ID_carddir_zipstem` as stable human-facing work name; qualifier, never identity. | owner ratified rec, 2026-08-24 | frozen after first release |
 | D15 | Naming ratified per 2026-07-03 Model B spec: new top-level `soranoha/` component; namespaces `soranoha.core` (shared types/config/the one canonicalizer), `soranoha.yomi` (source-acquirer+selector), `soranoha.kura` (trace store+CAS+verifier), `soranoha.ori` (stages/renderers/validation), `soranoha.za` (release assembly+publishing). Vocabulary reused, NOT the old spec's scope (no LOD/IIIF/XTDB in v1). `snh:` id prefix per D13. | owner, 2026-08-24 | dir rename trivial pre-first-release |
-| D16 | Wire formats: normative v1 = the protocol spec's FOUR canonical JSON schemas (manifest, assessment-snapshot, admission-report, governance-event) + fixed raw signature/key/`releases/HEAD` encodings; canonicalizer `rfc8785-safe-integer-json-string-v1`; closed type registry. FREEZE at the pre-Slice-2 review, whose approved objects are the executable JSON Schemas + conformance vectors (F80/F88). Full semantics: `snh-protocol-v1.md` (sole normative source). Amendment history: F3→F13 (D16.1) and rounds 3–19 (F16–F104) in the findings sections. | review rounds 2–19 | draft — cheap to change until the pre-Slice-2 freeze |
+| D16 | Wire formats: normative v1 = the protocol spec's FOUR canonical JSON schemas (manifest, assessment-snapshot, admission-report, governance-event) + fixed raw signature/key/`releases/HEAD` encodings; canonicalizer `rfc8785-safe-integer-json-string-v1`; closed type registry. FREEZE at the pre-Slice-2 review, whose approved objects are the executable JSON Schemas + conformance vectors (F80/F88). Full semantics: `snh-protocol-v1.md` (sole normative source). Amendment history: F3→F13 (D16.1) and rounds 3–19 (F16–F104) in the findings sections. | review rounds 2–19 | **FROZEN 2026-08-25 at commit 22551310 (D16.1 approved; freeze-review F147–F156)** — changes only via decision-log entry |
 | D17 | Publication = the spec §9 transaction: single-parent commit fast-forward-pushed to the protected branch (the remote ref is the CAS, D17.1/F10); rejection/unknown result → CURRENT-STATE reconciliation (discard the assembled manifest, refetch, recompute; F86); scheduled-build no-op on the F67 projection; nondeterminism halts. Amendment history: F1→F10→F61→F66/F67→F73/F79→F86 in the findings sections. | review rounds 2–16 | internal protocol, revisable |
 | D18 | Retention/archival: all published manifests + referenced blobs are permanent GC roots; the publication repo carries the published artifact bytes (bytes-in-git so SWH archives real bytes; accepted subject to the F12 growth probe, F93); stored lifecycle state = `published` only; archival status = a successful `archive_verification(view, C, keys)` observation report (spec §10, F97/F101/F113); citation eligibility requires a successful observation satisfying the current citation policy; independent authorship checkpoints = credential-separated Zenodo deposits (F70). Amendment history: F2→F11/F12→F63/F71→F93/F97/F101. | owner-endorsed + review rounds 2–19 | promise text frozen at first public release |
 | D19 | Trust: v1 = two disjoint ROLES with FIXED directly pinned Ed25519 key sets — RELEASE: one online CI key (manifests); GOVERNANCE: ONE offline owner-held SOFTWARE Ed25519 key, generated offline, held as TWO authorized custody copies on separately controlled encrypted offline media under the ceremony-declared complete persistent-copy inventory (withdrawal/amendment) — **O5a-as-amended, owner-RATIFIED 2026-08-25; key medium amended by owner 2026-08-25 (software, after the 5.4.3 firmware finding); composition collapsed per round-27 F143, owner-CONFIRMED 2026-08-25 (two non-threshold software keys add nothing over a second inventoried copy)**. For a given publication chain the pinned sets are established at genesis and never change; changing them ends that chain; successor continuity is outside v1 (F112/F120). The anchor authenticates the role assignment, never a flat key list (F126). Raw detached signatures over domain-separated messages; fingerprints over decoded raw key bytes; key bytes/fingerprints live in the independent anchor + pinned verifier config only (F116). One inventoried medium verifiably destroyed → continue on the remaining copy; an unexplained copy, lost custody of any medium, or possible disclosure → suspected compromise → HALT (F115/F144); compromise of any member → HALT; chain freezes at the last credential-separated Zenodo checkpoint (F55/F59/F70); freshness deferred. Key-manifest/recovery designs stay in the non-frozen contingency appendix; activation trigger: BEFORE any set change, continuity promise, or freshness consumer — never mid-incident. Amendment history: F8→F22–F47→O5a/F48–F55→F112–F117. | review-adopted; O5a staging round 9; owner-directed set-of-2 + round-22 corrections | contingency activates per O5a trigger |
@@ -2349,6 +2396,581 @@ Slices 0–1 unaffected.
   recorded in the O5a amendment history) and a duplicate of the
   Slice-3 F12 gate (real-bytes/predetermined-budgets detail folded
   into the Slice-3 preconditions).
+
+## Freeze review round 1 (2026-08-25) — findings F147–F154; NOT APPROVED at 1c9dcfd2; all findings applied
+
+Verdict: package close; four contract defects block D16.1. All eight
+findings applied same day; suite green locally and hermetically
+(28 tests, 149 assertions).
+
+- **F147 (signature not bound to artifact — Blocker, applied)** — the
+  public verify operation accepted a caller-supplied message, so a
+  signature over one domain could be presented under another label.
+  Fix: `verify-artifact-signature?` takes (type, artifact hex) and
+  constructs the domain-separated message internally; arbitrary-message
+  verification is private. Vector table extended with wrong-domain and
+  wrong-subject rejection rows (10 cases total).
+- **F148 (v1 key cardinality unenforced — Blocker, applied)** — role
+  sets accepted any non-empty size, permitting unsupported in-chain key
+  addition. Fix: pinned-keys configuration is scalar
+  `{:release hex :governance hex}` — invalid cardinality is
+  unrepresentable; set-shaped values rejected.
+- **F149 (snapshot cannot express O1 — Blocker, applied)** — the
+  ratified rule assesses the exact work/edition AND every contribution;
+  the schema had only contribution facts. Fix: required candidate-level
+  `work_assessment` (same fact shape, no contribution_id); spec §5 and
+  fixtures updated; missing-work-assessment negative vector added.
+- **F150 (valid vector contradicted "no dates in event bytes" —
+  Blocker, applied)** — rule clarified to the enforceable structural
+  form: no dedicated date/timestamp field; substantive dates may appear
+  in the free-form statement.
+- **F151 (schema-validity test vacuous — applied)** — replaced the
+  map?/string? assertions with `ported-schema/schema-valid!` over all
+  four schemas.
+- **F152 (suite outside the Nix/check path — applied, D12 fulfilled
+  rather than amended)** — `soranoha/flake.nix` (clj-nix deps cache,
+  `checks.<system>.clj-nix-tests` runs the full kaocha suite
+  hermetically with the shared canonicalization fixture); wired into
+  root `check-no-build` (flake check --no-build) and `evidence-gate`
+  (actual run), plus a focused `just soranoha-tests` recipe.
+- **F153 (unused schema-file hash — applied)** — deleted; git + $id +
+  schemas + vectors establish freeze identity.
+- **F154 (semantic boundary rules undefined — applied)** — spec §5/§8
+  now require real proleptic-Gregorian `effective_date` values and an
+  absolute-URI-with-host `upstream_origin`, enforced in
+  `soranoha.snh.semantic` (never JSON Schema `format`); tested
+  including 2026-99-99 / 2027-02-29 rejections.
+- Cleanup: trailing whitespace in generated vector JSON eliminated;
+  "frozen" wording replaced with freeze-candidate in AGENTS.md.
+  Owner rule adopted same session: code comments and names stand on
+  their own — no plan/finding references (ADR links only) and no
+  all-caps emphasis; soranoha sources swept accordingly.
+
+## Freeze review round 2 (2026-08-25) — findings F155–F156; both applied; **D16.1 FREEZE APPROVED at 22551310**
+
+Approval note: owner/reviewer confirmed the evidence independently
+(local 27/149 green; hermetic Nix green; both semantic negatives fail
+through decode with the specified reasons; meta-schema control fails,
+all four schemas pass; whitespace/format gates pass; valid-vector ids
+unchanged; one authoritative validation boundary). The §8 verifier,
+§9 transaction, and §11 item 6's state/transaction fixtures require
+their own review — not implicitly approved by this format freeze.
+
+Verdict: F147–F154 substantively resolved; two narrow blockers, no
+further architectural review needed.
+
+- **F155 (schema-validity test still ineffective — applied)** — the
+  round-1 fix delegated to a helper whose validating schema was a bare
+  `{"$schema": …}` (declares a dialect, constrains nothing); the
+  reviewer's control instance passed. Fix: the conformance test
+  validates each schema against
+  `{"$ref": "https://json-schema.org/draft/2020-12/schema"}` (the
+  meta-schema) with an invalid-schema control proving the check can
+  fail; the byte-faithful ported helper is untouched. Reviewer
+  independently confirmed all four candidates pass the correct
+  meta-schema.
+- **F156 (semantic rules were optional helpers — applied)** — decode
+  never called them, so encode accepted `upstream_origin` "not-a-uri"
+  and `effective_date` "2026-99-99", leaving duplicate
+  remember-to-call obligations. Fix: boundary decode applies the
+  type-dispatched single-object semantic checks after structural
+  validation (spec §1/§5/§8 updated — F154 rules now live inside the
+  decode step; cross-object/transition invariants remain §8); encode
+  inherits via its round trip; helper-only rejection assertions
+  replaced with two full-boundary reject vectors
+  (`release-manifest-invalid-relative-origin`,
+  `assessment-snapshot-invalid-impossible-date`). Vector ids of valid
+  fixtures unchanged.
+
+Suites after both fixes: local 27 tests / 149 assertions green;
+hermetic Nix check green.
+
+## Slice-2 implementation review round 1 (2026-08-25) — findings F157–F163; NOT APPROVED at 25830364; all applied
+
+Verdict on the §8/§9 implementation: architecture clean; correctness
+gaps at the publication boundary. All seven findings and the
+streaming simplification applied same day.
+
+- **F157 (candidates pushed before verification — applied)** — a
+  zeroed release signature reached the origin. Fix: both transaction
+  paths verify the candidate commit with the §8 primitive before the
+  CAS push (spec §9 step 5); test asserts a bad signature leaves the
+  origin ref unchanged.
+- **F158 (no-op/determinism decision only ran after losing a race —
+  applied)** — identical state published twice; uncontended
+  same-projection divergence published instead of halting. Fix: the
+  projection/derived-state decision runs before any commit is created
+  (spec §9 step 3) and is shared verbatim with reconciliation; tests
+  cover the uncontended no-op and the uncontended determinism halt.
+- **F159 (git view honored replacement refs / lazy fetch — applied)**
+  — a replacement ref substituted a valid commit for an invalid one.
+  Fix: every view invocation runs with --no-replace-objects and
+  --no-lazy-fetch plus cleared alternates environment; alternate
+  object directories are rejected at view construction; spec §8 view
+  contract now says NON-SUBSTITUTING; replacement-ref negative
+  fixture added.
+- **F160 (manufactured commit timestamps — applied)** — the
+  process-local counter was not cross-process monotonic and stamped
+  production commits in 2023. Deleted; real commit time restored;
+  identical-commit collision is documented as state convergence and
+  the affected race test accepts both convergent outcomes.
+- **F161 (single-object semantics split across callers — applied)** —
+  reverse-sorted governance entries published and verified. Fix: all
+  single-object rules (list sortedness/uniqueness/disjointness for
+  all four types) moved into the boundary-decode semantic dispatch
+  (spec §1/§8 updated); the chain verifier keeps only cross-object
+  and transition rules and inherits the rest through decode.
+- **F162 (validation_summary not re-derived — applied)** — a forged
+  invalid_slugs claim verified. Fix: the verifier consumes the fixed
+  projection {status, validated_artifact} of each tei-validation
+  record, requires validated_artifact to name that work's TEI bytes,
+  and requires invalid_slugs to equal exactly the sorted failed slugs
+  (spec §8; matches the kernel's existing record fields). Fixture
+  validation blobs are representative JSON.
+- **F163 (invariant fixtures not isolating — applied)** — the genesis
+  negative accepted any of three reasons. Fix: table-driven mutation
+  suites with one exact expected reason per row (build-chain table,
+  governance-chain table, genesis table, plus dedicated multi-work
+  withdrawal-works and replacement-ref cases). The
+  superseded-event-single-entry rule is documented as unreachable in
+  a valid chain (subsumed by decode's entry uniqueness) and kept as
+  defense in depth with a positive fixture.
+- **Simplification (applied)** — verification streams: each manifest
+  decoded exactly once, only the head manifest retained; the result
+  carries head, ordered manifest ids, executed governance-event ids,
+  and chain length — all the transaction consumes.
+
+Suites after the round: 48 tests / 241 assertions green locally and
+hermetically. Awaiting re-review.
+
+## Slice-2 implementation review round 2 (2026-08-26) — findings F164–F167; NOT APPROVED at 7f6718fa; all applied
+
+Verdict: the round-1 fixes are real; targeted probes found three
+boundary blockers and one safe deletion. All applied same day, one
+regression test per reproduced failure.
+
+- **F164 (build no-op trusted an unverified head — applied)** — a
+  permitted fast-forward commit that left `releases/HEAD` unchanged
+  made the next identical build return :already-published while
+  direct verification rejected that head. Fix: `publish-build!` fully
+  verifies the fetched commit with the §8 primitive and takes head +
+  decoded head manifest from its result, before the no-op decision
+  and again in reconciliation (spec §9 step 2); `head-manifest-at`
+  deleted, no duplicate decoding remains. Test: the crafted
+  fast-forward tip now fails with :head-not-advanced instead of
+  converging.
+- **F165 (validation-record contract bypassable — applied)** — an
+  unknown status string, a suffix-forged validated_artifact, and a
+  duplicate-key record all verified. Fix: the consumed projection is
+  a minimal contract — strict JSON parse with duplicate-key
+  rejection, status exactly passed | warning | failed
+  (:validation-status-unknown otherwise), validated_artifact exactly
+  `sha256:<tei-hex>` (spec §8 F162 bullet amended). Three exact-reason
+  mutation rows reproduce the probes.
+- **F166 (git view inherited foreign redirects — applied)** — an
+  external GIT_DIR or GIT_OBJECT_DIRECTORY let a view over an empty
+  repository read another repository's commits. Fix: view discovery
+  and every read run under a sanitized environment (all GIT_-prefixed
+  variables stripped, environment replaced wholesale) and are bound
+  to the git directory resolved at construction via --git-dir (spec
+  §8 view contract). Probes cover both inherited variables through
+  the construction seam.
+- **F167 (unreachable superseded-entry check — applied)** — the check,
+  its event-fetch callback, and the §8 sentence are deleted; decode's
+  entry-uniqueness rule makes a duplicate-slug predecessor event
+  unrepresentable in a valid chain (noted in §8). The subsumption
+  test is gone; a compact positive fixture keeps pinning that
+  amending one entry of a multi-entry event is legal.
+
+Suites after the round: 50 tests / 249 assertions green locally and
+hermetically. Awaiting re-review of this boundary.
+
+## Slice-2 implementation review round 3 (2026-08-26) — finding F168; applied; §8/§9 APPROVED at d7e80a22
+
+Verdict on round 2: F164–F167 correctly resolved; one remaining F166
+edge blocked approval.
+
+- **F168 (linked worktrees bypass alternates rejection — applied)** —
+  the alternates check ran beneath --absolute-git-dir, which for a
+  linked worktree is the per-worktree administration directory; the
+  object store and alternates file live under the separate common
+  directory, so a view over a linked worktree of a shared clone read
+  a commit supplied only by the foreign alternate. Fix: construction
+  resolves both directories (--path-format=absolute --git-dir
+  --git-common-dir) and rejects common-dir ≠ git-dir outright —
+  linked worktrees have no v1 consumer (spec §8 view contract). Test:
+  a shared clone plus linked worktree; the clone is rejected for its
+  alternates file, the worktree for the hidden common directory.
+- Reviewer confirmation recorded: keep
+  amending-one-entry-of-a-multi-entry-event-is-legal — it protects
+  distinct supported behavior.
+
+Suites after the round: 51 tests / 251 assertions green locally and
+hermetically.
+
+Reviewer verdict (2026-08-26): APPROVED — no remaining findings in the
+§8 verifier / §9 transaction boundary at d7e80a22. Confirmed: shared
+clones and linked worktrees rejected at construction; ordinary
+worktrees and bare origins usable; F168 adds no speculative mechanism
+(v1 narrowed to repository forms with present consumers); the retained
+partial-amendment fixture is justified. Slice 2 proceeds to manifest
+assembly against the real trace store and the F5 second-revision
+oracle.
+
+## Slice-2 manifest assembly + F5 delta oracle (2026-08-26; APPROVED at 379951dc via rounds 4–8)
+
+The remaining Slice-2 body, implemented against the real kernel:
+
+- `soranoha.za.assemble` — the first za namespace (admission is a
+  release-assembler concern per D21/F60; the D20 AGENTS.md transfer was
+  recorded before this work). `assemble-release` bridges kernel outputs
+  to the §9 transaction's input: the assessment snapshot commits the
+  candidate facts (sorted, contribution-sorted), the inclusion rule
+  `za-public-domain-unanimous-v1` (id + hash over its canonical rule
+  bytes) derives the total admitted/excluded/quarantined partition,
+  both evidence artifacts encode through the boundary decode and
+  publish with the release, works = admitted − withdrawn with every
+  artifact byte read from the kura CAS (fixed [plaintext, tei,
+  tei-validation] artifact order, source_content_hash from the
+  extract stage's bundle identity), and the validation summary is
+  derived from the same per-work records the verifier re-derives it
+  from (include-and-flag: a failed validation is a summary entry,
+  never an exclusion). `release-assembler` adapts to the transaction
+  contract; the F87 totality gate compares the snapshot's slugs
+  against the kernel's selected slug set passed independently.
+- Fixture corpus harness (`soranoha.za.corpus`, test tree): a
+  miniature aozorabunko checkout under git — cards/ work zips, the
+  official catalog zip, the real provenance gate, real catalog read,
+  real selection join, the real extract stage, and the real
+  engine/trace/CAS. Deterministic in-process stages stand in for the
+  subprocess parser/converter and the schema validator with matching
+  wiring, output names, and record shapes, so `main/run-work!`
+  executes unchanged and invalidation semantics are the engine's own.
+- F5 three-set oracle (`soranoha.za.oracle`, test tree): (a)
+  source/selection delta from per-slug zip content, (b) executed
+  stages from the engine's cache decisions, (c) works-entry delta
+  between decoded manifests, plus the explanation invariant — every
+  stage executed in run 2 for a pre-existing work must have a changed
+  declared input (modeled exactly on run-work!'s wiring).
+- Acceptance (`soranoha.za.assemble-test`), all through publish +
+  full §8 verification against a fixture origin:
+  - kernel-backed genesis: works = admitted slugs; the R7 invalid
+    work publishes and is flagged in invalid_slugs; artifact ids
+    equal the kernel's CAS hashes; the published admission report
+    carries the exact excluded/quarantined partition; manifest
+    round-trip re-serializes to the same manifest_id (twice); the
+    identical scheduled build is :already-published.
+  - second revision (addition + deletion + content edit + catalog
+    fan-out + output-preserving rezip): oracle sets exactly as
+    predicted — the rezip re-executes extract only and its manifest
+    entry is retained byte-identical; the catalog edit fans metadata
+    re-execution across every work without touching artifacts; the
+    content edit invalidates the full chain and changes only its own
+    entry; zero unexplained executions; distinct manifest ids.
+  - assessment-only delta (F24 under the F61 protocol): same store,
+    revision, and works; enlarged assessment snapshot → changed
+    admission evidence, distinct manifest_id, published (never
+    no-op'd), works byte-identical.
+  - totality: a selected-but-unassessed work blocks emission.
+- Slice-2 fixture-test coverage mapping: withdrawal (R8 path, F26
+  chain invariants), event-amendment, and the F61 lost-ack test are
+  covered by the §8/§9 suites approved at d7e80a22
+  (verify-test/transact-test); addition, deletion, output-preserving
+  edit, R7 include-and-flag, and the assessment-only delta land here.
+
+Suites after this work: 55 tests / 285 assertions green locally and
+hermetically. The F5 second-upstream-revision acceptance runs on the
+fixture corpus; the production run at a second real aozorabunko
+revision remains a Slice-3-adjacent operation on the same machinery.
+
+## Slice-2 implementation review round 4 (2026-08-26) — findings F169–F173; NOT APPROVED at 8abef9c7; all applied
+
+Verdict on the assembly increment: transaction/verifier integration
+strong; five boundary issues, three of them duplicated semantics the
+redesign exists to eliminate. All applied same day.
+
+- **F169 (inclusion_rule_hash did not bind the executable rule —
+  applied)** — the hash covered an English description while the
+  partition logic lived independently in code. Fix: the rule is now a
+  small executable data value ({admit_when_all, exclude_when_any,
+  exclude_reason, quarantine_reason}) consumed by the evaluator;
+  changing any decision-bearing value changes the hash; no resolver or
+  schema added. Test binds the published report's inclusion_rule_hash
+  to the canonical hash of that value.
+- **F170 (fixture catalog result unrepresentative — applied)** — the
+  production metadata stage embedded the catalog file hash in the
+  renderer-facing persons value via source_csv_provenance, so a real
+  catalog edit re-rendered every work; the harness's "metadata only"
+  expectation was true only of the substitute stage. Fix per the
+  preferred option: the production stage now strips
+  source_csv_provenance (which render ignores) from the persons
+  output, restoring early cutoff and making the oracle's expected
+  result true of the production graph; metadata stage-version bumped
+  to 2 (output bytes change for identical inputs). The harness
+  docstring now states exactly which stages are substituted
+  (metadata, parse, convert, render, validate; extract and all
+  orchestration real).
+- **F171 (validation-record interpretation split again — applied)** —
+  the assembler parsed records permissively while the verifier held
+  the strict contract. Fix: one pure shared checker,
+  verify/consumed-validation-record (strict duplicate-key parse,
+  status domain, string validated_artifact), called by both the
+  assembler's summary derivation and the verifier's re-derivation; a
+  noncontractual kernel record now fails assembly, not just pre-push
+  verification. Pure-contract regression test added.
+- **F172 (toolchain provenance not fail-closed — applied)** — the
+  production default clj-dev-0 let dependency/runtime changes retain
+  stale derivations and an unchanged release projection. Fix: default
+  removed; build! fails closed without a wrapper-supplied
+  --clj-toolchain-id. Reconciliation recorded (spec §3 toolchain row):
+  nix_closure_hash carries the stage's toolchain identity exactly as
+  the derivation keys carry it — the Nix closure hash for
+  nix-provisioned stages, the hashed binary/profile identity for
+  subprocess stages; constant placeholders prohibited.
+- **F173 (source_content_hash semantics disagreed with the frozen
+  prose — applied)** — the spec said "hex of upstream source bytes";
+  the implementation records the canonical source-bundle identity
+  hash (member paths + member content hashes), which is the desirable
+  semantics (identity survives archive-level repackaging). Post-freeze
+  semantic clarification recorded in spec §3; no wire change.
+- **Handoff correction (applied)** — build!'s disposable run report
+  now carries everything the delta oracle consumes: per-work
+  source_zip, source_relpath, source_content_hash, per-stage cache
+  decisions, and the stage coordinate table; run-work! returns
+  zip-hex and source facts. Still a schema-less, retention-free
+  export. Slice 2 is not declared complete until the production F5
+  run at a second real revision has been driven from these exports.
+
+Suites after the round: 56 tests / 291 assertions green locally and
+hermetically.
+
+## Slice-2 implementation review round 5 (2026-08-26) — findings F174–F176; NOT APPROVED at 4a6585d8; all applied
+
+Verdict on round 4: F169–F171 cleanly resolved and the F170
+production simplification sound; two blockers and one exactness
+correction remained.
+
+- **F174 (report could not drive the explanation oracle — applied)**
+  — the report carried final artifacts, source facts, cache
+  decisions, and stage coordinates, but not the intermediate input
+  hashes the invariant compares. Fix per the simplest option: the
+  engine's already-computed derivation key is exported per work/stage
+  (run-work! returns :trace-keys; the report carries "trace_keys").
+  With equal stage-coordinate tables across two runs, an executed
+  stage must carry a changed trace key; a same-key execution
+  correctly surfaces missing-blob recovery work. The test oracle's
+  hand-modeled stage-input map is deleted — unexplained-executions
+  now compares the same trace keys the production export carries, so
+  there is exactly one oracle representation.
+- **F175 (F172 only partially implemented — applied; F172 REMAINS
+  OPEN)** — two gaps: no wrapper yet supplies the promised
+  Nix-derived identity (the CLI merely fails without one, and a
+  caller could still pass a permanent placeholder), and
+  validate-tei-stage — in-process Clojure — hashed only the TEI
+  profile trio, so JVM validation-dependency changes could reuse its
+  traces. The stage's toolchain identity now binds clj-toolchain-id
+  alongside the three profile hashes. F172 stays explicitly open
+  until the production F5 driver lands the content-derived wrapper
+  identity; no placeholder wrapper is added in the interim.
+- **F176 (identity abbreviated incorrectly — applied)** — the spec §3
+  works row now states the exact hashed object: sha256 over the
+  canonical bytes of the abc-source-bundle-v1 identity object
+  {construction, members: [{path, member_hash}...],
+  primary_text_member}. The round-4 ledger entries' "spec §2"
+  references corrected to §3.
+
+Per the reviewer, no additional harness: the already-required
+production F5 run proves the real metadata-stage cutoff and the
+wrapper wiring.
+
+Suites after the round: 56 tests / 291 assertions green locally and
+hermetically.
+
+## Slice-2 implementation review round 6 (2026-08-26) — finding F177; NOT APPROVED at 0049cfc6; applied
+
+Verdict on round 5: F175/F176 correct, F172 honestly open; one
+blocker.
+
+- **F177 (oracle precondition unenforced — applied)** — the trace-key
+  invariant assumed equal stage coordinates but neither captured nor
+  checked them, so a stage-version or toolchain change would be
+  misreported as a changed declared input (the reviewer's probe with
+  no coordinate data returned an empty violation list). Fix: each
+  harness run captures its actual {stage-id, stage-version,
+  toolchain-id} table (run-corpus! also takes an explicit stage set);
+  unexplained-executions fails loudly with :runs-incomparable when
+  either table is absent or they differ. Negative test: a
+  toolchain-only bump (which re-executes exactly the re-keyed stage),
+  a stage-version-only bump, and an absent coordinate table are all
+  refused; a genuine same-coordinate cached rerun remains comparable
+  with zero violations. Trace keys stay the sole representation; the
+  production driver normalizes its existing "stages" report field
+  under the still-open F172 work.
+
+Suites after the round: 57 tests / 297 assertions green locally and
+hermetically.
+
+## Slice-2 implementation review round 7 (2026-08-26) — finding F178; NOT APPROVED at 829eee04; applied
+
+Verdict on round 6: the F177 fix held for complete fixture-generated
+runs; one fail-closed hole remained, plus a consolidation.
+
+- **F178 (incomplete evidence still passed — applied)** — the
+  precondition checked only that the coordinate tables existed and
+  were equal, not that they covered every analyzed stage or that both
+  runs carried a trace key for every compared execution; equal empty
+  tables with an execution, and complete tables with the earlier
+  run's key missing, both returned []. Fix: unexplained-executions
+  now fails closed with :runs-incomparable when a compared
+  execution's stage is not covered by the coordinate table or when
+  either run lacks a string trace key for it — directly relevant to
+  the F172 JSON normalization, where omission is possible. Both probe
+  cases join the negative table, alongside a positive showing a
+  same-key execution under complete evidence is a reported violation.
+- **Consolidation (applied)** — one coordinate projection,
+  trace/stage-coordinates, owned beside the derivation-key logic
+  (logical stage key -> {stage-id, stage-version, toolchain-id} —
+  exactly the non-input part of each derivation key); the production
+  report's "stages" field and the fixture harness both consume it,
+  deleting the duplicate projection and making coverage checkable.
+  The run-corpus! stage-set arity and the two extra full-corpus runs
+  are deleted — the oracle test mutates captured coordinate evidence
+  directly, and trace invalidation under coordinate changes is
+  already proven by the engine's derivation-key tests.
+
+Suites after the round: 57 tests / 299 assertions green locally and
+hermetically.
+
+## Slice-2 implementation review round 8 (2026-08-26) — finding F179; NOT APPROVED at a5565d09; applied
+
+Verdict on round 7: F178 refusal cases correct, harness-arity
+deletion good; one consolidation blocker — otherwise ready.
+
+- **F179 (the "one projection" still had three encodings — applied)**
+  — derivation-key built its own string-keyed coordinate object,
+  stage-coordinates built a keyword-keyed equivalent, and the report
+  converted back to string keys, leaving the synchronization trap the
+  consolidation was meant to remove: a future derivation coordinate
+  could be hashed but omitted from the comparison table. Fix, in the
+  net-deleting shape: trace/stage-coordinate is the single
+  constructor of {"stage_id","stage_version","toolchain_id"};
+  derivation-key adds "inputs" to that value and hashes it;
+  stage-coordinates maps logical stage keys to that same value; the
+  report converts only the outer logical keys to strings and passes
+  coordinate values through unchanged. A coordinate added to the
+  constructor is automatically both hashed and compared. No new test
+  or abstraction — the derivation-key and oracle suites already cover
+  the behavior.
+- Recorded under the open F172: malformed-but-present coordinate
+  values and non-hex trace-key strings still pass the oracle; the
+  future external-report boundary decoder rejects them before
+  invoking the oracle — no additional validation layer here, since no
+  current consumer parses external reports.
+
+Suites after the round: 57 tests / 299 assertions green locally and
+hermetically.
+
+Reviewer verdict (2026-08-26): no blocking findings at 379951dc — the
+manifest-assembly / F5-oracle increment (rounds 4–8, F169–F179) is
+approved. Open before Slice 2 is declared complete: the production F5
+run at a second real aozorabunko revision, driven from the disposable
+run reports, which also lands the F172 work (content-derived wrapper
+toolchain identity; external-report boundary decode).
+
+## Slice-2 implementation review round 9 (2026-08-26) — findings F180–F183; NOT APPROVED at 64b6ad4a; all applied
+
+Reviewer verdict on the F172-closure increment: production evidence
+credible and internally consistent, but three implementation contracts
+fell short of the claimed clean oracle result. All fixed at cd9ffa69;
+the production F5 pair was then rerun through the final wrapper (see
+below).
+
+- **F180 (blocker) — incomplete execution evidence was accepted.**
+  decode-run required each work's cached/trace_keys stages only to be a
+  *subset* of the declared coordinate table; deleting the same stage
+  from both maps passed decoding (reproduced by the reviewer against
+  the real revision-B report: a five-stage work against a six-stage
+  table), silently erasing an execution from the oracle. Fix: both key
+  sets must equal the declared stage set exactly — which also subsumes
+  the separate cached/trace-keys divergence check (deleted, with its
+  :cached-and-trace-keys-diverge reason). Tests: omitting a declared
+  stage from cached or from trace_keys each refuse decoding.
+- **F181 (blocker + simplification) — unexplained_artifact_changes
+  deleted.** The delta CLI treated *any* executed stage as sufficient
+  explanation for *any* artifact change (reviewer flipped the real
+  052211 report to metadata-only execution with changed TEI bytes; the
+  CLI still said ok), and conversely a valid warm-cache run can obtain
+  changed artifacts entirely from cache while executing nothing. The
+  rule was both too weak and too strong; F5's sound checks already
+  exist (content hashes establish byte changes; trace-key comparison
+  explains executions). Fix: the artifact delta stays descriptive and
+  `ok` depends on unexplained executions only. No
+  artifact-to-producing-stage model added.
+- **F182 (blocker) — wrapper identity did not authenticate its runtime
+  environment.** The wrapper hashed a Clojure derivation label and the
+  lockfile but invoked clojure against the caller's mutable HOME,
+  Clojure configuration, and Maven cache. Fix: reuse the existing
+  hermetic machinery from soranoha/flake.nix — the clj-nix offline
+  dependency cache with HOME, JAVA_TOOL_OPTIONS(-Duser.home),
+  CLJ_CONFIG, GITLIBS bound to store paths and CLJ_CACHE /
+  XDG_CONFIG_HOME on a per-invocation scratch dir — and derive the
+  identity from the actual Clojure closure store path, the
+  dependency-cache closure store path, and deps.edn, retaining the
+  full sha256 (clj-nix-<64 hex>, no truncation). PATH is now bound
+  wholesale rather than prefixed onto the caller's.
+- **F183 (correction) — deterministic failure output.** The CLI
+  serialized unexplained-execution rows from unordered maps/sets
+  without sorting; rows are now sorted by slug then stage, making the
+  deterministic-JSON claim true on failing runs too.
+
+What checked out per the reviewer: both suites at 59/311 (now 59/312
+with the F180 coverage assertions), Nix evaluation/format/hygiene
+gates, matching coordinate tables and complete evidence in the two
+production reports as generated, source delta = git delta, and the
+reproducible execution/artifact counts including the catalog-only
+052211 change.
+
+### Production F5 rerun through the final wrapper (F182 identity)
+
+Same corpus revisions (A = a1da0f5a00, 17,592 selected; B = the pinned
+0e9ea3e586, 17,602 selected), same store /db/soranoha/kernel-full,
+both builds through the hermetic `nix run .#soranoha-kernel`
+(identity clj-nix-6b66028fa5941a0e2d389d7eff295e131aee7d9ae3bdc9bde
+fb4f3f164884147, visible in the reports' stage-coordinate tables).
+Run A re-keyed every pure-Clojure stage under the new identity
+(70,347 executions); run B executed only the delta. Reports
+run-1787730983384.json / run-1787731321127.json; logs + verdict under
+/db/soranoha/publication-rearchitecture/slice2/logs/
+(f5-run-a-hermetic.log, f5-run-b-hermetic.log,
+f5-delta-hermetic.json).
+
+Verdict **ok = true** under the corrected gate (unexplained
+executions only): 0 unexplained executions; the selected
+cards/*/files/*.zip delta matched Git exactly: 10 added, 1 modified,
+0 removed (the full Git delta is broader — 30 additions and 223
+modifications, including six changed index ZIPs outside the selected
+work-zip population);
+executed: extract 11, render/validate 12, metadata 17,595 (parse and
+convert do not bind the clj identity, so their earlier traces remain
+valid); artifact delta descriptive: 10 added, 2 changed (the
+source-explained 004820 and the catalog-driven 052211 — source zip,
+parser-IR, and plaintext byte-identical, only TEI + validation record
+changed), 17,590 retained byte-identical. The delta JSON is
+byte-identical across CLI reruns. Checkout restored to the pinned
+master. Suites: 59 tests / 312 assertions green locally and
+hermetically.
+
+## Slice-2 completion (2026-08-26) — **APPROVED at 5d9f16b7**
+
+Slice 2 closed after nine implementation-review rounds (F157–F183):
+§8/§9 boundary approved at d7e80a22, assembly/F5 fixture increment at
+379951dc, F172 closure + production F5 evidence + wrapper hermeticity
+at 5d9f16b7 (a1da0f5a00 → the pinned 0e9ea3e586, oracle ok = true, 0
+unexplained executions; reports and verdict under
+/db/soranoha/publication-rearchitecture/slice2/logs/). Suites: 59
+tests / 312 assertions green locally and hermetically. This is the
+ledger's implementation-transcript cutoff; subsequent implementation
+evidence lives in commits and PR review.
 
 ## Contingency appendix (NON-NORMATIVE, NOT FROZEN — per O5a/F48)
 

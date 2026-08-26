@@ -59,7 +59,7 @@
         run1 (engine/run-stage! store upcase-stage {"text" input-hex})
         out-hex (get (:outputs run1) "out")]
     (fs/delete (cas/blob-path (:cas-dir store) out-hex))
-    (testing "trace hit with missing output blob re-executes (F99)"
+    (testing "trace hit with missing output blob re-executes"
       (let [run2 (engine/run-stage! store upcase-stage {"text" input-hex})]
         (is (false? (:cached? run2)))
         (is (some? (cas/get-bytes (:cas-dir store) out-hex)))))

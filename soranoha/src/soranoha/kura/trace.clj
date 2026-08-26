@@ -1,6 +1,6 @@
 ;; SQLite (WAL) constructive-trace store. One trace row per derivation key
 ;; (stage-id, stage-version, toolchain-id, input-hashes) -> output-hashes,
-;; plus an append-only history ledger recording every actual EXECUTION as the
+;; plus an append-only history ledger recording every actual execution as the
 ;; determinism monitor: two history rows for the same key with different
 ;; outputs is the violation the verifier queries for.
 (ns soranoha.kura.trace
@@ -40,16 +40,32 @@
 (defn close! [{:keys [conn]}]
   (.close ^java.sql.Connection conn))
 
+(defn stage-coordinate
+  "The one encoding of a stage's non-input derivation coordinates: the
+  exact object every derivation key hashes (with \"inputs\" added) and the
+  delta oracle compares. A coordinate added here is automatically both
+  hashed and compared — there is no second encoding to keep in sync."
+  [{:keys [stage-id stage-version toolchain-id]}]
+  {"stage_id" stage-id
+   "stage_version" stage-version
+   "toolchain_id" toolchain-id})
+
 (defn derivation-key
   "The trace key: sha256 over the canonical bytes of the full derivation
   coordinates. stage-version and toolchain-id are inside the hash AND stored
   as columns (acceptance criterion 4: the incomplete-key trap)."
-  [{:keys [stage-id stage-version toolchain-id]} inputs]
-  (hash/sha256-canonical-json
-   {"stage_id" stage-id
-    "stage_version" stage-version
-    "toolchain_id" toolchain-id
-    "inputs" inputs}))
+  [stage inputs]
+  (hash/sha256-canonical-json (assoc (stage-coordinate stage)
+                                     "inputs" inputs)))
+
+(defn stage-coordinates
+  "Logical stage key -> stage-coordinate for a stage set. Two runs' trace
+  keys are comparable as input-equality evidence only when their tables
+  from this projection are equal."
+  [stages]
+  (into {}
+        (map (fn [[k stage]] [k (stage-coordinate stage)]))
+        stages))
 
 (defn lookup
   "Cached outputs map for a trace key, or nil."
@@ -103,7 +119,7 @@
           (jdbc/execute! conn ["SELECT outputs_json FROM trace"]))))
 
 (defn trace-rows
-  "All trace rows as maps (build-index queries; disposable views only, F57)."
+  "All trace rows as maps (build-index queries; disposable views only)."
   [{:keys [conn] :as store}]
   (locking store
     (mapv (fn [row]

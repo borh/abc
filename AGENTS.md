@@ -4,11 +4,15 @@ This repository is the Soranoha monorepo. It contains three main components:
 
 - `abc/`: Clojure/Nix publication, schema, TEI, manifest, and validation tools.
 - `ab-validator/`: Rust adapters, parser/IR validation, corpus measurement, and report tooling.
-- `soranoha/`: the publication-rearchitecture build kernel (Slice 1 of
+- `soranoha/`: the publication-rearchitecture build kernel and snh protocol
+  implementation (Slices 1–2 of
   `docs/design/2026-08-24-publication-rearchitecture.md`): content-addressed
-  store + constructive-trace engine + copied per-work pipeline. Zero requires
-  into abc namespaces; abc-owned assets (record schemas, TEI profile) are
-  consumed via an explicit assets root.
+  store + constructive-trace engine + copied per-work pipeline, plus the
+  snh-protocol-v1 freeze-candidate schemas, conformance vectors, boundary
+  decode, and wire/signature encodings (`src/soranoha/snh/`,
+  `resources/snh/`). Zero
+  requires into abc namespaces; abc-owned assets (record schemas, TEI
+  profile) are consumed via an explicit assets root.
 
 ## Working Rules
 
@@ -51,11 +55,16 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 
 ## Design Boundaries
 
-- ABC owns publication schemas, TEI profile policy, manifest identity, and registry admission.
-- `soranoha/` owns ONLY the build kernel (CAS, trace store, copied renderers)
-  during Slice 1 (design ledger F56/D20-as-amended); the publication-schema
-  and manifest-identity ownership transfer is recorded here before the first
-  Slice-2 work that assembles manifests, not earlier.
+- ABC owns TEI profile policy and its own legacy publication schemas and
+  manifest formats.
+- `soranoha/` owns the build kernel (CAS, trace store, copied renderers)
+  AND — transferred 2026-08-25 with the first Slice-2 manifest work (design
+  ledger D20-as-amended/F56) — snh publication-schema and manifest-identity
+  ownership: the freeze-candidate protocol schemas
+  (`soranoha/resources/snh/schemas/`), the conformance vectors
+  (`soranoha/resources/snh/vectors/`), boundary decode, wire encodings, and
+  admission-evidence formats. After the D16.1 freeze these change only via a
+  decision-log entry in the design ledger.
 - ab-validator owns parser/adaptor measurement, AAT evidence, parser-IR conversion evidence, and corpus reports.
 - Parser outputs are supporting evidence; source-authority measurements are the authority for Aozora markup coverage.
 - Plaintext output should remain visible body text only; ruby, source apparatus, provenance, and other metadata belong in TEI/custom sidecars.

@@ -6,8 +6,8 @@
             [soranoha.core.hash :as hash]))
 
 ;; The shared cross-language vector fixture is the binding contract between
-;; this copy of the canonicalizer and abc's original (D16: one canonicalizer,
-;; one vector set). Path is relative to the soranoha/ component root.
+;; this copy of the canonicalizer and abc's original: one canonicalizer, one
+;; vector set. Path is relative to the soranoha/ component root.
 (def shared-vectors-path
   "../abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json")
 

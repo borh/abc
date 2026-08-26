@@ -87,7 +87,7 @@
                      findings)}))
 
 (defn tei-validation-result
-  "Validate a TEI file against the profile trio. Include-and-flag (R7): the
+  "Validate a TEI file against the profile trio. Include-and-flag: the
   result records failure, it never excludes a work."
   [{:keys [odd rng sch]} tei-file]
   (let [tei-profile-hash (file-hash odd)

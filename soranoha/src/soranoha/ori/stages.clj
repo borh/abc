@@ -5,7 +5,7 @@
 ;; nothing but their function. Toolchain identity: subprocess stages hash the
 ;; actual binary (+ mapping) bytes; validate-tei hashes the TEI profile trio;
 ;; pure Clojure stages carry the run-supplied clj toolchain id (over- rather
-;; than under-invalidation, R6).
+;; than under-invalidation).
 (ns soranoha.ori.stages
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
@@ -31,7 +31,7 @@
       (throw (ex-info (str what " unavailable; set " k) {:env_var k}))))
 
 (defn resolve-adapter
-  "Resolve the ab-aozora adapter, converter, and v2 mapping ONCE from the
+  "Resolve the ab-aozora adapter, converter, and v2 mapping once from the
   environment the flake wrapper supplies (never per work)."
   []
   {:aozora-bin (require-env "AB_AOZORA_BIN" "ab-aozora parser")
@@ -74,7 +74,7 @@
   parse-once cache; deterministic because it is keyed by content)."
   [clj-toolchain-id rows-for catalog-provenance]
   {:stage-id "metadata"
-   :stage-version "1"
+   :stage-version "2"
    :toolchain-id clj-toolchain-id
    :f (fn [_resolve inputs]
         (let [rows (rows-for (get inputs "catalog"))
@@ -92,14 +92,21 @@
                   :source-csv-provenance catalog-provenance})
                 (let [record-bytes (fs/read-all-bytes record-file)
                       record (json/read-json (String. ^bytes record-bytes "UTF-8"))
+                      ;; the renderer-facing persons value drops
+                      ;; source_csv_provenance (which render ignores): the
+                      ;; catalog file hash inside it would otherwise flow
+                      ;; into these bytes and defeat early cutoff — a
+                      ;; catalog edit would re-render every work
                       persons (into (sorted-map)
                                     (for [contributor (get record "contributors")
                                           :let [pid (get contributor "person_id")]]
-                                      [pid (json/read-json
-                                            (String. ^bytes (fs/read-all-bytes
-                                                             (fs/path persons-dir
-                                                                      (str pid ".json")))
-                                                     "UTF-8"))]))]
+                                      [pid (dissoc
+                                            (json/read-json
+                                             (String. ^bytes (fs/read-all-bytes
+                                                              (fs/path persons-dir
+                                                                       (str pid ".json")))
+                                                      "UTF-8"))
+                                            "source_csv_provenance")]))]
                   {"metadata-record" record-bytes
                    "persons" (json-bytes persons)}))))))})
 
@@ -163,13 +170,17 @@
            "plaintext" (utf8 (:plaintext rendered))}))})
 
 (defn validate-tei-stage
-  "TEI bytes -> validation record. Include-and-flag (R7): a failed
-  validation is an artifact, never an exclusion."
-  [profile]
+  "TEI bytes -> validation record. Include-and-flag: a failed
+  validation is an artifact, never an exclusion. The stage runs
+  in-process, so its toolchain identity binds the Clojure runtime
+  identity alongside the TEI profile trio — a JVM validation-dependency
+  change must invalidate its traces."
+  [clj-toolchain-id profile]
   {:stage-id "validate-tei"
    :stage-version "1"
    :toolchain-id (core-hash/sha256-canonical-json
-                  {"odd" (core-hash/sha256-file (:odd profile))
+                  {"clj" clj-toolchain-id
+                   "odd" (core-hash/sha256-file (:odd profile))
                    "rng" (core-hash/sha256-file (:rng profile))
                    "sch" (core-hash/sha256-file (:sch profile))})
    :f (fn [{:keys [blob]} inputs]

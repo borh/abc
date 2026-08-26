@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snh:schema:release-manifest:1",
+  "title": "snh-manifest/1",
+  "description": "Release manifest structure. This schema governs structure only; ordering, uniqueness, and cross-object invariants are semantic rules checked by the verifier. Closed schema: no members beyond those listed. No dates of any kind appear in manifest bytes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "corpus",
+    "toolchain",
+    "selection_params",
+    "admission",
+    "works",
+    "withdrawn",
+    "validation_summary",
+    "governance_event",
+    "prev_manifest"
+  ],
+  "properties": {
+    "schema": { "const": "snh-manifest/1" },
+    "corpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["upstream_origin", "upstream_rev"],
+      "properties": {
+        "upstream_origin": { "type": "string", "minLength": 1 },
+        "upstream_rev": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[0-9a-z][0-9a-z-]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["nix_closure_hash", "stage_code_version"],
+        "properties": {
+          "nix_closure_hash": { "type": "string", "minLength": 1 },
+          "stage_code_version": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "selection_params": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "integer"],
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "policy_hash",
+        "inclusion_rule_id",
+        "inclusion_rule_hash",
+        "assessment_snapshot",
+        "admission_report"
+      ],
+      "properties": {
+        "policy_id": { "type": "string", "minLength": 1 },
+        "policy_hash": { "$ref": "#/$defs/hex64" },
+        "inclusion_rule_id": { "type": "string", "minLength": 1 },
+        "inclusion_rule_hash": { "$ref": "#/$defs/hex64" },
+        "assessment_snapshot": {
+          "type": "string",
+          "pattern": "^snh:1:assessment-snapshot:[0-9a-f]{64}$"
+        },
+        "admission_report": {
+          "type": "string",
+          "pattern": "^snh:1:admission-report:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "works": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "source_content_hash", "artifacts"],
+        "properties": {
+          "slug": { "$ref": "#/$defs/slug" },
+          "source_content_hash": { "$ref": "#/$defs/hex64" },
+          "artifacts": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "prefixItems": [
+              {
+                "$ref": "#/$defs/artifact",
+                "properties": {
+                  "type": { "const": "plaintext" },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^snh:1:plaintext:[0-9a-f]{64}$"
+                  }
+                }
+              },
+              {
+                "$ref": "#/$defs/artifact",
+                "properties": {
+                  "type": { "const": "tei" },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^snh:1:tei:[0-9a-f]{64}$"
+                  }
+                }
+              },
+              {
+                "$ref": "#/$defs/artifact",
+                "properties": {
+                  "type": { "const": "tei-validation" },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^snh:1:tei-validation:[0-9a-f]{64}$"
+                  }
+                }
+              }
+            ],
+            "items": false
+          }
+        }
+      }
+    },
+    "withdrawn": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "event"],
+        "properties": {
+          "slug": { "$ref": "#/$defs/slug" },
+          "event": { "$ref": "#/$defs/governance-event-id" }
+        }
+      }
+    },
+    "validation_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invalid_count", "invalid_slugs"],
+      "properties": {
+        "invalid_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "invalid_slugs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/slug" }
+        }
+      }
+    },
+    "governance_event": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/governance-event-id" }
+      ]
+    },
+    "prev_manifest": { "$ref": "#/$defs/hex64" }
+  },
+  "$defs": {
+    "hex64": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "slug": { "type": "string", "pattern": "^[0-9a-z_-]+$" },
+    "governance-event-id": {
+      "type": "string",
+      "pattern": "^snh:1:governance-event:[0-9a-f]{64}$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "bytes"],
+      "properties": {
+        "type": { "type": "string" },
+        "id": { "type": "string" },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    }
+  }
+}

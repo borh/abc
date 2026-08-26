@@ -1,12 +1,15 @@
 ;; Kernel CLI. `build` runs the full per-work stage graph at an aozorabunko
 ;; checkout revision into the kura store; output is CAS + trace results plus
 ;; a disposable run report (a query/export over the trace store — no
-;; independent identity, no schema, no retention promise). No manifest,
-;; signing, or publishing here: those operate on admission evidence this
-;; kernel never sees. `compare` checks per-work TEI/plaintext bytes against
-;; a reference tree through the trace store; `delta` runs the three-set
-;; delta oracle over two run reports; `verify` runs the kura determinism +
-;; fixity report.
+;; independent identity, no schema, no retention promise). The build itself
+;; carries no manifest, signing, or publishing: those operate on admission
+;; evidence the kernel never sees. `release` composes the scheduled release
+;; pipeline — build, then the za driver's assembly and publication
+;; transaction, with the assessment snapshot, policy value, signing seed,
+;; and pinned verifier keys as fail-closed file inputs. `compare` checks
+;; per-work TEI/plaintext bytes against a reference tree through the trace
+;; store; `delta` runs the three-set delta oracle over two run reports;
+;; `verify` runs the kura determinism + fixity report.
 (ns soranoha.main
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
@@ -24,9 +27,11 @@
             [soranoha.ported.assets :as assets]
             [soranoha.ported.json :as abc-json]
             [soranoha.ported.parallel :as parallel]
+            [soranoha.snh.sign :as sign]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
-            [soranoha.za.oracle :as oracle])
+            [soranoha.za.oracle :as oracle]
+            [soranoha.za.release :as za-release])
   (:gen-class))
 
 (defn- git! [aozora-root & args]
@@ -302,6 +307,57 @@
     (println (abc-json/write-deterministic-json-str result))
     result))
 
+(defn release!
+  "One scheduled release invocation: kernel build at the current checkout,
+  then the za driver's release assembly and publication transaction. Every
+  release input is a fail-closed file: the assessment snapshot (protocol
+  bytes, strictly decoded by the driver), the policy value (its bytes are
+  hashed into the manifest admission), the release signing seed, and the
+  pinned verifier keys."
+  [{:keys [root chain-clone branch upstream-origin selection-config
+           assessment policy-id policy pinned-keys release-key]
+    :as opts}]
+  (doseq [[flag value] {"--chain-clone" chain-clone
+                        "--upstream-origin" upstream-origin
+                        "--selection-config" selection-config
+                        "--assessment" assessment
+                        "--policy-id" policy-id
+                        "--policy" policy
+                        "--pinned-keys" pinned-keys
+                        "--release-key" release-key}]
+    (when (string/blank? (str value))
+      (throw (ex-info (str flag " is required for release") {:option flag}))))
+  (let [pinned (let [{:strs [release governance]}
+                     (json/read-json (slurp (str pinned-keys)))]
+                 (when (or (string/blank? release) (string/blank? governance))
+                   (throw (ex-info "pinned keys must name release and governance"
+                                   {:file (str pinned-keys)})))
+                 {:release release :governance governance})
+        seed (sign/hex->bytes (string/trim (slurp (str release-key))))
+        report (build! opts)
+        outcome (za-release/release!
+                 {:report report
+                  :cas-dir (config/cas-dir (config/root root))
+                  :upstream-origin upstream-origin
+                  :selection-params {"config" selection-config}
+                  :policy-id policy-id
+                  :policy-hash (core-hash/sha256-file (fs/file (str policy)))
+                  :snapshot-bytes (fs/read-all-bytes (str assessment))
+                  :clone (str chain-clone)
+                  :branch branch
+                  :pinned-keys pinned
+                  :sign-release (fn [manifest-hex]
+                                  (sign/sign seed
+                                             (sign/manifest-message manifest-hex)))})]
+    (println (abc-json/write-deterministic-json-str
+              (into (sorted-map)
+                    (keep (fn [[k v]] (when v [k v])))
+                    {"outcome" (name (:outcome outcome))
+                     "manifest_id" (:manifest-id outcome)
+                     "head" (:head outcome)
+                     "commit" (:commit outcome)})))
+    outcome))
+
 (defn verify!
   [{:keys [root]}]
   (let [root (config/root root)
@@ -323,6 +379,15 @@
    :report {:coerce :string}
    :report-a {:coerce :string}
    :report-b {:coerce :string}
+   :chain-clone {:coerce :string}
+   :branch {:coerce :string :default "main"}
+   :upstream-origin {:coerce :string}
+   :selection-config {:coerce :string}
+   :assessment {:coerce :string}
+   :policy-id {:coerce :string}
+   :policy {:coerce :string}
+   :pinned-keys {:coerce :string}
+   :release-key {:coerce :string}
    ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
    ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}
@@ -339,10 +404,16 @@
         "compare" (compare! opts)
         "delta" (when-not (get (delta! opts) "ok")
                   (System/exit 1))
+        ;; scheduled-runner exit contract: success covers the no-op; a
+        ;; requeue asks the next scheduled run to retry from the new head;
+        ;; a determinism halt is an ordinary failure
+        "release" (let [{:keys [outcome]} (release! opts)]
+                    (when-not (#{:published :already-published} outcome)
+                      (System/exit (if (= :requeue outcome) 3 1))))
         "verify" (when-not (:ok? (verify! opts))
                    (System/exit 1))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|delta|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|compare|delta|release|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

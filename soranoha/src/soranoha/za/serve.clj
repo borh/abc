@@ -102,9 +102,10 @@
                   (read! (verify/event-sig-path hex))))
         (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
         ;; the rename targets the exact destination path, never a
-        ;; directory to nest under; atomicity here is crash-atomicity
-        ;; (complete tree or nothing), not no-clobber — the exporter-owned
-        ;; parent is what keeps the destination from appearing concurrently
+        ;; directory to nest under; atomicity here is atomic namespace
+        ;; visibility — not no-clobber or crash durability — and the
+        ;; exporter-owned parent is what keeps the destination from
+        ;; appearing concurrently
         (Files/move (fs/path staging) out-path
                     (into-array CopyOption [StandardCopyOption/ATOMIC_MOVE]))
         (finally

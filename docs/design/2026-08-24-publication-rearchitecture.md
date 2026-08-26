@@ -3090,7 +3090,9 @@ releases/HEAD) derives from the verified chain, staged and atomically
 installed into a previously absent destination. Deployment
 preconditions: the destination parent is exporter-owned (one
 cooperating exporter; nothing else creates the destination — the rename
-is crash-atomic, not no-clobber), and exporter and resolver run as the
+gives atomic namespace visibility, not no-clobber or crash durability;
+the serving tree is regenerable, the publication repository is the
+durable record), and exporter and resolver run as the
 same OS principal (the installed tree keeps owner-only mode). A derived
 history projection (history.json) is deferred until a router consumer
 requires it — chain history reads from the manifests themselves. Archival: SWH

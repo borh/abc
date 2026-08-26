@@ -172,6 +172,28 @@
     (is (= [(slug-of kumo)] (:selected-only outcome)))
     (is (= head-before (fx/head-of clone)))))
 
+(deftest rights-policy-must-be-one-whole-document
+  ;; a reader stopping at the first value would authorize — and hash —
+  ;; bytes it never evaluated
+  (let [reason (fn [^String s]
+                 (try (release/rights-authority! (.getBytes s "UTF-8"))
+                      :accepted
+                      (catch clojure.lang.ExceptionInfo e
+                        (:reason (ex-data e)))))]
+    (is (= :policy-unreadable
+           (reason (str "{:rights-publication :assessment-required} "
+                        "{:rights-publication :blocked}"))))
+    (is (= :policy-unreadable
+           (reason "{:rights-publication :assessment-required} %%%")))
+    (is (= :policy-unreadable
+           (reason "{:rights-publication :assessment-required} garbage")))
+    (is (= :policy-unreadable (reason "")))
+    (testing "the exact single-value document still authorizes"
+      (is (= "rights-publication-policy-v1"
+             (:policy-id (release/rights-authority!
+                          (.getBytes "{:rights-publication :assessment-required}\n"
+                                     "UTF-8"))))))))
+
 ;; --- CLI boundary ------------------------------------------------------------
 
 (defn- vector-keys []
@@ -237,6 +259,18 @@
              (error (assoc base :upstream-origin "mirrors/corpus.git")))))
     (testing "--limit is refused for release"
       (is (= "--limit" (error (assoc base :limit 5)))))
+    (testing "a malformed signing seed is rejected without echoing the secret"
+      (let [thrown (try (main/release!
+                         (assoc base :release-key
+                                (write! "sentinel.seed"
+                                        "SECRETSENTINEL-this-is-not-hex")))
+                        nil
+                        (catch clojure.lang.ExceptionInfo e e))
+            ;; the exact line the CLI prints to stderr on failure
+            printed (str "error: " (ex-message thrown) " "
+                         (pr-str (ex-data thrown)))]
+        (is (= :malformed-release-key (:reason (ex-data thrown))))
+        (is (not (str/includes? printed "SECRETSENTINEL")))))
     (testing "with every input valid, the first failure is the build's own
       provenance gate — proof the preflight ran to completion first"
       (is (= "source git unavailable" (error base))))))

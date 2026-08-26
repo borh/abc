@@ -179,7 +179,6 @@
                   ;; the release driver's totality comparison runs
                   ;; against this set, never against the works keys
                   "selected_slugs" (vec (sort (map :slug candidates)))
-                  "selected_count" (count candidates)
                   "rejected_count" (count rejected)
                   "executed_stage_count" (count (filter false?
                                                         (mapcat (comp vals :cached)
@@ -314,6 +313,18 @@
     (println (abc-json/write-deterministic-json-str result))
     result))
 
+(defn- read-signing-seed
+  "Parse a signing-seed file (64 lowercase hex + optional surrounding
+  whitespace) into 32 bytes. The file content is a secret: rejection
+  names only the file, never the content — hex->bytes would otherwise
+  carry the rejected text into exception data, which the CLI prints."
+  ^bytes [path]
+  (let [text (string/trim (slurp (str path)))]
+    (when-not (re-matches #"[0-9a-f]{64}" text)
+      (throw (ex-info "release key file must contain exactly 64 lowercase hex characters"
+                      {:reason :malformed-release-key :file (str path)})))
+    (sign/hex->bytes text)))
+
 (defn release-preflight!
   "Read and validate every release input before the build runs, returning
   the already-read values the release consumes. Fail-closed: the
@@ -350,7 +361,7 @@
                            (fs/read-all-bytes (str release-pub)))
                  :governance (sign/parse-hex64-lf
                               (fs/read-all-bytes (str governance-pub)))})
-        seed (sign/hex->bytes (string/trim (slurp (str release-key))))]
+        seed (read-signing-seed release-key)]
     (when-not (sign/seed-signs-for? seed (:release pinned))
       (throw (ex-info "release signing seed does not correspond to the pinned release key"
                       {:reason :seed-key-mismatch})))

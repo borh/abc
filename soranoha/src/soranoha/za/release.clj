@@ -32,6 +32,22 @@
                   (.onUnmappableCharacter CodingErrorAction/REPORT))]
     (str (.decode decoder (ByteBuffer/wrap bytes)))))
 
+(defn- read-one-edn
+  "Read exactly one EDN value spanning the whole of `text`: an empty
+  document, a second form, or trailing garbage after the value all fail —
+  a reader that stops at the first value would hash bytes it never
+  evaluated."
+  [^String text]
+  (with-open [reader (java.io.PushbackReader. (java.io.StringReader. text))]
+    (let [eof (Object.)
+          value (edn/read {:eof eof} reader)]
+      (when (identical? value eof)
+        (throw (ex-info "empty policy document" {})))
+      (when-not (identical? eof (try (edn/read {:eof eof} reader)
+                                     (catch Exception _ nil)))
+        (throw (ex-info "trailing input after the policy value" {})))
+      value)))
+
 (defn rights-authority!
   "Fail-closed value-plus-hash rights authority over the policy bytes:
   strict UTF-8 + EDN decode, then only the authorizing rights-publication
@@ -42,7 +58,7 @@
   {:policy-id :policy-hash}; throws on anything else."
   [^bytes policy-bytes]
   (let [value (try
-                (edn/read-string (strict-utf8 policy-bytes))
+                (read-one-edn (strict-utf8 policy-bytes))
                 (catch Exception e
                   (throw (ex-info "rights policy unreadable"
                                   {:reason :policy-unreadable

@@ -342,16 +342,20 @@
 
 (defn archive-verification
   "Total over readable views: always returns a report
-  {:result :success | :failed, :commit, :snapshot-id, :pinned-fingerprints,
-  :verifier-version, and on failure :reason/:detail}. Success requires the
-  commit to be present, to be a publication commit (not the pre-genesis
-  empty state), and the full chain to verify with the archived view as the
-  sole read source."
-  [v commit pinned-keys {:keys [snapshot-id]}]
+  {:result :success | :failed, :commit, :pinned-fingerprints,
+  :verifier-version, and on failure :reason/:detail}. The commit must be
+  the concrete lowercase commit id the publication repository names;
+  aliases and revision expressions are refused before any read, so the
+  identity the report records is the identity that was verified. Success
+  requires the commit to be present, to be a publication commit (not the
+  pre-genesis empty state), and the full chain to verify with the
+  archived view as the sole read source."
+  [v commit pinned-keys]
   (let [base {:commit commit
-              :snapshot-id snapshot-id
               :verifier-version verifier-version}]
     (try
+      (when-not (re-matches #"[0-9a-f]{40}" commit)
+        (fail! :malformed-commit {:commit commit}))
       (let [base (assoc base :pinned-fingerprints
                         (into {} (map (fn [[role k]] [role (sign/fingerprint k)]))
                               (sign/validate-pinned-keys! pinned-keys)))

@@ -434,11 +434,6 @@
                    "--governance-pub" governance-pub
                    "--release-key" release-key})
   (let [pinned (pinned-keys-from-files release-pub governance-pub)
-        sig-bytes (fs/read-all-bytes (str event-sig))
-        _ (when-not (= 64 (alength ^bytes sig-bytes))
-            (throw (ex-info "event signature file must be exactly 64 raw bytes"
-                            {:reason :malformed-event-signature
-                             :length (alength ^bytes sig-bytes)})))
         seed (read-signing-seed release-key)
         _ (when-not (sign/seed-signs-for? seed (:release pinned))
             (throw (ex-info "release signing seed does not correspond to the pinned release key"
@@ -451,7 +446,7 @@
                                   (sign/sign seed
                                              (sign/manifest-message manifest-hex)))
                   :event-bytes (fs/read-all-bytes (str event))
-                  :event-sig sig-bytes})]
+                  :event-sig (fs/read-all-bytes (str event-sig))})]
     (println (abc-json/write-deterministic-json-str
               (into (sorted-map)
                     (keep (fn [[k v]] (when v [k v])))
@@ -462,8 +457,8 @@
     outcome))
 
 (defn serving-tree!
-  "Export the serving tree (blobs/, releases/, governance/, history.json)
-  from the verified chain into --out."
+  "Export the serving tree (blobs/, releases/, governance/) from the
+  verified chain into --out, which must not yet exist."
   [{:keys [chain-clone branch out release-pub governance-pub]}]
   (require-flags! "serving-tree"
                   {"--chain-clone" chain-clone
@@ -488,24 +483,21 @@
   view that cannot be constructed throws — a failure to perform the
   observation, never an observation; a readable view always yields a
   report, success or failed."
-  [{:keys [archive commit snapshot-id release-pub governance-pub]}]
+  [{:keys [archive commit release-pub governance-pub]}]
   (require-flags! "archive-verify"
                   {"--archive" archive
                    "--commit" commit
-                   "--snapshot-id" snapshot-id
                    "--release-pub" release-pub
                    "--governance-pub" governance-pub})
   (let [v (view/git-view (str archive))
         report (verify/archive-verification
                 v (str commit)
-                (pinned-keys-from-files release-pub governance-pub)
-                {:snapshot-id snapshot-id})]
+                (pinned-keys-from-files release-pub governance-pub))]
     (println (abc-json/write-deterministic-json-str
               (into (sorted-map)
                     (keep (fn [[k v]] (when v [k v])))
                     {"result" (name (:result report))
                      "commit" (:commit report)
-                     "snapshot_id" (:snapshot-id report)
                      "verifier_version" (:verifier-version report)
                      "key_fingerprints"
                      (into (sorted-map)
@@ -550,7 +542,6 @@
    :out {:coerce :string}
    :archive {:coerce :string}
    :commit {:coerce :string}
-   :snapshot-id {:coerce :string}
    ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
    ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}

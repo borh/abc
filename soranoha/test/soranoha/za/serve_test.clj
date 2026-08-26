@@ -2,8 +2,9 @@
   "Serving-tree acceptance: the exported tree derives only from a fully
   verified chain, is self-verifying (every file's bytes hash to its
   name), keeps withdrawn works served under their historical manifests,
-  and re-exports byte-identically. An unverifiable chain exports
-  nothing."
+  and exports byte-identically for the same chain. The destination must
+  not yet exist, so a served path can never mix chain content with
+  pre-existing bytes; an unverifiable chain exports nothing."
   (:require [babashka.fs :as fs]
             [charred.api :as json]
             [clojure.test :refer [deftest is testing]]
@@ -36,34 +37,50 @@
                        :pinned-keys (fx/pinned-keys)
                        :out-dir (str out)}))
 
+(defn- tree-out []
+  (fs/path (fs/create-temp-dir {:prefix "za-serve"}) "tree"))
+
 (defn- tree-bytes ^bytes [out rel]
   (fs/read-all-bytes (fs/path out rel)))
 
+(defn- tree-map
+  "Every regular file in the tree as relative-path -> byte vector."
+  [out]
+  (into (sorted-map)
+        (for [p (fs/glob out "**")
+              :when (fs/regular-file? p)]
+          [(str (fs/relativize out p)) (vec (fs/read-all-bytes p))])))
+
 (deftest serving-tree-derives-from-the-verified-chain
   (let [{:keys [clone withdrawal]} (chain-with-withdrawal!)
-        out (fs/create-temp-dir {:prefix "za-serve"})
+        out (tree-out)
         result (export! clone out)
-        history (json/read-json (String. (tree-bytes out "history.json")
-                                         "UTF-8"))]
+        manifest-at (fn [hex]
+                      (json/read-json
+                       (String. (tree-bytes out (verify/manifest-path hex))
+                                "UTF-8")))
+        zero-genesis (apply str (repeat 64 "0"))
+        chain (loop [hex (:head result) acc []]
+                (if (= zero-genesis hex)
+                  acc
+                  (recur (get (manifest-at hex) "prev_manifest")
+                         (conj acc hex))))]
     (is (= 3 (:releases result)))
-    (is (= (:head result) (get history "head")))
-
-    (testing "history is the verified chain, head-first, with prev links"
-      (let [releases (get history "releases")]
-        (is (= 3 (count releases)))
-        (is (= (:head result) (get (first releases) "manifest_id")))
-        (is (= (mapv #(get % "manifest_id") (rest releases))
-               (mapv #(get % "prev_manifest") (butlast releases))))
-        (is (= [{"works" 1 "withdrawn" 1} {"works" 2 "withdrawn" 0}
-                {"works" 2 "withdrawn" 0}]
-               (mapv (fn [r] {"works" (get r "work_count")
-                              "withdrawn" (get r "withdrawn_count")})
-                     releases)))
-        (is (some? (get (first releases) "governance_event")))))
 
     (testing "releases/HEAD names the head"
       (is (= (str (:head result) "\n")
              (String. (tree-bytes out verify/head-path) "UTF-8"))))
+
+    (testing "the served manifests link head-first back to genesis"
+      (is (= 3 (count chain)))
+      (is (= [{"works" 1 "withdrawn" 1} {"works" 2 "withdrawn" 0}
+              {"works" 2 "withdrawn" 0}]
+             (mapv (fn [hex]
+                     (let [manifest (manifest-at hex)]
+                       {"works" (count (get manifest "works"))
+                        "withdrawn" (count (get manifest "withdrawn"))}))
+                   chain)))
+      (is (some? (get (manifest-at (:head result)) "governance_event"))))
 
     (testing "every exported manifest and blob is self-verifying"
       (doseq [rel (map str (fs/glob out "releases/*.json"))
@@ -75,11 +92,7 @@
                (hash/sha256-bytes (fs/read-all-bytes rel))))))
 
     (testing "the withdrawn work stays served under its historical manifest"
-      (let [genesis-hex (get (last (get history "releases")) "manifest_id")
-            genesis (json/read-json
-                     (String. (tree-bytes out (verify/manifest-path
-                                               genesis-hex))
-                              "UTF-8"))
+      (let [genesis (manifest-at (last chain))
             withdrawn-artifacts (for [work (get genesis "works")
                                       :when (= slug-b (get work "slug"))
                                       artifact (get work "artifacts")]
@@ -94,10 +107,35 @@
         (is (= 64 (count (tree-bytes out (verify/event-sig-path
                                           event-hex)))))))
 
-    (testing "a re-export writes identical bytes"
-      (let [before (vec (tree-bytes out "history.json"))]
-        (is (= result (export! clone out)))
-        (is (= before (vec (tree-bytes out "history.json"))))))))
+    (testing "an export of the same chain is byte-identical"
+      (let [out-2 (tree-out)]
+        (is (= result (export! clone out-2)))
+        (is (= (tree-map out) (tree-map out-2)))))
+
+    (testing "an existing destination is refused, never merged into"
+      (let [reason (try (export! clone out)
+                        nil
+                        (catch clojure.lang.ExceptionInfo e
+                          (:reason (ex-data e))))]
+        (is (= :destination-exists reason))))))
+
+(deftest a-preexisting-directory-cannot-contribute-bytes-to-a-served-tree
+  ;; closure: everything under a served tree is chain content, so a
+  ;; destination that already holds bytes is refused outright rather
+  ;; than exported over
+  (let [{:keys [clone]} (chain-with-withdrawal!)
+        out (tree-out)
+        stray (fs/path out (verify/blob-path (apply str (repeat 64 "e"))))]
+    (fs/create-dirs (fs/parent stray))
+    (fs/write-bytes stray (.getBytes "not chain content" "UTF-8"))
+    (let [reason (try (export! clone out)
+                      nil
+                      (catch clojure.lang.ExceptionInfo e
+                        (:reason (ex-data e))))]
+      (is (= :destination-exists reason))
+      (is (not (fs/exists? (fs/path out verify/head-path))))
+      (is (= "not chain content" (String. (fs/read-all-bytes stray) "UTF-8")))
+      (is (not (fs/exists? (str out ".staging")))))))
 
 (deftest an-unverifiable-chain-exports-nothing
   (let [{:keys [clone]} (chain-with-withdrawal!)
@@ -116,4 +154,5 @@
                     (catch clojure.lang.ExceptionInfo e
                       (:reason (ex-data e))))]
     (is (= :signature-invalid reason))
-    (is (not (fs/exists? out)))))
+    (is (not (fs/exists? out)))
+    (is (not (fs/exists? (str out ".staging"))))))

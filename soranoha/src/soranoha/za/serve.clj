@@ -1,16 +1,16 @@
 (ns soranoha.za.serve
-  "The serving tree: blobs/, releases/, governance/, and a derived
-  history.json, exported from a fully verified publication chain. Every
-  exported byte is either chain content read through the restricted view
-  at the verified head commit, or — history.json alone — a projection of
-  the verified chain; nothing is exported before the whole chain
-  verifies, and only what the chain references is exported. Withdrawn
-  works stay served under their historical manifests (the protocol
-  promises absence from current works, never byte erasure); removal from
-  work-facing routes is the service's own obligation, on top of this
-  tree."
+  "The serving tree: blobs/, releases/, and governance/, exported from a
+  fully verified publication chain. Nothing is exported before the whole
+  chain verifies, and only what the chain references is exported: the
+  destination must not already exist, and the tree is built aside and
+  installed in one rename, so a serving path never holds a partial tree
+  or bytes from outside the chain. Pointing routes at the installed tree
+  is the service's own activation step, separate from this export.
+  Withdrawn works stay served under their historical manifests (the
+  protocol promises absence from current works, never byte erasure);
+  removal from work-facing routes is the service's own obligation, on
+  top of this tree."
   (:require [babashka.fs :as fs]
-            [soranoha.ported.json :as abc-json]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.repo :as repo]
             [soranoha.snh.sign :as sign]
@@ -30,12 +30,12 @@
 
 (defn export-tree!
   "Export the serving tree for the current chain of `branch` into
-  `out-dir`. Fetches, fully verifies the head with the published checker,
-  then writes every chain manifest + signature, every referenced blob,
-  every governing event + signature, releases/HEAD, and history.json (the
-  verified chain head-first, one entry per release). Idempotent: a
-  re-export of the same chain rewrites identical bytes. Returns
-  {:head :releases :blobs}."
+  `out-dir`, which must not yet exist. Fetches, fully verifies the head
+  with the published checker, then builds the tree — every chain
+  manifest + signature, every referenced blob, every governing event +
+  signature, and releases/HEAD — in a sibling staging directory and
+  installs it at `out-dir` with a single atomic rename; a failed export
+  leaves no tree at `out-dir`. Returns {:head :releases :blobs}."
   [{:keys [clone branch pinned-keys out-dir]}]
   (let [v (view/git-view clone)
         commit (or (repo/fetch! clone branch)
@@ -46,12 +46,16 @@
     (when (:empty chain-result)
       (throw (ex-info "nothing to serve before the first release"
                       {:reason :no-published-release})))
-    (let [read! (fn [path]
+    (when (fs/exists? out-dir)
+      (throw (ex-info "serving-tree destination already exists"
+                      {:reason :destination-exists :out-dir (str out-dir)})))
+    (let [staging (str out-dir ".staging")
+          read! (fn [path]
                   (or (view/read-at v commit path)
                       (throw (ex-info "verified chain path unreadable"
                                       {:reason :path-unreadable :path path}))))
           write! (fn [rel ^bytes bytes]
-                   (let [path (fs/path out-dir rel)]
+                   (let [path (fs/path staging rel)]
                      (fs/create-dirs (fs/parent path))
                      (fs/write-bytes path bytes)))
           chain (:chain chain-result)
@@ -68,33 +72,25 @@
                             (keep #(some-> (get % "governance_event")
                                            verify/id->hex))
                             manifests)]
-      (doseq [hex chain]
-        (write! (verify/manifest-path hex) (read! (verify/manifest-path hex)))
-        (write! (verify/manifest-sig-path hex)
-                (read! (verify/manifest-sig-path hex))))
-      (doseq [hex blob-hexes]
-        (write! (verify/blob-path hex) (read! (verify/blob-path hex))))
-      (doseq [hex event-hexes]
-        (write! (verify/event-path hex) (read! (verify/event-path hex)))
-        (write! (verify/event-sig-path hex)
-                (read! (verify/event-sig-path hex))))
-      (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
-      (write! "history.json"
-              (.getBytes ^String
-               (abc-json/write-deterministic-json-str
-                {"head" (:head chain-result)
-                 "releases"
-                 (mapv (fn [hex manifest]
-                         {"manifest_id" hex
-                          "prev_manifest" (get manifest
-                                               "prev_manifest")
-                          "governance_event" (get manifest
-                                                  "governance_event")
-                          "work_count" (count (get manifest "works"))
-                          "withdrawn_count"
-                          (count (get manifest "withdrawn"))})
-                       chain manifests)})
-                         "UTF-8"))
+      (when (fs/exists? staging)
+        (fs/delete-tree staging))
+      (try
+        (doseq [hex chain]
+          (write! (verify/manifest-path hex)
+                  (read! (verify/manifest-path hex)))
+          (write! (verify/manifest-sig-path hex)
+                  (read! (verify/manifest-sig-path hex))))
+        (doseq [hex blob-hexes]
+          (write! (verify/blob-path hex) (read! (verify/blob-path hex))))
+        (doseq [hex event-hexes]
+          (write! (verify/event-path hex) (read! (verify/event-path hex)))
+          (write! (verify/event-sig-path hex)
+                  (read! (verify/event-sig-path hex))))
+        (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
+        (fs/move staging out-dir {:atomic-move true})
+        (finally
+          (when (fs/exists? staging)
+            (fs/delete-tree staging))))
       {:head (:head chain-result)
        :releases (count chain)
        :blobs (count blob-hexes)})))

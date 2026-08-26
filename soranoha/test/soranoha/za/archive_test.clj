@@ -5,6 +5,7 @@
   the verifier's reason); an unreadable view throws — a failure to
   perform the observation, never an observation."
   (:require [babashka.fs :as fs]
+            [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
             [soranoha.main :as main]
             [soranoha.snh.fixture :as fx]))
@@ -37,13 +38,10 @@
         keys* (key-files!)
         observe (fn [opts]
                   (main/archive-verify!
-                   (merge {:archive archive
-                           :commit commit
-                           :snapshot-id "swh:1:snp:fixture0000"}
-                          keys* opts)))
+                   (merge {:archive archive :commit commit} keys* opts)))
         report (observe {})]
     (is (= :success (:result report)))
-    (is (= "swh:1:snp:fixture0000" (:snapshot-id report)))
+    (is (= commit (:commit report)))
     (is (= 1 (:chain-length report)))
     (is (= #{:release :governance} (set (keys (:pinned-fingerprints report)))))
 
@@ -51,6 +49,15 @@
       (let [failed (observe {:commit (apply str (repeat 40 "d"))})]
         (is (= :failed (:result failed)))
         (is (= :commit-missing (:reason failed)))))
+
+    (testing "only the concrete lowercase commit id names the observation:
+      aliases and revision expressions are refused before any read"
+      (doseq [not-an-identity [(str commit "^{commit}")
+                               (str/upper-case commit)
+                               "HEAD"]]
+        (let [refused (observe {:commit not-an-identity})]
+          (is (= :failed (:result refused)))
+          (is (= :malformed-commit (:reason refused))))))
 
     (testing "the archive alone decides: origin movement after the snapshot
       is invisible to the observation"

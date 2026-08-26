@@ -678,24 +678,28 @@
 
 (deftest archive-verification-is-a-total-report
   (let [{:keys [clone head-commit init-commit]} (build-ctx)
-        v (view/git-view clone)
-        opts {:snapshot-id "swh:1:snp:fixture"}]
+        v (view/git-view clone)]
     (testing "success report at the publication head"
-      (let [report (verify/archive-verification v head-commit (fx/pinned-keys) opts)]
+      (let [report (verify/archive-verification v head-commit (fx/pinned-keys))]
         (is (= :success (:result report)))
         (is (= 2 (:chain-length report)))
-        (is (= "swh:1:snp:fixture" (:snapshot-id report)))
+        (is (= head-commit (:commit report)))
         (is (= (set [:release :governance])
                (set (keys (:pinned-fingerprints report)))))))
     (testing "the pre-genesis commit is not a citable publication commit"
-      (let [report (verify/archive-verification v init-commit (fx/pinned-keys) opts)]
+      (let [report (verify/archive-verification v init-commit (fx/pinned-keys))]
         (is (= :failed (:result report)))
         (is (= :not-a-publication-commit (:reason report)))))
     (testing "an absent commit yields a failed report, not an exception"
       (let [report (verify/archive-verification
-                    v (apply str (repeat 40 "d")) (fx/pinned-keys) opts)]
+                    v (apply str (repeat 40 "d")) (fx/pinned-keys))]
         (is (= :failed (:result report)))
-        (is (= :commit-missing (:reason report)))))))
+        (is (= :commit-missing (:reason report)))))
+    (testing "a revision expression is refused before any read"
+      (let [report (verify/archive-verification
+                    v (str head-commit "^{commit}") (fx/pinned-keys))]
+        (is (= :failed (:result report)))
+        (is (= :malformed-commit (:reason report)))))))
 
 (deftest archived-view-lacking-required-bytes-fails-without-fallback
   ;; a view reads only its own repository: an archive missing bytes the live

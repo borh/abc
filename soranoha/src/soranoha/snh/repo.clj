@@ -16,7 +16,7 @@
 
 (defn- git!
   [dir opts & args]
-  (let [{:keys [exit out err] :as r}
+  (let [{:keys [exit err] :as r}
         (apply process/sh (merge {:dir (str dir) :out :string :err :string} opts)
                "git" args)]
     (when-not (zero? exit)
@@ -48,7 +48,7 @@
                     (str "refs/remotes/origin/" branch))]
     (when (zero? exit) (str/trim out))))
 
-(defn hash-blob!
+(defn- hash-blob!
   "Write `bytes` as a blob object; returns its git sha."
   [dir ^bytes bytes]
   (str/trim (:out (git! dir {:in bytes} "hash-object" "-w" "--stdin"))))

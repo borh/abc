@@ -49,9 +49,9 @@
       (reject! :non-integral-number type {:token (str node)}))
     (.isArray node) (mapv #(node->value % type) node)
     (.isObject node) (into {}
-                          (map (fn [entry]
-                                 [(key entry) (node->value (val entry) type)]))
-                          (.properties node))
+                           (map (fn [entry]
+                                  [(key entry) (node->value (val entry) type)]))
+                           (.properties node))
     :else (reject! :unsupported-json-node type {:node-type (str (class node))})))
 
 (defn decode

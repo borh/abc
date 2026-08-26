@@ -335,8 +335,8 @@
         "compare" (compare! opts)
         "delta" (when-not (get (delta! opts) "ok")
                   (System/exit 1))
-        "verify" (do (when-not (:ok? (verify! opts))
-                       (System/exit 1)))
+        "verify" (when-not (:ok? (verify! opts))
+                   (System/exit 1))
         (do (binding [*out* *err*]
               (println "usage: build|compare|delta|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))

@@ -86,11 +86,3 @@
     (when-not (zero? exit)
       (throw (ex-info "commit unreadable in view" {:commit commit :err err})))
     (vec (rest (str/split (str/trim out) #"\s+")))))
-
-(defn branch-head
-  "Current sha of `branch`, or nil when the branch does not exist."
-  [view branch]
-  (let [{:keys [exit out]} (run-git view {:out :string}
-                                    ["rev-parse" "--verify" "--quiet"
-                                     (str "refs/heads/" branch)])]
-    (when (zero? exit) (str/trim out))))

@@ -121,7 +121,7 @@
 
    {:name "referenced blob present only outside its prescribed path"
     :expect :missing-blob
-    :craft (fn [{:keys [clone head-commit head] :as ctx}]
+    :craft (fn [{:keys [clone head-commit head]}]
              (let [{:keys [core blobs]} (assembled {:variant "v3"
                                                     :selection-params
                                                     {"config" "fixture" "round" 3}}
@@ -522,7 +522,7 @@
 
 (deftest withdrawal-must-only-remove-the-affected-works
   ;; three admitted works; the withdrawal of one may not touch the others
-  (let [{:keys [clone] :as repos} (fx/make-repos!)
+  (let [{:keys [clone]} (fx/make-repos!)
         slug-c "wagahai_wa_neko_de_aru_000148_789"
         admitted [slug-a slug-b slug-c]
         _ (fx/publish! clone {:admitted admitted})
@@ -593,8 +593,7 @@
                         (craft (assoc genesis-base "withdrawn"
                                       [{"slug" "phantom_000000_1"
                                         "event" (str "snh:1:governance-event:"
-                                                     (apply str (repeat 64 "a")))}])
-                               )))))
+                                                     (apply str (repeat 64 "a")))}]))))))
     (testing "a root commit with a nonzero head"
       (let [{:keys [commit]} (fx/craft-release!
                               clone {:parents []
@@ -605,7 +604,7 @@
 (deftest replacement-refs-do-not-alter-view-reads
   ;; git replace would silently substitute objects under plain plumbing; the
   ;; hardened view must keep reporting the invalid commit's own state
-  (let [{:keys [clone head-commit] :as ctx} (build-ctx)
+  (let [{:keys [clone head-commit]} (build-ctx)
         bad (repo/write-commit!
              clone {:parents [head-commit]
                     :base-tree-of head-commit

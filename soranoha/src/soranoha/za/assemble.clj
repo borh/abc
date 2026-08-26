@@ -33,11 +33,11 @@
    "exclude_reason" "in-copyright"
    "quarantine_reason" "not-fully-evaluated"})
 
-(def inclusion-rule-id (get inclusion-rule "id"))
+(def ^:private inclusion-rule-id (get inclusion-rule "id"))
 
-(def inclusion-rule-hash (hash/sha256-canonical-json inclusion-rule))
+(def ^:private inclusion-rule-hash (hash/sha256-canonical-json inclusion-rule))
 
-(defn partition-candidates
+(defn- partition-candidates
   "Total partition of snapshot candidates under `rule` (the executable
   inclusion-rule value)."
   [rule candidates]
@@ -61,7 +61,7 @@
 
 ;; --- evidence artifacts -----------------------------------------------------
 
-(defn snapshot-value
+(defn- snapshot-value
   "snh-assessment-snapshot/1 value: candidates sorted by slug, each
   candidate's contributions sorted by contribution_id."
   [candidates]
@@ -75,7 +75,7 @@
                                                 contributions)))))
                       candidates)))})
 
-(defn report-value
+(defn- report-value
   [snapshot-id {:keys [admitted excluded quarantined]} policy-hash]
   {"schema" "snh-admission-report/1"
    "assessment_snapshot" snapshot-id
@@ -141,14 +141,14 @@
                           "stage_code_version" stage-version}]))
         stages))
 
-(defn assemble-release
+(defn- assemble-release
   "One desired release as the transaction's assemble result
   {:core :blobs :selection}.
   - :cas-dir — the kura CAS every artifact byte is read from;
   - :corpus / :toolchain / :selection-params / :policy-id / :policy-hash —
     manifest coordinates;
   - :candidates — snapshot candidate values covering the assessed
-    population (the F87 totality gate compares their slugs against
+    population (the totality gate compares their slugs against
     :selection, the kernel's selected slug set, so an unassessed or
     unselected candidate blocks emission);
   - :works — slug -> {:plaintext :tei :tei-validation <cas hex>,

@@ -1,7 +1,7 @@
 ;; TEI validation (Jing RELAX NG + project Schematron), extracted from
 ;; abc.tools.materialize-publication with the profile paths made explicit
 ;; arguments: the kernel consumes the TEI profile trio from abc as an
-;; external asset (D20 — one source of truth), so nothing here resolves
+;; external asset (one source of truth), so nothing here resolves
 ;; against a working directory. The recorded toolchain paths stay the fixed
 ;; logical names so validation-record bytes are machine-independent.
 (ns soranoha.ori.validate

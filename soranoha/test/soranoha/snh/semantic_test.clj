@@ -2,8 +2,7 @@
   "The semantic boundary rules: real-calendar effective dates and
   absolute upstream origins — enforced in code, never via JSON Schema
   `format`. The valid fixture vectors must pass both checks."
-  (:require [charred.api :as json]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [soranoha.core.canonical :as canonical]
             [soranoha.snh.decode :as decode]

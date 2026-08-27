@@ -52,17 +52,20 @@ numbers live in the findings sections and Git history, not here):
   eligible completed assessments enter the first release) PLUS the
   authorized policy change from :blocked-pending-assessment-migration
   to :assessment-required (data alone does not lift the block);
-  host and TLS choices; key custody for BOTH keys (the offline
-  governance ceremony AND generating/provisioning the online RELEASE
-  key to CI); the evidence-retention policy before the first real
-  withdrawal. ENGINEERING ONCE THOSE INPUTS EXIST: the unattended
-  Forgejo scheduled release job (D5 — the driver and its exit contract
-  are ready; the job awaits the real runner/secrets contract, pending
+  adoption of the cited statutory answers (Q1–Q5 + old-law
+  transition); key custody for BOTH keys (the offline governance
+  ceremony AND generating/provisioning the online RELEASE key to CI);
+  the evidence-retention policy before the first real withdrawal.
+  ENGINEERING ONCE THOSE INPUTS EXIST: the unattended Forgejo
+  scheduled release job (D5 — the driver and its exit contract are
+  ready; the job awaits the real runner/secrets contract, pending
   deployment integration), the service unit realizing the serving
-  premises + TLS, F12 probe execution, and production acceptances
-  (1)–(3) at the real origin/SWH. Before deployment / the first public
-  signed release: the deployment prerequisites below; the F75 ORCID
-  work (the anchor's version DOI) published.
+  premises + TLS, the tailnet-testable F12 storage/origin probes
+  (budgets ratified before the run), and production acceptances
+  (1)–(3) — acceptance (3)'s SWH observation requires public exposure.
+  Before deployment / the first public signed release: the deployment
+  prerequisites below; the F75 ORCID work (the anchor's version DOI)
+  published.
 - Owner decisions: ALL RATIFIED (2026-08-25) — O1 (assessment-based
   admission with the round-4 wording), O2a (Forgejo authoritative
   origin architecture), O3(b) (amendable-but-permanent governing
@@ -71,35 +74,21 @@ numbers live in the findings sections and Git history, not here):
   copies — owner medium amendment + round-27 F143 collapse —
   degraded/halt semantics per the F144 custody inventory), F83
   (dateless naming), F75 channel = an ORCID work naming the first
-  anchor deposit's Zenodo VERSION DOI (F145). Remaining owner item:
-  private evidence-record retention policy, before the first real
-  withdrawal.
-- Owner decisions (2026-08-27 decision interview): **O2b provisional**
-  — the existing tailnet Forgejo (code.hyakutake-barbel.ts.net) is
-  exposed functionally-public for the test deployment (HTTPS
-  exercised; true public exposure deferred — until then outside
-  verifiers cannot independently attest the current tip, only cited
-  bytes). **TLS owner** — Caddy terminates TLS with
-  Tailscale-provisioned certificates; the service is deployed via the
-  speely nix configuration. **Key ceremony staging** — the offline
-  governance ceremony proceeds now (media + custody inventory + smoke
-  signing); the online RELEASE key is generated at CI provisioning
-  time so it is born where it lives. **First-release rights scope** —
-  statutory groundwork first (Q1–Q5 of the aozora-rights-source
-  contract researched into cited answers for owner adoption), then
-  assessments over the conservative mechanical subset (all
-  contributors なし with parseable expired terms, no
-  translation/foreign-term involvement, catalog agreement), everything
-  else explicitly not-evaluated; owner principle recorded for the Q6
-  resolution: works Aozora releases without qualification should be
-  releasable — to be made auditable as provenance-bearing assessments
-  derived from the catalog under the cited rule, never as
-  flag-authorizes. **Next engineering** — the F12 growth probe against
-  the named origin, budgets proposed for ratification before the run.
-  Main pushed to origin at 48369cea (2026-08-27).
+  anchor deposit's Zenodo VERSION DOI (F145). Extended 2026-08-27
+  (rationale in the owner decision record at the end of this ledger):
+  O2b provisional = the tailnet Forgejo as PRIVATE TEST ORIGIN (public
+  exposure deferred); TLS = Caddy terminating with tailnet
+  certificates via the speely nix configuration; key staging =
+  governance ceremony now, release key at CI provisioning; rights
+  assessment authority = Soranoha, singly (Aozora flags corroborate,
+  never assess; no permission-based admission lane); F12 split =
+  tailnet-testable origin/storage probes now, SWH observation
+  public-only. Remaining owner item: private evidence-record retention
+  policy, before the first real withdrawal.
 - Deployment prerequisites (operational tasks, NOT owner decisions —
-  F108): O2b hostname/configuration + the F12 growth/SWH probes on
-  the named origin; the software-key ceremony (offline generation of
+  F108): O2b named (the private test origin; public exposure a later
+  step); the F12 storage/origin probes against it (SWH probing awaits
+  public exposure); the software-key ceremony (offline generation of
   the ONE governance key; two authorized custody copies on separately
   controlled encrypted media, the copy operation recorded in the
   F144 inventory) + the F54/F70 credential-separated Zenodo
@@ -3393,3 +3382,52 @@ back by citing the previous release tag.
   for disciplinary discoverability; Internet Archive = optional immutable
   item per snapshot. This resolves the D2 hybrid concretely and Q3 (static
   files only — no resolver service needed).
+
+## Owner decision record — 2026-08-27 (decision interview, corrected per external review)
+
+- **O2b provisional: private test origin.** The existing tailnet
+  Forgejo (code.hyakutake-barbel.ts.net) is the origin for the test
+  deployment. Tailscale Serve is tailnet-only, so this origin is
+  PRIVATE — it exercises HTTPS, Forgejo compare-and-append behavior,
+  repository growth, cloning, and repacking, but not anonymous
+  verification of the current tip and not SWH ingestion. True public
+  exposure is a later, separate step.
+- **TLS owner.** Caddy terminates TLS with Tailscale-provisioned
+  certificates; the serving deployment lives in the speely nix
+  configuration.
+- **Key ceremony staging.** The offline governance ceremony proceeds
+  now (media, custody inventory, smoke-signing evidence per F123); the
+  online RELEASE key is generated at CI provisioning time, so it is
+  born where it lives.
+- **Rights assessment authority: Soranoha, singly.** One authority per
+  assessment (the source contract's rule; statutory dates cannot be
+  inserted into an Aozora assertion): Soranoha performs the cited
+  public-domain assessment under statutory answers the owner adopts;
+  Aozora's flags remain corroborating source facts — never the
+  assessor, and no permission-based admission lane is created. The
+  executable admission rule stands unchanged: a work admits only when
+  the work and every contribution are public-domain. Statutory
+  groundwork = Q1–Q5 of the aozora-rights-source contract PLUS an
+  old-law transition question (works first published under the
+  pre-1971 Copyright Act; Agency for Cultural Affairs transition
+  guidance), each answered as a citation for owner adoption.
+- **Coverage expectations, bounded.** 16,558 (なし works minus
+  translation-marked works) is a LEXICAL UPPER BOUND on first-tranche
+  candidates — not an approved tranche, coverage figure, or recovery
+  promise; the なし ∩ text-URL intersection is uncomputed, and absence
+  of 翻訳者/原題 does not establish absence of foreign-term issues
+  (nationality is not a catalog field). Works outside the first
+  tranche are DEFERRED FOR ASSESSMENT; some may remain protected after
+  Q4/Q5 analysis. F3's 1967 death-year frontier corroborates the
+  non-revival transition hypothesis but does not establish who
+  assessed Aozora's flags or under which rule — Q6 stays open. The
+  owner's principle (works Aozora releases without qualification
+  should be releasable) is recorded as a coverage aspiration to test
+  against completed assessments, not as an authority route.
+- **F12 split.** The tailnet-testable storage/origin probes (packed
+  size, clone/fetch bytes, repack time, peak RSS — budgets ratified
+  before the run) proceed against the private test origin; SWH
+  save-code-now probing and the archival observation are public-only
+  and deferred to public exposure.
+- State: main pushed to origin at 48369cea; subsequent documentation
+  commits stay local until the next push instruction.

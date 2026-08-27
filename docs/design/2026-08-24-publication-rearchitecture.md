@@ -3468,3 +3468,54 @@ back by citing the previous release tag.
   upstream-only cadence, not a general annual bound.
 - State: main pushed to origin at 48369cea; subsequent documentation
   commits stay local until the next push instruction.
+
+## F12 growth-probe results — 2026-08-27 (tailnet-testable portion)
+
+Executed against the private test origin (Forgejo 16.0.3 at
+code.hyakutake-barbel.ts.net) on the disposable repositories
+bor/soranoha-f12-probe (growth) and bor/soranoha-f12-protections
+(destructive negative checks), with the ratified budgets recorded
+beforehand. Real artifacts only: publication chain pre-genesis
+31d70bb6 → genesis manifest 2651c070… (revision a1da0f5a00, 17,592
+works) → incremental manifest 6533e11e… (revision 0e9ea3e586, 17,602
+works), driven by the release CLI end-to-end with a probe rights
+policy, probe assessment snapshot (fixture facts, no rights
+authority), and the RFC 8032 fixture keys.
+
+Origin checks — ALL PASS: ordinary and fast-forward pushes accepted;
+force-push of rewritten history rejected (pre-receive declined) with
+apply_to_admins=true, so the owner account cannot bypass; protected-
+branch deletion rejected; plain non-fast-forward push refused; the
+largest published blob (12,454,646 B tei) pushed, verified at head,
+and cloned. Configuration gap found and fixed during setup: Forgejo's
+protection default leaves apply_to_admins=false — the production
+repository must set it true.
+
+Measurements vs budgets — ALL WITHIN BUDGET:
+| # | measured | budget | result |
+|---|---|---|---|
+| M1 genesis packed (repack -adf) | 630,590,254 B (601 MiB; 24% of the 2.57 GB raw) | ≤ 2.6 GiB | PASS |
+| M2 incremental packed growth | 988,658 B (below even the 2,668,760 B raw new bytes) | ≤ raw+10 MiB = 13,154,520 B | PASS |
+| M3 loose before maintenance | genesis-class: 53,023 objects (publisher clone); ordinary release: 80 objects | alert > 1,000 (ordinary) | no alert |
+| M4 fresh full clone | 631,367,363 B received pack, 24 s | ≤ 2.65 GiB | PASS |
+| M5 follower fetch after one release | 7,035,971 B object-store growth (80 objects, exploded loose per fetch.unpackLimit; dominated by the 9.1 MB manifest) | ≤ 13,154,520 B | PASS |
+| M6 full repack wall | 16.35 s | ≤ 15 min | PASS |
+| M7 repack peak RSS | 1,160,516 KB (1.11 GiB) | ≤ 4 GiB | PASS |
+
+Operational record: repack = `git repack -adf --threads=16`, git
+2.54.0, host farspark (Ryzen 9 7950X3D, 32 threads, 94 GB RAM, 70 GB
+available), no maintenance window needed at these sizes. Caveats:
+repack/RSS measured on the publisher host, not the Forgejo origin
+host (no server shell); server-side loose-object growth not directly
+observable (pushes arrive as packs). Real manifest size measured:
+9,095,537 / 9,100,699 B (the earlier 7–10 MB estimate is retired).
+Probe sequence stopped at two releases per the stop rule: no further
+real upstream revisions are qualifiable from this host (github.com
+unreachable; the full local aozorabunko clone carries no newer
+revision). Operational finding, not a budget item: publisher-side
+wall time was 2,918 s (genesis) / 4,642 s (incremental), dominated by
+per-object git subprocess spawning during blob writes and full-head
+verification (~53k spawns); workable at daily cadence but the obvious
+future optimization is batched cat-file/hash-object — not implemented
+in this probe. Public-only remainder (SWH save-code-now acceptance,
+archival observation) stays deferred to public exposure.

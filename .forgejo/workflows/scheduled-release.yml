@@ -43,15 +43,24 @@ jobs:
 
       - name: owner inputs present
         # fail-closed preflight with names: the kernel would also refuse,
-        # but this states exactly which owner input is missing
+        # but this states exactly which owner input is missing. The pinned
+        # keys are DEPLOYMENT configuration under the publisher root, never
+        # repository content (F122/F126: repo-hosted keys cannot
+        # authenticate themselves; key bytes live in the independent anchor
+        # and the pinned verifier configuration only).
         run: |
+          PINNED=/var/lib/soranoha-runner/soranoha/production/pinned
           missing=0
           for f in abc/data/assessment-snapshot.json \
-                   abc/data/publication-policy.edn \
-                   soranoha/config/keys/release.pub \
-                   soranoha/config/keys/governance.pub; do
+                   abc/data/publication-policy.edn; do
             if [ ! -f "src/$f" ]; then
-              echo "MISSING owner input: $f"
+              echo "MISSING owner input (repository): $f"
+              missing=1
+            fi
+          done
+          for f in release.pub governance.pub; do
+            if [ ! -f "$PINNED/$f" ]; then
+              echo "MISSING pinned verifier configuration: $PINNED/$f"
               missing=1
             fi
           done
@@ -92,8 +101,8 @@ jobs:
             --upstream-origin https://github.com/aozorabunko/aozorabunko.git \
             --assessment "$PWD/src/abc/data/assessment-snapshot.json" \
             --policy "$PWD/src/abc/data/publication-policy.edn" \
-            --release-pub "$PWD/src/soranoha/config/keys/release.pub" \
-            --governance-pub "$PWD/src/soranoha/config/keys/governance.pub" \
+            --release-pub /var/lib/soranoha-runner/soranoha/production/pinned/release.pub \
+            --governance-pub /var/lib/soranoha-runner/soranoha/production/pinned/governance.pub \
             --release-key "$PWD/release.seed"
           rc=$?
           set -e
@@ -126,8 +135,8 @@ jobs:
               --chain-clone "$PROD/chain" \
               --branch main \
               --out "$SERVE/trees/$head" \
-              --release-pub "$PWD/src/soranoha/config/keys/release.pub" \
-              --governance-pub "$PWD/src/soranoha/config/keys/governance.pub"
+              --release-pub /var/lib/soranoha-runner/soranoha/production/pinned/release.pub \
+              --governance-pub /var/lib/soranoha-runner/soranoha/production/pinned/governance.pub
           fi
           ln -s "trees/$head" "$SERVE/current.new"
           mv -T "$SERVE/current.new" "$SERVE/current"

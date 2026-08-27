@@ -123,7 +123,11 @@ numbers live in the findings sections and Git history, not here):
   probe's "200, not a defect" reading is corrected. Release key
   PROVISIONED 2026-08-28 by the owner (born where it lives): pub
   00d915b90bcb2c9bd375a9e332eff9957af55add1fdce23e83af2d312a957b27
-  (pinned at soranoha/config/keys/release.pub); the seed exists
+  (pinned in the DEPLOYMENT verifier configuration under the
+  publisher root, production/pinned/release.pub — F122/F126: no
+  repository key copies, a repo-hosted key cannot authenticate
+  itself; an initial repo copy was made and REMOVED same day); the
+  seed exists
   solely as the bor/soranoha Actions secret SORANOHA_RELEASE_SEED —
   the ONLY workflow secret, single copy per the owner decision, so
   seed loss ends the chain's ability to publish (recoverable only
@@ -150,7 +154,8 @@ numbers live in the findings sections and Git history, not here):
   https://github.com/aozorabunko/aozorabunko.git, owner-only to the
   runner). Remaining before the first production publish: the
   offline governance ceremony's public key (pinned as
-  soranoha/config/keys/governance.pub) and the owner inputs (total
+  production/pinned/governance.pub in the deployment verifier
+  configuration) and the owner inputs (total
   assessment snapshot at abc/data/assessment-snapshot.json and the
   unblocked publication policy);
   production acceptances (1)–(3) — acceptance (3)'s SWH observation

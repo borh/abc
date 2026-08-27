@@ -137,7 +137,13 @@ numbers live in the findings sections and Git history, not here):
   one-pointer serving contract (owner-inputs guard fails closed by
   name; exit contract 0/3 honored; export + atomic re-point only
   after a successful outcome; seed file removed even on failure);
-  the cron trigger is added only at unattended activation.
+  the cron trigger is added only at unattended activation. First
+  dispatch EXECUTED 2026-08-28 (run 2724): the job was picked up by
+  the dedicated runner (uuid 25346496…, the server-side-verified
+  registration), the SHA-pinned checkout landed on 1828485d, and
+  the owner-inputs guard stopped the job fail-closed naming exactly
+  the two absent inputs (assessment-snapshot.json,
+  governance.pub) — before any secret was written.
   Remaining before the first production publish: the offline
   governance ceremony's public key (pinned as
   soranoha/config/keys/governance.pub), the owner inputs (total

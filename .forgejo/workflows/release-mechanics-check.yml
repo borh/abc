@@ -37,7 +37,7 @@ jobs:
         # the origin host key below is pinned from the declarative host
         # configuration, independently of any connection this job makes
         run: |
-          export PATH="$PATH:/run/current-system/sw/bin"
+          export PATH="/run/current-system/sw/bin:$PATH"
           umask 077
           printf '%s' "${{ secrets.SORANOHA_FIXTURE_DEPLOY_KEY }}" > deploy_key
           printf '%s' "${{ secrets.SORANOHA_FIXTURE_RELEASE_SEED }}" > release.seed
@@ -51,7 +51,7 @@ jobs:
 
       - name: append the fixture event through the transaction
         run: |
-          export PATH="$PATH:/run/current-system/sw/bin"
+          export PATH="/run/current-system/sw/bin:$PATH"
           export GIT_SSH_COMMAND="ssh -i $PWD/deploy_key -o UserKnownHostsFile=$PWD/known_hosts -o StrictHostKeyChecking=yes"
           run_once() {
             nix run ./src#soranoha-kernel -- governance \

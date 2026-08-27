@@ -83,19 +83,31 @@ numbers live in the findings sections and Git history, not here):
   invocation measured at chain length 365, 2026-08-27 — F12
   results); the service unit realizing the
   serving premises + TLS — AUTHORED 2026-08-28 in the infra repo as
-  soranoha-serve.nix (contract-tested): the backend runs the
-  CHECKED-IN Caddyfile verbatim as the publisher runner's own user
-  (exporter = resolver principal), condition-gated inert until the
-  export step installs it, creating nothing under the publisher
-  root; TLS = the host Caddy terminating with a
-  Tailscale-provisioned certificate on
-  soranoha.hyakutake-barbel.ts.net, transport-only vhost. This
-  fixes the export-layout contract the production workflow's export
-  step must fulfil under the publisher root
-  /var/lib/soranoha-runner: serve/config/Caddyfile (the checked-in
-  file, installed per release) and serve/current (stable name of
-  the active serving tree, atomically re-pointed). Serving anything
-  still gates on the speely deployment and the first export;
+  soranoha-serve.nix and REWORKED same day per external review
+  (blocker: serving and signing must never share a principal): the
+  backend runs the CHECKED-IN Caddyfile verbatim as its OWN
+  soranoha-serve user — read access granted narrowly through the
+  soranoha-serve group the exporter belongs to, the runner's
+  umask-077 state unreadable to the resolver — with the Caddyfile
+  pinned into the Nix store by revision + content hash (serving
+  POLICY is immutable system state updated by deliberate
+  deployment, never by a data release), condition-gated inert on
+  serve/current, creating nothing under the publisher root; TLS =
+  the host Caddy terminating with a Tailscale-provisioned
+  certificate on soranoha.hyakutake-barbel.ts.net, transport-only
+  vhost. Export-layout contract the production workflow's export
+  step must fulfil under /var/lib/soranoha-runner: serve/ (setgid
+  2750, group soranoha-serve), serve/trees/<id>/ (dirs 2750, files
+  0640, umask 027), and serve/current — the atomic pointer,
+  ALWAYS INSTALLED LAST, the readiness token the unit watches.
+  Runner status: ACTIVE on speely 2026-08-28 and its registration
+  scope VERIFIED server-side (runner id 5, bound to repo
+  bor/soranoha alone — repo_id 22, absent from the instance-level
+  runner list). Ordered next steps per the review: one disposable
+  live export verifying HTTPS delivery, atomic re-pointing, and
+  that the serving principal cannot read runner/key state; THEN
+  release-key provisioning; THEN the production workflow against
+  the final one-pointer serving contract;
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
   2026-08-27 (results at the end of this ledger): capacity,
@@ -3193,8 +3205,14 @@ preconditions: the destination parent is exporter-owned (one
 cooperating exporter; nothing else creates the destination — the rename
 gives atomic namespace visibility, not no-clobber or crash durability;
 the serving tree is regenerable, the publication repository is the
-durable record), and exporter and resolver run as the
-same OS principal (the installed tree keeps owner-only mode). Chain
+durable record), and — AMENDED 2026-08-28 per external review — the
+exporter and the resolver run as SEPARATE OS principals: the earlier
+same-principal wording would have collapsed the network-facing
+resolver and the release authority into one user, letting a
+compromised static server reach signing material. The exporter
+installs the serving tree readable to a narrow serving group the
+resolver belongs to (dirs 2750/files 0640); everything else under
+the publisher root stays owner-only to the exporter. Chain
 history reads from the manifests themselves. Archival: SWH
 save-code-now per release,
 non-blocking; **archival status per F113 (one operation, one name):

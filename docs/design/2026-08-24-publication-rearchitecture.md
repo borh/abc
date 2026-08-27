@@ -58,7 +58,12 @@ numbers live in the findings sections and Git history, not here):
   the evidence-retention policy before the first real withdrawal.
   ENGINEERING TRACKS (independent; each names only its activation
   gate): the Forgejo scheduled release job — D5's driver and exit
-  contract are ready and fixture-scale integration can proceed now;
+  contract are ready, and the fixture-scale mechanics check EXECUTED
+  successfully 2026-08-27 on the instance runner (dispatch-only
+  workflow release-mechanics-check.yml: hermetic kernel on the
+  runner, secret-channel seed, deploy-key push to the protected
+  fixture chain, first dispatch published / re-runs exactly
+  already-applied, independently verified from a second host);
   UNATTENDED production activation gates on the owner inputs above,
   the real runner/secrets contract, and one representative long-chain
   no-op measurement (the no-op bound correction is implemented;

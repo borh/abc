@@ -103,11 +103,27 @@ numbers live in the findings sections and Git history, not here):
   Runner status: ACTIVE on speely 2026-08-28 and its registration
   scope VERIFIED server-side (runner id 5, bound to repo
   bor/soranoha alone — repo_id 22, absent from the instance-level
-  runner list). Ordered next steps per the review: one disposable
-  live export verifying HTTPS delivery, atomic re-pointing, and
-  that the serving principal cannot read runner/key state; THEN
-  release-key provisioning; THEN the production workflow against
-  the final one-pointer serving contract;
+  runner list). The disposable live export EXECUTED 2026-08-28 as
+  the real principals on speely, then disposed (service inactive,
+  path unit re-armed, serve/ removed): the exporter installed
+  trees per the layout contract and the path unit started serving
+  the moment `current` landed; an atomic re-point (ln -s + mv -T)
+  flipped content with the same MainPID, zero restarts, visible
+  through the public HTTPS path; the checked-in Caddyfile's
+  semantics held through TLS (immutable header + content on an
+  existing digest path, max-age=60 pointer, 404 WITHOUT immutable
+  on a missing digest path); and as soranoha-serve, reading the
+  runner's registration, instance dir, and workspace were each
+  Permission denied while the exported tree read fine. One defect
+  found and fixed: through the vhost, digest paths first answered
+  an EMPTY 200 — the checked-in Caddyfile host-matches its own
+  listen address, so the preserved public Host fell through to the
+  backend's default site; the transport vhost now rewrites Host to
+  the upstream (header_up, contract-tested), and the earlier
+  probe's "200, not a defect" reading is corrected. Ordered next
+  steps per the review: release-key provisioning; THEN the
+  production workflow against the final one-pointer serving
+  contract;
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
   2026-08-27 (results at the end of this ledger): capacity,

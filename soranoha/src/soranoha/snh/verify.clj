@@ -284,16 +284,8 @@
   (when-not (= [] (get manifest "withdrawn"))
     (fail! :genesis-has-withdrawn {:commit commit})))
 
-(defn verify-repository-at
-  "Verify the repository state at `commit` through `v`, with `pinned-keys`
-  covering the full chain. Returns {:empty true} for the valid pre-genesis
-  initial commit, otherwise {:head <hex> :head-manifest <value>
-  :chain [hex ... genesis] :governance-events #{event id ...}
-  :chain-length n}. Throws ex-info with :reason on any violation."
+(defn- verify-chain-from
   [v commit pinned-keys]
-  (sign/validate-pinned-keys! pinned-keys)
-  (when-not (view/commit-exists? v commit)
-    (fail! :commit-missing {:commit commit}))
   (let [head (head-at v commit)]
     (if (= sign/zero-head-hex head)
       (do (when (seq (view/parents-of v commit))
@@ -337,6 +329,20 @@
                   (let [pm (decoded-manifest v p h)]
                     (check-transition! c m pm events)
                     (recur p h pm chain gov-ids)))))))))))
+
+(defn verify-repository-at
+  "Verify the repository state at `commit` through `v`, with `pinned-keys`
+  covering the full chain. Returns {:empty true} for the valid pre-genesis
+  initial commit, otherwise {:head <hex> :head-manifest <value>
+  :chain [hex ... genesis] :governance-events #{event id ...}
+  :chain-length n}. Throws ex-info with :reason on any violation."
+  [v commit pinned-keys]
+  (sign/validate-pinned-keys! pinned-keys)
+  (when-not (view/commit-exists? v commit)
+    (fail! :commit-missing {:commit commit}))
+  ;; the chain walk reads every artifact of every manifest; one batched
+  ;; reader serves the whole pass
+  (view/with-batch v (fn [v] (verify-chain-from v commit pinned-keys))))
 
 (def verifier-version "snh-verify/1")
 

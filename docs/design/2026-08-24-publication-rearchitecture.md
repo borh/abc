@@ -3573,3 +3573,30 @@ path reachability at each commit. No second verifier, queue, cache
 protocol, monitoring, or new service; nothing implemented in this
 probe. Public-only remainder (SWH save-code-now acceptance, archival
 observation) stays deferred to public exposure.
+
+No-op bound correction implemented 2026-08-27, profile first. The
+measured decomposition on the real chain attributed the pass almost
+entirely to per-read subprocess spawns: 11.8 ms per read × 52,806
+artifact reads per commit × 2 commits ≈ 1,248 s of the 1,370 s
+measured full verification pass; hashing is 1.75 ms/MB (≈ 4.5 s per
+commit); the writer does not run in a no-op. Smallest measured
+change, at the view boundary only: within one verification pass,
+reads are served by a single persistent `git cat-file --batch`
+subprocess (view/with-batch) started under the same --git-dir
+binding, hardening flags, and sanitized environment as spawned
+reads; every request still names commit:path, so each read proves
+the same path reachability from that one commit's tree — no content
+reuse, no cached verifier state, writer untouched. Measured after:
+full verification pass 26 s (was 1,370 s); end-to-end unchanged
+invocation 45 s (was 1,319 s), outcome already-published. The
+after-measurement ran the kernel CLI directly with the pinned
+toolchain identity and the wrapper's pinned adapter store paths: the
+nix wrapper would derive a NEW toolchain identity from the changed
+source, changing the projection, so an unchanged invocation under
+the new wrapper exists only after the next toolchain-class release.
+The releases × works slope remains (≈ 13 s per chain commit of
+bytes read and hashed per pass); the ≤ 30 min bound now projects to
+hold to chain length ≈ 130, and the asymptotic work-elimination
+(cross-commit content reuse with a per-commit reachability proof)
+stays available but untaken. 71 tests / 452 assertions pass; every
+verification test now exercises the batched reader.

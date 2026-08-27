@@ -13,10 +13,18 @@
   directory differs from their git directory) and alternate object
   directories are rejected at construction. Live verification wraps the fetched
   authoritative repository; archive verification wraps only the archived
-  snapshot; mirrors and clones wrap themselves."
+  snapshot; mirrors and clones wrap themselves.
+
+  Reads run one git subprocess per call, except inside with-batch, which
+  serves read-at from a single persistent cat-file --batch subprocess
+  started under the same binding, flags, and sanitized environment. A
+  batched read still names commit:path per request, so it proves the same
+  path reachability from that one commit's tree as a spawned read."
   (:require [babashka.process :as process]
             [clojure.java.io :as io]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:import (java.io BufferedInputStream ByteArrayOutputStream DataInputStream
+                    EOFException OutputStream)))
 
 (def ^:private hardening-flags ["--no-replace-objects" "--no-lazy-fetch"])
 
@@ -64,14 +72,65 @@
                            {:dir (str dir) :alternates (str alternates)})))
          (assoc v :bind ["--git-dir" git-dir]))))))
 
+(defn- header-line
+  "One LF-terminated cat-file --batch header line as a string."
+  [^DataInputStream in]
+  (let [buf (ByteArrayOutputStream.)]
+    (loop []
+      (let [b (.read in)]
+        (cond
+          (neg? b) (throw (EOFException. "batch reader closed mid-header"))
+          (= b 10) (String. (.toByteArray buf) "UTF-8")
+          :else (do (.write buf b) (recur)))))))
+
+(defn- batch-read-at
+  "One request/response exchange on the persistent batch subprocess. The
+  exchange is atomic under the process lock, and the payload is always
+  drained even when the object is not a blob, so the stream never
+  desynchronizes."
+  ^bytes [{:keys [^Process process ^OutputStream in ^DataInputStream out]}
+          commit path]
+  (locking process
+    (.write in (.getBytes (str commit ":" path "\n") "UTF-8"))
+    (.flush in)
+    (let [header (header-line out)]
+      (when-not (or (str/ends-with? header " missing")
+                    (str/ends-with? header " ambiguous"))
+        (let [[_ type size] (str/split header #" ")
+              payload (byte-array (Long/parseLong size))]
+          (.readFully out payload)
+          (.skipBytes out 1)
+          (when (= "blob" type) payload))))))
+
+(defn with-batch
+  "Run (f batched-view): read-at on the passed view is served by one
+  persistent cat-file --batch subprocess instead of one subprocess per
+  read; the subprocess starts under the view's binding, hardening flags,
+  and sanitized environment, and is destroyed when f returns."
+  [view f]
+  (let [pb (ProcessBuilder.
+            ^java.util.List (vec (concat ["git"] (:bind view) hardening-flags
+                                         ["cat-file" "--batch"])))]
+    (.directory pb (io/file (:dir view)))
+    (doto (.environment pb) (.clear) (.putAll (:env view)))
+    (let [p (.start pb)]
+      (try
+        (f (assoc view :batch {:process p
+                               :in (.getOutputStream p)
+                               :out (DataInputStream.
+                                     (BufferedInputStream. (.getInputStream p)))}))
+        (finally (.destroy p))))))
+
 (defn read-at
   "Blob bytes at `path` in `commit`'s tree, or nil when absent. Only the tree
   of the named commit is consulted — presence of the same bytes elsewhere in
   the object graph does not satisfy a read."
   ^bytes [view commit path]
-  (let [{:keys [exit out]} (run-git view {:out :bytes}
-                                    ["cat-file" "blob" (str commit ":" path)])]
-    (when (zero? exit) out)))
+  (if-let [batch (:batch view)]
+    (batch-read-at batch commit path)
+    (let [{:keys [exit out]} (run-git view {:out :bytes}
+                                      ["cat-file" "blob" (str commit ":" path)])]
+      (when (zero? exit) out))))
 
 (defn commit-exists? [view commit]
   (zero? (:exit (run-git view {:out :string}

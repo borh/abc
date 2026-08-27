@@ -23,7 +23,10 @@ jobs:
         # workflow must execute its own source even if main advances
         # between dispatch and clone
         run: |
-          git clone "https://x:${GITHUB_TOKEN}@${GITHUB_SERVER_URL#https://}/${GITHUB_REPOSITORY}.git" src
+          # scheme-agnostic: the runner may name the instance over http
+          # (a loopback URL on the Forgejo host) or https
+          helper='!f() { echo "username=x"; echo "password=${GITHUB_TOKEN}"; }; f'
+          git -c credential.helper="$helper" clone "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git" src
           git -C src fetch origin "$FORGEJO_SHA"
           git -C src checkout --detach "$FORGEJO_SHA"
           test "$(git -C src rev-parse HEAD)" = "$FORGEJO_SHA"

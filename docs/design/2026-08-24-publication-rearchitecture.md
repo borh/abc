@@ -56,17 +56,19 @@ numbers live in the findings sections and Git history, not here):
   transition); key custody for BOTH keys (the offline governance
   ceremony AND generating/provisioning the online RELEASE key to CI);
   the evidence-retention policy before the first real withdrawal.
-  ENGINEERING ONCE THOSE INPUTS EXIST: the unattended Forgejo
-  scheduled release job (D5 — the driver and its exit contract are
-  ready; the job awaits the real runner/secrets contract, pending
-  deployment integration), the service unit realizing the serving
-  premises + TLS, and production acceptances
-  (1)–(3) — acceptance (3)'s SWH observation requires public exposure.
-  The tailnet-testable F12 probes EXECUTED 2026-08-27 (results at the
-  end of this ledger): capacity, transport, and concurrency checks
-  pass; the origin-host maintenance measurements (M6/M7 and
-  origin-side loose growth) are a pending one-shot during the speely
-  deployment.
+  ENGINEERING TRACKS (independent; each names only its activation
+  gate): the Forgejo scheduled release job — D5's driver and exit
+  contract are ready and fixture-scale integration can proceed now;
+  UNATTENDED production activation gates on the owner inputs above,
+  the real runner/secrets contract, and correction of the publication
+  no-op wall-time bound (F12 results); the service unit realizing the
+  serving premises + TLS — gates on the speely deployment;
+  production acceptances (1)–(3) — acceptance (3)'s SWH observation
+  gates on public exposure. The tailnet-testable F12 probes EXECUTED
+  2026-08-27 (results at the end of this ledger): capacity,
+  transport, and concurrency checks pass; the origin-host maintenance
+  measurements (M6/M7 and origin-side loose growth) are a pending
+  one-shot during the speely deployment.
   Before deployment / the first public signed release: the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
@@ -3520,7 +3522,7 @@ publisher-host observations with the origin-host measurement pending:
 | M1 genesis packed (repack -adf) | 630,590,254 B (601 MiB; 24% of the 2.57 GB raw) | ≤ 2.6 GiB | PASS |
 | M2 incremental packed growth | 988,658 B (below even the 2,668,760 B raw new bytes) | ≤ raw+10 MiB = 13,154,520 B | PASS |
 | M3 loose before maintenance | genesis-class: 53,023 objects (publisher clone); ordinary release: 80 objects follower-side | alert > 1,000 (ordinary) | no alert follower-side; origin-side pending |
-| M4 fresh full clone | 631,367,363 B received pack, 24 s (ssh); 13 s over HTTPS | ≤ 2.65 GiB | PASS |
+| M4 fresh full clone | 629,666,943 B received packfile, 24 s (ssh); byte-identical packfile in 13 s over HTTPS | ≤ 2.65 GiB | PASS |
 | M5 follower fetch after one release | 4,576,279 B retained packfile (4,581,083 B pack-dir growth incl. index), fetched over HTTPS with fetch.unpackLimit=1 | ≤ 13,154,520 B | PASS |
 | M6 full repack wall | 16.35 s | ≤ 15 min | publisher observation; origin pending |
 | M7 repack peak RSS | 1,160,516 KB (1.11 GiB) | ≤ 4 GiB | publisher observation; origin pending |
@@ -3528,7 +3530,9 @@ publisher-host observations with the origin-host measurement pending:
 M5 was first recorded as 7,035,971 B of loose-object-store growth;
 that measured Git's post-unpack state, not the ratified quantity
 (received packfile bytes on disk), and is superseded by the
-retained-pack measurement above. M6/M7 (and origin-side loose
+retained-pack measurement above. M4 was first recorded as
+631,367,363 B; that was total object-directory size (pack plus
+locally generated index), superseded by the packfile value above. M6/M7 (and origin-side loose
 growth) were measured on the publisher clone at farspark, which
 establishes client-side feasibility, not Forgejo-server maintenance
 capacity; the origin-host measurement is a pending ONE-SHOT during
@@ -3536,7 +3540,9 @@ the speely deployment — no monitoring framework.
 
 Operational record: repack = `git repack -adf --threads=16`, git
 2.54.0, host farspark (Ryzen 9 7950X3D, 32 threads, 94 GB RAM, 70 GB
-available), no maintenance window needed at these sizes. Real
+available), no maintenance window needed at these sizes. The probe
+API credential lives outside the workspace under owner-only
+permissions (no in-repo secret file, no ignore-entry convention). Real
 manifest size measured: 9,095,537 / 9,100,699 B (the earlier 7–10 MB
 estimate is retired). Probe sequence stopped at two releases per the
 stop rule: no further real upstream revisions are qualifiable from
@@ -3546,18 +3552,24 @@ carries no newer revision).
 Publication wall time has an algorithmic growth problem — "workable
 at daily cadence" is NOT established. Measured 2,918 s (genesis) /
 4,642 s (release 2) despite release 2 adding only 35 blobs: the repo
-writer spawns hash-object/update-index per file and every invocation
-re-verifies the full chain by walking every historical manifest with
-one cat-file per read (~53k subprocesses per verification pass; on
-the order of 159k subprocesses for the genesis invocation and 264k
-for release 2), so cost grows with releases × works. No-op/unchanged
-invocation wall-time budget: ≤ 30 min at the current corpus,
-measured 1,319 s (22 min) for one unchanged invocation (build fully
-cached, outcome already-published, no push); a breach of this budget
-forces the correction before the scheduled job relies on it. The
-eventual correction is to deepen the existing repository/view
-modules with batched plumbing (cat-file --batch / hash-object
---stdin-paths) and per-verification content reuse — no second
-verifier, queue, cache protocol, or new service; not implemented in
-this probe. Public-only remainder (SWH save-code-now acceptance,
-archival observation) stays deferred to public exposure.
+writer launches subprocesses per file (hash-object and update-index
+each) and every invocation re-verifies the full chain by walking
+every historical manifest with one cat-file per read (~53k
+subprocesses per verification pass; on the order of 159k subprocesses
+for the genesis invocation and 264k for release 2), so cost grows
+with releases × works. No-op/unchanged invocation wall-time bound:
+≤ 30 min, measured 1,319 s (22 min) for one unchanged invocation at
+the recorded workload of 17,602 works, chain length 2 (build fully
+cached, outcome already-published, no push). The trigger has
+effectively fired: at releases × works growth, linear extrapolation
+puts the next few releases around or beyond the 30-minute bound —
+this is a present limit, not a speculative future breach. Correcting
+it is a PREREQUISITE for unattended production activation of the
+scheduled job; fixture-scale scheduler integration can continue
+meanwhile. Correction shape: profile first, then deepen the existing
+repository/view boundary with the smallest measured
+batching/work-elimination change; any content reuse must still prove
+path reachability at each commit. No second verifier, queue, cache
+protocol, monitoring, or new service; nothing implemented in this
+probe. Public-only remainder (SWH save-code-now acceptance, archival
+observation) stays deferred to public exposure.

@@ -65,8 +65,10 @@ numbers live in the findings sections and Git history, not here):
   fixture chain, first dispatch published / re-runs exactly
   already-applied, independently verified from a second host);
   UNATTENDED production activation gates on the owner inputs above,
-  the real runner/secrets contract, and one representative long-chain
-  no-op measurement (the no-op bound correction is implemented;
+  the real runner/secrets contract (the publisher must be a
+  DEDICATED, REPOSITORY-SCOPED runner — Forgejo host runners have no
+  meaningful isolation and broader pools could receive the job), and
+  one representative long-chain no-op measurement (the no-op bound correction is implemented;
   year-one cost is projected within budget, not yet measured at
   length — F12 results); the service unit realizing the
   serving premises + TLS — gates on the speely deployment;

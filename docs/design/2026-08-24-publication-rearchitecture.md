@@ -60,13 +60,15 @@ numbers live in the findings sections and Git history, not here):
   scheduled release job (D5 — the driver and its exit contract are
   ready; the job awaits the real runner/secrets contract, pending
   deployment integration), the service unit realizing the serving
-  premises + TLS, the tailnet-testable F12 storage/origin probes
-  (budgets ratified before the run), and production acceptances
+  premises + TLS, the tailnet-testable F12 storage/origin probes and
+  pass/fail origin checks (budgets ratified before the run), and
+  production acceptances
   (1)–(3) — acceptance (3)'s SWH observation requires public exposure.
   Before deployment / the first public signed release: the deployment
   prerequisites below; the F75 ORCID work (the anchor's version DOI)
   published.
-- Owner decisions: ALL RATIFIED (2026-08-25) — O1 (assessment-based
+- Protocol decisions: all ratified (2026-08-25); deployment choices
+  follow — O1 (assessment-based
   admission with the round-4 wording), O2a (Forgejo authoritative
   origin architecture), O3(b) (amendable-but-permanent governing
   events), O5a (fixed pinned key sets per chain; governance = ONE
@@ -3408,11 +3410,13 @@ back by citing the previous release tag.
   executable admission rule stands unchanged: a work admits only when
   the work and every contribution are public-domain. Statutory
   groundwork = Q1–Q5 of the aozora-rights-source contract PLUS an
-  old-law transition question (works first published under the
-  pre-1971 Copyright Act; Agency for Cultural Affairs transition
-  guidance), each answered as a citation for owner adoption.
-- **Coverage expectations, bounded.** 16,558 (なし works minus
-  translation-marked works) is a LEXICAL UPPER BOUND on first-tranche
+  old-law transition question (works whose protection is affected by
+  old-law/current-law transitional provisions; Agency for Cultural
+  Affairs transition guidance), each answered as a citation for owner
+  adoption.
+- **Coverage expectations, bounded.** 16,558 — the census partition
+  row "`なし`, every contributor has a parseable CE year ≤ 1967, no
+  `翻訳者` and no `原題`" — is a LEXICAL UPPER BOUND on first-tranche
   candidates — not an approved tranche, coverage figure, or recovery
   promise; the なし ∩ text-URL intersection is uncomputed, and absence
   of 翻訳者/原題 does not establish absence of foreign-term issues
@@ -3425,8 +3429,11 @@ back by citing the previous release tag.
   should be releasable) is recorded as a coverage aspiration to test
   against completed assessments, not as an authority route.
 - **F12 split.** The tailnet-testable storage/origin probes (packed
-  size, clone/fetch bytes, repack time, peak RSS — budgets ratified
-  before the run) proceed against the private test origin; SWH
+  size, clone/fetch bytes, repack time, peak RSS, loose-object growth
+  before maintenance — budgets ratified before the run), plus the
+  existing F12 pass/fail origin checks (object-size limits, force-push
+  prevention, branch-deletion protection, rejected-concurrent-push
+  recovery), proceed against the private test origin; SWH
   save-code-now probing and the archival observation are public-only
   and deferred to public exposure.
 - State: main pushed to origin at 48369cea; subsequent documentation

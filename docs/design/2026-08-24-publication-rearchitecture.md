@@ -144,12 +144,15 @@ numbers live in the findings sections and Git history, not here):
   the owner-inputs guard stopped the job fail-closed naming exactly
   the two absent inputs (assessment-snapshot.json,
   governance.pub) — before any secret was written.
-  Remaining before the first production publish: the offline
-  governance ceremony's public key (pinned as
-  soranoha/config/keys/governance.pub), the owner inputs (total
+  The aozora mirror is PROVISIONED 2026-08-28 under the publisher
+  root (full-history clone, 26 GB, HEAD 0e9ea3e586 = the
+  qualification stop point, origin = the recorded upstream
+  https://github.com/aozorabunko/aozorabunko.git, owner-only to the
+  runner). Remaining before the first production publish: the
+  offline governance ceremony's public key (pinned as
+  soranoha/config/keys/governance.pub) and the owner inputs (total
   assessment snapshot at abc/data/assessment-snapshot.json and the
-  unblocked publication policy), and the one-time aozora mirror
-  provisioning under the publisher root;
+  unblocked publication policy);
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
   2026-08-27 (results at the end of this ledger): capacity,

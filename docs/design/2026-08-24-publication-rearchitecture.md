@@ -3579,24 +3579,41 @@ measured decomposition on the real chain attributed the pass almost
 entirely to per-read subprocess spawns: 11.8 ms per read × 52,806
 artifact reads per commit × 2 commits ≈ 1,248 s of the 1,370 s
 measured full verification pass; hashing is 1.75 ms/MB (≈ 4.5 s per
-commit); the writer does not run in a no-op. Smallest measured
-change, at the view boundary only: within one verification pass,
-reads are served by a single persistent `git cat-file --batch`
-subprocess (view/with-batch) started under the same --git-dir
-binding, hardening flags, and sanitized environment as spawned
-reads; every request still names commit:path, so each read proves
-the same path reachability from that one commit's tree — no content
-reuse, no cached verifier state, writer untouched. Measured after:
-full verification pass 26 s (was 1,370 s); end-to-end unchanged
-invocation 45 s (was 1,319 s), outcome already-published. The
-after-measurement ran the kernel CLI directly with the pinned
-toolchain identity and the wrapper's pinned adapter store paths: the
-nix wrapper would derive a NEW toolchain identity from the changed
-source, changing the projection, so an unchanged invocation under
-the new wrapper exists only after the next toolchain-class release.
-The releases × works slope remains (≈ 13 s per chain commit of
-bytes read and hashed per pass); the ≤ 30 min bound now projects to
-hold to chain length ≈ 130, and the asymptotic work-elimination
-(cross-commit content reuse with a per-commit reachability proof)
-stays available but untaken. 71 tests / 452 assertions pass; every
-verification test now exercises the batched reader.
+commit); the writer does not run in a no-op. Two changes, both
+inside the existing view/verifier boundary: (1) within one
+verification pass, reads are served by a single persistent
+`git cat-file --batch` subprocess (view/with-batch) started under
+the same --git-dir binding, hardening flags, and sanitized
+environment as spawned reads, with the subprocess owned end-to-end
+(stderr inherited, stdin closed and clean termination required on
+success, destroy on failure, payload framing asserted); (2)
+within-pass cross-commit work elimination — a work artifact's
+content is verified once per pass, and an older commit reuses the
+younger commit's verification only when the younger, already-
+verified commit carried the same hex at the same path AND a tree
+comparison proves this commit's entry identical, so every commit
+still proves each artifact's path reachability in its own tree;
+declared lengths are checked on both routes, the reused facts live
+only for the one pass, and a regression test pins that a valid head
+above a historical commit storing same-length wrong bytes at one
+artifact path still fails with blob-hash-mismatch. No cross-pass
+state, no second verifier, no service.
+
+Measured after, on the real chain: full verification pass 15.4 s
+(26.1 s with batching alone; 1,370 s before), historical-commit
+marginal ≈ 2.4 s. End-to-end unchanged invocation through the REAL
+nix wrapper: 30 s steady-state (40 s with first nix evaluation),
+outcome already-published — the earlier direct-CLI qualification
+rested on a false premise: the toolchain identity hashes the Clojure
+runtime, dependency cache, and deps.edn, NOT kernel source, so the
+rebuilt wrapper still supplies clj-nix-6b66028f… and the hermetic
+unchanged invocation is measurable now. Activation target = the
+year-one workload of the daily-release premise: at 365 releases one
+no-op verification projects to ≈ 13 s + 364 × 2.4 s ≈ 15 min,
+inside the ≤ 30 min bound with ~2× headroom; the residual per-commit
+cost is each release's own distinct content (manifest, snapshot,
+report — verified once each, irreducible under verify-everything).
+The bound is projected to be reached around chain length ≈ 700
+(roughly two years at daily cadence); revisit then against the
+no-op measurement the scheduled job records per run — no monitoring
+service. 72 tests / 453 assertions pass.

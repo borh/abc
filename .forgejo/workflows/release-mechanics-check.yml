@@ -42,7 +42,7 @@ jobs:
           printf '%s' "${{ secrets.SORANOHA_FIXTURE_DEPLOY_KEY }}" > deploy_key
           printf '%s' "${{ secrets.SORANOHA_FIXTURE_RELEASE_SEED }}" > release.seed
           printf '%s\n' '[speely.hyakutake-barbel.ts.net]:63333 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPHMPfs2L/J7ei0SCng0EclKKIANQXhZQ19Tiw1FkvK7' > known_hosts
-          export GIT_SSH_COMMAND="ssh -i $PWD/deploy_key -o UserKnownHostsFile=$PWD/known_hosts -o StrictHostKeyChecking=yes"
+          export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i $PWD/deploy_key -o UserKnownHostsFile=$PWD/known_hosts -o StrictHostKeyChecking=yes"
           git clone ssh://forgejo@speely.hyakutake-barbel.ts.net:63333/bor/soranoha-f12-race.git chain
           git -C chain fetch origin fixture-inputs
           for f in event.json event.sig release.pub governance.pub; do
@@ -52,7 +52,7 @@ jobs:
       - name: append the fixture event through the transaction
         run: |
           export PATH="/run/current-system/sw/bin:$PATH"
-          export GIT_SSH_COMMAND="ssh -i $PWD/deploy_key -o UserKnownHostsFile=$PWD/known_hosts -o StrictHostKeyChecking=yes"
+          export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i $PWD/deploy_key -o UserKnownHostsFile=$PWD/known_hosts -o StrictHostKeyChecking=yes"
           run_once() {
             nix run ./src#soranoha-kernel -- governance \
               --chain-clone "$PWD/chain" \

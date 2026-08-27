@@ -37,8 +37,18 @@ numbers live in the findings sections and Git history, not here):
   hermetic `soranoha-kernel` wrapper. Implementation-review rounds
   1–9 (F157–F183) are recorded in the sections below; suites 59
   tests / 312 assertions, locally and hermetically.
-- Slice 3: implementation underway (fixture/local-origin work needs no
-  gate). Before deployment / the first public signed release:
+- Slice 3: LOCAL IMPLEMENTATION COMPLETE (2026-08-27 at 26cc95df) —
+  release driver (fail-closed rights authority, pre-execution totality,
+  preflight, scheduled-runner exit contract), governance CLI
+  (offline-signed events through the §9 transaction), serving-tree
+  export (verified-chain-only, staged atomic install, work-facing
+  symlink layer), archival-observation CLI (§10 total report over a
+  sole archived view), and the F98/F104 service-withdrawal acceptance
+  over the checked-in Caddy configuration; suites 71 tests / 452
+  assertions, locally and hermetically. Remaining Slice-3 items are
+  deployment-gated: production acceptances (1)–(3) at the real
+  origin/SWH; the serving premises and TLS owner realized by the
+  service unit. Before deployment / the first public signed release:
   full-corpus assessment data; the deployment prerequisites below; the
   F75 ORCID work (the anchor's version DOI) published.
 - Owner decisions: ALL RATIFIED (2026-08-25) — O1 (assessment-based
@@ -3091,8 +3101,17 @@ push result converges on the same reconciliation via the reachability
 check; scheduled-build no-op per the F67 projection.
 Forgejo auto-release polls upstream; admission is a fail-closed input
 (policy hash in manifest). Serving tree (blobs/, releases/, governance/,
-releases/HEAD) derives from the verified chain, staged and atomically
-installed into a previously absent destination. Deployment
+releases/HEAD, plus the work-facing symlink layer works/<slug>/<type>,
+withdrawn/<slug>.json, releases/latest — relative names into chain
+content, no derived documents and no runtime resolution) derives from
+the verified chain, staged and atomically installed into a previously
+absent destination. The static server is Caddy (owner-selected
+2026-08-27); the checked-in soranoha/config/caddy/Caddyfile is the
+whole serving configuration (immutable cache headers only on existing
+digest-addressed files, short-cache pointer layer, listen/root from
+the environment). Before public activation the TLS owner must be
+named: an external terminator fronting Caddy, or Caddy's production
+configuration terminating TLS. Deployment
 preconditions: the destination parent is exporter-owned (one
 cooperating exporter; nothing else creates the destination — the rename
 gives atomic namespace visibility, not no-clobber or crash durability;
@@ -3137,7 +3156,9 @@ are not blocked on the production host: once the server/configuration
 is selected, this acceptance runs locally against the generated tree;
 only real-origin behavior and the SWH observation need external
 deployment. The protocol-level absence from `works` is already checked
-by the §8 verifier.
+by the §8 verifier. IMPLEMENTED (2026-08-27, approved at 26cc95df):
+static_serve_test drives the checked-in Caddyfile over HTTP against a
+generated tree with a withdrawn work.
 
 ### Slice 4 — citability layer
 Quarterly Zenodo snapshot (concept DOI + first version DOI) — **each

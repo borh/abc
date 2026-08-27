@@ -60,8 +60,10 @@ numbers live in the findings sections and Git history, not here):
   gate): the Forgejo scheduled release job — D5's driver and exit
   contract are ready and fixture-scale integration can proceed now;
   UNATTENDED production activation gates on the owner inputs above,
-  the real runner/secrets contract, and correction of the publication
-  no-op wall-time bound (F12 results); the service unit realizing the
+  the real runner/secrets contract, and one representative long-chain
+  no-op measurement (the no-op bound correction is implemented;
+  year-one cost is projected within budget, not yet measured at
+  length — F12 results); the service unit realizing the
   serving premises + TLS — gates on the speely deployment;
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
@@ -3607,13 +3609,13 @@ outcome already-published — the earlier direct-CLI qualification
 rested on a false premise: the toolchain identity hashes the Clojure
 runtime, dependency cache, and deps.edn, NOT kernel source, so the
 rebuilt wrapper still supplies clj-nix-6b66028f… and the hermetic
-unchanged invocation is measurable now. Activation target = the
-year-one workload of the daily-release premise: at 365 releases one
-no-op verification projects to ≈ 13 s + 364 × 2.4 s ≈ 15 min,
-inside the ≤ 30 min bound with ~2× headroom; the residual per-commit
-cost is each release's own distinct content (manifest, snapshot,
-report — verified once each, irreducible under verify-everything).
-The bound is projected to be reached around chain length ≈ 700
-(roughly two years at daily cadence); revisit then against the
-no-op measurement the scheduled job records per run — no monitoring
-service. 72 tests / 453 assertions pass.
+unchanged invocation is measurable now. Year-one capacity is
+PROJECTED WITHIN BUDGET, not yet measured at length: extrapolating
+the one measured historical marginal, 365 releases ≈ 13 s +
+364 × 2.4 s ≈ 15 min against the ≤ 30 min bound, with the residual
+per-commit cost being each release's own distinct content (manifest,
+snapshot, report — verified once each, irreducible under
+verify-everything) and the bound projected to be reached around
+chain length ≈ 700. ONE representative long-chain no-op measurement
+is required before unattended activation; no further optimization or
+monitoring now. 72 tests / 453 assertions pass.

@@ -1,0 +1,73 @@
+# Fixture-scale mechanics check for the future scheduled release job:
+# the runner-to-origin path — hermetic kernel via nix, signing seed
+# delivered as a secret to a 0600 file, deploy-key push to a protected
+# publication branch, and the transaction outcomes asserted — against
+# the disposable fixture chain (bor/soranoha-f12-race) with the public
+# RFC 8032 fixture keys, a pre-signed withdrawal event from the chain's
+# fixture-inputs branch, and no corpus. Idempotent: the first dispatch
+# publishes the event's successor manifest; every later dispatch must
+# converge to exactly already-applied. Proves runner/secrets/transaction
+# mechanics only; it is not the production job and carries no rights
+# meaning. The deploy key is a live (narrowly scoped) credential: its
+# file is removed even when the job fails.
+name: release-mechanics-check
+on:
+  workflow_dispatch: {}
+
+jobs:
+  governance-append:
+    runs-on: nix-host
+    steps:
+      - name: check out the triggering commit
+        # the dispatched SHA, not a floating branch: the reviewed
+        # workflow must execute its own source even if main advances
+        # between dispatch and clone
+        run: |
+          git clone "https://x:${GITHUB_TOKEN}@${GITHUB_SERVER_URL#https://}/${GITHUB_REPOSITORY}.git" src
+          git -C src fetch origin "$FORGEJO_SHA"
+          git -C src checkout --detach "$FORGEJO_SHA"
+          test "$(git -C src rev-parse HEAD)" = "$FORGEJO_SHA"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: receive credentials and fixture inputs
+        # the origin host key below is pinned from the declarative host
+        # configuration, independently of any connection this job makes
+        run: |
+          umask 077
+          printf '%s' "${{ secrets.SORANOHA_FIXTURE_DEPLOY_KEY }}" > deploy_key
+          printf '%s' "${{ secrets.SORANOHA_FIXTURE_RELEASE_SEED }}" > release.seed
+          printf '%s\n' '[speely.hyakutake-barbel.ts.net]:63333 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPHMPfs2L/J7ei0SCng0EclKKIANQXhZQ19Tiw1FkvK7' > known_hosts
+          export GIT_SSH_COMMAND="ssh -i $PWD/deploy_key -o UserKnownHostsFile=$PWD/known_hosts -o StrictHostKeyChecking=yes"
+          git clone ssh://forgejo@speely.hyakutake-barbel.ts.net:63333/bor/soranoha-f12-race.git chain
+          git -C chain fetch origin fixture-inputs
+          git -C chain --work-tree "$PWD" checkout FETCH_HEAD -- \
+            event.json event.sig release.pub governance.pub
+
+      - name: append the fixture event through the transaction
+        run: |
+          export GIT_SSH_COMMAND="ssh -i $PWD/deploy_key -o UserKnownHostsFile=$PWD/known_hosts -o StrictHostKeyChecking=yes"
+          run_once() {
+            nix run ./src#soranoha-kernel -- governance \
+              --chain-clone "$PWD/chain" \
+              --branch main \
+              --event event.json \
+              --event-sig event.sig \
+              --release-pub release.pub \
+              --governance-pub governance.pub \
+              --release-key release.seed
+          }
+          # both outcomes exit 0, so the deterministic JSON is what
+          # distinguishes a publish from a duplicate: the first dispatch
+          # publishes (later dispatches find the event applied), and the
+          # second invocation must be exactly already-applied
+          first="$(run_once)"
+          printf '%s\n' "$first"
+          printf '%s' "$first" | grep -E '"outcome": "(published|already-applied)"'
+          second="$(run_once)"
+          printf '%s\n' "$second"
+          printf '%s' "$second" | grep -F '"outcome": "already-applied"'
+
+      - name: remove credential files
+        if: always()
+        run: rm -f deploy_key release.seed

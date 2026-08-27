@@ -74,6 +74,29 @@ numbers live in the findings sections and Git history, not here):
   anchor deposit's Zenodo VERSION DOI (F145). Remaining owner item:
   private evidence-record retention policy, before the first real
   withdrawal.
+- Owner decisions (2026-08-27 decision interview): **O2b provisional**
+  — the existing tailnet Forgejo (code.hyakutake-barbel.ts.net) is
+  exposed functionally-public for the test deployment (HTTPS
+  exercised; true public exposure deferred — until then outside
+  verifiers cannot independently attest the current tip, only cited
+  bytes). **TLS owner** — Caddy terminates TLS with
+  Tailscale-provisioned certificates; the service is deployed via the
+  speely nix configuration. **Key ceremony staging** — the offline
+  governance ceremony proceeds now (media + custody inventory + smoke
+  signing); the online RELEASE key is generated at CI provisioning
+  time so it is born where it lives. **First-release rights scope** —
+  statutory groundwork first (Q1–Q5 of the aozora-rights-source
+  contract researched into cited answers for owner adoption), then
+  assessments over the conservative mechanical subset (all
+  contributors なし with parseable expired terms, no
+  translation/foreign-term involvement, catalog agreement), everything
+  else explicitly not-evaluated; owner principle recorded for the Q6
+  resolution: works Aozora releases without qualification should be
+  releasable — to be made auditable as provenance-bearing assessments
+  derived from the catalog under the cited rule, never as
+  flag-authorizes. **Next engineering** — the F12 growth probe against
+  the named origin, budgets proposed for ratification before the run.
+  Main pushed to origin at 48369cea (2026-08-27).
 - Deployment prerequisites (operational tasks, NOT owner decisions —
   F108): O2b hostname/configuration + the F12 growth/SWH probes on
   the named origin; the software-key ceremony (offline generation of

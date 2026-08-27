@@ -3436,5 +3436,35 @@ back by citing the previous release tag.
   recovery), proceed against the private test origin; SWH
   save-code-now probing and the archival observation are public-only
   and deferred to public exposure.
+- **F12 budgets RATIFIED (2026-08-27), recorded before the run.**
+  Evidence base (measured from the production store and the two
+  qualified revisions, stated in artifact-hash terms): unique
+  published-artifact hashes 52,753 (revision A) / 52,783 (revision B)
+  / 52,788 (union) — the incremental revision adds 35 unique blobs,
+  2,668,760 raw bytes; corpus volume 2.570 GB raw (tei 1.826 GB, mean
+  104 KB, max 12.45 MB; plaintext 722 MB, mean 41 KB; tei-validation
+  21.5 MB); manifest size is an ESTIMATE (~7–10 MB) until the probe
+  measures a real one. Probe sequence: genesis full release +
+  incremental release from the two qualified revisions, then up to
+  three further real upstream revisions qualified via the F5 oracle;
+  stop and report if qualification fails. Budgets: capacity limits M1
+  genesis packed size after repack ≤ 2.6 GiB, M4 fresh-full-clone
+  received-pack bytes ≤ 2.65 GiB at probe end; owner-selected service
+  limits M6 repack wall time ≤ 15 min, M7 repack peak RSS ≤ 4 GiB
+  (the run records origin hardware, repack command/configuration,
+  thread count, available memory, maintenance window); proportional
+  thresholds for ORDINARY upstream releases M2 packed growth and M5
+  fetch bytes ≤ new unique raw artifact bytes + 10 MiB overhead
+  (full-generation/toolchain rebuilds are genesis-class events
+  recorded separately — M2/M5 do not apply); alert (not prohibition)
+  M3 > 1,000 loose objects or > 50 MiB per ordinary release before
+  maintenance. Definition: clone/fetch bytes = packfile bytes received
+  on disk (.git/objects/pack growth) over the real network protocol.
+  Origin checks: force-push and deletion protection exercised only on
+  a disposable identically-configured branch/repository; object-size
+  acceptance = pushing and cloning the real 12.45 MB maximum artifact
+  (no synthetic margin); rejected-concurrent-push recovery per §9.
+  365 × 10 MiB ≈ 3.6 GiB is a scenario ceiling for ordinary
+  upstream-only cadence, not a general annual bound.
 - State: main pushed to origin at 48369cea; subsequent documentation
   commits stay local until the next push instruction.

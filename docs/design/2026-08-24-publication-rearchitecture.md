@@ -82,7 +82,20 @@ numbers live in the findings sections and Git history, not here):
   the year-one no-op PERFORMANCE gate alone is retired (unchanged
   invocation measured at chain length 365, 2026-08-27 — F12
   results); the service unit realizing the
-  serving premises + TLS — gates on the speely deployment;
+  serving premises + TLS — AUTHORED 2026-08-28 in the infra repo as
+  soranoha-serve.nix (contract-tested): the backend runs the
+  CHECKED-IN Caddyfile verbatim as the publisher runner's own user
+  (exporter = resolver principal), condition-gated inert until the
+  export step installs it, creating nothing under the publisher
+  root; TLS = the host Caddy terminating with a
+  Tailscale-provisioned certificate on
+  soranoha.hyakutake-barbel.ts.net, transport-only vhost. This
+  fixes the export-layout contract the production workflow's export
+  step must fulfil under the publisher root
+  /var/lib/soranoha-runner: serve/config/Caddyfile (the checked-in
+  file, installed per release) and serve/current (stable name of
+  the active serving tree, atomically re-pointed). Serving anything
+  still gates on the speely deployment and the first export;
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
   2026-08-27 (results at the end of this ledger): capacity,

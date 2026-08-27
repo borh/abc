@@ -57,11 +57,11 @@ jobs:
             nix run ./src#soranoha-kernel -- governance \
               --chain-clone "$PWD/chain" \
               --branch main \
-              --event event.json \
-              --event-sig event.sig \
-              --release-pub release.pub \
-              --governance-pub governance.pub \
-              --release-key release.seed
+              --event "$PWD/event.json" \
+              --event-sig "$PWD/event.sig" \
+              --release-pub "$PWD/release.pub" \
+              --governance-pub "$PWD/governance.pub" \
+              --release-key "$PWD/release.seed"
           }
           # both outcomes exit 0, so the deterministic JSON is what
           # distinguishes a publish from a duplicate: the first dispatch

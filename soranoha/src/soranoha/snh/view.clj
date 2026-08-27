@@ -99,26 +99,43 @@
         (let [[_ type size] (str/split header #" ")
               payload (byte-array (Long/parseLong size))]
           (.readFully out payload)
-          (.skipBytes out 1)
+          (when-not (= 10 (.read out))
+            (throw (EOFException. "batch reader desynchronized after payload")))
           (when (= "blob" type) payload))))))
 
 (defn with-batch
   "Run (f batched-view): read-at on the passed view is served by one
   persistent cat-file --batch subprocess instead of one subprocess per
   read; the subprocess starts under the view's binding, hardening flags,
-  and sanitized environment, and is destroyed when f returns."
+  and sanitized environment, with stderr inherited so it can neither
+  fill a pipe nor disappear. On success the request stream is closed and
+  the subprocess must terminate cleanly — spawned reads check every git
+  exit, and a batch pass ends with the same obligation; on failure the
+  subprocess is destroyed."
   [view f]
-  (let [pb (ProcessBuilder.
-            ^java.util.List (vec (concat ["git"] (:bind view) hardening-flags
-                                         ["cat-file" "--batch"])))]
+  (let [pb (doto (ProcessBuilder.
+                  ^java.util.List (vec (concat ["git"] (:bind view)
+                                               hardening-flags
+                                               ["cat-file" "--batch"])))
+             (.redirectError java.lang.ProcessBuilder$Redirect/INHERIT))]
     (.directory pb (io/file (:dir view)))
     (doto (.environment pb) (.clear) (.putAll (:env view)))
-    (let [p (.start pb)]
+    (let [p (.start pb)
+          in (.getOutputStream p)]
       (try
-        (f (assoc view :batch {:process p
-                               :in (.getOutputStream p)
-                               :out (DataInputStream.
-                                     (BufferedInputStream. (.getInputStream p)))}))
+        (let [result (f (assoc view :batch
+                               {:process p
+                                :in in
+                                :out (DataInputStream.
+                                      (BufferedInputStream.
+                                       (.getInputStream p)))}))]
+          (.close in)
+          (when-not (and (.waitFor p 10 java.util.concurrent.TimeUnit/SECONDS)
+                         (zero? (.exitValue p)))
+            (throw (ex-info "batch reader did not terminate cleanly"
+                            {:alive (.isAlive p)
+                             :exit (when-not (.isAlive p) (.exitValue p))})))
+          result)
         (finally (.destroy p))))))
 
 (defn read-at
@@ -145,3 +162,20 @@
     (when-not (zero? exit)
       (throw (ex-info "commit unreadable in view" {:commit commit :err err})))
     (vec (rest (str/split (str/trim out) #"\s+")))))
+
+(defn changed-paths
+  "Set of repo paths under `prefix` whose entries differ between the trees
+  of `commit-a` and `commit-b`; additions and removals differ by
+  definition. A path absent from this set therefore names bit-identical
+  tree entries in both commits — the tree comparison is itself a
+  reachability proof for the path in each commit where it exists. Paths
+  are NUL-delimited on the wire, so no quoting ambiguity arises."
+  [view commit-a commit-b prefix]
+  (let [{:keys [exit out err]} (run-git view {:out :string}
+                                        ["diff-tree" "-r" "--name-only" "-z"
+                                         "--no-commit-id" commit-a commit-b
+                                         "--" prefix])]
+    (when-not (zero? exit)
+      (throw (ex-info "tree diff unreadable in view"
+                      {:commits [commit-a commit-b] :err err})))
+    (into #{} (remove str/blank?) (str/split out #"\x00"))))

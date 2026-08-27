@@ -14,7 +14,11 @@
   Verification streams: each manifest is decoded exactly once and only the
   head manifest is retained — the result carries the ordered manifest ids,
   the executed governance-event ids, and the chain length, which is
-  everything the transaction consumes.
+  everything the transaction consumes. Within one pass a work artifact's
+  content is verified once: an older commit reuses the younger commit's
+  verification only when the tree comparison proves its entry identical
+  at the same path, so every commit still proves each artifact's path
+  reachability in its own tree.
 
   archive-verification wraps the primitive into a total report over a
   readable view: acquisition failures throw; a readable view always yields
@@ -152,35 +156,54 @@
                 (merge {:commit commit :slug slug}
                        (dissoc (ex-data e) :reason))))))
 
+(defn- checked-artifact!
+  "Verify one work artifact at `commit`; returns {:hex :record} (`:record`
+  only for tei-validation bytes). `reuse?` grants that the same path
+  carried the same verified hex at the already-verified younger commit
+  and the tree comparison proved this commit's entry identical, so the
+  bytes here ARE the bytes verified there; `facts` is the pass-level
+  content cache {hex {:length :record}} those grants draw on. The
+  declared length is checked against the actual bytes on either route."
+  [v commit slug {:strs [type id bytes]} {:keys [reuse? facts]}]
+  (let [hex (id->hex id)
+        path (blob-path hex)
+        known (get @facts hex)
+        check-length! (fn [actual]
+                        (when-not (= bytes actual)
+                          (fail! :blob-length-mismatch
+                                 {:commit commit :slug slug :id id
+                                  :declared bytes :actual actual})))]
+    (if (and known (reuse? path hex)
+             (or (not= type "tei-validation") (:record known)))
+      (do (check-length! (:length known))
+          {:hex hex :record (:record known)})
+      (let [blob (read-required v commit path :missing-blob)]
+        (check-length! (alength blob))
+        (when-not (= hex (hash/sha256-bytes blob))
+          (fail! :blob-hash-mismatch {:commit commit :slug slug :id id}))
+        (let [record (when (= type "tei-validation")
+                       (validation-record commit slug blob))]
+          (swap! facts assoc hex {:length (alength blob) :record record})
+          {:hex hex :record record})))))
+
 (defn- check-works-blobs!
   "Blob presence/hash/length for every per-work artifact, plus the
   validation-summary re-derivation: each tei-validation record must name
   that work's TEI bytes, and invalid_slugs must equal exactly the sorted
-  slugs whose status is failed."
-  [v commit manifest]
+  slugs whose status is failed. Returns {path hex} for every verified
+  artifact — the younger-commit evidence `reuse?` grants draw on when the
+  predecessor is verified next."
+  [v commit manifest reuse]
   (let [failed
         (vec
          (for [{:strs [slug artifacts]} (get manifest "works")
-               :let [by-type (into {} (map (fn [{:strs [type] :as a}] [type a]))
+               :let [by-type (into {}
+                                   (map (fn [{:strs [type] :as a}]
+                                          [type (checked-artifact!
+                                                 v commit slug a reuse)]))
                                    artifacts)
-                     blobs (into {}
-                                 (map (fn [[type {:strs [id bytes]}]]
-                                        (let [hex (id->hex id)
-                                              blob (read-required
-                                                    v commit (blob-path hex)
-                                                    :missing-blob)]
-                                          (when-not (= bytes (alength blob))
-                                            (fail! :blob-length-mismatch
-                                                   {:commit commit :slug slug :id id
-                                                    :declared bytes
-                                                    :actual (alength blob)}))
-                                          (when-not (= hex (hash/sha256-bytes blob))
-                                            (fail! :blob-hash-mismatch
-                                                   {:commit commit :slug slug :id id}))
-                                          [type blob])))
-                                 by-type)
-                     record (validation-record commit slug (get blobs "tei-validation"))
-                     tei-hex (id->hex (get-in by-type ["tei" "id"]))]
+                     record (:record (get by-type "tei-validation"))
+                     tei-hex (:hex (get by-type "tei"))]
                :when (do (when-not (= (:validated-artifact record)
                                       (str "sha256:" tei-hex))
                            (fail! :validation-artifact-mismatch
@@ -193,7 +216,12 @@
       (fail! :validation-summary-mismatch
              {:commit commit
               :declared (get-in manifest ["validation_summary" "invalid_slugs"])
-              :derived failed}))))
+              :derived failed}))
+    (into {}
+          (for [{:strs [artifacts]} (get manifest "works")
+                {:strs [id]} artifacts
+                :let [hex (id->hex id)]]
+            [(blob-path hex) hex]))))
 
 (defn- check-admission! [v commit manifest]
   (let [admission (get manifest "admission")
@@ -291,12 +319,14 @@
       (do (when (seq (view/parents-of v commit))
             (fail! :zero-head-after-genesis {:commit commit}))
           {:empty true})
-      (let [head-manifest (decoded-manifest v commit head)]
+      (let [head-manifest (decoded-manifest v commit head)
+            facts (atom {})]
         (loop [c commit
                m-hex head
                m head-manifest
                chain []
-               gov-ids #{}]
+               gov-ids #{}
+               younger nil]
           (let [parents (view/parents-of v c)]
             (when-not (= 1 (count parents))
               (fail! (if (empty? parents) :nonzero-head-at-root :merge-commit)
@@ -311,24 +341,37 @@
               (when genesis? (check-genesis! c m))
               (check-signature! v c pinned-keys "release-manifest" m-hex
                                 (manifest-sig-path m-hex))
-              (check-works-blobs! v c m)
-              (check-admission! v c m)
-              (let [events (check-events! v c pinned-keys m)
-                    chain (conj chain m-hex)
-                    gov-ids (cond-> gov-ids
-                              (get m "governance_event")
-                              (conj (get m "governance_event")))]
-                (if genesis?
-                  (do (when (seq (view/parents-of v p))
-                        (fail! :zero-head-after-genesis {:commit p}))
-                      {:head head
-                       :head-manifest head-manifest
-                       :chain chain
-                       :governance-events gov-ids
-                       :chain-length (count chain)})
-                  (let [pm (decoded-manifest v p h)]
-                    (check-transition! c m pm events)
-                    (recur p h pm chain gov-ids)))))))))))
+              (let [;; a reuse grant needs both halves of the proof: the
+                    ;; younger, already-verified commit held this hex at
+                    ;; this path, and the tree comparison shows this
+                    ;; commit's entry is identical
+                    reuse? (if younger
+                             (let [changed (view/changed-paths
+                                            v (:commit younger) c "blobs")]
+                               (fn [path hex]
+                                 (and (= hex (get (:verified younger) path))
+                                      (not (contains? changed path)))))
+                             (fn [_ _] false))
+                    verified (check-works-blobs! v c m {:reuse? reuse?
+                                                        :facts facts})]
+                (check-admission! v c m)
+                (let [events (check-events! v c pinned-keys m)
+                      chain (conj chain m-hex)
+                      gov-ids (cond-> gov-ids
+                                (get m "governance_event")
+                                (conj (get m "governance_event")))]
+                  (if genesis?
+                    (do (when (seq (view/parents-of v p))
+                          (fail! :zero-head-after-genesis {:commit p}))
+                        {:head head
+                         :head-manifest head-manifest
+                         :chain chain
+                         :governance-events gov-ids
+                         :chain-length (count chain)})
+                    (let [pm (decoded-manifest v p h)]
+                      (check-transition! c m pm events)
+                      (recur p h pm chain gov-ids
+                             {:commit c :verified verified}))))))))))))
 
 (defn verify-repository-at
   "Verify the repository state at `commit` through `v`, with `pinned-keys`

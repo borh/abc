@@ -512,6 +512,39 @@
       (testing name
         (is (= expect (reason-at (:clone ctx) (craft ctx))))))))
 
+(deftest historical-corruption-behind-a-valid-head-is-still-caught
+  ;; the within-pass reuse grant must never extend a younger commit's
+  ;; verification to a historical tree entry that differs: a chain whose
+  ;; head stores every correct blob but whose genesis stores wrong bytes
+  ;; at one artifact path fails at the historical commit
+  (let [{:keys [clone init-commit]} (fx/make-repos!)
+        genesis (assembled {} nil)
+        target-bytes (fx/work-blob-bytes "plaintext" slug-a "v1")
+        target-hex (hash/sha256-bytes target-bytes)
+        g-manifest (assoc (:core genesis) "prev_manifest" sign/zero-head-hex
+                          "withdrawn" [] "governance_event" nil)
+        {g-commit :commit g-hex :hex}
+        (fx/craft-release!
+         clone {:parents [init-commit]
+                :base-tree-of init-commit
+                :manifest-value g-manifest
+                :extra-files (blob-files
+                              (assoc (:blobs genesis) target-hex
+                                     ;; same length, different bytes: only
+                                     ;; the hash check can reject it
+                                     (byte-array (alength target-bytes)
+                                                 (byte 120))))})
+        successor (assembled {:selection-params {"config" "fixture" "round" 2}}
+                             g-manifest)
+        s-manifest (assoc (:core successor) "prev_manifest" g-hex
+                          "withdrawn" [] "governance_event" nil)
+        {s-commit :commit}
+        (fx/craft-release! clone {:parents [g-commit]
+                                  :base-tree-of g-commit
+                                  :manifest-value s-manifest
+                                  :extra-files (blob-files (:blobs successor))})]
+    (is (= :blob-hash-mismatch (reason-at clone s-commit)))))
+
 (deftest governance-chain-mutations-fail-with-exact-reasons
   (let [ctx (gov-ctx)]
     (testing "the untouched context verifies"

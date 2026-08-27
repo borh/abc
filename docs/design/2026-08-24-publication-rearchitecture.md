@@ -37,9 +37,10 @@ numbers live in the findings sections and Git history, not here):
   hermetic `soranoha-kernel` wrapper. Implementation-review rounds
   1–9 (F157–F183) are recorded in the sections below; suites 59
   tests / 312 assertions, locally and hermetically.
-- Before Slice 3: full-corpus assessment data; the deployment
-  prerequisites below; the F75 ORCID work (the anchor's version DOI)
-  published.
+- Slice 3: implementation underway (fixture/local-origin work needs no
+  gate). Before deployment / the first public signed release:
+  full-corpus assessment data; the deployment prerequisites below; the
+  F75 ORCID work (the anchor's version DOI) published.
 - Owner decisions: ALL RATIFIED (2026-08-25) — O1 (assessment-based
   admission with the round-4 wording), O2a (Forgejo authoritative
   origin architecture), O3(b) (amendable-but-permanent governing
@@ -1946,7 +1947,11 @@ hold; Slices 0–1 ready.
   governance surfaces (withdrawal statement + release history remain
   accessible), and the hash resolver (remains accessible under
   non-erasure); Slice-3 acceptance (4) is one table-driven integration
-  test over the DECLARED route inventory.
+  test over the DECLARED route inventory. [Superseded mechanism: the
+  declared-inventory/router-table formulation was implemented as a
+  test-only Clojure registry and deleted (2026-08-27); the current
+  boundary is the Slice-3 acceptance (4) entry — materialized static
+  paths + the actual server configuration.]
 
 ## External design review round 20 (2026-08-25) — findings F105–F108
 
@@ -3115,17 +3120,24 @@ reconciliation without double publication; (3) at least one
 release has the archival predicate SUCCEED (F77 wording — no
 "archive-verified" state is reached or stored) with all four F12
 checks, with measured (not assumed) archival latency recorded in the
-ledger; (4) **F98/F104 service-withdrawal acceptance — ONE table-driven
-integration test over the za service contract's DECLARED route
-inventory** (an unbounded "no work-facing routes" assertion is not
-testable and would wrongly suppress the public withdrawal history):
-current-corpus surfaces (catalog, search, slug content, downloads)
-EXCLUDE the withdrawn work; historical/governance surfaces (the
-withdrawal statement, release history) REMAIN accessible;
-the hash resolver REMAINS accessible under the explicit non-erasure
-policy. The test exercises the REAL router table — never a parallel
-route registry (round-20 verdict). The protocol-level absence from
-`works` is already checked by the §8 verifier.
+ledger; (4) **F98/F104 service-withdrawal acceptance — against the
+REAL static-serving boundary, per Q3 ("static files, no resolver
+service")**: the acceptance exercises the concrete paths the
+export/deployment step materializes plus the actual checked-in
+static-server configuration — no executable resolver and no test-only
+route registry (a Clojure inventory consumed only by its own test was
+built and DELETED as a parallel-registry seam; do not recreate it).
+The bounded surface partition holds: current-corpus surfaces (catalog,
+slug content, downloads) EXCLUDE the withdrawn work;
+historical/governance surfaces (the withdrawal statement, release
+history) REMAIN accessible; the hash resolver REMAINS accessible under
+the explicit non-erasure policy; search enters the acceptance only
+after a real search surface exists. Materialization + configuration
+are not blocked on the production host: once the server/configuration
+is selected, this acceptance runs locally against the generated tree;
+only real-origin behavior and the SWH observation need external
+deployment. The protocol-level absence from `works` is already checked
+by the §8 verifier.
 
 ### Slice 4 — citability layer
 Quarterly Zenodo snapshot (concept DOI + first version DOI) — **each

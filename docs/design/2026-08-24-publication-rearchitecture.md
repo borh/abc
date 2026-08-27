@@ -120,10 +120,30 @@ numbers live in the findings sections and Git history, not here):
   listen address, so the preserved public Host fell through to the
   backend's default site; the transport vhost now rewrites Host to
   the upstream (header_up, contract-tested), and the earlier
-  probe's "200, not a defect" reading is corrected. Ordered next
-  steps per the review: release-key provisioning; THEN the
-  production workflow against the final one-pointer serving
-  contract;
+  probe's "200, not a defect" reading is corrected. Release key
+  PROVISIONED 2026-08-28 by the owner (born where it lives): pub
+  00d915b90bcb2c9bd375a9e332eff9957af55add1fdce23e83af2d312a957b27
+  (pinned at soranoha/config/keys/release.pub); the seed exists
+  solely as the bor/soranoha Actions secret SORANOHA_RELEASE_SEED —
+  the ONLY workflow secret, single copy per the owner decision, so
+  seed loss ends the chain's ability to publish (recoverable only
+  via full Forgejo restore). Production chain origin
+  bor/soranoha-chain CREATED with protected main (force-push and
+  deletion blocked, ff pushes allowed — the fixture-raced shape);
+  the runner's ssh write identity generated in its state root with
+  pinned known_hosts, its deploy key registered on the chain repo,
+  authentication probed. The production workflow
+  scheduled-release.yml is AUTHORED dispatch-only against the
+  one-pointer serving contract (owner-inputs guard fails closed by
+  name; exit contract 0/3 honored; export + atomic re-point only
+  after a successful outcome; seed file removed even on failure);
+  the cron trigger is added only at unattended activation.
+  Remaining before the first production publish: the offline
+  governance ceremony's public key (pinned as
+  soranoha/config/keys/governance.pub), the owner inputs (total
+  assessment snapshot at abc/data/assessment-snapshot.json and the
+  unblocked publication policy), and the one-time aozora mirror
+  provisioning under the publisher root;
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
   2026-08-27 (results at the end of this ledger): capacity,

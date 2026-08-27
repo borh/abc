@@ -1,0 +1,138 @@
+# The production scheduled release job (ledger: D5 driver + scheduled-runner
+# exit contract, runner/secrets contract, one-pointer serving contract).
+# DISPATCH-ONLY until unattended activation: the cron trigger is added at
+# activation, which still gates on the owner inputs — until they exist this
+# job fails closed at the owner-inputs guard.
+#
+# The contract carried here:
+#   - runs ONLY on the dedicated repository-scoped runner (label
+#     soranoha-release; registration verified server-side as bound to this
+#     repository alone).
+#   - the ONLY workflow secret is the release signing seed
+#     (SORANOHA_RELEASE_SEED), written to a 0600 file and removed even on
+#     failure. The runner owns its ssh identity and pinned known_hosts in
+#     its state root; the job addresses them by absolute path.
+#   - one root: persistent inputs and outputs live under the publisher root
+#     /var/lib/soranoha-runner/soranoha/production (kernel root, chain
+#     clone, aozora mirror) and the serving area /var/lib/soranoha-runner/
+#     serve (versioned trees + the atomic `current` pointer, group-readable
+#     to the serving principal only, `current` installed last).
+#   - exit contract: release exits 0 on published/already-published (then
+#     the serving tree is exported and `current` re-pointed), 3 on requeue
+#     (clean stop — the next scheduled run retries from the new head),
+#     anything else fails the job.
+name: scheduled-release
+on:
+  workflow_dispatch: {}
+
+jobs:
+  release:
+    runs-on: soranoha-release
+    steps:
+      - name: check out the triggering commit
+        # the dispatched SHA, not a floating branch: the job must execute
+        # its own source even if main advances between dispatch and clone
+        run: |
+          helper='!f() { echo "username=x"; echo "password=${GITHUB_TOKEN}"; }; f'
+          git -c credential.helper="$helper" clone "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git" src
+          git -C src fetch origin "$FORGEJO_SHA"
+          git -C src checkout --detach "$FORGEJO_SHA"
+          test "$(git -C src rev-parse HEAD)" = "$FORGEJO_SHA"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: owner inputs present
+        # fail-closed preflight with names: the kernel would also refuse,
+        # but this states exactly which owner input is missing
+        run: |
+          missing=0
+          for f in abc/data/assessment-snapshot.json \
+                   abc/data/publication-policy.edn \
+                   soranoha/config/keys/release.pub \
+                   soranoha/config/keys/governance.pub; do
+            if [ ! -f "src/$f" ]; then
+              echo "MISSING owner input: $f"
+              missing=1
+            fi
+          done
+          if [ "$missing" != 0 ]; then
+            echo "owner inputs incomplete; the release is fail-closed"
+            exit 1
+          fi
+
+      - name: prepare the publisher root
+        run: |
+          export PATH="/run/current-system/sw/bin:$PATH"
+          PROD=/var/lib/soranoha-runner/soranoha/production
+          umask 077
+          mkdir -p "$PROD/root"
+          if [ ! -d "$PROD/aozora/.git" ]; then
+            echo "aozora mirror absent at $PROD/aozora — one-time provisioning required"
+            exit 1
+          fi
+          if [ ! -d "$PROD/chain/.git" ]; then
+            export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
+            git clone ssh://forgejo@speely.hyakutake-barbel.ts.net:63333/bor/soranoha-chain.git "$PROD/chain"
+          fi
+
+      - name: release
+        run: |
+          export PATH="/run/current-system/sw/bin:$PATH"
+          export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
+          PROD=/var/lib/soranoha-runner/soranoha/production
+          umask 077
+          printf '%s' "${{ secrets.SORANOHA_RELEASE_SEED }}" > release.seed
+          set +e
+          nix run ./src#soranoha-kernel -- release \
+            --root "$PROD/root" \
+            --aozora-root "$PROD/aozora" \
+            --assets-root "$PWD/src/abc" \
+            --chain-clone "$PROD/chain" \
+            --branch main \
+            --upstream-origin https://github.com/aozorabunko/aozorabunko.git \
+            --assessment "$PWD/src/abc/data/assessment-snapshot.json" \
+            --policy "$PWD/src/abc/data/publication-policy.edn" \
+            --release-pub "$PWD/src/soranoha/config/keys/release.pub" \
+            --governance-pub "$PWD/src/soranoha/config/keys/governance.pub" \
+            --release-key "$PWD/release.seed"
+          rc=$?
+          set -e
+          echo "$rc" > release.rc
+          case "$rc" in
+            0) echo "release: published or already-published" ;;
+            3) echo "release: requeue — the next scheduled run retries from the new head" ;;
+            *) exit "$rc" ;;
+          esac
+
+      - name: export the serving tree and re-point current
+        # only after a successful release outcome; `current` is the
+        # readiness token, re-pointed atomically and always installed last
+        run: |
+          test "$(cat release.rc)" = 0 || { echo "skipping export (requeue)"; exit 0; }
+          export PATH="/run/current-system/sw/bin:$PATH"
+          PROD=/var/lib/soranoha-runner/soranoha/production
+          SERVE=/var/lib/soranoha-runner/serve
+          head="$(git -C "$PROD/chain" rev-parse main)"
+          umask 027
+          mkdir -p "$SERVE/trees"
+          chgrp soranoha-serve "$SERVE" "$SERVE/trees"
+          chmod 2750 "$SERVE" "$SERVE/trees"
+          if [ -d "$SERVE/trees/$head" ] && [ "$(readlink "$SERVE/current" || true)" = "trees/$head" ]; then
+            echo "serving tree for $head already current"
+            exit 0
+          fi
+          if [ ! -d "$SERVE/trees/$head" ]; then
+            nix run ./src#soranoha-kernel -- serving-tree \
+              --chain-clone "$PROD/chain" \
+              --branch main \
+              --out "$SERVE/trees/$head" \
+              --release-pub "$PWD/src/soranoha/config/keys/release.pub" \
+              --governance-pub "$PWD/src/soranoha/config/keys/governance.pub"
+          fi
+          ln -s "trees/$head" "$SERVE/current.new"
+          mv -T "$SERVE/current.new" "$SERVE/current"
+          echo "current -> trees/$head"
+
+      - name: remove credential files
+        if: always()
+        run: rm -f release.seed

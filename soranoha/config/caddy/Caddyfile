@@ -17,7 +17,13 @@
 http://{$SORANOHA_SERVE_LISTEN} {
 	root * {$SORANOHA_SERVE_ROOT}
 
-	@immutable path /blobs/sha256/* /governance/* /releases/*.json /releases/*.sig
+	# immutable only when the file exists: a digest-addressed 404 must
+	# never be retained, since the same URL can begin existing at the
+	# next serving-tree activation
+	@immutable {
+		path /blobs/sha256/* /governance/* /releases/*.json /releases/*.sig
+		file
+	}
 	header @immutable Cache-Control "public, max-age=31536000, immutable"
 
 	@pointer path /releases/latest /releases/HEAD /works/* /withdrawn/*

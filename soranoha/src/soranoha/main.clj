@@ -475,8 +475,7 @@
     (println (abc-json/write-deterministic-json-str
               {"head" (:head result)
                "releases" (:releases result)
-               "blobs" (:blobs result)
-               "works" (:works result)}))
+               "blobs" (:blobs result)}))
     result))
 
 (defn archive-verify!

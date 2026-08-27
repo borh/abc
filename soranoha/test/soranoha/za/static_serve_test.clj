@@ -59,8 +59,7 @@
   ^Process [tree port]
   (let [scratch (fs/create-temp-dir {:prefix "za-caddy"})
         builder (ProcessBuilder.
-                 [(or (System/getenv "CADDY_BIN") "caddy")
-                  "run" "--config"
+                 ["caddy" "run" "--config"
                   (str (fs/absolutize "config/caddy/Caddyfile"))
                   "--adapter" "caddyfile"])
         env (.environment builder)]
@@ -170,6 +169,15 @@
             (is (= "public, max-age=31536000, immutable"
                    (:cache-control response)))
             (is (= hex (hash/sha256-bytes (:body response)))))))
+
+      (testing "an absent digest path is a 404 no client may retain"
+        (let [absent-hex (apply str (repeat 64 "f"))
+              blob (http-get port (str "/blobs/sha256/ff/" absent-hex))
+              manifest (http-get port (str "/releases/" absent-hex ".json"))]
+          (is (= 404 (:status blob)))
+          (is (nil? (:cache-control blob)))
+          (is (= 404 (:status manifest)))
+          (is (nil? (:cache-control manifest)))))
 
       (testing "the head pointer serves the verified head"
         (let [response (http-get port "/releases/HEAD")]

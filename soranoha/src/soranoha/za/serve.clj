@@ -52,7 +52,7 @@
   `out-dir` with a single exact-target atomic rename. A failed export
   leaves no tree at `out-dir`, and cleanup touches only this
   invocation's own staging directory, never a directory another
-  process made. Returns {:head :releases :blobs :works}."
+  process made. Returns {:head :releases :blobs}."
   [{:keys [clone branch pinned-keys out-dir]}]
   (let [v (view/git-view clone)
         commit (or (repo/fetch! clone branch)
@@ -140,5 +140,4 @@
             (fs/delete-tree staging))))
       {:head (:head chain-result)
        :releases (count chain)
-       :blobs (count blob-hexes)
-       :works (count (get (first manifests) "works"))})))
+       :blobs (count blob-hexes)})))

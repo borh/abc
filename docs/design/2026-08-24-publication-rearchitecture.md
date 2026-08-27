@@ -45,12 +45,24 @@ numbers live in the findings sections and Git history, not here):
   symlink layer), archival-observation CLI (§10 total report over a
   sole archived view), and the F98/F104 service-withdrawal acceptance
   over the checked-in Caddy configuration; suites 71 tests / 452
-  assertions, locally and hermetically. Remaining Slice-3 items are
-  deployment-gated: production acceptances (1)–(3) at the real
-  origin/SWH; the serving premises and TLS owner realized by the
-  service unit. Before deployment / the first public signed release:
-  full-corpus assessment data; the deployment prerequisites below; the
-  F75 ORCID work (the anchor's version DOI) published.
+  assertions, locally and hermetically. Remaining Slice-3 work splits
+  two ways. OWNER INPUTS: assessment evidence as versioned data (total
+  accounting over the population, explicit not-evaluated facts
+  included — not completed legal assessments for every work; only
+  eligible completed assessments enter the first release) PLUS the
+  authorized policy change from :blocked-pending-assessment-migration
+  to :assessment-required (data alone does not lift the block);
+  host and TLS choices; key custody for BOTH keys (the offline
+  governance ceremony AND generating/provisioning the online RELEASE
+  key to CI); the evidence-retention policy before the first real
+  withdrawal. ENGINEERING ONCE THOSE INPUTS EXIST: the unattended
+  Forgejo scheduled release job (D5 — the driver and its exit contract
+  are ready; the job awaits the real runner/secrets contract, pending
+  deployment integration), the service unit realizing the serving
+  premises + TLS, F12 probe execution, and production acceptances
+  (1)–(3) at the real origin/SWH. Before deployment / the first public
+  signed release: the deployment prerequisites below; the F75 ORCID
+  work (the anchor's version DOI) published.
 - Owner decisions: ALL RATIFIED (2026-08-25) — O1 (assessment-based
   admission with the round-4 wording), O2a (Forgejo authoritative
   origin architecture), O3(b) (amendable-but-permanent governing
@@ -3057,7 +3069,9 @@ event-amendment (O3(b) ratified; amends chain verified; withdrawn set
 unchanged); each yields a distinct manifest_id via changed content.
 
 ### Slice 3 — za publishing + CI (rewritten per D17.1/D18.1/D21)
-Preconditions: O1 RATIFIED (owner, 2026-08-25, with the round-4
+Production-deployment prerequisites (local implementation is complete;
+these gate deployment and the first public signed release, never the
+fixture/local work): O1 RATIFIED (owner, 2026-08-25, with the round-4
 wording: public-release-allowed is the inclusion rule's decision) —
 the assessment evidence committed as versioned data (F24 snapshot
 source) remains outstanding; O2 host named and
@@ -3082,7 +3096,13 @@ loaded as pinned verifier configuration; smoke signing by the
 governance key recorded as disposable ceremony evidence (F123)** — the deposit
 carries the actual genesis manifest bytes + signature (F63); full-corpus
 assessment DATA migrated (the schema froze at Slice 2 — F58/round-12
-cleanup: no schema freezes remain before this slice); signatures are raw
+cleanup: no schema freezes remain before this slice; "full-corpus"
+means TOTAL ACCOUNTING — explicit not-evaluated facts included, not
+completed legal assessments for every work; only eligible completed
+assessments enter the first release — and after migration an
+AUTHORIZED policy change from :blocked-pending-assessment-migration to
+:assessment-required is also required: data alone does not lift the
+block); signatures are raw
 detached Ed25519 per F64; the F49/F55/F59 compromise runbook documented
 (chain freezes at the last independent Zenodo checkpoint;
 post-checkpoint signatures contested until an out-of-band cutoff notice;
@@ -3090,7 +3110,8 @@ artifact ids always identify exact bytes). No key-manifest, trust
 branch, or recovery tooling in this slice (O5a — contingency appendix
 only). Additional acceptance: a governance-withdrawal fixture executed
 end-to-end (event signed by the governance key; F39/F62 transition
-invariants verified by the published checker).
+invariants verified by the published checker) — IMPLEMENTED
+(2026-08-27, in the governance-CLI increment).
 Publication = the D17.1 remote compare-and-append: one complete commit
 (blobs + manifest + sig) fast-forward-pushed to the protected branch;
 rejection → CURRENT-STATE reconciliation per spec §9 (F86: DISCARD the
@@ -3099,8 +3120,11 @@ projection and expected content against it → success when the desired
 state is already published / determinism-halt / requeue); an unknown
 push result converges on the same reconciliation via the reachability
 check; scheduled-build no-op per the F67 projection.
-Forgejo auto-release polls upstream; admission is a fail-closed input
-(policy hash in manifest). Serving tree (blobs/, releases/, governance/,
+Forgejo auto-release polls upstream — PENDING deployment integration:
+the invokable driver and its scheduled-runner exit contract are
+implemented, and the unattended job (a production consumer per D5)
+awaits the real runner/secrets contract; admission is a fail-closed
+input (policy hash in manifest). Serving tree (blobs/, releases/, governance/,
 releases/HEAD, plus the work-facing symlink layer works/<slug>/<type>,
 withdrawn/<slug>.json, releases/latest — relative names into chain
 content, no derived documents and no runtime resolution) derives from
@@ -3117,9 +3141,8 @@ cooperating exporter; nothing else creates the destination — the rename
 gives atomic namespace visibility, not no-clobber or crash durability;
 the serving tree is regenerable, the publication repository is the
 durable record), and exporter and resolver run as the
-same OS principal (the installed tree keeps owner-only mode). A derived
-history projection (history.json) is deferred until a router consumer
-requires it — chain history reads from the manifests themselves. Archival: SWH
+same OS principal (the installed tree keeps owner-only mode). Chain
+history reads from the manifests themselves. Archival: SWH
 save-code-now per release,
 non-blocking; **archival status per F113 (one operation, one name):
 `archive_verification(archived_view, C, pinned_keys) → report` — C

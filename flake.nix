@@ -315,6 +315,9 @@
                   pkgs.git
                   pkgs.clj-kondo
                   pkgs.cljfmt
+                  # the static-serving acceptance runs the checked-in
+                  # Caddyfile against an exported tree
+                  pkgs.caddy
                 ];
               }
               ''
@@ -709,6 +712,7 @@
                 abValidatorShells.default
               ];
             packages = [
+              pkgs.caddy
               pkgs.cljfmt
               pkgs.clj-kondo
               pkgs.git

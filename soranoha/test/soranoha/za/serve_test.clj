@@ -101,6 +101,12 @@
         (doseq [hex withdrawn-artifacts]
           (is (fs/exists? (fs/path out (verify/blob-path hex)))))))
 
+    (testing "the work-facing layer names only the current corpus"
+      (is (fs/sym-link? (fs/path out "releases/latest")))
+      (is (= [slug-a]
+             (mapv fs/file-name (fs/list-dir (fs/path out "works")))))
+      (is (fs/sym-link? (fs/path out "withdrawn" (str slug-b ".json")))))
+
     (testing "the governing event and its signature are served"
       (let [event-hex (verify/id->hex (:event withdrawal))]
         (is (fs/exists? (fs/path out (verify/event-path event-hex))))

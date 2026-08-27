@@ -457,8 +457,9 @@
     outcome))
 
 (defn serving-tree!
-  "Export the serving tree (blobs/, releases/, governance/) from the
-  verified chain into --out, which must not yet exist."
+  "Export the serving tree (blobs/, releases/, governance/, plus the
+  work-facing symlink layer works/, withdrawn/, releases/latest) from
+  the verified chain into --out, which must not yet exist."
   [{:keys [chain-clone branch out release-pub governance-pub]}]
   (require-flags! "serving-tree"
                   {"--chain-clone" chain-clone
@@ -474,7 +475,8 @@
     (println (abc-json/write-deterministic-json-str
               {"head" (:head result)
                "releases" (:releases result)
-               "blobs" (:blobs result)}))
+               "blobs" (:blobs result)
+               "works" (:works result)}))
     result))
 
 (defn archive-verify!

@@ -1,6 +1,11 @@
 (ns soranoha.za.serve
-  "The serving tree: blobs/, releases/, and governance/, exported from a
-  fully verified publication chain. Nothing is exported before the whole
+  "The serving tree: blobs/, releases/, and governance/ hold the chain
+  content; works/, withdrawn/, and releases/latest are the work-facing
+  layer — relative symlinks into that content (current works' artifacts
+  by slug and type, each withdrawal statement by slug, the head
+  manifest as the short-cache pointer), so the static file server needs
+  no resolution logic. Everything is exported from a fully verified
+  publication chain. Nothing is exported before the whole
   chain verifies, and only what the chain references is exported: the
   destination must not already exist, and the tree is built aside and
   installed in one rename, so a serving path never holds a partial tree
@@ -41,12 +46,13 @@
   `out-dir`, which must not yet exist. Fetches, fully verifies the head
   with the published checker, then builds the tree — every chain
   manifest + signature, every referenced blob, every governing event +
-  signature, and releases/HEAD — in a uniquely named sibling staging
+  signature, releases/HEAD, and the work-facing symlink layer — in a
+  uniquely named sibling staging
   directory this invocation alone creates, then installs it at
   `out-dir` with a single exact-target atomic rename. A failed export
   leaves no tree at `out-dir`, and cleanup touches only this
   invocation's own staging directory, never a directory another
-  process made. Returns {:head :releases :blobs}."
+  process made. Returns {:head :releases :blobs :works}."
   [{:keys [clone branch pinned-keys out-dir]}]
   (let [v (view/git-view clone)
         commit (or (repo/fetch! clone branch)
@@ -101,6 +107,27 @@
           (write! (verify/event-sig-path hex)
                   (read! (verify/event-sig-path hex))))
         (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
+        ;; the work-facing layer is relative symlinks into chain content
+        ;; — human URLs for the current corpus, slug-addressed withdrawal
+        ;; statements, and the short-cache head pointer — so it adds
+        ;; names, never bytes
+        (let [head-manifest (first manifests)]
+          (fs/create-sym-link (fs/path staging "releases" "latest")
+                              (str (:head chain-result) ".json"))
+          (doseq [work (get head-manifest "works")
+                  :let [dir (fs/path staging "works" (get work "slug"))]
+                  artifact (get work "artifacts")]
+            (fs/create-dirs dir)
+            (fs/create-sym-link
+             (fs/path dir (get artifact "type"))
+             (str "../../" (verify/blob-path
+                            (verify/id->hex (get artifact "id"))))))
+          (doseq [entry (get head-manifest "withdrawn")]
+            (fs/create-dirs (fs/path staging "withdrawn"))
+            (fs/create-sym-link
+             (fs/path staging "withdrawn" (str (get entry "slug") ".json"))
+             (str "../" (verify/event-path
+                         (verify/id->hex (get entry "event")))))))
         ;; the rename targets the exact destination path, never a
         ;; directory to nest under; atomicity here is atomic namespace
         ;; visibility — not no-clobber or crash durability — and the
@@ -113,4 +140,5 @@
             (fs/delete-tree staging))))
       {:head (:head chain-result)
        :releases (count chain)
-       :blobs (count blob-hexes)})))
+       :blobs (count blob-hexes)
+       :works (count (get (first manifests) "works"))})))

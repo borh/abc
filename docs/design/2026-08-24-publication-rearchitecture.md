@@ -70,7 +70,15 @@ numbers live in the findings sections and Git history, not here):
   UNATTENDED production activation gates on the owner inputs above,
   the real runner/secrets contract (the publisher must be a
   DEDICATED, REPOSITORY-SCOPED runner — Forgejo host runners have no
-  meaningful isolation and broader pools could receive the job) —
+  meaningful isolation and broader pools could receive the job; the
+  runner half is AUTHORED 2026-08-27 in the infra repo as
+  soranoha-release-runner.nix — registration token scoped to
+  bor/soranoha, static isolated user with its own state root and
+  umask 077, the single label soranoha-release:host, capacity 1,
+  job-facing nix = the host daemon's package — pinned by the
+  soranoha-release-runner-contracts check and awaiting operator
+  activation; the secrets half, release-key provisioning and the
+  production workflow, remains) —
   the year-one no-op PERFORMANCE gate alone is retired (unchanged
   invocation measured at chain length 365, 2026-08-27 — F12
   results); the service unit realizing the

@@ -45,8 +45,9 @@ jobs:
           export GIT_SSH_COMMAND="ssh -i $PWD/deploy_key -o UserKnownHostsFile=$PWD/known_hosts -o StrictHostKeyChecking=yes"
           git clone ssh://forgejo@speely.hyakutake-barbel.ts.net:63333/bor/soranoha-f12-race.git chain
           git -C chain fetch origin fixture-inputs
-          git -C chain --work-tree "$PWD" checkout FETCH_HEAD -- \
-            event.json event.sig release.pub governance.pub
+          for f in event.json event.sig release.pub governance.pub; do
+            git -C chain cat-file blob "FETCH_HEAD:$f" > "$f"
+          done
 
       - name: append the fixture event through the transaction
         run: |

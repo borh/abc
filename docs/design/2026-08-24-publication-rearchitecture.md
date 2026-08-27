@@ -53,7 +53,10 @@ numbers live in the findings sections and Git history, not here):
   authorized policy change from :blocked-pending-assessment-migration
   to :assessment-required (data alone does not lift the block);
   adoption of the cited statutory answers (Q1–Q5 + old-law
-  transition); key custody for BOTH keys (the offline governance
+  transition — DRAFTED 2026-08-27 as
+  abc/docs/evidence/external/jp-term-statute-citations.md, verbatim
+  statute + 文化庁 guidance with retrieval dates; adoption is the
+  owner's act); key custody for BOTH keys (the offline governance
   ceremony AND generating/provisioning the online RELEASE key to CI);
   the evidence-retention policy before the first real withdrawal.
   ENGINEERING TRACKS (independent; each names only its activation

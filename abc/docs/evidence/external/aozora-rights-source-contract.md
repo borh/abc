@@ -334,6 +334,9 @@ inference from F5b's 280 on-server works.
 
 Each needs an authoritative citation with a retrieval date before any mapping
 depends on it. The parenthetical is the hypothesis to test, not a finding.
+The statutory portions of Q1–Q5 plus the old-law transition are cited in
+`jp-term-statute-citations.md` (retrieved 2026-08-27, pending owner
+adoption); Q6–Q8 remain open, and nothing in that document speaks to them.
 
 - **Q1 — What is the applicable Japanese term, and its transition rule?**
   (Hypothesis: a 50-year post-mortem term, with the 2018-12-30 extension to 70

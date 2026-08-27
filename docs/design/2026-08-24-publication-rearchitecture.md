@@ -70,11 +70,10 @@ numbers live in the findings sections and Git history, not here):
   UNATTENDED production activation gates on the owner inputs above,
   the real runner/secrets contract (the publisher must be a
   DEDICATED, REPOSITORY-SCOPED runner — Forgejo host runners have no
-  meaningful isolation and broader pools could receive the job); the
-  representative long-chain no-op measurement EXECUTED 2026-08-27:
-  758 s (12.6 min) for one unchanged invocation at chain length 365,
-  outcome already-published, against the ≤ 30 min bound — F12
-  results; the service unit realizing the
+  meaningful isolation and broader pools could receive the job) —
+  the year-one no-op PERFORMANCE gate alone is retired (unchanged
+  invocation measured at chain length 365, 2026-08-27 — F12
+  results); the service unit realizing the
   serving premises + TLS — gates on the speely deployment;
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
@@ -3620,25 +3619,46 @@ outcome already-published — the earlier direct-CLI qualification
 rested on a false premise: the toolchain identity hashes the Clojure
 runtime, dependency cache, and deps.edn, NOT kernel source, so the
 rebuilt wrapper still supplies clj-nix-6b66028f… and the hermetic
-unchanged invocation is measurable now. Year-one capacity MEASURED
-AT LENGTH 2026-08-27, retiring the projection: the disposable probe
-chain was extended to chain length 365 (the year-one workload) with
-production-shaped governance successors — one real withdrawal of a
-head work plus a linear run of event-amendments, every manifest a
-real full-corpus manifest (17,601 works after the withdrawal),
-every successor built by the transaction's own successor
-construction and signed with the fixture keys — then verified once
-in full and pushed to the probe origin. Full verification pass at
-chain length 365: 806.8 s (13.4 min), matching the extrapolation
-from the measured historical marginal (13 s + 364 × 2.4 s ≈ 15
-min). End-to-end unchanged invocation through the REAL nix wrapper
-at chain length 365: 758 s (12.6 min), outcome already-published
-against the crafted head's manifest, peak RSS 4.7 GiB, and the run
-absorbed a kernel-derivation rebuild — the ≤ 30 min bound is met at
-the year-one workload with ≈ 2.4× headroom. The residual
-per-commit cost is each release's own distinct content (manifest,
-snapshot, report — verified once each, irreducible under
-verify-everything); the bound is still projected to be reached
-around chain length ≈ 700, at which point a cadence or retention
-decision is the owner's, not further optimization now. No
-monitoring added. 72 tests / 453 assertions pass.
+unchanged invocation is measurable now. Year-one chain-length cost
+MEASURED 2026-08-27, retiring the projection. Construction: the
+disposable probe chain (bor/soranoha-f12-probe, branch main) was
+extended from head commit
+b265c1505b1f9a055ea047c3821485200af09a8c to
+4f06199716fadebd17426788e81aebdc7171d035 — 366 first-parent commits
+(zero state + 365 release commits), one real withdrawal of a head
+work plus 362 linear event-amendments, every manifest a real
+full-corpus manifest (17,601 works after the withdrawal; 365
+manifest files, 3,321,645,792 B logical), every successor built by
+the transaction's own successor construction and signed with the
+fixture keys; head manifest
+78c04aac9438426b515fc58b01bc0b940cc6f10058070bca872ea31756ad3190.
+This is a GOVERNANCE-HEAVY, full-manifest chain-LENGTH measurement,
+not 365 independent releases: by construction the amendments
+inherit the same assessment snapshot and admission report, so this
+chain's per-commit distinct content is the manifest and event;
+per-release distinct-content cost is evidenced separately by the
+two REAL releases' measured historical marginal (≈ 2.4 s/commit),
+which this chain's observed marginal matches
+((806.8 − 13) / 364 ≈ 2.2 s/commit). Measurements, in run order on
+the same persistent clone: (1) full verification pass at chain
+length 365 immediately after crafting, timed in-process
+(System/nanoTime around verify-repository-at): 806.8 s, with the
+365 crafted manifests still LOOSE objects; (2) the script's
+end-of-run fetch then auto-packed them — object store after: base
+pack 628,680,029 B + new pack 41,555,798 B, zero loose; (3)
+end-to-end unchanged invocation via the same recorded release-CLI
+command (concurrency 16) through the REAL nix wrapper, GNU time
+wall clock, fresh JVM, page cache warm from the preceding verify,
+kernel derivation rebuilt by nix during the run: 758.3 s, outcome
+already-published against the head manifest above, peak RSS
+4.7 GiB. The 758 s figure is NOT conservative: it is faster than
+the standalone 806.8 s verification, i.e. the packed store and warm
+cache outweighed the rebuild. Both observations sit under the
+≤ 30 min bound with over 2.2× headroom — the bound is met at the
+year-one workload. It is still projected to be reached around chain
+length ≈ 700; the response then is REMEASURE, then choose cadence
+or a verifier improvement — v1's append-only chain back to genesis
+with permanent manifest/blob roots means pruning history cannot
+reduce verification cost, and a chain rollover would be a separate
+protocol/trust decision, not retention. No monitoring added. 72
+tests / 453 assertions pass.

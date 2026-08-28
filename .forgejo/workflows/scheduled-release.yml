@@ -100,10 +100,12 @@ jobs:
           export PATH="/run/current-system/sw/bin:$PATH"
           export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
           PROD=/var/lib/soranoha-runner/soranoha/production
-          seed="$SORANOHA_RELEASE_SEED"
+          _soranoha_release_seed="$SORANOHA_RELEASE_SEED"
+          export -n _soranoha_release_seed
           unset SORANOHA_RELEASE_SEED
           set +e
-          printf '%s' "$seed" | env -u SORANOHA_RELEASE_SEED nix run ./src#soranoha-kernel -- release \
+          printf '%s' "$_soranoha_release_seed" |
+            env -u SORANOHA_RELEASE_SEED -u _soranoha_release_seed nix run ./src#soranoha-kernel -- release \
             --root "$PROD/root" \
             --aozora-root "$PROD/aozora" \
             --assets-root "$PWD/src/abc" \

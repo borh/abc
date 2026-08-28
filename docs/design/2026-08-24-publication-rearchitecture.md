@@ -3234,8 +3234,11 @@ signing in place (F119 reconciliation; key medium amended by owner
 RELEASE key + ONE offline GOVERNANCE software Ed25519 key generated
 offline, held as TWO authorized custody copies on separately
 controlled encrypted media (the copy operation recorded in the
-custody inventory); NO repository key copies (F122); **the F54
-minimal trust anchor published BEFORE the first signed release: the
+custody inventory); NO key copies in the publication repository or
+serving trees — deployment source may carry the public keys as
+non-authenticating pinned verifier configuration (F122 as clarified
+2026-08-28); **the F54 minimal trust anchor published BEFORE FIRST
+PUBLICATION OF THE SIGNED GENESIS RELEASE: the
 ROLE-BOUND assignment — RELEASE = {release key}, GOVERNANCE =
 {governance key} — as key bytes + fingerprints in the FIRST immutable
 Zenodo deposit (F126: the anchor authenticates roles, never a flat
@@ -3400,13 +3403,16 @@ back by citing the previous release tag.
   outside the wire protocol. The ceremony has the governance key sign
   a fixed protocol conformance vector as disposable evidence (F117
   analog). Key bytes + fingerprints go in the independent anchor +
-  pinned verifier configuration ONLY; v1 publishes NO repository key
-  copies (F122/F138). Publish the minimal
-  trust anchor on Zenodo (F59/F63: the deposit carries key bytes +
-  fingerprints + the ACTUAL genesis manifest bytes and signature — never
-  a record that merely names a head — making it both the first pin
-  and the first independent authorship checkpoint) BEFORE the first
-  signed release — owner, before Slice 3. **F70: the Zenodo credential
+  pinned verifier configuration ONLY; no key copies in the
+  publication repository or serving trees — deployment source may
+  carry the public keys as non-authenticating pinned verifier
+  configuration (F122/F138 as clarified 2026-08-28). Publish the
+  minimal trust anchor on Zenodo (F59/F63: the deposit carries key
+  bytes + fingerprints + the ACTUAL genesis manifest bytes and
+  signature — never a record that merely names a head — making it
+  both the first pin and the first independent authorship
+  checkpoint) BEFORE FIRST PUBLICATION OF THE SIGNED GENESIS
+  RELEASE — owner, before Slice 3. **F70: the Zenodo credential
   must be UNAVAILABLE to release CI — deposits are a manual owner action
   or a separately controlled MFA workflow; only then is the checkpoint
   operationally independent.** Quarterly Zenodo deposits thereafter

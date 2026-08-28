@@ -145,11 +145,13 @@ numbers live in the findings sections and Git history, not here):
   scheduled-release.yml is AUTHORED dispatch-only against the
   one-pointer serving contract (owner-inputs guard fails closed by
   name; exit contract 0/3 honored; export + atomic re-point only
-  after a successful outcome; the seed is delivered through an
-  environment binding piped to the kernel's stdin and NEVER touches
-  disk — crash-safe by construction, verified end-to-end through
-  the hermetic wrapper — replacing the earlier write-then-cleanup
-  file, whose cleanup a crash could skip);
+  after a successful outcome; the workflow creates NO plaintext key
+  file and build children do NOT inherit the seed — copied to a
+  non-exported shell variable, the exported binding unset, piped to
+  the kernel's stdin with the variable scrubbed from the child
+  environment; stdin passthrough verified end-to-end through the
+  hermetic wrapper — replacing the earlier write-then-cleanup file,
+  whose cleanup a crash could skip);
   the cron trigger is added only at unattended activation. First
   dispatch EXECUTED 2026-08-28 (run 2724): the job was picked up by
   the dedicated runner (uuid 25346496…, the server-side-verified

@@ -203,8 +203,11 @@ the ASSEMBLER against the rule bytes it holds.
   - governance events: `snh-governance-event-sig/1:<event hex>`
 - `.sig` file: EXACTLY 64 raw Ed25519 signature bytes.
 - Key-bytes file (`.pub`; the encoding for key bytes in the
-  trust-anchor deposit and pinned verifier configuration — v1
-  publishes NO repository key copies, F116/F122): EXACTLY 65 bytes —
+  trust-anchor deposit and pinned verifier configuration — v1's
+  PUBLICATION repositories and serving trees contain NO key copies;
+  deployment source MAY carry public keys as NON-AUTHENTICATING
+  pinned verifier configuration; only the trust anchor authenticates
+  the role assignment, F116/F122): EXACTLY 65 bytes —
   64 lowercase ASCII hex characters (the 32 raw Ed25519 public-key
   bytes) + one LF.
 - Key FINGERPRINT: lowercase sha256 hex over the DECODED 32 raw key
@@ -279,10 +282,13 @@ RELEASE = {K_release}; GOVERNANCE = {K_governance}. `pinned_keys`
 PRESERVES that partition; the role
 sets MUST be disjoint, and an un-roled/overlapping configuration is
 INVALID — otherwise an accidental flat configuration could authorize
-the online release key for governance. v1 publishes NO
-repository key copies (F116/F122 — a repo-hosted copy cannot
-authenticate itself and has no consumer; even an "optional
-non-normative" copy invites synchronization questions).
+the online release key for governance. v1's PUBLICATION repositories
+and serving trees contain NO key copies (F116/F122 — a copy hosted
+in the publication channel cannot authenticate itself and has no
+consumer; even an "optional non-normative" copy invites
+synchronization questions). Deployment source MAY carry the public
+keys as NON-AUTHENTICATING pinned verifier configuration; only the
+Zenodo/ORCID anchor authenticates the role assignment.
 
 Signer note (non-normative): any signer producing plain Ed25519 over
 the §6 message satisfies this section. The v1 governance key (owner

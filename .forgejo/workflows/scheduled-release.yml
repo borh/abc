@@ -9,11 +9,14 @@
 #     soranoha-release; registration verified server-side as bound to this
 #     repository alone).
 #   - the ONLY workflow secret is the release signing seed
-#     (SORANOHA_RELEASE_SEED), delivered through an environment binding and
-#     piped to the kernel's stdin — it never touches disk, so no cleanup
-#     step can be skipped by a crash. (Verified: the hermetic wrapper
-#     preserves stdin; a piped wrong seed fails at the seed-pin
-#     correspondence check.) The runner owns its ssh identity and pinned
+#     (SORANOHA_RELEASE_SEED). The workflow creates NO plaintext key file
+#     (so no cleanup step a crash could skip) and BUILD CHILDREN DO NOT
+#     INHERIT THE SEED: it is copied to a non-exported shell variable, the
+#     exported binding is unset, and the value is piped to the kernel's
+#     stdin with the variable additionally scrubbed from the child
+#     environment. (Verified: the hermetic wrapper preserves stdin; a piped
+#     wrong seed fails at the seed-pin correspondence check.)
+#     The runner owns its ssh identity and pinned
 #     known_hosts in its state root; the job addresses them by absolute
 #     path. The role pins are root-owned files under /etc/soranoha/pinned,
 #     immutable to the runner.
@@ -97,8 +100,10 @@ jobs:
           export PATH="/run/current-system/sw/bin:$PATH"
           export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
           PROD=/var/lib/soranoha-runner/soranoha/production
+          seed="$SORANOHA_RELEASE_SEED"
+          unset SORANOHA_RELEASE_SEED
           set +e
-          printf '%s' "$SORANOHA_RELEASE_SEED" | nix run ./src#soranoha-kernel -- release \
+          printf '%s' "$seed" | env -u SORANOHA_RELEASE_SEED nix run ./src#soranoha-kernel -- release \
             --root "$PROD/root" \
             --aozora-root "$PROD/aozora" \
             --assets-root "$PWD/src/abc" \

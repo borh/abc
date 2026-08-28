@@ -175,7 +175,18 @@ numbers live in the findings sections and Git history, not here):
   (above) — both pinned pubs pass the kernel's
   validate-pinned-keys!, and live inspection confirmed the pin
   files' encodings and that the serving principal cannot read the
-  publisher's state. Remaining before FIRST PUBLICATION OF THE
+  publisher's state. Post-switch verification EXECUTED 2026-08-28 on
+  the activated closure: the pins are REAL root-owned mode-0444
+  files (activation copies, not store symlinks) carrying the
+  ceremony values; as soranoha-runner both pins READ while append,
+  sibling-create, and unlink in the pin directory were each
+  Permission denied; and a fresh dispatch (run 2748) checked out
+  the pushed tip 47d54fe6 SHA-pinned and failed closed naming ONLY
+  the one remaining absent owner input
+  (abc/data/assessment-snapshot.json) — the pins and the policy
+  file now pass the guard's presence checks, the policy content
+  still blocks release, and the entire remaining path to genesis
+  runs through the adoption boundary. Remaining before FIRST PUBLICATION OF THE
   SIGNED GENESIS RELEASE: the owner inputs (total assessment
   snapshot at abc/data/assessment-snapshot.json and the unblocked
   publication policy), then the ONE-TIME GENESIS CEREMONY — the

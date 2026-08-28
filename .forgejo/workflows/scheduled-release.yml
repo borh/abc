@@ -9,9 +9,14 @@
 #     soranoha-release; registration verified server-side as bound to this
 #     repository alone).
 #   - the ONLY workflow secret is the release signing seed
-#     (SORANOHA_RELEASE_SEED), written to a 0600 file and removed even on
-#     failure. The runner owns its ssh identity and pinned known_hosts in
-#     its state root; the job addresses them by absolute path.
+#     (SORANOHA_RELEASE_SEED), delivered through an environment binding and
+#     piped to the kernel's stdin — it never touches disk, so no cleanup
+#     step can be skipped by a crash. (Verified: the hermetic wrapper
+#     preserves stdin; a piped wrong seed fails at the seed-pin
+#     correspondence check.) The runner owns its ssh identity and pinned
+#     known_hosts in its state root; the job addresses them by absolute
+#     path. The role pins are root-owned files under /etc/soranoha/pinned,
+#     immutable to the runner.
 #   - one root: persistent inputs and outputs live under the publisher root
 #     /var/lib/soranoha-runner/soranoha/production (kernel root, chain
 #     clone, aozora mirror) and the serving area /var/lib/soranoha-runner/
@@ -44,12 +49,13 @@ jobs:
       - name: owner inputs present
         # fail-closed preflight with names: the kernel would also refuse,
         # but this states exactly which owner input is missing. The pinned
-        # keys are DEPLOYMENT configuration under the publisher root, never
-        # repository content (F122/F126: repo-hosted keys cannot
-        # authenticate themselves; key bytes live in the independent anchor
-        # and the pinned verifier configuration only).
+        # keys are root-owned DEPLOYMENT configuration (/etc/soranoha/
+        # pinned), immutable to this job's own principal, never repository
+        # content (F122/F126: repo-hosted keys cannot authenticate
+        # themselves; key bytes live in the independent anchor and the
+        # pinned verifier configuration only).
         run: |
-          PINNED=/var/lib/soranoha-runner/soranoha/production/pinned
+          PINNED=/etc/soranoha/pinned
           missing=0
           for f in abc/data/assessment-snapshot.json \
                    abc/data/publication-policy.edn; do
@@ -85,14 +91,14 @@ jobs:
           fi
 
       - name: release
+        env:
+          SORANOHA_RELEASE_SEED: ${{ secrets.SORANOHA_RELEASE_SEED }}
         run: |
           export PATH="/run/current-system/sw/bin:$PATH"
           export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
           PROD=/var/lib/soranoha-runner/soranoha/production
-          umask 077
-          printf '%s' "${{ secrets.SORANOHA_RELEASE_SEED }}" > release.seed
           set +e
-          nix run ./src#soranoha-kernel -- release \
+          printf '%s' "$SORANOHA_RELEASE_SEED" | nix run ./src#soranoha-kernel -- release \
             --root "$PROD/root" \
             --aozora-root "$PROD/aozora" \
             --assets-root "$PWD/src/abc" \
@@ -101,9 +107,9 @@ jobs:
             --upstream-origin https://github.com/aozorabunko/aozorabunko.git \
             --assessment "$PWD/src/abc/data/assessment-snapshot.json" \
             --policy "$PWD/src/abc/data/publication-policy.edn" \
-            --release-pub /var/lib/soranoha-runner/soranoha/production/pinned/release.pub \
-            --governance-pub /var/lib/soranoha-runner/soranoha/production/pinned/governance.pub \
-            --release-key "$PWD/release.seed"
+            --release-pub /etc/soranoha/pinned/release.pub \
+            --governance-pub /etc/soranoha/pinned/governance.pub \
+            --release-key /dev/stdin
           rc=$?
           set -e
           echo "$rc" > release.rc
@@ -135,13 +141,9 @@ jobs:
               --chain-clone "$PROD/chain" \
               --branch main \
               --out "$SERVE/trees/$head" \
-              --release-pub /var/lib/soranoha-runner/soranoha/production/pinned/release.pub \
-              --governance-pub /var/lib/soranoha-runner/soranoha/production/pinned/governance.pub
+              --release-pub /etc/soranoha/pinned/release.pub \
+              --governance-pub /etc/soranoha/pinned/governance.pub
           fi
           ln -s "trees/$head" "$SERVE/current.new"
           mv -T "$SERVE/current.new" "$SERVE/current"
           echo "current -> trees/$head"
-
-      - name: remove credential files
-        if: always()
-        run: rm -f release.seed

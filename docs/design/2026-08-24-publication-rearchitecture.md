@@ -69,19 +69,17 @@ numbers live in the findings sections and Git history, not here):
   runner, secret-channel seed, deploy-key push to the protected
   fixture chain, first dispatch published / re-runs exactly
   already-applied, independently verified from a second host);
-  UNATTENDED production activation gates on the owner inputs above,
-  the real runner/secrets contract (the publisher must be a
-  DEDICATED, REPOSITORY-SCOPED runner — Forgejo host runners have no
-  meaningful isolation and broader pools could receive the job; the
-  runner half is AUTHORED 2026-08-27 in the infra repo as
-  soranoha-release-runner.nix — registration token scoped to
-  bor/soranoha, static isolated user with its own state root and
-  umask 077, the single label soranoha-release:host, capacity 1,
-  job-facing nix = the host daemon's package — pinned by the
-  soranoha-release-runner-contracts check and awaiting operator
-  activation; the secrets half, release-key provisioning and the
-  production workflow, remains) —
-  the year-one no-op PERFORMANCE gate alone is retired (unchanged
+  UNATTENDED production activation now gates on the owner inputs
+  above, the one-time genesis ceremony below, and the cron trigger;
+  the runner/secrets contract is CLOSED 2026-08-28 — the dedicated
+  repository-scoped runner (soranoha-release-runner.nix: token
+  scoped to bor/soranoha, static isolated user, own state root,
+  umask 077, single label, capacity 1, host-daemon nix,
+  contract-tested) is ACTIVE with its registration scope verified
+  server-side, the release key is provisioned, and the production
+  workflow is authored and dispatch-proven fail-closed (all
+  recorded below) —
+  the year-one no-op PERFORMANCE gate is retired (unchanged
   invocation measured at chain length 365, 2026-08-27 — F12
   results); the service unit realizing the
   serving premises + TLS — AUTHORED 2026-08-28 in the infra repo as
@@ -123,17 +121,22 @@ numbers live in the findings sections and Git history, not here):
   backend's default site; the transport vhost now rewrites Host to
   the upstream (header_up, contract-tested), and the earlier
   probe's "200, not a defect" reading is corrected. Release key
-  PROVISIONED 2026-08-28 by the owner (born where it lives): pub
-  00d915b90bcb2c9bd375a9e332eff9957af55add1fdce23e83af2d312a957b27
-  (pinned in the DEPLOYMENT verifier configuration under the
-  publisher root, production/pinned/release.pub — F122/F126: no
-  repository key copies, a repo-hosted key cannot authenticate
-  itself; an initial repo copy was made and REMOVED same day); the
-  seed exists
-  solely as the bor/soranoha Actions secret SORANOHA_RELEASE_SEED —
-  the ONLY workflow secret, single copy per the owner decision, so
-  seed loss ends the chain's ability to publish (recoverable only
-  via full Forgejo restore). Production chain origin
+  PROVISIONED 2026-08-28 by the owner (born where it lives). The
+  key bytes live ONLY in the pinned verifier configuration and,
+  later, the independent anchor (F116/F122) — this ledger records
+  no key values. The pins are ROOT-OWNED read-only files at
+  /etc/soranoha/pinned/{release,governance}.pub, deployed through
+  the infra configuration and immutable to the publisher's own
+  principal (review blocker 2026-08-28: runner-owned pins would let
+  a compromised workflow rewrite its own trust roots; an interim
+  runner-owned copy was removed). An early same-day repository copy
+  of the release pub survives in git history and is explicitly
+  NON-AUTHORITATIVE (F126: a repo-hosted key authenticates
+  nothing); the authoritative pointer is the ORCID/Zenodo anchor
+  once published. The seed exists solely as the bor/soranoha
+  Actions secret SORANOHA_RELEASE_SEED — the ONLY workflow secret,
+  single copy per the owner decision, so seed loss ends the chain's
+  ability to publish (recoverable only via full Forgejo restore). Production chain origin
   bor/soranoha-chain CREATED with protected main (force-push and
   deletion blocked, ff pushes allowed — the fixture-raced shape);
   the runner's ssh write identity generated in its state root with
@@ -142,7 +145,11 @@ numbers live in the findings sections and Git history, not here):
   scheduled-release.yml is AUTHORED dispatch-only against the
   one-pointer serving contract (owner-inputs guard fails closed by
   name; exit contract 0/3 honored; export + atomic re-point only
-  after a successful outcome; seed file removed even on failure);
+  after a successful outcome; the seed is delivered through an
+  environment binding piped to the kernel's stdin and NEVER touches
+  disk — crash-safe by construction, verified end-to-end through
+  the hermetic wrapper — replacing the earlier write-then-cleanup
+  file, whose cleanup a crash could skip);
   the cron trigger is added only at unattended activation. First
   dispatch EXECUTED 2026-08-28 (run 2724): the job was picked up by
   the dedicated runner (uuid 25346496…, the server-side-verified
@@ -161,17 +168,28 @@ numbers live in the findings sections and Git history, not here):
   persistent-copy inventory declared and owner-held on paper, and
   smoke signing over the fixed conformance vector
   snh-governance-event-sig/1:<64 zeros> verified on the offline
-  machine (disposable ceremony evidence, not a frozen fixture); pub
-  8c1b208973fb14c5700d60d750685775bf63414e4cb0d4be6572be3d8c9bf600,
-  pinned as production/pinned/governance.pub in the deployment
-  verifier configuration — both pinned pubs pass the kernel's
-  validate-pinned-keys!. Remaining before the first production
-  publish: the owner inputs (total assessment snapshot at
-  abc/data/assessment-snapshot.json and the unblocked publication
-  policy), then at genesis the F54/F70 Zenodo trust-anchor deposit
-  (role-bound key assignment + the actual genesis manifest bytes
-  and signature, credential-separated from release CI) BEFORE the
-  first signed release;
+  machine (disposable ceremony evidence, not a frozen fixture); the
+  public key is pinned in the root-owned verifier configuration
+  (above) — both pinned pubs pass the kernel's
+  validate-pinned-keys!, and live inspection confirmed the pin
+  files' encodings and that the serving principal cannot read the
+  publisher's state. Remaining before FIRST PUBLICATION OF THE
+  SIGNED GENESIS RELEASE: the owner inputs (total assessment
+  snapshot at abc/data/assessment-snapshot.json and the unblocked
+  publication policy), then the ONE-TIME GENESIS CEREMONY — the
+  anchor must contain the exact genesis manifest and signature and
+  the ORCID record must name the deposit's version DOI before
+  publication, but the release command assembles, signs, commits,
+  and pushes in one operation, so genesis is prepared out-of-band
+  once, with no permanent prepare/publish protocol added: (1)
+  produce the candidate genesis against a QUARANTINE ref rooted at
+  the exact production pre-genesis commit; (2) verify the
+  candidate; (3) deposit its manifest bytes, signature, and the
+  role-bound key assignment to Zenodo (F54/F70,
+  credential-separated from release CI); (4) add the deposit's
+  version DOI to the ORCID record (F75/F145); (5) CAS-push that
+  exact prepared commit to the production branch; (6) the scheduled
+  workflow serves only later releases;
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
   2026-08-27 (results at the end of this ledger): capacity,

@@ -8,8 +8,10 @@
 ;; transaction, with the assessment snapshot, policy value, signing seed,
 ;; and pinned verifier keys as fail-closed file inputs. `governance`
 ;; appends one offline-signed event; `serving-tree` exports the verified
-;; chain's serving tree; `archive-verify` runs the archival observation
-;; over a sole archived view. `compare` checks per-work TEI/plaintext
+;; chain's serving tree; `assessment-scaffold` emits the total
+;; not-evaluated assessment snapshot over the current selection;
+;; `archive-verify` runs the archival observation over a sole archived
+;; view. `compare` checks per-work TEI/plaintext
 ;; bytes against a reference tree through the trace store; `delta` runs
 ;; the three-set delta oracle over two run reports; `verify` runs the
 ;; kura determinism + fixity report.
@@ -40,6 +42,7 @@
             [soranoha.yomi.select :as select]
             [soranoha.za.oracle :as oracle]
             [soranoha.za.release :as za-release]
+            [soranoha.za.scaffold :as scaffold]
             [soranoha.za.serve :as serve])
   (:gen-class))
 
@@ -478,6 +481,38 @@
                "blobs" (:blobs result)}))
     result))
 
+(defn assessment-scaffold!
+  "Generate the total not-evaluated assessment snapshot for the current
+  selection at --aozora-root, writing canonical protocol bytes to --out.
+  --out must not yet exist: the snapshot is versioned owner-input data,
+  and replacing one must be an explicit act, never a rerun side effect.
+  The provenance the ledger records — source commit, catalog hash,
+  snapshot id, counts — is printed as the command's output."
+  [{:keys [aozora-root out]}]
+  (require-flags! "assessment-scaffold"
+                  {"--aozora-root" aozora-root
+                   "--out" out})
+  (when (fs/exists? (str out))
+    (throw (ex-info "refusing to overwrite existing --out"
+                    {:out (str out)})))
+  (let [commit (source-provenance! aozora-root)
+        {:keys [csv-text catalog-csv-hash]} (catalog/read-catalog-zip aozora-root)
+        rows (catalog/read-rows-from-string csv-text)
+        {:keys [candidates]} (select/select-candidates aozora-root rows)
+        enc (scaffold/snapshot rows candidates)]
+    (fs/write-bytes (str out) (:bytes enc))
+    (println (abc-json/write-deterministic-json-str
+              {"aozora_git_commit" commit
+               "catalog_csv_hash" catalog-csv-hash
+               "snapshot_id" (:id enc)
+               "candidates" (count candidates)
+               "contributions" (transduce
+                                (map #(count (get % "contributions")))
+                                + 0 (get (:value enc) "candidates"))
+               "ragged_rows" (count (filter #(get % catalog/ragged-key)
+                                            rows))}))
+    enc))
+
 (defn archive-verify!
   "One archival observation: run the chain verifier with the archived
   copy as the sole repository view and print the disposable report,
@@ -575,12 +610,13 @@
                        (when-not (#{:published :already-applied} outcome)
                          (System/exit 1)))
         "serving-tree" (serving-tree! opts)
+        "assessment-scaffold" (assessment-scaffold! opts)
         "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
                            (System/exit 1))
         "verify" (when-not (:ok? (verify! opts))
                    (System/exit 1))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|delta|release|governance|serving-tree|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|compare|delta|release|governance|serving-tree|assessment-scaffold|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

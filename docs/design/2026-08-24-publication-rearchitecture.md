@@ -49,7 +49,35 @@ numbers live in the findings sections and Git history, not here):
   two ways. OWNER INPUTS: assessment evidence as versioned data (total
   accounting over the population, explicit not-evaluated facts
   included — not completed legal assessments for every work; only
-  eligible completed assessments enter the first release) PLUS the
+  eligible completed assessments enter the first release) — DONE
+  2026-08-28: the snapshot-migration produced
+  abc/data/assessment-snapshot.json via the kernel's new
+  assessment-scaffold subcommand (same selection join and canonical
+  encoder as the release path, so slug totality and canonical bytes
+  hold by construction). Every work assessment and every
+  contribution is the EXPLICIT not-evaluated fact: under the adopted
+  derivations there are ZERO eligible completed assessments today —
+  D-4 keeps Q6–Q8 open, so no third-party assertion (including
+  Aozora's own flag) is usable, and no per-work D-3 findings exist.
+  Provenance: aozora 0e9ea3e586 (the qualification stop point = the
+  production mirror's HEAD), catalog csv sha256 c0ace54c7ac037e5…,
+  snapshot id snh:1:assessment-snapshot:cebf79535c693f30…, 17,602
+  candidates (the full selection), 19,092 contributions (all
+  catalog rows sharing each candidate's 作品ID, deduplicated,
+  role-token:person-id ids; unknown roles, malformed person ids,
+  and ragged rows in a selected work's row set fail the scaffold
+  closed; 0 ragged rows observed), two generation runs
+  byte-identical. Verified end-to-end: the file boundary-decodes as
+  protocol bytes and the inclusion rule partitions it 0 admitted /
+  0 excluded / 17,602 quarantined — so an authorized policy change
+  against THIS snapshot yields a genesis release publishing ZERO
+  works (total quarantine evidence only); works enter later
+  releases as completed assessments merge in under their own
+  authority, and whether genesis precedes or awaits the first
+  completed assessments is the owner's timing choice at the policy
+  change. A dispatch now passes the owner-inputs guard and fails
+  fast at release preflight on :rights-blocked, before any build.
+  REMAINING: the
   authorized policy change from :blocked-pending-assessment-migration
   to :assessment-required (data alone does not lift the block);
   adoption of the cited statutory answers (Q1–Q5 + old-law

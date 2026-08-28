@@ -26,11 +26,13 @@ transition question named in the 2026-08-27 owner decision record
 (soranoha ledger). It performs no assessment of any work and says
 nothing about what Aozora Bunko did (Q6–Q8 remain open).
 
-All retrievals 2026-08-27 (UTC). Retrieval channels: the e-Gov law
-API (laws.e-gov.go.jp, v1 article endpoint and v2
-`elm=SupplProvision`) for consolidated statute text, and 文化庁
+All retrievals 2026-08-27 (UTC), except S-E (旧著作権法 text,
+retrieved 2026-08-28 during the D-1 amendment). Retrieval channels:
+the e-Gov law API (laws.e-gov.go.jp, v1 article endpoint and v2
+`elm=SupplProvision`) for consolidated statute text, 文化庁
 publications read directly (PDF pages rendered, not paraphrased from
-search results). Statute text is bound to exact consolidated
+search results), and the CRIC domestic-law database for the repealed
+old law e-Gov does not carry. Statute text is bound to exact consolidated
 revisions:
 
 - 著作権法 revision `345AC0000000048_20260624_508AC0000000048`
@@ -64,6 +66,14 @@ revisions:
   https://www.bunka.go.jp/seisaku/chosakuken/hokaisei/kantaiheiyo_hokaisei/pdf/r1408266_02.pdf
   (the amendment act 平成28年法律第108号 as amended by 平成30年法律第70号;
   第8条 and 附則, read page by page).
+- S-E 旧著作権法 (明治32年法律第39号), full text as published in the
+  著作権情報センター (CRIC) domestic-law database,
+  https://www.cric.or.jp/db/domestic/old_index.html, retrieved
+  2026-08-28. e-Gov does not carry repealed laws (the v1 article
+  endpoint returns zero results for 明治三十二年法律第三十九号), so
+  this is a secondary consolidated text; it is used here only for
+  the bounded-expiry argument in D-1, whose conclusion is robust to
+  the interim-extension figures (see D-1).
 - Note: e-Gov does not carry the TPP整備法 as a standalone law
   (`/api/2/laws?law_title=環太平洋パートナーシップ` returns zero), and the
   consolidated 著作権法 XML truncates before amendment-act 附則 blocks in
@@ -200,8 +210,29 @@ each date, 施行 1971-01-01 / 1997-03-25 / 2004-01-01 / 2018-12-30):
 | 写真の著作物 | — | 発行又は創作後13年間 | 公表後50年間 | 死後50年間 (1996改正〜) | 死後70年間 |
 
 (※ the PDF table's second row is rendered near-identically to the
-first at this resolution; consult S-C 問10 directly before relying on
-the 死後公表 cell. Film rows omitted here — no films in scope.)
+first at this resolution; the statute itself resolves the 死後公表
+cell — see 旧法第4条 below: the old-law posthumous-publication term
+is PUBLICATION-counted, not death-counted, whatever the table cell's
+label. Film rows omitted here — no films in scope.)
+
+The old law's own term articles (S-E; base figures before the
+昭和37–44年 interim extension laws, which raised the table's
+old-law column to the 38/38/33 figures 文化庁 states):
+
+> 第三条　〔保護期間－生前公表著作物〕　発行又ハ興行シタル著作物ノ著作権ハ著作者ノ生存間及其ノ死後三十年間継続ス数人ノ合著作ニ係ル著作物ノ著作権ハ最終ニ死亡シタル者ノ死後三十年間継続ス
+> 第四条　〔同前－死後公表著作物〕　著作者ノ死後発行又ハ興行シタル著作物ノ著作権ハ発行又ハ興行ノトキヨリ三十年間継続ス
+> 第五条　〔同前－無名・変名著作物〕　無名又ハ変名著作物ノ著作権ハ発行又ハ興行ノトキヨリ三十年間継続ス但シ其ノ期間内ニ著作者其ノ実名ノ登録ヲ受ケタルトキハ第三条ノ規定ニ従フ
+> 第九条　〔期間の計算〕　前六条ノ場合ニ於テ著作権ノ期間ヲ計算スルニハ著作者死亡ノ年又ハ著作物ヲ発行又ハ興行シタル年ノ翌年ヨリ起算ス
+
+第4条 is the load-bearing finding for D-1: a work first published
+AFTER its author's death had an old-law term counted from
+PUBLICATION, which can far outlive the author's death-counted terms
+(author died 1920, first published 1965 → old-law protection into
+the 2000s, past 死後50年 = 1970). 附則7条 (昭和45年, quoted above)
+keeps such a longer old-law term. So "the old-law term is strictly
+shorter than every current-law term" is FALSE for the
+posthumous-publication subclass; D-1's conclusion survives on a
+different, bounded argument (below).
 
 The governing rule as 文化庁 states it (S-C 問10):
 
@@ -214,20 +245,41 @@ still protected at 2018-12-30, so 死後70年 → 2040.
 
 ## Derivations (not citations — consequences the owner adopts or rejects with the above)
 
-D-1 CLASS-SCOPED old-law conclusion: for 映画・写真以外 works of
-natural persons where a death-based term applies (実名 or 周知の変名,
-per 第52条第2項), the old-law term (死後38年) is strictly shorter than
-every current-law term, so 附則7条 never selects it; and any such work
-already expired under the old law at 1971-01-01 (附則2条) belongs to
-an author who died before 1933, inside the D-2 arithmetic anyway. For
-THIS CLASS ONLY the old-law/current-law transition adds no case the
-death-year arithmetic misses. Every other case — photographs, films,
-non-周知 pseudonymous or 団体名義 attribution, publication-based
-terms, unclear attribution form — remains NOT-EVALUATED until its
-work type, attribution form, publication facts, and applicable term
-are established per work. No further old-law research is needed for
-the first tranche; the boundary of this class is the boundary of the
-conclusion.
+D-1 CLASS-SCOPED old-law conclusion (AMENDED 2026-08-28: the original
+strictly-shorter argument was refuted by 旧法第4条 — see the old-law
+section — and replaced by this two-branch argument; the conclusion is
+unchanged): for 映画・写真以外 works of natural persons where a
+death-based term applies under CURRENT law (実名 or 周知の変名, per
+第52条第2項) and the author died on or before 1967-12-31, the
+old-law/current-law transition cannot defeat the D-2 expiry
+arithmetic, because EVERY candidate term expires before the
+2018-12-29 non-revival frontier: (a) if the work was published in
+the author's lifetime, the old-law term (旧法第3条, death-counted,
+at most 死後38年 with the interim extensions) is strictly shorter
+than 死後50年, so 附則7条 (昭和45年) never selects it, and any such
+work already expired at 1971-01-01 falls under 附則2条 with an
+author dead before 1933, inside the D-2 arithmetic anyway; (b) if
+the work was first published AFTER the author's death, the old-law
+term (旧法第4条, PUBLICATION-counted) can outlive the death-counted
+terms — but it necessarily runs from a publication before the
+1971-01-01 repeal, so even at the maximum interim-extended figure
+of 38 years it ends by 2008-12-31 (旧法第9条: counted from the
+following year), before the frontier, while the current-law
+death-based term for a pre-1968 death ends by 2017-12-31, also
+before the frontier. Whichever term 附則7条 selects, the right was
+extinct on 2018-12-29 and TPP整備法附則第7条 did not revive it. For
+THIS CLASS ONLY the transition adds no case the death-year
+arithmetic misses — though branch (b) works have a LATER historical
+expiry date than death+50 suggests, which matters if any consumer
+ever needs the expiry YEAR rather than present-day status. Every
+other case — photographs, films, non-周知 pseudonymous or 団体名義
+attribution, publication-based terms, unclear attribution form —
+remains NOT-EVALUATED until its work type, attribution form,
+publication facts, and applicable term are established per work.
+No further old-law research is needed for the first tranche; the
+boundary of this class is the boundary of the conclusion. Wartime
+additions are excluded separately per D-3(b) — they stack on either
+branch and are a per-work condition, not part of this arithmetic.
 
 D-2 Death-year arithmetic (NOT an assessment status): UNDER a
 death-based term (第51条第2項 as it stood, 死後50年) and BEFORE any

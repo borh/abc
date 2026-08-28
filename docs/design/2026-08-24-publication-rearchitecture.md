@@ -55,8 +55,18 @@ numbers live in the findings sections and Git history, not here):
   adoption of the cited statutory answers (Q1–Q5 + old-law
   transition — DRAFTED 2026-08-27 as
   abc/docs/evidence/external/jp-term-statute-citations.md, verbatim
-  statute + 文化庁 guidance with retrieval dates; adoption is the
-  owner's act); key custody for BOTH keys — DONE 2026-08-28: the
+  statute + 文化庁 guidance with retrieval dates; ADOPTED by the
+  owner 2026-08-28: all four derivations D-1..D-4, with D-1 adopted
+  AS AMENDED the same day — a pre-adoption probe refuted D-1's
+  original strictly-shorter argument against 旧著作権法第4条
+  (posthumous-publication terms are PUBLICATION-counted and can
+  outlive death-counted terms), and the owner chose amend-then-adopt
+  over narrowing the class: D-1 now rests on the two-branch
+  bounded-expiry argument (old posthumous terms end ≤2008 < the
+  2018-12-29 non-revival frontier), with the old-law articles quoted
+  verbatim from CRIC's text of the repealed law, which e-Gov does
+  not carry. Adoption unblocks the total assessment snapshot; it
+  marks NO work public-domain); key custody for BOTH keys — DONE 2026-08-28: the
   online RELEASE key provisioned to CI and the offline governance
   ceremony executed (details in the engineering-tracks record
   below); the evidence-retention policy before the first real

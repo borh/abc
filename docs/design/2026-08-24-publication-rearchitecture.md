@@ -56,9 +56,11 @@ numbers live in the findings sections and Git history, not here):
   transition — DRAFTED 2026-08-27 as
   abc/docs/evidence/external/jp-term-statute-citations.md, verbatim
   statute + 文化庁 guidance with retrieval dates; adoption is the
-  owner's act); key custody for BOTH keys (the offline governance
-  ceremony AND generating/provisioning the online RELEASE key to CI);
-  the evidence-retention policy before the first real withdrawal.
+  owner's act); key custody for BOTH keys — DONE 2026-08-28: the
+  online RELEASE key provisioned to CI and the offline governance
+  ceremony executed (details in the engineering-tracks record
+  below); the evidence-retention policy before the first real
+  withdrawal.
   ENGINEERING TRACKS (independent; each names only its activation
   gate): the Forgejo scheduled release job — D5's driver and exit
   contract are ready, and the fixture-scale mechanics check EXECUTED
@@ -152,12 +154,24 @@ numbers live in the findings sections and Git history, not here):
   root (full-history clone, 26 GB, HEAD 0e9ea3e586 = the
   qualification stop point, origin = the recorded upstream
   https://github.com/aozorabunko/aozorabunko.git, owner-only to the
-  runner). Remaining before the first production publish: the
-  offline governance ceremony's public key (pinned as
-  production/pinned/governance.pub in the deployment verifier
-  configuration) and the owner inputs (total
-  assessment snapshot at abc/data/assessment-snapshot.json and the
-  unblocked publication policy);
+  runner). The offline governance ceremony EXECUTED 2026-08-28 by
+  the owner (D19/F143/F144/F123): one governance software Ed25519
+  key generated on an offline machine, TWO authorized custody
+  copies on separately controlled encrypted media, the complete
+  persistent-copy inventory declared and owner-held on paper, and
+  smoke signing over the fixed conformance vector
+  snh-governance-event-sig/1:<64 zeros> verified on the offline
+  machine (disposable ceremony evidence, not a frozen fixture); pub
+  8c1b208973fb14c5700d60d750685775bf63414e4cb0d4be6572be3d8c9bf600,
+  pinned as production/pinned/governance.pub in the deployment
+  verifier configuration — both pinned pubs pass the kernel's
+  validate-pinned-keys!. Remaining before the first production
+  publish: the owner inputs (total assessment snapshot at
+  abc/data/assessment-snapshot.json and the unblocked publication
+  policy), then at genesis the F54/F70 Zenodo trust-anchor deposit
+  (role-bound key assignment + the actual genesis manifest bytes
+  and signature, credential-separated from release CI) BEFORE the
+  first signed release;
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
   2026-08-27 (results at the end of this ledger): capacity,

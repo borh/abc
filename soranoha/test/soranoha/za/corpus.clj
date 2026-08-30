@@ -62,16 +62,27 @@
                (str "cards/" card "/files/" (work-basename work) ".zip")))
 
 (defn write-catalog!
-  "The official catalog zip for `works`: one row per work, joining each
-  zip to its work/person ids through the text-file URL basename."
+  "The official catalog zip for `works`: one row per (work, contributor)
+  pair, joining each zip to its work/person ids through the text-file
+  URL basename. This is the real catalog's shape — every row of a work
+  repeats that work's URL, so a multi-contributor work has several rows
+  sharing one basename. Each work's own :person-id 著者 row is emitted
+  LAST, so the basename index (later rows win) resolves to it and the
+  work's slug is independent of its other contributors; any
+  :contributors entries ({:person-id :role}) precede it."
   [root works]
   (write-zip! (fs/path root "index_pages" "list_person_all_extended_utf8.zip")
               [["list_person_all_extended_utf8.csv"
-                (str "作品ID,人物ID,作品名,テキストファイルURL\n"
+                (str "作品ID,人物ID,役割フラグ,作品名,テキストファイルURL\n"
                      (str/join ""
-                               (for [{:keys [work-id person-id card title]
-                                      :as work} works]
-                                 (str work-id "," person-id "," title
+                               (for [{:keys [work-id person-id card title
+                                             contributors]
+                                      :as work} works
+                                     {p :person-id r :role}
+                                     (concat contributors
+                                             [{:person-id person-id
+                                               :role "著者"}])]
+                                 (str work-id "," p "," r "," title
                                       ",https://example.org/cards/" card
                                       "/files/" (work-basename work) ".zip\n"))))]]))
 

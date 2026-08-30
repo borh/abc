@@ -79,6 +79,53 @@
                                     rs [(candidate "s" [(first rs)])]))
                            "candidates")))))))
 
+(deftest projection-drift-detection
+  (let [checkout-rows (rows "000100,000001,著者,https://example.org/cards/000001/files/100_ruby_200.zip"
+                            "000100,000002,翻訳者,"
+                            "000300,000003,著者,https://example.org/cards/000003/files/300_ruby_400.zip")
+        selection [(candidate "s-100" [(first checkout-rows)])
+                   (candidate "s-300" [(nth checkout-rows 2)])]
+        checkout (scaffold/projection checkout-rows selection)]
+    (testing "a snapshot scaffolded from the same checkout shows no drift"
+      (let [enc (scaffold/snapshot checkout-rows selection)]
+        (is (nil? (scaffold/projection-drift
+                   checkout
+                   (scaffold/snapshot-projection (:value enc)))))))
+    (testing "a contributor added under surviving slugs is drift"
+      ;; exactly the case slug totality cannot see: same slugs, new
+      ;; translator row on an existing work
+      (let [stale (scaffold/snapshot-projection
+                   (:value (scaffold/snapshot
+                            (rows "000100,000001,著者,https://example.org/cards/000001/files/100_ruby_200.zip"
+                                  "000300,000003,著者,https://example.org/cards/000003/files/300_ruby_400.zip")
+                            selection)))
+            drift (scaffold/projection-drift checkout stale)]
+        (is (some? drift))
+        (is (= 0 (:only-in-checkout-count drift)))
+        (is (= 0 (:only-in-snapshot-count drift)))
+        (is (= 1 (:contributions-differ-count drift)))
+        (is (= ["s-100"] (:contributions-differ-sample drift)))))
+    (testing "a changed role under a surviving slug is drift"
+      (let [stale (scaffold/snapshot-projection
+                   (:value (scaffold/snapshot
+                            (rows "000100,000001,著者,https://example.org/cards/000001/files/100_ruby_200.zip"
+                                  "000100,000002,編者,"
+                                  "000300,000003,著者,https://example.org/cards/000003/files/300_ruby_400.zip")
+                            selection)))]
+        (is (= 1 (:contributions-differ-count
+                  (scaffold/projection-drift checkout stale))))))
+    (testing "slug-level differences are reported on their own side"
+      (let [drift (scaffold/projection-drift checkout (dissoc checkout "s-300"))]
+        (is (= 1 (:only-in-checkout-count drift)))
+        (is (= ["s-300"] (:only-in-checkout-sample drift)))
+        (is (= 0 (:contributions-differ-count drift)))))
+    (testing "samples are bounded while counts stay complete"
+      (let [wide (into {} (map (fn [i] [(format "w-%04d" i) ["author:000001"]]))
+                       (range 50))
+            drift (scaffold/projection-drift wide {} 20)]
+        (is (= 50 (:only-in-checkout-count drift)))
+        (is (= 20 (count (:only-in-checkout-sample drift))))))))
+
 (deftest admission-quarantines-everything
   (let [rs (rows "000100,000001,著者,https://example.org/cards/000001/files/100_ruby_200.zip")
         enc (scaffold/snapshot rs [(candidate "s-100" [(first rs)])])

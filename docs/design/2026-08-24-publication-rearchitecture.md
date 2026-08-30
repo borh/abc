@@ -50,34 +50,63 @@ numbers live in the findings sections and Git history, not here):
   accounting over the population, explicit not-evaluated facts
   included — not completed legal assessments for every work; only
   eligible completed assessments enter the first release) — DONE
-  2026-08-28: the snapshot-migration produced
-  abc/data/assessment-snapshot.json via the kernel's new
-  assessment-scaffold subcommand (same selection join and canonical
-  encoder as the release path, so slug totality and canonical bytes
-  hold by construction). Every work assessment and every
-  contribution is the EXPLICIT not-evaluated fact: under the adopted
-  derivations there are ZERO eligible completed assessments today —
-  D-4 keeps Q6–Q8 open, so no third-party assertion (including
-  Aozora's own flag) is usable, and no per-work D-3 findings exist.
-  Provenance: aozora 0e9ea3e586 (the qualification stop point = the
-  production mirror's HEAD), catalog csv sha256 c0ace54c7ac037e5…,
-  snapshot id snh:1:assessment-snapshot:cebf79535c693f30…, 17,602
-  candidates (the full selection), 19,092 contributions (all
-  catalog rows sharing each candidate's 作品ID, deduplicated,
-  role-token:person-id ids; unknown roles, malformed person ids,
-  and ragged rows in a selected work's row set fail the scaffold
-  closed; 0 ragged rows observed), two generation runs
-  byte-identical. Verified end-to-end: the file boundary-decodes as
-  protocol bytes and the inclusion rule partitions it 0 admitted /
-  0 excluded / 17,602 quarantined — so an authorized policy change
-  against THIS snapshot yields a genesis release publishing ZERO
-  works (total quarantine evidence only); works enter later
-  releases as completed assessments merge in under their own
-  authority, and whether genesis precedes or awaits the first
-  completed assessments is the owner's timing choice at the policy
-  change. A dispatch now passes the owner-inputs guard and fails
-  fast at release preflight on :rights-blocked, before any build.
-  REMAINING: the
+  PARTIALLY DISCHARGED 2026-08-28 as a TOTAL QUARANTINE BASELINE —
+  NOT a completed assessment migration (round-31 verdict): the
+  kernel's new assessment-scaffold subcommand produced
+  abc/data/assessment-snapshot.json (same selection join and
+  canonical encoder as the release path, so slug totality and
+  canonical bytes hold by construction). Every work assessment and
+  every contribution is the EXPLICIT not-evaluated fact: under the
+  adopted derivations there are ZERO eligible completed assessments
+  today — D-4 keeps Q6–Q8 open, so no third-party assertion
+  (including Aozora's own flag) is usable, and no per-work D-3
+  findings exist. Provenance: aozora 0e9ea3e586 (the qualification
+  stop point = the production mirror's HEAD), catalog csv sha256
+  c0ace54c7ac037e5…, snapshot id
+  snh:1:assessment-snapshot:cebf79535c693f30…, 17,602 candidates
+  (the full selection), 19,092 contribution entries, 36,694 facts
+  all not-evaluated; 0 ragged rows observed; two generation runs
+  byte-identical. What the contribution entries ARE (round-31 finding 1):
+  CATALOG-LISTED CONTRIBUTION CANDIDATES — every (役割フラグ, 人物ID)
+  row sharing each candidate's 作品ID, deduplicated, as
+  role-token:person-id — NOT the rights-relevant contribution set
+  the spec requires. Adopted D-3 is explicit that catalog rows prove
+  neither exhaustive authorship nor that every listed role holds
+  copyright, so this is a starting list to assess. The file is safe
+  precisely because nothing is admitted; BEFORE any work's facts may
+  become public-domain its per-work assessment must ESTABLISH the
+  exact rights-relevant contribution set (adding what the catalog
+  omits, discharging what it wrongly lists) and the snapshot must
+  carry that established set — flipping statuses on the catalog
+  listing alone would admit works on an unestablished contribution
+  basis. Unknown roles, malformed person ids, and ragged rows inside
+  a selected work's row set fail the scaffold closed. Round-31 finding 2
+  (snapshot/checkout binding) is CLOSED: release preflight now
+  re-derives the {slug → sorted catalog-listed contribution
+  candidate ids} projection from the checkout under release and
+  refuses on any difference (:snapshot-projection-drift, complete
+  counts + bounded named samples), because both the driver's
+  selected-vs-built check and the transaction's totality gate
+  compare SLUGS ALONE — a catalog revision adding a translator or
+  changing a role under surviving slugs would otherwise publish
+  against a stale snapshot. The scaffolder's own projection is
+  reused; no new wire schema, sidecar, registry, or persisted hash.
+  Verified: the file boundary-decodes, the inclusion rule partitions
+  it 0 admitted / 0 excluded / 17,602 quarantined, it shows ZERO
+  drift against the checkout, and a single removed contribution id
+  is detected. GENESIS TIMING DECIDED (round-31 finding 3, owner
+  2026-08-31): do NOT publish an empty genesis. The chain,
+  transaction, signing, and serving paths are already exercised; a
+  permanent zero-work genesis would create an irreversible public
+  release solely to establish machinery and would offer no citable
+  corpus. The policy stays :blocked-pending-assessment-migration
+  until the FIRST ASSESSED BATCH exists, then ONE meaningful
+  genesis. Should an empty genesis ever be reconsidered, an
+  end-to-end all-quarantined fixture covering publication,
+  verification, and serving is a prerequisite (present tests
+  exercise the partition function only). REMAINING: the first
+  assessed batch (per-work assessments under the adopted rule, each
+  establishing its own rights-relevant contribution set), THEN the
   authorized policy change from :blocked-pending-assessment-migration
   to :assessment-required (data alone does not lift the block);
   adoption of the cited statutory answers (Q1–Q5 + old-law
@@ -225,9 +254,12 @@ numbers live in the findings sections and Git history, not here):
   file now pass the guard's presence checks, the policy content
   still blocks release, and the entire remaining path to genesis
   runs through the adoption boundary. Remaining before FIRST PUBLICATION OF THE
-  SIGNED GENESIS RELEASE: the owner inputs (total assessment
-  snapshot at abc/data/assessment-snapshot.json and the unblocked
-  publication policy), then the ONE-TIME GENESIS CEREMONY — the
+  SIGNED GENESIS RELEASE: the first assessed batch (the total
+  quarantine baseline at abc/data/assessment-snapshot.json is in
+  place — see the Slice-3 owner-inputs record; what is outstanding
+  is completed per-work assessments, each establishing its own
+  rights-relevant contribution set) and the consequent unblocked
+  publication policy, then the ONE-TIME GENESIS CEREMONY — the
   anchor must contain the exact genesis manifest and signature and
   the ORCID record must name the deposit's version DOI before
   publication, but the release command assembles, signs, commits,
@@ -3272,7 +3304,11 @@ these gate deployment and the first public signed release, never the
 fixture/local work): O1 RATIFIED (owner, 2026-08-25, with the round-4
 wording: public-release-allowed is the inclusion rule's decision) —
 the assessment evidence committed as versioned data (F24 snapshot
-source) remains outstanding; O2 host named and
+source) is PARTIALLY in place — the total quarantine baseline is
+committed (2026-08-28) and preflight-bound to its checkout; the
+completed per-work assessments that would let any work be admitted
+remain outstanding, and the policy stays blocked until the first
+assessed batch (round-31 finding 3); O2 host named and
 F12-probed; rights admission consumed-from-abc or transferred (F14c);
 F12 repo-growth probe run against the chosen origin ON REAL
 adjacent-revision artifacts from Slices 1/2 — smallest representative

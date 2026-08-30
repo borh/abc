@@ -9,7 +9,7 @@
 ;; and pinned verifier keys as fail-closed file inputs. `governance`
 ;; appends one offline-signed event; `serving-tree` exports the verified
 ;; chain's serving tree; `assessment-scaffold` emits the total
-;; not-evaluated assessment snapshot over the current selection;
+;; quarantine baseline over the current selection;
 ;; `archive-verify` runs the archival observation over a sole archived
 ;; view. `compare` checks per-work TEI/plaintext
 ;; bytes against a reference tree through the trace store; `delta` runs
@@ -348,20 +348,52 @@
                       {:reason :malformed-release-key :file (str path)})))
     (sign/hex->bytes text)))
 
+(defn release-preflight-drift
+  "nil when the assessment snapshot at --assessment still describes the
+  checkout at --aozora-root; otherwise the drift diagnostic. The
+  comparison is the scaffolder's own {slug -> sorted catalog-listed
+  contribution candidate ids} projection, re-derived from the checkout
+  and compared against the snapshot's equivalent — the release driver's
+  selected-vs-built check and the transaction's totality gate both
+  compare SLUGS ALONE, so this is what refuses a snapshot whose slugs
+  all survive a catalog revision that moved a contribution. The clean-
+  checkout provenance gate runs first, so the projection is derived from
+  an identified source tree."
+  ([opts]
+   (release-preflight-drift
+    opts
+    (:value (decode/decode "assessment-snapshot"
+                           (fs/read-all-bytes (str (:assessment opts)))))))
+  ([{:keys [aozora-root]} snapshot-value]
+   (source-provenance! aozora-root)
+   (let [rows (catalog/read-rows-from-string
+               (:csv-text (catalog/read-catalog-zip aozora-root)))
+         {:keys [candidates]} (select/select-candidates aozora-root rows)]
+     (scaffold/projection-drift
+      (scaffold/projection rows candidates)
+      (scaffold/snapshot-projection snapshot-value)))))
+
 (defn release-preflight!
   "Read and validate every release input before the build runs, returning
   the already-read values the release consumes. Fail-closed: the
-  assessment snapshot must boundary-decode, the rights policy must
-  authorize (value plus hash from the same bytes; the authority fixes the
-  policy id), the pinned role keys must form a valid two-role
-  configuration, the 32-byte signing seed must correspond to the pinned
-  release key, and the upstream origin must be an absolute URI. --limit
-  is refused: it is a build diagnostic, and a limited selection would
-  claim the same projection as the full one."
-  [{:keys [chain-clone upstream-origin assessment policy
-           release-pub governance-pub release-key limit]}]
+  assessment snapshot must boundary-decode AND still describe the
+  checkout under release — its {slug -> catalog-listed contribution
+  candidates} projection must equal the one re-derived here from that
+  checkout, so a catalog revision that adds a contributor or changes a
+  role under surviving slugs cannot publish against a stale snapshot
+  (the transaction's totality gate compares slugs alone) — the rights
+  policy must authorize (value plus hash from the same bytes; the
+  authority fixes the policy id), the pinned role keys must form a valid
+  two-role configuration, the 32-byte signing seed must correspond to
+  the pinned release key, and the upstream origin must be an absolute
+  URI. --limit is refused: it is a build diagnostic, and a limited
+  selection would claim the same projection as the full one."
+  [{:keys [aozora-root chain-clone upstream-origin assessment policy
+           release-pub governance-pub release-key limit]
+    :as opts}]
   (require-flags! "release"
-                  {"--chain-clone" chain-clone
+                  {"--aozora-root" aozora-root
+                   "--chain-clone" chain-clone
                    "--upstream-origin" upstream-origin
                    "--assessment" assessment
                    "--policy" policy
@@ -375,7 +407,8 @@
     (throw (ex-info "upstream origin must be an absolute URI"
                     {:reason :invalid-upstream-origin :origin upstream-origin})))
   (let [snapshot-bytes (fs/read-all-bytes (str assessment))
-        _ (decode/decode "assessment-snapshot" snapshot-bytes)
+        snapshot-value (:value (decode/decode "assessment-snapshot"
+                                              snapshot-bytes))
         authority (za-release/rights-authority!
                    (fs/read-all-bytes (str policy)))
         pinned (pinned-keys-from-files release-pub governance-pub)
@@ -383,6 +416,12 @@
     (when-not (sign/seed-signs-for? seed (:release pinned))
       (throw (ex-info "release signing seed does not correspond to the pinned release key"
                       {:reason :seed-key-mismatch})))
+    ;; last in preflight, after every file input has passed: the only
+    ;; check that reads the corpus
+    (when-let [drift (release-preflight-drift opts snapshot-value)]
+      (throw (ex-info (str "assessment snapshot does not describe the "
+                           "checkout under release")
+                      (assoc drift :reason :snapshot-projection-drift))))
     (merge authority
            {:snapshot-bytes snapshot-bytes
             :pinned pinned
@@ -482,8 +521,11 @@
     result))
 
 (defn assessment-scaffold!
-  "Generate the total not-evaluated assessment snapshot for the current
-  selection at --aozora-root, writing canonical protocol bytes to --out.
+  "Generate the total quarantine baseline for the current selection at
+  --aozora-root — one all-not-evaluated candidate per selected slug over
+  its catalog-listed contribution candidates — writing canonical
+  protocol bytes to --out. This is the starting list an assessment
+  campaign works through, never a completed assessment migration.
   --out must not yet exist: the snapshot is versioned owner-input data,
   and replacing one must be an explicit act, never a rerun side effect.
   The provenance the ledger records — source commit, catalog hash,

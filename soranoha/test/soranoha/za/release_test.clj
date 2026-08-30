@@ -15,8 +15,11 @@
             [soranoha.snh.sign :as sign]
             [soranoha.snh.verify :as verify]
             [soranoha.snh.view :as view]
+            [soranoha.yomi.catalog :as catalog]
+            [soranoha.yomi.select :as select]
             [soranoha.za.corpus :as corpus]
-            [soranoha.za.release :as release]))
+            [soranoha.za.release :as release]
+            [soranoha.za.scaffold :as scaffold]))
 
 ;; --- fixture corpus works ---------------------------------------------------
 
@@ -334,6 +337,61 @@
                          (pr-str (ex-data thrown)))]
         (is (= :malformed-release-key (:reason (ex-data thrown))))
         (is (not (str/includes? printed "SECRETSENTINEL")))))
-    (testing "with every input valid, the first failure is the build's own
-      provenance gate — proof the preflight ran to completion first"
+    (testing "with every file input valid, the first failure is the
+      provenance gate the corpus-reading checks sit behind — proof every
+      file input was preflighted first"
       (is (= "source git unavailable" (error base))))))
+
+(deftest stale-snapshot-is-refused-before-the-build
+  ;; the case slug totality alone cannot see: the catalog loses a
+  ;; contributor while every slug survives, so the committed snapshot no
+  ;; longer describes the corpus under release
+  (let [translated (assoc merosu :contributors [{:person-id "000009"
+                                                 :role "翻訳者"}])
+        root (corpus/init-corpus! [translated kumo])
+        dir (fs/create-temp-dir {:prefix "za-release-drift"})
+        write! (fn [name ^String content]
+                 (let [path (str (fs/path dir name))]
+                   (spit path content)
+                   path))
+        ks (vector-keys)
+        scaffold-bytes (fn []
+                         (let [rows (catalog/read-rows-from-string
+                                     (:csv-text (catalog/read-catalog-zip
+                                                 root)))]
+                           (:bytes (scaffold/snapshot
+                                    rows
+                                    (:candidates (select/select-candidates
+                                                  root rows))))))
+        opts {:root (str (fs/path dir "store"))
+              :aozora-root root
+              :clj-toolchain-id "za-drift-fixture"
+              :chain-clone (str (fs/path dir "no-such-clone"))
+              :branch "main"
+              :upstream-origin "https://forge.example/za/fixture-corpus.git"
+              :assessment (let [path (str (fs/path dir "snapshot.json"))]
+                            (fs/write-bytes path (scaffold-bytes))
+                            path)
+              :policy (write! "policy.edn"
+                              "{:rights-publication :assessment-required}")
+              :release-pub (write! "release.pub"
+                                   (str (get-in ks ["release" "pub"]) "\n"))
+              :governance-pub (write! "governance.pub"
+                                      (str (get-in ks ["governance" "pub"]) "\n"))
+              :release-key (write! "release.seed"
+                                   (get-in ks ["release" "seed"]))}]
+    (testing "the scaffolded snapshot matches the corpus it came from"
+      (is (nil? (main/release-preflight-drift opts))))
+    (testing "dropping a contributor under a surviving slug is refused"
+      (corpus/write-catalog! root [merosu kumo])
+      (corpus/commit-corpus! root)
+      (let [drift (main/release-preflight-drift opts)]
+        (is (= 1 (:contributions-differ-count drift)))
+        (is (= [(slug-of merosu)] (:contributions-differ-sample drift)))
+        (is (= 0 (:only-in-checkout-count drift)))
+        (is (= 0 (:only-in-snapshot-count drift))))
+      (is (= :snapshot-projection-drift
+             (try (main/release! opts)
+                  nil
+                  (catch clojure.lang.ExceptionInfo e
+                    (:reason (ex-data e)))))))))

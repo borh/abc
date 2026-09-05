@@ -8,12 +8,18 @@ object keys, and unexpected types.
 
 Usage: ./2026-08-14-release-qualification-domain-scan.py 'DIR/*.json'
 """
-import json, glob, sys, collections
+
+import json
+import glob
+import sys
+import collections
 from concurrent.futures import ProcessPoolExecutor
+
 SAFE = 9007199254740991
+
+
 def scan(path):
     bad = collections.Counter()
-    mx, mn = 0, 0
     with open(path, "rb") as fh:
         doc = json.load(fh)
     stack = [("", doc)]
@@ -21,19 +27,24 @@ def scan(path):
         p, v = stack.pop()
         if isinstance(v, dict):
             for k, x in v.items():
-                if not isinstance(k, str): bad["nonstring_key"] += 1
+                if not isinstance(k, str):
+                    bad["nonstring_key"] += 1
                 stack.append((p + "." + k, x))
         elif isinstance(v, list):
-            for x in v: stack.append((p + "[]", x))
+            for x in v:
+                stack.append((p + "[]", x))
         elif isinstance(v, bool) or v is None or isinstance(v, str):
             pass
         elif isinstance(v, int):
-            if v > SAFE or v < -SAFE: bad["int_out_of_safe_range:" + p] += 1
+            if v > SAFE or v < -SAFE:
+                bad["int_out_of_safe_range:" + p] += 1
         elif isinstance(v, float):
             bad["float:" + p] += 1
         else:
             bad["other:" + type(v).__name__] += 1
     return bad
+
+
 def main(pat, jobs=32):
     files = sorted(glob.glob(pat))
     total = collections.Counter()
@@ -41,44 +52,15 @@ def main(pat, jobs=32):
         for b in ex.map(scan, files, chunksize=32):
             total.update(b)
     return len(files), total
+
+
 if __name__ == "__main__":
     n, t = main(sys.argv[1])
     print("files=%d  violations=%d" % (n, sum(t.values())))
-    for k, v in t.most_common(10): print("   %-60s %d" % (k, v))
-import json, glob, sys, collections
-from concurrent.futures import ProcessPoolExecutor
-SAFE = 9007199254740991
-def scan(path):
-    bad = collections.Counter()
-    mx, mn = 0, 0
-    with open(path, "rb") as fh:
-        doc = json.load(fh)
-    stack = [("", doc)]
-    while stack:
-        p, v = stack.pop()
-        if isinstance(v, dict):
-            for k, x in v.items():
-                if not isinstance(k, str): bad["nonstring_key"] += 1
-                stack.append((p + "." + k, x))
-        elif isinstance(v, list):
-            for x in v: stack.append((p + "[]", x))
-        elif isinstance(v, bool) or v is None or isinstance(v, str):
-            pass
-        elif isinstance(v, int):
-            if v > SAFE or v < -SAFE: bad["int_out_of_safe_range:" + p] += 1
-        elif isinstance(v, float):
-            bad["float:" + p] += 1
-        else:
-            bad["other:" + type(v).__name__] += 1
-    return bad
-def main(pat, jobs=32):
-    files = sorted(glob.glob(pat))
-    total = collections.Counter()
-    with ProcessPoolExecutor(jobs) as ex:
-        for b in ex.map(scan, files, chunksize=32):
-            total.update(b)
-    return len(files), total
+    for k, v in t.most_common(10):
+        print("   %-60s %d" % (k, v))
 if __name__ == "__main__":
     n, t = main(sys.argv[1])
     print("files=%d  violations=%d" % (n, sum(t.values())))
-    for k, v in t.most_common(10): print("   %-60s %d" % (k, v))
+    for k, v in t.most_common(10):
+        print("   %-60s %d" % (k, v))

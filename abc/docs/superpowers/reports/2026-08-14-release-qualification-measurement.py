@@ -112,16 +112,19 @@ def build_population(corpus: pathlib.Path):
             continue
         cat = idx[p.name]
         data, crc_mismatch = read_member(zf, members[0])
-        rows.append({
-            "slug": "%s_%s_%s_%s" % (cat.get("作品ID"), cat.get("人物ID"), m.group(1), p.name[:-4]),
-            "text_zip_relpath": rel,
-            "primary_text_member": members[0],
-            "archive_hash": "sha256:" + hashlib.sha256(raw).hexdigest(),
-            "primary_text_hash": "sha256:" + hashlib.sha256(data).hexdigest(),
-            "trailing_garbage_trimmed": trimmed,
-            "crc_mismatch": crc_mismatch,
-            "txt_member_count": len(members),
-        })
+        rows.append(
+            {
+                "slug": "%s_%s_%s_%s"
+                % (cat.get("作品ID"), cat.get("人物ID"), m.group(1), p.name[:-4]),
+                "text_zip_relpath": rel,
+                "primary_text_member": members[0],
+                "archive_hash": "sha256:" + hashlib.sha256(raw).hexdigest(),
+                "primary_text_hash": "sha256:" + hashlib.sha256(data).hexdigest(),
+                "trailing_garbage_trimmed": trimmed,
+                "crc_mismatch": crc_mismatch,
+                "txt_member_count": len(members),
+            }
+        )
     return rows, recovered, rejected, sha256_file(catalog_zip)
 
 
@@ -138,20 +141,33 @@ def _parse(args):
     src = pathlib.Path(out) / "src" / (slug + ".txt")
     dst = pathlib.Path(out) / "aat" / (slug + ".json")
     with open(src, "rb") as i, open(dst, "wb") as o:
-        r = subprocess.run([parser_bin, "--mode", "aat"], stdin=i, stdout=o, stderr=subprocess.DEVNULL)
+        r = subprocess.run(
+            [parser_bin, "--mode", "aat"], stdin=i, stdout=o, stderr=subprocess.DEVNULL
+        )
     return slug if r.returncode != 0 else None
 
 
 def _convert(args):
     conv, mapping, out, slug, work_hash, npass = args
     o = pathlib.Path(out)
-    r = subprocess.run([conv, "convert",
-                        "--aat", str(o / "aat" / (slug + ".json")),
-                        "--mapping", mapping,
-                        "--work-content-hash", work_hash,
-                        "--parser-ir-out", str(o / f"ir{npass}" / (slug + ".json")),
-                        "--divergence-out", str(o / f"div{npass}" / (slug + ".json"))],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    r = subprocess.run(
+        [
+            conv,
+            "convert",
+            "--aat",
+            str(o / "aat" / (slug + ".json")),
+            "--mapping",
+            mapping,
+            "--work-content-hash",
+            work_hash,
+            "--parser-ir-out",
+            str(o / f"ir{npass}" / (slug + ".json")),
+            "--divergence-out",
+            str(o / f"div{npass}" / (slug + ".json")),
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     return slug if r.returncode != 0 else None
 
 
@@ -174,8 +190,10 @@ def _project(args):
 def aggregate(per: dict) -> str:
     top = hashlib.sha256()
     for k in sorted(per):
-        top.update(k.encode()); top.update(b"\0")
-        top.update(bytes.fromhex(per[k])); top.update(b"\n")
+        top.update(k.encode())
+        top.update(b"\0")
+        top.update(bytes.fromhex(per[k]))
+        top.update(b"\n")
     return "sha256:" + top.hexdigest()
 
 
@@ -203,7 +221,8 @@ def main() -> int:
     timings["population_seconds"] = round(time.time() - t0, 1)
     pop_path = out / "population.jsonl"
     pop_path.write_text(
-        "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in rows))
+        "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in rows)
+    )
     pop_hash = sha256_file(pop_path)
 
     with ProcessPoolExecutor(a.jobs) as ex:
@@ -212,8 +231,11 @@ def main() -> int:
         timings["extract_seconds"] = round(time.time() - t, 1)
 
         t = time.time()
-        parse_fail = [s for s in ex.map(_parse, [(a.parser, str(out), r["slug"]) for r in rows],
-                                        chunksize=32) if s]
+        parse_fail = [
+            s
+            for s in ex.map(_parse, [(a.parser, str(out), r["slug"]) for r in rows], chunksize=32)
+            if s
+        ]
         timings["parse_seconds"] = round(time.time() - t, 1)
 
         work_hashes = {}
@@ -224,14 +246,21 @@ def main() -> int:
         convert_fail = {}
         for npass in (1, 2):
             t = time.time()
-            jobs = [(a.converter, a.mapping, str(out), r["slug"], work_hashes[r["slug"]], npass)
-                    for r in rows]
+            jobs = [
+                (a.converter, a.mapping, str(out), r["slug"], work_hashes[r["slug"]], npass)
+                for r in rows
+            ]
             convert_fail[npass] = [s for s in ex.map(_convert, jobs, chunksize=32) if s]
             timings[f"convert_pass{npass}_seconds"] = round(time.time() - t, 1)
 
         digests, projection_timings = {}, {}
-        for label, subdir in (("aat", "aat"), ("parser_ir", "ir1"), ("parser_ir_p2", "ir2"),
-                              ("divergence", "div1"), ("divergence_p2", "div2")):
+        for label, subdir in (
+            ("aat", "aat"),
+            ("parser_ir", "ir1"),
+            ("parser_ir_p2", "ir2"),
+            ("divergence", "div1"),
+            ("divergence_p2", "div2"),
+        ):
             key = label.replace("_p2", "")
             _, drop = PROJECTIONS[key]
             files = sorted(str(p) for p in (out / subdir).glob("*.json"))
@@ -247,9 +276,12 @@ def main() -> int:
         "identities": {
             "corpus": str(corpus),
             "catalog_zip_hash": catalog_hash,
-            "parser_bin": a.parser, "parser_bin_hash": sha256_file(a.parser),
-            "converter_bin": a.converter, "converter_bin_hash": sha256_file(a.converter),
-            "mapping": a.mapping, "mapping_hash": sha256_file(a.mapping),
+            "parser_bin": a.parser,
+            "parser_bin_hash": sha256_file(a.parser),
+            "converter_bin": a.converter,
+            "converter_bin_hash": sha256_file(a.converter),
+            "mapping": a.mapping,
+            "mapping_hash": sha256_file(a.mapping),
             "projections": {k: v[0] for k, v in PROJECTIONS.items()},
             "harness_hash": sha256_file(__file__),
         },
@@ -262,20 +294,37 @@ def main() -> int:
             "population_manifest": "population.jsonl",
             "population_manifest_hash": pop_hash,
         },
-        "failures": {"parse": parse_fail,
-                     "convert_pass1": convert_fail[1], "convert_pass2": convert_fail[2]},
+        "failures": {
+            "parse": parse_fail,
+            "convert_pass1": convert_fail[1],
+            "convert_pass2": convert_fail[2],
+        },
         "timings_seconds": {**timings, "projection": projection_timings, "jobs": a.jobs},
         "aggregate_digests": {k: aggregate(v) for k, v in digests.items()},
         "determinism": {
-            "parser_ir_differing_works":
-                sum(1 for k in digests["parser_ir"] if digests["parser_ir"][k] != digests["parser_ir_p2"].get(k)),
-            "divergence_differing_works":
-                sum(1 for k in digests["divergence"] if digests["divergence"][k] != digests["divergence_p2"].get(k)),
+            "parser_ir_differing_works": sum(
+                1
+                for k in digests["parser_ir"]
+                if digests["parser_ir"][k] != digests["parser_ir_p2"].get(k)
+            ),
+            "divergence_differing_works": sum(
+                1
+                for k in digests["divergence"]
+                if digests["divergence"][k] != digests["divergence_p2"].get(k)
+            ),
         },
     }
-    (out / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True) + "\n")
-    print(json.dumps(summary["population"] | summary["determinism"] |
-                     {"aggregates": summary["aggregate_digests"]}, indent=2))
+    (out / "summary.json").write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
+    )
+    print(
+        json.dumps(
+            summary["population"]
+            | summary["determinism"]
+            | {"aggregates": summary["aggregate_digests"]},
+            indent=2,
+        )
+    )
     return 0
 
 

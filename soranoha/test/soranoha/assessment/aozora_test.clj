@@ -56,11 +56,18 @@
           (reset! responses (assoc baseline aozora/catalog-url (catalog-bytes dir "あり" "")))
           (is (thrown-with-msg? clojure.lang.ExceptionInfo #"not-classified-expired"
                                 (aozora/prepare! root evidence slug opts))))
+        (testing "official catalog removal wins over retained Git presence"
+          (let [p (fs/path dir "removed.zip")]
+            (corpus/write-zip! p [["catalog.csv" "作品ID,作品著作権フラグ,人物著作権フラグ,図書カードURL,テキストファイルURL\n"]])
+            (reset! responses (assoc baseline aozora/catalog-url (fs/read-all-bytes p)))
+            (is (= {:state "unavailable" :reason "missing-current-work"} (check)))))
         (testing "changed source content cannot use old reliance"
           (reset! responses baseline)
           (corpus/write-work! root (assoc work :text "Changed edition\n"))
           (swap! responses assoc file-url (fs/read-all-bytes (corpus/work-zip-path root work)))
-          (is (= "unavailable" (:state (check)))))
+          (is (= {:state "unavailable" :reason "checkout-edition-mismatch"} (check)))
+          (corpus/write-work! root work)
+          (is (= {:state "unavailable" :reason "current-edition-mismatch"} (check))))
         (testing "retained response corruption cannot be replaced by live bytes"
           (corpus/write-work! root work)
           (reset! responses baseline)

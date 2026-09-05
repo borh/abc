@@ -394,6 +394,7 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D19 | Trust: v1 = two disjoint ROLES with FIXED directly pinned Ed25519 key sets — RELEASE: one online CI key (manifests); GOVERNANCE: ONE offline owner-held SOFTWARE Ed25519 key, generated offline, held as TWO authorized custody copies on separately controlled encrypted offline media under the ceremony-declared complete persistent-copy inventory (withdrawal/amendment) — **O5a-as-amended, owner-RATIFIED 2026-08-25; key medium amended by owner 2026-08-25 (software, after the 5.4.3 firmware finding); composition collapsed per round-27 F143, owner-CONFIRMED 2026-08-25 (two non-threshold software keys add nothing over a second inventoried copy)**. For a given publication chain the pinned sets are established at genesis and never change; changing them ends that chain; successor continuity is outside v1 (F112/F120). The anchor authenticates the role assignment, never a flat key list (F126). Raw detached signatures over domain-separated messages; fingerprints over decoded raw key bytes; key bytes/fingerprints live in the independent anchor + pinned verifier config only (F116). One inventoried medium verifiably destroyed → continue on the remaining copy; an unexplained copy, lost custody of any medium, or possible disclosure → suspected compromise → HALT (F115/F144); compromise of any member → HALT; chain freezes at the last credential-separated Zenodo checkpoint (F55/F59/F70); freshness deferred. Key-manifest/recovery designs stay in the non-frozen contingency appendix; activation trigger: BEFORE any set change, continuity promise, or freshness consumer — never mid-incident. Amendment history: F8→F22–F47→O5a/F48–F55→F112–F117. | review-adopted; O5a staging round 9; owner-directed set-of-2 + round-22 corrections | contingency activates per O5a trigger |
 | D20 | **Ownership** (F6): TEI profile schemas consumed as explicit flake input from abc during migration (no schema copies). **Amended F56 (round 11): the publication-schema/manifest-identity transfer has NO Slice-1 consumer after F52 — ABC keeps that ownership during Slice 1; soranoha/ owns only kernel/CAS/trace-store/copied renderers; the AGENTS.md transfer moves to the first Slice-2 work that assembles manifests. Slice 1 waits on nothing administrative.** | review-adopted 2026-08-24; amended round 11 | owner action: AGENTS.md edit, before Slice 2 |
 | D21 | **Rights/registry admission restored** (F14): the fail-closed value-plus-hash rights authority (policy hash recorded in manifest `admission`); per-work inclusion governed by named rule (O1, owner); admission responsibility consumed from abc or transferred in AGENTS.md before Slice 3. Currently `publication-policy.edn` BLOCKS release. **F60 (round 12): admission lives ENTIRELY in soranoha.za — `load-rights-authority!`, inclusion rules, and the fail-closed block are RELEASE-ASSEMBLER concerns, never kernel concerns. The kernel builds any selected inputs, policy-blind (F52); Slice 2 uses fixture admission inputs; Slice 3 connects the production authority. The earlier "kernel ports/inherits" wording was a leak that could have reintroduced the build/publication coupling F52 removed.** **F17: admission is assessment-based per O1 (adopted reviewer rule); catalog flags seed, never authorize; private archiving needs its own authorization policy.** **F24 (as amended by F61/F71 — intent_id no longer exists): the assessment data itself is cryptographically committed — bound in `admission` and part of the F67 build projection, so newly completed assessments change the manifest and are never no-op'd as duplicates. F30: the commitment is two retained public artifacts, separating domain roles — the assessment SNAPSHOT commits facts (public-domain / in-copyright / undetermined / not-evaluated per contribution, F35/F47); the admission REPORT records the inclusion rule's total partition (admitted/excluded/quarantined with reasons). Both published, permanently rooted, hash-resolvable. F38: works = admitted − withdrawn.** | review rounds 2–8 | policy content owner-governed; mechanism fixed |
+| D22 | **Spec interpretation, snapshot `not-evaluated` (2026-09-05; from the soranoha-ejw design review, finding R2).** The §5 fact rule's `not-evaluated` ("no completed assessment") is read as NO CURRENTLY APPLICABLE completed assessment: a completed finding whose acceptance was withdrawn or superseded, or whose recorded premises no longer match the source under release, projects to `not-evaluated`, because no completed assessment describes the fact as it stands. Two currently applicable findings with different values are NOT `not-evaluated` and never reach projection — the evaluator fails the source view as inconsistent until a supersession, withdrawal, or an explicit accepted inconclusiveness finding (projecting to `undetermined`) resolves it. `undetermined` remains reserved for an assessment actually performed. Spec wording and schema bytes are unchanged; no wire change. Recorded BEFORE the first non-null fact is committed so the evaluator and the frozen spec cannot drift. | owner-directed 2026-09-05; ledger section below | interpretation of frozen text; a spec clarification note, if ever added, follows the D16 process |
 
 ## Constraints & success metrics
 
@@ -3876,3 +3877,52 @@ with permanent manifest/blob roots means pruning history cannot
 reduce verification cost, and a chain rollover would be a separate
 protocol/trust decision, not retention. No monitoring added. 72
 tests / 453 assertions pass.
+
+## Assessment-evaluator design review — 2026-09-05 (soranoha-ejw; spec interpretation D22)
+
+Context: the assessment-dependency design in issue soranoha-ejw
+projects an evaluated fact into the frozen `snh-assessment-snapshot/1`
+shape. Its review (finding R2) found two readings of the spec §5 fact
+rule that the frozen text does not distinguish, and one mapping the
+draft design had chosen that the spec text does not support.
+
+- **Interpretation recorded (D22).** `not-evaluated` = no CURRENTLY
+  APPLICABLE completed assessment. A reviewed finding exists in the
+  versioned source data but is not currently applicable when its
+  acceptance was withdrawn or superseded, or when a premise it
+  recorded no longer matches the source under release (a changed
+  edition bundle, a changed catalog observation it consumed). Such a
+  fact projects to `not-evaluated` with the three null fields. This
+  is the fail-closed reading: a finding about a source that no longer
+  exists describes nothing the release publishes.
+- **Mapping rejected.** The draft design projected a CONFLICT — two
+  currently applicable findings asserting different values for one
+  fact — as `not-evaluated`. That would publish "no completed
+  assessment" where two exist, and would route an `in-copyright`
+  finding into quarantine instead of exclusion. Under D22 a conflict
+  is an inconsistency in the owner-authored acceptance records: the
+  evaluator fails the whole source view, naming both justifications,
+  and no snapshot is produced until a supersession or withdrawal
+  record removes one, or an explicit accepted inconclusiveness
+  finding projects the fact to `undetermined`. Conflicting input
+  never fabricates that review.
+- **What is unchanged.** Spec §5 text, the four frozen schemas, the
+  conformance vectors, the inclusion rule, and the total quarantine
+  baseline. `undetermined` still means an assessment was performed
+  and was inconclusive, with jurisdiction, effective date, and basis
+  recorded. The verifier checks nothing new: the interpretation binds
+  the ASSEMBLER-side evaluator, which is where §8 already places
+  totality and semantic-domain checks.
+- **Why here and now.** The design also fixes per-finding effective
+  dates (R1), a closed v1 fact vocabulary drawn from D-1..D-3 (R3), a
+  minted contribution identity for contributors the catalog omits
+  (R4), and regenerate-and-compare preflight over the committed
+  snapshot (R5). Those are design-internal and live in the issue.
+  D22 is recorded in the ledger because it fixes the meaning of a
+  frozen public status value; it is written before any non-null
+  fact is committed to `abc/data/assessment-snapshot.json`, so the
+  first assessed batch is produced under a stated reading rather than
+  an implicit one. Implementation follows the child issues
+  soranoha-ejw.1 (evaluator + snapshot projection on synthetic
+  fixtures), .2 (preflight replacement), .3 (internal RDF), .4 (first
+  real dossier, no admission).

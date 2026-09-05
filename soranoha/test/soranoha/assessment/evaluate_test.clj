@@ -241,3 +241,17 @@
           (is (= reviewed-status (get projected "status")))
           (is (= :conflicting-assessment-support
                  (failure #(evaluate/evaluate! store (update (source) "findings" conj review) options)))))))))
+(deftest supersession-targets-and-rule-identities-are-unambiguous
+  (let [source (assoc records/empty-source "findings"
+                      (mapv #(fixtures/finding % "person:000001" "death-year" 1900 []) ["a" "b" "c"]))
+        ab {"id" "ab" "kind" "supersession" "target" "a" "replacement" "b"}
+        ac {"id" "ac" "kind" "supersession" "target" "a" "replacement" "c"}
+        ba {"id" "ba" "kind" "supersession" "target" "b" "replacement" "a"}]
+    (doseq [controls [[ab ac ba] [ac ab ba] [ba ab ac] [ab ac]]]
+      (is (= :duplicate-supersession-target
+             (failure #(records/encode (assoc source "controls" controls))))))
+    (doseq [controls [[ab ba] [ba ab]]]
+      (is (= :supersession-cycle (failure #(records/encode (assoc source "controls" controls))))))
+    (doseq [id ["jp-conservative-term/1" "jp-conservative-term/2"]]
+      (is (= :assessment-schema-invalid
+             (failure #(records/encode (assoc-in source ["findings" 0 "id"] id))))))))

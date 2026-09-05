@@ -57,6 +57,12 @@
                 (not= (get-in by-id [(get control "target") "fact"])
                       (get-in by-id [(get control "replacement") "fact"])))
         (fail! :invalid-supersession {:control control})))
+    (let [targets (frequencies (map #(get % "target")
+                                    (filter #(= "supersession" (get % "kind"))
+                                            (get source "controls"))))
+          duplicates (sort (keep (fn [[target n]] (when (> n 1) target)) targets))]
+      (when (seq duplicates)
+        (fail! :duplicate-supersession-target {:targets (vec duplicates)})))
     (let [successor (into {} (keep (fn [control]
                                      (when (= "supersession" (get control "kind"))
                                        [(get control "target") (get control "replacement")])))

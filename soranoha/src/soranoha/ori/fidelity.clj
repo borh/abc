@@ -26,12 +26,18 @@
     (map #(.item xs %) (range (.getLength xs)))))
 
 (defn- elements [node name]
-  (filter #(= name (.getLocalName ^Node %))
+  (filter #(and (= name (.getLocalName ^Node %))
+                (= "http://www.tei-c.org/ns/1.0" (.getNamespaceURI ^Node %)))
           (tree-seq #(seq (children %)) children node)))
 
 (defn- attr [^Node node name]
   (when-let [attrs (.getAttributes node)]
     (when-let [a (.getNamedItem attrs name)] (.getNodeValue a))))
+
+(defn- abc-attr [^Node node name]
+  (when-let [attrs (.getAttributes node)]
+    (when-let [a (.getNamedItemNS attrs "https://w3id.org/abc/ns/tei" name)]
+      (.getNodeValue a))))
 
 (defn- xml [bytes]
   (let [factory (doto (DocumentBuilderFactory/newInstance)
@@ -82,7 +88,11 @@
         plain (str/replace text ruby-pattern (fn [[_ explicit implicit _]] (or explicit implicit)))
         unsupported? (boolean (re-find #"[［］《》｜※�]" plain))]
     {:plain plain :rubies rubies :gaijis @gaijis
-     :heading (when heading (nth heading 1)) :closing? closing?
+     :heading (when heading (nth heading 1))
+     :heading-indent (when heading
+                       (Long/parseLong (apply str (map #(Character/digit ^char % 10)
+                                                       (second (re-find #"^［＃([０-９0-9]+)字下げ］" mapped))))))
+     :closing? closing?
      :indent (count (or (re-find #"^　+" plain) ""))
      :unsupported? unsupported?}))
 
@@ -121,16 +131,35 @@
                             (elements doc "note")))
         note-lines (when note (vec (elements note "seg")))
         indent-style? (fn [node property n]
-                        (boolean (re-find (re-pattern (str property "\\s*:\\s*" n "em(?:;|$)"))
-                                          (or (attr node "style") ""))))]
+                        (let [style (or (attr node "style") "")]
+                          (or (and (zero? n) (not (str/includes? style property)))
+                              (boolean (re-find (re-pattern (str property "\\s*:\\s*" n "em(?:;|$)"))
+                                                style)))))]
     [(comparison "plaintext-body"
                  (mapv :plain lines)
                  (vec (remove str/blank? (str/split-lines (str/replace plaintext #"\r\n?" "\n")))))
      (comparison "tei-body-text"
-                 (apply str (map #(str/replace (:plain %) #"^　+" "") source-paragraphs))
-                 (apply str (map second paragraphs)))
+                 (mapv #(str/replace (:plain %) #"^　+" "") source-paragraphs)
+                 (mapv second paragraphs))
+     (comparison "tei-block-order"
+                 (mapv #(vector (if (:heading %) "head" "p")
+                                (str/replace (:plain %) #"^　+" "")) lines)
+                 (->> (tree-seq #(seq (children %)) children body)
+                      (filter #(and (= "http://www.tei-c.org/ns/1.0" (.getNamespaceURI ^Node %))
+                                    (#{"p" "head"} (.getLocalName ^Node %))))
+                      (map #(vector (.getLocalName ^Node %) (visible % mappings)))
+                      (remove #(str/blank? (second %))) vec))
      (comparison "tei-headings" (vec (keep :heading lines))
                  (mapv #(visible % mappings) (elements body "head")))
+     (comparison "tei-heading-layout" true
+                 (let [expected (filter :heading lines)
+                       actual (elements body "head")]
+                   (and (= (count expected) (count actual))
+                        (every? true?
+                                (map (fn [src h]
+                                       (and (= "2" (attr h "n"))
+                                            (indent-style? h "padding-inline-start" (:heading-indent src))))
+                                     expected actual)))))
      (comparison "tei-ruby" (vec (mapcat :rubies lines))
                  (mapv (fn [r] [(visible (first (elements r "rb")) mappings)
                                 (.getTextContent ^Node (first (elements r "rt")))])
@@ -142,8 +171,7 @@
                       (every? true?
                               (map (fn [src [p text]]
                                      (and (not (str/starts-with? text "　"))
-                                          (or (zero? (:indent src))
-                                              (indent-style? p "text-indent" (:indent src)))))
+                                          (indent-style? p "text-indent" (:indent src))))
                                    source-paragraphs paragraphs))))
      (comparison "tei-source-note-layout" true
                  (and (= (count notes) (count note-lines))
@@ -151,10 +179,15 @@
                               (map (fn [s node]
                                      (let [n (count (or (re-find #"^　+" s) ""))]
                                        (and (= (subs s n) (.getTextContent ^Node node))
-                                            (or (zero? n) (indent-style? node "padding-inline-start" n)))))
+                                            (indent-style? node "padding-inline-start" n))))
                                    notes note-lines))))
-     (result "closing-date-layout" (if (some :closing? lines) "not-evaluated" "passed")
-             "Closing-date alignment is outside this checker's supported rendition subset.")]))
+     (comparison "closing-date-layout" true
+                 (every? true?
+                         (map (fn [src [p _]]
+                                (or (not (:closing? src))
+                                    (and (= "chitsuki" (abc-attr p "layout-kind"))
+                                         (= "align=right;offset-from-end=1" (abc-attr p "layout-params")))))
+                              source-paragraphs paragraphs)))]))
 
 (defn check
   "Compare raw primary-text bytes against TEI and UTF-8 plaintext bytes.
@@ -183,4 +216,4 @@
                     (statuses "not-evaluated") "not-evaluated" :else "passed")
      "checks" checks
      "limitations" ["Limited to separator-delimited Aozora prose with a 底本 colophon, basic ruby, plane-1 third-level JIS gaiji, middle headings, and leading fullwidth indentation."
-                    "Blank-line spacing, title/author metadata, colophon fields after 入力, and closing-date alignment are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))
+                    "Blank-line spacing, title/author metadata and colophon fields after 入力 are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))

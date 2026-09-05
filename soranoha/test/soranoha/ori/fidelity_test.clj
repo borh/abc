@@ -12,7 +12,7 @@
 (def tei
   (str "<TEI xmlns='http://www.tei-c.org/ns/1.0'><teiHeader><charDecl>"
        "<char xml:id='g1'><mapping type='unicode'>犍</mapping></char></charDecl></teiHeader>"
-       "<text><body><div><head n='2'>一</head><p style='text-indent: 1em'>"
+       "<text><body><div><head n='2' style='padding-inline-start: 8em'>一</head><p style='text-indent: 1em'>"
        "<s><ruby><rb>池</rb><rt>いけ</rt></ruby>の　底に、"
        "<ruby><rb><g ref='#g1'/>陀多</rb><rt>かんだた</rt></ruby>。</s></p>"
        "<note type='source-attribution'><seg type='source-line'>底本：本</seg><lb/>"
@@ -30,7 +30,9 @@
 (deftest independent-source-values-detect-export-mutations
   (is (= "passed" (get (report source tei plaintext) "status")))
   (doseq [[label id transform]
-          [["heading omission" "tei-headings" #(str/replace % "<head n='2'>一</head>" "")]
+          [["heading omission" "tei-headings" #(str/replace % "<head n='2' style='padding-inline-start: 8em'>一</head>" "")]
+           ["heading level mutation" "tei-heading-layout" #(str/replace % "head n='2'" "head n='1'")]
+           ["heading indent mutation" "tei-heading-layout" #(str/replace % "padding-inline-start: 8em" "padding-inline-start: 7em")]
            ["visible omission" "tei-body-text" #(str/replace % "の　底に、" "の　に、")]
            ["meaningful interior space" "tei-body-text" #(str/replace % "の　底" "の底")]
            ["serializer whitespace" "tei-body-text" #(str/replace % "<s>" "<s>\n   ")]
@@ -60,7 +62,32 @@
     (is (= "passed" (get r "status")))
     (is (= "windows-31j" (get r "source_encoding"))))
   (let [s (str/replace source "\n\n底本：" "\n［＃地から１字上げ］（日付）\n\n底本：")
-        t (str/replace tei "<note " "<p>（日付）</p><note ")
+        t (str/replace tei "<note " "<p xmlns:abc='https://w3id.org/abc/ns/tei' abc:layout-kind='chitsuki' abc:layout-params='align=right;offset-from-end=1'>（日付）</p><note ")
         r (report s t (str plaintext "（日付）\n"))]
-    (is (= "not-evaluated" (status r "closing-date-layout")))
-    (is (= "not-evaluated" (get r "status")))))
+    (is (= "passed" (status r "closing-date-layout")))
+    (is (= "passed" (get r "status")))
+    (is (= "failed" (status (report s (str/replace t "offset-from-end=1" "offset-from-end=2")
+                                    (str plaintext "（日付）\n")) "closing-date-layout")))))
+
+(deftest structure-and-zero-indentation-are-source-dependent
+  (let [s (str/replace source "\n\n底本：" "\n次。\n\n底本：")
+        t (str/replace tei "<note " "<p>次。</p><note ")
+        p (str plaintext "次。\n")]
+    (is (= "passed" (get (report s t p) "status"))))
+  (let [moved (-> tei
+                  (str/replace "<head n='2' style='padding-inline-start: 8em'>一</head>" "")
+                  (str/replace "<note " "<head n='2' style='padding-inline-start: 8em'>一</head><note "))]
+    (is (= "failed" (status (report source moved plaintext) "tei-block-order"))))
+  (let [s (str/replace source "\n\n底本：" "\n次。\n\n底本：")
+        t (-> tei
+              (str/replace "。</s></p>" "</s></p><p>。次。</p>"))]
+    (is (= "failed" (status (report s t (str plaintext "次。\n")) "tei-body-text"))))
+  (is (= "failed"
+         (status (report (str/replace source "　池" "池") tei
+                         (str/replace plaintext "　池" "池")) "tei-paragraph-indentation")))
+  (is (= "failed"
+         (status (report source (str/replace tei ">底本：本</seg>"
+                                             " style='padding-inline-start: 2em'>底本：本</seg>")
+                         plaintext) "tei-source-note-layout")))
+  (is (= "failed" (get (report source (str/replace tei "http://www.tei-c.org/ns/1.0" "urn:other")
+                               plaintext) "status"))))

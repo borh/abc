@@ -11,6 +11,9 @@
 (def missing-selected-work
   {"state" "unavailable" "reason" "missing-selected-work"})
 
+(def ^:private rule-version "1")
+(def ^:private assessment-fact-version "1")
+
 (def ^:private rule-date "2018-12-29")
 
 (defn semantic-value
@@ -53,7 +56,7 @@
         basis (:basis result)
         run (engine/run-stage!
              store
-             {:stage-id "assessment-fact" :stage-version "1"
+             {:stage-id "assessment-fact" :stage-version assessment-fact-version
               :toolchain-id toolchain-id
               :f (fn [_ inputs]
                    {"semantic" (canonical/rfc8785-safe-integer-json-bytes-v1
@@ -69,7 +72,7 @@
   (let [run (engine/run-stage!
              store
              {:stage-id (str "assessment-rule/" (get key "predicate"))
-              :stage-version "1" :toolchain-id toolchain-id
+              :stage-version rule-version :toolchain-id toolchain-id
               :f (fn [_ _]
                    {"semantic" (canonical/rfc8785-safe-integer-json-bytes-v1 (compute))})}
              (assoc inputs "fact" key))
@@ -182,11 +185,12 @@
               (let [kind (get premise "kind") ref (get premise "ref")
                     projection (get premise "projection" "evidence-version")
                     result (when (= kind "fact") (resolve-fact ref))
+                    identity (when (= kind "identity")
+                               (first (filter #(= ref (get % "id")) (get source "identities"))))
                     actual (case kind
-                             "identity" (let [identity (first (filter #(= ref (get % "id")) (get source "identities")))]
-                                          (when (every? #(= "available" (get-in obs [% :state]))
-                                                        (get identity "evidence"))
-                                            (identity-fingerprint identity observations)))
+                             "identity" (when (every? #(= "available" (get-in obs [% :state]))
+                                                      (get identity "evidence"))
+                                          (identity-fingerprint identity observations))
                              "observation"
                              (do
                                (when (and (= "available" (get-in obs [ref :state]))
@@ -202,7 +206,11 @@
                     matches? (= actual (get premise "fingerprint"))]
                 {:premise premise :state (if matches? "available" "unavailable")
                  :actual actual :reason (when-not matches?
-                                          (or (:reason result) (get-in obs [ref :reason]) "stale-premise"))
+                                          (or (:reason result)
+                                              (if identity
+                                                (some #(get-in obs [% :reason]) (get identity "evidence"))
+                                                (get-in obs [ref :reason]))
+                                              "stale-premise"))
                  :dependencies (vec (:dependencies result))}))
             (resolve-finding [finding]
               (let [id (get finding "id")
@@ -259,8 +267,9 @@
                 (if (= "available" (get semantic "state"))
                   (available (get semantic "value")
                              (get semantic "effective_date")
-                             (concat [{"id" "jp-conservative-term/1"
-                                       "text" "Japanese death-based term: death by 1967; established attribution, work type, publication timing, rights chain and absence of wartime addition; status on or after 2018-12-29."}]
+                             (concat [{"id" (str "jp-conservative-term/" rule-version)
+                                       "text" (str "jp-conservative-term/" rule-version
+                                                   ": Japanese death-based term: death by 1967; established attribution, work type, publication timing, rights chain and absence of wartime addition; status on or after 2018-12-29.")}]
                                      (mapcat :basis all-results))
                              all-edges)
                   (unavailable (get semantic "reason") all-edges))))

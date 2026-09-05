@@ -9,14 +9,22 @@
             [soranoha.kura.engine :as engine])
   (:import [java.net URI URLEncoder]))
 
+(def ^:private fragment-versions {"finding" "2" "conclusion" "1"})
+(def ^:private assembly-version "2")
+
 (def default-mapping-profile {"vocabulary" "urn:soranoha:assessment:"})
 
 (def ^:private rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 (def ^:private prov "http://www.w3.org/ns/prov#")
 (def ^:private xsd "http://www.w3.org/2001/XMLSchema#")
 
+(defn- validate-unicode! [s]
+  ;; The canonicalizer rejects lone UTF-16 surrogates before Java can replace
+  ;; them during UTF-8 encoding.
+  (canonical/rfc8785-safe-integer-json-string-v1 s))
+
 (defn- iri [s]
-  (canonical/rfc8785-safe-integer-json-string-v1 s)
+  (validate-unicode! s)
   (when-not (and (string? s) (not (re-find #"[\x00-\x20<>\"{}|^`\\]" s))
                  (try (.isAbsolute (URI. s)) (catch Exception _ false)))
     (throw (ex-info "RDF requires an absolute IRI" {:reason :invalid-rdf-iri :value s})))
@@ -27,7 +35,7 @@
 
 (defn- literal [value datatype]
   (let [s (str value)]
-    (canonical/rfc8785-safe-integer-json-string-v1 s)
+    (validate-unicode! s)
     (str "\""
          (apply str (map (fn [c]
                            (case c
@@ -99,8 +107,7 @@
            (quad usage (str prov "hadRole") (iri (str vocabulary projection)) nil)
            (quad usage (str vocabulary "premiseKind") (value-term (get premise "kind")) nil)
            (quad usage (str vocabulary "premiseReference") (value-term (get premise "ref")) nil)
-           (quad evidence (str rdf "type") (iri (str prov "Entity")) nil)
-           (quad id (str prov "wasDerivedFrom") (iri evidence) nil)]))
+           (quad evidence (str rdf "type") (iri (str prov "Entity")) nil)]))
       (map-indexed vector (get record "premises"))))))
 
 (defn- projection-input [view]
@@ -216,7 +223,7 @@
         result
         (engine/run-stage!
          store
-         {:stage-id (str "assessment-rdf-" kind) :stage-version "1" :toolchain-id toolchain-id
+         {:stage-id (str "assessment-rdf-" kind) :stage-version (get fragment-versions kind) :toolchain-id toolchain-id
           :f (fn [_ inputs]
                (let [base (get inputs "base") vocabulary (get-in inputs ["mapping" "vocabulary"])
                      payload (get inputs "payload")
@@ -252,7 +259,7 @@
         result
         (engine/run-stage!
          store
-         {:stage-id "assessment-rdf" :stage-version "2" :toolchain-id toolchain-id
+         {:stage-id "assessment-rdf" :stage-version assembly-version :toolchain-id toolchain-id
           :f (fn [{:keys [blob]} inputs]
                (let [fragments (map #(String. ^bytes (blob %) "UTF-8") (get inputs "fragments"))
                      metadata (metadata-quads (get inputs "base") (get inputs "mapping")

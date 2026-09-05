@@ -776,4 +776,9 @@
       (catch clojure.lang.ExceptionInfo e
         (binding [*out* *err*]
           (println (str "error: " (.getMessage e) " " (pr-str (ex-data e)))))
+        (System/exit 1))
+      (catch java.io.IOException e
+        (binding [*out* *err*]
+          (println (str "error: input/output operation failed "
+                        (pr-str {:reason :io-failure :detail (.getMessage e)}))))
         (System/exit 1)))))

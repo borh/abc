@@ -722,6 +722,7 @@
               pkgs.mypy
               pkgs.nixfmt
               pkgs.ruff
+              (pkgs.python3.withPackages (python: [ python.rdflib ]))
             ];
             shellHook = ''
               if command -v sccache > /dev/null 2>&1; then

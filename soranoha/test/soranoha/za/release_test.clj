@@ -535,6 +535,20 @@
               :upstream-origin "https://forge.example/fixture.git"}
         current (atom {slug {:state "available" :reason nil}})
         published? (atom false)]
+    (testing "refreshing official evidence preserves a recorded exception"
+      (let [original (fs/read-all-bytes (:assessment-source opts))
+            output (str (fs/path dir "refreshed.json"))]
+        (try
+          (fs/write-bytes (:assessment-source opts)
+                          (:bytes (records/encode
+                                   (assoc records/empty-source "reliances"
+                                          [(assoc declaration "exception" "Unresolved specific restriction.")]))))
+          (with-redefs [aozora/prepare! (fn [& _] declaration)]
+            (main/aozora-reliance-prepare! (assoc opts :slug slug :out output)))
+          (is (= "Unresolved specific restriction."
+                 (get-in (:value (records/decode (fs/read-all-bytes output)))
+                         ["reliances" 0 "exception"])))
+          (finally (fs/write-bytes (:assessment-source opts) original)))))
     (with-redefs [aozora/check! (fn [& _] @current)]
       (main/assessment-evaluate! (assoc opts :out (:assessment opts)))
       (commit-assessment-inputs! dir)

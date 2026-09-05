@@ -447,7 +447,7 @@
 
 (defn aozora-reliance-prepare!
   "Capture official edition evidence and write a draft owner source file.
-  Existing declarations are preserved except for the requested edition.
+  Refresh the requested edition while preserving any recorded exception.
   Preparing evidence does not publish or commit an acceptance."
   [{:keys [aozora-root evidence-root slug out assessment-source as-of]}]
   (require-flags! "aozora-reliance-prepare"
@@ -458,8 +458,10 @@
                  (:value (assessment-records/decode (fs/read-all-bytes assessment-source)))
                  assessment-records/empty-source)
         today (str (java.time.LocalDate/now java.time.ZoneOffset/UTC))
-        record (aozora/prepare! aozora-root evidence-root slug
-                                {:observed-at today :decision-date (or as-of today)})
+        prior (first (filter #(= slug (get % "slug")) (get source "reliances")))
+        record (cond-> (aozora/prepare! aozora-root evidence-root slug
+                                        {:observed-at today :decision-date (or as-of today)})
+                 prior (assoc "exception" (get prior "exception")))
         _ (when-not (= before (source-provenance! aozora-root) (get record "source_revision"))
             (throw (ex-info "source checkout changed during reliance preparation"
                             {:reason :assessment-source-changed})))

@@ -1,5 +1,11 @@
 # Japanese statutory term citations — Q1–Q5 and the old-law transition
 
+Policy scope: ledger D23 adopts Aozora reliance as the default admission
+basis. The D-3/D-4 requirements below remain the independent-assessment
+route and its historical rationale; they no longer prohibit that adopted
+source-reliance route. Statutory quotations and arithmetic are unchanged.
+Implementation and frozen-contract compatibility are tracked in soranoha-ejw.
+
 Status: this document carries FOUR distinct kinds of content, and
 only one of them is subject to owner adoption:
 

@@ -58,9 +58,10 @@ numbers live in the findings sections and Git history, not here):
   canonical bytes hold by construction). Every work assessment and
   every contribution is the EXPLICIT not-evaluated fact: under the
   adopted derivations there are ZERO eligible completed assessments
-  today — D-4 keeps Q6–Q8 open, so no third-party assertion
-  (including Aozora's own flag) is usable, and no per-work D-3
-  findings exist. Provenance: aozora 0e9ea3e586 (the qualification
+  in the implemented independent-assessment path. D23 adopts
+  Aozora reliance as the default policy; its evidence representation
+  and release integration are not yet implemented. No per-work D-3
+  findings have been accepted. Provenance: aozora 0e9ea3e586 (the qualification
   stop point = the production mirror's HEAD), catalog csv sha256
   c0ace54c7ac037e5…, snapshot id
   snh:1:assessment-snapshot:cebf79535c693f30…, 17,602 candidates
@@ -102,8 +103,12 @@ numbers live in the findings sections and Git history, not here):
   rights-relevant contribution set. The production source remains empty
   and regenerates the total quarantine snapshot. Implementation and
   review evidence live in `soranoha-ejw` and its children; the real
-  assessed dossier remains `soranoha-ejw.4`, dependent on D-3 findings
-  and the `soranoha-28a` evidence-retention decision.
+  edition dossier remains `soranoha-ejw.4`, now following D23.
+  `soranoha-28a` resolves retention: a configured evidence directory
+  and digest checks belong to Soranoha; storage, backup and recovery
+  belong to the overall NixOS configuration. D23 changes the adopted
+  default admission policy; the running evaluator still enforces the
+  earlier independent-assessment contract until the migration is reviewed.
 
   GENESIS TIMING DECIDED (round-31 finding 3, owner
   2026-08-31): do NOT publish an empty genesis. The chain,
@@ -406,6 +411,7 @@ set-difference. Daily releases are cheap: mostly pointers to existing artifacts.
 | D20 | **Ownership** (F6): TEI profile schemas consumed as explicit flake input from abc during migration (no schema copies). **Amended F56 (round 11): the publication-schema/manifest-identity transfer has NO Slice-1 consumer after F52 — ABC keeps that ownership during Slice 1; soranoha/ owns only kernel/CAS/trace-store/copied renderers; the AGENTS.md transfer moves to the first Slice-2 work that assembles manifests. Slice 1 waits on nothing administrative.** | review-adopted 2026-08-24; amended round 11 | owner action: AGENTS.md edit, before Slice 2 |
 | D21 | **Rights/registry admission restored** (F14): the fail-closed value-plus-hash rights authority (policy hash recorded in manifest `admission`); per-work inclusion governed by named rule (O1, owner); admission responsibility consumed from abc or transferred in AGENTS.md before Slice 3. Currently `publication-policy.edn` BLOCKS release. **F60 (round 12): admission lives ENTIRELY in soranoha.za — `load-rights-authority!`, inclusion rules, and the fail-closed block are RELEASE-ASSEMBLER concerns, never kernel concerns. The kernel builds any selected inputs, policy-blind (F52); Slice 2 uses fixture admission inputs; Slice 3 connects the production authority. The earlier "kernel ports/inherits" wording was a leak that could have reintroduced the build/publication coupling F52 removed.** **F17: admission is assessment-based per O1 (adopted reviewer rule); catalog flags seed, never authorize; private archiving needs its own authorization policy.** **F24 (as amended by F61/F71 — intent_id no longer exists): the assessment data itself is cryptographically committed — bound in `admission` and part of the F67 build projection, so newly completed assessments change the manifest and are never no-op'd as duplicates. F30: the commitment is two retained public artifacts, separating domain roles — the assessment SNAPSHOT commits facts (public-domain / in-copyright / undetermined / not-evaluated per contribution, F35/F47); the admission REPORT records the inclusion rule's total partition (admitted/excluded/quarantined with reasons). Both published, permanently rooted, hash-resolvable. F38: works = admitted − withdrawn.** | review rounds 2–8 | policy content owner-governed; mechanism fixed |
 | D22 | **Spec interpretation, snapshot `not-evaluated` (2026-09-05; from the soranoha-ejw design review, finding R2).** The §5 fact rule's `not-evaluated` ("no completed assessment") is read as NO CURRENTLY APPLICABLE completed assessment: a completed finding whose acceptance was withdrawn or superseded, or whose recorded premises no longer match the source under release, projects to `not-evaluated`, because no completed assessment describes the fact as it stands. Two currently applicable findings with different values are NOT `not-evaluated` and never reach projection — the evaluator fails the source view as inconsistent until a supersession, withdrawal, or an explicit accepted inconclusiveness finding (projecting to `undetermined`) resolves it. `undetermined` remains reserved for an assessment actually performed. Spec wording and schema bytes are unchanged; no wire change. Recorded BEFORE the first non-null fact is committed so the evaluator and the frozen spec cannot drift. | owner-directed 2026-09-05; ledger section below | interpretation of frozen text; a spec clarification note, if ever added, follows the D16 process |
+| D23 | **Aozora reliance as the default admission basis.** Accept Aozora Bunko's published copyright-expired classification for the identified work/edition, scoped to Japan; retain the source assertion, applicable usage rules, source revision and observation date. Soranoha records its own decision to rely on that assertion; it does not fabricate independent contributor assessments or a guarantee. Independent rights reconstruction is reserved for concrete contradictory evidence or restrictions. Mere presence in the Git mirror is insufficient because removed public-site files can remain there. This supersedes O1/D21 and D-3/D-4 insofar as they require universal independent assessment or forbid source reliance. Their statutory evidence and independent-assessment derivations remain. No worldwide claim, protected/permission-only admission, schema alteration, policy activation or genesis is authorized by this decision alone. | owner-adopted 2026-09-06, decision interview | evidence representation and frozen-contract compatibility to be reviewed before release integration |
 
 ## Constraints & success metrics
 
@@ -1057,7 +1063,8 @@ around remote compare-and-append + verified receipts + admission; "sources
 in agent report" headings redirected to the inlined sources list.
 
 ### Owner decisions (ALL RATIFIED as of 2026-08-25; O1/O2 gated Slice 3, O3 gated the D16.1 freeze per F31)
-- **O1 — admission rule.** Round-3 review VETOED the two-flag (なし/なし)
+- **O1 — admission rule. [SUPERSEDED by D23 for the default Aozora
+  reliance path; retained as history and independent-assessment rationale.]** Round-3 review VETOED the two-flag (なし/なし)
   rule: the in-repo rights-remediation design (abc/docs/superpowers/specs/
   2026-07-11-rights-assessment-remediation-design.md) states the catalog
   Boolean is a source assertion that must not be promoted to a legal
@@ -3937,3 +3944,34 @@ draft design had chosen that the spec text does not support.
   soranoha-ejw.1 (evaluator + snapshot projection on synthetic
   fixtures), .2 (preflight replacement), .3 (internal RDF), .4 (first
   real dossier, no admission).
+
+## Aozora reliance policy adopted — 2026-09-06 (D23)
+
+The owner chose reliance on Aozora's published copyright-expired
+classification for an identified edition in Japan as Soranoha's default
+admission basis. Independent reconstruction of every rights chain is no
+longer a prerequisite for the ordinary Aozora case. Concrete contradictory
+evidence or restrictions still require investigation; discovering a
+literary source relationship alone does not establish such a contradiction.
+
+The retained evidence is the source assertion, its edition binding, the
+applicable usage rules, source revision and observation date, together with
+Soranoha's reliance decision. Observation time must not be represented as
+an undocumented Aozora assessment date. A work-level source assertion does
+not establish individual contributor statuses or an exhaustive contribution
+set. Existing fact dependencies and provenance machinery remain reusable.
+
+Aozora's usage rules distinguish expired works from protected or
+permission-specific works and cover redistribution and format conversion:
+https://www.aozora.gr.jp/guide/kijyunn.html . Its FAQ describes the Japanese
+publication scope and warns that its Git mirror may retain removed public
+files: https://www.aozora.gr.jp/guide/aozora_bunko_faq.html . This evidence
+supports an explicit reliance policy, not a guarantee of legal correctness.
+
+The frozen snapshot currently requires work and rights-relevant contribution
+assessment facts. The representation of source reliance must therefore be
+resolved explicitly under the D16 change process wherever necessary; it
+must not be implemented by filling catalog rows with fictitious assessments.
+Implementation work is tracked under soranoha-ejw. The policy file and
+quarantine snapshot stay unchanged until the new path is implemented and
+reviewed. No empty genesis remains the owner's decision.

@@ -93,9 +93,19 @@
         params
         (assoc :abc/layout-params params)))))
 
+(defn- leading-indent [text]
+  (count (re-find #"^　+" (or text ""))))
+
 (defn- source-note-hiccup [node]
-  [:note {:type (get node "note_type")}
-   (get node "text")])
+  (into [:note {:type (get node "note_type")}]
+        (interpose [:lb]
+                   (map (fn [line]
+                          (let [indent (leading-indent line)]
+                            [:seg (cond-> {:type "source-line"}
+                                    (pos? indent)
+                                    (assoc :style (str "padding-inline-start: " indent "em")))
+                             (subs line indent)]))
+                        (string/split-lines (get node "text"))))))
 
 (defn- flush-paragraph [acc]
   (if (seq (:current-paragraph acc))
@@ -400,12 +410,26 @@
                            :prior-end prior-end})))
         (recur (rest remaining) end)))))
 
-(defn- render-paragraph-row [nodes acc paragraph]
+(defn- paragraph-render-inputs [nodes paragraph]
   (let [{start "start" end "end"} (paragraph-range paragraph)
+        first-node (when (< start end) (nth nodes start))
+        indent (if (and (= "body" (get paragraph "role"))
+                        (= "text" (get first-node "type")))
+                 (leading-indent (get first-node "text"))
+                 0)]
+    [(if (pos? indent)
+       (update-in nodes [start "text"] subs indent)
+       nodes)
+     (cond-> (paragraph-attrs paragraph)
+       (pos? indent) (assoc :style (str "text-indent: " indent "em")))]))
+
+(defn- render-paragraph-row [nodes acc paragraph]
+  (let [[nodes attrs] (paragraph-render-inputs nodes paragraph)
+        {start "start" end "end"} (paragraph-range paragraph)
         node-slice (subvec nodes start end)]
     (case (get paragraph "role")
       "body" (-> acc
-                 (assoc :current-paragraph-attrs (paragraph-attrs paragraph))
+                 (assoc :current-paragraph-attrs attrs)
                  (render-node-seq node-slice)
                  flush-paragraph)
       "source-note" (-> acc
@@ -413,7 +437,7 @@
                         (render-node-seq node-slice)
                         flush-paragraph)
       (-> acc
-          (assoc :current-paragraph-attrs (paragraph-attrs paragraph))
+          (assoc :current-paragraph-attrs attrs)
           (render-node-seq node-slice)
           flush-paragraph))))
 
@@ -469,21 +493,31 @@
         paragraph-sentences (get sentences-by-pid (get paragraph "id"))]
     (if (and (seq paragraph-sentences)
              (sentence-wrappable-paragraph? node-slice paragraph))
-      (-> (assoc acc :current-paragraph-attrs (paragraph-attrs paragraph))
-          (as-> state
-                (reduce (partial render-sentence-row nodes)
-                        state
-                        paragraph-sentences))
-          flush-paragraph)
+      (let [[nodes attrs] (paragraph-render-inputs nodes paragraph)]
+        (-> (assoc acc :current-paragraph-attrs attrs)
+            (as-> state
+                  (reduce (partial render-sentence-row nodes)
+                          state
+                          paragraph-sentences))
+            flush-paragraph))
       (render-paragraph-row nodes acc paragraph))))
 
 (defn- render-with-paragraphs [nodes paragraphs sentences]
   (validate-paragraph-ranges! nodes paragraphs)
-  (let [sentences-by-pid (sentences-by-paragraph sentences)]
-    (finalize-result
-     (reduce (partial render-paragraph-row-with-sentences nodes sentences-by-pid)
-             (initial-acc)
-             paragraphs))))
+  (let [sentences-by-pid (sentences-by-paragraph sentences)
+        [result end] (reduce
+                      (fn [[acc prior-end] paragraph]
+                        (let [{start "start" end "end"} (paragraph-range paragraph)]
+                          [(render-paragraph-row-with-sentences
+                            nodes sentences-by-pid
+                            (-> acc
+                                (render-node-seq (subvec nodes prior-end start))
+                                flush-paragraph)
+                            paragraph)
+                           end]))
+                      [(initial-acc) 0]
+                      paragraphs)]
+    (finalize-result (render-node-seq result (subvec nodes end)))))
 
 (defn- render-flat [nodes]
   (finalize-result

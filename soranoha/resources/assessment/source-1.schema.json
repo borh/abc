@@ -1,0 +1,576 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "observations",
+    "findings",
+    "controls",
+    "identities"
+  ],
+  "properties": {
+    "schema": {
+      "const": "soranoha-assessment-source/1"
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "selector",
+              "slug"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "selector": {
+                "enum": [
+                  "canonical-source-bundle",
+                  "catalog-contributors"
+                ]
+              },
+              "slug": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "selector",
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "selector": {
+                "const": "retained-evidence"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "fact",
+          "value",
+          "effective_date",
+          "reviewed_at",
+          "assessor",
+          "method",
+          "basis",
+          "premises"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fact": {
+            "$ref": "#/$defs/fact"
+          },
+          "value": {},
+          "effective_date": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "reviewed_at": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "assessor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1
+          },
+          "basis": {
+            "type": "string",
+            "minLength": 1
+          },
+          "premises": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "ref",
+                "fingerprint"
+              ],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "observation",
+                    "fact",
+                    "identity"
+                  ]
+                },
+                "ref": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "$ref": "#/$defs/fact"
+                    }
+                  ]
+                },
+                "fingerprint": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "projection": {
+                  "enum": [
+                    "value",
+                    "evidence-version",
+                    "set-membership"
+                  ]
+                },
+                "rationale": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "fact": {
+                  "properties": {
+                    "predicate": {
+                      "const": "death-year"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9999
+                },
+                "fact": {
+                  "properties": {
+                    "subject": {
+                      "pattern": "^person:([0-9]{6}|soranoha-[a-z0-9][a-z0-9_-]*)$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "fact": {
+                  "properties": {
+                    "predicate": {
+                      "const": "attribution-form"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "real-name",
+                    "well-known-pseudonym",
+                    "registered-real-name",
+                    "other"
+                  ]
+                },
+                "fact": {
+                  "properties": {
+                    "subject": {
+                      "pattern": "^[0-9a-z_-]+/(author|translator|editor|reviser|other):([0-9]{6}|soranoha-[a-z0-9][a-z0-9_-]*)$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "fact": {
+                  "properties": {
+                    "predicate": {
+                      "const": "no-wartime-addition"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "boolean"
+                },
+                "fact": {
+                  "properties": {
+                    "subject": {
+                      "pattern": "^[0-9a-z_-]+/(author|translator|editor|reviser|other):([0-9]{6}|soranoha-[a-z0-9][a-z0-9_-]*)$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "fact": {
+                  "properties": {
+                    "predicate": {
+                      "const": "work-type"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "non-film-non-photo",
+                    "film",
+                    "photo",
+                    "other"
+                  ]
+                },
+                "fact": {
+                  "properties": {
+                    "subject": {
+                      "pattern": "^[0-9a-z_-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "fact": {
+                  "properties": {
+                    "predicate": {
+                      "const": "publication-timing"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "lifetime",
+                    "posthumous",
+                    "unknown"
+                  ]
+                },
+                "fact": {
+                  "properties": {
+                    "subject": {
+                      "pattern": "^[0-9a-z_-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "fact": {
+                  "properties": {
+                    "predicate": {
+                      "const": "derivative-chain"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                },
+                "fact": {
+                  "properties": {
+                    "subject": {
+                      "pattern": "^[0-9a-z_-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "fact": {
+                  "properties": {
+                    "predicate": {
+                      "const": "contribution-set"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(author|translator|editor|reviser|other):([0-9]{6}|soranoha-[a-z0-9][a-z0-9_-]*)$"
+                  },
+                  "uniqueItems": true
+                },
+                "fact": {
+                  "properties": {
+                    "subject": {
+                      "pattern": "^[0-9a-z_-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "fact": {
+                  "properties": {
+                    "predicate": {
+                      "const": "contribution-status"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "public-domain",
+                    "in-copyright",
+                    "undetermined"
+                  ]
+                },
+                "fact": {
+                  "properties": {
+                    "subject": {
+                      "pattern": "^[0-9a-z_-]+/(author|translator|editor|reviser|other):([0-9]{6}|soranoha-[a-z0-9][a-z0-9_-]*)$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "fact": {
+                  "properties": {
+                    "predicate": {
+                      "const": "work-status"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "public-domain",
+                    "in-copyright",
+                    "undetermined"
+                  ]
+                },
+                "fact": {
+                  "properties": {
+                    "subject": {
+                      "pattern": "^[0-9a-z_-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "controls": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "target"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "const": "withdrawal"
+              },
+              "target": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "target",
+              "replacement"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "const": "supersession"
+              },
+              "target": {
+                "type": "string",
+                "minLength": 1
+              },
+              "replacement": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "identities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "basis",
+          "assessor",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^soranoha-[a-z0-9][a-z0-9_-]*$"
+          },
+          "basis": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assessor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:soranoha:assessment-source:1",
+  "$defs": {
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "predicate",
+        "jurisdiction"
+      ],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "predicate": {
+          "enum": [
+            "death-year",
+            "attribution-form",
+            "no-wartime-addition",
+            "work-type",
+            "publication-timing",
+            "derivative-chain",
+            "contribution-set",
+            "contribution-status",
+            "work-status"
+          ]
+        },
+        "jurisdiction": {
+          "const": "jp"
+        }
+      }
+    }
+  }
+}

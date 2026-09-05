@@ -54,6 +54,15 @@
                            (.properties node))
     :else (reject! :unsupported-json-node type {:node-type (str (class node))})))
 
+(defn parse-value
+  "Parse JSON with duplicate-key rejection and integral numbers only.
+  Schema validation and canonical-byte checks belong to the caller."
+  [type ^bytes stored-bytes]
+  (let [node (try (.readTree strict-mapper stored-bytes)
+                  (catch Exception e
+                    (reject! :parse-invalid type {:cause (.getMessage e)})))]
+    (node->value node type)))
+
 (defn decode
   "Boundary-decode `stored-bytes` as a protocol object of `type` (one of the
   four release-level registry types). Returns
@@ -66,10 +75,7 @@
   (when-not (contains? schema/schema-resources type)
     (throw (ex-info "boundary decode applies only to the four protocol JSON objects"
                     {:type type :known (keys schema/schema-resources)})))
-  (let [node (try (.readTree strict-mapper stored-bytes)
-                  (catch Exception e
-                    (reject! :parse-invalid type {:cause (.getMessage e)})))
-        value (node->value node type)]
+  (let [value (parse-value type stored-bytes)]
     (when-let [errors (schema/validation-errors type value)]
       (reject! :schema-invalid type {:errors errors}))
     ((semantic/check-for type) value)

@@ -95,6 +95,15 @@
           (when (and (not= projection "evidence-version")
                      (not (seq (get premise "rationale"))))
             (fail! :unjustified-semantic-premise {:finding (get finding "id")})))))
+    (let [reliances (get source "reliances")
+          slugs (map #(get % "slug") reliances)]
+      (when-not (= (count slugs) (count (set slugs)))
+        (fail! :duplicate-reliance-slug {}))
+      (doseq [reliance reliances]
+        (doseq [field ["observed_at" "decision_date"]]
+          (date! (get reliance field)))
+        (when (pos? (compare (get reliance "observed_at") (get reliance "decision_date")))
+          (fail! :reliance-decision-before-observation {:slug (get reliance "slug")}))))
     (doseq [identity (get source "identities") id (get identity "evidence")]
       (when-not (contains? observations id)
         (fail! :unknown-identity-evidence {:id id})))

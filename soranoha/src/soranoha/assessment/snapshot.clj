@@ -12,26 +12,29 @@
      "basis" (str/join "\n" (distinct (map #(get % "text") (:basis result))))}
     scaffold/not-evaluated))
 
-(defn encode [{:keys [facts candidates]}]
+(defn encode [{:keys [facts candidates source reliances]}]
   (decode/encode
    "assessment-snapshot"
-   {"schema" "snh-assessment-snapshot/1"
+   {"schema" (if (seq (get source "reliances"))
+               "snh-assessment-snapshot/2" "snh-assessment-snapshot/1")
     "candidates"
     (mapv (fn [[slug provisional]]
-            (let [complete (get facts (records/fact-key slug "contribution-set"))
-                  established? (= "available" (:state complete))
-                  ids (if established? (:value complete) provisional)]
-              {"slug" slug
-               "work_assessment" (if established?
-                                   (fact (get facts (records/fact-key slug "work-status")))
-                                   scaffold/not-evaluated)
-               "contributions"
-               (mapv (fn [id]
-                       (assoc (if established?
-                                (fact (get facts (records/fact-key
-                                                  (records/contribution-subject slug id)
-                                                  "contribution-status")))
-                                scaffold/not-evaluated)
-                              "contribution_id" id))
-                     (sort ids))}))
+            (if-let [reliance (get reliances slug)]
+              {"slug" slug "reliance" reliance}
+              (let [complete (get facts (records/fact-key slug "contribution-set"))
+                    established? (= "available" (:state complete))
+                    ids (if established? (:value complete) provisional)]
+                {"slug" slug
+                 "work_assessment" (if established?
+                                     (fact (get facts (records/fact-key slug "work-status")))
+                                     scaffold/not-evaluated)
+                 "contributions"
+                 (mapv (fn [id]
+                         (assoc (if established?
+                                  (fact (get facts (records/fact-key
+                                                    (records/contribution-subject slug id)
+                                                    "contribution-status")))
+                                  scaffold/not-evaluated)
+                                "contribution_id" id))
+                       (sort ids))})))
           (sort-by key candidates))}))

@@ -13,6 +13,7 @@
 
 (def ^:private rule-version "1")
 (def ^:private assessment-fact-version "1")
+(def ^:private reliance-version "1")
 
 (def ^:private rule-date "2018-12-29")
 
@@ -165,13 +166,75 @@
                           (map #(key-for % "work-status") (keys candidates)))]
         (visit key)))))
 
+(defn- restrictive-facts-by-work [facts]
+  (reduce-kv
+   (fn [index fact result]
+     (let [predicate (get fact "predicate")
+           subject (get fact "subject")]
+       (if (and (#{"work-status" "contribution-status"} predicate)
+                (= "available" (:state result))
+                (#{"in-copyright" "undetermined"} (:value result)))
+         (update index (if (= predicate "work-status") subject (first (str/split subject #"/" 2)))
+                 (fnil conj []) {"fact" fact "semantic" (semantic-value result)})
+         index)))
+   {} facts))
+
+(defn- reliance-payload [inputs]
+  (let [record (get inputs "record")
+        current (get inputs "current")
+        reason (cond
+                 (not (get inputs "selected")) "missing-selected-work"
+                 (some? (get record "exception")) "recorded-exception"
+                 (seq (get inputs "restrictions")) "restrictive-independent-assessment"
+                 (not= "available" (get current "state")) (get current "reason"))]
+    (assoc (dissoc record "slug")
+           "issuer" "aozora-bunko" "jurisdiction" "jp"
+           "classification" "copyright-expired"
+           "status" (if reason "unavailable" "relied-upon") "reason" reason)))
+
+(defn- evaluate-reliances! [store source candidates observations facts toolchain-id stages]
+  (let [restrictions (restrictive-facts-by-work facts)]
+    (into {}
+          (map
+           (fn [record]
+             (let [slug (get record "slug")
+                   observed (get observations slug)
+                   current (if observed
+                             {"state" (:state observed)
+                              "reason" (when (= "unavailable" (:state observed)) (:reason observed))}
+                             {"state" "unavailable" "reason" "missing-reliance-observation"})
+                   _ (when-not (and (#{"available" "unavailable"} (get current "state"))
+                                    (or (= "available" (get current "state"))
+                                        (and (string? (get current "reason"))
+                                             (seq (get current "reason")))))
+                       (records/fail! :invalid-reliance-observation {:slug slug}))
+                   run (engine/run-stage!
+                        store
+                        {:stage-id "assessment-reliance" :stage-version reliance-version
+                         :toolchain-id toolchain-id
+                         :f (fn [_ inputs]
+                              {"reliance" (canonical/rfc8785-safe-integer-json-bytes-v1
+                                           (reliance-payload inputs))})}
+                        {"record" record "current" current
+                         "selected" (contains? candidates slug)
+                         "restrictions" (vec (sort-by records/fingerprint (get restrictions slug)))})
+                   payload (json/read-json
+                            (String. ^bytes (cas/get-bytes (:cas-dir store)
+                                                           (get-in run [:outputs "reliance"])) "UTF-8"))]
+               (swap! stages conj (assoc run :reliance-slug slug))
+               [slug payload])))
+          (get source "reliances"))))
+
 (defn evaluate!
   "Evaluate validated owner records against freshly captured observations.
   Candidates map slugs to provisional catalog contribution ids; as-of validates
   applicability and never stamps unchanged facts."
-  [store source {:keys [observations candidates as-of toolchain-id]}]
+  [store source {:keys [observations candidates as-of toolchain-id reliance-observations]}]
   (records/validate! source)
   (validate-view! source observations as-of)
+  (doseq [reliance (get source "reliances")]
+    (when (pos? (compare (get reliance "decision_date") as-of))
+      (records/fail! :future-reliance-decision {:slug (get reliance "slug")})))
   (validate-acyclic! source candidates)
   (let [findings (get source "findings")
         by-fact (group-by #(get % "fact") findings)
@@ -316,6 +379,7 @@
                                                 (mapcat :dependencies
                                                         (cond-> reviewed derived (conj derived)))))
                           result (if (and (= predicate "work-status")
+                                          (not (#{"in-copyright" "undetermined"} (:value result)))
                                           (not= "available"
                                                 (:state (resolve-fact
                                                          (records/fact-key (get key "subject")
@@ -331,6 +395,8 @@
       (doseq [key (sort-by records/fingerprint (keys by-fact))] (resolve-fact key))
       (doseq [[slug _] (sort-by key candidates)]
         (resolve-fact (records/fact-key slug "work-status")))
-      {:source source :observations obs :facts @facts :candidates candidates
-       :findings (mapv #(get @states (get % "id")) findings)
-       :stages @stages})))
+      (let [reliances (evaluate-reliances! store source candidates reliance-observations
+                                           @facts toolchain-id stages)]
+        {:source source :observations obs :facts @facts :candidates candidates
+         :findings (mapv #(get @states (get % "id")) findings)
+         :reliances reliances :stages @stages}))))

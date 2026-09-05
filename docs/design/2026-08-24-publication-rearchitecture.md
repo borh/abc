@@ -80,21 +80,32 @@ numbers live in the findings sections and Git history, not here):
   carry that established set — flipping statuses on the catalog
   listing alone would admit works on an unestablished contribution
   basis. Unknown roles, malformed person ids, and ragged rows inside
-  a selected work's row set fail the scaffold closed. Round-31 finding 2
-  (snapshot/checkout binding) is CLOSED: release preflight now
-  re-derives the {slug → sorted catalog-listed contribution
-  candidate ids} projection from the checkout under release and
-  refuses on any difference (:snapshot-projection-drift, complete
-  counts + bounded named samples), because both the driver's
-  selected-vs-built check and the transaction's totality gate
-  compare SLUGS ALONE — a catalog revision adding a translator or
-  changing a role under surviving slugs would otherwise publish
-  against a stale snapshot. The scaffolder's own projection is
-  reused; no new wire schema, sidecar, registry, or persisted hash.
-  Verified: the file boundary-decodes, the inclusion rule partitions
-  it 0 admitted / 0 excluded / 17,602 quarantined, it shows ZERO
-  drift against the checkout, and a single removed contribution id
-  is detected. GENESIS TIMING DECIDED (round-31 finding 3, owner
+  a selected work's row set fail the scaffold closed.
+
+  The `soranoha.assessment` evaluator consumes the owner-authored
+  `soranoha/data/assessment-source.json` and freshly captured checkout
+  observations, using the existing CAS and constructive traces for
+  fact-level dependencies. Release preflight checks that the source
+  records and `abc/data/assessment-snapshot.json` match committed bytes
+  in one owner checkout revision, regenerates the snapshot, and refuses
+  differences with `:snapshot-regeneration-drift` (complete counts and
+  bounded named samples). The evaluated contribution set can legitimately
+  differ from catalog candidates when reviewed completeness findings
+  reconcile them. Under D22, absent or no longer applicable assessments
+  project to `not-evaluated`; conflicting applicable findings fail the
+  source view. Before publication, the driver rechecks the committed
+  owner inputs and the consumed source content against the build.
+  The internal RDF view derives from the same evaluated facts and is
+  outside the frozen wire format. The retained observation-only dossier
+  in `soranoha/data/dossiers/` exercises real-edition capture and
+  reproducibility; it establishes no reviewed D-3 findings or complete
+  rights-relevant contribution set. The production source remains empty
+  and regenerates the total quarantine snapshot. Implementation and
+  review evidence live in `soranoha-ejw` and its children; the real
+  assessed dossier remains `soranoha-ejw.4`, dependent on D-3 findings
+  and the `soranoha-28a` evidence-retention decision.
+
+  GENESIS TIMING DECIDED (round-31 finding 3, owner
   2026-08-31): do NOT publish an empty genesis. The chain,
   transaction, signing, and serving paths are already exercised; a
   permanent zero-work genesis would create an irreversible public

@@ -4,10 +4,12 @@
   published checker verifies end-to-end; an unmoved upstream is the
   scheduled no-op; a malformed assessment snapshot publishes nothing."
   (:require [babashka.fs :as fs]
+            [babashka.process :as process]
             [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
+            [soranoha.assessment.records :as records]
             [soranoha.core.hash :as hash]
             [soranoha.main :as main]
             [soranoha.snh.decode :as decode]
@@ -266,6 +268,19 @@
 
 ;; --- CLI boundary ------------------------------------------------------------
 
+(defn- git-inputs! [dir & args]
+  (let [result (apply process/sh {:dir (str dir) :out :string :err :string}
+                      "git" args)]
+    (when-not (zero? (:exit result))
+      (throw (ex-info "assessment fixture git failed" {:args args :err (:err result)})))))
+
+(defn- commit-assessment-inputs! [dir]
+  (git-inputs! dir "init" "-q")
+  (git-inputs! dir "add" "--" "source.json" "snapshot.json")
+  (git-inputs! dir "-c" "user.name=assessment-fixture"
+               "-c" "user.email=assessment@localhost"
+               "commit" "-qm" "Record assessment inputs"))
+
 (deftest release-input-errors-win-before-the-build-runs
   ;; every file input is preflighted; the aozora-root sentinel does not
   ;; exist, so any row that reached the build would fail with the
@@ -285,6 +300,10 @@
               :chain-clone (str (fs/path dir "no-such-clone"))
               :branch "main"
               :upstream-origin "https://forge.example/za/fixture-corpus.git"
+              :assessment-source (write! "source.json"
+                                         (String. ^bytes (:bytes (records/encode records/empty-source))
+                                                  "UTF-8"))
+              :as-of "2026-09-05"
               :assessment snapshot-file
               :policy (write! "policy.edn"
                               "{:rights-publication :assessment-required}")
@@ -300,6 +319,7 @@
                      (catch clojure.lang.ExceptionInfo e
                        (or (:reason (ex-data e)) (:option (ex-data e))
                            (ex-message e)))))]
+    (commit-assessment-inputs! dir)
     (testing "the blocking production rights state refuses release"
       (is (= :rights-blocked
              (error (assoc base :policy
@@ -312,6 +332,9 @@
                                    (str/replace (slurp snapshot-file)
                                                 "{\"candidates\""
                                                 "{\"candidates\":[],\"candidates\"")))))))
+    (testing "malformed assessment source fails before source checkout access"
+      (is (= :parse-invalid
+             (error (assoc base :assessment-source (write! "broken-source.json" "{"))))))
     (testing "overlapping role keys are an invalid configuration"
       (is (= :overlapping-roles
              (error (assoc base :governance-pub (:release-pub base))))))
@@ -337,6 +360,41 @@
                          (pr-str (ex-data thrown)))]
         (is (= :malformed-release-key (:reason (ex-data thrown))))
         (is (not (str/includes? printed "SECRETSENTINEL")))))
+    (testing "valid draft source and snapshot copies are not release authority"
+      (doseq [[option original name] [[:assessment-source (:assessment-source base) "draft-source.json"]
+                                      [:assessment snapshot-file "draft-snapshot.json"]]]
+        (is (= :uncommitted-assessment-input
+               (error (assoc base option (write! name (slurp original))))))))
+    (testing "modified tracked inputs require committing their new bytes"
+      (let [source-path (:assessment-source base)
+            original (slurp source-path)
+            changed (assoc records/empty-source "observations"
+                           [{"id" "draft" "selector" "catalog-contributors" "slug" "draft"}])]
+        (try
+          (write! "source.json" (String. ^bytes (:bytes (records/encode changed)) "UTF-8"))
+          (is (= :uncommitted-assessment-input (error base)))
+          (finally (spit source-path original)))))
+    (testing "a changed tracked snapshot also requires a new commit"
+      (let [original (slurp snapshot-file)]
+        (try
+          (spit snapshot-file (str/replace original "2026-08-01" "2026-08-02"))
+          (is (= :uncommitted-assessment-input (error base)))
+          (finally (spit snapshot-file original)))))
+    (testing "inputs from different owner repositories cannot form one release view"
+      (let [other (fs/create-temp-dir {:prefix "assessment-other-repo"})]
+        (fs/copy (:assessment-source base) (fs/path other "source.json"))
+        (fs/copy snapshot-file (fs/path other "snapshot.json"))
+        (commit-assessment-inputs! other)
+        (is (= :assessment-input-revisions-differ
+               (error (assoc base :assessment-source (str (fs/path other "source.json"))))))))
+    (testing "unrelated tracked edits do not invalidate committed assessment authority"
+      (write! "notes.txt" "unrelated tracked data")
+      (git-inputs! dir "add" "--" "notes.txt")
+      (git-inputs! dir "-c" "user.name=assessment-fixture"
+                   "-c" "user.email=assessment@localhost"
+                   "commit" "-qm" "Record unrelated fixture data")
+      (write! "notes.txt" "unrelated local edit")
+      (is (= "source git unavailable" (error base))))
     (testing "with every file input valid, the first failure is the
       provenance gate the corpus-reading checks sit behind — proof every
       file input was preflighted first"
@@ -369,6 +427,10 @@
               :chain-clone (str (fs/path dir "no-such-clone"))
               :branch "main"
               :upstream-origin "https://forge.example/za/fixture-corpus.git"
+              :assessment-source (write! "source.json"
+                                         (String. ^bytes (:bytes (records/encode records/empty-source))
+                                                  "UTF-8"))
+              :as-of "2026-09-05"
               :assessment (let [path (str (fs/path dir "snapshot.json"))]
                             (fs/write-bytes path (scaffold-bytes))
                             path)
@@ -380,8 +442,50 @@
                                       (str (get-in ks ["governance" "pub"]) "\n"))
               :release-key (write! "release.seed"
                                    (get-in ks ["release" "seed"]))}]
+    (commit-assessment-inputs! dir)
     (testing "the scaffolded snapshot matches the corpus it came from"
       (is (nil? (main/release-preflight-drift opts))))
+    (testing "a withdrawal committed during the build prevents publishing the captured view"
+      (let [source-path (:assessment-source opts)
+            original (fs/read-all-bytes source-path)
+            finding {"id" "synthetic-death" "fact" (records/fact-key "person:000001" "death-year")
+                     "value" 1900 "effective_date" "2020-01-01" "reviewed_at" "2020-01-01"
+                     "assessor" "synthetic reviewer" "method" "synthetic evidence"
+                     "basis" "Synthetic assertion for concurrent withdrawal coverage." "premises" []}
+            reviewed (assoc records/empty-source "findings" [finding])
+            current-source (main/source-provenance! root)]
+        (try
+          (fs/write-bytes source-path (:bytes (records/encode reviewed)))
+          (commit-assessment-inputs! dir)
+          (is (= :uncommitted-assessment-input
+                 (with-redefs [main/build!
+                               (fn [_]
+                                 (fs/write-bytes
+                                  source-path
+                                  (:bytes (records/encode
+                                           (assoc reviewed "controls"
+                                                  [{"id" "withdraw-synthetic" "kind" "withdrawal"
+                                                    "target" "synthetic-death"}]))))
+                                 (commit-assessment-inputs! dir)
+                                 {"aozora_git_commit" current-source "works" {}})]
+                   (try (main/release! opts)
+                        nil
+                        (catch clojure.lang.ExceptionInfo e (:reason (ex-data e)))))))
+          (finally
+            (fs/write-bytes source-path original)
+            (commit-assessment-inputs! dir)))))
+    (testing "source movement between preflight and publication is refused"
+      (let [before (main/source-provenance! root)
+            error (with-redefs [main/build!
+                                (fn [_]
+                                  (corpus/write-catalog! root
+                                                         [(assoc translated :title "changed during build") kumo])
+                                  (corpus/commit-corpus! root)
+                                  {"aozora_git_commit" before "works" {}})]
+                    (try (main/release! opts)
+                         nil
+                         (catch clojure.lang.ExceptionInfo e (:reason (ex-data e)))))]
+        (is (= :assessment-source-changed-during-build error))))
     (testing "dropping a contributor under a surviving slug is refused"
       (corpus/write-catalog! root [merosu kumo])
       (corpus/commit-corpus! root)
@@ -390,7 +494,7 @@
         (is (= [(slug-of merosu)] (:contributions-differ-sample drift)))
         (is (= 0 (:only-in-checkout-count drift)))
         (is (= 0 (:only-in-snapshot-count drift))))
-      (is (= :snapshot-projection-drift
+      (is (= :snapshot-regeneration-drift
              (try (main/release! opts)
                   nil
                   (catch clojure.lang.ExceptionInfo e

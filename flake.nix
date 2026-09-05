@@ -315,6 +315,7 @@
                   pkgs.git
                   pkgs.clj-kondo
                   pkgs.cljfmt
+                  (pkgs.python3.withPackages (python: [ python.rdflib ]))
                   # the static-serving acceptance runs the checked-in
                   # Caddyfile against an exported tree
                   pkgs.caddy

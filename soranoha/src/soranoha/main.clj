@@ -6,7 +6,9 @@
 ;; evidence the kernel never sees. `release` composes the scheduled release
 ;; pipeline — build, then the za driver's assembly and publication
 ;; transaction, with the assessment snapshot, policy value, signing seed,
-;; and pinned verifier keys as fail-closed file inputs. `governance`
+;; reviewed assessment source records, and pinned verifier keys as fail-closed
+;; file inputs. `assessment-evaluate` regenerates a snapshot and an optional
+;; internal RDF view. `governance`
 ;; appends one offline-signed event; `serving-tree` exports the verified
 ;; chain's serving tree; `assessment-scaffold` emits the total
 ;; quarantine baseline over the current selection;
@@ -21,6 +23,11 @@
             [babashka.process :as process]
             [charred.api :as json]
             [clojure.string :as string]
+            [soranoha.assessment.evaluate :as assessment-evaluator]
+            [soranoha.assessment.records :as assessment-records]
+            [soranoha.assessment.rdf :as assessment-rdf]
+            [soranoha.assessment.snapshot :as assessment-snapshot]
+            [soranoha.assessment.source :as assessment-source]
             [soranoha.core.config :as config]
             [soranoha.core.hash :as core-hash]
             [soranoha.kura.engine :as engine]
@@ -348,46 +355,132 @@
                       {:reason :malformed-release-key :file (str path)})))
     (sign/hex->bytes text)))
 
+(defn- assessment-inputs!
+  [{:keys [assessment-source evidence-root as-of]}]
+  (require-flags! "assessment evaluation"
+                  {"--assessment-source" assessment-source "--as-of" as-of})
+  (try
+    (when-not (= as-of (str (java.time.LocalDate/parse as-of)))
+      (throw (java.time.DateTimeException. "noncanonical date")))
+    (catch java.time.DateTimeException _
+      (throw (ex-info "--as-of must be a real YYYY-MM-DD date"
+                      {:reason :assessment-invalid-date :value as-of}))))
+  (let [source-bytes (fs/read-all-bytes (str assessment-source))
+        source (:value (assessment-records/decode source-bytes))]
+    {:source source :source-bytes source-bytes
+     :retained (assessment-source/retained-observations source evidence-root)}))
+
+(defn- committed-assessment-inputs!
+  "Require the specific reviewed files to match one checkout's committed
+  bytes. Unrelated working-tree edits and later unrelated commits do not
+  affect the authority of these records."
+  [opts source-bytes snapshot-bytes]
+  (let [revisions
+        (mapv
+         (fn [[path expected]]
+           (let [file (fs/real-path (str path))
+                 directory (str (fs/parent file))
+                 git (fn [& args] (apply process/sh {:dir directory} "git" args))
+                 top (git "rev-parse" "--show-toplevel")
+                 head (git "rev-parse" "HEAD")]
+             (when-not (and (zero? (:exit top)) (zero? (:exit head)))
+               (throw (ex-info "assessment input must be committed"
+                               {:reason :uncommitted-assessment-input :file (str path)})))
+             (let [repo (fs/real-path (string/trim (:out top)))
+                   revision (string/trim (:out head))
+                   relative (str (fs/relativize repo file))
+                   blob (process/sh {:dir (str repo) :out :bytes}
+                                    "git" "show" (str revision ":" relative))]
+               (when-not (and (zero? (:exit blob))
+                              (java.util.Arrays/equals ^bytes expected ^bytes (:out blob))
+                              (java.util.Arrays/equals ^bytes expected
+                                                       ^bytes (fs/read-all-bytes file)))
+                 (throw (ex-info "assessment input differs from committed reviewed bytes"
+                                 {:reason :uncommitted-assessment-input :file (str path)})))
+               [(str repo) revision])))
+         [[(:assessment-source opts) source-bytes] [(:assessment opts) snapshot-bytes]])]
+    (when-not (apply = revisions)
+      (throw (ex-info "assessment source and snapshot must share a reviewed revision"
+                      {:reason :assessment-input-revisions-differ})))
+    true))
+
+(defn- evaluate-assessment!
+  [{:keys [root aozora-root as-of clj-toolchain-id rdf-out rdf-base]}
+   {:keys [source retained]}]
+  (require-flags! "assessment evaluation"
+                  {"--root" (config/root root)
+                   "--aozora-root" aozora-root
+                   "--clj-toolchain-id" clj-toolchain-id})
+  (when rdf-out
+    (require-flags! "internal RDF export" {"--rdf-base" rdf-base}))
+  (let [commit (source-provenance! aozora-root)
+        captured (assessment-source/capture-checkout aozora-root source retained)
+        _ (when-not (= commit (source-provenance! aozora-root))
+            (throw (ex-info "source checkout changed during assessment capture"
+                            {:reason :assessment-source-changed})))
+        root (config/ensure-layout! (config/root root))
+        store (engine/open-store! {:cas-dir (config/cas-dir root)
+                                   :db-path (config/trace-db-path root)})]
+    (try
+      (let [evaluation (assessment-evaluator/evaluate!
+                        store source
+                        (assoc captured :as-of as-of :toolchain-id clj-toolchain-id))
+            snapshot (assessment-snapshot/encode evaluation)]
+        (when rdf-out
+          (let [rdf (assessment-rdf/project!
+                     store evaluation {:base-iri rdf-base
+                                       :mapping-profile assessment-rdf/default-mapping-profile
+                                       :toolchain-id clj-toolchain-id})]
+            (fs/write-bytes (str rdf-out)
+                            (cas/get-bytes (:cas-dir store)
+                                           (get-in rdf [:outputs "nquads"])))))
+        {:snapshot snapshot :evaluation evaluation
+         :source-commit commit :source-hashes (:source-hashes captured)})
+      (finally (engine/close-store! store)))))
+
+(defn assessment-evaluate!
+  "Evaluate versioned assessment inputs against the current checkout and
+  optionally write a snapshot and an internal RDF view. Does not publish."
+  [{:keys [out] :as opts}]
+  (let [result (evaluate-assessment! opts (assessment-inputs! opts))
+        snapshot (:snapshot result)]
+    (when out (fs/write-bytes (str out) (:bytes snapshot)))
+    (println (abc-json/write-deterministic-json-str
+              {"assessment_snapshot" (:id snapshot)
+               "candidates" (count (get-in snapshot [:value "candidates"]))
+               "source_commit" (:source-commit result)}))
+    result))
+
+(defn- snapshot-drift [expected supplied]
+  (let [by-slug #(into {} (map (juxt (fn [c] (get c "slug")) identity))
+                       (get % "candidates"))
+        expected-works (by-slug expected)
+        supplied-works (by-slug supplied)
+        changed (vec (sort (for [[slug work] expected-works
+                                 :when (not= work (get supplied-works slug))]
+                             slug)))]
+    (merge (scaffold/projection-drift
+            (scaffold/snapshot-projection expected)
+            (scaffold/snapshot-projection supplied))
+           {:changed-work-count (count changed)
+            :changed-work-sample (vec (take 20 changed))})))
+
 (defn release-preflight-drift
-  "nil when the assessment snapshot at --assessment still describes the
-  checkout at --aozora-root; otherwise the drift diagnostic. The
-  comparison is the scaffolder's own {slug -> sorted catalog-listed
-  contribution candidate ids} projection, re-derived from the checkout
-  and compared against the snapshot's equivalent — the release driver's
-  selected-vs-built check and the transaction's totality gate both
-  compare SLUGS ALONE, so this is what refuses a snapshot whose slugs
-  all survive a catalog revision that moved a contribution. The clean-
-  checkout provenance gate runs first, so the projection is derived from
-  an identified source tree."
+  "Regenerate the committed snapshot from reviewed source records and
+  freshly captured observations. nil means canonical bytes agree."
   ([opts]
    (release-preflight-drift
-    opts
-    (:value (decode/decode "assessment-snapshot"
-                           (fs/read-all-bytes (str (:assessment opts)))))))
-  ([{:keys [aozora-root]} snapshot-value]
-   (source-provenance! aozora-root)
-   (let [rows (catalog/read-rows-from-string
-               (:csv-text (catalog/read-catalog-zip aozora-root)))
-         {:keys [candidates]} (select/select-candidates aozora-root rows)]
-     (scaffold/projection-drift
-      (scaffold/projection rows candidates)
-      (scaffold/snapshot-projection snapshot-value)))))
+    opts (:value (decode/decode "assessment-snapshot"
+                                (fs/read-all-bytes (str (:assessment opts)))))))
+  ([opts supplied]
+   (let [expected (:snapshot (evaluate-assessment! opts (assessment-inputs! opts)))
+         actual (decode/encode "assessment-snapshot" supplied)]
+     (when-not (java.util.Arrays/equals ^bytes (:bytes expected) ^bytes (:bytes actual))
+       (snapshot-drift (:value expected) supplied)))))
 
 (defn release-preflight!
-  "Read and validate every release input before the build runs, returning
-  the already-read values the release consumes. Fail-closed: the
-  assessment snapshot must boundary-decode AND still describe the
-  checkout under release — its {slug -> catalog-listed contribution
-  candidates} projection must equal the one re-derived here from that
-  checkout, so a catalog revision that adds a contributor or changes a
-  role under surviving slugs cannot publish against a stale snapshot
-  (the transaction's totality gate compares slugs alone) — the rights
-  policy must authorize (value plus hash from the same bytes; the
-  authority fixes the policy id), the pinned role keys must form a valid
-  two-role configuration, the 32-byte signing seed must correspond to
-  the pinned release key, and the upstream origin must be an absolute
-  URI. --limit is refused: it is a build diagnostic, and a limited
-  selection would claim the same projection as the full one."
+  "Validate all file inputs before capturing the corpus, then require the
+  regenerated assessment to match the committed snapshot byte for byte."
   [{:keys [aozora-root chain-clone upstream-origin assessment policy
            release-pub governance-pub release-key limit]
     :as opts}]
@@ -409,6 +502,7 @@
   (let [snapshot-bytes (fs/read-all-bytes (str assessment))
         snapshot-value (:value (decode/decode "assessment-snapshot"
                                               snapshot-bytes))
+        assessment-inputs (assessment-inputs! opts)
         authority (za-release/rights-authority!
                    (fs/read-all-bytes (str policy)))
         pinned (pinned-keys-from-files release-pub governance-pub)
@@ -416,27 +510,39 @@
     (when-not (sign/seed-signs-for? seed (:release pinned))
       (throw (ex-info "release signing seed does not correspond to the pinned release key"
                       {:reason :seed-key-mismatch})))
-    ;; last in preflight, after every file input has passed: the only
-    ;; check that reads the corpus
-    (when-let [drift (release-preflight-drift opts snapshot-value)]
-      (throw (ex-info (str "assessment snapshot does not describe the "
-                           "checkout under release")
-                      (assoc drift :reason :snapshot-projection-drift))))
-    (merge authority
-           {:snapshot-bytes snapshot-bytes
-            :pinned pinned
-            :sign-release (fn [manifest-hex]
-                            (sign/sign seed
-                                       (sign/manifest-message manifest-hex)))})))
+    (committed-assessment-inputs! opts (:source-bytes assessment-inputs) snapshot-bytes)
+    (let [{:keys [snapshot source-commit source-hashes]}
+          (evaluate-assessment! (dissoc opts :rdf-out) assessment-inputs)]
+      (when-not (java.util.Arrays/equals ^bytes (:bytes snapshot) ^bytes snapshot-bytes)
+        (throw (ex-info "committed assessment snapshot differs from current evaluation"
+                        (assoc (snapshot-drift (:value snapshot) snapshot-value)
+                               :reason :snapshot-regeneration-drift))))
+      (merge authority
+             {:snapshot-bytes snapshot-bytes
+              :assessment-source-bytes (:source-bytes assessment-inputs)
+              :source-commit source-commit :source-hashes source-hashes
+              :pinned pinned
+              :sign-release (fn [manifest-hex]
+                              (sign/sign seed
+                                         (sign/manifest-message manifest-hex)))}))))
 
 (defn release!
   "One scheduled release invocation: preflight every fail-closed file
   input, then the kernel build at the current checkout, then the za
   driver's release assembly and publication transaction."
   [{:keys [root chain-clone branch upstream-origin] :as opts}]
-  (let [{:keys [snapshot-bytes policy-id policy-hash pinned sign-release]}
+  (let [{:keys [snapshot-bytes policy-id policy-hash pinned sign-release
+                source-commit source-hashes assessment-source-bytes]}
         (release-preflight! opts)
         report (build! opts)
+        _ (when-not (and (= source-commit (get report "aozora_git_commit")
+                            (source-provenance! (:aozora-root opts)))
+                         (every? (fn [[slug digest]]
+                                   (= digest (get-in report ["works" slug "source_content_hash"])))
+                                 source-hashes))
+            (throw (ex-info "built sources differ from assessment inputs"
+                            {:reason :assessment-source-changed-during-build})))
+        _ (committed-assessment-inputs! opts assessment-source-bytes snapshot-bytes)
         outcome (za-release/release!
                  {:report report
                   :cas-dir (config/cas-dir (config/root root))
@@ -617,6 +723,11 @@
    :branch {:coerce :string :default "main"}
    :upstream-origin {:coerce :string}
    :assessment {:coerce :string}
+   :assessment-source {:coerce :string}
+   :evidence-root {:coerce :string}
+   :as-of {:coerce :string}
+   :rdf-out {:coerce :string}
+   :rdf-base {:coerce :string}
    :policy {:coerce :string}
    :release-pub {:coerce :string}
    :governance-pub {:coerce :string}
@@ -653,12 +764,13 @@
                          (System/exit 1)))
         "serving-tree" (serving-tree! opts)
         "assessment-scaffold" (assessment-scaffold! opts)
+        "assessment-evaluate" (assessment-evaluate! opts)
         "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
                            (System/exit 1))
         "verify" (when-not (:ok? (verify! opts))
                    (System/exit 1))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|delta|release|governance|serving-tree|assessment-scaffold|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|compare|delta|release|governance|serving-tree|assessment-scaffold|assessment-evaluate|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

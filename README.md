@@ -6,6 +6,8 @@ validation system. It contains:
 - `abc/`: Clojure/Nix publication, schema, TEI, manifest, and validation tools.
 - `ab-validator/`: Rust adapters, parser/IR validation, corpus measurement, and
   report tooling.
+- `soranoha/`: the publication build kernel and snh protocol, including
+  [assessment evaluation and experimental RDF](soranoha/docs/assessment-evaluation.md).
 
 The old split repositories are archived. Use this repository for active
 development, source identity, validation, and release work.

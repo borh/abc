@@ -61,6 +61,7 @@ jobs:
           PINNED=/etc/soranoha/pinned
           missing=0
           for f in abc/data/assessment-snapshot.json \
+                   soranoha/data/assessment-source.json \
                    abc/data/publication-policy.edn; do
             if [ ! -f "src/$f" ]; then
               echo "MISSING owner input (repository): $f"
@@ -113,6 +114,8 @@ jobs:
             --branch main \
             --upstream-origin https://github.com/aozorabunko/aozorabunko.git \
             --assessment "$PWD/src/abc/data/assessment-snapshot.json" \
+            --assessment-source "$PWD/src/soranoha/data/assessment-source.json" \
+            --as-of "$(date -u +%F)" \
             --policy "$PWD/src/abc/data/publication-policy.edn" \
             --release-pub /etc/soranoha/pinned/release.pub \
             --governance-pub /etc/soranoha/pinned/governance.pub \

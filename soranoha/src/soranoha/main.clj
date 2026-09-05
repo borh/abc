@@ -23,6 +23,7 @@
             [babashka.process :as process]
             [charred.api :as json]
             [clojure.string :as string]
+            [soranoha.assessment.aozora :as aozora]
             [soranoha.assessment.evaluate :as assessment-evaluator]
             [soranoha.assessment.records :as assessment-records]
             [soranoha.assessment.rdf :as assessment-rdf]
@@ -367,6 +368,9 @@
                       {:reason :assessment-invalid-date :value as-of}))))
   (let [source-bytes (fs/read-all-bytes (str assessment-source))
         source (:value (assessment-records/decode source-bytes))]
+    (when (and (seq (get source "reliances")) (string/blank? evidence-root))
+      (throw (ex-info "Aozora reliance requires --evidence-root"
+                      {:reason :missing-evidence-root})))
     {:source source :source-bytes source-bytes
      :retained (assessment-source/retained-observations source evidence-root)}))
 
@@ -405,7 +409,7 @@
     true))
 
 (defn- evaluate-assessment!
-  [{:keys [root aozora-root as-of clj-toolchain-id rdf-out rdf-base]}
+  [{:keys [root aozora-root evidence-root as-of clj-toolchain-id rdf-out rdf-base]}
    {:keys [source retained]}]
   (require-flags! "assessment evaluation"
                   {"--root" (config/root root)
@@ -415,6 +419,8 @@
     (require-flags! "internal RDF export" {"--rdf-base" rdf-base}))
   (let [commit (source-provenance! aozora-root)
         captured (assessment-source/capture-checkout aozora-root source retained)
+        reliance-observations (when (seq (get source "reliances"))
+                                (aozora/check! aozora-root evidence-root (get source "reliances")))
         _ (when-not (= commit (source-provenance! aozora-root))
             (throw (ex-info "source checkout changed during assessment capture"
                             {:reason :assessment-source-changed})))
@@ -424,7 +430,8 @@
     (try
       (let [evaluation (assessment-evaluator/evaluate!
                         store source
-                        (assoc captured :as-of as-of :toolchain-id clj-toolchain-id))
+                        (assoc captured :as-of as-of :toolchain-id clj-toolchain-id
+                               :reliance-observations reliance-observations))
             snapshot (assessment-snapshot/encode evaluation)]
         (when rdf-out
           (let [rdf (assessment-rdf/project!
@@ -437,6 +444,35 @@
         {:snapshot snapshot :evaluation evaluation
          :source-commit commit :source-hashes (:source-hashes captured)})
       (finally (engine/close-store! store)))))
+
+(defn aozora-reliance-prepare!
+  "Capture official edition evidence and write a draft owner source file.
+  Existing declarations are preserved except for the requested edition.
+  Preparing evidence does not publish or commit an acceptance."
+  [{:keys [aozora-root evidence-root slug out assessment-source as-of]}]
+  (require-flags! "aozora-reliance-prepare"
+                  {"--aozora-root" aozora-root "--evidence-root" evidence-root
+                   "--slug" slug "--out" out})
+  (let [before (source-provenance! aozora-root)
+        source (if assessment-source
+                 (:value (assessment-records/decode (fs/read-all-bytes assessment-source)))
+                 assessment-records/empty-source)
+        today (str (java.time.LocalDate/now java.time.ZoneOffset/UTC))
+        record (aozora/prepare! aozora-root evidence-root slug
+                                {:observed-at today :decision-date (or as-of today)})
+        _ (when-not (= before (source-provenance! aozora-root) (get record "source_revision"))
+            (throw (ex-info "source checkout changed during reliance preparation"
+                            {:reason :assessment-source-changed})))
+        result (assessment-records/encode
+                (update source "reliances"
+                        (fn [records]
+                          (vec (sort-by #(get % "slug")
+                                        (conj (vec (remove #(= slug (get % "slug")) records)) record))))))]
+    (fs/write-bytes out (:bytes result))
+    (println (abc-json/write-deterministic-json-str
+              {"assessment_source" out "slug" slug
+               "source_content_hash" (get record "source_content_hash")}))
+    result))
 
 (defn assessment-evaluate!
   "Evaluate versioned assessment inputs against the current checkout and
@@ -520,6 +556,7 @@
       (merge authority
              {:snapshot-bytes snapshot-bytes
               :assessment-source-bytes (:source-bytes assessment-inputs)
+              :assessment-inputs assessment-inputs
               :source-commit source-commit :source-hashes source-hashes
               :pinned pinned
               :sign-release (fn [manifest-hex]
@@ -532,7 +569,7 @@
   driver's release assembly and publication transaction."
   [{:keys [root chain-clone branch upstream-origin] :as opts}]
   (let [{:keys [snapshot-bytes policy-id policy-hash pinned sign-release
-                source-commit source-hashes assessment-source-bytes]}
+                source-commit source-hashes assessment-source-bytes assessment-inputs]}
         (release-preflight! opts)
         report (build! opts)
         _ (when-not (and (= source-commit (get report "aozora_git_commit")
@@ -542,6 +579,14 @@
                                  source-hashes))
             (throw (ex-info "built sources differ from assessment inputs"
                             {:reason :assessment-source-changed-during-build})))
+        _ (committed-assessment-inputs! opts assessment-source-bytes snapshot-bytes)
+        _ (when (seq (get-in assessment-inputs [:source "reliances"]))
+            (let [current (evaluate-assessment! (dissoc opts :rdf-out) assessment-inputs)]
+              (when-not (and (= source-commit (:source-commit current))
+                             (java.util.Arrays/equals ^bytes snapshot-bytes
+                                                      ^bytes (get-in current [:snapshot :bytes])))
+                (throw (ex-info "Aozora reliance changed during the build"
+                                {:reason :reliance-changed-during-build})))))
         _ (committed-assessment-inputs! opts assessment-source-bytes snapshot-bytes)
         outcome (za-release/release!
                  {:report report
@@ -725,6 +770,7 @@
    :assessment {:coerce :string}
    :assessment-source {:coerce :string}
    :evidence-root {:coerce :string}
+   :slug {:coerce :string}
    :as-of {:coerce :string}
    :rdf-out {:coerce :string}
    :rdf-base {:coerce :string}
@@ -765,12 +811,13 @@
         "serving-tree" (serving-tree! opts)
         "assessment-scaffold" (assessment-scaffold! opts)
         "assessment-evaluate" (assessment-evaluate! opts)
+        "aozora-reliance-prepare" (aozora-reliance-prepare! opts)
         "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
                            (System/exit 1))
         "verify" (when-not (:ok? (verify! opts))
                    (System/exit 1))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|delta|release|governance|serving-tree|assessment-scaffold|assessment-evaluate|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|compare|delta|release|governance|serving-tree|assessment-scaffold|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

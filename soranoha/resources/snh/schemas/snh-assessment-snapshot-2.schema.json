@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snh:schema:assessment-snapshot:2",
+  "title": "snh-assessment-snapshot/2",
+  "description": "Mixed independent assessments and attributed reliance on Aozora Bunko classification. Reliance is not an independent public-domain finding.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "candidates"
+  ],
+  "properties": {
+    "schema": {
+      "const": "snh-assessment-snapshot/2"
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "slug",
+              "work_assessment",
+              "contributions"
+            ],
+            "properties": {
+              "slug": {
+                "$ref": "#/$defs/slug"
+              },
+              "work_assessment": {
+                "$ref": "#/$defs/fact"
+              },
+              "contributions": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/contribution"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "slug",
+              "reliance"
+            ],
+            "properties": {
+              "slug": {
+                "$ref": "#/$defs/slug"
+              },
+              "reliance": {
+                "$ref": "#/$defs/reliance"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[0-9a-z_-]+$"
+    },
+    "fact": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "jurisdiction",
+            "effective_date",
+            "basis"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "public-domain",
+                "in-copyright",
+                "undetermined"
+              ]
+            },
+            "jurisdiction": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]+$"
+            },
+            "effective_date": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "basis": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "jurisdiction",
+            "effective_date",
+            "basis"
+          ],
+          "properties": {
+            "status": {
+              "const": "not-evaluated"
+            },
+            "jurisdiction": {
+              "type": "null"
+            },
+            "effective_date": {
+              "type": "null"
+            },
+            "basis": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "contribution": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contribution_id",
+            "status",
+            "jurisdiction",
+            "effective_date",
+            "basis"
+          ],
+          "properties": {
+            "contribution_id": {
+              "$ref": "#/$defs/contribution-id"
+            },
+            "status": {
+              "enum": [
+                "public-domain",
+                "in-copyright",
+                "undetermined"
+              ]
+            },
+            "jurisdiction": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]+$"
+            },
+            "effective_date": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "basis": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contribution_id",
+            "status",
+            "jurisdiction",
+            "effective_date",
+            "basis"
+          ],
+          "properties": {
+            "contribution_id": {
+              "$ref": "#/$defs/contribution-id"
+            },
+            "status": {
+              "const": "not-evaluated"
+            },
+            "jurisdiction": {
+              "type": "null"
+            },
+            "effective_date": {
+              "type": "null"
+            },
+            "basis": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "contribution-id": {
+      "type": "string",
+      "pattern": "^[0-9a-z][0-9a-z:_-]*$"
+    },
+    "reliance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "catalog_sha256",
+        "card_sha256",
+        "file_sha256",
+        "rules_sha256",
+        "issuer",
+        "jurisdiction",
+        "classification",
+        "source_content_hash",
+        "source_revision",
+        "observed_at",
+        "decision_date",
+        "basis",
+        "exception",
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "catalog_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "card_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "file_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "rules_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "issuer": {
+          "const": "aozora-bunko"
+        },
+        "jurisdiction": {
+          "const": "jp"
+        },
+        "classification": {
+          "const": "copyright-expired"
+        },
+        "source_content_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "source_revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "observed_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "decision_date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "basis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exception": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "relied-upon",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "relied-upon"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "type": "null"
+              },
+              "exception": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

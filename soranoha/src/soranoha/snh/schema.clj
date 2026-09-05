@@ -1,5 +1,5 @@
 (ns soranoha.snh.schema
-  "The four protocol JSON Schemas of snh protocol v1, loaded from resources
+  "Protocol JSON Schemas, loaded from resources
   and keyed by artifact type. These schemas govern structure only; semantic
   and state invariants live in the protocol specification and are checked by
   assembler/verifier code; the conformance vectors demonstrate both."
@@ -33,7 +33,13 @@
       (throw (ex-info "No protocol schema for artifact type"
                       {:type type :known (keys schema-resources)}))))
 
+(def ^:private snapshot-v2
+  (delay (json/read-json (slurp (io/resource "snh/schemas/snh-assessment-snapshot-2.schema.json")))))
+
 (defn validation-errors
   "Validation errors for `value` against the schema of `type`; nil when valid."
   [type value]
-  (ported-schema/validation-errors (schema-for type) value))
+  (ported-schema/validation-errors
+   (if (and (= type "assessment-snapshot") (= "snh-assessment-snapshot/2" (get value "schema")))
+     @snapshot-v2
+     (schema-for type)) value))

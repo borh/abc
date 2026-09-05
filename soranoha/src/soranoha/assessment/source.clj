@@ -43,14 +43,14 @@
 (defn capture-checkout
   "Resolve declared observations against the current selected population.
   Catalog values are observations, never the assessed contribution set.
-  Only source bundles explicitly consumed by an observation are inspected."
+  Only source bundles consumed by an observation or reliance are inspected."
   [aozora-root source retained-values]
   (let [rows (catalog/read-rows-from-string
               (:csv-text (catalog/read-catalog-zip aozora-root)))
         selected (:candidates (select/select-candidates aozora-root rows))
         by-slug (into {} (map (juxt :slug identity)) selected)
         candidates (scaffold/projection rows selected)
-        source-slugs (into #{}
+        source-slugs (into (set (map #(get % "slug") (get source "reliances")))
                            (keep (fn [{:strs [selector slug]}]
                                    (when (= selector "canonical-source-bundle") slug)))
                            (get source "observations"))

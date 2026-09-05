@@ -104,6 +104,10 @@ jobs:
           _soranoha_release_seed="$SORANOHA_RELEASE_SEED"
           export -n _soranoha_release_seed
           unset SORANOHA_RELEASE_SEED
+          evidence_args=()
+          if [ -n "${SORANOHA_EVIDENCE_ROOT:-}" ]; then
+            evidence_args=(--evidence-root "$SORANOHA_EVIDENCE_ROOT")
+          fi
           set +e
           printf '%s' "$_soranoha_release_seed" |
             env -u SORANOHA_RELEASE_SEED -u _soranoha_release_seed nix run ./src#soranoha-kernel -- release \
@@ -119,7 +123,7 @@ jobs:
             --policy "$PWD/src/abc/data/publication-policy.edn" \
             --release-pub /etc/soranoha/pinned/release.pub \
             --governance-pub /etc/soranoha/pinned/governance.pub \
-            --release-key /dev/stdin
+            --release-key /dev/stdin "${evidence_args[@]}"
           rc=$?
           set -e
           echo "$rc" > release.rc

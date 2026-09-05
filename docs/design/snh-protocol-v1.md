@@ -672,3 +672,44 @@ review pending) in `soranoha.snh.verify-test` and
    required blob present ELSEWHERE in the same archived object graph
    (another branch, a later commit, or dangling) but absent at its
    prescribed path under C's tree must FAIL.
+
+## Assessment snapshot payload version 2
+
+The D24 decision in the publication design ledger adds
+`snh-assessment-snapshot/2` alongside the unchanged version 1 payload.
+Both payload versions use the registered `assessment-snapshot` artifact type
+and the existing `snh:1:assessment-snapshot:<sha256>` identity over canonical
+stored bytes. Manifest, admission-report, signature, and resolver formats do
+not change. A version 1 reader rejects a version 2 discriminator; upgraded
+readers accept either explicit discriminator and reject unknown versions.
+
+The normative structure is
+`soranoha/resources/snh/schemas/snh-assessment-snapshot-2.schema.json`.
+Candidates remain sorted and unique by slug. Each candidate is exactly one
+of the existing independent-assessment object or `{slug, reliance}`. The
+reliance payload has no duplicate slug, work assessment, or contribution
+list. It records reliance on Aozora Bunko's `copyright-expired`
+classification for Japan; it does not assert an independently established
+public-domain fact.
+
+The payload retains the canonical source content hash, source revision,
+observation and decision dates, basis, catalog/card/file/rules digests,
+and exception. Dates must be real calendar dates and the observation date
+must not follow the decision date. `relied-upon` requires null reason and
+exception. `unavailable` requires a nonempty reason and is quarantined.
+
+Version 2 releases use `za-assessment-or-aozora-reliance-v2`. Its executable
+value and partition are shared by assembler and verifier in
+`soranoha.snh.admission`. Reliance candidates are admitted exactly when
+`relied-upon`; independent candidates retain the unanimous public-domain,
+in-copyright exclusion, and otherwise quarantine rule. A verifier requires
+the exact rule identity/hash and reproduces the partition. The assembler
+binds relied-upon source content hashes to built work inputs; the verifier
+checks that published works carry the same canonical source content hash.
+Withdrawal handling still subtracts the withdrawn set from admission.
+Version 1 rule bytes and verifier behavior remain unchanged.
+
+Internal RDF places attributed source classification and the relying
+decision in their own record graphs. Current reliance links appear only in
+`accepted-reliance`, separately from independently evaluated facts in
+`accepted`; no synthetic contribution or independent fact is introduced.

@@ -10,6 +10,7 @@
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
             [soranoha.assessment.records :as records]
+            [soranoha.assessment.aozora :as aozora]
             [soranoha.core.hash :as hash]
             [soranoha.main :as main]
             [soranoha.snh.decode :as decode]
@@ -499,3 +500,56 @@
                   nil
                   (catch clojure.lang.ExceptionInfo e
                     (:reason (ex-data e)))))))))
+
+(deftest current-reliance-is-rechecked-after-build
+  (let [root (corpus/init-corpus! [merosu])
+        dir (fs/create-temp-dir {:prefix "reliance-cli"})
+        run (corpus/run-corpus! root (str (fs/create-dirs (fs/path dir "build"))))
+        slug (slug-of merosu)
+        report (run->report run)
+        ks (vector-keys)
+        write! (fn [name content]
+                 (let [path (str (fs/path dir name))] (spit path content) path))
+        declaration {"slug" slug
+                     "source_content_hash" (get-in report ["works" slug "source_content_hash"])
+                     "source_revision" (:commit run)
+                     "observed_at" "2026-09-05" "decision_date" "2026-09-05"
+                     "basis" "Synthetic official assertion for release-boundary coverage."
+                     "catalog_sha256" (hash/sha256-string "catalog")
+                     "card_sha256" (hash/sha256-string "card")
+                     "file_sha256" (hash/sha256-string "file")
+                     "rules_sha256" (hash/sha256-string "rules") "exception" nil}
+        opts {:root (str (fs/path dir "store")) :aozora-root root
+              :evidence-root (str (fs/path dir "evidence"))
+              :clj-toolchain-id "reliance-cli-test" :as-of "2026-09-06"
+              :assessment-source (write! "source.json"
+                                         (String. ^bytes (:bytes (records/encode
+                                                                  (assoc records/empty-source "reliances" [declaration])))
+                                                  "UTF-8"))
+              :assessment (str (fs/path dir "snapshot.json"))
+              :policy (write! "policy.edn" "{:rights-publication :assessment-required}")
+              :release-pub (write! "release.pub" (str (get-in ks ["release" "pub"]) "\n"))
+              :governance-pub (write! "governance.pub" (str (get-in ks ["governance" "pub"]) "\n"))
+              :release-key (write! "release.seed" (get-in ks ["release" "seed"]))
+              :chain-clone "unused" :branch "main"
+              :upstream-origin "https://forge.example/fixture.git"}
+        current (atom {slug {:state "available" :reason nil}})
+        published? (atom false)]
+    (with-redefs [aozora/check! (fn [& _] @current)]
+      (main/assessment-evaluate! (assoc opts :out (:assessment opts)))
+      (commit-assessment-inputs! dir)
+      (is (nil? (main/release-preflight-drift opts)))
+      (testing "withdrawal after preflight refuses before publication"
+        (with-redefs [main/build! (fn [_]
+                                    (reset! current {slug {:state "unavailable" :reason "official-work-protected"}})
+                                    report)
+                      release/release! (fn [_] (reset! published? true))]
+          (is (= :reliance-changed-during-build
+                 (try (main/release! opts) nil
+                      (catch clojure.lang.ExceptionInfo e (or (:reason (ex-data e)) (ex-message e))))))
+          (is (false? @published?))))
+      (testing "a stale accepted snapshot refuses before the build"
+        (with-redefs [main/build! (fn [_] (throw (ex-info "must not build" {})))]
+          (is (= :snapshot-regeneration-drift
+                 (try (main/release! opts) nil
+                      (catch clojure.lang.ExceptionInfo e (or (:reason (ex-data e)) (ex-message e)))))))))))

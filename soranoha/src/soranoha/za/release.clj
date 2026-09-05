@@ -112,9 +112,8 @@
   [{:keys [report cas-dir upstream-origin selection-params
            policy-id policy-hash snapshot-bytes
            clone branch pinned-keys sign-release push-fn]}]
-  (let [candidates (get (:value (decode/decode "assessment-snapshot"
-                                               snapshot-bytes))
-                        "candidates")
+  (let [snapshot (:value (decode/decode "assessment-snapshot" snapshot-bytes))
+        candidates (get snapshot "candidates")
         ;; the selected population is captured from the selection join
         ;; before work execution; requiring the built works to equal it
         ;; keeps the assembler's totality comparison independent — a work
@@ -141,6 +140,7 @@
                           :policy-id policy-id
                           :policy-hash policy-hash
                           :candidates candidates
+                          :snapshot-schema (get snapshot "schema")
                           :works (report-works report)
                           :selection selected})}
        push-fn (assoc :push-fn push-fn)))))

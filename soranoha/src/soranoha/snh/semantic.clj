@@ -79,7 +79,13 @@
   [snapshot]
   (sorted-unique! :candidates-not-sorted-unique
                   (mapv #(get % "slug") (get snapshot "candidates")) {})
-  (doseq [{:strs [slug work_assessment contributions]} (get snapshot "candidates")]
+  (doseq [{:strs [slug work_assessment contributions reliance]} (get snapshot "candidates")]
+    (when reliance
+      (doseq [field ["observed_at" "decision_date"]]
+        (when-not (real-calendar-date? (get reliance field))
+          (fail! :invalid-reliance-date {:slug slug :field field})))
+      (when (pos? (compare (get reliance "observed_at") (get reliance "decision_date")))
+        (fail! :reliance-observed-after-decision {:slug slug})))
     (sorted-unique! :contributions-not-sorted-unique
                     (mapv #(get % "contribution_id") contributions)
                     {:slug slug})

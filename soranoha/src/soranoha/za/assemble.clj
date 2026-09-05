@@ -1,7 +1,7 @@
 (ns soranoha.za.assemble
   "Release assembly: the bridge from kernel outputs to the publication
   transaction's input. The kernel builds every selected work policy-blind;
-  admission is decided here — the assessment snapshot commits the facts,
+  admission is decided here — the assessment snapshot commits facts or attributed reliance,
   the inclusion rule derives the total admitted/excluded/quarantined
   partition, and both evidence artifacts publish with the release. Works
   are the admitted slugs minus the chain's withdrawn set; every published
@@ -12,6 +12,7 @@
   (:require [soranoha.core.hash :as hash]
             [soranoha.kura.cas :as cas]
             [soranoha.snh.decode :as decode]
+            [soranoha.snh.admission :as admission]
             [soranoha.snh.verify :as verify]))
 
 (defn- fail! [reason data]
@@ -20,68 +21,33 @@
 
 ;; --- admission --------------------------------------------------------------
 
-(def inclusion-rule
-  "The executable rule value whose canonical bytes inclusion_rule_hash
-  binds: the evaluator admits a candidate iff every fact status (the work
-  assessment and each contribution) equals admit_when_all, excludes with
-  exclude_reason iff any status equals exclude_when_any, and quarantines
-  with quarantine_reason otherwise. Changing any decision-bearing value
-  changes the hash."
-  {"id" "za-public-domain-unanimous-v1"
-   "admit_when_all" "public-domain"
-   "exclude_when_any" "in-copyright"
-   "exclude_reason" "in-copyright"
-   "quarantine_reason" "not-fully-evaluated"})
-
-(def ^:private inclusion-rule-id (get inclusion-rule "id"))
-
-(def ^:private inclusion-rule-hash (hash/sha256-canonical-json inclusion-rule))
-
-(defn- partition-candidates
-  "Total partition of snapshot candidates under `rule` (the executable
-  inclusion-rule value)."
-  [rule candidates]
-  (reduce
-   (fn [acc {:strs [slug work_assessment contributions]}]
-     (let [statuses (map #(get % "status") (cons work_assessment contributions))]
-       (cond
-         (every? #{(get rule "admit_when_all")} statuses)
-         (update acc :admitted conj slug)
-
-         (some #{(get rule "exclude_when_any")} statuses)
-         (update acc :excluded conj {"slug" slug
-                                     "reason_code" (get rule "exclude_reason")})
-
-         :else
-         (update acc :quarantined conj
-                 {"slug" slug
-                  "reason_code" (get rule "quarantine_reason")}))))
-   {:admitted [] :excluded [] :quarantined []}
-   candidates))
+(def inclusion-rule admission/inclusion-rule)
+(def ^:private partition-candidates admission/partition-candidates)
 
 ;; --- evidence artifacts -----------------------------------------------------
 
 (defn- snapshot-value
-  "snh-assessment-snapshot/1 value: candidates sorted by slug, each
-  candidate's contributions sorted by contribution_id."
-  [candidates]
-  {"schema" "snh-assessment-snapshot/1"
+  "Sort candidates and independent contributions, retaining reliance payloads."
+  [candidates snapshot-schema]
+  {"schema" (or snapshot-schema (if (some #(contains? % "reliance") candidates)
+                                  "snh-assessment-snapshot/2" "snh-assessment-snapshot/1"))
    "candidates"
    (vec (sort-by #(get % "slug")
                  (map (fn [candidate]
-                        (update candidate "contributions"
-                                (fn [contributions]
-                                  (vec (sort-by #(get % "contribution_id")
-                                                contributions)))))
+                        (if (contains? candidate "reliance") candidate
+                            (update candidate "contributions"
+                                    (fn [contributions]
+                                      (vec (sort-by #(get % "contribution_id")
+                                                    contributions))))))
                       candidates)))})
 
 (defn- report-value
-  [snapshot-id {:keys [admitted excluded quarantined]} policy-hash]
+  [snapshot-id {:keys [admitted excluded quarantined]} policy-hash rule]
   {"schema" "snh-admission-report/1"
    "assessment_snapshot" snapshot-id
    "policy_hash" policy-hash
-   "inclusion_rule_id" inclusion-rule-id
-   "inclusion_rule_hash" inclusion-rule-hash
+   "inclusion_rule_id" (get rule "id")
+   "inclusion_rule_hash" (hash/sha256-canonical-json rule)
    "admitted" (vec (sort admitted))
    "excluded" (vec (sort-by #(get % "slug") excluded))
    "quarantined" (vec (sort-by #(get % "slug") quarantined))})
@@ -157,14 +123,19 @@
   - :withdrawn-slugs — the chain head's withdrawn set; works = admitted
     minus withdrawn."
   [{:keys [cas-dir corpus toolchain selection-params policy-id policy-hash
-           candidates works withdrawn-slugs selection]}]
+           candidates works withdrawn-slugs selection snapshot-schema]}]
   (let [snapshot-enc (decode/encode "assessment-snapshot"
-                                    (snapshot-value candidates))
-        partition (partition-candidates inclusion-rule
+                                    (snapshot-value candidates snapshot-schema))
+        rule (admission/rule-for (:value snapshot-enc))
+        _ (doseq [{:strs [slug reliance]} candidates
+                  :when (= "relied-upon" (get reliance "status"))]
+            (when-not (= (get reliance "source_content_hash") (:source-content-hash (get works slug)))
+              (fail! :reliance-source-content-mismatch {:slug slug})))
+        partition (partition-candidates rule
                                         (get (:value snapshot-enc) "candidates"))
         report-enc (decode/encode "admission-report"
                                   (report-value (:id snapshot-enc) partition
-                                                policy-hash))
+                                                policy-hash rule))
         published (vec (sort (remove (set withdrawn-slugs)
                                      (:admitted partition))))
         entries (mapv (fn [slug]
@@ -182,8 +153,8 @@
             "selection_params" selection-params
             "admission" {"policy_id" policy-id
                          "policy_hash" policy-hash
-                         "inclusion_rule_id" inclusion-rule-id
-                         "inclusion_rule_hash" inclusion-rule-hash
+                         "inclusion_rule_id" (get rule "id")
+                         "inclusion_rule_hash" (hash/sha256-canonical-json rule)
                          "assessment_snapshot" (:id snapshot-enc)
                          "admission_report" (:id report-enc)}
             "works" (mapv :entry entries)

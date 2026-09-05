@@ -9,7 +9,7 @@
             [soranoha.kura.engine :as engine])
   (:import [java.net URI URLEncoder]))
 
-(def ^:private fragment-versions {"finding" "2" "conclusion" "1"})
+(def ^:private fragment-versions {"finding" "2" "conclusion" "1" "reliance" "1"})
 (def ^:private assembly-version "2")
 
 (def default-mapping-profile {"vocabulary" "urn:soranoha:assessment:"})
@@ -114,7 +114,8 @@
   (when-not (and (map? (:facts view)) (vector? (:findings view)))
     (throw (ex-info "RDF projection requires an evaluated assessment view"
                     {:reason :invalid-assessment-view})))
-  {"controls" (get-in view [:source "controls"])
+  {"reliances" (mapv (fn [[slug payload]] {"slug" slug "payload" payload}) (sort-by key (:reliances view)))
+   "controls" (get-in view [:source "controls"])
    "findings" (mapv (fn [{:keys [record state reason]}]
                       {"record" record "state" state "reason" reason})
                     (:findings view))
@@ -183,6 +184,30 @@
        [(quad id (str vocabulary "replacement")
               (iri (claim-iri base (get by-id replacement))) nil)]))))
 
+(defn- reliance-quads [base vocabulary {:strs [slug payload] :as record}]
+  (let [id (str base "reliance/" (hash/sha256-canonical-json record))
+        source (str id "/source-classification")
+        activity (str id "/decision")
+        graph id
+        subject (str base "subject/" (component slug))]
+    (concat
+     [(quad id (str rdf "type") (iri (str vocabulary "SourceClassificationReliance")) graph)
+      (quad id (str vocabulary "subject") (iri subject) graph)
+      (quad id (str prov "wasGeneratedBy") (iri activity) graph)
+      (quad activity (str rdf "type") (iri (str prov "Activity")) graph)
+      (quad activity (str prov "used") (iri source) graph)
+      (quad source (str rdf "type") (iri (str vocabulary "SourceClassification")) graph)
+      (quad source (str prov "wasAttributedTo") (iri "https://www.aozora.gr.jp/") graph)
+      (quad source (str vocabulary "classification") (value-term (get payload "classification")) graph)
+      (quad source (str vocabulary "source_content_hash") (value-term (get payload "source_content_hash")) graph)]
+     (map (fn [[field value]]
+            (quad id (str vocabulary field)
+                  (if (#{"observed_at" "decision_date"} field)
+                    (literal value (str xsd "date")) (value-term value)) graph)) payload)
+     (when (= "relied-upon" (get payload "status"))
+       [(quad subject (str vocabulary "sourceClassificationReliance") (iri id)
+              (str base "accepted-reliance"))]))))
+
 (defn- metadata-quads [base profile by-id controls]
   (let [vocabulary (get profile "vocabulary") accepted (str base "accepted")]
     (concat
@@ -202,6 +227,7 @@
              (concat
               (metadata-quads base profile by-id (get input "controls"))
               (mapcat #(finding-quads base vocabulary %) findings)
+              (mapcat #(reliance-quads base vocabulary %) (get input "reliances"))
               (mapcat #(conclusion-quads base vocabulary accepted by-id %) (get input "facts"))))))))
 
 (defn- options! [{:keys [base-iri mapping-profile]}]
@@ -228,6 +254,7 @@
                (let [base (get inputs "base") vocabulary (get-in inputs ["mapping" "vocabulary"])
                      payload (get inputs "payload")
                      quads (case kind
+                             "reliance" (reliance-quads base vocabulary payload)
                              "finding" (finding-quads base vocabulary
                                                       {:record (get payload "record")
                                                        :state (get payload "state")
@@ -254,6 +281,7 @@
                 (fragment! store options "conclusion" (get result "fact")
                            {"result" result
                             "supports" (select-keys by-id (map #(get % "id") (get result "basis")))})))
+        fragments (into fragments (map #(fragment! store options "reliance" (get % "slug") %) (get input "reliances")))
         control-targets (mapcat #(keep % ["target" "replacement"]) (get input "controls"))
         metadata {"targets" (select-keys by-id control-targets) "controls" (get input "controls")}
         result

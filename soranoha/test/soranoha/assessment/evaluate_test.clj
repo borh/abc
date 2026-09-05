@@ -200,3 +200,18 @@
         (is (= :invalid-captured-observation
                (failure #(evaluate/evaluate! store (source)
                                              (assoc-in inputs [:observations "bundle"] nil)))))))))
+
+(deftest revised-citations-reuse-the-term-calculation
+  (with-store
+    (fn [store]
+      (let [source (arithmetic-source)
+            original (evaluate/evaluate! store source options)
+            corrected (evaluate/evaluate! store (assoc-in source ["findings" 1 "basis"] "Corrected synthetic death-year citation") options)
+            key (records/fact-key "work/author:000001" "contribution-status")]
+        (is (= (get-in original [:facts key :semantic-id])
+               (get-in corrected [:facts key :semantic-id])))
+        (is (not= (get-in original [:facts key :basis-id])
+                  (get-in corrected [:facts key :basis-id])))
+        (is (every? :cached? (filter :rule? (:stages corrected))))
+        (is (= (get-in original [:facts (records/fact-key "independent" "work-status") :semantic-id])
+               (get-in corrected [:facts (records/fact-key "independent" "work-status") :semantic-id])))))))

@@ -44,7 +44,7 @@
             alternate (update initial "findings" conj
                               (assoc (last (get initial "findings")) "id" "alternative"))
             first-withdrawn (assoc alternate "controls"
-                                   [{"id" "w1" "kind" "withdrawal" "target" "status-author:000001"}])
+                                   [{"id" "w1" "kind" "withdrawal" "target" (get (last (get initial "findings")) "id")}])
             all-withdrawn (update first-withdrawn "controls" conj
                                   {"id" "w2" "kind" "withdrawal" "target" "alternative"})
             transitions [[initial options "public-domain"]
@@ -215,3 +215,29 @@
         (is (every? :cached? (filter :rule? (:stages corrected))))
         (is (= (get-in original [:facts (records/fact-key "independent" "work-status") :semantic-id])
                (get-in corrected [:facts (records/fact-key "independent" "work-status") :semantic-id])))))))
+
+(deftest reviewed-public-domain-cannot-bypass-term-premises
+  (doseq [[subject predicate] [["work/author:000001" "contribution-status"]
+                               ["work" "work-status"]]]
+    (is (= :assessment-schema-invalid
+           (failure #(records/encode
+                      (assoc records/empty-source "findings"
+                             [(fixtures/finding "unsupported" subject predicate "public-domain" [])])))))))
+
+(deftest restrictive-reviewed-statuses-remain-explicit-findings
+  (with-store
+    (fn [store]
+      (doseq [[subject predicate] [["work/author:000001" "contribution-status"]
+                                   ["work" "work-status"]]
+              reviewed-status ["in-copyright" "undetermined"]]
+        (let [review (fixtures/finding "review" subject predicate reviewed-status [])
+              complete (first (get (source) "findings"))
+              input (assoc (source) "findings" [complete review])
+              view (evaluate/evaluate! store input options)
+              candidate (get-in (snapshot-value view) ["candidates" 1])
+              projected (if (= predicate "work-status")
+                          (get candidate "work_assessment")
+                          (first (get candidate "contributions")))]
+          (is (= reviewed-status (get projected "status")))
+          (is (= :conflicting-assessment-support
+                 (failure #(evaluate/evaluate! store (update (source) "findings" conj review) options)))))))))

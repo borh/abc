@@ -1,5 +1,6 @@
 (ns soranoha.assessment.fixtures
-  (:require [soranoha.assessment.records :as records]))
+  (:require [clojure.string :as str]
+            [soranoha.assessment.records :as records]))
 
 (defn finding [id subject predicate value premises]
   {"id" id "fact" (records/fact-key subject predicate) "value" value
@@ -12,17 +13,25 @@
   {"kind" "observation" "ref" id "fingerprint" (records/fingerprint value)})
 
 (defn assessed-source
-  "Synthetic completed findings for one work and its established set.
+  "Synthetic established premises for a derived public-domain assessment.
   Captures are values under observation ids bundle and catalog."
   [slug ids captures]
-  (assoc records/empty-source
-         "observations" [{"id" "bundle" "selector" "canonical-source-bundle" "slug" slug}
-                         {"id" "catalog" "selector" "catalog-contributors" "slug" slug}]
-         "findings"
-         (into [(finding "complete" slug "contribution-set" (vec (sort ids))
-                         [(observation-premise "bundle" (get captures "bundle"))
-                          (observation-premise "catalog" (get captures "catalog"))])]
-               (map (fn [id]
-                      (finding (str "status-" id)
-                               (records/contribution-subject slug id)
-                               "contribution-status" "public-domain" []))) ids)))
+  (let [coordinates (sort (distinct (map #(second (str/split % #":" 2)) ids)))
+        work-findings [(finding "work-type" slug "work-type" "non-film-non-photo" [])
+                       (finding "publication" slug "publication-timing" "lifetime" [])
+                       (finding "chain" slug "derivative-chain" [] [])]
+        people (map #(finding (str "death-" %) (str "person:" %) "death-year" 1900 []) coordinates)
+        contributions (mapcat
+                       (fn [id]
+                         (let [subject (records/contribution-subject slug id)]
+                           [(finding (str "attribution-" id) subject "attribution-form" "real-name" [])
+                            (finding (str "wartime-" id) subject "no-wartime-addition" true [])]))
+                       ids)]
+    (assoc records/empty-source
+           "observations" [{"id" "bundle" "selector" "canonical-source-bundle" "slug" slug}
+                           {"id" "catalog" "selector" "catalog-contributors" "slug" slug}]
+           "findings"
+           (into [(finding "complete" slug "contribution-set" (vec (sort ids))
+                           [(observation-premise "bundle" (get captures "bundle"))
+                            (observation-premise "catalog" (get captures "catalog"))])]
+                 (concat work-findings people contributions)))))

@@ -397,7 +397,6 @@
               "properties": {
                 "value": {
                   "enum": [
-                    "public-domain",
                     "in-copyright",
                     "undetermined"
                   ]
@@ -428,7 +427,6 @@
               "properties": {
                 "value": {
                   "enum": [
-                    "public-domain",
                     "in-copyright",
                     "undetermined"
                   ]

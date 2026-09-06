@@ -28,9 +28,8 @@
 
 (defn- snapshot-value
   "Sort candidates and independent contributions, retaining reliance payloads."
-  [candidates snapshot-schema]
-  {"schema" (or snapshot-schema (if (some #(contains? % "reliance") candidates)
-                                  "snh-assessment-snapshot/2" "snh-assessment-snapshot/1"))
+  [candidates]
+  {"schema" "snh-assessment-snapshot/2"
    "candidates"
    (vec (sort-by #(get % "slug")
                  (map (fn [candidate]
@@ -123,10 +122,10 @@
   - :withdrawn-slugs — the chain head's withdrawn set; works = admitted
     minus withdrawn."
   [{:keys [cas-dir corpus toolchain selection-params policy-id policy-hash
-           candidates works withdrawn-slugs selection snapshot-schema]}]
+           candidates works withdrawn-slugs selection]}]
   (let [snapshot-enc (decode/encode "assessment-snapshot"
-                                    (snapshot-value candidates snapshot-schema))
-        rule (admission/rule-for (:value snapshot-enc))
+                                    (snapshot-value candidates))
+        rule admission/inclusion-rule
         _ (doseq [{:strs [slug reliance]} candidates
                   :when (= "relied-upon" (get reliance "status"))]
             (when-not (= (get reliance "source_content_hash") (:source-content-hash (get works slug)))

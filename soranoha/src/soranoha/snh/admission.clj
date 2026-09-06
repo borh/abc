@@ -3,11 +3,13 @@
 (def inclusion-rule
   "The executable rule value whose canonical bytes inclusion_rule_hash
   binds: the evaluator admits a candidate iff every fact status (the work
-  assessment and each contribution) equals admit_when_all, excludes with
+  assessment and each contribution) equals admit_when_all or an edition
+  reliance has admit_reliance_status; excludes with
   exclude_reason iff any status equals exclude_when_any, and quarantines
   with quarantine_reason otherwise. Changing any decision-bearing value
   changes the hash."
-  {"id" "za-public-domain-unanimous-v1"
+  {"id" "za-assessment-or-aozora-reliance-v2"
+   "admit_reliance_status" "relied-upon"
    "admit_when_all" "public-domain"
    "exclude_when_any" "in-copyright"
    "exclude_reason" "in-copyright"
@@ -36,12 +38,3 @@
                   "reason_code" (get rule "quarantine_reason")}))))
    {:admitted [] :excluded [] :quarantined []}
    candidates))
-
-(def reliance-inclusion-rule
-  (assoc inclusion-rule "id" "za-assessment-or-aozora-reliance-v2"
-         "admit_reliance_status" "relied-upon"))
-
-(defn rule-for [snapshot]
-  (if (= "snh-assessment-snapshot/2" (get snapshot "schema"))
-    reliance-inclusion-rule
-    inclusion-rule))

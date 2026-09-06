@@ -140,7 +140,6 @@
                           :policy-id policy-id
                           :policy-hash policy-hash
                           :candidates candidates
-                          :snapshot-schema (get snapshot "schema")
                           :works (report-works report)
                           :selection selected})}
        push-fn (assoc :push-fn push-fn)))))

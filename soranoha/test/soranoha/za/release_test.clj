@@ -10,6 +10,7 @@
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
             [soranoha.assessment.records :as records]
+            [soranoha.assessment.snapshot :as snapshot]
             [soranoha.assessment.aozora :as aozora]
             [soranoha.core.hash :as hash]
             [soranoha.main :as main]
@@ -54,7 +55,7 @@
 
 (defn- snapshot-bytes ^bytes [candidates]
   (:bytes (decode/encode "assessment-snapshot"
-                         {"schema" "snh-assessment-snapshot/1"
+                         {"schema" "snh-assessment-snapshot/2"
                           "candidates" (vec (sort-by #(get % "slug")
                                                      candidates))})))
 
@@ -418,10 +419,10 @@
                          (let [rows (catalog/read-rows-from-string
                                      (:csv-text (catalog/read-catalog-zip
                                                  root)))]
-                           (:bytes (scaffold/snapshot
-                                    rows
-                                    (:candidates (select/select-candidates
-                                                  root rows))))))
+                           (:bytes (snapshot/encode
+                                    {:facts {}
+                                     :candidates (scaffold/projection
+                                                  rows (:candidates (select/select-candidates root rows)))}))))
         opts {:root (str (fs/path dir "store"))
               :aozora-root root
               :clj-toolchain-id "za-drift-fixture"

@@ -235,19 +235,18 @@
     (doseq [field ["policy_hash" "inclusion_rule_id" "inclusion_rule_hash"]]
       (when-not (= (get admission field) (get report field))
         (fail! :report-admission-field-mismatch {:commit commit :field field})))
-    (when (= "snh-assessment-snapshot/2" (get snapshot "schema"))
-      (let [rule admission-rule/reliance-inclusion-rule
-            partition (admission-rule/partition-candidates rule (get snapshot "candidates"))
-            works (into {} (map (juxt #(get % "slug") identity)) (get manifest "works"))]
-        (when-not (and (= (get rule "id") (get report "inclusion_rule_id"))
-                       (= (hash/sha256-canonical-json rule) (get report "inclusion_rule_hash"))
-                       (every? (fn [[k v]] (= v (get report (name k)))) partition))
-          (fail! :reliance-admission-mismatch {:commit commit}))
-        (doseq [{:strs [slug reliance]} (get snapshot "candidates")
-                :when (and reliance (get works slug))]
-          (when-not (= (get reliance "source_content_hash")
-                       (str "sha256:" (get-in works [slug "source_content_hash"])))
-            (fail! :reliance-source-content-mismatch {:commit commit :slug slug})))))
+    (let [rule admission-rule/inclusion-rule
+          partition (admission-rule/partition-candidates rule (get snapshot "candidates"))
+          works (into {} (map (juxt #(get % "slug") identity)) (get manifest "works"))]
+      (when-not (and (= (get rule "id") (get report "inclusion_rule_id"))
+                     (= (hash/sha256-canonical-json rule) (get report "inclusion_rule_hash"))
+                     (every? (fn [[k v]] (= v (get report (name k)))) partition))
+        (fail! :reliance-admission-mismatch {:commit commit}))
+      (doseq [{:strs [slug reliance]} (get snapshot "candidates")
+              :when (and reliance (get works slug))]
+        (when-not (= (get reliance "source_content_hash")
+                     (str "sha256:" (get-in works [slug "source_content_hash"])))
+          (fail! :reliance-source-content-mismatch {:commit commit :slug slug}))))
     (let [candidates (mapv #(get % "slug") (get snapshot "candidates"))
           admitted (get report "admitted")
           excluded (mapv #(get % "slug") (get report "excluded"))

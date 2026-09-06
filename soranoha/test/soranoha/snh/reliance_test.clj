@@ -27,9 +27,10 @@
 (deftest versioned-boundary-preserves-the-independent-arm
   (let [value (snapshot)]
     (is (= value (:value (decode/encode "assessment-snapshot" value))))
-    (is (seq (validator/validation-errors (schema/schema-for "assessment-snapshot") value)))
+    (is (nil? (validator/validation-errors (schema/schema-for "assessment-snapshot") value)))
     (doseq [[mutation expected]
-            [[#(assoc % "schema" "snh-assessment-snapshot/3") :schema-invalid]
+            [[#(assoc % "schema" "snh-assessment-snapshot/1" "candidates" [(first (get % "candidates"))]) :schema-invalid]
+             [#(assoc % "schema" "snh-assessment-snapshot/3") :schema-invalid]
              [#(assoc-in % ["candidates" 1 "reliance" "observed_at"] "2026-02-30") :invalid-reliance-date]
              [#(assoc-in % ["candidates" 1 "reliance" "decision_date"] "2026-09-04") :reliance-observed-after-decision]
              [#(assoc-in % ["candidates" 1 "contributions"] []) :schema-invalid]
@@ -52,7 +53,6 @@
              "upstream_rev" (apply str (repeat 40 "2"))}
     :toolchain {} :selection-params {} :policy-id "synthetic-reliance-test"
     :policy-hash (hash/sha256-string "synthetic-reliance-policy")
-    :snapshot-schema (get (snapshot) "schema")
     :candidates (get (snapshot) "candidates")
     :works (into {} (map (fn [slug] [slug (work! cas-dir slug)])) ["independent" "relied"])
     :selection ["independent" "relied" "unavailable"]}))

@@ -3,17 +3,17 @@
     {
       "file": "release-manifest-valid.json",
       "type": "release-manifest",
-      "id": "snh:1:release-manifest:84b03a3bb73fc505e7d990a51972be9ad0c557a52ad0f646297cef6b980eee61"
+      "id": "snh:1:release-manifest:7eb4e129b8b72cfc0b2dbd403f424119e5ae2c0db02f0fb9dc0b4c6ab5e42593"
     },
     {
       "file": "assessment-snapshot-valid.json",
       "type": "assessment-snapshot",
-      "id": "snh:1:assessment-snapshot:f16ccdff762ff998d61f6aef4b6ad641b229562a2deb226498d7794a50b93217"
+      "id": "snh:1:assessment-snapshot:9a65fe672c9599b4b04f418478f603261c0935b8797ae4bd11033000aa77da3d"
     },
     {
       "file": "admission-report-valid.json",
       "type": "admission-report",
-      "id": "snh:1:admission-report:2088a628c47f28ab038b22014ecad89d354096b2cf863b491d4f005253ea3907"
+      "id": "snh:1:admission-report:bdf1d058edeb9baecac3b1ac8c8cd1e39d4410b42f43ff32f6777713c88b7f12"
     },
     {
       "file": "governance-event-withdrawal-valid.json",

@@ -66,13 +66,13 @@
              (reason #(records/encode (assoc records/empty-source "findings"
                                              [(fixtures/finding "direct" "work" "work-status" "public-domain" [])]))))))))
 
-(deftest legacy-source-preserves-exact-v1-snapshot
+(deftest independent-source-uses-current-snapshot-format
   (with-store
     (fn [store]
       (let [view (evaluate/evaluate! store records/empty-source options)
             expected (decode/encode
                       "assessment-snapshot"
-                      {"schema" "snh-assessment-snapshot/1"
+                      {"schema" "snh-assessment-snapshot/2"
                        "candidates"
                        (mapv (fn [[slug ids]]
                                {"slug" slug "work_assessment" scaffold/not-evaluated

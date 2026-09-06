@@ -12,11 +12,10 @@
      "basis" (str/join "\n" (distinct (map #(get % "text") (:basis result))))}
     scaffold/not-evaluated))
 
-(defn encode [{:keys [facts candidates source reliances]}]
+(defn encode [{:keys [facts candidates reliances]}]
   (decode/encode
    "assessment-snapshot"
-   {"schema" (if (seq (get source "reliances"))
-               "snh-assessment-snapshot/2" "snh-assessment-snapshot/1")
+   {"schema" "snh-assessment-snapshot/2"
     "candidates"
     (mapv (fn [[slug provisional]]
             (if-let [reliance (get reliances slug)]

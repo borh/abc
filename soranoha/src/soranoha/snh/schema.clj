@@ -12,7 +12,7 @@
   executable form of the type registry's release-level protocol JSON
   objects — the only types boundary decode applies to."
   {"release-manifest"    "snh/schemas/snh-manifest-1.schema.json"
-   "assessment-snapshot" "snh/schemas/snh-assessment-snapshot-1.schema.json"
+   "assessment-snapshot" "snh/schemas/snh-assessment-snapshot-2.schema.json"
    "admission-report"    "snh/schemas/snh-admission-report-1.schema.json"
    "governance-event"    "snh/schemas/snh-governance-event-1.schema.json"})
 
@@ -33,13 +33,7 @@
       (throw (ex-info "No protocol schema for artifact type"
                       {:type type :known (keys schema-resources)}))))
 
-(def ^:private snapshot-v2
-  (delay (json/read-json (slurp (io/resource "snh/schemas/snh-assessment-snapshot-2.schema.json")))))
-
 (defn validation-errors
   "Validation errors for `value` against the schema of `type`; nil when valid."
   [type value]
-  (ported-schema/validation-errors
-   (if (and (= type "assessment-snapshot") (= "snh-assessment-snapshot/2" (get value "schema")))
-     @snapshot-v2
-     (schema-for type)) value))
+  (ported-schema/validation-errors (schema-for type) value))

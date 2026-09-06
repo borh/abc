@@ -8,6 +8,7 @@
             [soranoha.core.canonical :as canonical]
             [soranoha.core.hash :as hash]
             [soranoha.snh.decode :as decode]
+            [soranoha.snh.admission :as admission]
             [soranoha.snh.repo :as repo]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.transact :as transact]
@@ -89,7 +90,7 @@
              "artifacts" (mapv (fn [[kind bytes]] (entry-for kind bytes)) parts)}}))
 
 (def policy-hash (hash/sha256-string "fixture:policy"))
-(def rule-hash (hash/sha256-string "fixture:rule"))
+(def rule-hash (hash/sha256-canonical-json admission/inclusion-rule))
 
 (defn make-assemble
   "Assembler over a parameterized fixture corpus. `admitted`, `excluded`,
@@ -107,19 +108,23 @@
           live (vec (sort (remove withdrawn admitted)))
           works (mapv #(work-entry % variant (contains? (set invalid) %)) live)
           all-candidates (vec (sort (concat admitted excluded quarantined)))
-          snapshot {"schema" "snh-assessment-snapshot/1"
-                    "candidates" (mapv candidate
+          snapshot {"schema" "snh-assessment-snapshot/2"
+                    "candidates" (mapv (fn [slug]
+                                         (let [status (cond (some #{slug} excluded) "in-copyright"
+                                                            (some #{slug} quarantined) "undetermined"
+                                                            :else "public-domain")]
+                                           (update (candidate slug) "work_assessment" assoc "status" status)))
                                        (remove #{drop-candidate} all-candidates))}
           snapshot-enc (decode/encode "assessment-snapshot" snapshot)
           report {"schema" "snh-admission-report/1"
                   "assessment_snapshot" (:id snapshot-enc)
                   "policy_hash" policy-hash
-                  "inclusion_rule_id" "fixture-rule-v1"
+                  "inclusion_rule_id" (get admission/inclusion-rule "id")
                   "inclusion_rule_hash" rule-hash
                   "admitted" (vec (sort admitted))
                   "excluded" (mapv (fn [slug] {"slug" slug "reason_code" "in-copyright"})
                                    (sort excluded))
-                  "quarantined" (mapv (fn [slug] {"slug" slug "reason_code" "not-evaluated"})
+                  "quarantined" (mapv (fn [slug] {"slug" slug "reason_code" "not-fully-evaluated"})
                                       (sort quarantined))}
           report-enc (decode/encode "admission-report" report)]
       {:core {"schema" "snh-manifest/1"
@@ -130,7 +135,7 @@
               "selection_params" selection-params
               "admission" {"policy_id" "fixture-policy"
                            "policy_hash" policy-hash
-                           "inclusion_rule_id" "fixture-rule-v1"
+                           "inclusion_rule_id" (get admission/inclusion-rule "id")
                            "inclusion_rule_hash" rule-hash
                            "assessment_snapshot" (:id snapshot-enc)
                            "admission_report" (:id report-enc)}

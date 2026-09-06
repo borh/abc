@@ -47,9 +47,9 @@
                    {"type" "text" "text" ""}]]]
     (let [nodes (into prefix [{"type" "text" "text" "　本文　中。"}])
           body (:body (tei/render
-                        {"nodes" nodes
-                         "paragraphs" [{"id" "p1" "role" "body"
-                                        "node_range" {"start" 0 "end" (count nodes)}}]}))
+                       {"nodes" nodes
+                        "paragraphs" [{"id" "p1" "role" "body"
+                                       "node_range" {"start" 0 "end" (count nodes)}}]}))
           paragraph (first (elements body :p))]
       (is (= "text-indent: 1em" (:style (second paragraph))))
       (is (= "本文　中。" (last paragraph)))
@@ -62,9 +62,9 @@
                   {"type" "emphasis" "style" "sesame-dot"
                    "inline_children" [{"type" "text" "text" "前"}]}]]
     (let [body (:body (tei/render
-                        {"nodes" [prefix {"type" "text" "text" "　本文。"}]
-                         "paragraphs" [{"id" "p1" "role" "body"
-                                        "node_range" {"start" 0 "end" 2}}]}))
+                       {"nodes" [prefix {"type" "text" "text" "　本文。"}]
+                        "paragraphs" [{"id" "p1" "role" "body"
+                                       "node_range" {"start" 0 "end" 2}}]}))
           paragraph (first (elements body :p))]
       (is (nil? (:style (second paragraph))))
       (is (= "　本文。" (last paragraph))))))

@@ -35,7 +35,7 @@ fn sort_keys_deep_sorts_insertion_ordered_maps() {
 ///   --mapping data/aat-to-parser-ir-mapping-v1.json \
 ///   --parser-ir-out /tmp/canary-parser-ir.json \
 ///   --divergence-out /tmp/canary-divergence.json \
-///   --abc-root data/abc-schemas
+///   --research-root research
 /// ```
 ///
 /// The fixture is the same minimal AAT document used by
@@ -123,16 +123,16 @@ fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn abc_root(repo: &Path) -> PathBuf {
-    std::env::var_os("AB_ABC_ROOT")
+fn research_root(repo: &Path) -> PathBuf {
+    std::env::var_os("AB_RESEARCH_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| repo.join("data/abc-schemas"))
+        .unwrap_or_else(|| repo.join("research"))
 }
 
 #[test]
 fn convert_and_serialize_parser_ir_is_canonical_under_preserve_order() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     // The mapping loaded below (`aat-to-parser-ir-mapping-v1.json`) declares
     // `source_aat_version: 1`; `MappingDocument::preflight` requires the
     // loaded AAT schema version to match, so this canary — whose fixture AAT

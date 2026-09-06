@@ -20,7 +20,7 @@ use sha2::{Digest, Sha256};
 const IDENTITY_REF: &str =
     "sha256:6ad6a02c2e9e16e53cfe5cda3786142e58a632a1fc35875334a188721e3bb146";
 const POLICY: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-ab-aozora-diagnostic-gap-v1.json");
+    include_bytes!("../../../research/data/parser-rq-ab-aozora-diagnostic-gap-v1.json");
 
 fn hash(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
@@ -29,9 +29,9 @@ fn hash(bytes: &[u8]) -> String {
 fn fixture_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()
-        .nth(3)
+        .nth(2)
         .unwrap()
-        .join("abc/test/fixtures/parser-rq/diagnostic-gap-capture")
+        .join("research/test/fixtures/parser-rq/diagnostic-gap-capture")
 }
 
 fn identity() -> Value {

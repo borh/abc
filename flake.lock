@@ -2,9 +2,6 @@
   "nodes": {
     "ab-validator": {
       "inputs": {
-        "abc": [
-          "abc"
-        ],
         "aozorabunko-src": [
           "aozorabunko-src"
         ],
@@ -17,6 +14,8 @@
           "nixpkgs"
         ],
         "rust-overlay": "rust-overlay",
+        "soranoha-assets": "soranoha-assets",
+        "tei-eaj-aozora-tei": "tei-eaj-aozora-tei",
         "upstream-aozora-notation-spec-src": "upstream-aozora-notation-spec-src",
         "upstream-aozorabunko-extractor-src": "upstream-aozorabunko-extractor-src"
       },
@@ -26,31 +25,6 @@
       },
       "original": {
         "path": "./ab-validator",
-        "type": "path"
-      },
-      "parent": []
-    },
-    "abc": {
-      "inputs": {
-        "aozorabunko-src": [
-          "aozorabunko-src"
-        ],
-        "clj-nix": [
-          "clj-nix"
-        ],
-        "crane": "crane",
-        "local-pkgs": "local-pkgs",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "tei-eaj-aozora-tei": "tei-eaj-aozora-tei"
-      },
-      "locked": {
-        "path": "./abc",
-        "type": "path"
-      },
-      "original": {
-        "path": "./abc",
         "type": "path"
       },
       "parent": []
@@ -91,22 +65,6 @@
       "original": {
         "owner": "jlesquembre",
         "repo": "clj-nix",
-        "type": "github"
-      }
-    },
-    "crane": {
-      "locked": {
-        "lastModified": 1779041105,
-        "narHash": "sha256-nnGD2f8OlAZT2i5OfwikJsw+ifWfiA4d6A8BWlgOXV0=",
-        "owner": "ipetkov",
-        "repo": "crane",
-        "rev": "10e6e3cb966f7cfcc789fe5eee7a85f3188ce08b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "ipetkov",
-        "ref": "v0.23.4",
-        "repo": "crane",
         "type": "github"
       }
     },
@@ -166,20 +124,6 @@
         "repo": "flake-utils",
         "type": "github"
       }
-    },
-    "local-pkgs": {
-      "flake": false,
-      "locked": {
-        "path": "./nix/ci-empty-local-pkgs",
-        "type": "path"
-      },
-      "original": {
-        "path": "./nix/ci-empty-local-pkgs",
-        "type": "path"
-      },
-      "parent": [
-        "abc"
-      ]
     },
     "mecab-dic-converter-src": {
       "flake": false,
@@ -251,7 +195,6 @@
     "root": {
       "inputs": {
         "ab-validator": "ab-validator",
-        "abc": "abc",
         "aozorabunko-src": "aozorabunko-src",
         "clj-nix": "clj-nix",
         "nixpkgs": "nixpkgs",
@@ -278,6 +221,20 @@
         "repo": "rust-overlay",
         "type": "github"
       }
+    },
+    "soranoha-assets": {
+      "flake": false,
+      "locked": {
+        "path": "../soranoha",
+        "type": "path"
+      },
+      "original": {
+        "path": "../soranoha",
+        "type": "path"
+      },
+      "parent": [
+        "ab-validator"
+      ]
     },
     "systems": {
       "locked": {

@@ -6,7 +6,7 @@ use hegel::generators;
 use sha2::{Digest, Sha256};
 
 const POLICY: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-ab-aozora-diagnostic-gap-v1.json");
+    include_bytes!("../../../research/data/parser-rq-ab-aozora-diagnostic-gap-v1.json");
 fn hash(b: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(b))
 }

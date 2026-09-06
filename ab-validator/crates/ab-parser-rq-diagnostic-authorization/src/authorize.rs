@@ -13,9 +13,9 @@ use crate::model::{
 };
 
 const RAW_SCHEMA: &[u8] =
-    include_bytes!("../../../../abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json");
+    include_bytes!("../../../research/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json");
 const POLICY_SCHEMA: &[u8] =
-    include_bytes!("../../../../abc/schemas/parser-rq-diagnostic-gap-policy.schema.json");
+    include_bytes!("../../../research/schemas/parser-rq-diagnostic-gap-policy.schema.json");
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]

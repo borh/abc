@@ -14,15 +14,15 @@
             [soranoha.ori.render :as render]
             [soranoha.ori.fidelity :as fidelity]
             [soranoha.ori.validate :as validate]
-            [soranoha.ported.aozora-ingest :as ingest]
-            [soranoha.ported.json :as abc-json]
-            [soranoha.ported.source-bundle :as source-bundle]
-            [soranoha.ported.schema :as schema]
+            [soranoha.aozora.ingest :as ingest]
+            [soranoha.core.json :as record-json]
+            [soranoha.aozora.source-bundle :as source-bundle]
+            [soranoha.core.schema :as schema]
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
 (defn- utf8 ^bytes [^String s] (.getBytes s "UTF-8"))
-(defn- json-bytes ^bytes [value] (utf8 (abc-json/write-deterministic-json-str value)))
+(defn- json-bytes ^bytes [value] (utf8 (record-json/write-deterministic-json-str value)))
 
 (defn- env-value [k]
   (let [v (System/getenv k)]
@@ -87,7 +87,7 @@
                 (ingest/build-records
                  {:rows (json/read-json (String. ^bytes (blob (get inputs "catalog-rows")) "UTF-8"))
                   :work-id (get inputs "work_id") :schemas schemas})]
-            {"metadata-record" (utf8 (str (abc-json/write-deterministic-json-str metadata-rec) "\n"))
+            {"metadata-record" (utf8 (str (record-json/write-deterministic-json-str metadata-rec) "\n"))
              "persons" (json-bytes person-records)}))}))
 
 (defn parse-stage

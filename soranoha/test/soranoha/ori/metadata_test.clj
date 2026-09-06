@@ -7,7 +7,7 @@
             [soranoha.kura.cas :as cas]
             [soranoha.kura.engine :as engine]
             [soranoha.ori.stages :as stages]
-            [soranoha.ported.json :as abc-json]
+            [soranoha.core.json :as record-json]
             [soranoha.main :as main]
             [soranoha.za.corpus :as corpus]))
 
@@ -46,7 +46,7 @@
       (fs/create-dirs (fs/path assets "schemas"))
       (doseq [filename ["metadata-record.schema.json" "person-record.schema.json"]]
         (spit (str (fs/path assets "schemas" filename))
-              (slurp (str (fs/path "../abc/schemas" filename)))))
+              (slurp (str (fs/path "schemas" filename)))))
       (let [stage (stages/metadata-stage "test" assets)
             run (fn [stage rows]
                   (engine/run-stage! store stage
@@ -64,8 +64,8 @@
             old-person (get (read-output second-run "persons") "000001")
             mutate-schema! (fn [filename]
                              (let [path (str (fs/path assets "schemas" filename))
-                                   doc (assoc (abc-json/read-json-file path) "description" "changed schema document")]
-                               (spit path (abc-json/write-deterministic-json-str doc))
+                                   doc (assoc (record-json/read-json-file path) "description" "changed schema document")]
+                               (spit path (record-json/write-deterministic-json-str doc))
                                (str "sha256:" (hash/sha256-canonical-json doc))))]
         (testing "same-process metadata schema edits bind both stage identity and embedded schema hash"
           (let [schema-hash (mutate-schema! "metadata-record.schema.json")
@@ -111,7 +111,7 @@
                            (corpus/write-zip! (fs/path corpus-root "index_pages" "list_person_all_extended_utf8.zip")
                                               [["catalog.csv" (str writer)]])
                            (corpus/commit-corpus! corpus-root)))
-        opts {:root (str dir) :aozora-root corpus-root :assets-root "../abc"
+        opts {:root (str dir) :aozora-root corpus-root :assets-root "."
               :clj-toolchain-id "test" :concurrency 1}
         build #(binding [*out* (java.io.StringWriter.)] (main/build! opts))]
     (try

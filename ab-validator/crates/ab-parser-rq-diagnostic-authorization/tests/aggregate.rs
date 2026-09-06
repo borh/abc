@@ -85,7 +85,7 @@ fn source(record: &RecognitionWorkRecord) -> Vec<u8> {
 }
 
 const POLICY: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-ab-aozora-diagnostic-gap-v1.json");
+    include_bytes!("../../../research/data/parser-rq-ab-aozora-diagnostic-gap-v1.json");
 
 fn authorization(
     record: &RecognitionWorkRecord,

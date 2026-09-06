@@ -29,9 +29,8 @@ This follows ABC ADRs 0003, 0005, 0008, 0012, 0023, and 0025.
 The root `flake.lock` is the canonical lock for Soranoha. The old split
 repositories are archived and no longer define active source identity.
 
-Component locks under `abc/` and `ab-validator/` may remain for direct component
-flake workflows, but they are compatibility surfaces inside the monorepo. When a
-component flake input changes, update the root lock and the relevant component
+The `ab-validator/flake.lock` supports direct research flake workflows. When a
+component flake input changes, update the root lock and the component
 lock in the same change so root-prefixed outputs and direct component workflows
 see the same source identities.
 
@@ -60,12 +59,12 @@ review handled by normal Nix lock diffs.
 
 ## TEI P5 Identity
 
-ABC profile validation is pinned to TEI P5 4.11.0. The monorepo TEI source
+Soranoha profile validation is pinned to TEI P5 4.11.0. The monorepo TEI source
 reference must therefore also use TEI P5 4.11.0:
 
 - root input: `github:TEIC/TEI/P5_Release_4.11.0`
-- ABC full TEI Relax NG: TEI Vault P5 4.11.0 `tei_all.rng`
-- ABC ODD expansion source: TEI Vault P5 4.11.0 `p5subset.xml`
+- Soranoha full TEI Relax NG: TEI Vault P5 4.11.0 `tei_all.rng`
+- Soranoha ODD expansion source: TEI Vault P5 4.11.0 `p5subset.xml`
 
 The `monorepo-tei-version-coherence` check enforces this alignment.
 
@@ -78,7 +77,7 @@ changes:
 just tei-version-coherence
 just flake-input-policy
 just root-flake-check-no-build
-just validate-migration
+just validate
 ```
 
 Heavy corpus measurements remain operator-driven and are not part of the

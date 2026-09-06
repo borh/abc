@@ -7,7 +7,7 @@
             [soranoha.core.hash :as hash]
             [soranoha.kura.cas :as cas]
             [soranoha.kura.engine :as engine]
-            [soranoha.ported.schema :as validator]
+            [soranoha.core.schema :as validator]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.fixture :as fx]
             [soranoha.snh.schema :as schema]

@@ -1,9 +1,0 @@
-{
-  "artifact_kind": "failure",
-  "failed_stage": "tei-schematron-validation",
-  "source_fixture": "fixtures/tei/invalid/missing-title.xml",
-  "expected_rule_id": "abc-tei-header-title",
-  "status": "failed",
-  "message": "Schematron validation failed because teiHeader/fileDesc/titleStmt has no main title.",
-  "policy": "Failure manifests are materialized for invalid TEI examples instead of relying on console errors."
-}

@@ -85,7 +85,7 @@ def check_component_lock_coherence(repo_root: Path) -> list[str]:
     root_nodes = root_lock.get("nodes", {})
     errors: list[str] = []
 
-    for component in ("abc", "ab-validator"):
+    for component in ("ab-validator",):
         component_lock_path = repo_root / component / "flake.lock"
         if not component_lock_path.exists():
             continue
@@ -106,7 +106,6 @@ def main() -> int:
     repo_root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.cwd()
     lock_paths = [
         repo_root / "flake.lock",
-        repo_root / "abc" / "flake.lock",
         repo_root / "ab-validator" / "flake.lock",
     ]
 

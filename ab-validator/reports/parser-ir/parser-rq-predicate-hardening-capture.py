@@ -61,7 +61,7 @@ def capture(
     aozora: Path,
     converter: Path,
     mapping: Path,
-    abc_root: Path,
+    research_root: Path,
     identity_ref: str,
     parser_policy: Path,
     store: Path,
@@ -107,8 +107,8 @@ def capture(
                 str(aat_path),
                 "--mapping",
                 str(mapping),
-                "--abc-root",
-                str(abc_root),
+                "--research-root",
+                str(research_root),
                 "--work-id",
                 work_id,
                 "--qualification-identity-ref",
@@ -163,7 +163,7 @@ def main() -> int:
     parser.add_argument("--ab-aozora", type=Path, required=True)
     parser.add_argument("--converter", type=Path, required=True)
     parser.add_argument("--mapping", type=Path, required=True)
-    parser.add_argument("--abc-root", type=Path, required=True)
+    parser.add_argument("--research-root", type=Path, required=True)
     parser.add_argument("--identity-ref", required=True)
     parser.add_argument("--parser-policy", type=Path, required=True)
     parser.add_argument("--store", type=Path, required=True)
@@ -175,7 +175,7 @@ def main() -> int:
         aozora=args.ab_aozora,
         converter=args.converter,
         mapping=args.mapping,
-        abc_root=args.abc_root,
+        research_root=args.research_root,
         identity_ref=args.identity_ref,
         parser_policy=args.parser_policy,
         store=args.store,

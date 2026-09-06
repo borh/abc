@@ -1,1 +1,0 @@
-{"severity":"warning","code":"UNRESOLVED_GAIJI","message":"Gaiji marker was preserved without Unicode resolution.","span":{"start":17,"end":28,"line":2,"column":12},"construct":"gaiji","recovery":"Preserved raw marker in parser IR."}

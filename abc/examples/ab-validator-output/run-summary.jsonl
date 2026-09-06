@@ -1,3 +1,0 @@
-{"event":"run-start","run_id":"ab-validator-fixture-run","generated_at":"2026-04-26T00:00:00Z","producer":"ab-validator","producer_version":"0.0.0-fixture"}
-{"event":"work-result","run_id":"ab-validator-fixture-run","work_id":"fixture-0001","parser_id":"fixture-parser","status":"warning","parser_ir_path":"parser-ir.json","warnings_path":"warnings.jsonl","warning_count":1,"error_count":0}
-{"event":"run-complete","run_id":"ab-validator-fixture-run","status":"warning","works_total":1,"works_succeeded":1,"works_failed":0,"warning_count":1,"error_count":0}

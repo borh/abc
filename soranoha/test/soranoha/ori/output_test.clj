@@ -7,9 +7,9 @@
             [soranoha.ori.fidelity-test :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.stages :as stages]
-            [soranoha.ported.tei-header :as header]
-            [soranoha.ported.parser-ir-plaintext :as plaintext]
-            [soranoha.ported.parser-ir-sentence-policy :as sentence-policy])
+            [soranoha.ori.tei-header :as header]
+            [soranoha.ori.plaintext :as plaintext]
+            [soranoha.ori.sentence-policy :as sentence-policy])
   (:import [java.io ByteArrayInputStream]
            [javax.xml.parsers DocumentBuilderFactory]))
 

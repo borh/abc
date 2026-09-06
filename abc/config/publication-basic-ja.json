@@ -1,9 +1,0 @@
-{
-  "config_schema_id": "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json",
-  "config_schema_version": "0.2.0",
-  "source_trust_mode": "fixture",
-  "parser_profile": "ab-aozora",
-  "publication_profile": "tei-publication-basic-ja-v1",
-  "continue_on_failure": true,
-  "materialization_scope": "smoke"
-}

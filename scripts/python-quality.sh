@@ -12,7 +12,7 @@ else
       -path './ab-validator/benchmarks/baselines' -prune -o \
       -path './ab-validator/docs/superpowers/reports' -prune -o \
       -path './ab-validator/scratch' -prune -o \
-      -path './abc/out' -prune -o \
+      -path './ab-validator/research/out' -prune -o \
       -path './out' -prune -o \
       -path './scratch' -prune -o \
       -name '*.py' -print \

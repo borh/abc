@@ -9,10 +9,12 @@ import pytest
 
 AB_ROOT = pathlib.Path(__file__).resolve().parents[3]
 SCRIPT = AB_ROOT / "reports/parser-ir/publication-bundle-validate.py"
-PRESERVATION_SCHEMA = AB_ROOT.parent / "abc/schemas/parser-ir-publication-preservation.schema.json"
+PRESERVATION_SCHEMA = (
+    AB_ROOT.parent / "ab-validator/research/schemas/parser-ir-publication-preservation.schema.json"
+)
 if not PRESERVATION_SCHEMA.is_file():
     PRESERVATION_SCHEMA = (
-        AB_ROOT / "data/abc-schemas/nix-schemas/parser-ir-publication-preservation.schema.json"
+        AB_ROOT / "research/schemas/parser-ir-publication-preservation.schema.json"
     )
 
 

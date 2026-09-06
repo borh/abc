@@ -39,14 +39,9 @@ class LegacyJsonC14n(unittest.TestCase):
             self.assertEqual(legacy_json_c14n.canonical_json(value), expected)
 
     def test_matches_every_shared_cross_language_vector(self) -> None:
-        # abc/test/fixtures/canonicalization/abc-legacy-json-c14n-v0-vectors.json,
-        # mirrored into this tree at data/abc-fixtures/canonicalization (symlink
-        # in a checkout; copied from the abc flake input in the sandbox). Also
-        # pinned by abc/tools/test_legacy_json_c14n.py (Python) and
-        # abc hash_test.clj (Clojure) — a mismatch means the trees drifted.
         fixture_path = (
             Path(__file__).resolve().parents[3]
-            / "data/abc-fixtures/canonicalization/abc-legacy-json-c14n-v0-vectors.json"
+            / "research/test/fixtures/canonicalization/abc-legacy-json-c14n-v0-vectors.json"
         )
         fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
         self.assertEqual(fixture["algorithm_id"], "abc-legacy-json-c14n-v0")

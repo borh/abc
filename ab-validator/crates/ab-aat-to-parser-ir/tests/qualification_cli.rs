@@ -5,10 +5,7 @@ use serde_json::Value;
 
 const HASH: &str = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-// Workspace-relative, never through the checkout's parent: the workspace
-// directory is not guaranteed to be NAMED `ab-validator` (the nix test
-// sandbox stages it as `source`), only to contain this crate and to have
-// the abc tree as a sibling.
+// The build sandbox may name the workspace directory differently from a checkout.
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -31,7 +28,7 @@ fn qualify_preserves_convert_parser_ir_bytes() {
 
     let aat = crate_root.join("tests/fixtures/nested-sentence-basic.aat.json");
     let mapping = root.join("data/aat-to-parser-ir-mapping-v1.json");
-    let abc_root = root.join("../abc");
+    let research_root = root.join("research");
     let converted = temp.path().join("converted.json");
     let divergence = temp.path().join("divergence.json");
     let qualified = temp.path().join("qualified.json");
@@ -44,8 +41,8 @@ fn qualify_preserves_convert_parser_ir_bytes() {
         .arg(&aat)
         .arg("--mapping")
         .arg(&mapping)
-        .arg("--abc-root")
-        .arg(&abc_root)
+        .arg("--research-root")
+        .arg(&research_root)
         .arg("--parser-ir-out")
         .arg(&converted)
         .arg("--divergence-out")
@@ -63,8 +60,8 @@ fn qualify_preserves_convert_parser_ir_bytes() {
         .arg(&aat)
         .arg("--mapping")
         .arg(&mapping)
-        .arg("--abc-root")
-        .arg(&abc_root)
+        .arg("--research-root")
+        .arg(&research_root)
         .arg("--work-id")
         .arg("fixture")
         .arg("--qualification-identity-ref")

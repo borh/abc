@@ -18,8 +18,8 @@ unset AB_MORPH_WAREHOUSE_AAT_DIR
 unset AB_AOZORA2HTML_AAT_DIR
 unset AB_AAT_RUN_SET
 unset AB_TEI_EAJ_WORKSET
-unset ABC_OUTPUT_ROOT
-unset ABC_REPORT_DIR
+unset AB_RESEARCH_OUTPUT_ROOT
+unset AB_RESEARCH_REPORT_DIR
 unset AB_TEI_P5_ROOT
 
 mkdir -p "$tmp/workspace"
@@ -27,7 +27,7 @@ mkdir -p "$tmp/workspace"
 cat > "$tmp/machine.env" <<'ENV'
 export SORANOHA_STATE_ROOT=/machine/state
 export AB_DB_ROOT=/config/ab-validator
-export ABC_OUTPUT_ROOT=/config/abc
+export AB_RESEARCH_OUTPUT_ROOT=/config/research
 ENV
 
 AB_DB_ROOT=/explicit/ab \
@@ -37,8 +37,8 @@ bash -c '
   set -euo pipefail
   source "$1"
   test "$AB_DB_ROOT" = "/explicit/ab"
-  test "$ABC_OUTPUT_ROOT" = "/config/abc"
-  test "$ABC_REPORT_DIR" = "/config/abc/reports"
+  test "$AB_RESEARCH_OUTPUT_ROOT" = "/config/research"
+  test "$AB_RESEARCH_REPORT_DIR" = "/config/research/reports"
 ' bash "$runtime_env"
 
 SORANOHA_WORKSPACE_ROOT="$tmp/workspace" \
@@ -51,8 +51,8 @@ bash -c '
   test "$AB_MORPH_WAREHOUSE_DIR" = "/config/ab-validator/morph-warehouse"
   test "$AB_AAT_RUN_SET" = "$SORANOHA_WORKSPACE_ROOT/ab-validator/reports/aat-fidelity/run-sets/current.json"
   test "$AB_AOZORA2HTML_AAT_DIR" = "/config/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter"
-  test "$ABC_REPORT_DIR" = "/config/abc/reports"
-  test "$AB_TEI_EAJ_WORKSET" = "/config/abc/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json"
+  test "$AB_RESEARCH_REPORT_DIR" = "/config/research/reports"
+  test "$AB_TEI_EAJ_WORKSET" = "/config/research/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json"
 ' bash "$runtime_env"
 
 SORANOHA_WORKSPACE_ROOT="$tmp/workspace" \
@@ -64,12 +64,12 @@ bash -c '
     "$SORANOHA_WORKSPACE_ROOT"/ab-validator/scratch/state) ;;
     *) echo "unexpected AB_DB_ROOT=$AB_DB_ROOT" >&2; exit 1 ;;
   esac
-  case "$ABC_OUTPUT_ROOT" in
-    "$SORANOHA_WORKSPACE_ROOT"/abc/out) ;;
-    *) echo "unexpected ABC_OUTPUT_ROOT=$ABC_OUTPUT_ROOT" >&2; exit 1 ;;
+  case "$AB_RESEARCH_OUTPUT_ROOT" in
+    "$SORANOHA_WORKSPACE_ROOT"/ab-validator/research/out) ;;
+    *) echo "unexpected AB_RESEARCH_OUTPUT_ROOT=$AB_RESEARCH_OUTPUT_ROOT" >&2; exit 1 ;;
   esac
-  case "$AB_DB_ROOT $ABC_OUTPUT_ROOT $ABC_REPORT_DIR" in
-    */db/*) echo "repo-local defaults must not point at /db: $AB_DB_ROOT $ABC_OUTPUT_ROOT $ABC_REPORT_DIR" >&2; exit 1 ;;
+  case "$AB_DB_ROOT $AB_RESEARCH_OUTPUT_ROOT $AB_RESEARCH_REPORT_DIR" in
+    */db/*) echo "repo-local defaults must not point at /db: $AB_DB_ROOT $AB_RESEARCH_OUTPUT_ROOT $AB_RESEARCH_REPORT_DIR" >&2; exit 1 ;;
   esac
 ' bash "$runtime_env"
 

@@ -1,14 +1,8 @@
-;; The pure per-work render path: parser-IR + metadata record + person
-;; records -> plaintext string + TEI XML string. Extracted from
-;; abc.tools.materialize-publication/materialize-publication! with one
-;; signature change: person records arrive as data (persons-by-id) instead of
-;; a persons/ directory, because the kernel resolves every input from the CAS
-;; by hash. The render sequence and every byte-affecting call are unchanged.
 (ns soranoha.ori.render
-  (:require [soranoha.ported.parser-ir-plaintext :as plaintext]
-            [soranoha.ported.parser-ir-sentence-policy :as sentence-policy]
-            [soranoha.ported.parser-ir-tei :as parser-ir-tei]
-            [soranoha.ported.tei-header :as tei-header]))
+  (:require [soranoha.ori.plaintext :as plaintext]
+            [soranoha.ori.sentence-policy :as sentence-policy]
+            [soranoha.ori.tei :as parser-ir-tei]
+            [soranoha.ori.tei-header :as tei-header]))
 
 (defn- header-input [metadata-record persons-by-id]
   {:work (get metadata-record "work")

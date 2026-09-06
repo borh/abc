@@ -1,10 +1,3 @@
-;; The one canonicalizer of this component:
-;; `rfc8785-safe-integer-json-string-v1`. Ported byte-for-byte from
-;; abc.tools.jcs (the safe-integer path only — abc's legacy canonical-json-*
-;; paths are frozen there and have no consumer in this component). The shared
-;; cross-language test vectors in
-;; abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json
-;; bind the two copies together; any byte divergence is a defect.
 (ns soranoha.core.canonical
   (:require [charred.api :as json]
             [clojure.string :as string])

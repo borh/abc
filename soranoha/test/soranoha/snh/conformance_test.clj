@@ -7,7 +7,7 @@
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [soranoha.core.hash :as hash]
-            [soranoha.ported.schema :as ported-schema]
+            [soranoha.core.schema :as schema-validator]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.schema :as schema]
             [soranoha.snh.sign :as sign]))
@@ -213,9 +213,9 @@
 (deftest protocol-schemas-are-valid-json-schemas
   (doseq [[type _] schema/schema-resources]
     (testing type
-      (is (nil? (ported-schema/validation-errors meta-schema-ref
-                                                 (schema/schema-for type))))))
+      (is (nil? (schema-validator/validation-errors meta-schema-ref
+                                                    (schema/schema-for type))))))
   (testing "control: the check can fail"
-    (is (seq (ported-schema/validation-errors
+    (is (seq (schema-validator/validation-errors
               meta-schema-ref
               {"type" "definitely-not-a-json-schema-type"})))))

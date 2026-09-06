@@ -6,7 +6,7 @@ use hegel::generators;
 use serde_json::Value;
 
 const POLICY: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-ab-aozora-classified-source-v1.json");
+    include_bytes!("../../../research/data/parser-rq-ab-aozora-classified-source-v1.json");
 
 fn input(source: &str) -> RecognitionInput {
     let generation = capture_generation_from_bytes(source.as_bytes()).unwrap();

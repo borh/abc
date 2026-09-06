@@ -4,18 +4,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    abc = {
-      url = "path:./abc";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.clj-nix.follows = "clj-nix";
-      inputs.aozorabunko-src.follows = "aozorabunko-src";
-    };
-
     ab-validator = {
       url = "path:./ab-validator";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.clj-nix.follows = "clj-nix";
-      inputs.abc.follows = "abc";
       inputs.aozorabunko-src.follows = "aozorabunko-src";
     };
 
@@ -39,7 +31,6 @@
     {
       self,
       nixpkgs,
-      abc,
       ab-validator,
       clj-nix,
       tei-p5,
@@ -52,7 +43,7 @@
         "aarch64-linux"
       ];
 
-      # Root and abc deliberately target Linux only (x86_64 + aarch64) via a
+      # Soranoha deliberately target Linux only (x86_64 + aarch64) via a
       # hand-rolled genAttrs, while ab-validator uses flake-utils.eachDefaultSystem
       # for its Rust builds (which include darwin). The root wraps only ab-validator's
       # Linux outputs. This split is intentional; do not unify without widening the
@@ -169,23 +160,17 @@
             '';
         in
         {
-          schema-drift = mkWrappedScript "soranoha-schema-drift" ''exec bash scripts/monorepo-schema-drift.sh "$@"'';
           tei-version-coherence = mkWrappedScript "soranoha-tei-version-coherence" ''exec bash scripts/monorepo-tei-version-coherence.sh "$@"'';
           flake-input-policy = mkWrappedScript "soranoha-flake-input-policy" ''exec python scripts/monorepo-flake-input-policy.py "$@"'';
-          # Kept explicit (not via mkWrappedScript): its multi-line body, when
-          # spliced through the helper's ''-string, re-dedents to a different
-          # script text and changes the derivation hash. Explicit form preserves it.
-          validate-migration = pkgs.writeShellScript "soranoha-validate-migration" ''
+          validate = pkgs.writeShellScript "soranoha-validate" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
             workspace_root="$PWD"
             bash tests/monorepo-active-path-hygiene-smoke.sh
             bash tests/root-flake-output-contract-smoke.sh
-            bash scripts/monorepo-schema-drift.sh
             bash scripts/monorepo-tei-version-coherence.sh
             python scripts/monorepo-flake-input-policy.py
             nix flake check --no-build "$@"
-            (cd "$workspace_root/abc" && nix flake check --no-build "$@")
             (
               cd "$workspace_root/ab-validator"
               AB_WORKSPACE_ROOT="$workspace_root" nix flake check --no-build "$@"
@@ -207,27 +192,28 @@
         let
           pkgs = pkgsFor system;
           scripts = monorepoScripts pkgs;
-          abcApps = optionalOutputAttrs abc "apps" system;
+          profile = import ./nix/tei-profile-artifacts.nix {
+            inherit pkgs;
+            odd = ./soranoha/schemas/tei-profile.odd;
+          };
           mkScriptApp = program: description: {
             type = "app";
             program = "${program}";
             meta.description = description;
           };
         in
-        (
-          if builtins.hasAttr "soranoha" abcApps then
-            {
-              soranoha = abcApps.soranoha;
-            }
-          else
-            { }
-        )
-        // {
+        {
           soranoha-kernel = mkScriptApp (mkKernelSoranohaApp system) "Soranoha kernel CLI (build/delta/verify) with content-derived Clojure toolchain identity";
-          schema-drift = mkScriptApp scripts.schema-drift "Check monorepo ABC schema contract drift";
+          regenerate-tei-profile = mkScriptApp (pkgs.writeShellScript "regenerate-tei-profile" ''
+            set -euo pipefail
+            target="''${1:-$PWD/soranoha}"
+            test -d "$target/schemas"
+            ${pkgs.coreutils}/bin/install -m 0644 ${profile.artifacts}/tei-profile.{rng,sch} \
+              ${profile.artifacts}/tei-profile-generation.json "$target/schemas/"
+          '') "Regenerate the Soranoha TEI profile from its ODD";
           tei-version-coherence = mkScriptApp scripts.tei-version-coherence "Check TEI P5 source/profile version coherence";
           flake-input-policy = mkScriptApp scripts.flake-input-policy "Check release-critical flake inputs are explicitly pinned";
-          validate-migration = mkScriptApp scripts.validate-migration "Run Soranoha monorepo migration validation gates";
+          validate = mkScriptApp scripts.validate "Run Soranoha validation gates";
         }
       );
 
@@ -235,21 +221,14 @@
         system:
         let
           pkgs = pkgsFor system;
-          cljPkgs = import nixpkgs {
-            inherit system;
-            overlays = [ clj-nix.overlays.default ];
-          };
-          cljDepsCache = cljPkgs.mk-deps-cache {
-            lockfile = ./abc/deps-lock.json;
-          };
           soranohaClj = soranohaCljContext system;
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
-          abcApps = optionalOutputAttrs abc "apps" system;
+          profile = import ./nix/tei-profile-artifacts.nix {
+            inherit pkgs;
+            odd = ./soranoha/schemas/tei-profile.odd;
+          };
+          researchApps = optionalOutputAttrs ab-validator "apps" system;
           abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
-          parserRqWiringPython = pkgs.python3.withPackages (pythonPackages: [
-            pythonPackages.jsonschema
-            pythonPackages.pytest
-          ]);
           mkMonorepoCheck =
             name: nativeBuildInputs: script:
             pkgs.runCommand name
@@ -264,13 +243,20 @@
               '';
         in
         {
+          tei-profile-drift = pkgs.runCommand "soranoha-tei-profile-drift" { } ''
+            diff -u ${./soranoha/schemas/tei-profile.rng} ${profile.artifacts}/tei-profile.rng
+            diff -u ${./soranoha/schemas/tei-profile.sch} ${profile.artifacts}/tei-profile.sch
+            diff -u \
+              <(${pkgs.jq}/bin/jq -S '{odd_hash, rng_hash, schematron_hash}' ${./soranoha/schemas/tei-profile-generation.json}) \
+              <(${pkgs.jq}/bin/jq -S '{odd_hash, rng_hash, schematron_hash}' ${profile.artifacts}/tei-profile-generation.json)
+            touch "$out"
+          '';
           # The soranoha kernel + snh conformance suite plus its lint and
           # format gates, hermetic against the wrapper's Clojure, Git, and
           # dependency-cache derivations (the same store paths the wrapper
           # binds; not the wrapper's complete environment). git backs the
           # repository-view and publication-transaction test fixtures. The
-          # ported tree retains its upstream formatting conventions and is
-          # excluded from the kernel lint/format gate.
+          # maintained Clojure source is covered by the lint/format gate.
           soranoha-tests =
             pkgs.runCommand "soranoha-tests"
               {
@@ -288,21 +274,11 @@
               ''
                 cp -R ${./soranoha} source
                 chmod -R u+w source
-                # The canonicalization suite binds the kernel's canonicalizer
-                # to abc's shared cross-language vectors at this relative path
-                # (the two copies must never diverge byte-wise).
-                mkdir -p abc/test/fixtures/canonicalization
-                cp ${./abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json} \
-                  abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json
-                mkdir -p abc/schemas
-                cp ${./abc/schemas/tei-profile.rng} abc/schemas/tei-profile.rng
-                cp ${./abc/schemas/metadata-record.schema.json} abc/schemas/metadata-record.schema.json
-                cp ${./abc/schemas/person-record.schema.json} abc/schemas/person-record.schema.json
                 cd source
 
-                find src test -name '*.clj' -not -path '*/ported/*' -print0 \
+                find src test -name '*.clj' -print0 \
                   | xargs -0 clj-kondo --fail-level warning --lint
-                find src test -name '*.clj' -not -path '*/ported/*' -print0 \
+                find src test -name '*.clj' -print0 \
                   | xargs -0 cljfmt check
 
                 export HOME="${soranohaClj.depsCache}"
@@ -318,76 +294,6 @@
                 echo "soranoha suite, lint, and format checks passed" > "$out/result.txt"
               '';
 
-          # One canonical strict-governance derivation. It lives here (not in
-          # the abc component flake) because claim evidence paths are
-          # monorepo-root-relative — abc/test/…, ab-validator/crates/…/tests/…
-          # — so the validator must see both trees staged as siblings, which
-          # abc's subtree-only sandbox cannot provide.
-          monorepo-adr-governance =
-            pkgs.runCommand "soranoha-monorepo-adr-governance"
-              {
-                nativeBuildInputs = [
-                  cljPkgs.clojure
-                  pkgs.coreutils
-                ];
-              }
-              ''
-                cp -R ${self}/abc abc
-                cp -R ${self}/ab-validator ab-validator
-                cp -R ${self}/soranoha soranoha
-                chmod -R u+w abc ab-validator
-                cd abc
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-                clojure -M:abc/adr-governance
-                mkdir -p "$out"
-                echo "ADR corpus is strictly valid." > "$out/result.txt"
-              '';
-
-          # The freshly built release binaries must match the APPROVED identity.
-          # Approved hashes are resolved through parser-release-authority/authenticate
-          # — the full integrity + decision-binding authority path runtime uses, not
-          # a shape-only loader — and compared byte-for-byte against the actual
-          # ab-validator build outputs. This lives in the monorepo flake because it
-          # is the only place with both the abc authenticate boundary and the
-          # standalone ab-validator package set (abc's own flake has neither an
-          # ab-validator input nor a non-empty local-pkgs overlay).
-          release-parser-build-matches-approved-identity =
-            pkgs.runCommand "soranoha-release-parser-build-matches-approved-identity"
-              {
-                nativeBuildInputs = [
-                  cljPkgs.clojure
-                  pkgs.coreutils
-                ];
-              }
-              ''
-                cp -R ${self}/abc abc
-                cp -R ${self}/soranoha soranoha
-                chmod -R u+w abc
-                cd abc
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-                read want_a want_c < <(clojure -M -e '(require (quote [abc.tools.parser-release-authority :as a]))
-                  (let [r (a/authenticate {:release_parser_identity_path "data/release-parser-identity-v1.edn"
-                                           :decisions_path "docs/adr/decisions.edn"})
-                        h (fn [n] (:sha256 (first (filter #(= n (:name %))
-                                                          (get-in r [:executable-provenance :executables])))))]
-                    (println (subs (h "ab-aozora") 7) (subs (h "ab-aat-to-parser-ir") 7)))')
-                a=$(sha256sum ${abValidatorPackages."ab-aozora"}/bin/ab-aozora | cut -d' ' -f1)
-                c=$(sha256sum ${abValidatorPackages."ab-aat-to-parser-ir"}/bin/ab-aat-to-parser-ir | cut -d' ' -f1)
-                [ "$a" = "$want_a" ] || { echo "ab-aozora $a != approved $want_a" >&2; exit 1; }
-                [ "$c" = "$want_c" ] || { echo "converter $c != approved $want_c" >&2; exit 1; }
-                mkdir -p "$out"
-                echo "release parser build matches approved (authenticated) identity" > "$out/result.txt"
-              '';
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =
             mkMonorepoCheck "soranoha-monorepo-tei-version-coherence"
@@ -406,16 +312,6 @@
               ]
               ''
                 python scripts/monorepo-flake-input-policy.py "$src"
-              '';
-          monorepo-schema-drift =
-            mkMonorepoCheck "soranoha-monorepo-schema-drift"
-              [
-                pkgs.bash
-                pkgs.coreutils
-                pkgs.python3
-              ]
-              ''
-                bash scripts/monorepo-schema-drift.sh
               '';
           monorepo-runtime-config =
             mkMonorepoCheck "soranoha-monorepo-runtime-config"
@@ -504,27 +400,6 @@
                 export MYPY_CACHE_DIR="$TMPDIR/mypy-cache"
                 bash scripts/python-quality.sh
               '';
-          parser-rq-production-wiring =
-            mkMonorepoCheck "soranoha-parser-rq-production-wiring"
-              [
-                abValidatorPackages."parser-rq-candidate"
-                parserRqWiringPython
-                cljPkgs.clojure
-                pkgs.bash
-                pkgs.coreutils
-                pkgs.systemd
-              ]
-              ''
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export GITLIBS="$HOME/.gitlibs"
-                export PARSER_RQ_CANDIDATE_ROOT="${abValidatorPackages."parser-rq-candidate"}"
-                export PARSER_RQ_REPOSITORY_ROOT="$src"
-                pytest -q abc/tools/test_parser_rq_campaign_orchestrator.py \
-                  -k 'real_candidate or bounded_production_chain'
-              '';
           monorepo-nix-format =
             mkMonorepoCheck "soranoha-monorepo-nix-format"
               [
@@ -551,7 +426,7 @@
                 mkdir -p "$work/abc"
                 cd "$work"
 
-                tei_root="$(${abcApps."tei-eaj-aozora-tei-source".program})"
+                tei_root="$(${researchApps."tei-eaj-aozora-tei-source".program})"
                 cp "$tei_root/data/complete/tei_lib_lv4/1567_tei.xml" abc/melos.xml
                 chmod u+w abc/melos.xml
                 python - <<'PY'
@@ -569,8 +444,8 @@
                 export ABC_TEI_EAJ_ALIGNMENT_PROBE_BIN="${
                   abValidatorPackages."ab-aat-to-parser-ir"
                 }/bin/ab-aat-to-parser-ir"
-                python "$src/abc/tools/tei_eaj_aozora_reports.py" \
-                  --compare-script "$src/abc/tools/tei_eaj_compare.py" \
+                python "$src/ab-validator/research/tools/tei_eaj_aozora_reports.py" \
+                  --compare-script "$src/ab-validator/research/tools/tei_eaj_compare.py" \
                   --tei-eaj-root "$tei_root" \
                   --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
                   --abc-melos abc/melos.xml \
@@ -621,20 +496,18 @@
         system:
         let
           pkgs = pkgsFor system;
-          abcShells = optionalOutputAttrs abc "devShells" system;
           abValidatorShells = optionalOutputAttrs ab-validator "devShells" system;
         in
         {
           default = pkgs.mkShell {
             AB_BOOTSTRAP_VIBRATO_DICT = "0";
-            TEI_SCHEMA_PATH = abcShells.default.TEI_SCHEMA_PATH;
-            inputsFrom =
-              lib.optionals (builtins.hasAttr "default" abcShells) [ abcShells.default ]
-              ++ lib.optionals (builtins.hasAttr "default" abValidatorShells) [
-                abValidatorShells.default
-              ];
+            TEI_SCHEMA_PATH = "${./soranoha/schemas/tei-profile.rng}";
+            inputsFrom = lib.optionals (builtins.hasAttr "default" abValidatorShells) [
+              abValidatorShells.default
+            ];
             packages = [
               pkgs.caddy
+              pkgs.clojure
               pkgs.cljfmt
               pkgs.clj-kondo
               pkgs.git

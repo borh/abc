@@ -2,9 +2,9 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 repo_root := `pwd`
 repo_storage_root := `git rev-parse --path-format=absolute --git-common-dir | xargs dirname`
-default_workspace_root := `root="$(git rev-parse --path-format=absolute --show-toplevel)"; if [ -d "$root/abc" ] && [ -d "$root/ab-validator" ]; then printf '%s\n' "$root"; else dirname "$root"; fi`
+default_workspace_root := `root="$(git rev-parse --path-format=absolute --show-toplevel)"; if [ -d "$root/ab-validator" ]; then printf '%s\n' "$root"; else dirname "$root"; fi`
 workspace_root := env_var_or_default("AB_WORKSPACE_ROOT", default_workspace_root)
-abc_repo_root := env_var_or_default("AB_ABC_ROOT", workspace_root + "/abc")
+research_repo_root := env_var_or_default("AB_RESEARCH_ROOT", repo_root + "/research")
 ab_db_root := env_var_or_default("AB_DB_ROOT", workspace_root + "/ab-validator/scratch/state")
 morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", ab_db_root + "/morph-warehouse")
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-aat/aozora2html-adapter")
@@ -15,7 +15,7 @@ morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", ab_d
 # avoid a second, drifting pin of the same dumps (they had already diverged for
 # aozora and aozora-rs).
 aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
-tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", abc_repo_root + "/out/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json")
+tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", research_repo_root + "/out/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json")
 vibrato_dictionary_root := repo_root + "/dictionary"
 vibrato_unidic_sources := vibrato_dictionary_root + "/unidic-sources"
 vibrato_compiled_dir := vibrato_dictionary_root + "/compiled"
@@ -163,19 +163,7 @@ source-inventory-full JOBS="24" INDEX="" CORPUS="":
 # see docs/superpowers/specs/2026-07-09-fidelity-run-idempotency-design.md (Phase 1
 # supersedes the env-neutralization glue).
 
-parser-ir-level3-publication-smoke:
-	@bash "{{repo_root}}/tests/parser-ir-level3-publication-smoke.sh"
 
-parser-ir-level3-melos-publication-smoke AAT="":
-	@aat="{{AAT}}"; if [ -z "$aat" ]; then aat="{{aozora2html_full_aat_dir}}/000035_1567-32ff5a089d67.json"; fi; \
-	AB_LEVEL3_AAT="$aat" AB_LEVEL3_EXPECT_SOURCE_NOTE=1 bash "{{repo_root}}/tests/parser-ir-level3-publication-smoke.sh"
-
-parser-ir-level3-melos-eaj-compare-smoke AAT="" TEI_EAJ_FILE="data/complete/tei_lib_lv4/1567_tei.xml":
-	@aat="{{AAT}}"; if [ -z "$aat" ]; then aat="{{aozora2html_full_aat_dir}}/000035_1567-32ff5a089d67.json"; fi; \
-	AB_LEVEL3_AAT="$aat" AB_LEVEL3_TEI_EAJ_FILE="{{TEI_EAJ_FILE}}" bash "{{repo_root}}/tests/parser-ir-level3-tei-eaj-compare-smoke.sh"
-
-parser-ir-ortho-publication-smoke:
-	@bash "{{repo_root}}/tests/parser-ir-ortho-publication-smoke.sh"
 
 monorepo-path-hygiene-smoke:
 	@bash "{{repo_root}}/tests/monorepo-path-hygiene-smoke.sh"
@@ -186,7 +174,7 @@ monorepo-workspace-layout-smoke:
 source-region-disposition-samples-smoke:
 	@bash "{{repo_root}}/tests/source-region-disposition-samples-smoke.sh"
 
-source-region-disposition-samples-report SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_REPORT_MD="docs/superpowers/reports/2026-07-04-source-authority-representability.md" POLICY="data/abc-schemas/data/source-region-publication-policy-v0.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.md":
+source-region-disposition-samples-report SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_REPORT_MD="docs/superpowers/reports/2026-07-04-source-authority-representability.md" POLICY="research/data/source-region-publication-policy-v0.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.md":
 	@python "{{repo_root}}/reports/source-regions/source-region-disposition-samples.py" \
 		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
 		--source-report-md "{{repo_root}}/{{SOURCE_REPORT_MD}}" \
@@ -200,24 +188,10 @@ parser-ir-publication-bundle-smoke:
 parser-ir-publication-bundle-batch-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-publication-bundle-batch-smoke.sh"
 
-parser-ir-publication-bundle-validation ABC_ROOT=abc_repo_root OUT_DIR="scratch/parser-ir-publication-bundle-validation" SOURCE_REGION_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-publication-bundle-validation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json":
-	@abc_root="$(readlink -f "{{ABC_ROOT}}")"; out_dir="{{repo_root}}/{{OUT_DIR}}"; rm -rf "$out_dir"; mkdir -p "$out_dir"; \
-	printf '%s\n' '(require (quote [abc.tools.materialize-publication :as publication])) (publication/materialize-publication! {:parser-ir-path "examples/v0/example-work/parser-ir.json" :metadata-record-path "examples/v0/example-work/metadata-record.json" :persons-dir "examples/v0/example-persons" :output-dir (first *command-line-args*) :source-manifest-path "examples/v0/example-work/source.manifest.json" :generated-at "2026-07-03T00:00:00Z"})' | \
-	(cd "$abc_root" && clojure -M - "$out_dir") >/dev/null; \
-	abc_commit="$(git -C "$abc_root" rev-parse --short HEAD)"; \
-	python "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
-		--parser-ir "$abc_root/examples/v0/example-work/parser-ir.json" \
-		--source-region-summary "{{repo_root}}/{{SOURCE_REGION_SUMMARY}}" \
-		--publication-dir "$out_dir" \
-		--abc-commit "$abc_commit" \
-		--command "just parser-ir-publication-bundle-validation" \
-		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}"
-
-parser-ir-publication-bundle-batch-validation BATCH_ROOT="" SCOPE="representative" SOURCE_REGION_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json" ABC_ROOT=abc_repo_root:
+parser-ir-publication-bundle-batch-validation BATCH_ROOT="" SCOPE="representative" SOURCE_REGION_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json" ABC_ROOT=research_repo_root:
 	@if [ -z "{{BATCH_ROOT}}" ]; then echo "BATCH_ROOT is required" >&2; exit 2; fi; \
-	abc_root="$(readlink -f "{{ABC_ROOT}}")"; \
-	abc_commit="$(git -C "$abc_root" rev-parse --short HEAD 2>/dev/null || true)"; \
+	research_root="$(readlink -f "{{ABC_ROOT}}")"; \
+	abc_commit="$(git -C "$research_root" rev-parse --short HEAD 2>/dev/null || true)"; \
 	python "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
 		--batch-root "{{BATCH_ROOT}}" \
 		--batch-scope "{{SCOPE}}" \

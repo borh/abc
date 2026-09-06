@@ -1,5 +1,5 @@
 (ns soranoha.ori.tei-contract-test
-  (:require [soranoha.ported.parser-ir-tei :as parser-ir-tei]
+  (:require [soranoha.ori.tei :as parser-ir-tei]
             [clojure.test :refer [deftest is testing]]))
 
 (defn hiccup-nodes [node]

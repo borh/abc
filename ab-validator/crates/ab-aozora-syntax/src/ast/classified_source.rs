@@ -7,7 +7,7 @@
 
 use ab_aozora_spec::Span;
 
-/// ABC-owned source-role vocabulary implemented by the parser adapter.
+/// Research-owned source-role vocabulary implemented by the parser adapter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum ClassifiedSourceRole {
@@ -28,7 +28,7 @@ pub enum ClassifiedSourceRole {
     UnrecognizedSourceForm,
 }
 
-/// ABC-owned disposition vocabulary implemented by the parser adapter.
+/// Research-owned disposition vocabulary implemented by the parser adapter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum ClassifiedSourceDisposition {

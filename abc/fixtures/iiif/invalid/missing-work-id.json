@@ -1,6 +1,0 @@
-{
-  "title": "Missing required work_id",
-  "status": "not_applicable",
-  "reason": "Used to assert the schema rejects records without a work_id.",
-  "derived_manifest": null
-}

@@ -87,7 +87,7 @@ fn production_diagnostics_wire_matches_abc_raw_fixture() {
     let actual = ab_aozora_aat::diagnostics_json_from_bytes("本文\u{e001}終わり".as_bytes())
         .expect("diagnostics capture");
     let expected = include_str!(
-        "../../../../abc/test/fixtures/parser-rq/diagnostic-gap/raw-diagnostics-valid.json"
+        "../../../research/test/fixtures/parser-rq/diagnostic-gap/raw-diagnostics-valid.json"
     )
     .trim_end();
     assert_eq!(str::from_utf8(&actual).unwrap().trim_end(), expected);

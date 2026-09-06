@@ -2,6 +2,9 @@
 
 Date: 2026-07-07
 
+Historical migration record. The ABC component has since been retired; current
+ownership and commands are documented in [the repository README](../README.md).
+
 Soranoha is the integration monorepo for the former sibling repositories:
 
 - `abc/`

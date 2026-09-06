@@ -8,7 +8,7 @@ From the repository root, set the three variables below to absolute paths. The c
 nix run .#soranoha-kernel -- build \
   --root "$BUILD_STORE" \
   --aozora-root "$CORPUS_CHECKOUT" \
-  --assets-root "$PWD/abc" \
+  --assets-root "$PWD/soranoha" \
   --out "$EXPORT_DIR"
 ```
 
@@ -16,7 +16,7 @@ Each work gets a directory named by its catalog slug containing `tei.xml`, `plai
 
 TEI encodes paragraph-leading fullwidth indentation as `style="text-indent: 1em"` (scaled to the source count), and heading or source-note continuation indentation as `padding-inline-start`. Its `styleDefDecl` declares CSS. Source-note lines use `seg` and `lb`. Bibliographic attribution and colophon explanations or credits are retained separately as `source-attribution` and `transcriber-note` notes, in source order. Interior spaces remain text. The XML serializer indents structural containers for inspection. It leaves paragraphs, sentences, headings, ruby, notes, other mixed content, and `xml:space="preserve"` subtrees unchanged; indentation cannot become part of their lexical text.
 
-Validation records the profile generator and build identity from `schemas/tei-profile-generation.json`, emitted by ABC’s existing profile-regeneration command. The record binds the exact ODD, RNG and Schematron hashes. Custom assets without generation metadata omit the optional generator fields; mismatched metadata is rejected. Updating this provenance affects validation only.
+Validation records the profile generator and build identity from `schemas/tei-profile-generation.json`, emitted by `nix run .#regenerate-tei-profile`. The record binds the exact ODD, RNG and Schematron hashes. Custom assets without generation metadata omit the optional generator fields; mismatched metadata is rejected. Updating this provenance affects validation only.
 
 The fidelity checker independently reads the raw source, rather than treating parser IR as ground truth. It compares visible text, block order, middle headings and indentation, ruby base/reading pairs, gaiji, paragraph indentation, source-note lines and closing-date layout. The report binds the exact source, TEI and plaintext digests. `passed` covers only these listed comparisons; `failed` reports an observed mismatch; `not-evaluated` means the checker does not recognize the source encoding, boundaries or markup.
 

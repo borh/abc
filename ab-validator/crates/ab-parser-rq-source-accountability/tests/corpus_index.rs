@@ -156,9 +156,9 @@ fn generated_index_validates_against_live_abc_schema() {
     let instance = serde_json::to_value(index).unwrap();
     let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()
-        .nth(3)
+        .nth(2)
         .unwrap()
-        .join("abc/schemas/parser-rq-source-accountability-index.schema.json");
+        .join("research/schemas/parser-rq-source-accountability-index.schema.json");
     let schema: serde_json::Value =
         serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
     let validator = jsonschema::validator_for(&schema).unwrap();

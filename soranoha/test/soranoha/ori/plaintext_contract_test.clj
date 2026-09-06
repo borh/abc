@@ -1,5 +1,5 @@
 (ns soranoha.ori.plaintext-contract-test
-  (:require [soranoha.ported.parser-ir-plaintext :as plaintext]
+  (:require [soranoha.ori.plaintext :as plaintext]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]))
 

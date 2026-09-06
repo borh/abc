@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
+research_root="${AB_RESEARCH_ROOT:-$repo_root/research}"
 out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/divergence-bundle-smoke"
 bundle="$out_dir/bundle.json"
 record="$out_dir/record.json"
@@ -66,7 +66,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 repo = Path("$repo_root")
-abc = Path("$abc_root")
+abc = Path("$research_root")
 bundle = json.loads(Path("$bundle").read_text())
 record = json.loads(Path("$record").read_text())
 

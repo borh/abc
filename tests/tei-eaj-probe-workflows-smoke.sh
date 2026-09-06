@@ -29,8 +29,8 @@ TRACE="$tmp/trace" PATH="$tmp/bin:$PATH" \
 TRACE="$tmp/trace" PATH="$tmp/bin:$PATH" \
   bash "$repo_root/scripts/run-tei-eaj-probe-workflow.sh" reports-with-probes
 
-grep -Fxq "run ./abc#tei-eaj-aozora-alignment-probe -- --max-rows 4" "$tmp/trace"
-grep -Fxq "run ./abc#tei-eaj-aozora-reports-with-probes --" "$tmp/trace"
+grep -Fxq "run ./ab-validator#tei-eaj-aozora-alignment-probe -- --max-rows 4" "$tmp/trace"
+grep -Fxq "run ./ab-validator#tei-eaj-aozora-reports-with-probes --" "$tmp/trace"
 
 if TRACE="$tmp/trace" PATH="$tmp/bin:$PATH" \
   bash "$repo_root/scripts/run-tei-eaj-probe-workflow.sh" unknown 2>/dev/null; then

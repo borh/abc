@@ -1,24 +1,17 @@
-;; TEI validation (Jing RELAX NG + project Schematron), extracted from
-;; abc.tools.materialize-publication with the profile paths made explicit
-;; arguments: the kernel consumes the TEI profile trio from abc as an
-;; external asset (one source of truth), so nothing here resolves
-;; against a working directory. The recorded toolchain paths stay the fixed
-;; logical names instead of embedding checkout locations.
 (ns soranoha.ori.validate
   (:require [clojure.string :as string]
             [clojure.java.io :as io]
             [soranoha.core.hash :as hash]
-            [soranoha.ported.json :as json]
-            [soranoha.ported.schematron :as schematron]
-            [soranoha.ported.tei :as tei]))
+            [soranoha.core.json :as json]
+            [soranoha.ori.schematron :as schematron]
+            [soranoha.ori.relaxng :as tei]))
 
 (def logical-odd-path "schemas/tei-profile.odd")
 (def logical-rng-path "schemas/tei-profile.rng")
 (def logical-schematron-path "schemas/tei-profile.sch")
 
 (defn profile-paths
-  "The TEI profile trio under an assets root (the abc checkout or a flake
-  input carrying schemas/tei-profile.{odd,rng,sch})."
+  "The TEI profile trio under an explicit assets root."
   [assets-root]
   {:odd (str assets-root "/" logical-odd-path)
    :rng (str assets-root "/" logical-rng-path)

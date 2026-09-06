@@ -5,7 +5,7 @@
   (:require [babashka.fs :as fs]
             [clojure.java.io :as io]
             [soranoha.core.hash :as hash]
-            [soranoha.ported.source-bundle :as bundle]
+            [soranoha.aozora.source-bundle :as bundle]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
             [soranoha.za.scaffold :as scaffold]))

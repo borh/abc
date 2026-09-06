@@ -5,7 +5,7 @@
   assembler/verifier code; the conformance vectors demonstrate both."
   (:require [charred.api :as json]
             [clojure.java.io :as io]
-            [soranoha.ported.schema :as ported-schema]))
+            [soranoha.core.schema :as schema-validator]))
 
 (def schema-resources
   "Artifact type -> classpath resource of its JSON Schema. This map is the
@@ -36,4 +36,4 @@
 (defn validation-errors
   "Validation errors for `value` against the schema of `type`; nil when valid."
   [type value]
-  (ported-schema/validation-errors (schema-for type) value))
+  (schema-validator/validation-errors (schema-for type) value))

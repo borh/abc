@@ -7,9 +7,9 @@ use sha2::{Digest, Sha256};
 use crate::interval::{Interval, intersect, normalize, subtract, total_len};
 
 const POLICY_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../abc/schemas/parser-rq-classified-source-policy.schema.json");
+    include_bytes!("../../../research/schemas/parser-rq-classified-source-policy.schema.json");
 const AUTHORITY_BYTES: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-classified-source-authority-v1.json");
+    include_bytes!("../../../research/data/parser-rq-classified-source-authority-v1.json");
 /// v4 because the accent round-trip rule changed; the wire format did not.
 ///
 /// At v2, `eligible_bytes` moved from the whole decoded file to the body

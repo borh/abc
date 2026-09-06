@@ -14,8 +14,8 @@ SCRIPT = REPO_ROOT / "ab-validator/reports/parser-ir/predicate-hardening-identit
 
 # Retained policies and manifests authenticate their recorded capture.
 COMMITTED_POLICIES = {
-    "diagnostic-completeness": "abc/data/parser-rq-diagnostic-completeness-policy-v1.json",
-    "parser-ir-conformance": "abc/data/parser-rq-parser-ir-conformance-policy-v1.json",
+    "diagnostic-completeness": "ab-validator/research/data/parser-rq-diagnostic-completeness-policy-v1.json",
+    "parser-ir-conformance": "ab-validator/research/data/parser-rq-parser-ir-conformance-policy-v1.json",
 }
 
 COMMITTED_MANIFESTS = {
@@ -52,7 +52,7 @@ def test_helper_byte_mutation_changes_semantic_hash(module, tmp_path):
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes((REPO_ROOT / path).read_bytes())
     before = module.build_manifest(root, "diagnostic-completeness")
-    helper = root / "abc/src/abc/tools/parser_rq_capture.clj"
+    helper = root / "ab-validator/research/src/ab_research/parser_rq_capture.clj"
     helper.write_text(helper.read_text(encoding="utf-8") + "\n", encoding="utf-8")
     after = module.build_manifest(root, "diagnostic-completeness")
     assert before["validator_semantics_hash"] != after["validator_semantics_hash"]
@@ -60,17 +60,18 @@ def test_helper_byte_mutation_changes_semantic_hash(module, tmp_path):
 
 def test_added_or_removed_helper_fails_reviewed_set_equality(module, tmp_path):
     root = tmp_path / "repo"
-    shutil.copytree(REPO_ROOT / "abc/src", root / "abc/src")
+    shutil.copytree(REPO_ROOT / "ab-validator/research/src", root / "ab-validator/research/src")
+    shutil.copytree(REPO_ROOT / "soranoha/src", root / "soranoha/src")
     for path in module.INSTRUMENTS["diagnostic-completeness"].artifacts:
         destination = root / path
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes((REPO_ROOT / path).read_bytes())
-    helper = root / "abc/src/abc/tools/new_semantic_helper.clj"
-    helper.write_text("(ns abc.tools.new-semantic-helper)\n", encoding="utf-8")
-    entry = root / "abc/src/abc/tools/parser_rq_diagnostic_completeness.clj"
+    helper = root / "ab-validator/research/src/ab_research/new_semantic_helper.clj"
+    helper.write_text("(ns ab-research.new-semantic-helper)\n", encoding="utf-8")
+    entry = root / "ab-validator/research/src/ab_research/parser_rq_diagnostic_completeness.clj"
     entry.write_text(
         entry.read_text(encoding="utf-8").replace(
-            "(:require", "(:require [abc.tools.new-semantic-helper]\n            ", 1
+            "(:require", "(:require [ab-research.new-semantic-helper]\n            ", 1
         ),
         encoding="utf-8",
     )
@@ -95,7 +96,7 @@ def test_schema_mutation_changes_manifest_and_policy_identity(module, tmp_path):
         destination.write_bytes((REPO_ROOT / path).read_bytes())
     before_manifest = module.build_manifest(root, "parser-ir-conformance")
     before_policy = module.build_policy(root, "parser-ir-conformance", before_manifest, ["fixture"])
-    schema_path = root / "abc/schemas/parser-ir.schema.json"
+    schema_path = root / "ab-validator/research/schemas/parser-ir.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     schema["$comment"] = "semantic mutation"
     schema_path.write_text(json.dumps(schema), encoding="utf-8")
@@ -133,9 +134,9 @@ def test_historical_policy_reproduces_from_retained_evidence(module, tmp_path, i
     policy = json.loads((REPO_ROOT / COMMITTED_POLICIES[instrument]).read_text())
     schema_path = manifest["artifacts"][0]["path"]
     schema = REPO_ROOT / (
-        "abc/test/fixtures/parser-rq/predicate-hardening-capture/parser-ir-0.7.0.schema.json"
+        "ab-validator/research/test/fixtures/parser-rq/predicate-hardening-capture/parser-ir-0.7.0.schema.json"
         if instrument == "parser-ir-conformance"
-        else schema_path
+        else module.INSTRUMENTS[instrument].artifacts[0]
     )
     assert manifest["validator_semantics_hash"] == module.projected_hash(
         manifest, "validator_semantics_hash"
@@ -147,7 +148,7 @@ def test_historical_policy_reproduces_from_retained_evidence(module, tmp_path, i
         }
     ]
     retained_root = tmp_path / "retained"
-    destination = retained_root / schema_path
+    destination = retained_root / module.INSTRUMENTS[instrument].artifacts[0]
     destination.parent.mkdir(parents=True)
     shutil.copyfile(schema, destination)
     assert (

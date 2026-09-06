@@ -7,8 +7,8 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [soranoha.core.hash :as hash]
-            [soranoha.ported.parallel :as parallel]
-            [soranoha.ported.source-bundle :as bundle]
+            [soranoha.core.parallel :as parallel]
+            [soranoha.aozora.source-bundle :as bundle]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select])
   (:import [java.io ByteArrayInputStream ByteArrayOutputStream IOException StringReader]

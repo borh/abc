@@ -34,15 +34,22 @@ class Instrument:
 INSTRUMENTS = {
     "diagnostic-completeness": Instrument(
         reviewed_sources=(
-            pathlib.Path("abc/src/abc/tools/parser_rq_diagnostic_completeness.clj"),
-            pathlib.Path("abc/src/abc/tools/parser_rq_capture.clj"),
-            pathlib.Path("abc/src/abc/tools/schema.clj"),
-            pathlib.Path("abc/src/abc/tools/files.clj"),
-            pathlib.Path("abc/src/abc/tools/hash.clj"),
-            pathlib.Path("abc/src/abc/tools/json.clj"),
-            pathlib.Path("abc/src/abc/tools/jcs.clj"),
+            pathlib.Path(
+                "ab-validator/research/src/ab_research/parser_rq_diagnostic_completeness.clj"
+            ),
+            pathlib.Path("ab-validator/research/src/ab_research/parser_rq_capture.clj"),
+            pathlib.Path("ab-validator/research/src/ab_research/schema.clj"),
+            pathlib.Path("ab-validator/research/src/ab_research/files.clj"),
+            pathlib.Path("ab-validator/research/src/ab_research/hash.clj"),
+            pathlib.Path("soranoha/src/soranoha/core/jcs.clj"),
+            pathlib.Path("soranoha/src/soranoha/core/canonical.clj"),
+            pathlib.Path("soranoha/src/soranoha/core/json.clj"),
         ),
-        artifacts=(pathlib.Path("abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"),),
+        artifacts=(
+            pathlib.Path(
+                "ab-validator/research/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
+            ),
+        ),
         validator_id="abc/parser-rq-diagnostic-completeness/v1",
     ),
     "parser-ir-conformance": Instrument(
@@ -56,18 +63,22 @@ INSTRUMENTS = {
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/ortho_annotations.rs"),
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs"),
         ),
-        artifacts=(pathlib.Path("abc/schemas/parser-ir.schema.json"),),
+        artifacts=(pathlib.Path("ab-validator/research/schemas/parser-ir.schema.json"),),
         validator_id="ab-validator/parser-ir-schema-conformance/v1",
         locked_package="ab-aat-to-parser-ir",
     ),
 }
 
-_CLOJURE_REQUIRE = re.compile(r"\[(abc(?:\.[A-Za-z0-9_-]+)+)(?:\s|\])")
+_CLOJURE_REQUIRE = re.compile(r"\[((?:ab-research|soranoha)(?:\.[A-Za-z0-9_-]+)+)(?:\s|\])")
 
 
 def _clojure_namespace_path(repo_root: pathlib.Path, namespace: str) -> pathlib.Path:
     relative = namespace.replace("-", "_").replace(".", "/") + ".clj"
-    return repo_root / "abc/src" / relative
+    return (
+        repo_root
+        / ("soranoha/src" if namespace.startswith("soranoha.") else "ab-validator/research/src")
+        / relative
+    )
 
 
 def _clojure_closure(repo_root: pathlib.Path, entrypoint: pathlib.Path) -> set[pathlib.Path]:
@@ -248,7 +259,7 @@ def build_manifest(repo_root: pathlib.Path, instrument: str) -> dict[str, Any]:
             {
                 "language": "clojure",
                 "json_schema_dialect": "2020-12",
-                "canonical_identity": "abc.tools.jcs/canonical-json-bytes",
+                "canonical_identity": "ab-research.jcs/canonical-json-bytes",
             }
             if instrument == "diagnostic-completeness"
             else {
@@ -315,7 +326,8 @@ def build_policy(
             },
             "raw_diagnostic_schema_id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
             "raw_diagnostic_schema_hash": _json_logical_hash(
-                repo_root / "abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
+                repo_root
+                / "ab-validator/research/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
             ),
             "diagnostic_wire_version": 3,
             "vacuity_semantics": "empty_expectation_match_is_a_positive_observation",
@@ -336,7 +348,7 @@ def build_policy(
             "algorithm_version": "parser-ir-schema-conformance-v1",
             "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
             "parser_ir_schema_hash": _json_logical_hash(
-                repo_root / "abc/schemas/parser-ir.schema.json"
+                repo_root / "ab-validator/research/schemas/parser-ir.schema.json"
             ),
             "generated_output_denominator": "schema_valid_plus_schema_invalid",
             "no_output_semantics": "available_failure_when_generated_outputs_zero",

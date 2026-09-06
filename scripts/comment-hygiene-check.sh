@@ -2,20 +2,20 @@
 set -euo pipefail
 
 # Enforces docs/comment-standards.md: no transient task/plan/spec/issue/phase
-# references in source comments across ab-validator/, abc/src/, and
+# references in source comments across ab-validator/ and
 # soranoha/src/. Exits non-zero and prints offending lines if any criterion
 # fails.
 #
 # Scope excludes vendored/build trees (target/, .cargo/, third_party/) via the
-# search roots, and soranoha's ported tree (byte fidelity to the abc originals
-# is intentional there). String-literal program output (report headers,
+# search roots. Research evidence tests contain literal historical paths and
+# are excluded. String-literal program output (report headers,
 # test-assertion messages) is out of scope — see the C10 exclusions below.
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-roots=(ab-validator/ abc/src/ soranoha/src/)
-rgopts=(-g '!soranoha/src/soranoha/ported/**')
+roots=(ab-validator/ soranoha/src/)
+rgopts=(-g "!ab-validator/research/test/**")
 srcglob='src:*.{rs,clj,cljc,cljs}'
 # Six issue numbers are retained named invariants (docs/glossary.md).
 keep='#(78|228|331|333|384|435)\b'
@@ -62,11 +62,11 @@ c10="$(rg -nP --type-add "$srcglob" -t src '\bPhase[- ][0-9A-H]' "${rgopts[@]}" 
 report "C10 transient Phase labels" "$c10"
 
 # C12 design-ledger finding/decision tags (F##/D##) in soranoha source.
-# Scoped to soranoha only: abc and ab-validator legitimately use F1 scores,
+# Scoped to soranoha only: ab-validator legitimately use F1 scores,
 # Unicode D800/F900 literals, and named D1–D6 degradation rules.
 report "C12 design-ledger F/D refs (soranoha)" \
   "$(rg -nP --type-add "$srcglob" -t src '(?<![A-Za-z0-9_./-])[FD][0-9]{1,3}(\.[0-9])?\b' \
-    "${rgopts[@]}" soranoha/src/ || true)"
+    soranoha/src/ || true)"
 
 # C11 the six named invariants must still be present.
 for n in 78 228 331 333 384 435; do

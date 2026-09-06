@@ -1,4 +1,0 @@
-{:schema-version :abc-evidence-higher-order-call-v1
- :caller abc.tools.parser-evidence/duplicate-values
- :parameters {key-fn [abc.tools.parser-evidence/evidence-id-key
-                      abc.tools.parser-evidence/logical-file-key]}}

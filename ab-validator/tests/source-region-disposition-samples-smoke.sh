@@ -131,7 +131,7 @@ rg -n "Source-Region Disposition Samples" "$report_md" >/dev/null
 python "$repo_root/reports/source-regions/source-region-disposition-samples.py" \
   --source-summary "$repo_root/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" \
   --source-report-md "$repo_root/docs/superpowers/reports/2026-07-04-source-authority-representability.md" \
-  --policy "$repo_root/data/abc-schemas/data/source-region-publication-policy-v0.json" \
+  --policy "$repo_root/research/data/source-region-publication-policy-v0.json" \
   --summary-json "$repo_policy_summary_json" \
   --report-md "$repo_policy_report_md"
 

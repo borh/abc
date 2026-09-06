@@ -20,9 +20,8 @@ fn fixture_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .and_then(Path::parent)
-        .and_then(Path::parent)
         .unwrap()
-        .join("abc/test/fixtures/parser-rq/source-recognition-capture")
+        .join("research/test/fixtures/parser-rq/source-recognition-capture")
 }
 
 fn identity() -> Value {

@@ -1,9 +1,9 @@
 (ns soranoha.tei-fidelity-test
   (:require [babashka.fs :as fs]
             [soranoha.ori.render :as render]
-            [soranoha.ported.tei :as rng]
+            [soranoha.ori.relaxng :as rng]
             [clojure.test :refer [deftest is]]
-            [soranoha.ported.parser-ir-tei :as tei]))
+            [soranoha.ori.tei :as tei]))
 
 (defn- elements [tree tag]
   (filter #(and (vector? %) (= tag (first %)))
@@ -99,6 +99,6 @@
                  :persons-by-id {}})]
     (try
       (spit xml-path (:tei result))
-      (is (empty? (:violations (rng/validate! {:schema-path "../abc/schemas/tei-profile.rng"
+      (is (empty? (:violations (rng/validate! {:schema-path "schemas/tei-profile.rng"
                                                :xml-path xml-path :label "source layout"}))))
       (finally (fs/delete-tree dir)))))

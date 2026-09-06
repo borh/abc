@@ -40,7 +40,7 @@ enum Command {
         #[arg(long)]
         divergence_out: PathBuf,
         #[arg(long)]
-        abc_root: Option<PathBuf>,
+        research_root: Option<PathBuf>,
         /// Fail closed unless the loaded mapping's `mapping_version` equals this.
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
@@ -67,7 +67,7 @@ enum Command {
         #[arg(long)]
         record_out: PathBuf,
         #[arg(long)]
-        abc_root: Option<PathBuf>,
+        research_root: Option<PathBuf>,
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
@@ -81,7 +81,7 @@ enum Command {
         #[arg(long)]
         ortho_annotations_out: PathBuf,
         #[arg(long)]
-        abc_root: Option<PathBuf>,
+        research_root: Option<PathBuf>,
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
@@ -101,7 +101,7 @@ enum Command {
         #[arg(long, default_value_t = 0)]
         jobs: usize,
         #[arg(long)]
-        abc_root: Option<PathBuf>,
+        research_root: Option<PathBuf>,
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
@@ -117,7 +117,7 @@ enum Command {
         #[arg(long)]
         report_md: PathBuf,
         #[arg(long)]
-        abc_root: Option<PathBuf>,
+        research_root: Option<PathBuf>,
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
@@ -135,7 +135,7 @@ enum Command {
         #[arg(long)]
         report_md: PathBuf,
         #[arg(long)]
-        abc_root: Option<PathBuf>,
+        research_root: Option<PathBuf>,
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
@@ -163,22 +163,25 @@ fn main() -> Result<()> {
             mapping,
             parser_ir_out,
             divergence_out,
-            abc_root,
+            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
-            let abc_root = abc_root
-                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
-                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let research_root = research_root
+                .or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("research"));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
             mapping.check_expected_generation(
                 expect_mapping_version.as_deref(),
                 expect_mapping_hash.as_deref(),
             )?;
-            let schemas =
-                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
+            let schemas = SchemaSet::load_for_aat_version(
+                &repo_root,
+                &research_root,
+                mapping.source_aat_version,
+            )?;
             let orthographic_annotations = match ortho_annotations {
                 Some(path) => Some(
                     ab_aat_to_parser_ir::ortho_annotations::read_ortho_annotations_bundle(&path)?,
@@ -211,14 +214,14 @@ fn main() -> Result<()> {
             parser_ir_out,
             ledger_out,
             record_out,
-            abc_root,
+            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
-            let abc_root = abc_root
-                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
-                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let research_root = research_root
+                .or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("research"));
             let policy: ParserIrQualificationPolicy =
                 serde_json::from_value(ab_aat_to_parser_ir::schema::read_json(&policy)?)
                     .context("invalid Parser-IR qualification policy")?;
@@ -235,8 +238,11 @@ fn main() -> Result<()> {
                 expect_mapping_version.as_deref(),
                 expect_mapping_hash.as_deref(),
             )?;
-            let schemas =
-                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
+            let schemas = SchemaSet::load_for_aat_version(
+                &repo_root,
+                &research_root,
+                mapping.source_aat_version,
+            )?;
             let converter = PreparedConverter::new(mapping, schemas)?;
             let capture = ab_aat_to_parser_ir::qualification::qualify_work(
                 ab_aat_to_parser_ir::qualification::QualificationRequest {
@@ -265,22 +271,25 @@ fn main() -> Result<()> {
             aat,
             mapping,
             ortho_annotations_out,
-            abc_root,
+            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
-            let abc_root = abc_root
-                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
-                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let research_root = research_root
+                .or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("research"));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
             mapping.check_expected_generation(
                 expect_mapping_version.as_deref(),
                 expect_mapping_hash.as_deref(),
             )?;
-            let schemas =
-                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
+            let schemas = SchemaSet::load_for_aat_version(
+                &repo_root,
+                &research_root,
+                mapping.source_aat_version,
+            )?;
             let vibrato = std::sync::Arc::new(
                 ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default()
                     .context("detect-ortho-annotations requires AB_VIBRATO_DICT or the flake-provided Unidic CWJ dictionary")?,
@@ -304,7 +313,7 @@ fn main() -> Result<()> {
             report_md,
             compat_edn_out,
             jobs,
-            abc_root,
+            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
@@ -315,7 +324,7 @@ fn main() -> Result<()> {
                 summary_json,
                 report_md,
                 compat_edn_out,
-                abc_root,
+                research_root,
                 repo_root,
                 jobs,
                 expect_mapping_version,
@@ -333,14 +342,14 @@ fn main() -> Result<()> {
             mapping,
             summary_json,
             report_md,
-            abc_root,
+            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
-            let abc_root = abc_root
-                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
-                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let research_root = research_root
+                .or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("research"));
             let inputs = aat_inputs
                 .iter()
                 .map(|spec| parse_input_spec(spec))
@@ -350,8 +359,11 @@ fn main() -> Result<()> {
                 expect_mapping_version.as_deref(),
                 expect_mapping_hash.as_deref(),
             )?;
-            let schemas =
-                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
+            let schemas = SchemaSet::load_for_aat_version(
+                &repo_root,
+                &research_root,
+                mapping.source_aat_version,
+            )?;
             let summary = run_structural_probe(StructuralProbeConfig {
                 inputs,
                 mapping,
@@ -371,14 +383,14 @@ fn main() -> Result<()> {
             mapping,
             summary_json,
             report_md,
-            abc_root,
+            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
-            let abc_root = abc_root
-                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
-                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let research_root = research_root
+                .or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("research"));
             let aat_dirs = aat_dirs
                 .iter()
                 .map(|spec| parse_input_spec(spec))
@@ -388,8 +400,11 @@ fn main() -> Result<()> {
                 expect_mapping_version.as_deref(),
                 expect_mapping_hash.as_deref(),
             )?;
-            let schemas =
-                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
+            let schemas = SchemaSet::load_for_aat_version(
+                &repo_root,
+                &research_root,
+                mapping.source_aat_version,
+            )?;
             let summary = run_tei_eaj_structural_expansion(TeiEajStructuralExpansionConfig {
                 workset_path: workset,
                 aat_dirs,

@@ -1,11 +1,5 @@
 nix_eval := "nix --option eval-cache false"
 
-schema-drift:
-	@bash scripts/monorepo-schema-drift.sh
-
-sync-schema-mirror:
-	@bash scripts/sync-schema-mirror.sh
-
 tei-version-coherence:
 	@bash scripts/monorepo-tei-version-coherence.sh
 
@@ -50,29 +44,18 @@ tei-eaj-alignment-probe *args:
 tei-eaj-reports-with-probes *args:
 	@scripts/run-tei-eaj-probe-workflow.sh reports-with-probes {{args}}
 
-validate-migration-eval-cache-smoke:
-	@bash tests/validate-migration-eval-cache-smoke.sh
+validate-eval-cache-smoke:
+	@bash tests/validate-eval-cache-smoke.sh
 
-check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check validate-migration-eval-cache-smoke root-flake-check-no-build
-	@(cd abc && {{nix_eval}} flake check --no-build)
+check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy python-quality nix-format-check validate-eval-cache-smoke root-flake-check-no-build
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
 
-monorepo-adr-governance:
+# Publication tests and generated TEI profile must match their checked-in sources.
+evidence-gate: soranoha-tests
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
-	{{nix_eval}} build ".#checks.$system.monorepo-adr-governance" --print-build-logs
-
-# Standing evidence gate (ADR 0043): actually RUN the executable evidence the
-# ADR corpus cites — the full Kaocha suite check, the TEI profile drift check,
-# and the design-bundle validator. The ~3.3 GiB source-bundle corpus check is
-# deliberately excluded from the standing gate for cost; run it explicitly via
-# `just source-bundle-corpus-check` (CI/release).
-evidence-gate:
-	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
-	{{nix_eval}} build "./abc#checks.$system.clj-nix-focused-tests" \
-		"./abc#checks.$system.tei-profile-drift" --print-build-logs
-	@{{nix_eval}} run ./abc#validate-design-bundle
-	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
-	{{nix_eval}} build ".#checks.$system.soranoha-tests" --print-build-logs
+	{{nix_eval}} build ".#checks.$system.tei-profile-drift" \
+		"./ab-validator#checks.$system.research-clojure-tests" \
+		"./ab-validator#checks.$system.research-python-tests" --print-build-logs
 
 # Soranoha kernel + snh conformance suite plus clj-kondo/cljfmt, hermetic
 # against the root wrapper's shared Clojure/dependency-cache context.
@@ -103,21 +86,4 @@ parser-rq-instrument-identity:
 	{{nix_eval}} build "./ab-validator#checks.$system.parser-rq-publication-pytest" \
 		--no-link --print-build-logs
 
-validate-migration: check-no-build monorepo-adr-governance evidence-gate parser-rq-instrument-identity release-parser-reproducible
-
-# Unseeded simulation soak (15x counts); failures print the seed to replay.
-sim-soak:
-	cd abc && ABC_SIM_SOAK=1 clojure -M:test:kaocha -m kaocha.runner --focus :simulation
-
-# Replay the pinned aozorabunko history through the audit machinery and
-# diff against the committed baseline (needs network on a cold cache).
-replay-aozora:
-	cd abc && clojure -M:abc/aozora-replay -- --check
-
-# Re-run the replay and rewrite the committed baseline (adjudicate the
-# diff in the same PR as whatever caused it).
-replay-aozora-update:
-	cd abc && clojure -M:abc/aozora-replay -- --update
-
-source-bundle-corpus-check:
-	nix build ./abc#checks.x86_64-linux.source-bundle-corpus --print-build-logs
+validate: check-no-build evidence-gate parser-rq-instrument-identity release-parser-reproducible

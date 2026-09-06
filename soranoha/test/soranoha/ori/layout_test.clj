@@ -2,8 +2,8 @@
   (:require [babashka.fs :as fs]
             [clojure.test :refer [deftest is]]
             [soranoha.ori.render :as render]
-            [soranoha.ported.parser-ir-tei :as tei]
-            [soranoha.ported.tei :as rng]))
+            [soranoha.ori.tei :as tei]
+            [soranoha.ori.relaxng :as rng]))
 
 (defn- document [blocks]
   {"nodes" (mapv #(hash-map "type" "text" "text" %) ["前" "RESTAURANT" "西洋料理店" "WILDCAT HOUSE" "山猫軒" "後"])
@@ -52,7 +52,7 @@
                    :persons-by-id {}})]
       (try
         (spit xml-path (:tei result))
-        (is (empty? (:violations (rng/validate! {:schema-path "../abc/schemas/tei-profile.rng"
+        (is (empty? (:violations (rng/validate! {:schema-path "schemas/tei-profile.rng"
                                                  :xml-path xml-path :label "embedded sign"}))))
         (finally (fs/delete-tree dir))))))
 

@@ -190,8 +190,8 @@ write_row_bundle "$out_dir/rows/row-b" "ねこ" "底本：「fixture」" "吾輩
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --batch-root "$out_dir" \
   --source-region-summary "$source_region" \
-  --parser-ir-schema "$repo_root/../abc/schemas/parser-ir.schema.json" \
-  --preservation-schema "$repo_root/../abc/schemas/parser-ir-publication-preservation.schema.json" \
+  --parser-ir-schema "$repo_root/../ab-validator/research/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/../ab-validator/research/schemas/parser-ir-publication-preservation.schema.json" \
   --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --abc-commit "abc1234" \
   --command "fixture batch materialization" \
@@ -211,8 +211,8 @@ write_row_bundle "$out_dir/rows/row-c" "ねこ" "底本：「fixture」" "吾輩
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --batch-root "$out_dir" \
   --source-region-summary "$source_region" \
-  --parser-ir-schema "$repo_root/../abc/schemas/parser-ir.schema.json" \
-  --preservation-schema "$repo_root/../abc/schemas/parser-ir-publication-preservation.schema.json" \
+  --parser-ir-schema "$repo_root/../ab-validator/research/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/../ab-validator/research/schemas/parser-ir-publication-preservation.schema.json" \
   --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --abc-commit "abc1234" \
   --command "fixture batch materialization" \

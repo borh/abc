@@ -1,1 +1,0 @@
-{"schema_version":"abc/parser-rq-diagnostic-gap-result/v1","status":"unavailable","work_id":"fixture-work","capture_generation_ref":"sha256:1111111111111111111111111111111111111111111111111111111111111111","policy_hash":"sha256:cec4fc8a06a833897b008f9b8b3172f3f9bc86ec0c11a1632760f063a9a065d5","unavailable_reasons":["raw-diagnostics-invalid"]}

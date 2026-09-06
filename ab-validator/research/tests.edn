@@ -1,0 +1,1 @@
+#kaocha/v1 {:tests [{:id :unit :source-paths ["src"] :test-paths ["test"] :ns-patterns ["-test$"]}]}

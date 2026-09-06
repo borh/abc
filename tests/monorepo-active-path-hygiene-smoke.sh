@@ -7,7 +7,7 @@ cd "$repo_root"
 mapfile -t active_files < <(
   find \
     flake.nix justfile config scripts tests \
-    abc/flake.nix abc/bin abc/nix abc/src abc/tools \
+    nix soranoha/src ab-validator/research/src ab-validator/research/tools \
     ab-validator/flake.nix ab-validator/justfile ab-validator/adapters \
     ab-validator/benchmarks ab-validator/crates ab-validator/reports \
     ab-validator/scripts \
@@ -46,9 +46,9 @@ import re
 import sys
 from pathlib import Path, PurePosixPath
 
-TARGETS = {"abc", "ab-validator"}
+TARGETS = {"soranoha", "ab-validator"}
 ABSOLUTE_PATH_EXCEPTIONS = {
-    (PurePosixPath("tests/runtime-config-smoke.sh"), "/config/abc/reports"),
+    (PurePosixPath("tests/runtime-config-smoke.sh"), "/config/research/reports"),
     (
         PurePosixPath("tests/runtime-config-smoke.sh"),
         "/config/ab-validator/morph-warehouse",
@@ -59,17 +59,13 @@ ABSOLUTE_PATH_EXCEPTIONS = {
     ),
     (
         PurePosixPath("tests/runtime-config-smoke.sh"),
-        "/config/abc/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json",
+        "/config/research/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json",
     ),
     (PurePosixPath("tests/runtime-config-smoke.sh"), "/ab-validator/scratch/state"),
-    (PurePosixPath("tests/runtime-config-smoke.sh"), "/abc/out"),
+    (PurePosixPath("tests/runtime-config-smoke.sh"), "/ab-validator/research/out"),
     (
         PurePosixPath("ab-validator/reports/lib/tests/test_aat_runs.py"),
         "/db/ab-validator/aat-corpus/pinned/aat/aozora-adapter",
-    ),
-    (
-        PurePosixPath("abc/src/abc/tools/aozora_replay.clj"),
-        "/db/abc/cache/aozorabunko",
     ),
     (
         PurePosixPath("ab-validator/justfile"),
@@ -158,23 +154,23 @@ def forbidden_candidate(repo: PurePosixPath, source: PurePosixPath, raw: str) ->
 def self_test() -> None:
     repo = PurePosixPath("/repo")
     cases = [
-        ("tests/check.sh", "../abc/x", True),
-        ("tests/check.sh", "./../abc/x", True),
-        ("tests/check.sh", "${ROOT}/../abc/x", True),
-        ("tests/check.sh", "foo/../../abc/x", True),
-        ("tests/check.sh", "foo//.././../abc/x", True),
-        ("scripts/check.sh", "/home/user/abc/x", True),
+        ("tests/check.sh", "../soranoha/x", True),
+        ("tests/check.sh", "./../soranoha/x", True),
+        ("tests/check.sh", "${ROOT}/../soranoha/x", True),
+        ("tests/check.sh", "foo/../../soranoha/x", True),
+        ("tests/check.sh", "foo//.././../soranoha/x", True),
+        ("scripts/check.sh", "/home/user/soranoha/x", True),
         ("scripts/check.sh", "'/Users/me/ab-validator/x'", True),
-        ("scripts/check.sh", "/opt/build/abc/x", True),
-        ("tests/check.sh", "$repo_root/abc/x", False),
-        ("tests/check.sh", "$AB_WORKSPACE_ROOT/abc/x", False),
-        ("tests/check.sh", "$AB_WORKSPACE_ROOT/../abc/x", True),
-        ("ab-validator/crates/c/src/lib.rs", "../../../../abc/data/x", False),
-        ("ab-validator/crates/c/src/lib.rs", "../../../../abc//data/./x", False),
-        ("abc/src/a.clj", "abc/data/x", False),
-        ("flake.nix", "./abc/flake.nix", False),
+        ("scripts/check.sh", "/opt/build/soranoha/x", True),
+        ("tests/check.sh", "$repo_root/soranoha/x", False),
+        ("tests/check.sh", "$AB_WORKSPACE_ROOT/soranoha/x", False),
+        ("tests/check.sh", "$AB_WORKSPACE_ROOT/../soranoha/x", True),
+        ("ab-validator/crates/c/src/lib.rs", "../../../../soranoha/data/x", False),
+        ("ab-validator/crates/c/src/lib.rs", "../../../../soranoha//data/./x", False),
+        ("soranoha/src/a.clj", "soranoha/data/x", False),
+        ("flake.nix", "./soranoha/flake.nix", False),
         ("ab-validator/Cargo.toml", "crates/abc-helper", False),
-        ("ab-validator/crates/c/tests/x.rs", "/../../../abc/data/x", False),
+        ("ab-validator/crates/c/tests/x.rs", "/../../../soranoha/data/x", False),
     ]
     for source, candidate, expected in cases:
         stripped = candidate.strip("'")
@@ -185,18 +181,18 @@ def self_test() -> None:
             raise AssertionError(f"{source}: {candidate!r}: expected {expected}, got {actual}")
 
     source_cases = [
-        ("ROOT=../abc/x", True),
-        ("--root=../abc/x", True),
-        ("ROOT=/home/user/abc/x", True),
-        ('ROOT="../abc/x"', True),
-        ("A=B=../abc/x", True),
-        ("ROOT:../abc/x", True),
-        ("ROOT=${BASE:-../abc/x}", True),
-        ("ROOT=${BASE:-${OTHER:-../abc/x}}", True),
-        ("https://w3id.org/abc/schemas/x", False),
+        ("ROOT=../soranoha/x", True),
+        ("--root=../soranoha/x", True),
+        ("ROOT=/home/user/soranoha/x", True),
+        ('ROOT="../soranoha/x"', True),
+        ("A=B=../soranoha/x", True),
+        ("ROOT:../soranoha/x", True),
+        ("ROOT=${BASE:-../soranoha/x}", True),
+        ("ROOT=${BASE:-${OTHER:-../soranoha/x}}", True),
+        ("https://w3id.org/soranoha/schemas/x", False),
         ("schema=sha256:abc/012345", False),
-        ("label=abc/source", False),
-        ("ROOT=$repo_root/abc/x", False),
+        ("label=soranoha/source", False),
+        ("ROOT=$repo_root/soranoha/x", False),
     ]
     source = PurePosixPath("scripts/check.sh")
     for text, expected in source_cases:
@@ -247,13 +243,13 @@ python3 "$classifier" --self-test
 
 if ! python3 "$classifier" \
   --repo "$repo_root" "${active_files[@]}"; then
-  echo "active code must not escape into a sibling abc/ab-validator checkout" >&2
+  echo "active code must not escape into a sibling soranoha/ab-validator checkout" >&2
   exit 1
 fi
 
 if rg -n --fixed-strings \
   -e "references/parsers/" \
-  -e "abc/references/TEI/P5" \
+  -e "soranoha/references/TEI/P5" \
   "${active_files[@]}"; then
   echo "active code must not depend on sibling checkout or untracked references/ paths" >&2
   exit 1

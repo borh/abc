@@ -23,13 +23,13 @@ smoke_workspace_root() {
   printf '%s\n' "$repo_parent"
 }
 
-smoke_abc_root() {
-  if [[ -n "${AB_ABC_ROOT:-}" ]]; then
-    printf '%s\n' "$AB_ABC_ROOT"
+smoke_research_root() {
+  if [[ -n "${AB_RESEARCH_ROOT:-}" ]]; then
+    printf '%s\n' "$AB_RESEARCH_ROOT"
     return
   fi
 
-  printf '%s/abc\n' "$(smoke_workspace_root)"
+  printf '%s/research\n' "$AB_VALIDATOR_ROOT"
 }
 
 smoke_tmp_dir() {

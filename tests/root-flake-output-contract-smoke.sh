@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# eval-cache disabled to match the validate-migration cache-independence
+# eval-cache disabled to match the validate cache-independence
 # policy: this check exists to detect an output surface that drifted from the
 # contract, which a stale eval cache would hide.
 nix --option eval-cache false flake show --json --all-systems "$repo_root" | python -c '
@@ -28,16 +28,14 @@ expected_output_names = {"apps", "checks", "devShells", "formatter", "packages"}
 expected = {
     "apps": {
         "flake-input-policy",
-        "schema-drift",
-        "soranoha",
         "soranoha-kernel",
+        "regenerate-tei-profile",
         "tei-version-coherence",
-        "validate-migration",
+        "validate",
     },
     "packages": {"tei-p5-reference"},
     "devShells": {"default"},
     "checks": {
-        "monorepo-adr-governance",
         "monorepo-aat-materialization-workflow",
         "monorepo-aat-run-set",
         "monorepo-active-path-hygiene",
@@ -47,13 +45,11 @@ expected = {
         "monorepo-nix-format",
         "monorepo-python-quality",
         "monorepo-runtime-config",
-        "monorepo-schema-drift",
         "monorepo-tei-p5-reference",
         "monorepo-tei-version-coherence",
         "monorepo-workflow-run-lib",
-        "parser-rq-production-wiring",
-        "release-parser-build-matches-approved-identity",
         "soranoha-tests",
+        "tei-profile-drift",
         "tei-eaj-aozora-alignment-probe-generation",
     },
 }

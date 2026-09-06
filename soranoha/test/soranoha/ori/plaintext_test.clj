@@ -1,6 +1,6 @@
 (ns soranoha.ori.plaintext-test
   (:require [clojure.test :refer [deftest is]]
-            [soranoha.ported.parser-ir-plaintext :as plaintext]))
+            [soranoha.ori.plaintext :as plaintext]))
 
 (deftest initial-heading-does-not-invent-a-blank-line-or-shift-ruby
   (let [result (plaintext/render-with-annotations

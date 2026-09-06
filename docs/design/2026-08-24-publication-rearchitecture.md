@@ -2,6 +2,10 @@
 
 Current state (F103/F124/F129: evergreen — history, dates, and round
 numbers live in the findings sections and Git history, not here):
+- Publication implementation and assets are consolidated under `soranoha/`;
+  parser research tooling and fixtures live under `ab-validator/research/`.
+  ABC is retired as a component. Namespace and asset-path moves preserve
+  artifact bytes, protocol encodings, and stage identities.
 - **`docs/design/snh-protocol-v1.md` is the SOLE NORMATIVE source.**
   This ledger is the decision/rationale record and dev handoff;
   nothing here overrides the spec. At the pre-Slice-2 freeze review
@@ -135,7 +139,7 @@ numbers live in the findings sections and Git history, not here):
   D23 as recorded above; genesis preparation and promotion remain;
   adoption of the cited statutory answers (Q1–Q5 + old-law
   transition — DRAFTED 2026-08-27 as
-  abc/docs/evidence/external/jp-term-statute-citations.md, verbatim
+  soranoha/docs/evidence/jp-term-statute-citations.md, verbatim
   statute + 文化庁 guidance with retrieval dates; ADOPTED by the
   owner 2026-08-28: all four derivations D-1..D-4, with D-1 adopted
   AS AMENDED the same day — a pre-adoption probe refuted D-1's
@@ -4009,3 +4013,15 @@ inputs before building, and captures local source identity. The final gate check
 the built and evaluated source identities against that capture and checks that
 the committed assessment inputs have not changed. No protocol, assessment schema,
 stage identity or publication-policy change follows from this timing amendment.
+
+## Ownership consolidation — 2026-09-06
+
+The owner approved retiring ABC as a separate component and removing the
+`soranoha.ported` namespace. Soranoha owns the maintained publication
+implementation, record schemas, TEI profile, and assessment/policy inputs.
+`ab-validator/research/` owns retained parser research tools and fixtures.
+Superseded ABC runtime, mirrors, and duplicate publication checks are removed;
+source-authority research checks remain. This changes repository organization
+and development entry points, with artifact bytes, stage identities, and frozen
+protocol encodings preserved. Earlier ledger entries retain their historical
+paths and ownership descriptions.

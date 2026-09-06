@@ -1,18 +1,12 @@
 # Agent Notes
 
-This repository is the Soranoha monorepo. It contains three main components:
+This repository is the Soranoha monorepo. It contains two components:
 
-- `abc/`: Clojure/Nix publication, schema, TEI, manifest, and validation tools.
-- `ab-validator/`: Rust adapters, parser/IR validation, corpus measurement, and report tooling.
-- `soranoha/`: the publication-rearchitecture build kernel and snh protocol
-  implementation (Slices 1–2 of
-  `docs/design/2026-08-24-publication-rearchitecture.md`): content-addressed
-  store + constructive-trace engine + copied per-work pipeline, plus the
-  frozen snh-protocol-v1 schemas (D16.1), conformance vectors, boundary
-  decode, and wire/signature encodings (`src/soranoha/snh/`,
-  `resources/snh/`). Zero
-  requires into abc namespaces; abc-owned assets (record schemas, TEI
-  profile) are consumed via an explicit assets root.
+- `soranoha/`: publication build kernel, TEI/plaintext conversion, record schemas,
+  TEI profile, assessment evaluation, and the snh protocol.
+- `ab-validator/`: Rust adapters, parser/IR validation, source-authority research,
+  corpus measurement, and report tooling. Retained research tools and fixtures live
+  under `ab-validator/research/`.
 
 ## Working Rules
 
@@ -27,7 +21,7 @@ This repository is the Soranoha monorepo. It contains three main components:
 Run from the monorepo root:
 
 ```sh
-just validate-migration
+just validate
 ```
 
 Useful focused checks:
@@ -36,8 +30,6 @@ Useful focused checks:
 just python-quality
 just nix-format-check
 just soranoha-tests
-nix build ./abc#checks.x86_64-linux.clj-kondo
-nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
 nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
 nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
@@ -48,24 +40,19 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 - Rust: use the `./ab-validator#checks...` Nix checks for cargo check, clippy,
   fmt, and tests.
 - Python: all tracked Python should pass ruff format/check and mypy via `just python-quality`.
-- Clojure: `abc-clj-kondo` checks all `abc/src` and `abc/test` with clj-kondo plus cljfmt.
+- Clojure: `just soranoha-tests` runs the publication tests with clj-kondo and cljfmt.
 - Nix: run `nixfmt` or `just nix-format-check` for Nix changes.
 - Comments: follow `docs/comment-standards.md`; verify with
   `scripts/comment-hygiene-check.sh` (no transient task/plan/spec/issue
-  references in `ab-validator/`, `abc/src/`, or `soranoha/src/` comments;
-  soranoha additionally bans design-ledger F/D tags, ported tree excluded).
+  references in `ab-validator/` or `soranoha/src/` comments;
+  soranoha additionally bans design-ledger F/D tags).
 
 ## Design Boundaries
 
-- ABC owns TEI profile policy and its own legacy publication schemas and
-  manifest formats.
-- `soranoha/` owns the build kernel (CAS, trace store, copied renderers)
-  AND — transferred 2026-08-25 with the first Slice-2 manifest work (design
-  ledger D20-as-amended/F56) — snh publication-schema and manifest-identity
-  ownership: the frozen protocol schemas
-  (`soranoha/resources/snh/schemas/`), the conformance vectors
-  (`soranoha/resources/snh/vectors/`), boundary decode, wire encodings, and
-  admission-evidence formats. After the D16.1 freeze these change only via a
+- `soranoha/` owns publication behavior, record schemas and TEI profile policy,
+  including the frozen protocol schemas (`soranoha/resources/snh/schemas/`),
+  conformance vectors (`soranoha/resources/snh/vectors/`), boundary decode, wire
+  encodings, and admission-evidence formats. Frozen protocol changes require a
   decision-log entry in the design ledger.
 - ab-validator owns parser/adaptor measurement, AAT evidence, parser-IR conversion evidence, and corpus reports.
 - Parser outputs are supporting evidence; source-authority measurements are the authority for Aozora markup coverage.

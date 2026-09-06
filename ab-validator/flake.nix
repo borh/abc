@@ -6,10 +6,13 @@
 
     flake-utils.url = "github:numtide/flake-utils";
 
-    abc = {
-      url = "path:../abc";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.clj-nix.follows = "clj-nix";
+    soranoha-assets = {
+      url = "path:../soranoha";
+      flake = false;
+    };
+    tei-eaj-aozora-tei = {
+      url = "github:TEI-EAJ/aozora_tei/77a675fc2771936f9544505d922d4cd45075338c";
+      flake = false;
     };
 
     clj-nix = {
@@ -48,7 +51,8 @@
     {
       self,
       nixpkgs,
-      abc,
+      soranoha-assets,
+      tei-eaj-aozora-tei,
       clj-nix,
       upstream-aozora-notation-spec-src,
       upstream-aozorabunko-extractor-src,
@@ -106,48 +110,72 @@
 
         source = cleanProjectSource ./.;
 
-        abcSource = cleanProjectSource abc.outPath;
-        abcResearchSource = "${abc.packages.${system}.research-source}/abc";
-        abcCljDepsCache = pkgs.mk-deps-cache {
-          lockfile = "${abc.outPath}/deps-lock.json";
+        researchSource = pkgs.runCommand "ab-validator-research-source" { } ''
+          cp -R ${source}/research "$out"
+          chmod -R u+w "$out"
+          substituteInPlace "$out/deps.edn" --replace-fail '../../soranoha' '${soranoha-assets}'
+        '';
+        researchCljDepsCache = pkgs.mk-deps-cache {
+          lockfile = ./research/deps-lock.json;
         };
-
-        abcSchemaRootForNix = pkgs.runCommand "ab-validator-abc-schema-root" { } ''
-          mkdir -p "$out/schemas"
-          cp "${source}/data/abc-schemas/nix-schemas"/*.schema.json "$out/schemas/"
-          cp "${source}/data/abc-schemas/schema-contracts.json" \
-            "$out/schemas/schema-contracts.json"
+        researchRoot = "${source}/research";
+        stageSharedVectors = ''
+          mkdir -p ../soranoha/test/fixtures
+          cp -R ${soranoha-assets}/test/fixtures/canonicalization ../soranoha/test/fixtures/
         '';
-
-        stageParserRqAbcAuthorities = ''
-          mkdir -p \
-            ../abc/data \
-            ../abc/schemas \
-            ../abc/test/fixtures/parser-rq/classified-source-capture \
-            ../abc/test/fixtures/parser-rq/diagnostic-gap
-          cp "${abcSource}/data/parser-rq-ab-aozora-classified-source-v1.json" \
-            ../abc/data/
-          cp "${abcSource}/data/parser-rq-ab-aozora-diagnostic-gap-v1.json" \
-            ../abc/data/
-          cp "${abcSource}/data/parser-rq-classified-source-authority-v1.json" \
-            ../abc/data/
-          cp "${abcSource}/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json" \
-            ../abc/schemas/
-          cp "${abcSource}/schemas/parser-rq-classified-source-ledger.schema.json" \
-            ../abc/schemas/
-          cp "${abcSource}/schemas/parser-rq-classified-source-policy.schema.json" \
-            ../abc/schemas/
-          cp "${abcSource}/schemas/parser-rq-capture-generation.schema.json" \
-            ../abc/schemas/
-          cp "${abcSource}/schemas/parser-rq-diagnostic-gap-policy.schema.json" \
-            ../abc/schemas/
-          cp "${abcSource}/schemas/parser-rq-source-recognition-work.schema.json" \
-            ../abc/schemas/
-          cp "${abcSource}/test/fixtures/parser-rq/classified-source-capture/source.txt" \
-            ../abc/test/fixtures/parser-rq/classified-source-capture/
-          cp "${abcSource}/test/fixtures/parser-rq/diagnostic-gap/raw-diagnostics-valid.json" \
-            ../abc/test/fixtures/parser-rq/diagnostic-gap/
-        '';
+        researchClojureTests =
+          pkgs.runCommand "research-clojure-tests"
+            {
+              nativeBuildInputs = [
+                pkgs.clojure
+                pkgs.git
+                pkgs.python3
+                pkgs.clj-kondo
+                pkgs.cljfmt
+              ];
+            }
+            ''
+                  mkdir -p repo/ab-validator
+                  cp -R ${source}/. repo/ab-validator/
+              cp ${source}/justfile repo/justfile
+              cp -R ${soranoha-assets} repo/soranoha
+                  chmod -R u+w repo
+                  cd repo/ab-validator/research
+                  export HOME="${researchCljDepsCache}"
+                  export JAVA_TOOL_OPTIONS="-Duser.home=${researchCljDepsCache}"
+                  export CLJ_CONFIG="$HOME/.clojure" CLJ_CACHE="$TMPDIR/cp-cache" GITLIBS="$HOME/.gitlibs"
+                  clj-kondo --fail-level warning --lint src test
+                  cljfmt check src test
+                  clojure -M:test -m kaocha.runner
+                  touch "$out"
+            '';
+        researchPythonTests =
+          pkgs.runCommand "research-python-tests"
+            {
+              nativeBuildInputs = [
+                pkgs.python3
+                pkgs.python3Packages.pytest
+              ];
+            }
+            ''
+                  mkdir -p repo
+              cp -R ${source} repo/ab-validator
+                  chmod -R u+w repo
+                  cd repo/ab-validator/research
+                  python -m pytest tools -q
+                  touch "$out"
+            '';
+        teiEajApp = subcommand: {
+          type = "app";
+          program = toString (
+            pkgs.writeShellScript "tei-eaj-${subcommand}" ''
+              exec ${pkgs.python3}/bin/python ${source}/research/tools/tei_eaj_aozora_reports.py \
+                --compare-script ${source}/research/tools/tei_eaj_compare.py \
+                --tei-eaj-root ${tei-eaj-aozora-tei} \
+                --source-rev 77a675fc2771936f9544505d922d4cd45075338c ${subcommand} "$@"
+            ''
+          );
+        };
 
         upstreamAozoraNotationSpec =
           pkgs.runCommand "upstream-aozora-notation-spec"
@@ -586,7 +614,7 @@
           ];
           buildInputs = workspaceExtraBuildInputs;
           env = {
-            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+            AB_RESEARCH_ROOT = "${researchRoot}";
           };
           doCheck = true;
           stub = pkgs.writeShellApplication {
@@ -612,7 +640,7 @@
           nativeBuildInputs = [ pkgs.pkg-config ];
           buildInputs = workspaceExtraBuildInputs;
           env = {
-            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+            AB_RESEARCH_ROOT = "${researchRoot}";
           };
           cargoBuildFlags = [
             "-p"
@@ -628,7 +656,7 @@
           ];
           doCheck = false;
           extra = {
-            preBuild = stageParserRqAbcAuthorities;
+            preBuild = stageSharedVectors;
             postInstall = ''
               ln -s ${pkgs.time}/bin/time "$out/bin/time"
             '';
@@ -644,7 +672,7 @@
           ];
           buildInputs = workspaceExtraBuildInputs;
           env = {
-            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+            AB_RESEARCH_ROOT = "${researchRoot}";
           };
           cargoBuildFlags = [ "--workspace" ];
           doCheck = true;
@@ -657,15 +685,7 @@
               "--features"
               "ab-morph-run/test-analyzer"
             ];
-            # The workspace tests compile ab-aozora-capture's four
-            # `include_bytes!` embeds of sibling-abc files and read committed
-            # witness stores under abc/test/fixtures/, so the full abc tree
-            # must sit beside the staged workspace; a minimal file list cannot
-            # anticipate every fixture a test reads. Without this the check
-            # could not compile and was only ever evaluated, never built.
-            preBuild = ''
-              cp -R ${abcSource} ../abc
-            '';
+            preBuild = stageSharedVectors;
           };
         };
 
@@ -687,11 +707,11 @@
           cp -R "$src" source
           chmod -R u+w source
           cd source
-          ${stageParserRqAbcAuthorities}
+          ${stageSharedVectors}
           export HOME="$TMPDIR/home"
           export CARGO_HOME="$TMPDIR/cargo-home"
           mkdir -p "$HOME" "$CARGO_HOME"
-          export AB_ABC_ROOT="${abcSchemaRootForNix}"
+          export AB_RESEARCH_ROOT="${researchRoot}"
           mkdir -p .cargo
           cat > .cargo/config.toml <<EOF
           [source.crates-io]
@@ -779,30 +799,6 @@
 
         pythonWithAatDuckdb = pkgs.python3.withPackages (ps: [ ps.duckdb ]);
 
-        stageAbcSchemas = ''
-          abc_root="$work_dir/abc"
-          mkdir -p "$abc_root/schemas"
-          cp "$work_dir/source/data/abc-schemas/nix-schemas"/*.schema.json \
-            "$abc_root/schemas/"
-          cp "$work_dir/source/data/abc-schemas/schema-contracts.json" \
-            "$abc_root/schemas/schema-contracts.json"
-          export AB_ABC_ROOT="$abc_root"
-        '';
-
-        stageAbcPublicationRoot = ''
-          abc_root="$work_dir/abc"
-          cp -R "${abcResearchSource}" "$abc_root"
-          chmod -R +w "$abc_root"
-          export HOME="${abcCljDepsCache}"
-          export JAVA_TOOL_OPTIONS="-Duser.home=${abcCljDepsCache}"
-          export CLJ_CONFIG="$HOME/.clojure"
-          export CLJ_CACHE="$TMPDIR/cp-cache"
-          export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-          export GITLIBS="$HOME/.gitlibs"
-          mkdir -p "$CLJ_CACHE" "$XDG_CONFIG_HOME"
-          export AB_ABC_ROOT="$abc_root"
-        '';
-
         mkSmokeCheck =
           {
             name,
@@ -855,11 +851,7 @@
               cp -R "${source}" "$work_dir/source"
               chmod -R +w "$work_dir/source"
               cd "$work_dir/source"
-              rm data/abc-schemas/schemas
-              cp -R "${abcSource}/schemas" data/abc-schemas/schemas
-              rm data/abc-fixtures/canonicalization
-              cp -R "${abcSource}/test/fixtures/canonicalization" \
-                data/abc-fixtures/canonicalization
+              ${stageSharedVectors}
               python -m pytest \
                 reports/aat-fidelity/tests \
                 reports/lib/tests \
@@ -875,16 +867,10 @@
               nativeBuildInputs = [ pythonWithAatSchemaDeps ];
             }
             ''
-              # Stage the monorepo layout, not the ab-validator subtree alone.
-              # test_predicate_hardening_identity.py resolves its repository root
-              # as parents[4] of the test file, which is correct for a checkout
-              # and requires both ab-validator/ and abc/ to be present: the
-              # reviewed semantic closure spans both trees. Staging only this
-              # subtree made every test in that file error at import.
               work_dir="$(mktemp -d)"
               mkdir -p "$work_dir/repo"
               cp -R "${source}" "$work_dir/repo/ab-validator"
-              cp -R "${abcSource}" "$work_dir/repo/abc"
+              cp -R ${soranoha-assets} "$work_dir/repo/soranoha"
               chmod -R +w "$work_dir/repo"
               cd "$work_dir/repo/ab-validator"
               python -m pytest reports/parser-ir/tests -q
@@ -982,19 +968,21 @@
               AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
             }
             ''
-              bash ${source}/tests/parser-rq-predicate-hardening-capture-smoke.sh \
-                ${source} ${abcSource}
-              export HOME="${abcCljDepsCache}"
-              export JAVA_TOOL_OPTIONS="-Duser.home=${abcCljDepsCache}"
-              export CLJ_CONFIG="$HOME/.clojure"
-              export CLJ_CACHE="$TMPDIR/cp-cache"
-              export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-              export GITLIBS="$HOME/.gitlibs"
-              mkdir -p "$CLJ_CACHE" "$XDG_CONFIG_HOME"
-              cd ${abcResearchSource}
-              clojure -M:test:kaocha -m kaocha.runner \
-                --focus abc.tools.parser-rq-predicate-hardening-capture-test
-              touch "$out"
+                  bash ${source}/tests/parser-rq-predicate-hardening-capture-smoke.sh \
+                    ${source} ${researchRoot}
+                  export HOME="${researchCljDepsCache}"
+                  export JAVA_TOOL_OPTIONS="-Duser.home=${researchCljDepsCache}"
+                  export CLJ_CONFIG="$HOME/.clojure"
+                  export CLJ_CACHE="$TMPDIR/cp-cache"
+                  export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+                  export GITLIBS="$HOME/.gitlibs"
+                  mkdir -p "$CLJ_CACHE" "$XDG_CONFIG_HOME"
+                  cd ${researchSource}
+                  clj-kondo --fail-level warning --lint src test
+              cljfmt check src test
+              clojure -M:test -m kaocha.runner \
+                    --focus ab-research.parser-rq-predicate-hardening-capture-test
+                  touch "$out"
             '';
 
         taxonomyGenerator = mkRustBin {
@@ -1084,23 +1072,6 @@
           ];
         };
 
-        parserIrOrthoPublicationSmokeCheck = mkSmokeCheck {
-          name = "parser-ir-ortho-publication-smoke-check";
-          testScript = "tests/parser-ir-ortho-publication-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.clojure
-            pkgs.git
-            pkgs.jq
-            pkgs.ripgrep
-            pkgs.zstd
-          ];
-          extraEnv = {
-            AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
-            AB_VIBRATO_DICT = "${vibratoDictCwj}/share/vibrato/unidic-cwj-202512.dic.zst";
-          };
-          extraPreScript = stageAbcPublicationRoot;
-        };
-
         taxonomyDriftCheck =
           pkgs.runCommand "taxonomy-drift-check"
             {
@@ -1128,31 +1099,6 @@
               touch "$out"
             '';
 
-        abcSchemaContractDriftCheck =
-          pkgs.runCommand "abc-schema-contract-drift-check"
-            {
-              nativeBuildInputs = [ pkgs.python3 ];
-            }
-            ''
-              cp -R "${source}" source
-              chmod -R +w source
-              cd source
-              abc_root="$TMPDIR/abc"
-              mkdir -p "$abc_root/schemas"
-              cp data/abc-schemas/schema-contracts.json "$abc_root/schemas/schema-contracts.json"
-              python scripts/compare_abc_schema_contracts.py --abc "$abc_root"
-              touch "$out"
-            '';
-
-        abcSchemaContractCompareSmokeCheck = mkSmokeCheck {
-          name = "abc-schema-contract-compare-smoke-check";
-          testScript = "tests/abc-schema-contract-compare-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.python3
-            pkgs.ripgrep
-          ];
-        };
-
         monorepoPathHygieneSmokeCheck = mkSmokeCheck {
           name = "monorepo-path-hygiene-smoke-check";
           testScript = "tests/monorepo-path-hygiene-smoke.sh";
@@ -1170,12 +1116,7 @@
             pkgs.just
             pkgs.python3
           ];
-          extraPreScript = ''
-            git init -q
-            mkdir -p "$work_dir/abc/schemas"
-            cp "${source}/data/abc-schemas/schema-contracts.json" "$work_dir/abc/schemas/schema-contracts.json"
-            export AB_ABC_ROOT="$work_dir/abc"
-          '';
+          extraPreScript = "git init -q";
         };
 
         abAatToParserIr = mkRustBin {
@@ -1186,7 +1127,7 @@
           ];
           buildInputs = workspaceExtraBuildInputs;
           env = {
-            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+            AB_RESEARCH_ROOT = "${researchRoot}";
           };
           cargoBuildFlags = [
             "--package"
@@ -1206,7 +1147,7 @@
           ];
           buildInputs = workspaceExtraBuildInputs;
           env = {
-            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+            AB_RESEARCH_ROOT = "${researchRoot}";
           };
           cargoBuildFlags = [
             "--package"
@@ -1225,7 +1166,7 @@
             "ab-index"
           ];
           env = {
-            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+            AB_RESEARCH_ROOT = "${researchRoot}";
           };
         };
 
@@ -1240,7 +1181,7 @@
             "ab-check"
           ];
           env = {
-            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+            AB_RESEARCH_ROOT = "${researchRoot}";
           };
         };
 
@@ -1270,10 +1211,10 @@
             pythonWithAatSchemaDeps
           ];
           extraEnv = {
-            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+            AB_RESEARCH_ROOT = "${researchRoot}";
             AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
           };
-          extraPreScript = stageAbcSchemas;
+
         };
 
         aozoraNotationSpecComparatorSmokeCheck = mkSmokeCheck {
@@ -1289,6 +1230,7 @@
       in
       {
         packages = {
+          research-source = researchSource;
           default = abValidator;
           ab-validator = abValidator;
           parser-rq-candidate = parserRqCandidate;
@@ -1318,6 +1260,17 @@
           sudachi = sudachiApp;
         };
 
+        apps.tei-eaj-aozora-alignment-probe = teiEajApp "alignment-probe";
+        apps.tei-eaj-aozora-reports-with-probes = teiEajApp "all-with-probes";
+        apps.tei-eaj-aozora-reports = teiEajApp "all";
+        apps.tei-eaj-aozora-tei-source = {
+          type = "app";
+          program = toString (
+            pkgs.writeShellScript "tei-eaj-source" ''
+              printf '%s\n' ${tei-eaj-aozora-tei}
+            ''
+          );
+        };
         apps.default =
           flake-utils.lib.mkApp {
             drv = abValidator;
@@ -1359,6 +1312,8 @@
           };
 
         checks = {
+          research-clojure-tests = researchClojureTests;
+          research-python-tests = researchPythonTests;
           default = workspaceCheck;
           ab-validator = workspaceCheck;
           cargo-fmt = cargoFmtCheck;
@@ -1369,11 +1324,8 @@
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
           aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
-          abc-schema-contract-drift = abcSchemaContractDriftCheck;
-          abc-schema-contract-compare-smoke = abcSchemaContractCompareSmokeCheck;
           monorepo-path-hygiene-smoke = monorepoPathHygieneSmokeCheck;
           monorepo-workspace-layout-smoke = monorepoWorkspaceLayoutSmokeCheck;
-          parser-ir-ortho-publication-smoke = parserIrOrthoPublicationSmokeCheck;
           parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;
           parser-ir-publication-bundle-batch-smoke = publicationBundleBatchSmokeCheck;
           aat-to-parser-ir-smoke = abAatToParserIrCheck;

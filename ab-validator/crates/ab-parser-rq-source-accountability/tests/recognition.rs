@@ -6,9 +6,9 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 const POLICY: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-ab-aozora-classified-source-v1.json");
+    include_bytes!("../../../research/data/parser-rq-ab-aozora-classified-source-v1.json");
 const WORK_SCHEMA: &[u8] =
-    include_bytes!("../../../../abc/schemas/parser-rq-source-recognition-work.schema.json");
+    include_bytes!("../../../research/schemas/parser-rq-source-recognition-work.schema.json");
 
 fn sha256(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))

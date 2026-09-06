@@ -305,10 +305,10 @@ fn publication_is_immutable_and_manifest_is_published_last() {
 fn production_fixture_regenerates_byte_identically() {
     const ROOT: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../abc/test/fixtures/parser-rq/classified-source-capture"
+        "/../../research/test/fixtures/parser-rq/classified-source-capture"
     );
     let source = include_bytes!(concat!(
-        "../../../../abc/test/fixtures/parser-rq/classified-source-capture/",
+        "../../../research/test/fixtures/parser-rq/classified-source-capture/",
         "source.txt"
     ));
     let first = capture_generation_from_bytes(source).unwrap();

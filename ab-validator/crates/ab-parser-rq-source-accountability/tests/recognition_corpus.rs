@@ -33,7 +33,7 @@ fn temp(name: &str) -> PathBuf {
 fn fixture_bytes(name: &str) -> Vec<u8> {
     fs::read(
         Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../../abc/test/fixtures/parser-rq/classified-source-capture")
+            .join("../../research/test/fixtures/parser-rq/classified-source-capture")
             .join(name),
     )
     .unwrap()
@@ -41,7 +41,7 @@ fn fixture_bytes(name: &str) -> Vec<u8> {
 
 fn assert_schema(name: &str, value: &impl serde::Serialize) {
     let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../abc/schemas")
+        .join("../../research/schemas")
         .join(name);
     let schema: Value = serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
     let instance = serde_json::to_value(value).unwrap();
@@ -604,7 +604,7 @@ fn shared_store_rejects_traversal_and_symlink_locators() {
 #[test]
 fn rust_matches_every_shared_rfc8785_safe_integer_vector() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(
-        "../../../abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json",
+        "../../../soranoha/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json",
     );
     let fixture: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
     for vector in fixture["vectors"].as_array().unwrap() {

@@ -530,7 +530,7 @@ fn try_match(bytes: &[u8], i: usize) -> Option<(usize, char)> {
 /// rules here were derived from — and validated against — the archive's own
 /// XHTML rendering of every accent span in the pinned corpus (5,031
 /// substitution sites, 2,331 of them alignable to an oracle label; see
-/// `abc/docs/superpowers/plans/2026-07-30-accent-exact-accounting.md`):
+/// `ab-validator/research/docs/superpowers/plans/2026-07-30-accent-exact-accounting.md`):
 ///
 /// - **Cedilla (`,`)** composes only before an ASCII letter. Genuine cedilla
 ///   sits word-internally (`Franc,ois`, `garc,on`: 52 composed / 3 literal

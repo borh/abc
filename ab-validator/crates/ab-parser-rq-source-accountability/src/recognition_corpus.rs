@@ -14,7 +14,7 @@ use crate::{
 };
 
 const POLICY_BYTES: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-ab-aozora-classified-source-v1.json");
+    include_bytes!("../../../research/data/parser-rq-ab-aozora-classified-source-v1.json");
 const CORPUS_GENERATION_ALGORITHM: &str = "sha256-rfc8785-safe-integer-domain-abc-v1";
 pub(crate) const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 

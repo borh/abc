@@ -205,8 +205,8 @@ JSON
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --parser-ir "$parser_ir" \
   --source-region-summary "$source_region" \
-  --parser-ir-schema "$repo_root/../abc/schemas/parser-ir.schema.json" \
-  --preservation-schema "$repo_root/../abc/schemas/parser-ir-publication-preservation.schema.json" \
+  --parser-ir-schema "$repo_root/../ab-validator/research/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/../ab-validator/research/schemas/parser-ir-publication-preservation.schema.json" \
   --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --publication-dir "$bundle_dir" \
   --summary-json "$summary_json" \
@@ -231,8 +231,8 @@ printf '吾輩猫ねこ\n（古伝説と、シルレルの詩から。）\n' > "
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --parser-ir "$parser_ir" \
   --source-region-summary "$source_region" \
-  --parser-ir-schema "$repo_root/../abc/schemas/parser-ir.schema.json" \
-  --preservation-schema "$repo_root/../abc/schemas/parser-ir-publication-preservation.schema.json" \
+  --parser-ir-schema "$repo_root/../ab-validator/research/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/../ab-validator/research/schemas/parser-ir-publication-preservation.schema.json" \
   --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --publication-dir "$bundle_dir" \
   --summary-json "$failed_summary_json" \

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ab_root="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
-abc_root="${2:-$(cd "$ab_root/../abc" && pwd)}"
+research_root="${2:-$(cd "$ab_root/research" && pwd)}"
 write_target="${3:-}"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -19,7 +19,7 @@ generate() {
   local stage="$tmp/stage-$(basename "$output")"
   mkdir -p "$stage"
   local mapping="$ab_root/data/aat-to-parser-ir-mapping-v2.json"
-  local policy="$abc_root/data/parser-rq-parser-ir-conformance-policy-v1.json"
+  local policy="$research_root/data/parser-rq-parser-ir-conformance-policy-v1.json"
   local identity_ref="sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   local plain="$ab_root/crates/ab-aozora-aat/tests/data/plain-ascii.txt"
   local diagnostic="$ab_root/crates/ab-aozora-aat/tests/data/broken-ruby-utf8.txt"
@@ -35,7 +35,7 @@ generate() {
     "$AB_AAT_TO_PARSER_IR_BIN" qualify \
       --aat "$stage/$work_id.aat.json" \
       --mapping "$mapping" \
-      --abc-root "$abc_root" \
+      --research-root "$research_root" \
       --work-id "$work_id" \
       --qualification-identity-ref "$identity_ref" \
       --policy "$policy" \
@@ -48,7 +48,7 @@ generate() {
     "$stage/000003_3.record.json"
   test ! -e "$stage/000003_3.parser-ir.json"
 
-  python - "$ab_root" "$abc_root" "$stage" "$output" <<'PY'
+  python - "$ab_root" "$research_root" "$stage" "$output" <<'PY'
 import hashlib
 import json
 import pathlib
@@ -56,11 +56,11 @@ import re
 import shutil
 import sys
 
-ab_root, abc_root, stage, output = map(pathlib.Path, sys.argv[1:])
+ab_root, research_root, stage, output = map(pathlib.Path, sys.argv[1:])
 identity_ref = "sha256:" + "a" * 64
 work_ids = ["000001_1", "000002_2", "000003_3"]
-diag_policy = json.loads((abc_root / "data/parser-rq-diagnostic-completeness-policy-v1.json").read_text())
-ir_policy = json.loads((abc_root / "data/parser-rq-parser-ir-conformance-policy-v1.json").read_text())
+diag_policy = json.loads((research_root / "data/parser-rq-diagnostic-completeness-policy-v1.json").read_text())
+ir_policy = json.loads((research_root / "data/parser-rq-parser-ir-conformance-policy-v1.json").read_text())
 
 if output.exists():
     shutil.rmtree(output)
@@ -248,5 +248,5 @@ if [[ -n "$write_target" ]]; then
   mkdir -p "$(dirname "$write_target")"
   cp -R "$tmp/first" "$write_target"
 else
-  diff -ru "$abc_root/test/fixtures/parser-rq/predicate-hardening-capture" "$tmp/first"
+  diff -ru "$research_root/test/fixtures/parser-rq/predicate-hardening-capture" "$tmp/first"
 fi

@@ -170,9 +170,9 @@ fn fixture(name: &str) -> String {
 fn fixture_path(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()
-        .nth(3)
+        .nth(2)
         .unwrap()
-        .join("abc/test/fixtures/parser-rq/source-accountability")
+        .join("research/test/fixtures/parser-rq/source-accountability")
         .join(name)
 }
 

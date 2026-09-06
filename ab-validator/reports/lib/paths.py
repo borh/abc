@@ -18,37 +18,26 @@ def workspace_root() -> Path:
     if value := os.environ.get("AB_WORKSPACE_ROOT"):
         return Path(value).resolve()
 
-    root = repo_root().resolve()
-    parent = root.parent
-    if (parent / "abc").is_dir() and (parent / "ab-validator").is_dir():
-        return parent
-    return parent
+    return repo_root().resolve().parent
 
 
-def abc_root() -> Path:
-    """Return the ABC component root or an explicit override."""
-    if value := os.environ.get("AB_ABC_ROOT"):
-        return Path(value).resolve()
-    candidate = workspace_root() / "abc"
-    if candidate.is_dir():
-        return candidate
-    return repo_root() / "data" / "abc-schemas"
+def research_root() -> Path:
+    """Return the research component root or an explicit override."""
+    return (
+        Path(os.environ["AB_RESEARCH_ROOT"]).resolve()
+        if "AB_RESEARCH_ROOT" in os.environ
+        else repo_root() / "research"
+    )
 
 
 def schemas_dir() -> Path:
-    """Return the authoritative ABC JSON schema directory."""
-    candidate = abc_root() / "schemas"
-    if candidate.is_dir():
-        return candidate
-    return repo_root() / "data" / "abc-schemas" / "schemas"
+    """Return the authoritative research JSON schema directory."""
+    return research_root() / "schemas"
 
 
 def policy_dir() -> Path:
-    """Return the authoritative ABC publication policy directory."""
-    candidate = abc_root() / "data"
-    if candidate.is_dir():
-        return candidate
-    return repo_root() / "data" / "abc-schemas" / "data"
+    """Return the authoritative research policy directory."""
+    return research_root() / "data"
 
 
 def tei_p5_root() -> Path:

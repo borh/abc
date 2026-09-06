@@ -1,4 +1,0 @@
-{:schema-version :abc-evidence-higher-order-call-v1
- :caller abc.tools.edn-registry/call-duplicate-error
- :parameters {duplicate-error-fn [abc.tools.parser-evidence/duplicate-errors
-                                  abc.tools.aat-parser-ir-compat/duplicate-key-errors]}}

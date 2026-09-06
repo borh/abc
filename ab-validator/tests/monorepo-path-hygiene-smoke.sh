@@ -35,7 +35,7 @@ def walk(value: object, key_path: tuple[str, ...] = ()) -> None:
         bad_values.append(f"{dotted}: legacy TEI reference {value}")
     if value.startswith("/home/bor/Projects/"):
         bad_values.append(f"{dotted}: physical checkout path {value}")
-    if field == "path" and value.startswith(("../abc/", "../ab-validator/")):
+    if field == "path" and value.startswith(("../abc/", "../")):
         bad_values.append(f"{dotted}: sibling checkout identity path {value}")
 
 
@@ -47,8 +47,8 @@ if bad_values:
     raise SystemExit(1)
 PY
 
-if rg -n 'AB_ABC_ROOT:-.*\.\./abc' "$repo_root/tests"; then
-  echo "active smoke tests must default through AB_WORKSPACE_ROOT/AB_ABC_ROOT, not repo_root/../abc" >&2
+if rg -n 'AB_RESEARCH_ROOT:-.*\.\./abc' "$repo_root/tests"; then
+  echo "active smoke tests must default through AB_WORKSPACE_ROOT/AB_RESEARCH_ROOT, not repo_root/../abc" >&2
   exit 1
 fi
 

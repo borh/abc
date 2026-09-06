@@ -26,7 +26,7 @@ appendix for their activation triggers.
 ## 1. Canonical form and identity
 
 - Canonicalizer: `rfc8785-safe-integer-json-string-v1` (test vectors:
-  `abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json`).
+  `soranoha/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json`).
 - No floats anywhere; integers within the safe range; object keys sorted
   per RFC 8785; array sort orders as specified per field. Canonical
   bytes are unique for a given value.

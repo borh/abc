@@ -5,7 +5,7 @@
             [clojure.java.io :as io]
             [soranoha.core.canonical :as canonical]
             [soranoha.core.hash :as hash]
-            [soranoha.ported.schema :as schema]
+            [soranoha.core.schema :as schema]
             [soranoha.snh.decode :as decode])
   (:import [java.time LocalDate]
            [java.util Arrays]))

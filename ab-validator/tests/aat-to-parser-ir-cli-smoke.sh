@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
+research_root="${AB_RESEARCH_ROOT:-$repo_root/research}"
 out_dir="${TMPDIR:-/tmp}/ab-validator-aat-to-parser-ir-smoke"
 rm -rf "$out_dir"
 mkdir -p "$out_dir"
@@ -40,7 +40,7 @@ convert_args=(
   --work-content-hash "sha256:6666666666666666666666666666666666666666666666666666666666666666"
   --parser-ir-out "$out_dir/parser-ir.json"
   --divergence-out "$out_dir/divergence.json"
-  --abc-root "$abc_root"
+  --research-root "$research_root"
 )
 
 if [ -n "${AB_AAT_TO_PARSER_IR_BIN:-}" ]; then
@@ -83,8 +83,8 @@ then
   fi
 fi
 
-"${python_jsonschema[@]}" - "$abc_root/schemas/parser-ir.schema.json" \
-  "$abc_root/schemas/aat-parser-ir-divergence.schema.json" \
+"${python_jsonschema[@]}" - "$research_root/schemas/parser-ir.schema.json" \
+  "$research_root/schemas/aat-parser-ir-divergence.schema.json" \
   "$repo_root/data/aat-parser-ir-divergence-bundle-v1.schema.json" \
   "$out_dir/parser-ir.json" \
   "$out_dir/divergence.json" <<'PY'
@@ -123,7 +123,7 @@ audit_args=(
   --report-md "$out_dir/audit-report.md"
   --compat-edn-out "$out_dir/compatibility-candidates.edn"
   --jobs 2
-  --abc-root "$abc_root"
+  --research-root "$research_root"
 )
 
 if [ -n "${AB_AAT_TO_PARSER_IR_BIN:-}" ]; then
@@ -191,7 +191,7 @@ structural_args=(
   --mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json"
   --summary-json "$out_dir/structural-summary.json"
   --report-md "$out_dir/structural-report.md"
-  --abc-root "$abc_root"
+  --research-root "$research_root"
 )
 
 if [ -n "${AB_AAT_TO_PARSER_IR_BIN:-}" ]; then
@@ -261,7 +261,7 @@ tei_args=(
   --mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json"
   --summary-json "$out_dir/tei-eaj-structural-summary.json"
   --report-md "$out_dir/tei-eaj-structural-report.md"
-  --abc-root "$abc_root"
+  --research-root "$research_root"
 )
 
 if [ -n "${AB_AAT_TO_PARSER_IR_BIN:-}" ]; then

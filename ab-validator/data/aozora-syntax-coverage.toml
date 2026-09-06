@@ -640,7 +640,7 @@ source_inventory_row = "break.page_line"
 status = "typed"
 aat_nodes = ["paragraph", "text"]
 raw_fallback = true
-evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../abc/test/abc/tools/parser_ir_tei_test.clj"
+evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../ab-validator/research/test/ab-validator/research/tools/parser_ir_tei_test.clj"
 notes = "AAT source-derived page breaks project to parser-IR page-break and TEI pb; source-derived explicit line breaks project to parser-IR line-break and TEI lb."
 
 [[syntax]]
@@ -3666,5 +3666,5 @@ source_inventory_row = "break.line_explicit"
 status = "typed"
 aat_nodes = ["text"]
 raw_fallback = true
-evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../abc/test/abc/tools/parser_ir_tei_test.clj"
+evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../ab-validator/research/test/ab-validator/research/tools/parser_ir_tei_test.clj"
 notes = "Source-derived AAT text with x-break-kind = line is projected as parser-IR line-break and TEI lb while preserving surrounding text nodes."

@@ -18,13 +18,13 @@ use ab_aozora_aat::{
 };
 
 const POLICY_BYTES: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-ab-aozora-classified-source-v1.json");
+    include_bytes!("../../../research/data/parser-rq-ab-aozora-classified-source-v1.json");
 const LEDGER_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../abc/schemas/parser-rq-classified-source-ledger.schema.json");
+    include_bytes!("../../../research/schemas/parser-rq-classified-source-ledger.schema.json");
 const GENERATION_SCHEMA_BYTES: &[u8] =
-    include_bytes!("../../../../abc/schemas/parser-rq-capture-generation.schema.json");
+    include_bytes!("../../../research/schemas/parser-rq-capture-generation.schema.json");
 const AUTHORITY_BYTES: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-classified-source-authority-v1.json");
+    include_bytes!("../../../research/data/parser-rq-classified-source-authority-v1.json");
 const POLICY_ID: &str = "parser-rq-ab-aozora-classified-source-v1";
 const LEDGER_VERSION: &str = "abc/parser-rq-classified-source-ledger/v1";
 const GENERATION_VERSION: &str = "abc/parser-rq-capture-generation/v1";

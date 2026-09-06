@@ -5,7 +5,7 @@ use ab_parser_rq_diagnostic_authorization::{
 use ab_parser_rq_source_accountability::{RecognitionStatus, RecognitionWorkRecord};
 
 const POLICY: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-ab-aozora-diagnostic-gap-v1.json");
+    include_bytes!("../../../research/data/parser-rq-ab-aozora-diagnostic-gap-v1.json");
 
 fn hash(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};

@@ -12,7 +12,7 @@
 //!
 //! **Canonicalization.** The hash is SHA-256 over a JCS canonicalization of the
 //! descriptor (RFC 8785 subset: object keys sorted, compact separators, UTF-8),
-//! mirroring `abc.tools.jcs` so the discipline matches `tokenizer-profile-hash`.
+//! mirroring `ab-research.jcs` so the discipline matches `tokenizer-profile-hash`.
 //! The descriptor deliberately contains only strings and string arrays with
 //! slash-free ASCII identifiers, so the escaping-sensitive corners of RFC 8785
 //! (numbers, `/`, non-ASCII) never fire and the two implementations would agree
@@ -174,7 +174,7 @@ impl NormalizationPolicy {
 /// RFC 8785 (JCS) canonicalization for the value shapes used by policy
 /// descriptors: objects (keys sorted), arrays (order preserved), strings,
 /// numbers, booleans, null. NOT byte-compatible with
-/// `abc.tools.jcs/canonical-json-string`, which escapes `/` and non-ASCII
+/// `ab-research.jcs/canonical-json-string`, which escapes `/` and non-ASCII
 /// (Charred defaults); recorded `policy_hash` values pin THIS dialect, so the
 /// divergence is frozen — do not "align" it.
 fn canonical_json_string(value: &serde_json::Value) -> String {

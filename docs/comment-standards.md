@@ -1,7 +1,7 @@
 # Comment Standards
 
 Conventions for source-comment content in `ab-validator/` (Rust) and
-`abc/src/` (Clojure). These are coding standards, not architecture
+`soranoha/src/` (Clojure). These are coding standards, not architecture
 decisions — hence a convention doc, not an ADR. Enforced by
 `scripts/comment-hygiene-check.sh`.
 

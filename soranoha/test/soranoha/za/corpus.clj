@@ -18,7 +18,7 @@
             [soranoha.kura.trace :as trace]
             [soranoha.main :as main]
             [soranoha.ori.stages :as stages]
-            [soranoha.ported.json :as abc-json]
+            [soranoha.core.json :as record-json]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select])
   (:import [java.io FileOutputStream]
@@ -117,7 +117,7 @@
 (def fixture-toolchain "za-fixture-toolchain-1")
 
 (defn- json-bytes ^bytes [value]
-  (.getBytes (abc-json/write-deterministic-json-str value) "UTF-8"))
+  (.getBytes (record-json/write-deterministic-json-str value) "UTF-8"))
 
 (defn- blob-json [blob hex]
   (json/read-json (String. ^bytes (blob hex) "UTF-8")))

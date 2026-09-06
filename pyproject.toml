@@ -5,7 +5,7 @@ extend-exclude = [
   "ab-validator/benchmarks/baselines",
   "ab-validator/docs/superpowers/reports",
   "ab-validator/scratch",
-  "abc/out",
+  "ab-validator/research/out",
   "out",
   "scratch",
 ]
@@ -39,7 +39,7 @@ exclude = [
   "ab-validator/benchmarks/baselines/",
   "ab-validator/docs/superpowers/reports/",
   "ab-validator/scratch/",
-  "abc/out/",
+  "ab-validator/research/out/",
   "out/",
   "scratch/",
 ]

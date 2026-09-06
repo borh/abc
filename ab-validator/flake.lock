@@ -1,46 +1,6 @@
 {
   "nodes": {
-    "abc": {
-      "inputs": {
-        "aozorabunko-src": "aozorabunko-src",
-        "clj-nix": [
-          "clj-nix"
-        ],
-        "crane": "crane",
-        "local-pkgs": "local-pkgs",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "tei-eaj-aozora-tei": "tei-eaj-aozora-tei"
-      },
-      "locked": {
-        "path": "../abc",
-        "type": "path"
-      },
-      "original": {
-        "path": "../abc",
-        "type": "path"
-      },
-      "parent": []
-    },
     "aozorabunko-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1777068010,
-        "narHash": "sha256-g46OHD5oLs2iVkO+DjsD0dtD0sWp3YzJMKc94JoPLvM=",
-        "owner": "aozorabunko",
-        "repo": "aozorabunko",
-        "rev": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165",
-        "type": "github"
-      },
-      "original": {
-        "owner": "aozorabunko",
-        "repo": "aozorabunko",
-        "rev": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165",
-        "type": "github"
-      }
-    },
-    "aozorabunko-src_2": {
       "flake": false,
       "locked": {
         "lastModified": 1777068010,
@@ -76,22 +36,6 @@
       "original": {
         "owner": "jlesquembre",
         "repo": "clj-nix",
-        "type": "github"
-      }
-    },
-    "crane": {
-      "locked": {
-        "lastModified": 1779041105,
-        "narHash": "sha256-nnGD2f8OlAZT2i5OfwikJsw+ifWfiA4d6A8BWlgOXV0=",
-        "owner": "ipetkov",
-        "repo": "crane",
-        "rev": "10e6e3cb966f7cfcc789fe5eee7a85f3188ce08b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "ipetkov",
-        "ref": "v0.23.4",
-        "repo": "crane",
         "type": "github"
       }
     },
@@ -151,20 +95,6 @@
         "repo": "flake-utils",
         "type": "github"
       }
-    },
-    "local-pkgs": {
-      "flake": false,
-      "locked": {
-        "path": "./nix/ci-empty-local-pkgs",
-        "type": "path"
-      },
-      "original": {
-        "path": "./nix/ci-empty-local-pkgs",
-        "type": "path"
-      },
-      "parent": [
-        "abc"
-      ]
     },
     "mecab-dic-converter-src": {
       "flake": false,
@@ -235,13 +165,14 @@
     },
     "root": {
       "inputs": {
-        "abc": "abc",
-        "aozorabunko-src": "aozorabunko-src_2",
+        "aozorabunko-src": "aozorabunko-src",
         "clj-nix": "clj-nix",
         "flake-utils": "flake-utils",
         "mecab-dic-converter-src": "mecab-dic-converter-src",
         "nixpkgs": "nixpkgs",
         "rust-overlay": "rust-overlay",
+        "soranoha-assets": "soranoha-assets",
+        "tei-eaj-aozora-tei": "tei-eaj-aozora-tei",
         "upstream-aozora-notation-spec-src": "upstream-aozora-notation-spec-src",
         "upstream-aozorabunko-extractor-src": "upstream-aozorabunko-extractor-src"
       }
@@ -265,6 +196,18 @@
         "repo": "rust-overlay",
         "type": "github"
       }
+    },
+    "soranoha-assets": {
+      "flake": false,
+      "locked": {
+        "path": "../soranoha",
+        "type": "path"
+      },
+      "original": {
+        "path": "../soranoha",
+        "type": "path"
+      },
+      "parent": []
     },
     "systems": {
       "locked": {

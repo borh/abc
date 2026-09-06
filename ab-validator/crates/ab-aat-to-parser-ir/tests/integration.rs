@@ -14,15 +14,15 @@ fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn abc_root(repo: &Path) -> PathBuf {
-    std::env::var_os("AB_ABC_ROOT")
+fn research_root(repo: &Path) -> PathBuf {
+    std::env::var_os("AB_RESEARCH_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| repo.join("data/abc-schemas"))
+        .unwrap_or_else(|| repo.join("research"))
 }
 
 fn roots() -> (PathBuf, PathBuf) {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     (repo, abc)
 }
 
@@ -31,19 +31,20 @@ fn default_test_options() -> ConversionOptions {
 }
 
 fn schemas_and_mapping() -> (SchemaSet, MappingDocument) {
-    let (repo_root, abc_root) = roots();
+    let (repo_root, research_root) = roots();
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
             .unwrap();
     let schemas =
-        SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version).unwrap();
+        SchemaSet::load_for_aat_version(&repo_root, &research_root, mapping.source_aat_version)
+            .unwrap();
     (schemas, mapping)
 }
 
 #[test]
 fn schema_set_rejects_unknown_aat_version() {
-    let (repo_root, abc_root) = roots();
-    let err = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 3).unwrap_err();
+    let (repo_root, research_root) = roots();
+    let err = SchemaSet::load_for_aat_version(&repo_root, &research_root, 3).unwrap_err();
     assert!(
         err.to_string().contains("unsupported AAT schema version 3"),
         "{err}"
@@ -193,11 +194,11 @@ fn qualification_capture_turns_conversion_failure_into_no_output() {
 
 #[test]
 fn v1_document_under_v2_tuple_fails_input_validation() {
-    let (repo_root, abc_root) = roots();
+    let (repo_root, research_root) = roots();
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     // v1 fixture (version:1) must be REJECTED by the v2 tuple's input validation.
     let aat = include_fixture_json("nested-sentence-basic.aat.json");
     let err = ab_aat_to_parser_ir::convert(ConversionRequest {
@@ -212,11 +213,11 @@ fn v1_document_under_v2_tuple_fails_input_validation() {
 
 #[test]
 fn v2_document_under_v1_tuple_fails_input_validation() {
-    let (repo_root, abc_root) = roots();
+    let (repo_root, research_root) = roots();
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
             .unwrap();
-    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 1).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 1).unwrap();
     // v2 doc (version:2, using a v2-only construct) must be REJECTED by the v1
     // tuple's input validation.
     let aat = json!({
@@ -237,12 +238,12 @@ fn v2_document_under_v1_tuple_fails_input_validation() {
 
 #[test]
 fn preflight_rejects_mismatched_mapping_schema_tuple() {
-    let (repo_root, abc_root) = roots();
+    let (repo_root, research_root) = roots();
     // v1 mapping paired with the v2 schema file must fail preflight.
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
             .unwrap();
-    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     let err = mapping.preflight(&schemas).unwrap_err();
     assert!(err.to_string().contains("tuple mismatch"), "{err}");
 }
@@ -711,7 +712,7 @@ fn has_divergence_record(
 #[test]
 fn legacy_schema_hashes_match_mapping_artifact() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     let schemas = SchemaSet::load_for_aat_version(&repo, &abc, 1).unwrap();
 
     assert_eq!(
@@ -826,19 +827,19 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
 #[test]
 fn mapping_preflight_accepts_checked_in_v2_artifact() {
-    let (repo_root, abc_root) = roots();
+    let (repo_root, research_root) = roots();
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
     assert_eq!(mapping.mapping_version, "0.6.0");
     assert_eq!(mapping.source_aat_version, 2);
-    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
 }
 
 #[test]
 fn frozen_v2_0_3_0_artifact_retains_historical_coordinates() {
-    let (repo_root, abc_root) = roots();
+    let (repo_root, research_root) = roots();
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2-0.3.0.json"))
             .unwrap();
@@ -847,7 +848,7 @@ fn frozen_v2_0_3_0_artifact_retains_historical_coordinates() {
         mapping.document_hash,
         "sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40"
     );
-    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     assert_ne!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap(),
@@ -857,7 +858,7 @@ fn frozen_v2_0_3_0_artifact_retains_historical_coordinates() {
 
 #[test]
 fn frozen_v2_0_4_0_artifact_retains_phase5_coordinates() {
-    let (repo_root, abc_root) = roots();
+    let (repo_root, research_root) = roots();
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2-0.4.0.json"))
             .unwrap();
@@ -867,7 +868,7 @@ fn frozen_v2_0_4_0_artifact_retains_phase5_coordinates() {
         "sha256:cf177bee98af086fe728cbc1942e4f631b26ed5bb55aedc7d91b21f467c41f30"
     );
     assert_eq!(mapping.source_aat_version, 2);
-    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     assert_ne!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap(),
@@ -2152,11 +2153,11 @@ fn projects_jisage_block_wrapped_paragraph_to_paragraph_layout() {
 }
 
 fn v2_schemas_and_mapping() -> (SchemaSet, MappingDocument) {
-    let (repo_root, abc_root) = roots();
+    let (repo_root, research_root) = roots();
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     (schemas, mapping)
 }
 
@@ -3722,7 +3723,7 @@ fn converts_checked_in_real_measured_aat_fixtures() {
 #[test]
 fn cli_convert_writes_parser_ir_and_divergence_bundle() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     let temp = tempfile::tempdir().unwrap();
     let aat = temp.path().join("input.aat.json");
     let parser_ir = temp.path().join("parser-ir.json");
@@ -3757,7 +3758,7 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
         .arg(&parser_ir)
         .arg("--divergence-out")
         .arg(&divergence)
-        .arg("--abc-root")
+        .arg("--research-root")
         .arg(abc)
         .status()
         .unwrap();
@@ -3779,7 +3780,7 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
 #[test]
 fn cli_convert_rejects_mapping_generation_version_mismatch() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     let temp = tempfile::tempdir().unwrap();
     let aat = temp.path().join("input.aat.json");
     let parser_ir = temp.path().join("parser-ir.json");
@@ -3812,7 +3813,7 @@ fn cli_convert_rejects_mapping_generation_version_mismatch() {
         .arg(&parser_ir)
         .arg("--divergence-out")
         .arg(&divergence)
-        .arg("--abc-root")
+        .arg("--research-root")
         .arg(&abc)
         .arg("--expect-mapping-version")
         .arg("0.9.9")
@@ -3832,7 +3833,7 @@ fn cli_convert_rejects_mapping_generation_version_mismatch() {
 #[test]
 fn cli_convert_accepts_matching_mapping_generation_version_and_hash() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     let temp = tempfile::tempdir().unwrap();
     let aat = temp.path().join("input.aat.json");
     let parser_ir = temp.path().join("parser-ir.json");
@@ -3868,7 +3869,7 @@ fn cli_convert_accepts_matching_mapping_generation_version_and_hash() {
         .arg(&parser_ir)
         .arg("--divergence-out")
         .arg(&divergence)
-        .arg("--abc-root")
+        .arg("--research-root")
         .arg(&abc)
         .arg("--expect-mapping-version")
         .arg(&mapping.mapping_version)
@@ -3885,7 +3886,7 @@ fn cli_convert_accepts_matching_mapping_generation_version_and_hash() {
 #[test]
 fn cli_convert_with_ortho_annotations_emits_sentence_tags() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     let temp = tempfile::tempdir().unwrap();
     let aat = temp.path().join("input.aat.json");
     let ortho = temp.path().join("ortho.json");
@@ -3914,7 +3915,7 @@ fn cli_convert_with_ortho_annotations_emits_sentence_tags() {
         .arg(&parser_ir)
         .arg("--divergence-out")
         .arg(&divergence)
-        .arg("--abc-root")
+        .arg("--research-root")
         .arg(abc)
         .status()
         .unwrap();
@@ -3932,7 +3933,7 @@ fn cli_convert_with_ortho_annotations_emits_sentence_tags() {
 #[test]
 fn cli_detect_ortho_annotations_reports_missing_dictionary() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     let temp = tempfile::tempdir().unwrap();
     let aat = temp.path().join("input.aat.json");
     let ortho = temp.path().join("ortho.json");
@@ -3951,7 +3952,7 @@ fn cli_detect_ortho_annotations_reports_missing_dictionary() {
         .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
         .arg("--ortho-annotations-out")
         .arg(&ortho)
-        .arg("--abc-root")
+        .arg("--research-root")
         .arg(abc)
         .env("AB_VIBRATO_DICT", &missing_dict)
         .output()
@@ -3967,7 +3968,7 @@ fn cli_detect_ortho_annotations_reports_missing_dictionary() {
 #[test]
 fn cli_audit_corpus_reports_successes_and_failures() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     let temp = tempfile::tempdir().unwrap();
     let aat_dir = temp.path().join("aat");
     std::fs::create_dir_all(&aat_dir).unwrap();
@@ -4021,7 +4022,7 @@ fn cli_audit_corpus_reports_successes_and_failures() {
         .arg(&report)
         .arg("--jobs")
         .arg("2")
-        .arg("--abc-root")
+        .arg("--research-root")
         .arg(abc)
         .status()
         .unwrap();
@@ -4060,7 +4061,7 @@ fn cli_audit_corpus_reports_successes_and_failures() {
 #[test]
 fn cli_audit_corpus_reports_raw_node_provenance_inventory() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     let temp = tempfile::tempdir().unwrap();
     let aat_dir = temp.path().join("aat");
     std::fs::create_dir_all(&aat_dir).unwrap();
@@ -4121,7 +4122,7 @@ fn cli_audit_corpus_reports_raw_node_provenance_inventory() {
         .arg(&report)
         .arg("--jobs")
         .arg("2")
-        .arg("--abc-root")
+        .arg("--research-root")
         .arg(abc)
         .status()
         .unwrap();
@@ -4222,7 +4223,7 @@ fn cli_default_roots_follow_mapping_path_not_current_directory() {
 #[test]
 fn cli_tei_eaj_structural_expansion_writes_reports() {
     let repo = repo_root();
-    let abc = abc_root(&repo);
+    let abc = research_root(&repo);
     let temp = tempfile::tempdir().unwrap();
     let aat_dir = temp.path().join("aat");
     std::fs::create_dir_all(&aat_dir).unwrap();
@@ -4303,7 +4304,7 @@ fn cli_tei_eaj_structural_expansion_writes_reports() {
         .arg(&summary)
         .arg("--report-md")
         .arg(&report)
-        .arg("--abc-root")
+        .arg("--research-root")
         .arg(abc)
         .status()
         .unwrap();
@@ -4556,12 +4557,12 @@ fn adapter_conversion_spans_address_full_source_across_body_and_terminal_provena
     let aat: Value =
         serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(bytes).unwrap()).unwrap();
     let version = aat["version"].as_u64().unwrap();
-    let (repo_root, abc_root) = roots();
+    let (repo_root, research_root) = roots();
     let mapping = MappingDocument::from_path(
         &repo_root.join(format!("data/aat-to-parser-ir-mapping-v{version}.json")),
     )
     .unwrap();
-    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, version).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, version).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,

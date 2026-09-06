@@ -18,7 +18,7 @@ use ab_parser_rq_source_accountability::{
 use serde_json::Value;
 
 const POLICY: &[u8] =
-    include_bytes!("../../../../abc/data/parser-rq-ab-aozora-classified-source-v1.json");
+    include_bytes!("../../../research/data/parser-rq-ab-aozora-classified-source-v1.json");
 
 /// A source with all three regions non-empty: a legend-fenced header, a body,
 /// and a colophon tail with a blank line before it.
@@ -808,9 +808,9 @@ fn the_published_regions_validate_against_the_live_abc_schema() {
     let record = analyze(LEGEND_FENCED, &root).record;
     let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()
-        .nth(3)
+        .nth(2)
         .unwrap()
-        .join("abc/schemas/parser-rq-source-recognition-work.schema.json");
+        .join("research/schemas/parser-rq-source-recognition-work.schema.json");
     let schema: Value = serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
     let instance = serde_json::to_value(&record).unwrap();
     assert!(instance.get("regions").is_some());

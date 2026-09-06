@@ -18,21 +18,21 @@ if [[ "$computed_workspace" != "$actual_workspace" ]]; then
   exit 1
 fi
 
-computed_abc_default="$(
+computed_research_default="$(
   cd "$repo_root"
-  env -u AB_ABC_ROOT -u AB_WORKSPACE_ROOT just --evaluate abc_repo_root
+  env -u AB_RESEARCH_ROOT -u AB_WORKSPACE_ROOT just --evaluate research_repo_root
 )"
-if [[ "$computed_abc_default" != "$actual_workspace/abc" ]]; then
-  echo "expected default just abc_repo_root=$actual_workspace/abc, got $computed_abc_default" >&2
+if [[ "$computed_research_default" != "$repo_root/research" ]]; then
+  echo "expected default just research_repo_root=$repo_root/research, got $computed_research_default" >&2
   exit 1
 fi
 
-helper_abc_default="$(
-  env -u AB_ABC_ROOT -u AB_WORKSPACE_ROOT AB_VALIDATOR_ROOT="$repo_root" bash -c \
-    'source "$AB_VALIDATOR_ROOT/tests/lib/smoke-env.sh"; smoke_abc_root'
+helper_research_default="$(
+  env -u AB_RESEARCH_ROOT -u AB_WORKSPACE_ROOT AB_VALIDATOR_ROOT="$repo_root" bash -c \
+    'source "$AB_VALIDATOR_ROOT/tests/lib/smoke-env.sh"; smoke_research_root'
 )"
-if [[ "$helper_abc_default" != "$actual_workspace/abc" ]]; then
-  echo "expected default smoke_abc_root=$actual_workspace/abc, got $helper_abc_default" >&2
+if [[ "$helper_research_default" != "$repo_root/research" ]]; then
+  echo "expected default smoke_research_root=$repo_root/research, got $helper_research_default" >&2
   exit 1
 fi
 
@@ -40,31 +40,30 @@ workspace="$out_dir/workspace"
 mkdir -p "$workspace"
 ln -s "$repo_root" "$workspace/ab-validator"
 
-abc_root="$actual_workspace/abc"
-if [[ ! -d "$abc_root" ]]; then
-  echo "missing ABC component at $abc_root" >&2
+research_root="$repo_root/research"
+if [[ ! -d "$research_root" ]]; then
+  echo "missing research root at $research_root" >&2
   exit 2
 fi
-ln -s "$abc_root" "$workspace/abc"
 
-computed_abc="$(
+computed_research="$(
   cd "$workspace/ab-validator"
-  env -u AB_ABC_ROOT AB_WORKSPACE_ROOT="$workspace" just --evaluate abc_repo_root
+  env -u AB_RESEARCH_ROOT AB_WORKSPACE_ROOT="$workspace" just --evaluate research_repo_root
 )"
-if [[ "$computed_abc" != "$workspace/abc" ]]; then
-  echo "expected just abc_repo_root=$workspace/abc, got $computed_abc" >&2
+if [[ "$computed_research" != "$workspace/ab-validator/research" ]]; then
+  echo "expected just research_repo_root=$workspace/ab-validator/research, got $computed_research" >&2
   exit 1
 fi
 
-helper_abc="$(
-  env -u AB_ABC_ROOT AB_VALIDATOR_ROOT="$workspace/ab-validator" AB_WORKSPACE_ROOT="$workspace" bash -c \
-    'source "$AB_VALIDATOR_ROOT/tests/lib/smoke-env.sh"; smoke_abc_root'
+helper_research="$(
+  env -u AB_RESEARCH_ROOT AB_VALIDATOR_ROOT="$workspace/ab-validator" AB_WORKSPACE_ROOT="$workspace" bash -c \
+    'source "$AB_VALIDATOR_ROOT/tests/lib/smoke-env.sh"; smoke_research_root'
 )"
-if [[ "$helper_abc" != "$workspace/abc" ]]; then
-  echo "expected smoke_abc_root=$workspace/abc, got $helper_abc" >&2
+if [[ "$helper_research" != "$workspace/ab-validator/research" ]]; then
+  echo "expected smoke_research_root=$workspace/ab-validator/research, got $helper_research" >&2
   exit 1
 fi
 
-python "$workspace/ab-validator/scripts/compare_abc_schema_contracts.py" --abc "$workspace/abc"
+
 
 echo "monorepo workspace layout smoke ok: $workspace"

@@ -8,7 +8,7 @@ expected_tag="P5_Release_${expected_version}"
 if [ -n "${AB_TEI_P5_ROOT:-}" ]; then
   tei_root="$AB_TEI_P5_ROOT"
 else
-  # eval-cache disabled to match the validate-migration cache-independence
+  # eval-cache disabled to match the validate cache-independence
   # policy: a stale eval cache could resolve tei-p5-reference to a derivation
   # that no longer matches the flake this gate is validating.
   tei_root="$(nix --option eval-cache false build --no-link --print-out-paths \
@@ -22,9 +22,9 @@ if [ "$actual_version" != "$expected_version" ]; then
 fi
 
 grep -q "github:TEIC/TEI/${expected_tag}" "$repo_root/flake.nix"
-grep -q "teiP5Version = \"${expected_version}\";" "$repo_root/abc/nix/tei-profile-artifacts.nix"
-grep -q "Vault/P5/\${teiP5Version}/xml/tei/custom/schema/relaxng/tei_all.rng" "$repo_root/abc/nix/tei-profile-artifacts.nix"
-grep -q "Vault/P5/\${teiP5Version}/xml/tei/odd/p5subset.xml" "$repo_root/abc/nix/tei-profile-artifacts.nix"
+grep -q "teiP5Version = \"${expected_version}\";" "$repo_root/nix/tei-profile-artifacts.nix"
+grep -q "Vault/P5/\${teiP5Version}/xml/tei/custom/schema/relaxng/tei_all.rng" "$repo_root/nix/tei-profile-artifacts.nix"
+grep -q "Vault/P5/\${teiP5Version}/xml/tei/odd/p5subset.xml" "$repo_root/nix/tei-profile-artifacts.nix"
 
 test -f "$tei_root/Source/Specs/ruby.xml"
 test -f "$tei_root/Source/Specs/hi.xml"

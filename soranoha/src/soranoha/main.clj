@@ -34,9 +34,8 @@
             [soranoha.kura.verify :as kura-verify]
             [soranoha.ori.stages :as stages]
             [soranoha.ori.validate :as validate]
-            [soranoha.ported.assets :as assets]
-            [soranoha.ported.json :as abc-json]
-            [soranoha.ported.parallel :as parallel]
+            [soranoha.core.json :as record-json]
+            [soranoha.core.parallel :as parallel]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.semantic :as semantic]
             [soranoha.snh.sign :as sign]
@@ -144,7 +143,7 @@
           (fs/write-bytes (fs/path dir filename)
                           (cas/get-bytes (config/cas-dir root) (get work kind))))))
     (spit (str (fs/path out "build.json"))
-          (abc-json/write-deterministic-json-str report))))
+          (record-json/write-deterministic-json-str report))))
 
 (defn- capture-build!
   [{:keys [root aozora-root clj-toolchain-id limit out]}]
@@ -178,86 +177,85 @@
 
 (defn execute-build!
   "Run the supplied candidates with the supplied stages and export their build report."
-  [{:keys [assets-root concurrency clj-toolchain-id out]}
+  [{:keys [concurrency clj-toolchain-id out]}
    {:keys [root commit catalog-csv-hash rows candidates rejected]} stage-set]
-  (binding [assets/*root* (str assets-root)]
-    (let [store (engine/open-store! {:cas-dir (config/cas-dir root)
-                                     :db-path (config/trace-db-path root)})]
-      (try
-        (let [rows-by-work (group-by catalog/row-work-id rows)
-              n (if (pos? concurrency)
-                  concurrency
-                  (.availableProcessors (Runtime/getRuntime)))
-              started (System/currentTimeMillis)
-              results (parallel/ordered-pmap
-                       n
-                       (fn [candidate]
-                         (try
-                           (run-work! store stage-set candidate
-                                      (get rows-by-work (catalog/row-work-id (:row candidate))))
-                           (catch Exception e
-                             (throw (ex-info (ex-message e)
-                                             (assoc (ex-data e) :slug (:slug candidate)) e)))))
-                       candidates)
-              relpath-of (into {} (map (juxt :slug :relpath)) candidates)
+  (let [store (engine/open-store! {:cas-dir (config/cas-dir root)
+                                   :db-path (config/trace-db-path root)})]
+    (try
+      (let [rows-by-work (group-by catalog/row-work-id rows)
+            n (if (pos? concurrency)
+                concurrency
+                (.availableProcessors (Runtime/getRuntime)))
+            started (System/currentTimeMillis)
+            results (parallel/ordered-pmap
+                     n
+                     (fn [candidate]
+                       (try
+                         (run-work! store stage-set candidate
+                                    (get rows-by-work (catalog/row-work-id (:row candidate))))
+                         (catch Exception e
+                           (throw (ex-info (ex-message e)
+                                           (assoc (ex-data e) :slug (:slug candidate)) e)))))
+                     candidates)
+            relpath-of (into {} (map (juxt :slug :relpath)) candidates)
           ;; the report is a disposable trace-store export, but it must
           ;; carry everything the second-revision delta oracle consumes:
           ;; per-work source identity, per-stage cache decisions, the
           ;; selection join, and the stage coordinates
-              report {"aozora_git_commit" commit
-                      "catalog_csv_hash" catalog-csv-hash
+            report {"aozora_git_commit" commit
+                    "catalog_csv_hash" catalog-csv-hash
                   ;; Captured before execution, independently of result rows.
-                      "selected_slugs" (vec (sort (map :slug candidates)))
-                      "rejected_count" (count rejected)
-                      "executed_stage_count" (count (filter false?
-                                                            (mapcat (comp vals :cached)
-                                                                    results)))
-                      "clj_toolchain_id" clj-toolchain-id
+                    "selected_slugs" (vec (sort (map :slug candidates)))
+                    "rejected_count" (count rejected)
+                    "executed_stage_count" (count (filter false?
+                                                          (mapcat (comp vals :cached)
+                                                                  results)))
+                    "clj_toolchain_id" clj-toolchain-id
                   ;; coordinate values pass through unchanged; only the
                   ;; outer logical stage keys become strings
-                      "stages" (into (sorted-map)
-                                     (map (fn [[stage coordinate]]
-                                            [(name stage) coordinate]))
-                                     (trace/stage-coordinates stage-set))
-                      "works" (into (sorted-map)
-                                    (map (fn [{:keys [slug outputs cached zip-hex
-                                                      source-facts trace-keys]}]
-                                           [slug (cond-> {"tei" (get-in outputs [:render "tei"])
-                                                          "plaintext" (get-in outputs
-                                                                              [:render "plaintext"])
-                                                          "tei-validation"
-                                                          (get-in outputs
-                                                                  [:validate "tei-validation"])
-                                                          "parser-ir" (get-in outputs
-                                                                              [:convert "parser-ir"])
-                                                          "source_zip" zip-hex
-                                                          "source_relpath" (get relpath-of slug)
-                                                          "source_content_hash"
-                                                          (get source-facts "work_content_hash")
-                                                          "cached" (into (sorted-map)
-                                                                         (map (fn [[stage hit?]]
-                                                                                [(name stage)
-                                                                                 hit?]))
-                                                                         cached)
+                    "stages" (into (sorted-map)
+                                   (map (fn [[stage coordinate]]
+                                          [(name stage) coordinate]))
+                                   (trace/stage-coordinates stage-set))
+                    "works" (into (sorted-map)
+                                  (map (fn [{:keys [slug outputs cached zip-hex
+                                                    source-facts trace-keys]}]
+                                         [slug (cond-> {"tei" (get-in outputs [:render "tei"])
+                                                        "plaintext" (get-in outputs
+                                                                            [:render "plaintext"])
+                                                        "tei-validation"
+                                                        (get-in outputs
+                                                                [:validate "tei-validation"])
+                                                        "parser-ir" (get-in outputs
+                                                                            [:convert "parser-ir"])
+                                                        "source_zip" zip-hex
+                                                        "source_relpath" (get relpath-of slug)
+                                                        "source_content_hash"
+                                                        (get source-facts "work_content_hash")
+                                                        "cached" (into (sorted-map)
+                                                                       (map (fn [[stage hit?]]
+                                                                              [(name stage)
+                                                                               hit?]))
+                                                                       cached)
                                                       ;; The delta oracle explains execution using
                                                       ;; changed derivation keys at equal coordinates.
-                                                          "trace_keys"
-                                                          (into (sorted-map)
-                                                                (map (fn [[stage k]]
-                                                                       [(name stage) k]))
-                                                                trace-keys)}
-                                                   (:fidelity outputs)
-                                                   (assoc "source-fidelity" (get-in outputs [:fidelity "source-fidelity"])))]))
-                                    results)}
-              report-path (str (fs/path root "runs" (str "run-" started ".json")))]
-          (fs/create-dirs (fs/parent report-path))
-          (spit report-path (abc-json/write-deterministic-json-str report))
-          (when out (export-build! root out report))
-          (println (str "run_report: " report-path))
-          (println (str "selected: " (count candidates)))
-          (when out (println (str "exports: " (fs/absolutize out))))
-          report)
-        (finally (engine/close-store! store))))))
+                                                        "trace_keys"
+                                                        (into (sorted-map)
+                                                              (map (fn [[stage k]]
+                                                                     [(name stage) k]))
+                                                              trace-keys)}
+                                                 (:fidelity outputs)
+                                                 (assoc "source-fidelity" (get-in outputs [:fidelity "source-fidelity"])))]))
+                                  results)}
+            report-path (str (fs/path root "runs" (str "run-" started ".json")))]
+        (fs/create-dirs (fs/parent report-path))
+        (spit report-path (record-json/write-deterministic-json-str report))
+        (when out (export-build! root out report))
+        (println (str "run_report: " report-path))
+        (println (str "selected: " (count candidates)))
+        (when out (println (str "exports: " (fs/absolutize out))))
+        report)
+      (finally (engine/close-store! store)))))
 
 (defn build! [opts]
   (let [captured (capture-build! opts)]
@@ -310,7 +308,7 @@
                          "trace_key" trace-key})
                       (sort-by (juxt :slug #(name (:stage %))) violations))
                 "ok" (empty? violations)}]
-    (println (abc-json/write-deterministic-json-str result))
+    (println (record-json/write-deterministic-json-str result))
     result))
 
 (defn- require-flags! [command flags]
@@ -461,7 +459,7 @@
                             (reduce #(assoc %1 (get %2 "slug") %2) prior)
                             vals (sort-by #(get % "slug")) vec)))]
     (fs/write-bytes out (:bytes result))
-    (println (abc-json/write-deterministic-json-str
+    (println (record-json/write-deterministic-json-str
               {"assessment_source" out
                "attempted" (+ (count records) (count unavailable))
                "refreshed" (count refreshed)
@@ -474,7 +472,7 @@
   [{:keys [chain-clone branch]}]
   (require-flags! "publication-init" {"--chain-clone" chain-clone "--branch" branch})
   (let [commit (transact/init-publication-branch! chain-clone branch)]
-    (println (abc-json/write-deterministic-json-str {"commit" commit "branch" branch}))
+    (println (record-json/write-deterministic-json-str {"commit" commit "branch" branch}))
     commit))
 
 (defn assessment-evaluate!
@@ -484,7 +482,7 @@
   (let [result (evaluate-assessment! opts (assessment-inputs! opts))
         snapshot (:snapshot result)]
     (when out (fs/write-bytes (str out) (:bytes snapshot)))
-    (println (abc-json/write-deterministic-json-str
+    (println (record-json/write-deterministic-json-str
               {"assessment_snapshot" (:id snapshot)
                "candidates" (count (get-in snapshot [:value "candidates"]))
                "source_commit" (:source-commit result)}))
@@ -618,7 +616,7 @@
           :clone (str chain-clone) :branch branch
           :pinned-keys pinned :sign-release sign-release})]
     (when out (export-build! (config/root root) out @last-report))
-    (println (abc-json/write-deterministic-json-str
+    (println (record-json/write-deterministic-json-str
               (into (sorted-map)
                     (keep (fn [[k v]] (when v [k v])))
                     {"outcome" (name (:outcome outcome))
@@ -657,7 +655,7 @@
                                              (sign/manifest-message manifest-hex)))
                   :event-bytes (fs/read-all-bytes (str event))
                   :event-sig (fs/read-all-bytes (str event-sig))})]
-    (println (abc-json/write-deterministic-json-str
+    (println (record-json/write-deterministic-json-str
               (into (sorted-map)
                     (keep (fn [[k v]] (when v [k v])))
                     {"outcome" (name (:outcome outcome))
@@ -682,7 +680,7 @@
                  :pinned-keys (pinned-keys-from-files release-pub
                                                       governance-pub)
                  :out-dir (str out)})]
-    (println (abc-json/write-deterministic-json-str
+    (println (record-json/write-deterministic-json-str
               {"head" (:head result)
                "releases" (:releases result)
                "blobs" (:blobs result)}))
@@ -709,7 +707,7 @@
                        v (str commit)
                        (pinned-keys-from-files release-pub governance-pub))
                       :archive-view archive-view)]
-    (println (abc-json/write-deterministic-json-str
+    (println (record-json/write-deterministic-json-str
               (into (sorted-map)
                     (keep (fn [[k v]] (when v [k v])))
                     {"result" (name (:result report))

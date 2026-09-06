@@ -1,6 +1,5 @@
-//! Authenticated classified-source capture, extracted verbatim from
-//! `ab-aozora-aat` so the release-gated `ab-aozora` / `ab-aat-to-parser-ir`
-//! binaries never link this module's four `abc/…` `include_bytes!` embeds.
+//! Authenticated classified-source capture. The release parser and converter
+//! binaries do not link the retained research authority documents.
 //! Only the rq adapters that actually run capture
 //! (`ab-parser-rq-source-accountability`,
 //! `ab-parser-rq-diagnostic-authorization`) depend on it.

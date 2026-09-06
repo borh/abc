@@ -15,14 +15,14 @@ pub struct SchemaSet {
 }
 
 impl SchemaSet {
-    /// Load the (AAT schema, ABC schema) tuple for a given AAT schema
+    /// Load the (AAT schema, research schema) tuple for a given AAT schema
     /// `version`. The AAT schema file is selected by version — 1 loads the
     /// frozen `data/aat-schema-v1.json`, 2 loads the current
-    /// `data/aat-schema.json` — while the ABC-owned schemas (mapping,
+    /// `data/aat-schema.json` — while the Research-owned schemas (mapping,
     /// parser-IR, divergence record, bundle) are shared across versions.
     pub fn load_for_aat_version(
         repo_root: &Path,
-        abc_root: &Path,
+        research_root: &Path,
         aat_version: u64,
     ) -> Result<Self> {
         let aat_schema_path = match aat_version {
@@ -32,10 +32,12 @@ impl SchemaSet {
         };
         Ok(Self {
             aat_schema: read_json(&aat_schema_path)?,
-            mapping_schema: read_json(&abc_root.join("schemas/aat-parser-ir-mapping.schema.json"))?,
-            parser_ir_schema: read_json(&abc_root.join("schemas/parser-ir.schema.json"))?,
+            mapping_schema: read_json(
+                &research_root.join("schemas/aat-parser-ir-mapping.schema.json"),
+            )?,
+            parser_ir_schema: read_json(&research_root.join("schemas/parser-ir.schema.json"))?,
             abc_divergence_record_schema: read_json(
-                &abc_root.join("schemas/aat-parser-ir-divergence.schema.json"),
+                &research_root.join("schemas/aat-parser-ir-divergence.schema.json"),
             )?,
             bundle_schema: read_json(
                 &repo_root.join("data/aat-parser-ir-divergence-bundle-v1.schema.json"),

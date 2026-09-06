@@ -272,12 +272,12 @@ def map_inline(node, offset, ledger_list, path):
         return result, span_end(span, fallback_end)
 
     if kind == "gaiji":
-        visible = node.get("resolved") or node.get("description", "")
+        resolved_str = node.get("resolved")
+        visible = resolved_str if resolved_str is not None else node.get("description", "")
         fallback_end = offset + utf8_len(visible)
         pir_span = map_span(span, offset, fallback_end, ledger_list, path)
         # AAT resolved = string|null; parser-IR resolved = boolean
-        resolved_str = node.get("resolved")
-        resolved_bool = bool(resolved_str) if resolved_str is not None else False
+        resolved_bool = resolved_str is not None
         # raw_marker INVENTION: AAT gives description, not the source marker.
         ledger_list.append(
             ledger(
@@ -305,15 +305,15 @@ def map_inline(node, offset, ledger_list, path):
                     f"unresolved_reason='{node['unresolved_reason']}' has no parser-IR field",
                 )
             )
-        # unicode: AAT may embed in resolved string; cannot extract
-        ledger_list.append(
-            ledger(
-                "LOSS",
-                "(none)",
-                "gaiji.unicode",
-                "AAT does not separate unicode codepoint from resolved string",
+        if resolved_str is None:
+            ledger_list.append(
+                ledger(
+                    "LOSS",
+                    "(none)",
+                    "gaiji.unicode",
+                    "Unresolved AAT gaiji has no Unicode text to project",
+                )
             )
-        )
         # jis_code -> reference (semantic stretch)
         if node.get("jis_code"):
             ledger_list.append(
@@ -330,7 +330,7 @@ def map_inline(node, offset, ledger_list, path):
             "gaiji": {
                 "raw_marker": node.get("description", ""),
                 "reference": node.get("jis_code"),
-                "unicode": None,
+                "unicode": resolved_str,
                 "ivs": None,
                 "image_or_glyph_fallback": None,
                 "resolved": resolved_bool,

@@ -6,6 +6,9 @@ abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
 out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/aat-parser-ir-mapping-policy-smoke"
 aat_dir="$out_dir/aat"
 
+python -m unittest discover -s "$repo_root/reports/aat-fidelity/tests" \
+  -p 'test_aat_parser_ir_mapping*.py'
+
 run_mapping_generator() {
   if [[ "${AB_MAPPING_USE_SYSTEM_PYTHON:-0}" == "1" ]]; then
     python "$@"

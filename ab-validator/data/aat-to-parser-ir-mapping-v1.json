@@ -1324,7 +1324,7 @@
       "aat_pointer": null,
       "parser_ir_pointer": "gaiji.unicode",
       "action": "drop",
-      "description": "Observed 104846 occurrences; first_path=(none). AAT does not separate unicode codepoint from resolved string"
+      "description": "Unresolved AAT gaiji has no Unicode text to project"
     },
     {
       "rule_id": "L-02",

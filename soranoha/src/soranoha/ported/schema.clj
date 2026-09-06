@@ -1,36 +1,11 @@
 (ns soranoha.ported.schema
-  (:require [soranoha.ported.jcs :as jcs]
-            [soranoha.core.hash :as hash]
-            [soranoha.ported.json :as abc-json]
+  (:require [soranoha.ported.json :as abc-json]
             [charred.api :as json]
             [clojure.string :as str])
   (:import [com.networknt.schema SchemaRegistry InputFormat SpecificationVersion]))
 
 (defn read-schema [file]
   (abc-json/read-json-file file))
-
-(defn schema-hash [file]
-  (hash/format-sha256
-   (hash/sha256-bytes (jcs/canonical-json-bytes (read-schema file)))))
-
-(let [cache (atom {})]
-  (defn cached-schema
-    "Read and parse the JSON Schema at `path` exactly once per JVM.
-    Identity-stable: callers can compare with `identical?`."
-    [path]
-    (or (get @cache path)
-        (let [v (read-schema path)]
-          (swap! cache assoc path v)
-          v)))
-
-  (defn cached-schema-hash
-    "Compute and cache the schema-bytes hash for `path`. Delegates to
-    `schema-hash` so the on-disk hash contract is preserved exactly."
-    [path]
-    (or (get @cache [::hash path])
-        (let [v (schema-hash path)]
-          (swap! cache assoc [::hash path] v)
-          v))))
 
 (def ^:private schema-registry
   (SchemaRegistry/withDefaultDialect SpecificationVersion/DRAFT_2020_12))

@@ -6,19 +6,23 @@
   (.codePointCount s 0 (.length s)))
 
 (defn- append-text [acc node-text]
-  (let [s (or node-text "")]
+  (let [s (or node-text "")
+        s (if (and (:paragraph-start? acc) (seq s) (seq (:text acc))
+                   (not (string/ends-with? (:text acc) "\n"))
+                   (not (string/starts-with? s "\n")))
+            (str "\n" s) s)]
     (-> acc
         (update :text str s)
         (update :offset (fnil + 0) (scalar-count s))
-        (assoc :source-text-ended-with-newline? false))))
+        (assoc :paragraph-start? (and (:paragraph-start? acc) (empty? s))
+               :source-text-ended-with-newline? false))))
 
 (defn- append-source-text [acc node-text]
-  (let [s (whitespace/source-text->plaintext node-text (empty? (:text acc)))]
-    (-> acc
-        (update :text str s)
-        (update :offset (fnil + 0) (scalar-count s))
-        (assoc :source-text-ended-with-newline?
-               (whitespace/source-text-ends-with-newline? node-text)))))
+  (let [s (whitespace/source-text->plaintext node-text (empty? (:text acc)))
+        s (if (and (:paragraph-start? acc) (string/ends-with? (:text acc) "\n"))
+            (string/replace s #"^\n+" "") s)]
+    (assoc (append-text acc s) :source-text-ended-with-newline?
+           (whitespace/source-text-ends-with-newline? node-text))))
 
 (defn- mark-omitted [acc node-type]
   (update acc :omitted conj {:type node-type :policy "omitted"}))
@@ -182,14 +186,19 @@
        acc))))
 
 (defn render-with-annotations [parser-ir]
-  (let [{:keys [text front_notes source_notes node_counts omitted annotations
+  (let [paragraph-starts (into #{} (keep #(when (= "body" (get % "role"))
+                                            (get-in % ["node_range" "start"])))
+                               (get parser-ir "paragraphs"))
+        {:keys [text front_notes source_notes node_counts omitted annotations
                 source-text-ended-with-newline?]}
-        (reduce render-node
+        (reduce (fn [acc [index node]]
+                  (render-node (cond-> acc (contains? paragraph-starts index)
+                                       (assoc :paragraph-start? true)) node))
                 {:text "" :offset 0 :annotations []
                  :front_notes [] :source_notes []
                  :node_counts {} :omitted []
                  :source-text-ended-with-newline? false}
-                (get parser-ir "nodes"))
+                (map-indexed vector (get parser-ir "nodes")))
         text (if source-text-ended-with-newline?
                (whitespace/trim-trailing-newlines text)
                text)

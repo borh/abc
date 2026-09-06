@@ -1318,8 +1318,9 @@ fn is_heading_hint_raw(node: &Value) -> bool {
 fn heading_block_from_hint(paragraph: &mut Vec<Value>, node: &Value) -> Option<Value> {
     let source = node.get("source").and_then(Value::as_str)?;
     let target = marker_target(source)?;
-    let level = heading_level(source);
-    let style = heading_style(source);
+    let (_, directive) = source.rsplit_once("」は")?;
+    let level = heading_level(directive);
+    let style = heading_style(directive);
     let text = paragraph.last()?;
     if text.get("kind").and_then(Value::as_str) != Some("text")
         || text.get("value").and_then(Value::as_str)? != target
@@ -2926,6 +2927,26 @@ mod tests {
         let heading = find_first_node(&aat, "heading");
         assert_eq!(heading["indent"], 5);
         assert!(heading.get("x-indent").is_none());
+    }
+
+    #[test]
+    fn quoted_heading_text_cannot_change_directive_level_or_style() {
+        for (title, directive, level, style) in [
+            ("大阪入城", "中見出し", 2, "normal"),
+            ("四　クーボー大博士", "中見出し", 2, "normal"),
+            ("大窓の同行者", "小見出し", 3, "normal"),
+            ("中庭", "大見出し", 1, "normal"),
+            ("大窓", "同行中見出し", 2, "dogyo"),
+            ("同行者", "窓小見出し", 3, "mado"),
+        ] {
+            let source = format!("［＃７字下げ］{title}［＃「{title}」は{directive}］\n");
+            let aat = aat_value_for(&source);
+            let heading = find_first_node(&aat, "heading");
+            assert_eq!(heading["level"], level, "{source}");
+            assert_eq!(heading["style"], style, "{source}");
+            assert_eq!(heading["indent"], 7);
+            assert_eq!(heading["content"][0]["value"], title);
+        }
     }
 
     #[test]

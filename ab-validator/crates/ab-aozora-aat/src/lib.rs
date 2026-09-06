@@ -436,10 +436,53 @@ fn projections(
         .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
     let doc = Document::new(source.clone());
     let tree = doc.parse();
-    let nodes = from_entries(&aozora_json::node_entries(&tree))?;
+    let initial_nodes: Vec<AozoraNode> = from_entries(&aozora_json::node_entries(&tree))?;
     let diagnostics = from_entries(&aozora_json::diagnostic_entries(tree.diagnostics()))?;
     let gaiji = from_entries(&aozora_json::gaiji_entries(&source))?;
-    let ruby = from_entries(&aozora_json::ruby_entries(&tree))?;
+    let mut ruby: Vec<AozoraRubyEntry> = from_entries(&aozora_json::ruby_entries(&tree))?;
+    let mut nodes = Vec::new();
+    let mut pending = initial_nodes;
+    // The facade exposes only outer nodes. Reparse recognized quote interiors
+    // to recover ruby with exact source offsets; the worklist avoids recursive
+    // stack growth, and every new interior is strictly smaller than its owner.
+    while let Some(node) = pending.pop() {
+        if node.kind != "angleQuote" {
+            nodes.push(node);
+            continue;
+        }
+        let start = node.span.start + '≪'.len_utf8();
+        let end = node.span.end - '≫'.len_utf8();
+        nodes.push(AozoraNode {
+            kind: "angleQuoteOpen".into(),
+            span: Span {
+                start: node.span.start,
+                end: start,
+            },
+        });
+        nodes.push(AozoraNode {
+            kind: "angleQuoteClose".into(),
+            span: Span {
+                start: end,
+                end: node.span.end,
+            },
+        });
+        let inner_doc = Document::new(&span_text[start..end]);
+        let inner_tree = inner_doc.parse();
+        let inner_nodes: Vec<AozoraNode> = from_entries(&aozora_json::node_entries(&inner_tree))?;
+        for mut inner in inner_nodes {
+            inner.span.start += start;
+            inner.span.end += start;
+            pending.push(inner);
+        }
+        let inner_ruby: Vec<AozoraRubyEntry> =
+            from_entries(&aozora_json::ruby_entries(&inner_tree))?;
+        for mut entry in inner_ruby {
+            entry.span.start += start;
+            entry.span.end += start;
+            ruby.push(entry);
+        }
+    }
+    nodes.sort_by_key(|node| (node.span.start, node.span.end));
     Ok((nodes, diagnostics, gaiji, ruby))
 }
 
@@ -1419,6 +1462,11 @@ fn inline_content(
             push_source_gap(&mut content, decoded, cursor, node.span.start);
         }
         match node.kind.as_str() {
+            "angleQuoteOpen" | "angleQuoteClose" => content.push(json!({
+                "kind": "text",
+                "value": if node.kind == "angleQuoteOpen" { "《" } else { "》" },
+                "span": span_json(&node.span, &decoded.span_ctx)
+            })),
             "ruby" => content.push(ruby_node(decoded, node, ruby_by_span, gaiji_by_start)),
             "gaiji" => content.push(gaiji_node(decoded, node, gaiji_by_start)),
             "bouten" => content.push(style_node(decoded, node, "bouten")),
@@ -2053,6 +2101,65 @@ mod tests {
     use proptest::prelude::*;
 
     use super::*;
+
+    #[test]
+    fn angle_quote_preserves_visible_delimiters_and_nested_markup() {
+        let source = "前≪中｜漢《かん》※［＃「てへん＋劣」、第3水準1-84-77］後≫末。\n";
+        let aat = aat_value_for(source);
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["reading"], "かん");
+        let gaiji = find_first_node(&aat, "gaiji");
+        assert!(gaiji.is_object());
+        let encoded = serde_json::to_string(&aat).unwrap();
+        assert!(encoded.contains("《"));
+        assert!(encoded.contains("》"));
+        assert!(!encoded.contains("angleQuote"));
+    }
+
+    #[test]
+    fn angle_quote_children_keep_full_source_spans() {
+        let source = "\u{feff}作品名\r\n著者名\r\n\r\n≪前｜漢《かん》後≫\r\n";
+        let aat = aat_value_for(source);
+        let ruby = find_first_node(&aat, "ruby");
+        let decoded_source = source.trim_start_matches('\u{feff}');
+        let start = decoded_source.find("｜漢").unwrap();
+        assert_eq!(ruby["span"]["byte_start"], start);
+        assert_eq!(ruby["span"]["byte_end"], start + "｜漢《かん》".len());
+        let contents = aat["blocks"].as_array().unwrap().last().unwrap()["content"]
+            .as_array()
+            .unwrap();
+        let opening = contents
+            .iter()
+            .find(|n| n["value"].as_str().is_some_and(|v| v.starts_with('《')))
+            .unwrap();
+        assert_eq!(
+            opening["span"]["byte_start"],
+            decoded_source.find('≪').unwrap()
+        );
+        assert_eq!(
+            opening["span"]["byte_end"],
+            decoded_source.find('≪').unwrap() + 3
+        );
+    }
+
+    #[test]
+    fn angle_quote_projection_is_iterative_and_does_not_promote_annotations() {
+        let source = format!("{}｜漢《かん》{}\n", "≪".repeat(256), "≫".repeat(256));
+        let aat = aat_value_for(&source);
+        assert_eq!(find_first_node(&aat, "ruby")["reading"], "かん");
+        let content = aat["blocks"][0]["content"].as_array().unwrap();
+        assert_eq!(content.iter().filter(|n| n["value"] == "《").count(), 256);
+        assert_eq!(content.iter().filter(|n| n["value"] == "》").count(), 256);
+        let aat = aat_value_for("≪前［＃未知の注記］後≫\n");
+        let raw = find_first_node(&aat, "raw");
+        assert_eq!(raw["source"], "［＃未知の注記］");
+        let aat = aat_value_for("前≪閉じない文。\n");
+        assert!(
+            !serde_json::to_string(&aat)
+                .unwrap()
+                .contains("\"value\":\"《\"")
+        );
+    }
 
     #[derive(serde::Deserialize)]
     struct SourceDecodingVector {

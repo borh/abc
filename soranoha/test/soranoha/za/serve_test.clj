@@ -8,6 +8,8 @@
   (:require [babashka.fs :as fs]
             [charred.api :as json]
             [clojure.test :refer [deftest is testing]]
+            [clojure.string :as str]
+            [soranoha.snh.view :as view]
             [soranoha.core.hash :as hash]
             [soranoha.snh.fixture :as fx]
             [soranoha.snh.verify :as verify]
@@ -181,3 +183,63 @@
     (is (= :signature-invalid reason))
     (is (not (fs/exists? out)))
     (is (empty? (fs/list-dir (fs/parent out))))))
+
+(deftest exporter-batch-failures-install-nothing-and-remove-owned-staging
+  (let [{:keys [clone]} (chain-with-withdrawal!)
+        verify-at verify/verify-repository-at
+        batch view/with-batch
+        read-at view/read-at]
+    (doseq [failure [:first-manifest-read :blob-read :batch-termination]]
+      (let [out (tree-out)
+            exporting? (atom false)
+            batch-starts (atom 0)]
+        (with-redefs [verify/verify-repository-at
+                      (fn [v commit pins]
+                        (let [result (verify-at v commit pins)]
+                          (reset! exporting? true)
+                          result))
+                      view/with-batch
+                      (fn [v f]
+                        (if @exporting?
+                          (do (swap! batch-starts inc)
+                              (let [result (batch v f)]
+                                (is (not (fs/exists? out)) "batch must terminate before installation")
+                                (when (= failure :batch-termination)
+                                  (throw (ex-info "batch did not terminate cleanly" {:exit 1})))
+                                result))
+                          (batch v f)))
+                      view/read-at
+                      (fn [v commit path]
+                        (when @exporting?
+                          (is (some? (:batch v)) "every export read uses the hardened batch view")
+                          (when (or (= failure :first-manifest-read)
+                                    (and (= failure :blob-read) (str/starts-with? path "blobs/")))
+                            (throw (ex-info "injected export read failure" {:path path}))))
+                        (read-at v commit path))]
+          (is (thrown? clojure.lang.ExceptionInfo (export! clone out)) (name failure)))
+        (is (= 1 @batch-starts))
+        (is (not (fs/exists? out)))
+        (is (empty? (fs/list-dir (fs/parent out))) "failed export leaves no owned staging residue")))))
+
+(deftest failed-install-preserves-a-concurrently-created-destination
+  (let [{:keys [clone]} (chain-with-withdrawal!)
+        out (tree-out)
+        verified? (atom false)
+        verify-at verify/verify-repository-at
+        batch view/with-batch]
+    (with-redefs [verify/verify-repository-at
+                  (fn [v commit pins]
+                    (let [result (verify-at v commit pins)]
+                      (reset! verified? true)
+                      result))
+                  view/with-batch
+                  (fn [v f]
+                    (let [exporting? @verified?
+                          result (batch v f)]
+                      (when exporting?
+                        (fs/create-dirs out)
+                        (spit (str (fs/path out "foreign")) "foreign bytes"))
+                      result))]
+      (is (thrown? java.nio.file.FileSystemException (export! clone out))))
+    (is (= "foreign bytes" (slurp (str (fs/path out "foreign")))))
+    (is (= ["tree"] (mapv fs/file-name (fs/list-dir (fs/parent out)))))))

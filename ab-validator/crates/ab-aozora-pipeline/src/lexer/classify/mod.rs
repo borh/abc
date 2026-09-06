@@ -2571,6 +2571,39 @@ mod tests {
     }
 
     #[test]
+    fn small_ke_extends_implicit_kanji_ruby_unless_a_bar_limits_it() {
+        for (source, expected) in [
+            ("松《まつ》ヶ枝《え》", vec![("松", "まつ"), ("ヶ枝", "え")]),
+            (
+                "鳥《てう》ヶ森《もり》",
+                vec![("鳥", "てう"), ("ヶ森", "もり")],
+            ),
+            (
+                "鳥《てう》ヶ｜森《もり》",
+                vec![("鳥", "てう"), ("森", "もり")],
+            ),
+            ("六ヶ《むつか》", vec![("六ヶ", "むつか")]),
+        ] {
+            run!(out, source);
+            let actual: Vec<_> = out
+                .spans
+                .iter()
+                .filter_map(|span| {
+                    if let SpanKind::Aozora(Node::Ruby(r)) = &span.kind {
+                        Some((
+                            out.plain(r.base).expect("plain base"),
+                            out.plain(r.reading).expect("plain reading"),
+                        ))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            assert_eq!(actual, expected, "{source}");
+        }
+    }
+
+    #[test]
     fn implicit_ruby_keeps_leading_gaiji_and_kanji_in_one_base() {
         let source = "※［＃「特のへん＋廴＋聿」、第3水準1-87-71］陀多《かんだた》";
         run!(out, source);

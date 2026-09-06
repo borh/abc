@@ -203,7 +203,7 @@ pub enum RubySide {
 #[non_exhaustive]
 pub enum RubyBaseClass {
     /// CJK ideographs (main block + Ext A/B..F + compatibility) plus the
-    /// iteration marks `々` / `〆` — the historical base set.
+    /// iteration marks `々` / `〆` and the kanji-form `ヶ`.
     Kanji,
     /// Hiragana (letters + `ゝ` / `ゞ`).
     Hiragana,
@@ -225,11 +225,9 @@ pub enum RubyBaseClass {
 /// bare reading would re-parse to the *same* base, decided by comparing
 /// classes here — so both sides must move in lockstep.
 ///
-/// The small katakana `ヵ` (U+30F5) and `ヶ` (U+30F6) are deliberately
-/// excluded from every class. Treating them as `Kanji` would over-grow a
-/// base such as `数ヶ所《かしょ》` (base `所` → `数ヶ所`, wrong reading);
-/// treating them as `Katakana` would put the base on the `ヶ` itself — so
-/// `六ヶ《むつか》` correctly *declines* instead of guessing.
+/// Aozora input rules treat `ヶ` as kanji when determining ruby boundaries.
+/// An explicit `｜` limits the base when preceding kanji must stay outside it.
+/// The small katakana `ヵ` remains outside the supported implicit classes.
 #[must_use]
 pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
     Some(match ch {
@@ -238,7 +236,8 @@ pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
         | '\u{F900}'..='\u{FAFF}'
         | '\u{20000}'..='\u{2FFFF}'
         | '々'
-        | '〆' => RubyBaseClass::Kanji,
+        | '〆'
+        | 'ヶ' => RubyBaseClass::Kanji,
         '\u{3041}'..='\u{3096}' | '\u{309D}'..='\u{309E}' => RubyBaseClass::Hiragana,
         // Katakana letters ァ..ヴ, phonetic ヷ..ヺ, and ー / ヽ / ヾ — but
         // NOT the small ヵ(30F5) / ヶ(30F6) or the middle dot ・(30FB).
@@ -252,8 +251,7 @@ pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
 }
 
 /// True when `ch` can serve as (part of) an implicit-ruby *kanji* base —
-/// the historical predicate, now expressed via [`ruby_base_class`]. Byte
-/// for byte identical to the pre-`RubyBaseClass` definition.
+/// predicate is shared with the implicit-base classifier.
 #[must_use]
 pub const fn is_ruby_base_char(ch: char) -> bool {
     matches!(ruby_base_class(ch), Some(RubyBaseClass::Kanji))

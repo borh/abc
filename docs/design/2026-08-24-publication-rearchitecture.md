@@ -90,8 +90,9 @@ numbers live in the findings sections and Git history, not here):
   observations, using the existing CAS and constructive traces for
   fact-level dependencies. Release preflight checks that the source
   records and `abc/data/assessment-snapshot.json` match committed bytes
-  in one owner checkout revision, regenerates the snapshot, and refuses
-  differences with `:snapshot-regeneration-drift` (complete counts and
+  in one owner checkout revision. After building, each publication attempt
+  regenerates the snapshot and refuses differences with
+  `:snapshot-regeneration-drift` (complete counts and
   bounded named samples). The evaluated contribution set can legitimately
   differ from catalog candidates when reviewed completeness findings
   reconcile them. Under D22, absent or no longer applicable assessments
@@ -110,8 +111,9 @@ numbers live in the findings sections and Git history, not here):
   and digest checks belong to Soranoha; storage, backup and recovery
   belong to the overall NixOS configuration. The evaluator supports both
   independent assessments and D23 reliance; all sources emit the current
-  version-2 snapshot under D25. Release checks live applicability before
-  and after the build. The first accepted batch (2026-09-06) contains
+  version-2 snapshot under D25. Release checks live applicability once after
+  building, before publication or a successful no-op, on every attempt.
+  Local input and source checks remain before building. The first accepted batch (2026-09-06) contains
   蜘蛛の糸, やまなし, 走れメロス and 銀河鉄道の夜 under D23 reliance,
   evaluated against upstream commit 0e9ea3e586eb0aa34039fabfc85a407d2f98b165.
   The other 17,598 selected works remain not-evaluated. The publication
@@ -3991,3 +3993,19 @@ must not be implemented by filling catalog rows with fictitious assessments.
 Implementation work is tracked under soranoha-ejw. The policy file and
 quarantine snapshot stay unchanged until the new path is implemented and
 reviewed. No empty genesis remains the owner's decision.
+
+## Release applicability timing amendment — 2026-09-06
+
+The owner approved one fresh applicability evaluation after building and before
+publication or a successful no-op, replacing the previous before-and-after
+evaluations. Every assembly attempt, including reconciliation retries, performs
+the final evaluation and requires byte equality with the committed snapshot.
+Unavailable upstream evidence has no cached fallback. This preserves the final
+admission gate while accepting that an upstream change or outage may be discovered
+after build work has completed.
+
+Preflight still validates file inputs, policy, keys and committed assessment
+inputs before building, and captures local source identity. The final gate checks
+the built and evaluated source identities against that capture and checks that
+the committed assessment inputs have not changed. No protocol, assessment schema,
+stage identity or publication-policy change follows from this timing amendment.

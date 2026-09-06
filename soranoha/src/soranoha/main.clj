@@ -518,8 +518,8 @@
        (snapshot-drift (:value expected) supplied)))))
 
 (defn release-preflight!
-  "Validate all file inputs before capturing the corpus, then require the
-  regenerated assessment to match the committed snapshot byte for byte."
+  "Validate file inputs and capture local sources before building.
+  Live assessment applicability is checked at the publication boundary."
   [{:keys [aozora-root chain-clone upstream-origin assessment policy
            release-pub governance-pub release-key limit]
     :as opts}]
@@ -539,8 +539,7 @@
     (throw (ex-info "upstream origin must be an absolute URI"
                     {:reason :invalid-upstream-origin :origin upstream-origin})))
   (let [snapshot-bytes (fs/read-all-bytes (str assessment))
-        snapshot-value (:value (decode/decode "assessment-snapshot"
-                                              snapshot-bytes))
+        _ (decode/decode "assessment-snapshot" snapshot-bytes)
         assessment-inputs (assessment-inputs! opts)
         authority (za-release/rights-authority!
                    (fs/read-all-bytes (str policy)))
@@ -550,12 +549,15 @@
       (throw (ex-info "release signing seed does not correspond to the pinned release key"
                       {:reason :seed-key-mismatch})))
     (committed-assessment-inputs! opts (:source-bytes assessment-inputs) snapshot-bytes)
-    (let [{:keys [snapshot source-commit source-hashes]}
-          (evaluate-assessment! (dissoc opts :rdf-out) assessment-inputs)]
-      (when-not (java.util.Arrays/equals ^bytes (:bytes snapshot) ^bytes snapshot-bytes)
-        (throw (ex-info "committed assessment snapshot differs from current evaluation"
-                        (assoc (snapshot-drift (:value snapshot) snapshot-value)
-                               :reason :snapshot-regeneration-drift))))
+    (require-flags! "assessment evaluation"
+                    {"--root" (config/root (:root opts))
+                     "--clj-toolchain-id" (:clj-toolchain-id opts)})
+    (let [source-commit (source-provenance! aozora-root)
+          {:keys [source-hashes]} (assessment-source/capture-checkout
+                                   aozora-root (:source assessment-inputs) (:retained assessment-inputs))]
+      (when-not (= source-commit (source-provenance! aozora-root))
+        (throw (ex-info "source checkout changed during assessment capture"
+                        {:reason :assessment-source-changed})))
       (merge authority
              {:snapshot-bytes snapshot-bytes
               :assessment-source-bytes (:source-bytes assessment-inputs)
@@ -600,8 +602,11 @@
                                   {:reason :assessment-source-changed-during-build})))
                 (when-not (java.util.Arrays/equals ^bytes snapshot-bytes
                                                    ^bytes (get-in current [:snapshot :bytes]))
-                  (throw (ex-info "assessment changed during the build"
-                                  {:reason :reliance-changed-during-build}))))
+                  (throw (ex-info "committed assessment snapshot differs from current evaluation"
+                                  (assoc (snapshot-drift
+                                          (get-in current [:snapshot :value])
+                                          (:value (decode/decode "assessment-snapshot" snapshot-bytes)))
+                                         :reason :snapshot-regeneration-drift)))))
               (committed-assessment-inputs! opts assessment-source-bytes snapshot-bytes)
               (vreset! last-report report)
               report))

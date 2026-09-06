@@ -440,7 +440,7 @@
       file input was preflighted first"
       (is (= "source git unavailable" (error base))))))
 
-(deftest stale-snapshot-is-refused-before-the-build
+(deftest stale-snapshot-is-refused-before-publication
   ;; the case slug totality alone cannot see: the catalog loses a
   ;; contributor while every slug survives, so the committed snapshot no
   ;; longer describes the corpus under release
@@ -538,13 +538,24 @@
         (is (= [(slug-of merosu)] (:contributions-differ-sample drift)))
         (is (= 0 (:only-in-checkout-count drift)))
         (is (= 0 (:only-in-snapshot-count drift))))
-      (is (= :snapshot-regeneration-drift
-             (try (main/release! opts)
-                  nil
-                  (catch clojure.lang.ExceptionInfo e
-                    (:reason (ex-data e)))))))))
+      (let [built? (atom false)
+            published? (atom false)]
+        (with-redefs [main/execute-build! (fn [& _]
+                                            (reset! built? true)
+                                            {"aozora_git_commit" (main/source-provenance! root)
+                                             "works" {}})
+                      release/release! (fn [{:keys [build-works!]}]
+                                         (build-works! [])
+                                         (reset! published? true))]
+          (is (= :snapshot-regeneration-drift
+                 (try (main/release! opts)
+                      nil
+                      (catch clojure.lang.ExceptionInfo e
+                        (:reason (ex-data e))))))
+          (is (true? @built?))
+          (is (false? @published?)))))))
 
-(deftest current-reliance-is-rechecked-after-build
+(deftest current-reliance-is-checked-once-after-every-build-attempt
   (let [root (corpus/init-corpus! [merosu kumo])
         dir (fs/create-temp-dir {:prefix "reliance-cli"})
         run (corpus/run-corpus! root (str (fs/create-dirs (fs/path dir "build"))))
@@ -578,6 +589,7 @@
               :chain-clone clone :branch fx/branch
               :upstream-origin "https://forge.example/fixture.git"}
         current (atom {slug {:state "available" :reason nil}})
+        checks (atom 0)
         published? (atom false)]
     (testing "refreshing official evidence preserves a recorded exception"
       (let [original (fs/read-all-bytes (:assessment-source opts))
@@ -593,7 +605,7 @@
                  (get-in (:value (records/decode (fs/read-all-bytes output)))
                          ["reliances" 0 "exception"])))
           (finally (fs/write-bytes (:assessment-source opts) original)))))
-    (with-redefs [aozora/check! (fn [& _] @current)]
+    (with-redefs [aozora/check! (fn [& _] (swap! checks inc) @current)]
       (main/assessment-evaluate! (assoc opts :out (:assessment opts)))
       (commit-assessment-inputs! dir)
       (is (nil? (main/release-preflight-drift opts)))
@@ -613,7 +625,9 @@
               exported (str (fs/path dir "release-export"))]
           (with-redefs-fn {#'main/build-stages (fn [_] @selected-stages)}
             (fn []
+              (reset! checks 0)
               (is (= :published (:outcome (main/release! (assoc opts :out exported)))))
+              (is (= 1 @checks))
               (let [manifest (:head-manifest (verified-chain clone))
                     report (json/read-json (slurp (str (fs/path exported "build.json"))))]
                 (is (= [slug] (mapv #(get % "slug") (get manifest "works"))))
@@ -624,7 +638,9 @@
                 (is (not (fs/exists? (fs/path exported slug "source-fidelity.json"))))
                 (is (not (contains? (get manifest "toolchain") "source-fidelity"))))
               (swap! selected-stages assoc-in [:fidelity :stage-version] "research-only-change")
+              (reset! checks 0)
               (is (= :already-published (:outcome (main/release! opts))))
+              (is (= 1 @checks))
               (swap! selected-stages assoc :fidelity (:fidelity corpus/stage-set))
               (is (= :invalid-converter-input
                      (try (main/build! opts) nil
@@ -639,6 +655,19 @@
         (let [manifest (:head-manifest (verified-chain clone))]
           (is (empty? (get manifest "works")))
           (is (empty? (get manifest "toolchain")))))
+      (testing "every assembly attempt receives its own post-build live check"
+        (let [events (atom [])]
+          (with-redefs [main/build-stages (constantly corpus/stage-set)
+                        main/execute-build! (fn [& _] (swap! events conj :build) report)
+                        aozora/check! (fn [& _] (swap! events conj :check) @current)
+                        release/release! (fn [{:keys [build-works!]}]
+                                           (build-works! [slug])
+                                           (swap! events conj :retry)
+                                           (build-works! [slug])
+                                           (swap! events conj :publish)
+                                           {:outcome :published})]
+            (is (= :published (:outcome (main/release! opts)))))
+          (is (= [:build :check :retry :build :check :publish] @events))))
       (testing "withdrawal after preflight refuses before publication"
         (with-redefs [main/build-stages (constantly corpus/stage-set)
                       main/execute-build! (fn [& _]
@@ -647,12 +676,20 @@
                       release/release! (fn [{:keys [build-works!]}]
                                          (build-works! [slug])
                                          (reset! published? true))]
-          (is (= :reliance-changed-during-build
+          (is (= :snapshot-regeneration-drift
                  (try (main/release! opts) nil
                       (catch clojure.lang.ExceptionInfo e (or (:reason (ex-data e)) (ex-message e))))))
           (is (false? @published?))))
-      (testing "a stale accepted snapshot refuses before the build"
-        (with-redefs [main/execute-build! (fn [& _] (throw (ex-info "must not build" {})))]
-          (is (= :snapshot-regeneration-drift
-                 (try (main/release! opts) nil
-                      (catch clojure.lang.ExceptionInfo e (or (:reason (ex-data e)) (ex-message e)))))))))))
+      (testing "a stale accepted snapshot builds before the final check refuses publication"
+        (let [events (atom [])]
+          (with-redefs [main/build-stages (constantly corpus/stage-set)
+                        main/execute-build! (fn [& _] (swap! events conj :build) report)
+                        aozora/check! (fn [& _] (swap! events conj :check) @current)
+                        release/release! (fn [{:keys [build-works!]}]
+                                           (build-works! [slug])
+                                           (swap! events conj :publish)
+                                           {:outcome :published})]
+            (is (= :snapshot-regeneration-drift
+                   (try (main/release! opts) nil
+                        (catch clojure.lang.ExceptionInfo e (or (:reason (ex-data e)) (ex-message e)))))))
+          (is (= [:build :check] @events)))))))

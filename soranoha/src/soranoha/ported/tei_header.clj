@@ -248,10 +248,33 @@
   [hiccup]
   (xml/emit-str (->xml-element hiccup)))
 
+(def ^:private element-only-containers
+  #{"TEI" "teiHeader" "fileDesc" "titleStmt" "publicationStmt" "sourceDesc"
+    "encodingDesc" "profileDesc" "langUsage" "textClass" "keywords" "revisionDesc"
+    "charDecl" "char" "biblStruct" "analytic" "monogr" "imprint"
+    "text" "front" "body" "back" "div"})
+
+(defn- indent-structural-elements [element depth]
+  (let [children (:content element)]
+    (if (and (contains? element-only-containers (name (:tag element)))
+             (not= "preserve" (get (:attrs element) (xml/qname xml-ns "space")))
+             (seq children)
+             (every? #(and (map? %) (:tag %)) children))
+      (let [padding #(str "\n" (apply str (repeat (* 2 %) " ")))]
+        (assoc element :content
+               (concat
+                (mapcat (fn [child]
+                          [(padding (inc depth))
+                           (indent-structural-elements child (inc depth))])
+                        children)
+                [(padding depth)])))
+      element)))
+
 (defn hiccup->pretty-xml-string
-  "Serialise TEI hiccup to indented XML for publication/inspection artifacts."
+  "Indent structural TEI containers while leaving mixed content and preserved
+  whitespace unchanged. Unknown content models remain unformatted."
   [hiccup]
-  (xml/indent-str (->xml-element hiccup)))
+  (xml/emit-str (indent-structural-elements (->xml-element hiccup) 0)))
 
 (defn emit-xml
   "Serialise a hiccup TEI header to an XML string. The TEI namespace

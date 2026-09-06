@@ -6,7 +6,8 @@
             [soranoha.main :as main]
             [soranoha.ori.fidelity-test :as fixture]
             [soranoha.ori.render :as render]
-            [soranoha.ori.stages :as stages])
+            [soranoha.ori.stages :as stages]
+            [soranoha.ported.tei-header :as header])
   (:import [java.io ByteArrayInputStream]
            [javax.xml.parsers DocumentBuilderFactory]))
 
@@ -23,8 +24,28 @@
                     (ByteArrayInputStream. (.getBytes ^String (:tei result) "UTF-8")))
         body (.item (.getElementsByTagNameNS doc "http://www.tei-c.org/ns/1.0" "body") 0)
         paragraph (.item (.getElementsByTagNameNS body "http://www.tei-c.org/ns/1.0" "p") 0)]
+    (is (re-find #">\n  <" (:tei result)))
     (is (= "前池いけ後" (.getTextContent paragraph)))
     (is (= "css" (.getAttribute (.item (.getElementsByTagNameNS doc "http://www.tei-c.org/ns/1.0" "styleDefDecl") 0) "scheme")))))
+
+(deftest inspection-formatting-respects-mixed-content-and-space-preservation
+  (let [mixed [:div [:head "見出し"]
+               [:p [:s "前" [:ruby [:rb "犍" [:g {:ref "#g"}]] [:rt "かん"]] "後"]]
+               [:note [:seg "底本"] [:lb] [:seg "刊行日"]]]
+        preserved [:div {:xml/space "preserve"} [:p "そのまま"] [:p "次"]]
+        explicit-text [:div " " [:p "空白も本文"]]
+        hiccup [:TEI [:text [:body mixed preserved explicit-text]]]
+        factory (doto (DocumentBuilderFactory/newInstance) (.setNamespaceAware true))
+        parse #(-> (.newDocumentBuilder factory)
+                   (.parse (ByteArrayInputStream. (.getBytes ^String % "UTF-8"))))
+        compact (parse (header/hiccup->xml-string hiccup))
+        pretty (parse (header/hiccup->pretty-xml-string hiccup))
+        texts (fn [doc tag]
+                (let [nodes (.getElementsByTagNameNS doc "http://www.tei-c.org/ns/1.0" tag)]
+                  (mapv #(.getTextContent (.item nodes %)) (range (.getLength nodes)))))]
+    (doseq [tag ["head" "p" "s" "ruby" "rb" "rt" "note" "seg"]]
+      (is (= (texts compact tag) (texts pretty tag)) tag))
+    (is (= (subvec (texts compact "div") 1) (subvec (texts pretty "div") 1)))))
 
 (deftest fidelity-is-content-bound-and-review-exports-are-cache-independent
   (let [dir (fs/create-temp-dir {:prefix "fidelity-output"})

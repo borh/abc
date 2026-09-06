@@ -176,6 +176,17 @@
                                     "</ruby>先。<note type='correction'>「甍の」は底本では「薨の」</note>")]]
       (is (= "failed" (status (report s (mutation t) p) "tei-correction-notes"))))))
 
+(deftest source-note-accents-preserve-visible-text-and-layout
+  (let [s (str (compact-source "本文。") "　　　〔DIE FLU:CHTLINGE〕 〔本全集〕\n")
+        t (str/replace (compact-tei "<p>本文。</p>") "</note>"
+                       "<lb/><seg type='source-line' style='padding-inline-start: 3em'>DIE FLÜCHTLINGE 〔本全集〕</seg></note>")
+        p "本文。\n"]
+    (is (= "passed" (get (report s t p) "status")))
+    (doseq [mutation [#(str/replace % "FLÜCHTLINGE" "FLUCHTLINGE")
+                      #(str/replace % "〔本全集〕" "本全集")
+                      #(str/replace % "padding-inline-start: 3em" "padding-inline-start: 2em")]]
+      (is (= "failed" (status (report s (mutation t) p) "tei-source-note-layout"))))))
+
 (deftest accent-notation-is-scoped-and-its-delimiters-are-not-body-text
   (let [s (compact-source "〔a` la Huysmans〕 〔ma^ts de'gou^t〕 jusqu'〔a`〕 〔ae& s& o/〕 〔本全集〕 a`。")
         text "à la Huysmans mâts dégoût jusqu'à æ ß ø 〔本全集〕 a`。"

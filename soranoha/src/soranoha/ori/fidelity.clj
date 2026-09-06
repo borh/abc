@@ -336,7 +336,7 @@
                       (every? true?
                               (map (fn [s node]
                                      (let [n (count (or (re-find #"^　+" s) ""))]
-                                       (and (= (subs s n) (.getTextContent ^Node node))
+                                       (and (= (source-accents (subs s n)) (.getTextContent ^Node node))
                                             (indent-style? node "padding-inline-start" n))))
                                    notes note-lines))))
      (comparison "closing-date-layout" true

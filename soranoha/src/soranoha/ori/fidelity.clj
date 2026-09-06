@@ -163,6 +163,7 @@
 (defn- parse-line [line]
   (let [gaijis (atom [])
         rubies (atom [])
+        ruby-ambiguities (atom [])
         resolve-marker (fn [[_ level plane row cell]]
                          (or (when (or (nil? level) (= (Long/parseLong level) (+ 2 (Long/parseLong plane))))
                                (gaiji plane row cell)) "�"))
@@ -171,12 +172,14 @@
                                               (fn [text]
                                                 (doseq [marker (re-seq gaiji-pattern text)]
                                                   (swap! gaijis conj (resolve-marker marker)))
-                                                (str/replace (source-accents text) ruby-pattern
+                                                (str/replace text ruby-pattern
                                                              (fn [[_ explicit implicit reading]]
                                                                (let [base (or explicit implicit)]
-                                                                 (swap! rubies conj [(resolve-markers base) (resolve-markers reading)])
+                                                                 (swap! ruby-ambiguities conj [(ambiguous-accents? base) (ambiguous-accents? reading)])
+                                                                 (swap! rubies conj [(resolve-markers (source-accents base))
+                                                                                     (resolve-markers (source-accents reading))])
                                                                  base)))))
-        mapped (outside-corrections unpointed-source resolve-markers)
+        mapped (outside-corrections unpointed-source #(resolve-markers (source-accents %)))
         heading (re-matches #"［＃[０-９0-9]+字下げ］(.+)［＃「(.+)」は中見出し］" mapped)
         closing (re-find #"^［＃地から([０-９0-9]+)字上げ］" mapped)
         text (cond heading (if (= (nth heading 1) (nth heading 2))
@@ -186,14 +189,14 @@
         emphasis (source-annotations text)
         plain (or (:plain emphasis) text)
         unsupported? (boolean (re-find #"[［］《》｜※�]" plain))]
-    {:plain (source-angle-quotes plain) :rubies @rubies :gaijis @gaijis
+    {:plain (source-angle-quotes plain) :rubies @rubies :ruby-ambiguities @ruby-ambiguities :gaijis @gaijis
      :emphasis (mapv (fn [[start text rendition]] [start (source-angle-quotes text) rendition]) (:emphasis emphasis))
      :corrections (:corrections emphasis)
      :heading (when heading (source-angle-quotes (nth heading 1)))
      :heading-indent (when heading
                        (decimal (second (re-find #"^［＃([０-９0-9]+)字下げ］" mapped))))
      :closing-offset (when closing (decimal (second closing)))
-     :ambiguous-accent? (ambiguous-accents? line)
+     :ambiguous-accent? (ambiguous-accents? unpointed-source)
      :indent (count (or (re-find #"^　+" plain) ""))
      :unsupported? unsupported?}))
 
@@ -243,12 +246,12 @@
 (defn- comparison
   ([id expected actual] (comparison id expected actual #{}))
   ([id expected actual unknown-indexes]
-   (comparison id expected actual unknown-indexes (constantly nil)))
+   (comparison id expected actual unknown-indexes (fn [_ _] nil)))
   ([id expected actual unknown-indexes known-value]
    (let [match? (if (seq unknown-indexes)
                   (and (= (count expected) (count actual))
                        (every? true? (map-indexed #(apply = (if (contains? unknown-indexes %1)
-                                                              (map known-value %2) %2))
+                                                              (map (partial known-value %1) %2) %2))
                                                   (map vector expected actual))))
                   (= expected actual))]
      (cond
@@ -282,6 +285,8 @@
         unknown-blocks (unknown-indexes (map :ambiguous-accent? lines))
         unknown-paragraphs (unknown-indexes (map :ambiguous-accent? source-paragraphs))
         unknown-headings (unknown-indexes (map :ambiguous-accent? (filter :heading lines)))
+        unknown-rubies (into {} (keep-indexed (fn [index flags] (when (some true? flags) [index flags]))
+                                              (mapcat :ruby-ambiguities lines)))
         unknown-emphasis (unknown-indexes (map #(and (:ambiguous-accent? %) (seq (:emphasis %))) lines))
         unknown-corrections (unknown-indexes (map #(and (:ambiguous-accent? %) (seq (:corrections %))) lines))
         unknown-notes (unknown-indexes (map ambiguous-accents? notes))
@@ -309,7 +314,7 @@
      (comparison "tei-block-order"
                  (mapv #(vector (if (:heading %) "head" "p")
                                 (str/replace (:plain %) #"^　+" "")) lines)
-                 (mapv #(vector (.getLocalName ^Node %) (visible %)) blocks) unknown-blocks first)
+                 (mapv #(vector (.getLocalName ^Node %) (visible %)) blocks) unknown-blocks (fn [_ value] (first value)))
      (comparison "tei-headings" (vec (keep :heading lines))
                  (mapv #(visible %) (elements body "head")) unknown-headings)
      (comparison "tei-heading-layout" true
@@ -324,7 +329,8 @@
      (comparison "tei-ruby" (vec (mapcat :rubies lines))
                  (mapv (fn [r] [(visible (first (elements r "rb")))
                                 (.getTextContent ^Node (first (elements r "rt")))])
-                       (elements body "ruby")))
+                       (elements body "ruby")) unknown-rubies
+                 (fn [index value] (mapv #(when-not %1 %2) (get unknown-rubies index) value)))
      (comparison "tei-gaiji" (mapv #(vector % %) (mapcat :gaijis lines))
                  (mapv #(vector (.getTextContent ^Node %)
                                 (get mappings (attr % "ref") "�"))
@@ -334,12 +340,12 @@
                          (mapv (fn [[start text rendition]]
                                  [(- start (:indent line)) text rendition])
                                (:emphasis line))) lines)
-                 (mapv export-emphasis blocks) unknown-emphasis #(mapv rest %))
+                 (mapv export-emphasis blocks) unknown-emphasis (fn [_ value] (mapv rest value)))
      (comparison "tei-correction-notes"
                  (mapv (fn [line]
                          (mapv (fn [[start text]] [(- start (:indent line)) text])
                                (:corrections line))) lines)
-                 (mapv export-corrections blocks) unknown-corrections #(mapv rest %))
+                 (mapv export-corrections blocks) unknown-corrections (fn [_ value] (mapv rest value)))
      (comparison "tei-block-layout" true
                  (and (= (count source-paragraphs) (count paragraphs))
                       (every? true?
@@ -400,7 +406,9 @@
                 (try (source-parts (:text decoded))
                      (catch Exception _ nil)))
         supported? (and parts (seq (:lines parts)) (not-any? :unsupported? (:lines parts)))
-        ambiguous? (or (some :ambiguous-accent? (:lines parts)) (some ambiguous-accents? (:notes parts)))
+        ambiguous? (or (some :ambiguous-accent? (:lines parts))
+                       (some true? (mapcat identity (mapcat :ruby-ambiguities (:lines parts))))
+                       (some ambiguous-accents? (:notes parts)))
         coverage (result "source-coverage" (if (and supported? (not ambiguous?)) "passed" "not-evaluated")
                          (cond
                            (not supported?) "Unrecognized source encoding, body boundary or annotation; comparisons withheld."
@@ -420,5 +428,5 @@
                     (statuses "not-evaluated") "not-evaluated" :else "passed")
      "checks" checks
      "limitations" ["Limited to Aozora text with a 底本 colophon and either a separator preamble or a two-line title/author header; basic ruby, Aozora Latin accent notation, single-line historical double-angle quotes, non-overlapping retrospective emphasis dots, numeric JIS X 0213 gaiji, correction notes, middle headings, numeric closing offsets, and the listed indentation/sign blocks."
-                    "Ambiguous accent punctuation leaves affected line text and annotation offsets unevaluated; independent markup values and layout remain checked."
+                    "Ambiguous accent punctuation leaves affected line text, ruby components and annotation offsets unevaluated; independent markup values and layout remain checked."
                     "Blank-line spacing and title/author metadata are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))

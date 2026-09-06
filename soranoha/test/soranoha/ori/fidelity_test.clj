@@ -82,6 +82,15 @@
         t (str/replace tei "<ruby><rb>池</rb><rt>いけ</rt></ruby>"
                        "<hi rend='bouten'><ruby><rb>池</rb><rt>いけ</rt></ruby></hi>")]
     (is (= "passed" (get (report s t plaintext) "status"))))
+  (let [s (str/replace source "池《いけ》の　底" "牛《ベゴ》の舌［＃「牛の舌」に傍点］の　底")
+        t (str/replace tei "<ruby><rb>池</rb><rt>いけ</rt></ruby>の　底"
+                       "<hi rend='bouten'><ruby><rb>牛</rb><rt>ベゴ</rt></ruby>の舌</hi>の　底")
+        p (str/replace plaintext "池の　底" "牛の舌の　底")]
+    (is (= "passed" (get (report s t p) "status")))
+    (doseq [mutation [#(str/replace % "の舌</hi>" "</hi>の舌")
+                      #(str/replace % "<hi rend='bouten'><ruby><rb>牛</rb><rt>ベゴ</rt></ruby>の舌</hi>"
+                                    "<ruby><rb>牛</rb><rt>ベゴ</rt></ruby>の舌<hi rend='bouten'/>")]]
+      (is (= "failed" (status (report s (mutation t) p) "tei-emphasis")))))
   (is (= "failed" (status (report source (str/replace tei "の　底に、" "<hi rend='bouten'>の</hi>　底に、")
                                   plaintext) "tei-emphasis"))))
 
@@ -262,6 +271,21 @@
     (is (= "not-evaluated" (status r "tei-source-note-layout")))
     (is (= "passed" (status r "tei-body-text")))
     (is (= "failed" (status (report s (str/replace t "3em" "2em") "本文。\n") "tei-source-note-layout")))))
+
+(deftest ruby-accent-uncertainty-affects-only-its-own-component
+  (let [s (compact-source "｜〔C'est〕《せ》")
+        t (compact-tei "<p><ruby><rb>C'est</rb><rt>せ</rt></ruby></p>")
+        r (report s t "C'est\n")]
+    (is (= "not-evaluated" (status r "tei-ruby")))
+    (is (= "not-evaluated" (status r "plaintext-body")))
+    (is (= "failed" (status (report s (str/replace t "<rt>せ" "<rt>し") "C'est\n") "tei-ruby"))))
+  (let [s (compact-source "｜字《〔C'est〕》")
+        t (compact-tei "<p><ruby><rb>字</rb><rt>C'est</rt></ruby></p>")
+        r (report s t "字\n")]
+    (is (= "not-evaluated" (status r "tei-ruby")))
+    (is (= "passed" (status r "plaintext-body")))
+    (is (= "passed" (status r "tei-body-text")))
+    (is (= "failed" (status (report s (str/replace t "<rb>字" "<rb>文") "字\n") "tei-ruby")))))
 
 (deftest correction-quotations-do-not-add-body-ruby-or-gaiji
   (let [correction "「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」"

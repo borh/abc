@@ -406,7 +406,7 @@ fn neutralize_sentinel_collisions(text: Cow<'_, str>) -> (Cow<'_, str>, Vec<Diag
 const REPLACEMENT_CHAR: char = '\u{FFFD}';
 
 /// Rewrite every `〔...〕` span applying accent decomposition to the body.
-/// Text outside spans is copied verbatim.
+/// Converted spans lose their accent-scope brackets; literal bracket text is preserved.
 #[doc(hidden)]
 #[must_use]
 pub fn rewrite_accent_spans(input: &str) -> String {
@@ -433,7 +433,7 @@ fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic
 }
 
 /// Core of [`rewrite_accent_spans_collecting`]; when `edits` is `Some`,
-/// records one [`MapEdit`] per digraph substitution — the source digraph
+/// records delimiter deletions and one [`MapEdit`] per digraph substitution — the source digraph
 /// bytes to the replacement character, in THIS step's input/output
 /// coordinates. Length-preserving substitutions (`s&` = ß, `s,` = ş) are
 /// recorded too: an edit marks "these bytes were rewritten", exactly as the
@@ -442,7 +442,7 @@ fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic
 /// source position — a whole-span edit here once collapsed every interior
 /// fact onto the span start, which manufactured byte-identical
 /// classified-source entries out of distinct constructs.
-fn rewrite_accent_spans_collecting_core(
+pub(super) fn rewrite_accent_spans_collecting_core(
     input: &str,
     diagnostics: &mut Vec<Diagnostic>,
     mut edits: Option<&mut Vec<MapEdit>>,
@@ -470,9 +470,22 @@ fn rewrite_accent_spans_collecting_core(
         let close_abs = after_open + close_rel;
 
         let body = &input[after_open..close_abs];
-        out.push(TORTOISE_OPEN);
+        let sites = decompose_fragment_sites(body);
+        if sites.is_empty() {
+            out.push_str(&input[open_abs..close_abs + TORTOISE_CLOSE.len_utf8()]);
+            cursor = close_abs + TORTOISE_CLOSE.len_utf8();
+            continue;
+        }
+        if let Some(e) = edits.as_deref_mut() {
+            e.push(MapEdit {
+                src_start: open_abs,
+                src_end: after_open,
+                dst_start: out.len(),
+                dst_end: out.len(),
+            });
+        }
         let mut body_cursor = 0;
-        for (site_off, in_len, replacement) in decompose_fragment_sites(body) {
+        for (site_off, in_len, replacement) in sites {
             out.push_str(&body[body_cursor..site_off]);
             let dst_start = out.len();
             out.push(replacement);
@@ -499,7 +512,14 @@ fn rewrite_accent_spans_collecting_core(
             body_cursor = site_off + in_len;
         }
         out.push_str(&body[body_cursor..]);
-        out.push(TORTOISE_CLOSE);
+        if let Some(e) = edits.as_deref_mut() {
+            e.push(MapEdit {
+                src_start: close_abs,
+                src_end: close_abs + TORTOISE_CLOSE.len_utf8(),
+                dst_start: out.len(),
+                dst_end: out.len(),
+            });
+        }
 
         cursor = close_abs + TORTOISE_CLOSE.len_utf8();
     }
@@ -994,12 +1014,12 @@ mod tests {
         // to `è` inside the span so the parser never sees the lone backtick.
         let input = "〔oraison fune`bre〕";
         let out = sanitize(input);
-        assert_eq!(out.text.as_ref(), "〔oraison funèbre〕");
+        assert_eq!(out.text.as_ref(), "oraison funèbre");
         assert!(!out.text.contains('`'));
     }
 
     #[test]
-    fn tortoiseshell_brackets_are_preserved_after_decomposition() {
+    fn literal_tortoiseshell_brackets_without_accent_notation_are_preserved() {
         let input = "〔Où〕";
         let out = sanitize(input);
         assert!(out.text.contains('〔'));
@@ -1011,7 +1031,7 @@ mod tests {
         // `text,` stays as-is; only `cafe'` inside the span becomes `café`.
         let input = "text, 〔cafe'〕, rest";
         let out = sanitize(input);
-        assert_eq!(out.text.as_ref(), "text, 〔café〕, rest");
+        assert_eq!(out.text.as_ref(), "text, café, rest");
         assert!(out.text.starts_with("text,"));
     }
 
@@ -1019,7 +1039,7 @@ mod tests {
     fn multiple_tortoiseshell_spans_are_each_rewritten() {
         let input = "前〔a`〕中〔e'〕後";
         let out = sanitize(input);
-        assert_eq!(out.text.as_ref(), "前〔à〕中〔é〕後");
+        assert_eq!(out.text.as_ref(), "前à中é後");
     }
 
     #[test]
@@ -1059,7 +1079,7 @@ mod tests {
         // producing `è` and leaving the LF as the next char.
         let input = "\u{FEFF}〔fune`\r\nbre〕end";
         let out = sanitize(input);
-        assert_eq!(out.text.as_ref(), "〔funè\nbre〕end");
+        assert_eq!(out.text.as_ref(), "funè\nbreend");
         assert!(!out.text.contains('`'), "grave accent must be consumed");
     }
 
@@ -1292,7 +1312,7 @@ mod tests {
         let src = "〔Henri《ア》 Re'gnier《レ》〕";
         let out = sanitize_mapped(src);
         let dst = out.text.as_ref();
-        assert_eq!(dst, "〔Henri《ア》 Régnier《レ》〕");
+        assert_eq!(dst, "Henri《ア》 Régnier《レ》");
         for needle in ["《ア》", "《レ》", "Henri", "gnier"] {
             let d = dst.find(needle).unwrap();
             let s = src.find(needle).unwrap();
@@ -1324,7 +1344,7 @@ mod tests {
         // character in output coordinates — not one whole-span Note.
         let out = sanitize("〔ve'rite'〕");
         let dst = out.text.as_ref();
-        assert_eq!(dst, "〔vérité〕");
+        assert_eq!(dst, "vérité");
         let spans: Vec<(usize, usize)> = out
             .diagnostics
             .iter()
@@ -1376,12 +1396,12 @@ mod tests {
             );
         }
         // Pin the traced rewrite: the `\n` produced from the lone `\r`
-        // (dst byte 33, between 後 and 尾) IS an edit and maps to the
+        // (between 後 and 尾) IS an edit and maps to the
         // lone `\r`'s exact source range (src 36..37).
-        assert_eq!(&dst[33..34], "\n");
-        assert!(out.maps.is_edited(33));
-        assert_eq!(out.maps.to_source_offset(33), 36);
-        assert_eq!(out.maps.to_source_end(34), 37);
+        let newline = dst.rfind('\n').unwrap();
+        assert!(out.maps.is_edited(newline));
+        assert_eq!(out.maps.to_source_offset(newline), 36);
+        assert_eq!(out.maps.to_source_end(newline + 1), 37);
         assert_eq!(&src[36..37], "\r");
     }
 

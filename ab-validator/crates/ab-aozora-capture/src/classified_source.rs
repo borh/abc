@@ -1451,22 +1451,10 @@ mod tests {
     }
 
     #[test]
-    fn rewritten_accent_span_keeps_the_literal_tortoise_shape() {
-        // A span the sanitizer rewrites is ledgered exactly like one it never
-        // touched: two 3-byte delimiter recoveries and a typed interior. The
-        // interior plain-text run covers the source digraph bytes (`cafe'`).
+    fn rewritten_accent_scope_is_not_literal_bracket_recovery() {
         let source = "〔cafe'〕";
         let entries = live_entries(source);
-        let recovered = recovered(&entries);
-        assert_eq!(recovered.len(), 2);
-        assert_eq!(
-            (recovered[0]["start"].as_u64(), recovered[0]["end"].as_u64()),
-            (Some(0), Some(3))
-        );
-        assert_eq!(
-            (recovered[1]["start"].as_u64(), recovered[1]["end"].as_u64()),
-            (Some(8), Some(11))
-        );
+        assert!(recovered(&entries).is_empty());
         assert!(
             entries
                 .iter()
@@ -1545,22 +1533,14 @@ mod tests {
 
     #[test]
     fn unrelated_recovery_inside_accent_edit_survives() {
-        // The lexer coalesces the lone `｜` with the adjacent `〕` into one
-        // recovery run. What matters here is that each recovery keeps its own
-        // exact source span beside the rewrite site — nothing claims the
-        // whole bracketed range.
         let entries = live_entries("〔a`｜〕");
         let recovered = recovered(&entries);
-        assert_eq!(recovered.len(), 2, "{entries:#?}");
+        assert_eq!(recovered.len(), 1, "{entries:#?}");
         assert_eq!(
             (recovered[0]["start"].as_u64(), recovered[0]["end"].as_u64()),
-            (Some(0), Some(3))
+            (Some(5), Some(8))
         );
-        assert_eq!(
-            (recovered[1]["start"].as_u64(), recovered[1]["end"].as_u64()),
-            (Some(5), Some(11))
-        );
-        assert_eq!(recovered[1]["construct_witness"]["source_form"], "｜〕");
+        assert_eq!(recovered[0]["construct_witness"]["source_form"], "｜");
     }
 
     #[test]

@@ -243,38 +243,24 @@ fn scan_rule_edits(line_normalized: &str) -> Vec<(u32, u32, u32)> {
     edits
 }
 
-/// `(in_off, in_len, out_len)` edits for `〔…〕` accent decomposition over
-/// `rule_isolated`. Mirrors
-/// [`rewrite_accent_spans`](super::sanitize::rewrite_accent_spans)'
-/// span scan (unclosed `〔` ends the scan) and delegates the per-digraph
-/// deltas to [`decompose_fragment_edits`](ab_aozora_syntax::accent::decompose_fragment_edits).
+/// Offset shifts emitted by the same accent rewrite used by sanitization.
 fn scan_accent_edits(rule_isolated: &str) -> Vec<(u32, u32, u32)> {
-    use ab_aozora_syntax::accent::decompose_fragment_edits;
-
     let mut edits = Vec::new();
-    let mut cursor = 0usize;
-    while cursor < rule_isolated.len() {
-        let Some(open_rel) = rule_isolated[cursor..].find('〔') else {
-            break;
-        };
-        let open_abs = cursor + open_rel;
-        let after_open = open_abs + '〔'.len_utf8();
-        let Some(close_rel) = rule_isolated[after_open..].find('〕') else {
-            // Unclosed span: rewrite_accent_spans copies the rest verbatim.
-            break;
-        };
-        let close_abs = after_open + close_rel;
-        let body = &rule_isolated[after_open..close_abs];
-        for (in_off, in_len, out_len) in decompose_fragment_edits(body) {
-            #[allow(
-                clippy::cast_possible_truncation,
-                reason = "byte offset ≤ source.len() ≤ u32::MAX"
-            )]
-            edits.push(((after_open + in_off) as u32, in_len as u32, out_len as u32));
-        }
-        cursor = close_abs + '〕'.len_utf8();
-    }
+    super::sanitize::rewrite_accent_spans_collecting_core(
+        rule_isolated,
+        &mut Vec::new(),
+        Some(&mut edits),
+    );
     edits
+        .into_iter()
+        .map(|edit| {
+            (
+                u32::try_from(edit.src_start).expect("source length fits u32"),
+                u32::try_from(edit.src_end - edit.src_start).expect("source length fits u32"),
+                u32::try_from(edit.dst_end - edit.dst_start).expect("sanitized length fits u32"),
+            )
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -377,10 +363,10 @@ mod tests {
         // acute, which the applicability gate declines everywhere.)
         let source = "〔e~a〕";
         let map = offset_map(source);
-        // sanitized = "〔ẽa〕": 〔=0..3, ẽ=3..6, a=6..7, 〕=7..10
-        assert_eq!(map.source_offset(3), 3); // ẽ start → e~ start
-        assert_eq!(map.source_offset(6), 5); // 'a' → source 'a'
-        assert_eq!(map.source_offset(10), 9); // end
+        // sanitized = "ẽa": ẽ=0..3, a=3..4
+        assert_eq!(map.source_offset(0), 3); // ẽ start → e~ start
+        assert_eq!(map.source_offset(3), 5); // 'a' → source 'a'
+        assert_eq!(map.source_offset(4), 9); // end
         assert_map_invariants(source);
     }
 
@@ -391,11 +377,12 @@ mod tests {
     }
 
     #[test]
-    fn length_preserving_accent_needs_no_anchor() {
-        // e` → è is 2 bytes → 2 bytes: no shift, map stays identity.
+    fn length_preserving_accent_still_maps_removed_scope_brackets() {
+        // e` → è preserves width, but the surrounding scope brackets disappear.
         let source = "〔fune`bre〕";
         let map = offset_map(source);
-        assert!(map.is_identity());
+        assert!(!map.is_identity());
+        assert_eq!(map.source_offset(0), 3);
         assert_map_invariants(source);
     }
 

@@ -126,7 +126,12 @@
             abValidatorPackages."ab-aat-to-parser-ir"
           }/bin/ab-aat-to-parser-ir"
           export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
-          export AB_AAT_TO_PARSER_IR_MAPPING_V2="${ab-validator}/data/aat-to-parser-ir-mapping-v2.json"
+          export AB_AAT_TO_PARSER_IR_MAPPING_V2="${
+            builtins.path {
+              path = "${ab-validator}/data/aat-to-parser-ir-mapping-v2.json";
+              name = "aat-to-parser-ir-mapping-v2.json";
+            }
+          }"
           export HOME="${kernelDepsCache}"
           export JAVA_TOOL_OPTIONS="-Duser.home=${kernelDepsCache}"
           export CLJ_CONFIG="$HOME/.clojure"

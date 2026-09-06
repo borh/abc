@@ -30,6 +30,7 @@ expected = {
         "flake-input-policy",
         "soranoha-kernel",
         "soranoha-replay",
+        "soranoha-compare-serving",
         "regenerate-tei-profile",
         "tei-version-coherence",
         "validate",

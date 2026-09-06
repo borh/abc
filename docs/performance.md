@@ -39,3 +39,32 @@ For an optimization comparison, use the same revisions, concurrency and cache
 conditions, interleave baseline/candidate runs, and compare per-pair differences.
 Artifact equivalence and the delta oracle are correctness checks, not timing
 thresholds. A single replay establishes a baseline, not a measured speedup.
+
+Compare two installed publisher builds on an isolated, already-exported chain:
+
+```sh
+nix run .#soranoha-compare-serving -- \
+  --baseline /nix/store/BASELINE-soranoha-kernel \
+  --candidate /nix/store/CANDIDATE-soranoha-kernel \
+  --chain-clone /absolute/path/to/isolated-chain \
+  --serve-root /absolute/path/to/isolated-serve \
+  --release-pub /absolute/path/to/release.pub \
+  --governance-pub /absolute/path/to/governance.pub \
+  --out /absolute/path/to/new-comparison-directory
+```
+
+The command runs fresh JVMs in ABBA/BAAB order and records elapsed, user and system
+CPU time, peak RSS in KiB, stdout and stderr. Each activation must reuse the
+existing export, and all eight verification results must agree. It requires only
+public keys. Use a chain whose origin is also isolated: activation fetches the
+configured origin. These timings include JVM startup, full chain verification,
+and checking the exported tree; they do not measure release assembly.
+
+On Speely's isolated four-release, 72,749-blob chain, with Charred 1.042 in both
+builds, bypassing per-string buffered-writer construction yielded a median paired
+elapsed reduction of 12.8% (four pairs; percentile bootstrap interval 11.4–13.0%).
+A subsequent per-document streaming candidate yielded 15.1% (12.6–17.6%). Its
+baseline/candidate elapsed medians were 61.785/52.410 seconds and peak-RSS medians
+were 2,174,440/1,643,324 KiB. All verification results agreed. Both candidates were
+rejected against the preselected 20% elapsed-time threshold. Four pairs describe
+this experiment's limited spread, not deployment-wide latency percentiles.

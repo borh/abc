@@ -212,6 +212,10 @@
             name = "soranoha-replay";
             invocation = ''clojure -J-Xmx4g -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.replay --assets-root ${./soranoha}'';
           }) "Replay source revisions through the production build and delta oracle";
+          soranoha-compare-serving = mkScriptApp (mkSoranohaApp system {
+            name = "soranoha-compare-serving";
+            invocation = ''clojure -J-Xmx512m -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.serving --time-bin ${pkgs.time}/bin/time'';
+          }) "Compare serving activation time and peak memory in balanced order";
           regenerate-tei-profile = mkScriptApp (pkgs.writeShellScript "regenerate-tei-profile" ''
             set -euo pipefail
             target="''${1:-$PWD/soranoha}"

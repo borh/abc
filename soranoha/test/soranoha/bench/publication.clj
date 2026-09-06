@@ -139,8 +139,9 @@
              provider (:result observation-run)
              opts (assoc opts :as-of (get round "as_of") :aozora-fetch (:fetch provider))
              checkout-run (replay/measure #(replay/git! checkout "checkout" "--detach" commit))
-             assessment-run (replay/measure
-                             #(main/assessment-evaluate! (assoc opts :out (:assessment opts))))
+             assessment-ms (:milliseconds
+                            (replay/measure
+                             #(main/assessment-evaluate! (assoc opts :out (:assessment opts)))))
              _ ((:assert-complete! provider))
              review-run (replay/measure #(commit-review! review))
              release-run (measured-release! opts)
@@ -161,7 +162,7 @@
                  :checkout-ms (:milliseconds checkout-run)
                  :observation-ms (:milliseconds observation-run)
                  :review-ms (:milliseconds review-run)
-                 :assessment-ms (:milliseconds assessment-run)
+                 :assessment-ms assessment-ms
                  :release-ms (:milliseconds release-run)
                  :serving-ms (:milliseconds serving-run)
                  :repeat-release-ms (:milliseconds repeat-run)

@@ -19,11 +19,6 @@
   (throw (ex-info (str "release assembly failed: " (name reason))
                   (assoc data :reason reason))))
 
-;; --- admission --------------------------------------------------------------
-
-(def inclusion-rule admission/inclusion-rule)
-(def ^:private partition-candidates admission/partition-candidates)
-
 ;; --- evidence artifacts -----------------------------------------------------
 
 (defn- snapshot-value
@@ -130,8 +125,8 @@
                   :when (= "relied-upon" (get reliance "status"))]
             (when-not (= (get reliance "source_content_hash") (:source-content-hash (get works slug)))
               (fail! :reliance-source-content-mismatch {:slug slug})))
-        partition (partition-candidates rule
-                                        (get (:value snapshot-enc) "candidates"))
+        partition (admission/partition-candidates rule
+                                                  (get (:value snapshot-enc) "candidates"))
         report-enc (decode/encode "admission-report"
                                   (report-value (:id snapshot-enc) partition
                                                 policy-hash rule))

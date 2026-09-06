@@ -11,6 +11,7 @@
             [clojure.test :refer [deftest is testing]]
             [soranoha.core.hash :as hash]
             [soranoha.snh.decode :as decode]
+            [soranoha.snh.admission :as admission]
             [soranoha.snh.fixture :as fx]
             [soranoha.snh.transact :as transact]
             [soranoha.snh.verify :as verify]
@@ -128,9 +129,9 @@
                    "reason_code" "not-fully-evaluated"}]
                  (get report "quarantined")))
           (testing "inclusion_rule_hash binds the executable rule value"
-            (is (= (hash/sha256-canonical-json za/inclusion-rule)
+            (is (= (hash/sha256-canonical-json admission/inclusion-rule)
                    (get report "inclusion_rule_hash")))
-            (is (= (get za/inclusion-rule "id")
+            (is (= (get admission/inclusion-rule "id")
                    (get report "inclusion_rule_id"))))))
 
       (testing "include-and-flag: the invalid work publishes and is flagged"

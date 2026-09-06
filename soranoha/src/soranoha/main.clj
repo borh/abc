@@ -179,6 +179,13 @@
           candidates (if (and limit (pos? limit))
                        (vec (take limit candidates))
                        candidates)
+          selected-work-ids (set (map #(catalog/row-work-id (:row %)) candidates))
+          _ (doseq [row rows
+                    :when (and (selected-work-ids (catalog/row-work-id row))
+                               (get row catalog/ragged-key))]
+              (throw (ex-info "selected work has a ragged catalog row"
+                              {:reason :ragged-metadata-row
+                               :work-id (catalog/row-work-id row)})))
           store (engine/open-store! {:cas-dir (config/cas-dir root)
                                      :db-path (config/trace-db-path root)})
           catalog-hex (cas/put-bytes! (:cas-dir store)

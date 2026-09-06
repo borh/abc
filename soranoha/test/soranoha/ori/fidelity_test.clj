@@ -228,6 +228,24 @@
                  (str/replace s "［＃ここから２字下げ］" "［＃ここから２字下げ、未知］")]]
       (is (= "not-evaluated" (get (report bad t p) "status"))))))
 
+(deftest enclosing-indentation-and-line-alignment-are-independent
+  (let [s (compact-source "前。\n［＃ここから２字下げ］\n附記。\n［＃地から２字上げ］（大正四年八月）\n［＃ここで字下げ終わり］\n後。")
+        t (compact-tei (str "<p>前。</p><floatingText style='padding-inline-start: 2em'><body><p>附記。</p>"
+                            "<p abc:layout-kind='chitsuki' abc:layout-params='align=right;offset-from-end=2'>（大正四年八月）</p>"
+                            "</body></floatingText><p>後。</p>"))
+        p "前。\n附記。\n（大正四年八月）\n後。\n"]
+    (is (= "passed" (get (report s t p) "status")))
+    (doseq [mutation [#(str/replace % "padding-inline-start: 2em" "padding-inline-start: 3em")
+                      #(str/replace % "</body></floatingText><p>後。</p>" "<p>後。</p></body></floatingText>")
+                      #(-> % (str/replace "</body></floatingText>" "")
+                           (str/replace "<p abc:layout-kind" "</body></floatingText><p abc:layout-kind"))]]
+      (is (= "failed" (status (report s (mutation t) p) "tei-enclosing-layout")))))
+  (let [s (compact-source "［＃ここから２字下げ］\n附記。\n［＃地から２字上げ］日付\n［＃ここで字下げ終わり］")
+        t (compact-tei "<floatingText style='padding-inline-start: 2em'><body><p>附記。</p><p abc:layout-kind='chitsuki' abc:layout-params='align=right;offset-from-end=3'>日付</p></body></floatingText>")
+        report (report s t "附記。\n日付\n")]
+    (is (= "passed" (status report "tei-enclosing-layout")))
+    (is (= "failed" (status report "closing-date-layout")))))
+
 (deftest plain-preamble-and-two-character-closing-offset
   (let [body "こころ　こころ\nくるしいこころ"
         s (str "こころ\n今野大力\n\n" body "\n\n底本：本\n")

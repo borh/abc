@@ -242,6 +242,12 @@
                         (map #(vector % (visible %)))
                         (remove #(str/blank? (second %))) vec)
         source-paragraphs (vec (remove :heading lines))
+        enclosing-layouts (->> lines (filter :layout)
+                               (group-by #(get-in % [:layout :start])) (sort-by key)
+                               (filter (fn [[_ group]]
+                                         (or (get-in (first group) [:layout :sign?])
+                                             (some :closing-offset group)))))
+        enclosed-starts (set (map first enclosing-layouts))
         source-notes (filter #(#{"source-attribution" "transcriber-note"} (attr % "type"))
                              (elements doc "note"))
         note-lines (vec (mapcat #(elements % "seg") source-notes))
@@ -296,18 +302,18 @@
                       (every? true?
                               (map (fn [src [p _]]
                                      (let [layout (:layout src)]
-                                       (if (and layout (not (:sign? layout)))
+                                       (if (and layout (not (enclosed-starts (:start layout))))
                                          (and (= "jisage" (abc-attr p "layout-kind"))
                                               (= (str "indent=" (:indent layout)) (abc-attr p "layout-params")))
                                          (not= "jisage" (abc-attr p "layout-kind")))))
                                    source-paragraphs paragraphs))))
      (comparison "tei-enclosing-layout"
-                 (->> lines (filter #(get-in % [:layout :sign?]))
-                      (group-by #(get-in % [:layout :start])) (sort-by key)
-                      (mapv (fn [[start group]]
-                              [(vec (range start (+ start (count group))))
-                               {"padding-inline-start" (str (get-in (first group) [:layout :indent]) "em")
-                                "writing-mode" "horizontal-tb" "text-align" "center" "border-style" "solid"}])))
+                 (mapv (fn [[start group]]
+                         [(vec (range start (+ start (count group))))
+                          (cond-> {"padding-inline-start" (str (get-in (first group) [:layout :indent]) "em")}
+                            (get-in (first group) [:layout :sign?])
+                            (assoc "writing-mode" "horizontal-tb" "text-align" "center" "border-style" "solid"))])
+                       enclosing-layouts)
                  (let [properties ["padding-inline-start" "writing-mode" "text-align" "border-style"]]
                    (->> (elements body "floatingText")
                         (filter #(seq (select-keys (css %) properties)))

@@ -18,6 +18,7 @@
             [soranoha.snh.fixture :as fixture]
             [soranoha.snh.repo :as repo]
             [soranoha.snh.transact :as transact]
+            [soranoha.za.assemble :as assemble]
             [soranoha.za.oracle :as oracle])
   (:import [java.time LocalDate]))
 
@@ -84,6 +85,7 @@
                 #'source/capture-checkout :capture-ms
                 #'aozora/check! :aozora-ms
                 #'evaluation/evaluate! :evaluate-ms
+                #'assemble/assemble-release :assembly-ms
                 #'verify/verify-repository-at :verify-ms}
         wrappers (into {} (map (fn [[v phase]]
                                  [v (let [original @v]

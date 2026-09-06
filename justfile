@@ -83,10 +83,11 @@ soranoha-tests:
 # release-parser-reproducible: the two release binaries must rebuild
 # byte-identically. `nix build --rebuild` re-realizes each derivation and fails
 # if the freshly built output differs byte-for-byte from the cached path, so it
-# establishes reproducibility independent of any single build. This needs the
+# establishes reproducibility against the baseline built first. This needs the
 # Nix daemon (a sandboxed runCommand builder cannot invoke it), so it is a just
 # recipe rather than a checks.<system> derivation.
 release-parser-reproducible:
+	{{nix_eval}} build ./ab-validator#ab-aozora ./ab-validator#ab-aat-to-parser-ir --no-link --print-build-logs
 	{{nix_eval}} build ./ab-validator#ab-aozora --rebuild --no-link --print-build-logs
 	{{nix_eval}} build ./ab-validator#ab-aat-to-parser-ir --rebuild --no-link --print-build-logs
 	@echo "release parser binaries rebuild reproducibly"

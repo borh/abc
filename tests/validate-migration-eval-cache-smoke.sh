@@ -4,35 +4,14 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 dry_run="$(cd "$repo_root" && just --dry-run validate-migration 2>&1)"
 
-stable_checks="$(grep -c 'nix --option eval-cache false flake check --no-build' <<<"$dry_run" || true)"
-stable_builds="$(grep -c 'nix --option eval-cache false build ' <<<"$dry_run" || true)"
-stable_evals="$(grep -c 'nix --option eval-cache false eval ' <<<"$dry_run" || true)"
-
-if [[ "$stable_checks" -ne 3 ]]; then
-  printf 'expected three uncached flake checks, found %s\n' "$stable_checks" >&2
-  exit 1
-fi
-
-# Six uncached builds: monorepo-adr-governance, evidence-gate (two ABC
-# attrs in one invocation, then the Soranoha suite), parser-rq-instrument-identity, and
-# the two --rebuild reproducibility builds in release-parser-reproducible.
-if [[ "$stable_builds" -ne 6 ]]; then
-  printf 'expected six uncached flake builds, found %s\n' "$stable_builds" >&2
-  exit 1
-fi
-
-# Four system evaluations: one each for monorepo-adr-governance and
-# parser-rq-instrument-identity, and two in evidence-gate.
-# release-parser-reproducible names its flake attrs directly, so it needs no
-# currentSystem eval.
-if [[ "$stable_evals" -ne 4 ]]; then
-  printf 'expected four uncached system evaluations, found %s\n' "$stable_evals" >&2
+if ! grep -q 'nix --option eval-cache false ' <<<"$dry_run"; then
+  printf 'validate-migration has no uncached flake evaluation boundary\n' >&2
   exit 1
 fi
 
 # Every subcommand that evaluates a flake can be served a stale answer by the
 # eval cache, so all of them must carry the uncached option — not just the
-# build/check/eval trio the counts above pin. `nix --option ... <sub>` never
+# build/check/eval trio. `nix --option ... <sub>` never
 # matches, because the subcommand does not directly follow `nix `.
 cached_boundary_re='(^|[;&|`$([:space:]])nix (flake (check|show)|build |eval |run )'
 

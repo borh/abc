@@ -176,6 +176,19 @@
                                     "</ruby>先。<note type='correction'>「甍の」は底本では「薨の」</note>")]]
       (is (= "failed" (status (report s (mutation t) p) "tei-correction-notes"))))))
 
+(deftest accent-notation-is-scoped-and-its-delimiters-are-not-body-text
+  (let [s (compact-source "〔a` la Huysmans〕 〔ma^ts de'gou^t〕 jusqu'〔a`〕 〔ae& s& o/〕 〔本全集〕 a`。")
+        text "à la Huysmans mâts dégoût jusqu'à æ ß ø 〔本全集〕 a`。"
+        t (compact-tei (str "<p>" text "</p>")) p (str text "\n")]
+    (is (= "passed" (get (report s t p) "status")))
+    (doseq [mutation [#(str/replace % "à la Huysmans" "〔à la Huysmans〕")
+                      #(str/replace % "mâts" "mats")
+                      #(str/replace % "æ" "aē")
+                      #(str/replace % "〔本全集〕" "本全集")
+                      #(str/replace % "a`。" "à。")]]
+      (is (= "failed" (status (report s t (mutation p)) "plaintext-body")))
+      (is (= "failed" (status (report s (mutation t) p) "tei-body-text"))))))
+
 (deftest correction-quotations-do-not-add-body-ruby-or-gaiji
   (let [correction "「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」"
         s (compact-source (str "煖爐《ストーブ》には［＃" correction "］、後。"))

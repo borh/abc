@@ -78,6 +78,30 @@
 
 (def ruby-pattern #"(?:｜([^｜《》\n]+)|([\p{IsHan}々〆ヵヶ]+))《([^《》\n]+)》")
 
+;; Source notation table: https://www.aozora.gr.jp/accent_separation.html
+(def ^:private accents
+  (into {"s&" "ß" "ae&" "æ" "AE&" "Æ" "oe&" "œ" "OE&" "Œ"}
+        (mapcat (fn [[mark bases glyphs]] (map #(vector (str %1 mark) (str %2)) bases glyphs)))
+        [["`" "aeinouAEINOU" "àèìǹòùÀÈÌǸÒÙ"]
+         ["'" "aceilmnorsuyzACEILMNORSUYZ" "áćéíĺḿńóŕśúýźÁĆÉÍĹḾŃÓŔŚÚÝŹ"]
+         ["^" "aceghijosuACEGHIJOSU" "âĉêĝĥîĵôŝûÂĈÊĜĤÎĴÔŜÛ"]
+         ["~" "aeinouAEINOU" "ãẽĩñõũÃẼĨÑÕŨ"]
+         [":" "aeiouyAEIOU" "äëïöüÿÄËÏÖÜ"]
+         ["&" "auAU" "åůÅŮ"]
+         ["," "cstCST" "çşţÇŞŢ"]
+         ["/" "dhiloDLO" "đħɨłøĐŁØ"]
+         ["_" "aeiouAEIOU" "āēīōūĀĒĪŌŪ"]]))
+
+(def ^:private accent-pattern
+  (re-pattern (str/join "|" (map #(java.util.regex.Pattern/quote %)
+                                 (sort-by (juxt (comp - count) identity) (keys accents))))))
+
+(defn- source-accents [text]
+  (str/replace text #"〔([^〔〕\n]*)〕"
+               (fn [[original inner]]
+                 (let [converted (str/replace inner accent-pattern accents)]
+                   (if (= inner converted) original converted)))))
+
 (def ^:private correction-body
   "(?:ルビの)?「(?:[^「」\n]|「[^「」\n]*」)*」は底本では「(?:[^「」\n]|「[^「」\n]*」)*」")
 
@@ -120,7 +144,7 @@
 (defn- parse-line [line]
   (let [gaijis (atom [])
         mapped (outside-corrections line
-                                    #(str/replace % #"※［＃[^］]*?、(?:第([34])水準)?([12])-([0-9]+)-([0-9]+)］"
+                                    #(str/replace (source-accents %) #"※［＃[^］]*?、(?:第([34])水準)?([12])-([0-9]+)-([0-9]+)］"
                                                   (fn [[_ level plane row cell]]
                                                     (let [s (or (when (or (nil? level) (= (Long/parseLong level) (+ 2 (Long/parseLong plane))))
                                                                   (gaiji plane row cell)) "�")]
@@ -342,5 +366,5 @@
      "status" (cond (statuses "failed") "failed"
                     (statuses "not-evaluated") "not-evaluated" :else "passed")
      "checks" checks
-     "limitations" ["Limited to Aozora text with a 底本 colophon and either a separator preamble or a two-line title/author header; basic ruby, non-overlapping retrospective emphasis dots, numeric JIS X 0213 gaiji, correction notes, middle headings, numeric closing offsets, and the listed indentation/sign blocks."
+     "limitations" ["Limited to Aozora text with a 底本 colophon and either a separator preamble or a two-line title/author header; basic ruby, Aozora Latin accent notation, non-overlapping retrospective emphasis dots, numeric JIS X 0213 gaiji, correction notes, middle headings, numeric closing offsets, and the listed indentation/sign blocks."
                     "Blank-line spacing and title/author metadata are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))

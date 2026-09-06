@@ -59,3 +59,7 @@ remain coherent with the root lock for shared non-path inputs.
 `just typecheck` checks the five publication-whitespace functions with Typed Clojure.
 Its annotations and locked checker dependencies live in `soranoha/dev/typecheck`,
 separate from runtime dependencies and publication toolchain identities.
+
+`nix run .#soranoha-replay` measures cold-cache builds and consecutive source
+revisions with the production stages and delta oracle. See
+[performance measurements](docs/performance.md) for the command and timing scope.

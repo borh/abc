@@ -95,15 +95,16 @@
             + builtins.hashString "sha256" "${pkgs.clojure}\n${depsCache}\n${builtins.hashFile "sha256" ./soranoha/deps.edn}";
         };
 
-      mkKernelSoranohaApp =
+      mkSoranohaApp =
         system:
+        { name, invocation }:
         let
           pkgs = pkgsFor system;
           abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
           kernelDepsCache = (soranohaCljContext system).depsCache;
           cljToolchainId = (soranohaCljContext system).toolchainId;
         in
-        pkgs.writeShellScript "soranoha-kernel" ''
+        pkgs.writeShellScript name ''
           set -euo pipefail
           export PATH="${
             pkgs.lib.makeBinPath [
@@ -137,7 +138,7 @@
           export CLJ_CACHE="$scratch/cp-cache"
           export XDG_CONFIG_HOME="$scratch/xdg-config"
           cd "${./soranoha}"
-          clojure -M:soranoha/build "$@" --clj-toolchain-id "${cljToolchainId}"
+          ${invocation} "$@" --clj-toolchain-id "${cljToolchainId}"
         '';
 
       monorepoScripts =
@@ -203,7 +204,14 @@
           };
         in
         {
-          soranoha-kernel = mkScriptApp (mkKernelSoranohaApp system) "Soranoha kernel CLI (build/delta/verify) with content-derived Clojure toolchain identity";
+          soranoha-kernel = mkScriptApp (mkSoranohaApp system {
+            name = "soranoha-kernel";
+            invocation = "clojure -M:soranoha/build";
+          }) "Soranoha kernel CLI (build/delta/verify) with content-derived Clojure toolchain identity";
+          soranoha-replay = mkScriptApp (mkSoranohaApp system {
+            name = "soranoha-replay";
+            invocation = ''clojure -J-Xmx4g -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.replay --assets-root ${./soranoha}'';
+          }) "Replay source revisions through the production build and delta oracle";
           regenerate-tei-profile = mkScriptApp (pkgs.writeShellScript "regenerate-tei-profile" ''
             set -euo pipefail
             target="''${1:-$PWD/soranoha}"

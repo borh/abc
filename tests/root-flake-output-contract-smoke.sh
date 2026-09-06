@@ -29,6 +29,7 @@ expected = {
     "apps": {
         "flake-input-policy",
         "soranoha-kernel",
+        "soranoha-replay",
         "regenerate-tei-profile",
         "tei-version-coherence",
         "validate",

@@ -1,0 +1,1 @@
+{:ann [soranoha.typed.whitespace]}

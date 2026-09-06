@@ -42,6 +42,7 @@ reproducibility, and evaluates the root and validator flakes directly.
 just python-quality
 just nix-format-check
 just soranoha-tests
+just typecheck
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
 nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
 nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
@@ -54,3 +55,7 @@ configured `AB_DB_ROOT`; they are not part of the ordinary validation gate.
 
 The root `flake.lock` is the canonical lock. The `ab-validator/flake.lock` supports direct research workflows and must
 remain coherent with the root lock for shared non-path inputs.
+
+`just typecheck` checks the five publication-whitespace functions with Typed Clojure.
+Its annotations and locked checker dependencies live in `soranoha/dev/typecheck`,
+separate from runtime dependencies and publication toolchain identities.

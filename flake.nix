@@ -251,6 +251,29 @@
               <(${pkgs.jq}/bin/jq -S '{odd_hash, rng_hash, schematron_hash}' ${profile.artifacts}/tei-profile-generation.json)
             touch "$out"
           '';
+          soranoha-typecheck =
+            let
+              cljPkgs = import nixpkgs {
+                inherit system;
+                overlays = [ clj-nix.overlays.default ];
+              };
+              cache = cljPkgs.mk-deps-cache {
+                lockfile = ./soranoha/dev/typecheck/deps-lock.json;
+              };
+            in
+            pkgs.runCommand "soranoha-typecheck" { nativeBuildInputs = [ pkgs.clojure ]; } ''
+              cp -R ${./soranoha/dev/typecheck} work
+              chmod -R u+w work
+              mkdir -p work/src/soranoha/ori
+              cp ${./soranoha/src/soranoha/ori/publication_whitespace.clj} work/src/soranoha/ori/publication_whitespace.clj
+              cd work
+              export JAVA_TOOL_OPTIONS="-Duser.home=${cache}"
+              export CLJ_CONFIG="${cache}/.clojure"
+              export CLJ_CACHE="$TMPDIR/cp-cache"
+              export GITLIBS="${cache}/.gitlibs"
+              clojure -M:check
+              touch "$out"
+            '';
           # The soranoha kernel + snh conformance suite plus its lint and
           # format gates, hermetic against the wrapper's Clojure, Git, and
           # dependency-cache derivations (the same store paths the wrapper

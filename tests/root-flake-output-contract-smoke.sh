@@ -49,6 +49,7 @@ expected = {
         "monorepo-tei-version-coherence",
         "monorepo-workflow-run-lib",
         "soranoha-tests",
+        "soranoha-typecheck",
         "tei-profile-drift",
         "tei-eaj-aozora-alignment-probe-generation",
     },

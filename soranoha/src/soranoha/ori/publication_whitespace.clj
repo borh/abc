@@ -32,9 +32,4 @@
                        (string/replace #"\n+" "\n")
                        (string/replace #"^\n+" "")
                        (string/replace #"\n+$" ""))]
-    (->> (re-seq #"\n|[^\n]+" normalized)
-         (keep (fn [token]
-                 (if (= "\n" token)
-                   [:lb]
-                   (when (seq token)
-                     token)))))))
+    (interpose [:lb] (remove empty? (string/split normalized #"\n")))))

@@ -51,7 +51,7 @@ check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contr
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
 
 # Publication tests and generated TEI profile must match their checked-in sources.
-evidence-gate: soranoha-tests
+evidence-gate: soranoha-tests typecheck
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
 	{{nix_eval}} build ".#checks.$system.tei-profile-drift" \
 		"./ab-validator#checks.$system.research-clojure-tests" \
@@ -87,3 +87,7 @@ parser-rq-instrument-identity:
 		--no-link --print-build-logs
 
 validate: check-no-build evidence-gate parser-rq-instrument-identity release-parser-reproducible
+
+typecheck:
+	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
+	{{nix_eval}} build ".#checks.$system.soranoha-typecheck" --print-build-logs

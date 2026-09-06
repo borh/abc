@@ -175,6 +175,16 @@ fn walk_blocks(aat: &Value, path: &mut Vec<PathSeg>, sink: &mut impl ProjectionS
 }
 
 fn walk_block(node: &Value, path: &mut Vec<PathSeg>, sink: &mut impl ProjectionSink) {
+    // Back-matter `source_note` blocks carry the Aozora colophon and
+    // attribution lines (底本, 入力／校正, 青空文庫作成ファイル). They are
+    // provenance about the text, not the text: projecting them appends a
+    // near-identical modern-kana/ASCII tail to every work, which shows up as
+    // boilerplate "disagreement" in tokenizer comparisons and breaks the
+    // historical-kana remap. The honbun projection cuts at 底本： for the
+    // same reason.
+    if node.get("kind").and_then(Value::as_str) == Some("source_note") {
+        return;
+    }
     walk_inline_children(node, "content", path, sink);
     if let Some(children) = node.get("children").and_then(Value::as_array) {
         path.push(PathSeg::Key("children"));
@@ -384,6 +394,35 @@ mod tests {
         });
 
         assert_eq!(visible_text_projection(&aat), "前後");
+    }
+
+    #[test]
+    fn projection_excludes_back_matter_source_notes() {
+        // The colophon and attribution tail the adapter emits as
+        // `source_note` blocks is provenance, not body text.
+        let aat = json!({
+            "work_id": "w-colophon",
+            "blocks": [
+                {"kind": "paragraph", "content": [{"kind": "text", "value": "本文。\n"}]},
+                {
+                    "kind": "source_note",
+                    "placement": "back",
+                    "region_class": "colophon_metadata",
+                    "content": [{"kind": "text", "value": "底本：「全集」\n"}]
+                },
+                {
+                    "kind": "source_note",
+                    "placement": "back",
+                    "region_class": "terminal_provenance",
+                    "content": [{"kind": "text", "value": "このファイルは、インターネットの図書館、青空文庫で作られました。\n"}]
+                }
+            ]
+        });
+
+        assert_eq!(visible_text_projection(&aat), "本文。\n");
+        let (text, spans) = visible_text_projection_with_spans(&aat);
+        assert_eq!(text, "本文。\n");
+        assert!(spans.iter().all(|span| span.aat_pointer.starts_with("/blocks/0/")));
     }
 
     #[test]

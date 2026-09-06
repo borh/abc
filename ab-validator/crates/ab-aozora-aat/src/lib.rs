@@ -1317,8 +1317,7 @@ fn is_heading_hint_raw(node: &Value) -> bool {
 
 fn heading_block_from_hint(paragraph: &mut Vec<Value>, node: &Value) -> Option<Value> {
     let source = node.get("source").and_then(Value::as_str)?;
-    let target = marker_target(source)?;
-    let (_, directive) = source.rsplit_once("」は")?;
+    let (target, directive) = source.strip_prefix("［＃「")?.rsplit_once("」は")?;
     let level = heading_level(directive);
     let style = heading_style(directive);
     let text = paragraph.last()?;
@@ -2938,6 +2937,8 @@ mod tests {
             ("中庭", "大見出し", 1, "normal"),
             ("大窓", "同行中見出し", 2, "dogyo"),
             ("同行者", "窓小見出し", 3, "mado"),
+            ("死語となつた「言文一致」", "中見出し", 2, "normal"),
+            ("「言文一致」といふ語の終り", "中見出し", 2, "normal"),
         ] {
             let source = format!("［＃７字下げ］{title}［＃「{title}」は{directive}］\n");
             let aat = aat_value_for(&source);

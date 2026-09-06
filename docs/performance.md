@@ -133,7 +133,8 @@ its attestation, remains unadmitted until assessment inputs justify it. Label th
 observation fixture, source range, admitted population and cache conditions with
 any reported timings.
 
-Reference corpus run on Speely, benchmark revision `987f476c`, source commits
+Reference corpus run on Speely using installed app
+`/nix/store/l2mk0cirhrhkv1mgqmnj227gmx3l7dwb-soranoha-publication-replay`, source commits
 `19549096…` → `36bf8ec8…` → `0e9ea3e5…` (2026-04-23 through 2026-04-25):
 
 | Source date | Assessment (s) | Release (s) | Serving (s) | Repeat release + serving (s) | Executed stages |
@@ -145,7 +146,9 @@ Reference corpus run on Speely, benchmark revision `987f476c`, source commits
 The full selection grew from 17,601 to 17,602 candidates; the published population
 from 17,307 to 17,308 works. Apr 24 retained every published work entry. Apr 25
 added one, changed one and retained 17,306. Every unchanged repeat executed zero
-stages and preserved the publication commit and verified export. The fixture used
+stages and preserved the publication commit and verified export. Both consecutive
+report comparisons passed the existing delta oracle with zero unexplained
+executions. The fixture used
 34,618 URL mappings backed by the 17,308 retained reliance records, supplied as
 simulated contemporary responses over those historical commits.
 

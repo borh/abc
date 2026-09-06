@@ -14,7 +14,7 @@
 (def ^:private bom-char (char 0xFEFF))
 
 (defn- strip-bom [^String s]
-  (if (and s (pos? (.length s)) (= bom-char (.charAt s 0)))
+  (if (and s (pos? (.length s)) (= (char bom-char) (.charAt s 0)))
     (.substring s 1)
     s))
 

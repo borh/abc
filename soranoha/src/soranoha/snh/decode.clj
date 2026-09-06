@@ -27,10 +27,11 @@
            (tools.jackson.databind.json JsonMapper)))
 
 (def ^:private ^JsonMapper strict-mapper
-  (-> (JsonMapper/builder)
-      (.enable (into-array StreamReadFeature
-                           [StreamReadFeature/STRICT_DUPLICATE_DETECTION]))
-      (.build)))
+  (let [builder (JsonMapper/builder)]
+    (.enable builder ^"[Ltools.jackson.core.StreamReadFeature;"
+             (into-array StreamReadFeature
+                         [StreamReadFeature/STRICT_DUPLICATE_DETECTION]))
+    (.build builder)))
 
 (defn- reject! [reason type detail]
   (throw (ex-info (str "boundary decode rejected " type " object: " (name reason))

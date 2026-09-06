@@ -261,7 +261,7 @@
                                                        :reason (get payload "reason")})
                              "conclusion" (conclusion-quads base vocabulary (str base "accepted")
                                                             (get payload "supports") (get payload "result")))]
-                 {"fragment" (.getBytes (apply str (sort (distinct quads))) "UTF-8")}))}
+                 {"fragment" (.getBytes ^String (apply str (sort (distinct quads))) "UTF-8")}))}
          {"base" base-iri "mapping" mapping-profile "payload" payload})]
     (assoc result :kind kind :id id)))
 

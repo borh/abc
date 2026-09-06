@@ -35,8 +35,8 @@
     :else (throw (ex-info "Unsupported JCS JSON value"
                           {:value value}))))
 
-(defn canonical-json-bytes [value]
-  (.getBytes (canonical-json-string value) StandardCharsets/UTF_8))
+(defn canonical-json-bytes ^bytes [value]
+  (.getBytes ^String (canonical-json-string value) StandardCharsets/UTF_8))
 
 ;; Historical ABC identities use canonical-json-* above, including Charred's
 ;; legacy slash and non-ASCII escaping defaults. Do not change that behavior in
@@ -121,6 +121,6 @@
   [value]
   (rfc8785-string-domain-json-string* value []))
 
-(defn rfc8785-string-domain-json-bytes [value]
-  (.getBytes (rfc8785-string-domain-json-string value)
+(defn rfc8785-string-domain-json-bytes ^bytes [value]
+  (.getBytes ^String (rfc8785-string-domain-json-string value)
              StandardCharsets/UTF_8))

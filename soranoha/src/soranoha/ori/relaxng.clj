@@ -38,7 +38,7 @@
               :column (.getColumnNumber e)
               :message (.getMessage e)}))))
 
-(defn- error-handler-props [handler]
+(defn- error-handler-props ^com.thaiopensource.util.PropertyMap [handler]
   (let [builder (PropertyMapBuilder.)]
     (.put builder ValidateProperty/ERROR_HANDLER handler)
     (.toPropertyMap builder)))

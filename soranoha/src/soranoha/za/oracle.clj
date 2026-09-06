@@ -111,10 +111,11 @@
 ;; --- report boundary decode -------------------------------------------------
 
 (def ^:private ^JsonMapper strict-report-mapper
-  (-> (JsonMapper/builder)
-      (.enable (into-array StreamReadFeature
-                           [StreamReadFeature/STRICT_DUPLICATE_DETECTION]))
-      (.build)))
+  (let [builder (JsonMapper/builder)]
+    (.enable builder ^"[Ltools.jackson.core.StreamReadFeature;"
+             (into-array StreamReadFeature
+                         [StreamReadFeature/STRICT_DUPLICATE_DETECTION]))
+    (.build builder)))
 
 (defn- reject! [reason detail]
   (throw (ex-info (str "run report rejected: " (name reason))

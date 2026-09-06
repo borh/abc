@@ -72,9 +72,9 @@
     (let [source (.getNameSource entry)]
       (cond
         (= source ZipArchiveEntry$NameSource/UNICODE_EXTRA_FIELD)
-        (let [unicode-path (cast UnicodePathExtraField
-                                 (.getExtraField
-                                  entry UnicodePathExtraField/UPATH_ID))]
+        (let [^UnicodePathExtraField unicode-path (cast UnicodePathExtraField
+                                                        (.getExtraField
+                                                         entry UnicodePathExtraField/UPATH_ID))]
           (when-not unicode-path
             (throw (IllegalArgumentException.
                     "Unicode Path name source has no Unicode Path field")))
@@ -252,7 +252,7 @@
               (when retained? (.write retained buffer 0 n))
               (recur next-member))))))))
 
-(defn- caused-by? [class throwable]
+(defn- caused-by? [class ^Throwable throwable]
   (loop [cause throwable]
     (cond
       (nil? cause) false
@@ -273,13 +273,12 @@
                 message)]
     (fail! :unreadable-zip archive-path {:cause cause})))
 
-(defn- open-zip-archive [archive-path stable-file]
+(defn- open-zip-archive ^ZipFile [archive-path stable-file]
   (try
-    (-> (ZipFile/builder)
-        (.setFile (io/file stable-file))
-        (.setCharset legacy-name-charset)
-        (.setUseUnicodeExtraFields true)
-        (.get))
+    (.get (doto (ZipFile/builder)
+            (.setFile (io/file stable-file))
+            (.setCharset ^Charset legacy-name-charset)
+            (.setUseUnicodeExtraFields true)))
     (catch IOException t
       (cond
         (caused-by? CharacterCodingException t)
@@ -350,8 +349,8 @@
                 "abc-source-bundle-staged-" ".zip" attributes)]
     (try
       (Files/copy (.toPath (io/file zip-file)) staged
-                  (into-array java.nio.file.CopyOption
-                              [StandardCopyOption/REPLACE_EXISTING]))
+                  ^"[Ljava.nio.file.CopyOption;" (into-array java.nio.file.CopyOption
+                                                             [StandardCopyOption/REPLACE_EXISTING]))
       (when-not (.setReadOnly (.toFile staged))
         (throw (IOException. "could not make staged source archive read-only")))
       (.toFile staged)

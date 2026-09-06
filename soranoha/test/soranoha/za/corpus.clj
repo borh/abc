@@ -117,7 +117,7 @@
 (def fixture-toolchain "za-fixture-toolchain-1")
 
 (defn- json-bytes ^bytes [value]
-  (.getBytes (record-json/write-deterministic-json-str value) "UTF-8"))
+  (.getBytes ^String (record-json/write-deterministic-json-str value) "UTF-8"))
 
 (defn- blob-json [blob hex]
   (json/read-json (String. ^bytes (blob hex) "UTF-8")))

@@ -23,7 +23,7 @@
 (def plaintext "一\n\n　池の　底に、犍陀多。\n")
 
 (defn report [source tei plaintext]
-  (fidelity/check (.getBytes source "UTF-8") (.getBytes tei "UTF-8") (.getBytes plaintext "UTF-8")))
+  (fidelity/check (.getBytes ^String source "UTF-8") (.getBytes ^String tei "UTF-8") (.getBytes ^String plaintext "UTF-8")))
 
 (defn status [r id]
   (some #(when (= id (get % "id")) (get % "status")) (get r "checks")))
@@ -56,7 +56,7 @@
              (str/replace source "池《いけ》" "いけ《いけ》")]]
     (is (= "not-evaluated" (get (report s tei plaintext) "status"))))
   (let [r (fidelity/check (byte-array [(unchecked-byte 0x81)])
-                          (.getBytes tei "UTF-8") (.getBytes plaintext "UTF-8"))]
+                          (.getBytes ^String tei "UTF-8") (.getBytes ^String plaintext "UTF-8"))]
     (is (= "not-evaluated" (get r "status"))))
   (is (= "failed" (get (report source "<!DOCTYPE TEI SYSTEM 'file:///etc/passwd'><TEI/>" plaintext) "status"))))
 
@@ -95,8 +95,8 @@
                                   plaintext) "tei-emphasis"))))
 
 (deftest supported-encoding-and-source-boundary-layout
-  (let [r (fidelity/check (.getBytes source "windows-31j")
-                          (.getBytes tei "UTF-8") (.getBytes plaintext "UTF-8"))]
+  (let [r (fidelity/check (.getBytes ^String source "windows-31j")
+                          (.getBytes ^String tei "UTF-8") (.getBytes ^String plaintext "UTF-8"))]
     (is (= "passed" (get r "status")))
     (is (= "windows-31j" (get r "source_encoding"))))
   (let [s (str/replace source "\n\n底本：" "\n［＃地から１字上げ］（日付）\n\n底本：")

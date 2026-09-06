@@ -98,6 +98,6 @@
   [value]
   (rfc8785-safe-integer-json-string-v1* value []))
 
-(defn rfc8785-safe-integer-json-bytes-v1 [value]
-  (.getBytes (rfc8785-safe-integer-json-string-v1 value)
+(defn rfc8785-safe-integer-json-bytes-v1 ^bytes [value]
+  (.getBytes ^String (rfc8785-safe-integer-json-string-v1 value)
              StandardCharsets/UTF_8))

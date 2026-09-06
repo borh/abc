@@ -174,7 +174,7 @@
      (concat
       (duplicate-paragraph-id-errors paragraphs)
       (loop [remaining paragraphs
-             previous-end 0
+             previous-end (Long/valueOf 0)
              errors []]
         (if-let [paragraph (first remaining)]
           (let [paragraph-id (get paragraph "id")

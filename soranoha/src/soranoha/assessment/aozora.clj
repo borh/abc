@@ -49,7 +49,7 @@
             (recur total)))))))
 
 (defn- fetch-http [url]
-  (let [^HttpURLConnection c (.openConnection (.toURL (official-uri url)))]
+  (let [^HttpURLConnection c (.openConnection (.toURL ^URI (official-uri url)))]
     (try
       (.setInstanceFollowRedirects c false)
       (.setConnectTimeout c 15000)
@@ -128,7 +128,7 @@
   (let [links (atom #{}) text (StringBuilder.)
         callback (proxy [HTMLEditorKit$ParserCallback] []
                    (handleStartTag [_ attrs _]
-                     (when-let [href (.getAttribute attrs HTML$Attribute/HREF)]
+                     (when-let [href (.getAttribute ^javax.swing.text.MutableAttributeSet attrs HTML$Attribute/HREF)]
                        (try
                          (swap! links conj (str (.resolve (URI. card) (str/trim (str href)))))
                          ;; A malformed unrelated link does not change the edition assertion.

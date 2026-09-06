@@ -55,12 +55,12 @@
 
 ;; --- Ed25519 ---------------------------------------------------------------
 
-(def ^:private key-factory (KeyFactory/getInstance "Ed25519"))
+(def ^:private ^KeyFactory key-factory (KeyFactory/getInstance "Ed25519"))
 
 (defn- raw-pub->public-key
   "Decode 32 raw Ed25519 public-key bytes (RFC 8032 encoding: little-endian y,
   high bit of the last byte = x parity) into a java.security PublicKey."
-  [^bytes raw]
+  ^java.security.PublicKey [^bytes raw]
   (when-not (= 32 (alength raw))
     (throw (ex-info "Ed25519 public key must be 32 raw bytes"
                     {:length (alength raw)})))

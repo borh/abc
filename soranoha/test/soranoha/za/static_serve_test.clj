@@ -41,7 +41,7 @@
   (with-open [socket (ServerSocket. 0)]
     (.getLocalPort socket)))
 
-(def ^:private client (HttpClient/newHttpClient))
+(def ^:private ^HttpClient client (HttpClient/newHttpClient))
 
 (defn- http-get [port path]
   (let [request (-> (HttpRequest/newBuilder)
@@ -58,10 +58,10 @@
   Process once the server answers."
   ^Process [tree port]
   (let [scratch (fs/create-temp-dir {:prefix "za-caddy"})
-        builder (ProcessBuilder.
-                 ["caddy" "run" "--config"
-                  (str (fs/absolutize "config/caddy/Caddyfile"))
-                  "--adapter" "caddyfile"])
+        ^java.util.List command ["caddy" "run" "--config"
+                                 (str (fs/absolutize "config/caddy/Caddyfile"))
+                                 "--adapter" "caddyfile"]
+        builder (ProcessBuilder. command)
         env (.environment builder)]
     (.put env "SORANOHA_SERVE_LISTEN" (str "127.0.0.1:" port))
     (.put env "SORANOHA_SERVE_ROOT" (str tree))

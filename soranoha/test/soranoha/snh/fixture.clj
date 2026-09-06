@@ -68,10 +68,10 @@
   "A representative tei-validation record carrying the consumed projection:
   status and validated_artifact naming the work's TEI bytes."
   ^bytes [tei-hex failed?]
-  (.getBytes (json/write-json-str
-              {"status" (if failed? "failed" "passed")
-               "validated_artifact" (str "sha256:" tei-hex)
-               "layers" {"relax_ng" "fixture"}})
+  (.getBytes ^String (json/write-json-str
+                      {"status" (if failed? "failed" "passed")
+                       "validated_artifact" (str "sha256:" tei-hex)
+                       "layers" {"relax_ng" "fixture"}})
              "UTF-8"))
 
 (defn- work-entry [slug variant failed?]

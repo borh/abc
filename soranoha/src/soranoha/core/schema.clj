@@ -7,7 +7,7 @@
 (defn read-schema [file]
   (record-json/read-json-file file))
 
-(def ^:private schema-registry
+(def ^:private ^SchemaRegistry schema-registry
   (SchemaRegistry/withDefaultDialect SpecificationVersion/DRAFT_2020_12))
 
 (defn- ^:private instance-location->path-segments
@@ -43,8 +43,8 @@
                    :else (pr-str document-path)))))))
 
 (defn validation-errors [schema value]
-  (let [schema-json (json/write-json-str schema)
-        value-json  (json/write-json-str value)
+  (let [^String schema-json (json/write-json-str schema)
+        ^String value-json  (json/write-json-str value)
         schema-obj  (.getSchema schema-registry schema-json)
         errors      (.validate schema-obj value-json InputFormat/JSON)]
     (when (seq errors)

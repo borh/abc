@@ -152,7 +152,7 @@
 
 (deftest hex64-lf-rejects-malformed-files
   (doseq [[label bs] [["missing LF" (.getBytes (str sign/zero-head-hex "0") "US-ASCII")]
-                      ["64 bytes (no LF)" (.getBytes sign/zero-head-hex "US-ASCII")]
+                      ["64 bytes (no LF)" (.getBytes ^String sign/zero-head-hex "US-ASCII")]
                       ["uppercase hex" (.getBytes (str (apply str (repeat 64 "A")) "\n") "US-ASCII")]
                       ["66 bytes" (.getBytes (str sign/zero-head-hex "\n\n") "US-ASCII")]]]
     (testing label

@@ -24,11 +24,11 @@
         factory (doto (DocumentBuilderFactory/newInstance) (.setNamespaceAware true))
         doc (.parse (.newDocumentBuilder factory)
                     (ByteArrayInputStream. (.getBytes ^String (:tei result) "UTF-8")))
-        body (.item (.getElementsByTagNameNS doc "http://www.tei-c.org/ns/1.0" "body") 0)
+        ^org.w3c.dom.Element body (.item (.getElementsByTagNameNS doc "http://www.tei-c.org/ns/1.0" "body") 0)
         paragraph (.item (.getElementsByTagNameNS body "http://www.tei-c.org/ns/1.0" "p") 0)]
     (is (re-find #">\n  <" (:tei result)))
     (is (= "前池いけ後" (.getTextContent paragraph)))
-    (is (= "css" (.getAttribute (.item (.getElementsByTagNameNS doc "http://www.tei-c.org/ns/1.0" "styleDefDecl") 0) "scheme")))))
+    (is (= "css" (.getAttribute ^org.w3c.dom.Element (.item (.getElementsByTagNameNS doc "http://www.tei-c.org/ns/1.0" "styleDefDecl") 0) "scheme")))))
 
 (deftest inspection-formatting-respects-mixed-content-and-space-preservation
   (let [mixed [:div [:head "見出し"]
@@ -42,7 +42,7 @@
                    (.parse (ByteArrayInputStream. (.getBytes ^String % "UTF-8"))))
         compact (parse (header/hiccup->xml-string hiccup))
         pretty (parse (header/hiccup->pretty-xml-string hiccup))
-        texts (fn [doc tag]
+        texts (fn [^org.w3c.dom.Document doc ^String tag]
                 (let [nodes (.getElementsByTagNameNS doc "http://www.tei-c.org/ns/1.0" tag)]
                   (mapv #(.getTextContent (.item nodes %)) (range (.getLength nodes)))))]
     (doseq [tag ["head" "p" "s" "ruby" "rb" "rt" "note" "seg"]]

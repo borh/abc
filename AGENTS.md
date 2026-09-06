@@ -40,7 +40,7 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 - Rust: use the `./ab-validator#checks...` Nix checks for cargo check, clippy,
   fmt, and tests.
 - Python: all tracked Python should pass ruff format/check and mypy via `just python-quality`.
-- Clojure: `just soranoha-tests` runs the publication tests with clj-kondo and cljfmt.
+- Clojure: `just soranoha-tests` runs publication tests, clj-kondo, cljfmt, and rejects project reflection warnings. Kaocha enables `clojure.core/*warn-on-reflection*` through `:bindings`; add precise Java type hints where interop needs them.
 - Nix: run `nixfmt` or `just nix-format-check` for Nix changes.
 - Comments: follow `docs/comment-standards.md`; verify with
   `scripts/comment-hygiene-check.sh` (no transient task/plan/spec/issue

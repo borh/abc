@@ -532,7 +532,7 @@
                               (assoc (:blobs genesis) target-hex
                                      ;; same length, different bytes: only
                                      ;; the hash check can reject it
-                                     (byte-array (alength target-bytes)
+                                     (byte-array (alength ^bytes target-bytes)
                                                  (byte 120))))})
         successor (assembled {:selection-params {"config" "fixture" "round" 2}}
                              g-manifest)

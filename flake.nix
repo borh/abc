@@ -288,7 +288,11 @@
                 export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
                 export GITLIBS="$HOME/.gitlibs"
 
-                clojure -M:test
+                set -o pipefail
+                clojure -M:test 2>&1 | tee test-output.log
+                if grep -q "^Reflection warning, soranoha/" test-output.log; then
+                  exit 1
+                fi
 
                 mkdir -p "$out"
                 echo "soranoha suite, lint, and format checks passed" > "$out/result.txt"

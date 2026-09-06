@@ -15,7 +15,7 @@
   (keyword (or (when-not (string/blank? role) role)
                (if (= kind :report) "warning" "error"))))
 
-(defn- finding [label rule-id context kind message]
+(defn- finding [label rule-id context kind ^com.helger.schematron.svrl.AbstractSVRLMessage message]
   {:label label
    :rule-id rule-id
    :severity (severity kind (.getRole message))
@@ -36,7 +36,7 @@
 ;; per-call mutable state.
 (defonce ^:private resource-cache (atom {}))
 
-(defn- schematron-resource [schema-path]
+(defn- schematron-resource ^SchematronResourceSCH [schema-path]
   (let [path (fs/path schema-path)
         cache-key [(str (fs/canonicalize path)) (fs/last-modified-time path)]]
     (or (get @resource-cache cache-key)
@@ -47,7 +47,7 @@
           (swap! resource-cache assoc cache-key resource)
           resource))))
 
-(defn- svrl-findings [label svrl]
+(defn- svrl-findings [label ^com.helger.schematron.svrl.jaxb.SchematronOutputType svrl]
   (loop [items (seq (.getActivePatternAndFiredRuleAndFailedAssert svrl))
          rule-id nil
          context nil

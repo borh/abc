@@ -115,10 +115,11 @@
 (defn projection [manifest] (select-keys manifest projection-keys))
 
 (def ^:private ^JsonMapper strict-record-mapper
-  (-> (JsonMapper/builder)
-      (.enable (into-array StreamReadFeature
-                           [StreamReadFeature/STRICT_DUPLICATE_DETECTION]))
-      (.build)))
+  (let [builder (JsonMapper/builder)]
+    (.enable builder ^"[Ltools.jackson.core.StreamReadFeature;"
+             (into-array StreamReadFeature
+                         [StreamReadFeature/STRICT_DUPLICATE_DETECTION]))
+    (.build builder)))
 
 (def ^:private validation-statuses #{"passed" "warning" "failed"})
 
@@ -132,13 +133,13 @@
   ex-info with :reason :validation-record-unreadable or
   :validation-status-unknown."
   [^bytes blob]
-  (let [node (try (.readTree strict-record-mapper blob)
-                  (catch Exception e
-                    (throw (ex-info "validation record unreadable"
-                                    {:reason :validation-record-unreadable
-                                     :cause (ex-message e)}))))
-        field (fn [name] (let [f (.get node name)]
-                           (when (and (some? f) (.isTextual f)) (.textValue f))))
+  (let [^tools.jackson.databind.JsonNode node (try (.readTree strict-record-mapper blob)
+                                                   (catch Exception e
+                                                     (throw (ex-info "validation record unreadable"
+                                                                     {:reason :validation-record-unreadable
+                                                                      :cause (ex-message e)}))))
+        field (fn [^String name] (let [f (.get node name)]
+                                   (when (and (some? f) (.isTextual f)) (.textValue f))))
         status (field "status")
         validated (field "validated_artifact")]
     (when-not (and (.isObject node) status validated)

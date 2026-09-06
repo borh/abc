@@ -14,7 +14,7 @@
   (when s (Normalizer/normalize s Normalizer$Form/NFC)))
 
 (defn- strip-bom [^String s]
-  (if (and s (pos? (.length s)) (= bom-char (.charAt s 0)))
+  (if (and s (pos? (.length s)) (= (char bom-char) (.charAt s 0)))
     (.substring s 1)
     s))
 

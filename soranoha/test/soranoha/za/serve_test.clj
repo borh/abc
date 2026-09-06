@@ -142,7 +142,7 @@
                         (:reason (ex-data e))))]
       (is (= :destination-exists reason))
       (is (not (fs/exists? (fs/path out verify/head-path))))
-      (is (= "not chain content" (String. (fs/read-all-bytes stray) "UTF-8")))
+      (is (= "not chain content" (String. ^bytes (fs/read-all-bytes stray) "UTF-8")))
       (is (= [(str (fs/file-name out))]
              (map fs/file-name (fs/list-dir (fs/parent out))))
           "the refused export leaves no staging residue"))))
@@ -159,7 +159,7 @@
     (let [result (export! clone out)]
       (is (= 3 (:releases result)))
       (is (fs/exists? (fs/path out verify/head-path)))
-      (is (= "irreplaceable" (String. (fs/read-all-bytes foreign) "UTF-8")))
+      (is (= "irreplaceable" (String. ^bytes (fs/read-all-bytes foreign) "UTF-8")))
       (is (= #{(str (fs/file-name out)) (str (fs/file-name out) ".staging")}
              (set (map fs/file-name (fs/list-dir (fs/parent out)))))
           "the export's own staging directory is gone; the foreign one stays"))))

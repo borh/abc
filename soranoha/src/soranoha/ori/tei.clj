@@ -436,7 +436,7 @@
 
 (defn- validate-paragraph-ranges! [nodes paragraphs]
   (loop [remaining paragraphs
-         prior-end 0]
+         prior-end (Long/valueOf 0)]
     (when-let [paragraph (first remaining)]
       (let [{start "start" end "end"} (paragraph-range paragraph)]
         (when-not (and (integer? start)

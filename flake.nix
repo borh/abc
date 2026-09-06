@@ -305,8 +305,8 @@
           # dependency-cache derivations (the same store paths the wrapper
           # binds; not the wrapper's complete environment). git backs the
           # repository-view and publication-transaction test fixtures. The
-          # ported tree is excluded from lint/format: byte fidelity to the
-          # abc originals is intentional there.
+          # ported tree retains its upstream formatting conventions and is
+          # excluded from the kernel lint/format gate.
           soranoha-tests =
             pkgs.runCommand "soranoha-tests"
               {
@@ -330,6 +330,8 @@
                 mkdir -p abc/test/fixtures/canonicalization
                 cp ${self}/abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json \
                   abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json
+                mkdir -p abc/schemas
+                cp ${self}/abc/schemas/tei-profile.rng abc/schemas/tei-profile.rng
                 cd source
 
                 find src test -name '*.clj' -not -path '*/ported/*' -print0 \

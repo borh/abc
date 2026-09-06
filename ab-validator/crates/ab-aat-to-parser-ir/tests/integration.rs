@@ -2461,36 +2461,36 @@ fn v2_explicit_source_note_converts_direct() {
 }
 
 #[test]
-fn v2_source_note_unknown_region_class_fails_closed() {
+fn emitted_colophon_note_converts_to_transcriber_note() {
     let (schemas, mapping) = v2_schemas_and_mapping();
-    let aat = json!({
-        "version": 2, "work_id": "t-source-note-unmapped",
-        "blocks": [
-            {
-                "kind": "source_note",
-                "placement": "back",
-                "region_class": "colophon_metadata",
-                "content": [{ "kind": "text", "value": "発行者：テスト" }],
-                "span": { "line_start": 10, "line_end": 10, "byte_start": 100, "byte_end": 120 }
-            }
-        ],
-        "meta": v2_test_meta()
-    });
-
-    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+    let source =
+        "本文。\n\n底本：「作品集」\n※「□」には、底本では「◆」が内接しています。\n入力：入力者\n";
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
-        schemas,
+        schemas: schemas.clone(),
         options: default_test_options(),
     })
-    .unwrap_err();
-
-    assert!(
-        error
-            .to_string()
-            .contains("unmapped source_note region_class"),
-        "{error}"
+    .unwrap();
+    let notes: Vec<_> = output.parser_ir["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|node| node["type"] == "source-note")
+        .collect();
+    assert_eq!(notes.len(), 2);
+    assert_eq!(notes[0]["note_type"], "source-attribution");
+    assert_eq!(notes[1]["note_type"], "transcriber-note");
+    assert_eq!(notes[1]["placement"], "back");
+    assert_eq!(notes[1]["classification"], "direct");
+    assert_eq!(
+        notes[1]["text"],
+        "※「□」には、底本では「◆」が内接しています。\n入力：入力者\n"
     );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
 #[test]

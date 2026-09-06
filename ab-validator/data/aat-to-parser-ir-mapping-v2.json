@@ -5396,7 +5396,7 @@
       "aat_pointer": "blocks[].source_note.region_class",
       "parser_ir_pointer": "(source-note.note_type)",
       "action": "project",
-      "description": "region_class terminal_provenance → note_type source-attribution."
+      "description": "region_class terminal_provenance → note_type source-attribution; colophon_metadata → transcriber-note."
     },
     {
       "rule_id": "L-470",

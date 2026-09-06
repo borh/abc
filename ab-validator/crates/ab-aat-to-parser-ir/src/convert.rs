@@ -554,6 +554,7 @@ fn map_block(
             let region_class_pointer = format!("{structural_pointer}.region_class");
             let note_type = match region_class {
                 "terminal_provenance" => "source-attribution",
+                "colophon_metadata" => "transcriber-note",
                 other => bail!("unmapped source_note region_class {other:?} at {path}"),
             };
             recorder.record(

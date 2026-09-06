@@ -670,8 +670,7 @@ const COLOPHON_HEADS: [&str; 4] = ["入力：", "校正：", "青空文庫作成
 /// The AAT emitter's job is different: it must always produce SOME AAT
 /// document for arbitrary stdin, so failing closed here would turn a
 /// corpus-absent edge case into a hard error for end users. Instead this
-/// classifies the line `Colophon` (excluded from `source_note` emission,
-/// same as a real colophon line) and records its tail-relative line index
+/// classifies the line `Colophon` and records its tail-relative line index
 /// in the returned `Vec<usize>` so the caller can emit a
 /// `tail-line-unclassified` warning — nothing is silently interpreted as
 /// terminal provenance.
@@ -731,20 +730,9 @@ fn tail_span_json(range: &Range<usize>, tail_offset: usize, ctx: &SpanContext) -
     })
 }
 
-/// Builds trailing `source_note` blocks from `decoded.sanitized_tail`
-/// (see `DecodedSource::sanitized_tail`'s doc comment for what "tail"
-/// means and where it starts). Splits the tail into terminator-inclusive
-/// lines (`line_ranges`, the same `\n`/`\r\n`/bare-`\r` boundary set
-/// `line_starts` uses), classifies each line (`classify_tail`), and
-/// groups CONTIGUOUS `TerminalProvenance` lines into one `source_note`
-/// block per group — a `Blank` or `Colophon` line ends a group.
-/// `colophon_metadata` lines are excluded from AAT entirely (measured
-/// separately by the source-region instrument;
-/// see ADR 0037),
-/// as is a work with no tail at all (`sanitized_tail` empty — no blocks,
-/// no warnings). Returns `(blocks, warnings)`: the `warnings` are only
-/// ever `tail-line-unclassified` fallback entries (see `classify_tail`'s
-/// doc comment); a well-formed tail produces none.
+/// Group nonblank tail lines into source notes. Attribution and colophon keep
+/// distinct region classes; blanks and class changes end a group. Content
+/// values and spans retain the source lines, including their terminators.
 fn source_notes_from_tail(decoded: &DecodedSource) -> (Vec<Value>, Vec<Value>) {
     if decoded.sanitized_tail.is_empty() {
         return (Vec::new(), Vec::new());
@@ -768,25 +756,38 @@ fn source_notes_from_tail(decoded: &DecodedSource) -> (Vec<Value>, Vec<Value>) {
         .collect::<Vec<_>>();
     let mut blocks = Vec::new();
     let mut group = Vec::new();
+    let mut group_region = None;
     for index in 0..classes.len() {
-        if classes[index] == TailLineClass::TerminalProvenance {
+        let region = match classes[index] {
+            TailLineClass::TerminalProvenance => Some("terminal_provenance"),
+            TailLineClass::Colophon => Some("colophon_metadata"),
+            TailLineClass::Blank => None,
+        };
+        if region != group_region && !group.is_empty() {
+            blocks.push(source_note_block(
+                mem::take(&mut group),
+                group_region.expect("nonempty group has a region"),
+            ));
+        }
+        group_region = region;
+        if region.is_some() {
             group.push(json!({
                 "kind": "text",
                 "value": lines[index],
                 "span": tail_span_json(&ranges[index], decoded.tail_offset, &decoded.span_ctx)
             }));
-        } else if !group.is_empty() {
-            blocks.push(source_note_block(mem::take(&mut group)));
         }
     }
     if !group.is_empty() {
-        blocks.push(source_note_block(group));
+        blocks.push(source_note_block(
+            group,
+            group_region.expect("nonempty group has a region"),
+        ));
     }
     (blocks, warnings)
 }
 
-/// One `source_note` block (`placement: "back"`,
-/// `region_class: "terminal_provenance"`) from a non-empty run of
+/// One back-matter `source_note` block from a non-empty run of
 /// `{kind: "text", value, span}` content nodes. The block `span`
 /// aggregates the first content span's `byte_start`/`line_start` and the
 /// last content span's `byte_end`/`line_end`.
@@ -794,13 +795,13 @@ fn source_notes_from_tail(decoded: &DecodedSource) -> (Vec<Value>, Vec<Value>) {
     clippy::needless_pass_by_value,
     reason = "content is consumed (moved into the returned block); a slice would force an extra clone at the one call site"
 )]
-fn source_note_block(content: Vec<Value>) -> Value {
+fn source_note_block(content: Vec<Value>, region_class: &str) -> Value {
     let first_span = content[0]["span"].clone();
     let last_span = content[content.len() - 1]["span"].clone();
     json!({
         "kind": "source_note",
         "placement": "back",
-        "region_class": "terminal_provenance",
+        "region_class": region_class,
         "content": content,
         "span": {
             "byte_start": first_span["byte_start"],
@@ -3064,6 +3065,31 @@ mod tests {
     // --- source_note emission -------------------------------------------
 
     #[test]
+    fn explanatory_colophon_note_is_retained_separately_from_attribution() {
+        let source = "本文。\n\n底本：「作品集」\n\n※「□」には、底本では「◆」が内接しています。\n入力：入力者\n";
+        let aat = aat_value_for(source);
+        let notes: Vec<_> = top_level_blocks(&aat)
+            .iter()
+            .filter(|block| block["kind"] == "source_note")
+            .collect();
+        assert_eq!(notes.len(), 2);
+        assert_eq!(notes[0]["region_class"], "terminal_provenance");
+        assert_eq!(notes[1]["region_class"], "colophon_metadata");
+        assert_eq!(
+            notes[1]["content"][0]["value"],
+            "※「□」には、底本では「◆」が内接しています。\n"
+        );
+        assert_eq!(notes[1]["content"][1]["value"], "入力：入力者\n");
+        for note in notes {
+            for line in note["content"].as_array().unwrap() {
+                let start = usize::try_from(line["span"]["byte_start"].as_u64().unwrap()).unwrap();
+                let end = usize::try_from(line["span"]["byte_end"].as_u64().unwrap()).unwrap();
+                assert_eq!(&source[start..end], line["value"].as_str().unwrap());
+            }
+        }
+    }
+
+    #[test]
     fn terminal_provenance_tail_emits_source_note() {
         let src = "本文です。\n\n底本：「作品集」文庫社\n　1990（平成2）年5月10日発行\n入力：someone\n校正：other\n";
         let aat = aat_value_for(src);
@@ -3071,13 +3097,14 @@ mod tests {
             .iter()
             .filter(|b| b["kind"] == "source_note")
             .collect();
-        assert_eq!(notes.len(), 1);
+        assert_eq!(notes.len(), 2);
+        assert_eq!(notes[1]["region_class"], "colophon_metadata");
+        assert_eq!(notes[1]["content"][0]["value"], "入力：someone\n");
+        assert_eq!(notes[1]["content"][1]["value"], "校正：other\n");
         let note = notes[0];
         assert_eq!(note["placement"], "back");
         assert_eq!(note["region_class"], "terminal_provenance");
-        // one text inline per terminal-provenance line (底本 + its
-        // continuation date line), colophon lines (入力/校正) EXCLUDED;
-        // values PRESERVE the line terminator
+        // One text inline per attribution line, with its terminator.
         let content = note["content"].as_array().unwrap();
         assert_eq!(content.len(), 2);
         assert_eq!(content[0]["value"], "底本：「作品集」文庫社\n");
@@ -3097,10 +3124,8 @@ mod tests {
     }
 
     #[test]
-    fn stateful_boundary_date_after_colophon_head_is_excluded() {
-        // The reviewer's distinguishing case: a date-shaped line AFTER
-        // 入力： stays colophon (excluded), even though it is shaped
-        // identically to a 底本 continuation line.
+    fn stateful_boundary_date_after_colophon_head_stays_colophon() {
+        // A date after input credits belongs to the colophon, not attribution.
         let src = "本文。\n\n底本：「X」Y社\n入力：someone\n　2005（平成17）年1月1日作成\n";
         let aat = aat_value_for(src);
         let note = top_level_blocks(&aat)
@@ -3108,7 +3133,15 @@ mod tests {
             .find(|b| b["kind"] == "source_note")
             .unwrap()
             .clone();
-        assert_eq!(note["content"].as_array().unwrap().len(), 1); // only the 底本 line
+        assert_eq!(note["content"].as_array().unwrap().len(), 1);
+        let colophon = top_level_blocks(&aat)
+            .iter()
+            .find(|block| block["region_class"] == "colophon_metadata")
+            .unwrap();
+        assert_eq!(
+            colophon["content"][1]["value"],
+            "　2005（平成17）年1月1日作成\n"
+        );
     }
 
     #[test]
@@ -3122,7 +3155,7 @@ mod tests {
     }
 
     #[test]
-    fn two_non_contiguous_provenance_groups_emit_two_source_notes() {
+    fn alternating_attribution_and_colophon_groups_retain_source_order() {
         // A colophon block interrupts two provenance blocks — each
         // contiguous TerminalProvenance run is its own source_note.
         let src = "本文。\n\n底本：「A」X社\n入力：someone\n底本の親本：「B」Y社\n入力：other\n";
@@ -3131,10 +3164,24 @@ mod tests {
             .iter()
             .filter(|b| b["kind"] == "source_note")
             .collect();
-        assert_eq!(notes.len(), 2);
+        assert_eq!(notes.len(), 4);
+        let regions: Vec<_> = notes
+            .iter()
+            .map(|note| note["region_class"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            regions,
+            [
+                "terminal_provenance",
+                "colophon_metadata",
+                "terminal_provenance",
+                "colophon_metadata"
+            ]
+        );
         assert_eq!(notes[0]["content"].as_array().unwrap().len(), 1);
-        assert_eq!(notes[1]["content"].as_array().unwrap().len(), 1);
-        assert_eq!(notes[1]["content"][0]["value"], "底本の親本：「B」Y社\n");
+        assert_eq!(notes[1]["content"][0]["value"], "入力：someone\n");
+        assert_eq!(notes[2]["content"][0]["value"], "底本の親本：「B」Y社\n");
+        assert_eq!(notes[3]["content"][0]["value"], "入力：other\n");
     }
 
     /// A real `decode_source_bytes` tail's first line is ALWAYS a
@@ -3160,9 +3207,12 @@ mod tests {
         decoded.sanitized_tail = "何かの一行\n底本：「X」Y社\n".to_owned();
         decoded.tail_offset = 0;
         let (blocks, warnings) = source_notes_from_tail(&decoded);
-        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks.len(), 2);
         assert_eq!(blocks[0]["kind"], "source_note");
-        let content = blocks[0]["content"].as_array().unwrap();
+        assert_eq!(blocks[0]["region_class"], "colophon_metadata");
+        assert_eq!(blocks[0]["content"][0]["value"], "何かの一行\n");
+        assert_eq!(blocks[1]["region_class"], "terminal_provenance");
+        let content = blocks[1]["content"].as_array().unwrap();
         assert_eq!(content.len(), 1);
         assert_eq!(content[0]["value"], "底本：「X」Y社\n");
         assert_eq!(warnings.len(), 1, "{warnings:?}");

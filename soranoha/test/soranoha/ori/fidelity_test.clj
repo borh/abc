@@ -176,6 +176,22 @@
                                     "</ruby>先。<note type='correction'>「甍の」は底本では「薨の」</note>")]]
       (is (= "failed" (status (report s (mutation t) p) "tei-correction-notes"))))))
 
+(deftest correction-quotations-do-not-add-body-ruby-or-gaiji
+  (let [correction "「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」"
+        s (compact-source (str "煖爐《ストーブ》には［＃" correction "］、後。"))
+        t (compact-tei (str "<p><ruby><rb>煖爐</rb><rt>ストーブ</rt></ruby>には<note type='correction'>"
+                            correction "</note>、後。</p>"))
+        p "煖爐には、後。\n"]
+    (is (= "passed" (get (report s t p) "status")))
+    (is (= "failed" (status (report s (str/replace t "<rt>ストーブ</rt>" "<rt>誤読</rt>") p) "tei-ruby")))
+    (is (= "failed" (status (report s (str/replace t "底本では「煖燼《ストーブ》" "底本では「煖燼《誤読》") p)
+                            "tei-correction-notes"))))
+  (let [correction "「※［＃「目＋旬」、第3水準1-88-80］《めくば》せを」は底本では「※［＃「目＋句」、第4水準2-81-91］《めくば》せを」"
+        s (compact-source (str "目［＃" correction "］後。"))
+        t (compact-tei (str "<p>目<note type='correction'>" correction "</note>後。</p>"))]
+    (is (= "passed" (get (report s t "目後。\n") "status")))
+    (is (= "failed" (status (report s (str/replace t "1-88-80" "1-88-81") "目後。\n") "tei-correction-notes")))))
+
 (deftest scoped-layout-preserves-every-line-and-property
   (let [s (compact-source "［＃ここから４字下げ、横書き、中央揃え、罫囲み］\nRESTAURANT\n西洋料理店\n［＃ここで字下げ終わり］\nといふ札。")
         attrs " style='padding-inline-start: 4em; writing-mode: horizontal-tb; text-align: center; border-style: solid'"

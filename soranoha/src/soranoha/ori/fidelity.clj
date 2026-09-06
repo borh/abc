@@ -78,8 +78,18 @@
 
 (def ruby-pattern #"(?:｜([^｜《》\n]+)|([\p{IsHan}々〆ヵヶ]+))《([^《》\n]+)》")
 
+(def ^:private correction-body
+  "(?:ルビの)?「(?:[^「」\n]|「[^「」\n]*」)*」は底本では「(?:[^「」\n]|「[^「」\n]*」)*」")
+
+(defn- outside-corrections [text transform]
+  (let [matcher (re-matcher (re-pattern (str "［＃" correction-body "］")) text)]
+    (loop [end 0 result ""]
+      (if (.find matcher)
+        (recur (.end matcher) (str result (transform (subs text end (.start matcher))) (.group matcher)))
+        (str result (transform (subs text end)))))))
+
 (defn- source-annotations [text]
-  (let [matcher (re-matcher #"［＃(?:「([^「」\n]+)」に傍点|((?:ルビの)?「[^「」\n]+」は底本では「[^「」\n]+」))］" text)]
+  (let [matcher (re-matcher (re-pattern (str "［＃(?:「([^「」\n]+)」に傍点|(" correction-body "))］")) text)]
     (loop [end 0 plain "" spans [] corrections []]
       (if (.find matcher)
         (let [prefix (str plain (subs text end (.start matcher)))
@@ -109,24 +119,28 @@
 
 (defn- parse-line [line]
   (let [gaijis (atom [])
-        mapped (str/replace line #"※［＃[^］]*?、(?:第([34])水準)?([12])-([0-9]+)-([0-9]+)］"
-                            (fn [[_ level plane row cell]]
-                              (let [s (or (when (or (nil? level) (= (Long/parseLong level) (+ 2 (Long/parseLong plane))))
-                                            (gaiji plane row cell)) "�")]
-                                (swap! gaijis conj s) s)))
+        mapped (outside-corrections line
+                                    #(str/replace % #"※［＃[^］]*?、(?:第([34])水準)?([12])-([0-9]+)-([0-9]+)］"
+                                                  (fn [[_ level plane row cell]]
+                                                    (let [s (or (when (or (nil? level) (= (Long/parseLong level) (+ 2 (Long/parseLong plane))))
+                                                                  (gaiji plane row cell)) "�")]
+                                                      (swap! gaijis conj s) s))))
         heading (re-matches #"［＃[０-９0-9]+字下げ］(.+)［＃「(.+)」は中見出し］" mapped)
         closing (re-find #"^［＃地から([０-９0-9]+)字上げ］" mapped)
         text (cond heading (if (= (nth heading 1) (nth heading 2))
                              (nth heading 1) mapped)
                    closing (subs mapped (count (first closing)))
                    :else mapped)
-        rubies (mapv (fn [[_ explicit implicit reading]] [(or explicit implicit) reading])
-                     (re-seq ruby-pattern text))
-        unpointed (str/replace text ruby-pattern (fn [[_ explicit implicit _]] (or explicit implicit)))
+        rubies (atom [])
+        unpointed (outside-corrections text
+                                       #(str/replace % ruby-pattern
+                                                     (fn [[_ explicit implicit reading]]
+                                                       (swap! rubies conj [(or explicit implicit) reading])
+                                                       (or explicit implicit))))
         emphasis (source-annotations unpointed)
         plain (or (:plain emphasis) unpointed)
         unsupported? (boolean (re-find #"[［］《》｜※�]" plain))]
-    {:plain plain :rubies rubies :gaijis @gaijis :emphasis (:emphasis emphasis) :corrections (:corrections emphasis)
+    {:plain plain :rubies @rubies :gaijis @gaijis :emphasis (:emphasis emphasis) :corrections (:corrections emphasis)
      :heading (when heading (nth heading 1))
      :heading-indent (when heading
                        (decimal (second (re-find #"^［＃([０-９0-9]+)字下げ］" mapped))))

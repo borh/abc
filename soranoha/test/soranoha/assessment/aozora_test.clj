@@ -25,14 +25,14 @@
                          card-url (utf8-bytes "<h1>図書カード：No.100</h1><style>div.copyright{}</style><a href='./files/100_ruby_1001.zip'>Download</a>")
                          file-url (fs/read-all-bytes (corpus/work-zip-path root work))})
         fetch (fn [url] (or (get @responses url)
-                            (throw (ex-info "HTTP404" {:reason "http-status"}))))
+                            (throw (ex-info "HTTP404" {:reason :aozora/http-status}))))
         opts {:fetch fetch :observed-at "2026-09-06" :decision-date "2026-09-06"}
         slug (corpus/work-slug work)]
     (try
       (let [record (aozora/prepare! root evidence slug opts)
             baseline @responses
             check #(get (aozora/check! root evidence [record] {:fetch fetch}) slug)]
-        (is (= {:state "available" :reason nil} (check)))
+        (is (= {:state :aozora/available :reason nil} (check)))
         (testing "fresh identical bytes reuse validated content without skipping acquisition"
           (let [parse-card @#'aozora/check-card!
                 inspect-bundle @#'aozora/bundle-hash
@@ -46,7 +46,7 @@
                                           (fn [bytes]
                                             (swap! calls update :bundle inc)
                                             (inspect-bundle bytes))]
-                              (is (= {:state "available" :reason nil}
+                              (is (= {:state :aozora/available :reason nil}
                                      (get (aozora/check!
                                            root evidence [record]
                                            {:fetch (fn [url]
@@ -67,58 +67,58 @@
             (reset! responses baseline)))
         (testing "transient acquisition retries fetch fresh evidence"
           (doseq [failure [(java.io.IOException. "Temporary network failure")
-                           (ex-info "Temporary HTTP failure" {:reason "http-status" :status 503})]]
+                           (ex-info "Temporary HTTP failure" {:reason :aozora/http-status :status 503})]]
             (let [calls (atom 0)
                   retry-fetch (fn [url]
                                 (if (and (= url aozora/catalog-url)
                                          (= 1 (swap! calls inc)))
                                   (throw failure)
                                   (fetch url)))]
-              (is (= {:state "available" :reason nil}
+              (is (= {:state :aozora/available :reason nil}
                      (get (aozora/check! root evidence [record] {:fetch retry-fetch}) slug)))
               (is (= 2 @calls)))))
         (testing "persistent transient failures have a bounded acquisition budget"
           (doseq [failure [(java.io.IOException. "Network unavailable")
-                           (ex-info "Service unavailable" {:reason "http-status" :status 503})]]
+                           (ex-info "Service unavailable" {:reason :aozora/http-status :status 503})]]
             (let [calls (atom 0)]
-              (is (= "unavailable"
+              (is (= :aozora/unavailable
                      (:state (get (aozora/check! root evidence [record]
                                                  {:fetch (fn [_] (swap! calls inc) (throw failure))}) slug))))
               (is (= 3 @calls)))))
         (testing "permanent failures and invalid bytes are not retried"
-          (doseq [response [(fn [] (throw (ex-info "Not found" {:reason "http-status" :status 404})))
+          (doseq [response [(fn [] (throw (ex-info "Not found" {:reason :aozora/http-status :status 404})))
                             (fn [] (throw (IllegalArgumentException. "Invalid caller value")))
                             (fn [] (byte-array 0))]]
             (let [calls (atom 0)]
-              (is (= "unavailable"
+              (is (= :aozora/unavailable
                      (:state (get (aozora/check! root evidence [record]
                                                  {:fetch (fn [_] (swap! calls inc) (response))}) slug))))
               (is (= 1 @calls)))))
         (testing "malformed unrelated links do not hide the edition link"
           (swap! responses assoc card-url
                  (utf8-bytes "<a href='https://example.org/%'>Unrelated</a><h1>図書カード：No.100</h1><a href=' ./files/100_ruby_1001.zip '>Download</a>"))
-          (is (= "available" (:state (check))))
+          (is (= :aozora/available (:state (check))))
           (is (= slug (get (aozora/prepare! root evidence slug opts) "slug"))))
         (testing "unrelated catalog rows and ZIP repacking preserve reliance"
           (swap! responses assoc aozora/catalog-url
                  (catalog-bytes dir "なし" "999999,あり,なし,https://www.aozora.gr.jp/cards/1/card1.html,https://www.aozora.gr.jp/cards/1/files/x.zip\n"))
           (corpus/write-work! root work :entry-time 1200000000000)
           (swap! responses assoc file-url (fs/read-all-bytes (corpus/work-zip-path root work)))
-          (is (= "available" (:state (check)))))
+          (is (= :aozora/available (:state (check)))))
         (doseq [[label url replacement expected]
-                [["protected work despite expired author" aozora/catalog-url (catalog-bytes dir "あり" "") "not-classified-expired"]
-                 ["unknown classification" aozora/catalog-url (catalog-bytes dir "" "") "not-classified-expired"]
-                 ["conflicting work rows" aozora/catalog-url (catalog-bytes dir "なし" (str "000100,あり,なし," card-url "," file-url "\n")) "not-classified-expired"]
-                 ["rules changed" aozora/rules-url (utf8-bytes "Changed rules") "rules-changed"]
-                 ["card says protected" card-url (utf8-bytes "<h1>図書カード：No.100</h1><div class='copyright'>＊著作権存続＊</div><a href='./files/100_ruby_1001.zip'>Download</a>") "protected-card"]
-                 ["wrong card" card-url (utf8-bytes "<h1>図書カード：No.1000</h1><a href='./files/100_ruby_1001.zip'>Download</a>") "card-identity-mismatch"]
-                 ["unlinked file" card-url (utf8-bytes "<h1>図書カード：No.100</h1>") "missing-card-file-link"]
-                 ["only malformed links" card-url (utf8-bytes "<h1>図書カード：No.100</h1><a href='https://example.org/%'>Unrelated</a>") "missing-card-file-link"]
-                 ["stale Git file with live404" file-url nil "http-status"]
-                 ["catalog network failure" aozora/catalog-url nil "http-status"]]]
+                [["protected work despite expired author" aozora/catalog-url (catalog-bytes dir "あり" "") :aozora/not-classified-expired]
+                 ["unknown classification" aozora/catalog-url (catalog-bytes dir "" "") :aozora/not-classified-expired]
+                 ["conflicting work rows" aozora/catalog-url (catalog-bytes dir "なし" (str "000100,あり,なし," card-url "," file-url "\n")) :aozora/not-classified-expired]
+                 ["rules changed" aozora/rules-url (utf8-bytes "Changed rules") :aozora/rules-changed]
+                 ["card says protected" card-url (utf8-bytes "<h1>図書カード：No.100</h1><div class='copyright'>＊著作権存続＊</div><a href='./files/100_ruby_1001.zip'>Download</a>") :aozora/protected-card]
+                 ["wrong card" card-url (utf8-bytes "<h1>図書カード：No.1000</h1><a href='./files/100_ruby_1001.zip'>Download</a>") :aozora/card-identity-mismatch]
+                 ["unlinked file" card-url (utf8-bytes "<h1>図書カード：No.100</h1>") :aozora/missing-card-file-link]
+                 ["only malformed links" card-url (utf8-bytes "<h1>図書カード：No.100</h1><a href='https://example.org/%'>Unrelated</a>") :aozora/missing-card-file-link]
+                 ["stale Git file with live404" file-url nil :aozora/http-status]
+                 ["catalog network failure" aozora/catalog-url nil :aozora/http-status]]]
           (testing label
             (reset! responses (assoc baseline url replacement))
-            (is (= {:state "unavailable" :reason expected} (check)))))
+            (is (= {:state :aozora/unavailable :reason expected} (check)))))
         (testing "preparation refuses the protected classification"
           (reset! responses (assoc baseline aozora/catalog-url (catalog-bytes dir "あり" "")))
           (is (thrown-with-msg? clojure.lang.ExceptionInfo #"not-classified-expired"
@@ -127,20 +127,20 @@
           (let [p (fs/path dir "removed.zip")]
             (corpus/write-zip! p [["catalog.csv" "作品ID,作品著作権フラグ,人物著作権フラグ,図書カードURL,テキストファイルURL\n"]])
             (reset! responses (assoc baseline aozora/catalog-url (fs/read-all-bytes p)))
-            (is (= {:state "unavailable" :reason "missing-current-work"} (check)))))
+            (is (= {:state :aozora/unavailable :reason :aozora/missing-current-work} (check)))))
         (testing "changed source content cannot use old reliance"
           (reset! responses baseline)
           (corpus/write-work! root (assoc work :text "Changed edition\n"))
           (swap! responses assoc file-url (fs/read-all-bytes (corpus/work-zip-path root work)))
-          (is (= {:state "unavailable" :reason "checkout-edition-mismatch"} (check)))
+          (is (= {:state :aozora/unavailable :reason :aozora/checkout-edition-mismatch} (check)))
           (corpus/write-work! root work)
-          (is (= {:state "unavailable" :reason "current-edition-mismatch"} (check))))
+          (is (= {:state :aozora/unavailable :reason :aozora/current-edition-mismatch} (check))))
         (testing "retained response corruption cannot be replaced by live bytes"
           (corpus/write-work! root work)
           (reset! responses baseline)
           (spit (str (fs/path evidence (get record "card_sha256"))) "corrupt")
           (let [calls (atom 0)]
-            (is (= {:state "unavailable" :reason "evidence-digest-mismatch"}
+            (is (= {:state :aozora/unavailable :reason :aozora/evidence-digest-mismatch}
                    (get (aozora/check! root evidence [record]
                                        {:fetch (fn [url] (swap! calls inc) (fetch url))}) slug)))
             (is (zero? @calls)))))
@@ -164,7 +164,7 @@
         calls (atom {})
         fetch (fn [url]
                 (swap! calls update url (fnil inc 0))
-                (or (get @responses url) (throw (ex-info "HTTP404" {:reason "http-status"}))))
+                (or (get @responses url) (throw (ex-info "HTTP404" {:reason :aozora/http-status}))))
         opts {:fetch fetch :parallelism 2}
         parsed (atom 0)
         parse-catalog @#'aozora/catalog-rows]
@@ -179,18 +179,18 @@
           (testing "each check verifies common retained and live evidence once"
             (reset! calls {})
             (reset! parsed 0)
-            (is (every? #(= "available" (:state %)) (vals (aozora/check! root evidence records opts))))
+            (is (every? #(= :aozora/available (:state %)) (vals (aozora/check! root evidence records opts))))
             (is (= 2 @parsed))
             (is (= 1 (get @calls aozora/catalog-url)))
             (is (= 1 (get @calls aozora/rules-url)))
             (swap! responses assoc aozora/rules-url (utf8-bytes "Changed rules"))
-            (is (every? #(= "rules-changed" (:reason %)) (vals (aozora/check! root evidence records opts))))
+            (is (every? #(= :aozora/rules-changed (:reason %)) (vals (aozora/check! root evidence records opts))))
             (is (= 2 (get @calls aozora/catalog-url)))
             (is (= 2 (get @calls aozora/rules-url))))
           (testing "exceptions remain unavailable without live acquisition"
             (reset! calls {})
             (let [exception-records (mapv #(assoc % "exception" "Review required") records)]
-              (is (every? #(= "recorded-exception" (:reason %))
+              (is (every? #(= :aozora/recorded-exception (:reason %))
                           (vals (aozora/check! root evidence exception-records opts))))
               (is (= "Review required" (get (first exception-records) "exception")))
               (is (empty? @calls))))
@@ -198,22 +198,22 @@
             (reset! responses (dissoc baseline file-url))
             (let [result (aozora/prepare-batch! root evidence slugs opts)]
               (is (= [(second slugs)] (mapv #(get % "slug") (:records result))))
-              (is (= [{:slug (first slugs) :reason "http-status"}] (:unavailable result)))))
+              (is (= [{:slug (first slugs) :reason :aozora/http-status}] (:unavailable result)))))
           (testing "protected classifications cannot become declarations"
             (reset! responses (assoc baseline aozora/catalog-url (catalog-bytes dir "あり" (str "000101,なし,なし," other-card "," other-file "\n"))))
             (let [result (aozora/prepare-batch! root evidence slugs opts)]
               (is (= [(second slugs)] (mapv #(get % "slug") (:records result))))
-              (is (= [{:slug (first slugs) :reason "not-classified-expired"}] (:unavailable result)))))
+              (is (= [{:slug (first slugs) :reason :aozora/not-classified-expired}] (:unavailable result)))))
           (testing "per-record retained failure leaves other editions checkable"
             (reset! responses baseline)
-            (is (= {(first slugs) {:state "unavailable" :reason "invalid-evidence-digest"}
-                    (second slugs) {:state "available" :reason nil}}
+            (is (= {(first slugs) {:state :aozora/unavailable :reason :aozora/invalid-evidence-digest}
+                    (second slugs) {:state :aozora/available :reason nil}}
                    (aozora/check! root evidence
                                   [(assoc (first records) "card_sha256" "invalid") (second records)] opts))))
           (testing "corrupt shared retained catalog refuses all dependants before acquisition"
             (reset! calls {})
             (spit (str (fs/path evidence (get (first records) "catalog_sha256"))) "corrupt")
-            (is (every? #(= "evidence-digest-mismatch" (:reason %))
+            (is (every? #(= :aozora/evidence-digest-mismatch (:reason %))
                         (vals (aozora/check! root evidence records opts))))
             (is (empty? @calls)))
           (testing "shared acquisition failure is reported for every requested edition"
@@ -221,6 +221,24 @@
             (swap! responses dissoc aozora/catalog-url)
             (let [result (aozora/prepare-batch! root evidence slugs opts)]
               (is (empty? (:records result)))
-              (is (= (mapv #(hash-map :slug % :reason "http-status") slugs) (:unavailable result)))
+              (is (= (mapv #(hash-map :slug % :reason :aozora/http-status) slugs) (:unavailable result)))
               (is (= 1 (get @calls aozora/catalog-url)))))))
       (finally (fs/delete-tree root) (fs/delete-tree dir)))))
+
+(deftest observation-wire-boundary-preserves-domain-and-diagnostic-distinction
+  (doseq [state ["available" :available :assessment/available :validation/passed]]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid Aozora observation state"
+                          (aozora/observation->wire {:state state :reason nil}))))
+  (doseq [reason [:assessment/missing-selected-work :validation/failed :aozora/unknown]]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid Aozora unavailability reason"
+                          (aozora/observation->wire {:state :aozora/unavailable :reason reason}))))
+  (is (thrown? clojure.lang.ExceptionInfo
+               (aozora/observation->wire {:state :aozora/available :reason :assessment/stale-premise})))
+  (is (thrown? clojure.lang.ExceptionInfo
+               (aozora/observation->wire {:state :aozora/unavailable :reason :aozora/acquisition-failed
+                                          :detail :assessment/stale-premise})))
+  (let [observation (#'aozora/outcome
+                     #(throw (ex-info "Invalid source archive" {:reason :primary-text-count})))]
+    (is (= :aozora/acquisition-failed (:reason observation)))
+    (is (= {"state" "unavailable" "reason" ":primary-text-count"}
+           (aozora/observation->wire observation)))))

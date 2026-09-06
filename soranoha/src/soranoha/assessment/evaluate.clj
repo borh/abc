@@ -5,8 +5,52 @@
             [soranoha.kura.cas :as cas]
             [clojure.string :as str]
             [soranoha.assessment.records :as records]
+            [soranoha.assessment.aozora :as aozora]
             [soranoha.core.canonical :as canonical]
             [soranoha.kura.engine :as engine]))
+
+(defn state->wire [state]
+  (case state
+    :assessment/available "available"
+    :assessment/unavailable "unavailable"
+    (throw (ex-info "Invalid assessment state" {:reason :invalid-assessment-view :value state}))))
+
+(defn reason->wire [reason]
+  (case reason
+    nil nil
+    (:assessment/missing-selected-work
+     :assessment/stale-premise
+     :assessment/revoked-support
+     :assessment/unavailable-term-premise
+     :assessment/death-year-outside-conservative-rule
+     :assessment/attribution-not-death-based
+     :assessment/wartime-addition-not-discharged
+     :assessment/work-type-outside-conservative-rule
+     :assessment/publication-timing-unestablished
+     :assessment/underlying-work-not-public-domain
+     :assessment/before-term-rule-effective-date
+     :assessment/unavailable-contribution-assessment
+     :assessment/unavailable-contribution-completeness
+     :assessment/absent-assessment) (name reason)
+    (throw (ex-info "Invalid assessment reason" {:reason :invalid-assessment-view :value reason}))))
+
+(defn- wire->reason [reason]
+  (case reason
+    ("missing-selected-work"
+     "stale-premise"
+     "revoked-support"
+     "unavailable-term-premise"
+     "death-year-outside-conservative-rule"
+     "attribution-not-death-based"
+     "wartime-addition-not-discharged"
+     "work-type-outside-conservative-rule"
+     "publication-timing-unestablished"
+     "underlying-work-not-public-domain"
+     "before-term-rule-effective-date"
+     "unavailable-contribution-assessment"
+     "unavailable-contribution-completeness"
+     "absent-assessment") (keyword "assessment" reason)
+    (throw (ex-info "Invalid stored assessment reason" {:reason :invalid-assessment-view :value reason}))))
 
 (def missing-selected-work
   {"state" "unavailable" "reason" "missing-selected-work"})
@@ -20,10 +64,10 @@
 (defn semantic-value
   "The supported value and its effective date, without its supporting evidence."
   [result]
-  (if (= "available" (:state result))
-    {"state" "available" "value" (:value result)
-     "effective_date" (:effective-date result)}
-    {"state" "unavailable"}))
+  (case (state->wire (:state result))
+    "available" {"state" "available" "value" (:value result)
+                 "effective_date" (:effective-date result)}
+    "unavailable" {"state" "unavailable"}))
 
 (defn premise-fingerprint
   "Fingerprint a fact projection for an authored premise. Observations use
@@ -43,13 +87,13 @@
                      (get identity "evidence"))}))
 
 (defn- unavailable [reason dependencies]
-  {:state "unavailable" :reason reason :dependencies (vec dependencies) :basis []})
+  {:state :assessment/unavailable :reason reason :dependencies (vec dependencies) :basis []})
 
 (defn- latest-date [results]
   (last (sort (keep :effective-date results))))
 
 (defn- available [value date basis dependencies]
-  {:state "available" :value value :effective-date date
+  {:state :assessment/available :value value :effective-date date
    :basis (vec (sort-by records/fingerprint (distinct basis))) :dependencies (vec dependencies)})
 
 (defn- stage-result! [store toolchain-id key result stages]
@@ -172,7 +216,7 @@
      (let [predicate (get fact "predicate")
            subject (get fact "subject")]
        (if (and (#{"work-status" "contribution-status"} predicate)
-                (= "available" (:state result))
+                (= :assessment/available (:state result))
                 (#{"in-copyright" "undetermined"} (:value result)))
          (update index (if (= predicate "work-status") subject (first (str/split subject #"/" 2)))
                  (fnil conj []) {"fact" fact "semantic" (semantic-value result)})
@@ -200,14 +244,8 @@
              (let [slug (get record "slug")
                    observed (get observations slug)
                    current (if observed
-                             {"state" (:state observed)
-                              "reason" (when (= "unavailable" (:state observed)) (:reason observed))}
+                             (aozora/observation->wire observed)
                              {"state" "unavailable" "reason" "missing-reliance-observation"})
-                   _ (when-not (and (#{"available" "unavailable"} (get current "state"))
-                                    (or (= "available" (get current "state"))
-                                        (and (string? (get current "reason"))
-                                             (seq (get current "reason")))))
-                       (records/fail! :invalid-reliance-observation {:slug slug}))
                    run (engine/run-stage!
                         store
                         {:stage-id "assessment-reliance" :stage-version reliance-version
@@ -242,8 +280,8 @@
         states (atom {}) facts (atom {}) visiting (atom #{}) stages (atom [])
         obs (into {} (map (fn [[id value]]
                             [id (if (= missing-selected-work value)
-                                  {:state "unavailable" :reason "missing-selected-work"}
-                                  {:state "available" :value value :version (records/fingerprint value)})])) observations)]
+                                  {:state :assessment/unavailable :reason :assessment/missing-selected-work}
+                                  {:state :assessment/available :value value :version (records/fingerprint value)})])) observations)]
     (letfn [(resolve-premise [premise]
               (let [kind (get premise "kind") ref (get premise "ref")
                     projection (get premise "projection" "evidence-version")
@@ -251,37 +289,37 @@
                     identity (when (= kind "identity")
                                (first (filter #(= ref (get % "id")) (get source "identities"))))
                     actual (case kind
-                             "identity" (when (every? #(= "available" (get-in obs [% :state]))
+                             "identity" (when (every? #(= :assessment/available (get-in obs [% :state]))
                                                       (get identity "evidence"))
                                           (identity-fingerprint identity observations))
                              "observation"
                              (do
-                               (when (and (= "available" (get-in obs [ref :state]))
+                               (when (and (= :assessment/available (get-in obs [ref :state]))
                                           (= projection "set-membership")
                                           (not (vector? (get-in obs [ref :value]))))
                                  (records/fail! :non-set-membership-premise {:premise premise}))
                                (get-in obs [ref :version]))
-                             (when (= "available" (:state result))
+                             (when (= :assessment/available (:state result))
                                (when (and (= projection "set-membership")
                                           (not (vector? (:value result))))
                                  (records/fail! :non-set-membership-premise {:premise premise}))
                                (premise-fingerprint result projection)))
                     matches? (= actual (get premise "fingerprint"))]
-                {:premise premise :state (if matches? "available" "unavailable")
+                {:premise premise :state (if matches? :assessment/available :assessment/unavailable)
                  :actual actual :reason (when-not matches?
                                           (or (:reason result)
                                               (if identity
                                                 (some #(get-in obs [% :reason]) (get identity "evidence"))
                                                 (get-in obs [ref :reason]))
-                                              "stale-premise"))
+                                              :assessment/stale-premise))
                  :dependencies (vec (:dependencies result))}))
             (resolve-finding [finding]
               (let [id (get finding "id")
                     edges (mapv resolve-premise (get finding "premises"))
-                    bad (filter #(= "unavailable" (:state %)) edges)
+                    bad (filter #(= :assessment/unavailable (:state %)) edges)
                     result (cond
-                             (revoked id) (unavailable "revoked-support" edges)
-                             (seq bad) (unavailable "stale-premise" edges)
+                             (revoked id) (unavailable :assessment/revoked-support edges)
+                             (seq bad) (unavailable :assessment/stale-premise edges)
                              :else (available (get finding "value")
                                               (get finding "effective_date")
                                               [{"id" id "version" (records/fingerprint finding)
@@ -311,20 +349,20 @@
                     all-edges (into edges (mapv dependency chain-keys chain-results))
                     failure-reason (fn []
                                      (cond
-                                       (some #(not= "available" (:state %)) all-results) "unavailable-term-premise"
-                                       (or (not (integer? death)) (> death 1967)) "death-year-outside-conservative-rule"
-                                       (not (#{"real-name" "well-known-pseudonym" "registered-real-name"} attribution)) "attribution-not-death-based"
-                                       (not (true? wartime)) "wartime-addition-not-discharged"
-                                       (not= "non-film-non-photo" type) "work-type-outside-conservative-rule"
-                                       (not (#{"lifetime" "posthumous"} timing)) "publication-timing-unestablished"
-                                       (some #(not= "public-domain" (:value %)) chain-results) "underlying-work-not-public-domain"
-                                       (neg? (compare as-of rule-date)) "before-term-rule-effective-date"))
+                                       (some #(not= :assessment/available (:state %)) all-results) :assessment/unavailable-term-premise
+                                       (or (not (integer? death)) (> death 1967)) :assessment/death-year-outside-conservative-rule
+                                       (not (#{"real-name" "well-known-pseudonym" "registered-real-name"} attribution)) :assessment/attribution-not-death-based
+                                       (not (true? wartime)) :assessment/wartime-addition-not-discharged
+                                       (not= "non-film-non-photo" type) :assessment/work-type-outside-conservative-rule
+                                       (not (#{"lifetime" "posthumous"} timing)) :assessment/publication-timing-unestablished
+                                       (some #(not= "public-domain" (:value %)) chain-results) :assessment/underlying-work-not-public-domain
+                                       (neg? (compare as-of rule-date)) :assessment/before-term-rule-effective-date))
                     semantic (run-rule!
                               store toolchain-id key
                               {"premises" (mapv semantic-value all-results)
                                "rule-applicable" (not (neg? (compare as-of rule-date)))}
                               #(if-let [reason (failure-reason)]
-                                 {"state" "unavailable" "reason" reason}
+                                 {"state" "unavailable" "reason" (reason->wire reason)}
                                  {"state" "available" "value" "public-domain"
                                   "effective_date" (last (sort [rule-date (latest-date all-results)]))}) stages)]
                 (if (= "available" (get semantic "state"))
@@ -335,22 +373,22 @@
                                                    ": Japanese death-based term: death by 1967; established attribution, work type, publication timing, rights chain and absence of wartime addition; status on or after 2018-12-29.")}]
                                      (mapcat :basis all-results))
                              all-edges)
-                  (unavailable (get semantic "reason") all-edges))))
+                  (unavailable (wire->reason (get semantic "reason")) all-edges))))
             (derive-work [key]
               (let [slug (get key "subject")
                     set-key (records/fact-key slug "contribution-set")
                     members (resolve-fact set-key)]
-                (if (= "available" (:state members))
+                (if (= :assessment/available (:state members))
                   (let [keys (mapv #(records/fact-key (records/contribution-subject slug %)
                                                       "contribution-status") (:value members))
                         results (mapv resolve-fact keys)
                         edges (into [(dependency set-key members)] (mapv dependency keys results))]
-                    (if (every? #(and (= "available" (:state %))
+                    (if (every? #(and (= :assessment/available (:state %))
                                       (= "public-domain" (:value %))) results)
                       (available "public-domain" (latest-date (cons members results))
                                  (mapcat :basis (cons members results)) edges)
-                      (unavailable "unavailable-contribution-assessment" edges)))
-                  (unavailable "unavailable-contribution-completeness"
+                      (unavailable :assessment/unavailable-contribution-assessment edges)))
+                  (unavailable :assessment/unavailable-contribution-completeness
                                [(dependency set-key members)]))))
             (resolve-fact [key]
               (or (get @facts key)
@@ -364,7 +402,7 @@
                                     "contribution-status" (derive-contribution key)
                                     "work-status" (derive-work key)
                                     nil)
-                          supports (filter #(= "available" (:state %))
+                          supports (filter #(= :assessment/available (:state %))
                                            (cond-> reviewed derived (conj derived)))
                           values (set (map :value supports))
                           _ (when (> (count values) 1)
@@ -375,16 +413,16 @@
                                               (distinct (mapcat :basis supports))
                                               (mapcat :dependencies supports))
                                    (unavailable (or (:reason (first reviewed))
-                                                    (:reason derived) "absent-assessment")
+                                                    (:reason derived) :assessment/absent-assessment)
                                                 (mapcat :dependencies
                                                         (cond-> reviewed derived (conj derived)))))
                           result (if (and (= predicate "work-status")
                                           (not (#{"in-copyright" "undetermined"} (:value result)))
-                                          (not= "available"
+                                          (not= :assessment/available
                                                 (:state (resolve-fact
                                                          (records/fact-key (get key "subject")
                                                                            "contribution-set")))))
-                                   (unavailable "unavailable-contribution-completeness"
+                                   (unavailable :assessment/unavailable-contribution-completeness
                                                 (:dependencies derived)) result)
                           result (stage-result! store toolchain-id key result stages)]
                       (swap! visiting disj key)

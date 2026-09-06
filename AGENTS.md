@@ -41,6 +41,7 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
   fmt, and tests.
 - Python: all tracked Python should pass ruff format/check and mypy via `just python-quality`.
 - Clojure: `just soranoha-tests` runs publication tests, clj-kondo, cljfmt, and rejects project reflection warnings. Kaocha enables `clojure.core/*warn-on-reflection*` through `:bindings`; add precise Java type hints where interop needs them.
+- Clojure domain variants: use namespaced keywords internally (for example, `:assessment/available` and `:aozora/available`). Preserve external vocabulary through explicit boundary codecs that reject values from another domain. `just typecheck` checks the publication-whitespace contracts with development-only Typed Clojure dependencies.
 - Nix: run `nixfmt` or `just nix-format-check` for Nix changes.
 - Comments: follow `docs/comment-standards.md`; verify with
   `scripts/comment-hygiene-check.sh` (no transient task/plan/spec/issue

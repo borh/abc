@@ -56,8 +56,8 @@
             view (evaluate/evaluate! store source
                                      {:observations {"bundle" evaluate/missing-selected-work}
                                       :candidates {} :as-of "2026-09-05" :toolchain-id "test"})]
-        (is (= "unavailable" (get-in view [:findings 0 :state])))
-        (is (= "missing-selected-work" (get-in view [:findings 0 :dependencies 0 :reason])))))))
+        (is (= :assessment/unavailable (get-in view [:findings 0 :state])))
+        (is (= :assessment/missing-selected-work (get-in view [:findings 0 :dependencies 0 :reason])))))))
 
 (deftest review-premises-express-usage-without-inferring-derivation
   (with-store

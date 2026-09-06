@@ -25,8 +25,55 @@
 (def rules-url "https://www.aozora.gr.jp/guide/kijyunn.html")
 (def ^:private response-limit (* 32 1024 1024))
 
+(defn reason->wire [{:keys [reason detail]}]
+  (case reason
+    :aozora/acquisition-failed
+    (if (or (nil? detail) (and (string? detail) (seq detail)))
+      (or detail "acquisition-failed")
+      (throw (ex-info "Invalid Aozora acquisition diagnostic"
+                      {:reason :invalid-aozora-reason :value detail})))
+    (:aozora/ambiguous-catalog
+     :aozora/card-identity-mismatch
+     :aozora/checkout-edition-mismatch
+     :aozora/current-edition-mismatch
+     :aozora/edition-content-mismatch
+     :aozora/edition-link-mismatch
+     :aozora/evidence-digest-mismatch
+     :aozora/evidence-symlink
+     :aozora/http-status
+     :aozora/invalid-evidence-digest
+     :aozora/invalid-response
+     :aozora/malformed-catalog-row
+     :aozora/missing-card-file-link
+     :aozora/missing-catalog-csv
+     :aozora/missing-current-work
+     :aozora/missing-evidence-root
+     :aozora/missing-retained-evidence
+     :aozora/missing-selected-work
+     :aozora/not-classified-expired
+     :aozora/protected-card
+     :aozora/recorded-exception
+     :aozora/response-too-large
+     :aozora/retained-edition-mismatch
+     :aozora/rules-changed
+     :aozora/source-revision-unavailable
+     :aozora/unofficial-url) (name reason)
+    (throw (ex-info "Invalid Aozora unavailability reason"
+                    {:reason :invalid-aozora-reason :value reason}))))
+
+(defn observation->wire [{:keys [state] :as observation}]
+  (case state
+    :aozora/available
+    (if (nil? (:reason observation))
+      {"state" "available" "reason" nil}
+      (throw (ex-info "Available Aozora observation cannot carry a failure reason"
+                      {:reason :invalid-reliance-observation :value (:reason observation)})))
+    :aozora/unavailable {"state" "unavailable" "reason" (reason->wire observation)}
+    (throw (ex-info "Invalid Aozora observation state"
+                    {:reason :invalid-reliance-observation :value state}))))
+
 (defn- refuse! [reason]
-  (throw (ex-info (str "Aozora reliance unavailable: " reason) {:reason reason})))
+  (throw (ex-info (str "Aozora reliance unavailable: " (reason->wire {:reason reason})) {:reason reason})))
 
 (defn- official-uri [url]
   (let [u (URI. url)]
@@ -34,7 +81,7 @@
                    (= "www.aozora.gr.jp" (.getHost u))
                    (= -1 (.getPort u)) (nil? (.getUserInfo u))
                    (nil? (.getQuery u)) (nil? (.getFragment u)))
-      (refuse! "unofficial-url"))
+      (refuse! :aozora/unofficial-url))
     u))
 
 (defn- bounded-bytes [in]
@@ -44,7 +91,7 @@
         (if (neg? n)
           (.toByteArray out)
           (let [total (+ total n)]
-            (when (> total response-limit) (refuse! "response-too-large"))
+            (when (> total response-limit) (refuse! :aozora/response-too-large))
             (.write out buffer 0 n)
             (recur total)))))))
 
@@ -58,7 +105,7 @@
       (let [status (.getResponseCode c)]
         (when-not (= 200 status)
           (throw (ex-info "Aozora reliance unavailable: http-status"
-                          {:reason "http-status" :status status}))))
+                          {:reason :aozora/http-status :status status}))))
       (with-open [in (.getInputStream c)] (bounded-bytes in))
       (finally (.disconnect c)))))
 
@@ -69,7 +116,7 @@
                            {:bytes ((or (:fetch opts) fetch-http) url)}
                            (catch IOException e {:failure e})
                            (catch clojure.lang.ExceptionInfo e
-                             (if (and (= "http-status" (:reason (ex-data e)))
+                             (if (and (= :aozora/http-status (:reason (ex-data e)))
                                       (#{429 502 503 504} (:status (ex-data e))))
                                {:failure e}
                                (throw e))))]
@@ -81,7 +128,7 @@
                 (:bytes result))))]
     (when-not (and (bytes? b) (pos? (alength ^bytes b))
                    (<= (alength ^bytes b) response-limit))
-      (refuse! "invalid-response"))
+      (refuse! :aozora/invalid-response))
     b))
 
 (defn- utf8 [bytes]
@@ -95,10 +142,10 @@
     (loop [csv nil]
       (if-let [entry (.getNextEntry in)]
         (if (str/ends-with? (.getName entry) ".csv")
-          (do (when csv (refuse! "ambiguous-catalog"))
+          (do (when csv (refuse! :aozora/ambiguous-catalog))
               (recur (utf8 (bounded-bytes in))))
           (do (bounded-bytes in) (recur csv)))
-        (if csv (catalog/read-rows-from-string csv) (refuse! "missing-catalog-csv"))))))
+        (if csv (catalog/read-rows-from-string csv) (refuse! :aozora/missing-catalog-csv))))))
 
 (defn- selection [root]
   (let [rows (catalog/read-rows-from-string (:csv-text (catalog/read-catalog-zip root)))]
@@ -106,7 +153,7 @@
           (:candidates (select/select-candidates root rows)))))
 
 (defn- selected [candidates slug]
-  (or (get candidates slug) (refuse! "missing-selected-work")))
+  (or (get candidates slug) (refuse! :aozora/missing-selected-work)))
 
 (defn- assertion [index candidate]
   (let [id (get-in candidate [:row "作品ID"])
@@ -116,12 +163,12 @@
         card (str "https://www.aozora.gr.jp/cards/"
                   (second (str/split (:relpath candidate) #"/"))
                   "/card" (Long/parseLong id) ".html")]
-    (when-not (seq matches) (refuse! "missing-current-work"))
-    (when (some catalog/ragged-key matches) (refuse! "malformed-catalog-row"))
+    (when-not (seq matches) (refuse! :aozora/missing-current-work))
+    (when (some catalog/ragged-key matches) (refuse! :aozora/malformed-catalog-row))
     (when-not (every? #(= "なし" (get % "作品著作権フラグ")) matches)
-      (refuse! "not-classified-expired"))
+      (refuse! :aozora/not-classified-expired))
     (when-not (= #{{"図書カードURL" card "テキストファイルURL" expected-file}} urls)
-      (refuse! "edition-link-mismatch"))
+      (refuse! :aozora/edition-link-mismatch))
     {:card card :file expected-file :work-id id}))
 
 (defn- check-card! [bytes {:keys [card file work-id]}]
@@ -135,12 +182,12 @@
                          (catch IllegalArgumentException _ nil))))
                    (handleText [chars _] (.append text ^chars chars)))]
     (.parse (ParserDelegator.) (StringReader. (utf8 bytes)) callback true)
-    (when (str/includes? (str text) "著作権存続") (refuse! "protected-card"))
+    (when (str/includes? (str text) "著作権存続") (refuse! :aozora/protected-card))
     (when-not (re-find (re-pattern (str "図書カード[：:]\\s*No\\.\\s*"
                                         (Long/parseLong work-id) "(?![0-9])"))
                        (str text))
-      (refuse! "card-identity-mismatch"))
-    (when-not (contains? @links file) (refuse! "missing-card-file-link"))))
+      (refuse! :aozora/card-identity-mismatch))
+    (when-not (contains? @links file) (refuse! :aozora/missing-card-file-link))))
 
 (defn- bundle-hash [bytes]
   (let [path (fs/create-temp-file {:prefix "aozora-edition" :suffix ".zip"})]
@@ -152,23 +199,23 @@
 (defn- retain! [root bytes]
   (fs/create-dirs root)
   (let [digest (hash/sha256-bytes bytes) path (fs/path root digest)]
-    (when (fs/sym-link? path) (refuse! "evidence-symlink"))
+    (when (fs/sym-link? path) (refuse! :aozora/evidence-symlink))
     (if (fs/exists? path)
-      (when-not (= digest (hash/sha256-file (str path))) (refuse! "evidence-digest-mismatch"))
+      (when-not (= digest (hash/sha256-file (str path))) (refuse! :aozora/evidence-digest-mismatch))
       (fs/write-bytes path bytes))
     digest))
 
 (defn- retained [root record key]
   (let [digest (get record key)]
     (when-not (and (string? digest) (re-matches hash/hex-pattern digest))
-      (refuse! "invalid-evidence-digest"))
-    (when-not root (refuse! "missing-evidence-root"))
+      (refuse! :aozora/invalid-evidence-digest))
+    (when-not root (refuse! :aozora/missing-evidence-root))
     (let [path (fs/path root digest)]
       (when-not (and (fs/regular-file? path) (not (fs/sym-link? path)))
-        (refuse! "missing-retained-evidence"))
+        (refuse! :aozora/missing-retained-evidence))
       (with-open [in (io/input-stream (str path))]
         (let [b (bounded-bytes in)]
-          (when-not (= digest (hash/sha256-bytes b)) (refuse! "evidence-digest-mismatch"))
+          (when-not (= digest (hash/sha256-bytes b)) (refuse! :aozora/evidence-digest-mismatch))
           b)))))
 
 (defn- catalog-index [bytes]
@@ -184,7 +231,7 @@
      (delay
        (let [git (process/sh {:dir (str aozora-root)} "git" "rev-parse" "HEAD")
              today (str (LocalDate/now java.time.ZoneOffset/UTC))]
-         (when-not (zero? (:exit git)) (refuse! "source-revision-unavailable"))
+         (when-not (zero? (:exit git)) (refuse! :aozora/source-revision-unavailable))
          {"source_revision" (str/trim (:out git))
           "observed_at" (or (:observed-at opts) today)
           "decision_date" (or (:decision-date opts) today)
@@ -200,7 +247,7 @@
         content-hash (bundle-hash file)]
     (check-card! card a)
     (when-not (= content-hash (:bundle-hash (bundle/inspect-zip (:file candidate))))
-      (refuse! "edition-content-mismatch"))
+      (refuse! :aozora/edition-content-mismatch))
     (locking context
       (assoc @(:declaration context)
              "slug" (:slug candidate) "source_content_hash" content-hash
@@ -216,7 +263,11 @@
                       (preparation-context aozora-root evidence-root opts) opts)))
 
 (defn- unavailable-reason [e]
-  (str (or (:reason (ex-data e)) "acquisition-failed")))
+  (let [reason (:reason (ex-data e))]
+    (if (and (keyword? reason) (= "aozora" (namespace reason)))
+      {:reason reason}
+      (cond-> {:reason :aozora/acquisition-failed}
+        reason (assoc :detail (str reason))))))
 
 (defn prepare-batch!
   "Attempt each requested slug, or all selected editions when slugs is nil.
@@ -233,15 +284,15 @@
                      {:record (prepare-edition! evidence-root (selected candidates slug)
                                                 @context opts)}
                      (catch Exception e
-                       {:unavailable {:slug slug :reason (unavailable-reason e)}})))
+                       {:unavailable (assoc (unavailable-reason e) :slug slug)})))
                  slugs)]
     {:records (into [] (keep :record) results)
      :unavailable (into [] (keep :unavailable) results)}))
 
 (defn- outcome [f]
-  (try (f) {:state "available" :reason nil}
+  (try (f) {:state :aozora/available :reason nil}
        (catch Exception e
-         {:state "unavailable" :reason (unavailable-reason e)})))
+         (assoc (unavailable-reason e) :state :aozora/unavailable))))
 
 (defn check!
   "Verify retained assertions and their live applicability. A failed current
@@ -264,7 +315,7 @@
                    [(get record "slug")
                     (outcome
                      (fn []
-                       (when (some? (get record "exception")) (refuse! "recorded-exception"))
+                       (when (some? (get record "exception")) (refuse! :aozora/recorded-exception))
                        (let [candidate (selected @candidates (get record "slug"))
                              a (assertion @index candidate)
                              pinned (get record "source_content_hash")
@@ -272,12 +323,12 @@
                          (check-card! card-bytes a)
                          (let [file-bytes (retained evidence-root record "file_sha256")]
                            (when-not (= pinned (bundle-hash file-bytes))
-                             (refuse! "retained-edition-mismatch"))
+                             (refuse! :aozora/retained-edition-mismatch))
                            @(get rules (get record "rules_sha256"))
                            (when-not (= pinned (:bundle-hash (bundle/inspect-zip (:file candidate))))
-                             (refuse! "checkout-edition-mismatch"))
+                             (refuse! :aozora/checkout-edition-mismatch))
                            (when-not (= (get record "rules_sha256") (:rules @live))
-                             (refuse! "rules-changed"))
+                             (refuse! :aozora/rules-changed))
                            (let [current (assertion (:index @live) candidate)
                                  current-card (fetch opts (:card current))]
                              (when-not (and (= a current)
@@ -286,6 +337,6 @@
                              (let [current-file (fetch opts (:file current))]
                                (when-not (or (Arrays/equals ^bytes file-bytes ^bytes current-file)
                                              (= pinned (bundle-hash current-file)))
-                                 (refuse! "current-edition-mismatch"))))))))])
+                                 (refuse! :aozora/current-edition-mismatch))))))))])
                  group))))
       {} (group-by #(get % "catalog_sha256") records)))))

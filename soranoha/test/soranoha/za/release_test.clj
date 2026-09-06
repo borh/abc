@@ -588,7 +588,7 @@
               :release-key (write! "release.seed" (get-in ks ["release" "seed"]))
               :chain-clone clone :branch fx/branch
               :upstream-origin "https://forge.example/fixture.git"}
-        current (atom {slug {:state "available" :reason nil}})
+        current (atom {slug {:state :aozora/available :reason nil}})
         checks (atom 0)
         published? (atom false)]
     (testing "refreshing official evidence preserves a recorded exception"
@@ -671,7 +671,7 @@
       (testing "withdrawal after preflight refuses before publication"
         (with-redefs [main/build-stages (constantly corpus/stage-set)
                       main/execute-build! (fn [& _]
-                                            (reset! current {slug {:state "unavailable" :reason "official-work-protected"}})
+                                            (reset! current {slug {:state :aozora/unavailable :reason :aozora/protected-card}})
                                             report)
                       release/release! (fn [{:keys [build-works!]}]
                                          (build-works! [slug])

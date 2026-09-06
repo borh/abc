@@ -28,8 +28,8 @@
 (def ^:private options
   {:observations {} :candidates {"work" ["author:000001"] "other" ["author:000002"]}
    :as-of "2026-09-06" :toolchain-id "reliance-test"
-   :reliance-observations {"work" {:state "available" :reason nil}
-                           "other" {:state "available" :reason nil}}})
+   :reliance-observations {"work" {:state :aozora/available :reason nil}
+                           "other" {:state :aozora/available :reason nil}}})
 
 (defn- input [] (assoc records/empty-source "reliances" [(declaration "work")]))
 (defn- reason [f] (try (f) nil (catch clojure.lang.ExceptionInfo e (:reason (ex-data e)))))
@@ -61,7 +61,7 @@
         (is (= "relied-upon" (get-in candidate ["reliance" "status"])))
         (is (= "2026-09-05" (get-in candidate ["reliance" "decision_date"])))
         (is (= "not-evaluated" (get-in projected ["candidates" 0 "work_assessment" "status"])))
-        (is (every? #(= "unavailable" (:state %)) (vals (:facts view)))))
+        (is (every? #(= :assessment/unavailable (:state %)) (vals (:facts view)))))
       (is (= :assessment-schema-invalid
              (reason #(records/encode (assoc records/empty-source "findings"
                                              [(fixtures/finding "direct" "work" "work-status" "public-domain" [])]))))))))
@@ -88,8 +88,8 @@
       (doseq [[label source opts expected]
               [["missing current acquisition" (input) (dissoc options :reliance-observations) "missing-reliance-observation"]
                ["current public file removed" (input)
-                (assoc-in options [:reliance-observations "work"] {:state "unavailable" :reason "public-file-unavailable"})
-                "public-file-unavailable"]
+                (assoc-in options [:reliance-observations "work"] {:state :aozora/unavailable :reason :aozora/http-status})
+                "http-status"]
                ["owner exception" (assoc-in (input) ["reliances" 0 "exception"] "Contradictory evidence requires review.") options "recorded-exception"]
                ["selected edition removed" (input) (update options :candidates dissoc "work") "missing-selected-work"]]]
         (testing label

@@ -1,5 +1,6 @@
 (ns soranoha.assessment.preparation-cli-test
   (:require [babashka.fs :as fs]
+            [charred.api :as json]
             [clojure.test :refer [deftest is testing]]
             [soranoha.assessment.aozora :as aozora]
             [soranoha.assessment.records :as records]
@@ -33,8 +34,9 @@
                     (fn [_ _ slugs _]
                       (is (nil? slugs))
                       {:records [(assoc protected "exception" nil "basis" "Changed assertion.") acquired]
-                       :unavailable [{:slug (get unavailable "slug") :reason "http-status"}]})]
-        (with-out-str (main/aozora-reliance-prepare! options))
+                       :unavailable [{:slug (get unavailable "slug") :reason :aozora/http-status}]})]
+        (is (= [{"slug" (get unavailable "slug") "reason" "http-status"}]
+               (get (json/read-json (with-out-str (main/aozora-reliance-prepare! options))) "unavailable")))
         (is (= #{protected unavailable acquired}
                (set (get (:value (records/decode (fs/read-all-bytes output))) "reliances")))))
       (testing "selection must be explicit and unambiguous"

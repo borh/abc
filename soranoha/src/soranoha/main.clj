@@ -464,7 +464,9 @@
                "attempted" (+ (count records) (count unavailable))
                "refreshed" (count refreshed)
                "exceptions_preserved" (- (count records) (count refreshed))
-               "unavailable" unavailable}))
+               "unavailable" (mapv (fn [entry]
+                                     {:slug (:slug entry) :reason (aozora/reason->wire entry)})
+                                   unavailable)}))
     result))
 
 (defn publication-init!

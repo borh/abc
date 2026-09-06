@@ -5,6 +5,7 @@
   (:require [clojure.string :as str]
             [clojure.walk :as walk]
             [soranoha.core.canonical :as canonical]
+            [soranoha.assessment.evaluate :as evaluate]
             [soranoha.core.hash :as hash]
             [soranoha.kura.engine :as engine])
   (:import [java.net URI URLEncoder]))
@@ -110,6 +111,12 @@
            (quad evidence (str rdf "type") (iri (str prov "Entity")) nil)]))
       (map-indexed vector (get record "premises"))))))
 
+(defn- dependency-input [edge]
+  (cond-> edge
+    (contains? edge :state) (update :state evaluate/state->wire)
+    (contains? edge :reason) (update :reason evaluate/reason->wire)
+    (contains? edge :dependencies) (update :dependencies #(mapv dependency-input %))))
+
 (defn- projection-input [view]
   (when-not (and (map? (:facts view)) (vector? (:findings view)))
     (throw (ex-info "RDF projection requires an evaluated assessment view"
@@ -117,19 +124,16 @@
   {"reliances" (mapv (fn [[slug payload]] {"slug" slug "payload" payload}) (sort-by key (:reliances view)))
    "controls" (get-in view [:source "controls"])
    "findings" (mapv (fn [{:keys [record state reason]}]
-                      {"record" record "state" state "reason" reason})
+                      {"record" record "state" (evaluate/state->wire state) "reason" (evaluate/reason->wire reason)})
                     (:findings view))
    "facts" (mapv (fn [[fact result]]
-                   (when-not (contains? #{"available" "unavailable"} (:state result))
-                     (throw (ex-info "RDF refuses an invalid fact state"
-                                     {:reason :invalid-assessment-view :fact fact})))
-                   {"fact" fact "state" (:state result) "value" (:value result)
+                   {"fact" fact "state" (evaluate/state->wire (:state result)) "value" (:value result)
                     "effective-date" (:effective-date result)
                     "semantic-id" (:semantic-id result) "basis-id" (:basis-id result)
                     "basis" (:basis result)
                     "dependencies" (mapv (fn [edge]
                                            (walk/stringify-keys
-                                            (cond-> edge
+                                            (cond-> (dependency-input edge)
                                               (:fact edge)
                                               (assoc :semantic-id (get-in view [:facts (:fact edge) :semantic-id])))))
                                          (:dependencies result))})

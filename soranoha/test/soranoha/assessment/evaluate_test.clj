@@ -97,8 +97,8 @@
             value-premise (assoc premise "projection" "value" "rationale" "Only established year affects this synthetic calculation."
                                  "fingerprint" (evaluate/premise-fingerprint result "value"))
             semantic (assoc-in changed ["findings" 1 "premises"] [value-premise])]
-        (is (= "unavailable" (:state (get (:facts (evaluate/evaluate! store changed options)) (get child "fact")))))
-        (is (= "available" (:state (get (:facts (evaluate/evaluate! store semantic options)) (get child "fact")))))
+        (is (= :assessment/unavailable (:state (get (:facts (evaluate/evaluate! store changed options)) (get child "fact")))))
+        (is (= :assessment/available (:state (get (:facts (evaluate/evaluate! store semantic options)) (get child "fact")))))
         (is (= :unjustified-semantic-premise
                (failure #(records/encode (assoc-in semantic ["findings" 1 "premises" 0] (dissoc value-premise "rationale"))))))))))
 
@@ -195,7 +195,7 @@
                           :candidates {"independent" ["author:000002"]})
             view (evaluate/evaluate! store (source) inputs)
             complete (get (:facts view) (records/fact-key "work" "contribution-set"))]
-        (is (= "unavailable" (:state complete)))
+        (is (= :assessment/unavailable (:state complete)))
         (is (= ["independent"] (mapv #(get % "slug") (get (snapshot-value view) "candidates"))))
         (is (= :invalid-captured-observation
                (failure #(evaluate/evaluate! store (source)
@@ -255,3 +255,11 @@
     (doseq [id ["jp-conservative-term/1" "jp-conservative-term/2"]]
       (is (= :assessment-schema-invalid
              (failure #(records/encode (assoc-in source ["findings" 0 "id"] id))))))))
+
+(deftest assessment-state-does-not-accept-neighboring-domain-vocabulary
+  (doseq [state ["available" :available :aozora/available :validation/passed]]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid assessment state"
+                          (evaluate/semantic-value {:state state}))))
+  (doseq [reason [:aozora/missing-selected-work :validation/failed]]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid assessment reason"
+                          (evaluate/reason->wire reason)))))

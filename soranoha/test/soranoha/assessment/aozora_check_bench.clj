@@ -52,7 +52,7 @@
   (let [reference (var-get (find-var 'soranoha.assessment.aozora-benchmark-reference/check!))
         records (get (json/read-json (slurp source-file)) "reliances")
         responses (responses root evidence records)
-        expected (into {} (map (fn [r] [(get r "slug") {:state "available" :reason nil}])) records)]
+        expected (into {} (map (fn [r] [(get r "slug") {:state :aozora/available :reason nil}])) records)]
     (dotimes [i (parse-long pair-count)]
       (let [order (if (even? i) [:reference :current] [:current :reference])
             results (into {} (map (fn [kind]

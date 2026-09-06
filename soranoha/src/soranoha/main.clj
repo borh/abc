@@ -80,7 +80,8 @@
    :parse (stages/parse-stage adapter)
    :convert (stages/convert-stage adapter)
    :render (stages/render-stage clj-toolchain-id)
-   :validate (stages/validate-tei-stage clj-toolchain-id profile)})
+   :validate (stages/validate-tei-stage clj-toolchain-id profile)
+   :fidelity (stages/source-fidelity-stage clj-toolchain-id)})
 
 (defn- read-cas-json [store hex]
   (json/read-json (String. ^bytes (cas/get-bytes (:cas-dir store) hex) "UTF-8")))
@@ -90,7 +91,7 @@
   Returns {:slug :zip-hex :source-facts
   :outputs {stage-key {name hex}} :cached {stage-key bool}
   :trace-keys {stage-key derivation-key-hex}}."
-  [store {:keys [extract metadata parse convert render validate]}
+  [store {:keys [extract metadata parse convert render validate fidelity]}
    {:keys [slug row file]} catalog-hex]
   (let [zip-hex (cas/put-file! (:cas-dir store) file)
         extract-r (engine/run-stage! store extract {"zip" zip-hex})
@@ -113,7 +114,11 @@
                                      "persons" (get (:outputs metadata-r)
                                                     "persons")})
         validate-r (engine/run-stage! store validate
-                                      {"tei" (get (:outputs render-r) "tei")})]
+                                      {"tei" (get (:outputs render-r) "tei")})
+        fidelity-r (engine/run-stage! store fidelity
+                                      {"source" (get (:outputs extract-r) "primary-text")
+                                       "tei" (get (:outputs render-r) "tei")
+                                       "plaintext" (get (:outputs render-r) "plaintext")})]
     {:slug slug
      :zip-hex zip-hex
      :source-facts facts
@@ -122,28 +127,52 @@
                :parse (:outputs parse-r)
                :convert (:outputs convert-r)
                :render (:outputs render-r)
-               :validate (:outputs validate-r)}
+               :validate (:outputs validate-r)
+               :fidelity (:outputs fidelity-r)}
      :cached {:extract (:cached? extract-r)
               :metadata (:cached? metadata-r)
               :parse (:cached? parse-r)
               :convert (:cached? convert-r)
               :render (:cached? render-r)
-              :validate (:cached? validate-r)}
+              :validate (:cached? validate-r)
+              :fidelity (:cached? fidelity-r)}
      :trace-keys {:extract (:trace-key extract-r)
                   :metadata (:trace-key metadata-r)
                   :parse (:trace-key parse-r)
                   :convert (:trace-key convert-r)
                   :render (:trace-key render-r)
-                  :validate (:trace-key validate-r)}}))
+                  :validate (:trace-key validate-r)
+                  :fidelity (:trace-key fidelity-r)}}))
+
+(defn- export-build!
+  "Write reviewable outputs to a new directory, outside the computation cache."
+  [root out report]
+  (let [out (fs/absolutize out)]
+    (fs/create-dirs (fs/parent out))
+    (fs/create-dir out)
+    (doseq [[slug work] (get report "works")]
+      (when-not (= slug (str (fs/file-name slug)))
+        (throw (ex-info "invalid export slug" {:slug slug})))
+      (let [dir (fs/path out slug)]
+        (fs/create-dir dir)
+        (doseq [[kind filename] [["tei" "tei.xml"] ["plaintext" "plain.txt"]
+                                 ["tei-validation" "tei-validation.json"]
+                                 ["source-fidelity" "source-fidelity.json"]]]
+          (fs/write-bytes (fs/path dir filename)
+                          (cas/get-bytes (config/cas-dir root) (get work kind))))))
+    (spit (str (fs/path out "build.json"))
+          (abc-json/write-deterministic-json-str report))))
 
 (defn build!
-  [{:keys [root aozora-root assets-root concurrency clj-toolchain-id limit]}]
+  [{:keys [root aozora-root assets-root concurrency clj-toolchain-id limit out]}]
   (when (string/blank? clj-toolchain-id)
     ;; fail closed: the toolchain identity keys every pure-Clojure stage's
     ;; derivations and lands in release provenance; a constant default
     ;; would let dependency or runtime changes retain stale derivations
     (throw (ex-info "clj toolchain identity required; the build wrapper must pass --clj-toolchain-id"
                     {:option "--clj-toolchain-id"})))
+  (when (and out (fs/exists? out))
+    (throw (ex-info "build export directory already exists" {:reason :export-output-exists})))
   (binding [assets/*root* (str assets-root)]
     (let [root (config/ensure-layout! (config/root root))
           commit (source-provenance! aozora-root)
@@ -217,6 +246,8 @@
                                               "tei-validation"
                                               (get-in outputs
                                                       [:validate "tei-validation"])
+                                              "source-fidelity"
+                                              (get-in outputs [:fidelity "source-fidelity"])
                                               "parser-ir" (get-in outputs
                                                                   [:convert "parser-ir"])
                                               "source_zip" zip-hex
@@ -243,9 +274,11 @@
           report-path (str (fs/path root "runs" (str "run-" started ".json")))]
       (fs/create-dirs (fs/parent report-path))
       (spit report-path (abc-json/write-deterministic-json-str report))
+      (when out (export-build! root out report))
       (engine/close-store! store)
       (println (str "run_report: " report-path))
       (println (str "selected: " (count candidates)))
+      (when out (println (str "exports: " (fs/absolutize out))))
       report)))
 
 (defn compare!

@@ -205,7 +205,8 @@
    :parse parse-stage
    :convert convert-stage
    :render render-stage
-   :validate validate-stage})
+   :validate validate-stage
+   :fidelity (stages/source-fidelity-stage fixture-toolchain)})
 
 ;; --- kernel run -------------------------------------------------------------
 

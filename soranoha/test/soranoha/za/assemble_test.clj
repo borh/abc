@@ -200,10 +200,10 @@
 
       (testing "(b) stages invalidated and executed"
         (let [executed (oracle/executed-stages run-b)]
-          (is (= #{:extract :metadata :parse :convert :render :validate}
+          (is (= #{:extract :metadata :parse :convert :render :validate :fidelity}
                  (executed (slug-of added-work)))
               "a new work executes the full chain")
-          (is (= #{:extract :metadata :parse :convert :render :validate}
+          (is (= #{:extract :metadata :parse :convert :render :validate :fidelity}
                  (executed (slug-of merosu)))
               "a content edit invalidates the full chain")
           (is (= #{:extract :metadata}

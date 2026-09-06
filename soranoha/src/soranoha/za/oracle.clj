@@ -50,7 +50,7 @@
                               (get m "works")))]
     (entry-delta (by-slug manifest-a) (by-slug manifest-b))))
 
-(def ^:private artifact-fields ["parser-ir" "plaintext" "tei" "tei-validation"])
+(def ^:private artifact-fields ["parser-ir" "plaintext" "tei" "tei-validation" "source-fidelity"])
 
 (defn report-artifact-delta
   "(c) per-slug artifact-byte delta between two decoded run reports:
@@ -204,7 +204,9 @@
                                      (map (fn [field]
                                             [field (hex64! [slug field]
                                                            (get work field))]))
-                                     artifact-fields)]))
+                                     (remove #(and (= "source-fidelity" %)
+                                                   (not (contains? work %)))
+                                             artifact-fields))]))
                   works)
      :results (into {}
                     (map (fn [[slug work]]

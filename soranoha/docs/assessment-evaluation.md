@@ -2,6 +2,8 @@
 
 Assessment source records describe owner-reviewed Aozora reliance declarations and independent findings with their precise premises. The evaluator regenerates the publication snapshot using the kernel's CAS and constructive traces. The committed empty source is a quarantine baseline: it authorizes no works. Publication remains blocked pending the first assessed batch.
 
+The research outputs are TEI and visible-body plaintext. The rights snapshot describes admission evidence only; it does not certify transcription or markup fidelity. See [source fidelity and review exports](source-fidelity.md) for the separate build outputs and checks.
+
 ## Prepare Aozora reliance evidence
 
 The default admission basis is reliance on Aozora Bunko’s published, work-level copyright-expired classification for the exact edition, scoped to Japan. It is an attributed upstream assertion, not Soranoha’s independent public-domain finding about every contributor. Concrete exceptions or conflicting applicable reviewed findings prevent reliance.

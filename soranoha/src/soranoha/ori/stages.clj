@@ -12,6 +12,7 @@
             [charred.api :as json]
             [soranoha.core.hash :as core-hash]
             [soranoha.ori.render :as render]
+            [soranoha.ori.fidelity :as fidelity]
             [soranoha.ori.validate :as validate]
             [soranoha.ported.aozora-ingest :as ingest]
             [soranoha.ported.json :as abc-json]
@@ -156,7 +157,7 @@
   "parser-IR + metadata record + persons -> TEI XML + plaintext bytes."
   [clj-toolchain-id]
   {:stage-id "render"
-   :stage-version "1"
+   :stage-version "2"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [read-json (fn [name]
@@ -191,3 +192,16 @@
               {"tei-validation" (json-bytes
                                  (validate/tei-validation-result
                                   profile tei-file))}))))})
+
+(defn source-fidelity-stage
+  "Source and export bytes -> bounded source-to-output fidelity evidence.
+  Rights assessment and TEI schema validity are separate results."
+  [clj-toolchain-id]
+  {:stage-id "source-fidelity"
+   :stage-version "1"
+   :toolchain-id clj-toolchain-id
+   :f (fn [{:keys [blob]} inputs]
+        {"source-fidelity"
+         (json-bytes (fidelity/check (blob (get inputs "source"))
+                                     (blob (get inputs "tei"))
+                                     (blob (get inputs "plaintext"))))})})

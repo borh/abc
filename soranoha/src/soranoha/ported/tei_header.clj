@@ -20,6 +20,7 @@
         [:publicationStmt [:idno {:type \"...\"} \"...\"] [:publisher \"...\"] [:date {:when \"...\"} \"...\"]]
         [:sourceDesc [:bibl ...]+]]
       [:encodingDesc
+        [:styleDefDecl {:scheme \"css\"}]
         [:charDecl [:char {:xml/id \"...\"} ...]?]
         [:editorialDecl
           [:normalization {:method \"markup\"} ...]]?]
@@ -158,7 +159,8 @@
 
 (defn- encoding-desc [declarations orthographic-sentence-normalization?]
   (let [children (keep identity
-                       [(char-decl declarations)
+                       [[:styleDefDecl {:scheme "css"}]
+                        (char-decl declarations)
                         (when orthographic-sentence-normalization?
                           (orthographic-normalization-decl))])]
     (when (seq children)

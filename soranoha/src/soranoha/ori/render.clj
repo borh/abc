@@ -48,5 +48,5 @@
                        :orthographic-sentence-normalization?
                        (orthographic-sentence-normalization? parser-ir)))]
     {:plaintext (:text plaintext-result)
-     :tei (tei-header/hiccup->pretty-xml-string
+     :tei (tei-header/hiccup->xml-string
            (tei-document header (:body tei-result)))}))

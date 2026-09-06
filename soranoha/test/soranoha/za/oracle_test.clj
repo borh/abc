@@ -85,3 +85,13 @@
     (is (= :not-a-content-hash
            (reject-reason (report-json :replace-from hex-a
                                        :replace-to (str/upper-case hex-a)))))))
+
+(deftest fidelity-only-artifact-changes-are-visible
+  (let [with-fidelity (fn [hash]
+                        (report-json :replace-from "\"source_zip\":"
+                                     :replace-to (str "\"source-fidelity\":\"" hash "\",\"source_zip\":")))
+        before (oracle/decode-run (with-fidelity hex-a))
+        after (oracle/decode-run (with-fidelity hex-b))]
+    (is (= #{"w_1"} (:changed (oracle/report-artifact-delta before after))))
+    (is (= #{"w_1"} (:retained (oracle/report-artifact-delta before before))))
+    (is (= :not-a-content-hash (reject-reason (with-fidelity "invalid"))))))

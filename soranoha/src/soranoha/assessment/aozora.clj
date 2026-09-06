@@ -111,7 +111,10 @@
         callback (proxy [HTMLEditorKit$ParserCallback] []
                    (handleStartTag [_ attrs _]
                      (when-let [href (.getAttribute attrs HTML$Attribute/HREF)]
-                       (swap! links conj (str (.resolve (URI. card) (str href))))))
+                       (try
+                         (swap! links conj (str (.resolve (URI. card) (str/trim (str href)))))
+                         ;; A malformed unrelated link does not change the edition assertion.
+                         (catch IllegalArgumentException _ nil))))
                    (handleText [chars _] (.append text ^chars chars)))]
     (.parse (ParserDelegator.) (StringReader. (utf8 bytes)) callback true)
     (when (str/includes? (str text) "著作権存続") (refuse! "protected-card"))

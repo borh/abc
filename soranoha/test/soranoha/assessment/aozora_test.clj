@@ -33,6 +33,11 @@
             baseline @responses
             check #(get (aozora/check! root evidence [record] {:fetch fetch}) slug)]
         (is (= {:state "available" :reason nil} (check)))
+        (testing "malformed unrelated links do not hide the edition link"
+          (swap! responses assoc card-url
+                 (utf8-bytes "<a href='https://example.org/%'>Unrelated</a><h1>図書カード：No.100</h1><a href=' ./files/100_ruby_1001.zip '>Download</a>"))
+          (is (= "available" (:state (check))))
+          (is (= slug (get (aozora/prepare! root evidence slug opts) "slug"))))
         (testing "unrelated catalog rows and ZIP repacking preserve reliance"
           (swap! responses assoc aozora/catalog-url
                  (catalog-bytes dir "なし" "999999,あり,なし,https://www.aozora.gr.jp/cards/1/card1.html,https://www.aozora.gr.jp/cards/1/files/x.zip\n"))
@@ -47,6 +52,7 @@
                  ["card says protected" card-url (utf8-bytes "<h1>図書カード：No.100</h1><div class='copyright'>＊著作権存続＊</div><a href='./files/100_ruby_1001.zip'>Download</a>") "protected-card"]
                  ["wrong card" card-url (utf8-bytes "<h1>図書カード：No.1000</h1><a href='./files/100_ruby_1001.zip'>Download</a>") "card-identity-mismatch"]
                  ["unlinked file" card-url (utf8-bytes "<h1>図書カード：No.100</h1>") "missing-card-file-link"]
+                 ["only malformed links" card-url (utf8-bytes "<h1>図書カード：No.100</h1><a href='https://example.org/%'>Unrelated</a>") "missing-card-file-link"]
                  ["stale Git file with live404" file-url nil "http-status"]
                  ["catalog network failure" aozora/catalog-url nil "http-status"]]]
           (testing label

@@ -322,18 +322,18 @@
                 ];
               }
               ''
-                cp -R ${self}/soranoha source
+                cp -R ${./soranoha} source
                 chmod -R u+w source
                 # The canonicalization suite binds the kernel's canonicalizer
                 # to abc's shared cross-language vectors at this relative path
                 # (the two copies must never diverge byte-wise).
                 mkdir -p abc/test/fixtures/canonicalization
-                cp ${self}/abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json \
+                cp ${./abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json} \
                   abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json
                 mkdir -p abc/schemas
-                cp ${self}/abc/schemas/tei-profile.rng abc/schemas/tei-profile.rng
-                cp ${self}/abc/schemas/metadata-record.schema.json abc/schemas/metadata-record.schema.json
-                cp ${self}/abc/schemas/person-record.schema.json abc/schemas/person-record.schema.json
+                cp ${./abc/schemas/tei-profile.rng} abc/schemas/tei-profile.rng
+                cp ${./abc/schemas/metadata-record.schema.json} abc/schemas/metadata-record.schema.json
+                cp ${./abc/schemas/person-record.schema.json} abc/schemas/person-record.schema.json
                 cd source
 
                 find src test -name '*.clj' -not -path '*/ported/*' -print0 \

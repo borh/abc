@@ -2584,6 +2584,21 @@ mod tests {
         assert!(gaiji["unresolved_reason"].is_null());
     }
 
+    #[test]
+    fn kumo_no_ito_ruby_base_keeps_gaiji_and_following_kanji() {
+        let src = "※［＃「特のへん＋廴＋聿」、第3水準1-87-71］陀多《かんだた》\n";
+        let aat = aat_value_for(src);
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["base"], "犍陀多");
+        assert_eq!(ruby["reading"], "かんだた");
+        let base = ruby["base_content"].as_array().unwrap();
+        assert_eq!(base.len(), 2);
+        assert_eq!(base[0]["kind"], "gaiji");
+        assert_eq!(base[0]["resolved"], "犍");
+        assert_eq!(base[1]["kind"], "text");
+        assert_eq!(base[1]["value"], "陀多");
+    }
+
     /// A retrospective style annotation whose target contains a ruby
     /// (`扨、私事《…》、［＃「扨、私事、」は太字］`) anchors the style
     /// node on the marker alone — the target text was already emitted as

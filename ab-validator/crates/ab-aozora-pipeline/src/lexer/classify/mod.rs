@@ -94,7 +94,9 @@ use std::collections::VecDeque;
 // straight into the lex output's `NodeStore`.
 use ab_aozora_syntax::alloc::Allocator;
 use ab_aozora_syntax::ast::{Content, Directive, Gaiji, Node, Segment};
-use ab_aozora_syntax::{DirectiveKind, RegionClose, RegionFormat, Span, ruby_base_class};
+use ab_aozora_syntax::{
+    DirectiveKind, RegionClose, RegionFormat, Span, is_ruby_base_char, ruby_base_class,
+};
 
 use super::pair::{PairEvent, PairKind};
 use super::token::TriggerKind;
@@ -1291,7 +1293,8 @@ where
     /// `pending_ruby_base` (`※［＃…］《みは》`) — the gaiji resolves to a glyph
     /// distinct from its source and was emitted as its own node, so there
     /// is no plain run to walk back over. Adopts the gaiji as a
-    /// `Segment::Gaiji` base; the reading is built from the `《…》` body as
+    /// structured base, including a following contiguous kanji run; the
+    /// reading is built from the `《…》` body as
     /// for a plain-base ruby. See [`GaijiBaseRuby`] for the outcomes.
     fn try_ruby_over_gaiji_base(
         &mut self,
@@ -1305,11 +1308,13 @@ where
         else {
             return GaijiBaseRuby::NotApplicable;
         };
-        let gaiji_base = self.pending_plain_start().is_none()
-            && self
-                .pending_ruby_base
-                .as_ref()
-                .is_some_and(|p| p.end() == open_span.start);
+        let gaiji_base = self.pending_ruby_base.as_ref().is_some_and(|p| {
+            p.end() == open_span.start
+                || (self.pending_plain_start() == Some(p.end())
+                    && self.source[p.end() as usize..open_span.start as usize]
+                        .chars()
+                        .all(is_ruby_base_char))
+        });
         if !gaiji_base {
             return GaijiBaseRuby::NotApplicable;
         }
@@ -1346,11 +1351,18 @@ where
             reading
         };
         let base_start = pending.start();
-        let segs: smallvec::SmallVec<[Segment; 2]> = pending
+        let mut segs: smallvec::SmallVec<[Segment; 2]> = pending
             .segs
             .iter()
             .map(|g| self.alloc.seg_gaiji(g.payload))
             .collect();
+        if pending.end() < open_span.start {
+            segs.push(
+                self.alloc
+                    .seg_text(&self.source[pending.end() as usize..open_span.start as usize]),
+            );
+            self.pending_plain.clear();
+        }
         let base = self.alloc.content_segments(&segs);
         let node = self.alloc.ruby(base, reading);
         GaijiBaseRuby::Emitted(ClassifiedSpan {
@@ -1791,6 +1803,7 @@ where
         // event continues or adopts it — an adjacent `《…》` ruby adopts it as
         // a base, and an adjacent `※` refmark (or its Bracket, once the
         // refmark is held) starts a continuation gaiji that extends the run.
+        // A contiguous kanji text run may complete a mixed gaiji/text base.
         // Any other event flushes the run as standalone spans first,
         // preserving source order. Checked after the frame guard so the
         // ruby's own body events (while its sub-frame buffers) never flush it
@@ -1801,8 +1814,25 @@ where
                 PairEvent::PairOpen {
                     kind: PairKind::Ruby,
                     span,
+                } => {
+                    span.start == end
+                        || (self.pending_plain_start() == Some(end)
+                            && self
+                                .pending_plain
+                                .back()
+                                .is_some_and(|p| p.source_span.end == span.start))
                 }
-                | PairEvent::Solo {
+                PairEvent::Text { range, .. } => {
+                    (range.start == end
+                        || self
+                            .pending_plain
+                            .back()
+                            .is_some_and(|p| p.source_span.end == range.start))
+                        && self.source[range.start as usize..range.end as usize]
+                            .chars()
+                            .all(is_ruby_base_char)
+                }
+                PairEvent::Solo {
                     kind: TriggerKind::RefMark,
                     span,
                 } => span.start == end,
@@ -2503,6 +2533,66 @@ mod tests {
         assert!(matches!(segs[0], Segment::Text(t) if out.s(t) == "に"));
         assert!(matches!(segs[1], Segment::Gaiji(_)));
         assert!(matches!(segs[2], Segment::Text(t) if out.s(t) == "ん"));
+    }
+
+    #[test]
+    fn implicit_ruby_keeps_leading_gaiji_and_kanji_in_one_base() {
+        let source = "※［＃「特のへん＋廴＋聿」、第3水準1-87-71］陀多《かんだた》";
+        run!(out, source);
+        let Node::Ruby(r) = out.only_aozora() else {
+            panic!("expected Ruby");
+        };
+        assert_eq!(out.spans.len(), 1);
+        assert_eq!(out.spans[0].source_span, Span::new(0, source.len() as u32));
+        assert_eq!(out.plain(r.reading), Some("かんだた"));
+        let base = out.contents(r.base);
+        let [Content::Segments(range)] = base[..] else {
+            panic!("expected structured ruby base");
+        };
+        let segments = out.store.resolve_seg_range(range);
+        assert_eq!(segments.len(), 2);
+        assert!(matches!(segments[0], Segment::Gaiji(_)));
+        assert!(matches!(segments[1], Segment::Text(t) if out.s(t) == "陀多"));
+    }
+
+    #[test]
+    fn deferred_gaiji_with_kanji_preserves_non_ruby_source_order() {
+        for suffix in ["陀多", "陀多《》", "陀多《かんだた", "陀多。", "陀多\n本文"]
+        {
+            let source = format!("※［＃「特のへん＋廴＋聿」、第3水準1-87-71］{suffix}");
+            run!(out, &source);
+            assert!(matches!(
+                out.spans[0].kind,
+                SpanKind::Aozora(Node::Gaiji(_))
+            ));
+            assert!(
+                !out.spans
+                    .iter()
+                    .any(|span| matches!(span.kind, SpanKind::Aozora(Node::Ruby(_))))
+            );
+            let mut end = 0;
+            for span in &out.spans {
+                assert_eq!(span.source_span.start, end, "{source}");
+                end = span.source_span.end;
+            }
+            assert_eq!(end as usize, source.len());
+        }
+    }
+
+    #[test]
+    fn non_kanji_after_gaiji_starts_a_separate_implicit_ruby_base() {
+        run!(
+            out,
+            "※［＃「特のへん＋廴＋聿」、第3水準1-87-71］かな陀多《だた》"
+        );
+        assert!(matches!(
+            out.spans[0].kind,
+            SpanKind::Aozora(Node::Gaiji(_))
+        ));
+        let SpanKind::Aozora(Node::Ruby(r)) = out.spans.last().unwrap().kind else {
+            panic!("expected trailing ruby");
+        };
+        assert_eq!(out.plain(r.base), Some("陀多"));
     }
 
     #[test]

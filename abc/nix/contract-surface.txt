@@ -1,8 +1,5 @@
 # Files that make up the ABC v0 source-contract surface.
-resources/abc/ndc9.edn.xz
 deps-lock.json
-src/abc/annotation/schema.clj
-src/abc/ndc.clj
 src/abc/tools/hash.clj
 src/abc/tools/jcs.clj
 src/abc/tools/json.clj
@@ -68,5 +65,3 @@ examples/v0/example-work/metadata-record.ttl
 examples/v0/example-persons/000879.json
 data/parser-ir-publication-policy-v0.json
 test/abc/tools/validate_design_bundle_test.clj
-test/abc/annotation_schema_test.clj
-test/abc/ndc_test.clj

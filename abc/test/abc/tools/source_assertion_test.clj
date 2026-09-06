@@ -1,5 +1,7 @@
 (ns abc.tools.source-assertion-test
-  (:require [clojure.java.io :as io]
+  (:require [abc.tools.files :as files]
+            [abc.tools.schema :as schema]
+            [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]))
 
@@ -10,17 +12,8 @@
    "snapshot_hash" (str "sha256:" (apply str (repeat 64 "a")))})
 
 (defn- validation-errors [value]
-  (when-let [f (try
-                 (requiring-resolve 'abc.tools.source-assertion/validation-errors)
-                 (catch java.io.FileNotFoundException _ nil))]
-    (f value)))
-
-(deftest source-assertion-contract-exists-test
-  (testing "the shared schema and validator are present"
-    (is (.isFile (io/file "schemas/source-assertion.schema.json")))
-    (is (some? (try
-                 (requiring-resolve 'abc.tools.source-assertion/validation-errors)
-                 (catch java.io.FileNotFoundException _ nil))))))
+  (schema/validation-errors
+   (files/read-json "schemas/source-assertion.schema.json") value))
 
 (deftest source-assertion-valid-values-test
   (testing "present and missing lexical values retain complete provenance"

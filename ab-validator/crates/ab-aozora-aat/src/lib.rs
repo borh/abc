@@ -844,7 +844,10 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
         }
 
         if let Some(offset) = align_end_offset(&node) {
-            let boundary = find_next_raw_boundary(&content, index + 1);
+            let boundary = content[index + 1..]
+                .iter()
+                .position(ends_source_line)
+                .map_or(content.len(), |offset| index + offset + 2);
             if boundary > index + 1 {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let inner = content[index + 1..boundary].to_vec();
@@ -1214,13 +1217,6 @@ fn find_next_container_boundary(content: &[Value], start: usize) -> usize {
     content[start..]
         .iter()
         .position(is_container_marker_raw)
-        .map_or(content.len(), |offset| start + offset)
-}
-
-fn find_next_raw_boundary(content: &[Value], start: usize) -> usize {
-    content[start..]
-        .iter()
-        .position(|node| node.get("kind").and_then(Value::as_str) == Some("raw"))
         .map_or(content.len(), |offset| start + offset)
 }
 
@@ -2876,6 +2872,28 @@ mod tests {
         let block = find_first_node(&aat, "jisage_block");
         assert_eq!(block["indent"], 2);
         assert!(block.get("x-indent").is_none());
+    }
+
+    #[test]
+    fn closing_offset_ends_at_source_line_boundary() {
+        for newline in ["\n", "\r\n"] {
+            let source = format!("［＃地から３字上げ］句《く》。{newline}続く。{newline}次。");
+            let aat = aat_value_for(&source);
+            let blocks = aat["blocks"].as_array().unwrap();
+            assert_eq!(blocks.len(), 3, "{aat}");
+            let style = &blocks[0]["content"][0];
+            assert_eq!(style["style_type"], "chitsuki");
+            assert_eq!(style["offset_from_end"], 3);
+            assert_eq!(style["content"].as_array().unwrap().len(), 2);
+            assert_eq!(blocks[1]["content"][0]["value"], "続く。\n");
+            assert_eq!(blocks[2]["content"][0]["value"], "次。");
+            let joined = aat_value_for(&source.replacen(newline, "", 1));
+            assert_eq!(joined["blocks"].as_array().unwrap().len(), 2);
+            assert_eq!(
+                joined["blocks"][0]["content"][0]["content"][1]["value"],
+                "。続く。\n"
+            );
+        }
     }
 
     #[test]

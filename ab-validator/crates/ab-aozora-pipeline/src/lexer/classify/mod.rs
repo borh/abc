@@ -2543,7 +2543,13 @@ mod tests {
             panic!("expected Ruby");
         };
         assert_eq!(out.spans.len(), 1);
-        assert_eq!(out.spans[0].source_span, Span::new(0, source.len() as u32));
+        assert_eq!(
+            out.spans[0].source_span,
+            Span::new(
+                0,
+                u32::try_from(source.len()).expect("fixture length fits u32")
+            )
+        );
         assert_eq!(out.plain(r.reading), Some("かんだた"));
         let base = out.contents(r.base);
         let [Content::Segments(range)] = base[..] else {

@@ -630,12 +630,10 @@ fn build_aat(
     // stream — raw toggle markers included — so paragraph/jizume
     // segmentation matches the no-pass baseline; adoption then rewrites
     // only the toggle spans inside the built tree.
-    let mut blocks = pair_bare_toggles_in_blocks(blocks_from_inline_content(inline_content(
-        decoded,
-        nodes,
-        &gaiji_by_start,
-        &ruby_by_span,
-    )));
+    let mut blocks = pair_bare_toggles_in_blocks(blocks_from_inline_content(
+        inline_content(decoded, nodes, &gaiji_by_start, &ruby_by_span),
+        &decoded.text,
+    ));
     let mut warnings = diagnostics
         .iter()
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
@@ -863,7 +861,7 @@ fn source_note_block(content: Vec<Value>, region_class: &str) -> Value {
     clippy::too_many_lines,
     reason = "single linear classifier pass ported from the frozen adapter; splitting would obscure the branch order contract"
 )]
-fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
+fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
     let mut blocks = Vec::new();
     let mut paragraph = Vec::new();
     let mut strip_next_leading_newline = false;
@@ -944,7 +942,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..close_index].to_vec();
                 strip_boundary_newlines(&mut inner);
-                blocks.push(jisage_block(&node, indent, inner));
+                blocks.push(jisage_block(&node, indent, inner, source));
                 strip_next_leading_newline = true;
                 index = close_index + 1;
                 continue;
@@ -954,7 +952,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..boundary].to_vec();
                 strip_boundary_newlines(&mut inner);
-                blocks.push(jisage_block(&node, indent, inner));
+                blocks.push(jisage_block(&node, indent, inner, source));
                 index = boundary;
                 continue;
             }
@@ -966,7 +964,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 strip_boundary_newlines(&mut inner);
                 blocks.push(json!({
                     "kind": "keigakomi_block",
-                    "children": blocks_from_inline_content(inner)
+                    "children": blocks_from_inline_content(inner, source)
                 }));
                 strip_next_leading_newline = true;
                 index = close_index + 1;
@@ -980,7 +978,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
             strip_boundary_newlines(&mut inner);
             blocks.push(json!({
                 "kind": "yokogumi_block",
-                "children": blocks_from_inline_content(inner)
+                "children": blocks_from_inline_content(inner, source)
             }));
             strip_next_leading_newline = true;
             index = close_index + 1;
@@ -988,7 +986,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
         }
 
         if is_heading_hint_raw(&node)
-            && let Some(heading) = heading_block_from_hint(&mut paragraph, &node)
+            && let Some(heading) = heading_block_from_hint(&mut paragraph, &node, source)
         {
             push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
             blocks.push(heading);
@@ -1159,10 +1157,10 @@ fn jisage_container_indent(node: &Value) -> Option<u64> {
     simple_jisage_open_indent(source)
 }
 
-fn jisage_block(opener: &Value, indent: u64, inner: Vec<Value>) -> Value {
+fn jisage_block(opener: &Value, indent: u64, inner: Vec<Value>, source: &str) -> Value {
     let mut block = json!({
         "kind": "jisage_block", "indent": indent,
-        "children": blocks_from_inline_content(inner)
+        "children": blocks_from_inline_content(inner, source)
     });
     if opener["source"]
         .as_str()
@@ -1358,18 +1356,16 @@ fn is_heading_hint_raw(node: &Value) -> bool {
         && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("headingHint")
 }
 
-fn heading_block_from_hint(paragraph: &mut Vec<Value>, node: &Value) -> Option<Value> {
+fn heading_block_from_hint(
+    paragraph: &mut Vec<Value>,
+    node: &Value,
+    decoded_source: &str,
+) -> Option<Value> {
     let source = node.get("source").and_then(Value::as_str)?;
     let (target, directive) = source.strip_prefix("［＃「")?.rsplit_once("」は")?;
     let level = heading_level(directive);
     let style = heading_style(directive);
-    let text = paragraph.last()?;
-    if text.get("kind").and_then(Value::as_str) != Some("text")
-        || text.get("value").and_then(Value::as_str)? != target
-    {
-        return None;
-    }
-    let heading_text = paragraph.pop()?;
+    let heading_content = take_visible_suffix(paragraph, target, decoded_source)?;
     let indent = paragraph.last().and_then(heading_indent_marker);
     if indent.is_some() {
         paragraph.pop();
@@ -1378,7 +1374,7 @@ fn heading_block_from_hint(paragraph: &mut Vec<Value>, node: &Value) -> Option<V
         "kind": "heading",
         "level": level,
         "style": style,
-        "content": [heading_text],
+        "content": heading_content,
         "x-provenance": "source-derived",
     });
     if let Some(indent) = indent {
@@ -2785,6 +2781,23 @@ mod tests {
     }
 
     #[test]
+    fn retrospective_heading_adopts_ruby_and_retains_indentation() {
+        let source = "［＃７字下げ］「大溝《おほどぶ》」［＃「「大溝」」は中見出し］\n本文。\n";
+        let aat = aat_value_for(source);
+        let heading = find_first_node(&aat, "heading");
+        assert_eq!(heading["level"], 2);
+        assert_eq!(heading["indent"], 7);
+        assert_eq!(find_first_node(heading, "ruby")["reading"], "おほどぶ");
+        let content = heading["content"].as_array().unwrap();
+        assert_eq!(content[0]["value"], "「");
+        assert_eq!(content[2]["value"], "」");
+        assert_eq!(aat["blocks"][1]["content"][0]["value"], "本文。\n");
+        let mismatch = aat_value_for(&source.replace("［＃「「大溝」」", "［＃「「小溝」」"));
+        assert!(find_node(&mismatch, "heading").is_none());
+        assert_eq!(find_first_node(&mismatch, "ruby")["base"], "大溝");
+    }
+
+    #[test]
     fn marker_only_style_adopts_ruby_target_without_duplication() {
         for (source, target) in [
             ("まえ牛《ベゴ》の舌［＃「牛の舌」に傍点］あと\n", "牛"),
@@ -3899,12 +3912,10 @@ mod tests {
             .iter()
             .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
             .collect::<BTreeMap<_, _>>();
-        let no_pass_blocks = Value::Array(blocks_from_inline_content(inline_content(
-            &decoded,
-            &nodes,
-            &gaiji_by_start,
-            &ruby_by_span,
-        )));
+        let no_pass_blocks = Value::Array(blocks_from_inline_content(
+            inline_content(&decoded, &nodes, &gaiji_by_start, &ruby_by_span),
+            &decoded.text,
+        ));
         let open = find_raw_with_source(&no_pass_blocks, "［＃横組み］")
             .expect("no-pass tree keeps the open marker raw")
             .clone();

@@ -131,3 +131,87 @@
     (is (= "failed" (status (report s tei plaintext) "tei-source-note-layout")))
     (is (= "failed" (status (report s (str/replace t "入力：人" "入力：別人") plaintext)
                             "tei-source-note-layout")))))
+
+(defn- compact-source [body]
+  (str "題\n作者\n\n--------------------\n記号説明\n--------------------\n"
+       body "\n\n底本：本\n"))
+
+(defn- compact-tei [body]
+  (str "<TEI xmlns='http://www.tei-c.org/ns/1.0' xmlns:abc='https://w3id.org/abc/ns/tei'>"
+       "<text><body>" body "</body><back><note type='source-attribution'>"
+       "<seg type='source-line'>底本：本</seg></note></back></text></TEI>"))
+
+(deftest numeric-gaiji-references-cover-both-jis-planes
+  (doseq [[annotation character]
+          [["「てへん＋丑」、第4水準2-12-93" "扭"]
+           ["「にんべん＋參」、第4水準2-1-79" "傪"]
+           ["「口＋「皐」の「白」にかえて「自」、第4水準2-4-33" "嘷"]
+           ["「やまいだれ＋低のつくり」、第4水準2-81-42" "疷"]
+           ["「言＋墟のつくり」、第4水準2-88-74" "譃"]
+           ["二の字点、1-2-22" "〻"]]]
+    (let [s (compact-source (str "※［＃" annotation "］"))
+          t (str/replace (compact-tei (str "<p><g ref='#g'>" character "</g></p>"))
+                         "<text>" (str "<teiHeader><charDecl><char xml:id='g'><mapping type='unicode'>"
+                                       character "</mapping></char></charDecl></teiHeader><text>"))]
+      (testing annotation
+        (is (= "passed" (get (report s t (str character "\n")) "status")))
+        (is (= "failed" (status (report s (str/replace t (str ">" character "</g>") ">字</g>")
+                                        (str character "\n")) "tei-gaiji")))
+        (is (= "failed" (status (report s (str/replace t (str ">" character "</mapping>") ">字</mapping>")
+                                        (str character "\n")) "tei-gaiji"))))))
+  (doseq [annotation ["第3水準2-1-79" "第4水準2-2-1" "第4水準2-1-95"]]
+    (is (= "not-evaluated" (get (report (compact-source (str "※［＃字、" annotation "］"))
+                                        (compact-tei "<p>字</p>") "字\n") "status")))))
+
+(deftest source-correction-notes-retain-exact-wording-and-position
+  (let [body "甍《いらか》［＃「甍の」は底本では「薨の」］先。明《あ》［＃ルビの「あ」は底本では「あか」］かさう。"
+        rendered "<p><ruby><rb>甍</rb><rt>いらか</rt></ruby><note type='correction'>「甍の」は底本では「薨の」</note>先。<ruby><rb>明</rb><rt>あ</rt></ruby><note type='correction'>ルビの「あ」は底本では「あか」</note>かさう。</p>"
+        s (compact-source body) t (compact-tei rendered) p "甍先。明かさう。\n"]
+    (is (= "passed" (get (report s t p) "status")))
+    (doseq [mutation [#(str/replace % #"<note type='correction'>[^<]+</note>" "")
+                      #(str/replace % "薨の" "甍の")
+                      #(str/replace % "</note>先。" "先。</note>")
+                      #(str/replace % "</note>先。" "</note>先。<note type='correction'>追加</note>")
+                      #(str/replace % "</ruby><note type='correction'>「甍の」は底本では「薨の」</note>先。"
+                                    "</ruby>先。<note type='correction'>「甍の」は底本では「薨の」</note>")]]
+      (is (= "failed" (status (report s (mutation t) p) "tei-correction-notes"))))))
+
+(deftest scoped-layout-preserves-every-line-and-property
+  (let [s (compact-source "［＃ここから４字下げ、横書き、中央揃え、罫囲み］\nRESTAURANT\n西洋料理店\n［＃ここで字下げ終わり］\nといふ札。")
+        attrs " abc:layout-kind='jisage' abc:layout-params='indent=4' style='writing-mode: horizontal-tb; text-align: center; border-style: solid'"
+        t (compact-tei (str "<p" attrs ">RESTAURANT</p><p" attrs ">西洋料理店</p><p>といふ札。</p>"))
+        p "RESTAURANT\n西洋料理店\nといふ札。\n"]
+    (is (= "passed" (get (report s t p) "status")))
+    (doseq [mutation [#(str/replace % "indent=4" "indent=3")
+                      #(str/replace-first % "horizontal-tb" "vertical-rl")
+                      #(str/replace-first % "text-align: center" "text-align: center-invalid")
+                      #(str/replace-first % "border-style: solid" "")
+                      #(str/replace % "<p>といふ札。" (str "<p" attrs ">といふ札。"))]]
+      (is (= "failed" (status (report s (mutation t) p) "tei-block-layout")))))
+  (let [s (compact-source "［＃ここから２字下げ］\n偶因狂疾成殊類　　災患相仍不可逃\n［＃ここで字下げ終わり］\n次。")
+        t (compact-tei "<p abc:layout-kind='jisage' abc:layout-params='indent=2'>偶因狂疾成殊類　　災患相仍不可逃</p><p>次。</p>")
+        p "偶因狂疾成殊類　　災患相仍不可逃\n次。\n"]
+    (is (= "passed" (get (report s t p) "status")))
+    (is (= "failed" (status (report s t (str/replace p "逃\n次" "逃次")) "plaintext-body")))
+    (doseq [bad [(str/replace s "［＃ここで字下げ終わり］" "")
+                 (str/replace s "［＃ここから２字下げ］" "［＃ここから２字下げ］\n［＃ここから３字下げ］")
+                 (str/replace s "［＃ここから２字下げ］" "［＃ここから２字下げ、未知］")]]
+      (is (= "not-evaluated" (get (report bad t p) "status"))))))
+
+(deftest plain-preamble-and-two-character-closing-offset
+  (let [body "こころ　こころ\nくるしいこころ"
+        s (str "こころ\n今野大力\n\n" body "\n\n底本：本\n")
+        t (compact-tei "<p>こころ　こころ</p><p>くるしいこころ</p>")]
+    (is (= "passed" (get (report s t (str body "\n")) "status")))
+    (is (= "failed" (status (report s t (str "こころ\n今野大力\n" body "\n")) "plaintext-body")))
+    (is (= "failed" (status (report s (str/replace t "<body>" "<body><p>こころ</p><p>今野大力</p>")
+                                    (str body "\n")) "tei-body-text")))
+    (is (= "not-evaluated" (get (report (str/replace s "大力\n\n" "大力\n") t (str body "\n")) "status"))))
+  (let [s (compact-source "［＃地から２字上げ］――四年九月――")
+        t (compact-tei "<p abc:layout-kind='chitsuki' abc:layout-params='align=right;offset-from-end=2'>――四年九月――</p>")
+        p "――四年九月――\n"]
+    (is (= "passed" (get (report s t p) "status")))
+    (is (= "failed" (status (report s (str/replace t "offset-from-end=2" "offset-from-end=1") p)
+                            "closing-date-layout")))
+    (is (= "failed" (status (report (str/replace s "［＃地から２字上げ］" "") t p)
+                            "closing-date-layout")))))

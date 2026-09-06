@@ -57,31 +57,41 @@
       (.getNodeValue ^Node node)
       :else (apply str (map #(visible %) (children node))))))
 
-(defn- gaiji [row cell]
-  (let [row (Long/parseLong row)
-        cell (Long/parseLong cell)]
-    (when (and (<= 1 row 94) (<= 1 cell 94))
-      (let [lead (+ 0x81 (quot (dec row) 2))
-            lead (if (> lead 0x9f) (+ lead 0x40) lead)
-            trail (if (even? row) (+ cell 0x9e)
+(defn- gaiji [plane row cell]
+  (let [plane (Long/parseLong plane)
+        row (Long/parseLong row)
+        cell (Long/parseLong cell)
+        lead (cond
+               (and (= plane 1) (<= 1 row 62)) (quot (+ row 257) 2)
+               (and (= plane 1) (<= 63 row 94)) (quot (+ row 385) 2)
+               (and (= plane 2) (#{1 3 4 5 8 12 13 14 15} row))
+               (- (quot (+ row 479) 2) (* (quot row 8) 3))
+               (and (= plane 2) (<= 78 row 94)) (quot (+ row 411) 2))]
+    (when (and lead (<= 1 cell 94))
+      (let [trail (if (even? row) (+ cell 0x9e)
                       (+ cell (if (< cell 64) 0x3f 0x40)))]
         (decode (byte-array [(unchecked-byte lead) (unchecked-byte trail)])
                 "x-SJIS_0213")))))
 
+(defn- decimal [s]
+  (Long/parseLong (apply str (map #(Character/digit ^char % 10) s))))
+
 (def ruby-pattern #"(?:｜([^｜《》\n]+)|([\p{IsHan}々〆ヵヶ]+))《([^《》\n]+)》")
 
-(defn- source-emphasis [text]
-  (let [matcher (re-matcher #"［＃「([^「」\n]+)」に傍点］" text)]
-    (loop [end 0 plain "" spans []]
+(defn- source-annotations [text]
+  (let [matcher (re-matcher #"［＃(?:「([^「」\n]+)」に傍点|((?:ルビの)?「[^「」\n]+」は底本では「[^「」\n]+」))］" text)]
+    (loop [end 0 plain "" spans [] corrections []]
       (if (.find matcher)
         (let [prefix (str plain (subs text end (.start matcher)))
               target (.group matcher 1)
               start (- (count prefix) (count target))
               [last-start last-text] (peek spans)]
-          (when (and (str/ends-with? prefix target)
-                     (>= start (+ (or last-start 0) (count last-text))))
-            (recur (.end matcher) prefix (conj spans [start target "bouten"]))))
-        {:plain (str plain (subs text end)) :emphasis spans}))))
+          (if-let [correction (.group matcher 2)]
+            (recur (.end matcher) prefix spans (conj corrections [(count prefix) correction]))
+            (when (and (str/ends-with? prefix target)
+                       (>= start (+ (or last-start 0) (count last-text))))
+              (recur (.end matcher) prefix (conj spans [start target "bouten"]) corrections))))
+        {:plain (str plain (subs text end)) :emphasis spans :corrections corrections}))))
 
 (defn- export-emphasis [node]
   (letfn [(walk [node offset]
@@ -99,40 +109,70 @@
 
 (defn- parse-line [line]
   (let [gaijis (atom [])
-        mapped (str/replace line #"※［＃[^］]*第3水準1-([0-9]+)-([0-9]+)］"
-                            (fn [[_ row cell]]
-                              (let [s (or (gaiji row cell) "�")]
+        mapped (str/replace line #"※［＃[^］]*?、(?:第([34])水準)?([12])-([0-9]+)-([0-9]+)］"
+                            (fn [[_ level plane row cell]]
+                              (let [s (or (when (or (nil? level) (= (Long/parseLong level) (+ 2 (Long/parseLong plane))))
+                                            (gaiji plane row cell)) "�")]
                                 (swap! gaijis conj s) s)))
         heading (re-matches #"［＃[０-９0-9]+字下げ］(.+)［＃「(.+)」は中見出し］" mapped)
-        closing? (str/starts-with? mapped "［＃地から１字上げ］")
+        closing (re-find #"^［＃地から([０-９0-9]+)字上げ］" mapped)
         text (cond heading (if (= (nth heading 1) (nth heading 2))
                              (nth heading 1) mapped)
-                   closing? (subs mapped (count "［＃地から１字上げ］"))
+                   closing (subs mapped (count (first closing)))
                    :else mapped)
         rubies (mapv (fn [[_ explicit implicit reading]] [(or explicit implicit) reading])
                      (re-seq ruby-pattern text))
         unpointed (str/replace text ruby-pattern (fn [[_ explicit implicit _]] (or explicit implicit)))
-        emphasis (source-emphasis unpointed)
+        emphasis (source-annotations unpointed)
         plain (or (:plain emphasis) unpointed)
         unsupported? (boolean (re-find #"[［］《》｜※�]" plain))]
-    {:plain plain :rubies rubies :gaijis @gaijis :emphasis (:emphasis emphasis)
+    {:plain plain :rubies rubies :gaijis @gaijis :emphasis (:emphasis emphasis) :corrections (:corrections emphasis)
      :heading (when heading (nth heading 1))
      :heading-indent (when heading
-                       (Long/parseLong (apply str (map #(Character/digit ^char % 10)
-                                                       (second (re-find #"^［＃([０-９0-9]+)字下げ］" mapped))))))
-     :closing? closing?
+                       (decimal (second (re-find #"^［＃([０-９0-9]+)字下げ］" mapped))))
+     :closing-offset (when closing (decimal (second closing)))
      :indent (count (or (re-find #"^　+" plain) ""))
      :unsupported? unsupported?}))
 
+(defn- body-lines [text]
+  (loop [remaining (remove str/blank? (str/split-lines text)) layout nil lines []]
+    (if-let [line (first remaining)]
+      (if-let [[_ n properties] (re-matches #"［＃ここから([０-９0-9]+)字下げ(、横書き、中央揃え、罫囲み)?］" line)]
+        (when-not layout
+          (recur (next remaining) {:indent (decimal n) :sign? (some? properties)} lines))
+        (if (= line "［＃ここで字下げ終わり］")
+          (when layout (recur (next remaining) nil lines))
+          (recur (next remaining) layout (conj lines (assoc (parse-line line) :layout layout)))))
+      (when-not layout lines))))
+
 (defn- source-parts [s]
   (let [s (str/replace s #"\r\n?" "\n")
-        sections (str/split s #"(?m)^-{20,}\n" -1)]
-    (when (= 3 (count sections))
-      (let [parts (str/split (last sections) #"(?m)(?=^底本：)" -1)]
+        sections (str/split s #"(?m)^-{20,}\n" -1)
+        body (cond
+               (= 3 (count sections)) (last sections)
+               (= 1 (count sections))
+               (second (re-matches #"[^\n［］]+\n[^\n［］]+\n\n([\s\S]+)" s)))]
+    (when body
+      (let [parts (str/split body #"(?m)(?=^底本：)" -1)]
         (when (= 2 (count parts))
-          {:lines (mapv parse-line (remove str/blank? (str/split-lines (first parts))))
+          {:lines (body-lines (first parts))
            :notes (->> (str/split-lines (second parts))
                        (remove str/blank?) vec)})))))
+
+(defn- export-corrections [node]
+  (letfn [(walk [node offset]
+            (cond
+              (= "note" (.getLocalName ^Node node))
+              [offset (if (= "correction" (attr node "type"))
+                        [[offset (.getTextContent ^Node node)]] [])]
+              (= "rt" (.getLocalName ^Node node)) [offset []]
+              (= Node/TEXT_NODE (.getNodeType ^Node node))
+              [(+ offset (count (.getNodeValue ^Node node))) []]
+              :else (reduce (fn [[at notes] child]
+                              (let [[next-at child-notes] (walk child at)]
+                                [next-at (into notes child-notes)]))
+                            [offset []] (children node))))]
+    (second (walk node 0))))
 
 (defn- result [id status message]
   {"id" id "status" status "message" message})
@@ -202,6 +242,27 @@
                                  [(- start (:indent line)) text rendition])
                                (:emphasis line))) lines)
                  (mapv export-emphasis blocks))
+     (comparison "tei-correction-notes"
+                 (mapv (fn [line]
+                         (mapv (fn [[start text]] [(- start (:indent line)) text])
+                               (:corrections line))) lines)
+                 (mapv export-corrections blocks))
+     (comparison "tei-block-layout" true
+                 (and (= (count source-paragraphs) (count paragraphs))
+                      (every? true?
+                              (map (fn [src [p _]]
+                                     (if-let [layout (:layout src)]
+                                       (and (= "jisage" (abc-attr p "layout-kind"))
+                                            (= (str "indent=" (:indent layout)) (abc-attr p "layout-params"))
+                                            (or (not (:sign? layout))
+                                                (let [style (into {} (keep (fn [declaration]
+                                                                             (let [[k v] (str/split declaration #":" 2)]
+                                                                               (when v [(str/trim k) (str/trim v)])))
+                                                                           (str/split (or (attr p "style") "") #";")))]
+                                                  (= {"writing-mode" "horizontal-tb" "text-align" "center" "border-style" "solid"}
+                                                     (select-keys style ["writing-mode" "text-align" "border-style"])))))
+                                       (not= "jisage" (abc-attr p "layout-kind"))))
+                                   source-paragraphs paragraphs))))
      (comparison "tei-paragraph-indentation" true
                  (and (= (count source-paragraphs) (count paragraphs))
                       (every? true?
@@ -220,9 +281,10 @@
      (comparison "closing-date-layout" true
                  (every? true?
                          (map (fn [src [p _]]
-                                (or (not (:closing? src))
-                                    (and (= "chitsuki" (abc-attr p "layout-kind"))
-                                         (= "align=right;offset-from-end=1" (abc-attr p "layout-params")))))
+                                (if-some [offset (:closing-offset src)]
+                                  (and (= "chitsuki" (abc-attr p "layout-kind"))
+                                       (= (str "align=right;offset-from-end=" offset) (abc-attr p "layout-params")))
+                                  (not= "chitsuki" (abc-attr p "layout-kind"))))
                               source-paragraphs paragraphs)))]))
 
 (defn check
@@ -251,5 +313,5 @@
      "status" (cond (statuses "failed") "failed"
                     (statuses "not-evaluated") "not-evaluated" :else "passed")
      "checks" checks
-     "limitations" ["Limited to separator-delimited Aozora prose with a 底本 colophon, basic ruby, non-overlapping retrospective emphasis dots, plane-1 third-level JIS gaiji, middle headings, and leading fullwidth indentation."
+     "limitations" ["Limited to Aozora text with a 底本 colophon and either a separator preamble or a two-line title/author header; basic ruby, non-overlapping retrospective emphasis dots, numeric JIS X 0213 gaiji, correction notes, middle headings, numeric closing offsets, and the listed indentation/sign blocks."
                     "Blank-line spacing and title/author metadata are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))

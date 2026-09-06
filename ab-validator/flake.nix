@@ -110,6 +110,33 @@
 
         source = cleanProjectSource ./.;
 
+        # Cargo resolves every workspace member even for a single-package build.
+        # Keep the workspace Rust inputs, but exclude research tooling and reports.
+        publicationRustFiles = lib.fileset.unions [
+          ./Cargo.toml
+          ./Cargo.lock
+          (lib.fileset.fileFilter (file: file.name == "Cargo.toml" || file.hasExt "rs") ./crates)
+          ./crates/ab-aozora-encoding/data
+          ./crates/ab-aozora-render/assets
+          ./crates/ab-aozora-facade/README.md
+        ];
+        aozoraSource = lib.fileset.toSource {
+          root = ./.;
+          fileset = publicationRustFiles;
+        };
+        parserIrSource = lib.fileset.toSource {
+          root = ./.;
+          fileset = lib.fileset.unions [
+            publicationRustFiles
+            ./data/aat-schema-v1.json
+            ./data/aat-schema.json
+            ./data/aat-parser-ir-divergence-bundle-v1.schema.json
+            ./research/schemas/aat-parser-ir-mapping.schema.json
+            ./research/schemas/parser-ir.schema.json
+            ./research/schemas/aat-parser-ir-divergence.schema.json
+          ];
+        };
+
         researchSource = pkgs.runCommand "ab-validator-research-source" { } ''
           cp -R ${source}/research "$out"
           chmod -R u+w "$out"
@@ -1126,9 +1153,7 @@
             pkgs.zstd
           ];
           buildInputs = workspaceExtraBuildInputs;
-          env = {
-            AB_RESEARCH_ROOT = "${researchRoot}";
-          };
+          extra.src = parserIrSource;
           cargoBuildFlags = [
             "--package"
             "ab-aat-to-parser-ir"
@@ -1193,6 +1218,7 @@
         # run-aat-full.sh can pin it by content as a first-class lane.
         abAozora = mkRustBin {
           pname = "ab-aozora";
+          extra.src = aozoraSource;
           cargoBuildFlags = [
             "--package"
             "ab-aozora"

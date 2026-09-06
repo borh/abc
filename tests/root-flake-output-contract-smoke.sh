@@ -31,6 +31,7 @@ expected = {
         "soranoha-kernel",
         "soranoha-replay",
         "soranoha-compare-serving",
+        "soranoha-publication-replay",
         "regenerate-tei-profile",
         "tei-version-coherence",
         "validate",

@@ -12,7 +12,7 @@
             [soranoha.main :as main]
             [soranoha.za.oracle :as oracle]))
 
-(defn- git! [repo & args]
+(defn git! [repo & args]
   (let [{:keys [exit out err]} (apply process/sh {:dir (str repo)} "git" args)]
     (when-not (zero? exit)
       (throw (ex-info "Replay Git operation failed" {:arguments args :diagnostic err})))
@@ -33,7 +33,7 @@
                       {:from first-revision :to last-revision})))
     commits))
 
-(defn- measure [f]
+(defn measure [f]
   (let [start (System/nanoTime)
         result (f)]
     {:milliseconds (/ (- (System/nanoTime) start) 1e6) :result result}))
@@ -49,6 +49,21 @@
       {:source (update-vals (oracle/source-delta before after) count)
        :artifacts (update-vals (oracle/report-artifact-delta before after) count)})))
 
+(defn prepare!
+  "Create an owned source checkout beneath a fresh output directory."
+  [{:keys [repo from to out]}]
+  (let [repo (fs/real-path repo)
+        commits (revisions repo from to)
+        out (fs/absolutize out)
+        out (fs/path (fs/real-path (fs/parent out)) (fs/file-name out))
+        _ (when (fs/starts-with? out repo)
+            (throw (ex-info "Replay output must be outside the source repository" {:out (str out)})))
+        checkout (fs/path out "checkout")
+        setup (measure #(do (fs/create-dir out)
+                            (git! out "clone" "--no-hardlinks" "--no-checkout"
+                                  (str repo) (str checkout))))]
+    {:out out :checkout checkout :commits commits :setup setup}))
+
 (defn replay!
   "Retain reports and a streaming measurements.jsonl in a new output directory.
   No state outside that directory is changed; failures retain diagnostic outputs."
@@ -61,16 +76,7 @@
           :when (some? value)]
     (when-not (and (integer? value) (pos? value))
       (throw (ex-info "Replay count must be positive" {:option option :value value}))))
-  (let [repo (fs/real-path repo)
-        commits (revisions repo from to)
-        out (fs/absolutize out)
-        out (fs/path (fs/real-path (fs/parent out)) (fs/file-name out))
-        _ (when (fs/starts-with? out repo)
-            (throw (ex-info "Replay output must be outside the source repository" {:out (str out)})))
-        checkout (fs/path out "checkout")
-        setup (measure #(do (fs/create-dir out)
-                            (git! out "clone" "--no-hardlinks" "--no-checkout"
-                                  (str repo) (str checkout))))
+  (let [{:keys [out checkout commits setup]} (prepare! {:repo repo :from from :to to :out out})
         opts (cond-> {:root (str (fs/path out "build")) :aozora-root (str checkout)
                       :concurrency (or concurrency 1) :clj-toolchain-id clj-toolchain-id
                       :assets-root assets-root}

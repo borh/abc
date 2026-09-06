@@ -390,7 +390,7 @@
     true))
 
 (defn- evaluate-assessment!
-  [{:keys [root aozora-root evidence-root as-of clj-toolchain-id rdf-out rdf-base]}
+  [{:keys [root aozora-root evidence-root as-of clj-toolchain-id rdf-out rdf-base aozora-fetch]}
    {:keys [source retained]}]
   (require-flags! "assessment evaluation"
                   {"--root" (config/root root)
@@ -401,7 +401,8 @@
   (let [commit (source-provenance! aozora-root)
         captured (assessment-source/capture-checkout aozora-root source retained)
         reliance-observations (when (seq (get source "reliances"))
-                                (aozora/check! aozora-root evidence-root (get source "reliances")))
+                                (aozora/check! aozora-root evidence-root (get source "reliances")
+                                               {:fetch aozora-fetch}))
         _ (when-not (= commit (source-provenance! aozora-root))
             (throw (ex-info "source checkout changed during assessment capture"
                             {:reason :assessment-source-changed})))

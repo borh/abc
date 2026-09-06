@@ -212,6 +212,10 @@
             name = "soranoha-replay";
             invocation = ''clojure -J-Xmx4g -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.replay --assets-root ${./soranoha}'';
           }) "Replay source revisions through the production build and delta oracle";
+          soranoha-publication-replay = mkScriptApp (mkSoranohaApp system {
+            name = "soranoha-publication-replay";
+            invocation = ''${pkgs.time}/bin/time --format 'replay_elapsed_seconds=%e replay_peak_rss_kib=%M' clojure -J-Xmx4g -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.publication --assets-root ${./soranoha}'';
+          }) "Simulate complete publication with recorded observations and isolated fixture keys";
           soranoha-compare-serving = mkScriptApp (mkSoranohaApp system {
             name = "soranoha-compare-serving";
             invocation = ''clojure -J-Xmx512m -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.serving --time-bin ${pkgs.time}/bin/time'';

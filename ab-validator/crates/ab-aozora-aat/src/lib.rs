@@ -1744,8 +1744,6 @@ fn contains_aozora_markup(source: &str) -> bool {
         || source.contains("[#")
         || source.contains('《')
         || source.contains('》')
-        || source.contains('〔')
-        || source.contains('〕')
 }
 
 #[allow(
@@ -2423,6 +2421,18 @@ mod tests {
     /// resulting AAT `Value`.
     fn aat_value_for(src: &str) -> Value {
         serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn prose_with_tortoise_brackets_remains_visible_text() {
+        for source in [
+            "　〔二十分停車〕と時計の下に書いてありました。\n",
+            "「行つてみよう。」二人は、まるで一度に叫んで、そつちの方へ走りました。その白い岩になつた處の入口に〔プリオシン海岸〕といふ、瀬戸物のつるつるした標札が立つて、向うの渚には、ところどころ細い鐵の欄干も植ゑられ、木製のきれいなベンチも置いてありました。\n",
+        ] {
+            let aat = aat_value_for(source);
+            assert!(find_node(&aat, "raw").is_none(), "{aat}");
+            assert_eq!(find_first_node(&aat, "text")["value"], source);
+        }
     }
 
     #[test]

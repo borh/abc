@@ -271,7 +271,7 @@
                                {"padding-inline-start" (str (get-in (first group) [:layout :indent]) "em")
                                 "writing-mode" "horizontal-tb" "text-align" "center" "border-style" "solid"}])))
                  (let [properties ["padding-inline-start" "writing-mode" "text-align" "border-style"]]
-                   (->> (elements body "div")
+                   (->> (elements body "floatingText")
                         (filter #(seq (select-keys (css %) properties)))
                         (mapv (fn [div]
                                 [(vec (keep-indexed (fn [index block]

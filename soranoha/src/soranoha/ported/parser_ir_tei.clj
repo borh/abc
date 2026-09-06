@@ -551,7 +551,8 @@
     (if-let [{:keys [block target start]} (peek frames)]
       (if (= paragraph-end (get-in block ["paragraph_range" "end"]))
         (let [children (get acc target)
-              wrapped (into [:div (layout-block-attrs block)] (subvec children start))]
+              wrapped [:floatingText (layout-block-attrs block)
+                       (into [:body] (subvec children start))]]
           (recur (assoc acc target (conj (subvec children 0 start) wrapped)) (pop frames)))
         [acc frames])
       [acc frames])))

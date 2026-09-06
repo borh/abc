@@ -1,6 +1,9 @@
 (ns soranoha.ori.layout-test
-  (:require [clojure.test :refer [deftest is]]
-            [soranoha.ported.parser-ir-tei :as tei]))
+  (:require [babashka.fs :as fs]
+            [clojure.test :refer [deftest is]]
+            [soranoha.ori.render :as render]
+            [soranoha.ported.parser-ir-tei :as tei]
+            [soranoha.ported.tei :as rng]))
 
 (defn- document [blocks]
   {"nodes" (mapv #(hash-map "type" "text" "text" %) ["前" "RESTAURANT" "西洋料理店" "WILDCAT HOUSE" "山猫軒" "後"])
@@ -15,18 +18,31 @@
   (let [body (:body (tei/render (document [(block 1 5)])))]
     (is (= :text (first body)))
     (is (= [:p "前"] (get-in body [1 1])))
-    (is (= :div (get-in body [1 2 0])))
+    (is (= :floatingText (get-in body [1 2 0])))
     (is (= [[:p "RESTAURANT"] [:p "西洋料理店"] [:p "WILDCAT HOUSE"] [:p "山猫軒"]]
-           (subvec (get-in body [1 2]) 2)))
+           (subvec (get-in body [1 2 2]) 1)))
     (is (= [:p "後"] (get-in body [1 3])))))
 
 (deftest nested-scopes-remain-nested-and-crossing-scopes-are-refused
   (let [body (:body (tei/render (document [(block 1 5) (block 2 4)])))]
-    (is (= :div (get-in body [1 2 0])))
-    (is (= :div (get-in body [1 2 3 0])))
-    (is (= [[:p "西洋料理店"] [:p "WILDCAT HOUSE"]] (subvec (get-in body [1 2 3]) 2))))
+    (is (= :floatingText (get-in body [1 2 0])))
+    (is (= :floatingText (get-in body [1 2 2 2 0])))
+    (is (= [[:p "西洋料理店"] [:p "WILDCAT HOUSE"]] (subvec (get-in body [1 2 2 2 2]) 1))))
   (doseq [blocks [[(block 1 4) (block 2 5)] [(block 2 7)] [(block 3 3)]]]
     (is (thrown? clojure.lang.ExceptionInfo (tei/render (document blocks))))))
+
+(deftest embedded-sign-allows-surrounding-prose-in-the-publication-profile
+  (let [dir (fs/create-temp-dir {:prefix "embedded-sign"})
+        xml-path (str (fs/path dir "tei.xml"))
+        result (render/render-work
+                {:parser-ir (assoc (document [(block 1 5)]) "sentence_segmentation" {})
+                 :metadata-record {"work" {"title" "試験" "aozora_modified" "2026-09-06"} "contributors" []}
+                 :persons-by-id {}})]
+    (try
+      (spit xml-path (:tei result))
+      (is (empty? (:violations (rng/validate! {:schema-path "../abc/schemas/tei-profile.rng"
+                                               :xml-path xml-path :label "embedded sign"}))))
+      (finally (fs/delete-tree dir)))))
 
 (deftest layout-block-cannot-cross-a-division-changing-gap
   (let [ir {"nodes" [{"type" "heading" "text" "A" "level" 2}
@@ -40,9 +56,9 @@
         paragraphs (mapv #(update % "node_range" (fn [r] (update (update r "start" inc) "end" inc)))
                          (get ir "paragraphs"))
         body (:body (tei/render (assoc ir "nodes" nodes "paragraphs" paragraphs)))]
-    (is (= :div (get-in body [1 1 3 0])))
+    (is (= :floatingText (get-in body [1 1 3 0])))
     (is (= [[:p "RESTAURANT"] [:p "西洋料理店"] [:p "WILDCAT HOUSE"] [:p "山猫軒"]]
-           (subvec (get-in body [1 1 3]) 2)))))
+           (subvec (get-in body [1 1 3 2]) 1)))))
 
 (deftest same-gaiji-reference-cannot-alias-different-source-glyphs
   (let [known {"type" "gaiji" "span" {"start" 15308 "end" 15311}

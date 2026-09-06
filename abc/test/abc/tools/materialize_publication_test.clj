@@ -253,13 +253,13 @@
                   "encoding" "UTF-8"
                   "normalization" "source"}
         "nodes" [{"type" "text"
-                  "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                  "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                   "text" "吾輩ハ猫デアル。"}
                  {"type" "text"
-                  "span" {"start" 24 "end" 48 "coordinate_system" "decoded_utf8"}
+                  "span" {"start" 24 "end" 48 "coordinate_system" "parser_text_utf8"}
                   "text" "名前はまだ無い。"}]
         "paragraphs" [{"id" "p000000"
-                       "span" {"start" 0 "end" 48 "coordinate_system" "decoded_utf8"}
+                       "span" {"start" 0 "end" 48 "coordinate_system" "parser_text_utf8"}
                        "span_source" "direct"
                        "node_range" {"start" 0 "end" 2}
                        "role" "body"
@@ -267,23 +267,23 @@
                        "classification" "direct"}]
         "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                                  "splitter_id" "ab-plaintext-japanese-v1"
-                                 "coordinate_system" "decoded_utf8"
+                                 "coordinate_system" "parser_text_utf8"
                                  "coverage" "body-paragraphs"}
         "sentences" [{"id" "s000000"
                       "paragraph_id" "p000000"
-                      "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                      "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                       "node_range" {"start" 0 "end" 1}
                       "tags" ["orthographic-katakana"]
                       "orthographic_annotation_indices" [0]}
                      {"id" "s000001"
                       "paragraph_id" "p000000"
-                      "span" {"start" 24 "end" 48 "coordinate_system" "decoded_utf8"}
+                      "span" {"start" 24 "end" 48 "coordinate_system" "parser_text_utf8"}
                       "node_range" {"start" 1 "end" 2}
                       "tags" []
                       "orthographic_annotation_indices" []}]
         "orthographic_annotations" {"work_id" "000000"
                                     "work_content_hash" (files/example-hash "11")
-                                    "coordinate_system" "decoded_utf8"
+                                    "coordinate_system" "parser_text_utf8"
                                     "detector_id" "HeuristicV1"
                                     "annotations" [{"source_byte_range" {"start" 0 "end" 24}
                                                     "normalized_text" "吾輩は猫である。"
@@ -330,10 +330,10 @@
                   "encoding" "UTF-8"
                   "normalization" "source"}
         "nodes" [{"type" "text"
-                  "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                  "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                   "text" "吾輩は猫である。"}]
         "paragraphs" [{"id" "p000000"
-                       "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                       "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                        "span_source" "direct"
                        "node_range" {"start" 0 "end" 1}
                        "role" "body"
@@ -341,17 +341,17 @@
                        "classification" "direct"}]
         "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                                  "splitter_id" "ab-plaintext-japanese-v1"
-                                 "coordinate_system" "decoded_utf8"
+                                 "coordinate_system" "parser_text_utf8"
                                  "coverage" "body-paragraphs"}
         "sentences" [{"id" "s000000"
                       "paragraph_id" "p000000"
-                      "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                      "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                       "node_range" {"start" 0 "end" 1}
                       "tags" []
                       "orthographic_annotation_indices" []}]
         "orthographic_annotations" {"work_id" "000000"
                                     "work_content_hash" (files/example-hash "11")
-                                    "coordinate_system" "decoded_utf8"
+                                    "coordinate_system" "parser_text_utf8"
                                     "detector_id" "HeuristicV1"
                                     "annotations" []}
         "warnings" []
@@ -386,10 +386,10 @@
                   "encoding" "UTF-8"
                   "normalization" "source"}
         "nodes" [{"type" "text"
-                  "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                  "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                   "text" "吾輩ハ猫デアル。"}]
         "paragraphs" [{"id" "p000000"
-                       "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                       "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                        "span_source" "direct"
                        "node_range" {"start" 0 "end" 1}
                        "role" "body"

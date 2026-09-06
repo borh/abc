@@ -14,12 +14,23 @@ Files:
 - `divergence.json`: AAT to parser-IR mapping provenance and divergence
   records, conforming to `schemas/aat-parser-ir-divergence-bundle.schema.json`.
 
-`divergence.json` carries the AAT adapter, mapping version, mapping schema hash,
-and parser-IR target schema identity checked against
-`data/aat-parser-ir-compatibility.edn`. Legacy parser-IR exports may carry the
-same provenance in `parser-ir.json` `derived_from`; the current converter keeps
-it in the sidecar bundle.
+`parser-ir.json` and `divergence.json` are current converter outputs from this
+synthetic UTF-8 source (LF line endings, including a final newline):
 
-The fixture is intentionally tiny and synthetic. It validates the boundary
-between the projects and the completed `ab-aat-to-parser-ir` output shape; it
-is not a parser benchmark.
+```text
+作品名
+著者名
+
+先生は｜下《した》に。
+
+底本：テスト本
+```
+
+The four-node example distinguishes parser-text byte offsets from exact decoded
+source extents, including ruby markup and source attribution. Convert the source
+with `ab-aozora --mode aat`, then `ab-aat-to-parser-ir convert` with the repository's
+v2 mapping and ABC assets root. The corresponding one-file conversion audit is
+recorded as `synthetic ABC import boundary fixture` in
+`data/aat-parser-ir-compatibility.edn`; it does not establish corpus coverage.
+The other files provide synthetic envelope examples for their independent boundary
+schemas.

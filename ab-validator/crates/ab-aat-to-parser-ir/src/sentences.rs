@@ -14,7 +14,7 @@ const MAX_NESTING_DEPTH: usize = 5;
 /// markers (exclusive of the marker glyphs). `outer_byte_start`/`outer_byte_end`
 /// bound the markers themselves so that framing-punctuation redistribution can
 /// attach the open marker to the first inner sentence and the close marker to
-/// the last inner sentence. All offsets are absolute `decoded_utf8` byte
+/// the last inner sentence. All offsets are absolute `parser_text_utf8` byte
 /// offsets.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct NestedRegion {
@@ -86,7 +86,7 @@ pub fn segmentation_meta() -> SentenceSegmentation {
     SentenceSegmentation {
         schema_version: "sentence-segmentation-v1".to_owned(),
         splitter_id: "ab-plaintext-japanese-v2".to_owned(),
-        coordinate_system: "decoded_utf8".to_owned(),
+        coordinate_system: "parser_text_utf8".to_owned(),
         coverage: "body-paragraphs".to_owned(),
     }
 }
@@ -257,18 +257,8 @@ fn project_body_paragraph(
     let paragraph_end = value_usize(paragraph, "/span/end", "paragraph span.end")?;
     let paragraph_text = paragraph_visible_text(original_nodes)?;
 
-    // INVARIANT: `paragraph_text.len()` equals `paragraph_end - paragraph_start`.
-    // Both the visible-text projection (ruby -> base, gaiji -> resolved char) and
-    // the node/paragraph spans are in the same decoded_utf8 coordinate system, so
-    // the flat/region byte offsets below index `paragraph_text` consistently. This
-    // holds because the converter projects EVERY node span to decoded coordinates
-    // (see convert.rs `map_node_span` / `paragraph_span`); a historical bug there
-    // copied raw AAT source offsets (which include ruby/gaiji markup) for some
-    // nodes, breaking the invariant and causing a large sentence-projection failure
-    // rate — or crashes — on ruby-heavy corpora. The guards in this function,
-    // split_node_at_boundaries, and the audit's catch_unwind remain as defensive
-    // backstops so any residual/future span inconsistency is RECORDED (in the
-    // sentence_projection_failures bucket) rather than crashing a corpus run.
+    // Sentence boundaries index the node text projection, not Aozora source bytes.
+    // Ruby bases, gaiji replacements and omitted markup can change its byte width.
 
     // --- Phase 0: flat sentence split (default rules; quotes suppress splits). ---
     let mut flat_bounds: Vec<SentenceBounds> = ab_plaintext::split_sentences(&paragraph_text)
@@ -531,7 +521,7 @@ fn project_body_paragraph(
         rows.push(ParserIrSentence {
             id: format!("s{:06}", sentence_index_start + gi),
             paragraph_id: paragraph_id(paragraph),
-            span: decoded_span(fb.bounds.start, fb.bounds.end),
+            span: parser_text_span(fb.bounds.start, fb.bounds.end),
             node_range: json!({
                 "start": sentence_node_start,
                 "end": sentence_node_end,
@@ -815,6 +805,9 @@ fn split_node_at_boundaries(
         let object = segment
             .as_object_mut()
             .context("node row is not an object")?;
+        // A source node can contain normalization or markup gaps. Its original
+        // extent does not establish exact source offsets for newly split fragments.
+        object.remove("source_span");
         object.insert("text".to_owned(), segment_text);
         out.push(segment);
     }
@@ -913,6 +906,7 @@ fn split_container_at_boundaries(
         let object = sibling
             .as_object_mut()
             .context("container node is not an object")?;
+        object.remove("source_span");
         object.insert("text".to_owned(), json!(text));
         object.insert("inline_children".to_owned(), Value::Array(segment_children));
         out.push(sibling);
@@ -948,11 +942,11 @@ fn node_belongs_to_sentence(node: &Value, sentence: SentenceBounds) -> Result<bo
     Ok(sentence.start <= node_start && node_end <= sentence.end)
 }
 
-fn decoded_span(start: usize, end: usize) -> Value {
+fn parser_text_span(start: usize, end: usize) -> Value {
     json!({
         "start": start,
         "end": end,
-        "coordinate_system": "decoded_utf8",
+        "coordinate_system": "parser_text_utf8",
     })
 }
 
@@ -1102,7 +1096,7 @@ mod tests {
         serde_json::from_value(json!({
             "work_id": "000000",
             "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-            "coordinate_system": "decoded_utf8",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [{
                 "source_byte_range": { "start": 0, "end": 24 },
@@ -1115,7 +1109,7 @@ mod tests {
     }
 
     fn span(start: usize, end: usize) -> serde_json::Value {
-        json!({"start": start, "end": end, "coordinate_system": "decoded_utf8"})
+        json!({"start": start, "end": end, "coordinate_system": "parser_text_utf8"})
     }
 
     #[test]
@@ -1123,11 +1117,13 @@ mod tests {
         let nodes = vec![json!({
             "type":"text",
             "span": span(0, 48),
+            "source_span": {"start": 24, "end": 75, "coordinate_system": "decoded_utf8"},
             "text":"吾輩ハ猫デアル。名前はまだ無い。"
         })];
         let paragraphs = vec![json!({
             "id":"p000000",
             "span": span(0, 48),
+            "source_span": {"start": 24, "end": 75, "coordinate_system": "decoded_utf8"},
             "span_source":"direct",
             "node_range":{"start":0,"end":1},
             "role":"body",
@@ -1138,6 +1134,16 @@ mod tests {
         let projection = project_sentences(nodes, paragraphs, None).unwrap();
 
         assert_eq!(projection.nodes.len(), 2);
+        assert!(
+            projection
+                .nodes
+                .iter()
+                .all(|node| node.get("source_span").is_none())
+        );
+        assert_eq!(
+            projection.paragraphs[0]["source_span"],
+            json!({"start": 24, "end": 75, "coordinate_system": "decoded_utf8"})
+        );
         assert_eq!(projection.nodes[0]["text"], "吾輩ハ猫デアル。");
         assert_eq!(projection.nodes[0]["span"], span(0, 24));
         assert_eq!(projection.nodes[1]["text"], "名前はまだ無い。");
@@ -1288,12 +1294,15 @@ mod tests {
         let nodes = vec![json!({
             "type":"emphasis",
             "span":span(0,12),
+            "source_span":{"start":24,"end":72,"coordinate_system":"decoded_utf8"},
             "style":"bold",
             "text":"甲。乙。",
-            "inline_children":[{"type":"text","span":span(0,12),"text":"甲。乙。"}]
+            "inline_children":[{"type":"text","span":span(0,12),
+            "source_span":{"start":24,"end":72,"coordinate_system":"decoded_utf8"},"text":"甲。乙。"}]
         })];
         let paragraphs = vec![json!({
-            "id":"p000000","span":span(0,12),"span_source":"direct",
+            "id":"p000000","span":span(0,12),
+            "source_span":{"start":24,"end":72,"coordinate_system":"decoded_utf8"},"span_source":"direct",
             "node_range":{"start":0,"end":1},"role":"body",
             "source_pointer":"blocks[0]","classification":"direct"
         })];
@@ -1301,6 +1310,10 @@ mod tests {
         let projection = project_sentences(nodes, paragraphs, None).unwrap();
 
         assert_eq!(projection.nodes.len(), 2);
+        for node in &projection.nodes {
+            assert!(node.get("source_span").is_none());
+            assert!(node["inline_children"][0].get("source_span").is_none());
+        }
         assert_eq!(projection.nodes[0]["type"], "emphasis");
         assert_eq!(projection.nodes[0]["style"], "bold");
         assert_eq!(projection.nodes[0]["text"], "甲。");

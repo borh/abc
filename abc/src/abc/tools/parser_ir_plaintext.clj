@@ -54,8 +54,8 @@
                       "ruby" {"base" (or (get-in node ["ruby" "base"]) "")
                               "reading" (or (get-in node ["ruby" "reading"]) "")
                               "direction" (get-in node ["ruby" "direction"])}}
-               (get node "span") (assoc "source_span"
-                                        (select-keys (get node "span") ["start" "end"])))))))
+               (get node "source_span") (assoc "source_span"
+                                               (select-keys (get node "source_span") ["start" "end"])))))))
 
 (defn- render-gaiji-node
   ([acc node] (render-gaiji-node acc node 0))
@@ -69,8 +69,8 @@
                       "gaiji" {"raw_marker" (or (get-in node ["gaiji" "raw_marker"]) "")
                                "unicode" (get-in node ["gaiji" "unicode"])
                                "resolved" (boolean (get-in node ["gaiji" "resolved"]))}}
-               (get node "span") (assoc "source_span"
-                                        (select-keys (get node "span") ["start" "end"])))))))
+               (get node "source_span") (assoc "source_span"
+                                               (select-keys (get node "source_span") ["start" "end"])))))))
 
 (defn- inline-children-need-visible-text-fallback? [children]
   (boolean

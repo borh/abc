@@ -12,7 +12,7 @@
            [java.nio.file.attribute FileAttribute]))
 
 (def ^:private mapping-hash
-  "sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40")
+  (get (files/read-json "examples/ab-validator-output/manifest-inputs.json") "mapping_hash"))
 
 (defn- temp-manifest-inputs [overrides]
   (merge

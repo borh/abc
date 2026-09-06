@@ -88,15 +88,26 @@
     },
     "span": {
       "type": "object",
-      "$comment": "Coordinate system is decoded_utf8: start/end are UTF-8 byte offsets into the decoded source string; line is 1-based; column is nullable. All fields except start/end are optional for backwards compatibility. end must be greater than or equal to start; JSON Schema cannot compare sibling numeric values portably without a non-standard extension.",
-      "required": ["start", "end"],
+      "$comment": "Half-open UTF-8 byte offsets in the converter's parser text projection, before publication whitespace filtering. This axis includes structural and source-note text traversed by the converter; it is not the decoded source or final plaintext. end must be greater than or equal to start.",
+      "required": ["start", "end", "coordinate_system"],
       "additionalProperties": false,
       "properties": {
-        "start": { "type": "integer", "minimum": 0, "description": "UTF-8 byte offset into the decoded source string where the span begins." },
-        "end": { "type": "integer", "minimum": 0, "description": "UTF-8 byte offset into the decoded source string where the span ends." },
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 },
+        "coordinate_system": { "const": "parser_text_utf8" }
+      }
+    },
+    "sourceSpan": {
+      "type": "object",
+      "$comment": "Exact half-open UTF-8 byte extent in the complete decoded source, including source markup. Source extents are absent when an exact mapping is unknown, including newly split fragments. line and column refer to the source and are 1-based when known.",
+      "required": ["start", "end", "coordinate_system"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 },
         "line": { "type": ["integer", "null"], "minimum": 1 },
         "column": { "type": ["integer", "null"], "minimum": 1 },
-        "coordinate_system": { "type": "string", "const": "decoded_utf8", "default": "decoded_utf8", "description": "When present, declares that start/end are UTF-8 byte offsets into the decoded source string." }
+        "coordinate_system": { "const": "decoded_utf8" }
       }
     },
     "baseNode": {
@@ -104,7 +115,8 @@
       "required": ["type", "span"],
       "properties": {
         "type": { "type": "string" },
-        "span": { "$ref": "#/$defs/span" }
+        "span": { "$ref": "#/$defs/span" },
+        "source_span": { "$ref": "#/$defs/sourceSpan" }
       }
     },
     "node": {
@@ -161,7 +173,7 @@
       "properties": {
         "schema_version": { "const": "sentence-segmentation-v1" },
         "splitter_id": { "enum": ["ab-plaintext-japanese-v1", "ab-plaintext-japanese-v2"] },
-        "coordinate_system": { "const": "decoded_utf8" },
+        "coordinate_system": { "const": "parser_text_utf8" },
         "coverage": { "const": "body-paragraphs" }
       }
     },
@@ -230,7 +242,7 @@
         "work_id": { "type": "string" },
         "primary_text_hash": { "$ref": "#/$defs/hash" },
         "work_content_hash": { "$ref": "#/$defs/hash" },
-        "coordinate_system": { "const": "decoded_utf8" },
+        "coordinate_system": { "const": "parser_text_utf8" },
         "detector_id": { "$ref": "#/$defs/orthoDetectorId" },
         "annotations": {
           "type": "array",
@@ -243,7 +255,7 @@
       "required": ["source_byte_range", "normalized_text", "kind", "confidence"],
       "additionalProperties": false,
       "properties": {
-        "source_byte_range": { "$ref": "#/$defs/byteRange" },
+        "source_byte_range": { "$ref": "#/$defs/byteRange", "description": "Range in the detector input, on the enclosing bundle parser_text_utf8 axis." },
         "normalized_text": { "type": "string" },
         "kind": { "enum": ["ScriptKatakanaToHiragana", "HistoricalToModern"] },
         "confidence": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 }
@@ -388,6 +400,7 @@
       "properties": {
         "id": { "type": "string", "pattern": "^p[0-9]{6}$" },
         "span": { "$ref": "#/$defs/span" },
+        "source_span": { "$ref": "#/$defs/sourceSpan" },
         "span_source": { "type": "string", "enum": ["direct", "derived", "synthesized", "unknown"] },
         "node_range": { "$ref": "#/$defs/nodeRange" },
         "role": { "type": "string", "enum": ["body", "source-note", "unknown"] },
@@ -406,6 +419,7 @@
           "properties": {
             "type": { "const": "text" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "text": { "type": "string" }
           }
         }
@@ -421,6 +435,7 @@
           "properties": {
             "type": { "const": "ruby" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "inline_children": {
               "type": "array",
               "items": { "$ref": "#/$defs/inlineNode" }
@@ -450,6 +465,7 @@
           "properties": {
             "type": { "const": "gaiji" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "gaiji": {
               "type": "object",
               "additionalProperties": false,
@@ -477,6 +493,7 @@
           "properties": {
             "type": { "const": "editor-note" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "note": { "$ref": "#/$defs/note" }
           }
         }
@@ -496,6 +513,7 @@
           "properties": {
             "type": { "const": "emphasis" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "text": { "type": "string" },
             "inline_children": {
               "type": "array",
@@ -516,6 +534,7 @@
           "properties": {
             "type": { "const": "layout-span" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "text": { "type": "string" },
             "inline_children": {
               "type": "array",
@@ -536,6 +555,7 @@
           "properties": {
             "type": { "const": "heading" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "text": { "type": "string" },
             "inline_children": {
               "type": "array",
@@ -557,6 +577,7 @@
           "properties": {
             "type": { "const": "indentation" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "depth": { "type": "integer", "minimum": 0 },
             "text": { "type": ["string", "null"] }
           }
@@ -573,6 +594,7 @@
           "properties": {
             "type": { "const": "page-break" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "marker": { "type": "string" },
             "page_number": { "type": ["integer", "null"], "minimum": 1 }
           }
@@ -589,6 +611,7 @@
           "properties": {
             "type": { "const": "line-break" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "marker": { "type": "string" }
           }
         }
@@ -604,6 +627,7 @@
           "properties": {
             "type": { "const": "image" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "src": { "type": "string" },
             "alt": { "type": ["string", "null"] },
             "path_hint": { "type": ["string", "null"] }
@@ -621,6 +645,7 @@
           "properties": {
             "type": { "const": "caption" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "text": { "type": "string" },
             "target": { "type": ["string", "null"] }
           }
@@ -637,6 +662,7 @@
           "properties": {
             "type": { "const": "quote" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "marker_type": { "type": "string", "enum": ["open", "close", "inline", "unknown"] },
             "nesting_level": { "type": ["integer", "null"], "minimum": 0 },
             "text": { "type": ["string", "null"] }
@@ -654,6 +680,7 @@
           "properties": {
             "type": { "const": "source-note" },
             "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
             "text": { "type": "string" },
             "note_type": { "type": "string", "enum": ["source-attribution", "bibliographic-note", "transcriber-note", "unknown"] },
             "placement": { "type": "string", "enum": ["front", "body", "back", "unknown"] },
@@ -685,7 +712,7 @@
         "message": { "type": "string" },
         "span": {
           "anyOf": [
-            { "$ref": "#/$defs/span" },
+            { "$ref": "#/$defs/sourceSpan" },
             { "type": "null" }
           ]
         },

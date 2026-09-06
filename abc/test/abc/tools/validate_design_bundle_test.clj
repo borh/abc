@@ -2275,15 +2275,15 @@
                                "normalization" "source"}
                      "nodes" [{"type" "text"
                                "span" {"start" 0 "end" 12
-                                       "coordinate_system" "decoded_utf8"}
+                                       "coordinate_system" "parser_text_utf8"}
                                "text" "第一段"}
                               {"type" "line-break"
                                "span" {"start" 12 "end" 17
-                                       "coordinate_system" "decoded_utf8"}
+                                       "coordinate_system" "parser_text_utf8"}
                                "marker" "［＃改行］"}
                               {"type" "source-note"
                                "span" {"start" 17 "end" 57
-                                       "coordinate_system" "decoded_utf8"}
+                                       "coordinate_system" "parser_text_utf8"}
                                "text" "（古伝説と、シルレルの詩から。）"
                                "note_type" "source-attribution"
                                "placement" "back"
@@ -2291,7 +2291,7 @@
                                "source_pointer" "blocks[78]"}]
                      "paragraphs" [{"id" "p000000"
                                     "span" {"start" 0 "end" 12
-                                            "coordinate_system" "decoded_utf8"}
+                                            "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 0 "end" 2}
                                     "role" "body"
@@ -2299,7 +2299,7 @@
                                     "classification" "direct"}
                                    {"id" "p000001"
                                     "span" {"start" 17 "end" 57
-                                            "coordinate_system" "decoded_utf8"}
+                                            "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 2 "end" 3}
                                     "role" "source-note"
@@ -2319,15 +2319,15 @@
                                "normalization" "source"}
                      "nodes" [{"type" "text"
                                "span" {"start" 0 "end" 24
-                                       "coordinate_system" "decoded_utf8"}
+                                       "coordinate_system" "parser_text_utf8"}
                                "text" "吾輩ハ猫デアル。"}
                               {"type" "text"
                                "span" {"start" 24 "end" 48
-                                       "coordinate_system" "decoded_utf8"}
+                                       "coordinate_system" "parser_text_utf8"}
                                "text" "名前はまだ無い。"}]
                      "paragraphs" [{"id" "p000000"
                                     "span" {"start" 0 "end" 48
-                                            "coordinate_system" "decoded_utf8"}
+                                            "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 0 "end" 2}
                                     "role" "body"
@@ -2335,25 +2335,25 @@
                                     "classification" "direct"}]
                      "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                                               "splitter_id" "ab-plaintext-japanese-v1"
-                                              "coordinate_system" "decoded_utf8"
+                                              "coordinate_system" "parser_text_utf8"
                                               "coverage" "body-paragraphs"}
                      "sentences" [{"id" "s000000"
                                    "paragraph_id" "p000000"
                                    "span" {"start" 0 "end" 24
-                                           "coordinate_system" "decoded_utf8"}
+                                           "coordinate_system" "parser_text_utf8"}
                                    "node_range" {"start" 0 "end" 1}
                                    "tags" ["orthographic-katakana"]
                                    "orthographic_annotation_indices" [0]}
                                   {"id" "s000001"
                                    "paragraph_id" "p000000"
                                    "span" {"start" 24 "end" 48
-                                           "coordinate_system" "decoded_utf8"}
+                                           "coordinate_system" "parser_text_utf8"}
                                    "node_range" {"start" 1 "end" 2}
                                    "tags" []
                                    "orthographic_annotation_indices" []}]
                      "orthographic_annotations" {"work_id" "000000"
                                                  "work_content_hash" (files/example-hash "11")
-                                                 "coordinate_system" "decoded_utf8"
+                                                 "coordinate_system" "parser_text_utf8"
                                                  "detector_id" "HeuristicV1"
                                                  "annotations" [{"source_byte_range" {"start" 0 "end" 24}
                                                                  "normalized_text" "吾輩は猫である。"
@@ -2373,15 +2373,15 @@
                                "normalization" "source"}
                      "nodes" [{"type" "text"
                                "span" {"start" 0 "end" 6
-                                       "coordinate_system" "decoded_utf8"}
+                                       "coordinate_system" "parser_text_utf8"}
                                "text" "台詞"}
                               {"type" "text"
                                "span" {"start" 6 "end" 36
-                                       "coordinate_system" "decoded_utf8"}
+                                       "coordinate_system" "parser_text_utf8"}
                                "text" "（大正十一年十二月）"}]
                      "paragraphs" [{"id" "p000000"
                                     "span" {"start" 0 "end" 6
-                                            "coordinate_system" "decoded_utf8"}
+                                            "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 0 "end" 1}
                                     "role" "body"
@@ -2393,7 +2393,7 @@
                                               "source" "aat-style"}}
                                    {"id" "p000001"
                                     "span" {"start" 6 "end" 36
-                                            "coordinate_system" "decoded_utf8"}
+                                            "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 1 "end" 2}
                                     "role" "body"
@@ -2417,11 +2417,11 @@
                                "normalization" "source"}
                      "nodes" [{"type" "text"
                                "span" {"start" 0 "end" 6
-                                       "coordinate_system" "decoded_utf8"}
+                                       "coordinate_system" "parser_text_utf8"}
                                "text" "台詞"}]
                      "paragraphs" [{"id" "p000000"
                                     "span" {"start" 0 "end" 6
-                                            "coordinate_system" "decoded_utf8"}
+                                            "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 0 "end" 1}
                                     "role" "body"
@@ -2450,11 +2450,11 @@
                                "normalization" "source"}
                      "nodes" [{"type" "text"
                                "span" {"start" 0 "end" 6
-                                       "coordinate_system" "decoded_utf8"}
+                                       "coordinate_system" "parser_text_utf8"}
                                "text" "台詞"}]
                      "paragraphs" [{"id" "p000000"
                                     "span" {"start" 0 "end" 6
-                                            "coordinate_system" "decoded_utf8"}
+                                            "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 0 "end" 1}
                                     "role" "body"
@@ -2475,11 +2475,11 @@
                                "encoding" "Shift_JIS"
                                "normalization" "source"}
                      "nodes" [{"type" "emphasis"
-                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                "style" "bold"
                                "text" "東京"
                                "inline_children" [{"type" "ruby"
-                                                   "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                                    "ruby" {"base" "東京"
                                                            "reading" "とうきょう"
                                                            "scope" "explicit"
@@ -2495,10 +2495,10 @@
                                "encoding" "Shift_JIS"
                                "normalization" "source"}
                      "nodes" [{"type" "emphasis"
-                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                "style" "bold"
                                "inline_children" [{"type" "ruby"
-                                                   "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                                    "ruby" {"base" "東京"
                                                            "reading" "とうきょう"
                                                            "scope" "explicit"
@@ -2516,11 +2516,11 @@
                                "encoding" "Shift_JIS"
                                "normalization" "source"}
                      "nodes" [{"type" "heading"
-                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                "text" "東京"
                                "level" 2
                                "inline_children" [{"type" "ruby"
-                                                   "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                                    "ruby" {"base" "東京"
                                                            "reading" "とうきょう"
                                                            "scope" "explicit"
@@ -2538,19 +2538,19 @@
                                "encoding" "Shift_JIS"
                                "normalization" "source"}
                      "nodes" [{"type" "layout-span"
-                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                "text" "12"
                                "inline_children" [{"type" "text"
-                                                   "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                                    "text" "12"}]
                                "layout" {"kind" "tcy"
                                          "source" "aat-inline"
                                          "marker" "縦中横"}}
                               {"type" "emphasis"
-                               "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                               "span" {"start" 2 "end" 3 "coordinate_system" "parser_text_utf8"}
                                "style" "bold"
                                "inline_children" [{"type" "layout-span"
-                                                   "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 2 "end" 3 "coordinate_system" "parser_text_utf8"}
                                                    "text" "横"
                                                    "layout" {"kind" "yokogumi"
                                                              "source" "aat-inline"
@@ -2568,7 +2568,7 @@
                                "encoding" "Shift_JIS"
                                "normalization" "source"}
                      "nodes" [{"type" "layout-span"
-                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                "text" "12"
                                "layout" {"source" "aat-inline"}}]
                      "warnings" []
@@ -2584,7 +2584,7 @@
                                "encoding" "Shift_JIS"
                                "normalization" "source"}
                      "nodes" [{"type" "emphasis"
-                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                "style" "bold"}]
                      "warnings" []
                      "errors" []}]
@@ -2599,20 +2599,20 @@
                                "encoding" "Shift_JIS"
                                "normalization" "source"}
                      "nodes" [{"type" "emphasis"
-                               "span" {"start" 0 "end" 4 "coordinate_system" "decoded_utf8"}
+                               "span" {"start" 0 "end" 4 "coordinate_system" "parser_text_utf8"}
                                "style" "bold"
                                "text" "AGB\n"
                                "inline_children" [{"type" "text"
-                                                   "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 0 "end" 1 "coordinate_system" "parser_text_utf8"}
                                                    "text" "A"}
                                                   {"type" "ruby"
-                                                   "span" {"start" 1 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 1 "end" 2 "coordinate_system" "parser_text_utf8"}
                                                    "ruby" {"base" "東"
                                                            "reading" "ひがし"
                                                            "scope" "explicit"
                                                            "direction" "right"}}
                                                   {"type" "gaiji"
-                                                   "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 2 "end" 3 "coordinate_system" "parser_text_utf8"}
                                                    "gaiji" {"raw_marker" "※［＃g］"
                                                             "unicode" "G"
                                                             "reference" nil
@@ -2620,15 +2620,15 @@
                                                             "image_or_glyph_fallback" nil
                                                             "resolved" true}}
                                                   {"type" "editor-note"
-                                                   "span" {"start" 3 "end" 3 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 3 "end" 3 "coordinate_system" "parser_text_utf8"}
                                                    "note" {"raw" "［＃注］"
                                                            "category" "misc"}}
                                                   {"type" "emphasis"
-                                                   "span" {"start" 3 "end" 4 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 3 "end" 4 "coordinate_system" "parser_text_utf8"}
                                                    "style" "inner"
                                                    "text" "B"}
                                                   {"type" "line-break"
-                                                   "span" {"start" 4 "end" 4 "coordinate_system" "decoded_utf8"}
+                                                   "span" {"start" 4 "end" 4 "coordinate_system" "parser_text_utf8"}
                                                    "marker" "［＃改行］"}]}]
                      "warnings" []
                      "errors" []}]
@@ -2645,17 +2645,17 @@
                 "warnings" []
                 "errors" []}]
       (doseq [inline-child [{"type" "page-break"
-                             "span" {"start" 0 "end" 0 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 0 "coordinate_system" "parser_text_utf8"}
                              "marker" "［＃改ページ］"}
                             {"type" "image"
-                             "span" {"start" 0 "end" 0 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 0 "coordinate_system" "parser_text_utf8"}
                              "src" "fig.png"
                              "alt" "図"}]]
         (is (seq (schema/validation-errors
                   schema
                   (assoc base
                          "nodes" [{"type" "emphasis"
-                                   "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                                   "span" {"start" 0 "end" 1 "coordinate_system" "parser_text_utf8"}
                                    "style" "bold"
                                    "text" "x"
                                    "inline_children" [inline-child]}]))))))))
@@ -2688,23 +2688,23 @@
 
 (def ^:private sentence-parser-ir-fixture
   {"nodes" [{"type" "text"
-             "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+             "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
              "text" "吾輩ハ猫デアル。"}
             {"type" "text"
-             "span" {"start" 24 "end" 48 "coordinate_system" "decoded_utf8"}
+             "span" {"start" 24 "end" 48 "coordinate_system" "parser_text_utf8"}
              "text" "名前はまだ無い。"}
             {"type" "text"
-             "span" {"start" 48 "end" 63 "coordinate_system" "decoded_utf8"}
+             "span" {"start" 48 "end" 63 "coordinate_system" "parser_text_utf8"}
              "text" "後続段落。"}]
    "paragraphs" [{"id" "p000000"
-                  "span" {"start" 0 "end" 48 "coordinate_system" "decoded_utf8"}
+                  "span" {"start" 0 "end" 48 "coordinate_system" "parser_text_utf8"}
                   "span_source" "direct"
                   "node_range" {"start" 0 "end" 2}
                   "role" "body"
                   "source_pointer" "blocks[0]"
                   "classification" "direct"}
                  {"id" "p000001"
-                  "span" {"start" 48 "end" 63 "coordinate_system" "decoded_utf8"}
+                  "span" {"start" 48 "end" 63 "coordinate_system" "parser_text_utf8"}
                   "span_source" "direct"
                   "node_range" {"start" 2 "end" 3}
                   "role" "body"
@@ -2712,27 +2712,28 @@
                   "classification" "direct"}]
    "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                             "splitter_id" "ab-plaintext-japanese-v1"
-                            "coordinate_system" "decoded_utf8"
+                            "coordinate_system" "parser_text_utf8"
                             "coverage" "body-paragraphs"}
    "sentences" [{"id" "s000000"
                  "paragraph_id" "p000000"
-                 "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                 "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                  "node_range" {"start" 0 "end" 1}
                  "tags" ["orthographic-katakana"]
                  "orthographic_annotation_indices" [0]}
                 {"id" "s000001"
                  "paragraph_id" "p000000"
-                 "span" {"start" 24 "end" 48 "coordinate_system" "decoded_utf8"}
+                 "span" {"start" 24 "end" 48 "coordinate_system" "parser_text_utf8"}
                  "node_range" {"start" 1 "end" 2}
                  "tags" []
                  "orthographic_annotation_indices" []}
                 {"id" "s000002"
                  "paragraph_id" "p000001"
-                 "span" {"start" 48 "end" 63 "coordinate_system" "decoded_utf8"}
+                 "span" {"start" 48 "end" 63 "coordinate_system" "parser_text_utf8"}
                  "node_range" {"start" 2 "end" 3}
                  "tags" []
                  "orthographic_annotation_indices" []}]
-   "orthographic_annotations" {"annotations" [{"source_byte_range" {"start" 0 "end" 24}
+   "orthographic_annotations" {"coordinate_system" "parser_text_utf8"
+                               "annotations" [{"source_byte_range" {"start" 0 "end" 24}
                                                "normalized_text" "吾輩は猫である。"
                                                "kind" "ScriptKatakanaToHiragana"
                                                "confidence" nil}]}})
@@ -2780,7 +2781,7 @@
                     conj
                     {"id" "s999999"
                      "paragraph_id" "p999999"
-                     "span" {"start" 63 "end" 66 "coordinate_system" "decoded_utf8"}
+                     "span" {"start" 63 "end" 66 "coordinate_system" "parser_text_utf8"}
                      "node_range" {"start" 3 "end" 3}
                      "tags" []
                      "orthographic_annotation_indices" []})))))
@@ -2797,7 +2798,7 @@
            (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 1 "span"]
-                      {"start" 30 "end" 54 "coordinate_system" "decoded_utf8"})))))
+                      {"start" 30 "end" 54 "coordinate_system" "parser_text_utf8"})))))
   (testing "rejects orthographic tag without annotation index"
     (is (= ["parser IR sentence s000000 has orthographic-katakana tag without annotation indices"]
            (sentence-policy/sentence-coherence-errors
@@ -2839,13 +2840,13 @@
                       {"type" "page-break"
                        "span" {"start" 63
                                "end" 63
-                               "coordinate_system" "decoded_utf8"}})
+                               "coordinate_system" "parser_text_utf8"}})
               (update "paragraphs"
                       conj
                       {"id" "p000002"
                        "span" {"start" 63
                                "end" 63
-                               "coordinate_system" "decoded_utf8"}
+                               "coordinate_system" "parser_text_utf8"}
                        "span_source" "direct"
                        "node_range" {"start" 3 "end" 4}
                        "role" "body"
@@ -2856,7 +2857,7 @@
            (sentence-policy/sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 1 "span"]
-                      {"start" 30 "end" 48 "coordinate_system" "decoded_utf8"})))))
+                      {"start" 30 "end" 48 "coordinate_system" "parser_text_utf8"})))))
   (testing "rejects node-range gaps"
     (is (= ["parser IR sentence s000001 node_range starts at 2 but expected 1"]
            (sentence-policy/sentence-coherence-errors

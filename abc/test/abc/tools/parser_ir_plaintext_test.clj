@@ -116,7 +116,7 @@
                        "text" "台詞"}]
              "paragraphs" [{"id" "p000000"
                             "span" {"start" 0 "end" 6
-                                    "coordinate_system" "decoded_utf8"}
+                                    "coordinate_system" "parser_text_utf8"}
                             "span_source" "direct"
                             "node_range" {"start" 0 "end" 1}
                             "role" "body"
@@ -132,7 +132,7 @@
     (is (= "序\n本文"
            (plaintext/render-string
             {"nodes" [{"type" "text"
-                       "span" {"start" 0 "end" 20 "coordinate_system" "decoded_utf8"}
+                       "span" {"start" 0 "end" 20 "coordinate_system" "parser_text_utf8"}
                        "text" "\r\n\r\n序\r\n\r\n\r\n本文\r\n\r\n"}]})))))
 
 (deftest emphasis-inline-children-render-visible-plaintext-test
@@ -140,25 +140,25 @@
     (is (= "東京X内"
            (plaintext/render-string
             {"nodes" [{"type" "emphasis"
-                       "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                       "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                        "style" "bold"
                        "text" "fallback"
                        "inline_children" [{"type" "ruby"
-                                           "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                           "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                            "ruby" {"base" "東京"
                                                    "reading" "とうきょう"
                                                    "scope" "explicit"}}
                                           {"type" "gaiji"
-                                           "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                                           "span" {"start" 2 "end" 3 "coordinate_system" "parser_text_utf8"}
                                            "gaiji" {"raw_marker" "※［＃x］"
                                                     "unicode" "X"
                                                     "resolved" true}}
                                           {"type" "editor-note"
-                                           "span" {"start" 3 "end" 4 "coordinate_system" "decoded_utf8"}
+                                           "span" {"start" 3 "end" 4 "coordinate_system" "parser_text_utf8"}
                                            "note" {"raw" "［＃注］"
                                                    "category" "misc"}}
                                           {"type" "emphasis"
-                                           "span" {"start" 4 "end" 5 "coordinate_system" "decoded_utf8"}
+                                           "span" {"start" 4 "end" 5 "coordinate_system" "parser_text_utf8"}
                                            "style" "inner"
                                            "text" "内"}]}]})))))
 
@@ -167,11 +167,11 @@
     (is (= "G"
            (plaintext/render-string
             {"nodes" [{"type" "emphasis"
-                       "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                       "span" {"start" 0 "end" 1 "coordinate_system" "parser_text_utf8"}
                        "style" "bold"
                        "text" "G"
                        "inline_children" [{"type" "gaiji"
-                                           "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                                           "span" {"start" 0 "end" 1 "coordinate_system" "parser_text_utf8"}
                                            "gaiji" {"raw_marker" "※［＃gaiji-G］"
                                                     "unicode" nil
                                                     "resolved" true}}]}]})))))
@@ -181,10 +181,10 @@
     (is (= "12大"
            (plaintext/render-string
             {"nodes" [{"type" "layout-span"
-                       "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                       "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                        "text" "fallback"
                        "inline_children" [{"type" "ruby"
-                                           "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                           "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                            "ruby" {"base" "12"
                                                    "reading" "じゅうに"
                                                    "scope" "explicit"}}]
@@ -192,7 +192,7 @@
                                  "source" "aat-inline"
                                  "marker" "縦中横"}}
                       {"type" "layout-span"
-                       "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                       "span" {"start" 2 "end" 3 "coordinate_system" "parser_text_utf8"}
                        "text" "大"
                        "layout" {"kind" "font-size"
                                  "source" "aat-inline"
@@ -204,11 +204,11 @@
     (is (= "\n東京\n"
            (plaintext/render-string
             {"nodes" [{"type" "heading"
-                       "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                       "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                        "text" "東京"
                        "level" 2
                        "inline_children" [{"type" "ruby"
-                                           "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                           "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                            "ruby" {"base" "東京"
                                                    "reading" "とうきょう"
                                                    "scope" "explicit"}}]}]})))))

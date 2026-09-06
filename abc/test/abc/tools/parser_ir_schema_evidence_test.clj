@@ -37,7 +37,7 @@
   (-> (files/read-json "examples/v0/example-work/parser-ir.json")
       (assoc "nodes" [{"type" "ruby"
                        "span" {"start" 0 "end" 6
-                               "coordinate_system" "decoded_utf8"}
+                               "coordinate_system" "parser_text_utf8"}
                        "ruby" {"base" "本文"
                                "reading" "ほんぶん"
                                "scope" "explicit"
@@ -46,26 +46,27 @@
              "sentences" [])
       (dissoc "sentence_segmentation" "orthographic_annotations")))
 
-(deftest bounded-span-shapes-remain-compatible-test
-  (let [parser-schema (files/read-json parser-ir-schema-path)]
-    (testing "current decoded UTF-8 spans carry bounded line and column coordinates"
-      (let [span (fixture-span "span-current.json")]
-        (is (= "decoded_utf8" (get span "coordinate_system")))
-        (is (pos-int? (get span "column")))
-        (is (nil? (schema/validation-errors parser-schema
-                                            (parser-ir-with-span span))))))
-    (testing "legacy bounded span shapes remain accepted"
-      (doseq [name ["span-legacy-start-end.json"
-                    "span-legacy-line-column.json"]]
-        (is (nil? (schema/validation-errors parser-schema
-                                            (parser-ir-with-span
-                                             (fixture-span name))))
-            name)))
-    (testing "unknown coordinate systems are rejected"
-      (is (seq (schema/validation-errors
-                parser-schema
-                (parser-ir-with-span
-                 (fixture-span "span-invalid-coordinate.json"))))))))
+(deftest parser-text-and-source-coordinate-shapes-are-distinct-test
+  (let [parser-schema (files/read-json parser-ir-schema-path)
+        span (fixture-span "span-current.json")]
+    (is (= "parser_text_utf8" (get span "coordinate_system")))
+    (is (nil? (schema/validation-errors parser-schema (parser-ir-with-span span))))
+    (doseq [invalid [(dissoc span "coordinate_system")
+                     (assoc span "coordinate_system" "decoded_utf8")
+                     (assoc span "line" 1)
+                     (fixture-span "span-invalid-coordinate.json")]]
+      (is (seq (schema/validation-errors parser-schema (parser-ir-with-span invalid)))))
+    (let [ir (assoc-in (parser-ir-with-span span) ["nodes" 0 "source_span"]
+                       {"start" 24 "end" 39 "line" 4 "coordinate_system" "decoded_utf8"})]
+      (is (nil? (schema/validation-errors parser-schema ir)))
+      (let [records (get (materialize/publication-preservation
+                          {:parser-ir ir
+                           :source-manifest (files/read-json "examples/v0/example-work/source.manifest.json")
+                           :generated-at generated-at}) "records")]
+        (is (some #(and (= "/nodes/0/source_span" (get % "ir_pointer"))
+                        (= (pr-str (get-in ir ["nodes" 0 "source_span"])) (get % "value"))) records)))
+      (is (seq (schema/validation-errors parser-schema
+                                         (assoc-in ir ["nodes" 0 "source_span" "coordinate_system"] "parser_text_utf8")))))))
 
 (deftest complete-parser-ir-envelopes-accept-supported-ruby-directions-test
   (let [parser-schema (files/read-json parser-ir-schema-path)]
@@ -80,14 +81,14 @@
               (parser-ir-with-ruby-direction "horizontal")))
         "a direction outside the ruby enum is rejected")))
 
-(deftest committed-publication-fixture-consumes-decoded-utf8-spans-test
+(deftest committed-publication-fixture-consumes-parser-text-utf8-spans-test
   (let [parser-ir (files/read-json "examples/v0/example-work/parser-ir.json")
-        decoded-nodes (->> (get parser-ir "nodes")
-                           (keep-indexed
-                            (fn [index node]
-                              (when (= "decoded_utf8"
-                                       (get-in node ["span" "coordinate_system"]))
-                                [index node]))))
+        projected-nodes (->> (get parser-ir "nodes")
+                             (keep-indexed
+                              (fn [index node]
+                                (when (= "parser_text_utf8"
+                                         (get-in node ["span" "coordinate_system"]))
+                                  [index node]))))
         plaintext-output (plaintext/render-string parser-ir)
         tei-output (pr-str (:body (tei/render parser-ir)))
         preservation-records (get (materialize/publication-preservation
@@ -97,20 +98,19 @@
                                      "examples/v0/example-work/source.manifest.json")
                                     :generated-at generated-at})
                                   "records")]
-    (is (= [[4 "第二段"] [5 "（古伝説と、シルレルの詩から。）"]]
-           (mapv (fn [[index node]] [index (get node "text")]) decoded-nodes)))
+    (is (= (count (get parser-ir "nodes")) (count projected-nodes)))
     (is (string/includes? plaintext-output "第二段")
-        "visible text selected by a decoded UTF-8 span reaches plaintext")
+        "visible text selected by a parser text span reaches plaintext")
     (is (string/includes? tei-output "第二段")
-        "visible text selected by a decoded UTF-8 span reaches TEI")
+        "visible text selected by a parser text span reaches TEI")
     (is (not (string/includes? plaintext-output "古伝説"))
-        "decoded-span source-note text remains outside visible plaintext")
-    (doseq [[index node] decoded-nodes]
+        "source-note source-note text remains outside visible plaintext")
+    (doseq [[index node] projected-nodes]
       (is (some #(and (= (str "/nodes/" index "/span")
                          (get % "ir_pointer"))
                       (= (pr-str (get node "span")) (get % "value")))
                 preservation-records)
-          (str "decoded UTF-8 span for node " index
+          (str "parser text span for node " index
                " is preserved with its parser-IR pointer")))))
 
 (deftest parser-ir-schema-hash-propagates-to-materialized-manifest-test

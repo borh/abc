@@ -161,7 +161,7 @@
 
 (defn- gaiji-declaration [node]
   (let [gaiji (get node "gaiji")
-        span (get node "span")]
+        span (or (get node "source_span") (get node "span"))]
     (cond-> {:xml-id (normalize-gaiji-id (get gaiji "reference") span)}
       (contains? gaiji "unicode")
       (assoc :unicode (get gaiji "unicode"))
@@ -215,7 +215,8 @@
                 (if-not (contains? (:char-declaration-ids acc) base-id)
                   base-id
                   (loop [ordinal 0]
-                    (let [candidate (str base-id "-at-" (get-in node ["span" "start"] 0)
+                    (let [candidate (str base-id "-at-" (or (get-in node ["source_span" "start"])
+                                                            (get-in node ["span" "start"]) 0)
                                          (when (pos? ordinal) (str "-" ordinal)))]
                       (if (contains? (:char-declaration-ids acc) candidate)
                         (recur (inc ordinal)) candidate)))))

@@ -12,7 +12,8 @@
 (def ^:private ir
   {"nodes"
    [{"type" "text" "text" "冒頭"}
-    {"type" "ruby" "span" {"start" 6 "end" 12}
+    {"type" "ruby" "span" {"start" 6 "end" 12 "coordinate_system" "parser_text_utf8"}
+     "source_span" {"start" 6 "end" 12 "coordinate_system" "decoded_utf8"}
      "ruby" {"base" "吾輩" "reading" "わがはい" "scope" "explicit" "direction" "right"}}
     {"type" "text" "text" "は"}
     ;; astral-plane gaiji: U+20B9F 𠮟 — 2 UTF-16 units, 1 unicode scalar

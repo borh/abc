@@ -1,7 +1,7 @@
 {
   "work_id": "000000",
   "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-  "coordinate_system": "decoded_utf8",
+  "coordinate_system": "parser_text_utf8",
   "detector_id": "HeuristicV1",
   "annotations": [
     {

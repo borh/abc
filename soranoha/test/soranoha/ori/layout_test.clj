@@ -35,7 +35,7 @@
   (let [dir (fs/create-temp-dir {:prefix "embedded-sign"})
         xml-path (str (fs/path dir "tei.xml"))
         result (render/render-work
-                {:parser-ir (assoc (document [(block 1 5)]) "sentence_segmentation" {})
+                {:parser-ir (assoc (document [(block 1 5)]) "sentence_segmentation" {"coordinate_system" "parser_text_utf8"})
                  :metadata-record {"work" {"title" "試験" "aozora_modified" "2026-09-06"} "contributors" []}
                  :persons-by-id {}})]
     (try

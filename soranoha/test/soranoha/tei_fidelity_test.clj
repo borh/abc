@@ -61,7 +61,7 @@
   (let [dir (fs/create-temp-dir {:prefix "tei-layout-profile"})
         xml-path (str (fs/path dir "tei.xml"))
         result (render/render-work
-                {:parser-ir {"sentence_segmentation" {}
+                {:parser-ir {"sentence_segmentation" {"coordinate_system" "parser_text_utf8"}
                              "nodes" [{"type" "heading" "level" 2 "indent" 8 "text" "一"}
                                       {"type" "text" "text" "　本文。"}
                                       {"type" "source-note" "placement" "back"

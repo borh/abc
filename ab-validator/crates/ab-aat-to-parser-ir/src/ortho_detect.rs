@@ -89,7 +89,7 @@ pub fn detect_orthographic_annotations(
     Ok(OrthoAnnotationsBundle {
         work_id,
         primary_text_hash,
-        coordinate_system: OrthoCoordinateSystem::DecodedUtf8,
+        coordinate_system: OrthoCoordinateSystem::ParserTextUtf8,
         detector_id: detector.detector_id(),
         annotations: detector.detect(&spans),
     })

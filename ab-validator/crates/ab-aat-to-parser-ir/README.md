@@ -9,6 +9,18 @@ divergence records are authorized by the checked-in mapping, and parser-IR plus
 divergence output are validated against the ABC schemas mirrored under
 `data/abc-schemas`.
 
+## Byte coordinates
+
+Parser-IR `span` uses `parser_text_utf8`: UTF-8 bytes in the converter's text
+projection, before publication whitespace filtering. Ruby occupies its base text
+width and resolved gaiji occupy their Unicode width. Headings and source notes
+also advance this projection; it is not the final plaintext export.
+
+Optional `source_span` uses `decoded_utf8`: the exact AAT byte extent in the full
+decoded source, including markup and source line metadata. Unknown extents remain
+absent. Sentence splitting does not copy a parent's source extent onto newly
+created fragments when their exact source mapping is unknown.
+
 ## Commands
 
 Convert one AAT file:
@@ -33,17 +45,18 @@ Optional path to an orthographic annotations JSON file produced by the
 - `sentences[].tags`: renderer-facing sentence tags, including
   `orthographic-katakana`
 
-The annotation file must describe the same byte-coordinate source as the AAT
-input: `work_id` must equal `AAT.work_id`, and `primary_text_hash` must equal
+The annotation file must use `parser_text_utf8` coordinates in the converted
+sentence text, and identify the same AAT input: `work_id` must equal `AAT.work_id`, and `primary_text_hash` must equal
 `AAT.meta.primary_text_hash` (or historical `AAT.meta.source_hash`). Historical
 annotation files using `work_content_hash` are accepted and migrated on read;
-new output emits only `primary_text_hash`.
+new output emits only `primary_text_hash`. Bundles tagged `decoded_utf8` are
+rejected; actual source offsets cannot be reinterpreted as parser-text offsets.
 
 ```json
 {
   "work_id": "000000",
   "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-  "coordinate_system": "decoded_utf8",
+  "coordinate_system": "parser_text_utf8",
   "detector_id": "HeuristicV1",
   "annotations": [
     {

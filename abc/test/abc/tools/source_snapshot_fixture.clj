@@ -54,7 +54,7 @@
                     "mapping_version" "0.2.0"}
     "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                              "splitter_id" "ab-plaintext-japanese-v1"
-                             "coordinate_system" "decoded_utf8"
+                             "coordinate_system" "parser_text_utf8"
                              "coverage" "body-paragraphs"}
     "nodes" []
     "warnings" []

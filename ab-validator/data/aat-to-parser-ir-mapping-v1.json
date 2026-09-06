@@ -4,7 +4,7 @@
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:7d89d81f793e9b1c8d59a5e2ed10b2e8cf1450502a14236d0ded7316569fb117",
+  "target_parser_ir_schema_hash": "sha256:d50ea195475ceefbf186288006dfda57032641829bb627fcf79007021e451310",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -44,7 +44,7 @@
       "aat_pointer": "blocks[].children[].children[].content[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 2912 occurrences; first_path=blocks[369].children[1].children[0].content[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 2912 occurrences; first_path=blocks[369].children[1].children[0].content[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-06",
@@ -60,7 +60,7 @@
       "aat_pointer": "blocks[].children[].children[].content[].warigaki.upper[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 14 occurrences; first_path=blocks[18].children[0].children[0].content[1].warigaki.upper[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 14 occurrences; first_path=blocks[18].children[0].children[0].content[1].warigaki.upper[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-08",
@@ -68,7 +68,7 @@
       "aat_pointer": "blocks[].children[].children[].heading.content[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 23 occurrences; first_path=blocks[0].children[0].children[0].heading.content[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 23 occurrences; first_path=blocks[0].children[0].children[0].heading.content[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-09",
@@ -92,7 +92,7 @@
       "aat_pointer": "blocks[].children[].children[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 21 occurrences; first_path=blocks[0].children[0].children[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 21 occurrences; first_path=blocks[0].children[0].children[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-12",
@@ -188,7 +188,7 @@
       "aat_pointer": "blocks[].children[].content[].content[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 2387 occurrences; first_path=blocks[1].children[0].content[0].content[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 2387 occurrences; first_path=blocks[1].children[0].content[0].content[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-24",
@@ -220,7 +220,7 @@
       "aat_pointer": "blocks[].children[].content[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 1042167 occurrences; first_path=blocks[0].children[0].content[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 1042167 occurrences; first_path=blocks[0].children[0].content[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-28",
@@ -236,7 +236,7 @@
       "aat_pointer": "blocks[].children[].content[].warigaki.lower[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 2 occurrences; first_path=blocks[4].children[1].content[1].warigaki.lower[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 2 occurrences; first_path=blocks[4].children[1].content[1].warigaki.lower[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-30",
@@ -260,7 +260,7 @@
       "aat_pointer": "blocks[].children[].content[].warigaki.upper[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 989 occurrences; first_path=blocks[13].children[2].content[5].warigaki.upper[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 989 occurrences; first_path=blocks[13].children[2].content[5].warigaki.upper[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-33",
@@ -292,7 +292,7 @@
       "aat_pointer": "blocks[].children[].heading.content[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 80160 occurrences; first_path=blocks[16].children[0].heading.content[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 80160 occurrences; first_path=blocks[16].children[0].heading.content[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-37",
@@ -316,7 +316,7 @@
       "aat_pointer": "blocks[].children[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 71477 occurrences; first_path=blocks[16].children[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 71477 occurrences; first_path=blocks[16].children[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-40",
@@ -780,7 +780,7 @@
       "aat_pointer": "blocks[].content[].content[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 2300598 occurrences; first_path=blocks[0].content[0].content[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 2300598 occurrences; first_path=blocks[0].content[0].content[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-98",
@@ -820,7 +820,7 @@
       "aat_pointer": "blocks[].content[].content[].warigaki.upper[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 896 occurrences; first_path=blocks[36].content[0].content[106].warigaki.upper[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 896 occurrences; first_path=blocks[36].content[0].content[106].warigaki.upper[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-103",
@@ -852,7 +852,7 @@
       "aat_pointer": "blocks[].content[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 28775383 occurrences; first_path=blocks[0].content[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 28775383 occurrences; first_path=blocks[0].content[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-107",
@@ -868,7 +868,7 @@
       "aat_pointer": "blocks[].content[].warigaki.lower[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 4 occurrences; first_path=blocks[5].content[19].warigaki.lower[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 4 occurrences; first_path=blocks[5].content[19].warigaki.lower[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-109",
@@ -900,7 +900,7 @@
       "aat_pointer": "blocks[].content[].warigaki.upper[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 2393 occurrences; first_path=blocks[249].content[1].warigaki.upper[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 2393 occurrences; first_path=blocks[249].content[1].warigaki.upper[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-113",
@@ -996,7 +996,7 @@
       "aat_pointer": "blocks[].heading.content[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 130274 occurrences; first_path=blocks[1].heading.content[0].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 130274 occurrences; first_path=blocks[1].heading.content[0].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-125",
@@ -1028,7 +1028,7 @@
       "aat_pointer": "blocks[].span",
       "parser_ir_pointer": "span",
       "action": "project",
-      "description": "Observed 159139 occurrences; first_path=blocks[1].span. AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized"
+      "description": "Observed 159139 occurrences; first_path=blocks[1].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
     },
     {
       "rule_id": "A-129",

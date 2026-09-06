@@ -237,15 +237,16 @@
 (defn- span-records [collection-name values]
   (mapcat
    (fn [index value]
-     (let [span (get value "span")]
-       (when (map? span)
-         [{:ir-pointer (json-pointer [collection-name index "span"])
-           :tei-pointer nil
-           :construct "span_coordinates"
-           :source-pointer (get value "source_pointer")
-           :source-inventory-row nil
-           :message "Parser-IR span coordinates are preserved outside TEI publication XML."
-           :value (pr-str span)}])))
+     (for [field ["span" "source_span"]
+           :let [span (get value field)]
+           :when (map? span)]
+       {:ir-pointer (json-pointer [collection-name index field])
+        :tei-pointer nil
+        :construct "span_coordinates"
+        :source-pointer (get value "source_pointer")
+        :source-inventory-row nil
+        :message "Parser-IR span coordinates are preserved outside TEI publication XML."
+        :value (pr-str span)}))
    (range)
    values))
 

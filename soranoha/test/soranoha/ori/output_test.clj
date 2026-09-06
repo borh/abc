@@ -7,13 +7,15 @@
             [soranoha.ori.fidelity-test :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.stages :as stages]
-            [soranoha.ported.tei-header :as header])
+            [soranoha.ported.tei-header :as header]
+            [soranoha.ported.parser-ir-plaintext :as plaintext]
+            [soranoha.ported.parser-ir-sentence-policy :as sentence-policy])
   (:import [java.io ByteArrayInputStream]
            [javax.xml.parsers DocumentBuilderFactory]))
 
 (deftest publication-serialization-does-not-invent-mixed-content-whitespace
   (let [result (render/render-work
-                {:parser-ir {"sentence_segmentation" {}
+                {:parser-ir {"sentence_segmentation" {"coordinate_system" "parser_text_utf8"}
                              "nodes" [{"type" "text" "text" "前"}
                                       {"type" "ruby" "ruby" {"base" "池" "reading" "いけ" "scope" "explicit"}}
                                       {"type" "text" "text" "後"}]}
@@ -72,3 +74,21 @@
         (is (= fixture/tei (slurp (str (fs/path out "work" "tei.xml")))))
         (is (fs/exists? (fs/path out "work" "source-fidelity.json"))))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
+
+(deftest annotation-source-extents-never-borrow-parser-text-offsets
+  (let [ruby {"type" "ruby" "span" {"start" 0 "end" 3 "coordinate_system" "parser_text_utf8"}
+              "source_span" {"start" 24 "end" 39 "coordinate_system" "decoded_utf8"}
+              "ruby" {"base" "下" "reading" "した"}}
+        render #(plaintext/render-with-annotations {"nodes" [%]})]
+    (is (= {"start" 24 "end" 39} (get-in (render ruby) [:annotations 0 "source_span"])))
+    (is (= {"start" 0 "end" 1} (get-in (render ruby) [:annotations 0 "span"])))
+    (is (not (contains? (first (:annotations (render (dissoc ruby "source_span")))) "source_span")))))
+
+(deftest publication-refuses-source-axis-sentence-or-orthography-evidence
+  (let [check sentence-policy/publication-sentence-evidence-errors
+        valid {"sentence_segmentation" {"coordinate_system" "parser_text_utf8"}}]
+    (is (empty? (check valid)))
+    (is (= ["sentence_segmentation requires parser_text_utf8 coordinates"]
+           (check (assoc-in valid ["sentence_segmentation" "coordinate_system"] "decoded_utf8"))))
+    (is (= ["orthographic_annotations requires parser_text_utf8 coordinates"]
+           (check (assoc valid "orthographic_annotations" {"coordinate_system" "decoded_utf8"}))))))

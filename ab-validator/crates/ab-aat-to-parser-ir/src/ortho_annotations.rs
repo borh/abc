@@ -6,8 +6,8 @@ use serde_json::Value;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OrthoCoordinateSystem {
-    #[serde(rename = "decoded_utf8")]
-    DecodedUtf8,
+    #[serde(rename = "parser_text_utf8")]
+    ParserTextUtf8,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -121,11 +121,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn roundtrips_through_json() {
+    fn rejects_source_axis_bundle_instead_of_reinterpreting_it() {
         let input = serde_json::json!({
             "work_id": "000000",
             "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
             "coordinate_system": "decoded_utf8",
+            "detector_id": "HeuristicV1",
+            "annotations": []
+        });
+        let error = serde_json::from_value::<OrthoAnnotationsBundle>(input).unwrap_err();
+        assert!(error.to_string().contains("parser_text_utf8"));
+    }
+
+    #[test]
+    fn roundtrips_through_json() {
+        let input = serde_json::json!({
+            "work_id": "000000",
+            "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [
                 {
@@ -138,7 +151,10 @@ mod tests {
         });
         let parsed: OrthoAnnotationsBundle = serde_json::from_value(input.clone()).unwrap();
         assert_eq!(parsed.work_id, "000000");
-        assert_eq!(parsed.coordinate_system, OrthoCoordinateSystem::DecodedUtf8);
+        assert_eq!(
+            parsed.coordinate_system,
+            OrthoCoordinateSystem::ParserTextUtf8
+        );
         assert_eq!(
             parsed.detector_id,
             ab_ortho_detect::OrthoDetectorId::HeuristicV1
@@ -157,7 +173,7 @@ mod tests {
         let input = serde_json::json!({
             "work_id": "000000",
             "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-            "coordinate_system": "decoded_utf8",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": {
                 "MlLogisticRegression": {
                     "model_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
@@ -178,7 +194,7 @@ mod tests {
         let parsed: OrthoAnnotationsBundle = serde_json::from_value(serde_json::json!({
             "work_id": "000000",
             "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-            "coordinate_system": "decoded_utf8",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": "HeuristicV1",
             "annotations": []
         }))
@@ -198,7 +214,7 @@ mod tests {
             "work_id": "000000",
             "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
             "work_content_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
-            "coordinate_system": "decoded_utf8",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": "HeuristicV1",
             "annotations": []
         }))
@@ -223,7 +239,7 @@ mod tests {
         let bundle: OrthoAnnotationsBundle = serde_json::from_value(serde_json::json!({
             "work_id": "000000",
             "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-            "coordinate_system": "decoded_utf8",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": "HeuristicV1",
             "annotations": []
         }))
@@ -243,7 +259,7 @@ mod tests {
         let bundle: OrthoAnnotationsBundle = serde_json::from_value(serde_json::json!({
             "work_id": "000000",
             "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-            "coordinate_system": "decoded_utf8",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": "HeuristicV1",
             "annotations": []
         }))

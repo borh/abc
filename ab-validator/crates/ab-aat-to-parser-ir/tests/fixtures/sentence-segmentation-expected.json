@@ -2,14 +2,14 @@
   "sentence_segmentation": {
     "schema_version": "sentence-segmentation-v1",
     "splitter_id": "ab-plaintext-japanese-v1",
-    "coordinate_system": "decoded_utf8",
+    "coordinate_system": "parser_text_utf8",
     "coverage": "body-paragraphs"
   },
   "sentences": [
     {
       "id": "s000000",
       "paragraph_id": "p000000",
-      "span": { "start": 0, "end": 24, "coordinate_system": "decoded_utf8" },
+      "span": { "start": 0, "end": 24, "coordinate_system": "parser_text_utf8" },
       "node_range": { "start": 0, "end": 1 },
       "tags": ["orthographic-katakana"],
       "orthographic_annotation_indices": [0]
@@ -17,7 +17,7 @@
     {
       "id": "s000001",
       "paragraph_id": "p000000",
-      "span": { "start": 24, "end": 48, "coordinate_system": "decoded_utf8" },
+      "span": { "start": 24, "end": 48, "coordinate_system": "parser_text_utf8" },
       "node_range": { "start": 1, "end": 2 },
       "tags": ["orthographic-katakana"],
       "orthographic_annotation_indices": [1]
@@ -25,7 +25,7 @@
     {
       "id": "s000002",
       "paragraph_id": "p000001",
-      "span": { "start": 48, "end": 63, "coordinate_system": "decoded_utf8" },
+      "span": { "start": 48, "end": 63, "coordinate_system": "parser_text_utf8" },
       "node_range": { "start": 2, "end": 3 },
       "tags": [],
       "orthographic_annotation_indices": []

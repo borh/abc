@@ -285,7 +285,7 @@ fn ortho_fixture_bundle() -> ab_aat_to_parser_ir::ortho_annotations::OrthoAnnota
     serde_json::from_value(json!({
         "work_id": "000000",
         "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-        "coordinate_system": "decoded_utf8",
+        "coordinate_system": "parser_text_utf8",
         "detector_id": "HeuristicV1",
         "annotations": [
             {
@@ -935,7 +935,7 @@ fn distinct_bundle_hash_does_not_change_annotation_coordinate_identity() {
         serde_json::from_value(json!({
             "work_id": "000000",
             "primary_text_hash": primary,
-            "coordinate_system": "decoded_utf8",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": "HeuristicV1",
             "annotations": []
         }))
@@ -985,7 +985,7 @@ fn detect_orthographic_annotations_uses_parser_ir_sentence_coordinates() {
     );
     assert_eq!(
         bundle.coordinate_system,
-        ab_aat_to_parser_ir::ortho_annotations::OrthoCoordinateSystem::DecodedUtf8
+        ab_aat_to_parser_ir::ortho_annotations::OrthoCoordinateSystem::ParserTextUtf8
     );
     assert_eq!(bundle.annotations.len(), 3);
     assert_eq!(bundle.annotations[0].source_byte_range, 0..24);
@@ -1045,15 +1045,15 @@ fn parser_ir_emits_split_sentence_rows_and_ortho_tags() {
     );
     assert_eq!(
         output.parser_ir.pointer("/sentences/0/span"),
-        Some(&json!({"start":0,"end":24,"coordinate_system":"decoded_utf8"}))
+        Some(&json!({"start":0,"end":24,"coordinate_system":"parser_text_utf8"}))
     );
     assert_eq!(
         output.parser_ir.pointer("/sentences/1/span"),
-        Some(&json!({"start":24,"end":48,"coordinate_system":"decoded_utf8"}))
+        Some(&json!({"start":24,"end":48,"coordinate_system":"parser_text_utf8"}))
     );
     assert_eq!(
         output.parser_ir.pointer("/sentences/2/span"),
-        Some(&json!({"start":48,"end":63,"coordinate_system":"decoded_utf8"}))
+        Some(&json!({"start":48,"end":63,"coordinate_system":"parser_text_utf8"}))
     );
     assert_eq!(
         output.parser_ir.pointer("/sentences/0/tags"),
@@ -1191,7 +1191,7 @@ fn ortho_indices_cover_multiple_annotations_in_one_sentence() {
         serde_json::from_value(json!({
             "work_id": "000000",
             "primary_text_hash": hash,
-            "coordinate_system": "decoded_utf8",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [
                 {"source_byte_range":{"start":0,"end":12},"normalized_text":"吾輩は猫","kind":"ScriptKatakanaToHiragana","confidence":null},
@@ -1213,7 +1213,7 @@ fn ortho_indices_cover_multiple_annotations_in_one_sentence() {
 
     assert_eq!(
         output.parser_ir.pointer("/sentences/0/span"),
-        Some(&json!({"start":0,"end":24,"coordinate_system":"decoded_utf8"}))
+        Some(&json!({"start":0,"end":24,"coordinate_system":"parser_text_utf8"}))
     );
     assert_eq!(
         output
@@ -1250,7 +1250,7 @@ fn ortho_annotation_spanning_two_sentences_tags_both() {
         serde_json::from_value(json!({
             "work_id": "000000",
             "primary_text_hash": hash,
-            "coordinate_system": "decoded_utf8",
+            "coordinate_system": "parser_text_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [
                 {"source_byte_range":{"start":6,"end":21},"normalized_text":"猫。名前ハ","kind":"ScriptKatakanaToHiragana","confidence":null}
@@ -1271,11 +1271,11 @@ fn ortho_annotation_spanning_two_sentences_tags_both() {
 
     assert_eq!(
         output.parser_ir.pointer("/sentences/0/span"),
-        Some(&json!({"start":0,"end":15,"coordinate_system":"decoded_utf8"}))
+        Some(&json!({"start":0,"end":15,"coordinate_system":"parser_text_utf8"}))
     );
     assert_eq!(
         output.parser_ir.pointer("/sentences/1/span"),
-        Some(&json!({"start":15,"end":33,"coordinate_system":"decoded_utf8"}))
+        Some(&json!({"start":15,"end":33,"coordinate_system":"parser_text_utf8"}))
     );
     assert_eq!(
         output
@@ -1781,13 +1781,13 @@ fn recovers_direct_raw_without_rendering_parser_residue_as_body_text() {
         &vec![
             json!({
                 "type": "page-break",
-                "span": {"start": 0, "end": 0, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+                "span": {"start": 0, "end": 0, "coordinate_system": "parser_text_utf8"},
                 "marker": "page",
                 "page_number": null,
             }),
             json!({
                 "type": "editor-note",
-                "span": {"start": 0, "end": 0, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+                "span": {"start": 0, "end": 0, "coordinate_system": "parser_text_utf8"},
                 "note": {
                     "raw": "「姿が」は底本では「艇が」",
                     "category": "misc"
@@ -1893,7 +1893,7 @@ fn recovers_accent_and_inline_yokogumi_without_fatal_conversion() {
         output.parser_ir.pointer("/nodes/0"),
         Some(&json!({
             "type": "emphasis",
-            "span": {"start": 0, "end": 2, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+            "span": {"start": 0, "end": 2, "coordinate_system": "parser_text_utf8"},
             "text": "é",
             "style": "1-09-63",
         }))
@@ -1902,11 +1902,11 @@ fn recovers_accent_and_inline_yokogumi_without_fatal_conversion() {
         output.parser_ir.pointer("/nodes/1"),
         Some(&json!({
             "type": "layout-span",
-            "span": {"start": 2, "end": 5, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+            "span": {"start": 2, "end": 5, "coordinate_system": "parser_text_utf8"},
             "text": "ABC",
             "inline_children": [{
                 "type": "text",
-                "span": {"start": 2, "end": 5, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+                "span": {"start": 2, "end": 5, "coordinate_system": "parser_text_utf8"},
                 "text": "ABC"
             }],
             "layout": {"kind": "yokogumi", "source": "aat-inline", "direction": "horizontal", "marker": null},
@@ -4346,8 +4346,11 @@ fn quote_node_emission_from_text() {
     assert!(quote_nodes[0]["nesting_level"].is_null());
     assert_eq!(quote_nodes[1]["marker_type"], "close");
     assert_eq!(quote_nodes[1]["text"], "」");
-    // Sub-segments carry synthetic spans (decoded_utf8 coordinate system).
-    assert_eq!(quote_nodes[0]["span"]["coordinate_system"], "decoded_utf8");
+    // Sub-segments carry synthetic spans (parser_text_utf8 coordinate system).
+    assert_eq!(
+        quote_nodes[0]["span"]["coordinate_system"],
+        "parser_text_utf8"
+    );
     // The text nodes around the markers are split out, not merged.
     let text_nodes: Vec<_> = nodes
         .iter()
@@ -4473,16 +4476,8 @@ fn fragment_field_coherence_holds() {
 }
 
 #[test]
-fn ruby_node_span_is_decoded_not_raw_source() {
-    // Regression for the converter coordinate-system bug. The AAT emits a RAW
-    // source span for a ruby node — byte_start=9, byte_end=24 covering the source
-    // markup `下《した》` (15 bytes) — but the parser-IR coordinate system is
-    // decoded_utf8. The converter must project the ruby node's span to the DECODED
-    // base (`下`, 3 bytes at decoded offset 9), i.e. [9, 12], so it stays consistent
-    // with sibling text spans and the visible-text sentence splitter. Copying the
-    // raw AAT offsets here (the old `map_span` behaviour) desynchronised node spans
-    // and made ruby-heavy corpora fail — or crash — sentence projection. See
-    // `map_node_span`.
+fn ruby_node_spans_distinguish_parser_text_and_source_markup() {
+    // Ruby occupies its base width in parser text and its full markup width in source.
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
         "version": 1,
@@ -4533,7 +4528,17 @@ fn ruby_node_span_is_decoded_not_raw_source() {
         ruby["span"]["end"], 12,
         "decoded end covers the base 下 (3 bytes), NOT the raw source markup (would be 24)"
     );
-    assert_eq!(ruby["span"]["coordinate_system"], "decoded_utf8");
+    assert_eq!(ruby["span"]["coordinate_system"], "parser_text_utf8");
+    assert_eq!(
+        ruby["source_span"],
+        json!({"start": 9, "end": 24, "line": 1, "coordinate_system": "decoded_utf8"})
+    );
+    assert!(
+        nodes
+            .iter()
+            .filter(|n| n["type"] == "text")
+            .all(|n| n.get("source_span").is_none())
+    );
 
     // The whole (ruby-bearing) document must convert and remain schema-valid — the
     // sentence projection over the now-consistent decoded spans succeeds.
@@ -4566,52 +4571,38 @@ fn adapter_conversion_spans_address_full_source_across_body_and_terminal_provena
     .unwrap();
 
     let nodes = output.parser_ir["nodes"].as_array().unwrap();
-    assert!(!nodes.is_empty());
-    for node in nodes {
-        let span = &node["span"];
-        assert_eq!(span["coordinate_system"], "decoded_utf8");
-        let start = span["start"].as_u64().unwrap() as usize;
-        let end = span["end"].as_u64().unwrap() as usize;
-        assert!(start <= end && end <= decoded.text.len());
-        assert!(
-            decoded.text.get(start..end).is_some(),
-            "span must land on UTF-8 boundaries: {span}"
-        );
-    }
-    let post_collision_start = decoded.text.find('\u{e001}').unwrap() + '\u{e001}'.len_utf8();
-    let post_collision_end = post_collision_start + "文です".len();
-    let post_collision = nodes
-        .iter()
-        .find(|node| {
-            node["span"]["start"]
-                .as_u64()
-                .is_some_and(|start| start as usize <= post_collision_start)
-                && node["span"]["end"]
-                    .as_u64()
-                    .is_some_and(|end| end as usize >= post_collision_end)
-        })
-        .expect("a body node must span across the sanitizer collision");
-    let start = post_collision["span"]["start"].as_u64().unwrap() as usize;
-    let end = post_collision["span"]["end"].as_u64().unwrap() as usize;
-    // Per-line paragraph segmentation makes the collision-crossing node the
-    // 本…文です line itself (offsets are projected-stream byte offsets, so the
-    // sanitizer's \r\n→\n width loss surfaces as the preceding terminator
-    // bytes at the slice head — previously hidden inside one whole-body node).
-    assert_eq!(&decoded.text[start..end], "\n\r\n本\u{e001}文です");
+    let body = nodes.iter().find(|node| node["type"] == "text").unwrap();
     assert_eq!(
-        &decoded.text[post_collision_start..post_collision_end],
-        "文です"
+        body["span"],
+        json!({"start": 0, "end": 18, "coordinate_system": "parser_text_utf8"})
     );
-    let tail_start = decoded.text.find("底本：").unwrap();
-    let tail_node = nodes
+    assert_eq!(
+        body["source_span"],
+        json!({"start": 24, "end": 42, "line": 4, "coordinate_system": "decoded_utf8"})
+    );
+    for node in nodes {
+        assert_eq!(node["span"]["coordinate_system"], "parser_text_utf8");
+        if let Some(span) = node.get("source_span") {
+            assert_eq!(span["coordinate_system"], "decoded_utf8");
+            let start = span["start"].as_u64().unwrap() as usize;
+            let end = span["end"].as_u64().unwrap() as usize;
+            assert!(
+                decoded.text.get(start..end).is_some(),
+                "source extent must address real UTF-8 boundaries: {span}"
+            );
+        }
+    }
+    let start = body["source_span"]["start"].as_u64().unwrap() as usize;
+    let end = body["source_span"]["end"].as_u64().unwrap() as usize;
+    assert_eq!(&decoded.text[start..end], "本\u{e001}文です。");
+    let tail = nodes
         .iter()
-        .find(|node| {
-            node["span"]["start"]
-                .as_u64()
-                .is_some_and(|start| start as usize >= tail_start)
-        })
-        .expect("terminal provenance must be represented by a full-source node span");
-    assert!(tail_node["span"]["start"].as_u64().unwrap() as usize > decoded.span_text.len());
+        .find(|node| node["type"] == "source-note")
+        .unwrap();
+    let tail_start = tail["source_span"]["start"].as_u64().unwrap() as usize;
+    assert_eq!(tail_start, decoded.text.find("底本：").unwrap());
+    assert!(tail_start > decoded.span_text.len());
+    assert_eq!(tail["span"]["start"], 18);
 }
 
 #[test]
@@ -4775,4 +4766,45 @@ fn source_corrections_and_one_compound_sign_survive_validated_conversion() {
         );
     }
     validate_value(&schemas.parser_ir_schema, ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn source_markup_gaps_and_gaiji_have_independent_projection_and_source_extents() {
+    let source = "\u{feff}作品名\r\n著者名\r\n\r\n前※［＃「てへん＋劣」、第3水準1-84-77］後。\r\n\r\n底本：テスト本\r\n";
+    let decoded = ab_aozora_aat::decode_source_bytes(source.as_bytes()).unwrap();
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+    let nodes = output.parser_ir["nodes"].as_array().unwrap();
+    let gaiji = nodes.iter().find(|node| node["type"] == "gaiji").unwrap();
+    assert_eq!(gaiji["gaiji"]["unicode"], "挘");
+    assert_eq!(
+        gaiji["span"],
+        json!({"start": 3, "end": 6, "coordinate_system": "parser_text_utf8"})
+    );
+    let start = gaiji["source_span"]["start"].as_u64().unwrap() as usize;
+    let end = gaiji["source_span"]["end"].as_u64().unwrap() as usize;
+    assert_eq!(
+        &decoded.text[start..end],
+        "※［＃「てへん＋劣」、第3水準1-84-77］"
+    );
+    let following = nodes
+        .iter()
+        .find(|node| {
+            node["text"]
+                .as_str()
+                .is_some_and(|text| text.starts_with("後。"))
+        })
+        .unwrap();
+    assert_eq!(following["span"]["start"], 6);
+    assert_eq!(following["source_span"]["start"], end);
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }

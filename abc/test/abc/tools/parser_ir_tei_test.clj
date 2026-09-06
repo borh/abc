@@ -74,7 +74,7 @@
   (testing "source/control-line separator whitespace does not enter TEI as literal body text"
     (let [result (parser-ir-tei/render
                   {"nodes" [{"type" "text"
-                             "span" {"start" 0 "end" 20 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 20 "coordinate_system" "parser_text_utf8"}
                              "text" "\r\n\r\n序\r\n\r\n\r\n本文\r\n\r\n"}]})
           paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))]
       (is (= [:p "序" [:lb] "本文"] paragraph))
@@ -85,21 +85,21 @@
   (testing "emphasis inline_children render nested hi and ruby nodes"
     (let [result (parser-ir-tei/render
                   {"nodes" [{"type" "emphasis"
-                             "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                              "style" "bold"
                              "text" "東京"
                              "inline_children" [{"type" "ruby"
-                                                 "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                 "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                                  "ruby" {"base" "東京"
                                                          "reading" "とうきょう"
                                                          "scope" "explicit"
                                                          "direction" "right"}}]}
                             {"type" "emphasis"
-                             "span" {"start" 2 "end" 4 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 2 "end" 4 "coordinate_system" "parser_text_utf8"}
                              "style" "outer"
                              "text" "内"
                              "inline_children" [{"type" "emphasis"
-                                                 "span" {"start" 2 "end" 4 "coordinate_system" "decoded_utf8"}
+                                                 "span" {"start" 2 "end" 4 "coordinate_system" "parser_text_utf8"}
                                                  "style" "inner"
                                                  "text" "内"}]}]})
           paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))]
@@ -118,11 +118,11 @@
   (testing "heading inline_children render structured TEI inside head"
     (let [result (parser-ir-tei/render
                   {"nodes" [{"type" "heading"
-                             "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                              "text" "東京"
                              "level" 2
                              "inline_children" [{"type" "ruby"
-                                                 "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                 "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                                  "ruby" {"base" "東京"
                                                          "reading" "とうきょう"
                                                          "scope" "explicit"
@@ -140,16 +140,16 @@
   (testing "layout-span projects typed layout facts to TEI rend"
     (let [result (parser-ir-tei/render
                   {"nodes" [{"type" "layout-span"
-                             "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                              "text" "12"
                              "inline_children" [{"type" "text"
-                                                 "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                 "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
                                                  "text" "12"}]
                              "layout" {"kind" "tcy"
                                        "source" "aat-inline"
                                        "marker" "縦中横"}}
                             {"type" "layout-span"
-                             "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 2 "end" 3 "coordinate_system" "parser_text_utf8"}
                              "text" "大"
                              "layout" {"kind" "font-size"
                                        "source" "aat-inline"
@@ -183,21 +183,21 @@
              "classification" "heuristic"
              "source_pointer" "blocks[78]"}]
    "paragraphs" [{"id" "p000000"
-                  "span" {"start" 0 "end" 12 "coordinate_system" "decoded_utf8"}
+                  "span" {"start" 0 "end" 12 "coordinate_system" "parser_text_utf8"}
                   "span_source" "direct"
                   "node_range" {"start" 0 "end" 1}
                   "role" "body"
                   "source_pointer" "blocks[0]"
                   "classification" "direct"}
                  {"id" "p000001"
-                  "span" {"start" 12 "end" 24 "coordinate_system" "decoded_utf8"}
+                  "span" {"start" 12 "end" 24 "coordinate_system" "parser_text_utf8"}
                   "span_source" "direct"
                   "node_range" {"start" 1 "end" 2}
                   "role" "body"
                   "source_pointer" "blocks[1]"
                   "classification" "direct"}
                  {"id" "p000002"
-                  "span" {"start" 24 "end" 64 "coordinate_system" "decoded_utf8"}
+                  "span" {"start" 24 "end" 64 "coordinate_system" "parser_text_utf8"}
                   "span_source" "direct"
                   "node_range" {"start" 2 "end" 3}
                   "role" "source-note"
@@ -231,7 +231,7 @@
                                "text" "（大正十一年十二月）"}]
                      "paragraphs" [{"id" "p000000"
                                     "span" {"start" 0 "end" 6
-                                            "coordinate_system" "decoded_utf8"}
+                                            "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 0 "end" 1}
                                     "role" "body"
@@ -243,7 +243,7 @@
                                               "source" "aat-style"}}
                                    {"id" "p000001"
                                     "span" {"start" 6 "end" 36
-                                            "coordinate_system" "decoded_utf8"}
+                                            "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 1 "end" 2}
                                     "role" "body"
@@ -270,18 +270,18 @@
   (testing "parser-IR sentence rows drive TEI s wrappers and orthographic type"
     (let [result (parser-ir-tei/render
                   {"nodes" [{"type" "text"
-                             "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                              "text" "吾輩ハ猫デアル。"}
                             {"type" "ruby"
-                             "span" {"start" 24 "end" 30 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 24 "end" 30 "coordinate_system" "parser_text_utf8"}
                              "ruby" {"base" "名前"
                                      "reading" "なまえ"
                                      "scope" "explicit"}}
                             {"type" "text"
-                             "span" {"start" 30 "end" 45 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 30 "end" 45 "coordinate_system" "parser_text_utf8"}
                              "text" "はまだ無い。"}]
                    "paragraphs" [{"id" "p000000"
-                                  "span" {"start" 0 "end" 45 "coordinate_system" "decoded_utf8"}
+                                  "span" {"start" 0 "end" 45 "coordinate_system" "parser_text_utf8"}
                                   "span_source" "direct"
                                   "node_range" {"start" 0 "end" 3}
                                   "role" "body"
@@ -291,17 +291,17 @@
                                             "indent" 2}}]
                    "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                                             "splitter_id" "ab-plaintext-japanese-v1"
-                                            "coordinate_system" "decoded_utf8"
+                                            "coordinate_system" "parser_text_utf8"
                                             "coverage" "body-paragraphs"}
                    "sentences" [{"id" "s000000"
                                  "paragraph_id" "p000000"
-                                 "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                                 "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                                  "node_range" {"start" 0 "end" 1}
                                  "tags" ["orthographic-katakana"]
                                  "orthographic_annotation_indices" [0]}
                                 {"id" "s000001"
                                  "paragraph_id" "p000000"
-                                 "span" {"start" 24 "end" 45 "coordinate_system" "decoded_utf8"}
+                                 "span" {"start" 24 "end" 45 "coordinate_system" "parser_text_utf8"}
                                  "node_range" {"start" 1 "end" 3}
                                  "tags" []
                                  "orthographic_annotation_indices" []}]})
@@ -323,18 +323,18 @@
   (testing "sentence rendering wraps ruby without using reading as sentence text"
     (let [result (parser-ir-tei/render
                   {"nodes" [{"type" "ruby"
-                             "span" {"start" 0 "end" 6 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 6 "coordinate_system" "parser_text_utf8"}
                              "ruby" {"base" "名前"
                                      "reading" "めいしょう"
                                      "scope" "explicit"}}
                             {"type" "text"
-                             "span" {"start" 6 "end" 24 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 6 "end" 24 "coordinate_system" "parser_text_utf8"}
                              "text" "はまだ無い。"}
                             {"type" "text"
-                             "span" {"start" 24 "end" 39 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 24 "end" 39 "coordinate_system" "parser_text_utf8"}
                              "text" "ここは次。"}]
                    "paragraphs" [{"id" "p000000"
-                                  "span" {"start" 0 "end" 39 "coordinate_system" "decoded_utf8"}
+                                  "span" {"start" 0 "end" 39 "coordinate_system" "parser_text_utf8"}
                                   "span_source" "direct"
                                   "node_range" {"start" 0 "end" 3}
                                   "role" "body"
@@ -342,17 +342,17 @@
                                   "classification" "direct"}]
                    "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                                             "splitter_id" "ab-plaintext-japanese-v1"
-                                            "coordinate_system" "decoded_utf8"
+                                            "coordinate_system" "parser_text_utf8"
                                             "coverage" "body-paragraphs"}
                    "sentences" [{"id" "s000000"
                                  "paragraph_id" "p000000"
-                                 "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                                 "span" {"start" 0 "end" 24 "coordinate_system" "parser_text_utf8"}
                                  "node_range" {"start" 0 "end" 2}
                                  "tags" []
                                  "orthographic_annotation_indices" []}
                                 {"id" "s000001"
                                  "paragraph_id" "p000000"
-                                 "span" {"start" 24 "end" 39 "coordinate_system" "decoded_utf8"}
+                                 "span" {"start" 24 "end" 39 "coordinate_system" "parser_text_utf8"}
                                  "node_range" {"start" 2 "end" 3}
                                  "tags" []
                                  "orthographic_annotation_indices" []}]})
@@ -372,16 +372,16 @@
   (testing "fragmented sentences render part/xml:id/next/prev; every <s> gets xml:id"
     (let [result (parser-ir-tei/render
                   {"nodes" [{"type" "text"
-                             "span" {"start" 0 "end" 15 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 15 "coordinate_system" "parser_text_utf8"}
                              "text" "先生は言った。"}
                             {"type" "text"
-                             "span" {"start" 15 "end" 30 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 15 "end" 30 "coordinate_system" "parser_text_utf8"}
                              "text" "「綺麗だ」"}
                             {"type" "text"
-                             "span" {"start" 30 "end" 45 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 30 "end" 45 "coordinate_system" "parser_text_utf8"}
                              "text" "といった。"}]
                    "paragraphs" [{"id" "p000000"
-                                  "span" {"start" 0 "end" 45 "coordinate_system" "decoded_utf8"}
+                                  "span" {"start" 0 "end" 45 "coordinate_system" "parser_text_utf8"}
                                   "span_source" "direct"
                                   "node_range" {"start" 0 "end" 3}
                                   "role" "body"
@@ -389,19 +389,19 @@
                                   "classification" "direct"}]
                    "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                                             "splitter_id" "ab-plaintext-japanese-v2"
-                                            "coordinate_system" "decoded_utf8"
+                                            "coordinate_system" "parser_text_utf8"
                                             "coverage" "body-paragraphs"}
                    "sentences" [{"id" "s000000" "paragraph_id" "p000000"
-                                 "span" {"start" 0 "end" 15 "coordinate_system" "decoded_utf8"}
+                                 "span" {"start" 0 "end" 15 "coordinate_system" "parser_text_utf8"}
                                  "node_range" {"start" 0 "end" 1}
                                  "tags" [] "orthographic_annotation_indices" []
                                  "part" "I" "fragment_group" "fg000000" "next_id" "s000002"}
                                 {"id" "s000001" "paragraph_id" "p000000"
-                                 "span" {"start" 15 "end" 30 "coordinate_system" "decoded_utf8"}
+                                 "span" {"start" 15 "end" 30 "coordinate_system" "parser_text_utf8"}
                                  "node_range" {"start" 1 "end" 2}
                                  "tags" [] "orthographic_annotation_indices" []}
                                 {"id" "s000002" "paragraph_id" "p000000"
-                                 "span" {"start" 30 "end" 45 "coordinate_system" "decoded_utf8"}
+                                 "span" {"start" 30 "end" 45 "coordinate_system" "parser_text_utf8"}
                                  "node_range" {"start" 2 "end" 3}
                                  "tags" [] "orthographic_annotation_indices" []
                                  "part" "F" "fragment_group" "fg000000" "prev_id" "s000000"}]})
@@ -417,11 +417,11 @@
   (testing "sentence rows do not force heading-only body paragraphs into TEI p wrappers"
     (let [result (parser-ir-tei/render
                   {"nodes" [{"type" "heading"
-                             "span" {"start" 0 "end" 3 "coordinate_system" "decoded_utf8"}
+                             "span" {"start" 0 "end" 3 "coordinate_system" "parser_text_utf8"}
                              "text" "序"
                              "level" 1}]
                    "paragraphs" [{"id" "p000000"
-                                  "span" {"start" 0 "end" 3 "coordinate_system" "decoded_utf8"}
+                                  "span" {"start" 0 "end" 3 "coordinate_system" "parser_text_utf8"}
                                   "span_source" "direct"
                                   "node_range" {"start" 0 "end" 1}
                                   "role" "body"
@@ -429,11 +429,11 @@
                                   "classification" "direct"}]
                    "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                                             "splitter_id" "ab-plaintext-japanese-v1"
-                                            "coordinate_system" "decoded_utf8"
+                                            "coordinate_system" "parser_text_utf8"
                                             "coverage" "body-paragraphs"}
                    "sentences" [{"id" "s000000"
                                  "paragraph_id" "p000000"
-                                 "span" {"start" 0 "end" 3 "coordinate_system" "decoded_utf8"}
+                                 "span" {"start" 0 "end" 3 "coordinate_system" "parser_text_utf8"}
                                  "node_range" {"start" 0 "end" 1}
                                  "tags" []
                                  "orthographic_annotation_indices" []}]})]
@@ -451,7 +451,7 @@
                               {"type" "text" "span" {"start" 1 "end" 2} "text" "二"}
                               {"type" "text" "span" {"start" 2 "end" 3} "text" "三"}]
                      "paragraphs" [{"id" "p000000"
-                                    "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                                    "span" {"start" 0 "end" 1 "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 0 "end" 1}
                                     "role" "body"
@@ -461,7 +461,7 @@
                                               "indent" 2
                                               "source" "aat-block"}}
                                    {"id" "p000001"
-                                    "span" {"start" 1 "end" 2 "coordinate_system" "decoded_utf8"}
+                                    "span" {"start" 1 "end" 2 "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 1 "end" 2}
                                     "role" "body"
@@ -471,7 +471,7 @@
                                               "width" 20
                                               "source" "source-derived"}}
                                    {"id" "p000002"
-                                    "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                                    "span" {"start" 2 "end" 3 "coordinate_system" "parser_text_utf8"}
                                     "span_source" "direct"
                                     "node_range" {"start" 2 "end" 3}
                                     "role" "body"

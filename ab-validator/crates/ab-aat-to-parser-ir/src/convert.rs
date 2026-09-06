@@ -284,13 +284,56 @@ fn map_block(
     is_final_top_level: bool,
     heuristic_enabled: bool,
 ) -> Result<u64> {
+    let node_start = outputs.nodes.len();
+    let paragraph_start = outputs.paragraphs.len();
+    let end = map_block_content(
+        block,
+        outputs,
+        recorder,
+        offset,
+        path,
+        inherited_layout,
+        is_final_top_level,
+        heuristic_enabled,
+    )?;
+    let kind = block["kind"].as_str().unwrap_or("");
+    if matches!(kind, "heading" | "source_note")
+        || (kind == "paragraph"
+            && outputs.nodes.len() == node_start + 1
+            && matches!(
+                outputs.nodes[node_start]["type"].as_str(),
+                Some("page-break" | "source-note")
+            ))
+    {
+        attach_single_source_span(&mut outputs.nodes[node_start..], block.get("span"))?;
+    }
+    if matches!(kind, "paragraph" | "source_note") {
+        attach_single_source_span(
+            &mut outputs.paragraphs[paragraph_start..],
+            block.get("span"),
+        )?;
+    }
+    Ok(end)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn map_block_content(
+    block: &Value,
+    outputs: &mut BlockOutputs<'_>,
+    recorder: &mut DivergenceRecorder,
+    offset: u64,
+    path: &str,
+    inherited_layout: Option<Value>,
+    is_final_top_level: bool,
+    heuristic_enabled: bool,
+) -> Result<u64> {
     let kind = block["kind"].as_str().unwrap_or("unknown");
     let structural_pointer = format!("{path}.{kind}");
     let mut current = offset;
     match kind {
         "paragraph" => {
             if is_source_derived_page_break(block) {
-                let span = map_span(block.get("span"), current, current, recorder, path)?;
+                let span = map_node_span(block.get("span"), current, current, recorder, path)?;
                 outputs.nodes.push(json!({
                     "type": "page-break",
                     "span": span,
@@ -329,7 +372,7 @@ fn map_block(
                     Some("source-note.text"),
                 )?;
                 let end = current + utf8_len(&text);
-                let span = map_span(block.get("span"), current, end, recorder, path)?;
+                let span = map_node_span(block.get("span"), current, end, recorder, path)?;
                 outputs.nodes.push(json!({
                     "type": "source-note",
                     "span": span,
@@ -358,14 +401,8 @@ fn map_block(
             if role == "body" && node_start == node_end {
                 return Ok(current);
             }
-            let (span, span_source) = paragraph_span(
-                block.get("span"),
-                outputs.nodes,
-                node_start,
-                node_end,
-                offset,
-                current,
-            )?;
+            let (span, span_source) =
+                paragraph_span(outputs.nodes, node_start, node_end, offset, current)?;
             let mut paragraph = json!({
                 "id": paragraph_id,
                 "span": span,
@@ -420,7 +457,7 @@ fn map_block(
                 0,
             )?;
             let end = current + utf8_len(&text);
-            let span = map_span(block.get("span"), current, end, recorder, path)?;
+            let span = map_node_span(block.get("span"), current, end, recorder, path)?;
             let mut heading = json!({
                 "type": "heading",
                 "span": span,
@@ -478,7 +515,7 @@ fn map_block(
                     None,
                     Some(json!(1)),
                 )?;
-                let span = map_span(block.get("span"), current, current, recorder, path)?;
+                let span = map_node_span(block.get("span"), current, current, recorder, path)?;
                 outputs.nodes.push(json!({
                     "type": "indentation",
                     "span": span,
@@ -534,7 +571,7 @@ fn map_block(
                     None,
                     Some(json!(1)),
                 )?;
-                let span = map_span(block.get("span"), current, current, recorder, path)?;
+                let span = map_node_span(block.get("span"), current, current, recorder, path)?;
                 outputs.nodes.push(json!({
                     "type": "indentation",
                     "span": span,
@@ -592,7 +629,7 @@ fn map_block(
             )?;
             let node_start = outputs.nodes.len();
             let end = current + utf8_len(&text);
-            let span = map_span(block.get("span"), current, end, recorder, path)?;
+            let span = map_node_span(block.get("span"), current, end, recorder, path)?;
             outputs.nodes.push(json!({
                 "type": "source-note",
                 "span": span,
@@ -605,14 +642,8 @@ fn map_block(
             current = end;
             let node_end = outputs.nodes.len();
             let paragraph_id = format!("p{:06}", outputs.paragraphs.len());
-            let (note_paragraph_span, span_source) = paragraph_span(
-                block.get("span"),
-                outputs.nodes,
-                node_start,
-                node_end,
-                offset,
-                current,
-            )?;
+            let (note_paragraph_span, span_source) =
+                paragraph_span(outputs.nodes, node_start, node_end, offset, current)?;
             outputs.paragraphs.push(json!({
                 "id": paragraph_id,
                 "span": note_paragraph_span,
@@ -785,20 +816,12 @@ fn paragraph_layout_from_jizume_block(block: &Value) -> Value {
 }
 
 fn paragraph_span(
-    block_span: Option<&Value>,
     nodes: &[Value],
     node_start: usize,
     node_end: usize,
     fallback_start: u64,
     fallback_end: u64,
 ) -> Result<(Value, &'static str)> {
-    // Derive the paragraph span from its child node spans, which are in decoded
-    // coordinates. This is the ONLY source consistent with `paragraph_start`/`_end`
-    // as used by the sentence splitter — the AAT block `byte_start`/`byte_end` are
-    // raw-source offsets (they include ruby/gaiji markup) and the `current`
-    // accumulator can overshoot the last visible node, both of which desynchronise
-    // the paragraph span from its nodes. The block span, when present, only supplies
-    // `line` provenance and marks the span_source as "direct".
     if node_start < node_end
         && let (Some(first), Some(last)) = (nodes.get(node_start), nodes.get(node_end - 1))
     {
@@ -810,43 +833,9 @@ fn paragraph_span(
             .pointer("/span/end")
             .and_then(Value::as_u64)
             .unwrap_or(fallback_end);
-        let (line, column, span_source) = if let Some(span) = block_span {
-            (
-                span.get("line_start").cloned().unwrap_or(Value::Null),
-                Value::Null,
-                "direct",
-            )
-        } else {
-            (
-                first.pointer("/span/line").cloned().unwrap_or(Value::Null),
-                first
-                    .pointer("/span/column")
-                    .cloned()
-                    .unwrap_or(Value::Null),
-                "derived",
-            )
-        };
-        return Ok((
-            json!({
-                "start": start,
-                "end": end,
-                "line": line,
-                "column": column,
-                "coordinate_system": "decoded_utf8",
-            }),
-            span_source,
-        ));
+        return Ok((synthetic_span(start, end), "derived"));
     }
-    Ok((
-        json!({
-            "start": fallback_start,
-            "end": fallback_end,
-            "line": null,
-            "column": null,
-            "coordinate_system": "decoded_utf8",
-        }),
-        "synthesized",
-    ))
+    Ok((synthetic_span(fallback_start, fallback_end), "synthesized"))
 }
 
 fn source_attribution_text(content: Option<&Value>) -> Result<Option<String>> {
@@ -935,6 +924,7 @@ fn map_inline_content(
         .flatten()
         .enumerate()
     {
+        let node_start = nodes.len();
         current = map_inline_to_nodes(
             child,
             nodes,
@@ -943,13 +933,12 @@ fn map_inline_content(
             current,
             &format!("{path}[{index}]"),
         )?;
+        attach_single_source_span(&mut nodes[node_start..], child.get("span"))?;
     }
     Ok(current)
 }
 
-/// Emit the parser-IR text node for an AAT `text` inline, preserving its
-/// source span. Handles source-derived line-break text. Behavior-preserving
-/// extraction of the former `"text"` arm of [`map_inline_to_nodes`].
+/// Emit text and source-derived line breaks in the parser text projection.
 fn map_text_node(
     node: &Value,
     nodes: &mut Vec<Value>,
@@ -1313,6 +1302,7 @@ fn inline_children_nodes(
         .flatten()
         .enumerate()
     {
+        let node_start = nodes.len();
         current = inline_child_node(
             child,
             &mut nodes,
@@ -1322,6 +1312,7 @@ fn inline_children_nodes(
             &format!("{path}[{index}]"),
             depth,
         )?;
+        attach_single_source_span(&mut nodes[node_start..], child.get("span"))?;
     }
     Ok(nodes)
 }
@@ -1558,13 +1549,7 @@ fn push_unrecorded_line_break_text(
 }
 
 fn synthetic_span(start: u64, end: u64) -> Value {
-    json!({
-        "start": start,
-        "end": end,
-        "line": null,
-        "column": null,
-        "coordinate_system": "decoded_utf8"
-    })
+    json!({"start": start, "end": end, "coordinate_system": "parser_text_utf8"})
 }
 
 fn map_accent_to_node(
@@ -1732,7 +1717,7 @@ fn map_source_derived_line_break_text(
                 pending.clear();
             }
             let end = current + utf8_len("\n");
-            let span = map_span(None, current, end, recorder, path)?;
+            let span = map_node_span(None, current, end, recorder, path)?;
             nodes.push(json!({
                 "type": "line-break",
                 "span": span,
@@ -1757,7 +1742,7 @@ fn push_text_node(
     path: &str,
 ) -> Result<u64> {
     let end = offset + utf8_len(text);
-    let span = map_span(None, offset, end, recorder, path)?;
+    let span = map_node_span(None, offset, end, recorder, path)?;
     nodes.push(json!({"type": "text", "span": span, "text": text}));
     Ok(end)
 }
@@ -2083,18 +2068,7 @@ fn warigaki_target<'a>(
     }
 }
 
-/// Build a parser-IR node span in the pipeline's `decoded_utf8` coordinate system.
-///
-/// Unlike [`map_span`], this IGNORES the AAT `byte_start`/`byte_end` for the span
-/// value and uses the caller's accumulated decoded offsets `[start, end)`. The AAT
-/// offsets are raw-source bytes that include Aozora markup (ruby `《…》`, gaiji /
-/// bouten `［＃…］`), so they run ahead of the decoded stream and must NOT be used
-/// as `decoded_utf8` span values — doing so is what desynchronised container /
-/// ruby / gaiji node spans from their (decoded) siblings and children and made the
-/// sentence projection fail or crash on ruby-heavy corpora. The AAT `line_start`
-/// is kept for provenance; the AMBIGUITY divergence for a missing span is still
-/// recorded, matching `map_span`. Inline children already build spans this way via
-/// `synthetic_span`; this is the top-level equivalent that also carries `line`.
+/// Coordinates in the converter's text projection; source provenance is separate.
 fn map_node_span(
     aat_span: Option<&Value>,
     start: u64,
@@ -2112,49 +2086,33 @@ fn map_node_span(
             None,
         );
     }
-    Ok(json!({
-        "start": start,
-        "end": end,
-        "line": aat_span
-            .and_then(|s| s.get("line_start"))
-            .cloned()
-            .unwrap_or(Value::Null),
-        "column": null,
-        "coordinate_system": "decoded_utf8",
-    }))
+    Ok(synthetic_span(start, end))
 }
 
-fn map_span(
-    aat_span: Option<&Value>,
-    fallback_start: u64,
-    fallback_end: u64,
-    recorder: &mut DivergenceRecorder,
-    path: &str,
-) -> Result<Value> {
-    let Some(span) = aat_span else {
-        let span_pointer = format!("{path}.span");
-        recorder.record_if_measured(
-            "AMBIGUITY",
-            Some(span_pointer.as_str()),
-            Some("span"),
-            None,
-            None,
-        );
-        return Ok(json!({
-            "start": fallback_start,
-            "end": fallback_end,
-            "line": null,
-            "column": null,
-            "coordinate_system": "decoded_utf8",
-        }));
+fn attach_source_span(value: &mut Value, aat_span: Option<&Value>) -> Result<()> {
+    let Some(span) = aat_span else { return Ok(()) };
+    let (Some(start), Some(end)) = (
+        span.get("byte_start").and_then(Value::as_u64),
+        span.get("byte_end").and_then(Value::as_u64),
+    ) else {
+        return Ok(());
     };
-    Ok(json!({
-        "start": span.get("byte_start").and_then(Value::as_u64).unwrap_or(fallback_start),
-        "end": span.get("byte_end").and_then(Value::as_u64).unwrap_or(fallback_end),
-        "line": span.get("line_start").cloned().unwrap_or(Value::Null),
-        "column": null,
-        "coordinate_system": "decoded_utf8",
-    }))
+    if start > end {
+        bail!("AAT source span is inverted: {start}..{end}");
+    }
+    let mut source = json!({"start": start, "end": end, "coordinate_system": "decoded_utf8"});
+    if let Some(line) = span.get("line_start") {
+        source["line"] = line.clone();
+    }
+    value["source_span"] = source;
+    Ok(())
+}
+
+fn attach_single_source_span(nodes: &mut [Value], aat_span: Option<&Value>) -> Result<()> {
+    if let [node] = nodes {
+        attach_source_span(node, aat_span)?;
+    }
+    Ok(())
 }
 
 fn derived_from(aat: &Value, mapping: &MappingDocument) -> Result<Value> {

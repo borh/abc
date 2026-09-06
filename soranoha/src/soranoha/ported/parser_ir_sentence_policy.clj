@@ -294,6 +294,14 @@
       (nil? (get parser-ir "sentence_segmentation"))
       (conj "parser IR publication requires sentence_segmentation")
 
+      (and (get parser-ir "sentence_segmentation")
+           (not= "parser_text_utf8" (get-in parser-ir ["sentence_segmentation" "coordinate_system"])))
+      (conj "sentence_segmentation requires parser_text_utf8 coordinates")
+
+      (and (get parser-ir "orthographic_annotations")
+           (not= "parser_text_utf8" (get-in parser-ir ["orthographic_annotations" "coordinate_system"])))
+      (conj "orthographic_annotations requires parser_text_utf8 coordinates")
+
       true
       (into coherence-errors))))
 

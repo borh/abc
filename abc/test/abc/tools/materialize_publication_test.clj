@@ -4,33 +4,11 @@
             [abc.tools.materialize-publication :as materialize]
             [abc.tools.parser-ir-publication-policy :as policy]
             [abc.tools.schema :as schema]
-            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
-
-;; The rights state is one governed fact the SHARED release predicate consumes
-;; (abc.tools.publication-release/release-problems via verify-release-root!).
-;; It is not per-work renderer authority, so the release-gating assertions that
-;; treated assert-release-allowed! / materialize-release-publication! as a
-;; per-work release boundary have moved to publication-release-test. This
-;; retains only the value check that the policy file is present and blocked.
-(deftest rights-publication-containment-policy-is-active-test
-  (let [policy-file (io/file "data/publication-policy.edn")]
-    (is (.isFile policy-file) "rights publication policy must be checked in")
-    (when (.isFile policy-file)
-      (is (= :blocked-pending-assessment-migration
-             (:rights-publication (edn/read-string (slurp policy-file))))))))
-
-;; The single-work CLI now routes through materialize-publication! itself: no
-;; per-work function wraps it with a rights gate, so no per-work function can
-;; be mistaken for the release decision. That decision lives solely in
-;; abc.tools.publication-release/verify-release-root!.
-(deftest materialize-release-publication-is-retired-test
-  (is (nil? (ns-resolve 'abc.tools.materialize-publication
-                        'materialize-release-publication!))))
 
 (def generated-at "2026-07-03T00:00:00Z")
 

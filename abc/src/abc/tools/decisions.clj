@@ -72,10 +72,10 @@
 ;; Evidence paths are monorepo-root-relative: one declared coordinate for
 ;; every claim, whichever tree holds the check. The monorepo root is the
 ;; parent of the abc artifact root this validator runs against, so the
-;; governance sandbox must stage the full repository (abc/ and ab-validator/
+;; governance sandbox must stage the evidence trees (abc/, soranoha/, and ab-validator/
 ;; as siblings), not the abc subtree alone.
 (def evidence-prefixes
-  ["abc/test/" "abc/fixtures/" "abc/nix/" "abc/docs/evidence/external/"])
+  ["abc/test/" "soranoha/test/" "abc/fixtures/" "abc/nix/" "abc/docs/evidence/external/"])
 (def evidence-patterns
   ;; Executable Rust checks: a crate's integration-test tree. Deliberately
   ;; excludes src/ — inline #[cfg(test)] units are implementation, not
@@ -340,9 +340,10 @@
                (some #(re-find % normalized) evidence-patterns))))
 
 (defn- executable-check? [normalized]
-  ;; The evidence surfaces that ARE checks (not data): abc test and nix
-  ;; trees, and Rust crate integration tests.
+  ;; The evidence surfaces that ARE checks (not data): Clojure test and ABC
+  ;; Nix trees, and Rust crate integration tests.
   (boolean (or (str/starts-with? normalized "abc/test/")
+               (str/starts-with? normalized "soranoha/test/")
                (str/starts-with? normalized "abc/nix/")
                (some #(re-find % normalized) evidence-patterns))))
 
@@ -362,7 +363,7 @@
                        (:decisions corpus))
                  (not (fs/directory? (fs/path root "abc"))))
         [(problem :evidence-root-unstaged file
-                  "evidence paths are monorepo-root-relative; the abc artifact root's parent must contain the full repository (abc/ and ab-validator/)")])
+                  "evidence paths are monorepo-root-relative; the abc artifact root's parent must contain the evidence trees (abc/, soranoha/, and ab-validator/)")])
       (for [{:keys [slug claims]} (:decisions corpus)
             {:keys [id evidence]} claims
             path evidence

@@ -52,7 +52,6 @@ expected = {
         "monorepo-tei-version-coherence",
         "monorepo-workflow-run-lib",
         "parser-rq-production-wiring",
-        "publication-build-real-wiring",
         "release-parser-build-matches-approved-identity",
         "soranoha-tests",
         "tei-eaj-aozora-alignment-probe-generation",

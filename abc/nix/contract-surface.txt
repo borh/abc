@@ -17,9 +17,7 @@ src/abc/tools/logging.clj
 src/abc/tools/manifest_to_rdf.clj
 src/abc/tools/materialize_publication.clj
 src/abc/tools/metadata_record.clj
-src/abc/tools/parser_ir_plaintext.clj
 src/abc/tools/parser_ir_publication_policy.clj
-src/abc/tools/parser_ir_tei.clj
 src/abc/tools/parser_ir_vocabulary.clj
 src/abc/tools/person_drift_history.clj
 src/abc/tools/person_record.clj
@@ -44,9 +42,7 @@ test/abc/tools/manifest_index_test.clj
 test/abc/tools/manifest_to_rdf_test.clj
 test/abc/tools/materialize_import_test.clj
 test/abc/tools/materialize_publication_test.clj
-test/abc/tools/parser_ir_plaintext_test.clj
 test/abc/tools/parser_ir_publication_policy_test.clj
-test/abc/tools/parser_ir_tei_test.clj
 test/abc/tools/parser_ir_vocabulary_test.clj
 test/abc/tools/aozora_csv_test.clj
 test/abc/tools/aozora_history_audit_test.clj

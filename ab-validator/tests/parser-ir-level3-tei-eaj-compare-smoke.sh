@@ -55,13 +55,18 @@ else
     --abc-root "$repo_root/data/abc-schemas")
 fi
 
-(cd "$abc_root" && clojure -M:abc/materialize-publication \
-  "$parser_ir" \
-  examples/v0/example-work/metadata-record.json \
-  examples/v0/example-persons \
-  "$publication_dir" \
-  --source-manifest examples/v0/example-work/source.manifest.json \
-  --generated-at 2026-07-04T00:00:00Z)
+(cd "$abc_root" && clojure -M - "$parser_ir" "$publication_dir" <<'CLJ'
+(require '[abc.tools.materialize-publication :as publication])
+(let [[parser-ir output] *command-line-args*]
+  (publication/materialize-publication!
+   {:parser-ir-path parser-ir
+    :metadata-record-path "examples/v0/example-work/metadata-record.json"
+    :persons-dir "examples/v0/example-persons"
+    :output-dir output
+    :source-manifest-path "examples/v0/example-work/source.manifest.json"
+    :generated-at "2026-07-04T00:00:00Z"}))
+CLJ
+)
 
 python - "$parser_ir" "$publication_dir/tei.xml" "$publication_dir/tei-validation-result.json" "$workset" "$tei_eaj_file" "$summary_json" "$report_md" <<'PY'
 import json

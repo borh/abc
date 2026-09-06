@@ -2,12 +2,12 @@
   (:require [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.materialize-publication :as materialize]
-            [abc.tools.parser-ir-plaintext :as plaintext]
-            [abc.tools.parser-ir-tei :as tei]
+            [soranoha.ported.parser-ir-plaintext :as plaintext]
+            [soranoha.ported.parser-ir-tei :as tei]
             [abc.tools.schema :as schema]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.test :refer [deftest is testing]])
+            [clojure.test :refer [deftest is]])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
 
@@ -89,7 +89,7 @@
                                 (when (= "parser_text_utf8"
                                          (get-in node ["span" "coordinate_system"]))
                                   [index node]))))
-        plaintext-output (plaintext/render-string parser-ir)
+        plaintext-output (:text (plaintext/render parser-ir))
         tei-output (pr-str (:body (tei/render parser-ir)))
         preservation-records (get (materialize/publication-preservation
                                    {:parser-ir parser-ir

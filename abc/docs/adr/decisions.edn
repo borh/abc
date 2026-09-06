@@ -945,9 +945,9 @@
      :evidence ["abc/test/abc/tools/parser_ir_schema_evidence_test.clj"]}
     {:id :c4,
      :statement
-     "TEI rendering preserves ruby direction using a profile-valid `rend` value. See `test/abc/tools/parser_ir_tei_test.clj`.",
+     "TEI rendering preserves ruby direction using a profile-valid `rend` value. See `soranoha/test/soranoha/ori/tei_contract_test.clj`.",
      :kind :fixture-behavior,
-     :evidence ["abc/test/abc/tools/parser_ir_tei_test.clj"]}
+     :evidence ["soranoha/test/soranoha/ori/tei_contract_test.clj"]}
     {:id :c5,
      :statement
      "Parser-IR schema JCS hash changes propagate to the parser-IR schema coordinate copied into materialized manifests. See `test/abc/tools/parser_ir_schema_evidence_test.clj`.",
@@ -991,9 +991,9 @@
      :evidence ["abc/test/abc/tools/materialize_publication_test.clj"]}
     {:id :c2,
      :statement
-     "Plaintext retains visible body text and ruby base text while excluding ruby readings, source apparatus, provenance, layout metadata, and source-note back matter. See `test/abc/tools/parser_ir_plaintext_test.clj`.",
+     "Plaintext retains visible body text and ruby base text while excluding ruby readings, source apparatus, provenance, layout metadata, and source-note back matter. See `soranoha/test/soranoha/ori/plaintext_contract_test.clj`.",
      :kind :fixture-behavior,
-     :evidence ["abc/test/abc/tools/parser_ir_plaintext_test.clj"]}
+     :evidence ["soranoha/test/soranoha/ori/plaintext_contract_test.clj"]}
     {:id :c3,
      :statement
      "Publication materialization writes plaintext, TEI, both manifests, the preservation sidecar, and a passing `tei-validation-result.json`. See `test/abc/tools/materialize_publication_test.clj`.",
@@ -1007,9 +1007,9 @@
      ["abc/test/abc/tools/parser_ir_publication_policy_test.clj"]}
     {:id :c5,
      :statement
-     "Generated Aozora ruby defaults to TEI `type=\"furigana\"`. See `test/abc/tools/parser_ir_tei_test.clj`.",
+     "Generated Aozora ruby defaults to TEI `type=\"furigana\"`. See `soranoha/test/soranoha/ori/tei_contract_test.clj`.",
      :kind :fixture-behavior,
-     :evidence ["abc/test/abc/tools/parser_ir_tei_test.clj"]}
+     :evidence ["soranoha/test/soranoha/ori/tei_contract_test.clj"]}
     {:id :c6,
      :statement
      "The supported design-bundle application exits zero over the committed publication outputs and TEI gates. Evidence boundary: `test/abc/tools/validate_design_bundle_test.clj`.",
@@ -1224,8 +1224,8 @@
       "abc/test/abc/tools/annotation_join_stats_test.clj"]}
     {:id :c7,
      :statement
-     "**Unchanged, inherited.** Renderer coverage remains schema-derived and\nfails closed on new parser-IR node types, matching the ADR 0025\ndiscipline: `render-with-annotations` shares the same `node-renderers` /\n`covered-node-types` tables as `render`, validated by the pre-existing\n`test/abc/tools/parser_ir_plaintext_test.clj`.",
-     :evidence ["abc/test/abc/tools/parser_ir_plaintext_test.clj"]}
+     "The shared Soranoha plaintext renderer preserves visible body payload, ruby bases, inline containers, and layout text while excluding apparatus. These contracts are exercised by `soranoha/test/soranoha/ori/plaintext_contract_test.clj`.",
+     :evidence ["soranoha/test/soranoha/ori/plaintext_contract_test.clj"]}
     {:id :c8,
      :statement
      "**Done.** The annotation output schema demonstrates the family shape with\nat least one non-ruby `annotation_kind` fixture: the schema and the first\npolicy (`data/annotation-policies/ruby-gaiji-v1.json`) carry two\n`annotation_kind` values, `ruby` and `gaiji` (D3), exercised together in\n`test/abc/tools/parser_ir_annotations_test.clj` and\n`test/abc/tools/materialize_annotations_test.clj`. Both kinds still derive\nfrom the same source-projection policy; a fully independent ML/LLM\n`annotation_kind` (e.g. `ner`) remains future work under D8/D9.",
@@ -1428,21 +1428,16 @@
      :evidence ["abc/test/abc/tools/source_bundle_test.clj"]}
     {:id :c4,
      :statement
-     "Parser-IR records\n`work_content_hash = bundle_hash` and the independently verified\n`primary_text_hash` in their distinct roles, as asserted by\n`test/abc/tools/materialize_source_snapshot_test.clj` and\n`test/abc/sim/content_sim_test.clj`.",
+     "Parser-IR records\n`work_content_hash = bundle_hash` and the independently verified\n`primary_text_hash` in their distinct roles, as asserted by\n`test/abc/tools/materialize_source_snapshot_test.clj` and\n`ab-validator/crates/ab-aat-to-parser-ir/tests/integration.rs`.",
      :kind :fixture-behavior,
      :evidence
      ["abc/test/abc/tools/materialize_source_snapshot_test.clj"
-      "abc/test/abc/sim/content_sim_test.clj"]}
+      "ab-validator/crates/ab-aat-to-parser-ir/tests/integration.rs"]}
     {:id :c5,
      :statement
      "Source snapshot validation checks archive,\ncanonical bundle, primary member, and parser-input hashes by their own\nconstructions without cross-role equality, as asserted by\n`test/abc/tools/materialize_source_snapshot_test.clj`.",
      :kind :fixture-behavior,
      :evidence ["abc/test/abc/tools/materialize_source_snapshot_test.clj"]}
-    {:id :c6,
-     :statement
-     "P16.3 passes without an\n`expected-failure*` gate, as asserted by `test/abc/sim/content_sim_test.clj`.",
-     :kind :fixture-behavior,
-     :evidence ["abc/test/abc/sim/content_sim_test.clj"]}
     {:id :c7,
      :statement
      "D7 is `:fixed` with dated\n`2026-07-12` structural evidence, as asserted by\n`test/abc/sim/divergences_test.clj`.",
@@ -1462,14 +1457,7 @@
      :statement
      "Member-count, per-member-byte, and total\nuncompressed-byte limits are enforced at both declared-size and streamed-byte\nboundaries, as asserted by `test/abc/tools/source_bundle_test.clj`.",
      :kind :fixture-behavior,
-     :evidence ["abc/test/abc/tools/source_bundle_test.clj"]}
-    {:id :c11,
-     :statement
-     "Release admissibility is the shared\n`abc.tools.publication-release/verify-release-root!` predicate recomputed over\nthe completed candidate root, not a locally derived selection flag: a strict\nworkflow exception never replaces the prior target root; a best-effort partial\nor fixture/policy diagnostic root is installed only when configured, records\nthe verifier result in `publications/publications-report.json` with\n`release_admissible=false`, and exits the build with status 1; and only an\nadmissible verifier result installs and exits 0, as asserted by\n`test/abc/sim/content_sim_test.clj` and `test/abc/tools/soranoha_test.clj`.",
-     :kind :fixture-behavior,
-     :evidence
-     ["abc/test/abc/sim/content_sim_test.clj"
-      "abc/test/abc/tools/soranoha_test.clj"]}],
+     :evidence ["abc/test/abc/tools/source_bundle_test.clj"]}],
    :legacy-number 33,
    :accepted "2026-07-12",
    :source
@@ -1929,13 +1917,13 @@
    [{:id :c1,
      :kind :structural-invariant,
      :statement
-     "The work slug is `work_id`_`person_id`_`card_directory`_`zip_stem` and is injective over selected sources. It includes the contributor card directory because Aozora files one `work_id` under several cards while `person_id` follows catalog last-row-wins, so `person_id` can name neither directory; the directory is the only distinguishing element. A slug is a function of that one source's own coordinates alone — never of what else the corpus contains — so adding or removing an unrelated source can never change another work's identity. A relpath naming no card directory fails closed rather than yielding a non-addressing slug. Evidence boundary: `test/abc/tools/soranoha_build_publication_test.clj`.",
-     :evidence ["abc/test/abc/tools/soranoha_build_publication_test.clj"]}
+     "The work slug is `work_id`_`person_id`_`card_directory`_`zip_stem` and is injective over selected sources. It includes the contributor card directory because Aozora files one `work_id` under several cards while `person_id` follows catalog last-row-wins, so `person_id` can name neither directory; the directory is the only distinguishing element. A slug is a function of that one source's own coordinates alone — never of what else the corpus contains — so adding or removing an unrelated source can never change another work's identity. A relpath naming no card directory fails closed rather than yielding a non-addressing slug. Evidence boundary: `soranoha/test/soranoha/yomi/select_test.clj`.",
+     :evidence ["soranoha/test/soranoha/yomi/select_test.clj"]}
     {:id :c2,
      :kind :structural-invariant,
      :statement
-     "Candidate slug uniqueness is asserted before any slug-addressed filesystem write, not after selection: `inspect-selected-work!` writes `works/<slug>/` from inside the parallel selection map, so a post-selection check would run after colliding writes had already occurred. A catalog-backed candidate claims identity before archive inspection, so an unreadable archive does not withdraw that claim and `continue_on_failure` never resolves a slug collision — publication membership therefore cannot change when archive corruption is repaired. Evidence boundary: `test/abc/tools/soranoha_build_publication_test.clj`.",
-     :evidence ["abc/test/abc/tools/soranoha_build_publication_test.clj"]}
+     "Candidate slug uniqueness is asserted before any slug-addressed filesystem write. Duplicate source claims are rejected rather than resolved by processing order. Evidence boundary: `soranoha/test/soranoha/yomi/select_test.clj`.",
+     :evidence ["soranoha/test/soranoha/yomi/select_test.clj"]}
     {:id :c3,
      :kind :structural-invariant,
      :statement
@@ -2290,11 +2278,6 @@
      :statement
      "The repository owner withdrew the standing third-party parser-comparison requirement on 2026-08-14. The retained requirement is one comprehensive, citable, frozen comparison record for the JADH 2026 paper, not a live comparison capability. That record already exists and is committed outside the retired trees: the neutral-comparison study (report, raw run manifests, diagnostics) under `ab-validator/docs/studies/aozora-parser-neutral-comparison-2026-07/`, the selection/oracle reports under `ab-validator/docs/`, and the paper demo bundle under `abc/docs/evidence/paper-demo/`. Comparison evidence was already structurally non-release before this decision: `abc.tools.parser-evidence` excludes the `:parser-selection` and `:neutral-comparison` classes from admission and release evidence by construction, so retiring the machinery removes no admission or release capability.",
      :evidence ["abc/test/abc/tools/parser_evidence_test.clj"]}
-    {:id :c2,
-     :kind :operational-behavior,
-     :statement
-     "Publication runs on the project-owned parser. No shipped build-publication config selects the `aozora2html` profile: the release config binds `ab-aozora` through `data/release-parser-identity-v1.edn`, and the diagnostic configs select `ab-aozora` unauthenticated. The `aozora2html` publication profile is retired with the adapter that implemented it.",
-     :evidence ["abc/test/abc/tools/soranoha_build_publication_test.clj"]}
     {:id :c3,
      :kind :structural-invariant,
      :statement

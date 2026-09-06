@@ -16,7 +16,7 @@
   (:require [abc.tools.annotation-join-stats :as stats]
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
-            [abc.tools.parser-ir-plaintext :as plaintext]
+            [soranoha.ported.parser-ir-plaintext :as plaintext]
             [abc.tools.workflow :as workflow]
             [babashka.fs :as fs]
             [babashka.process :as process]

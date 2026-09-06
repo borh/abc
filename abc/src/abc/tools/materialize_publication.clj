@@ -1,23 +1,16 @@
 (ns abc.tools.materialize-publication
   (:require [abc.tools.files :as files]
-            [abc.tools.json :as abc-json]
-            [abc.tools.logging :as logging]
             [abc.tools.manifest :as manifest]
             [abc.tools.metadata-record :as metadata-record]
-            [abc.tools.parallel :as parallel]
-            [abc.tools.parser-ir-plaintext :as plaintext]
+            [soranoha.ported.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-publication-policy :as policy]
-            [abc.tools.publication-policy :as publication-policy]
             [abc.tools.parser-ir-sentence-policy :as sentence-policy]
-            [abc.tools.parser-ir-tei :as parser-ir-tei]
+            [soranoha.ported.parser-ir-tei :as parser-ir-tei]
             [abc.tools.schematron :as schematron]
             [abc.tools.tei :as tei]
             [abc.tools.tei-header :as tei-header]
-            [abc.tools.workflow :as workflow]
             [babashka.fs :as fs]
-            [clojure.string :as string]
-            [clojure.tools.cli :as cli]
-            [taoensso.telemere :as tel]))
+            [clojure.string :as string]))
 
 (def default-generated-at "2026-07-03T00:00:00Z")
 (def publication-policy-path "data/parser-ir-publication-policy-v0.json")
@@ -654,168 +647,3 @@
      :plaintext-manifest plaintext-manifest-file
      :tei-manifest tei-manifest-file
      :tei-validation-result tei-validation-result-file}))
-
-(defn- batch-job-value [job key]
-  (or (get job key)
-      (get job (name key))))
-
-(defn- materialize-batch-job! [job]
-  (let [job-id (or (batch-job-value job :id)
-                   (batch-job-value job "id"))
-        output-dir (batch-job-value job :output_dir)]
-    (try
-      (let [result (materialize-publication!
-                    {:parser-ir-path (batch-job-value job :parser_ir_path)
-                     :metadata-record-path (batch-job-value job :metadata_record_path)
-                     :persons-dir (batch-job-value job :persons_dir)
-                     :output-dir output-dir
-                     :source-manifest-path (batch-job-value job :source_manifest_path)
-                     :generated-at (or (batch-job-value job :generated_at)
-                                       default-generated-at)})
-            validation (files/read-json (:tei-validation-result result))]
-        {"id" job-id
-         "status" (get validation "status")
-         "output_dir" (str output-dir)
-         "plain_text" (str (:plaintext result))
-         "tei" (str (:tei result))
-         "preservation" (str (:preservation result))
-         "tei_validation_result" (str (:tei-validation-result result))
-         "findings_count" (count (get validation "findings" []))})
-      (catch Throwable t
-        {"id" job-id
-         "status" "failed"
-         "output_dir" (str output-dir)
-         "error" (.getMessage t)}))))
-
-(defn- batch-concurrency [requested job-count]
-  (let [requested (or requested 1)
-        requested (if (pos-int? requested)
-                    requested
-                    (.availableProcessors (Runtime/getRuntime)))]
-    (max 1 (min requested (max 1 job-count)))))
-
-(defn- materialize-batch-jobs! [jobs concurrency]
-  (parallel/ordered-pmap concurrency materialize-batch-job! jobs))
-
-;; The batch adapter builds its own synthetic (all-at-once, zero-duration)
-;; steps rather than timing a real abc.tools.workflow/run-workflow! execution,
-;; so it cannot call run-workflow! itself; it shares run-workflow!'s two JSON
-;; constructors (workflow/run-value, workflow/step-value) instead of keeping a
-;; second, duplicate copy of the workflow-run/step-record shapes.
-
-(defn- batch-step-status [result]
-  (case (get result "status")
-    "passed" "passed"
-    "partial" "partial"
-    "skipped" "skipped"
-    "failed"))
-
-(defn- batch-step-outputs [result]
-  (cond-> []
-    (get result "tei")
-    (conj {"role" "tei"
-           "path" (get result "tei")})
-    (get result "plain_text")
-    (conj {"role" "plain-text"
-           "path" (get result "plain_text")})))
-
-(defn- batch-step-value [now result]
-  (workflow/step-value
-   {:step {:id (get result "id")
-           :requires []
-           :produces ["publication-output"]}
-    :status (batch-step-status result)
-    :started-at now
-    :ended-at now
-    :result {:outputs (batch-step-outputs result)}}))
-
-(defn- batch-run-value [results]
-  (let [now (str (java.time.Instant/now))
-        steps (mapv #(batch-step-value now %) results)]
-    (workflow/run-value "soranoha.materialize-publications-batch.v1"
-                        "local-batch"
-                        now now steps)))
-
-(defn materialize-publications-batch!
-  [{:keys [batch-path summary-path jobs]}]
-  (let [batch (files/read-json batch-path)
-        batch-jobs (vec (get batch "jobs" []))
-        concurrency (batch-concurrency jobs (count batch-jobs))
-        results (materialize-batch-jobs! batch-jobs concurrency)
-        passed (count (filter #(= "passed" (get % "status")) results))
-        summary-dir (when summary-path
-                      (or (fs/parent summary-path)
-                          (fs/absolutize ".")))
-        workflow-run-file (some-> summary-dir (fs/file "workflow-run.json"))
-        summary (cond-> {"schema_version" "abc-materialize-publications-batch-v1"
-                         "jobs_total" (count results)
-                         "jobs_concurrency" concurrency
-                         "jobs_succeeded" passed
-                         "jobs_failed" (- (count results) passed)
-                         "jobs" results}
-                  workflow-run-file
-                  (assoc "workflow_run_path" "workflow-run.json"))]
-    (when workflow-run-file
-      (abc-json/write-deterministic-json-file!
-       workflow-run-file
-       (batch-run-value results)))
-    (when summary-path
-      (abc-json/write-deterministic-json-file! summary-path summary))
-    summary))
-
-(defn usage []
-  (tel/log! :warn "Usage: clojure -M:abc/materialize-publication <parser-ir.json> <metadata-record.json> <persons-dir> <output-dir> [--source-manifest source.manifest.json] [--generated-at instant]")
-  (tel/log! :warn "  (non-release renderer: renders one work's publication artifacts; release admissibility is decided solely by soranoha's publication-release/verify-release-root! over a completed root, never here)")
-  (tel/log! :warn "   or: clojure -M:abc/materialize-publications-batch --batch jobs.json --summary summary.json"))
-
-(def cli-options
-  [[nil "--generated-at INSTANT" "UTC generation timestamp for deterministic fixtures"
-    :id :generated-at]
-   [nil "--source-manifest PATH" "Source artifact manifest carrying corpus snapshot identity"
-    :id :source-manifest]
-   [nil "--batch PATH" "Batch materialization input JSON with a top-level jobs array"
-    :id :batch]
-   [nil "--summary PATH" "Batch materialization summary JSON path"
-    :id :summary]
-   [nil "--jobs N" "Batch materialization concurrency"
-    :id :jobs
-    :parse-fn #(Integer/parseInt %)]])
-
-(defn -main [& args]
-  (logging/install-cli-handler!)
-  (let [{:keys [options arguments errors]} (cli/parse-opts args cli-options)
-        [parser-ir-path metadata-record-path persons-dir output-dir
-         positional-generated-at & extra] arguments
-        generated-at (or (:generated-at options)
-                         positional-generated-at
-                         default-generated-at)]
-    (if (:batch options)
-      (let [_ (publication-policy/assert-release-allowed!)
-            summary (materialize-publications-batch!
-                     {:batch-path (:batch options)
-                      :summary-path (:summary options)
-                      :jobs (:jobs options)})]
-        (tel/log! :info (str "materialized " (get summary "jobs_succeeded")
-                             "/" (get summary "jobs_total")
-                             " publication batch job(s)")))
-      (if (or (seq errors)
-              (nil? parser-ir-path)
-              (nil? metadata-record-path)
-              (nil? persons-dir)
-              (nil? output-dir)
-              (seq extra))
-        (do
-          (doseq [error errors]
-            (tel/log! :error error))
-          (usage)
-          (System/exit 2))
-        (do
-          (materialize-publication!
-           {:parser-ir-path parser-ir-path
-            :metadata-record-path metadata-record-path
-            :persons-dir persons-dir
-            :output-dir output-dir
-            :source-manifest-path (:source-manifest options)
-            :generated-at generated-at})
-          (tel/log! :info (str "materialized publication artifacts to "
-                               output-dir)))))))

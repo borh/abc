@@ -48,7 +48,7 @@ fi
   --abc-root "$abc_root"
 
 jq -e '.detector_id == "HeuristicV1"' "$ortho" >/dev/null
-jq -e '.coordinate_system == "decoded_utf8"' "$ortho" >/dev/null
+jq -e '.coordinate_system == "parser_text_utf8"' "$ortho" >/dev/null
 jq -e '(.annotations | length) >= 1' "$ortho" >/dev/null
 
 "${converter[@]}" convert \
@@ -61,15 +61,20 @@ jq -e '(.annotations | length) >= 1' "$ortho" >/dev/null
 
 jq -e '.orthographic_annotations.detector_id == "HeuristicV1"' "$parser_ir" >/dev/null
 jq -e 'any(.sentences[]; (.tags | index("orthographic-katakana")))' "$parser_ir" >/dev/null
-jq -e 'all(.sentences[]; .span.coordinate_system == "decoded_utf8")' "$parser_ir" >/dev/null
+jq -e 'all(.sentences[]; .span.coordinate_system == "parser_text_utf8")' "$parser_ir" >/dev/null
 
-(cd "$abc_root" && clojure -M:abc/materialize-publication \
-  "$parser_ir" \
-  examples/v0/example-work/metadata-record.json \
-  examples/v0/example-persons \
-  "$publication_dir" \
-  --source-manifest examples/v0/example-work/source.manifest.json \
-  --generated-at 2026-07-07T00:00:00Z)
+(cd "$abc_root" && clojure -M - "$parser_ir" "$publication_dir" <<'CLJ'
+(require '[abc.tools.materialize-publication :as publication])
+(let [[parser-ir output] *command-line-args*]
+  (publication/materialize-publication!
+   {:parser-ir-path parser-ir
+    :metadata-record-path "examples/v0/example-work/metadata-record.json"
+    :persons-dir "examples/v0/example-persons"
+    :output-dir output
+    :source-manifest-path "examples/v0/example-work/source.manifest.json"
+    :generated-at "2026-07-07T00:00:00Z"}))
+CLJ
+)
 
 jq -e '.status == "passed" and (.findings | length) == 0' "$publication_dir/tei-validation-result.json" >/dev/null
 rg -n '<[A-Za-z0-9_-]+:normalization method="markup"' "$publication_dir/tei.xml" >/dev/null

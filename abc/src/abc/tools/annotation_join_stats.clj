@@ -10,7 +10,7 @@
             [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
-            [abc.tools.parser-ir-plaintext :as plaintext]
+            [soranoha.ported.parser-ir-plaintext :as plaintext]
             [babashka.fs :as fs]
             [clojure.java.io :as io]))
 

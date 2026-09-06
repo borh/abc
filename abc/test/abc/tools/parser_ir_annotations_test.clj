@@ -1,5 +1,5 @@
 (ns abc.tools.parser-ir-annotations-test
-  (:require [abc.tools.parser-ir-plaintext :as plaintext]
+  (:require [soranoha.ported.parser-ir-plaintext :as plaintext]
             [clojure.test :refer [deftest is testing]]))
 
 (defn- scalar-subs
@@ -24,7 +24,7 @@
 (deftest render-with-annotations-spans-test
   (let [{:keys [text annotations]} (plaintext/render-with-annotations ir)]
     (testing "plaintext unchanged from render-string"
-      (is (= (plaintext/render-string ir) text))
+      (is (= (:text (plaintext/render ir)) text))
       (is (= "冒頭吾輩は𠮟る" text)))
     (testing "ruby annotation carries plaintext scalar span over the base text"
       (let [ruby (first (filter #(= "ruby" (get % "annotation_kind")) annotations))]

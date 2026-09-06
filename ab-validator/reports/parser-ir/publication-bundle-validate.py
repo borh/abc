@@ -68,7 +68,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-root", type=pathlib.Path)
     parser.add_argument("--batch-scope", default="representative")
     parser.add_argument("--abc-commit")
-    parser.add_argument("--command", default="clojure -M:abc/materialize-publication ...")
+    parser.add_argument("--command", default="not recorded")
     parser.add_argument("--summary-json", required=True, type=pathlib.Path)
     parser.add_argument("--report-md", required=True, type=pathlib.Path)
     args = parser.parse_args()

@@ -79,8 +79,7 @@
                   {:event/type :add-work :wid wid :work (model/base-work wid)}))]))
 
 (defn- gen-add-content
-  "Content only below the cap: real materialize-publication! runs per
-  content work, so generated volume is bounded here, not in the model."
+  "Bound generated content volume without constraining the model."
   [m cap]
   (let [cands (vec (remove #(contains? (:contents m) %) (keys (:works m))))]
     (if (or (empty? cands) (>= (count (:contents m)) cap))

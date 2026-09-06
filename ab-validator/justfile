@@ -202,21 +202,15 @@ parser-ir-publication-bundle-batch-smoke:
 
 parser-ir-publication-bundle-validation ABC_ROOT=abc_repo_root OUT_DIR="scratch/parser-ir-publication-bundle-validation" SOURCE_REGION_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-publication-bundle-validation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json":
 	@abc_root="$(readlink -f "{{ABC_ROOT}}")"; out_dir="{{repo_root}}/{{OUT_DIR}}"; rm -rf "$out_dir"; mkdir -p "$out_dir"; \
-	(cd "$abc_root" && clojure -M:abc/materialize-publication \
-		examples/v0/example-work/parser-ir.json \
-		examples/v0/example-work/metadata-record.json \
-		examples/v0/example-persons \
-		"$out_dir" \
-		--source-manifest examples/v0/example-work/source.manifest.json \
-		--generated-at 2026-07-03T00:00:00Z) \
-		>/dev/null; \
+	printf '%s\n' '(require (quote [abc.tools.materialize-publication :as publication])) (publication/materialize-publication! {:parser-ir-path "examples/v0/example-work/parser-ir.json" :metadata-record-path "examples/v0/example-work/metadata-record.json" :persons-dir "examples/v0/example-persons" :output-dir (first *command-line-args*) :source-manifest-path "examples/v0/example-work/source.manifest.json" :generated-at "2026-07-03T00:00:00Z"})' | \
+	(cd "$abc_root" && clojure -M - "$out_dir") >/dev/null; \
 	abc_commit="$(git -C "$abc_root" rev-parse --short HEAD)"; \
 	python "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
 		--parser-ir "$abc_root/examples/v0/example-work/parser-ir.json" \
 		--source-region-summary "{{repo_root}}/{{SOURCE_REGION_SUMMARY}}" \
 		--publication-dir "$out_dir" \
 		--abc-commit "$abc_commit" \
-		--command "clojure -M:abc/materialize-publication examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons {{OUT_DIR}}" \
+		--command "just parser-ir-publication-bundle-validation" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}"
 
@@ -229,7 +223,7 @@ parser-ir-publication-bundle-batch-validation BATCH_ROOT="" SCOPE="representativ
 		--batch-scope "{{SCOPE}}" \
 		--source-region-summary "{{repo_root}}/{{SOURCE_REGION_SUMMARY}}" \
 		--abc-commit "$abc_commit" \
-		--command "clojure -M:abc/materialize-publications-batch {{BATCH_ROOT}}/materialization-batch.json --summary {{BATCH_ROOT}}/materialization-summary.json" \
+		--command "just parser-ir-publication-bundle-batch-validation {{BATCH_ROOT}}" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}"
 

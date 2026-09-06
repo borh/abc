@@ -107,6 +107,7 @@
         source = cleanProjectSource ./.;
 
         abcSource = cleanProjectSource abc.outPath;
+        abcResearchSource = "${abc.packages.${system}.research-source}/abc";
         abcCljDepsCache = pkgs.mk-deps-cache {
           lockfile = "${abc.outPath}/deps-lock.json";
         };
@@ -790,7 +791,7 @@
 
         stageAbcPublicationRoot = ''
           abc_root="$work_dir/abc"
-          cp -R "${abcSource}" "$abc_root"
+          cp -R "${abcResearchSource}" "$abc_root"
           chmod -R +w "$abc_root"
           export HOME="${abcCljDepsCache}"
           export JAVA_TOOL_OPTIONS="-Duser.home=${abcCljDepsCache}"
@@ -990,7 +991,7 @@
               export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
               export GITLIBS="$HOME/.gitlibs"
               mkdir -p "$CLJ_CACHE" "$XDG_CONFIG_HOME"
-              cd ${abcSource}
+              cd ${abcResearchSource}
               clojure -M:test:kaocha -m kaocha.runner \
                 --focus abc.tools.parser-rq-predicate-hardening-capture-test
               touch "$out"

@@ -85,11 +85,8 @@
    "workflow_id" workflow-id
    "steps" (mapv json-step-plan steps)})
 
-(defn run-value
-  "Build a workflow-run JSON value from an already-rendered `steps` vector
-  (each a `step-value` map). Public so non-run-workflow! callers (e.g. a batch
-  adapter that synthesizes its own steps) can share this constructor instead
-  of duplicating the run-summary shape."
+(defn- run-value
+  "Build a workflow-run JSON value from rendered step records."
   [workflow-id run-id started-at ended-at steps]
   (let [failed (count (filter #(= "failed" (get % "status")) steps))
         partial (count (filter #(= "partial" (get % "status")) steps))
@@ -200,10 +197,8 @@
                 (step-order-errors steps))]
     (vec errors)))
 
-(defn step-value
-  "Build a workflow step-record JSON value. Public so non-run-workflow!
-  callers (e.g. a batch adapter) can share this constructor instead of
-  duplicating the step-record shape."
+(defn- step-value
+  "Build a workflow step-record JSON value."
   [{:keys [step status started-at ended-at result error]}]
   (cond-> {"id" (key-name (:id step))
            "status" status

@@ -2,7 +2,7 @@
   (:require [abc.tools.annotation-join :as join]
             [abc.tools.annotation-join-stats :as stats]
             [abc.tools.files :as files]
-            [abc.tools.parser-ir-plaintext :as plaintext]
+            [soranoha.ported.parser-ir-plaintext :as plaintext]
             [clojure.string :as string]))
 
 (defn- overlapping-exhaustive [tokens start end]

@@ -2,7 +2,7 @@
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
-            [abc.tools.parser-ir-plaintext :as plaintext]
+            [soranoha.ported.parser-ir-plaintext :as plaintext]
             [babashka.fs :as fs]
             [clojure.string :as string]))
 

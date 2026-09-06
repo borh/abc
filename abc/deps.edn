@@ -2,7 +2,8 @@
  :jvm-opts ["--add-opens" "java.base/java.util.concurrent=ALL-UNNAMED"]
 
  :deps
- {org.clojure/clojure                        {:mvn/version "1.12.5"}
+ {soranoha/soranoha                         {:local/root "../soranoha" :exclusions [org.slf4j/slf4j-nop]}
+  org.clojure/clojure                        {:mvn/version "1.12.5"}
   org.clojure/tools.cli                      {:mvn/version "1.4.256"}
   org.babashka/cli                           {:mvn/version "0.12.75"}
   org.clojure/tools.reader                   {:mvn/version "1.5.2"}
@@ -70,9 +71,6 @@
   :abc/validate-design-bundle {:main-opts ["-m" "abc.tools.validate-design-bundle"]}
   :abc/soranoha {:main-opts ["-m" "abc.tools.soranoha"]}
   :abc/materialize-import {:main-opts ["-m" "abc.tools.materialize-import"]}
-  :abc/materialize-publication {:main-opts ["-m" "abc.tools.materialize-publication"]}
-  :abc/materialize-publications-batch {:main-opts ["-m" "abc.tools.materialize-publication"
-                                                   "--batch"]}
   :abc/source-snapshot-workset {:main-opts ["-m" "abc.tools.source-snapshot-workset"]}
   :abc/materialize-source-snapshot {:main-opts ["-m" "abc.tools.materialize-source-snapshot"]}
   :abc/manifest-to-rdf {:main-opts ["-m" "abc.tools.manifest-to-rdf"]}

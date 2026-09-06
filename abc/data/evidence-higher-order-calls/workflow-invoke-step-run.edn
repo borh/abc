@@ -1,5 +1,0 @@
-{:schema-version :abc-evidence-higher-order-call-v1
- :caller abc.tools.workflow/invoke-step-run
- :parameters {run [abc.tools.soranoha-build-publication/materialize-source-selection-step
-                   abc.tools.soranoha-build-publication/write-build-records-step
-                   abc.tools.soranoha-build-publication/materialize-publications-step]}}

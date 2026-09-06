@@ -46,23 +46,29 @@ else
     --abc-root "$repo_root/data/abc-schemas")
 fi
 
-jq -e '.schema_hash == "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"' "$parser_ir" >/dev/null
+schema_hash="$(jq -r '.target_parser_ir_schema_hash' "$repo_root/data/aat-to-parser-ir-mapping-v1.json")"
+jq -e --arg schema_hash "$schema_hash" '.schema_hash == $schema_hash' "$parser_ir" >/dev/null
 jq -e '(.nodes | length) > 0' "$parser_ir" >/dev/null
 jq -e '(.paragraphs | length) >= 2' "$parser_ir" >/dev/null
-jq -e 'all(.paragraphs[]; (.node_range.start < .node_range.end) and (.span.coordinate_system == "decoded_utf8"))' "$parser_ir" >/dev/null
+jq -e 'all(.paragraphs[]; (.node_range.start < .node_range.end) and (.span.coordinate_system == "parser_text_utf8"))' "$parser_ir" >/dev/null
 
 if [[ "$expect_source_note" == "1" ]]; then
   jq -e 'any(.nodes[]; .type == "source-note" and .placement == "back")' "$parser_ir" >/dev/null
   jq -e 'any(.paragraphs[]; .role == "source-note")' "$parser_ir" >/dev/null
 fi
 
-(cd "$abc_root" && clojure -M:abc/materialize-publication \
-  "$parser_ir" \
-  examples/v0/example-work/metadata-record.json \
-  examples/v0/example-persons \
-  "$publication_dir" \
-  --source-manifest examples/v0/example-work/source.manifest.json \
-  --generated-at 2026-07-04T00:00:00Z)
+(cd "$abc_root" && clojure -M - "$parser_ir" "$publication_dir" <<'CLJ'
+(require '[abc.tools.materialize-publication :as publication])
+(let [[parser-ir output] *command-line-args*]
+  (publication/materialize-publication!
+   {:parser-ir-path parser-ir
+    :metadata-record-path "examples/v0/example-work/metadata-record.json"
+    :persons-dir "examples/v0/example-persons"
+    :output-dir output
+    :source-manifest-path "examples/v0/example-work/source.manifest.json"
+    :generated-at "2026-07-04T00:00:00Z"}))
+CLJ
+)
 
 test -s "$publication_dir/plain.txt"
 test -s "$publication_dir/tei.xml"

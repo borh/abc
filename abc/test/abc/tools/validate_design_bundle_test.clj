@@ -9,7 +9,7 @@
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.materialize-import :as materialize]
             [abc.tools.parser-evidence :as parser-evidence]
-            [abc.tools.parser-ir-plaintext :as plaintext]
+            [soranoha.ported.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-sentence-policy :as sentence-policy]
             [abc.tools.parser-rq-campaign :as campaign]
             [abc.tools.parser-rq-capture :as capture]
@@ -2192,7 +2192,7 @@
              (set (map #(get % "source_class")
                        (get policy "dispositions")))))
       (is (= (get fixture "expected_plaintext")
-             (plaintext/render-string parser-ir))))))
+             (:text (plaintext/render parser-ir)))))))
 
 (deftest comparison-report-schema-test
   (testing "accepts a well-formed comparison report"

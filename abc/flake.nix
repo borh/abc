@@ -30,6 +30,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       local-pkgs,
       tei-eaj-aozora-tei,
@@ -65,8 +66,23 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          soranohaLibrary = pkgs.lib.fileset.toSource {
+            root = ../soranoha;
+            fileset = pkgs.lib.fileset.unions [
+              ../soranoha/deps.edn
+              ../soranoha/src
+              ../soranoha/resources
+            ];
+          };
         in
         {
+          research-source = pkgs.runCommand "abc-research-source" { } ''
+            mkdir -p "$out"
+            cp -R ${./.} "$out/abc"
+            chmod -R u+w "$out"
+            substituteInPlace "$out/abc/deps.edn" \
+              --replace-fail '../soranoha' '${soranohaLibrary}'
+          '';
           parser-rq-build-capability-probe = pkgs.runCommand "parser-rq-build-capability-probe" { } ''
             mkdir -p "$out"
             echo parser-rq-build-capability > "$out/result"
@@ -109,9 +125,9 @@
               ${env}
               # Preserve the caller's working directory before cd'ing to the
               # pinned source root, so commands can resolve relative path args
-              # (e.g. build-publication --output-root) against where the user ran.
+              # against where the user ran.
               export ABC_INVOCATION_PWD="$PWD"
-              cd ${./.}
+              cd ${self.packages.${system}.research-source}/abc
               exec ${pkgs.clojure}/bin/clojure -J-Duser.home=${cljDepsCache} -M:${alias} "$@"
             '';
           mkCljApp =
@@ -183,18 +199,6 @@
             name = "abc-materialize-import";
             alias = "abc/materialize-import";
             description = "Materialize imported ab-validator output as ABC manifests";
-          };
-
-          materialize-publication = mkCljApp {
-            name = "abc-materialize-publication";
-            alias = "abc/materialize-publication";
-            description = "Materialize parser-IR publication plaintext and TEI artifacts";
-          };
-
-          materialize-publications-batch = mkCljApp {
-            name = "abc-materialize-publications-batch";
-            alias = "abc/materialize-publication";
-            description = "Materialize parser-IR publication plaintext and TEI artifacts from a batch JSON";
           };
 
           materialize-source-snapshot = mkCljApp {
@@ -348,7 +352,11 @@
           contractSurfacePaths = manifestLines ./nix/contract-surface.txt;
 
           copyWritableSource = ''
-            cp -R ${./.} source
+            cp -R ${self.packages.${system}.research-source}/abc source
+            mkdir -p soranoha/test/soranoha/ori soranoha/test/soranoha/yomi
+            cp ${../soranoha/test/soranoha/ori/tei_contract_test.clj} soranoha/test/soranoha/ori/tei_contract_test.clj
+            cp ${../soranoha/test/soranoha/ori/plaintext_contract_test.clj} soranoha/test/soranoha/ori/plaintext_contract_test.clj
+            cp ${../soranoha/test/soranoha/yomi/select_test.clj} soranoha/test/soranoha/yomi/select_test.clj
             chmod -R u+w source
             cd source
           '';

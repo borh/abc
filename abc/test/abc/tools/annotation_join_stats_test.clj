@@ -2,7 +2,7 @@
   (:require [abc.tools.annotation-join-stats :as stats]
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
-            [abc.tools.parser-ir-plaintext :as plaintext]
+            [soranoha.ported.parser-ir-plaintext :as plaintext]
             [abc.tools.source-snapshot-fixture :as fixture]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))

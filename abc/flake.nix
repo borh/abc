@@ -269,7 +269,8 @@
                 fi
                 install -m 0644 "${tei.artifacts}/tei-profile.rng" "$target/schemas/tei-profile.rng"
                 install -m 0644 "${tei.artifacts}/tei-profile.sch" "$target/schemas/tei-profile.sch"
-                echo "Updated $target/schemas/tei-profile.{rng,sch} from schemas/tei-profile.odd."
+                install -m 0644 "${tei.artifacts}/tei-profile-generation.json" "$target/schemas/tei-profile-generation.json"
+                echo "Updated $target/schemas/tei-profile.{rng,sch} and generation provenance from schemas/tei-profile.odd."
               ''
             );
             meta.description = "Regenerate schemas/tei-profile.{rng,sch} from schemas/tei-profile.odd via TEI Stylesheets";
@@ -647,6 +648,9 @@
             # remains the single source of truth.
             diff -u ${./schemas/tei-profile.rng} ${tei.artifacts}/tei-profile.rng
             diff -u ${./schemas/tei-profile.sch} ${tei.artifacts}/tei-profile.sch
+            diff -u \
+              <(${pkgs.jq}/bin/jq -S '{odd_hash, rng_hash, schematron_hash}' ${./schemas/tei-profile-generation.json}) \
+              <(${pkgs.jq}/bin/jq -S '{odd_hash, rng_hash, schematron_hash}' ${tei.artifacts}/tei-profile-generation.json)
             mkdir -p "$out"
             echo "schemas/tei-profile.{rng,sch} match the ODD-derived artifacts." > "$out/result.txt"
           '';

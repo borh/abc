@@ -22,12 +22,30 @@ let
     hash = "sha256-r9HruHPKcY1hvly09hFkoRA3/gybYSomI+avGvGe8wE=";
   };
 
+  generator = "TEI Stylesheets 7.60.0 with Saxon-HE ${pkgs.saxon-he.version}";
+  generatorBuildHash =
+    "sha256:"
+    + builtins.hashString "sha256" (
+      builtins.toJSON {
+        recipe = builtins.hashFile "sha256" ./tei-profile-artifacts.nix;
+        stylesheets = toString teiStylesheets;
+        p5Subset = toString teiP5Subset;
+        saxon = toString pkgs.saxon-he;
+        sed = toString pkgs.gnused;
+        awk = toString pkgs.gawk;
+        coreutils = toString pkgs.coreutils;
+        jq = toString pkgs.jq;
+      }
+    );
+
   artifacts =
     pkgs.runCommand "abc-tei-profile-artifacts"
       {
         nativeBuildInputs = [
           pkgs.saxon-he
           pkgs.gnused
+          pkgs.gawk
+          pkgs.jq
         ];
       }
       ''
@@ -71,6 +89,15 @@ let
         mv tei-profile.sch.filtered tei-profile.sch
         mkdir -p "$out"
         cp tei-profile.rng tei-profile.sch "$out/"
+        jq -nS \
+          --arg generator ${pkgs.lib.escapeShellArg generator} \
+          --arg generator_build_hash ${pkgs.lib.escapeShellArg generatorBuildHash} \
+          --arg odd_hash "sha256:$(sha256sum tei-profile.odd | cut -d ' ' -f 1)" \
+          --arg rng_hash "sha256:$(sha256sum tei-profile.rng | cut -d ' ' -f 1)" \
+          --arg schematron_hash "sha256:$(sha256sum tei-profile.sch | cut -d ' ' -f 1)" \
+          '{generator: $generator, generator_build_hash: $generator_build_hash,
+            odd_hash: $odd_hash, rng_hash: $rng_hash, schematron_hash: $schematron_hash}' \
+          > "$out/tei-profile-generation.json"
       '';
 in
 {

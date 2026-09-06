@@ -43,9 +43,9 @@
                                             (swap! calls update :card inc)
                                             (parse-card bytes assertion))
                                           aozora/bundle-hash
-                                          (fn [bytes]
+                                          (fn [& args]
                                             (swap! calls update :bundle inc)
-                                            (inspect-bundle bytes))]
+                                            (apply inspect-bundle args))]
                               (is (= {:state :aozora/available :reason nil}
                                      (get (aozora/check!
                                            root evidence [record]

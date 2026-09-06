@@ -6,6 +6,11 @@
             [soranoha.assessment.snapshot :as snapshot]
             [soranoha.assessment.source :as source]
             [soranoha.core.hash :as hash]
+            [soranoha.core.config :as config]
+            [soranoha.aozora.source-bundle :as bundle]
+            [soranoha.kura.cas :as cas]
+            [soranoha.kura.trace :as trace]
+            [soranoha.ori.stages :as stages]
             [soranoha.kura.engine :as engine]
             [soranoha.main :as main]
             [soranoha.za.corpus :as corpus]))
@@ -121,3 +126,46 @@
     (fs/delete file)
     (is (= :missing-evidence
            (reason #(source/retained-observations input dir))))))
+
+(deftest assessment-reuses-content-facts-and-refuses-corrupt-cache-bytes
+  (let [root (corpus/init-corpus! [work])
+        dir (fs/create-temp-dir {:prefix "assessment-cached-source"})
+        input (str (fs/path dir "source.json"))
+        cache (str (fs/path dir "build"))
+        slug (corpus/work-slug work)
+        zip (str (corpus/work-zip-path root work))
+        expected (:bundle-hash (bundle/inspect-zip zip))
+        opts {:root cache :aozora-root root :assessment-source input
+              :as-of "2026-09-06" :clj-toolchain-id "source-test"}
+        calls (atom 0)
+        inspect bundle/inspect-zip]
+    (try
+      (fs/write-bytes input (:bytes (records/encode (observed-source slug))))
+      (with-redefs [bundle/inspect-zip (fn [& args]
+                                         (when (= 1 (count args)) (swap! calls inc))
+                                         (apply inspect args))]
+        (let [evaluate #(get-in (main/assessment-evaluate! opts) [:source-hashes slug])]
+          (is (= expected (evaluate) (evaluate)))
+          (is (= 1 @calls))
+          (spit (str (fs/path root "unrelated.txt")) "Unrelated source commit")
+          (corpus/commit-corpus! root)
+          (is (= expected (evaluate)))
+          (is (= 1 @calls))
+          (let [store (engine/open-store! {:cas-dir (config/cas-dir cache)
+                                           :db-path (config/trace-db-path cache)})
+                outputs (try
+                          (trace/lookup (:trace store)
+                                        (trace/derivation-key (stages/extract-stage "source-test")
+                                                              {"zip" (hash/sha256-file zip)}))
+                          (finally (engine/close-store! store)))
+                facts-path (cas/blob-path (config/cas-dir cache) (get outputs "source-facts"))]
+            (spit facts-path "{}")
+            (is (= :source-facts-corrupt (reason evaluate)))
+            (fs/delete facts-path)
+            (is (= expected (evaluate)))
+            (is (= 2 @calls)))
+          (corpus/write-work! root (assoc work :text "A changed source edition.\n"))
+          (corpus/commit-corpus! root)
+          (is (not= expected (evaluate)))
+          (is (= 3 @calls))))
+      (finally (fs/delete-tree root) (fs/delete-tree dir)))))

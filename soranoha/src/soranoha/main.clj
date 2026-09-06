@@ -27,6 +27,7 @@
             [soranoha.assessment.snapshot :as assessment-snapshot]
             [soranoha.assessment.source :as assessment-source]
             [soranoha.core.config :as config]
+            [soranoha.core.hash :as hash]
             [soranoha.core.canonical :as canonical]
             [soranoha.kura.engine :as engine]
             [soranoha.kura.cas :as cas]
@@ -389,6 +390,24 @@
                       {:reason :assessment-input-revisions-differ})))
     true))
 
+(defn- cached-source-hash [store clj-toolchain-id]
+  (let [stage (stages/extract-stage clj-toolchain-id)]
+    (fn [file]
+      (let [zip (cas/put-file! (:cas-dir store) file)
+            run (engine/run-stage! store stage {"zip" zip})
+            digest (get-in run [:outputs "source-facts"])
+            bytes (cas/get-bytes (:cas-dir store) digest)]
+        (when-not (and bytes (= digest (hash/sha256-bytes bytes)))
+          (throw (ex-info "Cached source facts failed fixity verification"
+                          {:reason :source-facts-corrupt :digest digest})))
+        (let [facts (json/read-json (String. ^bytes bytes "UTF-8"))
+              content-hash (get facts "work_content_hash")]
+          (when-not (and (= (str "sha256:" zip) (get facts "archive_hash"))
+                         (string? content-hash) (re-matches hash/hash-pattern content-hash))
+            (throw (ex-info "Cached source facts do not describe the current archive"
+                            {:reason :source-facts-mismatch :digest digest})))
+          content-hash)))))
+
 (defn- evaluate-assessment!
   [{:keys [root aozora-root evidence-root as-of clj-toolchain-id rdf-out rdf-base aozora-fetch]}
    {:keys [source retained]}]
@@ -398,19 +417,20 @@
                    "--clj-toolchain-id" clj-toolchain-id})
   (when rdf-out
     (require-flags! "internal RDF export" {"--rdf-base" rdf-base}))
-  (let [commit (source-provenance! aozora-root)
-        captured (assessment-source/capture-checkout aozora-root source retained)
-        reliance-observations (when (seq (get source "reliances"))
-                                (aozora/check! aozora-root evidence-root (get source "reliances")
-                                               {:fetch aozora-fetch}))
-        _ (when-not (= commit (source-provenance! aozora-root))
-            (throw (ex-info "source checkout changed during assessment capture"
-                            {:reason :assessment-source-changed})))
-        root (config/ensure-layout! (config/root root))
+  (let [root (config/ensure-layout! (config/root root))
         store (engine/open-store! {:cas-dir (config/cas-dir root)
                                    :db-path (config/trace-db-path root)})]
     (try
-      (let [evaluation (assessment-evaluator/evaluate!
+      (let [commit (source-provenance! aozora-root)
+            source-hash (cached-source-hash store clj-toolchain-id)
+            captured (assessment-source/capture-checkout aozora-root source retained source-hash)
+            reliance-observations (when (seq (get source "reliances"))
+                                    (aozora/check! aozora-root evidence-root (get source "reliances")
+                                                   {:fetch aozora-fetch :source-hash source-hash}))
+            _ (when-not (= commit (source-provenance! aozora-root))
+                (throw (ex-info "source checkout changed during assessment capture"
+                                {:reason :assessment-source-changed})))
+            evaluation (assessment-evaluator/evaluate!
                         store source
                         (assoc captured :as-of as-of :toolchain-id clj-toolchain-id
                                :reliance-observations reliance-observations))
@@ -555,8 +575,15 @@
                     {"--root" (config/root (:root opts))
                      "--clj-toolchain-id" (:clj-toolchain-id opts)})
     (let [source-commit (source-provenance! aozora-root)
-          {:keys [source-hashes]} (assessment-source/capture-checkout
-                                   aozora-root (:source assessment-inputs) (:retained assessment-inputs))]
+          {:keys [source-hashes]}
+          (let [root (config/ensure-layout! (config/root (:root opts)))
+                store (engine/open-store! {:cas-dir (config/cas-dir root)
+                                           :db-path (config/trace-db-path root)})]
+            (try
+              (assessment-source/capture-checkout
+               aozora-root (:source assessment-inputs) (:retained assessment-inputs)
+               (cached-source-hash store (:clj-toolchain-id opts)))
+              (finally (engine/close-store! store))))]
       (when-not (= source-commit (source-provenance! aozora-root))
         (throw (ex-info "source checkout changed during assessment capture"
                         {:reason :assessment-source-changed})))

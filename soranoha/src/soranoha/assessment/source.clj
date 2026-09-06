@@ -44,29 +44,33 @@
 (defn capture-checkout
   "Resolve declared observations against the current selected population.
   Catalog values are observations, never the assessed contribution set.
-  Only source bundles consumed by an observation or reliance are inspected."
-  [aozora-root source retained-values]
-  (let [rows (csv/read-rows-from-string
-              (:csv-text (catalog/read-catalog-zip aozora-root)))
-        selected (:candidates (select/select-candidates aozora-root rows))
-        by-slug (into {} (map (juxt :slug identity)) selected)
-        candidates (scaffold/projection rows selected)
-        source-slugs (into (set (map #(get % "slug") (get source "reliances")))
-                           (keep (fn [{:strs [selector slug]}]
-                                   (when (= selector "canonical-source-bundle") slug)))
-                           (get source "observations"))
-        source-hashes (into {}
-                            (for [slug source-slugs
-                                  :let [candidate (get by-slug slug)]
-                                  :when candidate]
-                              [slug (:bundle-hash (bundle/inspect-zip
-                                                   (io/file (:file candidate))))]))
-        unavailable {"state" "unavailable" "reason" "missing-selected-work"}
-        observations
-        (into {}
-              (for [{:strs [id selector slug]} (get source "observations")]
-                [id (case selector
-                      "catalog-contributors" (get candidates slug unavailable)
-                      "canonical-source-bundle" (get source-hashes slug unavailable)
-                      "retained-evidence" (get retained-values id))]))]
-    {:candidates candidates :observations observations :source-hashes source-hashes}))
+  Only source bundles consumed by an observation or reliance are inspected.
+  The optional source-hash function maps an archive file to its admitted
+  canonical bundle hash, permitting reuse of content-addressed derivations."
+  ([aozora-root source retained-values]
+   (capture-checkout aozora-root source retained-values
+                     #(:bundle-hash (bundle/inspect-zip %))))
+  ([aozora-root source retained-values source-hash]
+   (let [rows (csv/read-rows-from-string
+               (:csv-text (catalog/read-catalog-zip aozora-root)))
+         selected (:candidates (select/select-candidates aozora-root rows))
+         by-slug (into {} (map (juxt :slug identity)) selected)
+         candidates (scaffold/projection rows selected)
+         source-slugs (into (set (map #(get % "slug") (get source "reliances")))
+                            (keep (fn [{:strs [selector slug]}]
+                                    (when (= selector "canonical-source-bundle") slug)))
+                            (get source "observations"))
+         source-hashes (into {}
+                             (for [slug source-slugs
+                                   :let [candidate (get by-slug slug)]
+                                   :when candidate]
+                               [slug (source-hash (io/file (:file candidate)))]))
+         unavailable {"state" "unavailable" "reason" "missing-selected-work"}
+         observations
+         (into {}
+               (for [{:strs [id selector slug]} (get source "observations")]
+                 [id (case selector
+                       "catalog-contributors" (get candidates slug unavailable)
+                       "canonical-source-bundle" (get source-hashes slug unavailable)
+                       "retained-evidence" (get retained-values id))]))]
+     {:candidates candidates :observations observations :source-hashes source-hashes})))

@@ -66,10 +66,18 @@
       (let [env {"GIT_INDEX_FILE" index}]
         (when base-tree-of
           (git! dir {:extra-env env} "read-tree" (str base-tree-of "^{tree}")))
-        (doseq [[path ^bytes bytes] (sort-by key files)]
-          (let [blob (hash-blob! dir bytes)]
-            (git! dir {:extra-env env} "update-index" "--add"
-                  "--cacheinfo" (str "100644," blob "," path))))
+        (when (seq files)
+          (let [entries (StringBuilder.)]
+            (doseq [[path ^bytes bytes] (sort-by key files)]
+              (when (str/includes? path "\u0000")
+                (throw (ex-info "Git paths cannot contain NUL" {:path path})))
+              (.append entries (str "100644 " (hash-blob! dir bytes) "\t" path "\u0000")))
+            (let [{:keys [err]} (git! dir {:extra-env env
+                                           :in (.getBytes (.toString entries) "UTF-8")}
+                                      "update-index" "-z" "--index-info")]
+              ;; Unlike --cacheinfo, --index-info silently skips invalid paths.
+              (when-not (str/blank? err)
+                (throw (ex-info "git update-index reported diagnostics" {:err err}))))))
         (let [tree (str/trim (:out (git! dir {:extra-env env} "write-tree")))
               args (concat ["commit-tree" tree]
                            (mapcat (fn [p] ["-p" p]) parents)

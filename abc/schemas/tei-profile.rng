@@ -13783,8 +13783,8 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:ruby/tei:rb">
-         <sch:assert test="normalize-space(string(.)) != ''">
-                ABC TEI ruby base must not be empty; preserve the source token text.
+         <sch:assert test="normalize-space(string(.)) != '' or .//tei:g[starts-with(@ref, '#')]">
+                ABC TEI ruby base must contain source text or a declared character.
               </sch:assert>
       </sch:rule>
    </pattern>

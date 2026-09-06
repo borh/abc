@@ -37,7 +37,7 @@
    </pattern>
    <pattern id="abc-ruby-base-non-empty">
       <rule context="tei:ruby/tei:rb">
-         <assert test="normalize-space(string(.)) != ''"> ABC TEI ruby base must not be empty; preserve the source token text.</assert>
+         <assert test="normalize-space(string(.)) != '' or .//tei:g[starts-with(@ref, '#')]"> ABC TEI ruby base must contain source text or a declared character.</assert>
       </rule>
    </pattern>
    <pattern id="abc-ruby-reading-non-empty">

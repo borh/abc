@@ -3,6 +3,7 @@
             [abc.test-fs :refer [with-temp-dir]]
             [babashka.fs :as fs]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]))
 
 (def ^:private schematron-ns "http://purl.oclc.org/dsdl/schematron")
@@ -288,3 +289,27 @@
         (finally
           (.delete schema)
           (.delete xml))))))
+
+(deftest ruby-base-may-be-a-declared-source-character-test
+  (with-temp-dir [dir]
+    (doseq [[label base declaration expected]
+            [["unresolved source glyph" "<g ref=\"#gaiji-355-17\"/>"
+              "<char xml:id=\"gaiji-355-17\"><localProp name=\"rawMarker\" value=\"凵＜茲\"/></char>" #{}]
+             ["resolved source glyph" "<g ref=\"#gaiji-355-17\">字</g>"
+              "<char xml:id=\"gaiji-355-17\"><mapping type=\"unicode\">字</mapping></char>" #{}]
+             ["empty base" "" "" #{"abc-ruby-base-non-empty"}]
+             ["whitespace base" " \n\t " "" #{"abc-ruby-base-non-empty"}]
+             ["dangling declaration" "<g ref=\"#gaiji-355-17\"/>" "" #{"abc-gaiji-chardecl-resolution"}]
+             ["empty declaration" "<g ref=\"#gaiji-355-17\"/>"
+              "<char xml:id=\"gaiji-355-17\"><desc> </desc></char>" #{"abc-char-resolution-form"}]
+             ["undeclared symbolic glyph" "<g ana=\"unresolved\"/>" "" #{"abc-ruby-base-non-empty"}]]]
+      (let [xml (-> (slurp "fixtures/tei/invalid/ruby-empty-base.xml")
+                    (string/replace "<rb></rb>" (str "<rb>" base "</rb>"))
+                    (string/replace "</fileDesc>"
+                                    (str "</fileDesc><encodingDesc><charDecl>" declaration
+                                         "</charDecl></encodingDesc>")))
+            path (fs/file dir "ruby.xml")]
+        (spit path xml)
+        (is (= expected (set (map :rule-id (:findings (schematron/validate!
+                                                       {:schema-path schema-path :xml-path (str path) :label label})))))
+            label)))))

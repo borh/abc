@@ -223,11 +223,12 @@
                 (json/read-json (.readLine ^java.io.BufferedReader reader)))]
     (when-not (= "publication simulation with recorded observations" (get setup "scope"))
       (throw (ex-info "Repeat requires a publication replay fixture" {})))
-    (doseq [child ["build" "checkout" "review" "chain" "origin.git" "serve"]]
+    (doseq [child ["build" "checkout" "review" "chain" "origin.git" "serve" "release.seed"]]
       (when-not (fs/starts-with? (fs/real-path (fs/path out child)) out)
         (throw (ex-info "Replay state escapes its output directory" {:child child}))))
     (when-not (= (str (fs/path out "origin.git"))
-                 (replay/git! (:chain-clone opts) "remote" "get-url" "origin"))
+                 (replay/git! (:chain-clone opts) "remote" "get-url" "origin")
+                 (replay/git! (:chain-clone opts) "remote" "get-url" "--push" "--all" "origin"))
       (throw (ex-info "Repeat requires the replay's local origin" {})))
     (doseq [role ["release" "governance"]]
       (when-not (= (get-in @fixture/keys* [role "pub"])

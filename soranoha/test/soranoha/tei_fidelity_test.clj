@@ -1,5 +1,8 @@
 (ns soranoha.tei-fidelity-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [babashka.fs :as fs]
+            [soranoha.ori.render :as render]
+            [soranoha.ported.tei :as rng]
+            [clojure.test :refer [deftest is]]
             [soranoha.ported.parser-ir-tei :as tei]))
 
 (defn- elements [tree tag]
@@ -53,3 +56,21 @@
         rb (first (elements (:body rendered) :rb))]
     (is (= [:rb [:g {:ref "#gaiji-1-87-71"}] "陀多"] rb))
     (is (= "犍" (:unicode (first (:char_declarations rendered)))))))
+
+(deftest source-layout-validates-against-the-publication-profile
+  (let [dir (fs/create-temp-dir {:prefix "tei-layout-profile"})
+        xml-path (str (fs/path dir "tei.xml"))
+        result (render/render-work
+                {:parser-ir {"sentence_segmentation" {}
+                             "nodes" [{"type" "heading" "level" 2 "indent" 8 "text" "一"}
+                                      {"type" "text" "text" "　本文。"}
+                                      {"type" "source-note" "placement" "back"
+                                       "note_type" "source-attribution" "text" "底本：書名\n　　　刊行日\n"}]
+                             "paragraphs" [{"id" "p1" "role" "body" "node_range" {"start" 1 "end" 2}}]}
+                 :metadata-record {"work" {"title" "試験" "aozora_modified" "2026-09-06"} "contributors" []}
+                 :persons-by-id {}})]
+    (try
+      (spit xml-path (:tei result))
+      (is (empty? (:violations (rng/validate! {:schema-path "../abc/schemas/tei-profile.rng"
+                                               :xml-path xml-path :label "source layout"}))))
+      (finally (fs/delete-tree dir)))))

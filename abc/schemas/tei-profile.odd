@@ -34,6 +34,7 @@
         <moduleRef key="figures"/>
         <moduleRef key="gaiji"/>
         <moduleRef key="analysis"/>
+        <moduleRef key="linking" include="seg"/>
 
         <!-- Schematron constraint declarations -->
         <constraintDecl scheme="schematron" queryBinding="xslt2">
@@ -113,22 +114,6 @@
           <remarks>
             <p>Character declarations document unresolved or custom external-character mappings.</p>
           </remarks>
-        </elementSpec>
-        <elementSpec ident="s" mode="change" module="analysis">
-          <attList>
-            <attDef ident="next" mode="add" usage="opt">
-              <desc>Pointer to the next fragment of a fragmented sentence.</desc>
-              <datatype>
-                <rng:data type="anyURI"/>
-              </datatype>
-            </attDef>
-            <attDef ident="prev" mode="add" usage="opt">
-              <desc>Pointer to the previous fragment of a fragmented sentence.</desc>
-              <datatype>
-                <rng:data type="anyURI"/>
-              </datatype>
-            </attDef>
-          </attList>
         </elementSpec>
         <classSpec ident="att.global" mode="change" module="tei" type="atts">
           <attList>

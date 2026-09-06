@@ -132,3 +132,27 @@ edition absent from the supplied assessment, or one whose source changes beyond
 its attestation, remains unadmitted until assessment inputs justify it. Label the
 observation fixture, source range, admitted population and cache conditions with
 any reported timings.
+
+Reference corpus run on Speely, benchmark revision `987f476c`, source commits
+`19549096…` → `36bf8ec8…` → `0e9ea3e5…` (2026-04-23 through 2026-04-25):
+
+| Source date | Assessment (s) | Release (s) | Serving (s) | Repeat release + serving (s) | Executed stages |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Apr 23 | 53.6 | 735.6 | 32.1 | 109.3 | 103,840 |
+| Apr 24 | 31.7 | 104.8 | 39.8 | 126.9 | 0 |
+| Apr 25 | 33.5 | 115.9 | 47.3 | 133.2 | 9 |
+
+The full selection grew from 17,601 to 17,602 candidates; the published population
+from 17,307 to 17,308 works. Apr 24 retained every published work entry. Apr 25
+added one, changed one and retained 17,306. Every unchanged repeat executed zero
+stages and preserved the publication commit and verified export. The fixture used
+34,618 URL mappings backed by the 17,308 retained reliance records, supplied as
+simulated contemporary responses over those historical commits.
+
+The complete command took 1,598.89 seconds, including JVM startup, setup and all
+three repeats, with GNU time reporting 5,821,864 KiB peak RSS. Repository cloning
+took 12.97 seconds. This was an empty computation cache with available Nix closures
+and uncontrolled OS page caches. It is one baseline run, not a speedup comparison.
+The harness retains the assessment result until row emission, so the peak includes
+that result. Phase measurements and reports remain under
+`/data/soranoha-benchmarks/publication-20260906/run` on Speely.

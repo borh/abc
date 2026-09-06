@@ -3,7 +3,8 @@
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [soranoha.core.canonical :as canonical]
-            [soranoha.core.hash :as hash]))
+            [soranoha.core.hash :as hash]
+            [soranoha.core.jcs :as jcs]))
 
 (def shared-vectors-path
   "test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json")
@@ -32,3 +33,31 @@
       (is (thrown-with-msg?
            clojure.lang.ExceptionInfo #"outside the supported JSON domain"
            (canonical/rfc8785-safe-integer-json-string-v1 {"n" value}))))))
+
+(deftest unicode-literals-match-the-pinned-escaping-engine
+  (let [strings (concat ["" "\"\\/\n\r\t" "日本語\u2028\u2029" "犍𠮷"]
+                        (map (comp str char) (range 0xD800))
+                        (map (comp str char) (range 0xE000 0x10000)))]
+    (is (every? (fn [s]
+                  (= (json/write-json-str s :escape-slash false
+                                          :escape-unicode false
+                                          :escape-js-separators false)
+                     (canonical/rfc8785-safe-integer-json-string-v1 s)))
+                strings))))
+
+(deftest malformed-utf16-rejection-retains-location
+  (doseq [s [(str (char 0xD800)) (str (char 0xDC00)) (str (char 0xD800) "x")]
+          [value path position] [[{"nested" [s]} ["nested" 0] :value]
+                                 [{"nested" {s "value"}} ["nested"] :object-key]]]
+    (let [error (try (canonical/rfc8785-safe-integer-json-string-v1 value) nil
+                     (catch clojure.lang.ExceptionInfo e (ex-data e)))]
+      (is (= {:reason :invalid-utf16 :path path :position position :string-index 0}
+             (select-keys error [:reason :path :position :string-index]))))))
+
+(deftest canonical-keys-remain-stricter-than-json-writer-keys
+  (is (= {"7" "seven"} (json/read-json (json/write-json-str {7 "seven"}))))
+  (doseq [encode [canonical/rfc8785-safe-integer-json-string-v1
+                  jcs/rfc8785-string-domain-json-string]]
+    (is (= :non-string-object-key
+           (try (encode {7 "seven"}) nil
+                (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))))

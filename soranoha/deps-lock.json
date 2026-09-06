@@ -43,14 +43,14 @@
       "hash": "sha256-LVp6g6ymqHa1ZOMHYD0CRaNxZ4osT0xoEH7dC5sLv7s="
     },
     {
-      "mvn-path": "com/cnuernber/charred/1.041/charred-1.041.jar",
+      "mvn-path": "com/cnuernber/charred/1.042/charred-1.042.jar",
       "mvn-repo": "https://repo.clojars.org/",
-      "hash": "sha256-3dyUBZFiqoUKcCsIDWfNPHPacKkpCkOQppRvN9Maxo4="
+      "hash": "sha256-ix3xBk3VIWiv0on1IE139M6ptPyQAtjm8zxeSCTJ4Bw="
     },
     {
-      "mvn-path": "com/cnuernber/charred/1.041/charred-1.041.pom",
+      "mvn-path": "com/cnuernber/charred/1.042/charred-1.042.pom",
       "mvn-repo": "https://repo.clojars.org/",
-      "hash": "sha256-00vE5SpiEIDyaQ9x2FyWtp11VhopWE2/xKIpLlUcrec="
+      "hash": "sha256-rRdbPY0njtnFlNUuVyoRjcMzS/k3/hYrEmlphpFZA+4="
     },
     {
       "mvn-path": "com/ethlo/time/itu/1.14.0/itu-1.14.0.jar",

@@ -1,3 +1,5 @@
+//! Accent notation is decoded without removing literal bracket text.
+
 use ab_aozora_aat::aat_json_from_bytes;
 use serde_json::Value;
 

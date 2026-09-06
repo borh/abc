@@ -354,8 +354,8 @@ struct PendingGaiji {
     payload: Gaiji,
 }
 
-/// A source-contiguous run of one or more deferred gaiji, held one step so
-/// an adjacent `《…》` ruby can adopt the whole run as its base. A single
+/// A source-contiguous run of deferred gaiji and intervening kanji, held so
+/// a following `《…》` ruby can adopt the whole run as its base. A single
 /// gaiji is the common `※［＃…］《みは》` case; a run of adjacent gaiji is an
 /// ateji whose reading spans several glyphs (`※［＃…］※［＃…］《かいがい》`).
 ///
@@ -962,10 +962,10 @@ where
                         // flush the run as standalone spans when the next
                         // event neither continues nor adopts it.
                         let gaiji_start = gaiji.span.source_span.start;
-                        let adjacent = self
-                            .pending_ruby_base
-                            .as_ref()
-                            .is_some_and(|p| p.end() == gaiji_start);
+                        let adjacent = self.pending_ruby_base.as_ref().is_some_and(|p| {
+                            p.end() == gaiji_start
+                                || prefix.is_some_and(|text| text.start == p.end())
+                        });
                         if adjacent {
                             self.pending_ruby_base
                                 .as_mut()
@@ -1355,11 +1355,20 @@ where
             reading
         };
         let base_start = pending.start();
-        let mut segs: smallvec::SmallVec<[Segment; 2]> = pending
-            .segs
-            .iter()
-            .map(|g| self.alloc.seg_gaiji(g.payload))
-            .collect();
+        let mut segs: smallvec::SmallVec<[Segment; 2]> = smallvec::SmallVec::new();
+        let mut previous_end = None;
+        for gaiji in &pending.segs {
+            if let Some(start) = previous_end.filter(|start| *start < gaiji.span.source_span.start)
+            {
+                segs.push(
+                    self.alloc.seg_text(
+                        &self.source[start as usize..gaiji.span.source_span.start as usize],
+                    ),
+                );
+            }
+            segs.push(self.alloc.seg_gaiji(gaiji.payload));
+            previous_end = Some(gaiji.span.source_span.end);
+        }
         if let Some(prefix) = pending.prefix {
             segs.insert(
                 0,
@@ -1725,7 +1734,18 @@ where
                 source_span: prefix,
             });
         }
+        let mut previous_end = None;
         for gaiji in pending.segs {
+            if let Some(start) = previous_end.filter(|start| *start < gaiji.span.source_span.start)
+            {
+                self.push_output(ClassifiedSpan {
+                    kind: SpanKind::Plain(PlainSpan {
+                        provenance: PlainProvenance::Text,
+                    }),
+                    source_span: Span::new(start, gaiji.span.source_span.start),
+                });
+            }
+            previous_end = Some(gaiji.span.source_span.end);
             self.push_output(gaiji.span);
         }
     }
@@ -1870,11 +1890,25 @@ where
                 PairEvent::Solo {
                     kind: TriggerKind::RefMark,
                     span,
-                } => span.start == end,
+                } => {
+                    span.start == end
+                        || (self.pending_plain_start() == Some(end)
+                            && self
+                                .pending_plain
+                                .back()
+                                .is_some_and(|p| p.source_span.end == span.start))
+                }
                 PairEvent::PairOpen {
                     kind: PairKind::Bracket,
                     ..
-                } => self.pending_refmark.is_some_and(|rm| rm.start == end),
+                } => self.pending_refmark.is_some_and(|rm| {
+                    rm.start == end
+                        || (self.pending_plain_start() == Some(end)
+                            && self
+                                .pending_plain
+                                .back()
+                                .is_some_and(|p| p.source_span.end == rm.start))
+                }),
                 _ => false,
             };
             !continues
@@ -2665,6 +2699,72 @@ mod tests {
             assert_eq!(segments.len(), 2);
             assert!(matches!(segments[0], Segment::Text(t) if out.s(t) == prefix));
             assert!(matches!(segments[1], Segment::Gaiji(_)));
+        }
+    }
+
+    #[test]
+    fn ruby_base_retains_gaiji_separated_by_kanji() {
+        for (source, expected) in [
+            (
+                "八※［＃「にんべん＋（八がしら／月）」、第3水準1-14-20］之※［＃「にんべん＋舞」、第4水準2-3-4］《やつらのまい》",
+                "八佾之儛",
+            ),
+            (
+                "※［＃「口＋奄」、第3水準1-15-6］阿謨※［＃「口＋云」、第3水準1-14-87］《おんあもうん》",
+                "唵阿謨呍",
+            ),
+        ] {
+            run!(out, source);
+            let Node::Ruby(ruby) = out.only_aozora() else {
+                panic!("expected one ruby across the complete base");
+            };
+            let [Content::Segments(range)] = out.contents(ruby.base)[..] else {
+                panic!("expected structured base");
+            };
+            let visible: String = out
+                .store
+                .resolve_seg_range(range)
+                .iter()
+                .map(|seg| match seg {
+                    Segment::Text(text) => out.s(*text).to_owned(),
+                    Segment::Gaiji(gaiji) => gaiji
+                        .resolve(&out.store)
+                        .expect("fixture glyph resolves")
+                        .as_char()
+                        .expect("single fixture scalar")
+                        .to_string(),
+                    _ => panic!("unexpected base segment"),
+                })
+                .collect();
+            assert_eq!(visible, expected);
+            assert_eq!(out.spans.len(), 1);
+            assert_eq!(
+                out.spans[0].source_span,
+                Span::new(0, u32::try_from(source.len()).unwrap())
+            );
+        }
+    }
+
+    #[test]
+    fn mixed_gaiji_run_restores_every_span_when_no_ruby_adopts_it() {
+        for suffix in ["", "。", "《》", "《み", "\n本文", "かな字《じ》"] {
+            let source = format!(
+                "八※［＃「にんべん＋（八がしら／月）」、第3水準1-14-20］之※［＃「にんべん＋舞」、第4水準2-3-4］{suffix}"
+            );
+            run!(out, &source);
+            let mut end = 0;
+            for span in &out.spans {
+                assert_eq!(span.source_span.start, end, "{source}");
+                end = span.source_span.end;
+            }
+            assert_eq!(usize::try_from(end).unwrap(), source.len());
+            assert_eq!(
+                out.spans
+                    .iter()
+                    .filter(|span| matches!(span.kind, SpanKind::Aozora(Node::Gaiji(_))))
+                    .count(),
+                2
+            );
         }
     }
 

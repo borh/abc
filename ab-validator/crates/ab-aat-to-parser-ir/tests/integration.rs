@@ -4854,3 +4854,36 @@ fn enclosing_indent_survives_line_local_closing_alignment() {
         assert!(validate_value(&schemas.parser_ir_schema, &malformed, "parser-IR").is_err());
     }
 }
+
+#[test]
+fn structured_ruby_reading_preserves_resolved_gaiji_in_body_and_heading() {
+    for wrapper in ["paragraph", "heading"] {
+        let (schemas, mapping) = v2_schemas_and_mapping();
+        let mut block = json!({"kind": wrapper, "content": [{
+            "kind": "ruby", "base": "淡絹",
+            "reading": "※［＃濁点付き片仮名ヱ、1-7-84］エル",
+            "reading_content": [
+                {"kind": "gaiji", "description": "濁点付き片仮名ヱ", "jis_code": "1-7-84", "resolved": "ヹ", "unresolved_reason": null},
+                {"kind": "text", "value": "エル"}
+            ]
+        }]});
+        if wrapper == "heading" {
+            block["level"] = json!(2);
+            block["style"] = json!("normal");
+        }
+        let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat: json!({"version": 2, "work_id": "gaiji-reading", "meta": v2_test_meta(), "blocks": [block]}),
+            mapping, schemas: schemas.clone(), options: default_test_options(),
+        }).unwrap();
+        let first = &output.parser_ir["nodes"][0];
+        let ruby = if wrapper == "paragraph" {
+            first
+        } else {
+            &first["inline_children"][0]
+        };
+        assert_eq!(ruby["ruby"]["reading"], "ヹエル");
+        assert_eq!(ruby["ruby"]["base"], "淡絹");
+        assert_eq!(ruby["span"]["end"], "淡絹".len());
+        validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+    }
+}

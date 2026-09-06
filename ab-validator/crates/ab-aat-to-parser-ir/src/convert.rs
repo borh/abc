@@ -886,19 +886,19 @@ fn plain_visible_inline_text(node: &Value) -> Result<String> {
     Ok(text)
 }
 
-fn ruby_base_text(node: &Value) -> Result<String> {
-    match node.get("base_content") {
+fn ruby_component_text(node: &Value, value_key: &str, content_key: &str) -> Result<String> {
+    match node.get(content_key) {
         Some(Value::Array(children)) if !children.is_empty() => {
-            plain_visible_content_text(node.get("base_content"))
+            plain_visible_content_text(node.get(content_key))
         }
-        _ => Ok(node["base"].as_str().unwrap_or("").to_owned()),
+        _ => Ok(node[value_key].as_str().unwrap_or("").to_owned()),
     }
 }
 
 fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()> {
     match node["kind"].as_str().unwrap_or("") {
         "text" => out.push_str(node["value"].as_str().unwrap_or("")),
-        "ruby" => out.push_str(&ruby_base_text(node)?),
+        "ruby" => out.push_str(&ruby_component_text(node, "base", "base_content")?),
         "gaiji" => out.push_str(
             node["resolved"]
                 .as_str()
@@ -1057,7 +1057,7 @@ fn map_inline_to_nodes(
             map_text_node_with_quotes(node, nodes, recorder, synthetic_warnings, offset, path)
         }
         "ruby" => {
-            let base = ruby_base_text(node)?;
+            let base = ruby_component_text(node, "base", "base_content")?;
             let end = offset + utf8_len(&base);
             let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
             recorder.record(
@@ -1072,7 +1072,7 @@ fn map_inline_to_nodes(
                 "span": span,
                 "ruby": {
                     "base": base,
-                    "reading": node["reading"].as_str().unwrap_or(""),
+                    "reading": ruby_component_text(node, "reading", "reading_content")?,
                     "scope": "explicit",
                     "direction": node.get("direction").and_then(Value::as_str)
                 }
@@ -1364,14 +1364,14 @@ fn inline_child_node(
             push_unrecorded_text_node(node["value"].as_str().unwrap_or(""), nodes, offset)
         }
         "ruby" => {
-            let base = ruby_base_text(node)?;
+            let base = ruby_component_text(node, "base", "base_content")?;
             let end = offset + utf8_len(&base);
             let mut ruby_node = json!({
                 "type": "ruby",
                 "span": synthetic_span(offset, end),
                 "ruby": {
                     "base": base,
-                    "reading": node["reading"].as_str().unwrap_or(""),
+                    "reading": ruby_component_text(node, "reading", "reading_content")?,
                     "scope": "explicit",
                     "direction": node.get("direction").and_then(Value::as_str)
                 }
@@ -1924,7 +1924,7 @@ fn append_visible_inline_text(
                 node.get("reading").cloned(),
                 None,
             );
-            out.push_str(&ruby_base_text(node)?);
+            out.push_str(&ruby_component_text(node, "base", "base_content")?);
         }
         "gaiji" => {
             let container_pointer = format!("{path}.gaiji");

@@ -4658,3 +4658,72 @@ fn heading_indent_and_gaiji_ruby_base_survive_conversion() {
     ));
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
+
+#[test]
+fn unresolved_gaiji_ruby_uses_child_projection_for_decoded_coordinates() {
+    for wrapper in ["paragraph", "chitsuki", "emphasis", "heading"] {
+        let (schemas, mapping) = v2_schemas_and_mapping();
+        let ruby = json!({
+            "kind": "ruby", "base": "※［＃「てへん＋諂のつくり」、13-下-25］", "reading": "ひね",
+            "base_content": [{
+                "kind": "gaiji", "description": "てへん＋諂のつくり",
+                "jis_code": "13-下-25", "resolved": null, "unresolved_reason": "unresolved"
+            }]
+        });
+        let content = json!([
+            ruby,
+            {"kind": "text", "value": "花\n\n"},
+            {"kind": "text", "value": "　六月の事なりき。年ごとに"}
+        ]);
+        let block = match wrapper {
+            "paragraph" => json!({"kind": "paragraph", "content": content}),
+            "chitsuki" => json!({"kind": "paragraph", "content": [{
+                "kind": "style", "style_type": "chitsuki", "align": "right",
+                "offset_from_end": 1, "x-provenance": "source-derived", "content": content
+            }]}),
+            "emphasis" => json!({"kind": "paragraph", "content": [{
+                "kind": "style", "style_type": "bouten", "content": content
+            }]}),
+            _ => json!({"kind": "heading", "level": 2, "style": "normal", "content": content}),
+        };
+        let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat: json!({"version": 2, "work_id": "unresolved-ruby", "meta": v2_test_meta(), "blocks": [block]}),
+            mapping, schemas: schemas.clone(), options: default_test_options(),
+        }).unwrap_or_else(|error| panic!("{wrapper}: {error}"));
+        let first = &output.parser_ir["nodes"][0];
+        let ruby_node = if first["type"] == "ruby" {
+            first
+        } else {
+            &first["inline_children"][0]
+        };
+        assert_eq!(ruby_node["ruby"]["base"], "てへん＋諂のつくり");
+        assert_eq!(ruby_node["span"]["end"], "てへん＋諂のつくり".len());
+        assert_eq!(
+            ruby_node["inline_children"][0]["span"]["end"],
+            ruby_node["span"]["end"]
+        );
+        assert!(ruby_node["inline_children"][0]["gaiji"]["unicode"].is_null());
+        assert_eq!(
+            ruby_node["inline_children"][0]["gaiji"]["raw_marker"],
+            "てへん＋諂のつくり"
+        );
+        let expected = "てへん＋諂のつくり花\n\n　六月の事なりき。年ごとに";
+        if wrapper == "heading" {
+            assert_eq!(first["text"], expected);
+            assert_eq!(first["span"]["end"], expected.len());
+        } else {
+            let nodes = output.parser_ir["nodes"].as_array().unwrap();
+            let sentences = output.parser_ir["sentences"].as_array().unwrap();
+            let text: String = sentences
+                .iter()
+                .map(|sentence| visible_text_for_sentence(nodes, sentence))
+                .collect();
+            assert_eq!(text, expected);
+            assert_eq!(
+                output.parser_ir["paragraphs"][0]["span"]["end"],
+                expected.len()
+            );
+        }
+        validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+    }
+}

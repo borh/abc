@@ -873,10 +873,19 @@ fn plain_visible_inline_text(node: &Value) -> Result<String> {
     Ok(text)
 }
 
+fn ruby_base_text(node: &Value) -> Result<String> {
+    match node.get("base_content") {
+        Some(Value::Array(children)) if !children.is_empty() => {
+            plain_visible_content_text(node.get("base_content"))
+        }
+        _ => Ok(node["base"].as_str().unwrap_or("").to_owned()),
+    }
+}
+
 fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()> {
     match node["kind"].as_str().unwrap_or("") {
         "text" => out.push_str(node["value"].as_str().unwrap_or("")),
-        "ruby" => out.push_str(node["base"].as_str().unwrap_or("")),
+        "ruby" => out.push_str(&ruby_base_text(node)?),
         "gaiji" => out.push_str(
             node["resolved"]
                 .as_str()
@@ -1035,8 +1044,8 @@ fn map_inline_to_nodes(
             map_text_node_with_quotes(node, nodes, recorder, synthetic_warnings, offset, path)
         }
         "ruby" => {
-            let base = node["base"].as_str().unwrap_or("");
-            let end = offset + utf8_len(base);
+            let base = ruby_base_text(node)?;
+            let end = offset + utf8_len(&base);
             let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
             recorder.record(
                 "INVENTION",
@@ -1340,8 +1349,8 @@ fn inline_child_node(
             push_unrecorded_text_node(node["value"].as_str().unwrap_or(""), nodes, offset)
         }
         "ruby" => {
-            let base = node["base"].as_str().unwrap_or("");
-            let end = offset + utf8_len(base);
+            let base = ruby_base_text(node)?;
+            let end = offset + utf8_len(&base);
             let mut ruby_node = json!({
                 "type": "ruby",
                 "span": synthetic_span(offset, end),
@@ -1893,7 +1902,7 @@ fn append_visible_inline_text(
                 node.get("reading").cloned(),
                 None,
             );
-            out.push_str(node["base"].as_str().unwrap_or(""));
+            out.push_str(&ruby_base_text(node)?);
         }
         "gaiji" => {
             let container_pointer = format!("{path}.gaiji");

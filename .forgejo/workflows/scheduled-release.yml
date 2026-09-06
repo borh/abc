@@ -141,22 +141,39 @@ jobs:
           export PATH="/run/current-system/sw/bin:$PATH"
           PROD=/var/lib/soranoha-runner/soranoha/production
           SERVE=/var/lib/soranoha-runner/serve
-          head="$(git -C "$PROD/chain" rev-parse main)"
+          export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
+          # Publication pushes advance origin, without moving local main.
+          git -C "$PROD/chain" fetch origin main
+          head="$(git -C "$PROD/chain" rev-parse refs/remotes/origin/main)"
+          manifest="$(git -C "$PROD/chain" show "$head:releases/HEAD")"
           umask 027
           mkdir -p "$SERVE/trees"
           chgrp soranoha-serve "$SERVE" "$SERVE/trees"
           chmod 2750 "$SERVE" "$SERVE/trees"
-          if [ -d "$SERVE/trees/$head" ] && [ "$(readlink "$SERVE/current" || true)" = "trees/$head" ]; then
-            echo "serving tree for $head already current"
-            exit 0
-          fi
           if [ ! -d "$SERVE/trees/$head" ]; then
+            staging="$(mktemp -d "$SERVE/trees/.export.XXXXXX")"
+            trap 'rm -rf -- "$staging"' EXIT
             nix run ./src#soranoha-kernel -- serving-tree \
               --chain-clone "$PROD/chain" \
               --branch main \
-              --out "$SERVE/trees/$head" \
+              --out "$staging/tree" \
               --release-pub /etc/soranoha/pinned/release.pub \
               --governance-pub /etc/soranoha/pinned/governance.pub
+            if [ "$(git -C "$PROD/chain" rev-parse refs/remotes/origin/main)" != "$head" ] ||
+               [ "$(cat "$staging/tree/releases/HEAD")" != "$manifest" ]; then
+              echo "publication head changed during export; current unchanged"
+              exit 1
+            fi
+            chmod g+rx "$staging/tree"
+            mv -T "$staging/tree" "$SERVE/trees/$head"
+          fi
+          if [ "$(cat "$SERVE/trees/$head/releases/HEAD")" != "$manifest" ]; then
+            echo "serving tree does not match publication commit $head"
+            exit 1
+          fi
+          if [ "$(readlink "$SERVE/current" || true)" = "trees/$head" ]; then
+            echo "serving tree for $head already current"
+            exit 0
           fi
           ln -s "trees/$head" "$SERVE/current.new"
           mv -T "$SERVE/current.new" "$SERVE/current"

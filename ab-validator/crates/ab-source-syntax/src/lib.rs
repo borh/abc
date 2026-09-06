@@ -223,7 +223,7 @@ impl SourceRegions {
 ///
 /// Head: the header is cut ONLY when the region between the first two
 /// dash-run separator lines carries the editorial legend
-/// (テキスト中に現れる記号について / 《》：ルビ). Dash-runs used as scene or
+/// (テキスト中に現れる記号について / 《》：ルビ / ［＃］：入力者注). Dash-runs used as scene or
 /// poem dividers carry no legend and leave the body uncut. With no separators,
 /// a two-line title/author header followed by a blank line is recognized only
 /// when a bibliographic tail is present.
@@ -249,7 +249,11 @@ pub fn aozora_body_range(source: &str) -> (core::ops::Range<usize>, usize) {
     let mut body_start = 0_usize;
     if separators.len() >= 2 {
         let legend = &source[separators[0].1..separators[1].0];
-        if legend.contains("テキスト中に現れる記号について") || legend.contains("《》：ルビ")
+        if legend.contains("テキスト中に現れる記号について")
+            || legend.contains("《》：ルビ")
+            || legend
+                .lines()
+                .any(|line| line.starts_with("［＃］：入力者注"))
         {
             body_start = skip_blank_lines(source, separators[1].1);
         }
@@ -1218,6 +1222,14 @@ mod tests {
         let src = "題名\n著者\n\n----------\n【テキスト中に現れる記号について】\n《》：ルビ\n----------\n\n本文です。\n\n底本：底本社\n";
         let (body, tail_start) = aozora_body_range(src);
         assert_eq!(&src[body], "本文です。");
+        assert!(src[tail_start..].starts_with("底本："));
+    }
+
+    #[test]
+    fn aozora_body_range_cuts_editorial_legend_without_ruby() {
+        let src = "“現代風俗”に就いて\n岸田國士\n\n----------\n［＃］：入力者注　主に外字の説明や、傍点の位置の指定\n（例）※［＃二の字点、1-2-22］\n\n〔〕：アクセント分解された欧文をかこむ\n（例）〔moe&urs〕\n----------\n\n　僕は近頃。\n\n底本：底本社\n";
+        let (body, tail_start) = aozora_body_range(src);
+        assert_eq!(&src[body], "　僕は近頃。");
         assert!(src[tail_start..].starts_with("底本："));
     }
 

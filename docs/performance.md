@@ -126,6 +126,35 @@ the full build selection. GNU time writes whole-process elapsed seconds and peak
 RSS in KiB to stderr, including startup. This is a single shared JVM per replay;
 it does not measure a new JVM for each incremental release.
 
+Assessment execution counts appear separately as `assessment-executions`; release
+counts cover every actual engine execution during preflight, building and final
+assessment. They include extraction performed before the per-work build report,
+so build-report counts alone are not total publication work. `release-phases` and
+`repeat-phases` contain inclusive timings: capture and Aozora checks nest inside
+assessment, and capture also occurs inside preflight. Do not sum nested phases.
+
+Compare unchanged publication in an existing completed replay fixture:
+
+```sh
+nix run .#soranoha-publication-replay -- \
+  --baseline /nix/store/BASELINE-soranoha-publication-replay \
+  --candidate /nix/store/CANDIDATE-soranoha-publication-replay \
+  --repeat-run /absolute/path/to/completed-publication-measurement-directory \
+  --recording /absolute/path/to/recording.json \
+  --evidence-root /absolute/path/to/retained-evidence \
+  --out /absolute/path/to/new-comparison-directory \
+  --concurrency 16
+```
+
+The comparison runs fresh JVMs in ABBA/BAAB order, measuring release, serving,
+whole-process elapsed time and peak RSS. Each child uses the recorded round for
+the fixture checkout's current commit and follows the ordinary release preflight.
+It must execute zero stages, preserve the origin's published commit and reuse the
+verified serving tree. All eight results must agree. `--repeat-run` alone runs one
+such check. These commands require the replay's local fetch and push origin,
+contained mutable state and public conformance keys; they do not resume a failed
+historical replay or accept production signing configuration.
+
 These are simulations with the supplied observations. Reusing today's retained
 assertions over old commits does not reconstruct historical website state. An
 edition absent from the supplied assessment, or one whose source changes beyond
@@ -156,6 +185,61 @@ The complete command took 1,598.89 seconds, including JVM startup, setup and all
 three repeats, with GNU time reporting 5,821,864 KiB peak RSS. Repository cloning
 took 12.97 seconds. This was an empty computation cache with available Nix closures
 and uncontrolled OS page caches. It is one baseline run, not a speedup comparison.
-The harness retains the assessment result until row emission, so the peak includes
-that result. Phase measurements and reports remain under
+That measured harness retained the assessment result until row emission, so its peak
+includes that result. The current harness discards the unused result immediately.
+Phase measurements and reports remain under
 `/data/soranoha-benchmarks/publication-20260906/run` on Speely.
+
+Publication source capture now reuses the existing extraction stage, keyed by the
+current ZIP digest, extraction version and Clojure toolchain. Source-fact bytes
+must match their CAS digest and name that same archive before assessment consumes
+them. A missing output recomputes; corrupt source-fact bytes refuse the attempt.
+The local trace store retains its existing trusted-writer boundary. Fresh HTTP
+acquisition, retained-evidence validation and assessment of current records still
+run on every attempt. An unrelated source commit reuses the same extraction;
+changed edition bytes select a new derivation.
+
+A balanced full-corpus comparison on Speely used the completed three-release
+fixture above, at `0e9ea3e586eb0aa34039fabfc85a407d2f98b165`, with 17,308 published
+works and 51,929 verified blobs. Each process started a fresh JVM against the warm
+computation cache and existing export, with concurrency 16 and the same recorded
+observations. The baseline includes the unused-assessment-result cleanup.
+
+| Metric | Baseline median | Candidate median | Median paired reduction | 95% paired bootstrap interval |
+| --- | ---: | ---: | ---: | ---: |
+| Final assessment | 30.726 s | 20.205 s | 33.7% | 32.4–35.6% |
+| Repeat release | 86.154 s | 68.629 s | 20.1% | 19.1–22.3% |
+| Serving | 47.994 s | 48.017 s | -0.4% | -3.6–3.3% |
+| Whole command, including startup | 140.600 s | 123.135 s | 12.7% | 10.7–13.8% |
+| Peak RSS | 4,822,844 KiB | 4,814,938 KiB | 0.08% | -0.19–1.21% |
+
+The assessment improvement clears the preselected 20% relevant-phase threshold;
+the largest paired peak-RSS increase was 0.19%, below the 10% guardrail. The
+candidate is retained. Serving and build times did not materially improve.
+Preflight fell from 14.595 to 7.864 seconds; the two source captures within release
+fell from 21.233 to 7.764 seconds combined, and Aozora checking from 9.636 to 6.364
+seconds. Release verification remained approximately 24.4 seconds. These nested
+phase medians identify the saved source-derivation work; they are not additive.
+
+All eight runs executed zero stages and preserved manifest
+`027f578070ab4e1ba1458583ca65e874d3f0154960c880058dc8c165093f2e2b`, publication commit
+`394ffce2eb50fc4c5493f16fb9c772a2c42a0e06`, and the reused verified export. Tests
+also cover fresh acquisition failure on cached inputs, changed editions,
+unrelated commits, missing cache outputs, and corrupt source-fact bytes. This is
+recorded-observation repeat latency, not live HTTP latency or a measured cold-start
+speedup. Four pairs describe this experiment's spread, not deployment percentiles.
+The intervals enumerate all 256 bootstrap resamples of the four paired effects.
+
+The measured programs were
+`/nix/store/42rb4snalvxllcrdg9flx81m0z66hkj7-soranoha-publication-replay` (baseline)
+and `/nix/store/psvg6nc6aajd646rlcz87n4sv5cbm3b0-soranoha-publication-replay`
+(candidate). Raw rows, process timings, stdout and stderr remain under
+`/data/soranoha-benchmarks/publication-20260906/source-facts-pairs-v2` on Speely.
+
+The integrated executable
+`/nix/store/017g8nhif5v66myljwkyn1hs64rfn3ba-soranoha-publication-replay` passed a
+further full-population repeat with the same result and zero stage executions.
+Its separately timed manifest assembly took 4.939 seconds; release took 69.297
+seconds and serving 46.840 seconds. This integration check is outside the paired
+sample. It includes the narrowed Nix sources; both resulting Rust executables are
+byte-identical to the binaries used in the comparison.

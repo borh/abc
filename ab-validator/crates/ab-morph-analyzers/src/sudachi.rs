@@ -17,6 +17,22 @@ use crate::span_builder::{RawToken, build_morphemes_from_tokens};
 use crate::{AnalyzerError, MorphAnalyzer};
 
 const SUDACHI_HARD_CHUNK_BYTES: usize = 32_000;
+const SUDACHI_SETTINGS_FILE: &str = "sudachi.json";
+
+/// Directory holding Sudachi's `sudachi.json`, `char.def`, `unk.def`, and
+/// `rewrite.def`.
+///
+/// The `sudachi` crate resolves these relative to the `CARGO_MANIFEST_DIR` it
+/// was compiled under, which is a build-sandbox path for nix-built binaries and
+/// a cargo checkout path for local builds. `AB_SUDACHI_RESOURCE_DIR` at run
+/// time wins; otherwise the value the packager baked in at compile time; and
+/// only then the crate's own default.
+fn sudachi_resource_dir() -> Option<PathBuf> {
+    if let Some(dir) = std::env::var_os("AB_SUDACHI_RESOURCE_DIR") {
+        return Some(PathBuf::from(dir));
+    }
+    option_env!("AB_SUDACHI_RESOURCE_DIR").map(PathBuf::from)
+}
 const SUDACHI_FEATURE_SUBSET: InfoSubset = InfoSubset::SURFACE
     .union(InfoSubset::POS_ID)
     .union(InfoSubset::NORMALIZED_FORM)
@@ -80,7 +96,11 @@ impl SudachiAnalyzer {
         dictionary_path: impl AsRef<Path>,
     ) -> Result<Arc<JapaneseDictionary>, AnalyzerError> {
         let dictionary_path = prepare_dictionary_path(analyzer_id, dictionary_path.as_ref())?;
-        let config = Config::new(None, None, Some(dictionary_path)).map_err(|err| {
+        let resource_dir = sudachi_resource_dir();
+        let config_file = resource_dir
+            .as_ref()
+            .map(|dir| dir.join(SUDACHI_SETTINGS_FILE));
+        let config = Config::new(config_file, resource_dir, Some(dictionary_path)).map_err(|err| {
             AnalyzerError::DictionaryLoad {
                 analyzer: analyzer_id.to_owned(),
                 message: err.to_string(),

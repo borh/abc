@@ -54,6 +54,8 @@ write_row_bundle() {
   local source_note="$3"
   local plaintext="$4"
   local publication_dir="$row_dir/publication"
+  local source_note_end
+  source_note_end=$((9 + $(printf '%s' "$source_note" | wc -c)))
 
   mkdir -p "$publication_dir"
 
@@ -68,15 +70,15 @@ write_row_bundle() {
     "normalization": "source"
   },
   "nodes": [
-    {"type": "text", "text": "吾輩", "span": {"start": 0, "end": 2}},
+    {"type": "text", "text": "吾輩", "span": {"start": 0, "end": 6, "coordinate_system": "parser_text_utf8"}},
     {
       "type": "ruby",
-      "span": {"start": 2, "end": 8},
+      "span": {"start": 6, "end": 9, "coordinate_system": "parser_text_utf8"},
       "ruby": {"base": "猫", "reading": "$reading", "scope": "explicit"}
     },
     {
       "type": "source-note",
-      "span": {"start": 8, "end": 28},
+      "span": {"start": 9, "end": $source_note_end, "coordinate_system": "parser_text_utf8"},
       "text": "$source_note",
       "note_type": "source-attribution",
       "placement": "back",
@@ -85,8 +87,8 @@ write_row_bundle() {
     }
   ],
   "paragraphs": [
-    {"id": "p000000", "span": {"start": 0, "end": 8}, "span_source": "direct", "node_range": {"start": 0, "end": 2}, "role": "body", "classification": "direct", "source_pointer": "blocks[0]"},
-    {"id": "p000001", "span": {"start": 8, "end": 28}, "span_source": "direct", "node_range": {"start": 2, "end": 3}, "role": "source-note", "classification": "heuristic", "source_pointer": "blocks[1]"}
+    {"id": "p000000", "span": {"start": 0, "end": 9, "coordinate_system": "parser_text_utf8"}, "span_source": "direct", "node_range": {"start": 0, "end": 2}, "role": "body", "classification": "direct", "source_pointer": "blocks[0]"},
+    {"id": "p000001", "span": {"start": 9, "end": $source_note_end, "coordinate_system": "parser_text_utf8"}, "span_source": "direct", "node_range": {"start": 2, "end": 3}, "role": "source-note", "classification": "heuristic", "source_pointer": "blocks[1]"}
   ],
   "warnings": [],
   "errors": []
@@ -190,8 +192,8 @@ write_row_bundle "$out_dir/rows/row-b" "ねこ" "底本：「fixture」" "吾輩
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --batch-root "$out_dir" \
   --source-region-summary "$source_region" \
-  --parser-ir-schema "$repo_root/../ab-validator/research/schemas/parser-ir.schema.json" \
-  --preservation-schema "$repo_root/../ab-validator/research/schemas/parser-ir-publication-preservation.schema.json" \
+  --parser-ir-schema "$repo_root/research/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/research/schemas/parser-ir-publication-preservation.schema.json" \
   --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --abc-commit "abc1234" \
   --command "fixture batch materialization" \
@@ -211,8 +213,8 @@ write_row_bundle "$out_dir/rows/row-c" "ねこ" "底本：「fixture」" "吾輩
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --batch-root "$out_dir" \
   --source-region-summary "$source_region" \
-  --parser-ir-schema "$repo_root/../ab-validator/research/schemas/parser-ir.schema.json" \
-  --preservation-schema "$repo_root/../ab-validator/research/schemas/parser-ir-publication-preservation.schema.json" \
+  --parser-ir-schema "$repo_root/research/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/research/schemas/parser-ir-publication-preservation.schema.json" \
   --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --abc-commit "abc1234" \
   --command "fixture batch materialization" \

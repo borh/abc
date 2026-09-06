@@ -34,22 +34,22 @@ cat > "$parser_ir" <<'JSON'
     {
       "type": "text",
       "text": "吾輩",
-      "span": {"start": 0, "end": 2}
+      "span": {"start": 0, "end": 6, "coordinate_system": "parser_text_utf8"}
     },
     {
       "type": "ruby",
-      "span": {"start": 2, "end": 8},
+      "span": {"start": 6, "end": 9, "coordinate_system": "parser_text_utf8"},
       "ruby": {"base": "猫", "reading": "ねこ", "scope": "explicit"}
     },
     {
       "type": "layout-span",
-      "span": {"start": 8, "end": 10},
+      "span": {"start": 9, "end": 11, "coordinate_system": "parser_text_utf8"},
       "text": "10",
       "layout": {"kind": "tcy", "source": "aat-inline"}
     },
     {
       "type": "source-note",
-      "span": {"start": 10, "end": 30},
+      "span": {"start": 11, "end": 59, "coordinate_system": "parser_text_utf8"},
       "text": "（古伝説と、シルレルの詩から。）",
       "note_type": "source-attribution",
       "placement": "back",
@@ -60,7 +60,7 @@ cat > "$parser_ir" <<'JSON'
   "paragraphs": [
     {
       "id": "p000000",
-      "span": {"start": 0, "end": 10},
+      "span": {"start": 0, "end": 11, "coordinate_system": "parser_text_utf8"},
       "span_source": "direct",
       "node_range": {"start": 0, "end": 3},
       "role": "body",
@@ -69,7 +69,7 @@ cat > "$parser_ir" <<'JSON'
     },
     {
       "id": "p000001",
-      "span": {"start": 10, "end": 30},
+      "span": {"start": 11, "end": 59, "coordinate_system": "parser_text_utf8"},
       "span_source": "direct",
       "node_range": {"start": 3, "end": 4},
       "role": "source-note",
@@ -205,8 +205,8 @@ JSON
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --parser-ir "$parser_ir" \
   --source-region-summary "$source_region" \
-  --parser-ir-schema "$repo_root/../ab-validator/research/schemas/parser-ir.schema.json" \
-  --preservation-schema "$repo_root/../ab-validator/research/schemas/parser-ir-publication-preservation.schema.json" \
+  --parser-ir-schema "$repo_root/research/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/research/schemas/parser-ir-publication-preservation.schema.json" \
   --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --publication-dir "$bundle_dir" \
   --summary-json "$summary_json" \
@@ -231,8 +231,8 @@ printf '吾輩猫ねこ\n（古伝説と、シルレルの詩から。）\n' > "
 python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --parser-ir "$parser_ir" \
   --source-region-summary "$source_region" \
-  --parser-ir-schema "$repo_root/../ab-validator/research/schemas/parser-ir.schema.json" \
-  --preservation-schema "$repo_root/../ab-validator/research/schemas/parser-ir-publication-preservation.schema.json" \
+  --parser-ir-schema "$repo_root/research/schemas/parser-ir.schema.json" \
+  --preservation-schema "$repo_root/research/schemas/parser-ir-publication-preservation.schema.json" \
   --validator-identity "$repo_root/data/parser-rq-publication-validator-v1.json" \
   --publication-dir "$bundle_dir" \
   --summary-json "$failed_summary_json" \

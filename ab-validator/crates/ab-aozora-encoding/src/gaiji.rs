@@ -124,6 +124,11 @@ pub fn lookup(
         return Some(Resolved::Char(ch));
     }
     if let Some(m) = mencode {
+        let prefixed = m
+            .strip_prefix("1-")
+            .map(|_| format!("第3水準{m}"))
+            .or_else(|| m.strip_prefix("2-").map(|_| format!("第4水準{m}")));
+        let m = prefixed.as_deref().unwrap_or(m);
         // Combo table first: the 25 multi-codepoint cells live only
         // here. A miss is a single PHF probe — cheap.
         if let Some(&s) = JISX0213_MENCODE_TO_STR.get(m) {
@@ -1294,6 +1299,26 @@ mod tests {
         // Confirms the early-return on `chars.next().is_none()`.
         assert_eq!(lookup(None, None, "未知の字形"), None);
         assert_eq!(lookup(None, None, "ab"), None);
+    }
+
+    #[test]
+    fn bare_numeric_references_resolve_without_changing_source_spelling() {
+        for (token, glyph) in [
+            ("1-13-26", Resolved::Char('Ⅵ')),
+            ("1-7-82", Resolved::Char('ヷ')),
+            ("1-8-78", Resolved::Char('⁉')),
+            ("1-4-87", Resolved::Multi("か\u{309a}")),
+            ("2-1-1", Resolved::Char('𠂉')),
+        ] {
+            let canonical = GaijiCanonical::from_mencode(Some(token));
+            assert_eq!(canonical.resolve("未登録の説明"), Some(glyph), "{token}");
+            let mut retained = String::new();
+            canonical.write_mencode(&mut retained).unwrap();
+            assert_eq!(retained, token);
+        }
+        for token in ["1-0-26", "1-13-95", "3-13-26", "1-13-26-extra"] {
+            assert_eq!(lookup(None, Some(token), "未登録の説明"), None, "{token}");
+        }
     }
 
     #[test]

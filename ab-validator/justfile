@@ -316,7 +316,9 @@ morph-warehouse-run-suw profile="full" aat_dir=morph_warehouse_aat_dir run_id=""
 
 # Dictionaries are nix-only. No symlinking needed: point AB_VIBRATO_DICT_DIR at
 # the combined `vibrato-dictionaries` flake output so every vibrato dictionary
-# resolves by name, and AB_SUDACHI_DICT at the sudachi dict. GC-safe (nix build
+# resolves by name, AB_VIBRATO_CACHE_DIR at the writable decompressed-dictionary
+# cache (the nix-built engine's compiled-in workspace default is a read-only
+# store path), and AB_SUDACHI_DICT at the sudachi dict. GC-safe (nix build
 # realizes the store paths); no `dictionary/compiled/` linking step.
 # Gated on input-set identity: skips the analyze-aat batch when a fresh warehouse
 # run is already indexed for these inputs (AAT content, dictionaries, analyzers,
@@ -335,6 +337,7 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 	sudachi_dic="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic"; \
 	engine_bin="$(nix build .#ab-morph-run --no-link --print-out-paths)/bin/ab-morph-run"; \
 	AB_VIBRATO_DICT_DIR="$vibrato_dir" \
+	AB_VIBRATO_CACHE_DIR="${AB_VIBRATO_CACHE_DIR:-$PWD/dictionary/compiled/.cache}" \
 	AB_SUDACHI_DICT="$sudachi_dic" \
 	python3 reports/morph-warehouse/warehouse_runner.py \
 		--aat-dir "{{aat_dir}}" \
@@ -410,6 +413,7 @@ morph-warehouse-run-lane-b works_parquet analyzers="vibrato sudachi-a sudachi-c"
 	sudachi_dic="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic"; \
 	engine_bin="$(nix build .#ab-morph-run --no-link --print-out-paths)/bin/ab-morph-run"; \
 	AB_VIBRATO_DICT_DIR="$vibrato_dir" \
+	AB_VIBRATO_CACHE_DIR="${AB_VIBRATO_CACHE_DIR:-$PWD/dictionary/compiled/.cache}" \
 	AB_SUDACHI_DICT="$sudachi_dic" \
 	python3 reports/morph-warehouse/warehouse_runner.py \
 		--aat-dir "{{aat_dir}}" \

@@ -1148,6 +1148,10 @@
           buildInputs = workspaceExtraBuildInputs;
           env = {
             AB_RESEARCH_ROOT = "${researchRoot}";
+            # Baked into the binary as the Sudachi resource-dir default (see
+            # ab-morph-analyzers::sudachi); the crate's own default is the
+            # build-sandbox path and does not exist at run time.
+            AB_SUDACHI_RESOURCE_DIR = "${sudachiRustSource}/resources";
           };
           cargoBuildFlags = [
             "--package"
@@ -1347,6 +1351,7 @@
 
             RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
             AB_SUDACHI_DICT = "${sudachiDictionaryFull}/share/sudachi/system.dic";
+            AB_SUDACHI_RESOURCE_DIR = "${sudachiRustSource}/resources";
             AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
 
             shellHook = ''

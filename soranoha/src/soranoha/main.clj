@@ -161,8 +161,8 @@
     (spit (str (fs/path out "build.json"))
           (abc-json/write-deterministic-json-str report))))
 
-(defn build!
-  [{:keys [root aozora-root assets-root concurrency clj-toolchain-id limit out]}]
+(defn- capture-build!
+  [{:keys [root aozora-root assets-root clj-toolchain-id limit out]}]
   (when (string/blank? clj-toolchain-id)
     ;; fail closed: the toolchain identity keys every pure-Clojure stage's
     ;; derivations and lands in release provenance; a constant default
@@ -179,22 +179,25 @@
           {:keys [candidates rejected]} (select/select-candidates aozora-root rows)
           candidates (if (and limit (pos? limit))
                        (vec (take limit candidates))
-                       candidates)
-          selected-work-ids (set (map #(catalog/row-work-id (:row %)) candidates))
-          _ (doseq [row rows
-                    :when (and (selected-work-ids (catalog/row-work-id row))
-                               (get row catalog/ragged-key))]
-              (throw (ex-info "selected work has a ragged catalog row"
-                              {:reason :ragged-metadata-row
-                               :work-id (catalog/row-work-id row)})))
-          store (engine/open-store! {:cas-dir (config/cas-dir root)
+                       candidates)]
+      (let [selected-work-ids (set (map #(catalog/row-work-id (:row %)) candidates))]
+        (doseq [row rows
+                :when (and (selected-work-ids (catalog/row-work-id row))
+                           (get row catalog/ragged-key))]
+          (throw (ex-info "selected work has a ragged catalog row"
+                          {:reason :ragged-metadata-row
+                           :work-id (catalog/row-work-id row)}))))
+      {:root root :commit commit :catalog-csv-hash catalog-csv-hash
+       :rows rows :candidates candidates :rejected rejected})))
+
+(defn execute-build!
+  "Run the supplied candidates with the supplied stages and export their build report."
+  [{:keys [assets-root concurrency clj-toolchain-id out]}
+   {:keys [root commit catalog-csv-hash rows candidates rejected]} stage-set]
+  (binding [assets/*root* (str assets-root)]
+    (let [store (engine/open-store! {:cas-dir (config/cas-dir root)
                                      :db-path (config/trace-db-path root)})
           rows-by-work (group-by catalog/row-work-id rows)
-          stage-set (build-stages
-                     {:clj-toolchain-id clj-toolchain-id
-                      :assets-root assets-root
-                      :adapter (stages/resolve-adapter)
-                      :profile (validate/profile-paths assets-root)})
           n (if (pos? concurrency)
               concurrency
               (.availableProcessors (Runtime/getRuntime)))
@@ -275,6 +278,14 @@
       (println (str "selected: " (count candidates)))
       (when out (println (str "exports: " (fs/absolutize out))))
       report)))
+
+(defn build! [opts]
+  (let [captured (capture-build! opts)]
+    (execute-build! opts captured
+                    (build-stages {:clj-toolchain-id (:clj-toolchain-id opts)
+                                   :assets-root (:assets-root opts)
+                                   :adapter (stages/resolve-adapter)
+                                   :profile (validate/profile-paths (:assets-root opts))}))))
 
 (defn delta!
   "Upstream-revision qualification: the three-set delta oracle over two

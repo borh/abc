@@ -139,7 +139,7 @@
     (if-let [line (first remaining)]
       (if-let [[_ n properties] (re-matches #"［＃ここから([０-９0-9]+)字下げ(、横書き、中央揃え、罫囲み)?］" line)]
         (when-not layout
-          (recur (next remaining) {:indent (decimal n) :sign? (some? properties)} lines))
+          (recur (next remaining) {:indent (decimal n) :sign? (some? properties) :start (count lines)} lines))
         (if (= line "［＃ここで字下げ終わり］")
           (when layout (recur (next remaining) nil lines))
           (recur (next remaining) layout (conj lines (assoc (parse-line line) :layout layout)))))
@@ -181,6 +181,12 @@
   (result id (if (= expected actual) "passed" "failed")
           (if (= expected actual) "Source-derived values match."
               "Source-derived values differ from the export.")))
+
+(defn- css [node]
+  (into {} (keep (fn [declaration]
+                   (let [[k v] (str/split declaration #":" 2)]
+                     (when v [(str/trim k) (str/trim v)]))))
+        (str/split (or (attr node "style") "") #";")))
 
 (defn- compare-exports [{:keys [lines notes]} doc plaintext]
   (let [mappings (into {} (map (fn [c]
@@ -251,18 +257,27 @@
                  (and (= (count source-paragraphs) (count paragraphs))
                       (every? true?
                               (map (fn [src [p _]]
-                                     (if-let [layout (:layout src)]
-                                       (and (= "jisage" (abc-attr p "layout-kind"))
-                                            (= (str "indent=" (:indent layout)) (abc-attr p "layout-params"))
-                                            (or (not (:sign? layout))
-                                                (let [style (into {} (keep (fn [declaration]
-                                                                             (let [[k v] (str/split declaration #":" 2)]
-                                                                               (when v [(str/trim k) (str/trim v)])))
-                                                                           (str/split (or (attr p "style") "") #";")))]
-                                                  (= {"writing-mode" "horizontal-tb" "text-align" "center" "border-style" "solid"}
-                                                     (select-keys style ["writing-mode" "text-align" "border-style"])))))
-                                       (not= "jisage" (abc-attr p "layout-kind"))))
+                                     (let [layout (:layout src)]
+                                       (if (and layout (not (:sign? layout)))
+                                         (and (= "jisage" (abc-attr p "layout-kind"))
+                                              (= (str "indent=" (:indent layout)) (abc-attr p "layout-params")))
+                                         (not= "jisage" (abc-attr p "layout-kind")))))
                                    source-paragraphs paragraphs))))
+     (comparison "tei-enclosing-layout"
+                 (->> lines (filter #(get-in % [:layout :sign?]))
+                      (group-by #(get-in % [:layout :start])) (sort-by key)
+                      (mapv (fn [[start group]]
+                              [(vec (range start (+ start (count group))))
+                               {"padding-inline-start" (str (get-in (first group) [:layout :indent]) "em")
+                                "writing-mode" "horizontal-tb" "text-align" "center" "border-style" "solid"}])))
+                 (let [properties ["padding-inline-start" "writing-mode" "text-align" "border-style"]]
+                   (->> (elements body "div")
+                        (filter #(seq (select-keys (css %) properties)))
+                        (mapv (fn [div]
+                                [(vec (keep-indexed (fn [index block]
+                                                      (when (some #(identical? block %) (tree-seq #(seq (children %)) children div))
+                                                        index)) blocks))
+                                 (select-keys (css div) properties)])))))
      (comparison "tei-paragraph-indentation" true
                  (and (= (count source-paragraphs) (count paragraphs))
                       (every? true?

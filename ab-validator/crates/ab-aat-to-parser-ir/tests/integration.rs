@@ -777,7 +777,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.4.0");
+    assert_eq!(mapping.mapping_version, "0.5.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -830,7 +830,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.5.0");
+    assert_eq!(mapping.mapping_version, "0.6.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -4726,4 +4726,53 @@ fn unresolved_gaiji_ruby_uses_child_projection_for_decoded_coordinates() {
         }
         validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
     }
+}
+
+#[test]
+fn source_corrections_and_one_compound_sign_survive_validated_conversion() {
+    let source = "題\n作者\n\n甍《いらか》［＃「甍の」は底本では「薨の」］先。\n［＃ここから４字下げ、横書き、中央揃え、罫囲み］\nRESTAURANT\n西洋料理店\nWILDCAT HOUSE\n山猫軒\n［＃ここで字下げ終わり］\nといふ札。\n\n底本：本\n";
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat: Value =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let mut wrong_owner = aat.clone();
+    wrong_owner["blocks"][1]["kind"] = json!("quote_block");
+    assert!(validate_value(&schemas.aat_schema, &wrong_owner, "AAT").is_err());
+    let mut wrong_children = aat.clone();
+    wrong_children["blocks"][1]["children"][0] =
+        json!({"kind": "heading", "level": 2, "style": "", "content": []});
+    assert!(validate_value(&schemas.aat_schema, &wrong_children, "AAT").is_err());
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+    let ir = &output.parser_ir;
+    let notes: Vec<_> = ir["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|node| node["type"] == "editor-note")
+        .collect();
+    assert_eq!(notes.len(), 1);
+    assert_eq!(
+        notes[0]["note"],
+        json!({"raw": "「甍の」は底本では「薨の」", "category": "correction"})
+    );
+    assert_eq!(ir["layout_blocks"].as_array().unwrap().len(), 1);
+    let block = &ir["layout_blocks"][0];
+    assert_eq!(block["paragraph_range"], json!({"start": 1, "end": 5}));
+    assert_eq!(block["indent"], 4);
+    assert_eq!(block["direction"], "horizontal");
+    assert_eq!(block["align"], "center");
+    assert_eq!(block["border"], "solid");
+    for paragraph in &ir["paragraphs"].as_array().unwrap()[1..5] {
+        assert!(
+            paragraph.get("layout").is_none(),
+            "shared border/indent belongs to its block"
+        );
+    }
+    validate_value(&schemas.parser_ir_schema, ir, "parser-IR").unwrap();
 }

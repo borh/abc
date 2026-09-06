@@ -178,16 +178,17 @@
 
 (deftest scoped-layout-preserves-every-line-and-property
   (let [s (compact-source "［＃ここから４字下げ、横書き、中央揃え、罫囲み］\nRESTAURANT\n西洋料理店\n［＃ここで字下げ終わり］\nといふ札。")
-        attrs " abc:layout-kind='jisage' abc:layout-params='indent=4' style='writing-mode: horizontal-tb; text-align: center; border-style: solid'"
-        t (compact-tei (str "<p" attrs ">RESTAURANT</p><p" attrs ">西洋料理店</p><p>といふ札。</p>"))
+        attrs " style='padding-inline-start: 4em; writing-mode: horizontal-tb; text-align: center; border-style: solid'"
+        t (compact-tei (str "<div><div" attrs "><p>RESTAURANT</p><p>西洋料理店</p></div><p>といふ札。</p></div>"))
         p "RESTAURANT\n西洋料理店\nといふ札。\n"]
     (is (= "passed" (get (report s t p) "status")))
-    (doseq [mutation [#(str/replace % "indent=4" "indent=3")
+    (doseq [mutation [#(str/replace % "padding-inline-start: 4em" "padding-inline-start: 3em")
                       #(str/replace-first % "horizontal-tb" "vertical-rl")
                       #(str/replace-first % "text-align: center" "text-align: center-invalid")
                       #(str/replace-first % "border-style: solid" "")
-                      #(str/replace % "<p>といふ札。" (str "<p" attrs ">といふ札。"))]]
-      (is (= "failed" (status (report s (mutation t) p) "tei-block-layout")))))
+                      #(str/replace % "</div><p>といふ札。</p>" "<p>といふ札。</p></div>")
+                      #(str/replace % "</p><p>西洋料理店" (str "</p></div><div" attrs "><p>西洋料理店"))]]
+      (is (= "failed" (status (report s (mutation t) p) "tei-enclosing-layout")))))
   (let [s (compact-source "［＃ここから２字下げ］\n偶因狂疾成殊類　　災患相仍不可逃\n［＃ここで字下げ終わり］\n次。")
         t (compact-tei "<p abc:layout-kind='jisage' abc:layout-params='indent=2'>偶因狂疾成殊類　　災患相仍不可逃</p><p>次。</p>")
         p "偶因狂疾成殊類　　災患相仍不可逃\n次。\n"]

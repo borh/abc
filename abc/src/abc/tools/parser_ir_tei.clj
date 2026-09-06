@@ -490,6 +490,9 @@
    (render-node-seq (initial-acc) nodes)))
 
 (defn render [parser-ir]
+  (when (seq (get parser-ir "layout_blocks"))
+    (throw (ex-info "ABC materialization does not support enclosing layout blocks; use the Soranoha renderer"
+                    {:reason :unsupported-layout-blocks})))
   (let [nodes (vec (get parser-ir "nodes"))
         paragraphs (seq (get parser-ir "paragraphs"))
         sentences (vec (get parser-ir "sentences" []))]

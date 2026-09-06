@@ -608,3 +608,7 @@
              (:char_declarations result)))
       (is (some #(= [:g {:ref "#gaiji-12-34"}] %)
                 (hiccup-nodes (:body result)))))))
+
+(deftest enclosing-layout-input-is-refused-before-materialization
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"does not support enclosing layout blocks"
+                        (parser-ir-tei/render {"layout_blocks" [{"paragraph_range" {"start" 0 "end" 1}}]}))))

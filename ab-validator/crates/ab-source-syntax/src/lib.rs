@@ -224,7 +224,9 @@ impl SourceRegions {
 /// Head: the header is cut ONLY when the region between the first two
 /// dash-run separator lines carries the editorial legend
 /// (テキスト中に現れる記号について / 《》：ルビ). Dash-runs used as scene or
-/// poem dividers carry no legend and leave the body uncut.
+/// poem dividers carry no legend and leave the body uncut. With no separators,
+/// a two-line title/author header followed by a blank line is recognized only
+/// when a bibliographic tail is present.
 ///
 /// Tail: the terminal-provenance trailer is the line whose
 /// (indent-trimmed) start is `底本：`; trailing blank lines before it are
@@ -255,6 +257,9 @@ pub fn aozora_body_range(source: &str) -> (core::ops::Range<usize>, usize) {
     if body_start == 0 {
         body_start = hyoki_note_header_end(source);
     }
+    if body_start == 0 && separators.is_empty() {
+        body_start = plain_title_author_header_end(source);
+    }
 
     let mut body_end = source.len();
     let mut tail_start = source.len();
@@ -269,6 +274,26 @@ pub fn aozora_body_range(source: &str) -> (core::ops::Range<usize>, usize) {
     }
 
     (body_start..body_end, tail_start)
+}
+
+/// A separator-free Aozora header has exactly two nonempty title/author
+/// lines followed by a blank line. Require a bibliographic tail so isolated
+/// body snippets retain their first lines.
+fn plain_title_author_header_end(source: &str) -> usize {
+    let mut lines = source.split_inclusive('\n');
+    let Some(title) = lines.next() else { return 0 };
+    let Some(author) = lines.next() else { return 0 };
+    let Some(blank) = lines.next() else { return 0 };
+    if title.trim().is_empty()
+        || author.trim().is_empty()
+        || !blank.trim().is_empty()
+        || title.contains(['［', '］'])
+        || author.contains(['［', '］'])
+        || !source.lines().any(|line| line.starts_with("底本："))
+    {
+        return 0;
+    }
+    skip_blank_lines(source, title.len() + author.len() + blank.len())
 }
 
 fn is_aozora_separator(line: &str) -> bool {
@@ -1235,6 +1260,18 @@ mod tests {
         let (body, tail_start) = aozora_body_range(src);
         assert_eq!(body, 0..src.len());
         assert_eq!(tail_start, src.len());
+    }
+
+    #[test]
+    fn separator_free_title_author_header_does_not_enter_the_body() {
+        let source = "こころ\n今野大力\n\nこころ　こころ\nくるしいこころ\n\n底本：作品集\n";
+        let (body, tail) = aozora_body_range(source);
+        assert_eq!(&source[body], "こころ　こころ\nくるしいこころ");
+        assert_eq!(&source[tail..], "底本：作品集\n");
+        let snippet = "こころ　こころ\nくるしいこころ\n\n次の連\n";
+        assert_eq!(aozora_body_range(snippet).0, 0..snippet.len());
+        let no_boundary = "こころ\n今野大力\nこころ　こころ\n底本：作品集\n";
+        assert_eq!(aozora_body_range(no_boundary).0.start, 0);
     }
 
     #[test]

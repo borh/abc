@@ -125,6 +125,7 @@ fn convert_preflighted_for_qualification(
     let mut recorder = DivergenceRecorder::new(index);
     let mut nodes = Vec::new();
     let mut paragraphs = Vec::new();
+    let mut layout_blocks = Vec::new();
     let mut synthetic_warnings = Vec::new();
     let mut offset = 0_u64;
 
@@ -132,6 +133,7 @@ fn convert_preflighted_for_qualification(
         let mut block_outputs = BlockOutputs {
             nodes: &mut nodes,
             paragraphs: &mut paragraphs,
+            layout_blocks: &mut layout_blocks,
             synthetic_warnings: &mut synthetic_warnings,
         };
 
@@ -199,6 +201,7 @@ fn convert_preflighted_for_qualification(
         "source": source,
         "nodes": nodes,
         "paragraphs": paragraphs,
+        "layout_blocks": layout_blocks,
         "warnings": warnings,
         "errors": [],
     });
@@ -266,6 +269,7 @@ fn schema_declares_sentence_segmentation(schema: &Value) -> bool {
 struct BlockOutputs<'a> {
     nodes: &'a mut Vec<Value>,
     paragraphs: &'a mut Vec<Value>,
+    layout_blocks: &'a mut Vec<Value>,
     synthetic_warnings: &'a mut Vec<Value>,
 }
 
@@ -438,6 +442,8 @@ fn map_block(
                 .all(|child| child.get("kind").and_then(Value::as_str) == Some("paragraph"))
             {
                 let layout = paragraph_layout_from_jisage_block(block);
+                let paragraph_start = outputs.paragraphs.len();
+                let block_style = block.get("block_style");
                 for (index, child) in children.into_iter().enumerate() {
                     current = map_block(
                         child,
@@ -445,10 +451,17 @@ fn map_block(
                         recorder,
                         current,
                         &format!("{path}.children[{index}]"),
-                        Some(layout.clone()),
+                        block_style.is_none().then(|| layout.clone()),
                         false,
                         heuristic_enabled,
                     )?;
+                }
+                if let Some(style) = block_style {
+                    outputs.layout_blocks.push(json!({
+                        "paragraph_range": {"start": paragraph_start, "end": outputs.paragraphs.len()},
+                        "indent": block["indent"], "direction": style["direction"],
+                        "align": style["align"], "border": style["border"], "source_pointer": path
+                    }));
                 }
             } else {
                 recorder.record(
@@ -1619,6 +1632,19 @@ fn map_raw_to_nodes(
     offset: u64,
     path: &str,
 ) -> Result<u64> {
+    let source = node.get("source").and_then(Value::as_str).unwrap_or("");
+    if let Some(annotation) = source
+        .strip_prefix("［＃")
+        .and_then(|s| s.strip_suffix('］'))
+        && (annotation.starts_with('「') || annotation.starts_with("ルビの「"))
+        && annotation.contains("」は底本では「")
+        && annotation.ends_with('」')
+    {
+        let span = map_node_span(node.get("span"), offset, offset, recorder, path)?;
+        nodes.push(json!({"type": "editor-note", "span": span,
+                          "note": {"raw": annotation, "category": "correction"}}));
+        return Ok(offset);
+    }
     let raw_pointer = format!("{path}.raw");
     if !recorder.record_if_measured(
         "UNSUPPORTED",

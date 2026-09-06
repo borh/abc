@@ -209,10 +209,21 @@
 
 (defn- render-gaiji-node
   ([acc node _depth]
-   (let [declaration (gaiji-declaration node)]
+   (let [identity (gaiji-declaration node)
+         base-id (:xml-id identity)
+         id (or (get (:gaiji-identities acc) identity)
+                (if-not (contains? (:char-declaration-ids acc) base-id)
+                  base-id
+                  (loop [ordinal 0]
+                    (let [candidate (str base-id "-at-" (get-in node ["span" "start"] 0)
+                                         (when (pos? ordinal) (str "-" ordinal)))]
+                      (if (contains? (:char-declaration-ids acc) candidate)
+                        (recur (inc ordinal)) candidate)))))
+         declaration (assoc identity :xml-id id)]
      (-> acc
+         (assoc-in [:gaiji-identities identity] id)
          (register-char-declaration declaration)
-         (append-inline (cond-> [:g {:ref (str "#" (:xml-id declaration))}]
+         (append-inline (cond-> [:g {:ref (str "#" id)}]
                           (seq (:unicode declaration)) (conj (:unicode declaration))))))))
 
 (defn- render-editor-note-node
@@ -368,6 +379,7 @@
    :back-notes []
    :char_declarations []
    :char-declaration-ids #{}
+   :gaiji-identities {}
    :node_counts {}
    :omitted []})
 
@@ -513,21 +525,54 @@
             flush-paragraph))
       (render-paragraph-row nodes acc paragraph))))
 
-(defn- render-with-paragraphs [nodes paragraphs sentences]
+(defn- validate-layout-blocks! [nodes paragraphs blocks]
+  (doseq [block blocks]
+    (let [{start "start" end "end"} (get block "paragraph_range")]
+      (when-not (and (integer? start) (integer? end) (<= 0 start) (< start end)
+                     (<= end (count paragraphs))
+                     (every? #(= "body" (get % "role")) (subvec paragraphs start end))
+                     (every? sentence-inline-node?
+                             (subvec nodes (get-in paragraphs [start "node_range" "start"])
+                                     (get-in paragraphs [(dec end) "node_range" "end"]))))
+        (throw (ex-info "Invalid layout block paragraph range" {:block block})))))
+  (doseq [a blocks b blocks
+          :let [{as "start" ae "end"} (get a "paragraph_range")
+                {bs "start" be "end"} (get b "paragraph_range")]
+          :when (< as bs ae be)]
+    (throw (ex-info "Crossing layout block ranges" {:blocks [a b]}))))
+
+(defn- layout-block-attrs [block]
+  {:type "layout"
+   :style (str "padding-inline-start: " (get block "indent") "em; "
+               "writing-mode: horizontal-tb; text-align: center; border-style: solid")})
+
+(defn- close-layout-blocks [acc frames paragraph-end]
+  (loop [acc acc frames frames]
+    (if-let [{:keys [block target start]} (peek frames)]
+      (if (= paragraph-end (get-in block ["paragraph_range" "end"]))
+        (let [children (get acc target)
+              wrapped (into [:div (layout-block-attrs block)] (subvec children start))]
+          (recur (assoc acc target (conj (subvec children 0 start) wrapped)) (pop frames)))
+        [acc frames])
+      [acc frames])))
+
+(defn- render-with-paragraphs [nodes paragraphs sentences layout-blocks]
   (validate-paragraph-ranges! nodes paragraphs)
+  (validate-layout-blocks! nodes paragraphs layout-blocks)
   (let [sentences-by-pid (sentences-by-paragraph sentences)
-        [result end] (reduce
-                      (fn [[acc prior-end] paragraph]
-                        (let [{start "start" end "end"} (paragraph-range paragraph)]
-                          [(render-paragraph-row-with-sentences
-                            nodes sentences-by-pid
-                            (-> acc
-                                (render-node-seq (subvec nodes prior-end start))
-                                flush-paragraph)
-                            paragraph)
-                           end]))
-                      [(initial-acc) 0]
-                      paragraphs)]
+        starts (group-by #(get-in % ["paragraph_range" "start"]) layout-blocks)
+        [result end _] (reduce
+                        (fn [[acc prior-end frames] [index paragraph]]
+                          (let [{start "start" end "end"} (paragraph-range paragraph)
+                                acc (-> acc (render-node-seq (subvec nodes prior-end start)) flush-paragraph)
+                                target (if (seq (:current-division acc)) :current-division :body-children)
+                                frames (into frames (map (fn [block] {:block block :target target :start (count (get acc target))})
+                                                         (sort-by #(get-in % ["paragraph_range" "end"]) > (get starts index))))
+                                rendered (render-paragraph-row-with-sentences nodes sentences-by-pid acc paragraph)
+                                [closed frames] (close-layout-blocks rendered frames (inc index))]
+                            [closed end frames]))
+                        [(initial-acc) 0 []]
+                        (map-indexed vector paragraphs))]
     (finalize-result (render-node-seq result (subvec nodes end)))))
 
 (defn- render-flat [nodes]
@@ -538,6 +583,8 @@
   (let [nodes (vec (get parser-ir "nodes"))
         paragraphs (seq (get parser-ir "paragraphs"))
         sentences (vec (get parser-ir "sentences" []))]
+    (when (and (seq (get parser-ir "layout_blocks")) (not paragraphs))
+      (throw (ex-info "Layout blocks require paragraph ranges" {})))
     (if paragraphs
-      (render-with-paragraphs nodes (vec paragraphs) sentences)
+      (render-with-paragraphs nodes (vec paragraphs) sentences (get parser-ir "layout_blocks" []))
       (render-flat nodes))))

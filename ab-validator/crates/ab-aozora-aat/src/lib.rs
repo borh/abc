@@ -898,11 +898,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..close_index].to_vec();
                 strip_boundary_newlines(&mut inner);
-                blocks.push(json!({
-                    "kind": "jisage_block",
-                    "indent": indent,
-                    "children": blocks_from_inline_content(inner)
-                }));
+                blocks.push(jisage_block(&node, indent, inner));
                 strip_next_leading_newline = true;
                 index = close_index + 1;
                 continue;
@@ -912,11 +908,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..boundary].to_vec();
                 strip_boundary_newlines(&mut inner);
-                blocks.push(json!({
-                    "kind": "jisage_block",
-                    "indent": indent,
-                    "children": blocks_from_inline_content(inner)
-                }));
+                blocks.push(jisage_block(&node, indent, inner));
                 index = boundary;
                 continue;
             }
@@ -1121,16 +1113,28 @@ fn jisage_container_indent(node: &Value) -> Option<u64> {
     simple_jisage_open_indent(source)
 }
 
+fn jisage_block(opener: &Value, indent: u64, inner: Vec<Value>) -> Value {
+    let mut block = json!({
+        "kind": "jisage_block", "indent": indent,
+        "children": blocks_from_inline_content(inner)
+    });
+    if opener["source"]
+        .as_str()
+        .is_some_and(|source| source.ends_with("、横書き、中央揃え、罫囲み］"))
+    {
+        block["block_style"] =
+            json!({"direction": "horizontal", "align": "center", "border": "solid"});
+    }
+    block
+}
+
 fn simple_jisage_open_indent(source: &str) -> Option<u64> {
     let marker = source.trim();
     if !marker.starts_with("［＃ここから") || !marker.ends_with('］') {
         return None;
     }
-    if marker.contains('、') || marker.contains("改行") || marker.contains("折り返して") {
-        return None;
-    }
     let (_, after_indent) = marker.split_once("字下げ")?;
-    if after_indent != "］" {
+    if after_indent != "］" && after_indent != "、横書き、中央揃え、罫囲み］" {
         return None;
     }
     Some(parse_aozora_number_before(marker, "字下げ").unwrap_or(1))

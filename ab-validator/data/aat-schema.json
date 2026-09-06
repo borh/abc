@@ -231,6 +231,16 @@
         "span": { "$ref": "#/$defs/span" },
         "indent": { "type": "integer", "minimum": 0 },
         "width": { "type": "integer", "minimum": 1 },
+        "block_style": {
+          "type": "object",
+          "required": ["direction", "align", "border"],
+          "additionalProperties": false,
+          "properties": {
+            "direction": { "const": "horizontal" },
+            "align": { "const": "center" },
+            "border": { "const": "solid" }
+          }
+        },
         "children": { "type": "array", "items": { "$ref": "#/$defs/block" } }
       },
       "allOf": [
@@ -241,6 +251,13 @@
         {
           "if": { "properties": { "kind": { "const": "jizume_block" } } },
           "then": { "required": ["width"] }
+        },
+        {
+          "if": { "required": ["block_style"] },
+          "then": { "properties": {
+            "kind": { "const": "jisage_block" },
+            "children": { "items": { "$ref": "#/$defs/paragraph" } }
+          } }
         }
       ]
     },

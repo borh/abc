@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors"],
   "additionalProperties": false,
@@ -38,6 +38,22 @@
         "source_path": { "type": ["string", "null"] },
         "encoding": { "type": "string", "enum": ["Shift_JIS", "UTF-8", "EUC-JP", "unknown"] },
         "normalization": { "type": "string", "enum": ["source", "NFC", "NFKC"] }
+      }
+    },
+    "layout_blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["paragraph_range", "indent", "direction", "align", "border", "source_pointer"],
+        "additionalProperties": false,
+        "properties": {
+          "paragraph_range": { "$ref": "#/$defs/nodeRange", "description": "Half-open indices into paragraphs, delimiting one enclosing layout block." },
+          "indent": { "type": "integer", "minimum": 0 },
+          "direction": { "const": "horizontal" },
+          "align": { "const": "center" },
+          "border": { "const": "solid" },
+          "source_pointer": { "type": "string" }
+        }
       }
     },
     "nodes": {
@@ -655,7 +671,7 @@
         "raw": { "type": "string" },
         "category": {
           "type": "string",
-          "enum": ["emphasis", "heading", "indentation", "page-break", "image", "caption", "external-character", "accent-mark", "ruby", "misc"]
+          "enum": ["emphasis", "heading", "indentation", "page-break", "image", "caption", "external-character", "accent-mark", "ruby", "correction", "misc"]
         }
       }
     },

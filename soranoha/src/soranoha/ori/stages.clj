@@ -136,7 +136,7 @@
   "parser-IR + metadata record + persons -> TEI XML + plaintext bytes."
   [clj-toolchain-id]
   {:stage-id "render"
-   :stage-version "4"
+   :stage-version "5"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [read-json (fn [name]
@@ -180,7 +180,7 @@
   Rights assessment and TEI schema validity are separate results."
   [clj-toolchain-id]
   {:stage-id "source-fidelity"
-   :stage-version "6"
+   :stage-version "7"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         {"source-fidelity"

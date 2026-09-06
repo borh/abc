@@ -29,18 +29,30 @@
             _ (git dir "add" "tracked.txt")
             index (bytes-at (fs/path dir ".git/index"))
             _ (spit (str tracked) "unstaged user bytes")
-            base (repo/write-commit! dir {:parents [] :files {"retained" (.getBytes "base" "UTF-8")}})
+            base (repo/write-commit! dir {:parents [] :files {"retained" (.getBytes "base" "UTF-8")
+                                                              "overwritten" (.getBytes "old" "UTF-8")}})
             other (repo/write-commit! dir {:parents [] :files {}})
+            _ (git dir "update-ref" "refs/heads/existing" base)
+            refs (git dir "for-each-ref")
             files {"日本語/名,前.txt" (.getBytes "本文" "UTF-8")
+                   "duplicate.txt" (.getBytes "本文" "UTF-8")
+                   "overwritten" (.getBytes "new" "UTF-8")
                    "tab\tname" (byte-array [(unchecked-byte 255) 0 42])
                    "line\nname" (byte-array 0)
                    "quote\"back\\slash" (.getBytes "quoted" "UTF-8")
                    "-option" (.getBytes "option" "UTF-8")}
             sh process/sh
+            launch process/process
             updates (atom 0)
+            blob-commands (atom [])
             commit (with-redefs [process/sh (fn [opts executable command & args]
                                               (when (= command "update-index") (swap! updates inc))
-                                              (apply sh opts executable command args))]
+                                              (apply sh opts executable command args))
+                                 process/process (fn [& args]
+                                                   (doseq [command ["fast-import" "hash-object"]]
+                                                     (when (some #{command} (flatten args))
+                                                       (swap! blob-commands conj command)))
+                                                   (apply launch args))]
                      (repo/write-commit! dir {:parents [base other] :base-tree-of base
                                               :files files :message "exact parents and files"}))
             tree-entries (->> (str/split (:out (process/sh {:dir (str dir) :out :string}
@@ -50,17 +62,55 @@
                                        [path (last (str/split metadata #" "))])))
                               (into {}))]
         (is (= 1 @updates) "index work is one batch, independent of file count")
+        (is (= ["fast-import"] @blob-commands) "blob writes use one importer and no per-blob processes")
         (is (= (conj (set (keys files)) "retained") (set (keys tree-entries))))
         (doseq [[path expected] (assoc files "retained" (.getBytes "base" "UTF-8"))]
           (is (= (vec expected) (read-blob dir (get tree-entries path))) path))
         (is (= [commit base other] (str/split (git dir "rev-list" "--parents" "-n" "1" commit) #" ")))
         (is (= index (bytes-at (fs/path dir ".git/index"))))
         (is (= "unstaged user bytes" (slurp (str tracked))))
+        (is (= refs (git dir "for-each-ref")))
         (is (= 1 (:exit (process/sh {:dir (str dir) :out :string :err :string} "git" "rev-parse" "--verify" "--quiet" "HEAD"))))
         (testing "an empty overlay preserves the base tree"
           (let [unchanged (repo/write-commit! dir {:parents [commit] :base-tree-of commit :files {}})]
             (is (= (git dir "rev-parse" (str commit "^{tree}"))
                    (git dir "rev-parse" (str unchanged "^{tree}")))))))
+      (finally (fs/delete-tree dir)))))
+
+(deftest failed-blob-streams-never-write-a-commit-and-clean-temporary-files
+  (let [dir (fs/create-temp-dir {:prefix "repo-writer-failure"})]
+    (try
+      (git dir "init" "-q")
+      (doseq [failure [:producer :importer]]
+        (let [created (atom [])
+              commands (atom [])
+              create fs/create-temp-file
+              launch process/process
+              sh process/sh]
+          (with-redefs [fs/create-temp-file (fn [opts]
+                                              (let [file (create opts)]
+                                                (swap! created conj file)
+                                                file))
+                        process/process (fn [args opts]
+                                          (launch (if (and (= failure :importer)
+                                                           (some #{"fast-import"} args))
+                                                    (conj (vec args) "--invalid-import-option")
+                                                    args)
+                                                  opts))
+                        process/sh (fn [opts executable command & args]
+                                     (swap! commands conj command)
+                                     (apply sh opts executable command args))]
+            (is (thrown? Exception
+                         (repo/write-commit! dir {:parents []
+                                                  :files (cond-> {"first" (.getBytes "valid" "UTF-8")}
+                                                           (= failure :producer) (assoc "second" nil))}))
+                (name failure)))
+          (is (not-any? #{"update-index" "commit-tree"} @commands))
+          (is (seq @created))
+          (doseq [path @created]
+            (is (not (fs/exists? path)))
+            (is (not (fs/exists? (str path ".lock")))))
+          (is (str/blank? (git dir "for-each-ref")))))
       (finally (fs/delete-tree dir)))))
 
 (deftest invalid-paths-refuse-the-write-and-clean-the-private-index

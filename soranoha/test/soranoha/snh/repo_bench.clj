@@ -3,8 +3,10 @@
   Run from soranoha/: clojure -Sdeps '{:paths [\"src\" \"test\"]}' -M
   -m soranoha.snh.repo-bench baseline|compare ARTIFACT-DIR FILE-COUNT PAIRS.
   Each write uses a fresh disposable Git repository; no signing seed or live ref
-  is read. The reference retains the original per-file index algorithm solely
-  to measure the effect of batching. Results are JSON on stdout."
+  is read. The reference hashes each blob in a separate process and batches
+  the index update, isolating the effect of importing blobs in one process.
+  Results are JSON on stdout. Command timings cover process/sh calls only;
+  total elapsed time also includes the streaming importer."
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
             [charred.api :as json]
@@ -16,10 +18,18 @@
     (try
       (fs/delete-if-exists index)
       (let [env {"GIT_INDEX_FILE" index}]
-        (doseq [[path bytes] (sort-by key files)]
-          (let [blob (#'repo/hash-blob! dir bytes)]
-            (#'repo/git! dir {:extra-env env} "update-index" "--add"
-                         "--cacheinfo" (str "100644," blob "," path))))
+        (when (seq files)
+          (let [entries (StringBuilder.)]
+            (doseq [[path bytes] (sort-by key files)]
+              (when (str/includes? path "\u0000")
+                (throw (ex-info "Git paths cannot contain NUL" {:path path})))
+              (let [blob (str/trim (:out (#'repo/git! dir {:in bytes} "hash-object" "-w" "--stdin")))]
+                (.append entries (str "100644 " blob "\t" path "\u0000"))))
+            (let [{:keys [err]} (#'repo/git! dir {:extra-env env
+                                                  :in (.getBytes (.toString entries) "UTF-8")}
+                                             "update-index" "-z" "--index-info")]
+              (when-not (str/blank? err)
+                (throw (ex-info "git update-index reported diagnostics" {:err err}))))))
         (let [tree (str/trim (:out (#'repo/git! dir {:extra-env env} "write-tree")))]
           (str/trim (:out (#'repo/git! dir {:extra-env (merge env @#'repo/ident-env)}
                                        "commit-tree" tree "-m" "writer benchmark")))))

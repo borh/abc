@@ -5,7 +5,8 @@
   craft deliberately invalid commits through the same writer)."
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:import [java.io BufferedOutputStream]))
 
 (def ^:private ident-env
   ;; real commit time: two racers producing byte-identical content in the
@@ -48,10 +49,33 @@
                     (str "refs/remotes/origin/" branch))]
     (when (zero? exit) (str/trim out))))
 
-(defn- hash-blob!
-  "Write `bytes` as a blob object; returns its git sha."
-  [dir ^bytes bytes]
-  (str/trim (:out (git! dir {:in bytes} "hash-object" "-w" "--stdin"))))
+(defn- import-blobs!
+  "Write blobs in one Git process, returning object IDs in input order."
+  [dir files]
+  (let [marks (str (fs/create-temp-file {:prefix "snh-marks"}))]
+    (try
+      (let [child (process/process ["git" "fast-import" "--quiet" "--done"
+                                    (str "--export-marks=" marks)]
+                                   {:dir (str dir) :in :pipe :out :string :err :string})]
+        (try
+          (with-open [out (BufferedOutputStream. (:in child))]
+            (doseq [[i [_ ^bytes bytes]] (map-indexed vector files)]
+              (.write out (.getBytes (str "blob\nmark :" (inc i) "\ndata " (alength bytes) "\n") "UTF-8"))
+              (.write out bytes)
+              (.write out (int 10)))
+            (.write out (.getBytes "done\n" "UTF-8")))
+          (process/check @child)
+          (catch Throwable e
+            (process/destroy-tree child)
+            @child
+            (throw e))))
+      (let [ids (into {} (map #(str/split % #" " 2)) (str/split-lines (slurp marks)))]
+        (mapv (fn [i]
+                (or (get ids (str ":" (inc i)))
+                    (throw (ex-info "Git import omitted a blob mark" {:mark (inc i)}))))
+              (range (count files))))
+      (finally
+        (fs/delete-if-exists marks)))))
 
 (defn write-commit!
   "Write a commit whose tree is `parent`'s tree (when given) with `files`
@@ -67,11 +91,13 @@
         (when base-tree-of
           (git! dir {:extra-env env} "read-tree" (str base-tree-of "^{tree}")))
         (when (seq files)
-          (let [entries (StringBuilder.)]
-            (doseq [[path ^bytes bytes] (sort-by key files)]
+          (let [files (sort-by key files)
+                entries (StringBuilder.)]
+            (doseq [[path _] files]
               (when (str/includes? path "\u0000")
-                (throw (ex-info "Git paths cannot contain NUL" {:path path})))
-              (.append entries (str "100644 " (hash-blob! dir bytes) "\t" path "\u0000")))
+                (throw (ex-info "Git paths cannot contain NUL" {:path path}))))
+            (doseq [[[path _] oid] (map vector files (import-blobs! dir files))]
+              (.append entries (str "100644 " oid "\t" path "\u0000")))
             (let [{:keys [err]} (git! dir {:extra-env env
                                            :in (.getBytes (.toString entries) "UTF-8")}
                                       "update-index" "-z" "--index-info")]

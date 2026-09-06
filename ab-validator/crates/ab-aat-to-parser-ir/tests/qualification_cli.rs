@@ -36,6 +36,29 @@ fn qualify_preserves_convert_parser_ir_bytes() {
     let record = temp.path().join("record.json");
     let binary = env!("CARGO_BIN_EXE_ab-aat-to-parser-ir");
 
+    let isolated_mapping = temp.path().join("mapping.json");
+    std::fs::copy(&mapping, &isolated_mapping).unwrap();
+    let embedded_output = temp.path().join("embedded.json");
+    let embedded = Command::new(binary)
+        .current_dir(temp.path())
+        .env_remove("AB_RESEARCH_ROOT")
+        .env_remove("AB_VALIDATOR_REPO_ROOT")
+        .args(["convert", "--aat"])
+        .arg(&aat)
+        .arg("--mapping")
+        .arg(&isolated_mapping)
+        .arg("--parser-ir-out")
+        .arg(&embedded_output)
+        .arg("--divergence-out")
+        .arg(temp.path().join("embedded-divergence.json"))
+        .output()
+        .unwrap();
+    assert!(
+        embedded.status.success(),
+        "{}",
+        String::from_utf8_lossy(&embedded.stderr)
+    );
+
     let convert = Command::new(binary)
         .args(["convert", "--aat"])
         .arg(&aat)
@@ -53,6 +76,11 @@ fn qualify_preserves_convert_parser_ir_bytes() {
         convert.status.success(),
         "{}",
         String::from_utf8_lossy(&convert.stderr)
+    );
+
+    assert_eq!(
+        std::fs::read(&converted).unwrap(),
+        std::fs::read(embedded_output).unwrap()
     );
 
     let qualify = Command::new(binary)

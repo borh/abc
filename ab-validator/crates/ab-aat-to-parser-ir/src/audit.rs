@@ -278,11 +278,10 @@ pub fn run_audit(config: CorpusAuditConfig) -> Result<AuditSummary> {
     let research_root = config
         .research_root
         .clone()
-        .or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from))
-        .unwrap_or_else(|| config.repo_root.join("research"));
-    let schemas = SchemaSet::load_for_aat_version(
+        .or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from));
+    let schemas = SchemaSet::for_aat_version(
         &config.repo_root,
-        &research_root,
+        research_root.as_deref(),
         mapping.source_aat_version,
     )?;
     let converter = PreparedConverter::new(mapping.clone(), schemas)?;

@@ -329,6 +329,7 @@
               ''
                 cp -R ${self}/abc abc
                 cp -R ${self}/ab-validator ab-validator
+                cp -R ${self}/soranoha soranoha
                 chmod -R u+w abc ab-validator
                 cd abc
                 export HOME="${cljDepsCache}"
@@ -360,6 +361,7 @@
               }
               ''
                 cp -R ${self}/abc abc
+                cp -R ${self}/soranoha soranoha
                 chmod -R u+w abc
                 cd abc
                 export HOME="${cljDepsCache}"

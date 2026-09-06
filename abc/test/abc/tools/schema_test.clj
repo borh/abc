@@ -47,30 +47,13 @@
                           nil
                           (catch java.io.IOException e e))))))))
 
-(def ^:private cross-project-schema-versions
-  {"schemas/annotation-output.schema.json" "0.1.0"
-   "schemas/parser-ir.schema.json" "0.9.0"
-   "schemas/aat-parser-ir-divergence.schema.json" "0.3.0"
-   "schemas/aat-parser-ir-mapping.schema.json" "0.2.4"
-   "schemas/alignment-probe-v1.schema.json" "0.1.0"
-   "schemas/analysis-recipe.schema.json" "0.1.1"
-   "schemas/analysis-result.schema.json" "0.1.2"
-   "schemas/manifest.schema.json" "0.4.4"
-   "schemas/parser-ir-publication-preservation.schema.json" "0.3.0"
-   "schemas/request-set.schema.json" "0.1.4"
-   "schemas/source-region-coverage.schema.json" "0.2.1"
-   "schemas/snapshot-index.schema.json" "0.2.0"
-   "schemas/tei-eaj-comparison.schema.json" "0.1.0"
-   "schemas/pack-policy.schema.json" "0.1.0"
-   "schemas/tokenizer-profile.schema.json" "0.1.0"
-   "schemas/token-output.schema.json" "0.1.0"
-   "schemas/workflow-run.schema.json" "0.3.0"})
-
 (deftest cross-project-schemas-carry-explicit-versions-test
-  (doseq [[path expected-version] cross-project-schema-versions]
-    (is (= expected-version
-           (get (files/read-json path) "version"))
-        (str path " must expose the cross-repo schema contract version"))))
+  (let [contracts (get (files/read-json "schemas/schema-contracts.json") "schemas")]
+    (is (seq contracts))
+    (doseq [{path "path" version "version"} contracts]
+      (is (and (string? version)
+               (= version (get (files/read-json path) "version")))
+          (str path " must expose the cross-repo schema contract version")))))
 
 (deftest source-bundle-schema-contract-test
   (let [source-bundle-schema (schema/read-schema

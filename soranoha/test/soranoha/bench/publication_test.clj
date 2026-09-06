@@ -6,6 +6,7 @@
             [soranoha.assessment.aozora :as aozora]
             [soranoha.assessment.records :as records]
             [soranoha.bench.publication :as publication]
+            [soranoha.bench.replay :as replay]
             [soranoha.core.hash :as hash]
             [soranoha.main :as main]
             [soranoha.za.corpus :as corpus]))
@@ -99,6 +100,16 @@
         (is (= [0 1 0 1 0] (mapv #(get-in % ["works-delta" "removed"]) (rest rows))))
         (is (pos? (get-in rows [1 "executed-stages"])))
         (is (every? zero? (map #(get % "executed-stages") (drop 2 rows)))))
+      (let [repeat-input (assoc input :repeat-run (:out input))
+            clone (fs/path (:out input) "chain")
+            seed (fs/path (:out input) "release.seed")
+            outside-seed (fs/path dir "fixture.seed")]
+        (replay/git! clone "remote" "set-url" "--push" "origin" "https://example.invalid/foreign.git")
+        (is (thrown-with-msg? Exception #"local origin" (publication/repeat! repeat-input)))
+        (replay/git! clone "config" "--unset" "remote.origin.pushurl")
+        (fs/move seed outside-seed)
+        (fs/create-sym-link seed outside-seed)
+        (is (thrown-with-msg? Exception #"escapes" (publication/repeat! repeat-input))))
       (is (= last-commit (main/source-provenance! source)))
       (is (thrown? java.nio.file.FileAlreadyExistsException (publication/replay! input)))
       (finally (fs/delete-tree dir) (fs/delete-tree source)))))

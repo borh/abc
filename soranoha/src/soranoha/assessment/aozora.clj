@@ -7,6 +7,7 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [soranoha.core.hash :as hash]
+            [soranoha.ported.parallel :as parallel]
             [soranoha.ported.source-bundle :as bundle]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select])
@@ -89,9 +90,9 @@
 (defn- selected [candidates slug]
   (or (get candidates slug) (refuse! "missing-selected-work")))
 
-(defn- assertion [rows candidate]
+(defn- assertion [index candidate]
   (let [id (get-in candidate [:row "作品ID"])
-        matches (filter #(= id (get % "作品ID")) rows)
+        matches (get index id)
         urls (set (map #(select-keys % ["図書カードURL" "テキストファイルURL"]) matches))
         expected-file (str "https://www.aozora.gr.jp/" (:relpath candidate))
         card (str "https://www.aozora.gr.jp/cards/"
@@ -149,66 +150,114 @@
           (when-not (= digest (hash/sha256-bytes b)) (refuse! "evidence-digest-mismatch"))
           b)))))
 
+(defn- catalog-index [bytes]
+  (group-by #(get % "作品ID") (catalog-rows bytes)))
+
+(defn- preparation-context [aozora-root evidence-root opts]
+  (let [catalog (fetch opts catalog-url)
+        index (catalog-index catalog)
+        rules (delay (fetch opts rules-url))]
+    {:index index
+     :rules rules
+     :declaration
+     (delay
+       (let [git (process/sh {:dir (str aozora-root)} "git" "rev-parse" "HEAD")
+             today (str (LocalDate/now java.time.ZoneOffset/UTC))]
+         (when-not (zero? (:exit git)) (refuse! "source-revision-unavailable"))
+         {"source_revision" (str/trim (:out git))
+          "observed_at" (or (:observed-at opts) today)
+          "decision_date" (or (:decision-date opts) today)
+          "basis" (or (:basis opts) "Reliance on Aozora's published copyright-expired classification for this exact edition in Japan.")
+          "catalog_sha256" (retain! evidence-root catalog)
+          "rules_sha256" (retain! evidence-root @rules)
+          "exception" nil}))}))
+
+(defn- prepare-edition! [evidence-root candidate context opts]
+  (let [a (assertion (:index context) candidate)
+        card (fetch opts (:card a)) file (fetch opts (:file a))
+        _ @(:rules context)
+        content-hash (bundle-hash file)]
+    (check-card! card a)
+    (when-not (= content-hash (:bundle-hash (bundle/inspect-zip (:file candidate))))
+      (refuse! "edition-content-mismatch"))
+    (locking context
+      (assoc @(:declaration context)
+             "slug" (:slug candidate) "source_content_hash" content-hash
+             "card_sha256" (retain! evidence-root card)
+             "file_sha256" (retain! evidence-root file)))))
+
 (defn prepare!
   "Acquire an official assertion for a selected edition and retain its evidence.
   The optional fetch function accepts an official URL and returns response bytes."
   [aozora-root evidence-root slug opts]
-  (let [candidate (selected (selection aozora-root) slug)
-        catalog (fetch opts catalog-url)
-        a (assertion (catalog-rows catalog) candidate)
-        card (fetch opts (:card a)) file (fetch opts (:file a))
-        rules (fetch opts rules-url)
-        content-hash (bundle-hash file)
-        _ (check-card! card a)
-        _ (when-not (= content-hash (:bundle-hash (bundle/inspect-zip (:file candidate))))
-            (refuse! "edition-content-mismatch"))
-        git (process/sh {:dir (str aozora-root)} "git" "rev-parse" "HEAD")
-        _ (when-not (zero? (:exit git)) (refuse! "source-revision-unavailable"))
-        today (str (LocalDate/now java.time.ZoneOffset/UTC))]
-    {"slug" slug "source_content_hash" content-hash
-     "source_revision" (str/trim (:out git))
-     "observed_at" (or (:observed-at opts) today)
-     "decision_date" (or (:decision-date opts) today)
-     "basis" (or (:basis opts) "Reliance on Aozora's published copyright-expired classification for this exact edition in Japan.")
-     "catalog_sha256" (retain! evidence-root catalog)
-     "card_sha256" (retain! evidence-root card)
-     "file_sha256" (retain! evidence-root file)
-     "rules_sha256" (retain! evidence-root rules)
-     "exception" nil}))
+  (let [candidate (selected (selection aozora-root) slug)]
+    (prepare-edition! evidence-root candidate
+                      (preparation-context aozora-root evidence-root opts) opts)))
+
+(defn- unavailable-reason [e]
+  (str (or (:reason (ex-data e)) "acquisition-failed")))
+
+(defn prepare-batch!
+  "Attempt each requested slug, or all selected editions when slugs is nil.
+  Return successful :records and :unavailable entries containing :slug and :reason.
+  Shared evidence is acquired once per invocation; :parallelism defaults to four."
+  [aozora-root evidence-root slugs opts]
+  (let [candidates (selection aozora-root)
+        slugs (or slugs (sort (keys candidates)))
+        context (delay (preparation-context aozora-root evidence-root opts))
+        results (parallel/ordered-pmap
+                 (or (:parallelism opts) 4)
+                 (fn [slug]
+                   (try
+                     {:record (prepare-edition! evidence-root (selected candidates slug)
+                                                @context opts)}
+                     (catch Exception e
+                       {:unavailable {:slug slug :reason (unavailable-reason e)}})))
+                 slugs)]
+    {:records (into [] (keep :record) results)
+     :unavailable (into [] (keep :unavailable) results)}))
 
 (defn- outcome [f]
   (try (f) {:state "available" :reason nil}
        (catch Exception e
-         {:state "unavailable" :reason (str (or (:reason (ex-data e)) "acquisition-failed"))})))
+         {:state "unavailable" :reason (unavailable-reason e)})))
 
 (defn check!
   "Verify retained assertions and their live applicability. A failed current
-  acquisition never falls back to a retained assertion or checkout existence."
+  acquisition never falls back to a retained assertion or checkout existence.
+  Shared evidence is read once per invocation; :parallelism defaults to four."
   ([aozora-root evidence-root records] (check! aozora-root evidence-root records {}))
   ([aozora-root evidence-root records opts]
    (let [candidates (delay (selection aozora-root))
-         live (delay (try {:rows (catalog-rows (fetch opts catalog-url))
-                           :rules (hash/sha256-bytes (fetch opts rules-url))}
-                          (catch Exception e {:error e})))]
-     (into {}
-           (for [record records]
-             [(get record "slug")
-              (outcome
-               (fn []
-                 (when (some? (get record "exception")) (refuse! "recorded-exception"))
-                 (let [candidate (selected @candidates (get record "slug"))
-                       a (assertion (catalog-rows (retained evidence-root record "catalog_sha256")) candidate)
-                       pinned (get record "source_content_hash")]
-                   (check-card! (retained evidence-root record "card_sha256") a)
-                   (when-not (= pinned (bundle-hash (retained evidence-root record "file_sha256")))
-                     (refuse! "retained-edition-mismatch"))
-                   (retained evidence-root record "rules_sha256")
-                   (when-not (= pinned (:bundle-hash (bundle/inspect-zip (:file candidate))))
-                     (refuse! "checkout-edition-mismatch"))
-                   (when-let [e (:error @live)] (throw e))
-                   (when-not (= (get record "rules_sha256") (:rules @live))
-                     (refuse! "rules-changed"))
-                   (let [current (assertion (:rows @live) candidate)]
-                     (check-card! (fetch opts (:card current)) current)
-                     (when-not (= pinned (bundle-hash (fetch opts (:file current))))
-                       (refuse! "current-edition-mismatch"))))))])))))
+         live (delay {:index (catalog-index (fetch opts catalog-url))
+                      :rules (hash/sha256-bytes (fetch opts rules-url))})
+         rules (into {} (for [[digest group] (group-by #(get % "rules_sha256") records)]
+                          [digest (delay (retained evidence-root (first group) "rules_sha256") true)]))]
+     (reduce
+      (fn [results [_ group]]
+        (let [index (delay (catalog-index (retained evidence-root (first group) "catalog_sha256")))]
+          (into results
+                (parallel/ordered-pmap
+                 (or (:parallelism opts) 4)
+                 (fn [record]
+                   [(get record "slug")
+                    (outcome
+                     (fn []
+                       (when (some? (get record "exception")) (refuse! "recorded-exception"))
+                       (let [candidate (selected @candidates (get record "slug"))
+                             a (assertion @index candidate)
+                             pinned (get record "source_content_hash")]
+                         (check-card! (retained evidence-root record "card_sha256") a)
+                         (when-not (= pinned (bundle-hash (retained evidence-root record "file_sha256")))
+                           (refuse! "retained-edition-mismatch"))
+                         @(get rules (get record "rules_sha256"))
+                         (when-not (= pinned (:bundle-hash (bundle/inspect-zip (:file candidate))))
+                           (refuse! "checkout-edition-mismatch"))
+                         (when-not (= (get record "rules_sha256") (:rules @live))
+                           (refuse! "rules-changed"))
+                         (let [current (assertion (:index @live) candidate)]
+                           (check-card! (fetch opts (:card current)) current)
+                           (when-not (= pinned (bundle-hash (fetch opts (:file current))))
+                             (refuse! "current-edition-mismatch"))))))])
+                 group))))
+      {} (group-by #(get % "catalog_sha256") records)))))

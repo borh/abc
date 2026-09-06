@@ -45,7 +45,8 @@
     (try
       (fs/create-dirs (fs/path assets "schemas"))
       (doseq [filename ["metadata-record.schema.json" "person-record.schema.json"]]
-        (fs/copy (fs/path "../abc/schemas" filename) (fs/path assets "schemas" filename)))
+        (spit (str (fs/path assets "schemas" filename))
+              (slurp (str (fs/path "../abc/schemas" filename)))))
       (let [stage (stages/metadata-stage "test" assets)
             run (fn [stage rows]
                   (engine/run-stage! store stage

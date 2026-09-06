@@ -180,7 +180,7 @@
   Rights assessment and TEI schema validity are separate results."
   [clj-toolchain-id]
   {:stage-id "source-fidelity"
-   :stage-version "4"
+   :stage-version "5"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         {"source-fidelity"

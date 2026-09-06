@@ -70,6 +70,33 @@
 
 (def ruby-pattern #"(?:｜([^｜《》\n]+)|([\p{IsHan}々〆ヵヶ]+))《([^《》\n]+)》")
 
+(defn- source-emphasis [text]
+  (let [matcher (re-matcher #"［＃「([^「」\n]+)」に傍点］" text)]
+    (loop [end 0 plain "" spans []]
+      (if (.find matcher)
+        (let [prefix (str plain (subs text end (.start matcher)))
+              target (.group matcher 1)
+              start (- (count prefix) (count target))
+              [last-start last-text] (peek spans)]
+          (when (and (str/ends-with? prefix target)
+                     (>= start (+ (or last-start 0) (count last-text))))
+            (recur (.end matcher) prefix (conj spans [start target "bouten"]))))
+        {:plain (str plain (subs text end)) :emphasis spans}))))
+
+(defn- export-emphasis [node]
+  (letfn [(walk [node offset]
+            (if (#{"rt" "note"} (.getLocalName ^Node node))
+              [offset []]
+              (if (= Node/TEXT_NODE (.getNodeType ^Node node))
+                [(+ offset (count (.getNodeValue ^Node node))) []]
+                (reduce (fn [[at spans] child]
+                          (let [[next-at child-spans] (walk child at)]
+                            [next-at (into spans child-spans)]))
+                        [offset (if (= "hi" (.getLocalName ^Node node))
+                                  [[offset (visible node) (attr node "rend")]] [])]
+                        (children node)))))]
+    (second (walk node 0))))
+
 (defn- parse-line [line]
   (let [gaijis (atom [])
         mapped (str/replace line #"※［＃[^］]*第3水準1-([0-9]+)-([0-9]+)］"
@@ -84,9 +111,11 @@
                    :else mapped)
         rubies (mapv (fn [[_ explicit implicit reading]] [(or explicit implicit) reading])
                      (re-seq ruby-pattern text))
-        plain (str/replace text ruby-pattern (fn [[_ explicit implicit _]] (or explicit implicit)))
+        unpointed (str/replace text ruby-pattern (fn [[_ explicit implicit _]] (or explicit implicit)))
+        emphasis (source-emphasis unpointed)
+        plain (or (:plain emphasis) unpointed)
         unsupported? (boolean (re-find #"[［］《》｜※�]" plain))]
-    {:plain plain :rubies rubies :gaijis @gaijis
+    {:plain plain :rubies rubies :gaijis @gaijis :emphasis (:emphasis emphasis)
      :heading (when heading (nth heading 1))
      :heading-indent (when heading
                        (Long/parseLong (apply str (map #(Character/digit ^char % 10)
@@ -121,6 +150,10 @@
                                         (elements c "mapping"))])
                                (elements doc "char")))
         body (first (elements doc "body"))
+        blocks (->> (tree-seq #(seq (children %)) children body)
+                    (filter #(and (= "http://www.tei-c.org/ns/1.0" (.getNamespaceURI ^Node %))
+                                  (#{"p" "head"} (.getLocalName ^Node %))))
+                    (remove #(str/blank? (visible %))))
         paragraphs (->> (elements body "p")
                         (map #(vector % (visible %)))
                         (remove #(str/blank? (second %))) vec)
@@ -143,11 +176,7 @@
      (comparison "tei-block-order"
                  (mapv #(vector (if (:heading %) "head" "p")
                                 (str/replace (:plain %) #"^　+" "")) lines)
-                 (->> (tree-seq #(seq (children %)) children body)
-                      (filter #(and (= "http://www.tei-c.org/ns/1.0" (.getNamespaceURI ^Node %))
-                                    (#{"p" "head"} (.getLocalName ^Node %))))
-                      (map #(vector (.getLocalName ^Node %) (visible %)))
-                      (remove #(str/blank? (second %))) vec))
+                 (mapv #(vector (.getLocalName ^Node %) (visible %)) blocks))
      (comparison "tei-headings" (vec (keep :heading lines))
                  (mapv #(visible %) (elements body "head")))
      (comparison "tei-heading-layout" true
@@ -167,6 +196,12 @@
                  (mapv #(vector (.getTextContent ^Node %)
                                 (get mappings (attr % "ref") "�"))
                        (elements body "g")))
+     (comparison "tei-emphasis"
+                 (mapv (fn [line]
+                         (mapv (fn [[start text rendition]]
+                                 [(- start (:indent line)) text rendition])
+                               (:emphasis line))) lines)
+                 (mapv export-emphasis blocks))
      (comparison "tei-paragraph-indentation" true
                  (and (= (count source-paragraphs) (count paragraphs))
                       (every? true?
@@ -216,5 +251,5 @@
      "status" (cond (statuses "failed") "failed"
                     (statuses "not-evaluated") "not-evaluated" :else "passed")
      "checks" checks
-     "limitations" ["Limited to separator-delimited Aozora prose with a 底本 colophon, basic ruby, plane-1 third-level JIS gaiji, middle headings, and leading fullwidth indentation."
+     "limitations" ["Limited to separator-delimited Aozora prose with a 底本 colophon, basic ruby, non-overlapping retrospective emphasis dots, plane-1 third-level JIS gaiji, middle headings, and leading fullwidth indentation."
                     "Blank-line spacing and title/author metadata are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))

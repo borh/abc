@@ -60,6 +60,31 @@
     (is (= "not-evaluated" (get r "status"))))
   (is (= "failed" (get (report source "<!DOCTYPE TEI SYSTEM 'file:///etc/passwd'><TEI/>" plaintext) "status"))))
 
+(deftest retrospective-emphasis-compares-location-text-and-rendition
+  (let [s (str/replace source "の　底に、" "の　底に、しだ、しだ［＃「しだ」に傍点］。")
+        t (str/replace tei "の　底に、" "の　底に、しだ、<hi rend='bouten'>しだ</hi>。")
+        p (str/replace plaintext "の　底に、" "の　底に、しだ、しだ。")]
+    (is (= "passed" (get (report s t p) "status")))
+    (doseq [[label mutation]
+            [["missing emphasis" #(str/replace % "<hi rend='bouten'>しだ</hi>" "しだ")]
+             ["wrong rendition" #(str/replace % "rend='bouten'" "rend='underline'")]
+             ["same text at wrong position" #(str/replace % "しだ、<hi rend='bouten'>しだ</hi>"
+                                                          "<hi rend='bouten'>しだ</hi>、しだ")]
+             ["wrong extent" #(str/replace % "<hi rend='bouten'>しだ</hi>" "<hi rend='bouten'>し</hi>だ")]
+             ["extra emphasis" #(str/replace % "の　底に、" "<hi rend='bouten'>の</hi>　底に、")]]]
+      (testing label
+        (is (= "failed" (status (report s (mutation t) p) "tei-emphasis")))))
+    (doseq [annotation ["［＃「ちがう」に傍点］" "［＃「しだ」に白ゴマ傍点］"
+                        "［＃「しだ」に傍点］［＃「しだ」に傍点］"]]
+      (is (= "not-evaluated"
+             (get (report (str/replace s "［＃「しだ」に傍点］" annotation) t p) "status")))))
+  (let [s (str/replace source "池《いけ》" "池《いけ》［＃「池」に傍点］")
+        t (str/replace tei "<ruby><rb>池</rb><rt>いけ</rt></ruby>"
+                       "<hi rend='bouten'><ruby><rb>池</rb><rt>いけ</rt></ruby></hi>")]
+    (is (= "passed" (get (report s t plaintext) "status"))))
+  (is (= "failed" (status (report source (str/replace tei "の　底に、" "<hi rend='bouten'>の</hi>　底に、")
+                                  plaintext) "tei-emphasis"))))
+
 (deftest supported-encoding-and-source-boundary-layout
   (let [r (fidelity/check (.getBytes source "windows-31j")
                           (.getBytes tei "UTF-8") (.getBytes plaintext "UTF-8"))]

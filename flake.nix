@@ -332,6 +332,8 @@
                   abc/test/fixtures/canonicalization/rfc8785-safe-integer-domain-abc-v1-vectors.json
                 mkdir -p abc/schemas
                 cp ${self}/abc/schemas/tei-profile.rng abc/schemas/tei-profile.rng
+                cp ${self}/abc/schemas/metadata-record.schema.json abc/schemas/metadata-record.schema.json
+                cp ${self}/abc/schemas/person-record.schema.json abc/schemas/person-record.schema.json
                 cd source
 
                 find src test -name '*.clj' -not -path '*/ported/*' -print0 \

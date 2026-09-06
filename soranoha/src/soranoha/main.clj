@@ -27,7 +27,7 @@
             [soranoha.assessment.snapshot :as assessment-snapshot]
             [soranoha.assessment.source :as assessment-source]
             [soranoha.core.config :as config]
-            [soranoha.core.hash :as core-hash]
+            [soranoha.core.canonical :as canonical]
             [soranoha.kura.engine :as engine]
             [soranoha.kura.cas :as cas]
             [soranoha.kura.trace :as trace]
@@ -70,10 +70,10 @@
                       {:aozora-root (str aozora-root) :status status})))
     commit))
 
-(defn- build-stages [{:keys [clj-toolchain-id rows-for
+(defn- build-stages [{:keys [clj-toolchain-id assets-root
                              adapter profile]}]
   {:extract (stages/extract-stage clj-toolchain-id)
-   :metadata (stages/metadata-stage clj-toolchain-id rows-for)
+   :metadata (stages/metadata-stage clj-toolchain-id assets-root)
    :parse (stages/parse-stage adapter)
    :convert (stages/convert-stage adapter)
    :render (stages/render-stage clj-toolchain-id)
@@ -89,12 +89,13 @@
   :outputs {stage-key {name hex}} :cached {stage-key bool}
   :trace-keys {stage-key derivation-key-hex}}."
   [store {:keys [extract metadata parse convert render validate fidelity]}
-   {:keys [slug row file]} catalog-hex]
+   {:keys [slug row file]} catalog-rows]
   (let [zip-hex (cas/put-file! (:cas-dir store) file)
         extract-r (engine/run-stage! store extract {"zip" zip-hex})
         facts (read-cas-json store (get (:outputs extract-r) "source-facts"))
         metadata-r (engine/run-stage! store metadata
-                                      {"catalog" catalog-hex
+                                      {"catalog-rows" (cas/put-bytes! (:cas-dir store)
+                                                                      (canonical/rfc8785-safe-integer-json-bytes-v1 catalog-rows))
                                        "work_id" (catalog/row-work-id row)})
         parse-r (engine/run-stage! store parse
                                    {"source" (get (:outputs extract-r)
@@ -188,22 +189,10 @@
                                :work-id (catalog/row-work-id row)})))
           store (engine/open-store! {:cas-dir (config/cas-dir root)
                                      :db-path (config/trace-db-path root)})
-          catalog-hex (cas/put-bytes! (:cas-dir store)
-                                      (.getBytes ^String csv-text "UTF-8"))
-          rows-cache (atom {})
-          rows-for (fn [hex]
-                     (or (get @rows-cache hex)
-                         (let [parsed (if (= hex catalog-hex)
-                                        rows
-                                        (catalog/read-rows-from-string
-                                         (String. ^bytes (cas/get-bytes
-                                                          (:cas-dir store) hex)
-                                                  "UTF-8")))]
-                           (swap! rows-cache assoc hex parsed)
-                           parsed)))
+          rows-by-work (group-by catalog/row-work-id rows)
           stage-set (build-stages
                      {:clj-toolchain-id clj-toolchain-id
-                      :rows-for rows-for
+                      :assets-root assets-root
                       :adapter (stages/resolve-adapter)
                       :profile (validate/profile-paths assets-root)})
           n (if (pos? concurrency)
@@ -212,7 +201,9 @@
           started (System/currentTimeMillis)
           results (parallel/ordered-pmap
                    n
-                   (fn [candidate] (run-work! store stage-set candidate catalog-hex))
+                   (fn [candidate]
+                     (run-work! store stage-set candidate
+                                (get rows-by-work (catalog/row-work-id (:row candidate)))))
                    candidates)
           relpath-of (into {} (map (juxt :slug :relpath)) candidates)
           ;; the report is a disposable trace-store export, but it must

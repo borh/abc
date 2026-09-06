@@ -123,14 +123,11 @@
   (json/read-json (String. ^bytes (blob hex) "UTF-8")))
 
 (def ^:private metadata-stage
-  ;; catalog (by content hash) + work id -> record + persons, purely from
-  ;; CAS content, so a catalog edit invalidates exactly this stage
   {:stage-id "metadata"
    :stage-version "1"
    :toolchain-id fixture-toolchain
    :f (fn [{:keys [blob]} inputs]
-        (let [rows (catalog/read-rows-from-string
-                    (String. ^bytes (blob (get inputs "catalog")) "UTF-8"))
+        (let [rows (blob-json blob (get inputs "catalog-rows"))
               work-id (get inputs "work_id")
               row (or (first (filter #(= work-id (catalog/row-work-id %)) rows))
                       (throw (ex-info "work id absent from catalog"
@@ -220,6 +217,7 @@
   (let [commit (main/source-provenance! root)
         {:keys [csv-text]} (catalog/read-catalog-zip root)
         rows (catalog/read-rows-from-string csv-text)
+        rows-by-work (group-by catalog/row-work-id rows)
         {:keys [candidates]} (select/select-candidates root rows)
         store (engine/open-store! {:cas-dir (str (fs/path store-root "objects"))
                                    :db-path (str (fs/path store-root
@@ -240,7 +238,7 @@
                         (map (fn [candidate]
                                [(:slug candidate)
                                 (main/run-work! store stage-set candidate
-                                                catalog-hex)]))
+                                                (get rows-by-work (catalog/row-work-id (:row candidate))))]))
                         candidates)})
       (finally (engine/close-store! store)))))
 

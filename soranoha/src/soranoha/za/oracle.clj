@@ -5,7 +5,7 @@
   of the second run is accounted for by a changed declared input (a changed
   trace key under equal, complete stage evidence). Manifest set-difference
   alone is not a delta oracle: source edits can preserve output bytes, and
-  a catalog edit fans out to every work's metadata stage without touching
+  a work's catalog edit can invalidate metadata without changing its body
   artifacts.
 
   Runs come either from the in-process harness or from decode-run over a

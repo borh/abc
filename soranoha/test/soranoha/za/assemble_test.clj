@@ -5,7 +5,7 @@
   publication transaction, and verified. Covers the include-and-flag path
   for an invalid work, manifest round-trip stability, the second-revision
   three-set delta oracle (addition, deletion, content edit, catalog
-  fan-out, output-preserving rezip), the assessment-only delta, and the
+  locality, output-preserving rezip), the assessment-only delta, and the
   totality gate."
   (:require [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]]
@@ -204,15 +204,15 @@
           (is (= #{:extract :metadata :parse :convert :render :validate :fidelity}
                  (executed (slug-of added-work)))
               "a new work executes the full chain")
-          (is (= #{:extract :metadata :parse :convert :render :validate :fidelity}
+          (is (= #{:extract :parse :convert :render :validate :fidelity}
                  (executed (slug-of merosu)))
-              "a content edit invalidates the full chain")
-          (is (= #{:extract :metadata}
+              "a content edit leaves unchanged metadata cached")
+          (is (= #{:extract}
                  (executed (slug-of flagged)))
               "an output-preserving rezip re-extracts and stops")
-          (is (= #{:metadata} (executed (slug-of guarded)))
-              "the catalog edit fans out to metadata only")
-          (is (= #{:metadata} (executed (slug-of unevaluated))))))
+          (is (= #{} (executed (slug-of guarded)))
+              "unrelated catalog edits leave this work cached")
+          (is (= #{} (executed (slug-of unevaluated))))))
 
       (testing "(c) artifact/manifest delta"
         (is (= {:added #{(slug-of added-work)}

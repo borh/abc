@@ -6,13 +6,9 @@
   (the kernel never renders RDF; the stripped functions were the only
   consumers of the Jena stack)."
   (:require [soranoha.ported.jcs :as jcs]
-            [soranoha.ported.assets :as assets]
             [soranoha.core.hash :as hash]
             [soranoha.ported.schema :as schema])
   (:import [java.time DateTimeException LocalDate]))
-
-(defn- schema-path []
-  (assets/resolve-path "schemas/person-record.schema.json"))
 
 (def ^:private full-date-shape-pattern #"^-?\d{4}-\d{2}-\d{2}$")
 
@@ -34,14 +30,14 @@
                            {:field field :value v}))))))
 
 (defn validate!
-  "Validate `record` against schemas/person-record.schema.json plus a
+  "Validate `record` against the supplied person schema plus a
   calendar-validity check for full-date shapes. Returns :ok on success;
   throws ex-info on failure with both :errors (structured error maps) and
   :errors-humanized (readable strings) for schema failures, or with
   :field/:value for calendar-validity failures."
-  [record]
+  [person-schema record]
   (let [[errors humanized] (schema/validation-errors-humanized
-                            (schema/cached-schema (schema-path)) record)]
+                            person-schema record)]
     (when (seq errors)
       (throw (ex-info "person-record validation failed"
                       {:errors errors

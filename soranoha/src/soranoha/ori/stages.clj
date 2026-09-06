@@ -17,6 +17,7 @@
             [soranoha.ported.aozora-ingest :as ingest]
             [soranoha.ported.json :as abc-json]
             [soranoha.ported.source-bundle :as source-bundle]
+            [soranoha.ported.schema :as schema]
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
@@ -70,18 +71,24 @@
                             "primary_text_hash" (:primary-text-hash inspection)})}))})
 
 (defn metadata-stage
-  "Catalog hash + work id -> validated metadata record and person records.
-  `rows-for` supplies the run-scoped catalog cache keyed by content hash."
-  [clj-toolchain-id rows-for]
-  {:stage-id "metadata"
-   :stage-version "2"
-   :toolchain-id clj-toolchain-id
-   :f (fn [_resolve inputs]
-        (let [{:keys [metadata-rec person-records]}
-              (ingest/build-records {:rows (rows-for (get inputs "catalog"))
-                                     :work-id (get inputs "work_id")})]
-          {"metadata-record" (utf8 (str (abc-json/write-deterministic-json-str metadata-rec) "\n"))
-           "persons" (json-bytes person-records)}))})
+  "Work-local catalog rows and work id -> validated metadata and person records.
+  Schema documents are captured once and are part of this stage's identity."
+  [clj-toolchain-id assets-root]
+  (let [schemas {:metadata (schema/read-schema (str (fs/path assets-root "schemas/metadata-record.schema.json")))
+                 :person (schema/read-schema (str (fs/path assets-root "schemas/person-record.schema.json")))}]
+    {:stage-id "metadata"
+     :stage-version "3"
+     :toolchain-id (core-hash/sha256-canonical-json
+                    {"clj" clj-toolchain-id
+                     "metadata-schema" (core-hash/sha256-canonical-json (:metadata schemas))
+                     "person-schema" (core-hash/sha256-canonical-json (:person schemas))})
+     :f (fn [{:keys [blob]} inputs]
+          (let [{:keys [metadata-rec person-records]}
+                (ingest/build-records
+                 {:rows (json/read-json (String. ^bytes (blob (get inputs "catalog-rows")) "UTF-8"))
+                  :work-id (get inputs "work_id") :schemas schemas})]
+            {"metadata-record" (utf8 (str (abc-json/write-deterministic-json-str metadata-rec) "\n"))
+             "persons" (json-bytes person-records)}))}))
 
 (defn parse-stage
   "Primary text bytes -> AAT JSON via the ab-aozora adapter."

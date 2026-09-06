@@ -359,8 +359,8 @@ struct PendingGaiji {
 /// gaiji is the common `※［＃…］《みは》` case; a run of adjacent gaiji is an
 /// ateji whose reading spans several glyphs (`※［＃…］※［＃…］《かいがい》`).
 ///
-/// `bar` is the span of an explicit `｜` immediately preceding the FIRST
-/// gaiji (`元｜※［＃…］《…》`): it is held out of the preceding plain run so
+/// `prefix` holds contiguous kanji before the first gaiji. `bar` holds an
+/// explicit `｜` before that prefix or gaiji, outside the preceding plain run so
 /// that, if a ruby adopts the run, the redundant base-marker `｜` is dropped
 /// instead of leaking (the gaiji run is unambiguously the base) while the
 /// ruby's source span still covers it for the tiling invariant. If no ruby
@@ -369,20 +369,22 @@ struct PendingGaiji {
 struct PendingRubyBase {
     segs: smallvec::SmallVec<[PendingGaiji; 2]>,
     bar: Option<Span>,
+    prefix: Option<Span>,
 }
 
 impl PendingRubyBase {
-    fn single(gaiji: PendingGaiji, bar: Option<Span>) -> Self {
+    fn single(gaiji: PendingGaiji, bar: Option<Span>, prefix: Option<Span>) -> Self {
         Self {
             segs: smallvec::smallvec![gaiji],
             bar,
+            prefix,
         }
     }
 
-    /// Source offset where the base starts — the held `｜` if any, else the
-    /// first gaiji. Used for the adopted ruby's tiling span.
+    /// Source offset where the base starts, including a held marker or prefix.
     fn start(&self) -> u32 {
         self.bar
+            .or(self.prefix)
             .map_or(self.segs[0].span.source_span.start, |b| b.start)
     }
 
@@ -948,7 +950,8 @@ where
                     // the rebuild closes pathological doc 50685's
                     // memcpy_memmove 25.13 % bucket and doc 49178's
                     // 22.63 %, both attributed to this hot path.
-                    if let Some((gaiji, bar)) = self.try_gaiji_emit(view, open_idx, rm_span) {
+                    if let Some((gaiji, bar, prefix)) = self.try_gaiji_emit(view, open_idx, rm_span)
+                    {
                         // Defer the emit one step: an immediately-following
                         // `《…》` ruby can adopt this gaiji as its base
                         // (`※［＃…］《みは》`). When this gaiji is
@@ -973,7 +976,8 @@ where
                             if let Some(old) = self.pending_ruby_base.take() {
                                 self.emit_pending_gaiji(old);
                             }
-                            self.pending_ruby_base = Some(PendingRubyBase::single(gaiji, bar));
+                            self.pending_ruby_base =
+                                Some(PendingRubyBase::single(gaiji, bar, prefix));
                         }
                         return;
                     }
@@ -1293,7 +1297,7 @@ where
     /// `pending_ruby_base` (`※［＃…］《みは》`) — the gaiji resolves to a glyph
     /// distinct from its source and was emitted as its own node, so there
     /// is no plain run to walk back over. Adopts the gaiji as a
-    /// structured base, including a following contiguous kanji run; the
+    /// structured base, including preceding and following kanji runs; the
     /// reading is built from the `《…》` body as
     /// for a plain-base ruby. See [`GaijiBaseRuby`] for the outcomes.
     fn try_ruby_over_gaiji_base(
@@ -1356,6 +1360,13 @@ where
             .iter()
             .map(|g| self.alloc.seg_gaiji(g.payload))
             .collect();
+        if let Some(prefix) = pending.prefix {
+            segs.insert(
+                0,
+                self.alloc
+                    .seg_text(&self.source[prefix.start as usize..prefix.end as usize]),
+            );
+        }
         if pending.end() < open_span.start {
             segs.push(
                 self.alloc
@@ -1620,7 +1631,7 @@ where
         body: BodyView<'_>,
         bracket_open_idx: usize,
         refmark_span: Span,
-    ) -> Option<(PendingGaiji, Option<Span>)> {
+    ) -> Option<(PendingGaiji, Option<Span>, Option<Span>)> {
         let mut ctx = RecogniseCtx {
             alloc: self.alloc,
             source: self.source,
@@ -1629,7 +1640,7 @@ where
             pending_decoration: None,
         };
         let m = ctx.recognize_gaiji(body, refmark_span, bracket_open_idx)?;
-        // An explicit `｜` (U+FF5C) immediately before the gaiji is a
+        // An explicit `｜` (U+FF5C) before the kanji prefix or gaiji is a
         // base-start marker for a following ruby. Hold it out of the plain
         // run so `try_ruby_over_gaiji_base` can drop the redundant marker on
         // adoption (the gaiji is unambiguously the base), or `emit_pending_gaiji`
@@ -1638,15 +1649,30 @@ where
         // per parse would leave the next `｜` adjacent to the gaiji, so
         // re-serialising `｜｜※…《…》` would keep peeling one bar off each pass
         // and never reach a fixed point (fmt-idempotence).
-        let before = &self.source[..m.consume_start as usize];
+        let prefix = self.pending_plain_start().and_then(|start| {
+            let before = &self.source[start as usize..m.consume_start as usize];
+            before
+                .char_indices()
+                .rev()
+                .take_while(|(_, ch)| is_ruby_base_char(*ch))
+                .last()
+                .map(|(offset, _)| {
+                    Span::new(
+                        start + u32::try_from(offset).expect("source offset fits u32"),
+                        m.consume_start,
+                    )
+                })
+        });
+        let prefix_start = prefix.map_or(m.consume_start, |p| p.start);
+        let before = &self.source[..prefix_start as usize];
         let bar_start = before.trim_end_matches('\u{ff5c}').len();
         let bar = (bar_start < before.len()).then(|| {
             Span::new(
                 u32::try_from(bar_start).expect("bar-run start is within the source (u32)"),
-                m.consume_start,
+                prefix_start,
             )
         });
-        self.flush_plain_up_to(bar.map_or(m.consume_start, |b| b.start));
+        self.flush_plain_up_to(bar.map_or(prefix_start, |b| b.start));
         let node = self.alloc.gaiji(m.payload);
         self.pending_plain.clear();
         // The gaiji still renders best-effort (as its description text)
@@ -1675,12 +1701,13 @@ where
                 payload: m.payload,
             },
             bar,
+            prefix,
         ))
     }
 
     /// Emit a deferred gaiji run that no ruby adopted: re-emit its held `｜`
     /// base-marker (if any) as plain first — restoring the `元｜※［＃…］`
-    /// shape — then every gaiji span in source order.
+    /// shape — then the held kanji prefix and gaiji spans in source order.
     fn emit_pending_gaiji(&mut self, pending: PendingRubyBase) {
         if let Some(bar) = pending.bar {
             self.push_output(ClassifiedSpan {
@@ -1688,6 +1715,14 @@ where
                     provenance: PlainProvenance::RecoveredVerbatim,
                 }),
                 source_span: bar,
+            });
+        }
+        if let Some(prefix) = pending.prefix {
+            self.push_output(ClassifiedSpan {
+                kind: SpanKind::Plain(PlainSpan {
+                    provenance: PlainProvenance::Text,
+                }),
+                source_span: prefix,
             });
         }
         for gaiji in pending.segs {
@@ -2559,6 +2594,55 @@ mod tests {
         assert_eq!(segments.len(), 2);
         assert!(matches!(segments[0], Segment::Gaiji(_)));
         assert!(matches!(segments[1], Segment::Text(t) if out.s(t) == "陀多"));
+    }
+
+    #[test]
+    fn implicit_ruby_includes_kanji_before_gaiji() {
+        for (prefix, marker, reading) in [
+            ("袁", "※［＃「にんべん＋參」、第4水準2-1-79］", "えんさん"),
+            (
+                "幽",
+                "※［＃「帚」の「冖／巾」に代えて「火」、第3水準1-87-36］",
+                "ゆうれい",
+            ),
+        ] {
+            let source = format!("の{prefix}{marker}《{reading}》");
+            run!(out, &source);
+            let Node::Ruby(r) = out.only_aozora() else {
+                panic!("expected Ruby")
+            };
+            assert_eq!(out.spans.len(), 2);
+            assert_eq!(out.spans[0].source_span, Span::new(0, 3));
+            assert_eq!(out.spans[1].source_span.start, 3);
+            assert_eq!(out.plain(r.reading), Some(reading));
+            let base = out.contents(r.base);
+            let [Content::Segments(range)] = base[..] else {
+                panic!("expected structured base")
+            };
+            let segments = out.store.resolve_seg_range(range);
+            assert_eq!(segments.len(), 2);
+            assert!(matches!(segments[0], Segment::Text(t) if out.s(t) == prefix));
+            assert!(matches!(segments[1], Segment::Gaiji(_)));
+        }
+    }
+
+    #[test]
+    fn deferred_kanji_prefix_preserves_source_without_a_reading() {
+        for suffix in ["", "。", "《》", "《えんさん", "\n本文"] {
+            let source = format!("の袁※［＃「にんべん＋參」、第4水準2-1-79］{suffix}");
+            run!(out, &source);
+            assert!(
+                !out.spans
+                    .iter()
+                    .any(|s| matches!(s.kind, SpanKind::Aozora(Node::Ruby(_))))
+            );
+            let mut end = 0;
+            for span in &out.spans {
+                assert_eq!(span.source_span.start, end);
+                end = span.source_span.end;
+            }
+            assert_eq!(end as usize, source.len());
+        }
     }
 
     #[test]

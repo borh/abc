@@ -202,8 +202,12 @@
           results (parallel/ordered-pmap
                    n
                    (fn [candidate]
-                     (run-work! store stage-set candidate
-                                (get rows-by-work (catalog/row-work-id (:row candidate)))))
+                     (try
+                       (run-work! store stage-set candidate
+                                  (get rows-by-work (catalog/row-work-id (:row candidate))))
+                       (catch Exception e
+                         (throw (ex-info (ex-message e)
+                                         (assoc (ex-data e) :slug (:slug candidate)) e)))))
                    candidates)
           relpath-of (into {} (map (juxt :slug :relpath)) candidates)
           ;; the report is a disposable trace-store export, but it must

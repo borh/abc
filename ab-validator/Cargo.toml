@@ -35,11 +35,7 @@ members = [
 resolver = "2"
 exclude = [
     "references",
-    # excluded: enables serde_json/preserve_order deliberately, to prove
-    # converter canonicalization; must never join the root workspace. This is
-    # now the deliberate preserve_order consumer in this workspace, following
-    # the Phase 2 shim deletion (checkpoint contract); the narrowed
-    # feature-unification rule lives in the 2026-07-10 provenance handoff.
+    # Isolate the canary's serde_json/preserve_order feature from the workspace.
     "tools/preserve-order-canary",
 ]
 
@@ -48,12 +44,7 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 
-# Lifted verbatim from the aozora upstream workspace root (rev 1a4f864,
-# ADR 0032 hard detach) so the `ab-aozora-*` crates' `[lints] workspace =
-# true` / `[lints.rust] ...` stanzas resolve unchanged. Scoped: Cargo
-# only applies `[workspace.lints]` to member crates that opt in via
-# `[lints] workspace = true`; no other ab-validator crate does, so this
-# has zero effect outside the lifted `ab-aozora-*` crates.
+# Member crates opt into these lints with `[lints] workspace = true`.
 [workspace.lints.rust]
 unsafe_code = "forbid"
 non_ascii_idents = "deny"
@@ -138,12 +129,7 @@ module_name_repetitions = "allow"
 multiple_crate_versions = "allow"
 missing_const_for_fn = "allow"
 redundant_pub_crate = "allow"
-# ab-validator-fork addition (not in upstream's table): `cargo_common_metadata`
-# inspects the whole resolved workspace's package metadata, not just the
-# opted-in crate being compiled. Enabling `clippy::cargo` here (verbatim from
-# upstream) surfaces pre-existing metadata gaps in unrelated, non-`ab-aozora-*`
-# ab-validator crates that never opted into any lint policy — fixing those is
-# out of scope for a rename-only parser lift (Task 3).
+# Cargo metadata lint inspects unrelated workspace packages as well.
 cargo_common_metadata = "allow"
 # `large_enum_variant`: SpanKind::Aozora already wraps its inner
 # `AozoraNode` in `Box` (~8 bytes ptr) to keep the variant data 7×

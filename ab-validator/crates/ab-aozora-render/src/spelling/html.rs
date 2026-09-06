@@ -346,7 +346,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             if center {
                 writer.write_str(" aozora-container-center")?;
             }
-            // #78 secondary line-layout: 字組み grid gets its own class,
+            // secondary line-layout: 字組み grid gets its own class,
             // 字詰め reuses the standalone line-width class (same semantics).
             match layout {
                 IndentLayout::Kumi(_) => {
@@ -357,7 +357,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
                 }
                 IndentLayout::None => {}
             }
-            // #78 co-applied decorative styles — flat classes on the same
+            // co-applied decorative styles — flat classes on the same
             // `<div>` (close stays a single `</div>`), reusing each
             // attribute's standalone-container class so one stylesheet rule
             // serves both forms. Canonical order = gothic, horizontal, framed,
@@ -982,10 +982,10 @@ mod tests {
 
     #[test]
     fn referenced_contiguous_forward_styles_referent_once() {
-        // #333: the non-adjacent referent 青空 is now styled in place (a
+        // the non-adjacent referent 青空 is now styled in place (a
         // `Detached` decoration spliced into the plain run), while the bracket
         // stays `Referenced` and renders nothing. 青空 still appears exactly
-        // once — the styling is added, the #228 no-double-render invariant holds.
+        // once — the styling is added, the no-double-render invariant holds.
         let html = render("青空の下を歩く［＃「青空」に傍点］");
         assert_eq!(
             html,
@@ -997,11 +997,11 @@ mod tests {
 
     #[test]
     fn referenced_ruby_base_forward_styles_base_once() {
-        // #384: the forward target 我 is a ruby base, so it cannot be pulled into
+        // the forward target 我 is a ruby base, so it cannot be pulled into
         // a plain forward leaf; the lowering pass instead decorates the ruby's
         // base (render-only `base_emphasis`). The bracket stays `Referenced` and
         // renders nothing, so 我 appears exactly once — now styled inside the
-        // `<ruby>`, before the `<rt>` — and the #228 no-double-render invariant
+        // `<ruby>`, before the `<rt>` — and the no-double-render invariant
         // still holds.
         let html = render("我《われ》の名は［＃「我」に傍点］");
         assert_eq!(
@@ -1009,7 +1009,7 @@ mod tests {
             "<p><ruby><em class=\"aozora-bouten aozora-bouten-goma aozora-bouten-right\">我</em><rp>(</rp><rt>われ</rt><rp>)</rp></ruby>の名は</p>\n"
         );
         assert_eq!(html.matches("我").count(), 1, "我 must not duplicate");
-        assert!(html.contains("<em"), "ruby base now styled (#384): {html}");
+        assert!(html.contains("<em"), "ruby base must be styled: {html}");
     }
 
     #[test]

@@ -62,11 +62,11 @@ let
           -xsl:${teiStylesheets}/xml/tei/stylesheet/odds/extract-isosch.xsl \
           -o:tei-profile.sch \
           lang=en
-        # Build-artifact canonicalization (ADR 0012). Narrow rewrites; the
+        # Build-artifact canonicalization uses narrow rewrites; the
         # ODD remains source of truth.
         # 1. Strip non-deterministic generation timestamps so rebuilds are
         #    byte-stable.
-        # 2. Rewrite ABC pattern IDs from
+        # 2. Rewrite profile pattern IDs from
         #    `schematron-constraint-<ident>-<seq>` back to the `<ident>` the
         #    ODD's constraintSpec/@ident declared. Inherited TEI built-in
         #    pattern IDs are left untouched.
@@ -75,9 +75,8 @@ let
         sed -E -i 's|id="schematron-constraint-(abc-[a-z0-9-]+)-[0-9]+"|id="\1"|g' tei-profile.sch
         sed -E -i 's|id="abc-tei-v0-(abc-[a-z0-9-]+)-constraint-rule-[0-9]+"|id="\1"|g' tei-profile.sch tei-profile.rng
         # Drop inherited TEI built-in patterns that the ODD did not declare.
-        # The committed v0 Schematron artifact is the ABC profile policy
-        # surface; inherited TEI diagnostics remain out-of-scope until ABC
-        # explicitly adopts them. This also preserves compatibility with
+        # The committed Schematron contains only explicitly declared profile policy.
+        # This also preserves compatibility with
         # ph-schematron's stricter pure ISO model, which rejects the inherited
         # TEI sch:let / role="nonfatal" constructs even though the XSLT path can
         # execute them.

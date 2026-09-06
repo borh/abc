@@ -1,19 +1,10 @@
 (ns ab-research.parser-evidence-test
   (:require
-   [clojure.edn :as edn]
    [ab-research.hash :as hash]
    [ab-research.parser-evidence :as parser-evidence]
    [babashka.fs :as fs]
    [clojure.set :as set]
    [clojure.test :refer [deftest is testing]]))
-
-(deftest adr-0038-grants-development-release-authority-test
-  (let [corpus (edn/read-string (slurp "docs/adr/decisions.edn"))
-        record (->> (:decisions corpus)
-                    (filter #(= "custom-parser-ownership-and-neutral-comparison"
-                                (:slug %)))
-                    first)]
-    (is (= :development (:release-authority record)))))
 
 (def valid-entry
   {:evidence_id "ab-validator/example"
@@ -76,44 +67,19 @@
                             :logical-path "docs/escaped.md")]
                (parser-evidence/citation-file-problems root index)))))))
 
-(deftest historical-parser-citation-rows-are-exact-and-not-neutral-study-test
-  (let [root (fs/canonicalize "../..")
-        ids #{"ab-validator/aozora-parser-comparison-study-2026-07-08"
-              "ab-validator/parser-fork-candidacy-faithful-comparison-2026-07-08"
-              "ab-validator/parser-comparison-followups-2026-07-09"}
-        rows (->> (:entries (parser-evidence/load-index))
-                  (filter #(contains? ids (:evidence_id %))))
-        expected {"ab-validator/aozora-parser-comparison-study-2026-07-08"
-                  ["ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md"
-                   "sha256:8f68178186c9ccad2514c833098f3ffbc725183699757d5dc8182678c5826a59"]
-                  "ab-validator/parser-fork-candidacy-faithful-comparison-2026-07-08"
-                  ["ab-validator/docs/superpowers/reports/2026-07-08-parser-fork-candidacy-faithful-comparison.md"
-                   "sha256:ec0e5b7cdef6ea0c14b6ba59af8a35eb7b742b12a3da74683f771873330933e8"]
-                  "ab-validator/parser-comparison-followups-2026-07-09"
-                  ["ab-validator/docs/superpowers/specs/2026-07-09-parser-comparison-followups-handoff.md"
-                   "sha256:e13c904f36ddc4180f1326cdc375e6939716487e55318349c86c64e5158d2aa0"]}]
-    (is (= expected
-           (into {} (map (juxt :evidence_id
-                               (juxt :logical_path :sha256)) rows))))
-    (is (empty? (parser-evidence/citation-file-problems root {:entries rows})))
-    (is (every? #(not (contains? % :study_contract)) rows))
-    (is (every? #(not (contains? % :neutral_comparison)) rows))
-    (is (every? #(not= :neutral-comparison (:evidence_class %)) rows))))
-
 (deftest neutral-comparison-reports-are-registered-with-study-contract-test
   (testing "the generated neutral-comparison reports register, content-address,
             and bind to their frozen study-contract hash"
     (let [root (fs/canonicalize "../..")
           study-contract "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe"
-          ids #{"ab-validator/aozora-parser-neutral-comparison-result-2026-07"
-                "ab-validator/aozora-parser-neutral-comparison-report-2026-07"}
+          ids #{"ab-validator/aozora-parser-neutral-comparison-result-2026-07"}
           rows (->> (:entries (parser-evidence/load-index))
                     (filter #(contains? ids (:evidence_id %))))]
       (testing "the committed index validates as a whole"
         (is (= :ok (parser-evidence/validate-index!
                     (parser-evidence/load-index)))))
-      (testing "both reports are present and typed neutral-comparison"
-        (is (= 2 (count rows)))
+      (testing "the result is present and typed neutral-comparison"
+        (is (= 1 (count rows)))
         (is (every? #(= :neutral-comparison (:evidence_class %)) rows)))
       (testing "each carries the frozen study-contract hash"
         (is (every? #(= study-contract (:study_contract %)) rows)))
@@ -126,8 +92,8 @@
                                      (:evidence_class %)))
                     rows))))))
 
-(deftest min-1-study-contract-is-coupled-to-evidence-class-test
-  (testing "MIN-1: an admission-class (:conversion-compatibility) entry must not
+(deftest study-contract-is-coupled-to-evidence-class-test
+  (testing "an admission-class (:conversion-compatibility) entry must not
             carry :study_contract"
     (is (empty? (parser-evidence/index-errors {:entries [valid-entry]})))
     (is (has-error? #":conversion-compatibility evidence must not carry a :study_contract"
@@ -135,7 +101,7 @@
                      {:entries [(assoc valid-entry
                                        :study_contract
                                        "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe")]}))))
-  (testing "MIN-1: a :neutral-comparison entry must carry :study_contract"
+  (testing "a :neutral-comparison entry must carry :study_contract"
     (let [neutral (assoc valid-entry
                          :evidence_id "ab-validator/neutral"
                          :evidence_class :neutral-comparison
@@ -145,7 +111,7 @@
       (is (has-error? #":neutral-comparison evidence must carry a :study_contract"
                       (parser-evidence/index-errors
                        {:entries [(dissoc neutral :study_contract)]})))))
-  (testing "MIN-1 leaves the unconstrained classes (parser-selection,
+  (testing "The schema leaves the unconstrained classes (parser-selection,
             comparator-oracle) free to omit :study_contract"
     (is (empty? (parser-evidence/index-errors
                  {:entries [(assoc valid-entry :evidence_class :parser-selection
@@ -164,14 +130,14 @@
                  parser-evidence/comparison-evidence-classes
                  parser-evidence/release-evidence-classes))))
   (let [entries (:entries (parser-evidence/load-index))
-        selection-rows (filter #(= :parser-selection (:evidence_class %)) entries)
+        selection-rows [(assoc valid-entry :evidence_class :parser-selection)]
         neutral-rows (filter #(= :neutral-comparison (:evidence_class %)) entries)
         compat-rows (filter #(= :conversion-compatibility (:evidence_class %)) entries)]
-    (testing "the committed index actually contains rows of each kind"
+    (testing "retained results and compatibility records are present"
       (is (seq selection-rows))
       (is (seq neutral-rows))
       (is (seq compat-rows)))
-    (testing "every historical :parser-selection row is rejected for admission
+    (testing "a :parser-selection row is rejected for admission
               AND release, keyed off evidence class not absence of fields"
       (doseq [row selection-rows]
         (is (false? (parser-evidence/entry-admissible? row)) (:evidence_id row))

@@ -49,19 +49,7 @@
     (is (#'rq-source/recognition-identity-valid? production-identity))))
 
 (deftest an-identity-naming-a-different-instrument-cannot-produce-an-observation
-  ;; The seam that makes a semantic instrument change fail closed.
-  ;;
-  ;; `instrument_versions.source_span_coverage` is taken from the predicate
-  ;; set's declared `:instrument`, and the committed instrument is this
-  ;; namespace's constant. When the measure changes, the constant moves and the
-  ;; predicate set does not, so the two disagree until the predicate's owner
-  ;; declares a contract for what is now measured. Disagreement must yield
-  ;; `:unavailable`, never a value scored against the old threshold.
-  ;;
-  ;; The quarantine this test once held open was lifted 2026-07-31: the
-  ;; predicate owner redeclared `:= 1.0` for the v4 body denominator, so the
-  ;; predicate set now names the committed instrument. The seam itself is
-  ;; unchanged -- an identity naming any OTHER version must still be refused.
+  ;; Thresholds apply only to observations from their declared instrument version.
   (is (not (#'rq-source/recognition-identity-valid?
             (assoc-in recognition-identity
                       [:instrument_versions :source_span_coverage]
@@ -779,11 +767,7 @@
         (is (= :unavailable
                (:status (rq-source/derive-source-recognition-envelope
                          store malformed aggregate recognition-identity)))))))
-  ;; A P0-only capture -- one carrying the accountability aggregate but no
-  ;; recognition evidence -- reports `instrument-missing`. It has no other
-  ;; value available to report: the node-span observation this could once have
-  ;; fallen back to was retired, so the fallback is now structurally
-  ;; impossible rather than merely rejected.
+  ;; Accountability totals cannot substitute for missing recognition evidence.
   (with-capture (retired-p1-aggregate-value) {:value 10 :unit "decoded_utf8_bytes"}
     (fn [{:keys [store manifest]}]
       (is (= {:value :instrument-missing

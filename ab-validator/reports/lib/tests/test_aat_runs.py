@@ -1,9 +1,8 @@
-"""Characterization tests for AAT run-set resolution (fidelity Phase 1).
+"""Characterization tests for AAT run-set resolution.
 
 The run-set manifest is the SOLE authority for dump selection: a stale
 `AB_*_AAT_DIR` in the ambient shell must NOT override the pinned value, even if
-the adapter entry still carries a legacy `*_env` field. See
-docs/superpowers/specs/2026-07-09-fidelity-run-idempotency-design.md (F1/F2).
+the adapter entry still carries a legacy `*_env` field.
 
 Run: python3 -m unittest reports.lib.tests.test_aat_runs   (from ab-validator/)
   or: python3 reports/lib/tests/test_aat_runs.py

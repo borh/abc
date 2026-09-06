@@ -6,19 +6,6 @@
 //! Aozora notation marker characters listed in [`TriggerKind`];
 //! everything else flows into [`Token::Text`] runs.
 //!
-//! Two production-ready surfaces sit side by side:
-//!
-//! - [`tokenize`] — streaming `impl Iterator<Item = Token>`, kept for
-//!   FFI / incremental / pull-based consumers that have no arena.
-//! - `tokenize_in` — arena-batch `BumpVec<'a, Token>` allocated
-//!   inside the caller's `Arena`; the scratch trigger /
-//!   newline offset buffers used during the merge walk also live in
-//!   the arena.
-//!
-//! The Aozora pipeline drives `tokenize_in` because it already owns an
-//! arena; benchmarks and FFI shims that want lazy semantics use
-//! `tokenize`. There is no third "heap-batch" entry point.
-//!
 //! ## Algorithm
 //!
 //! 1. [`ab_aozora_scan::scan_offsets`] returns the byte offsets of every

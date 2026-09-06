@@ -1,28 +1,7 @@
-# Manually dispatched publication on the dedicated repository runner.
-# The private tailnet deployment uses the ordinary signed release path.
-# Public exposure requires the fresh-genesis procedure in
-# docs/private-publication.md.
-#
-# The contract carried here:
-#   - runs ONLY on the dedicated repository-scoped runner (label
-#     soranoha-release; registration verified server-side as bound to this
-#     repository alone).
-#   - the ONLY workflow secret is the release signing seed
-#     (SORANOHA_RELEASE_SEED). The workflow creates NO plaintext key file
-#     (so no cleanup step a crash could skip) and BUILD CHILDREN DO NOT
-#     INHERIT THE SEED: it is copied to a non-exported shell variable, the
-#     exported binding is unset, and the value is piped to the kernel's
-#     stdin with the variable additionally scrubbed from the child
-#     environment. (Verified: the hermetic wrapper preserves stdin; a piped
-#     wrong seed fails at the seed-pin correspondence check.)
-#   - deployment paths, SSH transport, role pins and directory provisioning
-#     belong to the NixOS publisher profile. The kernel reads its non-secret
-#     /etc/soranoha/publisher.json configuration and performs input preflight.
-#   - Clojure verifies exports and switches current atomically.
-#   - exit contract: release exits 0 on published/already-published (then
-#     the serving tree is exported and `current` re-pointed), 3 on requeue
-#     (clean stop — the next scheduled run retries from the new head),
-#     anything else fails the job.
+# Publish on the repository-scoped runner using the NixOS deployment config.
+# The signing seed reaches only the release process through stdin; build children
+# must not inherit it. Public exposure follows docs/private-publication.md.
+# Release exit 3 requests a retry from the new head; other failures stop the job.
 name: scheduled-release
 on:
   workflow_dispatch: {}

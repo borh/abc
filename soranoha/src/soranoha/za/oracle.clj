@@ -15,8 +15,6 @@
            (tools.jackson.databind JsonNode)
            (tools.jackson.databind.json JsonMapper)))
 
-;; --- deltas -----------------------------------------------------------------
-
 (defn- entry-delta [a b]
   {:added (set (remove a (keys b)))
    :removed (set (remove b (keys a)))
@@ -64,8 +62,6 @@
                      (:works run)))]
     (entry-delta (pick run-a) (pick run-b))))
 
-;; --- explanation invariant --------------------------------------------------
-
 (defn- incomparable! [data]
   (throw (ex-info "runs incomparable: missing or divergent stage evidence"
                   (assoc data :reason :runs-incomparable))))
@@ -107,8 +103,6 @@
       (vec (for [{:keys [slug stage key-a key-b]} compared
                  :when (= key-a key-b)]
              {:slug slug :stage stage :trace-key key-b})))))
-
-;; --- report boundary decode -------------------------------------------------
 
 (def ^:private ^JsonMapper strict-report-mapper
   (let [builder (JsonMapper/builder)]

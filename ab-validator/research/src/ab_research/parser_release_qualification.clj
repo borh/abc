@@ -1,7 +1,7 @@
 (ns ab-research.parser-release-qualification
   "Release-qualification gate for the project-owned custom parser.
 
-  Admission (ADR 0023 exact tuple) and release qualification (this gate) are
+  Admission (exact compatibility tuple) and release qualification (this gate) are
   separate. This namespace owns the release side: a pinned qualification corpus,
   a predeclared predicate set with exact thresholds fixed BEFORE any run, and a
   measurement-agnostic evaluator that emits, per predicate, the exact observed
@@ -15,7 +15,7 @@
   - This gate consumes a captured measurement bundle (`:measurements`), never
     citation evidence, so comparison / neutral citations cannot reach it at all.
     The release evidence-class boundary itself lives in `ab-research.parser-evidence`
-    (`assert-release-evidence!`, ADR 0038) for any path that does ingest
+    (`assert-release-evidence!`) for any path that does ingest
     citations."
   (:require [ab-research.files :as files]
             [ab-research.aat-parser-ir-compat :as compat]
@@ -43,10 +43,8 @@
   change corpus identity but a work/path/hash/category/expected-status edit
   does.
 
-  `:expected_diagnostics` is here because the diagnostic-completeness
-  instrument now measures against it. A governed value an instrument reads
-  must move corpus identity when it changes; until it did, the field was
-  declared, read by nothing, and free to be edited without consequence."
+  `:expected_diagnostics` participates because the diagnostic-completeness
+  instrument compares observations against it."
   [:work_id :source_path :source_sha256 :category :expected_status
    :expected_diagnostics])
 
@@ -211,18 +209,10 @@
     :release-qualified
     :not-qualified))
 
-(defn adr-0039-status
-  "ADR 0039 promotion rule: `Accepted` only on a fully passing gate; otherwise
-  it stays `Proposed`."
-  [precondition-ok? results]
-  (if (= :release-qualified (gate-status precondition-ok? results))
-    "Accepted"
-    "Proposed"))
-
 ;; --- Qualification coherence + admission ------------------------------------
 
 (def admission-identity-keys
-  "The exact ADR-0023 compatibility projection used for admission. This is a
+  "The exact compatibility projection used for admission. This is a
   strict subset of qualification identity; corpus, predicate, and instrument
   coordinates participate in observation coherence but not registry admission."
   [:aat_version :aat_adapter :aat_adapter_version
@@ -384,10 +374,9 @@
 
 (def report-schema
   [:map
-   [:report_schema_version [:= "abc/parser-release-qualification-report/v2"]]
+   [:report_schema_version [:= "abc/parser-release-qualification-report/v3"]]
    [:report_id :string]
    [:gate_status [:enum :release-qualified :not-qualified]]
-   [:adr_0039_status [:enum "Accepted" "Proposed"]]
    [:identity [:map-of :keyword :any]]
    [:coherence [:map
                 [:status [:enum :ok :error]]
@@ -420,10 +409,9 @@
                      (pinned-contract-errors identity corpus predicate-set))
         admission (admission-resolution registry identity admission_candidate)
         precondition-ok? (and (empty? errors) (= :admitted (:status admission)))]
-    {:report_schema_version "abc/parser-release-qualification-report/v2"
+    {:report_schema_version "abc/parser-release-qualification-report/v3"
      :report_id report_id
      :gate_status (gate-status precondition-ok? results)
-     :adr_0039_status (adr-0039-status precondition-ok? results)
      :identity identity
      :coherence {:status (if (empty? errors) :ok :error)
                  :identity_ref (qualification-identity-ref identity)
@@ -459,6 +447,5 @@
     (json/write-deterministic-json-file! out-path report)
     (binding [*out* *err*]
       (println "gate_status" (name (:gate_status report))
-               "adr_0039_status" (:adr_0039_status report)
                "tally" (pr-str (:verdict_tally report))))
     report))

@@ -730,12 +730,8 @@ fn body_intervals_never_escape_the_body_region() {
 
 #[test]
 fn crlf_sources_carry_facts_outside_the_body_and_lf_sources_do_not() {
-    // Measured, and it corrects the premise recorded in
-    // parser-rq-instrument-before-threshold c2, which says the header and tail
-    // carry no entry of any kind. That holds for LF sources. It does not hold
-    // for CRLF sources, which real Aozora files are: `sanitizer_entries` walks
-    // the WHOLE sanitized text rather than the body, so every line ending in
-    // the header and tail is already a `crlf_normalization` fact.
+    // Sanitization records CRLF normalization in header and tail as well as
+    // body. A body denominator cannot include every accounted interval.
     //
     // So a body-region denominator must not assume the body contains every
     // accounted interval -- it does not, on any real CRLF work -- and a

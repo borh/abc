@@ -42,7 +42,7 @@ use crate::{DiagnosticSource, NodeRef, RubySide, Severity, Tree};
 /// serialised shape (variant additions, field renames, envelope
 /// changes).
 ///
-/// Schema 2 (#435): added the `gothic` weight tag (emphasis / container);
+/// Schema 2: added the `gothic` weight tag (emphasis / container);
 /// renamed the `lineBold` node kind to `lineGothic`; removed the
 /// `combineUprightRange` container tag (縦中横 has no paired-range form).
 ///

@@ -111,7 +111,7 @@ pub struct Ruby {
     pub reading: ContentRange,
     /// Which side the reading sits on.
     pub side: RubySide,
-    /// Render-only forward emphasis applied to the base (#384). Set by the
+    /// Render-only forward emphasis applied to the base. Set by the
     /// lowering pass when a declined forward directive `［＃「X」に傍点/罫囲み/
     /// 行右小書き/…］` (a [`ForwardOrigin::Referenced`](crate::ForwardOrigin)
     /// leaf) names this ruby's base as its *unique* preceding referent — the
@@ -145,7 +145,7 @@ pub struct ForwardFormat {
     pub target: ContentRange,
     /// Target-text provenance.
     pub origin: ForwardOrigin,
-    /// Raw directive body for [`ForwardAttr::AccentDot`] (#331), interned so
+    /// Raw directive body for [`ForwardAttr::AccentDot`], interned so
     /// the renderer can re-derive the per-letter dot composition and the
     /// serializer can re-emit the body byte-exact. `None` for every other
     /// attribute — the arena handle lives here (not on the scope-independent

@@ -27,8 +27,6 @@
             [soranoha.za.release :as release]
             [soranoha.za.scaffold :as scaffold]))
 
-;; --- fixture corpus works ---------------------------------------------------
-
 (def ^:private merosu {:work-id "000100" :person-id "000001" :card "000001"
                        :book "100" :n "1001" :title "hashire-merosu"
                        :text "メロスは激怒した。\nfixture line two\n"})
@@ -50,8 +48,6 @@
      "contributions" [(assoc (fact (str "author:" (:work-id work)))
                              "contribution_id"
                              (str "author:" (:work-id work)))]}))
-
-;; --- driver inputs -----------------------------------------------------------
 
 (def ^:private policy-hash (hash/sha256-string "za fixture policy"))
 
@@ -113,8 +109,6 @@
                                (fx/pinned-keys)))
 
 (defn- temp-store! [] (str (fs/create-temp-dir {:prefix "za-release-store"})))
-
-;; --- acceptance --------------------------------------------------------------
 
 (deftest consecutive-automated-releases-over-a-local-origin
   (let [root (corpus/init-corpus! [merosu kumo])
@@ -306,8 +300,6 @@
              (:policy-id (release/rights-authority!
                           (.getBytes "{:rights-publication :assessment-required}\n"
                                      "UTF-8"))))))))
-
-;; --- CLI boundary ------------------------------------------------------------
 
 (defn- git-inputs! [dir & args]
   (let [result (apply process/sh {:dir (str dir) :out :string :err :string}

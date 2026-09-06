@@ -1,5 +1,5 @@
 //! Forked from <https://github.com/P4suta/aozora>
-//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (hard detach; ADR 0032).
+//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (independent fork).
 //! Upstream crate: aozora-scan. License: MIT OR Apache-2.0 (see NOTICE).
 
 //! Trigger-byte scanner for the Aozora notation lexer.
@@ -12,31 +12,15 @@
 //! caller-provided [`OffsetSink`], or returns a `Vec<u32>` via the
 //! convenience entry [`scan_offsets`].
 //!
-//! ## Why `aho-corasick`, not a hand-rolled SIMD kernel
-//!
-//! This crate used to carry the tree's only `unsafe`: a bespoke Teddy
-//! multi-pattern matcher with one SIMD inner kernel per ISA
-//! (`pshufb` / `vqtbl1q_u8` / `i8x16_swizzle`) plus a scalar fallback.
-//! It worked, but the candidate filter keyed only on the lead byte's
-//! nibbles — and `0xE3` is the lead byte of *every hiragana and
-//! katakana codepoint*, so on real Japanese prose the filter fired on
-//! a large fraction of the text and paid a scalar trigram-verify to
-//! reject each kana byte.
-//!
-//! [`aho_corasick`] solves the same problem with a safe, portable,
-//! expertly-maintained packed matcher whose fingerprint spans more
-//! than the lead byte, so it is *both* algorithmically more selective
-//! (fewer false-positive verifies) and free of `unsafe`. On 8 MiB of
-//! real prose it scanned ~24% faster than the hand-rolled SIMD while
-//! producing byte-identical offsets, and it carries every platform —
-//! the win is portable, not pinned to the dev machine's AVX2. The
-//! crate is now `#![forbid(unsafe_code)]`.
+//! The packed [`aho_corasick`] matcher fingerprints more than the leading
+//! byte. This avoids treating every kana character (whose UTF-8 encoding
+//! starts with `0xE3`) as a candidate notation trigger.
 //!
 //! ## Output channel
 //!
 //! [`OffsetSink`] decouples the scanner from "where the offsets land".
 //! `Vec<u32>` and `bumpalo::collections::Vec<'_, u32>` both implement
-//! it, so callers with an arena (the lex pipeline) write offsets
+//! it, so callers with an arena can write offsets
 //! directly into the arena. [`CountSink`] counts pushes without
 //! storing, useful for capacity probes.
 //!

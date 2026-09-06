@@ -1,5 +1,5 @@
 //! Forked from <https://github.com/P4suta/aozora>
-//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (hard detach; ADR 0032).
+//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (independent fork).
 //! Upstream crate: aozora-veb. License: MIT OR Apache-2.0 (see NOTICE).
 
 //! Cache-friendly sorted-collection lookup.

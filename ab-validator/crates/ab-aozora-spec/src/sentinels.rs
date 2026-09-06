@@ -1,28 +1,11 @@
-//! PUA sentinel codepoints reserved by the Aozora pipeline.
+//! Private-use codepoints for classified constructs in normalized text.
 //!
-//! The lexer rewrites every recognised Aozora construct into one of
-//! these single-character sentinels in the normalized text it hands to
-//! the downstream `CommonMark` parser. The placeholder registry maps each
-//! sentinel position back to the originating [`crate::Span`] +
-//! `Node`, so `post_process` can splice the construct back into
-//! the AST after `CommonMark` parsing.
+//! Registry entries associate each placeholder position with its source span
+//! and parsed node. The sanitize stage diagnoses and neutralizes source text
+//! containing these reserved codepoints before inserting placeholders.
 //!
-//! All four sentinels live in the Unicode Private Use Area (`U+E000..U+F8FF`),
-//! which is guaranteed to be unassigned and therefore safe to use as
-//! application-internal markers. A pre-scan in the sanitize stage
-//! emits `Diagnostic::SourceContainsPua` if the source already
-//! contains any of these codepoints — a future enhancement can fall
-//! back to Unicode noncharacters (`U+FDD0..U+FDEF`) when collisions
-//! become recurring.
-//!
-//! # Source of truth
-//!
-//! [`Sentinel`] is the primary type: a `#[repr(u32)]` enum with one
-//! variant per sentinel kind. The four legacy `pub const` `char`
-//! values ([`INLINE_SENTINEL`] etc.) and the [`ALL_SENTINELS`] array
-//! are now thin shims derived from the enum via
-//! [`Sentinel::as_char`], so a new sentinel kind only needs adding to
-//! the enum.
+//! [`Sentinel`] defines the codepoint mapping; the public character constants
+//! and [`ALL_SENTINELS`] are derived from it.
 
 /// Sentinel kind tag.
 ///

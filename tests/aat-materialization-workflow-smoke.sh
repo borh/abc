@@ -7,10 +7,7 @@ trap 'rm -rf "$tmp"' EXIT
 
 mkdir -p "$tmp/corpus/cards"
 
-# ab-aozora is the sole surviving AAT lane (the third-party comparison lanes
-# are retired — ADR third-party-comparison-retirement). --adapter-bin keeps
-# the plan hermetic: without it, planning resolves the pinned nix-store
-# binary, which a sandboxed check cannot do.
+# An explicit adapter path keeps binary resolution inside the test fixture.
 fake_adapter="$tmp/fake-ab-aozora"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$fake_adapter"
 chmod +x "$fake_adapter"

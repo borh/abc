@@ -21,7 +21,7 @@ The work is a kanbun-kundoku (漢文訓読) commentary — exactly the genre tha
 requires kunten. It was selected by scanning all 1,227 card directories in
 the local Aozora snapshot (cards/*/files/*_ruby_*.zip and *_txt_*.zip) for
 the Aozora 返り点 / 送り仮名 marker forms documented at
-`/home/bor/Dependencies/aozorabunko/annotation/kunten.html`. Work `4644`
+`annotation/kunten.html`. Work `4644`
 is the richest hit: it emits *every* marker sub-variety (see below).
 
 ## Kunten markers present in the excerpt
@@ -57,31 +57,11 @@ manual page. The excerpt captures a representative, dense subset; the full
 file can be re-extracted from the card path above if a wider sample is
 needed.
 
-## Policy note (read this before treating this as a test)
+## Representation
 
-> **AAT v1 has no kunten node kind.** See
-> `docs/handoffs/aozora-manual-integration-audit.md` → **Gap B** (kunten
-> construct unrepresented in the 20 AAT v1 node kinds), and
-> `docs/handoffs/owned-mapping-design.md` → §5, **deferred decision 1b**
-> (a dedicated kunten node is deferred to an AAT v2 ADR; the v1 schema is
-> frozen). Renaming or extending `data/aat-schema.json` to add a kunten
-> kind is explicitly **out of scope** for the v1 window.
->
-> This fixture exists to **track the gap**, not to close it. If/when an
-> adapter (e.g. the `aozora-rs` adapter) is run over this excerpt, the
-> output **MUST record the kunten construct as lost** — i.e. emit a
-> divergence / dropped-construct entry naming the marker and its source
-> span — and **MUST NOT silently drop** `［＃レ］`, `［＃二］`,
-> `［＃（ノ）］`, etc.
->
-> Until AAT v2 adds a kunten node kind, this fixture must not become an
-> adapter-fidelity assertion expecting a kunten AAT node. It is now executable
-> only as a detector regression: the corpus feature index and coverage
-> detectors must recognize the real compact spellings so prevalence
-> measurement cannot silently false-zero again. When v2 lands the kunten node,
-> upgrade this fixture to an executable adapter-fidelity assertion (input:
-> this excerpt; expected: a kunten node projecting each marker above with the
-> correct `kind`, surface form, and source span).
+AAT v1 has no kunten node kind. The feature-index tests use this excerpt to
+check recognition of compact reading-order and kana markers independently of
+adapter representation. AAT v2 defines kunten in `data/aat-schema.json`.
 
 ## How to reproduce the excerpt
 
@@ -90,8 +70,3 @@ unzip -p cards/000250/files/4644_ruby_15596.zip "hoo_kansho07.txt" \
   | iconv -f SHIFT_JIS -t UTF-8 \
   | sed -n '17,19p;99,102p'
 ```
-
-(Note the historical gotcha that bit an earlier extraction attempt: pass
-encoding as `-t UTF-8` — a *separate* `//IGNORE` argument is treated by
-`iconv` as an input *filename* and silently yields an empty conversion,
-making it look as if no kunten markers exist in the corpus. They do.)

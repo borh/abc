@@ -618,7 +618,7 @@ def test_wholesale_line1_synthesis_trips(tmp_path):
     assert code == 2
 
 
-# --- v2-migration mode (Phase 4, rotation C3) ---
+# --- v2-migration mode ---
 
 
 def v2_doc(blocks, warnings=None):
@@ -772,9 +772,9 @@ JCLOSE = "［＃ここで字詰め終わり］"
 
 def _line_width_base(tmp_path):
     # A standalone `［＃ここからN字詰め］ … ［＃ここで字詰め終わり］` pair as a v1
-    # baseline leaves it a RAW containerOpen/containerClose pair — Phase 3 (and,
-    # post-C3-fix, Phase 4) never form a jizume_block from the standalone
-    # line-width form (spec §6.6, `line-width-open`).
+    # baseline leaves it a RAW containerOpen/containerClose pair; the emitter
+    # does not form a jizume_block from the standalone
+    # line-width form (`line-width-open`).
     inner = text("\n中身\n", 10)  # span 10..18
     return write_dump(
         tmp_path,
@@ -937,7 +937,7 @@ def test_v2_migration_compound_jizume_wrap(tmp_path):
     # a real v1 dump produces whether or not the original marker carried a
     # 字詰め clause. The audit cannot re-derive the width from baseline
     # alone; it adopts the candidate's jizume_block wrapper (verifying
-    # width and exact wrapped-content invariants) mirroring Task 6's wrap.
+    # width and exact wrapped-content invariants) mirroring the inline-container wrap.
     base_para = para(burasage_style([text("本文", 10, 16)], 6, 7))
     base = write_dump(tmp_path, "a", {"w1": doc([base_para])})
     cand_para = para(
@@ -1186,7 +1186,7 @@ def test_v2_migration_rejects_warning_extra_key(tmp_path):
     assert code == 2
 
 
-# --- source-note-append mode (Phase 4, rotation C4) ---
+# --- source-note-append mode ---
 
 
 def source_note(content, placement="back", region_class="terminal_provenance", span=None):
@@ -1342,7 +1342,7 @@ def test_append_mode_rejects_terminator_stripped_values(tmp_path):
     assert code == 2
 
 
-# --- bare-toggle-adoption mode (Phase 5, rotation C5) -----------------------
+# --- bare-toggle-adoption mode -----------------------
 #
 # NOTE: this file already defines `raw_marker(source, marker_kind, start)`
 # above (used by container-rewrite/v2-migration/source-note-append tests).
@@ -1509,7 +1509,7 @@ def test_bare_toggle_independence_missing_adoption_fails(tmp_path):
     # Baseline implies (via classify_tokens) exactly one valid yokogumi
     # adoption, but the candidate left the markers raw (byte-identical to
     # baseline) — the independent derivation must catch this even though
-    # there is no structural diff to inspect (review P5-4).
+    # there is no structural diff to inspect.
     inner = {
         "kind": "text",
         "value": "x",
@@ -1538,7 +1538,7 @@ def test_bare_toggle_independence_invalid_adoption_fails(tmp_path):
     # A candidate that nevertheless wraps the yokogumi span in a toggle
     # container (byte-exact and structurally recoverable) must still be
     # rejected: the independent derivation, not structural recoverability,
-    # decides adoption validity (review P5-4, the converse direction).
+    # decides adoption validity.
     open_y = bare_marker("［＃横組み］", bs=0, be=12)
     open_k = bare_marker("［＃罫囲み］", bs=12, be=24)
     inner = {
@@ -1566,7 +1566,7 @@ def test_bare_toggle_independence_invalid_adoption_fails(tmp_path):
 
 
 def test_bare_toggle_compensating_cross_line_adoption_fails(tmp_path):
-    # PROBE 1 (plan amendment 0d323a72): per-WORK totals alone admit a
+    # PROBE 1: per-WORK totals alone admit a
     # compensating false-pass. Baseline line 1 is a valid yokogumi pair
     # (expected: 1 adoption); line 2 is an interleaved y/k line (expected:
     # 0 adoptions; declined 4 = orphan_open 1 + reopen_rollback 2 +

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed Phase 3 checkpoint: nine PASS gate summaries, two
+"""Fidelity rotation checkpoint: nine PASS gate summaries, two
 conversion audits, three candidates.
 
 Per stage (stage0 / rotation-a / rotation-b): the three summaries carry

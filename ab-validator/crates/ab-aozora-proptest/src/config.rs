@@ -1,36 +1,12 @@
-//! Shared proptest configuration.
-//!
-//! Every property test in the aozora workspace should use
-//! [`default_config`] so `AOZORA_PROPTEST_CASES` tunes the whole sweep
-//! consistently. The default of 128 cases is a deliberate compromise
-//! between catching regressions quickly during `just test` and keeping
-//! the CI loop under a few seconds per proptest binary.
-//!
-//! Override sites:
-//!
-//! * `AOZORA_PROPTEST_CASES=16` for tight local iteration.
-//! * `AOZORA_PROPTEST_CASES=4096` for pre-release deep sweeps
-//!   (`just prop-deep`).
+//! Shared property-test configuration, controlled by `AOZORA_PROPTEST_CASES`.
 
 use std::env;
 
 use proptest::prelude::ProptestConfig;
 use proptest::test_runner::FileFailurePersistence;
 
-/// Default [`ProptestConfig`] used across every aozora property test.
-///
-/// * `cases` defaults to 128 and can be overridden via the
-///   `AOZORA_PROPTEST_CASES` environment variable; values that fail to
-///   parse fall through to the default rather than panicking, because a
-///   CI misconfiguration must never silently replace strict testing
-///   with a permissive default.
-/// * `max_shrink_iters` is held at 10 000 — the proptest default — so
-///   shrinking converges on minimal failure cases without blowing the
-///   per-run time budget.
-/// * `failure_persistence` writes regressions into each test's
-///   `proptest-regressions/` directory so a failure replays instantly
-///   on the next run. The existing repo convention is to commit these
-///   files alongside the tests; `aozora-proptest` does not deviate.
+/// Uses 128 cases unless `AOZORA_PROPTEST_CASES` parses as a case count.
+/// Regressions persist beside each test in `proptest-regressions/`.
 #[must_use]
 pub fn default_config() -> ProptestConfig {
     ProptestConfig {

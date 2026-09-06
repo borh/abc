@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-"""Terminal-provenance / colophon-metadata measurement split (Task 12 instrument).
+"""Terminal-provenance / colophon-metadata measurement split.
 
 ABC policy v0.2.0 admits `terminal_provenance` and `colophon_metadata` as
 source-region classes but flags both `needs_measurement_split`
 (`reports/lib/source_region.py`). This generator applies the stateful
 boundary rule in `reports/lib/terminal_provenance.py` (the NORMATIVE rule
--- Task 14's Rust `source_note` emission transcribes it case-for-case) to
+-- Rust `source_note` emission transcribes it case-for-case) to
 every work in the corpus and reports how many tail lines fall on each
 side of the 底本：/入力： boundary.
 
@@ -68,7 +68,6 @@ MAX_EXAMPLES = 20
 MAX_SAMPLES = 10
 
 # The 2026-07-06 source-authority representability run
-# (docs/superpowers/reports/2026-07-04-source-authority-representability.md)
 # recorded these MARKER OCCURRENCE counts from the ab-source-inventory Rust
 # scanner's source_region_coverage block. This instrument measures a
 # different unit (works, and tail lines under the stateful rule); the
@@ -77,15 +76,7 @@ REFERENCE_COVERAGE_DATE = "2026-07-06"
 REFERENCE_TERMINAL_PROVENANCE_OCCURRENCES = 609
 REFERENCE_COLOPHON_OCCURRENCES = 89416
 
-# The Task 12 brief's head-marker skeleton (`PROVENANCE_HEADS`/`COLOPHON_HEADS`
-# in reports/lib/terminal_provenance.py) is extended ONLY by corpus-scan
-# residuals -- a non-empty `unclassifiable_examples` bucket after a
-# full-corpus run means the skeleton is insufficient and must gain an entry,
-# documented here with examples and work IDs. This list starts empty because
-# the brief's skeleton, unmodified, reached a defined state before any
-# non-blank tail line in every one of the 17886 pinned-corpus text entries
-# (works_unclassifiable == 0 on the 2026-07-12 hinoki run) -- see the report's
-# Rule Extensions section.
+# Extensions record corpus examples not covered by the shared head-marker sets.
 RULE_EXTENSIONS: list[dict[str, Any]] = []
 
 
@@ -125,7 +116,7 @@ def work_id_from_index_path(path: str) -> str:
 def discover_entries(corpus_root: pathlib.Path) -> list[pathlib.Path]:
     """Yield every `cards/*/files/*.zip` and bare `*.txt` sibling, sorted.
 
-    Selection rule (Task 15's C4-gate correction): every `.zip`/`.txt` FILE
+    Selection rule: every `.zip`/`.txt` FILE
     CANDIDATE in a `cards/<id>/files/` directory is discovered here -- one
     candidate per file, same as Rust's `collect_source_files` in
     `crates/ab-index/src/index.rs` (which walks the identical `cards/*/
@@ -157,9 +148,9 @@ def discover_entries(corpus_root: pathlib.Path) -> list[pathlib.Path]:
     return entries
 
 
-# --- Zip-vs-plain entry selection/reading (Task 15's 6-entry correction) --
+# --- Zip-vs-plain entry selection/reading --
 #
-# Task 15's C4-gate confinement audit traced the split scanner's 6-entry
+# The corpus confinement audit traced the split scanner's 6-entry
 # disagreement with the Rust corpus pipeline to a single root cause: this
 # reader used to dispatch zip-vs-plain by FILENAME EXTENSION (`.zip` only),
 # never by content. The pinned aozorabunko corpus contains files named

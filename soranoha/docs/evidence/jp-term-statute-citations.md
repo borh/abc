@@ -1,39 +1,14 @@
-# Japanese statutory term citations — Q1–Q5 and the old-law transition
+# Japanese statutory term citations
 
-Policy scope: ledger D23 adopts Aozora reliance as the default admission
-basis. The D-3/D-4 requirements below remain the independent-assessment
-route and its historical rationale; they no longer prohibit that adopted
-source-reliance route. Statutory quotations and arithmetic are unchanged.
-Implementation and frozen-contract compatibility are tracked in soranoha-ejw.
-
-Status: this document carries FOUR distinct kinds of content, and
-only one of them is subject to owner adoption:
-
-1. STATUTORY EVIDENCE — verbatim consolidated statute text, bound to
-   exact e-Gov revisions below. Not adopted; it is what the law says.
-2. AGENCY GUIDANCE — 文化庁's published readings and examples. Not
-   adopted; it is what the Agency says.
-3. PROPOSED SORANOHA DERIVATIONS (D-1…D-4) — the assessment-rule
-   consequences Soranoha proposes to draw from 1 and 2. THESE are
-   what the owner adopts or rejects.
-4. PER-WORK ASSESSMENT FACTS — none appear here. Assessments are
-   produced later, per work, under the adopted rule.
-
-Adoption of the derivations unblocks creating the TOTAL assessment
-snapshot (explicit not-evaluated entries included). It does NOT
-authorize marking the 16,558 lexical census candidates public-domain:
-the census predicate is a screen over catalog rows, and every
-public-domain status still requires a per-work assessment under the
-adopted rule (see D-2/D-3).
-
-This document answers the statutory portions of Q1–Q5 of
-`aozora-rights-source-contract.md` plus the old-law/current-law
-transition question named in the 2026-08-27 owner decision record
-(soranoha ledger). It performs no assessment of any work and says
-nothing about what Aozora Bunko did (Q6–Q8 remain open).
+These pinned quotations and agency guidance support the independent-assessment
+route. They do not assess any work, establish Aozora's review process, or replace
+edition-level reliance. The implemented rule and its limits are described in
+[assessment evaluation](../assessment-evaluation.md). Catalog death years alone
+do not establish the applicable term, exclude wartime additions, or establish
+all copyright-relevant contributions.
 
 All retrievals 2026-08-27 (UTC), except S-E (旧著作権法 text,
-retrieved 2026-08-28 during the D-1 amendment). Retrieval channels:
+retrieved 2026-08-28). Retrieval channels:
 the e-Gov law API (laws.e-gov.go.jp, v1 article endpoint and v2
 `elm=SupplProvision`) for consolidated statute text, 文化庁
 publications read directly (PDF pages rendered, not paraphrased from
@@ -77,15 +52,13 @@ revisions:
   https://www.cric.or.jp/db/domestic/old_index.html, retrieved
   2026-08-28. e-Gov does not carry repealed laws (the v1 article
   endpoint returns zero results for 明治三十二年法律第三十九号), so
-  this is a secondary consolidated text; it is used here only for
-  the bounded-expiry argument in D-1, whose conclusion is robust to
-  the interim-extension figures (see D-1).
+  this is a secondary consolidated text used for the old-law transition below.
 - Note: e-Gov does not carry the TPP整備法 as a standalone law
   (`/api/2/laws?law_title=環太平洋パートナーシップ` returns zero), and the
   consolidated 著作権法 XML truncates before amendment-act 附則 blocks in
   API retrieval — hence S-D for the 整備法 text.
 
-## Q1 — the applicable term and its transition rule
+## the applicable term and its transition rule
 
 Principle (S-A, 第51条):
 
@@ -120,7 +93,7 @@ Non-revival — the transition rule itself (S-D, 附則第7条第1項,
 would have ended 2018-12-31, the amendment arrived 2018-12-30 while
 the right subsisted, so the term became 70 years (to 2038-12-31).
 
-## Q2 — when within a year a term expires
+## when within a year a term expires
 
 S-A, 第57条:
 
@@ -131,7 +104,7 @@ S-C 問2: すべての期間は、死亡、公表、創作した年の「翌年�
 起算します（第57条）— with the example that a 1989 death is protected
 to 2059-12-31 under the 70-year term.
 
-## Q3 — anonymous, pseudonymous, and corporate works
+## anonymous, pseudonymous, and corporate works
 
 S-A, 第52条:
 
@@ -149,7 +122,7 @@ S-A, 第53条:
 > ２ 前項の規定は、法人その他の団体が著作の名義を有する著作物の著作者である個人が同項の期間内にその実名又は周知の変名を著作者名として表示してその著作物を公表したときは、適用しない。
 > ３ 第十五条第二項の規定により法人その他の団体が著作者である著作物の著作権の存続期間に関しては、第一項の著作物に該当する著作物以外の著作物についても、当該団体が著作の名義を有するものとみなして同項の規定を適用する。
 
-## Q4 — foreign works: comparison of terms and wartime additions
+## foreign works: comparison of terms and wartime additions
 
 S-A, 第58条:
 
@@ -173,7 +146,7 @@ entry into force). 問8–問9: works inside a wartime-addition period on
 2018-12-29 were subsisting rights, so they too were extended — legally
 70 years plus the addition.
 
-## Q5 — composition of the original author's and translator's terms
+## composition of the original author's and translator's terms
 
 A translation IS a derivative work by definition (S-A, 第2条第1項第11号):
 
@@ -191,8 +164,8 @@ authorship form (death-based only for real-name or 周知変名 natural
 persons) — and the original author's rights over the derivative's use
 (第28条, running on the original work's term, likewise under whichever
 of 第51〜53条 applies). Free use requires BOTH terms to have expired —
-the statutory citation behind the composition rule S2 records as
-Aozora's operating practice.
+the statutory basis for the composition rule described in
+[Aozora's handling rules](aozora-rights-source-contract.md).
 
 ## The old-law transition (旧著作権法, 明治32年法律第39号)
 
@@ -230,15 +203,12 @@ old-law column to the 38/38/33 figures 文化庁 states):
 > 第五条　〔同前－無名・変名著作物〕　無名又ハ変名著作物ノ著作権ハ発行又ハ興行ノトキヨリ三十年間継続ス但シ其ノ期間内ニ著作者其ノ実名ノ登録ヲ受ケタルトキハ第三条ノ規定ニ従フ
 > 第九条　〔期間の計算〕　前六条ノ場合ニ於テ著作権ノ期間ヲ計算スルニハ著作者死亡ノ年又ハ著作物ヲ発行又ハ興行シタル年ノ翌年ヨリ起算ス
 
-第4条 is the load-bearing finding for D-1: a work first published
-AFTER its author's death had an old-law term counted from
-PUBLICATION, which can far outlive the author's death-counted terms
-(author died 1920, first published 1965 → old-law protection into
-the 2000s, past 死後50年 = 1970). 附則7条 (昭和45年, quoted above)
-keeps such a longer old-law term. So "the old-law term is strictly
-shorter than every current-law term" is FALSE for the
-posthumous-publication subclass; D-1's conclusion survives on a
-different, bounded argument (below).
+Under 第4条, a work first published after its author's death had an
+old-law term counted from publication. That term can outlast a death-counted
+term: an author dying in 1920 with first publication in 1965 gives protection
+into the 2000s, beyond death plus 50 years in 1970. The current law's
+supplementary article 7 retains the longer old-law term. Old-law terms cannot
+therefore be assumed shorter without examining the publication history.
 
 The governing rule as 文化庁 states it (S-C 問10):
 
@@ -248,85 +218,3 @@ Worked example (S-C 問10): an author who died 昭和45 (1970), work
 published under real name in their lifetime — old law: protected to
 2008 (死後38年); still protected at 1971-01-01, so 死後50年 → 2020;
 still protected at 2018-12-30, so 死後70年 → 2040.
-
-## Derivations (not citations — consequences the owner adopts or rejects with the above)
-
-D-1 CLASS-SCOPED old-law conclusion (AMENDED 2026-08-28: the original
-strictly-shorter argument was refuted by 旧法第4条 — see the old-law
-section — and replaced by this two-branch argument; the conclusion is
-unchanged): for 映画・写真以外 works of natural persons where a
-death-based term applies under CURRENT law (実名 or 周知の変名, per
-第52条第2項) and the author died on or before 1967-12-31, the
-old-law/current-law transition cannot defeat the D-2 expiry
-arithmetic, because EVERY candidate term expires before the
-2018-12-29 non-revival frontier: (a) if the work was published in
-the author's lifetime, the old-law term (旧法第3条, death-counted,
-at most 死後38年 with the interim extensions) is strictly shorter
-than 死後50年, so 附則7条 (昭和45年) never selects it, and any such
-work already expired at 1971-01-01 falls under 附則2条 with an
-author dead before 1933, inside the D-2 arithmetic anyway; (b) if
-the work was first published AFTER the author's death, the old-law
-term (旧法第4条, PUBLICATION-counted) can outlive the death-counted
-terms — but it necessarily runs from a publication before the
-1971-01-01 repeal, so even at the maximum interim-extended figure
-of 38 years it ends by 2008-12-31 (旧法第9条: counted from the
-following year), before the frontier, while the current-law
-death-based term for a pre-1968 death ends by 2017-12-31, also
-before the frontier. Whichever term 附則7条 selects, the right was
-extinct on 2018-12-29 and TPP整備法附則第7条 did not revive it. For
-THIS CLASS ONLY the transition adds no case the death-year
-arithmetic misses — though branch (b) works have a LATER historical
-expiry date than death+50 suggests, which matters if any consumer
-ever needs the expiry YEAR rather than present-day status. Every
-other case — photographs, films, non-周知 pseudonymous or 団体名義
-attribution, publication-based terms, unclear attribution form —
-remains NOT-EVALUATED until its work type, attribution form,
-publication facts, and applicable term are established per work.
-No further old-law research is needed for the first tranche; the
-boundary of this class is the boundary of the conclusion. Wartime
-additions are excluded separately per D-3(b) — they stack on either
-branch and are a per-work condition, not part of this arithmetic.
-
-D-2 Death-year arithmetic (NOT an assessment status): UNDER a
-death-based term (第51条第2項 as it stood, 死後50年) and BEFORE any
-addition, an author death on or before 1967-12-31 put the term's end
-at or before 2017-12-31 (第57条: counted from the following year) —
-before 施行日の前日 2018-12-29 — so TPP整備法附則第7条 left that term
-expired rather than extending it; a death in 1968 or later meant the
-term subsisted on 2018-12-29 and became 死後70年. 文化庁 states the
-1968 boundary as the GENERAL case (原則として) and separately explains
-that 戦時加算 can hold a term alive past the ordinary boundary (S-C
-問3, 問8). A death year alone therefore NEVER yields a public-domain
-status: the applicable term must be shown death-based, additions must
-be excluded, and every rights chain must pass — per-work assessment
-work under the adopted rule, not census arithmetic. This arithmetic
-is the statutory basis OF the census predicate's "parseable CE year
-≤ 1967" screen and of F3's observed frontier — of the screen, not of
-any status.
-
-D-3 The conditions D-2's arithmetic needs, per work: (a) a
-death-based term applies — real name or 周知の変名 or 実名登録
-(第52条第2項); a non-周知 pseudonym or 団体名義 switches to a
-publication-based term (公表後70年 now; for those, publication on or
-before 1967-12-31 supports the analogous expired-before-extension
-arithmetic, again as arithmetic only); (b) no 戦時加算 — the addition
-attaches to rights HELD OR ACQUIRED BY Allied nationals in the treaty
-window (S-B 第4条), a fact about right-holders that catalog fields do
-not carry; the census predicate's no-翻訳者/no-原題 filter removes the
-typical translated-work case but is lexical, not probative; (c) for
-translations and other derivatives, BOTH chains (第2条第1項第11号 +
-第28条) must independently satisfy the applicable-term test. The
-predicate's "every contributor" quantifier is a CONSERVATIVE LEXICAL
-SCREEN over catalog rows and nothing more: it does not establish that
-the catalog rows exhaust the copyright-relevant authorships, that
-each listed role holds copyright, or that any term is death-based —
-it must never be cited as assessment evidence; (d) 第58条 can only
-shorten a foreign work's Japanese term, so it never defeats an expiry
-conclusion, but it also never rescues a domestic conclusion
-misapplied to a foreign work with wartime additions.
-
-D-4 What none of this establishes: who assessed Aozora's flags,
-under which rule, or when (Q6); jurisdiction scoping of any external
-assertion (Q7–Q8); and the effective date of any third-party
-assertion (the contract's *Three distinct times*). Those remain open
-exactly as the source contract states.

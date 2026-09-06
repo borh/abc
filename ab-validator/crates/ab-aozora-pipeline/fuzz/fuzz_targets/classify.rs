@@ -2,7 +2,7 @@
 //!
 //! Drives the full streaming chain
 //! (`tokenize` → `pair` → `classify`) directly, bypassing the
-//! arena-normalize fold so the fuzzer hammers the classifier's
+//! normalizer fold so the fuzzer hammers the classifier's
 //! recogniser leaves (ruby / bouten / TCY / gaiji / kaeriten /
 //! annotation catch-all) in isolation. Targets the slice-indexing,
 //! char-boundary, and `as`-cast paths in
@@ -18,18 +18,14 @@
 //!    `spans[0].start == 0`, `spans[i].end == spans[i+1].start`, and
 //!    `spans[last].end == source.len()`. When `source` is empty the
 //!    span list is empty. This is the module-level coverage invariant
-//!    the arena-normalize fold relies on; a classify bug that drops or
+//!    the normalizer fold relies on; a classify bug that drops or
 //!    overlaps bytes breaks it here before it can corrupt the normalized buffer.
 //! 2. **Char-boundary spans.** Every span edge lands on a UTF-8 char
 //!    boundary of `source`, so the byte ranges are always sliceable.
 //! 3. **In-bounds diagnostics.** Every diagnostic span is non-inverted.
 //!
 //! The classifier builds owned nodes via an `Allocator`; we materialise a
-//! fresh arena per iteration so allocations are reclaimed in one
-//! `Bump::reset` on drop.
-//!
-//! Run via `just fuzz-quick aozora-pipeline classify` (or
-//! `fuzz-deep` / `fuzz-marathon`).
+//! fresh owned store per iteration.
 
 #![no_main]
 

@@ -6,8 +6,7 @@ same rule: an existing output is FRESH iff its recorded input-set hash equals th
 current inputs' hash AND its outputs still re-hash to the recorded output hash. An
 absent/unreadable output is never fresh (fail toward recompute). This module holds
 ONLY that rule as a pure function; each caller keeps its own metadata loading and
-maps the returned verdict to its own result vocabulary. See
-docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
+maps the returned verdict to its own result vocabulary.
 """
 
 from __future__ import annotations

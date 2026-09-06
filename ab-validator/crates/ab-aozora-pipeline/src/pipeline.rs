@@ -265,7 +265,7 @@ impl Pipeline<'_, Paired> {
             let mut classify_diagnostics: Vec<Diagnostic> = classify_stream.take_diagnostics();
             drop(classify_stream);
             let (lowered, ruby_base_decorated) = lower_spans(spans, &sanitized_text, &mut alloc);
-            // Ruby-base forward emphasis (#384): a directive the lowering pass
+            // Ruby-base forward emphasis: a directive the lowering pass
             // decorated onto a preceding ruby base is no longer an unstyled
             // decline, so drop its `forward_referent_not_stylable` warning. Only
             // the decorated directive spans are suppressed — cross-line /
@@ -340,7 +340,7 @@ impl Pipeline<'_, Paired> {
 /// provenance.
 ///
 /// Returns the lowered spans and the set of forward-directive spans the
-/// ruby-base emphasis phase (#384) decorated — the builder suppresses those
+/// ruby-base emphasis phase decorated — the builder suppresses those
 /// directives' `forward_referent_not_stylable` warnings.
 fn lower_spans(
     spans: Vec<ClassifiedSpan>,
@@ -378,13 +378,13 @@ fn lower_spans(
     // Second phase: fold S4-foldable inline-range emphasis into forward leaves.
     let mut out = fold_inline_emphasis(out, source, alloc);
     // Third phase: apply a declined forward emphasis onto a preceding ruby base
-    // it uniquely names (#384).
+    // it uniquely names.
     let decorated = decorate_ruby_bases(&mut out, source, alloc.store());
     (out, decorated)
 }
 
 /// Whether a forward attribute decorates a whole run as a single emphasis
-/// wrapper, so it can style a ruby base (#384). Excludes the sub-character /
+/// wrapper, so it can style a ruby base. Excludes the sub-character /
 /// target-splitting attributes — [`ForwardAttr::AccentDot`] (addresses letters
 /// via an interned directive body the ruby cannot carry),
 /// [`ForwardAttr::Accent`] (composes a single Latin letter), and
@@ -399,7 +399,7 @@ const fn attr_decorates_ruby_base(attr: ForwardAttr) -> bool {
 
 /// Apply a declined forward emphasis directive (`［＃「X」に傍点/罫囲み/…］`, a
 /// [`ForwardOrigin::Referenced`] leaf) onto a preceding ruby whose base is the
-/// *unique* referent named `X` (#384). The classifier declines these because a
+/// *unique* referent named `X`. The classifier declines these because a
 /// ruby base cannot be pulled into a plain forward leaf (bouten-over-ruby is not
 /// representable); instead we set that ruby's `base_emphasis` so the renderer
 /// wraps the base in the attribute's emphasis element. The directive leaf stays

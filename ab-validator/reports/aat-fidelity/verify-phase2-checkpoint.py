@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Fail-closed Phase 2 checkpoint: three PASS gate summaries, one candidate.
+"""Fidelity checkpoint: three PASS gate summaries, one candidate.
 
-Reads the three gate summary JSONs (Gate evidence schema in the Phase 2
-plan) and verifies, dying on the first violation:
+Reads three gate summary JSONs and rejects the first violation:
 - every file parses and carries gate/candidate/verdict/details fields
 - gate names are absorption-parity / perf / conformance-echo respectively
 - all verdicts are exactly "PASS"

@@ -58,26 +58,10 @@
         flake: outputName: system:
         lib.attrByPath [ outputName system ] { } flake;
 
-      # The soranoha/ Clojure kernel CLI with the same private adapter
-      # injection. The wrapper authenticates the Clojure runtime it names
-      # instead of inheriting the caller's: classpath resolution runs
-      # against the offline clj-nix dependency cache with HOME and the
-      # Clojure/Maven/gitlibs configuration bound to store paths, so
-      # user-level deps.edn merging or mutable caches cannot change what
-      # executes. The toolchain identity the kernel refuses to run without
-      # is derived from exactly that environment — the Clojure tool
-      # closure, the dependency-cache closure, and deps.edn — so a runtime
-      # or dependency change re-keys every pure-Clojure stage derivation
-      # instead of silently reusing stale traces. The wrapper always
-      # supplies that identity and runs the Nix-captured source; direct
-      # clojure invocation remains the path for intentionally custom
-      # identities.
-      # One private Clojure context for the soranoha kernel — a single
-      # dependency-cache derivation and derived toolchain identity. The
-      # wrapper app consumes both; the soranoha-tests check consumes the
-      # dependency cache and the same nixpkgs Clojure/Git pins, so both
-      # build against identical tool derivations (the check does not run
-      # inside the wrapper's full environment or consume the identity).
+      # Resolve the runtime against the offline dependency cache with user
+      # configuration disabled. The same closure and deps.edn form the stage
+      # toolchain identity, preventing stale traces after dependency changes.
+      # Tests share tool derivations but do not use the wrapper's full environment.
       soranohaCljContext =
         system:
         let

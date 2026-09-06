@@ -26,9 +26,6 @@ phf = { version = "0.14", default-features = false }
 # `include!()`. Moves the perfect-hash construction out of the
 # rustc proc-macro phase, which on the macro path was ~30–60 s of
 # `cargo check` time on cold caches.
-#
-# Ad hoc version pin — not present in upstream `[workspace.dependencies]`
-# either; carried verbatim per Task 2 provenance handoff.
 phf_codegen = "0.14"
 
 [dev-dependencies]

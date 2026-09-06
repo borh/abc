@@ -7,10 +7,6 @@
 //! normalized text must remain valid UTF-8, and every reported
 //! diagnostic span must be in-bounds. Targets parser-side panics in
 //! the trigger / pair / classify stages.
-//!
-//! Run with the standard `just fuzz-{quick,deep,marathon,triage,
-//! promote}` family from the workspace root, e.g.
-//! `just fuzz-quick aozora-pipeline lex`.
 
 #![no_main]
 

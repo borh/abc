@@ -25,8 +25,6 @@
   (:import [java.io FileOutputStream]
            [java.util.zip ZipEntry ZipOutputStream]))
 
-;; --- corpus checkout --------------------------------------------------------
-
 (def ^:private fixed-entry-time
   ;; deterministic zip bytes; an output-preserving rezip passes a different
   ;; time so the archive bytes change while the member content does not
@@ -112,8 +110,6 @@
     (write-catalog! root works)
     (commit-corpus! root)
     root))
-
-;; --- stage graph ------------------------------------------------------------
 
 (def fixture-toolchain "za-fixture-toolchain-1")
 
@@ -205,8 +201,6 @@
    :render render-stage
    :validate validate-stage
    :fidelity (stages/source-fidelity-stage fixture-toolchain)})
-
-;; --- kernel run -------------------------------------------------------------
 
 (defn run-corpus!
   "One kernel run at the corpus's current commit into the persistent store

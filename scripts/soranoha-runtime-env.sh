@@ -71,14 +71,8 @@ export AB_DB_ROOT="${AB_DB_ROOT:-$SORANOHA_WORKSPACE_ROOT/ab-validator/scratch/s
 export AB_MORPH_WAREHOUSE_DIR="${AB_MORPH_WAREHOUSE_DIR:-$AB_DB_ROOT/morph-warehouse}"
 export AB_MORPH_WAREHOUSE_AAT_DIR="${AB_MORPH_WAREHOUSE_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-aat/aozora2html-adapter}"
 export AB_AAT_RUN_SET="${AB_AAT_RUN_SET:-$SORANOHA_WORKSPACE_ROOT/ab-validator/reports/aat-fidelity/run-sets/current.json}"
-# Per-adapter fidelity AAT dumps are NO LONGER selected by env. The AAT run-set
-# (AB_AAT_RUN_SET -> resolve-run-set -> lock) is the sole dump-selection authority
-# (aat_runs ignores ambient AB_*_AAT_DIR; the parser-IR audits and the mapping
-# smoke resolve dirs from the lock). The former AB_AOZORA{,_RS,2,2HTML,_EPUB3}_AAT_DIR
-# overrides were removed to stop stale/broken defaults (e.g. a nonexistent scratch
-# aozora-rs path) silently diverging from the pins. AB_AOZORA2HTML_AAT_DIR is kept
-# below only as a single-file fixture source for the parser-ir-level3-* smokes and
-# morph-warehouse recipes (a dev convenience, not fidelity dump selection).
+# The resolved AAT run-set lock selects fidelity dumps.
+# AB_AOZORA2HTML_AAT_DIR below supplies only retained single-file research fixtures.
 export AB_AOZORA2HTML_AAT_DIR="${AB_AOZORA2HTML_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter}"
 
 export AB_RESEARCH_OUTPUT_ROOT="${AB_RESEARCH_OUTPUT_ROOT:-$SORANOHA_WORKSPACE_ROOT/ab-validator/research/out}"

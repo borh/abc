@@ -23,15 +23,11 @@
            (java.security.spec EdECPoint EdECPrivateKeySpec EdECPublicKeySpec
                                NamedParameterSpec)))
 
-;; --- hex helpers -----------------------------------------------------------
-
 (defn hex->bytes ^bytes [^String s]
   (when-not (and (string? s) (even? (count s)) (re-matches #"^[0-9a-f]*$" s))
     (throw (ex-info "Expected lowercase hex" {:value s})))
   (byte-array (map #(unchecked-byte (Integer/parseInt (subs s % (+ % 2)) 16))
                    (range 0 (count s) 2))))
-
-;; --- 65-byte hex+LF files (.pub and releases/HEAD share the contract) ------
 
 (def zero-head-hex (apply str (repeat 64 "0")))
 
@@ -52,8 +48,6 @@
     (when-not (= \newline (.charAt s 64))
       (throw (ex-info "hex+LF file must end with one LF" {})))
     (hash/assert-hex64 (subs s 0 64))))
-
-;; --- Ed25519 ---------------------------------------------------------------
 
 (def ^:private ^KeyFactory key-factory (KeyFactory/getInstance "Ed25519"))
 
@@ -103,15 +97,11 @@
          (.update ver (.getBytes message StandardCharsets/US_ASCII))
          (.verify ver sig-bytes))))
 
-;; --- domain-separated messages ---------------------------------------------
-
 (defn manifest-message [manifest-id-hex]
   (str "snh-manifest-sig/1:" (hash/assert-hex64 manifest-id-hex)))
 
 (defn event-message [event-hex]
   (str "snh-governance-event-sig/1:" (hash/assert-hex64 event-hex)))
-
-;; --- pinned roles ----------------------------------------------------------
 
 (defn validate-pinned-keys!
   "Validate a pinned-keys configuration {:release pub-hex :governance pub-hex}.

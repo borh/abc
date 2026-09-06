@@ -1,15 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Idempotency gate for the fidelity resolve step (Phase 2, Move B). Proves the
-# three properties the fidelity-lock design leans on, using only a tiny
-# self-contained fixture (a one-file AAT dir + a manifest) so it runs in the Nix
-# check sandbox with NO /db and NO network:
-#   1. DETERMINISM  — resolving the same manifest twice yields a byte-identical lock.
-#   2. FAIL-CLOSED  — a manifest pinning the WRONG content_hash refuses to emit a lock.
-#   3. PASS         — a manifest pinning the CORRECT content_hash emits a lock that
-#                     records that content_hash.
-# See docs and the fidelity-run idempotency ADR. Companion to aat-run-set-smoke.sh.
+# Resolution must be deterministic, reject a wrong content hash, and record
+# the correct hash. The fixture needs neither corpus storage nor network access.
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 resolve="$repo_root/ab-validator/reports/aat-fidelity/resolve-run-set.py"

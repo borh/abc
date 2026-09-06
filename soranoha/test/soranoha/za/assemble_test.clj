@@ -20,8 +20,6 @@
             [soranoha.za.corpus :as corpus]
             [soranoha.za.oracle :as oracle]))
 
-;; --- fixture corpus works ---------------------------------------------------
-
 (def merosu {:work-id "000100" :person-id "000001" :card "000001"
              :book "100" :n "1001" :title "hashire-merosu"
              :text "メロスは激怒した。\nfixture line two\n"})
@@ -43,8 +41,6 @@
 
 (def slug-of corpus/work-slug)
 
-;; --- assessments ------------------------------------------------------------
-
 (defn- fact [status basis]
   (if (= "not-evaluated" status)
     {"status" "not-evaluated" "jurisdiction" nil
@@ -62,8 +58,6 @@
                              (str "author:" (:person-id work)))]}))
 
 (defn- pd [work] (candidate work "public-domain" "public-domain"))
-
-;; --- publication ------------------------------------------------------------
 
 (def policy-hash (hash/sha256-string "za fixture policy"))
 
@@ -100,8 +94,6 @@
                            (view/read-at v commit
                                          (verify/blob-path
                                           (verify/id->hex artifact-id)))))))
-
-;; --- acceptance -------------------------------------------------------------
 
 (deftest kernel-backed-genesis-release
   (let [root (corpus/init-corpus! [merosu kumo flagged guarded unevaluated])

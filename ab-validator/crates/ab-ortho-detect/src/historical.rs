@@ -4,14 +4,8 @@
 //! rewrite only the historical *kana* — so an analyzer with no historical
 //! dictionary (sudachi) can be fed modernized input, and every analyzer sees the
 //! identical modernized text for cross-analyzer comparability.
-//! See docs/comment-standards.md and docs/glossary.md.
 //!
-//! ## The algorithm is what was measured, not what was hoped
-//!
-//! This is the exact hybrid that a ground-truth harness scored **94.8%** against
-//! 25 parallel 旧仮名/新仮名 aozora editions (regular 95.9%, digraph 92.7%,
-//! surface-unchanged baseline 14.8%); see
-//! `reports/ortho-detect/2026-07-08-lane-b-coverage-probe.md`:
+//! ## Modernization rules
 //!
 //! 1. **POS particle guard** — a 助詞 は/へ/を keeps its historical spelling
 //!    (現代仮名遣い keeps the particles). Requires the segmentation oracle's POS.
@@ -24,11 +18,8 @@
 //!    yotsugana づ→ず, ぢ→じ) plus the word-medial は/ひ/ふ/へ/ほ → わ/い/う/え/お
 //!    (medial = not the token-initial char) and っ-before-て/た.
 //!
-//! **No lexical exception table.** The measured 94.8% used none; the residual ~5%
-//! (mostly false misses from segmentation-boundary differences, plus a small
-//! 現代仮名遣い exception set — づ/ぢ-retention in words like 続く, え-row 長音
-//! spelled ええ) is documented as future work rather than shipped unmeasured — an
-//! untested table could only move the validated number the wrong way.
+//! No lexical exception table is applied. Segmentation boundaries and modern
+//! spelling exceptions (such as retained づ/ぢ) can therefore cause mismatches.
 
 use std::ops::Range;
 use std::sync::Arc;

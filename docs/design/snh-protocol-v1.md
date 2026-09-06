@@ -1,27 +1,14 @@
-# snh protocol v1 — live specification
+# snh protocol v1
 
-Status: **NORMATIVE, D16.1-FROZEN — the sole normative source (F84).
-Freeze approved 2026-08-25 at commit 22551310** after freeze-review
-rounds 1–2 (F147–F156, all applied). The frozen objects are the four
-executable JSON Schemas and the conformance vectors (§11 items 1–5,
-at the locations named in §11); no further changes to them or to this
-document without a decision-log entry. §11 item 6's state/transaction
-fixtures land with the §8 verifier and §9 transaction implementations
-and require their own review — they are not covered by this freeze.
-No open items remain; F83, O5a, O3(b), and O1 are owner-ratified. Per F80, the FROZEN objects are the executable
-JSON Schemas plus the conformance vectors (§11). Authority split
-(F88): the JSON Schemas govern STRUCTURE; this document governs
-SEMANTIC and STATE invariants; the conformance vectors demonstrate
-both. Any disagreement among the three BLOCKS the freeze — and after
-it, is a defect resolved by a decision-log entry, never by silently
-preferring one artifact.
+This specification defines the publication protocol's semantic and state
+invariants. The four executable JSON Schemas govern structure; conformance
+vectors demonstrate both. Changes to these contracts require a permanent
+architectural decision record. A disagreement among the specification, schemas
+and vectors is a defect; no artifact silently overrides another.
 
-This document contains only the live protocol. Rationale, decision
-history, and superseded designs live in the design ledger
-(`2026-08-24-publication-rearchitecture.md`); nothing there overrides
-this document. Contingency designs (key rotation, recovery statements,
-signature envelopes) are NOT part of v1 — see the ledger's contingency
-appendix for their activation triggers.
+Key rotation, successor-chain recovery statements and signature envelopes are
+outside this version. Assessment snapshots use payload version 2 under the
+existing `snh:1:assessment-snapshot` artifact identity.
 
 ## 1. Canonical form and identity
 
@@ -32,12 +19,12 @@ appendix for their activation triggers.
   bytes are unique for a given value.
 - Every content id is `sha256` lowercase hex over canonical bytes (for
   JSON objects) or exact published bytes (for artifacts).
-- BOUNDARY DECODE (F137/F142 — ONE reusable operation applied to EACH
+- BOUNDARY DECODE (ONE reusable operation applied to EACH
   OF THE FOUR PROTOCOL JSON OBJECTS (the §2 registry) and to NOTHING
   ELSE, on both the assembler and verifier sides):
   reject duplicate object keys; parse WITHOUT coercion; validate the
   parsed value against its frozen JSON Schema; apply the type's
-  SINGLE-OBJECT semantic boundary rules (F154/F156/F161 — EVERY rule
+  SINGLE-OBJECT semantic boundary rules (EVERY rule
   a lone object must satisfy: sortedness/uniqueness of each object's
   slug- and id-keyed lists, list disjointness within the object, real
   calendar dates, absolute origin; cross-object and transition
@@ -49,9 +36,9 @@ appendix for their activation triggers.
 - Artifact id string form: `snh:1:<type>:<sha256hex>`.
 - `manifest_id` = sha256 hex over the manifest's canonical bytes.
   External citation form: `snh:1:release-manifest:<hex>`.
-- Resolver route: artifact id → `/blobs/sha256/<hex>` (+ type-suffixed
-  convenience path) — a SERVING path, independent of storage layout.
-- In-repo blob layout (F93): `blobs/sha256/<hex[0:2]>/<hex>` —
+- Resolver route: artifact id → `/blobs/sha256/<hex[0:2]>/<hex>`.
+  The static serving tree exposes the same sharded blob layout as the repository.
+- In-repo blob layout: `blobs/sha256/<hex[0:2]>/<hex>` —
   SHARDED; a flat directory of tens of thousands of entries would
   rewrite one giant tree object per release. Fixed here so verifiers
   and the archival predicate can locate any blob in any commit or
@@ -68,17 +55,16 @@ v1 consumers must never meet unknown members.
 
 ## 3. `snh-manifest/1`
 
-Required top-level fields; closed schema — no other members. No dates
-of any kind appear in manifest bytes.
+Required top-level fields; closed schema — no other members. No dedicated date or timestamp fields appear in manifest bytes.
 
 | Field | Contract |
 |---|---|
 | `schema` | literal `"snh-manifest/1"` |
 | `corpus` | `{upstream_origin (URL string), upstream_rev (commit hex)}` |
-| `toolchain` | object: stage-id (matches `^[0-9a-z][0-9a-z-]*$`, F80) → `{nix_closure_hash (string), stage_code_version (string)}`; keys sorted. Provenance/derivation-key input only — never an input to artifact identity. `nix_closure_hash` carries the stage's toolchain identity EXACTLY as the build's derivation keys carry it (F172 clarification): the wrapper-supplied Nix closure hash for nix-provisioned stages, the hashed binary/profile identity for subprocess stages; a constant placeholder is prohibited — the build fails closed without a supplied identity |
+| `toolchain` | object: stage-id (matches `^[0-9a-z][0-9a-z-]*$`) → `{nix_closure_hash (string), stage_code_version (string)}`; keys sorted. Provenance/derivation-key input only — never an input to artifact identity. `nix_closure_hash` carries the stage's toolchain identity EXACTLY as the build's derivation keys carry it: the wrapper-supplied Nix closure hash for nix-provisioned stages, the hashed binary/profile identity for subprocess stages; a constant placeholder is prohibited — the build fails closed without a supplied identity |
 | `selection_params` | object; string keys sorted; values strings or safe-range integers; `{}` when the inclusion rule takes no parameters |
 | `admission` | `{policy_id (string), policy_hash (hex), inclusion_rule_id (string), inclusion_rule_hash (hex), assessment_snapshot (artifact id), admission_report (artifact id)}` |
-| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty, F80), unique. Each `{slug, source_content_hash (hex of the CANONICAL SOURCE-BUNDLE IDENTITY, F173/F176 clarification: sha256 over the canonical bytes of the abc-source-bundle-v1 identity object `{construction, members: [{path, member_hash}...], primary_text_member}` — stable across archive-level repackaging that preserves members, unlike a raw archive hash), artifacts}`; `artifacts` sorted bytewise by `type`, each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type |
+| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty), unique. Each `{slug, source_content_hash (hex of the CANONICAL SOURCE-BUNDLE IDENTITY: sha256 over the canonical bytes of the abc-source-bundle-v1 identity object `{construction, members: [{path, member_hash}...], primary_text_member}` — stable across archive-level repackaging that preserves members, unlike a raw archive hash), artifacts}`; `artifacts` sorted bytewise by `type`, each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type |
 | `withdrawn` | array sorted by `slug`; each `{slug, event}` with `event` a `governance-event` artifact id — the GOVERNING event carrying the public reason |
 | `validation_summary` | `{invalid_count (integer), invalid_slugs (sorted array of slugs)}` |
 | `governance_event` | `null`, or the `governance-event` artifact id this manifest executes; non-null exactly when the manifest performs a withdrawal or event-amendment |
@@ -92,29 +78,22 @@ commit; GC-rooted; resolvable by hash.
 ```
 {schema: "snh-governance-event/1",
  kind: "withdrawal" | "event-amendment",
- entries: [{slug, reason_code, statement, amends?}]}  // sorted by slug
+ entries: [{slug, reason_code, statement, amends?}]} // sorted by slug
 ```
 
-(F82: `authority` and `evidence_hash` are REMOVED from v1 — `authority`
-duplicated the pinned governance key's role; `evidence_hash` had no
-frozen evidence serialization, retention policy, or verifier consumer,
-and publicly committed potentially sensitive material. Private
-request/evidence stays in the publisher's operational record; a public
-evidence commitment returns only with a concrete audit consumer and
-encoding.)
+Private requests and supporting evidence remain in the publisher's operational
+record; governance events contain only the public statement.
 
 - `reason_code` ∈ {"rights", "takedown-request", "data-defect", "other"}.
 - `statement`: string, may be empty. No dedicated date or timestamp
-  FIELD exists in event bytes (F150); substantive dates may appear
+  FIELD exists in event bytes; substantive dates may appear
   inside the free-form `statement` text — the enforceable rule is
   structural, not a prohibition on prose content.
 - `entries` is non-empty with unique slugs. In a `withdrawal` event NO
   entry has `amends`; in an `event-amendment` event EVERY entry has
   `amends` (the superseded event's artifact id).
-- The `event-amendment` kind exists per O3(b) — owner-RATIFIED
-  2026-08-25 (amendable-but-permanent: a governing event id changes
-  only via an audited `amends` chain; withdrawal itself never
-  reverses).
+- A governing event changes only through an `amends` chain. Amending its
+  statement never reverses the withdrawal.
 - Signed by the GOVERNANCE key (see §7). Stored in the release commit at
   `governance/<hex>.json` (convenience copy; CAS blob authoritative)
   with detached signature `governance/<hex>.sig`.
@@ -124,50 +103,46 @@ encoding.)
 Two retained public content-addressed artifacts; both are permanent GC
 roots; both resolve by hash.
 
-**`snh-assessment-snapshot/1`** — assessment FACTS only, for every
-candidate in the selected population, per rights-relevant contribution:
-status ∈ {public-domain, in-copyright, undetermined, not-evaluated},
-jurisdiction, effective date, recorded basis. `not-evaluated` (no
-completed assessment) and `undetermined` (assessment performed,
-inconclusive) are distinct and never collapsed; absence of a completed
-assessment is an explicit `not-evaluated` fact, never an omitted
-contribution. No admission decisions appear here.
+**`snh-assessment-snapshot/2`** records every candidate in the selected
+population as either independent assessment facts or edition-level reliance
+(see the payload section below). An independent candidate records both the
+exact work/edition and every rights-relevant contribution. `not-evaluated`
+means no currently applicable assessment; `undetermined` means an applicable
+assessment was inconclusive. Unavailable assessment is explicit, never an
+omitted contribution. Neither is an admission decision.
 
-Content shape (fixed 2026-08-25 at the pre-Slice-2 freeze; amended per
-freeze-review F149 — the O1 rule assesses BOTH the exact work/edition
-and every rights-relevant contribution, so both fact levels are
-required. The schema is authoritative for structure per F88):
+Independent candidate shape:
 
 ```
-{schema: "snh-assessment-snapshot/1",
+{schema: "snh-assessment-snapshot/2",
  candidates: [{slug,
                work_assessment: {status, jurisdiction,
                                  effective_date, basis},
                contributions: [{contribution_id, status,
                                 jurisdiction, effective_date,
-                                basis}]}]}   // candidates sorted by slug;
+                                basis}]}]} // candidates sorted by slug;
                                              // contributions sorted by
                                              // contribution_id; both unique
 ```
 
-- `work_assessment` (F149): the assessment fact for the exact
+- `work_assessment`: the assessment fact for the exact
   work/edition itself, same shape as a contribution fact minus
-  `contribution_id`; required for every candidate.
+  `contribution_id`; required for every independent-assessment candidate.
 - `contribution_id`: string matching `^[0-9a-z][0-9a-z:_-]*$`, naming
   the rights-relevant contribution (e.g. `author:000035`,
-  `annotator:001357`); unique within its candidate; every candidate has
+  `annotator:001357`); unique within its candidate; every independent-assessment candidate has
   at least one contribution.
 - Fact rule (both levels): status `not-evaluated` ⇔ `jurisdiction`,
   `effective_date`, and `basis` are all `null`. Every other status
   (including `undetermined` — the assessment was performed) carries all
   three non-null: `jurisdiction` lowercase (`^[a-z][a-z0-9-]+$`, e.g.
-  `jp`), `effective_date` = the as-of date of the recorded facts
-  (`YYYY-MM-DD`; a REAL calendar date per the F154 semantic rule below;
+  `jp`), `effective_date` = the effective date of the recorded facts
+  (`YYYY-MM-DD`; a REAL calendar date per the semantic rule below;
   dates are permitted here — the structural no-date-field rule binds
   manifest and event bytes), `basis` a non-empty recorded-basis string.
 
-Semantic boundary rules (F154 — enforced inside the §1 boundary
-decode after structural validation (F156), so assembler and verifier
+Semantic boundary rules (enforced inside the §1 boundary
+decode after structural validation, so assembler and verifier
 inherit them from the one shared operation; never JSON Schema
 `format`, whose enforcement is inconsistent across validators):
 - every non-null `effective_date` must be a real proleptic-Gregorian
@@ -179,21 +154,20 @@ inherit them from the one shared operation; never JSON Schema
 
 ```
 {schema: "snh-admission-report/1",
- assessment_snapshot: <full artifact id>,    // F80: typed id, matching
- policy_hash: <hex>,                         // the manifest's admission
+ assessment_snapshot: <full artifact id>, // typed id, matching
+ policy_hash: <hex>, // the manifest's admission
  inclusion_rule_id, inclusion_rule_hash: <hex>,
- admitted: [slug...],                        // sorted
- excluded: [{slug, reason_code}...],         // sorted by slug
- quarantined: [{slug, reason_code}...]}      // sorted by slug
+ admitted: [slug...], // sorted
+ excluded: [{slug, reason_code}...], // sorted by slug
+ quarantined: [{slug, reason_code}...]} // sorted by slug
 ```
 
 Every candidate appears exactly once across the three sets. Report
 `reason_code` values match `^[0-9a-z-]+$`; their DOMAIN is defined by
 the content-addressed inclusion rule (`inclusion_rule_id` +
-`inclusion_rule_hash`). The hash BINDS that vocabulary but does not
-resolve it (F87 — v1 publishes no resolver for rule bytes): the
-schema constrains syntax publicly; the semantic domain is checked by
-the ASSEMBLER against the rule bytes it holds.
+`inclusion_rule_hash`). The hash binds that vocabulary but does not resolve rule bytes. The schema
+constrains syntax; assembler and verifier check the rule identity and reproduce
+the partition with the executable inclusion rule.
 
 ## 6. Encodings (wire contracts; conformance vectors required)
 
@@ -207,7 +181,7 @@ the ASSEMBLER against the rule bytes it holds.
   PUBLICATION repositories and serving trees contain NO key copies;
   deployment source MAY carry public keys as NON-AUTHENTICATING
   pinned verifier configuration; only the trust anchor authenticates
-  the role assignment, F116/F122): EXACTLY 65 bytes —
+  the role assignment): EXACTLY 65 bytes —
   64 lowercase ASCII hex characters (the 32 raw Ed25519 public-key
   bytes) + one LF.
 - Key FINGERPRINT: lowercase sha256 hex over the DECODED 32 raw key
@@ -219,19 +193,9 @@ the ASSEMBLER against the rule bytes it holds.
 
 ## 7. Keys and verification
 
-(Implements O5a — owner-RATIFIED 2026-08-25, exact corrected text
-including F125's incident condition; governance key MEDIUM amended by
-owner 2026-08-25 after the firmware finding — SOFTWARE Ed25519, not
-hardware tokens — and COMPOSITION collapsed per round-27 review F143:
-ONE governance key with TWO separately controlled custody copies,
-since two non-threshold software keys where either signs and either's
-compromise halts add no property beyond a second inventoried copy.
-All other clauses unchanged.)
-
-Two disjoint ROLES, each a FIXED, directly pinned, non-empty SET of
-Ed25519 keys. FOR A GIVEN PUBLICATION CHAIN, the pinned sets are
+Two disjoint ROLES, each with exactly one fixed, directly pinned Ed25519 key. FOR A GIVEN PUBLICATION CHAIN, the pinned sets are
 established at genesis and NEVER change; changing them ENDS that
-chain; successor continuity is OUTSIDE v1 (F112/F120 — the verifier
+chain; successor continuity is OUTSIDE v1 (the verifier
 takes ONE `pinned_keys` argument over the FULL chain: removing a
 member fails historical signatures, retaining it authorizes future
 events, and no epoch/window machinery exists to distinguish the
@@ -248,10 +212,9 @@ cases). No key-manifest, no in-band rotation, no envelope in v1:
 
 The verifier selects the ROLE from the signed object's kind,
 constructs the domain-separated message from the artifact it holds,
-and accepts the raw signature iff it verifies against SOME member of
-that role's pinned set.
+and accepts the raw signature iff it verifies against that role's pinned key.
 
-Degradation and halt (F115/F144 — "lost without compromise" is not
+Degradation and halt ("lost without compromise" is not
 normally observable; for SOFTWARE keys accountability attaches to the
 DECLARED COPY INVENTORY, not a physical token): the ceremony declares
 the governance key's COMPLETE AUTHORIZED PERSISTENT-COPY INVENTORY —
@@ -268,45 +231,37 @@ COMPROMISE of any role member halts the role's operations
 Custody of the media's encryption secrets is an operational ceremony
 matter, OUTSIDE the wire protocol.
 
-Key distribution (F116): pinned key BYTES and fingerprints live ONLY
+Key distribution: pinned key BYTES and fingerprints live ONLY
 in the independent trust anchor and the verifier's pinned
 configuration, obtained via the owner-named pre-release discovery
 channel — the owner's ORCID record, which lists the FIRST anchor
 deposit's specific Zenodo VERSION DOI as a work before the first
-signed release (F145: ONE pointer to the ONE immutable role-bound
+signed release (ONE pointer to the ONE immutable role-bound
 anchor; a version DOI's files are fixed, unlike the concept DOI's;
 no fingerprints are duplicated outside the anchor, so no counts can
 drift). The anchor
-authenticates the ROLE ASSIGNMENT, never a flat key list (F126):
+authenticates the ROLE ASSIGNMENT, never a flat key list:
 RELEASE = {K_release}; GOVERNANCE = {K_governance}. `pinned_keys`
 PRESERVES that partition; the role
 sets MUST be disjoint, and an un-roled/overlapping configuration is
 INVALID — otherwise an accidental flat configuration could authorize
 the online release key for governance. v1's PUBLICATION repositories
-and serving trees contain NO key copies (F116/F122 — a copy hosted
+and serving trees contain NO key copies (a copy hosted
 in the publication channel cannot authenticate itself and has no
 consumer; even an "optional non-normative" copy invites
 synchronization questions). Deployment source MAY carry the public
 keys as NON-AUTHENTICATING pinned verifier configuration; only the
 Zenodo/ORCID anchor authenticates the role assignment.
 
-Signer note (non-normative): any signer producing plain Ed25519 over
-the §6 message satisfies this section. The v1 governance key (owner
-amendment 2026-08-25; F143) is a software keypair: the ceremony
-generates it offline, writes the TWO authorized copies to their
-separately controlled encrypted offline media — the deliberate copy
-operation recorded in the custody inventory — and has the key sign a
-fixed protocol conformance vector as disposable ceremony evidence
-(F117 analog). Governance signing happens on an offline machine; the
-key material never resides on a network-connected host. The owner's
-existing YubiKeys (firmware 5.4.3) cannot serve: PIV Ed25519 requires
-firmware ≥ 5.7.0, and FIDO2 resident keys do NOT satisfy §6 — CTAP2
-assertions sign authenticator data + a counter, never the raw
-message.
+Governance signing uses plain Ed25519 over the §6 message on an offline
+machine. The key material must never reside on a network-connected host. The
+ceremony creates the two authorized encrypted copies, records the copy operation
+in the custody inventory, and signs a fixed conformance vector as disposable
+evidence. Ceremony signatures never replace the checked-in fixture signatures.
 
 ## 8. Verifier invariants
 
-THE verifier primitive (F105):
+THE verifier primitive:
 `verify_repository_at(repository_view, C, pinned_keys)`. Every read —
 commits, trees, manifests, signatures, events, artifacts,
 `releases/HEAD` — goes through the single NON-FALLBACK
@@ -319,18 +274,16 @@ repository; archive verification supplies ONLY the SWH snapshot;
 mirrors and local clones supply themselves. The invariants below are
 what the primitive checks, with C:`releases/HEAD` as the target head.
 
-The view's contract is COMMIT-SCOPED (F110) and NON-SUBSTITUTING
-(F159): reads must ignore object-replacement mechanisms and must not
+The view's contract is COMMIT-SCOPED and NON-SUBSTITUTING: reads must ignore object-replacement mechanisms and must not
 import objects from outside the view's single object store — for a
 git-backed view, replacement refs are disabled, promisor/lazy fetches
 are disabled, and alternate object directories are rejected outright.
 Discovery and reads run under a SANITIZED environment bound to the
-view's own git directory (F166): every `GIT_`-prefixed variable is
+view's own git directory: every `GIT_`-prefixed variable is
 stripped and the git directory resolved at construction is passed
 explicitly on every invocation, so an inherited `GIT_DIR`,
 `GIT_OBJECT_DIRECTORY`, or alternates override cannot point reads at
-a foreign object store. Linked worktrees are REJECTED at construction
-(F168): a linked worktree's per-worktree git directory hides the
+a foreign object store. Linked worktrees are REJECTED at construction: a linked worktree's per-worktree git directory hides the
 common directory's object store and alternates file, so the view
 requires the resolved common directory to equal the git directory
 (linked worktrees have no v1 consumer).
@@ -342,9 +295,9 @@ another branch, a later commit, a dangling object — is INSUFFICIENT
 (the co-presence error one level lower). Pre-genesis base case: the
 initial commit with the zero `releases/HEAD` is a valid EMPTY
 repository state; every later valid target C must be a publication
-commit (F106).
+commit.
 
-PUBLICATION COMMIT (F106 — a LOCAL definition; uniqueness is a
+PUBLICATION COMMIT (a LOCAL definition; uniqueness is a
 consequence of the linear-history invariants below, not a separate
 search): C is a publication commit iff
 - C has exactly one parent P;
@@ -356,23 +309,22 @@ Structural (single-object rules — works/withdrawn/invalid_slugs
 sortedness, uniqueness, and disjointness; event entries sortedness;
 snapshot candidate/contribution ordering; report list ordering and
 partition-list disjointness — are enforced by the §1 boundary decode
-each manifest/evidence/event fetch passes through, F161; the bullets
+each manifest/evidence/event fetch passes through; the bullets
 below are the verifier's cross-object additions):
 - Every artifact id hash is 64 lowercase hex; `bytes` matches the
   stored blob's length.
-- Type-prefix and hash checks are EXPLICIT (F80): every artifact id's
+- Type-prefix and hash checks are EXPLICIT: every artifact id's
   `<type>` component must match its field context (`withdrawn[].event`
   and `governance_event` are `governance-event`; `admission.*` ids are
   `assessment-snapshot`/`admission-report`; `works[].artifacts[].id`
   type equals its `type` member); for every artifact the verifier
   FETCHES, it recomputes sha256 over the bytes and requires equality
   with the id's hash component; each of the FOUR PROTOCOL JSON
-  objects additionally passes the §1 BOUNDARY DECODE (F137/F142 —
-  stored bytes must equal the canonical bytes of the validated
+  objects additionally passes the §1 BOUNDARY DECODE (stored bytes must equal the canonical bytes of the validated
   value). All other artifacts — e.g. `tei-validation` JSON bytes —
-  are exact published bytes checked by hash alone; they have no
-  frozen schema and no canonical form.
-- Validation-summary RE-DERIVATION (F162/F165): the verifier consumes
+  are exact published bytes checked by hash; they have no frozen schema or
+  canonical form. Validation records additionally satisfy the consumed contract below.
+- Validation-summary RE-DERIVATION: the verifier consumes
   a fixed projection of each per-work `tei-validation` record under a
   minimal consumed contract — the record parses as strict JSON with
   duplicate keys rejected, `status` is exactly one of `passed`,
@@ -382,7 +334,7 @@ below are the verifier's cross-object additions):
   `status` is `failed`. No other field is consumed or constrained;
   tei-validation bytes remain exact published bytes checked by hash,
   with no frozen schema and no canonical form.
-- Semantic boundary rules (F154/F156, applied inside the §1 boundary
+- Semantic boundary rules (applied inside the §1 boundary
   decode — never via JSON Schema `format`): `corpus.upstream_origin`
   is an absolute URI with a scheme and non-empty host; every non-null
   `effective_date` in the assessment snapshot is a real
@@ -390,45 +342,38 @@ below are the verifier's cross-object additions):
 
 Admission (fetch both evidence artifacts by hash):
 - The report's fields match `admission` field-for-field over the
-  fields the report actually carries (F89 — the report has NO
+  fields the report actually carries (the report has NO
   `policy_id`): report `assessment_snapshot` ==
   `admission.assessment_snapshot`; report `policy_hash`,
   `inclusion_rule_id`, `inclusion_rule_hash` equal the corresponding
   `admission` values.
 - admitted ∪ excluded ∪ quarantined partitions the snapshot's
   candidates exactly.
-- **Totality binding (F81/F87 — snapshot and report could otherwise
+- **Totality binding (snapshot and report could otherwise
   omit the same work undetected):** the snapshot's candidate set must
   equal the selected candidate population derived from `corpus` +
   `selection_params`. In v1 this is an ASSEMBLER invariant: candidate
   selection PRECEDES assessment (it cannot run "under the inclusion
-  rule", which consumes the snapshot's facts — the round-15 wording
-  was circular), and the assembler checks set equality against the
+  rule", which consumes the snapshot's facts), and the assembler checks set equality against the
   transactionally consistent selection it derived before emitting the
   manifest. v1 makes NO public-recomputation claim — rule and policy
   bytes are not publicly resolvable. Public verifiers still check the
-  partition and field-binding invariants above. Upgrade path, if
-  independent totality verification is ever wanted: a
-  candidate-selection definition independent of rights inclusion plus
-  hash-resolvable selector/policy/rule bytes.
+  partition and field-binding invariants above.
 - `works[].slug` set = admitted − withdrawn slugs. Excluded and
   quarantined slugs never appear in `works`.
 
 Chain (walk `prev_manifest` from `releases/HEAD` to the zero genesis;
 reject a HEAD not matching a valid chain head):
-- **Linear history (F85 — a merge could otherwise bypass the
-  round-15 first-parent rule: the old authoritative head rides the
-  MERGE's second parent while its first-parent line carries a
-  replacement chain from zero, and every round-15 check passes):**
+- **Linear history:**
   every commit on the publication branch except the initial one has
   EXACTLY ONE parent — the previously accepted head. Merge commits on
   the publication branch are INVALID; the verifier rejects them.
-- **Append-onlyness (F78):** for every commit transition where
+- **Append-onlyness:** for every commit transition where
   `releases/HEAD` changes from H to M, `M.prev_manifest == H` MUST
   hold. Only the branch's initial commit may contain the zero HEAD.
-  With F85's linearity this makes "the unique HEAD-advancing commit"
+  With linearity this makes "the unique HEAD-advancing commit"
   (§10) demonstrable.
-- **Genesis (F85 — the predecessor-relative rules below are otherwise
+- **Genesis (the predecessor-relative rules below are otherwise
   undefined without a predecessor):** the genesis manifest has
   `prev_manifest` = 64×"0", `governance_event` = `null`, and
   `withdrawn` = `[]` — explicit values replacing the ordinary-build
@@ -444,7 +389,7 @@ reject a HEAD not matching a valid chain head):
   verbatim; publication coordinates (corpus, toolchain, admission,
   selection_params) equal the predecessor's; the only `works` changes
   are the affected slugs' removals.
-- kind `event-amendment` (O3(b), owner-ratified) ⇒ changed `withdrawn` slugs equal
+- kind `event-amendment` ⇒ changed `withdrawn` slugs equal
   the event's `entries` slugs exactly; for each, `amends ==
   predecessor.withdrawn[slug].event` (linear — no skipped or
   overwritten corrections); each changed `withdrawn[slug].event`
@@ -452,7 +397,7 @@ reject a HEAD not matching a valid chain head):
   `works`, and coordinates verbatim-unchanged. (A superseded event
   with more than one entry per slug is unrepresentable: §1 boundary
   decode rejects duplicate entry slugs, so no such event can enter a
-  valid chain — F167 removed the redundant per-amendment check.)
+  valid chain.)
 - Mixed build/governance changes prohibited in one manifest.
 - Each `withdrawn` entry's slug appears in its governing event's
   `entries`.
@@ -461,8 +406,8 @@ reject a HEAD not matching a valid chain head):
 
 Authority: the protected publication branch of the authoritative public
 origin; fast-forward-only push is the compare-and-swap. What each
-mechanism establishes (F96 — the ref is UNSIGNED and authenticated
-freshness is explicitly deferred, so the origin DESIGNATES the tip
+mechanism establishes (the ref is UNSIGNED and authenticated
+freshness is not established by v1, so the origin DESIGNATES the tip
 operationally; it cannot cryptographically prove it is not serving a
 stale or equivocated head):
 - release signature → Soranoha issuance;
@@ -471,54 +416,48 @@ stale or equivocated head):
 - the authoritative ref → the operationally designated current tip
   and the compare-and-swap serialization point;
 - Zenodo checkpoints → independently recorded historical cutoffs.
-"Completeness" names THREE distinct claims (F102), none an origin
+"Completeness" names THREE distinct claims, none an origin
 property: REPOSITORY-CLOSURE completeness — every manifest, signature,
 event, and blob required for verification is present (a verifier
 result); ADMISSION-PARTITION completeness — the published
 snapshot/report partition checks internally (§8, a verifier result);
-CANDIDATE-SELECTION totality — assembler-only in v1 (§8/F87, not
+CANDIDATE-SELECTION totality — assembler-only in v1 (§8, not
 publicly recomputable). A non-authoritative carrier (mirror, archive,
 clone) can present an internally valid chain from genesis; whether
 that chain is a prefix of the authoritative one is decidable only by
-comparison against an independently obtained head or checkpoint
-(F91/F96).
+comparison against an independently obtained head or checkpoint.
 
 1. Fetch Git commit C (branch head).
 2. FULLY VERIFY C with the §8 primitive and take the manifest head H
-   and the decoded head manifest from its result (F164): the fetched
+   and the decoded head manifest from its result: the fetched
    state is trusted only after verification — an accepted-but-invalid
    tip (e.g. a permitted fast-forward that leaves `releases/HEAD`
    unchanged) must fail here, never satisfy the no-op decision in
    step 3. The same rule governs reconciliation (step 7).
 3. Assemble manifest M with `prev_manifest` = H. BEFORE creating any
-   commit (F158), apply the projection/derived-state decision against
+   commit, apply the projection/derived-state decision against
    the current head: projection equal and derived content equal →
    SUCCESS without publishing (the scheduled no-op); projection equal
    and derived content different → DETERMINISM FAILURE — halt (the
    halt rule applies uncontended, not only after losing a race);
    projection different → proceed.
-4. Create commit C′ with EXACTLY ONE parent, C (F85 — never a merge):
+4. Create commit C′ with EXACTLY ONE parent, C (never a merge):
    M's blobs, `releases/<manifest_id>.json` + `.sig`,
    `releases/HEAD` = M's manifest_id.
-5. VERIFY C′ with the §8 primitive BEFORE pushing (F157): an invalid
+5. VERIFY C′ with the §8 primitive BEFORE pushing: an invalid
    candidate — a bad signature, a missing blob, any violated
    invariant — must never reach the origin ref. Then push with C as
    the expected ref value.
 6. UNKNOWN result: if M is on the accepted manifest chain (walked from
    the current `releases/HEAD`) — success. If M is ABSENT, proceed
-   exactly as for REJECTION (step 7); the two cases converge (F79).
-7. REJECTION — CURRENT-STATE reconciliation (F86 — the round-15
-   pairwise race taxonomy assumed exactly one intervening operation
-   and left "derived state" undefined; the loser now consults only
-   the CURRENT head, so any number and ordering of intervening
-   commits reconciles identically):
+   exactly as for REJECTION (step 7); the two cases converge.
+7. REJECTION — reconcile against the current accepted state:
    - Fetch and FULLY VERIFY the new accepted head; DISCARD the
      assembled M.
    - **Build:** recompute the desired projection `{corpus, toolchain,
      selection_params, admission}`.
      - Projection DIFFERS from the head's → REQUEUE an ordinary build
-       from the head. (This subsumes round-15's build-vs-governance
-       reassembly: the fresh build inherits the head's `withdrawn` by
+       from the head. (The fresh build inherits the head's `withdrawn` by
        construction; a stale loser is never blindly published.)
      - Projection EQUAL → recompute the expected derived content
        under that projection and the head's `withdrawn` (`works` =
@@ -536,17 +475,17 @@ comparison against an independently obtained head or checkpoint
      fresh offline governance authorization. Never rewrite or re-sign
      an event.
 
-Scheduled-build no-op: build iff the projection
-`{corpus, toolchain, selection_params, admission}` differs from the
-current head's. Governance state is inherited and excluded.
+Scheduled-build no-op: publish only when the projection
+`{corpus, toolchain, selection_params, admission}` differs from the current
+head. The repeated build still checks inputs and determinism before converging.
+Governance state is inherited and excluded from this projection.
 
 Nondeterministic output under identical coordinates HALTS as a
 determinism defect.
 
 ## 10. Naming, time, and archival
 
-- Naming (F83, **OWNER-RATIFIED 2026-08-25 — amends D13's dated
-  form**): the canonical, citable identity is the full typed manifest
+- Naming: the canonical, citable identity is the full typed manifest
   id `snh:1:release-manifest:<hex>`. Publication dates are
   presentation/citation metadata only (from the accepted commit and the
   Zenodo record) — never part of the name, because a Git committer
@@ -554,49 +493,41 @@ determinism defect.
   acquire a different derived name when repackaged in another commit
   history. Display conventions (e.g. a short hash prefix such as
   `r<manifest_id[0:12]>`) are presentation concerns OUTSIDE this
-  protocol (round 16) — they carry no identity semantics.
+  protocol — they carry no identity semantics.
 - Stored lifecycle state: `published` only.
-- Withdrawal semantics (F92/F98 — the PROTOCOL guarantees exactly
+- Withdrawal semantics (the PROTOCOL guarantees exactly
   three things): after a withdrawal manifest, the slug is ABSENT from
   current `works`, PRESENT in `withdrawn`, and the transition is
   authorized by its governance event (§8). Removal from discovery and
   work-facing serving routes is a SERVICE obligation of soranoha.za —
-  it belongs to the public promise/service contract with a Slice-3
-  acceptance test, because this protocol defines no routes and cannot
-  test that obligation. NEITHER layer promises byte erasure or
+  the service tests exercise that obligation because this protocol defines no
+  work-facing routes. NEITHER layer promises byte erasure or
   hash-level suppression: bytes remain in chain history, clones,
   mirrors, and archives, and identical bytes may be shared by another
-  admitted work. Hash-level suppression, if legal policy ever
-  requires it, is an explicit operational denylist plus a shared-blob
-  policy OUTSIDE this protocol.
-- Archive verification is ONE operation and ONE name (F109/F113 — the
-  predicate-shaped `archive_verified(C)` is RETIRED; its result was
-  never a function of C alone):
+  admitted work. Hash-level suppression is outside this protocol.
+- Archive verification:
   `archive_verification(archived_view, C, pinned_keys) → report`.
-  The result contract is TOTAL over READABLE views (F121/F128 —
-  bounded so acquisition failures and programmer defects are never
+  The result contract is TOTAL over READABLE views (bounded so acquisition failures and programmer defects are never
   turned into claims about archival validity): acquiring or
   materializing `archived_view` may fail OPERATIONALLY, and that is a
   failure to PERFORM the observation, not an observation. Given a
   readable view, verification ALWAYS returns a report:
   `report.result` =
   SUCCESS iff C is present in the archived view, C is a PUBLICATION
-  COMMIT (§8, F106), and
+  COMMIT (§8), and
   `verify_repository_at(archived_view, C, pinned_keys)` succeeds with
-  the archived SWH snapshot as the SOLE repository view (F97/F101/
-  F105 — nothing is read from the live origin or resolver;
+  the archived SWH snapshot as the SOLE repository view (nothing is read from the live origin or resolver;
   co-presence of C and a valid head is not binding); OTHERWISE a
   FAILED report recording the reason. The DISPOSABLE
   report records the SWH snapshot identifier, C, the pinned key
   fingerprints, and the verifier version + result — no signed
   receipt, no frozen schema. The claim is repository-closure
-  completeness plus the public §7–§8 invariants — nothing more
-  (F102). CITATION ELIGIBILITY requires a SUCCESSFUL observation
-  satisfying the CURRENT citation policy (F113 — disposable reports
+  completeness plus the public §7–§8 invariants — nothing more. CITATION ELIGIBILITY requires a SUCCESSFUL observation
+  satisfying the CURRENT citation policy (disposable reports
   have no ordering contract, so "the latest report" is undefined, and
   a later failed observation does not necessarily invalidate an
   earlier successful one).
-- Archive resolution recipe (F94 — a documented recipe, no new wire
+- Archive resolution recipe (a documented recipe, no new wire
   format): the published promise documents how to map a manifest id +
   artifact id to the archived publication commit and the sharded
   in-repo path (§1), hence to an SWHID — so a citation stays
@@ -606,82 +537,71 @@ determinism defect.
   unavailable to release CI. Compromise semantics: chain freezes at the
   last checkpoint; later signatures contested until an out-of-band
   cutoff notice; release-key compromise halts publication. The
-  governance key, exactly per §7/F115/F144: one inventoried medium
+  governance key, exactly per §7: one inventoried medium
   verifiably destroyed → continue on the remaining copy; an
   unexplained copy, lost custody, or possible disclosure → suspected
   compromise → HALT; compromise of any role member → HALT.
 
-## 11. Executable schemas and conformance vectors (the FROZEN objects, F80)
+## 11. Executable schemas and conformance vectors
 
-The four JSON Schemas and these vectors are what the freeze review
-approves — authored BEFORE that review, not transcribed after it.
-
-Frozen artifact locations (D16.1 freeze approved 2026-08-25 at commit
-22551310): schemas at `soranoha/resources/snh/schemas/*.schema.json`
-(one per §2 release-level type); vectors at
-`soranoha/resources/snh/vectors/` with `expected.json` as the
-table-driven index (accept vectors carry the exact stored canonical
-bytes; reject vectors carry the exact bytes that must fail, each with
-its frozen rejection reason); executable check =
-`soranoha.snh.conformance-test`. Items 1–5 below are covered there.
-Item 6's §8/§9 invariant fixtures are implemented (post-freeze, own
-review pending) in `soranoha.snh.verify-test` and
-`soranoha.snh.transact-test` against a local fixture origin, exercising
-`soranoha.snh.verify` (the §8 primitive + §10 archive report) and
-`soranoha.snh.transact` (the §9 transaction).
+Schemas are at `soranoha/resources/snh/schemas/*.schema.json`, one per §2
+release-level type. Vectors are at `soranoha/resources/snh/vectors/`, with
+`expected.json` as their index. Accept vectors contain exact canonical bytes;
+reject vectors contain exact rejected bytes and their rejection reasons.
+`soranoha.snh.conformance-test` checks items 1–5 below. State and transaction
+fixtures in `soranoha.snh.verify-test` and `soranoha.snh.transact-test` exercise
+item 6 against a local fixture origin.
 
 1. Canonicalization: existing shared vectors (§1).
 2. A complete valid manifest → canonical bytes → manifest_id; the
-   F137 boundary-decode NEGATIVE vector — EQUIVALENT but NONCANONICAL
+   boundary-decode NEGATIVE vector — EQUIVALENT but NONCANONICAL
    JSON (same value; reordered keys or altered whitespace) must be
-   REJECTED; and the F142 DUPLICATE-KEY negative vector — JSON
+   REJECTED; and the DUPLICATE-KEY negative vector — JSON
    carrying a repeated object key must be REJECTED at parse, BEFORE
    schema validation (canonicality vectors cannot exercise this
    parser behavior).
 3. A governance event (each kind) → canonical bytes → id.
 4. Signature: key bytes, message bytes, 64-byte signature for one
-   manifest and one event; and the F126 table-driven CROSS-ROLE
+   manifest and one event; and the table-driven CROSS-ROLE
    tests — the release key signing a governance event FAILS, a
    governance key signing a manifest FAILS, a non-member key FAILS,
    and an overlapping/un-roled `pinned_keys` configuration is
-   REJECTED. All vectors use FIXTURE keys (F123): the F117 key
+   REJECTED. All vectors use FIXTURE keys: the key
    ceremony's smoke signing with the ACTUAL governance key is
    pre-release DISPOSABLE evidence, never a frozen fixture or schema.
 5. `.pub` and `releases/HEAD` byte-exact fixtures (65 bytes each),
    including the pre-genesis zero HEAD.
 6. Invariant fixtures: each §8 rule with one passing and one failing
-   case — including the F85 linearity rule (a MERGE commit carrying
-   the old head on its second parent must FAIL), the F78
+   case — including the linearity rule (a MERGE commit carrying
+   the old head on its second parent must FAIL), the
    HEAD-transition rule (a chain-replacement attempt with
    `prev_manifest` = 0 must FAIL), an explicit genesis fixture (zero
    `prev_manifest`, null `governance_event`, empty `withdrawn`), and
-   the F87 assembler-side totality check; the §9 current-state
+   the assembler-side totality check; the §9 current-state
    reconciliation cases — build: state-already-published success,
    same-projection-different-content determinism failure,
    changed-projection requeue (including after an intervening
-   withdrawal, and after MULTIPLE intervening commits per F86);
+   withdrawal, and after MULTIPLE intervening commits);
    governance: already-applied success, revalidate-and-append,
-   conflicting-withdrawal halt, stale-`amends` halt; and the F101
+   conflicting-withdrawal halt, stale-`amends` halt; and the
    archive-binding NEGATIVE fixture — an archived snapshot whose
    current head verifies but whose expected commit C is invalid (or
-   is not a publication commit per F106) must produce a FAILED
-   `archive_verification` report; the F105 view-isolation NEGATIVE
+   is not a publication commit) must produce a FAILED
+   `archive_verification` report; the view-isolation NEGATIVE
    fixture — an archived view lacking a required signature/blob that
    the live origin still has must FAIL (no fallback reads); and the
-   F110 tree-reachability NEGATIVE fixture — a
+   tree-reachability NEGATIVE fixture — a
    required blob present ELSEWHERE in the same archived object graph
    (another branch, a later commit, or dangling) but absent at its
    prescribed path under C's tree must FAIL.
 
-## Assessment snapshot payload version 2
+## 12. Assessment snapshot payload version 2
 
-The D24 decision in the publication design ledger adds
-`snh-assessment-snapshot/2` alongside the unchanged version 1 payload.
-Both payload versions use the registered `assessment-snapshot` artifact type
-and the existing `snh:1:assessment-snapshot:<sha256>` identity over canonical
-stored bytes. Manifest, admission-report, signature, and resolver formats do
-not change. A version 1 reader rejects a version 2 discriminator; upgraded
-readers accept either explicit discriminator and reject unknown versions.
+`snh-assessment-snapshot/2` uses the registered `assessment-snapshot` artifact
+type and `snh:1:assessment-snapshot:<sha256>` identity over canonical stored
+bytes. The decoder accepts this explicit payload discriminator and rejects
+unknown versions. Manifest, admission-report and signature formats retain their
+own version 1 discriminators.
 
 The normative structure is
 `soranoha/resources/snh/schemas/snh-assessment-snapshot-2.schema.json`.
@@ -707,7 +627,7 @@ the exact rule identity/hash and reproduces the partition. The assembler
 binds relied-upon source content hashes to built work inputs; the verifier
 checks that published works carry the same canonical source content hash.
 Withdrawal handling still subtracts the withdrawn set from admission.
-Version 1 rule bytes and verifier behavior remain unchanged.
+
 
 Internal RDF places attributed source classification and the relying
 decision in their own record graphs. Current reliance links appear only in

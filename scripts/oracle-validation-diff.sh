@@ -1,29 +1,9 @@
 #!/usr/bin/env bash
-# Validate a NEW full-corpus morph-warehouse run against a PRIOR one for the
-# ruby-oracle follow-ups (iteration marks + classification split, spec
-# 2026-07-07-oracle-followups-perf).
-#
-# Invariants (see spec §Validation):
-#   * Non-oracle tables must be ROW-COUNT-IDENTICAL (A/B touch only the oracle
-#     path; P1 reorders shards but changes no row content).
-#   * The oracle table legitimately changes, so it is compared by a KEYED
-#     4-bucket diff on (source_id, text_id, region_index, projected_char_start,
-#     projected_char_end):
-#       - dropped        : emitted before, gone now  -> iteration-mark A-wins
-#                          (a false non-match became all-match -> not emitted).
-#                          EXPECTED > 0.
-#       - newly_emitted  : present now, absent before -> a prior MATCH became a
-#                          non-match. EXPECTED ~= 0; anything else is a
-#                          regression signal to inspect.
-#       - classification_changed / unchanged on shared keys.
-#   * The prior run predates the classification column, so prior labels are read
-#     from evidence_detail JSON (2-way: resolved / nonstandard_ruby).
-#
-# Every table is stored as a DIR of parquet part(s) (X.parquet/*.parquet), even
-# when compacted to a single part.
-#
-# Usage: scripts/oracle-validation-diff.sh PRIOR_RUN_DIR NEW_RUN_DIR
 set -euo pipefail
+
+# Compare non-oracle table row counts and oracle rows keyed by source, text,
+# region and projected character offsets. Older classifications come from
+# evidence_detail; tables are directories of Parquet parts.
 PRIOR="${1:?usage: oracle-validation-diff.sh PRIOR_RUN_DIR NEW_RUN_DIR}"
 NEW="${2:?usage: oracle-validation-diff.sh PRIOR_RUN_DIR NEW_RUN_DIR}"
 rp() { printf "read_parquet('%s/%s.parquet/*.parquet')" "$1" "$2"; }

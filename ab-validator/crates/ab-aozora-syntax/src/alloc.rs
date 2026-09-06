@@ -309,7 +309,7 @@ impl Allocator {
         })
     }
 
-    /// `Node::Format` for a #331 dotted-letter directive
+    /// `Node::Format` for a dotted-letter directive
     /// ([`ForwardAttr::AccentDot`]): decorates the reclaimed `text` run and
     /// interns the raw directive `body` (the selector grammar) so the renderer
     /// can compose the dots and the serializer can re-emit it verbatim.

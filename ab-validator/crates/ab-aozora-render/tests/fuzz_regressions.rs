@@ -1,9 +1,5 @@
-//! Permanent regression cases for the cargo-fuzz harnesses under
-//! `crates/aozora-render/fuzz/`.
-//!
-//! See the top-level `tests/fuzz_regressions/README.md` for the
-//! triage / promote workflow. Every promoted artifact replays here
-//! on `just test` without a nightly toolchain.
+//! Replay raw fuzz regression inputs from `tests/fuzz_regressions/`.
+//! Invalid UTF-8 is skipped, matching the fuzz target input contract.
 
 use std::fs;
 use std::panic;

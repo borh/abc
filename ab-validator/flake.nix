@@ -484,8 +484,7 @@
         # Standalone Vibrato and Sudachi CLIs built from the exact sources the
         # workspace already pins, wired to the flake dictionaries. These exist
         # so tokenizer-profile fixture evidence and ad hoc probes run pinned,
-        # reproducible runners instead of ambient tools (ADR 0027 deferred
-        # decision; docs/handoffs/ruby-annotation-probe-2026-07-09.md caveat).
+        # reproducible runners instead of ambient tools.
 
         vibratoRkyvSource = pkgs.fetchgit {
           url = "https://github.com/o24s/vibrato-rkyv.git";
@@ -1214,8 +1213,7 @@
           };
         };
 
-        # Permanent stdin→AAT fork adapter binary (Phase 2). Packaged so
-        # run-aat-full.sh can pin it by content as a first-class lane.
+        # The AAT adapter is pinned by executable content for corpus measurements.
         abAozora = mkRustBin {
           pname = "ab-aozora";
           extra.src = aozoraSource;

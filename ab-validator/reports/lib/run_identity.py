@@ -2,8 +2,7 @@
 
 `input_set_hash(identity_object)` reduces the full set of inputs that determine a
 batch run's output to a single `sha256:<hex>`, so a run can be skipped when its
-inputs are unchanged and detected as stale the instant any input changes. See
-docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
+inputs are unchanged and detected as stale the instant any input changes.
 
 Identity is content-based (never mtime) and fails toward correctness: any input
 that can affect the output belongs in `identity_object`; omitting one silently

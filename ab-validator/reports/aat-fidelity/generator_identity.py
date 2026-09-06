@@ -1,14 +1,13 @@
 """Input-set identity + provenance fields for an AAT dump (run-aat-full.sh).
 
-Closes F6: the generator records both the dump's **input identity**
+The generator records both the dump's **input identity**
 (`input_set_hash`) and its own **output content hash** (`output_content_hash`) in
 `metadata.json`, so staleness is decidable — a dump is stale exactly when a
 freshly-computed `input_set_hash` differs from the one it recorded.
 
 Content-based, fail toward correctness: the corpus tree, adapter binary, and
 feature-patterns file are hashed by content; output-affecting flags (timeout,
-features, work-ids) are folded in; `--jobs` (parallelism only) is excluded. See
-docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
+features, work-ids) are folded in; `--jobs` (parallelism only) is excluded.
 """
 
 from __future__ import annotations

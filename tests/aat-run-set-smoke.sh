@@ -7,17 +7,8 @@ trap 'rm -rf "$tmp"' EXIT
 
 unset AB_AOZORA_AAT_DIR
 
-# The fixture must name a flake input that is actually locked, and agree with
-# the lock byte-for-byte, or `validate_run_set` reports drift and the positive
-# assertion below fails. Read both coordinates out of the lock instead of
-# restating them: a hand-copied rev turns every routine `nix flake update` into
-# a spurious failure of this test, and a retired input turns it into a failure
-# with no live pin to copy at all -- which is exactly how the previous
-# `upstream-aozora-src` fixture rotted after that input was retired.
-#
-# What this test owns is the validator's behaviour, not the pin. The pin is
-# governed by `scripts/monorepo-flake-input-policy.py`; the negative case below
-# still proves the rev comparison has teeth.
+# Derive fixture coordinates from the lock so input updates do not stale the
+# positive case. The negative case independently checks revision mismatches.
 aozora_input="aozorabunko-src"
 read -r aozora_rev aozora_nar_hash < <(
   python3 - "$repo_root/flake.lock" "$aozora_input" <<'PY'
@@ -91,9 +82,7 @@ assert adapter_aat_globs(run_set)["aozora"].endswith("/aozora/aat/aozora-adapter
 clean_errors = validate_run_set(run_set, repo_root=repo_root, require_paths=True)
 assert clean_errors == [], clean_errors
 
-# The manifest is authoritative: a stale ambient AB_AOZORA_AAT_DIR must NOT swap
-# the dump, even though the entry still carries the legacy aat_dir_env field
-# (fidelity Phase 1, F1/F2 of the idempotency ADR).
+# The manifest selects the dump even when an ambient directory disagrees.
 os.environ["AB_AOZORA_AAT_DIR"] = str(override_dir)
 assert adapter_aat_globs(run_set)["aozora"].endswith("/aozora/aat/aozora-adapter/*.json")
 

@@ -21,8 +21,6 @@
     (fail! reason data))
   xs)
 
-;; --- shared value rules -----------------------------------------------------
-
 (def ^:private strict-iso-date
   ;; uuuu (not yyyy) so the strict resolver accepts unambiguous years, and
   ;; real calendar arithmetic rejects impossible dates like 2026-99-99 or
@@ -51,8 +49,6 @@
                     (some? (.getHost uri))
                     (not (.isEmpty (.getHost uri)))))
              (catch java.net.URISyntaxException _ false)))))
-
-;; --- per-type checks --------------------------------------------------------
 
 (defn check-manifest!
   [manifest]

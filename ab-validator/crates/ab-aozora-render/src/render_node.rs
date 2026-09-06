@@ -120,7 +120,7 @@ fn render_content_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> f
 /// Render a ruby node to a `<ruby>` element (a left-side ruby classes its
 /// `<rt>` for below-the-line placement).
 ///
-/// When `base_emphasis` is set (#384) — a declined forward directive
+/// When `base_emphasis` is set — a declined forward directive
 /// `［＃「X」に傍点/罫囲み/…］` named this ruby's base as its unique referent — the
 /// base is wrapped in that attribute's emphasis element **inside** the `<ruby>`,
 /// before the `<rt>`, so the emphasis marks the base glyphs and not the reading.
@@ -128,7 +128,7 @@ fn render_content_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> f
 /// [`ForwardOrigin::SelfContained`] leaf on the base, so every attribute kind
 /// (傍点 → `<em>`, 罫囲み → framed `<span>`, 行右小書き / 太字 / 二重傍線 / …) wraps
 /// identically; the separate `Referenced` directive leaf still renders nothing,
-/// so exactly one styled copy exists (no #228 double-render).
+/// so exactly one styled copy exists (no double-render).
 fn render_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut W) -> fmt::Result {
     out.write_str("<ruby>")?;
     match r.base_emphasis {
@@ -169,8 +169,7 @@ fn render_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) ->
 ///
 /// A `Referenced` origin emits **nothing** — its
 /// target literal already lives in the upstream plain run (or a ruby base), so
-/// re-rendering it here would double the text (#228). This is load-bearing and
-/// pinned by the curated `Referenced` inputs. A `Detached` decoration (#333) is
+/// re-rendering it here would double the text. A `Detached` decoration is
 /// *not* `Referenced`, so it falls through the gate and renders styled — it is
 /// the styled-literal half of a non-adjacent split, and its literal was removed
 /// from the plain run, so rendering it here is the sole (correct) copy.
@@ -248,7 +247,7 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
             }
             None => render_forward_semantic(f, f.attr, store, out),
         },
-        // ドット付き (#331): compose the addressed letters of the reclaimed run
+        // ドット付き: compose the addressed letters of the reclaimed run
         // into their precomposed dotted glyphs (ṁ / ṣ) — see `render_accent_dot`.
         ForwardAttr::AccentDot => render_accent_dot(f, store, out),
         // アクサン / ウムラウト: compose the single target letter with its accent
@@ -317,7 +316,7 @@ fn render_forward_semantic<W: Write>(
     out.write_str(close)
 }
 
-/// Render a #331 dotted-letter forward: compose the addressed letters of the
+/// Render a dotted-letter forward: compose the addressed letters of the
 /// reclaimed run into their precomposed glyphs inside an `aozora-accent-dot`
 /// span. The selector grammar lives in the interned `accent_body`; the shared
 /// composer (also the classifier's validator) produces the visible run. A

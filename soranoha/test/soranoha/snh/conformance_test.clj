@@ -21,8 +21,6 @@
 
 (def expected (delay (vector-json "expected.json")))
 
-;; --- boundary decode: accepts, ids, and rejection reasons ------------------
-
 (deftest accept-vectors-decode-to-their-recorded-ids
   (doseq [{:strs [file type id]} (get @expected "accept")]
     (testing file
@@ -51,8 +49,6 @@
 (deftest boundary-decode-applies-only-to-the-four-protocol-types
   (is (thrown? clojure.lang.ExceptionInfo
                (decode/decode "tei-validation" (.getBytes "{}" "UTF-8")))))
-
-;; --- signatures: artifact binding and role binding -------------------------
 
 (def sig-vectors (delay (vector-json "signature-vectors.json")))
 
@@ -134,8 +130,6 @@
       (is (= (get k "fingerprint")
              (hash/sha256-bytes (sign/hex->bytes (get k "pub"))))))))
 
-;; --- byte-exact .pub and releases/HEAD fixtures ----------------------------
-
 (deftest pub-and-head-fixtures-are-exactly-65-bytes
   (doseq [[file hex] [["fixture-release.pub"
                        (get-in @sig-vectors ["keys" "release" "pub"])]
@@ -157,8 +151,6 @@
                       ["66 bytes" (.getBytes (str sign/zero-head-hex "\n\n") "US-ASCII")]]]
     (testing label
       (is (thrown? clojure.lang.ExceptionInfo (sign/parse-hex64-lf bs))))))
-
-;; --- cross-artifact consistency of the fixture family ----------------------
 
 (deftest fixture-family-is-cross-consistent
   (let [manifest (:value (decode/decode "release-manifest"
@@ -202,8 +194,6 @@
                                              (vector-bytes "governance-event-amendment-valid.json")))]
         (is (= (:id withdrawal)
                (get-in amendment ["entries" 0 "amends"])))))))
-
-;; --- the schemas themselves are valid 2020-12 schemas ----------------------
 
 (def ^:private meta-schema-ref
   ;; $ref to the meta-schema validates a schema document; a bare $schema

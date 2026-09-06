@@ -2,7 +2,9 @@
   (:require [ab-research.aat-parser-ir-compat :as compat]
             [ab-research.parser-release-qualification :as q]
             [ab-research.parser-rq-capture :as capture]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :refer [deftest is testing]]
+            [charred.api :as json]
+            [soranoha.core.json :as record-json]))
 
 (def admitted-identity
   {:aat_version 2
@@ -178,9 +180,9 @@
            (:verdict (q/evaluate-predicate
                       predicate {:parser_ir_schema_validation envelope}))))))
 
-;; --- Gate status + ADR promotion rule -----------------------------------------
+;; --- Gate status and promotion rule -----------------------------------------
 
-(deftest predicate-tally-and-adr-status-require-all-pass-test
+(deftest gate-status-requires-all-predicates-pass-test
   (let [preds (q/load-predicates)
         all-pass {:fatal_failures 0 :source_span_coverage 1.0
                   :metadata_attribution 1.0 :silent_drops 0
@@ -189,9 +191,9 @@
                   :timeouts 0}
         one-unavailable (dissoc all-pass :peak_cgroup_memory_bytes)
         one-fail (assoc all-pass :source_span_coverage 0.969)]
-    (is (= "Accepted" (q/adr-0039-status true (q/evaluate preds (envelopes admitted-identity all-pass)))))
-    (is (= "Proposed" (q/adr-0039-status true (q/evaluate preds (envelopes admitted-identity one-unavailable)))))
-    (is (= "Proposed" (q/adr-0039-status true (q/evaluate preds (envelopes admitted-identity one-fail)))))))
+    (is (= :release-qualified (q/gate-status true (q/evaluate preds (envelopes admitted-identity all-pass)))))
+    (is (= :not-qualified (q/gate-status true (q/evaluate preds (envelopes admitted-identity one-unavailable)))))
+    (is (= :not-qualified (q/gate-status true (q/evaluate preds (envelopes admitted-identity one-fail)))))))
 
 (deftest admission-query-projects-exactly-the-nine-match-keys
   (is (= (set compat/match-keys)
@@ -216,7 +218,7 @@
                        :admission_candidate {:entries [conflicting]}))]
     (is (= :conflict (get-in report [:admission :status])))
     (is (= :not-qualified (:gate_status report)))
-    (is (= "Proposed" (:adr_0039_status report)))))
+    (is (= "abc/parser-release-qualification-report/v3" (:report_schema_version report)))))
 
 (deftest absent-or-invalid-admission-candidate-cannot-qualify
   (let [base (report-input admitted-identity
@@ -333,7 +335,13 @@
                  :identity admitted-identity
                  :measurements measurements})]
     (is (q/report-valid? report) (pr-str (q/report-explain report)))
+    (let [wire (json/read-json (record-json/write-deterministic-json-str report))]
+      (is (= "abc/parser-release-qualification-report/v3"
+             (get wire "report_schema_version")))
+      (is (= "not-qualified" (get wire "gate_status")))
+      (is (= #{"report_schema_version" "report_id" "gate_status" "identity"
+               "coherence" "admission" "predicate_verdicts" "verdict_tally"}
+             (set (keys wire)))))
     (is (= :not-qualified (:gate_status report)))
-    (is (= "Proposed" (:adr_0039_status report)))
     (is (= (:list_hash corpus) (get-in report [:identity :corpus_list_hash])))
     (is (= 10 (count (:predicate_verdicts report))))))

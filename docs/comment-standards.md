@@ -1,52 +1,28 @@
-# Comment Standards
+# Comments and documentation
 
-Conventions for source-comment content in `ab-validator/` (Rust) and
-`soranoha/src/` (Clojure). These are coding standards, not architecture
-decisions — hence a convention doc, not an ADR. Enforced by
-`scripts/comment-hygiene-check.sh`.
+Repository prose explains the current system without requiring project history.
+Plans, handoffs, review discussions and temporary decision records belong in the
+issue tracker. Current contracts, operating guides, useful research evidence and
+permanent architectural decisions belong beside the code they explain.
 
-## Allowed external references
+Source comments should add a contract, constraint or reason the code cannot express
+clearly. Remove comments that repeat the next expression, narrate an edit, or
+promise future work. Describe an actual limitation where a caller needs to know
+it. Document public behavior at the API boundary and implementation rationale
+beside the relevant operation.
 
-- Code symbols (functions, types, fields) documented for the reader.
-- Specific ADRs (e.g., `ADR 0037`).
-- Upstream/external specifications: JIS, Unicode, TEI, IIIF, RDF, SHACL,
-  JSON-LD, aozora.gr.jp, and `U+XXXX` codepoint notation.
+Use descriptive invariant names, including those in [the glossary](glossary.md).
+Do not reference issues, review findings, numbered project tasks or deleted plans.
+References to code symbols, permanent architecture documents and external
+specifications such as Unicode, JIS and TEI are useful when they identify the
+actual contract. Algorithm steps and protocol section numbers are not project
+coordination labels.
 
-## Not allowed
+Keep historical evidence clearly scoped to its recorded inputs and observations;
+do not present it as the current implementation. Update live document links when
+moving or removing their targets. Generated documentation must be changed through
+its source and regenerated with the existing toolchain.
 
-- The project's own issue-tracker numbers (`#NNN`). One-off references
-  are rewritten as self-contained prose.
-- Handoff documents, dated specs/reports (`docs/handoffs/…`,
-  `docs/superpowers/{specs,reports}/…`).
-- Project-management labels: `Task N`, `Plan G.4`, `plan amendment`,
-  `Plan Blocker`, transient `Phase` labels (`Phase-C`, `Phase-3 Lane B`,
-  `Phase 1.2`, `Phase-0 responsibility`, …), transient `Tier` labels.
-- `TODO` markers — convert to a factual limitation statement instead.
-- Speculative/forward-looking filler ("revisit", "eventually export",
-  "a later task", "someday").
-
-## Retained named invariants
-
-Six issue numbers name durable, cross-file semantic invariants and are
-kept as stable identifiers (they behave like the "Tier-A canary"
-invariant name). They are defined in [`glossary.md`](glossary.md):
-`#78`, `#228`, `#331`, `#333`, `#384`, `#435`. The "Tier-A canary"
-invariant name is likewise retained.
-
-## Retained algorithm-stage markers
-
-Comments of the form `// --- Phase N: <description> ---` (and the
-`Phase 0: …` marker in `ab-aozora-pipeline`'s `pipeline.rs`) describe a
-function's own internal processing stages, not project phases. They stay.
-The canonical example is `ab-aat-to-parser-ir/src/sentences.rs`.
-
-## Program output is out of scope
-
-String literals emitted as program output (e.g. the ablation report
-headers in `ab-ortho-detect-ml/src/main.rs`) are not comments. The
-cleanup does not rewrite them, and the hygiene check excludes them.
-
-## UNSTABLE / stability posture
-
-Per-item `UNSTABLE` markers are not used. A single crate- or
-module-level `# Stability` section states the pre-1.0 semver posture once.
+Run `scripts/comment-hygiene-check.sh` to catch coordination references. The check
+is a guard against recognizable markers; reviewers must also check accuracy,
+necessity and audience throughout prose that contains no such markers.

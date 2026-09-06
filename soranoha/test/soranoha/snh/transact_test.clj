@@ -197,8 +197,6 @@
     (is (= :published (:outcome r)))
     (is (= 2 (count (:chain (verified-chain clone)))))))
 
-;; --- current-state reconciliation races ------------------------------------
-
 (defn- race!
   "Publish `winner-opts` from a second clone between the loser's assembly and
   push, then return the loser's outcome."

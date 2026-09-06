@@ -461,11 +461,11 @@ pub(crate) struct RecogniseCtx<'al, 's> {
     /// or `None` when no plain run is open (or this is a nested-content
     /// view, where forward references never resolve). Read by the forward
     /// recognizers to locate a non-adjacent referent *inside* that run and
-    /// splice a styled decoration at it (#333).
+    /// splice a styled decoration at it.
     pub pending_plain_start: Option<u32>,
     /// Output channel: a styled decoration leaf a forward recognizer carved
     /// out of the pending plain run at its interior referent, plus that
-    /// referent's source span (#333). `try_bracket_emit` drains it and
+    /// referent's source span. `try_bracket_emit` drains it and
     /// splices the leaf into the plain run before flushing the tail. `None`
     /// for every other outcome (adjacent / self-contained / declined /
     /// non-forward).
@@ -744,7 +744,7 @@ where
     }
 
     /// Splice a styled decoration leaf into the *middle* of the pending plain
-    /// run at an interior referent (#333). Where [`Self::flush_plain_up_to`]
+    /// run at an interior referent. Where [`Self::flush_plain_up_to`]
     /// only truncates the tail, this opens an interior hole:
     /// `Plain[pending_start, deco.start]` · `deco` · then re-seeds the pending
     /// run at `deco.end` so the tail (up to the bracket's `consume_start`)
@@ -1572,7 +1572,7 @@ where
             source: self.source,
             diagnostics: Vec::new(),
             // The forward recognizers resolve a non-adjacent referent inside
-            // the current pending plain run (#333); hand them its start.
+            // the current pending plain run; hand them its start.
             pending_plain_start,
             pending_decoration: None,
         };
@@ -1580,11 +1580,11 @@ where
         // Drain diagnostics raised while building nested reading content
         // (a gaiji inside a left-ruby / annotation reading) into our sink,
         // and take the decoration the forward recognizer may have carved out
-        // (#333). Both reads are the last use of `ctx`, so its reborrow of
+        //. Both reads are the last use of `ctx`, so its reborrow of
         // `self.alloc` ends here (NLL) and the splice below gets full `self`.
         self.diagnostics.append(&mut ctx.diagnostics);
         let decoration = ctx.pending_decoration.take();
-        // #333: if the recognizer resolved a non-adjacent interior referent,
+        // if the recognizer resolved a non-adjacent interior referent,
         // splice a styled decoration leaf into the pending plain run *before*
         // flushing the tail up to the bracket. The window invariant is
         // re-checked defensively (the recognizer computed the span against the

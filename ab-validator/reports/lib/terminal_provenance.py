@@ -3,7 +3,7 @@
 ABC policy v0.2.0 admits `terminal_provenance` and `colophon_metadata` as
 distinct source-region classes but flags them `needs_measurement_split`
 (see `reports/lib/source_region.py`). This module defines the NORMATIVE
-boundary rule between them; Task 14's Rust `source_note` emission
+boundary rule between them; Rust `source_note` emission
 transcribes this rule case-for-case, so it must not drift from what is
 written here.
 
@@ -63,9 +63,6 @@ BLANK_CLASS: Class = "blank"
 TAIL_START_MARKER = "底本："
 
 # Ordered head-marker skeleton -- extended ONLY by corpus-scan residuals.
-# Every extension beyond this skeleton is documented (with examples and
-# work IDs) in
-# docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md.
 #
 # A head is recognized by prefix match against the line with leading/
 # trailing whitespace stripped (`line.strip()`), same as `classify_tail`
@@ -141,7 +138,7 @@ def find_tail_start(lines: list[str]) -> int | None:
     stripping ONLY leading whitespace (`str.lstrip`, matching the Rust
     `trim_start` check), starts with `底本：`. This is the SAME boundary
     `aozora_body_range` uses to end the parser's body span, so the tail
-    returned by `lines[start:]` agrees with what Task 14's parser
+    returned by `lines[start:]` agrees with what the parser
     transcription treats as body-end.
 
     Returns `None` when no such line exists in `lines` (no tail).
@@ -152,7 +149,7 @@ def find_tail_start(lines: list[str]) -> int | None:
     return None
 
 
-# The normative rule, embedded as data so the report (and Task 14's Rust
+# The normative rule, embedded as data so the report (and Rust
 # transcription) can render/compare it directly rather than re-deriving it
 # from prose.
 BOUNDARY_RULE: dict[str, object] = {

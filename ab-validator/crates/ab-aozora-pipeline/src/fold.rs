@@ -40,7 +40,7 @@ use ab_aozora_syntax::{DirectiveKind, ForwardAttr, LineFormat, RegionClose, Regi
 /// [`LexOutput`] (`Send + Sync`).
 ///
 /// The native owned producer: the classify stage builds the owned tree in one
-/// pass (the way the retired borrowed `lex` built the borrowed one), so the
+/// pass, so the
 /// returned output owns all its payloads (interned strings, content / segment
 /// runs, side tables). This is what `Document::parse` / `Document::lex`
 /// call.

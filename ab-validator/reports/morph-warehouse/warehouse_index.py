@@ -13,8 +13,7 @@ workflow cache's ``valid-cached-node-result``:
   or manifest ``input_set_hash`` mismatch) → recompute.
 
 Content only; no timestamps. Run manifests are rebuildable, so the index is
-derived state, not identity. See
-docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
+derived state, not identity.
 """
 
 from __future__ import annotations

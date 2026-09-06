@@ -11,7 +11,7 @@
 //! monomorphises against the concrete sink type, which lets the LLVM
 //! inliner fold the `push` call into the match-emit loop with no
 //! virtual dispatch overhead — so [`crate::scan_offsets_in`] writes
-//! straight into the lex arena with no heap round-trip.
+//! directly into the supplied arena without an intermediate heap buffer.
 
 use alloc::vec::Vec;
 

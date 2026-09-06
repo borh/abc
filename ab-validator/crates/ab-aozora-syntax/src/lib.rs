@@ -1,5 +1,5 @@
 //! Forked from <https://github.com/P4suta/aozora>
-//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (hard detach; ADR 0032).
+//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (independent fork).
 //! Upstream crate: aozora-syntax. License: MIT OR Apache-2.0 (see NOTICE).
 
 //! AST type definitions for the aozora parser.
@@ -221,7 +221,7 @@ pub enum RubyBaseClass {
 ///
 /// Single source of truth shared by the classifier's implicit-base walk
 /// ([`is_ruby_base_char`]'s callers) and the serializer's canonical
-/// bare-vs-`｜` decision (ADR 0002): the serializer drops `｜` only when a
+/// bare-vs-`｜` decision: the serializer drops `｜` only when a
 /// bare reading would re-parse to the *same* base, decided by comparing
 /// classes here — so both sides must move in lockstep.
 ///

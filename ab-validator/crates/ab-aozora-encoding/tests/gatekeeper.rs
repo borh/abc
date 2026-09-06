@@ -149,7 +149,7 @@ fn gatekeeper_lookup_tier_dispatch_order_is_pinned() {
 #[test]
 fn gatekeeper_level_table_sizes_match_jisx0213_2004_spec() {
     // Cell counts triangulate the build-time derivation against two
-    // independent sources: the issue-verified JIS X 0208 cell count
+    // independent sources: the JIS X 0208 cell count
     // (6918) and the slim-TSV 第3/第4水準 counts (1893 / 2436, also
     // pinned in the single-char gatekeeper). A drift here means the
     // std.txt parser changed behaviour — re-verify, do NOT edit to pass.

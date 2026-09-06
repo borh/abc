@@ -100,12 +100,13 @@ impl SudachiAnalyzer {
         let config_file = resource_dir
             .as_ref()
             .map(|dir| dir.join(SUDACHI_SETTINGS_FILE));
-        let config = Config::new(config_file, resource_dir, Some(dictionary_path)).map_err(|err| {
-            AnalyzerError::DictionaryLoad {
-                analyzer: analyzer_id.to_owned(),
-                message: err.to_string(),
-            }
-        })?;
+        let config =
+            Config::new(config_file, resource_dir, Some(dictionary_path)).map_err(|err| {
+                AnalyzerError::DictionaryLoad {
+                    analyzer: analyzer_id.to_owned(),
+                    message: err.to_string(),
+                }
+            })?;
         let dictionary =
             JapaneseDictionary::from_cfg(&config).map_err(|err| AnalyzerError::DictionaryLoad {
                 analyzer: analyzer_id.to_owned(),

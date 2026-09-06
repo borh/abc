@@ -1,7 +1,7 @@
 """The normative classify_line model must reproduce every shared vector.
 
 The same vector file is consumed by the Rust mirror test
-(crates/ab-aozora-aat/tests/bare_toggle_model.rs) — Task 5. Editing a
+(crates/ab-aozora-aat/tests/bare_toggle_model.rs). Editing a
 vector means BOTH sides re-verify; never edit expectations to match an
 implementation."""
 

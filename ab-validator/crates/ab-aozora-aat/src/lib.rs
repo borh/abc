@@ -71,9 +71,6 @@ pub struct DecodedSource {
     /// silently drop or duplicate those blanks). Empty when the work has
     /// no `底本：` line at all (`aozora_body_range` returns
     /// `source.len()` as the tail start in that case).
-    /// previously this text was computed and thrown away by
-    /// `sanitize_for_aat`, discarding the terminal-provenance/colophon
-    /// tail entirely (see ADR 0037).
     pub sanitized_tail: String,
     /// Byte offset of `sanitized_tail`'s start within the full SANITIZED
     /// text (same coordinate system `sanitize_diagnostics` spans use —
@@ -82,8 +79,7 @@ pub struct DecodedSource {
     /// sanitize-stage rebase).
     pub tail_offset: usize,
     /// Sanitize offset maps + body offset + line index for span rebasing
-    /// (ADR 0024: emitted spans are offsets against the full decoded
-    /// source `text`, with real 1-based line numbers).
+    /// for full decoded-source offsets and real 1-based line numbers.
     /// Sanitized→decoded span-mapping context. `pub` so the extracted
     /// classified-source capture crate can rebase spans (see `SpanContext`).
     pub span_ctx: SpanContext,
@@ -165,8 +161,8 @@ impl SpanContext {
 /// The decoded source keeps its original terminators — sanitize's CR/LF
 /// normalization only rewrites the text the PARSER sees. A `\n`-only
 /// index therefore synthesizes line 1 for every span of a classic-Mac
-/// bare-CR source (zero `\n` in the whole file), violating ADR 0024's
-/// real-line requirement. Counting `\r\n` as one boundary keeps CRLF
+/// bare-CR source (zero `\n` in the whole file), losing its
+/// real line numbers. Counting `\r\n` as one boundary keeps CRLF
 /// sources' boundary set byte-identical to a `\n`-only index (the
 /// boundary sits after the pair, exactly where `\n`+1 put it), and
 /// treating lone `\r` as a terminator mirrors sanitize's lone-`\r`→`\n`
@@ -216,13 +212,7 @@ fn terminator_ends(text: &str) -> Vec<usize> {
 /// terminator (the text doesn't end in one) still yields one last range
 /// ending at `text.len()`.
 ///
-/// NOTE (divergence from the Python reference, see ADR 0037):
-/// Python's `str.splitlines`/line iteration also breaks on `\v`, `\f`,
-/// `\x1c`-`\x1e`, `U+2028`, `U+2029`, etc. This Rust rule only recognizes
-/// `\n`/`\r\n`/`\r` (the terminators `sanitize` and `line_starts` already
-/// treat as real line boundaries). The corpus scan
-/// found zero exotic-boundary tail lines across 17,886 works, so this
-/// divergence is corpus-absent.
+/// Other Unicode separators remain text, matching the sanitize stage.
 fn line_ranges(text: &str) -> Vec<Range<usize>> {
     let mut out = Vec::new();
     let mut start = 0;
@@ -657,14 +647,8 @@ fn build_aat(
     })
 }
 
-/// The terminal-provenance/colophon tail line classes — a direct
-/// transcription of `reports/lib/terminal_provenance.py`'s `Class`
-/// (`TERMINAL_PROVENANCE_CLASS` / `COLOPHON_METADATA_CLASS` /
-/// `BLANK_CLASS`), the NORMATIVE authority for this rule (see ADR 0037). `Colophon` covers both a real
-/// colophon-head/continuation line AND the fail-open fallback below
-/// (`classify_tail`'s doc comment) — AAT emission only ever needs to know
-/// "not terminal provenance", so the two are not distinguished here; the
-/// fallback additionally produces a `tail-line-unclassified` warning.
+/// Tail classification separates source attribution from transcription metadata.
+/// Unclassified nonblank lines remain colophon data and produce a warning.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum TailLineClass {
     TerminalProvenance,
@@ -672,49 +656,20 @@ enum TailLineClass {
     Blank,
 }
 
-/// State carried across tail lines — mirrors the Python module's
-/// `PROVENANCE_STATE` / `COLOPHON_STATE`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum TailState {
     Provenance,
     Colophon,
 }
 
-/// Ordered head-marker skeleton — verbatim transcription of
-/// `reports/lib/terminal_provenance.py`'s `PROVENANCE_HEADS`. A head is
-/// recognized by prefix match against the line with leading/trailing
-/// whitespace stripped, same as the Python `classify_tail`.
 const PROVENANCE_HEADS: [&str; 2] = ["底本：", "底本の親本："];
 
-/// Verbatim transcription of `reports/lib/terminal_provenance.py`'s
-/// `COLOPHON_HEADS`.
 const COLOPHON_HEADS: [&str; 4] = ["入力：", "校正：", "青空文庫作成ファイル：", "※"];
 
-/// Classify every line of a tail (terminator-inclusive, as produced by
-/// `line_ranges` over `DecodedSource::sanitized_tail`). Transcribes
-/// `reports/lib/terminal_provenance.py`'s `classify_tail` case-for-case
-/// (see ADR 0037 for the normative rule):
-///
-/// - blank line (whitespace-stripped empty): `Blank`, state unchanged.
-/// - line (stripped) starts with a `PROVENANCE_HEADS` entry: `Provenance`
-///   state, class `TerminalProvenance`.
-/// - line (stripped) starts with a `COLOPHON_HEADS` entry: `Colophon`
-///   state, class `Colophon`.
-/// - otherwise, non-blank, matching no head: inherits the class of the
-///   current state (continuation line).
-///
-/// **Divergence from the Python reference (deliberate, documented):** the
-/// Python `classify_tail` is fail-closed — a non-blank line reached before
-/// any state-setting head raises `UnclassifiableTail`, because the corpus
-/// scan proved the rule total (zero unclassifiable residual across 17,886
-/// works) and the *generator*'s job is to flag out-of-corpus input loudly.
-/// The AAT emitter's job is different: it must always produce SOME AAT
-/// document for arbitrary stdin, so failing closed here would turn a
-/// corpus-absent edge case into a hard error for end users. Instead this
-/// classifies the line `Colophon` and records its tail-relative line index
-/// in the returned `Vec<usize>` so the caller can emit a
-/// `tail-line-unclassified` warning — nothing is silently interpreted as
-/// terminal provenance.
+/// Nonblank continuation lines inherit the preceding head's class; blanks do
+/// not change that state. Lines before any head remain colophon data, with
+/// their indices returned for `tail-line-unclassified` warnings. This preserves
+/// arbitrary input without assigning unsupported source-attribution authority.
 fn classify_tail(lines: &[&str]) -> (Vec<TailLineClass>, Vec<usize>) {
     let mut state: Option<TailState> = None;
     let mut classes = Vec::with_capacity(lines.len());
@@ -3164,10 +3119,6 @@ mod tests {
 
     #[test]
     fn c5_identity_join_key_and_document_version() {
-        // Bumps
-        // `ab-aozora` `0.5.0` → `0.6.0` — the schema-2 join key's other
-        // coordinates (`aat-schema 2 facade 0.3.0 wire-schema 3`) are
-        // unchanged by this version-only bump.
         assert!(
             adapter_version()
                 .starts_with("ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3")
@@ -3175,12 +3126,6 @@ mod tests {
         let aat = aat_value_for("あ\n");
         assert_eq!(aat["version"], 2);
     }
-
-    // --- classify_tail (transcribed from
-    // reports/lib/terminal_provenance.py; see ADR 0037)
-    // Tests mirror `ClassifyTail` in
-    // reports/source-regions/tests/test_terminal_provenance_split.py
-    // one-for-one where applicable. ------------------------------------
 
     #[test]
     fn classify_tail_provenance_head_line() {

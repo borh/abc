@@ -3,7 +3,7 @@
 
 The parser-IR audit tools (`ab-aat-to-parser-ir audit-corpus` /
 `tei-eaj-structural-expansion`) are Rust binaries that take repeated `--aat-dir`
-flags; they have no lock/run-set knowledge (that is resolve's job — Phase 2). This
+flags; they have no lock/run-set knowledge (that is resolve's job). This
 thin CLI turns a resolved lock into the `--aat-dir` values so those recipes source
 their dumps from the SAME content-verified pins as the fidelity run-set, instead of
 drifting `env_var_or_default` `/db` paths. Lock reading stays single-sourced in

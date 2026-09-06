@@ -2,7 +2,7 @@
 """Parity between two AAT dumps (directories of per-work *.json).
 
 Two instruments over the same allowlist — exactly the identity pointers
-/meta/adapter and /meta/adapter_version (Phase 2 rotates both):
+/meta/adapter and /meta/adapter_version:
 
   semantic  parsed-JSON equality after REMOVING the two pointers. Key order
             and number formatting are invisible. Localization diagnostic.
@@ -11,8 +11,7 @@ Two instruments over the same allowlist — exactly the identity pointers
             occurrence must appear exactly once per document (fail closed:
             exit 2) so drift can never hide inside the substitution.
 
-Without --bytes the exit code reflects semantic parity (Phase 1 Gate A
-behavior); with --bytes it reflects byte parity, and the semantic result is
+Without --bytes the exit code reflects semantic parity; with --bytes it reflects byte parity, and the semantic result is
 still computed and reported for localization.
 
 Exit 0 = parity; 1 = divergence; 2 = usage/reference error.

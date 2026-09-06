@@ -30,12 +30,7 @@
      [:status [:enum {:error/message "must be citable, provisional, or superseded"}
                :citable :provisional :superseded]]
      [:summary ::am/nonblank-string]]
-    ;; MIN-1: couple :study_contract to :evidence_class so the study-contract
-    ;; binding cannot drift across evidence classes. Admission-class evidence
-    ;; (:conversion-compatibility, the only class ADR 0023 admits) records an
-    ;; exact registry tuple, not a research study, so it MUST NOT carry a study
-    ;; contract; a :neutral-comparison report is a preregistered study
-    ;; measurement, so it MUST bind to its frozen study contract by hash.
+    ;; Study measurements and exact compatibility tuples support different claims.
     [:fn {:error/message ":conversion-compatibility evidence must not carry a :study_contract"}
      (fn [entry]
        (or (not= :conversion-compatibility (:evidence_class entry))
@@ -67,14 +62,13 @@
 ;; --- Evidence-class admission/release boundary --------------------------------
 ;;
 ;; A structural allowlist keyed off :evidence_class, not off the absence of any
-;; particular field. Admission (ADR 0023 exact-tuple registry) and release
-;; qualification (separately authorized, ADR 0038) each name the exact evidence
+;; particular field. Admission (exact-tuple registry) and release
+;; qualification (separately authorized) each name the exact evidence
 ;; classes that may support the claim. Comparison/selection research evidence —
 ;; the historical :parser-selection rows and the new :neutral-comparison rows —
 ;; is deliberately outside both allowlists, so a comparison citation is
 ;; structurally incapable of admitting or release-qualifying a parser regardless
-;; of its :status or which fields it carries (ADR 0030 §Evidence policy,
-;; ADR 0038-C2). Downstream gates (e.g. the release gate) key their predicates
+;; of its :status or which fields it carries. Downstream gates (e.g. the release gate) key their predicates
 ;; off these sets rather than re-deriving the policy.
 
 (def comparison-evidence-classes
@@ -84,13 +78,13 @@
 
 (def admission-evidence-classes
   "Structural allowlist of evidence classes eligible to support an exact-tuple
-  admission claim. Admission is controlled by ADR 0023 exact registry tuples;
+  admission claim. Admission is controlled by exact registry tuples;
   only conversion-compatibility evidence is an admission class."
   #{:conversion-compatibility})
 
 (def release-evidence-classes
   "Structural allowlist of evidence classes eligible to support a release /
-  qualification claim. Release authority is separate (ADR 0038); no
+  qualification claim. Release authority is separate; no
   comparison/selection class qualifies a release, so the allowlist excludes
   every comparison class by construction."
   #{:conversion-compatibility})

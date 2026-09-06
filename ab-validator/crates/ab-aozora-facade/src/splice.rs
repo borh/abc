@@ -1,11 +1,7 @@
 //! Source-region ownership and minimal-diff source splicing.
 //!
-//! The **minimal-diff edit splice** (the — the last pillar of the
-//! coremodel-purification epic. An editor surface that "adds ruby to
-//! this word" or "changes this heading level" wants the resulting source to
-//! differ from the original by the smallest possible diff; it must *not*
-//! reflow the whole document to canonical form ([`Tree::to_source`]), which
-//! would rewrite the author's verbatim formatting everywhere.
+//! Source edits preserve formatting outside the affected construct. Serializing
+//! the whole tree with [`Tree::to_source`] would canonicalize unrelated text.
 //!
 //! This layer answers, for every byte of the sanitized source, two questions:
 //!
@@ -41,11 +37,10 @@
 //!
 //! Nothing is stored on the AST to support the splice. The coupling of a
 //! forward reference is exactly the irreducible [`ForwardOrigin`] provenance
-//! the epic already materialized; a container's pairing is the structural
+//! stored on each forward node; a container's pairing is the structural
 //! nesting already present in [`Tree::source_nodes`]. The splice model is the
 //! dual of the parser's classification, derived entirely on demand from data
-//! that already exists. See ADR-0018 (foundation) and ADR-0019 (coupled /
-//! container splice).
+//! that already exists.
 //!
 //! Incremental *re-parse* (reusing the unaffected tree across an edit) is a
 //! separate performance concern, not part of this model: the parser is
@@ -93,7 +88,7 @@ pub enum RegionRole {
     ForwardSelfContained,
     /// The styled-literal half of a **non-adjacent** forward-reference split
     /// ([`ForwardOrigin::Detached`]) — a decoration leaf materialised at an
-    /// interior occurrence of the target run (#333). The literal lives wholly
+    /// interior occurrence of the target run. The literal lives wholly
     /// inside the region, so editing it is a [`Direct`](SpliceSafety::Direct)
     /// splice; the directive bracket is the coupled
     /// [`ForwardReferenced`](Self::ForwardReferenced) partner, derived on demand.
@@ -294,7 +289,7 @@ pub(crate) fn classify_node_ref(node: NodeRef) -> (RegionRole, SpliceSafety) {
                     Coupled(CoupledKind::ForwardReference),
                 ),
                 ForwardOrigin::SelfContained => (RegionRole::ForwardSelfContained, Direct),
-                // The styled-literal half of a non-adjacent split (#333): its
+                // The styled-literal half of a non-adjacent split: its
                 // literal lives wholly inside the region, so a byte-replace is a
                 // complete local edit — `Direct`, exactly like the interstitial
                 // plain run it was carved out of. (It must NOT be `Coupled`: the
@@ -323,7 +318,7 @@ pub(crate) fn classify_node_ref(node: NodeRef) -> (RegionRole, SpliceSafety) {
             Node::Line(_) => (RegionRole::Line, Direct),
             Node::PageBreak => (RegionRole::PageBreak, Direct),
             Node::SectionBreak(_) => (RegionRole::SectionBreak, Direct),
-            // Self-contained structural-marker leaves (#78) — they fully own
+            // Self-contained structural-marker leaves — they fully own
             // their rendered bytes, so editing the bracket is a Direct splice.
             Node::BodyEnd => (RegionRole::BodyEnd, Direct),
             Node::ForcedBreak => (RegionRole::ForcedBreak, Direct),
@@ -730,7 +725,7 @@ impl Tree<'_> {
     /// The span of the **unique** occurrence of `target` in the sanitized
     /// source before `before`, but only when it lies wholly within a single
     /// plain interstitial run — or a [`ForwardDetached`](RegionRole::ForwardDetached)
-    /// decoration tile, whose bytes *are* the literal (#333). `None` if the
+    /// decoration tile, whose bytes *are* the literal. `None` if the
     /// target is absent, appears more than once (an ambiguous referent), or its
     /// occurrence falls inside another classified construct (e.g. a ruby base) —
     /// the irreducible cases a coupled edit must decline rather than guess.

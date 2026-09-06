@@ -125,7 +125,7 @@ fn render_context_source(variant: &str) -> String {
     format!("あ［＃{variant}］")
 }
 
-/// The seam pin (ADR-0022's fourth, opt-in render role): for every catalogue
+/// For every catalogue
 /// variant, the normalise-render path replaces the inert `Unknown` directive
 /// span with a real rendering of the canonical spelling. The existing
 /// round-trip test proves a canonical is not itself a lint variant, but never
@@ -229,7 +229,7 @@ fn catalogue_refuses_every_editorial_body() {
 
 // ---------------------------------------------------------------------------
 // Tier2 (`ab_aozora_syntax::degraded`) — the opt-in, render-only home for the
-// lossy / judgment reductions migrated out of Tier1 (ADR-0026).
+// lossy / judgment reductions migrated out of Tier1.
 // ---------------------------------------------------------------------------
 
 /// Every migrated degraded sample reduces to a directly parser-recognised
@@ -265,7 +265,7 @@ fn every_degraded_sample_reduces() {
     }
 }
 
-/// Tier1 and Tier2 are disjoint catalogues (ADR-0026): no body resolves in both.
+/// Tier1 and Tier2 are disjoint catalogues: no body resolves in both.
 /// This is what keeps the zero-FP Tier1 map free of the lossy / judgment Tier2
 /// reductions migrated out of it.
 #[test]
@@ -335,7 +335,7 @@ fn degraded_reductions_are_render_only() {
 /// only from `--degraded`. This closes the recognition-vs-meaning gap that let a
 /// lossy fold sit in Tier1 undetected.
 ///
-/// (Before #435 this axis used `中文字、ゴシック体` → `中文字、太字`; that fold was
+/// (Before this axis used `中文字、ゴシック体` → `中文字、太字`; that fold was
 /// removed when ゴシック体 became a first-class gothic construct, so the axis now
 /// exercises a still-lossy Tier2 rule.)
 #[test]
@@ -364,7 +364,7 @@ fn tier1_never_overrides_parser_spelling_preservation() {
 
 /// Tier2 keeps the zero-FP relaxation honest: genuinely editorial, compound, or
 /// composition-note bodies must NOT reduce — reducing them would launder
-/// editorial prose or invent lost data (the ADR-0022 failure mode).
+/// editorial prose or invent lost data.
 #[test]
 fn degraded_refuses_editorial_and_compound() {
     for body in [

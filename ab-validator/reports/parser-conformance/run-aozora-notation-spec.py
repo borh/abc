@@ -88,13 +88,10 @@ def inspect(adapter: Adapter, kind: str, source: str) -> tuple[dict[str, Any] | 
 
 # --- AAT-mode comparison: project AAT blocks -> ordered spec `kind` sequence -
 #
-# AAT adapter output carries NO spans (production adapters omit them; see
-# docs/aat-contract.md and docs/aat-span-audit.md), so we compare the ordered
-# sequence of spec node `kind`s only -- spans are dropped from both sides.
+# Adapters differ in span availability, so this comparison uses only the
+# ordered sequence of projected node kinds.
 #
-# The map below is derived empirically from real adapter output (see the "Spike
-# findings" section of the 2026-07-08 AAT-scoring plan). Two AAT representations
-# of the same construct must be handled: typed nodes (aozora-rs style) and flat
+# Two representations of the same construct must be handled: typed nodes (aozora-rs style) and flat
 # `raw` marker nodes (aozora2 style, e.g. `raw source="BlockStart(Chitsuki)"`).
 
 # AAT `style` style_type -> spec kind. Default (unlisted) decoration -> emphasis,

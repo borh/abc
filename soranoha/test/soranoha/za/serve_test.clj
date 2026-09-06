@@ -1,7 +1,7 @@
 (ns soranoha.za.serve-test
   "Serving-tree acceptance: the exported tree derives only from a fully
-  verified chain, is self-verifying (every file's bytes hash to its
-  name), keeps withdrawn works served under their historical manifests,
+  verified chain, preserves artifact hashes,
+  keeps withdrawn works served under their historical manifests,
   and exports byte-identically for the same chain. The destination must
   not yet exist, so a served path can never mix chain content with
   pre-existing bytes; an unverifiable chain exports nothing."

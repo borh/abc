@@ -42,9 +42,9 @@ impl Default for HeuristicConfig {
 /// V1 heuristic: two-pass detection based on the aozora-corpus-generator
 /// `is_katakana_sentence` logic.
 ///
-/// Branch B option (b): the OOV guard is dropped (Unidic-CWJ has dictionary
-/// entries for katakana particles/copulas, so `LexType::Unknown` rarely fires
-/// on this corpus — see reports/ortho-detect/2026-07-05-sudachi-baseline.md).
+/// No out-of-vocabulary guard is applied: UniDic-CWJ includes katakana
+/// particles and copulas, so dictionary presence does not distinguish
+/// historical spelling.
 /// The proper-noun guard and character-level cascade remain.
 pub struct HeuristicV1 {
     tokenizer: Arc<dyn OrthoTokenizer>,
@@ -168,8 +168,7 @@ impl HeuristicV1 {
 
     /// First-pass tokenization to compute proper-noun coverage.
     ///
-    /// Branch B option (b): `oov_count` is always 0 (the guard is dropped;
-    /// see `reports/ortho-detect/2026-07-05-sudachi-baseline.md`).
+    /// `oov_count` is always zero because detection applies no OOV guard.
     fn first_pass_tokenize(&self, sentence: &SentenceSpan<'_>) -> TokenFeatures {
         let tokens = self.tokenizer.tokenize(sentence.text);
 

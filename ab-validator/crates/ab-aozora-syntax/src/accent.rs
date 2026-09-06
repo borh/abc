@@ -522,36 +522,13 @@ fn try_match(bytes: &[u8], i: usize) -> Option<(usize, char)> {
     None
 }
 
-/// Whether a table digraph is an accent **in this occurrence**, or prose
-/// punctuation that happens to share its shape.
+/// Whether a table digraph denotes an accent in this occurrence.
 ///
-/// Transcribers wrap whole foreign passages in `〔…〕`, so the span body mixes
-/// notation with ordinary prose and two marker bytes collide with it. The
-/// rules here were derived from — and validated against — the archive's own
-/// XHTML rendering of every accent span in the pinned corpus (5,031
-/// substitution sites, 2,331 of them alignable to an oracle label; see
-/// `ab-validator/research/docs/superpowers/plans/2026-07-30-accent-exact-accounting.md`):
-///
-/// - **Cedilla (`,`)** composes only before an ASCII letter. Genuine cedilla
-///   sits word-internally (`Franc,ois`, `garc,on`: 52 composed / 3 literal
-///   before a letter), while a comma before space, line end, or `〕` is
-///   sentence punctuation (4 composed / 149 literal). `Films,` stays
-///   `Films,` instead of becoming `Filmş`.
-/// - **Acute (`'`)** composes only on a vowel base (`aeiouy`, either case).
-///   Vowel-base sites are accents in every context, word-final é included
-///   (765 composed / 3 literal); consonant-base sites are French élision or
-///   an apostrophe (`L'art`, `s'e'prennent`, `c'est`: 0 composed / 114
-///   literal). The consonant acute rows (ć ĺ ḿ ń ŕ ś ź) stay in the table —
-///   the policy's closed mapping vocabulary is unchanged — but no corpus
-///   occurrence is genuinely one of them.
-/// - Every other marker composes unconditionally, as before. The grave,
-///   circumflex, macron, tilde, ring, and stroke markers show no prose
-///   collision in the labeled corpus, and the colon's one collision (prose
-///   colons in bibliographies) is a distinction the archive's own rendering
-///   does not make consistently, so no rule can be validated for it.
-///
-/// Declining composes nothing and loses nothing: the bytes stay verbatim in
-/// the emitted text, which is the fail direction this parser prefers.
+/// Foreign passages inside `〔…〕` also contain prose punctuation. A comma
+/// before whitespace remains punctuation (`Films,`); a cedilla composes only
+/// before an ASCII letter. Acute marks compose only on vowels, preserving
+/// French elision such as `L'art` and `c'est`. Other markers compose wherever
+/// their table entry matches. Declined digraphs remain verbatim in the text.
 #[inline]
 const fn digraph_applies(base: u8, marker: u8, next: Option<u8>) -> bool {
     match marker {
@@ -588,7 +565,7 @@ pub fn compose_accent(letter: char, mark: AccentMark) -> Option<char> {
 }
 
 // ======================================================================
-// Dotted-letter composition (#331 ドット付き) — a *separate* facility from
+// Dotted-letter composition (ドット付き) — a *separate* facility from
 // the `〔…〕` digraph decomposition above.
 // ======================================================================
 //
@@ -602,7 +579,7 @@ pub fn compose_accent(letter: char, mark: AccentMark) -> Option<char> {
 // needed. This makes `accent.rs` the one authority for "Latin letter +
 // diacritic → precomposed glyph".
 
-/// Position of the combining dot in a #331 dotted-letter directive:
+/// Position of the combining dot in a dotted-letter directive:
 /// `上ドット付き` (above) or `下ドット付き` (below).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DotPosition {
@@ -1147,7 +1124,7 @@ mod tests {
         assert_eq!(compose_accent('g', AccentMark::Umlaut), None);
     }
 
-    // --- #331 dotted-letter composition ---
+    // --- dotted-letter composition ---
 
     #[test]
     fn dot_table_composes_case_preserving() {

@@ -12,9 +12,6 @@
 //!   recognised, non-key spellings, so a further pass is a no-op) — the
 //!   idempotency the `fmt --fix` / `render --degraded` write and render paths
 //!   depend on.
-//!
-//! Run via `just fuzz-quick aozora-render catalogue_normalization` (or
-//! `fuzz-deep` / `fuzz-marathon`).
 
 #![no_main]
 

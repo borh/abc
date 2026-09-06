@@ -121,15 +121,9 @@ pub struct DiagnosticBlobRef {
 /// parser-IR, which diagnostics, under which taxonomy, authenticated against
 /// which qualification identity.
 ///
-/// v2 publishes no measurement. v1 also carried a node-span coverage quantity
-/// and the whole-file eligibility it was measured against; both were retired
-/// together, because the quantity was computed by unioning parser-IR spans --
-/// which are offsets into emitted visible text -- against decoded source bytes.
-/// See `docs/adr/parser-rq-retire-node-span-coverage.md`.
-///
-/// `coordinate_system` survives the retirement because `decoded_source.bytes`
-/// does: it says which coordinate that count is in. It no longer qualifies any
-/// interval, because the record publishes none.
+/// The record carries no coverage quantity: parser-IR spans address emitted
+/// text and cannot be unioned against decoded source bytes. `coordinate_system`
+/// describes `decoded_source.bytes`; it does not qualify any interval.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct WorkRecord {

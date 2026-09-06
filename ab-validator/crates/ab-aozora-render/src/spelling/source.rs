@@ -60,7 +60,7 @@ pub fn container_close_source(open: RegionFormat) -> String {
 ///
 /// `emit_ruby` reads it to decide whether a bare `《reading》` would
 /// re-parse to the *same* base (drop `｜`) or a different one (keep `｜`)
-/// — ADR 0002. The predecessor may be a preceding NODE (e.g. a kaeriten
+/// The predecessor may be a preceding NODE (e.g. a kaeriten
 /// `二`, which is a ruby-base char) and not just text, so the last char
 /// must be tracked at the writer, not per `on_text`.
 pub(crate) struct TrackingWriter<W: Write> {
@@ -76,7 +76,7 @@ impl<W: Write> TrackingWriter<W> {
     }
 
     /// The last `char` written so far, if any. `emit_ruby` reads it to
-    /// decide whether a bare `《reading》` drops the explicit `｜` (ADR 0002).
+    /// decide whether a bare `《reading》` drops the explicit `｜`.
     pub(crate) const fn last(&self) -> Option<char> {
         self.last
     }
@@ -225,7 +225,7 @@ pub(crate) fn emit_container_open<W: Write>(open: RegionFormat, out: &mut W) -> 
     }
 }
 
-/// Serialize a `［＃ここから…字下げ…］` opener from its [`IndentBlock`] (#78).
+/// Serialize a `［＃ここから…字下げ…］` opener from its [`IndentBlock`].
 ///
 /// Built incrementally in a fixed **canonical clause order** (wrap → center →
 /// line-layout → bold → horizontal → framed → font), independent of the source
@@ -342,7 +342,7 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
         RegionClose::Gothic { padded: true } => out.write_str("［＃ここでゴシック体終わり］"),
         RegionClose::Italic { padded: false } => out.write_str("［＃斜体終わり］"),
         RegionClose::Italic { padded: true } => out.write_str("［＃ここで斜体終わり］"),
-        // #78 字組み compound — the close keeps its own width so the marker
+        // 字組み compound — the close keeps its own width so the marker
         // round-trips byte-exact; every other indent close is the generic form.
         RegionClose::Indent {
             kumi_width: Some(width),

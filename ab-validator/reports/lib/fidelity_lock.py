@@ -3,8 +3,7 @@
 The lock is emitted by `resolve-run-set.py` and consumed read-only here. It mirrors
 `aat_runs`' resolution interface (`*_aat_dirs` / `*_aat_globs`) so compute tools swap
 one for the other without touching their logic — but the lock is a *closed value*: no
-env, no CWD, no `/db` discovery happen when reading it (that is resolve's job). See
-docs/superpowers/specs/2026-07-09-fidelity-phase2-resolve-compute-lock.md.
+env, no CWD, no `/db` discovery happen when reading it (that is resolve's job).
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-//! Tier2 degraded-form matcher for the notation-hygiene layers (ADR-0026).
+//! Tier2 degraded-form matcher for the notation-hygiene layers.
 //!
 //! [`degraded_directive`] maps a `［＃…］` directive body that the parser keeps
 //! as `DirectiveKind::Unknown` — and that Tier1 ([`crate::lint::canonical_directive`])
@@ -24,7 +24,7 @@
 //! by the parser, the default lint, the default `fmt`, or `fmt --fix`.
 //! Because `DirectiveNormalization::Degraded` is constructed at a single
 //! ephemeral render site, a Tier2 misfire can reach only `--degraded` render
-//! output; it never rewrites source. See ADR-0026.
+//! output; it never rewrites source.
 
 use std::borrow::Cow;
 
@@ -39,10 +39,8 @@ use crate::lint::is_digit_run;
 /// syntactic self-test.
 #[must_use]
 pub fn degraded_directive(body: &str) -> Option<Cow<'static, str>> {
-    // (The former D1 — line-scope 中文字、ゴシック体 → 中文字、太字 — was removed
-    // in #435: ゴシック体 is now a first-class gothic construct distinct from
-    // 太字, so folding it to 太字 is a meaning change, not a faithful render.
-    // The rare 中文字、ゴシック体 size+gothic compound stays a verbatim Unknown.)
+    // ゴシック体 is distinct from 太字; folding it to bold would lose meaning.
+    // The size+gothic compound 中文字、ゴシック体 remains verbatim Unknown.
 
     // D2 — ここから最後まで{N}字下げ → ここから{N}字下げ. LOSSY: 最後まで marks an
     // indent that auto-closes at document/section end; the parser has no

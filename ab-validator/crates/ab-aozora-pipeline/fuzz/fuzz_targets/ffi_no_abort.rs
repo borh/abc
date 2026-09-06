@@ -31,9 +31,6 @@
 //! 4. Every buffer is released via `aozora_bytes_free` and the handle
 //!    via `aozora_document_free` (ASan/LSan under cargo-fuzz then
 //!    catches any leak or double-free).
-//!
-//! Run via `just fuzz-quick aozora-pipeline ffi_no_abort` (or
-//! `fuzz-deep` / `fuzz-marathon`).
 
 #![no_main]
 

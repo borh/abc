@@ -34,8 +34,6 @@
   [opts head-value]
   ((fx/make-assemble (merge base opts)) head-value))
 
-;; --- context: a two-release build chain ------------------------------------
-
 (defn- build-ctx []
   (let [{:keys [clone init-commit] :as repos} (fx/make-repos!)]
     (fx/publish! clone base)
@@ -275,8 +273,6 @@
                                 :base-tree-of head-commit
                                 :manifest-value manifest
                                 :extra-files (:files event)}))))}])
-
-;; --- context: a governance chain (withdrawal of slug-b, then amendment) ----
 
 (defn- gov-ctx []
   (let [{:keys [clone] :as repos} (fx/make-repos!)]

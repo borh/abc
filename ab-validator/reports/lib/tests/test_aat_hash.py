@@ -1,4 +1,4 @@
-"""Tests for the AAT dump content hasher (Phase 2, Move A)."""
+"""Tests for the AAT dump content hasher."""
 
 from __future__ import annotations
 

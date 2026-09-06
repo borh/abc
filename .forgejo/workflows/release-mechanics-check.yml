@@ -1,15 +1,6 @@
-# Fixture-scale mechanics check for the future scheduled release job:
-# the runner-to-origin path — hermetic kernel via nix, signing seed
-# delivered as a secret to a 0600 file, deploy-key push to a protected
-# publication branch, and the transaction outcomes asserted — against
-# the disposable fixture chain (bor/soranoha-f12-race) with the public
-# RFC 8032 fixture keys, a pre-signed withdrawal event from the chain's
-# fixture-inputs branch, and no corpus. Idempotent: the first dispatch
-# publishes the event's successor manifest; every later dispatch must
-# converge to exactly already-applied. Proves runner/secrets/transaction
-# mechanics only; it is not the production job and carries no rights
-# meaning. The deploy key is a live (narrowly scoped) credential: its
-# file is removed even when the job fails.
+# Exercise runner transport and publication against a disposable fixture origin
+# using public RFC 8032 keys. Repeated dispatches must converge to already-applied.
+# The SSH deploy key remains a credential and is removed even on failure.
 name: release-mechanics-check
 on:
   workflow_dispatch: {}

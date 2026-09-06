@@ -67,19 +67,19 @@ fn snapshot_xss_payload_is_escaped() {
 
 #[test]
 fn snapshot_contiguous_forward_styles_referent() {
-    // #333: a non-adjacent referent in the same plain run is styled in place
+    // a non-adjacent referent in the same plain run is styled in place
     // (a `Detached` decoration spliced at 青空) while the bracket stays
     // `Referenced` and renders nothing — 青空 appears once, now bouten-styled,
-    // preserving the #228 no-double-render invariant.
+    // preserving the no-double-render invariant.
     insta::assert_snapshot!(render("青空の下を歩く［＃「青空」に傍点］"));
 }
 
 #[test]
 fn snapshot_referenced_ruby_base_forward_no_double_render() {
-    // #384: the bouten target resolves to a ruby base (not representable as a
+    // the bouten target resolves to a ruby base (not representable as a
     // text-only leaf), so the bracket stays `Referenced` (renders nothing) and
     // the lowering pass decorates the ruby's base instead — 我 renders once,
-    // now emphasis-wrapped inside the `<ruby>`, preserving the #228
+    // now emphasis-wrapped inside the `<ruby>`, preserving the
     // no-double-render invariant.
     insta::assert_snapshot!(render("我《われ》の名は［＃「我」に傍点］"));
 }

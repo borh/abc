@@ -73,7 +73,7 @@ enum BodyFamily {
     SashiePrefix,             // 挿絵（ → 挿絵（X）入る
     IndentBlockParamPrefix,   // ここから → ここから{N}字下げ
     AlignEndBlockParamPrefix, // ここから地から → ここから地から{N}字上げ
-    IndentKumiBlockEnd,       // ここで字下げ、 → ここで字下げ、{W}字組み終わり (#78)
+    IndentKumiBlockEnd,       // ここで字下げ、 → ここで字下げ、{W}字組み終わり
     OkuriganaPrefix,          // （ → kaeriten okurigana （X）
 
     // === Body-equals-pattern then parse from body[0] ===
@@ -216,8 +216,7 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "ここで字下げ終わり",
         family: BodyFamily::IndentBlockEnd,
     },
-    // The 字組み compound closer carries the width (`ここで字下げ、20字組み終わり`,
-    // #78). Distinct from the generic `ここで字下げ終わり` above — the char after
+    // The 字組み compound closer carries the width (`ここで字下げ、20字組み終わり`). Distinct from the generic `ここで字下げ終わり` above — the char after
     // `ここで字下げ` is `、` vs `終`, so the two needles never overlap.
     BodyPattern {
         needle: "ここで字下げ、",
@@ -327,7 +326,7 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     // reference `「X」は縦中横` leaf). A bare `［＃縦中横］…［＃縦中横終わり］` is a
     // non-canonical corpus convention that used to open a styling range,
     // contradicting the handbook's own tcy page; it now stays verbatim
-    // `Directive{Unknown}` and never opens a block (#435).
+    // `Directive{Unknown}` and never opens a block.
     // Block 罫囲み (ここから form; the bare 罫囲み is also KeigakomiOpen).
     // LeftmostLongest keeps ここから罫囲み over the ここから indent prefix.
     BodyPattern {
@@ -341,7 +340,7 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     // 表罫囲み / ミシン罫囲み (specific rule styles) are non-canonical and
     // corpus-vanishing (2 / 1 works); they are *not* folded onto Rule (which
     // would erase the rule-style spelling) — they decline to Directive{Unknown}
-    // (lossless verbatim), the core recognising only the canonical 罫囲み (#435).
+    // (lossless verbatim), the core recognising only the canonical 罫囲み.
     // Block 割り注 (multi-line region; inline ［＃割り注］ stays WarichuOpen).
     BodyPattern {
         needle: "ここから割り注",
@@ -401,7 +400,7 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "改見開き",
         family: BodyFamily::SectionKaimihiraki,
     },
-    // Structural markers (#78). `改行` is an exact match: a bare `［＃改行］`
+    // Structural markers. `改行` is an exact match: a bare `［＃改行］`
     // forced line break. The longer `改行天付き` needle wins under
     // LeftmostLongest for the hanging-indent form, and the Exact mode rejects
     // any `改行X` tail, so only the bare body reaches `ForcedBreak`.
@@ -607,7 +606,7 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "ここで斜体終わり",
         family: BodyFamily::Emphasis,
     },
-    // ゴシック体 — a first-class gothic typeface, distinct from 太字 (#435):
+    // ゴシック体 — a first-class gothic typeface, distinct from 太字:
     // the corpus uses ゴシック体 and 太字 in disjoint works and print sets a
     // gothic family apart from a bold weight, so the parser keeps its own
     // spelling and never folds it to 太字. The bare openers also anchor their
@@ -1042,7 +1041,7 @@ pub(super) fn classify_annotation_body(
         )),
         BodyFamily::IndentBlockEnd => {
             // ここで字下げ終わり, optionally with a redundant compound tail
-            // `、{style}も終わり` (e.g. `…終わり、小さい活字も終わり`, #78). The
+            // `、{style}も終わり` (e.g. `…終わり、小さい活字も終わり`). The
             // open payload is authoritative and the generic 字下げ終わり closes
             // the whole stack, so any `、…も終わり` tail maps to the same generic
             // close (it re-serializes to the canonical `ここで字下げ終わり`). A
@@ -1060,7 +1059,7 @@ pub(super) fn classify_annotation_body(
             Some((EmitKind::BlockClose(RegionClose::LineWidth), None))
         }
         BodyFamily::IndentKumiBlockEnd => {
-            // ここで字下げ、{W}字組み終わり (#78) — the 字組み compound closer.
+            // ここで字下げ、{W}字組み終わり — the 字組み compound closer.
             // The close carries its own `W` so the marker round-trips byte-exact
             // (it pairs with the Indent open by family). Tolerate an optional
             // leading `{L}行`. Declines (→ Unknown) on any other shape.
@@ -1219,7 +1218,7 @@ pub(super) fn classify_annotation_body(
                     None,
                 ))
             } else if let Some(after) = tail.strip_prefix("字下げ、") {
-                // ここから{N}字下げ、… compound (#78): the indent opener carries
+                // ここから{N}字下げ、… compound: the indent opener carries
                 // a trailing `、`-separated stack of clauses — `折り返して{M}字下げ`
                 // (wrap), `ページの左右中央`/`中央揃え` (center), `{W}字詰め` /
                 // `{L}行{W}字組み[で]` (line layout), and the decorative styles
@@ -1564,7 +1563,7 @@ fn strip_heading_style(s: &str) -> (HeadingStyle, &str) {
 
 /// Heading level for a **close** marker only. Requires the full `見出し`
 /// keyword — the 送り仮名-elided stem (`中見出` for `中見出し`) is **not**
-/// recognised (#435): it declines to `Directive{Unknown}` (lossless) and a
+/// recognised: it declines to `Directive{Unknown}` (lossless) and a
 /// Tier1 lint suggests the canonical `見出し終わり`, matching how the
 /// structurally identical `字下げ` close okurigana is handled. A leveled close
 /// serializes back to the canonical `見出し` keyword, so the round-trip is a
@@ -1655,7 +1654,7 @@ fn font_size_block_open_steps(tail: &str, magnitude: u8) -> Option<i8> {
     }
 }
 
-/// Parse the line-layout clause after `ここから{N}字下げ、` (#78).
+/// Parse the line-layout clause after `ここから{N}字下げ、`.
 ///
 /// `after` is the text following `字下げ、` in the opener body. Two
 /// corpus-attested forms:
@@ -1666,7 +1665,7 @@ fn font_size_block_open_steps(tail: &str, magnitude: u8) -> Option<i8> {
 /// `Directive{Unknown}` (round-trips byte-identical) instead of being
 /// claimed in error.
 /// Parse the `、`-separated clause stack following `ここから{N}字下げ、` into a
-/// fully-resolved [`IndentBlock`] (#78 compound indent).
+/// fully-resolved [`IndentBlock`] (compound indent).
 ///
 /// Each clause is resolved by [`resolve_indent_segment`]; the whole compound is
 /// declined (`None` → generic `Unknown`, lossless) if any clause is unknown or
@@ -1797,7 +1796,7 @@ fn parse_indent_line_layout(after: &str) -> Option<IndentLayout> {
 /// (`keyword`) yet silently missed here. `×傍点` is accepted as an input
 /// alias for the canonical ばつ傍点. Only the canonical mark-prefix keywords
 /// (`白丸傍点`, …) are recognised; the non-canonical `傍点（白丸）` /
-/// `傍点◎` marker-suffix spellings decline to `Directive{Unknown}` (#435),
+/// `傍点◎` marker-suffix spellings decline to `Directive{Unknown}`,
 /// served by a Tier1 lint suggesting the canonical keyword. Unknown suffixes
 /// return `None`, letting the annotation fall through to the
 /// `Directive{Unknown}` catch-all. Lookup is a short linear scan (14 entries,
@@ -1895,7 +1894,7 @@ fn parse_line_font_size(body: &str) -> Option<(AbsoluteSize, bool)> {
 pub(super) enum EmphasisWeight {
     /// 太字 (bold).
     Bold,
-    /// ゴシック体 (gothic) — distinct from 太字 (#435).
+    /// ゴシック体 (gothic) — distinct from 太字.
     Gothic,
     /// 斜体 (italic).
     Italic,
@@ -1905,7 +1904,7 @@ pub(super) enum EmphasisWeight {
 /// `(weight, padded, is_close)`. `padded` is `true` for the `ここから…` /
 /// `ここで…終わり` block form, `false` for the bare inline range. Returns `None`
 /// (→ `Directive{Unknown}`) for any non-emphasis body. ゴシック体 keeps its own
-/// [`EmphasisWeight::Gothic`] rather than folding to 太字 (#435); ゴチック is not
+/// [`EmphasisWeight::Gothic`] rather than folding to 太字; ゴチック is not
 /// recognised (declines to Unknown + Tier1 → ゴシック体).
 pub(super) fn parse_emphasis_body(body: &str) -> Option<(EmphasisWeight, bool, bool)> {
     use EmphasisWeight::{Bold, Gothic, Italic};

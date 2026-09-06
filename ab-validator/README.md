@@ -1,19 +1,18 @@
-# ab-validator
+# Parser validation and source research
 
-`ab-validator` is a set of standalone tools for evaluating Aozora Bunko parsers
-against corpus features and a shared JSON Abstract Annotation Tree (AAT) format.
+`ab-validator` contains the Rust Aozora parser, AAT-to-parser-IR conversion,
+source-authority measurement, and morphology tools. Soranoha consumes the
+`ab-aozora` and `ab-aat-to-parser-ir` executables for publication. Research
+adapters, schemas, fixtures, and reports live under `research/`.
 
-Current tools:
+The [workspace crate guide](crates/README.md) describes the library boundaries.
+The [AAT contract](docs/aat-contract.md) defines the adapter interchange format.
 
-- `ab-index`: scans a corpus and builds a feature index.
-- `ab-check`: validates AAT output and runs parser invariant checks.
+Use the monorepo root for development:
 
-Reference parser adapters live under `adapters/`. Local research and parser
-checkouts may live under `references/`; that directory is intentionally ignored
-by Git.
-
-## Development
-
-```bash
-just quality
+```sh
+just validate
+nix build ./ab-validator#checks.x86_64-linux.cargo-check
+nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
+nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 ```

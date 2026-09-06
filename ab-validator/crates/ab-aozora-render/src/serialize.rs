@@ -43,8 +43,7 @@ use ab_aozora_syntax::{
 /// The default (`Off`) is the byte-identical, non-judgemental path: an Unknown
 /// directive round-trips its raw bytes verbatim (serialize) / renders as an
 /// inert `<span class="aozora-directive" hidden>` (render), so output never
-/// depends on the catalogue. The three levels map exactly to the tiers of
-/// ADR-0022 / ADR-0026.
+/// depends on the catalogue.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum DirectiveNormalization {
     /// Verbatim / inert — the byte-identical default.
@@ -58,7 +57,7 @@ pub enum DirectiveNormalization {
     /// (per [`degraded_directive`]) Tier1 refuses. Constructed **only** by the
     /// opt-in renderer ([`crate::render_html_normalized`] via `render --degraded`),
     /// never by a persistent-write path, so a Tier2 misfire can reach only
-    /// `--degraded` render output — never source. See ADR-0026.
+    /// `--degraded` render output — never source.
     Degraded,
 }
 
@@ -334,7 +333,7 @@ fn emit_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut TrackingWriter<W>)
 /// `is_ruby_base_char`-based rule (the `Kanji` class equals the old set);
 /// the class-awareness only governs the non-kanji bases that
 /// `trailing_ruby_base_start` newly forms — the same lockstep the
-/// classifier walks (ADR 0002).
+/// classifier walks.
 fn ruby_needs_bar(base_run: &[Content], prev: Option<char>, store: &NodeStore) -> bool {
     // An all-gaiji base (`※［＃…］《…》` or an adjacent run `※…※…《…》`) re-parses
     // implicitly via the classifier's deferred-emit accumulation, so it never
@@ -370,7 +369,7 @@ fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> f
     if matches!(f.origin, ForwardOrigin::Reclaimed | ForwardOrigin::Detached) {
         emit_content_as_plain_range(f.target, store, out)?;
     }
-    // A `Detached` decoration (#333) is the styled-literal half of a
+    // A `Detached` decoration is the styled-literal half of a
     // non-adjacent forward split: it serializes as the bare literal above,
     // because the `［＃…］` directive is a *separate* `Referenced` node that
     // emits the bracket itself. Return before the bracket-emitting block.
@@ -396,7 +395,7 @@ fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> f
         return out.write_str("」は「□」囲み］");
     }
     if matches!(f.attr, ForwardAttr::AccentDot) {
-        // ドット付き (#331): the body is a selector grammar, not the
+        // ドット付き: the body is a selector grammar, not the
         // `「target」は<keyword>` shape, so re-emit the interned raw body verbatim
         // (byte-exact round-trip). The `Reclaimed` leading literal — the run the
         // dots compose onto — was already emitted above.

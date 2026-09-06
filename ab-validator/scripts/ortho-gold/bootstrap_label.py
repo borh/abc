@@ -1,16 +1,10 @@
 #!/usr/bin/env python
 """Bootstrap-label candidate katakana sentences from one Aozora work.
 
-Faithful Branch-B port of aozora-corpus-generator's is_katakana_sentence
-(aozora.py:311). Branch B = OOV guard dropped (Vibrato's LexType::Unknown
-never fires on katakana prose because Unidic-CWJ has dictionary entries
-for katakana particles/copulas — see reports/ortho-detect/2026-07-05-sudachi-baseline.md).
-So oov_count=0, proper_noun_chars=0; those branches never trigger; only
-the character cascade decides. This re-implements the cascade faithfully
-WITHOUT requiring a MeCab install or the sibling repo's Token type.
-
-This is a SEED, not ground truth: a model trained on these labels can
-at best reproduce the heuristic. Real human annotation is Task 9.
+Character-pattern labels omit token-level OOV and proper-noun guards.
+They need no tokenizer or dictionary. A model trained on these labels measures
+agreement with this heuristic; independent human annotation is required to
+measure detection quality.
 
 Emits JSONL to stdout, one record per candidate sentence.
 """

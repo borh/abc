@@ -6,23 +6,23 @@
   <teiHeader>
     <fileDesc>
       <titleStmt>
-        <title>ABC Minimum Aozora TEI Profile v0</title>
+        <title>Soranoha Aozora TEI Profile v0</title>
       </titleStmt>
       <editionStmt>
-        <edition>Draft v0 targeting TEI P5 4.11.0-era ruby support.</edition>
+        <edition>Profile v0 with TEI P5 4.11.0 ruby support.</edition>
       </editionStmt>
       <publicationStmt>
-        <p>Draft profile contract for ABC v0 design bundle.</p>
+        <p>TEI publication profile maintained by Soranoha.</p>
       </publicationStmt>
       <sourceDesc>
-        <p>Derived from the ABC high-level architecture note v0.5.1 and ADR 0012.</p>
+        <p>Customization of TEI P5 for Aozora Bunko source markup.</p>
       </sourceDesc>
     </fileDesc>
   </teiHeader>
   <text>
     <body>
       <schemaSpec ident="abc-tei-v0" start="TEI">
-        <desc>ABC minimum TEI profile for Aozora Bunko-derived artifacts.</desc>
+        <desc>Soranoha TEI profile for Aozora Bunko-derived artifacts.</desc>
 
         <!-- TEI modules -->
         <moduleRef key="tei"/>
@@ -44,24 +44,21 @@
         <!-- Project documentation -->
         <remarks>
           <p>
-            This ODD is the canonical ABC v0 TEI profile contract. It must
-            generate a project-specific Relax NG schema and a project-specific
-            Schematron schema before the TEI profile is considered complete.
+            This ODD defines the publication profile. Relax NG and Schematron
+            schemas are generated from it for runtime validation.
           </p>
           <p>
             `tei_profile_hash` identifies this ODD/profile contract. Generated
             RNG and Schematron files are derived validation artifacts; generator
-            version and stylesheet/toolchain hashes are validation-run metadata
-            unless a later ADR promotes them into profile identity.
+            version and stylesheet/toolchain hashes are validation-run metadata.
           </p>
           <p>
             Aozora ruby must preserve base text, reading, source span, and
             whether the base scope was explicit, inferred, grouped, mid-word, or
             ambiguous in the parser IR. Generated TEI uses `ruby @type =
             "furigana"` as the default Aozora publication heuristic, matching
-            the TEI-EAJ jpn_classical convention, while preserving parser IR as
-            the place where future non-furigana ruby classifications can be
-            represented explicitly. Aozora gaiji output must preserve the
+            the TEI-EAJ jpn_classical convention. Parser IR retains the source
+            classification independently of that rendering default. Aozora gaiji output must preserve the
             original marker and link to the resolution policy used to choose
             Unicode, IVS, glyph, or unresolved fallback output.
           </p>
@@ -73,14 +70,13 @@
             permits derived audit projections such as `abc:preservation-record`,
             `abc:accent-code`, `abc:style-source`, `abc:layout-kind`,
             `abc:layout-params`, and `abc:figure-class` on ordinary TEI
-            elements. The JSON preservation sidecar remains the authoritative
-            audit ledger; ABC TEI attributes are queryable XML projections of
-            that evidence.
+            elements. These attributes project parser-IR evidence; they do not
+            replace the source records from which they were derived.
           </p>
         </remarks>
 
         <list>
-          <head>Initial Schematron rule inventory</head>
+          <head>Schematron rule inventory</head>
           <item><label>abc-tei-header-title</label> error: every generated TEI file must have a main title in `teiHeader`.</item>
           <item><label>abc-tei-header-source-work-id</label> error: TEI header must preserve the Aozora work ID or source identifier.</item>
           <item><label>abc-header-language-declared</label> error: teiHeader must declare at least one tei:profileDesc/tei:langUsage/tei:language with a non-empty @ident, so downstream tooling can route on document language.</item>
@@ -90,13 +86,13 @@
           <item><label>abc-gaiji-reference</label> error: gaiji must retain original marker and either a resolved replacement or unresolved status.</item>
           <item><label>abc-gaiji-chardecl-resolution</label> error: gaiji `@ref` fragment identifiers must point to a `charDecl/char` declaration in this document.</item>
           <item><label>abc-char-resolution-form</label> error: tei:charDecl/tei:char must declare at least one of tei:mapping, tei:unicodeProp, tei:localProp, or tei:desc (closes the &lt;char xml:id="x"/&gt; empty-declaration loophole).</item>
-          <item><label>abc-figure-accessibility</label> warning initially: figures/images should have `figDesc`, `head`, or caption mapping where available.</item>
+          <item><label>abc-figure-accessibility</label> warning: figures/images should have `figDesc`, `head`, or caption mapping where available.</item>
           <item><label>abc-source-span-reference</label> error: elements claiming source spans must point to valid span identifiers.</item>
           <item><label>abc-source-span-target-exists</label> error: each fragment id in `@source` must resolve to an `@xml:id` defined in this document.</item>
-          <item><label>abc-transcription-vs-annotation</label> warning initially: linguistic enrichment must not be mixed into transcription unless declared.</item>
+          <item><label>abc-transcription-vs-annotation</label> warning: linguistic enrichment must not be mixed into transcription unless declared.</item>
           <item><label>abc-vocab-version-declared</label> error: TEI roots using ABC extension attributes must declare `abc:vocab-version="0"`.</item>
           <item><label>abc-preservation-record-shape</label> error: `abc:preservation-record` values must be deterministic sidecar record ids of the form `r000000`.</item>
-          <item><label>abc-layout-params-shape</label> error: `abc:layout-params` values must use the closed key=value grammar declared by the ABC TEI namespace design.</item>
+          <item><label>abc-layout-params-shape</label> error: `abc:layout-params` values must use the key=value grammar checked by this profile.</item>
         </list>
 
         <!-- Element/attribute constraints and documentation anchors -->

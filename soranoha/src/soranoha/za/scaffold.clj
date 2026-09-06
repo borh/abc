@@ -17,7 +17,7 @@
    "その他" "other"})
 
 (def not-evaluated
-  "The explicit no-completed-assessment fact (snapshot schema: the
+  "No currently applicable assessment (snapshot schema: the
   not-evaluated arm carries null jurisdiction/effective_date/basis)."
   {"status" "not-evaluated"
    "jurisdiction" nil

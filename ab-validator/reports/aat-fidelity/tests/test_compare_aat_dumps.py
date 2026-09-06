@@ -28,7 +28,7 @@ def test_adapter_version_under_meta_is_normalized(tmp_path):
 
 
 def test_adapter_under_meta_is_also_normalized(tmp_path):
-    # Phase 2: BOTH /meta/adapter and /meta/adapter_version are sanctioned
+    # Both /meta/adapter and /meta/adapter_version are sanctioned
     # identity pointers (candidate emits "ab-aozora" where reference says
     # "aozora") -- semantic normalize now strips both.
     a, b = tmp_path / "a", tmp_path / "b"

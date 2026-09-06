@@ -44,9 +44,10 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 - Clojure domain variants: use namespaced keywords internally (for example, `:assessment/available` and `:aozora/available`). Preserve external vocabulary through explicit boundary codecs that reject values from another domain. `just typecheck` checks the publication-whitespace contracts with development-only Typed Clojure dependencies.
 - Nix: run `nixfmt` or `just nix-format-check` for Nix changes.
 - Comments: follow `docs/comment-standards.md`; verify with
-  `scripts/comment-hygiene-check.sh` (no transient task/plan/spec/issue
-  references in `ab-validator/` or `soranoha/src/` comments;
-  soranoha additionally bans design-ledger F/D tags).
+  `scripts/comment-hygiene-check.sh`. Keep repository content self-contained;
+  keep plans, handoffs, reviews and temporary decision records in the tracker.
+  Retain current contracts and permanent architectural rationale in the repository,
+  without issue references.
 
 ## Design Boundaries
 
@@ -54,7 +55,7 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
   including the frozen protocol schemas (`soranoha/resources/snh/schemas/`),
   conformance vectors (`soranoha/resources/snh/vectors/`), boundary decode, wire
   encodings, and admission-evidence formats. Frozen protocol changes require a
-  decision-log entry in the design ledger.
+  permanent architectural decision record describing the changed contract and rationale.
 - ab-validator owns parser/adaptor measurement, AAT evidence, parser-IR conversion evidence, and corpus reports.
 - Parser outputs are supporting evidence; source-authority measurements are the authority for Aozora markup coverage.
 - Plaintext output should remain visible body text only; ruby, source apparatus, provenance, and other metadata belong in TEI/custom sidecars.

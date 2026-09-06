@@ -38,11 +38,9 @@
 (defn canonical-json-bytes ^bytes [value]
   (.getBytes ^String (canonical-json-string value) StandardCharsets/UTF_8))
 
-;; Historical ABC identities use canonical-json-* above, including Charred's
-;; legacy slash and non-ASCII escaping defaults. Do not change that behavior in
-;; place: doing so would reinterpret already-published schema and artifact
-;; hashes. New string-only identity constructions that explicitly require RFC
-;; 8785 use this separate path instead.
+;; Record identities above include Charred's slash and non-ASCII escaping.
+;; Changing that encoding changes record and schema hashes. String-only
+;; identities requiring RFC 8785 use the separate path below.
 (declare rfc8785-string-domain-json-string*)
 
 (defn- invalid-utf16! [path position string-index code-unit]
@@ -116,7 +114,7 @@
 (defn rfc8785-string-domain-json-string
   "RFC 8785 canonical JSON for identity objects whose scalar domain is strings.
   Numbers are rejected so callers cannot silently inherit the known ES6 number
-  formatting gap in the historical canonicalizer. Every string and object key
+  formatting differences in the record canonicalizer. Every string and object key
   is rejected before serialization unless its UTF-16 is well-formed."
   [value]
   (rfc8785-string-domain-json-string* value []))

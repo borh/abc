@@ -1,11 +1,11 @@
 # AAT to Parser-IR Fixture Provenance
 
-These fixtures are minimized, schema-valid AAT documents used by the sandbox-pure
+These fixtures are minimized, schema-valid AAT documents used by the hermetic
 `ab-aat-to-parser-ir` tests. They are intentionally small enough for flake checks
-and do not require `/db`.
+and require no external corpus.
 
 - `real-aozora-rs-sample.aat.json` is copied from the checked-in aozora-rs
-  adapter output `adapters/aozora-rs/tests/fixtures/ruby_gaiji.aat.json`,
+  adapter output `research/adapters/aozora-rs/tests/fixtures/ruby_gaiji.aat.json`,
   preserving its real adapter version, source hash, metrics, and semantic
   summary. It exercises text, direct ruby direction projection, ruby
   `base_content` loss, gaiji raw marker invention, and gaiji resolved ambiguity.
@@ -16,7 +16,5 @@ and do not require `/db`.
   one real warning. It exercises `children[]` traversal, style-to-emphasis,
   ruby projection, warning inventions, and measured warigaki U-02.
 
-Both fixtures target `data/aat-to-parser-ir-mapping-v1.json` mapping version
-`0.4.0`. `real-aozora2html-sample.aat.json` is also used by
-`just parser-ir-level3-publication-smoke` to prove checked-fixture
-paragraph-backed parser-IR can be materialized into TEI by ABC.
+Both fixtures exercise the AAT v1 mapping in
+`data/aat-to-parser-ir-mapping-v1.json`.

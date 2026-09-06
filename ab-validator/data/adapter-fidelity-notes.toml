@@ -30,7 +30,7 @@ adapter = "aozora2"
 syntax_row_ids = ["indentation.jisage_block", "caption.block", "layout.yokogumi"]
 status = "retired"
 summary = "Adapter previously preserved supported block markers only as raw nodes before block reconstruction was implemented."
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 retired_by = "feat: reconstruct aozora2 block containers"
 
 [[note]]
@@ -39,7 +39,7 @@ adapter = "aozora2"
 syntax_row_ids = ["layout.tcy"]
 status = "retired"
 summary = "Adapter previously reconstructed headings, jisage, chitsuki, jizume, burasage, caption, keigakomi, and yokogumi, but preserved scoped tcy and related inline-display block boundaries as raw nodes."
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 retired_by = "feat: reconstruct aozora2 inline-display block scopes"
 
 [[note]]
@@ -48,7 +48,7 @@ adapter = "aozora2html"
 syntax_row_ids = ["gaiji.marker", "warichu.basic"]
 status = "active"
 summary = "Adapter maps rendered XHTML, so source-only markup distinctions absent from XHTML cannot always be recovered."
-evidence = "adapters/aozora2html/README.md"
+evidence = "research/adapters/aozora2html/README.md"
 
 [[note]]
 id = "aozora2html-cross-oracle-source-level-limits"
@@ -72,7 +72,7 @@ adapter = "aozora-epub3"
 syntax_row_ids = []
 status = "active"
 summary = "--mode html emits extracted/filtered body XHTML from the EPUB, not raw upstream parser output like aozora2html."
-evidence = "docs/superpowers/specs/2026-07-04-aozora-epub3-adapter-design.md"
+evidence = "docs/adapter-fidelity.md"
 
 [[note]]
 id = "aozora-epub3-halfwidth-numeral-annotations"
@@ -80,7 +80,7 @@ adapter = "aozora-epub3"
 syntax_row_ids = ["indentation.jisage_block"]
 status = "active"
 summary = "AozoraEpub3 requires full-width numerals in some annotations (e.g. ［＃ここから２字下げ］). Half-width variants are logged as unsupported."
-evidence = "docs/handoffs/adding-aozora2-aozoraepub3-parser-support.md"
+evidence = "docs/adapter-fidelity.md"
 
 [[note]]
 id = "aozora-epub3-warichu-malformed"
@@ -88,7 +88,7 @@ adapter = "aozora-epub3"
 syntax_row_ids = ["warichu.basic"]
 status = "active"
 summary = "AozoraEpub3 1.3.4-jdk21 emits malformed HTML for warichu blocks and reports [ERROR] 割り注終わりなし; source-derived warichu recovery is a no-op because the schema warigaki kind needs upper/lower rows unrecoverable from rendered split spans."
-evidence = "docs/handoffs/adding-aozora2-aozoraepub3-parser-support.md"
+evidence = "docs/adapter-fidelity.md"
 
 [[note]]
 id = "aozora-initial-json-inspect-adapter"
@@ -96,7 +96,7 @@ adapter = "aozora"
 syntax_row_ids = []
 status = "active"
 summary = "Initial aozora adapter maps from the upstream inspect JSON surface and raw-preserves unsupported node kinds."
-evidence = "docs/superpowers/specs/2026-07-05-aozora-parser-and-notation-spec-comparator.md"
+evidence = "docs/adapter-fidelity.md"
 
 [[note]]
 id = "aozora2-upstream-implicit-ruby-base-lost-after-gaiji-ruby"
@@ -104,7 +104,7 @@ adapter = "aozora2"
 syntax_row_ids = ["ruby.basic", "gaiji_ruby.inline_base"]
 status = "active"
 summary = "Upstream aozora-core 0.7.1: after a gaiji-bearing ruby earlier in the same line, the next bar-less ruby is parsed as Ruby { children: [] } — the base text stays in the preceding Text node and the AAT ruby has an empty base (3,541 rubies across 1,266 works in the aozora2-full-20260705 dump). Reproduced against the upstream crate directly; the adapter maps the upstream nodes faithfully."
-evidence = "docs/handoffs/2026-07-10-ruby-base-fidelity-audit.md"
+evidence = "docs/adapter-fidelity.md"
 
 [[note]]
 id = "aozora-epub3-implicit-ruby-base-drops"
@@ -112,4 +112,4 @@ adapter = "aozora-epub3"
 syntax_row_ids = ["ruby.basic"]
 status = "active"
 summary = "Marginal rendered-output loss: 14 empty ruby bases across 3 works in the aozora-epub3-full-20260704 dump (12 are readings over image-rendered gaiji bases; 2 lose a plain kanji base)."
-evidence = "docs/handoffs/2026-07-10-ruby-base-fidelity-audit.md"
+evidence = "docs/adapter-fidelity.md"

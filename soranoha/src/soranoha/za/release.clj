@@ -16,8 +16,6 @@
   (:import (java.nio ByteBuffer)
            (java.nio.charset CodingErrorAction StandardCharsets)))
 
-;; --- rights authority -------------------------------------------------------
-
 ;; The one rights-publication state that authorizes release publication.
 ;; Every other, missing, or malformed state is fail-closed. Moving this
 ;; value is a deliberate governance change, not an implementation detail.
@@ -71,8 +69,6 @@
                        :state (or state :missing-rights-publication-policy)})))
     {:policy-id "rights-publication-policy-v1"
      :policy-hash (hash/sha256-bytes policy-bytes)}))
-
-;; --- report projection ------------------------------------------------------
 
 (defn- report-works
   "The assembler's works map projected from a build run report."

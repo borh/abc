@@ -3172,9 +3172,9 @@ mod tests {
 
     #[test]
     fn push_region_rows_emits_maximal_contiguous_feature_diff_runs() {
-        // Producer-invariant CI guard (Step 3b): runs the row-based
+        // Runs the row-based
         // REFERENCE producer (`warehouse::rows::nway_fact_rows`, which
-        // drives `push_region_rows_reference` -- post-Task-4, production
+        // drives `push_region_rows_reference`; production
         // calls `push_region_rows` directly against a `NwayFeatureDiffsColumns`
         // Arrow builder instead) over representative multi-region,
         // multi-scope input and asserts the emitted `feature_diffs` form

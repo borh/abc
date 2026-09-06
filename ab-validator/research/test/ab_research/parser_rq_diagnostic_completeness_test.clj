@@ -109,7 +109,7 @@
      :observation (diagnostic/derive-observation governing hash-a aggregate)}))
 
 (deftest a-clean-corpus-passes-by-matching-its-expectation-not-by-vacuity
-  ;; The characterization the ADR promised: on a corpus where every work
+  ;; On a corpus where every work
   ;; expects nothing and emits nothing the outcome is unchanged -- but it is
   ;; now 3/3 works matching, not a constant nobody derived.
   (let [{:keys [aggregate observation]}

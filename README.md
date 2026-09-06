@@ -8,9 +8,6 @@ validation system. It contains:
 - `soranoha/`: publication, TEI/plaintext conversion, schemas, validation, and the snh protocol, including
   [assessment evaluation and experimental RDF](soranoha/docs/assessment-evaluation.md).
 
-The old split repositories are archived. Use this repository for active
-development, source identity, validation, and release work.
-
 ## Development
 
 Enter the root development shell:
@@ -63,3 +60,7 @@ separate from runtime dependencies and publication toolchain identities.
 `nix run .#soranoha-replay` measures cold-cache builds and consecutive source
 revisions with the production stages and delta oracle. See
 [performance measurements](docs/performance.md) for the command and timing scope.
+
+See [publication architecture](docs/design/publication-architecture.md) for the
+cache, assessment, publication and serving boundaries, and the
+[snh specification](docs/design/snh-protocol-v1.md) for the wire contract.

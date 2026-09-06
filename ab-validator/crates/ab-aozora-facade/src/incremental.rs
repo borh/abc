@@ -1198,14 +1198,13 @@ pub(crate) fn minimal_balanced_region<S: SanitizedSrc>(
 ///   `X`) is `Direct` for the same self-contained-bytes reason, but its very
 ///   *classification* is a whole-prefix predicate (target absence):
 ///   introducing an earlier `X` in another region flips a full parse to
-///   `Reclaimed`/`Referenced` and would resurrect the #228 double-render across
+///   `Reclaimed`/`Referenced` and would resurrect the double-render across
 ///   the splice boundary, which the node-free region re-lex cannot see — so it
 ///   is declined here too. A **self-contained forward heading**
 ///   (`［＃「X」は中見出し］` with no earlier `X`) shares this whole-prefix
 ///   classification — an earlier `X` flips it to a referent-bearing hint — and
 ///   is declined for the same reason.
-/// - **Render-coupled**: a **ruby with base emphasis** (`｜X《y》…［＃「X」は罫囲み］`,
-///   #384) is `Direct` in bytes (it fully owns its base + reading), but its
+/// - **Render-coupled**: a **ruby with base emphasis** (`｜X《y》…［＃「X」は罫囲み］`) is `Direct` in bytes (it fully owns its base + reading), but its
 ///   *render* depends on the declined forward directive that set its
 ///   `base_emphasis`. An edit that removes / retargets that directive without
 ///   touching the ruby's region would reuse the cached ruby with a stale
@@ -1227,7 +1226,7 @@ fn node_forbids_region_reuse(node: NodeRef) -> bool {
         role,
         RegionRole::ForwardReclaimed
             | RegionRole::ForwardSelfContained
-            // A `ForwardDetached` decoration (#333) is `Direct` in bytes, but its
+            // A `ForwardDetached` decoration is `Direct` in bytes, but its
             // very *existence* is a whole-prefix predicate — it exists only
             // because a downstream bracket references it, and duplicating the
             // target word upstream flips the interior/adjacency decision. A
@@ -1238,7 +1237,7 @@ fn node_forbids_region_reuse(node: NodeRef) -> bool {
             | RegionRole::HeadingSelfContained
             | RegionRole::Kaeriten
     ) || matches!(
-        // A ruby whose base carries render-only forward emphasis (#384) is
+        // A ruby whose base carries render-only forward emphasis is
         // `Direct` in bytes (it fully owns its base + reading), but its *render*
         // now depends on a declined forward directive elsewhere: the lowering
         // pass set `base_emphasis` because a downstream `［＃「X」は…］` named the
@@ -1969,7 +1968,7 @@ mod tests {
     /// `Direct` (its rendered bytes are self-contained), but its very
     /// *classification* is a whole-prefix predicate (target absence): a distant
     /// edit that introduces an earlier copy of the target flips a full parse to
-    /// `Reclaimed`/`Referenced` and would resurrect the #228 double-render
+    /// `Reclaimed`/`Referenced` and would resurrect the double-render
     /// across the splice boundary. So its region must not be reused — like the
     /// reclaimed case above, but for classification rather than diagnostic.
     /// Constructed directly; the source-driven decline test arrives with the
@@ -2013,7 +2012,7 @@ mod tests {
         // classification is a whole-prefix predicate. Introducing an earlier 強調
         // in a far region flips a full parse to a referent-present forward; a
         // naive splice would keep the cached self-contained node *and* the new
-        // upstream copy (the #228 double-render). So the node forbids region
+        // upstream copy (the double-render). So the node forbids region
         // reuse and the incremental reparse must decline.
         let cached = output("むかし。\n\n本文［＃「強調」は太字］\n");
         let san = cached.sanitized.clone();
@@ -2040,7 +2039,7 @@ mod tests {
         );
     }
 
-    /// #384 BREAK-2 guard (unit): a ruby whose base carries render-only forward
+    /// BREAK-2 guard (unit): a ruby whose base carries render-only forward
     /// emphasis is `Direct` in bytes but render-coupled to a declined directive
     /// elsewhere, so its region must not be reused. An un-decorated ruby stays
     /// freely reusable.
@@ -2060,7 +2059,7 @@ mod tests {
             !node_forbids_region_reuse(NodeRef::Inline(Node::Ruby(r))),
             "a plain ruby must stay freely reusable (Direct)",
         );
-        // Decorated (#384): render-coupled, must forbid region reuse.
+        // Decorated: render-coupled, must forbid region reuse.
         r.base_emphasis = Some(ForwardAttr::Bold);
         assert!(
             node_forbids_region_reuse(NodeRef::Inline(Node::Ruby(r))),
@@ -2069,7 +2068,7 @@ mod tests {
         );
     }
 
-    /// #384 BREAK-2 guard (end-to-end): a doc with a ruby-base forward emphasis
+    /// BREAK-2 guard (end-to-end): a doc with a ruby-base forward emphasis
     /// (`｜青梅《おうめ》…［＃「青梅」は罫囲み］`) carries a `base_emphasis` ruby whose
     /// render depends on the declined directive. A far-paragraph edit that does
     /// not intersect the ruby must not reuse the cached ruby (stale emphasis), so

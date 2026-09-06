@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Resolve a run-set manifest into a fidelity lock (Phase 2, Move B).
+"""Resolve a run-set manifest into a fidelity lock.
 
 This is the single impure boundary: it reads the manifest, validates it (fails
 closed), resolves every adapter's AAT directory to an absolute path, and emits a
 `fidelity-lock/v1` value. The compute tools then read ONLY the lock — no env, no
-CWD, no `/db` discovery. See
-docs/superpowers/specs/2026-07-09-fidelity-phase2-resolve-compute-lock.md.
+CWD, no `/db` discovery.
 
 The lock is a pure function of the manifest (+ AB_DB_ROOT interpolation): no
 timestamp is recorded, so `resolve` twice yields an identical lock.

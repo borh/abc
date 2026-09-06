@@ -1,11 +1,10 @@
-;; The registered stages (design component 4): parse, convert, render,
+;; Per-work derivations: parse, convert, render,
 ;; validate-tei, plus the kernel's extract and metadata stages that feed
 ;; them. Every stage is engine-shaped ({:stage-id :stage-version
 ;; :toolchain-id :f}); the engine owns caching and the CAS, stages own
 ;; nothing but their function. Toolchain identity: subprocess stages hash the
 ;; actual binary (+ mapping) bytes; validate-tei hashes the TEI profile trio;
-;; pure Clojure stages carry the run-supplied clj toolchain id (over- rather
-;; than under-invalidation).
+;; pure Clojure stages carry the run-supplied runtime/dependency identity.
 (ns soranoha.ori.stages
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
@@ -51,8 +50,6 @@
   (let [dir (fs/create-temp-dir {:prefix "soranoha-stage"})]
     (try (f dir)
          (finally (fs/delete-tree dir)))))
-
-;; ── Stage constructors ──────────────────────────────────────────────────────
 
 (defn extract-stage
   "Work ZIP (by content hash) -> primary text bytes + source facts."

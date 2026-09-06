@@ -34,29 +34,18 @@ serde_json = { version = "1.0", optional = true }
 # `schema_*()` functions and shouldn't pull schemars into their
 # dep tree.
 schemars = { version = "1.0", features = ["preserve_order"], optional = true }
-# Phase N4 — Aozora-shaped proptest generators. Optional, enabled
+# Aozora-shaped proptest generators. Optional, enabled
 # only by the `proptest` feature so library consumers don't pay
 # the proptest dep cost unless they're writing property tests
 # themselves.
 ab-aozora-proptest = { path = "../ab-aozora-proptest", optional = true }
 proptest = { version = "1.11", optional = true }
-# NOTE (Task 3 lift): upstream also declares optional deps on
-# `aozora-cst` / `aozora-query` gating the `cst` / `query` features.
-# Neither crate is in the Task-2-confirmed LIFT_SET (both are
-# feature-gated off by default upstream and excluded per the
-# minimal-core decision — see
-# docs/handoffs/2026-07-10-parser-fork-provenance.md). Their
-# `[dependencies]` entries and the `cst`/`query` feature lines are
-# therefore dropped here rather than pointed at a non-existent
-# `ab-aozora-cst` / `ab-aozora-query` path.
 
 [features]
 default = []
 # Typed wire-projection layer: entry types + *_entries() constructors +
 # SCHEMA_VERSION. Builds structs from the parse tree; never serializes, so
-# it must not pull serde_json (and above all not serde_json/preserve_order —
-# see the feature-unification hazard in
-# docs/handoffs/2026-07-10-parser-fork-provenance.md).
+# it must not enable serde_json/preserve_order through feature unification.
 entries = ["dep:serde"]
 # JSON wire format projection used by FFI / WASM / PyO3 drivers.
 # Enables `aozora::json::diagnostics` /
@@ -88,11 +77,6 @@ proptest = ["dep:proptest", "dep:ab-aozora-proptest"]
 # parse / round-trip / incremental-reparse invariants over a real corpus.
 # Declared path-only (no version) on purpose: ab-aozora-corpus is a
 # dev-only corpus loader that stays `publish = false`.
-#
-# Escalation resolved (2026-07-10): LIFT_SET extended with `aozora-corpus`
-# as a 10th, dev-only, test-support crate (`ab-aozora-corpus`) — see
-# docs/handoffs/2026-07-10-parser-fork-provenance.md. Restores this
-# dependency and the 3 corpus_*.rs test targets it gates.
 ab-aozora-corpus = { path = "../ab-aozora-corpus" }
 proptest = "1.11"
 ab-aozora-proptest = { path = "../ab-aozora-proptest" }

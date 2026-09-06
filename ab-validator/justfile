@@ -36,11 +36,8 @@ workspace-check:
 clippy:
 	@cargo clippy --workspace --all-targets --all-features
 
-# Guards the feature-unification hazard recorded in
-# docs/handoffs/2026-07-10-parser-fork-provenance.md: fails if
-# serde_json/preserve_order ever resolves into the root workspace's unified
-# feature graph, and proves ab-aat-to-parser-ir's canonical JSON stays
-# order-independent even when preserve_order is deliberately forced on.
+# Keep workspace JSON ordering stable and test converter canonicalization
+# separately with insertion-order maps enabled.
 preserve-order-hazard-check:
 	@set -euo pipefail; \
 	export RUSTC_WRAPPER= SCCACHE_DISABLE=1; \
@@ -155,15 +152,6 @@ source-inventory-full JOBS="24" INDEX="" CORPUS="":
 		--report-md "{{repo_root}}/docs/superpowers/reports/2026-07-04-source-authority-representability.md" \
 		--unknown-workset "{{ab_db_root}}/source-inventory/unknown-workset.json" \
 		--strict-representability
-
-# --- fidelity coverage entry points -----------------------------------------
-# INTERIM (2026-07-09): single entry points that fold this session's ad-hoc coverage
-# runs into `just` and encode the run-set-as-sole-authority env hygiene in one place.
-# These are a stopgap — the target is to remove the env dance entirely, not wrap it;
-# see docs/superpowers/specs/2026-07-09-fidelity-run-idempotency-design.md (Phase 1
-# supersedes the env-neutralization glue).
-
-
 
 monorepo-path-hygiene-smoke:
 	@bash "{{repo_root}}/tests/monorepo-path-hygiene-smoke.sh"

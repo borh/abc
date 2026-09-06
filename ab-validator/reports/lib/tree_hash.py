@@ -7,7 +7,7 @@ the same construction `aat_hash` uses for `*.json`, generalized to an arbitrary
 glob plus an exclude-list. Kept as a SEPARATE function (not a refactor of
 `aat_hash.hash_aat_dir`) on purpose: `hash_aat_dir`'s exact output is pinned as
 `expected.content_hash` across ~25 GB of fidelity dumps, so its bytes must not
-move. See docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
+move.
 """
 
 from __future__ import annotations

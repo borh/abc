@@ -1,17 +1,7 @@
-"""Content hash of an AAT dump directory — the dump's identity (Phase 2, Move A).
+"""Hash sorted relative paths and raw bytes of per-work AAT JSON files.
 
-The per-work AAT `*.json` files are deterministic (content-derived filenames, stable
-key order, no timestamps/RNG — see the Move A scoping in
-docs/superpowers/specs/2026-07-09-fidelity-phase2-resolve-compute-lock.md), so a hash
-over their raw bytes is a stable content identity: it changes iff the dump's bytes
-change. This lets resolve detect a mutated / truncated / swapped `/db` dump under a
-fixed pin and fail closed.
-
-Raw bytes (no JSON re-parse) keeps it fast — hashing 25 GB of dumps is I/O-bound, not
-CPU-bound on a full parse of every file. The one adapter whose *regenerated* output was
-not byte-stable, `aozora-rs` (embedded wall-clock `meta.metrics`), is fixed at the
-source (A4b); its already-pinned dump still hashes stably here because the on-disk bytes
-do not change unless the dump is re-generated.
+A changed, truncated, or replaced file changes the dump identity, even if the
+replacement parses to equivalent JSON. No JSON parsing is required.
 """
 
 from __future__ import annotations

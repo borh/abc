@@ -19,8 +19,6 @@
   (throw (ex-info (str "release assembly failed: " (name reason))
                   (assoc data :reason reason))))
 
-;; --- evidence artifacts -----------------------------------------------------
-
 (defn- snapshot-value
   "Sort candidates and independent contributions, retaining reliance payloads."
   [candidates]
@@ -45,8 +43,6 @@
    "admitted" (vec (sort admitted))
    "excluded" (vec (sort-by #(get % "slug") excluded))
    "quarantined" (vec (sort-by #(get % "slug") quarantined))})
-
-;; --- works ------------------------------------------------------------------
 
 (def ^:private artifact-kinds ["plaintext" "tei" "tei-validation"])
 
@@ -84,8 +80,6 @@
   [cas-dir hex]
   (= "failed"
      (:status (verify/consumed-validation-record (cas-blob cas-dir hex)))))
-
-;; --- release ----------------------------------------------------------------
 
 (defn toolchain-value
   "snh-manifest/1 toolchain object from engine-shaped stages: per stage id,

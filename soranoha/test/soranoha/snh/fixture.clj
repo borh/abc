@@ -49,8 +49,6 @@
 (defn second-clone! [{:keys [dir origin]}]
   (repo/clone! origin (fs/path dir "clone2")))
 
-;; --- fixture corpus ---------------------------------------------------------
-
 (defn- fact [basis]
   {"status" "public-domain" "jurisdiction" "jp"
    "effective_date" "2026-08-01" "basis" basis})
@@ -167,8 +165,6 @@
                                    :sign-release sign-release
                                    :event-bytes bytes
                                    :event-sig (sign-event hex)})))
-
-;; --- crafting invalid commits ----------------------------------------------
 
 (defn head-of
   "Current origin head sha as seen from `clone` (after fetch)."

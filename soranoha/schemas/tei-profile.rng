@@ -8,7 +8,7 @@
 Schema generated from ODD source. 
 TEI Edition: P5 Version 4.11.0. Last updated on 18th February 2026, revision 358d2e48e 
 TEI Edition Location: https://www.tei-c.org/Vault/P5/4.11.0/ 
- ABC minimum TEI profile for Aozora Bunko-derived artifacts. 
+ Soranoha TEI profile for Aozora Bunko-derived artifacts. 
 --><!---->
    <define name="macro.paraContent">
       <zeroOrMore>

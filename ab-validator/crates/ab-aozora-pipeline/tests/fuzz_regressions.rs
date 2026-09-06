@@ -1,23 +1,5 @@
-//! Permanent regression cases lifted from cargo-fuzz artifacts under
-//! `crates/aozora-pipeline/fuzz/`.
-//!
-//! Whenever `just fuzz-deep aozora-pipeline <target>` (or `fuzz-quick`)
-//! flags an input, run the artifact through `just fuzz-triage
-//! aozora-pipeline <target>` to see the panic message, fix the
-//! underlying issue, then call `just fuzz-promote aozora-pipeline
-//! <target> <artifact>` to lift the input into
-//! `tests/fuzz_regressions/<target>/`. From that point on, every
-//! `just test` run replays the fixed-up case — no nightly toolchain
-//! required.
-//!
-//! ## Layout
-//!
-//! ```text
-//! tests/fuzz_regressions/
-//!   lex/
-//!     <hash>             ── raw byte payload, fed verbatim
-//!     <hash>.expect.txt  ── (optional) panic snippet, archaeology only
-//! ```
+//! Replay raw fuzz regression inputs from `tests/fuzz_regressions/`.
+//! Invalid UTF-8 is skipped, matching the fuzz target input contract.
 
 use std::fs;
 use std::panic;

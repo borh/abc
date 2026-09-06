@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Fail-closed AAT delta audit between two dumps (Phase 3 rotations).
+"""Fail-closed AAT delta audit between two dumps.
 
 container-rewrite (rotation A): every difference must be explained by the
-three-class taxonomy of the Phase 3 design spec —
+three-class taxonomy —
   1. identity pointers (/meta/adapter_version),
   2. works whose baseline carries well-paired keigakomi/yokogumi container
      markers, checked by FORWARD REWRITE + DEEP EQUALITY: an independent
@@ -16,15 +16,15 @@ legacy synthesized-span warning from the baseline, the documents must be
 deeply equal; candidate spans must satisfy field invariants; the
 line-synthesis tripline flags wholesale line=1 output.
 
-v2-migration (Phase 4, rotation C3): forward-rewrites a schema-v1 baseline
+v2-migration: forward-rewrites a schema-v1 baseline
 document to its expected schema-v2 form — layout key renames, left-ruby
 typing, jizume_block formation (paired + compound), a warnings-shape
 projection, and the root version bump — and requires deep equality with
-the v2 candidate. Mirrors ab-aozora-aat/src/lib.rs's Phase 4 emission
+the v2 candidate. Mirrors ab-aozora-aat/src/lib.rs's emission
 semantics ONLY (never corpus-fitted); a mismatch on real corpus data is a
 controller escalation, same discipline as container-rewrite.
 
-source-note-append (Phase 4, rotation C4): the append-only confinement
+source-note-append: the append-only confinement
 contract between two schema-v2 dumps (C3-dump baseline, C4-dump
 candidate). After stripping /meta/adapter_version, the candidate's block
 list must equal the baseline's block list as an exact PREFIX (zero body
@@ -33,8 +33,6 @@ be a well-formed `source_note` block (placement "back", region_class
 "terminal_provenance", terminator-preserving text content, positive
 spans, block span anchored to the first content span); `meta.warnings`
 and every other meta key (besides adapter_version) must stay byte-equal.
-This mode IS Task 14's emission contract in executable form — Task 14
-implements the emitter to satisfy it.
 
 Exit 0 = PASS. Exit 2 = ANY unclassified difference or reference error
 (fail-closed; there is no exit 1). A container-rewrite mismatch on real
@@ -60,7 +58,7 @@ _bare_toggle_spec.loader.exec_module(_bare_toggle_placement)
 # Normative Contract 1 grammar (reports/aat-fidelity/bare-toggle-placement.py):
 # classify_tokens is the two-pass model, TOKEN_KIND maps a marker string to
 # its (construct, open/close) pair. bare-toggle-adoption mode derives its
-# expectations from these — never from the placement report (review P5-4).
+# expectations from these — never from the placement report.
 classify_tokens = _bare_toggle_placement.classify_tokens
 TOKEN_KIND = _bare_toggle_placement.TOKEN_KIND
 
@@ -539,7 +537,7 @@ def span_confinement_mode(base_doc, cand_doc, name, summary):
     summary["classes"]["span_confined"] += 1
 
 
-# --- v2-migration (Phase 4, rotation C3) ------------------------------------
+# --- v2-migration ------------------------------------
 
 WARNING_SEVERITIES = {"error", "warning", "note"}
 WARNING_ALLOWED_KEYS = {"code", "severity", "message", "span", "path"}
@@ -548,7 +546,7 @@ WARNING_REQUIRED_KEYS = {"code", "severity", "message"}
 # Structural mirror of `classify_forward_left_ruby`
 # (ab-aozora-pipeline/src/lexer/classify/forward.rs:1313) rather than a
 # `[^」]`/`[^］]` character-class regex: a left-ruby BASE may itself be — or
-# contain — an embedded gaiji reference `※［＃「…」、…］` (Task 6 corpus works
+# contain — an embedded gaiji reference `※［＃「…」、…］` (corpus works
 # 001395_49891 `銅※［＃「金＋拔のつくり」、第3水準1-93-6］子` and 001395_49905
 # `※［＃「漸／耳」、第4水準2-85-15］`). The parser resolves such a base via
 # `alloc.content_plain(target)`, so `ruby_entries`
@@ -825,14 +823,13 @@ def _is_raw_any(node):
 
 def adopt_compound_jizume(base_node, cand_node, name):
     """Contract item 5, compound form: a compound container's 字詰め clause
-    is discarded by v1's burasage classification (`burasage_container_indent`
-    is unchanged since the initial port — Task 6's git history confirms it)
+    is discarded by v1's burasage classification (`burasage_container_indent`)
     — so its width is NOT derivable from baseline output alone, unlike the
     pure/standalone form. Wherever baseline already classified a burasage
     paragraph, ADOPT candidate's jizume_block wrapper when present,
     verifying every invariant a forward rewrite CAN check (width a
     positive int, wrapped content byte-identical to what v1 classified,
-    no stray keys) — mirroring Task 6's wrap rule structurally. Anything
+    no stray keys) — mirroring the inline-container wrap rule structurally. Anything
     else about candidate's shape is left to the caller's final deep-equality
     check. Returns (adopted_node, adopted_count): the count of DISTINCT
     compound wraps accepted in this subtree (0 if none), which the caller
@@ -882,7 +879,7 @@ def v2_migration_mode(base_doc, cand_doc, name, summary):
     counts = {"ruby_left": 0}
     migrated_blocks = migrate_tree(base.get("blocks", []), counts)  # items 3+4
     # C3 gate fix: the standalone `字詰め` line-width form is NOT formed into a
-    # jizume_block (spec §6.6 — it stays a raw containerOpen/containerClose
+    # jizume_block (it stays a raw containerOpen/containerClose
     # pair, exactly as the v1 baseline already left it). `rewrite_blocks`
     # therefore does no jizume formation here; jizume enters only via the
     # compound-indent wrap adopted below.
@@ -913,7 +910,7 @@ def v2_migration_mode(base_doc, cand_doc, name, summary):
         summary["classes"]["migrated"] += 1
 
 
-# --- source-note-append (Phase 4, rotation C4) ------------------------------
+# --- source-note-append ------------------------------
 
 
 def check_meta_confinement(base, cand, name):
@@ -1007,7 +1004,7 @@ def source_note_append_mode(base_doc, cand_doc, name, summary):
         summary["classes"]["identical"] += 1
 
 
-# --- bare-toggle-adoption (Phase 5, rotation C5) ----------------------------
+# --- bare-toggle-adoption ----------------------------
 #
 # Two checks in one pass per work: (1) diff-grammar — any difference between
 # baseline and candidate must consist EXACTLY of bare-toggle adoption
@@ -1016,7 +1013,7 @@ def source_note_append_mode(base_doc, cand_doc, name, summary):
 # candidate back to baseline shape and requiring byte-exact equality; (2) an
 # independent expectation derivation over the BASELINE's own bare-toggle raw
 # markers (never the placement report, never the candidate) that the
-# observed adoptions/declines must match exactly (review P5-4).
+# observed adoptions/declines must match exactly.
 
 BARE_TOGGLE_TOKENS = TOKEN_KIND  # {token: (construct, "open"/"close")}
 TOGGLE_KINDS = {"yokogumi", "keigakomi"}
@@ -1074,7 +1071,7 @@ def normalize_adoption(node, name):
 def recover_markers(base_doc, container_span, open_token, close_token, name):
     """Locate the single baseline raw open/close marker pair a candidate's
     toggle-container span was adopted from — spans are RECOVERED FROM THE
-    BASELINE verbatim, never re-derived by the audit (review P5-4)."""
+    BASELINE verbatim, never re-derived by the audit."""
     bs, be = container_span.get("byte_start"), container_span.get("byte_end")
     opens, closes = [], []
     for _, node in collect_bare_toggle_raws(base_doc):
@@ -1117,8 +1114,7 @@ def expand_adoptions(node, base_doc, name, adopted, adopted_by_line):
     ({line: {construct: count}}), so the caller can compare observed vs
     expected adoptions PER marker-carrying line rather than per work —
     per-work totals alone admit a compensating false-pass where a missed
-    valid adoption on one line offsets a wrong adoption on another (plan
-    amendment 0d323a72)."""
+    valid adoption on one line offsets a wrong adoption on another."""
     if isinstance(node, list):
         out = []
         for item in node:
@@ -1146,16 +1142,15 @@ def expand_adoptions(node, base_doc, name, adopted, adopted_by_line):
 
 
 def derive_expected(base_doc):
-    """Independent expectation derivation (review P5-4 — the load-bearing
-    check): classify_tokens over the BASELINE's own bare-toggle raw
+    """Independent expectation derivation: classify_tokens over the BASELINE's own bare-toggle raw
     markers, grouped by physical line — never the placement report, never
     the candidate.
 
     Returns (expected_adopted, expected_reasons, expected_by_line):
     per-work adoption totals, per-work decline reasons, and the per-LINE
     adoption expectation {line: {construct: count}} for every
-    marker-carrying line (plan amendment 0d323a72 — the per-line map is
-    what forecloses compensating cross-line false-passes)."""
+    marker-carrying line; the per-line map prevents
+    compensating cross-line false-passes."""
     by_line: dict[int, list] = {}
     for path, node in collect_bare_toggle_raws(base_doc):
         span = node.get("span")
@@ -1221,8 +1216,7 @@ def bare_toggle_adoption_mode(base_doc, cand_doc, name, summary):
             die(f"{name}: differs from baseline but contains no toggle adoption")
         declined_doc = cand
 
-    # Independence check (review P5-4), bound PER LINE (plan amendment
-    # 0d323a72): every marker-carrying line's OBSERVED adoptions must equal
+    # Independence check, bound per line: every marker-carrying line's OBSERVED adoptions must equal
     # that line's baseline-derived EXPECTATION. This catches both
     # directions — a candidate that failed to adopt a pair the derivation
     # says is valid (observed 0, expected >0) AND a candidate that adopted
@@ -1299,7 +1293,6 @@ def main() -> int:
     elif args.mode == "bare-toggle-adoption":
         classes = {"identical": 0, "toggle_adopted": 0}
     else:
-        # Byte-identical shape to the pre-Task-8 output — untouched.
         classes = {"identical": 0, "rewritten": 0, "span_confined": 0}
     summary = {
         "mode": args.mode,

@@ -1,27 +1,9 @@
 #!/usr/bin/env python3
-"""Bare-toggle placement + adoption-grammar attribution (Revision 3).
+"""Measure bare-toggle placement and adoption grammar over source text.
 
-Measures, over the production corpus universe, what the Phase 5
-bare-toggle classifier (Contract 1 of
-docs/superpowers/specs/2026-07-12-consolidated-parser-phase5-bare-toggle-inline-design.md)
-would adopt and decline.
-
-Revision history:
-  Rev 1 — private reader (17,878 zip works), naive per-construct pairing.
-          Rejected by review (P5-2/P5-3, round 1).
-  Rev 2 — split-scanner reader (17,886 works), exact adoption grammar.
-          Review round 2 (P5-1) rejected the residual "unreadable both
-          paths" bucket: candidates must be explicitly classified, with
-          windows-31j member names and a tolerant 7zz recovery path.
-  Rev 3 — reader moved to the shared ``reports/lib/corpus_reader.py``
-          contract: every discovered candidate is classified as
-          work / non_work / recovered_extra / unreadable. The grammar
-          expectations bind to the ``work`` class (the production
-          17,886-entry universe the AAT dumps contain); the
-          ``recovered_extra`` class (readable only by tolerant 7zz,
-          rejected by every production reader including ABC's strict
-          fallback) is scanned and reported SEPARATELY so no readable
-          text is silently excluded from the study.
+The shared corpus reader classifies every candidate as work, non_work,
+recovered_extra, or unreadable. Grammar expectations use the work population;
+text recovered only by tolerant archive decoding is measured separately.
 
 Adoption grammar
 ----------------
@@ -29,7 +11,7 @@ Adoption grammar
 classifier's per-line two-pass algorithm over an already-tokenized
 marker sequence; ``classify_line`` tokenizes a text line and delegates.
 The split lets the delta audit derive expected adoptions/reasons
-INDEPENDENTLY from a baseline AAT dump's raw marker nodes (review P5-4)
+INDEPENDENTLY from a baseline AAT dump's raw marker nodes
 while this instrument derives them from source text. The Rust classifier
 must mirror the model test-for-test.
 

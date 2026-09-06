@@ -1,44 +1,12 @@
-# Upstream XHTML Full-Corpus Summary
+# Upstream XHTML full-corpus measurements
 
-This report compares Aozora upstream XHTML against local `aozora2html` XHTML
-generated from the local `references/aozorabunko` mirror. It does not download
-corpus data from the network.
+The recorded `upstream-xhtml-full` run compares Aozora Bunko XHTML with local
+`aozora2html` output from the same local corpus mirror. It measures rendered
+output equivalence, independently of source-markup reconstruction.
 
-## Reproducible Run
+## Recorded observations
 
-Run the full corpus refresh with:
-
-```bash
-reports/aat-fidelity/run-upstream-xhtml-full.sh \
-  --aozora-root references/aozorabunko \
-  --out-dir /db/ab-validator/aat-fidelity/upstream-xhtml-full \
-  --db /db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb \
-  --report-id upstream-xhtml-full \
-  --jobs "$(nproc)" \
-  --triage-limit 100
-```
-
-The script writes intermediate and generated files under `/db`, including:
-
-- `card-urls.txt`
-- `manifest.tsv`
-- `manifest.valid.tsv`
-- `manifest.invalid.tsv`
-- `metadata.csv`
-- `generation-failures.tsv`
-- `observations/*.local.xhtml`
-- `observations/summary.csv`
-- `observations/status-summary.csv`
-- `triage-report/index.md`
-- `adapter-error-report/index.md`
-
-Use `--force` only when local XHTML should be regenerated. Without `--force`,
-existing non-empty local XHTML files are reused and the DuckDB load/reporting
-steps are refreshed.
-
-## Current Status
-
-The current `report_id = 'upstream-xhtml-full'` has 17,601 loaded observations.
+The run contains 17,601 loaded observations.
 
 ```csv
 comparison_status,row_count
@@ -98,9 +66,7 @@ media,main_text_mismatch,90
 ## Local Adapter Errors
 
 The 58 `local_adapter_error` rows are adapter-abort JSON payloads from the
-wrapped Ruby `aozora2html` gem, not malformed local XHTML. The reproducible
-classification report is generated at
-`/db/ab-validator/aat-fidelity/upstream-xhtml-full/adapter-error-report/`.
+wrapped Ruby `aozora2html` gem, not malformed local XHTML.
 The largest class is block-stack imbalance in source files:
 
 ```csv

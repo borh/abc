@@ -75,12 +75,8 @@ release-parser-reproducible:
 	{{nix_eval}} build ./ab-validator#ab-aat-to-parser-ir --rebuild --no-link --print-build-logs
 	@echo "release parser binaries rebuild reproducibly"
 
-# parser-rq-instrument-identity: build the predicate-hardening identity suite,
-# which authenticates each instrument policy against the reviewed source closure
-# it claims to bind. `check-no-build` only EVALUATES flake checks, so this
-# derivation had never been built by any recipe; the suite meanwhile errored at
-# import for want of a monorepo-shaped staging root, and two committed identity
-# faults went unobserved. Building it here is what makes that repair stick.
+# Authenticate instrument policies against their declared source closure.
+# This requires building the identity suite; flake evaluation alone cannot run it.
 parser-rq-instrument-identity:
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
 	{{nix_eval}} build "./ab-validator#checks.$system.parser-rq-publication-pytest" \

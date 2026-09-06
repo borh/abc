@@ -1,14 +1,6 @@
 //! Lexer token types.
 //!
-//! The tokenize stage emits a `BumpVec<'a, Token>` (arena-backed) where
-//! each token is either a plain [`Token::Text`] range (a run of source
-//! bytes between triggers) or a [`Token::Trigger`] carrying the
-//! specific delimiter kind that caused the break. The pair stage consumes
-//! this stream and applies balanced-stack pairing to build
-//! structured events.
-//!
-//! [`TriggerKind`] lives in [`ab_aozora_spec::TriggerKind`] and is
-//! re-exported here for downstream consumers.
+//! The tokenize stage emits source spans for text, newlines, and triggers.
 
 use ab_aozora_syntax::Span;
 

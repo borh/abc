@@ -6,17 +6,6 @@
 //! into [`PairEvent::PairOpen`] / [`PairEvent::PairClose`] /
 //! [`PairEvent::Solo`] / [`PairEvent::Unmatched`] / [`PairEvent::Unclosed`].
 //!
-//! Two production-ready surfaces sit side by side, mirroring the tokenize stage:
-//!
-//! - [`pair`] — streaming `PairStream` for FFI / incremental consumers.
-//! - `pair_in` — arena-batch `PairOutputIn<'a>` whose `events` is
-//!   a `BumpVec<'a, PairEvent>` allocated inside the caller's `Arena`.
-//!
-//! Diagnostics stay heap-allocated. The corpus-median doc emits ~0.1
-//! diagnostics; per-arena allocation would cost more than it saves and
-//! diagnostics outlive the arena anyway (drained into the Pipeline
-//! accumulator).
-//!
 //! ## Why pairing must happen here, not in classify
 //!
 //! Aozora annotation bodies nest:
@@ -57,7 +46,6 @@
 //!   sinks the rest of the document to plain. A balanced body never
 //!   triggers it (the top *is* the bracket, matched directly). A `」`
 //!   still cannot cross a bracket downward — only `］` gets this scope.
-//!   See ADR-0025 (`docs/adr/`).
 
 use core::mem;
 
@@ -198,8 +186,7 @@ where
 ///   real Aozora text (corpus profile).
 /// * `diagnostics`: collected non-fatal observations.
 /// * `links`: resolved `(open, close)` pairs accumulated as the
-///   stack matches; mirrors `PairOutputIn::links` for streaming
-///   callers that don't go through `pair_in`.
+///   stack matches.
 /// * `pending`: FIFO queue of events a single trigger produced beyond
 ///   the one it returns directly. A `］` that closes a bracket buried
 ///   under dangling non-bracket opens yields several events at once
@@ -219,8 +206,6 @@ where
     stack: SmallVec<[(PairKind, Span, u8); 8]>,
     diagnostics: Vec<Diagnostic>,
     /// Resolved (open, close) pairs collected as the stack matches.
-    /// Mirrors the `PairOutputIn::links` side-table for streaming
-    /// callers that don't go through `pair_in`.
     links: Vec<PairLink>,
     /// Events queued by the current trigger to surface on later
     /// `next()` calls, drained front-first. Empty on the fast paths.

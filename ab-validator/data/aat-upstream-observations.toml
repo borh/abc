@@ -6,7 +6,7 @@ summary = "aozora-rs adapter supplements aozora-rs-gaiji v0.6.0 with the oracle 
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { resolved = "撑", jis_code = "2-13-47" }
-evidence = "adapters/aozora-rs/src/aat.rs"
+evidence = "research/adapters/aozora-rs/src/aat.rs"
 
 [[observation]]
 case_id = "gaiji.jis.2-13-47"
@@ -16,7 +16,7 @@ summary = "aozora-core 0.7.1 resolves this JIS-form marker to 撑."
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { resolved = "撑", jis_code = "2-13-47" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "ruby.gaiji.inline_base"
@@ -26,7 +26,7 @@ summary = "aozora-core 0.7.1 emits a ruby node with the resolved JIS gaiji as st
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "噯", reading = "おくび" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.bold_italic.block"
@@ -36,7 +36,7 @@ summary = "aozora-core 0.7.1 emits balanced block scopes for bold and italic; th
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "bold" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.font_size.block_larger"
@@ -46,7 +46,7 @@ summary = "aozora-core 0.7.1 emits block font-size scope with magnitude; the ada
 selector = "blocks.*.content.*"
 kind = "font_size"
 fields = { size_type = "larger", level = 2 }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "layout.tcy.block"
@@ -56,7 +56,7 @@ summary = "aozora-core 0.7.1 emits balanced block TCY scope; the adapter preserv
 selector = "blocks.*.content.*"
 kind = "tcy"
 fields = {}
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "gaiji.jis.2-13-47"
@@ -66,7 +66,7 @@ summary = "aozora2html renders this JIS gaiji as an image fallback; the adapter 
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "「てへん＋掌」、第4水準2-13-47", resolved = "撑", jis_code = "2-13-47", unresolved_reason = "" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "gaiji.unicode.u546d"
@@ -76,7 +76,7 @@ summary = "aozora2html renders this Unicode gaiji as plain text; the adapter sou
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "「口＋世」、U+546D", resolved = "呭", jis_code = "", unresolved_reason = "" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "ruby.gaiji.inline_base"
@@ -96,7 +96,7 @@ summary = "aozora2html renders gaiji ruby through image fallback; the adapter so
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "噯", reading = "おくび", direction = "right" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "ruby.double.right_left"
@@ -116,7 +116,7 @@ summary = "aozora2html renders right ruby and leaves left ruby as a source note;
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "right", x-left-reading = "aozora bunko" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "ruby.placement.left"
@@ -136,7 +136,7 @@ summary = "aozora2html leaves left-ruby placement as a source note; the adapter 
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "left" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "ruby.nested_forbidden.target_includes_ruby"
@@ -156,7 +156,7 @@ summary = "aozora2html renders the base ruby and source note; the adapter source
 selector = "blocks.*.content.*"
 kind = "raw"
 fields = { x-error-kind = "nested_ruby_forbidden" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "annotation.chuuki.basic"
@@ -176,7 +176,7 @@ summary = "aozora2html renders chuuki as ruby; the adapter source-derived recove
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "喋", reading = "ママ", direction = "right", x-annotation-type = "chuuki" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "annotation.bouki.basic"
@@ -196,7 +196,7 @@ summary = "aozora2html renders bouki as ruby with spacing entities; the adapter 
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "血が流れ", reading = "××××", direction = "right", x-annotation-type = "bouki" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "gaiji.dakuten_katakana.ve"
@@ -216,7 +216,7 @@ summary = "aozora2html renders this dakuten katakana marker as an image fallback
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "濁点付き片仮名ヱ、1-7-84", resolved = "ヹ", jis_code = "1-7-84", unresolved_reason = "" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "gaiji.un_embed.description_only"
@@ -236,7 +236,7 @@ summary = "aozora2html leaves description-only gaiji as note text; the adapter s
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "底本では欠字", resolved = "", jis_code = "", unresolved_reason = "unresolved" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "iteration.kunoji.basic"
@@ -256,7 +256,7 @@ summary = "aozora2html renders the kunoji source glyphs literally; the adapter s
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "くの字点", resolved = "〳〵", jis_code = "", unresolved_reason = "" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "accent.diacritic.e_acute"
@@ -276,7 +276,7 @@ summary = "aozora2html renders the accent as gaiji image fallback; the adapter s
 selector = "blocks.*.content.*"
 kind = "accent"
 fields = { code = "1-09-63", name = "アキュートアクセント付きE小文字", resolved = "é" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "kunten.kaeriten.basic"
@@ -296,7 +296,7 @@ summary = "aozora2html leaves kaeriten as note text; the adapter source-derived 
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "kaeriten", x-marker = "一" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "kunten.okurigana.basic"
@@ -316,7 +316,7 @@ summary = "aozora2html leaves kunten okurigana as note text; the adapter source-
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "", reading = "読", direction = "right", x-annotation-type = "okurigana" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "heading.inline_form.large"
@@ -396,7 +396,7 @@ summary = "aozora2html renders white-sesame boten with a parser-specific class; 
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "boten", x-boten-kind = "white_sesame" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.bousen.double"
@@ -416,7 +416,7 @@ summary = "aozora2html renders double bousen with a parser-specific class; the a
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "bousen", x-line-kind = "double" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.bold_italic.block"
@@ -436,7 +436,7 @@ summary = "aozora2html renders block bold/italic as classed divs; the adapter no
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "bold" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.bold_italic.both"
@@ -446,7 +446,7 @@ summary = "aozora2html renders bold/italic with parser-specific classes; the ada
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "bold" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.font_size.larger"
@@ -466,7 +466,7 @@ summary = "aozora2html renders inline font size as a parser-specific class; the 
 selector = "blocks.*.content.*"
 kind = "font_size"
 fields = { size_type = "larger", level = 2 }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.font_size.block_larger"
@@ -486,7 +486,7 @@ summary = "aozora2html renders block font size as a classed div; the adapter nor
 selector = "blocks.*.content.*"
 kind = "font_size"
 fields = { size_type = "larger", level = 2 }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.keigakomi.inline"
@@ -506,7 +506,7 @@ summary = "aozora2html renders inline keigakomi as a parser-specific style class
 selector = "blocks.*.content.*"
 kind = "keigakomi"
 fields = {}
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.direction_override.left_boten"
@@ -526,7 +526,7 @@ summary = "aozora2html renders directional boten with a parser-specific class; t
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "boten", x-placement = "left" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.jisage_oneline.two_chars"
@@ -546,7 +546,7 @@ summary = "aozora2html renders one-line jisage as a block; the adapter source-de
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "jisage_line", x-indent = 2 }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.chitsuki.line"
@@ -566,7 +566,7 @@ summary = "aozora2html renders line chitsuki as an empty classed div; the adapte
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "chitsuki", x-align = "right" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.jizume.width"
@@ -586,7 +586,7 @@ summary = "aozora2html renders jizume as a classed div; the adapter source-deriv
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "jizume", x-width = 4 }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.burasage.hanging"
@@ -606,7 +606,7 @@ summary = "aozora2html renders burasage as a classed div; the adapter source-der
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "burasage", x-indent-first = 2, x-indent-rest = 4 }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "layout.yokogumi.inline"
@@ -626,7 +626,7 @@ summary = "aozora2html renders yokogumi as a parser-specific style class; the ad
 selector = "blocks.*.content.*"
 kind = "yokogumi"
 fields = {}
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "layout.tcy.inline"
@@ -646,7 +646,7 @@ summary = "aozora2html renders inline TCY as plain text; the adapter source-deri
 selector = "blocks.*.content.*"
 kind = "tcy"
 fields = {}
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "layout.tcy.block"
@@ -666,7 +666,7 @@ summary = "aozora2html leaves block TCY commands as notes and text; the adapter 
 selector = "blocks.*.content.*"
 kind = "tcy"
 fields = {}
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "warigaki.parenthetical.basic"
@@ -686,7 +686,7 @@ summary = "aozora2html renders parenthetical warigaki as a parser-specific style
 selector = "blocks.*.content.*"
 kind = "warigaki"
 fields = {}
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "caption.inline.basic"
@@ -726,7 +726,7 @@ summary = "aozora2html renders block captions as classed divs; the adapter sourc
 selector = "blocks.*"
 kind = "caption_block"
 fields = {}
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "figure.image_inline.basic"
@@ -766,7 +766,7 @@ summary = "aozora2html leaves page-side editor notes as note text; the adapter s
 selector = "blocks.*.content.*"
 kind = "text"
 fields = { value = "", x-editor-note = "左頁" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "reference.frontref.boten"
@@ -786,7 +786,7 @@ summary = "aozora2html leaves front-reference boten as note text; the adapter so
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "boten", x-frontref = "強調" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "break.line_explicit.basic"
@@ -856,7 +856,7 @@ summary = "aozora2html renders basic boten as a parser-specific style class; the
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "boten" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.jisage_block.basic"
@@ -926,7 +926,7 @@ summary = "aozora-rs adapter resolves Unicode-codepoint gaiji through aozora-rs-
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "「口＋世」、U+546D", resolved = "呭" }
-evidence = "adapters/aozora-rs/src/aat.rs"
+evidence = "research/adapters/aozora-rs/src/aat.rs"
 
 [[observation]]
 case_id = "decoration.bold_italic.both"
@@ -936,7 +936,7 @@ summary = "aozora-rs adapter reconstructs inline bold and italic style scopes."
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "bold" }
-evidence = "adapters/aozora-rs/src/aat.rs"
+evidence = "research/adapters/aozora-rs/src/aat.rs"
 
 [[observation]]
 case_id = "ruby.basic.simple"
@@ -946,7 +946,7 @@ summary = "aozora-rs adapter preserves ordinary ruby as an AAT ruby node."
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "吾輩", reading = "わがはい", direction = "right" }
-evidence = "adapters/aozora-rs/src/aat.rs"
+evidence = "research/adapters/aozora-rs/src/aat.rs"
 
 [[observation]]
 case_id = "ruby.basic.simple"
@@ -956,7 +956,7 @@ summary = "aozora2html emits ordinary ruby as an AAT ruby node."
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "吾輩", reading = "わがはい", direction = "right" }
-evidence = "adapters/aozora2html/src/lib.rs"
+evidence = "research/adapters/aozora2html/src/lib.rs"
 
 [[observation]]
 case_id = "emphasis.boten.basic"
@@ -966,7 +966,7 @@ summary = "aozora-rs adapter reconstructs basic boten emphasis as an AAT style s
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "boten" }
-evidence = "adapters/aozora-rs/src/aat.rs"
+evidence = "research/adapters/aozora-rs/src/aat.rs"
 
 [[observation]]
 case_id = "gaiji.unicode.u546d"
@@ -976,7 +976,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "「口＋世」、U+546D", resolved = "呭", jis_code = "", unresolved_reason = "" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "ruby.double.right_left"
@@ -986,7 +986,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "right", x-left-reading = "aozora bunko" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "ruby.placement.left"
@@ -996,7 +996,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "left" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "ruby.nested_forbidden.target_includes_ruby"
@@ -1006,7 +1006,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "raw"
 fields = { x-error-kind = "nested_ruby_forbidden" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "annotation.chuuki.basic"
@@ -1016,7 +1016,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "喋", reading = "ママ", direction = "right", x-annotation-type = "chuuki" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "annotation.bouki.basic"
@@ -1026,7 +1026,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "血が流れ", reading = "××××", direction = "right", x-annotation-type = "bouki" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "gaiji.dakuten_katakana.ve"
@@ -1036,7 +1036,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "濁点付き片仮名ヱ、1-7-84", resolved = "ヹ", jis_code = "1-7-84", unresolved_reason = "" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "gaiji.un_embed.description_only"
@@ -1046,7 +1046,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "底本では欠字", resolved = "", jis_code = "", unresolved_reason = "unresolved" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "iteration.kunoji.basic"
@@ -1056,7 +1056,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { description = "くの字点", resolved = "〳〵", jis_code = "", unresolved_reason = "" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "accent.diacritic.e_acute"
@@ -1066,7 +1066,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "accent"
 fields = { code = "1-09-63", name = "アキュートアクセント付きE小文字", resolved = "é" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "kunten.kaeriten.basic"
@@ -1076,7 +1076,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "kaeriten", x-marker = "一" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "kunten.okurigana.basic"
@@ -1086,7 +1086,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "", reading = "読", direction = "right", x-annotation-type = "okurigana" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "heading.inline_form.large"
@@ -1096,7 +1096,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*"
 kind = "heading"
 fields = { level = 1, style = "normal" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "heading.dogyo.medium"
@@ -1106,7 +1106,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*"
 kind = "heading"
 fields = { level = 2, style = "dogyo" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "heading.mado.small"
@@ -1116,7 +1116,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*"
 kind = "heading"
 fields = { level = 3, style = "mado" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.boten.white_sesame"
@@ -1126,7 +1126,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "boten", x-boten-kind = "white_sesame" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.bousen.double"
@@ -1136,7 +1136,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "bousen", x-line-kind = "double" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.bold_italic.both"
@@ -1146,7 +1146,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "bold" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.font_size.larger"
@@ -1156,7 +1156,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "font_size"
 fields = { size_type = "larger", level = 2 }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.keigakomi.inline"
@@ -1166,7 +1166,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "keigakomi"
 fields = {}
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "decoration.direction_override.left_boten"
@@ -1176,7 +1176,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "boten", x-placement = "left" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.jisage_oneline.two_chars"
@@ -1186,7 +1186,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "jisage_line", x-indent = 2 }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.chitsuki.line"
@@ -1196,7 +1196,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "chitsuki", x-align = "right" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.jizume.width"
@@ -1206,7 +1206,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "jizume", x-width = 4 }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.burasage.hanging"
@@ -1216,7 +1216,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "burasage", x-indent-first = 2, x-indent-rest = 4 }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "layout.yokogumi.inline"
@@ -1226,7 +1226,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "yokogumi"
 fields = {}
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "layout.tcy.inline"
@@ -1236,7 +1236,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "tcy"
 fields = {}
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "warigaki.parenthetical.basic"
@@ -1246,7 +1246,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "warigaki"
 fields = {}
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "caption.inline.basic"
@@ -1256,7 +1256,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "caption"
 fields = {}
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "caption.block.basic"
@@ -1266,7 +1266,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*"
 kind = "caption_block"
 fields = {}
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "figure.image_inline.basic"
@@ -1276,7 +1276,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "figure"
 fields = { filename = "fig00001_01.png", alt = "猫の図", width = 321, height = 123 }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "editor_note.unmapped.blank"
@@ -1286,7 +1286,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "text"
 fields = { value = "", x-editor-note = "左頁" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "reference.frontref.boten"
@@ -1296,7 +1296,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "boten", x-frontref = "強調" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "break.line_explicit.basic"
@@ -1306,7 +1306,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "text"
 fields = { value = "前\n後", x-break-kind = "line" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "break.page.basic"
@@ -1316,7 +1316,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*"
 kind = "paragraph"
 fields = { x-break-kind = "page" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "ruby.basic.simple"
@@ -1326,7 +1326,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "ruby"
 fields = { base = "吾輩", reading = "わがはい", direction = "right" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "heading.basic.large"
@@ -1336,7 +1336,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*"
 kind = "heading"
 fields = { level = 1, style = "normal" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "emphasis.boten.basic"
@@ -1346,7 +1346,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "boten" }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "indentation.jisage_block.basic"
@@ -1356,7 +1356,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*"
 kind = "jisage_block"
 fields = { x-indent = 2 }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "warichu.basic.inline"
@@ -1366,7 +1366,7 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "warigaki"
 fields = {}
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"
 
 [[observation]]
 case_id = "figure.image_caption.basic"
@@ -1376,4 +1376,4 @@ summary = "aozora2 adapter output matches the reviewed AAT oracle for this sourc
 selector = "blocks.*.content.*"
 kind = "figure"
 fields = { filename = "fig00001_01.png", alt = "猫の図", width = 321, height = 123 }
-evidence = "adapters/aozora2/src/lib.rs"
+evidence = "research/adapters/aozora2/src/lib.rs"

@@ -1,7 +1,6 @@
 # Blind labeling package — full-corpus interestingness calibration (2026-07-06)
 
-This directory is the owner-facing half of the calibration plan's step 8
-(spec §Calibration Plan): a pooled, blinded sample of morpheme-difference
+This directory contains a pooled, blinded sample of morpheme-difference
 patterns for human verdicts. `labels.tsv` is the union of the top-50
 patterns from four ranking methods run against the full canonical warehouse
 (`full-2026-07-05_164518-jobs0`), deduplicated, seed-shuffled (seed
@@ -22,8 +21,7 @@ surfaced a row or at what rank. The method/rank data lives only in
 
 Scoring treats `bug` and `expected-dictionary` as relevant for p@50; nDCG
 gains are bug=3, expected-dictionary=2, corpus-artifact=1, expected-policy=1,
-noise=0, unclear=0 (plan decision D5 — dispute the constants before
-labeling if you disagree; recomputation from the same labels is free).
+noise=0, unclear=0.
 
 ## How to fill the TSV
 
@@ -50,7 +48,4 @@ cargo run --release -p ab-morph-run -- score-interesting-labels \
   --mapping reports/morph-warehouse/calibration/2026-07-06/labels/mapping.json
 ```
 
-This reports per-method p@50 and nDCG@50 over the pooled labels, feeding
-the plan's step-8 gates: the rank-scope decision (within-kind vs global)
-and the RRF-vs-frequency gate (if RRF does not beat the frequency sort at
-p@50, the mandated outcome is revisiting signal definitions, not a lock).
+This reports per-method p@50 and nDCG@50 over the pooled labels.

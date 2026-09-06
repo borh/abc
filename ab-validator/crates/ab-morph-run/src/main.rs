@@ -81,24 +81,15 @@ enum Command {
             long,
             value_enum,
             default_value_t = ab_morph_run::OrthoDetectMode::Off,
-            help = "Orthographic-detection layer for pre-war Japanese text (kata→hira normalization).
+            help = "Orthographic normalization before analysis.
 
-[off] No normalization (default).
-[heuristic] v1 char-cascade detector. Default threshold 0.40 ;
-recall 0.939 on a 300-sentence LLM-labeled evaluation set (>= 0.85 floor).
-See reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md.
-[ml] Logistic-regression detector on character features. Stable (not default):
-5-fold CV mean recall 0.959 on the 300-record LLM-labeled set. Requires
---ortho-ml-model. CAVEAT: the validation set is LLM-labeled (single-annotator,
-not human ground truth); real-world recall on unseen authors/eras is unverified.
-model_hash proves byte identity only, not training provenance. Do not promote
-to default or delete the heuristic path without a human-annotated gold set.
-[historical] Lane B (M2) historical→modern surface modernizer. Tokenizes with the
-kindai-bungo oracle and rewrites historical kana to modern kana in the input, so
-every analyzer receives the same modernized text (comparability). Pair with the
-old-kana slice (--works-parquet --orthographic-style 新字旧仮名,旧字旧仮名).
-Ground-truth membership accuracy ~94.8% (25 parallel 旧仮名/新仮名 editions); see
-reports/ortho-detect/2026-07-08-lane-b-coverage-probe.md."
+[off] Preserve source text (default).
+[heuristic] Character-pattern and proper-noun detection for katakana prose.
+[ml] Character-feature logistic regression; requires --ortho-ml-model.
+Model hashes identify bytes, not training provenance or accuracy on new authors.
+[historical] Normalize historical kana using the kindai-bungo oracle. All
+analyzers receive the same normalized text. Select old-kana works with
+--works-parquet and --orthographic-style 新字旧仮名,旧字旧仮名."
         )]
         ortho_detect: ab_morph_run::OrthoDetectMode,
         #[arg(

@@ -72,7 +72,7 @@ fn clear_forward_target_index() {
     });
 }
 
-/// Step A.1 fast path: most corpus docs never installed the index
+/// Most corpus documents never install the index
 /// in the first place (they're below the 64-quote threshold), so
 /// the previous doc's `installed=false` carries forward and the
 /// `clear()` call is a no-op. This wrapper short-circuits the
@@ -110,7 +110,7 @@ pub(super) fn install_forward_target_index_from_source(source: &str) {
     let _classify_guard = SubsystemGuard::new(Subsystem::ForwardIndexInstall);
 
     let bytes = source.as_bytes();
-    // Step A.1: cheap up-front count with early break at the
+    // Count quote opens with early termination at the
     // threshold. The previous shape unconditionally collected every
     // `「` offset into a `Vec<usize>` before checking the count —
     // wasted allocation on the >99 % of corpus docs that have far
@@ -434,7 +434,7 @@ impl RecogniseCtx<'_, '_> {
             });
         }
 
-        // `<run>［＃mは上ドット付き］` — dotted-letter composition (#331). Gated on
+        // `<run>［＃mは上ドット付き］` — dotted-letter composition. Gated on
         // the `ドット付き` suffix so the reclaim look-back (which copies the
         // preceding run) never runs on ordinary directives. Unlike the styling
         // recognisers above it addresses a bare Latin letter in the preceding
@@ -725,7 +725,7 @@ impl RecogniseCtx<'_, '_> {
         // A *single* target with no referent is a self-contained bouten: the
         // quoted run is itself the marked text, so style it directly (consume the
         // whole bracket, no pull-back) instead of falling through to the hidden
-        // Directive{Unknown}. #228-safe by construction — with no earlier copy
+        // Directive{Unknown}. Cannot duplicate the rendered text — with no earlier copy
         // there is nothing to duplicate, and a no-referent target has zero
         // look-back occurrences so it is never ambiguous. (Multi-target keeps
         // falling through below: non-contiguous targets cannot be spliced into
@@ -765,7 +765,7 @@ impl RecogniseCtx<'_, '_> {
                 ForwardDiag::NotStylable,
             ));
         };
-        // Single target: shared #333 resolution (`build_bouten_target([x])` ==
+        // Single target: shared resolution (`build_bouten_target([x])` ==
         // `content_plain(x)`, so the bouten node is identical). Then overlay the
         // bouten ambiguity diagnostic when the styled target occurs ≥2 times in
         // the look-back (`matches` counts non-overlapping candidate runs).
@@ -830,7 +830,7 @@ fn build_bouten_target(targets: &[&str], alloc: &mut Allocator) -> Content {
 /// not a 縦中横 directive at all (silent fall-through).
 enum ForwardTcy {
     /// A 縦中横 with a located target — the node, its consume start, and the
-    /// directive-level diagnostic (#333: `NotStylable` for a declined referent).
+    /// directive-level diagnostic (`NotStylable` for a declined referent).
     Recognised(Node, u32, ForwardDiag),
     /// `は縦中横` shape matched but the target has no preceding referent.
     ShapedNoTarget,
@@ -846,7 +846,7 @@ enum ForwardTcy {
 /// form (`［＃縦中横］…［＃縦中横終わり］`) is handled by the
 /// paired-container classifier and not matched here.
 ///
-/// Only the exact `「X」は縦中横` shape is recognised (spec §6.3, #435).
+/// Only the exact `「X」は縦中横` shape is recognised (spec §6.3).
 /// Multi-quote `［＃「A」「B」は縦中横］` bodies and the non-canonical
 /// `は縦中横、行右/左小書き` / `は横一列` variants decline to
 /// `Directive{Unknown}` (lossless verbatim) rather than being silently
@@ -863,7 +863,7 @@ impl RecogniseCtx<'_, '_> {
             return ForwardTcy::NotTcy;
         };
         // Only the exact spec form `「X」は縦中横` (spec §6.3) is recognised
-        // (#435). The non-canonical corpus variants decline to
+        //. The non-canonical corpus variants decline to
         // `Directive{Unknown}` (lossless verbatim), each served by an opt-in
         // layer instead of a silent parser fold:
         //   - `は縦中横、行右/左小書き` dropped the small-script axis silently
@@ -886,7 +886,7 @@ impl RecogniseCtx<'_, '_> {
         if !forward_target_is_preceded(view.events, self.source, open_idx, first) {
             return ForwardTcy::ShapedNoTarget;
         }
-        // Resolve the target position (#333), shared with the emphasis / box
+        // Resolve the target position, shared with the emphasis / box
         // families: `昭和64［＃「64」は縦中横］年` (adjacent) pulls `64` back into a
         // `Reclaimed` tcy; a non-adjacent plain referent splices a `Detached`
         // tcy decoration; a declined referent stays `Referenced` + reports it.
@@ -1036,7 +1036,7 @@ fn find_immediate_predecessor_target_position(
 
 /// Where a forward-reference target `X` resolves relative to its `［`, given
 /// the current pending plain run — the three-way generalisation of
-/// [`find_immediate_predecessor_target_position`] that drives #333.
+/// [`find_immediate_predecessor_target_position`] for interior referents.
 ///
 /// - [`Adjacent`](ForwardReferent::Adjacent): `X` butts the bracket — pull it
 ///   back into a `Reclaimed` node (case A, unchanged behaviour).
@@ -1060,7 +1060,7 @@ enum ForwardReferent {
 }
 
 /// The directive-level diagnostic a forward recognizer asks the dispatch to
-/// attach (#333). Orthogonal to the emitted node.
+/// attach. Orthogonal to the emitted node.
 enum ForwardDiag {
     /// No diagnostic.
     None,
@@ -1456,7 +1456,7 @@ impl RecogniseCtx<'_, '_> {
 /// `作者附記［＃「作者附記」は太字］` shape) so the `<b>` / `<i>` is its sole
 /// rendered copy.
 impl RecogniseCtx<'_, '_> {
-    /// Shared #333 resolution for the single-target `forward_format` families
+    /// Shared resolution for the single-target `forward_format` families
     /// (emphasis / 縦中横 / box enclosure). The caller has already confirmed the
     /// target is preceded (not self-contained) and holds the `attr` + open
     /// span. Returns the bracket node, its consume start, and the diagnostic;
@@ -1559,7 +1559,7 @@ impl RecogniseCtx<'_, '_> {
             // styled run (`ForwardOrigin::SelfContained`) rather than falling
             // through to a hidden `Unknown` directive. Consume the whole bracket
             // — no pull-back — so the region tiling is byte-identical to the old
-            // `Unknown` and the #228 double-render is structurally impossible.
+            // `Unknown` and the double-render is structurally impossible.
             let text = self.alloc.content_plain(only);
             return Some((
                 self.alloc
@@ -1612,7 +1612,7 @@ impl RecogniseCtx<'_, '_> {
         if !forward_target_is_preceded(view.events, self.source, open_idx, target) {
             // No referent: the quoted target is itself the boxed run. Consume the
             // whole bracket (no pull-back) so region tiling is byte-identical to
-            // the old `Unknown` and the #228 double-render is impossible.
+            // the old `Unknown` and the double-render is impossible.
             let text = self.alloc.content_plain(target);
             return Some((
                 self.alloc
@@ -1625,14 +1625,14 @@ impl RecogniseCtx<'_, '_> {
     }
 }
 
-/// Classify a `<run>［＃mは上ドット付き］` dotted-letter directive (#331).
+/// Classify a `<run>［＃mは上ドット付き］` dotted-letter directive.
 ///
 /// The directive addresses a base Latin letter *inside the immediately-
 /// preceding run* — a bare word (`Padma-sambhava`) or a decomposed `〔…〕`
 /// accent span — and asks for a combining dot above / below it. This is
 /// sub-run occurrence addressing, not the `「X」は…` quote shape, so it reclaims
 /// the preceding run directly (never `extract_forward_quote_targets`). The run
-/// is pulled back (the styled span is the sole rendered copy, #228-safe); the
+/// is pulled back (the styled span is the sole rendered copy, without duplicate rendering); the
 /// raw body is interned for byte-exact serialize and render-time composition.
 /// `ab_aozora_syntax::accent::compose_accent_dots` is the single authority for the
 /// selector grammar and glyph table, shared with the renderer — a `Some`
@@ -1703,7 +1703,7 @@ fn is_latin_run_char(ch: char) -> bool {
 /// Map the keyword after `は` to a forward-scope [`ForwardAttr`].
 ///
 /// 太字 → Bold, ゴシック体 → Gothic (a distinct typeface, **not** a fold to
-/// 太字 — #435), 斜体 → Italic (per
+/// 太字), 斜体 → Italic (per
 /// <https://www.aozora.gr.jp/annotation/emphasis.html>). ゴチック (1 corpus
 /// work) is not recognised — it declines to `Directive{Unknown}` and a Tier1
 /// lint suggests ゴシック体. 上付き小文字 →

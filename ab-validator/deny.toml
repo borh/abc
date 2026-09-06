@@ -1,6 +1,4 @@
 # cargo-deny audit configuration for the ab-validator workspace.
-# Introduced by Task 4 (parser-fork Phase 1) — no prior deny gate existed
-# in this workspace before this commit.
 #
 # Run: `cargo deny check` from this directory (ab-validator/).
 
@@ -33,23 +31,13 @@ allow = [
 [advisories]
 ignore = [
   # paste 1.0.15 unmaintained (creator archived repo, no safe upgrade path);
-  # pre-existing on main before parser fork (verified against main:Cargo.lock);
-  # follow-up outside Phase 1 scope — 2026-07-10
   "RUSTSEC-2024-0436",
   # bincode 1.3.3 / 2.0.1 unmaintained;
-  # pre-existing on main before parser fork (verified against main:Cargo.lock);
-  # follow-up outside Phase 1 scope — 2026-07-10
   "RUSTSEC-2025-0141",
   # instant 0.1.13 unmaintained;
-  # pre-existing on main before parser fork (verified against main:Cargo.lock);
-  # follow-up outside Phase 1 scope — 2026-07-10
   "RUSTSEC-2024-0384",
 ]
 # num-bigint 0.4.7 yanked version has no per-crate ignore mechanism in
 # cargo-deny's advisories.ignore (that list is RUSTSEC IDs only), so the
 # yanked-crate lint is downgraded to a warning instead;
-# pre-existing on main before parser fork (verified against main:Cargo.lock);
-# follow-up outside Phase 1 scope — 2026-07-10
 yanked = "warn"
-# crossbeam-epoch RUSTSEC-2026-0204 is intentionally NOT ignored here — it
-# was fixed in-branch via `cargo update -p crossbeam-epoch --precise 0.9.20`.

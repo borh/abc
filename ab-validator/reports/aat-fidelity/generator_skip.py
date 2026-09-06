@@ -1,12 +1,11 @@
 """Decide whether an existing AAT dump is fresh for the current inputs.
 
-Reads a dump's `metadata.json` (written by run-aat-full.sh, carrying the F6
+Reads a dump's `metadata.json` (written by run-aat-full.sh, carrying
 `input_set_hash` + `output_content_hash`), and re-verifies its `aat/` tree.
 A dump is FRESH iff its recorded `input_set_hash` equals the current inputs' hash
 AND its `aat/` tree still hashes to the recorded `output_content_hash`. Any
 anomaly (no/broken metadata, changed inputs, changed/missing outputs) → not fresh
-→ recompute. Fail toward correctness. See
-docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
+→ recompute. Fail toward correctness.
 """
 
 from __future__ import annotations

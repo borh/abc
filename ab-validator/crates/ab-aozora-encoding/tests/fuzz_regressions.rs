@@ -1,7 +1,5 @@
-//! Permanent regression cases for the `decode_sjis` cargo-fuzz harness
-//! under `crates/aozora-encoding/fuzz/`.
-//!
-//! Workflow lives in the top-level `tests/fuzz_regressions/README.md`.
+//! Replay raw fuzz regression inputs from `tests/fuzz_regressions/`.
+//! Invalid UTF-8 is skipped, matching the fuzz target input contract.
 
 use std::fs;
 use std::panic;

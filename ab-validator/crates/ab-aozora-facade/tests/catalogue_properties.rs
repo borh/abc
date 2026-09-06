@@ -7,7 +7,7 @@
 //!
 //! - **no-panic** over arbitrary UTF-8 (the `strip_suffix` / char-boundary
 //!   logic must never panic);
-//! - **disjoint** — no body resolves in both catalogues (ADR-0026);
+//! - **disjoint** — no body resolves in both catalogues;
 //! - **idempotent** — every output is a fixed point (not itself a key);
 //! - **recognised output** — every Tier1/Tier2 output parses to a non-Unknown
 //!   construct, and every Tier2 output is not a Tier1 key (the single
@@ -125,7 +125,7 @@ proptest! {
         let _d = degraded_directive(&s);
     }
 
-    /// Tier1 and Tier2 are disjoint: no body resolves in both (ADR-0026).
+    /// Tier1 and Tier2 are disjoint: no body resolves in both.
     #[test]
     fn tier1_and_tier2_are_disjoint(body in directive_body()) {
         prop_assert!(

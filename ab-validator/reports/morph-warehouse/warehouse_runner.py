@@ -8,8 +8,7 @@ index). The compute step is injected (a callable), exactly like the nix-bridge
 recipe supplies the real command; this module only decides skip-vs-run and records.
 
 Skip-recompute is additive: `--force`, or any non-fresh index state
-(missing/stale/invalid), runs the compute step exactly as today. See
-docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
+(missing/stale/invalid), runs the compute step exactly as today.
 """
 
 from __future__ import annotations

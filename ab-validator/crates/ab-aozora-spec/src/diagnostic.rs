@@ -1,5 +1,5 @@
 //! Forked from <https://github.com/P4suta/aozora>
-//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (hard detach; ADR 0032).
+//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (independent fork).
 //! Upstream crate: aozora-spec. License: MIT OR Apache-2.0 (see NOTICE).
 //!
 //! Lexer-emitted observations.
@@ -355,7 +355,7 @@ pub enum Diagnostic {
 
     /// A `〔…〕` accent digraph (e.g. `〔e'〕` → `é`) was decomposed into
     /// its Unicode-combined form during the sanitize stage. Purely
-    /// informational: the decomposition is intended behaviour (ADR-0003),
+    /// informational: the decomposition is intended behaviour,
     /// surfaced as a `Note` so an editor can show what changed. The
     /// serializer reconstructs the original `〔…〕` form, so the transform
     /// is loss-free.
@@ -1416,7 +1416,7 @@ impl Diagnostic {
             ),
             Self::AccentDecompositionApplied { .. } =>
                 "「〔…〕」のアクセント表記が、サニタイズ段階で合成済み Unicode 文字へ分解されました（例: 〔e'〕→é）。\n\n\
-                 これは意図された挙動（ADR-0003）で、情報提供のための Note です。\n\n\
+                 これは意図された挙動で、情報提供のための Note です。\n\n\
                  直し方: 対応は不要です。保存（serialize）すると元の 〔…〕 形へ復元され、変換は無損失です。"
                     .to_owned(),
             Self::UnresolvedGaiji { .. } =>

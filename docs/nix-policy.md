@@ -1,7 +1,5 @@
 # Nix Policy
 
-Date: 2026-07-07
-
 Soranoha treats Nix as the repository's identity, toolchain, and bounded
 materialization layer. Domain behavior stays in Clojure, Rust, and Python code.
 
@@ -21,8 +19,6 @@ Nix does not own:
 - Parser-IR, TEI, RDF, or sidecar policy
 - report interpretation
 - full-corpus Cartesian derivation matrices
-
-This follows ABC ADRs 0003, 0005, 0008, 0012, 0023, and 0025.
 
 ## Lock Authority
 

@@ -5,9 +5,6 @@
 //! iteration). The source is lexed via `aozora_pipeline` and rendered
 //! to HTML via `aozora_render`. Targets renderer panics and the round-trip "no PUA sentinel survives in
 //! the rendered HTML" invariant.
-//!
-//! Run via `just fuzz-quick aozora-render render_html` (or
-//! `fuzz-deep` / `fuzz-marathon`).
 
 #![no_main]
 

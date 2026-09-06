@@ -153,8 +153,7 @@ def locked_dependency_projection(repo_root: pathlib.Path, package: str) -> list[
     checksum, so their bytes are outside this projection and outside
     `reviewed_sources`. Editing a sibling crate that this instrument depends on
     rotates nothing. Cargo.lock likewise records no feature selection. Both
-    gaps are stated in ADR `package-scoped-instrument-dependency-identity`
-    rather than silently papered over by a wider hash.
+    gaps require separate source and feature identity inputs.
     """
     lock = tomllib.loads((repo_root / CARGO_LOCK).read_text(encoding="utf-8"))
     # Keyed by (name, version), not name. Thirty-six names in this workspace

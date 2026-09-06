@@ -1,5 +1,5 @@
 //! Forked from <https://github.com/P4suta/aozora>
-//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (hard detach; ADR 0032).
+//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (independent fork).
 //! Upstream crate: aozora. License: MIT OR Apache-2.0 (see NOTICE).
 
 //! `aozora` — the public meta crate.
@@ -41,30 +41,11 @@
 //! repeated string content; dropping the tree frees the store in one
 //! step, with no per-node `Drop`.
 //!
-//! The build-block crates (`aozora-spec`, `aozora-syntax`,
-//! `aozora-pipeline`, `aozora-render`, `aozora-encoding`) are each
-//! published in their own right, but consumers depend on `aozora`
-//! alone and reach them through this meta crate's
-//! [`pipeline`] / [`syntax`] / [`render`] / [`encoding`] / [`json`]
-//! modules. See the
-//! [Architecture chapter of the handbook](https://p4suta.github.io/aozora/arch/pipeline.html)
-//! for the layered design.
+//! The component crates are available through [`pipeline`], [`syntax`],
+//! [`render`], and [`encoding`]. Wire projections require the corresponding
+//! feature flags.
 //!
-//! ---
-//!
-//! The project README follows; its Quickstart example is compiled and
-//! run as a doctest so it can never drift from the live API.
-#![allow(
-    clippy::doc_markdown,
-    reason = "the included README is human-facing prose; proper nouns (PyO3, x86_64, macOS, …) are intentionally not code-spanned"
-)]
-// NOTE: upstream's relative depth (crate/src/lib.rs -> 3x
-// `..` -> project root README.md) is preserved verbatim, but the fork
-// lives at a different tree depth, so the unadjusted path would have
-// silently resolved to ab-validator's own top-level README instead of
-// the aozora project README this doctest is meant to exercise. Fixed by
-// vendoring the upstream root README.md alongside this crate's
-// Cargo.toml (one directory up from src/) and pointing here.
+//! The following README examples also run as doctests.
 #![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
 // Emit "Available on crate feature `…`" badges on docs.rs (and the
@@ -280,7 +261,7 @@ mod tests {
         let doc = Document::new("｜青梅《おうめ》");
         let tree = doc.parse();
         // Canonical right-side ruby is the bare form — the redundant `｜`
-        // (all-kanji base at line start) is dropped (ADR 0002/0003);
+        // (all-kanji base at line start) is dropped;
         // `to_source_verbatim` preserves the author's `｜`.
         assert_eq!(tree.to_source(), "青梅《おうめ》");
         assert_eq!(tree.to_source_verbatim(), "｜青梅《おうめ》");

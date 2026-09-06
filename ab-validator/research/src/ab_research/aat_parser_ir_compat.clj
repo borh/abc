@@ -65,8 +65,7 @@
      [:aat_version ::am/positive-int]
      [:aat_adapter ::am/concrete-adapter]
      ;; Presence is required (it is a compatibility match key); the value
-     ;; itself may be null. Absence was previously rejected by the manual
-     ;; required-entry-keys check that this schema now replaces.
+     ;; itself may be null.
      [:aat_adapter_version ::am/nullable-nonblank-string]
      [:mapping_id ::am/nonblank-string]
      [:mapping_version ::am/semver]

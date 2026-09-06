@@ -103,8 +103,7 @@ pub struct SourceAnnotationsBoth<'a> {
 /// The body is the work — prose and annotations. The header and tail are
 /// metadata *about* the work. They are two populations, not two candidate
 /// denominators for one ratio, and measuring their union averages parser
-/// fidelity against packaging attribution and can mean neither. See
-/// `docs/adr/parser-rq-source-region-partition.md`.
+/// fidelity against packaging attribution and can mean neither.
 ///
 /// The regions are derived from [`aozora_body_range`] alone; no separator or
 /// `底本：` heuristic is maintained anywhere else. Note that the tail is

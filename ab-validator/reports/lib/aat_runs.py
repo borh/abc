@@ -85,8 +85,8 @@ def validate_run_set(
             # Coherence: the run_descriptor (metadata.json) must sit at the root of the
             # SAME dump as the resolved aat_dir. Defence in depth against a hand-edited
             # manifest that points aat_dir and run_descriptor at different dumps, so the
-            # descriptor (which matches flake.lock) would validate the wrong data. See
-            # 2026-07-09-fidelity-workflow-integration.md and the idempotency design ADR.
+            # descriptor (which matches flake.lock) would validate the wrong data.
+
             dump_root = Path(descriptor_path).parent
             try:
                 Path(aat_dir).resolve().relative_to(dump_root.resolve())

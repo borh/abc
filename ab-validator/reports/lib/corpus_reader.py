@@ -1,14 +1,10 @@
 """Shared corpus source-reading contract for report instruments.
 
-One place for the discovery + classification + reading rules that the
-Rust pipeline (`crates/ab-index/src/index.rs` `collect_source_files`) and
-the litigated Phase 4 split scanner
-(`reports/source-regions/terminal-provenance-split.py`) established, plus
-the recovery paths ABC's builder added in abc commit `0bf4beed`
-("soranoha: robustly read work ZIPs (SJIS charset + 7zz fallback)").
+Discovers source candidates and classifies strict reads separately from tolerant
+archive recovery.
 
 Every discovered candidate is classified into exactly one of four
-classes (Phase 5 review P5-1):
+classes:
 
   - ``work``          — readable work source; carries the decoded text,
                         label, reader path, and sha256.

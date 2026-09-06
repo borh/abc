@@ -34,7 +34,7 @@ use crate::walk::{SentinelKind, WalkSink, walk};
 /// never a second copy of the catalogue — so a known 揺れ renders as a real
 /// element instead of a hidden directive span. `Canonical` consults Tier1 only
 /// (`render --normalize`); `Degraded` additionally reduces the lossy / judgment
-/// Tier2 forms (`render --degraded`). See ADR-0022's fourth role and ADR-0026.
+/// Tier2 forms (`render --degraded`).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct RenderOptions {
     /// Which notation-hygiene tiers to apply to `DirectiveKind::Unknown`

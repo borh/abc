@@ -15,7 +15,7 @@
   regex only bounds month 01-12 and day 01-31; full calendar validity
   needs a date library. java.time accepts signed negative years, so
   this gate covers BCE full dates too. Partial dates (YYYY, YYYY-MM)
-  skip this check — see ADR 0015."
+  skip this full-date check."
   [record]
   (doseq [field ["date_of_birth" "date_of_death"]
           :let [v (get record field)]

@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
-# Proves the ab-aozora lane's --adapter-bin override actually controls
-# execution AND recorded identity, not merely that a flag was parsed: a stub
-# binary with a distinctive --version must be the one ab-check's subprocess
-# spawns (stdin -> AAT, --mode aat), and the run's metadata.json must record
-# it as adapter_bin_override (path, sha256, --version, recorded verbatim by
-# run-aat-full.sh itself) — the Task-6 explicit-identity contract, parallel to
-# --aozora-bin's aozora_bin_override but for the ADAPTER EXECUTABLE ITSELF
-# (ab-aozora has no inner upstream parser and no renderer: the binary IS the
-# complete generator identity).
+# An adapter override must control both execution and recorded generator identity.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

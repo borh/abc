@@ -4,9 +4,6 @@
 //! result is then re-lexed and re-serialized; the two outputs must
 //! be byte-equal (I3 fixed-point invariant: `serialize` is idempotent
 //! on its own output).
-//!
-//! Run via `just fuzz-quick aozora-render serialize_round_trip` (or
-//! `fuzz-deep` / `fuzz-marathon`).
 
 #![no_main]
 

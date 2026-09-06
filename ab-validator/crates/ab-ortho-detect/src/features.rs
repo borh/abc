@@ -96,8 +96,7 @@ pub fn extract_char_features(text: &str) -> CharFeatures {
     // Repeated bigram pattern ratio: count of IMMEDIATE ABAB echoes
     // (optionally ッ-separated). Faithful port of the Python heuristic's
     // `len(re.findall(r"(..)ッ?\1", text))` — NOT "distinct bigrams appearing
-    // >=2 times anywhere" (the earlier Rust definition was broader and caused
-    // false rejections; see reports/ortho-detect/2026-07-05-phase2-recall-floor.md).
+    // >=2 times anywhere", which would reject unrelated repetitions.
     let repeated_bigram_pattern_count = count_immediate_bigram_echoes(&chars);
 
     // Does the sentence end in katakana?

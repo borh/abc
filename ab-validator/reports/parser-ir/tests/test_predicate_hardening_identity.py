@@ -308,7 +308,6 @@ def test_projection_marks_workspace_local_members_as_uncovered(module):
 
     Asserting the marker keeps the gap legible in the manifest instead of
     letting a version-only entry read as though it bound the crate's source.
-    See ADR `package-scoped-instrument-dependency-identity`.
     """
     projection = module.locked_dependency_projection(REPO_ROOT, "ab-aat-to-parser-ir")
     local = {entry["name"] for entry in projection if entry.get("origin") == "workspace-local"}

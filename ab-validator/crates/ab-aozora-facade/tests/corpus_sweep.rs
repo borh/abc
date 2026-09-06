@@ -7,10 +7,8 @@
 //!
 //! A small **shrink-only allowlist** (`corpus/roundtrip-allowlist.json`)
 //! records the documents whose canonical serialize is not yet a fixed
-//! point — each tied to a tracking issue. The gate fails if any
-//! *un-listed* document diverges, and also fails if a *listed* document
-//! has started round-tripping (so the list can only shrink as the
-//! normalization-waist epic lands; it never silently rots).
+//! point. The test fails if an unlisted document diverges or a listed
+//! document starts round-tripping, requiring removal of obsolete entries.
 
 use std::borrow::Cow;
 use std::collections::BTreeSet;

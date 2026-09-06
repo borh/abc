@@ -1,5 +1,5 @@
 //! Forked from <https://github.com/P4suta/aozora>
-//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (hard detach; ADR 0032).
+//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (independent fork).
 //! Upstream crate: aozora-render. License: MIT OR Apache-2.0 (see NOTICE).
 
 //! HTML / Aozora-source renderers over the semantic AST.
@@ -14,7 +14,7 @@
 //! - [`html::render_html_normalized`] — the opt-in twin that first
 //!   normalises Tier1 directive near-misses to canonical form (via the
 //!   formatter rewrite) so a known 揺れ renders non-inert. See
-//!   [`html::RenderOptions`] and ADR-0022's fourth role.
+//!   [`html::RenderOptions`].
 //! - [`serialize::serialize`] — round-trip the parsed tree back to
 //!   Aozora source text.
 //!

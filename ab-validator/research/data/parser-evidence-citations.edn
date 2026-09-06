@@ -3,23 +3,7 @@
                :current_external_paths "optional local rerun locators; nil in committed pre-monorepo index"
                :monorepo_note "Physical repo boundaries may disappear; producer and consumer component roles remain explicit."}
  :entries
- [{:evidence_id "ab-validator/parser-ir-conversion-sync-2026-07-04"
-   :evidence_class :conversion-compatibility
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md"
-   :current_external_path nil
-   :sha256 "sha256:bf0910f5316efc2cd528f504c0cbd16816ca993e7ccb2b99122aab8a71359527"
-   :status :citable
-   :summary "Parser-IR converter corpus-clean sync for mapping version 0.2.0 and admitted aozora-rs / aozora2html adapter tuples."}
-  {:evidence_id "ab-validator/aat-parser-ir-full-corpus-conversion-2026-07-04"
-   :evidence_class :conversion-compatibility
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md"
-   :current_external_path nil
-   :sha256 "sha256:be908c4061e49a01003b8f1e49b564da9a782671f421091189620aa787e37a49"
-   :status :citable
-   :summary "Full-corpus AAT to parser-IR conversion audit: 35,583 attempted, 35,583 succeeded, 0 failed."}
-  {:evidence_id "ab-validator/aat-parser-ir-compatibility-candidates-2026-07-04"
+ [{:evidence_id "ab-validator/aat-parser-ir-compatibility-candidates-2026-07-04"
    :evidence_class :conversion-compatibility
    :producer_component "ab-validator"
    :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn"
@@ -27,22 +11,6 @@
    :sha256 "sha256:58ec66fb9357563896a89ddfb92ed4917178c1acc03f55a1142f1ab78cae2ffe"
    :status :citable
    :summary "Exact adapter/version compatibility candidates admitted by ABC for mapping version 0.2.0."}
-  {:evidence_id "ab-validator/parser-ir-conversion-sync-2026-07-04-mapping-0.2.1"
-   :evidence_class :conversion-compatibility
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md"
-   :current_external_path nil
-   :sha256 "sha256:a8f27f56ffceaacbbcde1d80d823b8e5727186790d6ebc841a45966f1db1761c"
-   :status :citable
-   :summary "Parser-IR converter corpus-clean sync for mapping version 0.2.1 and admitted aozora-epub3 / aozora-rs / aozora2html adapter tuples."}
-  {:evidence_id "ab-validator/aat-parser-ir-full-corpus-conversion-2026-07-04-mapping-0.2.1"
-   :evidence_class :conversion-compatibility
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md"
-   :current_external_path nil
-   :sha256 "sha256:d03afdce19adef4c5a44d7a8caa628fa3b8cc8fc0f0599d047aed261cc9ad7a7"
-   :status :citable
-   :summary "Full-corpus AAT to parser-IR conversion audit for mapping version 0.2.1: 53,427 attempted, 53,427 succeeded, 0 failed."}
   {:evidence_id "ab-validator/aat-parser-ir-compatibility-candidates-2026-07-04-mapping-0.2.1"
    :evidence_class :conversion-compatibility
    :producer_component "ab-validator"
@@ -51,14 +19,6 @@
    :sha256 "sha256:c00481ab65239098a072112dd8c803f0203c6d5776d67864215491715a9616e6"
    :status :citable
    :summary "Exact adapter/version compatibility candidates admitted by ABC for mapping version 0.2.1."}
-  {:evidence_id "ab-validator/aat-parser-ir-full-corpus-conversion-2026-07-04-mapping-0.2.3"
-   :evidence_class :conversion-compatibility
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md"
-   :current_external_path nil
-   :sha256 "sha256:f669c97ca26f770a446b4a2432dc5af2b27e807ccecaf2488fc58e6bea57dfa9"
-   :status :citable
-   :summary "Full-corpus AAT to parser-IR conversion audit for mapping version 0.2.3: 71,301 attempted, 67,415 succeeded, 3,886 failed; includes full aozora2 evidence."}
   {:evidence_id "ab-validator/aat-parser-ir-compatibility-candidates-2026-07-04-mapping-0.2.3"
    :evidence_class :conversion-compatibility
    :producer_component "ab-validator"
@@ -67,54 +27,8 @@
    :sha256 "sha256:ca33cad372dba629e5b679c97e924a6418bcf83ab7bfa53f8a192103d6f1911d"
    :status :citable
    :summary "Exact adapter/version compatibility candidates admitted by ABC for mapping version 0.2.3, including aozora2 full-run failures in evidence scope."}
-  {:evidence_id "ab-validator/parser-performance-measurement-2026-07-04"
-   :evidence_class :parser-selection
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-parser-performance-measurement.md"
-   :current_external_path nil
-   :sha256 "sha256:4603fc0f3f175dc2524e0ac1b4f312df020cecfda5728cc8fbfe04f0337d49cd"
-   :status :provisional
-   :summary "Bounded parser timing evidence and DNF policy; useful for parser selection, not sufficient alone to accept ADR 0002. Reproduce scripts retired under ADR third-party-comparison-retirement; recoverable from git history."}
-  {:evidence_id "ab-validator/coverage-report-2026-04-28"
-   :evidence_class :parser-selection
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/coverage-report.md"
-   :current_external_path nil
-   :sha256 "sha256:58276af90204b6ceb2d8cad847275aacd7164183196b5077a536ba0b47118f6a"
-   :status :provisional
-   :summary "Parser recognition and AAT-fidelity feature matrix across aozora2, aozora-rs, and aozora2html. Frozen: the regenerating pipeline was retired under ADR third-party-comparison-retirement (the document now carries a freeze footer); reproduce scripts recoverable from git history."}
-  {:evidence_id "ab-validator/aozora-parser-comparison-study-2026-07-08"
-   :evidence_class :parser-selection
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md"
-   :current_external_path nil
-   :sha256 "sha256:8f68178186c9ccad2514c833098f3ffbc725183699757d5dc8182678c5826a59"
-   :status :citable
-   :summary "Five-parser comparison at pinned revisions over the pinned 17,886-work corpus: conformance breadth, faithful capability with parser-vs-adapter attribution, frequency-weighted corpus coverage decomposed into fidelity and robustness, and bounded performance. Verdict: aozora-pipeline is the fork base. Accepted as parser-selection evidence by ADR 0030."}
-  {:evidence_id "ab-validator/parser-fork-candidacy-faithful-comparison-2026-07-08"
-   :evidence_class :parser-selection
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/superpowers/reports/2026-07-08-parser-fork-candidacy-faithful-comparison.md"
-   :current_external_path nil
-   :sha256 "sha256:ec0e5b7cdef6ea0c14b6ba59af8a35eb7b742b12a3da74683f771873330933e8"
-   :status :citable
-   :summary "Rust-candidate eligibility (license, maintenance, forkability), faithfulness corrections for aozora-core and aozora-rs-core adapter distortions, and the build-fresh option on ab-source-syntax. Accepted as parser-selection evidence by ADR 0030."}
-  {:evidence_id "ab-validator/parser-comparison-followups-2026-07-09"
-   :evidence_class :parser-selection
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/superpowers/specs/2026-07-09-parser-comparison-followups-handoff.md"
-   :current_external_path nil
-   :sha256 "sha256:e13c904f36ddc4180f1326cdc375e6939716487e55318349c86c64e5158d2aa0"
-   :status :citable
-   :summary "Hardening index for the study: corpus-invariant denominators, aozora-core ruby-density pathology root cause, controlled upstream re-pin equivalence, construct-gap backlog, official-docs seed expansion, and methodology write-up. None changed the verdict. Accepted as parser-selection evidence by ADR 0030."}
-  {:evidence_id "ab-validator/adapter-fidelity-matrix"
-   :evidence_class :comparator-oracle
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/adapter-fidelity.md"
-   :current_external_path nil
-   :sha256 "sha256:1a506c15a776f3e1415fc9f233f6e997439a9b6c4b0d3c9566d495b4874dbfbb"
-   :status :citable
-   :summary "Direct vs indirect adapter-fidelity caveats, including aozora2html rendered-XHTML limits. Frozen: the document now carries a retirement banner (ADR third-party-comparison-retirement); the referenced comparison scripts are recoverable from git history."}
+
+
   {:evidence_id "ab-validator/aozora-parser-neutral-comparison-result-2026-07"
    :evidence_class :neutral-comparison
    :producer_component "ab-validator"
@@ -124,12 +38,4 @@
    :study_contract "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe"
    :status :citable
    :summary "Machine-readable neutral parser-comparison result IR, regenerated byte-identically from the committed raw run manifests under the frozen preregistration. Only parse-completion robustness is measured (exact counts, Wilson intervals, native and adapter lanes separate); every other axis is an explicit missing/non-comparable row. Neutral research measurement: cannot admit or release-qualify any parser."}
-  {:evidence_id "ab-validator/aozora-parser-neutral-comparison-report-2026-07"
-   :evidence_class :neutral-comparison
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/studies/aozora-parser-neutral-comparison-2026-07/report/comparison-report.md"
-   :current_external_path nil
-   :sha256 "sha256:d8760c56547d09fe900dda0fe3935caafba286d9081f7a0ebdc0db22e52d1e2f"
-   :study_contract "sha256:8715c30f69250dbd254d38218c05a433165e86d30a9c1e42fc169f5909500fbe"
-   :status :citable
-   :summary "Narrative neutral parser-comparison report separating observations, interpretations, limitations, missing data, and use-case sensitivity. Regenerated byte-identically from the committed raw run manifests; publishes no aggregate winner. Neutral research measurement: cannot admit or release-qualify any parser."}]}
+  ]}

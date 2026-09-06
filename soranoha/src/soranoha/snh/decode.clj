@@ -15,7 +15,7 @@
     6. recompute the id from the stored bytes: snh:1:<type>:<sha256hex>.
 
   All other artifacts (e.g. tei-validation JSON) are exact published bytes
-  checked by hash alone; they never pass through here."
+  checked by hash and consumer-specific constraints; they never pass through here."
   (:require [soranoha.core.canonical :as canonical]
             [soranoha.core.hash :as hash]
             [soranoha.snh.schema :as schema]

@@ -4,7 +4,7 @@ Two suites:
 
 * `ClassifyTail` pins the exact stateful behavior of
   `reports.lib.terminal_provenance.classify_tail` -- the normative rule
-  Task 14's Rust `source_note` emission transcribes case-for-case. The
+  Rust `source_note` emission transcribes case-for-case. The
   distinguishing case (a bare date line classifying differently depending
   on which head preceded it) is the whole reason this is a state machine
   and not a per-line predicate; see `test_same_shaped_line_...` below.
@@ -357,7 +357,7 @@ def _truncate_mid_stream(data: bytes) -> bytes:
 
 class ReadEntryTextZipDispatch(unittest.TestCase):
     """Direct tests of `read_entry_text`'s zip-vs-plain dispatch and its
-    tolerance for the two real-corpus corruption patterns (Task 15's Class
+    tolerance for the two real-corpus corruption patterns (corruption class
     A/B stray-file misread and Class C unreadable-to-python entries) --
     see `reports/source-regions/terminal-provenance-split.py`'s
     `read_entry_text`/`_read_zip_entry` docstrings for the full root-cause
@@ -372,7 +372,7 @@ class ReadEntryTextZipDispatch(unittest.TestCase):
         """Selection rule: dispatch must be by CONTENT (zip magic bytes),
         not by filename extension -- mirrors Rust's `is_zip_file` in
         `crates/ab-index/src/index.rs`. A `.txt`-named file holding a fully
-        valid zip archive (Task 15's Class B:
+        valid zip archive (corruption class B:
         `cards/001341/files/49658_ruby_70064.txt` /
         `cards/001585/files/53484_ruby_56576.txt`) must be unzipped and its
         REAL text returned, not the raw zip bytes mis-decoded as Shift_JIS
@@ -500,7 +500,7 @@ class GeneratorClipEndToEndZipDispatch(unittest.TestCase):
     classification, not just the unit-level reader: a `.txt`-named work
     whose real content is a valid zip with a genuine `底本：` tail must be
     counted under `works_with_terminal_provenance`, not
-    `works_without_tail` (the exact Class B misclassification Task 15
+    `works_without_tail` (the exact Class B misclassification the corpus audit
     traced on the real corpus)."""
 
     def _run(self, corpus_root: Path, tmp_path: Path) -> tuple[int, dict]:

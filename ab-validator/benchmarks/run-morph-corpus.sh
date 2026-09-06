@@ -17,11 +17,7 @@ fi
 # made the defaults miss a machine-local AB_DB_ROOT entirely.
 db_root="${AB_DB_ROOT:-$repo_root/scratch/state}"
 
-# The default AAT corpus is pinned to the dump the recorded baseline used
-# (benchmarks/baselines/morph-2026-07-03.md: 17,689 aozora2html-adapter files).
-# Point AB_MORPH_AAT_DIR at a different corpus to measure something else — but
-# re-record the baseline alongside it, because wall time is not comparable
-# across corpora.
+# Compare timings only across runs using the same AAT corpus.
 aat_dir="${AB_MORPH_AAT_DIR:-${AB_AOZORA2HTML_AAT_DIR:-$db_root/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter}}"
 warehouse_dir="${AB_MORPH_WAREHOUSE_DIR:-$db_root/morph-warehouse-bench}"
 jobs_list="${AB_MORPH_JOBS:-1 $(nproc)}"

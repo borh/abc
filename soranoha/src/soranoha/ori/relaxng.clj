@@ -43,11 +43,8 @@
     (.put builder ValidateProperty/ERROR_HANDLER handler)
     (.toPropertyMap builder)))
 
-;; Parsing the RelaxNG schema dominated per-call cost when every work in a
-;; corpus run re-loaded it. Schema objects are immutable and safe for
-;; concurrent use (Jing's documented contract), so cache by canonical path +
-;; mtime; an edited schema busts the entry. Validators are NOT thread-safe
-;; and are created per call.
+;; Jing Schema objects can be shared; Validators cannot. Cache the parsed
+;; schema by canonical path and mtime, and create a Validator per call.
 (defonce ^:private schema-cache (atom {}))
 
 (defn- load-schema ^Schema [^String schema-path]
@@ -76,8 +73,7 @@
   :column, :message} ...]}. Does not throw on validation issues;
   severity classification preserved on each violation. Malformed XML is
   recorded as a :fatal violation and the parser's SAXParseException
-  propagates (same contract as the previous ValidationDriver-based
-  implementation)."
+  propagates."
   [{:keys [^String schema-path ^String xml-path label]}]
   (when (string/blank? schema-path)
     (throw (ex-info "TEI RelaxNG schema path must be set."

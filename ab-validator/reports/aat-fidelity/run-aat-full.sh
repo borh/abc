@@ -113,7 +113,7 @@ case "$adapter_id" in
     default_jobs="${AB_AB_AOZORA_AAT_FULL_JOBS:-$(nproc)}"
     default_timeout="${AB_AB_AOZORA_AAT_FULL_TIMEOUT:-300s}"
     default_report_id="${AB_AB_AOZORA_AAT_FULL_REPORT_ID:-ab-aozora-full-$(date -u +%F)}"
-    # ab-aozora (Task 4's permanent native stdin->AAT binary) has NO external
+    # ab-aozora has NO external
     # renderer and NO separate Rust mapper: the adapter binary itself is the
     # complete generator identity. "adapter" here is a placeholder for
     # --print-plan (no build); the resolution block below (mirroring the
@@ -213,7 +213,7 @@ triage_python="$(nix build "$repo_root#aat-triage-python" --no-link --print-out-
 # (ab-check invokes it) and resolve their Rust mapper from nix below;
 # adapter_hash_target then points at that nix mapper binary for them.
 
-# ab-aozora is the permanent native stdin->AAT binary (Task 4): no separate
+# ab-aozora is the permanent native stdin->AAT binary: no separate
 # Rust mapper, no external renderer — the binary itself is the complete
 # generator identity. --adapter-bin overrides resolution entirely: no nix
 # build, the override both executes AND is what is recorded (never silently
@@ -387,7 +387,7 @@ out = pathlib.Path(out_dir)
 def run(args):
     return subprocess.check_output(args, cwd=repo, text=True).strip()
 
-# Reproducible descriptor (Phase 2 A4a): honour SOURCE_DATE_EPOCH so a rebuild can
+# Reproducible descriptor: honour SOURCE_DATE_EPOCH so a rebuild can
 # stamp a fixed time, and record the dirty-tree state as a clean boolean instead of
 # the noisy multi-line `git status --short` that made descriptors non-reproducible
 # and buried the provenance hole (F6). The aat/ tree itself is what gets content-
@@ -421,7 +421,7 @@ metadata = {
     "workflow_run_path": str(out / "workflow-run.json"),
 }
 
-# Explicit --adapter-bin override identity (Task 6, ab-aozora lane): recorded
+# Explicit --adapter-bin override identity (ab-aozora lane): recorded
 # verbatim — proof the override reached the adapter subprocess ab-check
 # actually invoked, not merely that a flag was passed.
 if adapter_bin_override:

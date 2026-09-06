@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Compare one adapter's conformance rows across two summary JSONs.
 
-Used by the Phase 3 gates: stage 0 requires the ab-aozora lane identical
-to the frozen Phase 2 echo summaries; rotations diff against the previous
+The baseline comparison requires the ab-aozora lane identical
+to the frozen echo summaries; rotations diff against the previous
 stage and the differences are reviewed against expectations.
 
 Exit 0 = identical; 1 = any row differs / vector set differs; 2 = usage or

@@ -6,8 +6,7 @@ Content-based and fail-toward-correctness: every knob that changes the analyzed
 output is folded in; parallelism (--jobs), temp dirs, and report ids are excluded
 (they change neither which works are analyzed nor the emitted bytes). Optional
 knobs are represented explicitly (null when the flag is not passed) so that "flag
-absent" and "flag present" are unambiguously different identities. See
-docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
+absent" and "flag present" are unambiguously different identities.
 """
 
 from __future__ import annotations

@@ -5,9 +5,6 @@
 //! assert that the decoder never panics on adversarial input —
 //! truncated trail bytes, lead-byte-at-EOF, malformed multi-byte
 //! sequences. On successful decodes the result must be valid UTF-8.
-//!
-//! Run via `just fuzz-quick aozora-encoding decode_sjis` (or
-//! `fuzz-deep` / `fuzz-marathon`).
 
 #![no_main]
 

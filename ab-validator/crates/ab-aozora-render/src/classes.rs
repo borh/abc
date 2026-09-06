@@ -206,7 +206,7 @@ mod tests {
 
     /// E1-1: a no-referent forward ([`ForwardOrigin::SelfContained`]) owns the
     /// only copy of its target, so it renders the styled run — it is **not**
-    /// short-circuited like [`ForwardOrigin::Referenced`] (the #228 guard). The
+    /// short-circuited like [`ForwardOrigin::Referenced`] (the duplicate-render guard). The
     /// producer is wired in E1-2/E1-3; the render fall-through is pinned here so
     /// the plumbing PR carries its own proof.
     #[test]
@@ -454,7 +454,7 @@ mod tests {
                 &mut nodes,
             );
         }
-        // AccentDot (#331) needs an interned body + a composable run, so it uses
+        // AccentDot needs an interned body + a composable run, so it uses
         // its own constructor rather than the loop above; this exercises the
         // `aozora-accent-dot` class through the compose path.
         let dotted = a.content_plain("Sam");
@@ -508,7 +508,7 @@ mod tests {
                 layout: IndentLayout::None,
                 styles: BlockStyles::EMPTY,
             }),
-            // #78 line-layout compounds — exercise the new line-kumi class
+            // line-layout compounds — exercise the new line-kumi class
             // (字詰め reuses the standalone line-width class).
             RegionFormat::Indent(IndentBlock {
                 amount: 3,
@@ -524,7 +524,7 @@ mod tests {
                 layout: IndentLayout::LineWidth(lw(18)),
                 styles: BlockStyles::EMPTY,
             }),
-            // #78 co-applied style stack — exercises the flat decoration
+            // co-applied style stack — exercises the flat decoration
             // classes (futoji / yokogumi / keigakomi / font-smaller) on one
             // indent `<div>`.
             RegionFormat::Indent(IndentBlock {

@@ -3,16 +3,16 @@
 Evaluation datasets and models for the `ab-ortho-detect` orthographic
 normalization layer (katakana→hiragana for pre-war Japanese prose).
 
-## What exists
+## Dataset provenance
 
 | File | Description |
 |---|---|
 | `candidates.jsonl` (1068 records) | Full candidate pool extracted from 46 Aozora fiction works (9 author-prefixes). Each record has `work_id`, `sentence`, `katakana_ratio`, `hiragana_count`, `total_chars`, and a bootstrap `label` from the Python `aozora-corpus-generator` heuristic. |
-| `sample-300-unlabeled.jsonl` (300 records) | **← Annotate this file.** Corpus-representative sample drawn from the candidate pool by `scripts/ortho-gold/sample_300.py`. Each record has a `label` field currently set to the bootstrap value — overwrite it with your own `"accept"` or `"reject"`. The original is preserved in `bootstrap_label`. |
-| `sentences-llm-300.jsonl` (300 records) | **LLM-labeled evaluation set** (single-annotator, NOT human ground truth). Labeled by an LLM applying the spec's intent rubric. 10% spot-check agreement 0.933. Used for the Phase 2.5 heuristic tune and ML cross-validation. |
-| `sentences.jsonl` (457 records) | Phase 2 bootstrap-labeled set. 58% Tanizaki — inherited from an unstratified candidate pool. Superseded by `sentences-llm-300.jsonl` for evaluation; retained for historical comparison. |
-| `sentences-human-sample.jsonl` (50 records) | Phase 2 human-annotated probe. First human-labeled subset; used to discover the 0.636 recall floor. |
-| `models/model-v1.bin` | ML model trained on the Phase 2 bootstrap labels (457 records). Superseded by `model-gold-300.bin`. |
+| `sample-300-unlabeled.jsonl` (300 records) | Corpus-representative sample drawn from the candidate pool by `scripts/ortho-gold/sample_300.py`. Each record has a `label` field currently set to the bootstrap value — overwrite it with your own `"accept"` or `"reject"`. The original is preserved in `bootstrap_label`. |
+| `sentences-llm-300.jsonl` (300 records) | **LLM-labeled evaluation set** (single-annotator, NOT human ground truth). Labeled by an LLM applying the spec's intent rubric. 10% spot-check agreement 0.933. Used for the heuristic tuning and ML cross-validation. |
+| `sentences.jsonl` (457 records) | Bootstrap-labeled set. 58% Tanizaki — inherited from an unstratified candidate pool. Superseded by `sentences-llm-300.jsonl` for evaluation; retained for historical comparison. |
+| `sentences-human-sample.jsonl` (50 records) | Human-annotated probe. First human-labeled subset; used to discover the 0.636 recall floor. |
+| `models/model-v1.bin` | ML model trained on the bootstrap labels (457 records). Superseded by `model-gold-300.bin`. |
 | `models/model-v2-human.bin` | ML model trained on the 50-sentence human probe. Small-data quality; not for production use. |
 | `models/model-gold-300.bin` | ML model trained on the 300 LLM labels. `model_hash: b5c460c7f13cf4698aea6dcd0e9e6358aadadeeb748f56d7aff776cf6666b978`. 5-fold CV mean recall 0.959. |
 
@@ -32,7 +32,7 @@ what matters is that the katakana is doing grammatical work. Normalizing
 would improve tokenization, AND the usage is a historical-orthography fact
 worth recording.
 
-### `normalize` — Emphatic/stylistic/robot-speech katakana (NEW)
+### `normalize` — Emphatic/stylistic/robot-speech katakana
 
 Katakana is used for emphasis, robot/alien speech, diary-entry delineation
 (e.g. in Tanizaki's *Kagi*), or other stylistic effect — NOT historical
@@ -72,7 +72,7 @@ tokenization (`シマッタ！`, `オロカ！`).
 1. **Sample** (optional — `sample-300-unlabeled.jsonl` is ready to label):
 
    ```bash
-   cd /home/bor/Projects/soranoha/ab-validator
+   cd ab-validator
    python scripts/ortho-gold/sample_300.py
    # Produces data/ortho-gold/sample-300-unlabeled.jsonl
    ```
@@ -124,11 +124,9 @@ tokenization (`シマッタ！`, `オロカ！`).
      --report reports/ortho-detect/YYYY-MM-DD-human-cv.md
    ```
 
-## Current state (2026-07-05 Phase 2.5)
+## Historical evaluation (2026-07-05)
 
-| Detector | Recall | Precision | F1 | Notes |
-|---|---|---|---|---|
-| HeuristicV1 (threshold 0.40) | 0.939 | 0.930 | 0.935 | Default. Clears 0.85 floor. 13 remaining FNs (proper-noun guard / fragment edge cases). |
-| ML (logistic regression) | 0.959† | 0.967† | 0.963† | Stable, NOT default. 5-fold CV mean (†) on LLM labels. Human-label generalization unverified. |
-
-**Blocked on human gold set:** ML promotion to default, `OrthoTokenizer`/`ortho_compat.rs` deletion, per-author generalization measurement, and Phase 3 (the 13 remaining FNs). See `reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md` for full context.
+The 300 LLM labels yielded heuristic recall 0.939, precision 0.930, and F1
+0.935. Five-fold cross-validation of logistic regression yielded mean recall
+0.959, precision 0.967, and F1 0.963. These are measurements against a single
+LLM annotator, not independently human-verified generalization estimates.

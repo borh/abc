@@ -146,17 +146,9 @@ fn ablate(gold: &std::path::Path, report: &std::path::Path) -> anyhow::Result<()
     let neg = n - pos;
 
     let text = format!(
-        "# Ortho-Detect ML Ablation (Phase 2)\n\n\
-Date: 2026-07-05\nGold set: `{}` (n={}, accept={}, reject={})\n\n\
-## Ablation: full-feature vs character-only\n\n\
-**v1 reality (Branch B):** TokenFeatures (oov_count, oov_ratio,\n\
-proper_noun_char_ratio) are dead — Vibrato's `LexType::Unknown` never\n\
-fires on katakana prose because Unidic-CWJ has dictionary entries for\n\
-katakana particles/copulas (see `reports/ortho-detect/2026-07-05-sudachi-baseline.md`).\n\
-Therefore **character-only IS the only viable feature set in v1.** The\n\
-Vibrato-coupling (`OrthoTokenizer` trait + `ortho_compat.rs`) is a no-op\n\
-for ML purposes in v1 and can be DELETED if the ML detector becomes the\n\
-default.\n\n\
+        "# Ortho-Detect ML Ablation\n\n\
+Gold set: `{}` (n={}, accept={}, reject={})\n\n\
+## Character-feature model\n\n\
 **Train-set accuracy (small data, no hold-out split):** {:.4}\n\n\
 ## Bias caveat (read before trusting these numbers)\n\n\
 This accuracy is against **bootstrap labels** (the Python\n\
@@ -166,13 +158,8 @@ It measures whether the linear model can reproduce the heuristic's\n\
 character cascade, NOT real-world detection quality. A perfectly-trained\n\
 model on these labels can at best tie the heuristic; it cannot exceed it\n\
 on the labeled distribution. Real evaluation requires the\n\
-human-annotated gold set (Task 9 — the documented finishing input).\n\n\
-## Recommended action\n\n\
-- Delete `OrthoTokenizer` trait + `ortho_compat.rs` + double-dict-load\n\
-  + `oov_*` config fields (investigation report items C1, C3, C4).\n\
-- Keep `MlLogisticRegression` character-only as the canonical detector.\n\
-- Re-run this ablation when TokenFeatures become live (requires exposing\n\
-  Vibrato `LexType::Unknown` through the trait).\n",
+independently human-annotated gold set.\n\n\
+",
         gold.display(),
         n,
         pos,
@@ -323,9 +310,8 @@ fn cross_validate(
 
     let gates_clears = mean_recall >= 0.85;
     let text = format!(
-        "# Ortho-Detect Phase 2.5 — ML k-Fold Cross-Validation\n\
+        "# Ortho-Detect ML k-Fold Cross-Validation\n\
 \n\
-Date: 2026-07-05\n\
 Gold set: `{}` (n={}, LLM-labeled, accept={}, reject={})\n\
 k = {} (strided fold assignment; deterministic — the sampler pre-shuffled the gold file, so no separate shuffle is needed; each record appears in exactly one test fold)\n\
 Model: `linfa_logistic::LogisticRegression` (char-only features via `extract_char_features` + `features_to_vector`; same train config as `{}` train: `max_iterations=500`, label encoding `1=accept / 0=reject` as `i32`).\n\
@@ -343,20 +329,20 @@ Model: `linfa_logistic::LogisticRegression` (char-only features via `extract_cha
 | f1 | {:.4} | — | — |\n\
 | accuracy | {:.4} | — | — |\n\
 \n\
-## Method note (Phase 2 Task 6 fix applied)\n\
+## Prediction labels\n\
 \n\
 Evaluation uses `Predict::predict`, which returns the actual class labels directly. **Do NOT** use `predict_probabilities >= 0.5`: linfa-logistic's `label_classes` designates the *more-frequent* class as positive, so thresholded probabilities invert on this data (correct impl shows ~0.9x recall; a buggy probabilities-threshold impl shows ~0.05 recall — the inversion signature). Labels are `Array1<i32>` (`1=accept, 0=reject`); linfa-logistic requires `Ord` labels, ruling out `f64`.\n\
 \n\
-## Honest generalization vs train-accuracy ceiling\n\
+## Historical training comparison\n\
 \n\
-- Train-accuracy recall on the full 300 LLM labels (Phase 2.5 Task 5/6 trainer, no hold-out): **0.958** — this is a *ceiling*, not generalization.\n\
-- Hold-out mean recall (5-fold CV, this report): **{:.4}** (min {:.4}, max {:.4}).\n\
+- Historical training recall (2026-07-05, 300 LLM labels, no hold-out): **0.958** — a training reference, not held-out performance.\n\
+- Hold-out mean recall (this report): **{:.4}** (min {:.4}, max {:.4}).\n\
 \n\
-The ~{} percentage-point gap between the ceiling and the hold-out mean is the train/test optimism on this feature set.\n\
+The ~{} percentage-point gap compares the historical training reference with this run; different input labels or samples make this comparison inapplicable.\n\
 \n\
-## Phase 2.5 Task 7 gate\n\
+## Recall threshold\n\
 \n\
-Promote `--ortho-detect ml` from EXPERIMENTAL to stable **only if mean recall >= 0.85**.\n\
+This report compares mean recall with a reference threshold of 0.85; passing it alone does not establish publication suitability.\n\
 \n\
 - Mean recall = **{:.4}**\n\
 - Gate (>= 0.85): **{}**\n\

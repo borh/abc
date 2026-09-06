@@ -52,8 +52,7 @@
 
 (defn derivation-key
   "The trace key: sha256 over the canonical bytes of the full derivation
-  coordinates. stage-version and toolchain-id are inside the hash AND stored
-  as columns (acceptance criterion 4: the incomplete-key trap)."
+  coordinates, including stage-version and toolchain-id."
   [stage inputs]
   (hash/sha256-canonical-json (assoc (stage-coordinate stage)
                                      "inputs" inputs)))
@@ -99,8 +98,7 @@
     trace-key))
 
 (defn determinism-violations
-  "Trace keys whose history contains more than one distinct outputs value.
-  Acceptance requires this to return an empty seq."
+  "Trace keys whose execution history contains conflicting output maps."
   [{:keys [conn] :as store}]
   (locking store
     (mapv :history/trace_key

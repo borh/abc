@@ -434,7 +434,7 @@ impl<'a> Tree<'a> {
     /// `Degraded` level, the lossy / judgment `ab_aozora_syntax::degraded`
     /// reductions — reached transitively through the formatter rewrite) render
     /// as if they were their canonical spelling. This is the opt-in, read-only
-    /// "render as if canonical" role of ADR-0022 / ADR-0026: it reuses the
+    /// rendering mode: it reuses the
     /// formatter rewrite as an internal, throwaway step feeding a reparse, and
     /// never mutates this document's source or the default parse/render.
     #[must_use]

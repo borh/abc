@@ -61,11 +61,11 @@
   ;; The qualifier (`初頭`/`初`/`末`/`半ば`/`前半`/`後半`) is captured
   ;; only for the audit trail — EDTF Level 1 has no sub-century
   ;; precision, so the qualifier does not influence the canonical
-  ;; lexical output. ADR 0016.
+  ;; lexical output.
   #"^紀元前(\d+)世紀(初頭|初|末|半ば|前半|後半)?$")
 (def ^:private decade-pattern
   ;; EDTF Level 1 decade marker (capital-X digit placeholder), with
-  ;; optional leading `-` for BCE. ADR 0016.
+  ;; optional leading `-` for BCE.
   #"^-?\d{3}X$")
 
 (defn- pad4-year [^String s]
@@ -90,7 +90,7 @@
   numbering: 紀元前N世紀 covers astronomical interval
   `[-(100N - 1), -((N - 1) · 100)]`, which matches the EDTF lexical
   `-{N-1:02d}XX`. Two-digit zero-padding holds for N ≤ 100; deeper
-  history is not exercised by the corpus. ADR 0016."
+  history is not exercised by the corpus."
   [^String n-str]
   (format "-%02dXX" (dec (Integer/parseInt n-str))))
 
@@ -122,8 +122,7 @@
   `strip-whitespace`, `collapse-multi-dash`,
   `normalize-date-separator`. Semantic rules: `bce-astronomical`,
   `unknown-marker`, `century-prose`. Decade markers (`192X`) are
-  admitted verbatim with no rule entry — no rewrite occurs. ADR 0015 /
-  ADR 0016."
+  admitted verbatim with no rule entry — no rewrite occurs."
   [raw]
   (cond
     (or (nil? raw) (= "" raw))
@@ -135,7 +134,6 @@
     :else
     (let [raw-str (string/trim raw)]
       (cond
-        ;; 前N (CE-relative BCE notation) → astronomical year. ADR 0015.
         (re-matches bce-pattern raw-str)
         (let [n-str (second (re-matches bce-pattern raw-str))
               n (Integer/parseInt n-str)]
@@ -149,19 +147,12 @@
             ;; lexical form.
             [raw-str []]))
 
-        ;; 紀元前N世紀(初頭|初|末|半ば|前半|後半)? → EDTF Level 1
-        ;; century marker. The qualifier is preserved in the raw
-        ;; field of the audit entry but does not influence the
-        ;; corrected lexical form (no sub-century precision in EDTF
-        ;; Level 1). ADR 0016.
         (re-matches century-prose-pattern raw-str)
         (let [n-str (second (re-matches century-prose-pattern raw-str))
               corrected (bce-century->edtf n-str)]
           [corrected
            [{"raw" raw "corrected" corrected "rule" "century-prose"}]])
 
-        ;; EDTF Level 1 decade marker (`192X`) — admitted verbatim.
-        ;; No rewrite, no audit entry. ADR 0016.
         (re-matches decade-pattern raw-str)
         [raw-str []]
 
@@ -201,8 +192,8 @@
   (when (and s (not= "" s)) s))
 
 (defn- parse-bool-flag
-  "Aozora's *著作権フラグ uses 'なし' (no copyright = expired)
-  and 'あり' (has copyright = active)."
+  "Decode the catalog's attributed copyright flag: なし is true, あり false.
+  This lexical value is not an independent rights assessment."
   [s]
   (case s
     "なし" true
@@ -260,7 +251,7 @@
   "Returns `{:fields, :corrections}`. `:fields` is the JSON-shaped
   person body (keys per the person-record schema). `:corrections` is
   a vector of `{field, raw, corrected, rule}` audit entries from
-  date normalization. ADR 0015."
+  date normalization."
   [row]
   (let [[dob dob-corrs] (parse-date (get row "生年月日"))
         [dod dod-corrs] (parse-date (get row "没年月日"))

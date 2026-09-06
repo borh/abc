@@ -1,113 +1,39 @@
-# Adapter Fidelity Matrix
+# Adapter fidelity and measurement limits
 
-> **Retired.** The third-party adapters and the comparison tooling this
-> document describes were removed under ADR
-> `third-party-comparison-retirement` (abc/docs/adr/decisions.edn). The
-> document is kept as the provenance record for the frozen fidelity data
-> (`data/adapter-fidelity-notes.toml` and the pinned study evidence); the
-> referenced `reports/aat-fidelity/` scripts are recoverable from git history
-> but no longer present.
+AAT schema validity does not establish fidelity to the source. Adapters that
+project rendered HTML cannot recover distinctions already lost by the renderer.
+The syntax matrix's `evidence` fields identify the supporting implementation or
+measurement record; they do not establish publication eligibility.
 
-This document tracks whether each adapter is faithful to the upstream parser it
-wraps. It does not define linguistic correctness. Correct Aozora gaiji
-resolution and similar truth-data checks belong in an oracle layer that can be
-compared against every adapter.
+## Adapter boundaries
 
-For AAT node semantics, result axes, selector protocol, and span coordinate
-rules, see `docs/aat-contract.md`.
+- `aozora2html` projects rendered XHTML. Source-only distinctions need separate
+  source evidence; an XHTML comparison is a rendered-body comparison.
+- `aozora-epub3 --mode html` extracts and filters body XHTML from an EPUB.
+- The research `aozora` adapter maps upstream inspect JSON and preserves
+  unsupported node kinds as raw data.
 
-## Fidelity Levels
+See `research/adapters/aozora2html/`, `research/adapters/aozora-epub3/`, and
+`research/adapters/aozora/` for the implementations.
 
-| Level | Meaning |
-| --- | --- |
-| Direct | Adapter uses upstream parser output directly and preserves the relevant parser events in AAT. |
-| Direct incomplete | Adapter uses upstream parser output directly, but known upstream events are still dropped, flattened, or only preserved as `raw`. This is a fidelity failure for the affected structure, not a minor display limitation. |
-| Indirect | Adapter is faithful to an intermediate representation, not directly to the original Aozora source markup. Source-level claims require separate oracle or source-marker checks. |
+## Historical parser observations
 
-## Matrix
+These findings describe the named parser versions and retained corpus runs.
+They have not been remeasured against newer parser versions.
 
-| Adapter | Faithfulness level | Upstream dependency | Entry point used | Preserved behavior | Known fidelity gaps / limits |
-| --- | --- | --- | --- | --- | --- |
-| `aozora-rs` | Direct | `aozora-rs-core` v0.6.0 plus `aozora-rs-gaiji` v0.6.0 | `AozoraDocument::parse` with adapter projection and `aozora-rs-gaiji::{parse_tag, gaiji_to_char}` for gaiji | Parser-normalized nodes, upstream gaiji resolution behavior including unresolved upstream results, ruby/gaiji nesting, fallback status in metadata. Fidelity policy: record upstream behavior as emitted; do not patch oracle-correct gaiji results inline. | Upstream `aozora-rs-gaiji` does not resolve every JIS-form gaiji, so faithful adapter output may still fail oracle correctness. |
-| `aozora2` | Direct | `aozora-core` 0.7.1 from crates.io | `aozora_core::tokenize` then `aozora_core::parse` | Text, ruby with nested content, gaiji, accent, figure, warigaki, inline wrappers, notes, reconstructed block containers for jisage, keigakomi, yokogumi, caption, and heading, plus style scopes for one-line jisage, chitsuki, jizume, burasage, scoped tcy, block bold/italic, and block font-size. | `--mode html` is unsupported because `aozora-core` does not expose an upstream HTML renderer. Unknown upstream boundary types are retained as raw nodes. |
-| `aozora2html` | Indirect | Ruby gem `aozora2html` 3.0.1 | Gem-rendered XHTML parsed by the Python mapper | XHTML-derived paragraphs, styles, ruby, warigaki, headings, break markers, figures/captions where rendered XHTML or surviving source-marker text supports them, visible parser output, and parser failure metadata. | Faithful to rendered XHTML, not directly to original Aozora markup. Source marker details, resolved gaiji markers that become plain text, and split structures not encoded in XHTML cannot always be recovered; source-derived recoveries are marked with `x-provenance`/`x-caption-provenance`. |
+- AozoraEpub3 `1.3.4-jdk21` rejected half-width numerals in some annotations
+  accepted with full-width numerals, including block indentation.
+- The same version produced malformed warichu HTML with
+  `[ERROR] 割り注終わりなし`. Rendered split spans did not provide the upper/lower
+  rows required by the AAT warigaki representation.
+- aozora-core `0.7.1` produced empty children for some implicit ruby bases after
+  a gaiji-bearing ruby on the same line. The base remained in a preceding text
+  node. The `aozora2-full-20260705` dump contained 3,541 such rubies across
+  1,266 works; direct upstream reproduction separated parser behavior from
+  adapter projection.
+- The `aozora-epub3-full-20260704` dump contained 14 empty ruby bases across
+  three works: 12 used image-rendered gaiji bases and two lost a plain kanji base.
 
-## XHTML Source Layer
-
-`aozora2html` has two XHTML inputs worth keeping distinct:
-
-- **Aozora upstream XHTML**: XHTML published by Aozora Bunko for a real work.
-- **Local `aozora2html` XHTML**: XHTML generated by the wrapped Ruby gem from
-  the source text we pass to the adapter.
-
-They share a conversion lineage but are not assumed to be byte-identical or
-semantically identical. Use
-`reports/aat-fidelity/compare-aozora-upstream-xhtml.sh` to generate local
-`aozora2html` XHTML for a source text, compare it with an upstream XHTML file,
-and store the observation in the fidelity DuckDB database. The resulting
-`fidelity_xhtml_observations` table records raw SHA-256 equality and normalized
-`main_text` equality as separate facts.
-
-The seed sample in `reports/aat-fidelity/upstream-xhtml-sample.tsv` records 5
-real Aozora pairs from the local `references/aozorabunko` mirror. All 5 have
-equal normalized `main_text`; 4 are byte-identical at the raw XHTML layer. See
-`reports/aat-fidelity/upstream-xhtml-sample-summary.md`.
-
-The scaled sample in `reports/aat-fidelity/upstream-xhtml-50-summary.md`
-records 50 real Aozora pairs from the same local mirror under
-`report_id = 'upstream-50-local'`. It found 46 normalized `main_text` matches,
-9 raw XHTML matches, 3 normalized text mismatches, and 1 local XHTML parse
-error. The selected sample is stratified by source features and includes ruby,
-inline annotations, layout, gaiji, headings, and 5 media-tagged works.
-
-The full local-corpus run uses only the local `references/aozorabunko` mirror
-and is stored under `report_id = 'upstream-xhtml-full'` in
-`/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb`. The run paired
-17,603 upstream XHTML/source entries, loaded 17,601 observations, and skipped
-2 source inputs that could not produce a local comparison file. Current status:
-6,321 raw XHTML matches, 8,910 normalized `main_text` matches beyond raw
-equality, 2,179 normalized `main_text` mismatches, 58 local adapter aborts,
-132 upstream XHTML files without `main_text`, and 1 row where both sides lack
-`main_text`. The triage outputs are generated in
-`/db/ab-validator/aat-fidelity/upstream-xhtml-full/triage-report/`.
-The run is reproducible with
-`reports/aat-fidelity/run-upstream-xhtml-full.sh`; see
-`reports/aat-fidelity/upstream-xhtml-full-summary.md` for the command and
-current triage. Adapter-abort payloads are classified by
-`reports/aat-fidelity/classify-xhtml-adapter-errors.py` and written under
-`/db/ab-validator/aat-fidelity/upstream-xhtml-full/adapter-error-report/`.
-
-The 58 local adapter aborts are classified as `local_adapter_error` because the
-local adapter wrote AAT-style JSON failure payloads after the wrapped
-`aozora2html` gem aborted. They are not malformed local XHTML files. This
-keeps source extraction/parser failures separate from XHTML comparison
-failures.
-
-Policy consequence: local `aozora2html` output is acceptable as a rendered-body
-proxy when upstream XHTML `main_text` equality is established for the work or
-sample slice being used. It is not a source-structure oracle. Any source-derived
-reconstruction added to the `aozora2html` adapter must be explicitly marked as
-source-derived and should not be counted as upstream-XHTML faithfulness.
-
-## Current Oracle Matrix
-
-The latest cross-adapter report is summarized in
-`reports/aat-fidelity/cross-adapter-summary.md`; the source JSON for that run is
-kept under `/db/ab-validator/aat-fidelity/cross-adapter/report.json`.
-
-| Adapter | Reviewed cases | Oracle pass | Oracle fail | Interpretation |
-| --- | ---: | ---: | ---: | --- |
-| `aozora2` | 46 | 46 | 0 | Current reviewed-case AAT baseline. |
-| `aozora-rs` | 46 | 46 | 0 | Current reviewed-case AAT baseline. |
-| `aozora2html` | 46 | 11 | 35 | Rendered-output observations now cover every reviewed failure; narrow source-derived recovery now covers warichu, simple figure/caption and image-inline cases, headings, and page/line breaks, while many source-level oracle assertions still exceed what the XHTML mapper reconstructs. |
-
-## Follow-up Checks
-
-- Add an oracle table for expected gaiji resolutions independent of adapter
-  output.
-- Use the upstream observation table as the pre-fix contract when improving
-  `aozora-rs` or `aozora2html`, so adapter changes can be distinguished from
-  upstream/parser behavior changes.
-- Add focused oracle cases if new Aozora boundary forms surface as raw nodes in
-  `aozora2`; current reviewed `aozora-core` block scopes are projected to AAT.
-- Keep version strings tied to the dependency actually loaded by each adapter.
+The adapter-note records in `data/adapter-fidelity-notes.toml` retain these
+population labels. Reusing a result for another input population requires a new
+measurement; these counts are not current-corpus totals.

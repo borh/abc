@@ -1,5 +1,4 @@
-;; The kernel reads exactly one root; a second environment variable is a
-;; design smell. Every other path is derived here and nowhere else.
+;; Computation-cache paths derive from one explicitly configured root.
 (ns soranoha.core.config
   (:require [babashka.fs :as fs]))
 

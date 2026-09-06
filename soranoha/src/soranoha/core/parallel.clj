@@ -6,8 +6,7 @@
   "Like (mapv f coll), running f on a fixed pool of `concurrency` threads.
   Results preserve coll order. concurrency <= 1 is exactly (mapv f coll) on
   the calling thread. Dynamic bindings at the call site convey to worker
-  threads (per-work loops are exercised in tests under a rebound
-  *derive-parser-ir!*). When any f call throws, the original throwable
+  threads. When any f call throws, the original throwable
   propagates (ExecutionException unwrapped) after all tasks have completed;
   queued and in-flight work all runs to completion (not cancelled)."
   [concurrency f coll]

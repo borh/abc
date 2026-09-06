@@ -36,14 +36,10 @@
 (def ^:private tei-ns "http://www.tei-c.org/ns/1.0")
 (def ^:private xml-ns "http://www.w3.org/XML/1998/namespace")
 
-;; ---------------------------------------------------------------------------
 ;; Hiccup builder (pure data, no XML library coupling beyond keyword names)
-;; ---------------------------------------------------------------------------
 
 (defn- person-name-block
-  "Three <persName> elements per TEI-EAJ: kanji, hiragana, romaji.
-  Each carries an <idno type=\"aozora-person-id\"> for the kanji form;
-  the reading and romaji forms repeat surname/forename only."
+  "Kanji name with the Aozora person ID; reading and romaji names when supplied."
   [person]
   (let [pid (get person "person_id")
         pers-name (fn [lang surname forename & extras]
@@ -196,9 +192,7 @@
    (encoding-desc char-declarations orthographic-sentence-normalization?)
    (profile-desc work)])
 
-;; ---------------------------------------------------------------------------
 ;; Hiccup → clojure.data.xml adapter
-;; ---------------------------------------------------------------------------
 
 (defn- tei-qname [tag]
   (xml/qname tei-ns (name tag)))

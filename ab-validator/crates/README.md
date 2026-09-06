@@ -38,7 +38,7 @@ the contract and should not be treated as version-stable adapter APIs.
 | Crate | Purpose |
 | --- | --- |
 | `ab-check` | CLI and backend for AAT schema validity, source projection, encoding, and parser invariant checks. |
-| `ab-aat-to-parser-ir` | CLI and library for converting measured AAT v1 JSON into ABC parser-IR plus divergence evidence authorized by `data/aat-to-parser-ir-mapping-v1.json`. |
+| `ab-aat-to-parser-ir` | CLI and library for converting measured AAT v1 JSON into parser-IR plus divergence evidence authorized by `data/aat-to-parser-ir-mapping-v1.json`. |
 | `ab-coverage` | Coverage matrix tooling and merge CLI for Aozora syntax coverage data. |
 
 ## Indexing and shared utilities
@@ -54,6 +54,3 @@ the contract and should not be treated as version-stable adapter APIs.
   another crate actually consumes them.
 - `ab-ir` is consumed as Rust types by at least one adapter today, but that is a
   convenience path rather than the normative adapter contract.
-- Pending cleanup candidates from the classification report are not addressed
-  here: unused dependencies, fake-seam review for `ab-diff-utils`, and explicit
-  versioning policy for any Rust-typed adapter boundary.

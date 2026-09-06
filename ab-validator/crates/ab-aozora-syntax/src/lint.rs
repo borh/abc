@@ -39,15 +39,15 @@ const EXACT: &[(&str, &str)] = &[
     ("斜体字", "斜体"),
     ("中中見出し", "中見出し"),
     // ゴチック → ゴシック体 (the parser recognises ゴシック体 as a first-class
-    // gothic construct; ゴチック is the corpus-vanishing variant spelling, #435).
+    // gothic construct; ゴチック is the corpus-vanishing variant spelling).
     ("ゴチック", "ゴシック体"),
     ("ここからゴチック", "ここからゴシック体"),
     ("ここでゴチック終わり", "ここでゴシック体終わり"),
-    // 傍点 marker-suffix spellings → the canonical mark-prefix keyword (#435).
+    // 傍点 marker-suffix spellings → the canonical mark-prefix keyword.
     ("傍点（白丸）", "白丸傍点"),
     ("傍点◎", "二重丸傍点"),
     // 見出し close 送り仮名 elision (中見出 → 中見出し) — the heading-scope
-    // analogue of the 字下げ close okurigana entries above (#435).
+    // analogue of the 字下げ close okurigana entries above.
     ("中見出終わり", "中見出し終わり"),
     ("大見出終わり", "大見出し終わり"),
     ("小見出終わり", "小見出し終わり"),
@@ -220,7 +220,7 @@ fn forward_form(body: &str) -> Option<String> {
         ("は上付き", "は上付き小文字"),
         ("はすべて下付き小文字", "は下付き小文字"),
         ("は地付け", "は地付き"),
-        // #435 — parser now declines these; the lint suggests the canonical.
+        // parser now declines these; the lint suggests the canonical.
         ("はゴチック", "はゴシック体"),
         ("は枠囲み", "は罫囲み"),
         ("は枠囲い", "は罫囲み"),
@@ -315,7 +315,7 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "「強調」ゴシック体",
     "「語」は傍点",
     "「語」の傍点",
-    // #435 — the parser declines these; the lint suggests the canonical.
+    // the parser declines these; the lint suggests the canonical.
     "ゴチック",
     "ここでゴチック終わり",
     "傍点（白丸）",
@@ -366,8 +366,8 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
 ///   free-form spatial-layout descriptions (`上に…付き`, `右側に…形で`) for which
 ///   the core models no construct. Matching one would launder an editor's note
 ///   into a directive.
-/// - **Multi-axis compounds** — `、`-joined two-directive bodies that ADR-0027
-///   deliberately declines (repairing them would silently drop an axis).
+/// - **Multi-axis compounds** — `、`-joined directives whose reduction
+///   would drop an axis.
 /// - **Gaiji-composition descriptions** — `「X」の下に「Y」` glyph builds, owned
 ///   by the 外字 layer, not the directive catalogues.
 ///
@@ -396,7 +396,7 @@ pub const EDITORIAL_MUST_STAY_UNKNOWN: &[&str] = &[
     "「甲」は上に「乙」付き",
     "「甲」は上部に出ている",
     "「甲」は「乙」の下にポイントを下げて2行で",
-    // Multi-axis compounds — ADR-0027 declines these (dropping an axis is lossy).
+    // Reducing a multi-axis compound to one directive would lose an axis.
     "「甲」は縦中横、行右小書き",
     "ここから3字下げ、「甲」は返り点",
     "「甲」は上付き小文字、「乙」は分数",

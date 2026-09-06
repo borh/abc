@@ -1,4 +1,4 @@
-"""Characterization tests for the fidelity lock (Phase 2, Move B).
+"""Characterization tests for the fidelity lock.
 
 The Move-B contract: replacing the compute stage's implicit `load_run_set()` +
 `adapter_aat_globs()` with `resolve` -> lock -> `lock_aat_globs()` is a pure

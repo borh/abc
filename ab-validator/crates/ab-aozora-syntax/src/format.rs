@@ -4,10 +4,7 @@
 //! Aozora's typographic notations (太字, 傍点, 字下げ, …) each apply at one
 //! or more *scopes* — forward-reference (`「X」は太字`), single line
 //! (`［＃地付き］`), or a paired range / block (`［＃ここから太字］ …
-//! ［＃ここで太字終わり］`). The legacy model defined the same attribute
-//! once per scope (`EmphasisKind::Bold` + `ContainerKind::Bold`), letting an
-//! illegal `(attribute, scope)` pair and placeholder close payloads
-//! (`steps: ±1`, `width: 0`) be representable.
+//! ［＃ここで太字終わり］`).
 //!
 //! This module separates the two axes:
 //!
@@ -19,8 +16,8 @@
 //! - [`RegionClose`] is the close-marker discriminant; the open
 //!   [`RegionFormat`] payload stays authoritative (see [`RegionClose::of`]).
 //! - The scalar parameters ([`FontShift`], [`ColumnCount`], [`LineWidth`],
-//!   [`Kumi`]) are `NonZero`, so the `0` / `±1` placeholders the close markers
-//!   used to carry cannot be constructed.
+//!   [`Kumi`]) reject zero magnitudes. Close markers carry no fabricated
+//!   open-marker parameters.
 
 use core::num::{NonZeroI8, NonZeroU8};
 
@@ -30,11 +27,10 @@ use crate::{BoutenKind, BoutenPosition, HeadingKind, HeadingStyle};
 // Scalar parameters — NonZero so placeholders are unconstructable
 // ----------------------------------------------------------------------
 
-/// Signed relative font-size shift (旧 `steps: i8`).
+/// Signed relative font-size shift.
 ///
 /// Positive = 大きな (larger), negative = 小さな (smaller). `NonZero` because
-/// a zero-stage shift is not a font-size change — the close marker used to
-/// carry a `±1` placeholder, which this type makes unrepresentable.
+/// a zero-stage shift is not a font-size change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FontShift(pub NonZeroI8);
@@ -98,7 +94,7 @@ impl AbsoluteSize {
 /// dotted circle), and 二重罫囲み (a double rule). The non-canonical, corpus-
 /// vanishing 枠囲み / 枠囲い / 表罫囲み / ミシン罫囲み are **not** members: the
 /// core declines them to `Directive{Unknown}` (lossless) rather than fold their
-/// spelling onto [`Self::Rule`] (#435). This mirrors how the 傍点 kinds share
+/// spelling onto [`Self::Rule`]. This mirrors how the 傍点 kinds share
 /// [`Format::Bouten`] via [`BoutenKind`].
 //
 // Deliberately NOT `#[non_exhaustive]`: every classifier / render / serialize
@@ -151,15 +147,15 @@ pub enum AccentMark {
 pub struct ColumnCount(pub NonZeroU8);
 
 /// Full-width characters per line (字詰め / 字組み width). `NonZero` because a
-/// zero-width line is meaningless — the close marker's `0` placeholder is gone.
+/// zero-width line is meaningless.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LineWidth(pub NonZeroU8);
 
 /// The `L行W字組み` clause: `lines` lines of `width` full-width characters.
 ///
-/// Both `NonZero` — the close marker used to re-emit `lines: 0`, which this
-/// type makes unrepresentable (the open side is authoritative on close).
+/// Both dimensions must be positive. The opening marker supplies the dimensions
+/// when a closing marker is rendered.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Kumi {
@@ -309,7 +305,7 @@ pub enum Format {
     Bold,
     /// ゴシック体 (gothic / sans-serif). A distinct typeface family, **not** a
     /// weight of 太字: the corpus uses ゴシック体 and 太字 in disjoint works and
-    /// print sets them differently, so the parser keeps them separate (#435).
+    /// print sets them differently, so the parser keeps them separate.
     Gothic,
     /// 斜体 (italic).
     Italic,
@@ -336,7 +332,7 @@ pub enum Format {
     CombineUpright,
     /// 分数 (fraction, `「a/b」は分数`).
     Fraction,
-    /// ドット付き (#331 dotted-letter composition, `mは上ドット付き` → ṁ).
+    /// ドット付き (dotted-letter composition, `mは上ドット付き` → ṁ).
     AccentDot,
     /// アクサン / ウムラウト (forward accent mark, `「e」はアクサン（´）付き` → é).
     /// The [`AccentMark`] rides the scope sum ([`ForwardAttr::Accent`]); the
@@ -446,7 +442,7 @@ pub enum ForwardAttr {
     /// 分数 (`「a/b」は分数`). The render arm splits the target on `/` (ASCII)
     /// or `／` (fullwidth) into a `<sup>`/`<sub>` fraction.
     Fraction,
-    /// ドット付き (#331). Composes a combining dot onto an addressed Latin letter
+    /// ドット付き. Composes a combining dot onto an addressed Latin letter
     /// in the reclaimed run (`Sam` + `mは上ドット付き` → `Saṁ`). The selector
     /// grammar lives in the raw directive body, interned on the owned leaf's
     /// `accent_body` (this attribute stays a `Copy` unit, arena-free).
@@ -518,7 +514,7 @@ pub enum ForwardOrigin {
     /// bracket span exactly: the renderer styles the quoted target (it is **not**
     /// a no-op like [`Referenced`](Self::Referenced)) and the serializer emits
     /// the bracket form alone (no leading literal like
-    /// [`Reclaimed`](Self::Reclaimed)). #228-safe by construction — with no
+    /// [`Reclaimed`](Self::Reclaimed)). Cannot duplicate the rendered text — with no
     /// earlier copy there is nothing to double-render. Produced by the
     /// no-referent classifier paths; everywhere else it is the natural
     /// fall-through of the guards that special-case `Reclaimed`/`Referenced`.
@@ -534,9 +530,9 @@ pub enum ForwardOrigin {
     /// renderer styles the target (**not** a no-op), and the serializer emits
     /// the literal **alone** — no bracket, because the bracket is the separate
     /// `Referenced` node's job (unlike [`Reclaimed`](Self::Reclaimed), which
-    /// re-emits literal *and* bracket from one node). #228-safe by construction:
+    /// re-emits literal *and* bracket from one node). Cannot duplicate the rendered text:
     /// the literal was removed from the plain run, so exactly one copy exists.
-    /// Produced only by the interior-referent resolver path (#333), never via
+    /// Produced only by the interior-referent resolver path, never via
     /// [`from_consume`](Self::from_consume).
     Detached,
 }

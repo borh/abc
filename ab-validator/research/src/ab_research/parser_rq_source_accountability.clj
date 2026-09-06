@@ -46,39 +46,14 @@
              walk/keywordize-keys)))
 
 (def source-recognition-instrument-version
-  "The committed source-recognition instrument.
+  "Source coverage uses the body-region denominator. Metadata attribution
+  uses content bytes, excluding line terminators and wholly blank lines so
+  newline encoding cannot affect the ratio. Accent-decomposition proofs bind
+  each substitution site to one policy mapping; a whole-span proof would mix
+  character conversion with newline normalization.
 
-  v4 because the instrument's obligations changed three times. At v2,
-  `eligible_bytes` moved from the whole decoded file to the body region and a
-  metadata attribution measure appeared beside it. At v3 the metadata ratio
-  moved off the region denominator onto `metadata.content_bytes` -- the same
-  regions with line terminators and wholly blank lines removed -- because a
-  terminator is a delimiter between packaging items rather than packaging that
-  can be understood, and counting it both capped the measure below 1.0 by
-  construction and scored a CRLF work below a byte-identical LF one. At v4 the
-  `accent_decomposition` proof obligation became site-local: the proof pair
-  must be exactly one row of the policy's `accent_mappings`, because the
-  capture adapter now proves each digraph substitution at its own site rather
-  than claiming a whole `〔…〕` span (a whole-span form conflated the accent
-  rewrite with CRLF normalization and failed round-trip on any multi-line
-  span of a CRLF work). The record shape is unchanged at v4; records at each
-  version can carry the same field names and similar-looking numbers while
-  meaning different things, which is what a version string exists to prevent.
-
-  `recognition-identity-valid?` requires this to equal the identity's
-  `instrument_versions.source_span_coverage` AND
-  `instrument_versions.metadata_attribution`, both taken from the predicate
-  set's declared `:instrument`. From 2026-07-27 to 2026-07-31 the predicate
-  set deliberately kept naming v1 while the instrument moved, so the two
-  disagreed and the observation was `:unavailable` -- qualification held open
-  rather than passing under a threshold predeclared for a denominator that no
-  longer existed. On 2026-07-31 the predicate owner declared both contracts
-  for what v4 measures: `source_span_coverage` `:= 1.0` over the body-region
-  denominator, so any eligible byte the ledger cannot account for fails the
-  gate, and `metadata_attribution` `:= 1.0` over `metadata.content_bytes`, so
-  any packaging content byte no classifier understands fails it. A future
-  semantic change moves this constant again and reopens the same quarantine
-  for both observations until the next redeclaration."
+  Both observations require this version to equal their declared instrument
+  versions in the predicate set. A mismatch yields unavailable evidence."
   "parser-rq-source-recognition-v4")
 
 (def ^:private diagnostic-gap-policy-v1-hash
@@ -479,9 +454,7 @@
                 semantic_gaps unaccounted regions metadata]} record
         ;; Intervals are absolute offsets into the decoded file; eligible
         ;; bytes is a count. The frame for bounding an interval is the body
-        ;; REGION, not the number of bytes in it. Those coincide only while
-        ;; the body is the whole file starting at zero, which is what this
-        ;; validator previously assumed.
+        ;; region, not its byte count; the body need not start at zero.
         body-start (get-in regions [:body :start])
         body-end (get-in regions [:body :end])
         header-end (get-in regions [:header :end])

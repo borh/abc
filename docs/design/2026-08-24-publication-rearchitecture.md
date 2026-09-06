@@ -55,13 +55,14 @@ numbers live in the findings sections and Git history, not here):
   kernel's new assessment-scaffold subcommand produced
   abc/data/assessment-snapshot.json (same selection join and
   canonical encoder as the release path, so slug totality and
-  canonical bytes hold by construction). Every work assessment and
+  canonical bytes hold by construction). In that baseline, every work assessment and
   every contribution is the EXPLICIT not-evaluated fact: under the
   adopted derivations there are ZERO eligible completed assessments
   in the implemented independent-assessment path. D23 adopts
   Aozora reliance as the default policy; D24 implements a version-2
   edition-reliance snapshot alternative, current official evidence checks,
-  and release integration. Production acceptance remains outstanding. No per-work D-3
+  and release integration. The accepted D23 batch is recorded below;
+  production publication remains outstanding. No per-work D-3
   findings have been accepted. Provenance: aozora 0e9ea3e586 (the qualification
   stop point = the production mirror's HEAD), catalog csv sha256
   c0ace54c7ac037e5…, snapshot id
@@ -74,8 +75,8 @@ numbers live in the findings sections and Git history, not here):
   role-token:person-id — NOT the rights-relevant contribution set
   the spec requires. Adopted D-3 is explicit that catalog rows prove
   neither exhaustive authorship nor that every listed role holds
-  copyright, so this is a starting list to assess. The file is safe
-  precisely because nothing is admitted; BEFORE any work's facts may
+  copyright, so this is a starting list to assess. The baseline was safe
+  precisely because nothing was admitted; BEFORE any work's facts may
   become public-domain its per-work assessment must ESTABLISH the
   exact rights-relevant contribution set (adding what the catalog
   omits, discharging what it wrongly lists) and the snapshot must
@@ -108,9 +109,14 @@ numbers live in the findings sections and Git history, not here):
   `soranoha-28a` resolves retention: a configured evidence directory
   and digest checks belong to Soranoha; storage, backup and recovery
   belong to the overall NixOS configuration. The evaluator supports both
-  independent assessments and D23 reliance; sources without declarations
-  retain version-1 snapshot bytes. Release checks live applicability before
-  and after the build. No production reliance declaration is accepted yet.
+  independent assessments and D23 reliance; all sources emit the current
+  version-2 snapshot under D25. Release checks live applicability before
+  and after the build. The first accepted batch (2026-09-06) contains
+  蜘蛛の糸, やまなし, 走れメロス and 銀河鉄道の夜 under D23 reliance,
+  evaluated against upstream commit 0e9ea3e586eb0aa34039fabfc85a407d2f98b165.
+  The other 17,598 selected works remain not-evaluated. The publication
+  policy now requires assessment; signed genesis promotion remains subject
+  to the ceremony below.
 
   GENESIS TIMING DECIDED (round-31 finding 3, owner
   2026-08-31): do NOT publish an empty genesis. The chain,
@@ -122,11 +128,9 @@ numbers live in the findings sections and Git history, not here):
   genesis. Should an empty genesis ever be reconsidered, an
   end-to-end all-quarantined fixture covering publication,
   verification, and serving is a prerequisite (present tests
-  exercise the partition function only). REMAINING: the first
-  assessed batch (per-work assessments under the adopted rule, each
-  establishing its own rights-relevant contribution set), THEN the
-  authorized policy change from :blocked-pending-assessment-migration
-  to :assessment-required (data alone does not lift the block);
+  exercise the partition function only). The first assessed batch and
+  authorized policy change to :assessment-required are now prepared under
+  D23 as recorded above; genesis preparation and promotion remain;
   adoption of the cited statutory answers (Q1–Q5 + old-law
   transition — DRAFTED 2026-08-27 as
   abc/docs/evidence/external/jp-term-statute-citations.md, verbatim
@@ -272,12 +276,9 @@ numbers live in the findings sections and Git history, not here):
   file now pass the guard's presence checks, the policy content
   still blocks release, and the entire remaining path to genesis
   runs through the adoption boundary. Remaining before FIRST PUBLICATION OF THE
-  SIGNED GENESIS RELEASE: the first assessed batch (the total
-  quarantine baseline at abc/data/assessment-snapshot.json is in
-  place — see the Slice-3 owner-inputs record; what is outstanding
-  is completed per-work assessments, each establishing its own
-  rights-relevant contribution set) and the consequent unblocked
-  publication policy, then the ONE-TIME GENESIS CEREMONY — the
+  SIGNED GENESIS RELEASE: deploy the accepted four-work D23 batch and
+  its assessment-required publication policy, then the ONE-TIME
+  GENESIS CEREMONY — the
   anchor must contain the exact genesis manifest and signature and
   the ORCID record must name the deposit's version DOI before
   publication, but the release command assembles, signs, commits,

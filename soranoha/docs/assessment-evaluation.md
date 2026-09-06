@@ -1,6 +1,6 @@
 # Assessment evaluation and internal RDF
 
-Assessment source records describe owner-reviewed Aozora reliance declarations and independent findings with their precise premises. The evaluator regenerates the publication snapshot using the kernel's CAS and constructive traces. The committed empty source is a quarantine baseline: it authorizes no works. Publication remains blocked pending the first assessed batch.
+Assessment source records describe owner-reviewed Aozora reliance declarations and independent findings with their precise premises. The evaluator regenerates the publication snapshot using the kernel's CAS and constructive traces. The committed source accepts reliance for the reviewed editions of 蜘蛛の糸, やまなし, 走れメロス and 銀河鉄道の夜. The publication policy requires applicable assessment evidence; other candidates remain quarantined.
 
 The research outputs are TEI and visible-body plaintext. The rights snapshot describes admission evidence only; it does not certify transcription or markup fidelity. See [source fidelity and review exports](source-fidelity.md) for the separate build outputs and checks.
 
@@ -35,7 +35,8 @@ nix run .#soranoha-kernel -- assessment-evaluate \
   --root "$ASSESSMENT_STORE" \
   --aozora-root "$CORPUS_CHECKOUT" \
   --assessment-source "$PWD/soranoha/data/assessment-source.json" \
-  --as-of 2026-09-05 \
+  --evidence-root "$EVIDENCE_ROOT" \
+  --as-of 2026-09-06 \
   --out "$SNAPSHOT_OUTPUT"
 ```
 
@@ -59,7 +60,7 @@ Assessment-owned source records and dossiers live in `soranoha/data/`. The exist
 
 The toolchain identity covers the runtime and dependency environment, not Soranoha source code. Change the assessment `rule-version` whenever its legal rule or computation changes; that version identifies both the rule stage and its recorded basis. Change `reliance-version` when reliance eligibility or payload computation changes. Change `assessment-fact-version` when fact serialization or meaning changes, and the applicable RDF `fragment-versions` entry or `assembly-version` when that stage’s serialization or meaning changes. Keep these versions local to the affected stage so unrelated program changes preserve reusable results.
 
-The build/render graph remains separate from assessment rules. Sources without reliance declarations preserve version-1 snapshot bytes. Sources with declarations emit `snh-assessment-snapshot/2`, whose candidates distinguish independent assessments from edition-level reliance. The snapshot carries the attributed assertion and retained-evidence digests; it does not invent contributor findings. The manifest and signature formats remain unchanged. Assessment source files and RDF graphs remain internal inputs and projections.
+The build/render graph remains separate from assessment rules. All sources emit `snh-assessment-snapshot/2`, whose candidates distinguish independent assessments from edition-level reliance. The snapshot carries the attributed assertion and retained-evidence digests; it does not invent contributor findings. The manifest and signature formats remain unchanged. Assessment source files and RDF graphs remain internal inputs and projections.
 
 ## Experimental RDF dataset
 

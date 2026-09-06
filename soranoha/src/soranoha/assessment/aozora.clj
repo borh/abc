@@ -16,6 +16,7 @@
            [java.nio ByteBuffer]
            [java.nio.charset CodingErrorAction StandardCharsets]
            [java.time LocalDate]
+           [java.util Arrays]
            [java.util.zip ZipInputStream]
            [javax.swing.text.html HTML$Attribute HTMLEditorKit$ParserCallback]
            [javax.swing.text.html.parser ParserDelegator]))
@@ -266,18 +267,25 @@
                        (when (some? (get record "exception")) (refuse! "recorded-exception"))
                        (let [candidate (selected @candidates (get record "slug"))
                              a (assertion @index candidate)
-                             pinned (get record "source_content_hash")]
-                         (check-card! (retained evidence-root record "card_sha256") a)
-                         (when-not (= pinned (bundle-hash (retained evidence-root record "file_sha256")))
-                           (refuse! "retained-edition-mismatch"))
-                         @(get rules (get record "rules_sha256"))
-                         (when-not (= pinned (:bundle-hash (bundle/inspect-zip (:file candidate))))
-                           (refuse! "checkout-edition-mismatch"))
-                         (when-not (= (get record "rules_sha256") (:rules @live))
-                           (refuse! "rules-changed"))
-                         (let [current (assertion (:index @live) candidate)]
-                           (check-card! (fetch opts (:card current)) current)
-                           (when-not (= pinned (bundle-hash (fetch opts (:file current))))
-                             (refuse! "current-edition-mismatch"))))))])
+                             pinned (get record "source_content_hash")
+                             card-bytes (retained evidence-root record "card_sha256")]
+                         (check-card! card-bytes a)
+                         (let [file-bytes (retained evidence-root record "file_sha256")]
+                           (when-not (= pinned (bundle-hash file-bytes))
+                             (refuse! "retained-edition-mismatch"))
+                           @(get rules (get record "rules_sha256"))
+                           (when-not (= pinned (:bundle-hash (bundle/inspect-zip (:file candidate))))
+                             (refuse! "checkout-edition-mismatch"))
+                           (when-not (= (get record "rules_sha256") (:rules @live))
+                             (refuse! "rules-changed"))
+                           (let [current (assertion (:index @live) candidate)
+                                 current-card (fetch opts (:card current))]
+                             (when-not (and (= a current)
+                                            (Arrays/equals ^bytes card-bytes ^bytes current-card))
+                               (check-card! current-card current))
+                             (let [current-file (fetch opts (:file current))]
+                               (when-not (or (Arrays/equals ^bytes file-bytes ^bytes current-file)
+                                             (= pinned (bundle-hash current-file)))
+                                 (refuse! "current-edition-mismatch"))))))))])
                  group))))
       {} (group-by #(get % "catalog_sha256") records)))))

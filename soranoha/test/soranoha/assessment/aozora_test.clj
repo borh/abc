@@ -33,6 +33,38 @@
             baseline @responses
             check #(get (aozora/check! root evidence [record] {:fetch fetch}) slug)]
         (is (= {:state "available" :reason nil} (check)))
+        (testing "fresh identical bytes reuse validated content without skipping acquisition"
+          (let [parse-card @#'aozora/check-card!
+                inspect-bundle @#'aozora/bundle-hash
+                measure (fn []
+                          (let [calls (atom {:card 0 :bundle 0 :fetches {}})]
+                            (with-redefs [aozora/check-card!
+                                          (fn [bytes assertion]
+                                            (swap! calls update :card inc)
+                                            (parse-card bytes assertion))
+                                          aozora/bundle-hash
+                                          (fn [bytes]
+                                            (swap! calls update :bundle inc)
+                                            (inspect-bundle bytes))]
+                              (is (= {:state "available" :reason nil}
+                                     (get (aozora/check!
+                                           root evidence [record]
+                                           {:fetch (fn [url]
+                                                     (swap! calls update-in [:fetches url] (fnil inc 0))
+                                                     (fetch url))}) slug))))
+                            (is (= {aozora/catalog-url 1 aozora/rules-url 1 card-url 1 file-url 1}
+                                   (:fetches @calls)))
+                            (select-keys @calls [:card :bundle])))]
+            (is (= {:card 1 :bundle 1} (measure)))
+            (testing "changed valid card bytes require a new parse"
+              (swap! responses update card-url
+                     #(utf8-bytes (str (String. ^bytes % "UTF-8") "\n")))
+              (is (= {:card 2 :bundle 1} (measure))))
+            (testing "a repacked ZIP requires inspection even when its bundle identity is unchanged"
+              (corpus/write-work! root work :entry-time 1200000000000)
+              (reset! responses (assoc baseline file-url (fs/read-all-bytes (corpus/work-zip-path root work))))
+              (is (= {:card 1 :bundle 2} (measure))))
+            (reset! responses baseline)))
         (testing "transient acquisition retries fetch fresh evidence"
           (doseq [failure [(java.io.IOException. "Temporary network failure")
                            (ex-info "Temporary HTTP failure" {:reason "http-status" :status 503})]]

@@ -151,7 +151,9 @@
 
 (defn- source-angle-quotes [text]
   ;; Historical literal double-angle quotes: https://www.aozora.gr.jp/annotation/extra.html
-  (str/replace text #"≪([^≪≫\n]*)≫" "《$1》"))
+  (loop [text text]
+    (let [converted (str/replace text #"≪([^≪≫\n]*)≫" "《$1》")]
+      (if (= text converted) text (recur converted)))))
 
 (defn- parse-line [line]
   (let [gaijis (atom [])

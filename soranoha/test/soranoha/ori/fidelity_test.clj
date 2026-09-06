@@ -201,6 +201,10 @@
       (is (= "failed" (status (report s (mutation t) p) "tei-body-text"))))))
 
 (deftest historical-angle-quotes-retain-nested-markup
+  (let [s (compact-source "≪外≪内≫後≫。")
+        t (compact-tei "<p>《外《内》後》。</p>")]
+    (is (= "passed" (get (report s t "《外《内》後》。\n") "status")))
+    (is (= "failed" (status (report s (str/replace t "《内》" "内") "《外《内》後》。\n") "tei-body-text"))))
   (let [s (compact-source "≪池《いけ》の※［＃「特のへん＋廴＋聿」、第3水準1-87-71］≫、外。≪未閉。")
         t (str/replace (compact-tei "<p>《<ruby><rb>池</rb><rt>いけ</rt></ruby>の<g ref='#g'>犍</g>》、外。≪未閉。</p>")
                        "<text>" "<teiHeader><charDecl><char xml:id='g'><mapping type='unicode'>犍</mapping></char></charDecl></teiHeader><text>")

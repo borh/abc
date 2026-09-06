@@ -24,9 +24,6 @@
     abc.tools.source-bundle
     {:operations #{Files/createTempFile Files/copy Files/deleteIfExists}
      :rationale "Archive staging requires NIO stream copy and exception-reporting cleanup"}
-    abc.tools.soranoha-build-publication
-    {:operations #{Files/move}
-     :rationale "Publication installation requires an atomic NIO move"}
     abc.tools.parser-rq-capture
     {:operations #{Files/isSymbolicLink Files/isRegularFile Files/readAllBytes}
      :rationale "Immutable blob authentication requires no-follow path checks and a single byte read"}})
@@ -243,7 +240,6 @@
              Files/move Files/deleteIfExists}
            abc.tools.source-bundle
            #{Files/createTempFile Files/copy Files/deleteIfExists}
-           abc.tools.soranoha-build-publication #{Files/move}
            abc.tools.files #{Files/deleteIfExists}
            abc.tools.parser-rq-capture
            #{Files/isRegularFile Files/isSymbolicLink Files/readAllBytes}}

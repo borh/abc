@@ -12,7 +12,6 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
             [abc.tools.snapshot-index :as snapshot-index]
-            [abc.tools.soranoha-build-publication :as build-publication]
             [abc.tools.soranoha-layout-report :as layout-report]
             [abc.tools.soranoha-stage-publication :as stage-publication]
             [babashka.fs :as fs]
@@ -327,36 +326,6 @@
                        "Materialize a publication source snapshot."
                        [:materialized-root :output-root :snapshot-scope :snapshot-date]
                        (fn [& args] (apply source-snapshot! args)))
-   {:cmds ["build-publication"]
-    :fn (fn [{:keys [opts]}]
-          (build-publication/build-publication! opts))
-    :doc "Build publication artifacts from an official Aozora checkout."
-    :spec {:aozora-root {:ref "DIR"
-                         :coerce :string
-                         :desc "Official aozorabunko checkout root."
-                         :require true}
-           :config {:ref "FILE"
-                    :coerce :string
-                    :desc "Soranoha publication build config JSON."
-                    :require true}
-           :snapshot-date {:ref "DATE"
-                           :coerce :string
-                           :desc "Snapshot date, YYYY-MM-DD."
-                           :require true}
-           :output-root {:ref "DIR"
-                         :coerce :string
-                         :desc "Final output root."
-                         :require true}
-           :replace {:coerce :boolean
-                     :desc "Replace an existing output root after a successful build."}
-           :concurrency {:ref "N"
-                         :coerce :long
-                         :default 0
-                         :validate {:pred #(>= % 0) :ex-msg "must be >= 0"}
-                         :desc "Worker threads (0 = all cores)."}}
-    :order [:aozora-root :config :snapshot-date :output-root
-            :replace :concurrency :help]
-    :restrict true}
    (positional-command "annotation-join-stats"
                        "Compare parser IR with morphological token output."
                        [:parser-ir-dir :tokens-dir :out-dir]

@@ -9,7 +9,6 @@ values to match new output -- investigate the canonicalization change instead.
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 import sys
 import unittest
@@ -22,8 +21,7 @@ import legacy_json_c14n  # noqa: E402
 
 # Golden cases: input value -> exact canonical JSON text. Covers slash-escaping
 # inside string values AND inside keys, non-ASCII (ensure_ascii=False), nested
-# objects, key sorting, and empty dict/list. Derived by running the current
-# reports/aat-fidelity/.../c14n.py canonical_json, then pasting observed bytes.
+# objects, key sorting, and empty dict/list.
 GOLDEN = [
     ({"b": 1, "a": 2}, '{"a":2,"b":1}'),
     ({"path": "a/b/c"}, '{"path":"a\\/b\\/c"}'),
@@ -33,13 +31,6 @@ GOLDEN = [
     ([], "[]"),
     ({}, "{}"),
 ]
-
-
-def _load(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
 
 
 class LegacyJsonC14n(unittest.TestCase):
@@ -68,17 +59,6 @@ class LegacyJsonC14n(unittest.TestCase):
                     hashlib.sha256(canon.encode("utf-8")).hexdigest(),
                     vector["sha256"],
                 )
-
-    def test_shared_matches_remaining_legacy_copy(self) -> None:
-        # Import the surviving legacy site's implementation and assert
-        # byte-identical output to the shared one across the golden inputs.
-        # (The level3-admission and publication-coverage copies died with the
-        # five-parser gates — ADR third-party-comparison-retirement.)
-        reports = Path(__file__).resolve().parents[2]  # ab-validator/reports
-        c14n = _load(reports / "aat-fidelity/aat_parser_ir_mapping/c14n.py", "c14n_legacy")
-        for value, _ in GOLDEN:
-            want = legacy_json_c14n.canonical_json(value)
-            self.assertEqual(c14n.canonical_json(value), want)
 
 
 if __name__ == "__main__":

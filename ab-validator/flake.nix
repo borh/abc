@@ -1275,44 +1275,6 @@
           extraPreScript = stageAbcSchemas;
         };
 
-        aatParserIrSchemaHashSmokeCheck = mkSmokeCheck {
-          name = "aat-parser-ir-schema-hash-smoke-check";
-          testScript = "tests/aat-parser-ir-schema-hash-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.ripgrep
-            pythonWithAatSchemaDeps
-          ];
-          extraPreScript = stageAbcSchemas;
-        };
-
-        aatParserIrMappingPolicySmokeCheck = mkSmokeCheck {
-          name = "aat-parser-ir-mapping-policy-smoke-check";
-          testScript = "tests/aat-parser-ir-mapping-policy-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.jq
-            pythonWithAatSchemaDeps
-          ];
-          extraEnv = {
-            AB_MAPPING_USE_SYSTEM_PYTHON = "1";
-          };
-          extraPreScript = stageAbcSchemas;
-        };
-
-        aatParserIrMappingSmokeCheck = mkSmokeCheck {
-          name = "aat-parser-ir-mapping-smoke-check";
-          testScript = "tests/aat-parser-ir-mapping-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.jq
-            pkgs.ripgrep
-            pythonWithAatSchemaDeps
-          ];
-          extraEnv = {
-            AB_MAPPING_SMOKE_HERMETIC = "1";
-            AB_MAPPING_USE_SYSTEM_PYTHON = "1";
-          };
-          extraPreScript = stageAbcSchemas;
-        };
-
         aozoraNotationSpecComparatorSmokeCheck = mkSmokeCheck {
           name = "aozora-notation-spec-comparator-smoke-check";
           testScript = "tests/aozora-notation-spec-comparator-smoke.sh";
@@ -1414,9 +1376,6 @@
           parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;
           parser-ir-publication-bundle-batch-smoke = publicationBundleBatchSmokeCheck;
           aat-to-parser-ir-smoke = abAatToParserIrCheck;
-          aat-parser-ir-schema-hash-smoke = aatParserIrSchemaHashSmokeCheck;
-          aat-parser-ir-mapping-policy-smoke = aatParserIrMappingPolicySmokeCheck;
-          aat-parser-ir-mapping-smoke = aatParserIrMappingSmokeCheck;
           source-inventory-smoke = sourceInventorySmokeCheck;
           source-representability-gate = sourceRepresentabilityGateCheck;
           aat-fidelity-duckdb-smoke = aatFidelityDuckdbSmokeCheck;

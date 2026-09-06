@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import pathlib
@@ -131,7 +132,7 @@ def test_policies_have_distinct_closed_identities(module):
     assert parser_ir["policy_hash"] == module.projected_hash(parser_ir, "policy_hash")
 
 
-@pytest.mark.parametrize("instrument", sorted(COMMITTED_POLICIES))
+@pytest.mark.parametrize("instrument", ["diagnostic-completeness"])
 def test_committed_policy_equals_its_regenerated_form(module, instrument):
     """The governed policy must be exactly what this generator produces.
 
@@ -152,12 +153,58 @@ def test_committed_policy_equals_its_regenerated_form(module, instrument):
     assert generated == committed
 
 
-@pytest.mark.parametrize("instrument", sorted(COMMITTED_MANIFESTS))
+@pytest.mark.parametrize("instrument", ["diagnostic-completeness"])
 def test_committed_manifest_equals_its_regenerated_form(module, instrument):
     committed = json.loads(
         (REPO_ROOT / COMMITTED_MANIFESTS[instrument]).read_text(encoding="utf-8")
     )
     assert module.build_manifest(REPO_ROOT, instrument) == committed
+
+
+def test_historical_parser_policy_reproduces_from_retained_evidence(module, tmp_path):
+    instrument = "parser-ir-conformance"
+    manifest = json.loads((REPO_ROOT / COMMITTED_MANIFESTS[instrument]).read_text())
+    policy = json.loads((REPO_ROOT / COMMITTED_POLICIES[instrument]).read_text())
+    schema = REPO_ROOT / (
+        "abc/test/fixtures/parser-rq/predicate-hardening-capture/parser-ir-0.7.0.schema.json"
+    )
+    assert manifest["validator_semantics_hash"] == module.projected_hash(
+        manifest, "validator_semantics_hash"
+    )
+    assert manifest["artifacts"] == [
+        {
+            "path": "abc/schemas/parser-ir.schema.json",
+            "sha256": "sha256:" + hashlib.sha256(schema.read_bytes()).hexdigest(),
+        }
+    ]
+    retained_root = tmp_path / "retained"
+    destination = retained_root / "abc/schemas/parser-ir.schema.json"
+    destination.parent.mkdir(parents=True)
+    shutil.copyfile(schema, destination)
+    assert (
+        module.build_policy(retained_root, instrument, manifest, policy["expected_work_ids"])
+        == policy
+    )
+
+    # The recorded manifest describes the historical converter. Current source
+    # bytes authenticate a new instrument; they cannot reproduce that capture.
+    current = module.build_manifest(REPO_ROOT, instrument)
+    assert current["validator_semantics_hash"] == module.projected_hash(
+        current, "validator_semantics_hash"
+    )
+    for entry in (*current["sources"], *current["artifacts"]):
+        assert (
+            entry["sha256"]
+            == "sha256:" + hashlib.sha256((REPO_ROOT / entry["path"]).read_bytes()).hexdigest()
+        )
+    current_policy = module.build_policy(
+        REPO_ROOT, instrument, current, policy["expected_work_ids"]
+    )
+    assert current_policy["validator_semantics_hash"] == current["validator_semantics_hash"]
+    assert current_policy["policy_hash"] == module.projected_hash(current_policy, "policy_hash")
+    if current["sources"] != manifest["sources"] or current["artifacts"] != manifest["artifacts"]:
+        assert current["validator_semantics_hash"] != manifest["validator_semantics_hash"]
+        assert current_policy["policy_hash"] != policy["policy_hash"]
 
 
 def _write_lock(path: pathlib.Path, packages: list[dict[str, object]]) -> None:

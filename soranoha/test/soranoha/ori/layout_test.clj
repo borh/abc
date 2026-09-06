@@ -31,18 +31,26 @@
   (doseq [blocks [[(block 1 4) (block 2 5)] [(block 2 7)] [(block 3 3)]]]
     (is (thrown? clojure.lang.ExceptionInfo (tei/render (document blocks))))))
 
-(deftest embedded-sign-allows-surrounding-prose-in-the-publication-profile
-  (let [dir (fs/create-temp-dir {:prefix "embedded-sign"})
-        xml-path (str (fs/path dir "tei.xml"))
-        result (render/render-work
-                {:parser-ir (assoc (document [(block 1 5)]) "sentence_segmentation" {"coordinate_system" "parser_text_utf8"})
-                 :metadata-record {"work" {"title" "試験" "aozora_modified" "2026-09-06"} "contributors" []}
-                 :persons-by-id {}})]
-    (try
-      (spit xml-path (:tei result))
-      (is (empty? (:violations (rng/validate! {:schema-path "../abc/schemas/tei-profile.rng"
-                                               :xml-path xml-path :label "embedded sign"}))))
-      (finally (fs/delete-tree dir)))))
+(deftest layout-scopes-allow-surrounding-prose-in-the-publication-profile
+  (doseq [scope [(block 1 5) (dissoc (block 1 5) "direction" "align" "border")]
+          heading? [false true]]
+    (let [dir (fs/create-temp-dir {:prefix "embedded-sign"})
+          xml-path (str (fs/path dir "tei.xml"))
+          ir (cond-> (document [scope])
+               heading? (update "nodes" #(into [{"type" "heading" "text" "章" "level" 2}] %))
+               heading? (update "paragraphs" #(mapv (fn [paragraph]
+                                                      (-> paragraph
+                                                          (update-in ["node_range" "start"] inc)
+                                                          (update-in ["node_range" "end"] inc))) %)))
+          result (render/render-work
+                  {:parser-ir (assoc ir "sentence_segmentation" {"coordinate_system" "parser_text_utf8"})
+                   :metadata-record {"work" {"title" "試験" "aozora_modified" "2026-09-06"} "contributors" []}
+                   :persons-by-id {}})]
+      (try
+        (spit xml-path (:tei result))
+        (is (empty? (:violations (rng/validate! {:schema-path "../abc/schemas/tei-profile.rng"
+                                                 :xml-path xml-path :label "embedded sign"}))))
+        (finally (fs/delete-tree dir))))))
 
 (deftest layout-block-cannot-cross-a-division-changing-gap
   (let [ir {"nodes" [{"type" "heading" "text" "A" "level" 2}
@@ -75,3 +83,20 @@
            (get-in result [:body 1 1])))
     (is (= [{:xml-id "gaiji-264-7" :unicode "糸" :raw-marker "糸＋率"}]
            (:char_declarations (tei/render {"nodes" [known known]}))))))
+
+(deftest enclosing-indent-and-local-closing-alignment-remain-independent
+  (let [scope {"paragraph_range" {"start" 1 "end" 3} "indent" 2 "source_pointer" "blocks[1]"}
+        ir (-> (document [scope])
+               (assoc-in ["paragraphs" 2 "layout"]
+                         {"kind" "chitsuki" "source" "aat-style" "align" "right" "offset_from_end" 2}))
+        body (:body (tei/render ir))
+        enclosure (get-in body [1 2])]
+    (is (= [:p "前"] (get-in body [1 1])))
+    (is (= :div (first enclosure)))
+    (is (= {:type "layout" :style "padding-inline-start: 2em"} (second enclosure)))
+    (is (= [:p "RESTAURANT"] (get enclosure 2)))
+    (is (= "chitsuki align(right) offset-from-end(2)" (get-in enclosure [3 1 :rend])))
+    (is (= [:p "WILDCAT HOUSE"] (get-in body [1 3 1])))
+    (let [changed (:body (tei/render (assoc-in ir ["paragraphs" 2 "layout" "offset_from_end"] 3)))]
+      (is (= (second enclosure) (get-in changed [1 2 1])))
+      (is (= "chitsuki align(right) offset-from-end(3)" (get-in changed [1 2 3 1 :rend]))))))

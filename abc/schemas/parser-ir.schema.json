@@ -44,7 +44,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["paragraph_range", "indent", "direction", "align", "border", "source_pointer"],
+        "required": ["paragraph_range", "indent", "source_pointer"],
         "additionalProperties": false,
         "properties": {
           "paragraph_range": { "$ref": "#/$defs/nodeRange", "description": "Half-open indices into paragraphs, delimiting one enclosing layout block." },

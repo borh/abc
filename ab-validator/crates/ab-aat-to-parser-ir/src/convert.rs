@@ -481,6 +481,10 @@ fn map_block_content(
                 let layout = paragraph_layout_from_jisage_block(block);
                 let paragraph_start = outputs.paragraphs.len();
                 let block_style = block.get("block_style");
+                let enclosing_scope = block_style.is_some()
+                    || children
+                        .iter()
+                        .any(|child| paragraph_layout_wrapper(child).is_some());
                 for (index, child) in children.into_iter().enumerate() {
                     current = map_block(
                         child,
@@ -488,17 +492,24 @@ fn map_block_content(
                         recorder,
                         current,
                         &format!("{path}.children[{index}]"),
-                        block_style.is_none().then(|| layout.clone()),
+                        (!enclosing_scope).then(|| layout.clone()),
                         false,
                         heuristic_enabled,
                     )?;
                 }
-                if let Some(style) = block_style {
-                    outputs.layout_blocks.push(json!({
+                if enclosing_scope {
+                    let mut scope = json!({
                         "paragraph_range": {"start": paragraph_start, "end": outputs.paragraphs.len()},
-                        "indent": block["indent"], "direction": style["direction"],
-                        "align": style["align"], "border": style["border"], "source_pointer": path
-                    }));
+                        "indent": layout["indent"], "source_pointer": path
+                    });
+                    if let Some(style) = block_style {
+                        for property in ["direction", "align", "border"] {
+                            if let Some(value) = style.get(property) {
+                                scope[property] = value.clone();
+                            }
+                        }
+                    }
+                    outputs.layout_blocks.push(scope);
                 }
             } else {
                 recorder.record(

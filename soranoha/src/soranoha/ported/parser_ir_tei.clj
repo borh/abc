@@ -551,16 +551,31 @@
 
 (defn- layout-block-attrs [block]
   {:type "layout"
-   :style (str "padding-inline-start: " (get block "indent") "em; "
-               "writing-mode: horizontal-tb; text-align: center; border-style: solid")})
+   :style (string/join "; "
+                       (cond-> [(str "padding-inline-start: " (get block "indent") "em")]
+                         (get block "direction") (conj "writing-mode: horizontal-tb")
+                         (get block "align") (conj "text-align: center")
+                         (get block "border") (conj "border-style: solid")))})
+
+(defn- normalize-layout-siblings [children]
+  ;; TEI permits prose before divisions, but later prose must belong to a
+  ;; division. Neutral wrappers keep those later paragraphs outside the
+  ;; source's indented division without inventing an embedded text.
+  (let [[before remaining] (split-with #(not= :div (first %)) children)]
+    (into (vec before)
+          (mapcat (fn [run]
+                    (if (= :div (ffirst run)) run [(into [:div] run)])))
+          (partition-by #(= :div (first %)) remaining))))
 
 (defn- close-layout-blocks [acc frames paragraph-end]
   (loop [acc acc frames frames]
     (if-let [{:keys [block target start]} (peek frames)]
       (if (= paragraph-end (get-in block ["paragraph_range" "end"]))
         (let [children (get acc target)
-              wrapped [:floatingText (layout-block-attrs block)
-                       (into [:body] (subvec children start))]]
+              content (normalize-layout-siblings (subvec children start))
+              wrapped (if (get block "border")
+                        [:floatingText (layout-block-attrs block) (into [:body] content)]
+                        (into [:div (layout-block-attrs block)] content))]
           (recur (assoc acc target (conj (subvec children 0 start) wrapped)) (pop frames)))
         [acc frames])
       [acc frames])))
@@ -582,7 +597,10 @@
                             [closed end frames]))
                         [(initial-acc) 0 []]
                         (map-indexed vector paragraphs))]
-    (finalize-result (render-node-seq result (subvec nodes end)))))
+    (finalize-result
+     (cond-> (-> result (render-node-seq (subvec nodes end)) flush-paragraph)
+       (seq layout-blocks) (update :current-division normalize-layout-siblings)
+       (seq layout-blocks) (update :body-children normalize-layout-siblings)))))
 
 (defn- render-flat [nodes]
   (finalize-result

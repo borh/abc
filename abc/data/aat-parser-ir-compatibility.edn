@@ -4,10 +4,10 @@
   :aat_adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)"
   :mapping_id "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe"
   :mapping_version "0.6.0"
-  :mapping_hash "sha256:9812c198ca42f4e116bc4bc26719c27dc64c4263d57a75382450671ab52207ed"
+  :mapping_hash "sha256:201b429b605e9a2a53402c974212de7816833a51d85b66374a6409c85e7c7432"
   :mapping_schema_hash "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"
   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-  :parser_ir_schema_hash "sha256:d50ea195475ceefbf186288006dfda57032641829bb627fcf79007021e451310"
+  :parser_ir_schema_hash "sha256:d58dde3af8aa807a849201c48838729bd2a38189394145f11aa50567b963184b"
   :evidence_scope {:evidence_type :conversion-audit
                    :adapter "ab-aozora"
                    :adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)"

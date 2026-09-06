@@ -4808,3 +4808,49 @@ fn source_markup_gaps_and_gaiji_have_independent_projection_and_source_extents()
     assert_eq!(following["source_span"]["start"], end);
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
+
+#[test]
+fn enclosing_indent_survives_line_local_closing_alignment() {
+    let source = "前。\n［＃ここから２字下げ］\n附記。\n［＃地から２字上げ］（大正四年八月）\n［＃ここで字下げ終わり］\n後。\n";
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    for date_offset in [2, 3] {
+        let changed = source.replace("地から２字上げ", &format!("地から{date_offset}字上げ"));
+        let aat = serde_json::from_slice(
+            &ab_aozora_aat::aat_json_from_bytes(changed.as_bytes()).unwrap(),
+        )
+        .unwrap();
+        let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat,
+            mapping: mapping.clone(),
+            schemas: schemas.clone(),
+            options: default_test_options(),
+        })
+        .unwrap();
+        let ir = &output.parser_ir;
+        assert_eq!(ir["paragraphs"].as_array().unwrap().len(), 4);
+        assert_eq!(
+            ir["layout_blocks"],
+            json!([{
+                "paragraph_range": {"start": 1, "end": 3}, "indent": 2, "source_pointer": "blocks[1]"
+            }])
+        );
+        assert_eq!(ir["paragraphs"][2]["layout"]["kind"], "chitsuki");
+        assert_eq!(
+            ir["paragraphs"][2]["layout"]["offset_from_end"],
+            date_offset
+        );
+        for index in [0, 1, 3] {
+            assert!(ir["paragraphs"][index].get("layout").is_none());
+        }
+        validate_value(&schemas.parser_ir_schema, ir, "parser-IR").unwrap();
+        let mut malformed = ir.clone();
+        malformed["layout_blocks"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("indent");
+        assert!(validate_value(&schemas.parser_ir_schema, &malformed, "parser-IR").is_err());
+        let mut malformed = ir.clone();
+        malformed["layout_blocks"][0]["align"] = json!("left");
+        assert!(validate_value(&schemas.parser_ir_schema, &malformed, "parser-IR").is_err());
+    }
+}

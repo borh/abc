@@ -1469,12 +1469,13 @@ fn inline_content(
             })),
             "ruby" => content.push(ruby_node(decoded, node, ruby_by_span, gaiji_by_start)),
             "gaiji" => content.push(gaiji_node(decoded, node, gaiji_by_start)),
-            "bouten" => content.push(style_node(decoded, node, "bouten")),
-            "emphasis" => content.push(style_node(
+            "bouten" => push_style_node(&mut content, decoded, node, "bouten"),
+            "emphasis" => push_style_node(
+                &mut content,
                 decoded,
                 node,
                 emphasis_style_type(decoded, node),
-            )),
+            ),
             "combineUpright" => content.push(tcy_node(decoded, node)),
             "kaeriten" => content.push(raw_node(decoded, node, "kaeriten")),
             "directive" if source_slice(&decoded.span_text, &node.span).contains("返り点") => {
@@ -1954,6 +1955,72 @@ fn gaiji_json(decoded: &DecodedSource, span: &Span, gaiji: &AozoraGaiji) -> Valu
     })
 }
 
+// Retrospective targets may cross already-emitted ruby or gaiji nodes.
+// Adopt the exact visible suffix instead of copying the marker's quotation.
+fn push_style_node(
+    content: &mut Vec<Value>,
+    decoded: &DecodedSource,
+    node: &AozoraNode,
+    style_type: &str,
+) {
+    let mut style = style_node(decoded, node, style_type);
+    if style["content"].as_array().is_some_and(Vec::is_empty)
+        && let Some(target) = marker_target(source_slice(&decoded.span_text, &node.span))
+        && let Some(children) = take_visible_suffix(content, target, &decoded.text)
+    {
+        style["span"]["byte_start"] = children[0]["span"]["byte_start"].clone();
+        style["span"]["line_start"] = children[0]["span"]["line_start"].clone();
+        style["content"] = json!(children);
+    }
+    content.push(style);
+}
+
+fn take_visible_suffix(content: &mut Vec<Value>, target: &str, source: &str) -> Option<Vec<Value>> {
+    if target.is_empty() || target.contains(['\n', '\r']) {
+        return None;
+    }
+    let mut remaining = target;
+    for index in (0..content.len()).rev() {
+        let node = &content[index];
+        let kind = node["kind"].as_str()?;
+        let text = match kind {
+            "text" => node["value"].as_str()?,
+            "ruby" => node["base"].as_str()?,
+            "gaiji" => node["resolved"].as_str()?,
+            _ => return None,
+        };
+        if text.is_empty() {
+            return None;
+        }
+        if let Some(prefix) = remaining.strip_suffix(text) {
+            remaining = prefix;
+            if remaining.is_empty() {
+                return Some(content.split_off(index));
+            }
+        } else if kind == "text" && text.ends_with(remaining) {
+            let end = usize::try_from(node["span"]["byte_end"].as_u64()?).ok()?;
+            let start = end.checked_sub(remaining.len())?;
+            // Only split literal source text: normalized characters do not
+            // establish a byte-for-byte source boundary at this position.
+            if source.get(start..end)? != remaining {
+                return None;
+            }
+            let mut tail = node.clone();
+            tail["value"] = json!(remaining);
+            tail["span"]["byte_start"] = json!(start);
+            tail["span"]["line_start"] = node["span"]["line_end"].clone();
+            content[index]["value"] = json!(&text[..text.len() - remaining.len()]);
+            content[index]["span"]["byte_end"] = json!(start);
+            let mut children = vec![tail];
+            children.extend(content.split_off(index + 1));
+            return Some(children);
+        } else {
+            return None;
+        }
+    }
+    None
+}
+
 fn style_node(decoded: &DecodedSource, node: &AozoraNode, style_type: &str) -> Value {
     let source = source_slice(&decoded.span_text, &node.span);
     json!({
@@ -1977,8 +2044,8 @@ fn tcy_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
 /// target text plus its marker, the quoted target is the node's one copy
 /// of that text. A span that starts at the marker itself (the tree
 /// anchors there when the target contains a ruby/gaiji and was already
-/// emitted as its own nodes) must stay empty — re-quoting the target
-/// would double it in every projection.
+/// emitted as its own nodes) contributes no new text. The style caller
+/// adopts those existing nodes when their visible suffix matches the target.
 fn annotation_content(source: &str) -> Vec<Value> {
     if source.starts_with("［＃") || source.starts_with("[#") {
         return Vec::new();
@@ -2717,18 +2784,43 @@ mod tests {
         assert_eq!(base[1]["value"], "陀多");
     }
 
-    /// A retrospective style annotation whose target contains a ruby
-    /// (`扨、私事《…》、［＃「扨、私事、」は太字］`) anchors the style
-    /// node on the marker alone — the target text was already emitted as
-    /// text/ruby nodes before it. The style node must NOT re-quote the
-    /// target as content: that doubled the passage in every projection.
     #[test]
-    fn marker_only_style_span_does_not_duplicate_target() {
-        let src = "まえ扨、私事《わたくしこと》、［＃「扨、私事、」は太字］あと\n";
-        let aat = aat_value_for(src);
-        let style = find_first_node(&aat, "style");
-        assert_eq!(style["style_type"], "bold");
-        assert_eq!(style["content"].as_array().unwrap().len(), 0);
+    fn marker_only_style_adopts_ruby_target_without_duplication() {
+        for (source, target) in [
+            ("まえ牛《ベゴ》の舌［＃「牛の舌」に傍点］あと\n", "牛"),
+            (
+                "まえ扨、私事《わたくしこと》、［＃「扨、私事、」は太字］あと\n",
+                "私事",
+            ),
+        ] {
+            let aat = aat_value_for(source);
+            let style = find_first_node(&aat, "style");
+            assert!(!style["content"].as_array().unwrap().is_empty());
+            assert_eq!(find_first_node(style, "ruby")["base"], target);
+            assert_eq!(style["span"]["byte_start"], "まえ".len());
+            assert_eq!(style["span"]["byte_end"], source.find("あと").unwrap());
+            let content = aat["blocks"][0]["content"].as_array().unwrap();
+            assert_eq!(content[0]["value"], "まえ");
+            assert_eq!(content.len(), 3);
+            assert_eq!(content[2]["value"], "あと\n");
+        }
+    }
+
+    #[test]
+    fn retrospective_style_does_not_adopt_mismatched_or_partial_ruby_targets() {
+        let source = "まえ牛舌《ベゴ》の字\n";
+        let aat = aat_value_for(source);
+        let original = aat["blocks"][0]["content"].as_array().unwrap();
+        for target in ["羊の字\n", "舌の字\n", "羊の字", "舌の字"] {
+            let mut content = original.clone();
+            if let Some(last) = content.last_mut() {
+                last["value"] = json!("の字");
+                last["span"]["byte_end"] = json!(source.len() - 1);
+            }
+            let before = content.clone();
+            assert!(take_visible_suffix(&mut content, target, source).is_none());
+            assert_eq!(content, before);
+        }
     }
 
     /// The span-covering form (`文字［＃「文字」に傍点］` where the node

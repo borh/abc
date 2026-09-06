@@ -102,6 +102,14 @@
                  (let [converted (str/replace inner accent-pattern accents)]
                    (if (= inner converted) original converted)))))
 
+(defn- ambiguous-accents? [text]
+  ;; The notation requires language judgment for punctuation inside broad scopes:
+  ;; https://www.aozora.gr.jp/annotation/external_character.html
+  (boolean
+   (some (fn [[_ inner]]
+           (re-find #"(?:^|[^A-Za-z])[cClLmMnNsS]'(?=[A-Za-z])|[cCsStT],(?=\s|$)" inner))
+         (re-seq #"〔([^〔〕\n]*)〕" text))))
+
 (def ^:private correction-body
   "(?:ルビの)?「(?:[^「」\n]|「[^「」\n]*」)*」は底本では「(?:[^「」\n]|「[^「」\n]*」)*」")
 
@@ -169,6 +177,7 @@
      :heading-indent (when heading
                        (decimal (second (re-find #"^［＃([０-９0-9]+)字下げ］" mapped))))
      :closing-offset (when closing (decimal (second closing)))
+     :ambiguous-accent? (ambiguous-accents? line)
      :indent (count (or (re-find #"^　+" plain) ""))
      :unsupported? unsupported?}))
 
@@ -215,10 +224,21 @@
 (defn- result [id status message]
   {"id" id "status" status "message" message})
 
-(defn- comparison [id expected actual]
-  (result id (if (= expected actual) "passed" "failed")
-          (if (= expected actual) "Source-derived values match."
-              "Source-derived values differ from the export.")))
+(defn- comparison
+  ([id expected actual] (comparison id expected actual #{}))
+  ([id expected actual unknown-indexes]
+   (comparison id expected actual unknown-indexes (constantly nil)))
+  ([id expected actual unknown-indexes known-value]
+   (let [match? (if (seq unknown-indexes)
+                  (and (= (count expected) (count actual))
+                       (every? true? (map-indexed #(apply = (if (contains? unknown-indexes %1)
+                                                              (map known-value %2) %2))
+                                                  (map vector expected actual))))
+                  (= expected actual))]
+     (cond
+       (not match?) (result id "failed" "Source-derived values differ from the export.")
+       (seq unknown-indexes) (result id "not-evaluated" "Known source values match; accent punctuation remains ambiguous in other values.")
+       :else (result id "passed" "Source-derived values match.")))))
 
 (defn- css [node]
   (into {} (keep (fn [declaration]
@@ -242,6 +262,13 @@
                         (map #(vector % (visible %)))
                         (remove #(str/blank? (second %))) vec)
         source-paragraphs (vec (remove :heading lines))
+        unknown-indexes (fn [xs] (set (keep-indexed #(when %2 %1) xs)))
+        unknown-blocks (unknown-indexes (map :ambiguous-accent? lines))
+        unknown-paragraphs (unknown-indexes (map :ambiguous-accent? source-paragraphs))
+        unknown-headings (unknown-indexes (map :ambiguous-accent? (filter :heading lines)))
+        unknown-emphasis (unknown-indexes (map #(and (:ambiguous-accent? %) (seq (:emphasis %))) lines))
+        unknown-corrections (unknown-indexes (map #(and (:ambiguous-accent? %) (seq (:corrections %))) lines))
+        unknown-notes (unknown-indexes (map ambiguous-accents? notes))
         enclosing-layouts (->> lines (filter :layout)
                                (group-by #(get-in % [:layout :start])) (sort-by key)
                                (filter (fn [[_ group]]
@@ -259,16 +286,16 @@
     [(comparison "plaintext-start" false (boolean (re-find #"^\r?\n" plaintext)))
      (comparison "plaintext-body"
                  (mapv :plain lines)
-                 (vec (remove str/blank? (str/split-lines (str/replace plaintext #"\r\n?" "\n")))))
+                 (vec (remove str/blank? (str/split-lines (str/replace plaintext #"\r\n?" "\n")))) unknown-blocks)
      (comparison "tei-body-text"
                  (mapv #(str/replace (:plain %) #"^　+" "") source-paragraphs)
-                 (mapv second paragraphs))
+                 (mapv second paragraphs) unknown-paragraphs)
      (comparison "tei-block-order"
                  (mapv #(vector (if (:heading %) "head" "p")
                                 (str/replace (:plain %) #"^　+" "")) lines)
-                 (mapv #(vector (.getLocalName ^Node %) (visible %)) blocks))
+                 (mapv #(vector (.getLocalName ^Node %) (visible %)) blocks) unknown-blocks first)
      (comparison "tei-headings" (vec (keep :heading lines))
-                 (mapv #(visible %) (elements body "head")))
+                 (mapv #(visible %) (elements body "head")) unknown-headings)
      (comparison "tei-heading-layout" true
                  (let [expected (filter :heading lines)
                        actual (elements body "head")]
@@ -291,12 +318,12 @@
                          (mapv (fn [[start text rendition]]
                                  [(- start (:indent line)) text rendition])
                                (:emphasis line))) lines)
-                 (mapv export-emphasis blocks))
+                 (mapv export-emphasis blocks) unknown-emphasis #(mapv rest %))
      (comparison "tei-correction-notes"
                  (mapv (fn [line]
                          (mapv (fn [[start text]] [(- start (:indent line)) text])
                                (:corrections line))) lines)
-                 (mapv export-corrections blocks))
+                 (mapv export-corrections blocks) unknown-corrections #(mapv rest %))
      (comparison "tei-block-layout" true
                  (and (= (count source-paragraphs) (count paragraphs))
                       (every? true?
@@ -331,14 +358,13 @@
                                      (and (not (str/starts-with? text "　"))
                                           (indent-style? p "text-indent" (:indent src))))
                                    source-paragraphs paragraphs))))
-     (comparison "tei-source-note-layout" true
-                 (and (= (count notes) (count note-lines))
-                      (every? true?
-                              (map (fn [s node]
-                                     (let [n (count (or (re-find #"^　+" s) ""))]
-                                       (and (= (source-accents (subs s n)) (.getTextContent ^Node node))
-                                            (indent-style? node "padding-inline-start" n))))
-                                   notes note-lines))))
+     (if (and (= (count notes) (count note-lines))
+              (every? true? (map #(indent-style? %2 "padding-inline-start" (count (or (re-find #"^　+" %1) "")))
+                                 notes note-lines)))
+       (comparison "tei-source-note-layout"
+                   (mapv #(source-accents (str/replace % #"^　+" "")) notes)
+                   (mapv #(.getTextContent ^Node %) note-lines) unknown-notes)
+       (result "tei-source-note-layout" "failed" "Source-note line count or indentation differs from the export."))
      (comparison "closing-date-layout" true
                  (every? true?
                          (map (fn [src [p _]]
@@ -358,9 +384,12 @@
                 (try (source-parts (:text decoded))
                      (catch Exception _ nil)))
         supported? (and parts (seq (:lines parts)) (not-any? :unsupported? (:lines parts)))
-        coverage (result "source-coverage" (if supported? "passed" "not-evaluated")
-                         (if supported? "Recognized bounded source syntax and body boundaries."
-                             "Unrecognized source encoding, body boundary or annotation; comparisons withheld."))
+        ambiguous? (or (some :ambiguous-accent? (:lines parts)) (some ambiguous-accents? (:notes parts)))
+        coverage (result "source-coverage" (if (and supported? (not ambiguous?)) "passed" "not-evaluated")
+                         (cond
+                           (not supported?) "Unrecognized source encoding, body boundary or annotation; comparisons withheld."
+                           ambiguous? "Accent punctuation is ambiguous; independent checks retain known source facts."
+                           :else "Recognized bounded source syntax and body boundaries."))
         checks (if supported?
                  (try (into [coverage] (compare-exports parts (xml tei-bytes) (decode plaintext-bytes "UTF-8")))
                       (catch Exception _
@@ -375,4 +404,5 @@
                     (statuses "not-evaluated") "not-evaluated" :else "passed")
      "checks" checks
      "limitations" ["Limited to Aozora text with a 底本 colophon and either a separator preamble or a two-line title/author header; basic ruby, Aozora Latin accent notation, non-overlapping retrospective emphasis dots, numeric JIS X 0213 gaiji, correction notes, middle headings, numeric closing offsets, and the listed indentation/sign blocks."
+                    "Ambiguous accent punctuation leaves affected line text and annotation offsets unevaluated; independent markup values and layout remain checked."
                     "Blank-line spacing and title/author metadata are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))

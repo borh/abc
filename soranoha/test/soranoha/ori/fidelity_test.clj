@@ -200,6 +200,32 @@
       (is (= "failed" (status (report s t (mutation p)) "plaintext-body")))
       (is (= "failed" (status (report s (mutation t) p) "tei-body-text"))))))
 
+(deftest ambiguous-accent-punctuation-keeps-independent-checks
+  (doseq [[encoded visible] [["C'est me^me" "C'est même"]
+                             ["Le Cafe' de Paris, Monte Carlo." "Le Café de Paris, Monte Carlo."]]]
+    (let [s (compact-source (str "〔" encoded "〕池《いけ》［＃「池」は底本では「海」］\n確かな本文。"))
+          t (compact-tei (str "<p>" visible "<ruby><rb>池</rb><rt>いけ</rt></ruby>"
+                              "<note type='correction'>「池」は底本では「海」</note></p><p>確かな本文。</p>"))
+          p (str visible "池\n確かな本文。\n")
+          r (report s t p)]
+      (is (= "not-evaluated" (get r "status")))
+      (is (= "not-evaluated" (status r "plaintext-body")))
+      (doseq [id ["tei-ruby" "tei-gaiji" "tei-paragraph-indentation" "tei-source-note-layout"]]
+        (is (= "passed" (status r id))))
+      (is (= "failed" (status (report s (str/replace t "確かな本文" "誤った本文") p) "tei-body-text")))
+      (is (= "failed" (status (report s t (str/replace p "確かな本文" "誤った本文")) "plaintext-body")))
+      (is (= "failed" (status (report s (str/replace t "<rt>いけ" "<rt>うみ") p) "tei-ruby")))
+      (is (= "failed" (status (report s (str/replace t "底本では「海」" "底本では「空」") p) "tei-correction-notes")))))
+  (is (= "passed" (get (report (compact-source "〔LE MAC,ON〕")
+                               (compact-tei "<p>LE MAÇON</p>") "LE MAÇON\n") "status")))
+  (let [s (str (compact-source "本文。") "　　　〔C'est me^me〕\n")
+        t (str/replace (compact-tei "<p>本文。</p>") "</note>"
+                       "<lb/><seg type='source-line' style='padding-inline-start: 3em'>C'est même</seg></note>")
+        r (report s t "本文。\n")]
+    (is (= "not-evaluated" (status r "tei-source-note-layout")))
+    (is (= "passed" (status r "tei-body-text")))
+    (is (= "failed" (status (report s (str/replace t "3em" "2em") "本文。\n") "tei-source-note-layout")))))
+
 (deftest correction-quotations-do-not-add-body-ruby-or-gaiji
   (let [correction "「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」"
         s (compact-source (str "煖爐《ストーブ》には［＃" correction "］、後。"))

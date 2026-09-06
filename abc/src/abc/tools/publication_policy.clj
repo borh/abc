@@ -7,12 +7,9 @@
   content hash from those same bytes, so a caller can never report a hash that
   disagrees with the value it evaluated. `release-problem` is the pure
   projection of the allowed-state semantics used by
-  abc.tools.publication-release/release-problems.
-
-  `assert-release-allowed!` / `rights-publication-state` remain as compatibility
-  projections for callers not yet routed through the shared predicate."
-  (:require [abc.tools.files :as files]
-            [abc.tools.hash :as hash]
+  abc.tools.publication-release/release-problems. The CLI preflight uses the
+  same loader and predicate before starting publication work."
+  (:require [abc.tools.hash :as hash]
             [babashka.fs :as fs]
             [clojure.edn :as edn])
   (:import [java.nio ByteBuffer]
@@ -24,12 +21,6 @@
 ;; other or missing state is fail-closed. Moving this value is a deliberate
 ;; governance change, not an implementation detail.
 (def allowed-rights-publication-state :assessment-required)
-
-(defn rights-publication-state
-  "Compatibility projection: the :rights-publication state from the policy
-  file. Retained until every caller moves to the value-plus-hash envelope."
-  ([] (rights-publication-state policy-path))
-  ([path] (:rights-publication (files/read-edn path))))
 
 (defn- decode-strict-utf8
   "Decode bytes as EDN source, failing (rather than substituting) on malformed
@@ -54,7 +45,7 @@
 
 (defn release-problem
   "PURE. nil when the parsed rights-policy value authorizes release; otherwise a
-  problem map. Preserves the allowed-state semantics of assert-release-allowed!."
+  problem map."
   [rights-policy]
   (let [state (:rights-publication rights-policy)]
     (when-not (= allowed-rights-publication-state state)
@@ -66,12 +57,12 @@
 (defn assert-release-allowed!
   "Return :ok only while the rights migration authorizes assessed publication.
   Every other or missing state fails closed and names the policy reason.
-  Compatibility boundary retained until its callers route through the shared
-  release predicate."
+  Reads the policy through the shared authority loader."
   ([] (assert-release-allowed! policy-path))
   ([path]
-   (let [state (rights-publication-state path)]
-     (if (= allowed-rights-publication-state state)
+   (let [{:keys [policy]} (load-rights-authority! path)
+         state (:rights-publication policy)]
+     (if-not (release-problem policy)
        :ok
        (throw (ex-info
                (str "release publication blocked by rights policy: " state)

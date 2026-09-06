@@ -19,9 +19,6 @@
             [babashka.cli :as cli]
             [clojure.java.io :as io]))
 
-(defn request-set-labels []
-  (request-set-resolver/request-set-labels))
-
 (defn- read-resolved-request-set-file [path]
   (let [request-set (files/read-json path)
         request-set-schema (files/read-json "schemas/request-set.schema.json")
@@ -44,7 +41,7 @@
       (request-set-resolver/resolve-request-set label-or-path))))
 
 (defn list-request-sets! []
-  (doseq [label (request-set-labels)]
+  (doseq [label (request-set-resolver/request-set-labels)]
     (println label))
   0)
 
@@ -118,16 +115,6 @@
     (println "record_file_hash:" (:record-file authority-hashes))
     (println "rights_policy_file_hash:" (:rights-policy-file authority-hashes))))
 
-(defn read-valid-snapshot-index
-  "Delegates to the single file-loading boundary owned by
-  abc.tools.snapshot-index. The dispatcher keeps only this delegation so the
-  domain reader can thin without stranding logic here."
-  [path]
-  (snapshot-index/read-valid-snapshot-index path))
-
-(defn- validate-snapshot-root-references! [root snapshot]
-  (snapshot-index/assert-closed-root! root snapshot))
-
 (defn- publication-report [snapshot validation]
   (let [identity-object (get snapshot "snapshot_index_identity_object")]
     {"schema_id" "https://w3id.org/abc/soranoha-publication-report-v0.json"
@@ -152,7 +139,7 @@
      "notes" "Citable reproduction evidence report. This file is not part of snapshot identity; cite snapshot_identity_hash, source_selection_hash, parser_config_hash, and artifact hashes from snapshot-index.json."}))
 
 (defn- write-publication-report-file! [root snapshot output-path]
-  (validate-snapshot-root-references! root snapshot)
+  (snapshot-index/assert-closed-root! root snapshot)
   (let [validation {"snapshot_root_valid" true
                     "checked_manifest_references" (count (get snapshot
                                                               "artifact_references"
@@ -165,7 +152,7 @@
 
 (defn publication-report! [snapshot-root output-path]
   (let [root (io/file snapshot-root)
-        snapshot (read-valid-snapshot-index root)]
+        snapshot (snapshot-index/read-valid-snapshot-index root)]
     (when-not (fs/directory? root)
       (throw (ex-info "publication-report requires a snapshot root directory"
                       {:path (str root)})))
@@ -179,7 +166,7 @@
       0)))
 
 (defn- write-layout-report-file! [root snapshot output-path]
-  (validate-snapshot-root-references! root snapshot)
+  (snapshot-index/assert-closed-root! root snapshot)
   (let [validation {"snapshot_root_valid" true
                     "checked_manifest_references" (count (get snapshot
                                                               "artifact_references"
@@ -192,7 +179,7 @@
 
 (defn layout-report! [snapshot-root output-path]
   (let [root (io/file snapshot-root)
-        snapshot (read-valid-snapshot-index root)]
+        snapshot (snapshot-index/read-valid-snapshot-index root)]
     (when-not (fs/directory? root)
       (throw (ex-info "layout-report requires a snapshot root directory"
                       {:path (str root)})))
@@ -209,11 +196,11 @@
   (publication-policy/assert-release-allowed!)
   (let [root (io/file snapshot-root)
         output-root (io/file output-root)
-        snapshot (read-valid-snapshot-index root)]
+        snapshot (snapshot-index/read-valid-snapshot-index root)]
     (when-not (fs/directory? root)
       (throw (ex-info "stage-publication requires a snapshot root directory"
                       {:path (str root)})))
-    (validate-snapshot-root-references! root snapshot)
+    (snapshot-index/assert-closed-root! root snapshot)
     (let [{:keys [index-file snapshot archive-count]}
           (stage-publication/stage-publication! {:snapshot-root root
                                                  :staged-root output-root
@@ -226,7 +213,7 @@
       0)))
 
 (defn explain-snapshot! [path]
-  (let [snapshot (read-valid-snapshot-index path)
+  (let [snapshot (snapshot-index/read-valid-snapshot-index path)
         summary (get snapshot "summary")
         identity-object (get snapshot "snapshot_index_identity_object")]
     (print-snapshot-summary! snapshot)
@@ -241,9 +228,9 @@
     0))
 
 (defn validate! [snapshot-root]
-  (let [snapshot (read-valid-snapshot-index snapshot-root)]
+  (let [snapshot (snapshot-index/read-valid-snapshot-index snapshot-root)]
     (when (fs/directory? snapshot-root)
-      (validate-snapshot-root-references! (snapshot-root-path snapshot-root)
+      (snapshot-index/assert-closed-root! (snapshot-root-path snapshot-root)
                                           snapshot))
     (println "snapshot_valid: true")
     (println "snapshot_date:" (get snapshot "snapshot_date"))

@@ -157,7 +157,7 @@
   "parser-IR + metadata record + persons -> TEI XML + plaintext bytes."
   [clj-toolchain-id]
   {:stage-id "render"
-   :stage-version "2"
+   :stage-version "3"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [read-json (fn [name]
@@ -178,12 +178,15 @@
   change must invalidate its traces."
   [clj-toolchain-id profile]
   {:stage-id "validate-tei"
-   :stage-version "1"
+   :stage-version "2"
    :toolchain-id (core-hash/sha256-canonical-json
                   {"clj" clj-toolchain-id
                    "odd" (core-hash/sha256-file (:odd profile))
                    "rng" (core-hash/sha256-file (:rng profile))
-                   "sch" (core-hash/sha256-file (:sch profile))})
+                   "sch" (core-hash/sha256-file (:sch profile))
+                   "generation" (when-let [path (:generation profile)]
+                                  (when (fs/exists? path)
+                                    (core-hash/sha256-file path)))})
    :f (fn [{:keys [blob]} inputs]
         (with-temp-dir
           (fn [dir]
@@ -198,7 +201,7 @@
   Rights assessment and TEI schema validity are separate results."
   [clj-toolchain-id]
   {:stage-id "source-fidelity"
-   :stage-version "1"
+   :stage-version "2"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         {"source-fidelity"

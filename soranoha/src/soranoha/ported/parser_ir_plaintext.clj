@@ -112,7 +112,8 @@
 (defn- render-heading-node
   ([acc node] (render-heading-node acc node 0))
   ([acc node _depth]
-   (append-text acc (str "\n" (or (get node "text") "") "\n"))))
+   (append-text acc (str (when (seq (:text acc)) "\n")
+                         (or (get node "text") "") "\n"))))
 
 (defn- render-indentation-node
   ([acc node] (render-indentation-node acc node 0))

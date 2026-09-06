@@ -135,7 +135,8 @@
                           (or (and (zero? n) (not (str/includes? style property)))
                               (boolean (re-find (re-pattern (str property "\\s*:\\s*" n "em(?:;|$)"))
                                                 style)))))]
-    [(comparison "plaintext-body"
+    [(comparison "plaintext-start" false (boolean (re-find #"^\r?\n" plaintext)))
+     (comparison "plaintext-body"
                  (mapv :plain lines)
                  (vec (remove str/blank? (str/split-lines (str/replace plaintext #"\r\n?" "\n")))))
      (comparison "tei-body-text"

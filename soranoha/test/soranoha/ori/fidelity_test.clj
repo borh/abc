@@ -44,7 +44,8 @@
            ["lexical note indent" "tei-source-note-layout" #(str/replace % ">初刷</seg>" ">　　　初刷</seg>")]
            ["missing note rendition" "tei-source-note-layout" #(str/replace % "padding-inline-start: 3em" "")]]]
     (testing label (is (= "failed" (status (report source (transform tei) plaintext) id)))))
-  (is (= "failed" (status (report source tei (str/replace plaintext "底" "")) "plaintext-body"))))
+  (is (= "failed" (status (report source tei (str/replace plaintext "底" "")) "plaintext-body")))
+  (is (= "failed" (status (report source tei (str "\n" plaintext)) "plaintext-start"))))
 
 (deftest unsupported-source-does-not-certify-exports
   (doseq [s [(str/replace source "池《いけ》" "池［＃傍点］")

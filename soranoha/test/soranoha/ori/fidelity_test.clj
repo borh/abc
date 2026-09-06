@@ -200,6 +200,17 @@
       (is (= "failed" (status (report s t (mutation p)) "plaintext-body")))
       (is (= "failed" (status (report s (mutation t) p) "tei-body-text"))))))
 
+(deftest historical-angle-quotes-retain-nested-markup
+  (let [s (compact-source "≪池《いけ》の※［＃「特のへん＋廴＋聿」、第3水準1-87-71］≫、外。≪未閉。")
+        t (str/replace (compact-tei "<p>《<ruby><rb>池</rb><rt>いけ</rt></ruby>の<g ref='#g'>犍</g>》、外。≪未閉。</p>")
+                       "<text>" "<teiHeader><charDecl><char xml:id='g'><mapping type='unicode'>犍</mapping></char></charDecl></teiHeader><text>")
+        p "《池の犍》、外。≪未閉。\n"]
+    (is (= "passed" (get (report s t p) "status")))
+    (is (= "failed" (status (report s (str/replace t "《" "≪") p) "tei-body-text")))
+    (is (= "failed" (status (report s t (str/replace p "池の犍" "池")) "plaintext-body")))
+    (is (= "failed" (status (report s (str/replace t "<rt>いけ" "<rt>うみ") p) "tei-ruby")))
+    (is (= "failed" (status (report s (str/replace t ">犍</g>" ">牛</g>") p) "tei-gaiji")))))
+
 (deftest ambiguous-accent-punctuation-keeps-independent-checks
   (doseq [[encoded visible] [["C'est me^me" "C'est même"]
                              ["Le Cafe' de Paris, Monte Carlo." "Le Café de Paris, Monte Carlo."]]]

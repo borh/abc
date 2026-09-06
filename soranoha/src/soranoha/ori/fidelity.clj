@@ -149,6 +149,10 @@
                         (children node)))))]
     (second (walk node 0))))
 
+(defn- source-angle-quotes [text]
+  ;; Historical literal double-angle quotes: https://www.aozora.gr.jp/annotation/extra.html
+  (str/replace text #"≪([^≪≫\n]*)≫" "《$1》"))
+
 (defn- parse-line [line]
   (let [gaijis (atom [])
         mapped (outside-corrections line
@@ -172,8 +176,10 @@
         emphasis (source-annotations unpointed)
         plain (or (:plain emphasis) unpointed)
         unsupported? (boolean (re-find #"[［］《》｜※�]" plain))]
-    {:plain plain :rubies @rubies :gaijis @gaijis :emphasis (:emphasis emphasis) :corrections (:corrections emphasis)
-     :heading (when heading (nth heading 1))
+    {:plain (source-angle-quotes plain) :rubies @rubies :gaijis @gaijis
+     :emphasis (mapv (fn [[start text rendition]] [start (source-angle-quotes text) rendition]) (:emphasis emphasis))
+     :corrections (:corrections emphasis)
+     :heading (when heading (source-angle-quotes (nth heading 1)))
      :heading-indent (when heading
                        (decimal (second (re-find #"^［＃([０-９0-9]+)字下げ］" mapped))))
      :closing-offset (when closing (decimal (second closing)))
@@ -403,6 +409,6 @@
      "status" (cond (statuses "failed") "failed"
                     (statuses "not-evaluated") "not-evaluated" :else "passed")
      "checks" checks
-     "limitations" ["Limited to Aozora text with a 底本 colophon and either a separator preamble or a two-line title/author header; basic ruby, Aozora Latin accent notation, non-overlapping retrospective emphasis dots, numeric JIS X 0213 gaiji, correction notes, middle headings, numeric closing offsets, and the listed indentation/sign blocks."
+     "limitations" ["Limited to Aozora text with a 底本 colophon and either a separator preamble or a two-line title/author header; basic ruby, Aozora Latin accent notation, single-line historical double-angle quotes, non-overlapping retrospective emphasis dots, numeric JIS X 0213 gaiji, correction notes, middle headings, numeric closing offsets, and the listed indentation/sign blocks."
                     "Ambiguous accent punctuation leaves affected line text and annotation offsets unevaluated; independent markup values and layout remain checked."
                     "Blank-line spacing and title/author metadata are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))

@@ -212,7 +212,8 @@
    (let [declaration (gaiji-declaration node)]
      (-> acc
          (register-char-declaration declaration)
-         (append-inline [:g {:ref (str "#" (:xml-id declaration))}])))))
+         (append-inline (cond-> [:g {:ref (str "#" (:xml-id declaration))}]
+                          (seq (:unicode declaration)) (conj (:unicode declaration))))))))
 
 (defn- render-editor-note-node
   ([acc node _depth]

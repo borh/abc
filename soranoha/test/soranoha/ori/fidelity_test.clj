@@ -14,7 +14,7 @@
        "<char xml:id='g1'><mapping type='unicode'>犍</mapping></char></charDecl></teiHeader>"
        "<text><body><div><head n='2' style='padding-inline-start: 8em'>一</head><p style='text-indent: 1em'>"
        "<s><ruby><rb>池</rb><rt>いけ</rt></ruby>の　底に、"
-       "<ruby><rb><g ref='#g1'/>陀多</rb><rt>かんだた</rt></ruby>。</s></p>"
+       "<ruby><rb><g ref='#g1'>犍</g>陀多</rb><rt>かんだた</rt></ruby>。</s></p>"
        "<note type='source-attribution'><seg type='source-line'>底本：本</seg><lb/>"
        "<seg type='source-line' style='padding-inline-start: 3em'>初刷</seg></note>"
        "</div></body></text></TEI>"))
@@ -30,7 +30,9 @@
 (deftest independent-source-values-detect-export-mutations
   (is (= "passed" (get (report source tei plaintext) "status")))
   (doseq [[label id transform]
-          [["heading omission" "tei-headings" #(str/replace % "<head n='2' style='padding-inline-start: 8em'>一</head>" "")]
+          [["empty resolved gaiji" "tei-gaiji" #(str/replace % "<g ref='#g1'>犍</g>" "<g ref='#g1'/>")]
+           ["wrong resolved gaiji" "tei-gaiji" #(str/replace % ">犍</g>" ">牛</g>")]
+           ["heading omission" "tei-headings" #(str/replace % "<head n='2' style='padding-inline-start: 8em'>一</head>" "")]
            ["heading level mutation" "tei-heading-layout" #(str/replace % "head n='2'" "head n='1'")]
            ["heading indent mutation" "tei-heading-layout" #(str/replace % "padding-inline-start: 8em" "padding-inline-start: 7em")]
            ["visible omission" "tei-body-text" #(str/replace % "の　底に、" "の　に、")]

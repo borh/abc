@@ -54,7 +54,7 @@
                                                  "gaiji" {"reference" "1-87-71" "unicode" "犍"}}
                                                 {"type" "text" "text" "陀多"}]}]})
         rb (first (elements (:body rendered) :rb))]
-    (is (= [:rb [:g {:ref "#gaiji-1-87-71"}] "陀多"] rb))
+    (is (= [:rb [:g {:ref "#gaiji-1-87-71"} "犍"] "陀多"] rb))
     (is (= "犍" (:unicode (first (:char_declarations rendered)))))))
 
 (deftest source-layout-validates-against-the-publication-profile

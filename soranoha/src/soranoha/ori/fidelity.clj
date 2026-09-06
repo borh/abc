@@ -49,14 +49,13 @@
                   (.setExpandEntityReferences false))]
     (.parse (.newDocumentBuilder factory) (ByteArrayInputStream. bytes))))
 
-(defn- visible [node mappings]
+(defn- visible [node]
   (let [tag (.getLocalName ^Node node)]
     (cond
       (#{"rt" "note"} tag) ""
-      (= "g" tag) (get mappings (attr node "ref") "�")
       (= Node/TEXT_NODE (.getNodeType ^Node node))
       (.getNodeValue ^Node node)
-      :else (apply str (map #(visible % mappings) (children node))))))
+      :else (apply str (map #(visible %) (children node))))))
 
 (defn- gaiji [row cell]
   (let [row (Long/parseLong row)
@@ -124,7 +123,7 @@
                                (elements doc "char")))
         body (first (elements doc "body"))
         paragraphs (->> (elements body "p")
-                        (map #(vector % (visible % mappings)))
+                        (map #(vector % (visible %)))
                         (remove #(str/blank? (second %))) vec)
         source-paragraphs (vec (remove :heading lines))
         note (first (filter #(= "source-attribution" (attr % "type"))
@@ -148,10 +147,10 @@
                  (->> (tree-seq #(seq (children %)) children body)
                       (filter #(and (= "http://www.tei-c.org/ns/1.0" (.getNamespaceURI ^Node %))
                                     (#{"p" "head"} (.getLocalName ^Node %))))
-                      (map #(vector (.getLocalName ^Node %) (visible % mappings)))
+                      (map #(vector (.getLocalName ^Node %) (visible %)))
                       (remove #(str/blank? (second %))) vec))
      (comparison "tei-headings" (vec (keep :heading lines))
-                 (mapv #(visible % mappings) (elements body "head")))
+                 (mapv #(visible %) (elements body "head")))
      (comparison "tei-heading-layout" true
                  (let [expected (filter :heading lines)
                        actual (elements body "head")]
@@ -162,11 +161,13 @@
                                             (indent-style? h "padding-inline-start" (:heading-indent src))))
                                      expected actual)))))
      (comparison "tei-ruby" (vec (mapcat :rubies lines))
-                 (mapv (fn [r] [(visible (first (elements r "rb")) mappings)
+                 (mapv (fn [r] [(visible (first (elements r "rb")))
                                 (.getTextContent ^Node (first (elements r "rt")))])
                        (elements body "ruby")))
-     (comparison "tei-gaiji" (vec (mapcat :gaijis lines))
-                 (mapv #(get mappings (attr % "ref") "�") (elements body "g")))
+     (comparison "tei-gaiji" (mapv #(vector % %) (mapcat :gaijis lines))
+                 (mapv #(vector (.getTextContent ^Node %)
+                                (get mappings (attr % "ref") "�"))
+                       (elements body "g")))
      (comparison "tei-paragraph-indentation" true
                  (and (= (count source-paragraphs) (count paragraphs))
                       (every? true?

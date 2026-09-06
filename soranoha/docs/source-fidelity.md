@@ -1,6 +1,6 @@
 # Source fidelity and review exports
 
-Soranoha builds TEI and visible-body plaintext as the research outputs. TEI retains ruby, gaiji declarations, headings, layout and source apparatus. Plaintext omits readings and source apparatus. The rights snapshot describes admission evidence; TEI schema validation checks structural validity; the separate source-fidelity report compares exports with the raw Aozora primary text.
+Soranoha builds TEI and visible-body plaintext as the research outputs. TEI retains ruby, gaiji declarations, headings, layout and source apparatus. Resolved gaiji contain their Unicode text directly inside `g`, including inside ruby bases; `ref` and `charDecl` retain the source mapping. Unresolved characters retain their reference without inventing a replacement. Plaintext omits readings and source apparatus. The rights snapshot describes admission evidence; TEI schema validation checks structural validity; the separate source-fidelity report compares exports with the raw Aozora primary text.
 
 From the repository root, set the three variables below to absolute paths. The corpus must be a clean Git checkout; the export directory must not exist:
 

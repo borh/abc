@@ -1,6 +1,7 @@
 (ns soranoha.yomi.select-test
   (:require [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]]
+            [soranoha.aozora.csv :as csv]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select])
   (:import [java.io FileOutputStream]
@@ -31,7 +32,7 @@
     root))
 
 (def fixture-rows
-  (catalog/read-rows-from-string
+  (csv/read-rows-from-string
    (str csv-header "\n"
         "000100,000001,https://example.org/cards/000001/files/100_ruby_200.zip\n"
         "000300,000002,https://example.org/cards/000002/files/300_ruby_400.zip\n")))
@@ -71,10 +72,10 @@
 
 (deftest catalog-parsing-test
   (testing "BOM stripped from header; ragged rows marked, not dropped"
-    (let [rows (catalog/read-rows-from-string
+    (let [rows (csv/read-rows-from-string
                 (str "﻿" csv-header "\n"
                      "1,2,https://example.org/f/a.zip\n"
                      "3,4\n"))]
       (is (= "1" (catalog/row-work-id (first rows))))
       (is (= "a.zip" (catalog/text-url-basename (first rows))))
-      (is (true? (get (second rows) catalog/ragged-key))))))
+      (is (true? (get (second rows) csv/ragged-key))))))

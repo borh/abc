@@ -1,36 +1,9 @@
-;; Official Aozora catalog access: the CSV inside
-;; index_pages/list_person_all_extended_utf8.zip. Ported from
-;; abc.tools.soranoha-build-publication (read-catalog-zip, catalog-index) and
-;; abc.tools.aozora-csv (row parsing incl. BOM strip and the ragged marker) —
-;; selection semantics must match abc byte-for-byte for the kernel's
-;; equivalence gate.
 (ns soranoha.yomi.catalog
-  (:require [charred.api :as charred]
-            [clojure.java.io :as io]
+  "Read the official catalog archive and index rows by work text URL."
+  (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [soranoha.core.hash :as hash])
   (:import [java.util.zip ZipEntry ZipFile]))
-
-(def ^:private bom-char (char 0xFEFF))
-
-(defn- strip-bom [^String s]
-  (if (and s (pos? (.length s)) (= (char bom-char) (.charAt s 0)))
-    (.substring s 1)
-    s))
-
-(def ragged-key
-  "Marker key on a parsed row whose cell count differed from the header's."
-  ::ragged?)
-
-(defn read-rows-from-string [^String s]
-  (let [rows (charred/read-csv s)]
-    (when (seq rows)
-      (let [header (mapv (fn [c] (strip-bom (or c ""))) (first rows))
-            width (count header)]
-        (mapv (fn [r]
-                (cond-> (into {} (map (fn [k v] [k (or v "")]) header r))
-                  (not= width (count r)) (assoc ragged-key true)))
-              (rest rows))))))
 
 (defn read-catalog-zip
   "Read the official catalog ZIP under `aozora-root`; returns
@@ -65,8 +38,7 @@
 (defn row-person-id [row] (get row "人物ID"))
 
 (defn catalog-index
-  "Index rows by the basename of each row's text-file URL (later rows win,
-  as in abc)."
+  "Index rows by text-file URL basename; later rows win."
   [rows]
   (reduce (fn [idx row]
             (if-let [basename (text-url-basename row)]

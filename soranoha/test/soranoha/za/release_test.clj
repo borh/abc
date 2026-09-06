@@ -20,6 +20,7 @@
             [soranoha.snh.repo :as repo]
             [soranoha.snh.verify :as verify]
             [soranoha.snh.view :as view]
+            [soranoha.aozora.csv :as csv]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
             [soranoha.za.corpus :as corpus]
@@ -454,7 +455,7 @@
                    path))
         ks (vector-keys)
         scaffold-bytes (fn []
-                         (let [rows (catalog/read-rows-from-string
+                         (let [rows (csv/read-rows-from-string
                                      (:csv-text (catalog/read-catalog-zip
                                                  root)))]
                            (:bytes (snapshot/encode

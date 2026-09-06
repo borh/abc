@@ -1,10 +1,6 @@
-;; Work selection over an aozorabunko checkout: enumerate work ZIPs under
-;; cards/NNNNNN/files/, join against the catalog by text-file basename, and
-;; assert slug injectivity before anything slug-addressed happens (the
-;; 17,602-vs-17,595 silent-overwrite incident is the reason this assert
-;; exists and runs first). Ported from abc.tools.soranoha-build-publication;
-;; the slug function and ordering must not drift.
 (ns soranoha.yomi.select
+  "Join work ZIPs against catalog text-file basenames. Reject slug collisions
+  before producing any slug-addressed result."
   (:require [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]

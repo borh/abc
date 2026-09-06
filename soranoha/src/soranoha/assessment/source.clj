@@ -6,6 +6,7 @@
             [clojure.java.io :as io]
             [soranoha.core.hash :as hash]
             [soranoha.aozora.source-bundle :as bundle]
+            [soranoha.aozora.csv :as csv]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
             [soranoha.za.scaffold :as scaffold]))
@@ -45,7 +46,7 @@
   Catalog values are observations, never the assessed contribution set.
   Only source bundles consumed by an observation or reliance are inspected."
   [aozora-root source retained-values]
-  (let [rows (catalog/read-rows-from-string
+  (let [rows (csv/read-rows-from-string
               (:csv-text (catalog/read-catalog-zip aozora-root)))
         selected (:candidates (select/select-candidates aozora-root rows))
         by-slug (into {} (map (juxt :slug identity)) selected)

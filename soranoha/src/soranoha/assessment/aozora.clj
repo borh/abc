@@ -9,6 +9,7 @@
             [soranoha.core.hash :as hash]
             [soranoha.core.parallel :as parallel]
             [soranoha.aozora.source-bundle :as bundle]
+            [soranoha.aozora.csv :as csv]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select])
   (:import [java.io ByteArrayInputStream ByteArrayOutputStream IOException StringReader]
@@ -145,10 +146,10 @@
           (do (when csv (refuse! :aozora/ambiguous-catalog))
               (recur (utf8 (bounded-bytes in))))
           (do (bounded-bytes in) (recur csv)))
-        (if csv (catalog/read-rows-from-string csv) (refuse! :aozora/missing-catalog-csv))))))
+        (if csv (csv/read-rows-from-string csv) (refuse! :aozora/missing-catalog-csv))))))
 
 (defn- selection [root]
-  (let [rows (catalog/read-rows-from-string (:csv-text (catalog/read-catalog-zip root)))]
+  (let [rows (csv/read-rows-from-string (:csv-text (catalog/read-catalog-zip root)))]
     (into {} (map (juxt :slug identity))
           (:candidates (select/select-candidates root rows)))))
 
@@ -164,7 +165,7 @@
                   (second (str/split (:relpath candidate) #"/"))
                   "/card" (Long/parseLong id) ".html")]
     (when-not (seq matches) (refuse! :aozora/missing-current-work))
-    (when (some catalog/ragged-key matches) (refuse! :aozora/malformed-catalog-row))
+    (when (some csv/ragged-key matches) (refuse! :aozora/malformed-catalog-row))
     (when-not (every? #(= "なし" (get % "作品著作権フラグ")) matches)
       (refuse! :aozora/not-classified-expired))
     (when-not (= #{{"図書カードURL" card "テキストファイルURL" expected-file}} urls)

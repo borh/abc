@@ -3,7 +3,8 @@
   Catalog declarations do not establish exhaustive authorship or rights facts.
   Assessment evaluation and release drift checks share this projection;
   malformed selected rows fail rather than silently dropping candidates."
-  (:require [soranoha.yomi.catalog :as catalog]))
+  (:require [soranoha.aozora.csv :as csv]
+            [soranoha.yomi.catalog :as catalog]))
 
 (def role-token
   "役割フラグ → contribution-id role token. Closed by construction: a
@@ -29,7 +30,7 @@
 
 (defn- contribution-id
   [row]
-  (when (get row catalog/ragged-key)
+  (when (get row csv/ragged-key)
     (fail! :ragged-contributor-row
            {:work-id (catalog/row-work-id row)
             :person-id (catalog/row-person-id row)}))

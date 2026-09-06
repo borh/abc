@@ -1,13 +1,13 @@
 (ns soranoha.za.scaffold-test
   (:require [clojure.test :refer [deftest is testing]]
-            [soranoha.yomi.catalog :as catalog]
+            [soranoha.aozora.csv :as csv]
             [soranoha.za.scaffold :as scaffold]))
 
 (def csv-header
   "作品ID,人物ID,役割フラグ,テキストファイルURL")
 
 (defn- rows [& lines]
-  (catalog/read-rows-from-string
+  (csv/read-rows-from-string
    (apply str csv-header "\n" (map #(str % "\n") lines))))
 
 (defn- candidate [slug rows-for-work]
@@ -34,14 +34,14 @@
       (is (thrown-with-msg? clojure.lang.ExceptionInfo #"malformed-person-id"
                             (scaffold/projection rs [(candidate "s" [(first rs)])])))))
   (testing "a ragged row inside a selected work's row set fails the projection"
-    (let [rs (catalog/read-rows-from-string
+    (let [rs (csv/read-rows-from-string
               (str csv-header "\n"
                    "000100,000001,著者,https://example.org/x.zip\n"
                    "000100,000002,著者\n"))]
       (is (thrown-with-msg? clojure.lang.ExceptionInfo #"ragged-contributor-row"
                             (scaffold/projection rs [(candidate "s" [(first rs)])])))))
   (testing "a ragged row for an unselected work does not block the projection"
-    (let [rs (catalog/read-rows-from-string
+    (let [rs (csv/read-rows-from-string
               (str csv-header "\n"
                    "000100,000001,著者,https://example.org/x.zip\n"
                    "000999,000002,著者\n"))]

@@ -42,6 +42,7 @@
             [soranoha.snh.transact :as transact]
             [soranoha.snh.verify :as verify]
             [soranoha.snh.view :as view]
+            [soranoha.aozora.csv :as csv]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
             [soranoha.za.oracle :as oracle]
@@ -158,7 +159,7 @@
   (let [root (config/ensure-layout! (config/root root))
         commit (source-provenance! aozora-root)
         {:keys [csv-text catalog-csv-hash]} (catalog/read-catalog-zip aozora-root)
-        rows (catalog/read-rows-from-string csv-text)
+        rows (csv/read-rows-from-string csv-text)
         {:keys [candidates rejected]} (select/select-candidates aozora-root rows)
         candidates (if (and limit (pos? limit))
                      (vec (take limit candidates))
@@ -170,7 +171,7 @@
   (let [selected-work-ids (set (map #(catalog/row-work-id (:row %)) candidates))]
     (doseq [row rows
             :when (and (selected-work-ids (catalog/row-work-id row))
-                       (get row catalog/ragged-key))]
+                       (get row csv/ragged-key))]
       (throw (ex-info "selected work has a ragged catalog row"
                       {:reason :ragged-metadata-row
                        :work-id (catalog/row-work-id row)})))))

@@ -19,6 +19,7 @@
             [soranoha.main :as main]
             [soranoha.ori.stages :as stages]
             [soranoha.core.json :as record-json]
+            [soranoha.aozora.csv :as csv]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select])
   (:import [java.io FileOutputStream]
@@ -216,7 +217,7 @@
   [root store-root]
   (let [commit (main/source-provenance! root)
         {:keys [csv-text]} (catalog/read-catalog-zip root)
-        rows (catalog/read-rows-from-string csv-text)
+        rows (csv/read-rows-from-string csv-text)
         rows-by-work (group-by catalog/row-work-id rows)
         {:keys [candidates]} (select/select-candidates root rows)
         store (engine/open-store! {:cas-dir (str (fs/path store-root "objects"))

@@ -436,13 +436,20 @@
 
 (defn- paragraph-render-inputs [nodes paragraph]
   (let [{start "start" end "end"} (paragraph-range paragraph)
-        first-node (when (< start end) (nth nodes start))
+        first-index (first (drop-while
+                            (fn [index]
+                              (let [node (nth nodes index)]
+                                (or (= "editor-note" (get node "type"))
+                                    (and (= "text" (get node "type"))
+                                         (empty? (get node "text"))))))
+                            (range start end)))
+        first-node (when first-index (nth nodes first-index))
         indent (if (and (= "body" (get paragraph "role"))
                         (= "text" (get first-node "type")))
                  (leading-indent (get first-node "text"))
                  0)]
     [(if (pos? indent)
-       (update-in nodes [start "text"] subs indent)
+       (update-in nodes [first-index "text"] subs indent)
        nodes)
      (cond-> (paragraph-attrs paragraph)
        (pos? indent) (assoc :style (str "text-indent: " indent "em")))]))

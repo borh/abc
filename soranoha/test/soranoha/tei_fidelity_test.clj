@@ -41,6 +41,34 @@
            (vec (elements note :seg))))
     (is (= 1 (count (elements note :lb))))))
 
+(deftest indentation-follows-empty-text-and-apparatus
+  (doseq [prefix [[{"type" "text" "text" ""}]
+                  [{"type" "editor-note" "note" {"category" "correction" "raw" "注記"}}
+                   {"type" "text" "text" ""}]]]
+    (let [nodes (into prefix [{"type" "text" "text" "　本文　中。"}])
+          body (:body (tei/render
+                        {"nodes" nodes
+                         "paragraphs" [{"id" "p1" "role" "body"
+                                        "node_range" {"start" 0 "end" (count nodes)}}]}))
+          paragraph (first (elements body :p))]
+      (is (= "text-indent: 1em" (:style (second paragraph))))
+      (is (= "本文　中。" (last paragraph)))
+      (is (= (count (filter #(= "editor-note" (get % "type")) prefix))
+             (count (elements body :note)))))))
+
+(deftest visible-nodes-stop-paragraph-indentation-search
+  (doseq [prefix [{"type" "text" "text" "前"}
+                  {"type" "ruby" "ruby" {"base" "前" "reading" "まえ"}}
+                  {"type" "emphasis" "style" "sesame-dot"
+                   "inline_children" [{"type" "text" "text" "前"}]}]]
+    (let [body (:body (tei/render
+                        {"nodes" [prefix {"type" "text" "text" "　本文。"}]
+                         "paragraphs" [{"id" "p1" "role" "body"
+                                        "node_range" {"start" 0 "end" 2}}]}))
+          paragraph (first (elements body :p))]
+      (is (nil? (:style (second paragraph))))
+      (is (= "　本文。" (last paragraph))))))
+
 (deftest heading-indentation-is-preserved
   (let [body (:body (tei/render {"nodes" [{"type" "heading" "level" 2 "indent" 8 "text" "一"}]}))]
     (is (= {:n "2" :style "padding-inline-start: 8em"}
